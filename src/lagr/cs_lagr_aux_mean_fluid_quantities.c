@@ -49,8 +49,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-
+#include "cs_array.h"
+#include "cs_balance.h"
+#include "cs_face_viscosity.h"
+#include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_operator.h"
+#include "cs_field_pointer.h"
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_stat.h"
@@ -250,10 +255,138 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       BFT_FREE(wpres);
 
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-      for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-        for (cs_lnum_t id = 0; id < 3; id++)
-          grad_pr[iel][id] += ro0 * grav[id];
+      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          grad_pr[cell_id][i] += ro0 * grav[i];
       }
+    }
+
+    cs_field_t *f_grad_pr = cs_field_by_name_try("lagr_pressure_gradient");
+
+    /* Store pressure gradient for postprocessing purpose */
+    if (f_grad_pr != NULL) {
+      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          f_grad_pr->val[3*cell_id + i] = grad_pr[cell_id][i];
+      }
+    }
+
+    //TODO add user momentum source terms to grad_pr
+
+    /* Compute viscous terms
+     * ===================== */
+    if (cs_glob_lagr_model->viscous_terms) {
+
+      cs_field_t *f_vel = CS_F_(vel);
+      const cs_equation_param_t *eqp_vel
+        = cs_field_get_equation_param_const(f_vel);
+      const cs_mesh_t  *m = cs_glob_mesh;
+      cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+      cs_real_3_t *cvar_vel = (cs_real_3_t *)f_vel->val;
+      const cs_real_3_t *cvar_vela = (const cs_real_3_t *)f_vel->val_pre;
+
+      const cs_lnum_t n_b_faces = m->n_b_faces;
+      const cs_lnum_t n_i_faces = m->n_i_faces;
+
+      cs_real_t *i_visc, *b_visc;
+      BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+      BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+
+      cs_face_viscosity(m,
+                        fvq,
+                        eqp_vel->imvisf,
+                        CS_F_(mu)->val, // cell viscosity
+                        i_visc,
+                        b_visc);
+
+      cs_real_t *i_massflux = NULL;
+      cs_real_t *b_massflux = NULL;
+
+      BFT_MALLOC(i_massflux, n_i_faces, cs_real_t);
+      BFT_MALLOC(b_massflux, n_b_faces, cs_real_t);
+      cs_array_real_fill_zero(n_i_faces, i_massflux);
+      cs_array_real_fill_zero(n_b_faces, b_massflux);
+
+      cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
+
+      cs_real_3_t *_div_mu_gradvel = NULL;
+      cs_real_3_t *div_mu_gradvel = NULL;
+      cs_field_t *f_visc_forces =
+        cs_field_by_name_try("viscous_shear_divergence");
+
+      if (f_visc_forces != NULL)
+        div_mu_gradvel = f_visc_forces->val;
+      else {
+        BFT_MALLOC(_div_mu_gradvel,m->n_cells_with_ghosts, cs_real_3_t);
+        div_mu_gradvel = _div_mu_gradvel;
+      }
+
+      cs_var_cal_opt_t vcopt_vel;
+      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+      /* Get the calculation option from the velocity field */
+      cs_field_get_key_struct(extra->vel, key_cal_opt_id, &vcopt_vel);
+
+      /* Do not consider convective terms */
+      vcopt_vel.iconv = 0;
+      cs_real_t *i_secvis= NULL;
+      cs_real_t *b_secvis= NULL;
+
+      //TODO: compute it
+      if (vp_model->ivisse == 1) {
+        BFT_MALLOC(i_secvis, n_i_faces, cs_real_t);
+        BFT_MALLOC(b_secvis, n_b_faces, cs_real_t);
+      }
+
+      cs_array_real_fill_zero(3*n_cells_with_ghosts, div_mu_gradvel);
+
+      /* Compute - div(mu_gradu) */
+      cs_balance_vector(cs_glob_time_step_options->idtvar,
+                        f_vel->id,
+                        0,//imasac,
+                        1,//inc,
+                        0, //TODO vp_model->ivisse,
+                        &vcopt_vel,
+                        cvar_vel,
+                        cvar_vela,
+                        f_vel->bc_coeffs->a,
+                        f_vel->bc_coeffs->b,
+                        f_vel->bc_coeffs->af,
+                        f_vel->bc_coeffs->bf,
+                        i_massflux,
+                        b_massflux,
+                        i_visc,
+                        b_visc,
+                        i_secvis,
+                        b_secvis,
+                        NULL,
+                        NULL,
+                        NULL,
+                        0,
+                        NULL,
+                        NULL,
+                        NULL,
+                        div_mu_gradvel);
+
+      const cs_real_t  *cell_f_vol = fvq->cell_vol;
+
+      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+        cs_real_t dvol = 1. / cell_f_vol[cell_id];
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          div_mu_gradvel[cell_id][i] *= dvol;
+          /* mind that div_mu_gradvel contains -div(mu gradvel) */
+          grad_pr[cell_id][i] += div_mu_gradvel[cell_id][i];
+        }
+      }
+
+      BFT_FREE(i_massflux);
+      BFT_FREE(b_massflux);
+      BFT_FREE(_div_mu_gradvel);
+      BFT_FREE(i_visc);
+      BFT_FREE(b_visc);
+      BFT_FREE(i_secvis);
+      BFT_FREE(b_secvis);
     }
 
     /* Compute velocity gradient

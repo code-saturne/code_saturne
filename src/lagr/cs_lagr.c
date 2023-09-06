@@ -186,7 +186,8 @@ static cs_lagr_model_t  _lagr_model
      .n_stat_classes = 0,
      .agglomeration = 0,
      .fragmentation = 0,
-     .n_user_variables = 0};
+     .n_user_variables = 0,
+     .viscous_terms = false};
 
 /* particle counter structure and associated pointer */
 

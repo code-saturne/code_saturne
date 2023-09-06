@@ -336,6 +336,9 @@ typedef struct {
 
   int  n_user_variables;
 
+  /*! Take viscous terms into account */
+  bool viscous_terms;
+
 } cs_lagr_model_t;
 
 /*! Particle counters for the Lagrangian module */
