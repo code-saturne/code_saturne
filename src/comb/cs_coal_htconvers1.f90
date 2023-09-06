@@ -60,8 +60,8 @@ implicit none
 
 ! Arguments
 
-real(c_double) :: xesp(ngazem)
-real(c_double) :: f1mc(ncharm), f2mc(ncharm)
+real(c_double), dimension(*) :: xesp
+real(c_double), dimension(*) :: f1mc, f2mc
 real(c_double), value :: tp
 real(c_double) :: eh
 
