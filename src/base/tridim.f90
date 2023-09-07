@@ -158,7 +158,7 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 
 procedure() :: atr1vf, cou1do, debvtl, distpr, distpr2, distyp, diffst
 procedure() :: dttvar, cs_compute_courant_fourier, cs_tagmro
-procedure() :: phyvar, pthrbm, schtmp, scalai, solvar
+procedure() :: phyvar, pthrbm, schtmp, scalai
 
 interface
 
@@ -214,7 +214,6 @@ interface
     implicit none
     real(kind=c_double), dimension(*), intent(in) :: h_wall
     real(kind=c_double), dimension(*), intent(inout) :: t_wall
-
   end subroutine cs_syr_coupling_send_boundary
 
   subroutine cs_turbulence_ke &

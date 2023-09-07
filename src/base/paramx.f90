@@ -258,19 +258,19 @@ module paramx
   ! command would be a possibility, but a simpler compiled source-only solution
   ! would be preferred.
 
-  procedure() :: cs_f_user_head_losses
+  integer :: cs_f_user_head_losses
 
-  procedure() :: cs_user_boundary_conditions, cs_user_cooling_towers,     &
-                 cs_user_extra_operations, cs_user_initialization,        &
-                 cs_user_mass_source_terms,                               &
-                 cs_user_metal_structures_source_terms,                   &
-                 cs_user_parameters, cs_user_physical_properties,         &
-                 cs_user_turbulence_source_terms,                         &
-                 cs_user_turbulence_source_terms2,                        &
-                 cs_user_atmo_soil
+  integer :: cs_user_boundary_conditions, cs_user_cooling_towers,     &
+             cs_user_extra_operations, cs_user_initialization,        &
+             cs_user_mass_source_terms,                               &
+             cs_user_metal_structures_source_terms,                   &
+             cs_user_parameters, cs_user_physical_properties,         &
+             cs_user_turbulence_source_terms,                         &
+             cs_user_turbulence_source_terms2,                        &
+             cs_user_atmo_soil
 
-  procedure() :: usalcl, usatdv, usati1, usatph, usatsoil, ushist,        &
-                 usporo, ussmag, usstr1, usstr2, ustsnv, ustsvv, usthht,  &
-                 usvosy, usvpst
+  integer :: usalcl, usatdv, usati1, usatph, usatsoil, ushist,        &
+             usporo, ussmag, usstr1, usstr2, ustsnv, ustsvv, usthht,  &
+             usvosy, usvpst
 
 end module paramx
