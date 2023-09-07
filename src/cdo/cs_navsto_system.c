@@ -112,6 +112,34 @@ static cs_navsto_system_t  *cs_navsto_system = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if one has at least one boundary with symmetry
+ *
+ * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_has_symmetry(const cs_navsto_param_t    *nsp)
+{
+  if (nsp == NULL)
+    return false;
+
+  const cs_boundary_t  *bdy = nsp->boundaries;
+
+  if (bdy->default_type == CS_BOUNDARY_SYMMETRY)
+    return true;
+
+  for (int i = 0; i < bdy->n_boundaries; i++)
+    if (bdy->types[i] & CS_BOUNDARY_SYMMETRY)
+      return true;
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if one has to handle non-linearities
  *
  * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
@@ -1956,6 +1984,8 @@ cs_navsto_system_log_setup(void)
   if (ns == NULL)
     return;
 
+  const cs_navsto_param_t  *nsp = ns->param;
+
   cs_log_printf(CS_LOG_SETUP, "\n");
   cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h1);
   cs_log_printf(CS_LOG_SETUP, "\tSummary of the Navier-Stokes system\n");
@@ -1963,7 +1993,22 @@ cs_navsto_system_log_setup(void)
 
   /* Main set of numerical parameters */
 
-  cs_navsto_param_log(ns->param);
+  cs_navsto_param_log(nsp);
+
+  /* Weak penalization coefficient if a boundary with symmetry is considered */
+
+  if (_has_symmetry(nsp)) {
+
+    const char  navsto[16] = "  * NavSto |";
+
+    cs_equation_param_t  *mom_eqp =
+      cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s Weak penalization coeff. in momentum: %5.1e\n",
+                  navsto, mom_eqp->weak_pena_bc_coeff);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

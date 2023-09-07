@@ -2084,14 +2084,15 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                 "  * %s | Boundary conditions | Enforcement: %s\n",
                 eqname,
                 cs_param_get_bc_enforcement_name(eqp->default_enforcement));
+
   if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED)
     cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | Boundary conditions | Penalization coefficient:"
+                  "  * %s | Boundary conditions | Strong penalization coeff.:"
                   " %5.3e\n", eqname, eqp->strong_pena_bc_coeff);
   else if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
     cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | Boundary conditions | Penalization coefficient:"
+                  "  * %s | Boundary conditions | Weak penalization coeff.:"
                   " %5.3e\n", eqname, eqp->weak_pena_bc_coeff);
 
   cs_log_printf(CS_LOG_SETUP, "  * %s | Boundary conditions |"
