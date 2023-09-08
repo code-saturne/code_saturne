@@ -119,7 +119,7 @@ static double  *_dual_porous_volume = NULL;
 /*----------------------------------------------------------------------------*/
 
 static void
-_joining_param_vgm(cs_gwf_soil_tpf_vgm_param_t    *sp)
+_joining_param_vgm(cs_gwf_soil_vgm_tpf_param_t    *sp)
 {
   const double  sl = sp->sl_joining;
 
@@ -149,7 +149,7 @@ _joining_param_vgm(cs_gwf_soil_tpf_vgm_param_t    *sp)
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_spf_vgm(const cs_real_t              t_eval,
+_update_iso_soil_vgm_spf(const cs_real_t              t_eval,
                          const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *cdoq,
@@ -168,7 +168,7 @@ _update_iso_soil_spf_vgm(const cs_real_t              t_eval,
 
   /* Retrieve the soil parameters */
 
-  cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
+  cs_gwf_soil_vgm_spf_param_t  *sp = soil->model_param;
 
   /* Retrieve the hydraulic context */
 
@@ -258,7 +258,7 @@ _update_iso_soil_spf_vgm(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_tpf_vgm(const cs_real_t              t_eval,
+_update_iso_soil_vgm_tpf(const cs_real_t              t_eval,
                          const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *cdoq,
@@ -275,7 +275,7 @@ _update_iso_soil_tpf_vgm(const cs_real_t              t_eval,
 
   /* Retrieve the soil parameters */
 
-  cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+  cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
   /* Retrieve the hydraulic context */
 
@@ -348,7 +348,7 @@ _update_iso_soil_tpf_vgm(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_tpf_vgm_joined(const cs_real_t              t_eval,
+_update_iso_soil_vgm_tpf_joined(const cs_real_t              t_eval,
                                 const cs_mesh_t             *mesh,
                                 const cs_cdo_connect_t      *connect,
                                 const cs_cdo_quantities_t   *cdoq,
@@ -365,7 +365,7 @@ _update_iso_soil_tpf_vgm_joined(const cs_real_t              t_eval,
 
   /* Retrieve the soil parameters */
 
-  cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+  cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
   /* Retrieve the hydraulic context */
 
@@ -549,11 +549,11 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
                 " of type CS_GWF_SOIL_SATURATED.\n", __func__);
     break;
 
-  case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
+  case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
     {
-      cs_gwf_soil_spf_vgm_param_t  *sp = NULL;
+      cs_gwf_soil_vgm_spf_param_t  *sp = NULL;
 
-      BFT_MALLOC(sp, 1, cs_gwf_soil_spf_vgm_param_t);
+      BFT_MALLOC(sp, 1, cs_gwf_soil_vgm_spf_param_t);
 
       sp->residual_moisture = 0.;
 
@@ -566,7 +566,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
 
       if (perm_type & CS_PROPERTY_ISO)
         if (hydraulic_model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE)
-          soil->update_properties = _update_iso_soil_spf_vgm;
+          soil->update_properties = _update_iso_soil_vgm_spf;
         else
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid type of hydraulic model.\n"
@@ -578,11 +578,11 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
     }
     break;
 
-  case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
+  case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
     {
-      cs_gwf_soil_tpf_vgm_param_t  *sp = NULL;
+      cs_gwf_soil_vgm_tpf_param_t  *sp = NULL;
 
-      BFT_MALLOC(sp, 1, cs_gwf_soil_tpf_vgm_param_t);
+      BFT_MALLOC(sp, 1, cs_gwf_soil_vgm_tpf_param_t);
 
       sp->n = 1.7;
       sp->m = 1 - 1./sp->n;
@@ -601,7 +601,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
       if (perm_type & CS_PROPERTY_ISO)
         if (hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
             hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE)
-          soil->update_properties = _update_iso_soil_tpf_vgm_joined;
+          soil->update_properties = _update_iso_soil_vgm_tpf_joined;
         else
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid type of hydraulic model.\n"
@@ -705,18 +705,18 @@ cs_gwf_soil_free_all(void)
 
       switch (soil->model) {
 
-      case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
+      case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
         {
-          cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
+          cs_gwf_soil_vgm_spf_param_t  *sp = soil->model_param;
 
           BFT_FREE(sp);
           sp = NULL;
         }
         break;
 
-      case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
+      case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
         {
-          cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+          cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
           BFT_FREE(sp);
           sp = NULL;
@@ -791,9 +791,9 @@ cs_gwf_soil_log_setup(void)
         cs_log_printf(CS_LOG_SETUP, "%s Model: *Saturated*\n", id);
       break;
 
-    case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
+    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
       {
-        const cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
+        const cs_gwf_soil_vgm_spf_param_t  *sp = soil->model_param;
 
         cs_log_printf(CS_LOG_SETUP, "%s Model: "
                       "*Single_phase_Van_Genuchten_Mualem*\n", id);
@@ -806,9 +806,9 @@ cs_gwf_soil_log_setup(void)
       }
       break;
 
-    case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
+    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
       {
-        const cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+        const cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
         cs_log_printf(CS_LOG_SETUP, "%s Model: "
                       "*Two_phase_Van_Genuchten_Mualem*\n", id);
@@ -920,8 +920,8 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 
     switch (soil->model) {
 
-    case CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM:
-    case CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM:
+    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
+    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
     case CS_GWF_SOIL_USER:
       {
         assert(soil->update_properties != NULL);
@@ -1278,7 +1278,7 @@ cs_gwf_soil_get_permeability_max_dim(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
+cs_gwf_soil_set_vgm_spf_param(cs_gwf_soil_t         *soil,
                               double                 theta_r,
                               double                 alpha,
                               double                 n,
@@ -1286,9 +1286,9 @@ cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
 {
   if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
 
-  cs_gwf_soil_spf_vgm_param_t  *sp = soil->model_param;
+  cs_gwf_soil_vgm_spf_param_t  *sp = soil->model_param;
 
-  if (soil->model != CS_GWF_SOIL_SINGLE_PHASE_VAN_GENUCHTEN_MUALEM)
+  if (soil->model != CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil model is not Van Genuchten\n", __func__);
   if (sp == NULL)
@@ -1335,7 +1335,7 @@ cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_tpf_vgm_param(cs_gwf_soil_t         *soil,
+cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
                               double                 n,
                               double                 pr_r,
                               double                 sl_r,
@@ -1344,9 +1344,9 @@ cs_gwf_soil_set_tpf_vgm_param(cs_gwf_soil_t         *soil,
 {
   if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
 
-  cs_gwf_soil_tpf_vgm_param_t  *sp = soil->model_param;
+  cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
-  if (soil->model != CS_GWF_SOIL_TWO_PHASE_VAN_GENUCHTEN_MUALEM)
+  if (soil->model != CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil model is not the one expected\n", __func__);
   if (soil->abs_permeability_dim > 1)
@@ -1383,11 +1383,11 @@ cs_gwf_soil_set_tpf_vgm_param(cs_gwf_soil_t         *soil,
   if (sl_joining < 1) {
 
     _joining_param_vgm(sp);
-    soil->update_properties = _update_iso_soil_tpf_vgm_joined;
+    soil->update_properties = _update_iso_soil_vgm_tpf_joined;
 
   }
   else
-    soil->update_properties = _update_iso_soil_tpf_vgm;
+    soil->update_properties = _update_iso_soil_vgm_tpf;
 }
 
 /*----------------------------------------------------------------------------*/

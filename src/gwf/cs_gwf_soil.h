@@ -94,7 +94,7 @@ typedef void
  * Type definitions
  *============================================================================*/
 
-/*! \struct cs_gwf_soil_spf_vgm_param_t
+/*! \struct cs_gwf_soil_vgm_spf_param_t
  *
  * \brief Structure to handle the Van Genuchten-Mualem model of soil in the
  *        case of a single-phase flow in a porous media
@@ -130,9 +130,9 @@ typedef struct {
   double             scale;
   double             tortuosity;
 
-} cs_gwf_soil_spf_vgm_param_t;
+} cs_gwf_soil_vgm_spf_param_t;
 
-/*! \struct cs_gwf_soil_tpf_vgm_param_t
+/*! \struct cs_gwf_soil_vgm_tpf_param_t
  *
  * \brief Structure to handle the Van Genuchten-Mualem model of soil in the
  *        case of a two-phase flow in a porous media
@@ -205,7 +205,7 @@ typedef struct {
   double       dsl_plus;
   double       sl_plus_slope;
 
-} cs_gwf_soil_tpf_vgm_param_t;
+} cs_gwf_soil_vgm_tpf_param_t;
 
 /*! \struct _gwf_soil_t
  *
@@ -572,7 +572,7 @@ cs_gwf_soil_get_permeability_max_dim(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
+cs_gwf_soil_set_vgm_spf_param(cs_gwf_soil_t         *soil,
                               double                 theta_r,
                               double                 alpha,
                               double                 n,
@@ -604,7 +604,7 @@ cs_gwf_soil_set_spf_vgm_param(cs_gwf_soil_t         *soil,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_tpf_vgm_param(cs_gwf_soil_t         *soil,
+cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
                               double                 n,
                               double                 pr_r,
                               double                 sl_r,
