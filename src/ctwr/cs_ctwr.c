@@ -706,6 +706,22 @@ cs_ctwr_add_property_fields(void)
 
   }
 
+  {
+    /* Rain temperature */
+    f = cs_field_create("t_rain",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        dim1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Temperature rain");
+
+  }
+
+
+
+
   /* Properties to create for rain velocity equation solving */
   if (ct_opt->solve_rain_velocity) {
     char f_name[80];
@@ -2290,6 +2306,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   /* Variable and properties for rain zones */
   cs_field_t *cfld_yp = cs_field_by_name_try("y_p");
+  cs_real_t *yp_tp = cs_field_by_name("y_p_t_l")->val;
+  cs_real_t *t_rain = cs_field_by_name("t_rain")->val;
 
   cs_real_t *y_p = NULL;
   if (cfld_yp != NULL)
@@ -2321,6 +2339,14 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       //TODO not one for rain zones - Why not?
       //If it represents the humid air, then it should be one?  If it represents
       //the dry air, then it should account for both y_p and y_w
+
+      /* Recompute real rain temperature from Yp.Tp */
+      if (y_p[cell_id] > 1.e-4){
+        t_rain[cell_id] = yp_tp[cell_id] / y_p[cell_id];
+      }
+      else {
+        t_rain[cell_id] = 0.;
+      }
     }
 
     /* Update humidity field */
