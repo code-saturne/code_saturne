@@ -181,6 +181,39 @@ _handle_non_linearities(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if one has to handle a weak enforcement of the boundary
+ *        conditions
+ *
+ * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] mom_eqp   pointer to a \ref cs_equation_param_t structure related
+ *                      to the momentum equation
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_has_weak_bc(const cs_navsto_param_t    *nsp,
+             const cs_equation_param_t  *mom_eqp)
+{
+  if (nsp == NULL)
+    return false;
+
+  if (mom_eqp == NULL)
+    return false;
+
+  if (_has_symmetry(nsp))
+    return true;
+
+  if (mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+      mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+    return true;
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate an empty Navier-Stokes system
  *
  * \return a pointer to a new allocated groundwater flow structure
@@ -1152,6 +1185,22 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
         ns->compute_steady = cs_cdofb_monolithic_steady_nl;
       else
         ns->compute_steady = cs_cdofb_monolithic_steady;
+
+      /* When a weak enforcement is used and also an augmentation of the linear
+         system, one scales the weak penalization coefficient by the
+         augmentation scaling in order to keep a weak penalization which is not
+         dominated by the augmentation */
+
+      if (_has_weak_bc(nsp, mom_eqp)) {
+
+        cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
+
+        if (nslesp->strategy == CS_NAVSTO_SLES_GKB_GMRES   ||
+            nslesp->strategy == CS_NAVSTO_SLES_GKB_SATURNE ||
+            nslesp->strategy == CS_NAVSTO_SLES_UZAWA_AL)
+          mom_eqp->weak_pena_bc_coeff *= nsp->gd_scale_coef;
+
+      }
 
       switch (mom_eqp->time_scheme) {
 
