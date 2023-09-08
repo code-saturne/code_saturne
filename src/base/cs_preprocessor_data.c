@@ -150,8 +150,8 @@ static int _n_max_mesh_files = 0;
 static _mesh_file_info_t  *_mesh_file_info = NULL;
 
 static int _input_present = -1;  /* -1 if not set, >= 0 if present
-                                    (1 to 4 depending on input path,
-                                    + 10 if restart, +100 if directory) */
+                                    (1 or 2 depending on input name,
+                                    + 10 if in restart, +100 if directory) */
 
 static  cs_preprocessor_data_restart_mode_t _restart_mode
   = CS_PREPROCESSOR_DATA_RESTART_ONLY;
@@ -194,28 +194,24 @@ _check_input_presense(void)
 
       input_present = 0;
 
-      int restart_present = 0;
-      if (cs_file_isdir("restart")) {
-        restart_present = 1;
-        input_present = 10;
+      if (_restart_mode != CS_PREPROCESSOR_DATA_RESTART_NONE) {
+        if (cs_file_isdir("restart")) {
+          if (cs_file_isreg(_cp_input_default))
+            input_present = 11;
+          else if (cs_file_isreg(_cp_input_default_noext))
+            input_present = 12;
+        }
       }
 
-      if (cs_file_isreg(_input_default))
-        input_present = 1;
-      else if (cs_file_isdir(_input_default_noext))
-        input_present = 102;
-      else if (cs_file_isreg(_input_default_noext))
-        input_present = 2;
-
-      else if (restart_present) {
-        if (cs_file_isreg(_cp_input_default))
-          input_present = 3;
-        else if (cs_file_isreg(_cp_input_default_noext))
-          input_present = 4;
+      if (input_present == 0) {
+        if (cs_file_isreg(_input_default))
+          input_present = 1;
+        else if (cs_file_isdir(_input_default_noext))
+          input_present = 102;
+        else if (cs_file_isreg(_input_default_noext))
+          input_present = 2;
       }
 
-      if (restart_present)
-        input_present += 10;
     }
 
 #if defined(HAVE_MPI)
@@ -246,20 +242,18 @@ _set_default_input_if_needed(void)
     cs_preprocessor_data_restart_mode_t restart_mode
       = cs_preprocessor_data_get_restart_mode();
 
-    switch(_input_present % 10) {
+    switch(_input_present) {
     case 1:
       input_path = _input_default;
       break;
     case 2:
       input_path = _input_default_noext;
       break;
-    case 3:
-      if (restart_mode != CS_PREPROCESSOR_DATA_RESTART_NONE)
-        input_path = _cp_input_default;
+    case 11:
+      input_path = _cp_input_default;
       break;
-    case 4:
-      if (restart_mode != CS_PREPROCESSOR_DATA_RESTART_NONE)
-        input_path = _cp_input_default_noext;
+    case 12:
+      input_path = _cp_input_default_noext;
       break;
     default:
       break;
