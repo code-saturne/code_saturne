@@ -416,7 +416,7 @@ cs_ctwr_add_variable_fields(void)
     /* Associate liquid water rain with class 1 */
     int class_id = 1;
 
-    int f_id = cs_variable_field_create("y_p", "Yp liq",
+    int f_id = cs_variable_field_create("y_p", "Yp rain",
                                         CS_MESH_LOCATION_CELLS, dim1);
     f = cs_field_by_id(f_id);
 
@@ -453,7 +453,7 @@ cs_ctwr_add_variable_fields(void)
      * NB : Temperature of the liquid must be transported after the bulk
      * enthalpy. */
 
-    f_id = cs_variable_field_create("y_p_t_l", "Tp liq",
+    f_id = cs_variable_field_create("y_p_t_l", "Yp.Tp rain",
                                     CS_MESH_LOCATION_CELLS, dim1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_int(f, keyccl, class_id);
@@ -545,7 +545,7 @@ cs_ctwr_add_variable_fields(void)
      * NB : Temperature of the liquid must be transported after the bulk
      * enthalpy. */
 
-    f_id = cs_variable_field_create("enthalpy_liquid", "Enthalpy liq",
+    f_id = cs_variable_field_create("enthalpy_liquid", "Enthalpy liq packing",
         CS_MESH_LOCATION_CELLS, dim1);
     /* TODO (from ctvarp.f90) : x_p_h_l or y_p_h_2 */
 
@@ -585,7 +585,7 @@ cs_ctwr_add_variable_fields(void)
     /* If not using the atmospheric module, we create the fields */
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID){
       /* Total mass fraction of water in the bulk humid air */
-      int f_id = cs_variable_field_create("ym_water", "Ym water",
+      int f_id = cs_variable_field_create("ym_water", "Ym water bulk",
                                           CS_MESH_LOCATION_CELLS, dim1);
 
       f = cs_field_by_id(f_id);
@@ -690,7 +690,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Temp liq");
+    cs_field_set_key_str(f, klbl, "Temperature liq packing");
   }
 
   {
@@ -702,7 +702,8 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Vertical vel liq");
+    cs_field_set_key_str(f, klbl, "Velocity liq packing");
+
   }
 
   /* Properties to create for rain velocity equation solving */
@@ -717,7 +718,7 @@ cs_ctwr_add_property_fields(void)
         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Drops limit vel");
+    cs_field_set_key_str(f, klbl, "Terminal velocity rain");
 
     /* Drift velocity for rain drops */
     sprintf(f_name, "vd_p_%02d", class_id);
@@ -728,7 +729,7 @@ cs_ctwr_add_property_fields(void)
         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Drops drift vel");
+    cs_field_set_key_str(f, klbl, "Drift velocity rain");
   }
 
   /* Continuous phase properties */
@@ -768,7 +769,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Continuous phase drift vel");
+    cs_field_set_key_str(f, klbl, "Drift velocity gas phase");
   }
 
 }
