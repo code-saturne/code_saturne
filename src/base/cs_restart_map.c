@@ -178,13 +178,13 @@ _interpolate_p0(ple_locator_t          *locator,
       dest[j] = src[j];
   }
 
-  ple_locator_exchange_point_var(_locator,
-                                 send_var,
-                                 val,
-                                 NULL,
-                                 type_size,
-                                 n_location_vals,
-                                 0);
+  ple_locator_exchange_point_var_all(_locator,
+                                     send_var,
+                                     val,
+                                     NULL,
+                                     type_size,
+                                     n_location_vals,
+                                     0);
 
   BFT_FREE(send_var);
 }

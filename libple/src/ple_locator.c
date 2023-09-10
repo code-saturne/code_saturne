@@ -2077,6 +2077,7 @@ _locate_all_local(ple_locator_t               *this_locator,
  *   reverse       <-- if true, exchange is reversed
  *                     (receive values associated with distant points
  *                     from the processes owning the original points)
+ *   interior      <-- if true, local_var is restricted to located points
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2086,7 +2087,8 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
                             const ple_lnum_t  *local_list,
                             MPI_Datatype       datatype,
                             size_t             stride,
-                            _Bool              reverse)
+                            _Bool              reverse,
+                            _Bool              interior)
 {
   int dist_v_count, loc_v_count, size;
   int dist_rank;
@@ -2198,7 +2200,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
       if (loc_v_flag > 0) {
         if (local_list == NULL) {
           const size_t nbytes = stride*size;
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             for (int k = 0; k < n_points_loc; k++) {
               char *local_v_p = (char *)local_var + _local_point_ids[k]*nbytes;
               const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
@@ -2217,7 +2219,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
           }
         }
         else {
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             const size_t nbytes = stride*size;
             const ple_lnum_t idb = this_locator->point_id_base;
             for (int k = 0; k < n_points_loc; k++) {
@@ -2248,7 +2250,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
       if (loc_v_flag > 0) {
         if (local_list == NULL) {
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             const size_t nbytes = stride*size;
             for (int k = 0; k < n_points_loc; k++) {
               const char *local_v_p
@@ -2272,7 +2274,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
         else {
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             for (int k = 0; k < n_points_loc; k++) {
               const char *local_v_p
                 = (const char *)local_var
@@ -2332,6 +2334,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
  *   reverse       <-- if true, exchange is reversed
  *                     (receive values associated with distant points
  *                     from the processes owning the original points)
+ *   interior      <-- if true, local_var is restricted to located points
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2341,7 +2344,8 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
                                  const ple_lnum_t  *local_list,
                                  MPI_Datatype       datatype,
                                  size_t             stride,
-                                 _Bool              reverse)
+                                 _Bool              reverse,
+                                 _Bool              interior)
 {
   int dist_v_count, loc_v_count, size;
   int dist_rank;
@@ -2533,7 +2537,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
       if (loc_v_flag[i] > 0) {
         if (local_list == NULL) {
           const size_t nbytes = stride*size;
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             for (ple_lnum_t k = 0; k < n_points_loc; k++) {
               char *local_v_p = (char *)local_var + _local_point_ids[k]*nbytes;
               const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
@@ -2554,7 +2558,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
         else {
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             for (ple_lnum_t k = 0; k < n_points_loc; k++) {
               char *local_v_p =   (char *)local_var
                                 + (local_list[_local_point_ids[k]] - idb)*nbytes;
@@ -2582,7 +2586,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
       if (loc_v_flag[i] > 0) {
         if (local_list == NULL) {
           const size_t nbytes = stride*size;
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             for (ple_lnum_t k = 0; k < n_points_loc; k++) {
               const char *local_v_p
                 = (const char *)local_var + _local_point_ids[k]*nbytes;
@@ -2604,7 +2608,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
         else {
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          if (this_locator->n_exterior == 0) {
+          if (this_locator->n_exterior == 0 || interior) {
             for (ple_lnum_t k = 0; k < n_points_loc; k++) {
               const char *local_v_p
                 = (const char *)local_var
@@ -2869,6 +2873,138 @@ _exchange_point_var_local_incomplete(ple_locator_t     *this_locator,
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Distribute variable defined on distant points to processes owning
+ * the original points (i.e. distant processes).
+ *
+ * The exchange is symmetric if both variables are defined, receive
+ * only if distant_var is NULL, or send only if local_var is NULL.
+ *
+ * The caller should have defined the values of distant_var[] for the
+ * distant points, whose coordinates are given by
+ * ple_locator_get_dist_coords(), and which are located in the elements
+ * whose numbers are given by ple_locator_get_dist_locations().
+ *
+ * The local_var[] is defined at local points, restricted to located points
+ * (those whose numbers are returned by ple_locator_get_interior_list())
+ * if interior is set to 1.
+ *
+ * If the optional local_list indirection is used, it is assumed to use
+ * the same base numbering as that defined by the options for the previous
+ * call to ple_locator_set_mesh() or ple_locator_extend_search().
+ *
+ * \param[in]      this_locator pointer to locator structure
+ * \param[in, out] distant_var  variable defined on distant points
+ *                              (ready to send); size: n_dist_points*stride
+ * \param[in, out] local_var    variable defined on local points
+ *                              (received); size: n_interior*stride
+ * \param[in]      local_list   optional indirection list for local_var
+ * \param[in]      type_size    sizeof (float or double) variable type
+ * \param[in]      stride       dimension (1 for scalar,
+ *                              3 for interleaved vector)
+ * \param[in]      reverse      if nonzero, exchange is reversed
+ *                              (receive values associated with distant points
+ *                              from the processes owning the original points)
+ * \param[in]      interior     if true, local_var is restricted
+ *                              to located points.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_exchange_point_var(ple_locator_t     *this_locator,
+                    void              *distant_var,
+                    void              *local_var,
+                    const ple_lnum_t  *local_list,
+                    size_t             type_size,
+                    size_t             stride,
+                    int                reverse,
+                    _Bool              interior)
+{
+  double w_start, w_end, cpu_start, cpu_end;
+
+  int mpi_flag = 0;
+  _Bool _reverse = reverse;
+
+  /* Initialize timing */
+
+  w_start = ple_timer_wtime();
+  cpu_start = ple_timer_cpu_time();
+
+#if defined(PLE_HAVE_MPI)
+
+  MPI_Initialized(&mpi_flag);
+
+  if (mpi_flag && this_locator->comm == MPI_COMM_NULL)
+    mpi_flag = 0;
+
+  if (mpi_flag) {
+
+    MPI_Datatype datatype = MPI_DATATYPE_NULL;
+
+    if (type_size == sizeof(double))
+      datatype = MPI_DOUBLE;
+    else if (type_size == sizeof(float))
+      datatype = MPI_FLOAT;
+    else
+      ple_error(__FILE__, __LINE__, 0,
+                _("type_size passed to ple_locator_exchange_point_var() does\n"
+                  "not correspond to double or float."));
+
+    assert (datatype != MPI_DATATYPE_NULL);
+
+    if (this_locator->exchange_algorithm == _EXCHANGE_SENDRECV)
+      _exchange_point_var_distant(this_locator,
+                                  distant_var,
+                                  local_var,
+                                  local_list,
+                                  datatype,
+                                  stride,
+                                  _reverse,
+                                  interior);
+
+    else if (this_locator->exchange_algorithm == _EXCHANGE_ISEND_IRECV)
+      _exchange_point_var_distant_asyn(this_locator,
+                                       distant_var,
+                                       local_var,
+                                       local_list,
+                                       datatype,
+                                       stride,
+                                       _reverse,
+                                       interior);
+
+  }
+
+#endif /* defined(PLE_HAVE_MPI) */
+
+  if (!mpi_flag) {
+    if (this_locator->n_exterior == 0 || interior)
+      _exchange_point_var_local(this_locator,
+                                distant_var,
+                                local_var,
+                                local_list,
+                                type_size,
+                                stride,
+                                _reverse);
+    else
+      _exchange_point_var_local_incomplete(this_locator,
+                                           distant_var,
+                                           local_var,
+                                           local_list,
+                                           type_size,
+                                           stride,
+                                           _reverse);
+  }
+
+  /* Finalize timing */
+
+  w_end = ple_timer_wtime();
+  cpu_end = ple_timer_cpu_time();
+
+  this_locator->exchange_wtime[0] += (w_end - w_start);
+  this_locator->exchange_cpu_time[0] += (cpu_end - cpu_start);
 }
 
 /*----------------------------------------------------------------------------
@@ -3654,86 +3790,68 @@ ple_locator_exchange_point_var(ple_locator_t     *this_locator,
                                size_t             stride,
                                int                reverse)
 {
-  double w_start, w_end, cpu_start, cpu_end;
+  _exchange_point_var(this_locator,
+                      distant_var,
+                      local_var,
+                      local_list,
+                      type_size,
+                      stride,
+                      reverse,
+                      true);
+}
 
-  int mpi_flag = 0;
-  _Bool _reverse = reverse;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Distribute variable defined on distant points to processes owning
+ * the original points (i.e. distant processes).
+ *
+ * The exchange is symmetric if both variables are defined, receive
+ * only if distant_var is NULL, or send only if local_var is NULL.
+ *
+ * The caller should have defined the values of distant_var[] for the
+ * distant points, whose coordinates are given by
+ * ple_locator_get_dist_coords(), and which are located in the elements
+ * whose numbers are given by ple_locator_get_dist_locations().
+ *
+ * The local_var[] is defined at the local points (whether located or not)
+ * provided when calling ple_locator_set_mesh() or ple_locator_extend_search().
+ *
+ * If the optional local_list indirection is used, it is assumed to use
+ * the same base numbering as that defined by the options for the previous
+ * call to ple_locator_set_mesh() or ple_locator_extend_search().
+ *
+ * \param[in]      this_locator pointer to locator structure
+ * \param[in, out] distant_var  variable defined on distant points
+ *                              (ready to send); size: n_dist_points*stride
+ * \param[in, out] local_var    variable defined on local points
+ *                              (received); size: n_points*stride
+ * \param[in]      local_list   optional indirection list for local_var
+ * \param[in]      type_size    sizeof (float or double) variable type
+ * \param[in]      stride       dimension (1 for scalar,
+ *                              3 for interleaved vector)
+ * \param[in]      reverse      if nonzero, exchange is reversed
+ *                              (receive values associated with distant points
+ *                              from the processes owning the original points)
+ */
+/*----------------------------------------------------------------------------*/
 
-  /* Initialize timing */
-
-  w_start = ple_timer_wtime();
-  cpu_start = ple_timer_cpu_time();
-
-#if defined(PLE_HAVE_MPI)
-
-  MPI_Initialized(&mpi_flag);
-
-  if (mpi_flag && this_locator->comm == MPI_COMM_NULL)
-    mpi_flag = 0;
-
-  if (mpi_flag) {
-
-    MPI_Datatype datatype = MPI_DATATYPE_NULL;
-
-    if (type_size == sizeof(double))
-      datatype = MPI_DOUBLE;
-    else if (type_size == sizeof(float))
-      datatype = MPI_FLOAT;
-    else
-      ple_error(__FILE__, __LINE__, 0,
-                _("type_size passed to ple_locator_exchange_point_var() does\n"
-                  "not correspond to double or float."));
-
-    assert (datatype != MPI_DATATYPE_NULL);
-
-    if (this_locator->exchange_algorithm == _EXCHANGE_SENDRECV)
-      _exchange_point_var_distant(this_locator,
-                                  distant_var,
-                                  local_var,
-                                  local_list,
-                                  datatype,
-                                  stride,
-                                  _reverse);
-
-    else if (this_locator->exchange_algorithm == _EXCHANGE_ISEND_IRECV)
-      _exchange_point_var_distant_asyn(this_locator,
-                                       distant_var,
-                                       local_var,
-                                       local_list,
-                                       datatype,
-                                       stride,
-                                       _reverse);
-
-  }
-
-#endif /* defined(PLE_HAVE_MPI) */
-
-  if (!mpi_flag) {
-    if (this_locator->n_exterior == 0)
-      _exchange_point_var_local(this_locator,
-                                distant_var,
-                                local_var,
-                                local_list,
-                                type_size,
-                                stride,
-                                _reverse);
-    else
-      _exchange_point_var_local_incomplete(this_locator,
-                                           distant_var,
-                                           local_var,
-                                           local_list,
-                                           type_size,
-                                           stride,
-                                           _reverse);
-  }
-
-  /* Finalize timing */
-
-  w_end = ple_timer_wtime();
-  cpu_end = ple_timer_cpu_time();
-
-  this_locator->exchange_wtime[0] += (w_end - w_start);
-  this_locator->exchange_cpu_time[0] += (cpu_end - cpu_start);
+void
+ple_locator_exchange_point_var_all(ple_locator_t     *this_locator,
+                                   void              *distant_var,
+                                   void              *local_var,
+                                   const ple_lnum_t  *local_list,
+                                   size_t             type_size,
+                                   size_t             stride,
+                                   int                reverse)
+{
+  _exchange_point_var(this_locator,
+                      distant_var,
+                      local_var,
+                      local_list,
+                      type_size,
+                      stride,
+                      reverse,
+                      false);
 }
 
 /*----------------------------------------------------------------------------*/

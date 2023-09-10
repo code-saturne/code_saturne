@@ -3,6 +3,11 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Fix code_saturne / code_saturne coupling when some selected elements
+  are not located on the coupled domain.
+  * This was a side effect of a fix in v7.0.5 for restarting from
+    a different mesh when some points are not located.
+
 - Fix Lagrangian module using LES turbulence models.
 
 - Fix parametric study available as code_saturne/neptune_cfd command line

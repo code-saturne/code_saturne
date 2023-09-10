@@ -1,5 +1,14 @@
-Release 2.0.3 (Unreleased)
+Release 2.0.4 (unreleased)
 ==========================
+
+Changes:
+--------
+
+- Add `ple_locator_exchange_point_var_all` function to handle
+  exchanges with both located and unlocated points.
+
+Release 2.0.3 (November 8, 2021)
+================================
 
 Changes:
 --------
@@ -10,9 +19,6 @@ Changes:
 
 Bug fixes:
 ----------
-
-- PLE locator: fix values shift in variable exchange when some points
-  are not located.
 
 - Fix PLE locator variable exchange in asynchronous reverse mode.
 
