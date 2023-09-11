@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2022  EDF S.A.
+  Copyright (C) 2005-2023  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -3797,9 +3797,6 @@ ple_locator_discard_exterior(ple_locator_t  *this_locator)
  * distant points, whose coordinates are given by
  * ple_locator_get_dist_coords(), and which are located in the elements
  * whose numbers are given by ple_locator_get_dist_locations().
- *
- * The local_var[] is defined at the local points (whether located or not)
- * provided when calling ple_locator_set_mesh() or ple_locator_extend_search().
  *
  * The local_var[] is defined at the located points (those whose
  * numbers are returned by ple_locator_get_interior_list().
