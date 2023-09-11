@@ -592,6 +592,8 @@ post_stats_id = timer_stats_id_by_name("postprocessing_stage")
 
 if (isuite.eq.1) then
 
+  call restart_initialize_fields_read_status
+
   call timer_stats_start(restart_stats_id)
 
   call cs_restart_map_build
@@ -1103,6 +1105,8 @@ if (nfpt1d.gt.0) then
 endif
 
 ! Free main arrays
+
+call restart_finalize_fields_read_status
 
 call radiat_finalize
 

@@ -1784,6 +1784,38 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function that initializes read status
+
+    subroutine cs_restart_initialize_fields_read_status() &
+      bind(C, name='cs_restart_initialize_fields_read_status')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_restart_initialize_fields_read_status
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that finalizes read status
+
+    subroutine cs_restart_finalize_fields_read_status() &
+      bind(C, name='cs_restart_finalize_fields_read_status')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_restart_finalize_fields_read_status
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to check field read status from checkpoint file
+
+    function cs_restart_get_field_read_status(f_id) result(retval) &
+      bind(C, name='cs_restart_get_field_read_status')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      integer(c_int)        :: retval
+    end function cs_restart_get_field_read_status
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function writing fields depending on others to a checkpoint
 
     function cs_restart_write_linked_fields(r, key, write_flag) result(n)  &
@@ -4866,6 +4898,56 @@ contains
     ierror = c_retcode
 
   end subroutine restart_read_field_vals
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Initialize fields checkpoint read status array
+
+  subroutine restart_initialize_fields_read_status()
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    call cs_restart_initialize_fields_read_status()
+
+  end subroutine restart_initialize_fields_read_status
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Finalize fields checkpoint read status array
+
+  subroutine restart_finalize_fields_read_status()
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    call cs_restart_finalize_fields_read_status()
+
+  end subroutine restart_finalize_fields_read_status
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Get field checkpoint read status. Returns 1 if field was read, 0
+  !         otherwise.
+
+  !> \param[in]  f_id     field id
+  !> \param[out] retval   return value. 1 f field was read, 0 otherwise
+
+  subroutine restart_get_field_read_status(f_id, retval)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    integer, intent(out) :: retval
+
+    ! Local variables
+    integer(c_int) :: c_f_id, c_retval
+    c_f_id = f_id
+
+    c_retval = cs_restart_get_field_read_status(c_f_id)
+    retval = c_retval
+
+  end subroutine restart_get_field_read_status
 
   !---------------------------------------------------------------------------
 

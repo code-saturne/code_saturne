@@ -72,7 +72,7 @@ integer          iscal , id, ityloc, itycat, pflag
 integer          ii
 integer          iok
 integer          f_id, idftnp
-integer          key_buoyant_id, is_buoyant_fld
+integer          key_buoyant_id, is_buoyant_fld, key_restart_file
 integer          keydri
 integer          kturt, turb_flux_model, kisso2t
 integer          ivar, iscdri, isso2t
@@ -94,6 +94,7 @@ procedure() :: add_source_term_prev_field
 call field_get_key_id("is_buoyant", key_buoyant_id)
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id("scalar_time_scheme", kisso2t)
+call field_get_key_id("restart_file", key_restart_file)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -352,6 +353,8 @@ if (idilat.ge.4) then
     call add_property_field_1d(f_name, '', iustdy(iscal))
     id = iustdy(iscal)
     call field_set_key_int(id, keyvis, 0)
+    ! Set restart file option for source terms
+    call field_set_key_int(id, key_restart_file, RESTART_AUXILIARY)
   enddo
   itsrho = nscal + 1
   call add_property_field_1d('dila_st', '', iustdy(itsrho))

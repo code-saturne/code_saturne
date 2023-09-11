@@ -291,6 +291,50 @@ cs_restart_read_fields(cs_restart_t       *r,
                        cs_restart_file_t   r_id);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Set restart file values for fields when those values cannot
+ *        be determined at field definition time.
+ *
+ * This is needed when the need for restart data depends on various
+ * combinations of settings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_set_auxiliary_field_options(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Initialize fields read status array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_initialize_fields_read_status(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Finalize fields read status array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_finalize_fields_read_status(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Get checkpoint read status for a field based on its id
+ *
+ * \param[in] f_id  field id
+ *
+ * \returns 0 if field read action failed, 1 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_get_field_read_status(const int f_id);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

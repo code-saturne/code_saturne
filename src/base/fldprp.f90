@@ -69,7 +69,8 @@ implicit none
 
 character(len=80) :: f_label, f_name
 integer           :: ischcp
-integer           :: idim1, idim3, idim6, iflid, k_restart_id
+integer           :: idim1, idim3, idim6, iflid
+integer           :: k_restart_id, key_n_restart_id
 integer           :: type_flag, post_flag, location_id
 integer           :: keypid
 logical           :: has_previous
@@ -123,6 +124,10 @@ call field_get_key_id("parent_field_id", keypid)
 idim1 = 1
 idim3 = 3
 idim6 = 6
+
+! Get key id for restart file
+call field_get_key_id("restart_file", k_restart_id)
+call field_get_key_id("restart_n_values", key_n_restart_id)
 
 !===============================================================================
 ! 1. PROPRIETES PRINCIPALES
@@ -255,7 +260,6 @@ endif
 if (ippmod(icompf).lt.0) then
   call add_property_field_1d('total_pressure', 'Total Pressure', iprtot)
   ! Save total pressure in auxiliary restart file
-  call field_get_key_id("restart_file", k_restart_id)
   call field_set_key_int(iprtot, k_restart_id, RESTART_AUXILIARY)
 endif
 
@@ -298,6 +302,9 @@ if (iale.ge.1) then
   call field_set_key_int(iflid, keylog, 1)
 
   call field_set_key_str(iflid, keylbl, trim(f_label))
+
+  call field_set_key_int(iflid, k_restart_id, RESTART_AUXILIARY)
+  call field_set_key_int(iflid, key_n_restart_id, 2)
 
   has_previous = .false.
   idim3 = 3

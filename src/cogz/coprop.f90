@@ -59,6 +59,7 @@ use coincl
 use cpincl
 use ppincl
 use radiat
+use cs_c_bindings
 
 !===============================================================================
 
@@ -67,6 +68,7 @@ implicit none
 ! Local variables
 
 integer       idirac, ifmk
+integer       key_restart_id
 
 character(len=80) :: f_name, f_label
 
@@ -125,6 +127,9 @@ if (ippmod(islfm).ge.0) then
   endif
 
   call add_property_field_1d('ym_progress', 'Ym_Progress', iym(ngazgm))
+  ! Add restart_file key info
+  call field_get_key_id("restart_file", key_restart_id)
+  call field_set_key_int(iym(ngazgm), key_restart_id, RESTART_AUXILIARY)
 
 endif
 

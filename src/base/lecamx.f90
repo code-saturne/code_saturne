@@ -59,7 +59,6 @@ subroutine lecamx &
 use, intrinsic :: iso_c_binding
 
 use paramx
-use dimens, only: nscal
 use cstphy
 use cstnum
 use entsor
@@ -99,7 +98,7 @@ character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
 character        ficsui*32
 logical          lprev
-integer          iel   , ifac, ii, nlfld, iscal
+integer          iel   , ifac, ii, nlfld
 integer          iz, kk
 integer          icha
 integer          jdtvar
@@ -112,6 +111,7 @@ integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          key_t_ext_id, icpext
 integer          iviext
 integer          ival(1)
+integer          iread_status_loc, iread_status_glob
 double precision rval(1)
 
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
@@ -325,37 +325,24 @@ inierr = 0
 if (    irovar.eq.1                   &
     .or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
 
-  ! Masse volumique - cellules
-  call restart_read_field_vals(rp, icrom, 0, ierror)
-  nberro = nberro+ierror
-  inierr = inierr+ierror
+  ! Si on a reussi a initialiser la masse volumique aux cellules ET
+  ! aux faces de bord, on l'indique (pour schtmp)
+  iread_status_loc  = 1
+  iread_status_glob = 1
 
-  ! Masse volumique du pdt precedent - cellules
-  if (ivofmt.gt.0.and.jvolfl.ge.0.or.idilat.ge.4) then
-    call restart_read_field_vals(rp, icrom, 1, ierror)
-    nberro = nberro+ierror
-    inierr = inierr+ierror
+  call restart_get_field_read_status(icrom, iread_status_loc)
+  if (iread_status_loc.eq.0) then
+    iread_status_glob = 0
   endif
-
-  ! Masse volumique - faces de bord
   if (nfabok.eqv..true.) then
-    call restart_read_field_vals(rp, ibrom, 0, ierror)
-    nberro = nberro+ierror
-    inierr = inierr+ierror
+    call restart_get_field_read_status(ibrom, iread_status_loc)
+    if (iread_status_loc.eq.0) then
+      iread_status_glob = 0
+    endif
   endif
 
-  !     Si on a reussi a initialiser la masse volumique aux cellules ET
-  !       aux faces de bord, on l'indique (pour schtmp)
-  if (nfabok.eqv..true..and.inierr.eq.0) then
+  if (nfabok.eqv..true..and.iread_status_glob.eq.1) then
     initro = 1
-  endif
-
-  ! Scalar source terms for dilatable model  (idilat = 4, 5)
-  if (idilat.ge.4) then
-    do iscal = 1, nscal
-      f_id = iustdy(iscal)
-      call restart_read_field_vals(rp, f_id, 0, ierror)
-    enddo
   endif
 
 else
@@ -369,35 +356,22 @@ endif
 !     La viscosite moleculaire est egalement lue pour le modele de cavitation
 !     Si on reussit, on l'indique
 
-call field_get_key_int(iviscl, key_t_ext_id, iviext)
-if (iviext.gt.0.or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
-
-  inierr = 0
-
-  !         Viscosite moleculaire - cellules
-  !         Uniquement si elle est variable ou pour la methode VOF
-  if (    ivivar.eq.1                   &
-      .or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
-    call restart_read_field_vals(rp, iviscl, 0, ierror)
-    nberro = nberro+ierror
-    inierr = inierr+ierror
-  endif
-endif
 
 call field_get_key_int(ivisct, key_t_ext_id, iviext)
 if (iviext.gt.0.or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
-  ! Viscosite turbulente ou de sous-maille - cellules
-  if (iviext.gt.0) then
-    call restart_read_field_vals(rp, ivisct, 0, ierror)
-    nberro = nberro+ierror
-    inierr = inierr+ierror
-  endif
-
   !     Si on a initialise les viscosites, on l'indique (pour schtmp)
-  if (inierr.eq.0) then
+  iread_status_glob = 1
+  call restart_get_field_read_status(iviscl, iread_status_loc)
+  if (iread_status_loc.eq.0) then
+    iread_status_glob = 0
+  endif
+  call restart_get_field_read_status(ivisct, iread_status_loc)
+  if (iread_status_loc.eq.0) then
+    iread_status_glob = 0
+  endif
+  if (iread_status_loc.eq.1) then
     initvi = 1
   endif
-
 endif
 
 
@@ -416,14 +390,9 @@ if (icp.ge.0) then
   if (icpext.gt.0.or.ippmod(ieljou).ge.1) then
 
     inierr = 0
-
-    ! Chaleur massique - cellules
-    call restart_read_field_vals(rp, icp, 0, ierror)
-    nberro = nberro+ierror
-    inierr = inierr+ierror
-
     ! Si on a initialise Cp, on l'indique (pour schtmp)
-    if (inierr.eq.0) then
+    call restart_get_field_read_status(icp, iread_status_loc)
+    if (iread_status_loc.eq.1) then
       initcp = 1
     endif
 
@@ -686,10 +655,6 @@ nberro = 0
 if (ineedy.eq.1) then
   if (icdpar.gt.0) then
     if (nfabok.eqv..true.) then
-      call field_get_id('wall_distance', f_id)
-      call restart_read_field_vals(rp, f_id, 0, ierror)
-
-      nberro=nberro+ierror
       if (ierror.eq.0 .and. iale.eq.0 ) then
         imajdy = 1
       endif
@@ -709,32 +674,8 @@ if (ilu.ne.0) then
 endif
 
 !===============================================================================
-! 10.  External forces
-!===============================================================================
-
-if (iphydr.eq.1) then
-
-  itysup = 1
-  nbval  = 3
-
-  call field_get_id('volume_forces', f_id)
-  call restart_read_field_vals(rp, f_id, 0, ierror)
-
-endif
-
-!===============================================================================
 ! 11. Predicted hydrostatic pressure
 !===============================================================================
-
-if (iphydr.eq.2) then
-
-  itysup = 1
-  nbval  = 1
-
-  call field_get_id('hydrostatic_pressure_prd', f_id)
-  call restart_read_field_vals(rp, f_id, 0, ierror)
-
-endif
 
 !===============================================================================
 ! 12.  Wall temperature associated to the condensation model
@@ -1003,11 +944,6 @@ if ( ippmod(islfm).ge.0 ) then
     endif
 
   endif
-
-!      Lire le traceur de progress variable
-  call restart_read_field_vals(rp, iym(ngazgm), 0, ierror)
-  nberro=nberro+ierror
-  ilu = ilu + 1
 
 endif
 
@@ -1287,27 +1223,6 @@ if ( ippmod(ielarc).ge.1  .or. ippmod(ieljou).ge.1 ) then
 endif
 
 ! ---> Termes sources des versions electriques
-
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1       ) then
-
-  call field_get_id('joule_power', f_id)
-  call restart_read_field_vals(rp, f_id, 0, ierror)
-  nberro=nberro+ierror
-  ilu = ilu + 1
-
-endif
-
-if ( ippmod(ielarc).ge.1 ) then
-
-  nbval  = 1
-
-  call field_get_id('laplace_force', f_id)
-  call restart_read_field_vals(rp, f_id, 0, ierror)
-  nberro=nberro+ierror
-  ilu = ilu + 1
-
-endif
 
 if (nberro.ne.0) then
   car54 = 'Reading electric information                          '

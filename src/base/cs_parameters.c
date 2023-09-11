@@ -1121,6 +1121,7 @@ cs_parameters_define_field_keys(void)
 
   /* Restart options */
   cs_field_define_key_int("restart_file", CS_RESTART_DISABLED, 0);
+  cs_field_define_key_int("restart_n_values", 1, 0);
 
   /* field units */
   cs_field_define_key_str("units", "", 0);
@@ -1826,6 +1827,8 @@ cs_parameters_need_extended_neighborhood(void)
 void
 cs_parameters_global_complete(void)
 {
+  /* Set restart_file key for various fields */
+  cs_restart_set_auxiliary_field_options();
 }
 
 /*----------------------------------------------------------------------------*/

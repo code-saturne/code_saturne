@@ -85,6 +85,7 @@ integer          f_id, kscavr, f_type
 integer          iopchr, ilog, ischcp
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
+integer          key_restart_id
 integer          idfm, iggafm, nfld
 integer          iflidp, idimf, idimc, n_fans
 integer          f_dim, kiflux, kbflux
@@ -132,6 +133,8 @@ call field_get_key_id("scalar_class", keyccl)
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
 
+! Key id for restart file
+call field_get_key_id("restart_file", key_restart_id)
 ! Number of fields
 call field_get_n_fields(nfld)
 
@@ -185,9 +188,11 @@ if (iphydr.eq.1) then
 
   call field_set_key_int(f_id, keylog, 1)
   call field_set_key_int(f_id, keyvis, 0)
+  call field_set_key_int(f_id, key_restart_id, RESTART_AUXILIARY)
 else if (iphydr.eq.2) then
   call field_find_or_create('hydrostatic_pressure_prd', &
                             itycat, ityloc, idim1, f_id)
+  call field_set_key_int(f_id, key_restart_id, RESTART_AUXILIARY)
 endif
 
 ! Hybrid blending field

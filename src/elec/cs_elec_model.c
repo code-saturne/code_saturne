@@ -1933,6 +1933,7 @@ cs_elec_add_property_fields(void)
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
+  const int key_restart_id = cs_field_key_id("restart_file");
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
@@ -1957,6 +1958,7 @@ cs_elec_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "PowJoul");
+    cs_field_set_key_int(f, key_restart_id, (int)CS_RESTART_AUXILIARY);
   }
 
   {
@@ -2003,6 +2005,9 @@ cs_elec_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "For_Lap");
+
+    if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0)
+      cs_field_set_key_int(f, key_restart_id, (int)CS_RESTART_AUXILIARY);
 
     f = cs_field_create("magnetic_field",
                         field_type,
