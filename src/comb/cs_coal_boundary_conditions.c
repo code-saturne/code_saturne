@@ -497,8 +497,6 @@ cs_coal_boundary_conditions(int  bc_type[])
     const cs_lnum_t n_elts = z->n_elts;
     const cs_lnum_t *elt_ids = z->elt_ids;
 
-    int izone = cs_boundary_conditions_get_legacy_zone_num(z);
-
     cs_coal_bc_inlet_t *ci
       = cs_boundary_conditions_get_model_inlet(z);
 
