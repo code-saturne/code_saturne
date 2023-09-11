@@ -187,13 +187,13 @@ _interpolate_p0(ple_locator_t          *locator,
       dest[j] = src[j];
   }
 
-  ple_locator_exchange_point_var(locator,
-                                 send_var,
-                                 val,
-                                 NULL,
-                                 type_size,
-                                 n_location_vals,
-                                 0);
+  ple_locator_exchange_point_var_all(locator,
+                                     send_var,
+                                     val,
+                                     NULL,
+                                     type_size,
+                                     n_location_vals,
+                                     0);
 
   BFT_FREE(send_var);
 }
@@ -242,13 +242,13 @@ _interpolate_vtx(ple_locator_t          *locator,
                            (const cs_real_t *)val_src,
                            (cs_real_t *)send_var);
 
-  ple_locator_exchange_point_var(locator,
-                                 send_var,
-                                 val,
-                                 NULL,
-                                 type_size,
-                                 n_location_vals,
-                                 0);
+  ple_locator_exchange_point_var_all(locator,
+                                     send_var,
+                                     val,
+                                     NULL,
+                                     type_size,
+                                     n_location_vals,
+                                     0);
 
   BFT_FREE(send_var);
 }

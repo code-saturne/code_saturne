@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2022  EDF S.A.
+  Copyright (C) 2005-2023  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -462,6 +462,48 @@ ple_locator_exchange_point_var(ple_locator_t     *this_locator,
                                size_t             type_size,
                                size_t             stride,
                                int                reverse);
+
+/*----------------------------------------------------------------------------
+ * Distribute variable defined on distant points to processes owning
+ * the original points (i.e. distant processes).
+ *
+ * The exchange is symmetric if both variables are defined, receive
+ * only if distant_var is NULL, or send only if local_var is NULL.
+ *
+ * The caller should have defined the values of distant_var[] for the
+ * distant points, whose coordinates are given by
+ * ple_locator_get_dist_coords(), and which are located in the elements
+ * whose numbers are given by ple_locator_get_dist_locations().
+ *
+ * The local_var[] is defined at the local points (whether located or not)
+ * provided when calling ple_locator_set_mesh() or ple_locator_extend_search().
+ *
+ * If the optional local_list indirection is used, it is assumed to use
+ * the same base numbering as that defined by the options for the previous
+ * call to ple_locator_set_mesh() or ple_locator_extend_search().
+ *
+ * parameters:
+ *   this_locator  <-- pointer to locator structure
+ *   distant_var   <-> variable defined on distant points (ready to send)
+ *                     size: n_dist_points*stride
+ *   local_var     <-> variable defined on local points (received)
+ *                     size: n_points*stride
+ *   local_list    <-- optional indirection list for local_var
+ *   type_size     <-- sizeof (float or double) variable type
+ *   stride        <-- dimension (1 for scalar, 3 for interlaced vector)
+ *   reverse       <-- if nonzero, exchange is reversed
+ *                     (receive values associated with distant points
+ *                     from the processes owning the original points)
+ *----------------------------------------------------------------------------*/
+
+void
+ple_locator_exchange_point_var_all(ple_locator_t     *this_locator,
+                                   void              *distant_var,
+                                   void              *local_var,
+                                   const ple_lnum_t  *local_list,
+                                   size_t             type_size,
+                                   size_t             stride,
+                                   int                reverse);
 
 /*----------------------------------------------------------------------------
  * Return timing information.

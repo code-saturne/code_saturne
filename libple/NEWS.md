@@ -4,13 +4,13 @@ Release 2.0.4 (unreleased)
 Bug fixes:
 ----------
 
-- PLE locator: fix values shift in variable exchange when some points
-  are not located.
-
 - Fix detection of GCC compiler with some Cray versions.
 
 Changes:
 --------
+
+- Add `ple_locator_exchange_point_var_all` function to handle
+  exchanges with both located and unlocated points.
 
 - Extend `ple_coupling_mpi_set` features:
   * Add `ple_coupling_mpi_set_compute_timestep` function to compute
