@@ -200,7 +200,7 @@ cs_rad_transfer_options(void)
                                 _("in Radiative module"),
                                 "cs_glob_rad_transfer_params->imodak",
                                 cs_glob_rad_transfer_params->imodak,
-                                0, 2);
+                                0, 3);
 
   if (   rt_params->type == CS_RAD_TRANSFER_DOM
       || rt_params->type == CS_RAD_TRANSFER_P1)
@@ -335,7 +335,8 @@ cs_rad_transfer_log_setup(void)
 
   const char *imodak_value_str[]
     = {N_("0 (do not use Modak)"),
-       N_("1 (Modak absorption coefficient)")};
+       N_("1 (Modak absorption coefficient)"),
+       N_("2 (Magnussen, Kent and Honnery models")};
 
   const char *imoadf_value_str[]
     = {N_("0 (no AFD model)"),

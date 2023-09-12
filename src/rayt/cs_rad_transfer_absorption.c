@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 #include "cs_base.h"
+#include "cs_combustion_gas.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_log.h"
@@ -134,7 +135,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   /* Initialization */
 
-  if (   rt_params->imodak == 1
+  if (   rt_params->imodak >= 1
       || rt_params->imoadf >= 1
       || rt_params->imfsck >= 1) {
     BFT_MALLOC(w1, n_cells_ext, cs_real_t);
@@ -155,7 +156,13 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       || pm_flag[CS_COMBUSTION_SLFM] >= 0
       || pm_flag[CS_COMBUSTION_EBU] >= 0) {
 
-    if (rt_params->imodak == 1) {
+    if (rt_params->imodak > 0) {
+      const cs_combustion_model_t *cm = cs_glob_combustion_model;
+      const int n_gas_e = cm->n_gas_el_comp;
+      const int n_gas_g = cm->n_gas_species;
+      cs_real_t Xpro, dmm;
+      double xk[n_gas_e], yi[2];
+      double yk[n_gas_e];
 
       const cs_real_t xsoot = cm->gas->xsoot;
       const cs_real_t rosoot = cm->gas->rosoot;
@@ -197,11 +204,19 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         else
           ys = 0;
 
+        yi[0] = cpro_ym1[cell_id];
+        yi[1] = cpro_ym2[cell_id];
+        yi[2] = cpro_ym3[cell_id];
+        cs_combustion_gas_yg2xye(yi, yk, xk);
+        Xpro = (xk[2] + xk[3]);
         w3[cell_id] = ys * crom[cell_id] / rosoot;
+        if (rt_params->imodak ==2){
+          cpro_cak0[cell_id] =  1225. * w3[cell_id] * cpro_temp[cell_id] +0.1 * Xpro;
+        }
       }
-
-      cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
-
+      if (rt_params->imodak == 1) {
+        cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
+      }
     }
     else if (rt_params->imfsck == 2) {
 
@@ -216,17 +231,11 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       }
     }
     else { /* if (rt_params->imodak != 1) */
-
       const cs_real_t *cpro_ckabs = cs_field_by_name("kabs")->val;
-
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         cpro_cak0[cell_id] = cpro_ckabs[cell_id];
-
     }
-
   }
-
-  /* Coal combustion */
 
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0) {
 

@@ -132,11 +132,11 @@ cs_user_radiative_transfer_parameters(void)
 
   cs_glob_rad_transfer_params->verbosity = 1;
 
-  /* Compute the absorption coefficient through Modak (if 1 or 2),
-     or do not use Modak (if 0).
+  /* Compute the absorption coefficient through a model (if different from 0),
+     or use a constant absorption coefficient (if 0).
      Useful ONLY when gas or coal combustion is activated
      - imodak = 1: ADF model with 8 wave length intervals
-     - imodak = 2: ADF model with 50 wave length intervals */
+     - imodak = 2: Magnussen et al. and Kent and Honnery models */
 
   cs_glob_rad_transfer_params->imodak = 2;
 
