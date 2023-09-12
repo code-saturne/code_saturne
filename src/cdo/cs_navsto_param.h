@@ -149,7 +149,7 @@ typedef enum {
  * Compute div(u) and associate a field to this quantity
  *
  * \var CS_NAVSTO_POST_KINETIC_ENERGY
- * Compute rho/2 u\cdot u and associate a field to this quantity
+ * Compute \f$ rho/2 u\cdot u \f$ and associate a field to this quantity
  *
  * \var CS_NAVSTO_POST_VORTICITY
  * Compute w = curl(u) and associate a field to this quantity
@@ -165,10 +165,10 @@ typedef enum {
  * extruded one, i.e. the flow is in the x-y plane
  *
  * \var CS_NAVSTO_POST_HELICITY
- * Compute h = u \cdot w and associate a field to this quantity
+ * Compute \f$ h = u \cdot w \f$ and associate a field to this quantity
  *
  * \var CS_NAVSTO_POST_ENSTROPHY
- * Compute  w \cdot w and associate a field to this quantity
+ * Compute \f$ w \cdot w \f$ and associate a field to this quantity
  *
  * \var CS_NAVSTO_POST_MASS_DENSITY
  * Compute the mass density in each cell and monitor the evolution of the

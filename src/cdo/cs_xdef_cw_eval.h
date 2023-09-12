@@ -683,16 +683,16 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t            *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the average on a face of a scalar
- *         function defined through a descriptor (\ref cs_xdef_t structure) by
- *         a cellwise process (usage of a \ref cs_cell_mesh_t structure)
+ * \brief Function pointer for evaluating the average on a face of a scalar
+ *        function defined through a descriptor (\ref cs_xdef_t structure) by a
+ *        cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
- * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      f          local face id
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
- * \param[in]      qtype      level of quadrature to use
- * \param[in, out] eval       result of the evaluation
+ * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      f           local face id
+ * \param[in]      time_eval   physical time at which one evaluates the term
+ * \param[in]      context     pointer to a context structure
+ * \param[in]      qtype       level of quadrature to use
+ * \param[in, out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -700,7 +700,7 @@ void
 cs_xdef_cw_eval_scalar_face_avg_by_analytic(const cs_cell_mesh_t   *cm,
                                             short int               f,
                                             cs_real_t               time_eval,
-                                            void                   *input,
+                                            void                   *context,
                                             cs_quadrature_type_t    qtype,
                                             cs_real_t              *eval);
 

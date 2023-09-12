@@ -345,7 +345,7 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
  *        the normal flux across faces.
  *
  * \param[in]   c2f           cell -> faces connectivity
- * \param[in]   quant         pointer to the additional quantities struct.
+ * \param[in]   cdoq          pointer to the additional quantities struct.
  * \param[in]   i_face_vals   array of DoF values for interior faces
  * \param[in]   b_face_vals   array of DoF values for border faces
  * \param[out]  cell_reco     vector-valued reconstruction inside cells

@@ -353,9 +353,9 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the average on a face of a scalar
- *         function defined through a descriptor (\ref cs_xdef_t structure) by
- *         a cellwise process (usage of a \ref cs_cell_mesh_t structure)
+ * \brief Function pointer for evaluating the average on a face of a scalar
+ *        function defined through a descriptor (\ref cs_xdef_t structure) by a
+ *        cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
  * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f           local face id

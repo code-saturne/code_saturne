@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  * \param[in, out] sbp     Block-preconditioner for the Saddle-point problem
  * \param[in, out] x1      array for the first part
  * \param[in, out] x2      array for the second part
- * \param[in, out] ia      pointer to a cs_iter_algo_t structure
+ * \param[in, out] algo    pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -75,7 +75,7 @@ cs_user_navsto_sles_solve(const cs_navsto_param_sles_t    *nslesp,
                           cs_saddle_block_precond_t       *sbp,
                           cs_real_t                       *x1,
                           cs_real_t                       *x2,
-                          cs_iter_algo_t                  *ia);
+                          cs_iter_algo_t                  *algo);
 
 /*============================================================================
  * Public function prototypes

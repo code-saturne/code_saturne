@@ -72,8 +72,7 @@ boundary faces and named `X0`, `X1`, `Y0`, `Y1`, `Z0` and `Z1`. These
 mesh face groups are used to define the two boundary zones needed for
 this example.  One proceeds as detailed in the GUI screenshot.
 
-\anchor gui_cdo_laplacian_boundary_zone
-\image html gui_boundary_zone_cartesian.png "GUI: Definition of boundary zones"
+![GUI: Definition of boundary zones](gui_boundary_zone_cartesian.png)
 
 
 Second step: Activate CDO and add a user-defined equation {#sec_cdo_laplacian_init_model}
@@ -83,9 +82,8 @@ The second step corresponds to the edition of the user source file
 named **cs_user_parameters.c** and especially the function \ref
 cs_user_model
 
-Click on the icon displayed just below in the GUI toolbar
-\anchor gui_src_editor_icon
-\image html src_editor-icon.png width=60px "GUI: Icon corresponding to 'Open the source file editor'"
+Click on the icon displayed just below in the GUI toolbar which
+corresponds to "Open the source file editor" <img src="src_editor-icon.png" width="60px">
 
 Then right-click on the file named `REFERENCE/cs_user_parameters.c`
 and select **Copy to SRC**. Then, you can choose your favorite file
@@ -149,5 +147,4 @@ This relies on  a `key` `value` principle. The available keys are listed [here](
 For the reader willing to get a better understanding of the
 mathematical concepts underpinning the CDO schemes, one refers to the
 [PhD thesis entitled *Compatible Discrete Operator schemes on
-polyhedral meshes for elliptic and Stokes equations*][Bonel14] \cite
-Bonel14
+polyhedral meshes for elliptic and Stokes equations*][Bonel14] \cite Bonel14

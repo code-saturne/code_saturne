@@ -1203,7 +1203,6 @@ cs_property_set_scaling_factor(cs_property_t    *pty,
  *        added.
  *
  * \param[in, out] pty    pointer to a cs_property_t structure
- * \param[in]      val    value to set
  */
 /*----------------------------------------------------------------------------*/
 

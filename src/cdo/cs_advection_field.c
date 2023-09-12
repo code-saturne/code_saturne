@@ -794,7 +794,7 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_adv_field_t structure using a cs_dof_func_t
+ * \brief Define a cs_adv_field_t structure using a cs_dof_func_t
  *
  * \param[in, out] adv           pointer to a cs_adv_field_t structure
  * \param[in]      dof_location  location where values are computed

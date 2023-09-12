@@ -553,18 +553,18 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_adv_field_t structure using a cs_dof_func_t
+ * \brief Define a cs_adv_field_t structure using a cs_dof_func_t
  *
- * \param[in, out] adv       pointer to a cs_adv_field_t structure
- * \param[in]      loc_flag  location where values are computed
- * \param[in]      func      pointer to a cs_dof_func_t function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] adv           pointer to a cs_adv_field_t structure
+ * \param[in]      dof_location  location where values are computed
+ * \param[in]      func          pointer to a cs_dof_func_t function
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
-                                   cs_flag_t          loc_flag,
+                                   cs_flag_t          dof_location,
                                    cs_dof_func_t     *func,
                                    void              *input);
 
