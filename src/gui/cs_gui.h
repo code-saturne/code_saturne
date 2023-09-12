@@ -179,24 +179,6 @@ void CS_PROCF (cstini, CSTINI) (void);
 void CS_PROCF (uiporo, UIPORO) (void);
 
 /*----------------------------------------------------------------------------
- * User momentum source terms.
- *
- * Fortran Interface:
- *
- * subroutine uitsnv (ncelet, vel, tsexp, tsimp)
- * *****************
- *
- * integer          ncelet   <--  number of cells with halo
- * double precision vel      <--  fluid velocity
- * double precision tsexp    -->  explicit source terms
- * double precision tsimp    -->  implicit source terms
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
-                              cs_real_3_t       *restrict tsexp,
-                              cs_real_33_t      *restrict tsimp);
-
-/*----------------------------------------------------------------------------
  * User law for material Properties
  *
  * Fortran Interface:
@@ -322,6 +304,20 @@ cs_gui_initial_conditions(void);
 
 void
 cs_gui_linear_solvers(void);
+
+/*----------------------------------------------------------------------------
+ * User momentum source terms.
+ *
+ * parameters:
+ *   vel      <--  fluid velocity
+ *   tsexp    -->  explicit source terms
+ *   tsimp    -->  implicit source terms
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
+                             cs_real_3_t        *restrict tsexp,
+                             cs_real_33_t       *restrict tsimp);
 
 /*-----------------------------------------------------------------------------
  * Define global numerical options.

@@ -87,7 +87,7 @@ où $\mu$ et $\mu_t$ repr\'esentent respectivement la viscosit\'e dynamique mol�
 \subsection*{Terme de gradient transposé}
 Avant de calculer l'intégration des deux termes, on calcule dans un premier
 temps la viscosité totale en fonction du modèle de turbulence considéré.\\
-Les termes calculés dans ce sous-programme, appelé par \fort{predvv}, interviennent dans le second membre
+Les termes calculés dans ce sous-programme, appelé par \fort{cs\_velocity\_prediction}, interviennent dans le second membre
 de l'équation de quantité de mouvement, et sont donc directement stockés dans le
 tableau correspondant  \var{TRAV}.\\
 Le terme $\dive\,(\mu_{\,tot}\,^t\ggrad(\underline{v}))$ est calculé en
@@ -159,7 +159,7 @@ Le traitement est similaire pour le terme de viscosité de volume dans le module
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'intégration du terme de gradient transposé pose un problème de compatibilité.
 En effet, le gradient transposé provient de l'écriture de la divergence
-du tenseur des contraintes (\emph{cf.} \fort{predvv}), soit :
+du tenseur des contraintes (\emph{cf.} \fort{cs\_velocity\_prediction}), soit :
 \begin{equation}\notag
 \dive\,(\tens{\sigma}) = \dive\,(- p \tens{Id} + \tens{\tau })
 \end{equation}

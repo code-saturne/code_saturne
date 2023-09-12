@@ -184,7 +184,7 @@ conditions is the one that contains the normal derivative of the velocity at the
 this being\footnote{The transpose gradient term is dealt with in \fort{visecv}
 and will not be considered here.}: $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$.
 It appears in the second member of the usual
-momentum equation (see \fort{bilsc2} and \fort{predvv}).
+momentum equation (see \fort{bilsc2} and \fort{cs\_velocity\_prediction}).
 
 When the $k-\varepsilon$ model shows a tendency to overestimate the turbulent kinetic
 energy production, the length scale of the model, $L_{k-\varepsilon}$, can become

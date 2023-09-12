@@ -28,7 +28,7 @@
 !>
 !> \brief Compute an "a priori" hydrostatic pressure and its gradient associated
 !> before the Navier Stokes equations
-!> (prediction and correction steps \ref navstv.f90).
+!> (prediction and correction steps \ref cs_solve_navier_stokes.c).
 !>
 !> This function computes a hydrostatic pressure \f$ P_{hydro} \f$ solving an
 !> a priori simplified momentum equation:

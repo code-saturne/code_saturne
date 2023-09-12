@@ -505,49 +505,6 @@ cs_turbomachinery_update(void);
 void
 cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t    *surf);
 
-/*----------------------------------------------------------------------------*/
-/*!
-  * \brief Velocity prediction step of the Navier-Stokes equations for
-  *        incompressible or slightly compressible flows.
-  *
-  * - At the first call, the predicted velocities are computed as well
-  *   as an estimator on the predicted velocity.
-  *
-  * - At the second call, a global estimator on Navier Stokes is computed.
-  *   This second call is done after the correction step
-  *   (\ref cs_pressure_correction).
-  *
-  * Please refer to the
-  * <a href="../../theory.pdf#predvv"><b>predvv</b></b></a> section
-  * of the theory guide for more informations.
-  */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_velocity_prediction(int        iappel,
-                       int        iterns,
-                       cs_real_t  dt[],
-                       cs_real_t  vel[][3],
-                       cs_real_t  vela[][3],
-                       cs_real_t  velk[][3],
-                       cs_real_t  da_uu[][6],
-                       cs_real_t  coefav[][3],
-                       cs_real_t  coefbv[][3][3],
-                       cs_real_t  cofafv[][3],
-                       cs_real_t  cofbfv[][3][3],
-                       cs_real_t  frcxt[][3],
-                       cs_real_t  grdphd[][3],
-                       cs_real_t  trava[][3],
-                       cs_real_t  dfrcxt[][3],
-                       cs_real_t  tpucou[][6],
-                       cs_real_t  trav[][3],
-                       cs_real_t  viscf[],
-                       cs_real_t  viscb[],
-                       cs_real_t  viscfi[],
-                       cs_real_t  viscbi[],
-                       cs_real_t  secvif[],
-                       cs_real_t  secvib[]);
-
 /*============================================================================
  *  User function prototypes
  *============================================================================*/

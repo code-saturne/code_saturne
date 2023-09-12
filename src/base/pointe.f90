@@ -167,7 +167,9 @@ module pointe
   !> \c ncepdc cells in which a pressure drop is imposed.
   !> Note the 6 values are interleaved as follows: (k11, k22, k33, k12, k23, k13).
   !> See \c ickpdc
-  double precision, allocatable, dimension(:,:) :: ckupdc
+  real(c_double), allocatable, dimension(:,:), target :: ckupdc
+  type(c_ptr) :: p_ckupdc = c_null_ptr
+  bind(C, name='cs_glob_ckupdc') :: p_ckupdc
 
   !> \anchor ncetsm
   !> number of the \c ncetsm cells in which a mass source term is imposed.
@@ -330,6 +332,7 @@ contains
 
     allocate(icepdc(ncepdc))
     allocate(ckupdc(6,ncepdc))
+    p_ckupdc = c_loc(ckupdc)
 
   end subroutine init_kpdc
 

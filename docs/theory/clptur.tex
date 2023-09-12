@@ -191,7 +191,7 @@ The term which requires boundary conditions is the one containing the
 velocity derivative in the normal direction to the wall\footnote{The transpose gradient term is treated in \fort{visecv}
 and thus will not be considered here.}~:
 $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$. It appears on the
-right-hand side of the usual momentum equation (see \fort{bilsc2} and \fort{predvv}).
+right-hand side of the usual momentum equation (see \fort{bilsc2} and \fort{cs\_velocity\_prediction}).
 
 In the case where the  $k-\varepsilon$  model tends to surestimate
 the production of turbulent kinetic energy, the length scale of the model,

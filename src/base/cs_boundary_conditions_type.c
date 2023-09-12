@@ -1562,7 +1562,7 @@ cs_boundary_conditions_type(bool  init,
   {
     /* Outputs: mass flux if verbosity or when log is on,
        and at the first two iterations and the two last iterations.
-       Only the first iteration on navstv. */
+       Only the first iteration on cs_solve_navier_stokes. */
 
     /* Always print 2 first iterations and the last 2 iterations */
     cs_lnum_t modntl = 1;

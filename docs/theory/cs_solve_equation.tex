@@ -93,7 +93,7 @@ Le terme $\displaystyle \frac {\partial  (\rho f)}{\partial t}$ est d\'{e}compos
 \frac {\partial  (\rho f)}{\partial t}=\rho \frac {\partial f}{\partial t} + f
 \frac {\partial \rho}{\partial t}
 \end{equation}
-En utilisant l'\'{e}quation de conservation de la masse (cf. \fort{predvv}),
+En utilisant l'\'{e}quation de conservation de la masse (cf. \fort{cs\_velocity\_prediction}),
 l'\'{e}quation pr\'{e}c\'{e}dente s'\'{e}crit finalement :\\
 \begin{equation}\label{Base_Covofi_Eq_cv_scal}
 \rho\ \displaystyle \frac {\partial f}{\partial t} +
@@ -268,7 +268,7 @@ explicite provenant de l'utilisation du $\theta$ sch\'{e}ma pour $T_s^{imp}$). L
 contribution implicite est alors mise dans \var{ROVSDT} (apr\`{e}s multiplication
 par $\theta$) quel que soit son signe, afin de ne pas utiliser des
 discr\'{e}tisations temporelles diff\'{e}rentes entre deux pas de temps successifs, dans
-le cas par exemple o\`{u} $T_s^{imp}$ change de signe\footnote{cf. \fort{predvv}}.
+le cas par exemple o\`{u} $T_s^{imp}$ change de signe\footnote{cf. \fort{cs\_velocity\_prediction}}.
 \\\\
 $\star$ Sinon la contibution de $T_s^{exp}$ est directement mise dans
 \var{SMBRS}. Celle de $T_s^{imp}$ est ajout\'{e}e \`{a} \var{ROVSDT} si elle est

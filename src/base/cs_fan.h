@@ -76,27 +76,6 @@ void CS_PROCF (debvtl, DEBVTL)
  cs_real_t  rhofab[]
 );
 
-/*----------------------------------------------------------------------------
- * Compute the force induced by the fans (needs a previous calculation
- * of the flows through each fan).
- *
- * The induced force is added to the array crvxep (which can have other
- * contributions).
- *
- * Fortran interface:
- *
- * subroutine tsvvtl
- * *****************
- *
- * parameters:
- *  crvexp         <-> Explicit source term (velocity)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (tsvvtl, TSVVTL)
-(
- cs_real_3_t  crvexp[]
-);
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

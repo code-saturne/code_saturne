@@ -49,7 +49,7 @@ module cfpoin
 
   !> boundary convection flux indicator of a Rusanov or an analytical flux
   !> (some boundary contributions of the momentum eq. have to be cancelled)
-  integer, allocatable, dimension(:) :: icvfli
+  integer, allocatable, dimension(:), target :: icvfli
 
   !> Stiffened gas limit pressure (Pa) for single phase model
   !> Equal to zero in perfect gas
@@ -74,6 +74,9 @@ module cfpoin
   !> \}
 
   !=============================================================================
+
+  type(c_ptr) :: p_icvfli
+  bind(C, name='icvfli') :: p_icvfli
 
   interface
 
@@ -147,6 +150,9 @@ contains
 
     allocate(ifbet(nfabor))
     allocate(icvfli(nfabor))
+
+    ! Map pointers to C
+    p_icvfli = c_loc(icvfli)
 
   end subroutine init_compf
 

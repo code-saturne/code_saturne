@@ -83,7 +83,8 @@ implicit none
 
 ! Arguments
 
-double precision secvif(nfac), secvib(nfabor)
+real(c_double), dimension(nfac) :: secvif
+real(c_double), dimension(nfabor) :: secvib
 
 ! Local variables
 

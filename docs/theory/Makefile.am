@@ -66,7 +66,7 @@ mesh_algo.tex \
 mesh_quality.tex \
 cs_solve_navier_stokes.tex \
 operat.tex \
-predvv.tex \
+cs_velocity_prediction.tex \
 resopv.tex \
 spadis.tex \
 timstp.tex \

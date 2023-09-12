@@ -20,9 +20,9 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{predvv}\label{ap:predvv}
+\programme{cs\_velocity\_prediction}\label{ap:cs_velocity_prediction}
 
-\hypertarget{predvv}{}
+\hypertarget{cs\_velocity\_prediction}{}
 
 \vspace{1cm}
 %-------------------------------------------------------------------------------
@@ -132,7 +132,7 @@ the convection and diffusion terms, are computed in this subroutine and
 transmitted to the
 subroutine \fort{codits} which solves the full equation (convection-diffusion with source terms).
 
-See the \doxygenfile{predvv_8f90.html}{programmers reference of the dedicated subroutine} for further details.
+See the \doxygenfile{cs\_velocity\_prediction.c.html}{programmers reference of the dedicated subroutine} for further details.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -324,10 +324,10 @@ leads to inconsistency (loss of coherence) in the numerical treatment of the pro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The conservation of momentum equation is solved in a decoupled manner. The integration of the different terms has therefore been carried out in order to treat separately the equations obtained for each component of the velocity.\\
-For each of these components, the second member $f_s^{exp}$ of the system  (\ref{Base_Predvv_eq_di2}), the implicit terms of the system (with the exception of the convection-diffusion terms) and the term representing the total viscosity at the  internal\footnote{value required for the integration of the diffusion term in \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} and boundary faces is calculated in the subroutine \fort{predvv}. These terms are then transmitted to the subroutine \fort{codits} which constructs and then solves the resulting complete system of equations, with the convection-diffusion terms, for each component of the velocity.
+For each of these components, the second member $f_s^{exp}$ of the system  (\ref{Base_Predvv_eq_di2}), the implicit terms of the system (with the exception of the convection-diffusion terms) and the term representing the total viscosity at the  internal\footnote{value required for the integration of the diffusion term in \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} and boundary faces is calculated in the subroutine \fort{cs\_velocity\_prediction}. These terms are then transmitted to the subroutine \fort{codits} which constructs and then solves the resulting complete system of equations, with the convection-diffusion terms, for each component of the velocity.
 \\\\
 The normalized residual for convergence of the solution of the system for the pressure correction (\fort{resopv}) is calculated in
-\fort{predvv}. It is defined as the norm of magnitude
+\fort{cs\_velocity\_prediction}. It is defined as the norm of magnitude
   $$\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta t \grad{P^{n-1+\theta}})-\Gamma$$
 integrated over each cell \var{IEL} of the mesh ($\Omega_{iel}$) or, symbolically, as the square root of the sum over the mesh cells of the quantity
 \begin{center}
@@ -338,10 +338,10 @@ $\int\limits_{\Omega_{iel}}[{\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta\,t\,\
 
 It represents the second member of the equation system that would be solved for the pressure if the pressure gradient were not taken into account in the velocity prediction step. Note that, if the second member of the pressure increment equation were to be used directly, a normalized residual tending to zero would be obtained for a stationary calculation that had been run to convergence. This result would be penalizing and of little use for the computations.
 
-At the start of \fort{predvv}, $\widetilde{\vect{u}}^{n+1}$ is not yet available and it is not possible therefore to calculate the total normalized residual. On the other hand, calculating the total residual at the end of \fort{predvv} is undesirable as this would require monopolising a working array to store the pressure gradient for the duration of the subroutine \fort{predvv}.
+At the start of \fort{cs\_velocity\_prediction}, $\widetilde{\vect{u}}^{n+1}$ is not yet available and it is not possible therefore to calculate the total normalized residual. On the other hand, calculating the total residual at the end of \fort{cs\_velocity\_prediction} is undesirable as this would require monopolising a working array to store the pressure gradient for the duration of the subroutine \fort{cs\_velocity\_prediction}.
 The calculation of the normalized residual is therefore carried out in two stages.
 
-The quantity $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ is calculated at the beginning of \fort{predvv} and the complement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ added at the end of \fort{predvv}.
+The quantity $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ is calculated at the beginning of \fort{cs\_velocity\_prediction} and the complement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ added at the end of \fort{cs\_velocity\_prediction}.
 
 The pressure gradient at the cells is thus first computed at instant $n-1+\theta$ by a call to \fort{grdcel}. The subroutine \fort{inimas} is then used to evaluate $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the faces (of surface $S$ and normal $\vect{n}$). On entry into \fort{inimas}, the working array \var{TRAV} contains $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$; when exiting this subroutine, the \var{VISCF} and \var{VISCB} arrays contain the value of $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the internal and boundary faces respectively.
 
@@ -354,7 +354,7 @@ $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$, t
 
 In addition, to save computation time when passing through \fort{inimas}, the face values on non-orthogonal meshes are evaluated merely to first-order accuracy in space (no reconstruction: \var{NSWRP=1}). Local accuracy is moreover of no particular interest as the aim here is simply to determine a normalized global residual.
 
-The computation of the residual will be completed at the end of \fort{predvv}.
+The computation of the residual will be completed at the end of \fort{cs\_velocity\_prediction}.
 
 
 \etape{Partial calculation of the normalized residual for the pressure step}
@@ -364,7 +364,7 @@ $$\var{XNORMP(IEL)}=\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\th
 d\Omega}$$
 This operation is carried out by successively implementing \fort{inimas}
 (calculation at the faces in \var{VISCF} and \var{VISCB} of $\Delta t\,\grad{P^{n-1+\theta}}$ using the contents of the working array \var{TRAV}=$\frac{\Delta t}{\rho} \grad{P^{n-1+\theta}}$ together with homogeneous velocity boundary conditions and without reconstruction) followed by \fort{divmas} (computation in \var{XNORMP} of the integral over the cells).  With a simple loop, we then add the mass source term contribution $\Gamma$.
-This calculation is completed at the end of \fort{predvv}.\\
+This calculation is completed at the end of \fort{cs\_velocity\_prediction}.\\
 
 \etape{Partial calculation of the term $\vect{f}_s^{\,exp}$}
 
@@ -409,11 +409,11 @@ Computation of the term $-\dive(\rho \tens{R})$ is implemented in two steps. A c
 \item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \vect\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \vect {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{cs\_solve\_navier\_stokes}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
 \\
 \item The terms corresponding to the velocity head losses ($\rho \tens{K}
-{u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{tspdcv} at the first iteration over \fort{cs\_solve\_navier\_stokes}. They are decomposed into two parts:\\
+{u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{st\_exp\_head\_loss} at the first iteration over \fort{cs\_solve\_navier\_stokes}. They are decomposed into two parts:\\
 {\tiny$\blacksquare$} The first part, corresponding to the contribution of the diagonal terms ($-\rho\,\tens{K}_{\,d}\vect{u}$), is not extrapolated.\\
 {\tiny$\blacksquare$} The second, which corresponds to the extra diagonal terms
 ($-\rho\,\tens{K}_{\,e}\vect{u}$), may or may not be extrapolated.\\
-During this step, the array \var{TRAV} is used as a working array while the call is being made to the subroutine \fort{tspdcv}. It reverts to its normal value at the end of this call, its contents having been meanwhile stored in the vectors \var{W7} to \var{W9}.
+During this step, the array \var{TRAV} is used as a working array while the call is being made to the subroutine \fort{st\_exp\_head\_loss}. It reverts to its normal value at the end of this call, its contents having been meanwhile stored in the vectors \var{W7} to \var{W9}.
 
 \end{itemize}
 

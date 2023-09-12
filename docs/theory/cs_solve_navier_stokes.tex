@@ -109,7 +109,7 @@ $$\frac{\partial \rho}{\partial t} + \dive{\,(\rho\,\vect{u})} = \Gamma  $$
 This equation is not taken into account in the projection step
 (we continue to resolve only $\displaystyle \dive(\,{\rho\,\vect{u}}) = \Gamma$)
 whereas the term $\displaystyle \frac{\partial \rho}{\partial t}$ does
-appear during the velocity prediction step in the subroutine \fort{predvv}.
+appear during the velocity prediction step in the subroutine \fort{cs\_velocity\_prediction}.
 If this term plays a significant role, the \CS compressible algorithm
 (which solves the full equation) is probably better adapted.
 \end{remark}
@@ -760,5 +760,5 @@ and thus:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Refer to the following appendices relating to the subroutines
-\fort{Predvv} (prediction of velocities) and \fort{Resopv}
+\fort{cs\_velocity\_prediction} (prediction of velocities) and \fort{Resopv}
 (pressure correction).

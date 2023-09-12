@@ -30,7 +30,7 @@
 \section*{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The velocity projection (or pressure correction) step is effected in this subroutine, called from \fort{cs\_solve\_navier\_stokes}. The equation of motion (prediction) is solved in \fort{predvv} with a fully explicit treatment of the pressure term. The resulting velocity field does not satisfy the continuity equation. Two correction algorithms are proposed:
+The velocity projection (or pressure correction) step is effected in this subroutine, called from \fort{cs\_solve\_navier\_stokes}. The equation of motion (prediction) is solved in \fort{cs\_velocity\_prediction} with a fully explicit treatment of the pressure term. The resulting velocity field does not satisfy the continuity equation. Two correction algorithms are proposed:
 \begin{enumerate}
 \item The algorithm that we will call "weak velocity-pressure coupling". This algorithm is implemented extensively in industrial source codes. It only couples the velocity and the pressure through the mass term (it is the algorithm proposed by default). It consists of a \textit{SIMPLEC}-type algorithm, similar to \textit{SIMPLE} although the latter  accounts for the simplified diagonals of the convection, diffusion and implicit source terms in addition to the mass term.
 \item The strengthened velocity-pressure coupling algorithm (option \var{IPUCOU  = 1}). This algorithm couples the velocity and pressure through all of the terms (convection, diffusion and implicit source terms) of the equation of motion, though it is still approximate. In practice, the advantage of this algorithm is that it allows large time steps without entirely decoupling the velocity and the pressure.
@@ -57,7 +57,7 @@ See the \doxygenfile{resopv_8f90.html}{programmers reference of the dedicated su
 \section*{Discretization}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The velocity prediction step is described in \fort{predvv}. An operator notation is adopted here to provide a simplified explanation of the code-based algorithms.
+The velocity prediction step is described in \fort{cs\_velocity\_prediction}. An operator notation is adopted here to provide a simplified explanation of the code-based algorithms.
 The discrete equation of motion at an intermediate point in time of solution is written, in each direction of space $\alpha$ ($\alpha \in \{1,2,3\}$)in the form:
 
 \begin{equation}
@@ -77,7 +77,7 @@ The discrete equation of motion at an intermediate point in time of solution is 
 \item[$\star$] $\tens{G_\alpha}$ is the linear, "cell" gradient operator\footnote{strictly speaking, this operator would no longer be truly linear if a gradient constraint option were to have been activated by the user} in the direction $\alpha$ (it is therefore applied on the vectors of dimension \var{NCEL}),
 \item[$\star$] $\vect{P}^n$, of dimension $\var{NCEL}$, is an array used to store the pressure $p^n$ computed at each cell during the previous time step,
 
-\item[$\star$] $\vect{S_\alpha}^{\,n}$ is the array of dimension $\var{NCEL}$ that contains all of the explicit source terms (see \fort{predvv} for more detail),
+\item[$\star$] $\vect{S_\alpha}^{\,n}$ is the array of dimension $\var{NCEL}$ that contains all of the explicit source terms (see \fort{cs\_velocity\_prediction} for more detail),
 
 \item[$\star$] $\tens{I}_{\,s,\alpha}$ is the diagonal tensor related to the implicit source terms of the velocity components.
 \end{itemize}
@@ -196,7 +196,7 @@ The problem initially arises with the calculation of $\tens{B}^{-1}$. It has alr
 
 In the case of the "weak velocity-pressure coupling" algorithm, we assume $\tens{B}_{\,\alpha}^{-1} = \tens{M}_{\,\alpha}^{-1}$ (we could also include the diagonal terms of the convection, diffusion and implicit source terms).
 
-With "strengthened velocity-pressure coupling", we invert the system\footnote{$\vect{\Omega} = (|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|)$.} $\tens{B}\ \vect{T} = \vect{\Omega} $ and we define the equality $\tens{B}_{\,\alpha}^{-1}~=~\text{diag}(T_\alpha) $. This step takes place in the subroutine \fort{predvv}.
+With "strengthened velocity-pressure coupling", we invert the system\footnote{$\vect{\Omega} = (|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|)$.} $\tens{B}\ \vect{T} = \vect{\Omega} $ and we define the equality $\tens{B}_{\,\alpha}^{-1}~=~\text{diag}(T_\alpha) $. This step takes place in the subroutine \fort{cs\_velocity\_prediction}.
 
 The use of operators when writing out the equations presents a major inconvenience when used in conjunction with collocated discretization. More specifically, the operator\footnote{We emphasize again that the operator $\tens{G}$ is the "cell gradients" operator applied to the explicit pressure during velocity prediction.}
 $\tens{D}\ \tens{B}^{-1}\ \tens{G}$ can lead to odd-even decoupling of the nodes on a regular Cartesian
@@ -364,7 +364,7 @@ $\vect{T}^n$ designates an array of dimension $3$ containing the local time step
 
 \begin{enumerate}
 \item Call to \fort{viscfa} with a total viscosity equal to the time step $\Delta t_I^n$ for the "weak velocity-pressure coupling" algorithm (\var{IPUCOU} = 0),
-\item Call to \fort{visort} with a diagonal total viscosity for the "strengthened velocity-pressure coupling" algorithm (\var{IPUCOU} = 1). It is at this level that $\widetilde{T}^n_{\,ij}$ is calculated. The equivalent time steps calculated in the subroutine \fort{predvv} beforehand are stored in the array \var{TPUCOU}.
+\item Call to \fort{visort} with a diagonal total viscosity for the "strengthened velocity-pressure coupling" algorithm (\var{IPUCOU} = 1). It is at this level that $\widetilde{T}^n_{\,ij}$ is calculated. The equivalent time steps calculated in the subroutine \fort{cs\_velocity\_prediction} beforehand are stored in the array \var{TPUCOU}.
 \end{enumerate}
 
 \item Call to \fort{matrix} for construction of the pressure diffusion matrix (without the reconstruction terms which cannot be taken into account if we wish to preserve a sparse matrix structure) using the previously calculated viscosity and the array \var{COEFB} of pressure boundary conditions $p^n$ (we impose a homogeneous Neumann condition on $\delta p$ for a Neumann condition on $p$ and \textit{vice versa}.
@@ -372,9 +372,9 @@ $\vect{T}^n$ designates an array of dimension $3$ containing the local time step
 \end{itemize}
 
 \etape{Calculation of the normalized residual \var{RNORMP}}
-Since version 1.1.0.s, this step is accomplished within the subroutine \fort{predvv} and the normalized residual transmitted \textit{via} the variable RNORMP(IPHAS).
+Since version 1.1.0.s, this step is accomplished within the subroutine \fort{cs\_velocity\_prediction} and the normalized residual transmitted \textit{via} the variable RNORMP(IPHAS).
 
-At this level of \CS \, the array \var{TRAV} contains the second member obtained from \fort{predvv} without the user source terms. The computational procedure for the calculation of \var{RNORMP} is enumerated below:
+At this level of \CS \, the array \var{TRAV} contains the second member obtained from \fort{cs\_velocity\_prediction} without the user source terms. The computational procedure for the calculation of \var{RNORMP} is enumerated below:
 
 \begin{enumerate}
 
@@ -486,7 +486,7 @@ There are a number of outstanding issues that still need to be resolved:
 
 \item Use of the weighting factor $\displaystyle \frac {1}{2}$ to improve numerical stability when computing calculations based on the values at the faces  (e.g. in \fort{itrmas} or \fort{itrgrp} during reconstruction of the pressure increment gradient at the face).
 
-\item We could verify the normalized residual calculation (see \fort{predvv}).
+\item We could verify the normalized residual calculation (see \fort{cs\_velocity\_prediction}).
 
 \item When computing the mass flux of $\displaystyle \widetilde{u}+
 \frac{\alpha}{\rho}\ \tens{T}\ \grad{p^n}$ in \fort{inimas}, we use the boundary conditions of the velocity at the time level $n$. The validity of this approach remains to be clarified, particularly for the

@@ -48,17 +48,28 @@
 #include "cs_array.h"
 #include "cs_assert.h"
 #include "cs_atmo.h"
+#include "cs_at_data_assim.h"
 #include "cs_bad_cells_regularisation.h"
+#include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
+#include "cs_bw_time_diff.h"
+#include "cs_cf_model.h"
 #include "cs_divergence.h"
+#include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
+#include "cs_face_viscosity.h"
+#include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
+#include "cs_gui.h"
 #include "cs_gradient.h"
+#include "cs_head_losses.h"
 #include "cs_lagr.h"
+#include "cs_lagr_head_losses.h"
+#include "cs_mass_source_terms.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -71,6 +82,8 @@
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sat_coupling.h"
+#include "cs_thermal_model.h"
+#include "cs_turbulence_ke.h"
 //#include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_model.h"
@@ -78,6 +91,7 @@
 #include "cs_vof.h"
 #include "cs_volume_mass_injection.h"
 #include "cs_wall_condensation.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -104,8 +118,16 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Global variables
+ *============================================================================*/
+
+extern cs_real_t *cs_glob_ckupdc;
+
+/*============================================================================
  * Prototypes for Fortran functions and variables.
  *============================================================================*/
+
+extern int *icvfli;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -135,6 +157,48 @@ cs_f_solve_navier_stokes(const int      iterns,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the explicit contribution of head loss terms.
+ *
+ * \param[in]       ncepdp  number of cells with head loss
+ * \param[in]       icepdc  index of cells with head loss
+ * \param[in]       vela    velocity at the previous time step
+ * \param[in]       ckupdc  work array for the head loss
+ * \param[in, out]  trav    right hand side
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_st_exp_head_loss(cs_lnum_t          ncepdc,
+                  const cs_lnum_t    icepdc[],
+                  const cs_real_3_t  vela[],
+                  const cs_real_6_t  ckupdc[],
+                  cs_real_3_t        trav[])
+{
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  for (cs_lnum_t hl_id = 0; hl_id < ncepdc; hl_id++) {
+
+    const cs_lnum_t c_id   = icepdc[hl_id];
+    const cs_real_t romvom = -crom[c_id]*cell_f_vol[c_id];
+    const cs_real_t cpdc11 = ckupdc[hl_id][0];
+    const cs_real_t cpdc22 = ckupdc[hl_id][1];
+    const cs_real_t cpdc33 = ckupdc[hl_id][2];
+    const cs_real_t cpdc12 = ckupdc[hl_id][3];
+    const cs_real_t cpdc23 = ckupdc[hl_id][4];
+    const cs_real_t cpdc13 = ckupdc[hl_id][5];
+    const cs_real_t vit1   = vela[c_id][0];
+    const cs_real_t vit2   = vela[c_id][1];
+    const cs_real_t vit3   = vela[c_id][2];
+
+    trav[c_id][0] += romvom*(cpdc11*vit1 + cpdc12*vit2 + cpdc13*vit3);
+    trav[c_id][1] += romvom*(cpdc12*vit1 + cpdc22*vit2 + cpdc23*vit3);
+    trav[c_id][2] += romvom*(cpdc13*vit1 + cpdc23*vit2 + cpdc33*vit3);
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -209,6 +273,269 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
       bmasfl[face_id] -= rhofac*(  surfbo[face_id][0]*vr[0]
                                  + surfbo[face_id][1]*vr[1]
                                  + surfbo[face_id][2]*vr[2]);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Face diffusivity for the velocity
+ *
+ * \param[in]       m       pointer to associated mesh structure
+ * \param[in]       mq      pointer to associated mesh quantities structure
+ * \param[in]       eqp_u   pointer to a cs_equation_param_t structure
+ * \param[in, out]  viscf   visc*surface/dist at interior faces
+ * \param[in, out]  viscb   visc*surface/dist at boundary faces
+ * \param[in, out]  viscfi  same as viscf for increments
+ * \param[in, out]  viscbi  same as viscb for increments
+ * \param[in, out]  viscce  Tensorial diffusion of the velocity
+ *                          (in case of tensorial porosity)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_face_diff_vel(const cs_mesh_t             *m,
+               const cs_mesh_quantities_t  *mq,
+               const cs_equation_param_t   *eqp_u,
+               cs_real_t                    viscf[],
+               cs_real_t                    viscb[],
+               cs_real_t                    viscfi[],
+               cs_real_t                    viscbi[],
+               cs_real_6_t                  viscce[])
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  if (eqp_u->idiff > 0) {
+
+    const cs_real_t *viscl = CS_F_(mu)->val;
+    const cs_real_t *visct = CS_F_(mu_t)->val;
+    cs_real_t idifft = eqp_u->idifft;
+
+    cs_real_t *w1;
+    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+
+    if (cs_glob_turb_model->itytur == 3)
+      cs_array_real_copy(n_cells, viscl, w1);
+    else
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] = viscl[c_id] + idifft*visct[c_id];
+
+    /*  Scalar diffusivity (Default) */
+    if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
+
+      cs_face_viscosity(m, mq,
+                        eqp_u->imvisf,
+                        w1,
+                        viscf, viscb);
+
+      /* When using Rij-epsilon model with the option irijnu=1, the face
+       * viscosity for the Matrix (viscfi and viscbi) is increased */
+      if (   cs_glob_turb_model->itytur == 3
+          && cs_glob_turb_rans_model->irijnu == 1) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          w1[c_id] = viscl[c_id] + idifft*visct[c_id];
+
+        cs_face_viscosity(m, mq,
+                          eqp_u->imvisf,
+                          w1,
+                          viscfi, viscbi);
+      }
+    }
+
+    /* Tensorial diffusion of the velocity (in case of tensorial porosity) */
+    else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          viscce[c_id][ii] = w1[c_id];
+        for (cs_lnum_t ii = 3; ii < 6; ii++)
+          viscce[c_id][ii] = 0;
+      }
+
+      cs_face_anisotropic_viscosity_vector(m, mq,
+                                           eqp_u->imvisf,
+                                           viscce,
+                                           (cs_real_33_t*)viscf,
+                                           viscb);
+
+      /* When using Rij-epsilon model with the option irijnu=1, the face
+       * viscosity for the Matrix (viscfi and viscbi) is increased */
+      if (   cs_glob_turb_model->itytur == 3
+          && cs_glob_turb_rans_model->irijnu == 1) {
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          w1[c_id] = viscl[c_id] + idifft*visct[c_id];
+
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+            viscce[c_id][ii] = w1[c_id];
+          for (cs_lnum_t ii = 3; ii < 6; ii++)
+            viscce[c_id][ii] = 0;
+        }
+
+        cs_face_anisotropic_viscosity_vector(m, mq,
+                                             eqp_u->imvisf,
+                                             viscce,
+                                             (cs_real_33_t*)viscfi,
+                                             viscbi);
+      }
+    }
+
+    BFT_FREE(w1);
+  }
+
+  /* If no diffusion, viscosity is set to 0. */
+  else {
+    cs_array_real_fill_zero(n_i_faces, viscf);
+    cs_array_real_fill_zero(n_b_faces, viscb);
+
+    if (   cs_glob_turb_model->itytur == 3
+        && cs_glob_turb_rans_model->irijnu == 1) {
+      cs_array_real_fill_zero(n_i_faces, viscfi);
+      cs_array_real_fill_zero(n_b_faces, viscbi);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Divergence of tensor Rij
+ *        Non linear part of Rij for non-liear Eddy Viscosity Models
+ *
+ * \param[in]        m         pointer to associated mesh structure
+ * \param[in]        crom      density at cells
+ * \param[in]        brom      density at boundary faces
+ * \param[in, out]   cpro_divr reynolds stress divergence
+ * \param[in, out]   c_st_vel  source term of velicity
+ * \param[in, out]   forbr     boundary forces
+ * \param[in, out]   trava     working array for the
+ *                             velocity-pressure coupling
+ * \param[in, out]   trav      right hand side for the normalizing
+ *                             the residual
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_div_rij(const cs_mesh_t     *m,
+         const cs_real_t      crom[],
+         const cs_real_t      brom[],
+         cs_real_3_t         *cpro_divr,
+         cs_real_3_t         *c_st_vel,
+         cs_real_3_t         *forbr,
+         cs_real_3_t          trava[],
+         cs_real_3_t          trav[])
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_velocity_pressure_param_t *vp_param
+    = cs_glob_velocity_pressure_param;
+
+  /* Flux computation options */
+  const cs_equation_param_t *eqp = NULL;
+
+  cs_real_3_t *tflmas = NULL, *tflmab = NULL;
+  BFT_MALLOC(tflmas, n_i_faces,cs_real_3_t);
+  BFT_MALLOC(tflmab, n_b_faces,cs_real_3_t);
+
+  /* Reynolds Stress Models */
+  if (cs_glob_turb_model->itytur == 3) {
+
+    const cs_field_t *f_rij = CS_F_(rij);
+    eqp = cs_field_get_equation_param_const(f_rij);
+
+    cs_tensor_face_flux(m, mq,
+                        -1, 1, 0, 1, 1,
+                        eqp->imrgra, eqp->nswrgr,
+                        eqp->imligr, eqp->iwarni,
+                        eqp->epsrgr, eqp->climgr,
+                        crom, brom,
+                        (const cs_real_6_t *)f_rij->val,
+                        (const cs_real_6_t *)f_rij->bc_coeffs->ad,
+                        (const cs_real_66_t *)f_rij->bc_coeffs->bd,
+                        tflmas, tflmab);
+
+  }
+
+  /* Baglietto et al. quadratic k-epislon model */
+  else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
+
+    cs_real_6_t *rij = NULL, *coefat = NULL;
+    cs_real_66_t *coefbt = NULL;
+
+    BFT_MALLOC(rij, n_cells_ext, cs_real_6_t);
+    BFT_MALLOC(coefat, n_b_faces, cs_real_6_t);
+    BFT_MALLOC(coefbt, n_b_faces, cs_real_66_t);
+
+    eqp = cs_field_get_equation_param_const(CS_F_(k));
+
+    /* Compute the non linear part of Rij */
+    cs_turbulence_ke_q(rij);
+
+    /* Boundary conditions: homogeneous Neumann */
+
+    cs_array_real_fill_zero(6*n_b_faces, (cs_real_t *)coefat);
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      for (cs_lnum_t jj = 0; jj < 6; jj++) {
+        for (cs_lnum_t kk = 0; kk < 6; kk++)
+          coefbt[face_id][jj][kk] = 0.;
+        coefbt[face_id][jj][jj] = 1.;
+      }
+    }
+
+    cs_tensor_face_flux(m, mq,
+                        -1, 1, 0, 1, 1,
+                        eqp->imrgra, eqp->nswrgr,
+                        eqp->imligr, eqp->iwarni,
+                        eqp->epsrgr, eqp->climgr,
+                        crom, brom,
+                        rij,
+                        coefat, coefbt,
+                        tflmas, tflmab);
+    BFT_FREE(rij);
+    BFT_FREE(coefat);
+    BFT_FREE(coefbt);
+
+  }
+
+  /* Compute stresses at boundary (part 5/5), if necessary */
+  if (forbr != NULL) {
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        forbr[f_id][ii] += tflmab[f_id][ii];
+    }
+  }
+
+  cs_tensor_divergence(m, 1, tflmas, tflmab, cpro_divr);
+
+  BFT_FREE(tflmas);
+  BFT_FREE(tflmab);
+
+  /* (if iphydr=1 then this term is already taken into account) */
+
+  if (   vp_param->iphydr != 1
+      || vp_param->igprij != 1) {
+
+    /* If extrapolation of source terms */
+    if (cs_glob_time_scheme->isno2t > 0)
+      cs_axpy(n_cells*3, -1, (cs_real_t *)cpro_divr, (cs_real_t *)c_st_vel);
+
+    /* No extrapolation of source terms */
+    else {
+      /* No inner iteration */
+      if (vp_param->nterup == 1)
+        cs_axpy(n_cells*3, -1, (cs_real_t *)cpro_divr, (cs_real_t *)trav);
+
+      else
+        cs_axpy(n_cells*3, -1, (cs_real_t *)cpro_divr, (cs_real_t *)trava);
     }
   }
 }
@@ -355,6 +682,188 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Take external forces partially equilibrated
+ *        with the pressure gradient into account
+ *
+ * \param[in]       m           pointer to associated mesh structure
+ * \param[in]       mq          pointer to associated mesh quantities structure
+ * \param[in]       fp          pointer to fluid properties structure
+ * \param[in]       ncepdc      number of cells in which a pressure drop
+ *                              is imposed.
+ * \param[in]       icepdc      number of the ncepdc cells in which a pressure
+ *                              drop is imposed
+ * \param[in]       crom        density at cells
+ * \param[in]       croma       density at cells at the previous time
+ * \param[in]       cromaa      density at cells at the two previous time
+ * \param[in]       gxyz        gravity
+ * \param[in]       vela        velocity at the previous time
+ * \param[in]       tsexp       explicite source term
+ * \param[in]       frcxt       external forces
+ * \param[in]       cpro_divr   reynolds stress divergence
+ * \param[in]       stf         surface tension force for VoF
+ * \param[in]       ckupdc      value of the coefficients of the pressure
+ * \param[in]                   drop tensor of the ncepdc cells in which
+ * \param[in]                   a pressure drop is imposed.
+ * \param[in, out]  dfrcxt      variation of the external forces
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ext_forces(const cs_mesh_t                *m,
+            const cs_mesh_quantities_t     *mq,
+            const cs_fluid_properties_t    *fp,
+            const cs_lnum_t                ncepdc,
+            const cs_lnum_t                *icepdc,
+            const cs_real_t                crom[],
+            const cs_real_t                croma[],
+            const cs_real_t                cromaa[],
+            const cs_real_3_t              gxyz,
+            const cs_real_3_t              vela[],
+            const cs_real_3_t              tsexp[],
+            const cs_real_3_t              frcxt[],
+            const cs_real_3_t              cpro_divr[],
+            const cs_real_3_t              stf[],
+            const cs_real_6_t              ckupdc[],
+            cs_real_3_t                    dfrcxt[])
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  /* External forces at previous time step:
+   * frcxt was initialised to 0
+   * NB: frcxt was used in typecl, and will be updated
+   *     at the end of cs_solve_navier_stokes.
+   *
+   * External force variation between time step n and n+1
+   * (used in the correction step) */
+
+  /* Boussinesq approximation */
+  if (cs_glob_velocity_pressure_model->idilat == 0) {
+    const cs_real_t *cvar_t = cs_thermal_model_field()->val;
+    const cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
+
+    cs_real_t tref = fp->t0;
+    /* for atmospheric flows, variable is potential temperature */
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
+      const cs_real_t rscp = fp->r_pg_cnst/fp->cp0;
+      tref = fp->t0*pow(cs_glob_atmo_constants->ps/fp->p0, rscp);
+    }
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
+      const cs_real_t drom
+        = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref)*c_act;
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dfrcxt[c_id][ii] = drom*gxyz[ii] - frcxt[c_id][ii]*c_act;
+    }
+  }
+
+  else {
+    int time_order = 1;
+    if (   cs_glob_time_scheme->time_order == 2
+        && cs_glob_velocity_pressure_param->itpcol == 1)
+      time_order = 2;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
+      cs_real_t drom;
+      if (time_order == 2)
+        drom = (1.5*croma[c_id] - 0.5*cromaa[c_id] - fp->ro0)*c_act;
+      else
+        drom = (crom[c_id]-fp->ro0) * c_act;
+
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dfrcxt[c_id][ii] = drom*gxyz[ii] - frcxt[c_id][ii]*c_act;
+    }
+  }
+
+  /* Add head losses */
+  if (ncepdc > 0) {
+
+    for (cs_lnum_t id = 0; id < ncepdc; id++) {
+      const cs_lnum_t c_id = icepdc[id];
+      const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
+      const cs_real_t vit1   = vela[c_id][0] * c_act;
+      const cs_real_t vit2   = vela[c_id][1] * c_act;
+      const cs_real_t vit3   = vela[c_id][2] * c_act;
+      const cs_real_t cpdc11 = ckupdc[id][0];
+      const cs_real_t cpdc22 = ckupdc[id][1];
+      const cs_real_t cpdc33 = ckupdc[id][2];
+      const cs_real_t cpdc12 = ckupdc[id][3];
+      const cs_real_t cpdc23 = ckupdc[id][4];
+      const cs_real_t cpdc13 = ckupdc[id][5];
+
+      dfrcxt[c_id][0] -= crom[c_id]*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3);
+      dfrcxt[c_id][1] -= crom[c_id]*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3);
+      dfrcxt[c_id][2] -= crom[c_id]*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3);
+    }
+  }
+
+  /* Add Coriolis force */
+  cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
+  if (   cs_glob_physical_constants->icorio == 1
+      || iturbo == CS_TURBOMACHINERY_FROZEN) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
+      const cs_real_t rom = -2*crom[c_id] * c_act;
+      cs_rotation_add_coriolis_v(cs_glob_rotation, rom, vela[c_id], dfrcxt[c_id]);
+    }
+
+    if (iturbo == CS_TURBOMACHINERY_FROZEN) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const int *irotce = cs_turbomachinery_get_cell_rotor_num();
+        if (irotce[c_id] > 0) {
+          const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
+          const cs_real_t rom = -crom[c_id] * c_act;
+          cs_rotation_add_coriolis_v(cs_glob_rotation + irotce[c_id],
+                                     rom, vela[c_id], dfrcxt[c_id]);
+
+        }
+      }
+    }
+  }
+
+  /* Add -div( rho R) as external force */
+  if (   cs_glob_turb_model->itytur == 3
+      && cs_glob_velocity_pressure_param->igprij == 1) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t dvol = 0;
+      if (cs_mesh_quantities_cell_is_active(mq, c_id) == 1)
+        dvol = 1.0/cell_f_vol[c_id];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dfrcxt[c_id][ii] -= cpro_divr[c_id][ii]*dvol;
+    }
+  }
+
+  /* Surface tension force for VoF */
+  if (stf != NULL) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t dvol = 0;
+      /* If it is not a solid cell */
+      if (cs_mesh_quantities_cell_is_active(mq, c_id) == 1)
+        dvol = 1.0/cell_f_vol[c_id];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dfrcxt[c_id][ii] += stf[c_id][ii]*dvol;
+    }
+  }
+
+  /* Use user source terms */
+  if (cs_glob_velocity_pressure_param->igpust == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t dvol = 0;
+      if (cs_mesh_quantities_cell_is_active(mq, c_id) == 1)
+        dvol = 1.0/cell_f_vol[c_id];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dfrcxt[c_id][ii] += tsexp[c_id][ii]*dvol;
+    }
+  }
+
+  cs_mesh_sync_var_vect((cs_real_t *)dfrcxt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -975,6 +1484,1431 @@ _resize_non_interleaved_cell_arrays(const cs_mesh_t    *m,
   BFT_FREE(buffer);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+  * \brief Velocity prediction step of the Navier-Stokes equations for
+  *        incompressible or slightly compressible flows.
+  *
+  * - At the first call, the predicted velocities are computed as well
+  *   as an estimator on the predicted velocity.
+  *
+  * - At the second call, a global estimator on Navier Stokes is computed.
+  *   This second call is done after the correction step
+  *   (\ref cs_pressure_correction).
+  *
+  * Please refer to the
+  * <a href="../../theory.pdf#cs_velocity_prediction"><b>cs_velocity_prediction</b></b></a>
+  * section of the theory guide for more informations.
+  *
+  * \param[in]       iappel        call number (1 or 2)
+  * \param[in]       iterns        index of the iteration on Navier-Stokes
+  * \param[in]       dt            time step (per cell)
+  * \param[in]       vel           velocity
+  * \param[in]       vela          velocity at the previous time step
+  * \param[in]       velk          velocity at the previous sub iteration (or vela)
+  * \param[in,out]   da_uu         velocity matrix
+  * \param[in]       coefav        boundary condition array for the variable
+  *                                (explicit part)
+  * \param[in]       coefbv        boundary condition array for the variable
+  *                                (implicit part)
+  * \param[in]       cofafv        boundary condition array for the diffusion
+  *                                of the variable (explicit part)
+  * \param[in]       cofbfv        boundary condition array for the diffusion
+  *                                of the variable (implicit part)
+  * \param[in]       frcxt         external forces making hydrostatic pressure
+  * \param[in]       trava         working array for the velocity-pressure coupling
+  * \param[out]      dfrcxt        variation of the external forces
+  *                                making the hydrostatic pressure
+  * \param[in]       grdphd        hydrostatic pressure gradient to handle the
+  *                                imbalance between the pressure gradient and
+  *                                gravity source term
+  * \param[in, out]  dttens        non scalar time step in case of
+  *                                velocity pressure coupling
+  * \param[in, out]  trav          right hand side for the normalizing
+  *                                the residual
+  * \param[in, out]  viscf         visc*surface/dist aux faces internes
+  * \param[in, out]  viscb         visc*surface/dist aux faces de bord
+  * \param[in, out]  viscfi        same as viscf for increments
+  * \param[in, out]  viscbi        same as viscb for increments
+  * \param[in, out]  secvif        secondary viscosity at interior faces
+  * \param[in, out]  secvib        secondary viscosity at boundary faces
+  */
+/*----------------------------------------------------------------------------*/
+
+static void
+_velocity_prediction(const cs_mesh_t             *m,
+                     const cs_mesh_quantities_t  *mq,
+                     int                          iappel,
+                     int                          iterns,
+                     const cs_real_t              dt[],
+                     cs_real_t                    vel[][3],
+                     cs_real_t                    vela[][3],
+                     cs_real_t                    velk[][3],
+                     cs_real_t                    da_uu[][6],
+                     cs_real_t                    coefav[][3],
+                     cs_real_t                    coefbv[][3][3],
+                     cs_real_t                    cofafv[][3],
+                     cs_real_t                    cofbfv[][3][3],
+                     cs_real_t                    frcxt[][3],
+                     cs_real_t                    grdphd[][3],
+                     cs_real_t                    trava[][3],
+                     cs_real_t                    dfrcxt[][3],
+                     cs_real_t                    dttens[][6],
+                     cs_real_t                    trav[][3],
+                     cs_real_t                    viscf[],
+                     cs_real_t                    viscb[],
+                     cs_real_t                    viscfi[],
+                     cs_real_t                    viscbi[],
+                     cs_real_t                    secvif[],
+                     cs_real_t                    secvib[])
+{
+  cs_lnum_t n_cells = m->n_cells;
+  cs_lnum_t n_i_faces = m->n_i_faces;
+  cs_lnum_t n_b_faces = m->n_b_faces;
+  cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_3_t *restrict diipb = (const cs_real_3_t *restrict)mq->diipb;
+
+  const cs_real_3_t  *restrict surfbo
+    = (const cs_real_3_t  *restrict) mq->b_face_normal;
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+  const cs_time_step_options_t  *tso = cs_glob_time_step_options;
+  const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+  const cs_vof_parameters_t *vof_param = cs_glob_vof_parameters;
+  const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
+  const cs_velocity_pressure_model_t
+    *vp_model = cs_glob_velocity_pressure_model;
+  cs_velocity_pressure_param_t *vp_param = cs_get_glob_velocity_pressure_param();
+
+  cs_equation_param_t *eqp_u
+    = cs_field_get_equation_param(CS_F_(vel));
+
+  const cs_equation_param_t *eqp_p
+    = cs_field_get_equation_param_const(CS_F_(p));
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
+  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+
+  cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
+  cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+
+  /* Pointers to properties
+   * Density at time n+1,iteration iterns+1 */
+  cs_real_t *crom_eos = CS_F_(rho)->val;
+  cs_real_t *brom_eos = CS_F_(rho_b)->val;
+
+  /* Density at time (n) */
+  cs_real_t *croma = crom_eos;
+  cs_real_t *broma = brom_eos;
+  if (fp->irovar == 1){
+    croma = CS_F_(rho)->val_pre;
+    broma = CS_F_(rho_b)->val_pre;
+  }
+
+  /* Density at time (n-1) if needed */
+  cs_real_t *cromaa = NULL;
+  if (   vp_model->idilat > 1
+      || vof_param->vof_model > 0
+      || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3
+      || fp->irovar == 1)
+    cromaa = CS_F_(rho)->vals[2];
+
+  /* Add Rusanov */
+  cs_real_t *ipro_rusanov = NULL;
+  if (cs_glob_turb_rans_model->irijnu == 2)
+    ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+
+  /* Density for the unsteady term (at time n);
+     by default (constant or weakly variable density), set to
+     density as defined by equations of state. */
+  cs_real_t *pcrom = crom_eos;
+
+  if (fp->irovar == 1) {
+    /* Compressible algorithm (mass equation is already solved)
+     * or Low Mach compressible algos with mass flux prediction */
+    if (   (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >=0
+            && cs_glob_physical_model_flag[CS_COMPRESSIBLE] != 3)
+        || (vp_model->idilat > 1 && vp_param->ipredfl == 1))
+      pcrom = croma;
+
+    /* VOF algorithm and Low Mach compressible algos: density at time n-1 */
+    else if (   vp_model->idilat > 1
+             || vof_param->vof_model > 0
+             || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3) {
+      if (vp_param->itpcol == 0 && iterns == 1)
+        pcrom = cromaa;
+      else
+        pcrom = croma;
+    }
+  }
+
+  /* Density for other terms such as buoyancy term
+     (default for 1st order in time) */
+  cs_real_t *crom = crom_eos, *brom = brom_eos;
+
+  if (eqp_u->thetav < 1.0) {   /* 2nd order in time */
+   /* map the density pointer:
+    * 1/4(n-1) + 1/2(n) + 1/4(n+1)
+    * here replaced by (n) */
+    crom = croma;
+    brom = broma;
+  }
+
+  /* Interpolation of rho^n-1/2 (stored in pcrom)
+   * Interpolation of the mass flux at (n+1/2)
+   * NB: the mass flux (n+1) is overwritten because not used after.
+   * The mass flux for (n->n+1) will be recomputed in cs_pressure_correction
+   * FIXME irovar=1 and if dt varies, use theta(rho) = theta(u)*... */
+
+  cs_real_t *cproa_rho_tc = NULL;
+  if (   (eqp_u->thetav < 1.0) && (iappel == 1)
+      && (iterns > 1) && (vp_param->itpcol == 0)) {
+    BFT_MALLOC(cproa_rho_tc, n_cells_ext, cs_real_t);
+
+    /* Pointer to the previous mass fluxes */
+    cs_real_t *imasfl_prev = cs_field_by_id(iflmas)->val_pre;
+    cs_real_t *bmasfl_prev = cs_field_by_id(iflmab)->val_pre;
+
+    const cs_real_t thetav = eqp_u->thetav;
+
+    if (fp->irovar == 1) {
+      /* remap the density pointer: n-1/2 */
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+        cproa_rho_tc[c_id] =          thetav  * croma[c_id]
+                             + (1.0 - thetav) * cromaa[c_id];
+      pcrom = cproa_rho_tc;
+    }
+
+    /* Inner mass flux interpolation: n-1/2->n+1/2 */
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+      imasfl[f_id] =          thetav  * imasfl[f_id]
+                     + (1.0 - thetav) * imasfl_prev[f_id];
+
+    /* Boundary mass flux interpolation: n-1/2->n+1/2 */
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+      bmasfl[f_id] =          thetav  * bmasfl[f_id]
+                     + (1.0 - thetav) * bmasfl_prev[f_id];
+  }
+
+  cs_real_6_t *viscce = NULL;
+  if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION)
+    BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+
+  cs_field_t *iespre = cs_field_by_name_try("est_error_pre_2");
+
+  cs_real_t *cvar_pr = NULL;
+  cs_real_t *cvara_k = NULL;
+
+  cs_field_t *iforbr = cs_field_by_name_try("boundary_forces");
+
+  if ((iforbr != NULL && iterns == 1) || (vof_param->vof_model > 0))
+    cvar_pr = CS_F_(p)->val;
+
+  if (   iterns == 1
+      && iforbr != NULL
+      && cs_glob_turb_rans_model->igrhok == 1
+      && (   cs_glob_turb_model->itytur == 2
+          || cs_glob_turb_model->itytur == 5
+          || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)) {
+    if (iappel == 2)
+      cvara_k = CS_F_(k)->val;
+    else
+      cvara_k = CS_F_(k)->val_pre;
+  }
+
+  cs_real_3_t *forbr = NULL;
+  if (iforbr != NULL && iterns == 1)
+    forbr = (cs_real_3_t *)iforbr->val;
+
+  cs_real_3_t *c_st_vel = NULL;
+  const cs_real_t thets = cs_glob_time_scheme->thetsn;
+
+  if (cs_glob_time_scheme->isno2t > 0) {
+    int kstprv = cs_field_key_id("source_term_prev_id");
+    int istprv = cs_field_get_key_int(CS_F_(vel), kstprv);
+    if (istprv > -1)
+      c_st_vel = (cs_real_3_t *)cs_field_by_id(istprv)->val;
+  }
+
+  /* Get user source terms */
+  cs_field_t *f = cs_field_by_name_try("velocity_source_term_exp");
+  cs_real_3_t *loctsexp = NULL, *tsexp = NULL;
+  if (f != NULL)
+    tsexp = (cs_real_3_t *)f->val;
+  else {
+    BFT_MALLOC(loctsexp, n_cells_ext, cs_real_3_t);
+    tsexp = loctsexp;
+  }
+
+  f = cs_field_by_name_try("velocity_source_term_imp");
+  cs_real_33_t *loctsimp = NULL, *tsimp = NULL;
+  if (f != NULL)
+    tsimp = (cs_real_33_t *)f->val;
+  else {
+    BFT_MALLOC(loctsimp, n_cells_ext, cs_real_33_t);
+    tsimp = loctsimp;
+  }
+  cs_array_real_fill_zero(3*n_cells, (cs_real_t *)tsexp);
+  cs_array_real_fill_zero(9*n_cells, (cs_real_t *)tsimp);
+
+  /* The computation of explicit and implicit source terms is performed
+   * at the first iteration only.
+   * If iphydr=1 or if we have buoyant scalars
+   * then we need to update source terms */
+
+  cs_gui_momentum_source_terms(vel, tsexp, tsimp);
+
+  cs_user_source_terms(cs_glob_domain,
+                       CS_F_(vel)->id,
+                       (cs_real_t *)tsexp,
+                       (cs_real_t *)tsimp);
+
+  if (cs_glob_porous_model == 3)
+    cs_immersed_boundary_wall_functions(CS_F_(vel)->id,
+                                        (cs_real_t *)tsexp,
+                                        (cs_real_t *)tsimp);
+
+  if (cs_fan_n_fans() > 0) {
+    if (ts->nt_cur == ts->nt_prev+1)
+      cs_fan_compute_flows(cs_glob_mesh,
+                           cs_glob_mesh_quantities,
+                           imasfl,
+                           bmasfl,
+                           crom,
+                           brom);
+    cs_fan_compute_force(mq, tsexp);
+  }
+
+  /* Skip first time step after restart if previous values have not been read. */
+  if (eqp_u->ibdtso < 0)
+    eqp_u->ibdtso = -eqp_u->ibdtso;
+
+  /* Nudging towards optimal interpolation for velocity */
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_OFF) {
+    const int kopint = cs_field_key_id_try("opt_interp_id");
+    const int f_oi_id = cs_field_get_key_int(CS_F_(vel), kopint);
+    if (f_oi_id > -1)
+      cs_at_data_assim_source_term(CS_F_(vel)->id,
+                                   (cs_real_t *)tsexp,
+                                   (cs_real_t *)tsimp);
+
+    if (cs_glob_atmo_option->open_bcs_treatment > 0)
+      cs_at_source_term_for_inlet(tsexp);
+  }
+
+  /* Coupling between two code_saturne instances */
+  if (cs_sat_coupling_n_couplings() > 0)
+    cs_sat_coupling_exchange_at_cells(CS_F_(vel)->id, (cs_real_t*)tsexp);
+
+  if (eqp_u->ibdtso > 1 && ts->nt_cur > ts->nt_ini
+      && (   tso->idtvar == CS_TIME_STEP_CONSTANT
+          || tso->idtvar == CS_TIME_STEP_ADAPTIVE))
+    /* TODO: remove test on ntcabs and implemente a "proper" condition for
+     * initialization. */
+    cs_backward_differentiation_in_time(CS_F_(vel),
+                                        (cs_real_t *)tsexp,
+                                        (cs_real_t *)tsimp);
+
+  /* Potential forces (pressure gradient and gravity)
+     ================================================ */
+
+  /* Pressure gradient */
+  cs_real_3_t *grad = NULL, *cpro_gradp = NULL;
+  f = cs_field_by_name_try("pressure_gradient");
+  if (f != NULL)
+    cpro_gradp = (cs_real_3_t *)f->val;
+  else {
+    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    cpro_gradp = grad;
+  }
+
+  cs_real_t *cpro_rho_mass = NULL;
+  cs_real_t *wgrec_crom = NULL, *cpro_rho_tc = NULL;
+
+  /* Namely for the VOF algorithm: consistency of the gradient
+   * with the diffusive flux scheme of the correction step */
+  if (eqp_p->iwgrec == 1) {
+
+    /* retrieve density used in diffusive flux scheme (correction step) */
+    if (   fp->irovar == 1
+        && (   vp_model->idilat > 1
+            || vof_param->vof_model > 0
+            || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
+
+      cpro_rho_mass = cs_field_by_name("density_mass")->val;
+
+      /* Time interpolated density */
+      if (eqp_u->thetav < 1.0 && iterns > 1) {
+        cs_real_t thetav = eqp_u->thetav;
+        BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
+#       pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+          cpro_rho_tc[c_id] =          thetav  * cpro_rho_mass[c_id]
+                              + (1.0 - thetav) * croma[c_id];
+        wgrec_crom = cpro_rho_tc;
+      }
+      else
+        wgrec_crom = cpro_rho_mass;
+    }
+
+    /* Weakly variable density algo. (idilat <=1) or constant density */
+    else
+      wgrec_crom = crom_eos;
+
+    /* Id weighting field for gradient */
+    const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
+    const int iflwgr = cs_field_get_key_int(CS_F_(p), kwgrec);
+    cs_field_t *f_g = cs_field_by_id(iflwgr);
+    cs_real_6_t *cpro_wgrec_v = NULL;
+    cs_real_t *cpro_wgrec_s = NULL;
+    if (f_g->dim > 1) {
+      cpro_wgrec_v = (cs_real_6_t *)f_g->val;
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          cpro_wgrec_v[c_id][ii] = dt[c_id] / wgrec_crom[c_id];
+
+        for (cs_lnum_t ii = 3; ii < 6; ii++)
+          cpro_wgrec_v[c_id][ii] = 0;
+      }
+      cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
+    }
+    else {
+      cpro_wgrec_s = f_g->val;
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        cpro_wgrec_s[c_id] = dt[c_id] / wgrec_crom[c_id];
+      cs_mesh_sync_var_scal(cpro_wgrec_s);
+    }
+    BFT_FREE(cpro_rho_tc);
+  }
+
+  cs_gradient_porosity_balance(1);
+
+  /* Pressure gradient */
+  if (cs_glob_velocity_pressure_model->iprcdo == 0)
+    cs_field_gradient_potential(CS_F_(p),
+                                0, /* iprev */
+                                1, /* inc */
+                                vp_param->iphydr,
+                                frcxt,
+                                cpro_gradp);
+
+  const cs_real_3_t *restrict cdgfbo
+      = (const cs_real_3_t *restrict)mq->b_face_cog;
+
+  /* Compute stress at walls (part 2/5), if required.
+   * Face pressure is computed at face and computed as in gradient
+   * reconstruction, the transformed into total pressure.
+   * We restrict this to the first iteration (for simplicity relatively
+   * to the part in cs_boundary_condition_set_coeffs, outside the loop) */
+
+  if (forbr != NULL && iterns == 1) {
+    const cs_real_t *coefa_p = CS_F_(p)->bc_coeffs->a;
+    const cs_real_t *coefb_p = CS_F_(p)->bc_coeffs->b;
+
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id ++) {
+      const cs_lnum_t c_id = b_face_cells[f_id];
+      const cs_real_t pip =   cvar_pr[c_id]
+                            + cs_math_3_dot_product(diipb[f_id],
+                                                    cpro_gradp[c_id]);
+
+      cs_real_t pfac = coefa_p[f_id] + coefb_p[f_id]*pip;
+      pfac +=   fp->ro0 * cs_math_3_distance_dot_product(fp->xyzp0,
+                                                         cdgfbo[f_id],
+                                                         gxyz)
+              - fp->pred0;
+
+      for (cs_lnum_t isou = 0; isou < 3; isou++)
+        forbr[f_id][isou] += pfac*surfbo[f_id][isou];
+    }
+  }
+
+  if (iappel == 1)
+    /* Initialization
+     * NB: at the second call, trav contains the temporal increment */
+    cs_array_real_fill_zero(3*n_cells, (cs_real_t *)trav);
+
+  /* FIXME : "rho g" will be second order only if extrapolated */
+
+  if (vp_param->iphydr == 1) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        trav[c_id][ii] +=   (frcxt[c_id][ii] - cpro_gradp[c_id][ii])
+                          * cell_f_vol[c_id];
+  }
+  else if (vp_param->iphydr == 2) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t rom = crom[c_id];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        trav[c_id][ii] +=   (  rom*gxyz[ii] - grdphd[c_id][ii]
+                             - cpro_gradp[c_id][ii])
+                          * cell_f_vol[c_id];
+    }
+  }
+  else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t rom = crom[c_id];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        trav[c_id][ii] += (rom*gxyz[ii] - cpro_gradp[c_id][ii])*cell_f_vol[c_id];
+    }
+  }
+  /* Boussinesq approximation */
+  else if (vp_model->idilat == 0) {
+
+    /* FIXME make it dependant on the scalar and use is_buoyant field */
+    const cs_real_t *cvar_t = cs_thermal_model_field()->val;
+    const cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
+
+    /* Delta rho = - rho_0 beta (T-T0) */
+    cs_real_t tref = fp->t0;
+    /* for atmospheric flows, variable is potential temperature */
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
+      const cs_real_t rscp = fp->r_pg_cnst/fp->cp0;
+      tref = fp->t0*pow(cs_glob_atmo_constants->ps/fp->p0, rscp);
+    }
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t drom = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref);
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii])
+                          * cell_f_vol[c_id];
+    }
+
+  }
+  else {
+
+    int t_order = 1;
+    if (cs_glob_time_scheme->time_order == 2 && vp_param->itpcol == 1)
+      t_order = 2;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t drom;
+      if (t_order == 2)
+        drom = (1.5*croma[c_id] - 0.5*cromaa[c_id] - fp->ro0);
+      else
+        drom = (crom[c_id] - fp->ro0);
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii] )
+                          * cell_f_vol[c_id];
+    }
+
+  }
+
+  BFT_FREE(grad);
+
+  /* For iappel = 1 (ie standard call without estimators)
+   * trav gathers the source terms which will be recalculated
+   * to all iterations on navsto
+   * If we don't iterate on navsto and we don't extrapolate the
+   * source terms, trav contains all source terms
+   * until failover in smbr
+   * At this level, trav contains -grad P and rho g
+   * P is assumed to be taken at n+1/2
+   * rho is possibly interpolated at n+1/2 */
+
+  /* Initialize trava array and source terms at the first call (iterns=1)
+
+   *  trava contains all source terms needed from the first sub iteration
+   *   (iterns=1) for the other iterations.
+   *  When there is only one iteration, we build source terms directly in
+   *    the trav array.
+   *  Explicit source terms will be used at the next time step in case of
+   *    extrapolation (if there is only one or multiple iterations on navtsv) */
+
+  /* At the first iteration on cs_solve_navier_stokes */
+  if (iterns == 1) {
+
+    /* If we extrapolate the S.T.: -theta*previous value */
+    if (cs_glob_time_scheme->isno2t > 0) {
+      if (vp_param->nterup == 1) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+             trav[c_id][ii] -= thets*c_st_vel[c_id][ii];
+        }
+      }
+      else {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+            trava[c_id][ii] = - thets*c_st_vel[c_id][ii];
+        }
+      }
+      /* And we initialize the source term to fill it then */
+      cs_array_real_fill_zero(3*n_cells, (cs_real_t *)c_st_vel);
+
+    }
+    /* If we not extrapolate the ST. */
+    else {
+
+      /* If we have many iterationss: trava initialize */
+      /* otherwise trava should not exist */
+      if (vp_param->nterup > 1)
+        cs_array_real_fill_zero(3*n_cells, (cs_real_t *)trava);
+
+    }
+  }
+
+  /* Initialization of the implicit terms */
+
+  cs_real_33_t *fimp = NULL;
+  BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
+
+  if (iappel == 1 && eqp_u->istat == 1) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t fimp_c = pcrom[c_id] / dt[c_id] * cell_f_vol[c_id];
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++) {
+          if (jj == ii)
+            fimp[c_id][ii][ii] = fimp_c;
+          else
+            fimp[c_id][ii][jj] = 0;
+        }
+      }
+    }
+  }
+  else
+    cs_array_real_fill_zero(9*n_cells, (cs_real_t *)fimp);
+
+  BFT_FREE(cproa_rho_tc);
+
+  /* 2/3 rho * grad(k) for k-epsilon ou k-omega
+   * Note: we do not take the gradient of (rho k), as this would make
+   *       the handling of BC's more complex...
+   *
+   * It is not clear whether the extrapolation in time is useful.
+   *
+   * This explicit term is computed once, at the first iteration on
+   * cs_solve_navier_stokes: it is saved in a field if it must be extrapolated
+   * in time ; it goes into trava if we do not extrapolate or iterate on
+   * cs_solve_navier_stokes. */
+
+  if (  (   cs_glob_turb_model->itytur == 2
+         || cs_glob_turb_model->itytur == 5
+         || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)
+      && cs_glob_turb_rans_model->igrhok == 1 && iterns == 1) {
+    cs_real_3_t *grad_k = NULL;
+    BFT_MALLOC(grad_k, n_cells_ext, cs_real_3_t);
+
+    cs_field_gradient_scalar(CS_F_(k), true, 1, grad_k);
+
+    const cs_real_t d2s3 = 2.0/3;
+    cs_real_3_t *st_ctrb = NULL;
+
+    /* If we extrapolate the source terms in time */
+    if (cs_glob_time_scheme->isno2t > 0) {
+      /* Compute  rho^n grad k^n if rho not extrapolated
+       *          rho^n grad k^n if rho     extrapolated */
+      st_ctrb = c_st_vel;
+    }
+    /* If the source terms are not extrapolate in time: trav or trava */
+    else {
+      if (vp_param->nterup == 1)
+        st_ctrb = trav;
+      else
+        st_ctrb = trava;
+    }
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t romvom = -crom[c_id]*cell_f_vol[c_id]*d2s3;
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        st_ctrb[c_id][ii] += grad_k[c_id][ii] * romvom;
+    }
+
+    /* Calculation of wall stresses (part 3/5), if requested */
+    if (iforbr != NULL) {
+      const cs_real_t *coefa_k = CS_F_(k)->bc_coeffs->a;
+      const cs_real_t *coefb_k = CS_F_(k)->bc_coeffs->b;
+
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id ++) {
+        const cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t xkb =   cvara_k[c_id]
+                        + cs_math_3_dot_product(diipb[f_id],
+                                                grad_k[c_id]);
+
+        xkb = coefa_k[f_id] + coefb_k[f_id]*xkb;
+        xkb = d2s3 * crom[c_id] * xkb;
+        for (cs_lnum_t isou = 0; isou < 3; isou++)
+          forbr[f_id][isou] += xkb*surfbo[f_id][isou];
+      }
+    }
+
+    BFT_FREE(grad_k);
+  }
+
+  /* Transpose of velocity gradient in the diffusion term
+   * These terms are taken into account in cs_balance_vector.
+   * We only compute here the secondary viscosity. */
+
+  if (vp_model->ivisse == 1)
+    cs_secondary_viscosity(secvif, secvib);
+
+  /* Head losses
+   * -----------
+   * (if iphydr=1 this term has already been taken into account)
+   *
+   * Remark: the icepdc is rebuilt locally, but can be avoided
+   * in the future by simply looping over the required zones.
+   * This also requires that the "iflow" Lagrangian rentrainment
+   * model simply force the base "all cells" zone to head loss
+   * type so that it fits in the regular framework.
+   */
+
+  cs_lnum_t *icepdc = NULL;
+  cs_real_6_t *ckupdc = (cs_real_6_t *)cs_glob_ckupdc;
+  cs_lnum_t ncepdc = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
+  if (cs_glob_lagr_reentrained_model->iflow == 1)
+    ncepdc = n_cells;
+
+  BFT_MALLOC(icepdc, ncepdc, cs_lnum_t);
+
+  cs_volume_zone_select_type_cells(CS_VOLUME_ZONE_HEAD_LOSS, icepdc);
+  if (cs_glob_lagr_reentrained_model->iflow == 1) {
+    for (cs_lnum_t c_id = 0; c_id < ncepdc; c_id++)
+      icepdc[c_id] = c_id;
+  }
+
+  /* Explicit part;
+
+   * The diagonal terms are placed in trav or trava,
+   * The consideration of velk from the second iteration
+   * is done directly in cs_equation_iterative_solve_vector. */
+
+  if (ncepdc > 0 && vp_param->iphydr != 1 && iterns == 1) {
+
+    /* If we have inner iterations, we use trava, otherwise trav */
+    if (vp_param->nterup > 1)
+      _st_exp_head_loss(ncepdc, icepdc, vela, ckupdc, trava);
+    else
+      _st_exp_head_loss(ncepdc, icepdc, vela, ckupdc, trav);
+
+  }
+
+  /* Implicit part ;
+
+   * At the second call, fimp is not needed anymore */
+
+  if (iappel == 1 && ncepdc > 0) {
+    /* The theta-scheme for head loss is the same as the other terms */
+    const cs_real_t thetap = eqp_u->thetav;
+
+    for (cs_lnum_t hl_id = 0; hl_id < ncepdc; hl_id++) {
+      const cs_lnum_t c_id = icepdc[hl_id];
+      const cs_real_t romvom = crom[c_id]*cell_f_vol[c_id]*thetap;
+
+      /* Diagonal part */
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        fimp[c_id][ii][ii] += romvom*ckupdc[hl_id][ii];
+      /* Extra-diagonal part */
+      const cs_real_t cpdc12 = ckupdc[hl_id][3];
+      const cs_real_t cpdc23 = ckupdc[hl_id][4];
+      const cs_real_t cpdc13 = ckupdc[hl_id][5];
+
+      fimp[c_id][1][0] += romvom*cpdc12;
+      fimp[c_id][0][1] += romvom*cpdc12;
+      fimp[c_id][2][0] += romvom*cpdc13;
+      fimp[c_id][0][2] += romvom*cpdc13;
+      fimp[c_id][2][1] += romvom*cpdc23;
+      fimp[c_id][1][2] += romvom*cpdc23;
+    }
+  }
+
+  /* Surface tension force for VoF
+     ----------------------------- */
+
+  cs_real_3_t *stf = NULL;
+  if (   cs_glob_vof_parameters->vof_model > 0
+      && cs_glob_vof_parameters->sigma_s > 0) {
+    BFT_MALLOC(stf, n_cells, cs_real_3_t);
+    cs_vof_surface_tension(m, mq, stf);
+  }
+
+  /* Coriolis force
+     --------------
+     (if iphydr=1 then this term is already taken into account) */
+
+  /* Explicit part */
+  const int *irotce = cs_turbomachinery_get_cell_rotor_num();
+  cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
+  if (   (   cs_glob_physical_constants->icorio == 1
+          || iturbo == CS_TURBOMACHINERY_FROZEN)
+      && (vp_param->iphydr != 1)) {
+
+    /* At first iteration on cs_solve_navier_stokes,
+       add the part based on explicit terms */
+    if (iterns == 1) {
+      cs_real_3_t *trav_p = (vp_param->nterup == 1) ? (cs_real_3_t *)trav
+                                                    : (cs_real_3_t *)trava;
+
+      /* Reference frame + turbomachinery frozen rotors rotation */
+      if (iturbo == CS_TURBOMACHINERY_FROZEN) {
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          const cs_real_t romvom = -crom[c_id] * cell_f_vol[c_id];
+          cs_rotation_add_coriolis_v(cs_glob_rotation,
+                                     2*romvom, vela[c_id], trav_p[c_id]);
+          if (irotce[c_id] > 0)
+            cs_rotation_add_coriolis_v(cs_glob_rotation + irotce[c_id],
+                                       romvom, vela[c_id], trav_p[c_id]);
+        }
+      }
+
+      /* Reference frame rotation */
+      else {
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          const cs_real_t romvom = -2 * crom[c_id] * cell_f_vol[c_id];
+          cs_rotation_add_coriolis_v(cs_glob_rotation,
+                                     romvom, vela[c_id], trav_p[c_id]);
+        }
+      }
+
+    } /* iterns == 1 */
+
+  }
+
+  /* Implicit part;
+     at the second call, fimp is not needed anymore */
+
+  if (   iappel == 1
+      && (   cs_glob_physical_constants->icorio == 1
+          || iturbo == CS_TURBOMACHINERY_FROZEN)) {
+    /* The theta-scheme for the Coriolis term is the same as the other terms */
+    const cs_real_t thetap = eqp_u->thetav;
+
+    /* Reference frame + turbomachinery frozen rotors rotation */
+    if (iturbo == CS_TURBOMACHINERY_FROZEN) {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const cs_real_t romvom = -crom[c_id] * cell_f_vol[c_id] * thetap;
+        cs_rotation_add_coriolis_t(cs_glob_rotation, 2*romvom, fimp[c_id]);
+        if (irotce[c_id] > 0) {
+          cs_rotation_add_coriolis_t(cs_glob_rotation + irotce[c_id],
+                                     romvom, fimp[c_id]);
+        }
+      }
+    }
+
+    /* Reference frame rotation */
+    else {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const cs_real_t romvom = -2 * crom[c_id] * cell_f_vol[c_id] * thetap;
+        cs_rotation_add_coriolis_t(cs_glob_rotation, romvom, fimp[c_id]);
+      }
+    }
+  }
+
+  /* Divergence of tensor Rij
+     ------------------------
+   * Non linear part of Rij for non-liear Eddy Viscosity Models */
+
+  cs_real_3_t *cpro_divr = NULL, *divt = NULL;
+
+  if (   iterns == 1
+      && (   cs_glob_turb_model->itytur == 3
+          || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD)) {
+
+    if (cs_field_by_name_try("reynolds_stress_divergence") != NULL)
+      cpro_divr
+        = (cs_real_3_t *)cs_field_by_name_try("reynolds_stress_divergence")->val;
+    else {
+      BFT_MALLOC(divt, n_cells_ext, cs_real_3_t);
+      cpro_divr = divt;
+    }
+
+    _div_rij(m,
+             crom, brom,
+             cpro_divr, c_st_vel,
+             forbr, trava, trav);
+  }
+
+  /* Face diffusivity for the velocity
+     --------------------------------- */
+
+  _face_diff_vel(m, mq, eqp_u, viscf, viscb, viscfi, viscbi, viscce);
+
+  BFT_FREE(viscce);
+
+  /* Add Rusanov
+     ----------- */
+
+  if (cs_glob_turb_rans_model->irijnu == 2) {
+
+    const cs_real_3_t *i_face_u_normal = mq->i_face_u_normal;
+    const cs_real_3_t *b_face_u_normal = mq->b_face_u_normal;
+
+    if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+        viscf[f_id] = cs_math_fmax(viscf[f_id], 0.5*ipro_rusanov[f_id]);
+    }
+
+    else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+        const cs_real_t *n = i_face_u_normal[f_id];
+        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+          for (cs_lnum_t jj = 0; jj < 3; jj++)
+            viscf[9*f_id+3*jj+ii]
+              = cs_math_fmax(viscf[9*f_id+3*jj+ii],
+                             0.5*ipro_rusanov[f_id]*n[ii]*n[jj]);
+        }
+      }
+    }
+
+    const cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      const cs_real_t *n = b_face_u_normal[f_id];
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          cofbfv[f_id][ii][jj] += bpro_rusanov[f_id]*n[ii]*n[jj];
+      }
+    }
+  }
+
+  /* External forces partially balanced with the pressure gradient
+   * -----------------------------------------------------------------
+   * (only for the first call, the second one is for error estimators) */
+
+  if (iappel == 1 && vp_param->iphydr == 1)
+    _ext_forces(m, mq, fp,
+                ncepdc, icepdc,
+                crom, croma, cromaa,
+                gxyz, vela,
+                tsexp,frcxt,
+                cpro_divr, stf,
+                ckupdc, dfrcxt);
+
+  BFT_FREE(divt);
+  BFT_FREE(icepdc);
+
+  /* Solving of the 3x3xNcel coupled system
+   ======================================== */
+
+  cs_real_t *c_estim = NULL;
+  if (iappel == 1 && iespre != NULL) {
+    c_estim = iespre->val;
+    cs_array_real_fill_zero(n_cells, c_estim);
+  }
+
+  if (iappel == 2) {
+    c_estim = cs_field_by_name_try("est_error_tot_2")->val;
+    if (c_estim != NULL)
+      cs_array_real_fill_zero(n_cells, c_estim);
+  }
+
+  /* Use user source terms
+     --------------------- */
+
+  /* Explicit contribution due to implicit terms */
+
+  if (iterns == 1) {
+    cs_real_3_t *trav_p = (vp_param->nterup > 1) ? trava : trav;
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          trav_p[c_id][ii] += tsimp[c_id][ii][jj] * vela[c_id][jj];
+      }
+    }
+  }
+
+  /* Explicit user source terms are added */
+
+  if (   vp_param->iphydr != 1
+      || cs_glob_velocity_pressure_param->igpust != 1) {
+    if (cs_glob_time_scheme->isno2t > 0) {
+      if (iterns == 1)
+        cs_axpy(n_cells*3, 1, (cs_real_t *)tsexp, (cs_real_t *)c_st_vel);
+    }
+    else
+      cs_axpy(n_cells*3, 1, (cs_real_t *)tsexp, (cs_real_t *)trav);
+  }
+
+  BFT_FREE(loctsexp);
+
+  /* Surface tension is added */
+
+  if (vp_param->iphydr != 1 && cs_glob_vof_parameters->sigma_s > 0) {
+
+    /* If source terms are time-extrapolated, they are stored in fields */
+    if (cs_glob_time_scheme->isno2t > 0) {
+      if (iterns == 1)
+        cs_axpy(n_cells*3, 1, (cs_real_t *)stf, (cs_real_t *)c_st_vel);
+    }
+    else
+      cs_axpy(n_cells*3, 1, (cs_real_t *)stf, (cs_real_t *)trav);
+  }
+
+  /* Implicit terms */
+
+  if (iappel == 1) {
+    if (cs_glob_time_scheme->isno2t > 0)
+      cs_axpy(n_cells*3*3, -eqp_u->thetav,
+              (cs_real_t *)tsimp, (cs_real_t *)fimp);
+
+    else {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+          for (cs_lnum_t jj = 0; jj < 3; jj++)
+            fimp[c_id][ii][jj] += cs_math_fmax(-tsimp[c_id][ii][jj], 0.0);
+        }
+      }
+    }
+  }
+
+  BFT_FREE(loctsimp);
+
+  /* Mass source terms
+     ----------------- */
+
+  cs_lnum_t ncetsm
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+
+  if (ncetsm > 0) {
+
+    cs_real_3_t *gavinj = NULL;
+    BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
+
+    int *itypsm = NULL;
+    cs_lnum_t _ncetsm = 0;
+    cs_lnum_t *_icetsm = NULL;
+    cs_real_t *_smacel_p = NULL;
+    cs_real_t *_smacel_vel = NULL;
+
+    cs_volume_mass_injection_get_arrays(CS_F_(vel),
+                                        &_ncetsm,
+                                        &_icetsm,
+                                        &itypsm,
+                                        &_smacel_vel,
+                                        &_smacel_p);
+
+    cs_real_3_t *trav_p = (vp_param->nterup == 1) ? trav : trava;
+
+    cs_mass_source_terms(iterns,
+                         3,
+                         ncetsm,
+                         _icetsm,
+                         itypsm,
+                         cell_f_vol,
+                         (cs_real_t*)vela,
+                         _smacel_vel,
+                         _smacel_p,
+                         (cs_real_t*)trav_p,
+                         (cs_real_t*)fimp,
+                         (cs_real_t*)gavinj);
+
+    if (iterns == 1) {
+
+      /* If source terms are extrapolated, stored in fields */
+      if (cs_glob_time_scheme->isno2t > 0)
+        cs_axpy(n_cells*3, 1,
+                (const cs_real_t *)gavinj, (cs_real_t *)c_st_vel);
+
+      else {
+        /* If no inner iteration: in trav */
+        if (vp_param->nterup == 1)
+          cs_axpy(n_cells*3, 1,
+                  (const cs_real_t *)gavinj, (cs_real_t *)trav);
+
+        /* Otherwise, in trava */
+        else
+          cs_axpy(n_cells*3, 1,
+                  (const cs_real_t *)gavinj, (cs_real_t *)trava);
+
+      }
+
+    }
+
+    BFT_FREE(gavinj);
+
+  }
+
+  BFT_FREE(stf);
+
+  /* Right Hand Side initialization
+     ------------------------------ */
+
+  cs_real_3_t *smbr;
+  BFT_MALLOC(smbr, n_cells_ext, cs_real_3_t);
+
+  /* If source terms are extrapolated in time */
+  if (cs_glob_time_scheme->isno2t > 0) {
+    const cs_real_t thetp1 = 1.0 + thets;
+    if (vp_param->nterup == 1) {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          smbr[c_id][ii] = trav[c_id][ii] + thetp1*c_st_vel[c_id][ii];
+      }
+    }
+    else {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          smbr[c_id][ii] =   trav[c_id][ii] + trava[c_id][ii]
+                           + thetp1*c_st_vel[c_id][ii];
+      }
+    }
+  }
+
+  /* No time extrapolation */
+  else {
+    if (vp_param->nterup == 1)
+      cs_array_real_copy(3*n_cells, (const cs_real_t *)trav, (cs_real_t *)smbr);
+
+    else {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          smbr[c_id][ii] = trav[c_id][ii] + trava[c_id][ii];
+      }
+    }
+  }
+
+  /* Lagrangian: coupling feedback
+     -----------------------------
+
+     Order 2 on terms from the Lagrangian model would require to decompose
+     the Lagrangian source terms into an implicit and explicit part, as
+     is done for user source terms.
+
+     For the time being, we do not try this.
+  */
+
+  if (   cs_glob_lagr_source_terms->ltsdyn == 1
+      && cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
+
+    const cs_real_3_t *lagr_st_vel
+      = (const cs_real_3_t *)cs_field_by_name_try("velocity_st_lagr")->val;
+
+    cs_axpy(n_cells*3, 1, (const cs_real_t *)lagr_st_vel, (cs_real_t *)smbr);
+
+    if (iappel == 1) {
+      const cs_lnum_t itsli = cs_glob_lagr_source_terms->itsli;
+      cs_real_t *st_val =   cs_glob_lagr_source_terms->st_val
+                          + (itsli-1)*n_cells_ext;
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t st = cs_math_fmax(-st_val[c_id], 0.0);
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          fimp[c_id][ii][ii] += st;
+      }
+    }
+
+  }
+
+  /* Electric Arcs (Laplace Force) (No 2nd order in time yet)
+     ----------------------------- */
+
+  if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0) {
+    const cs_real_3_t *lapla
+      = (const cs_real_3_t *)cs_field_by_name("laplace_force")->val;
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        smbr[c_id][ii] += cell_f_vol[c_id] * lapla[c_id][ii];
+    }
+  }
+
+  /* Solver parameters
+     ----------------- */
+
+  int icvflb = 0;
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
+    icvflb = 1;
+
+  cs_field_t *iestot = cs_field_by_name_try("est_error_tot_2");
+
+  cs_real_3_t *eswork = NULL;
+  if (iespre != NULL)
+    BFT_MALLOC(eswork, n_cells_ext, cs_real_3_t);
+
+  if (iappel == 1) {
+    /* Store fimp as the velocity matrix is stored in it in codtiv call */
+    cs_real_33_t *fimpcp = NULL;
+    BFT_MALLOC(fimpcp, n_cells_ext, cs_real_33_t);
+    cs_array_real_copy(9*n_cells, (const cs_real_t *)fimp, (cs_real_t *)fimpcp);
+
+    int iescap = 0;
+    if (iespre != NULL)
+      iescap = 1;
+
+    cs_equation_param_t eqp_loc = *eqp_u;
+
+    eqp_loc.istat  = -1;
+    eqp_loc.idifft = -1;
+    eqp_loc.iwgrec = 0;
+    eqp_loc.blend_st = 0; //  Warning, may be overwritten if a field
+
+    /* Warning: in case of convergence estimators, eswork gives the estimator
+       of the predicted velocity */
+
+    cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
+                                       iterns,
+                                       CS_F_(vel)->id,
+                                       NULL,
+                                       vp_model->ivisse,
+                                       iescap,
+                                       &eqp_loc,
+                                       vela,
+                                       velk,
+                                       coefav,
+                                       coefbv,
+                                       cofafv,
+                                       cofbfv,
+                                       imasfl,
+                                       bmasfl,
+                                       viscfi,
+                                       viscbi,
+                                       viscf,
+                                       viscb,
+                                       secvif,
+                                       secvib,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       icvflb,
+                                       icvfli,
+                                       fimp,
+                                       smbr,
+                                       vel,
+                                       eswork);
+
+    /* Compute kinetic energy balance for compressible algorithme
+     * See H. Amino thesis */
+    cs_thermal_model_kinetic_st_prepare(imasfl, bmasfl, vela, vel);
+
+    /* Store inverse of the velocity matrix for the correction step
+     * if needed (otherwise vitenp is used in cs_pressure_correction) */
+    if (vp_param->rcfact == 1) {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t tensor[6] = {fimp[c_id][0][0]/crom[c_id],
+                               fimp[c_id][1][1]/crom[c_id],
+                               fimp[c_id][2][2]/crom[c_id],
+                               fimp[c_id][1][0]/crom[c_id],
+                               fimp[c_id][2][1]/crom[c_id],
+                               fimp[c_id][2][0]/crom[c_id]};
+
+        cs_math_sym_33_inv_cramer(tensor, da_uu[c_id]);
+
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+           da_uu[c_id][ii] *= cell_f_vol[c_id];
+      }
+
+      cs_mesh_sync_var_sym_tens(da_uu);
+
+    }
+
+    /* Velocity-pression coupling: compute the vector T, stored in dttens,
+     * cs_equation_iterative_solve_vector is called, only one sweep is done,
+     * and dttens is initialized by 0, so that the advection/diffusion added
+     * by cs_balance_vector is 0.
+     *  nswrsp = -1 indicated that only one sweep is required and inc=0
+     *  for boundary contitions on the weight matrix. */
+
+    if (vp_param->ipucou == 1) {
+
+      cs_real_3_t *vect;
+      BFT_MALLOC(vect, n_cells_ext, cs_real_3_t);
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+          smbr[c_id][ii] = cell_f_vol[c_id];
+          vect[c_id][ii] = 0;
+        }
+      }
+
+      iescap = 0;
+
+      /* We do not take into account transpose of grad */
+      int ivisep = 0;
+
+      eqp_loc.nswrsm = -1;
+
+      cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
+                                         iterns,
+                                         CS_F_(vel)->id,
+                                         NULL,
+                                         ivisep,
+                                         iescap,
+                                         &eqp_loc,
+                                         vect,
+                                         vect,
+                                         coefav,
+                                         coefbv,
+                                         cofafv,
+                                         cofbfv,
+                                         imasfl,
+                                         bmasfl,
+                                         viscfi,
+                                         viscbi,
+                                         viscf,
+                                         viscb,
+                                         secvif,
+                                         secvib,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         icvflb,
+                                         NULL,
+                                         fimpcp,
+                                         smbr,
+                                         vect,
+                                         NULL);
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+        const cs_real_t rom = crom[c_id];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dttens[c_id][ii] = rom*vect[c_id][ii];
+        for (cs_lnum_t ii = 3; ii < 6; ii++)
+          dttens[c_id][ii] = 0;
+      }
+
+      BFT_FREE(vect);
+    }
+
+    /* The estimator on the predicted velocity is summed over the components */
+    if (iespre != NULL) {
+      c_estim = iespre->val;
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          c_estim[c_id] += eswork[c_id][ii];
+      }
+
+    }
+
+    BFT_FREE(fimpcp);
+  }
+
+  /* End of the construction of the total estimator:
+   * RHS residual of (U^{n+1}, P^{n+1}) + rho*volume*(U^{n+1} - U^n)/dt */
+
+  else if (iappel == 2) {
+
+    /* No relaxation for steady case */
+    int idtva0 = 0;
+    int imasac = 0;
+
+    cs_equation_param_t eqp_loc = *eqp_u;
+
+    eqp_loc.istat  = -1;
+    eqp_loc.idifft = -1;
+    eqp_loc.iswdyn = -1;
+    eqp_loc.nswrsm = -1;
+    eqp_loc.iwgrec = 0;
+    eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
+    eqp_loc.epsilo = -1;
+    eqp_loc.epsrsm = -1;
+
+    cs_balance_vector(idtva0,
+                      CS_F_(vel)->id,
+                      imasac,
+                      1,
+                      vp_model->ivisse,
+                      &eqp_loc,
+                      vel,
+                      vel,
+                      coefav,
+                      coefbv,
+                      cofafv,
+                      cofbfv,
+                      imasfl,
+                      bmasfl,
+                      viscf,
+                      viscb,
+                      secvif,
+                      secvib,
+                      NULL,
+                      NULL,
+                      NULL,
+                      icvflb,
+                      icvfli,
+                      NULL,
+                      NULL,
+                      smbr);
+
+    c_estim = iestot->val;
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      c_estim[c_id] = 0;
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        c_estim[c_id] += cs_math_pow2(smbr[c_id][ii] / cell_f_vol[c_id]);
+    }
+  }
+
+  BFT_FREE(fimp);
+  BFT_FREE(smbr);
+  BFT_FREE(eswork);
+
+  /* Finalaze estimators + logging */
+
+  f = cs_field_by_name_try("predicted_velocity");
+  if (f != NULL)
+    cs_array_real_copy(3*n_cells, (const cs_real_t *)vel, f->val);
+
+  if (iappel == 1) {
+
+    /* Estimator on the predicted velocity:
+     * square root (norm) or square root of the sum times the volume (L2 norm) */
+    if (iespre != NULL) {
+      c_estim = iespre->val;
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        c_estim[c_id] = sqrt(c_estim[c_id] * cell_f_vol[c_id]);
+    }
+
+    /* Norm logging */
+    if (eqp_u->iwarni > 1) {
+
+      cs_real_t rnormx = -1.0, rnormn = HUGE_VAL;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t vitnor = cs_math_3_norm(vel[c_id]);
+        rnormx = cs_math_fmax(rnormx, vitnor);
+        rnormn = cs_math_fmin(rnormn, vitnor);
+      }
+
+      cs_parall_max(1, CS_REAL_TYPE, &rnormx);
+      cs_parall_min(1, CS_REAL_TYPE, &rnormn);
+
+      bft_printf(_("Maximum velocity after prediction %e10.12\n"
+                   "Minimum velocity after prediction %e10.12\n"),
+                 rnormx, rnormn);
+    }
+
+  }
+
+  /* Estimator on the whole Navier-Stokes:
+   * square root (norm) or square root of the sum times the volume (L2 norm) */
+  else if (iappel == 2) {
+    if (iestot != NULL) {
+      c_estim = iestot->val;
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        c_estim[c_id] = sqrt(c_estim[c_id]*cell_f_vol[c_id]);
+    }
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -1388,29 +3322,31 @@ cs_solve_navier_stokes(const int   iterns,
   cs_real_33_t *cofbfu  = (cs_real_33_t *)CS_F_(vel)->bc_coeffs->bf;
 
   if (vp_param->staggered == 0)
-    cs_velocity_prediction(1,
-                           iterns,
-                           dt,
-                           vel,
-                           vela,
-                           velk,
-                           da_uu,
-                           coefau,
-                           coefbu,
-                           cofafu,
-                           cofbfu,
-                           frcxt,
-                           grdphd,
-                           trava,
-                           dfrcxt,
-                           dttens,
-                           trav,
-                           viscf,
-                           viscb,
-                           viscfi,
-                           viscbi,
-                           secvif,
-                           secvib);
+    _velocity_prediction(m,
+                         mq,
+                         1,
+                         iterns,
+                         dt,
+                         vel,
+                         vela,
+                         velk,
+                         da_uu,
+                         coefau,
+                         coefbu,
+                         cofafu,
+                         cofbfu,
+                         frcxt,
+                         grdphd,
+                         trava,
+                         dfrcxt,
+                         dttens,
+                         trav,
+                         viscf,
+                         viscb,
+                         viscfi,
+                         viscbi,
+                         secvif,
+                         secvib);
   else {
     /* Account for external forces partially balanced by the pressure gradient
        (only for the first call; the second one is for error estimators) */
@@ -1870,7 +3806,7 @@ cs_solve_navier_stokes(const int   iterns,
                              crom, brom,
                              imasfl, bmasfl);
 
-  /* FIXME for me we should do that before predvv */
+  /* FIXME for me we should do that before cs_velocity_prediction */
   /* Add solid's velocity in convective flux if the mesh is mobile (rigid solid).
    * For turbomachinery, the mesh velocity to add is known exactly */
 
@@ -1994,30 +3930,33 @@ cs_solve_navier_stokes(const int   iterns,
           trav[c_id][isou] = rovolsdt * (vela[c_id][isou] - vel[c_id][isou]);
       }
 
-      if (vp_param->staggered == 0)
-        cs_velocity_prediction(2,
-                               iterns,
-                               dt,
-                               vel,
-                               vel,
-                               velk,
-                               da_uu,
-                               coefau,
-                               coefbu,
-                               (cs_real_3_t *)(CS_F_(vel)->bc_coeffs->af),
-                               (cs_real_33_t *)(CS_F_(vel)->bc_coeffs->bf),
-                               frcxt,
-                               grdphd,
-                               trava,
-                               dfrcxt,
-                               dttens,
-                               trav,
-                               viscf,
-                               viscb,
-                               viscfi,
-                               viscbi,
-                               secvif,
-                               secvib);
+      if (vp_param->staggered == 0) {
+        _velocity_prediction(m,
+                             mq,
+                             2,
+                             iterns,
+                             dt,
+                             vel,
+                             vel,
+                             velk,
+                             da_uu,
+                             coefau,
+                             coefbu,
+                             (cs_real_3_t *)(CS_F_(vel)->bc_coeffs->af),
+                             (cs_real_33_t *)(CS_F_(vel)->bc_coeffs->bf),
+                             frcxt,
+                             grdphd,
+                             trava,
+                             dfrcxt,
+                             dttens,
+                             trav,
+                             viscf,
+                             viscb,
+                             viscfi,
+                             viscbi,
+                             secvif,
+                             secvib);
+      }
     }
 
     BFT_FREE(esflum);

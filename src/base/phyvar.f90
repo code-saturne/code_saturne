@@ -269,7 +269,7 @@ endif
 
 ! Parallelism and periodicity
 !
-! In navstv and visecv, we need rho in the halo
+! In cs_solve_navier_stokes and visecv, we need rho in the halo
 if (irangp.ge.0.or.iperio.eq.1) then
   call field_get_val_s(icrom, crom)
   call synsca(crom)

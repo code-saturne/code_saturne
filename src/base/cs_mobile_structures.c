@@ -1533,7 +1533,7 @@ cs_mobile_structures_displacement(int   itrale,
      ----------------------------------- */
 
   /* If nterup  >  1, values at previous time step have been modified
-     after navstv; We must then go back to a previous value. */
+     after cs_solve_navier_stokes; We must then go back to a previous value. */
 
   if (*itrfin != -1) {
 

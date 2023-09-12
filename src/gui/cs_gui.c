@@ -1950,121 +1950,6 @@ void CS_PROCF(uiporo, UIPORO)(void)
 }
 
 /*----------------------------------------------------------------------------
- * User momentum source terms.
- *
- * Fortran Interface:
- *
- * subroutine uitsnv (vel, tsexp, tsimp)
- * *****************
- *
- * double precision vel      <--  fluid velocity
- * double precision tsexp    -->  explicit source terms
- * double precision tsimp    -->  implicit source terms
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
-                              cs_real_3_t        *restrict tsexp,
-                              cs_real_33_t       *restrict tsimp)
-{
-  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-
-  double Su, Sv, Sw;
-  double dSudu, dSudv, dSudw;
-  double dSvdu, dSvdv, dSvdw;
-  double dSwdu, dSwdv, dSwdw;
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-#endif
-
-  int n_zones = cs_volume_zone_n_zones();
-
-  cs_tree_node_t *tn_mf
-    = cs_tree_get_node(cs_glob_tree,
-                       "thermophysical_models/source_terms/momentum_formula");
-
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-
-    if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
-      continue;
-
-    if (_zone_id_is_type(z->id, "momentum_source_term")) {
-      const cs_lnum_t n_cells = z->n_elts;
-      const cs_lnum_t *cell_ids = z->elt_ids;
-
-      cs_tree_node_t *tn = _add_zone_id_test_attribute(tn_mf, z->id);
-      const char *formula = cs_tree_node_get_value_str(tn);
-
-      if (formula != NULL) {
-
-        const cs_real_3_t *restrict cell_cen =
-          (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
-        cs_real_t *st_vals = cs_meg_source_terms(z->name,
-                                                 z->n_elts,
-                                                 z->elt_ids,
-                                                 cell_cen,
-                                                 "momentum",
-                                                 "momentum_source_term");
-
-        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-          cs_lnum_t c_id = cell_ids[e_id];
-
-          /* Read values from the newly created array */
-          Su = st_vals[12*e_id];
-          Sv = st_vals[12*e_id + 1];
-          Sw = st_vals[12*e_id + 2];
-
-          dSudu = st_vals[12*e_id + 3];
-          dSudv = st_vals[12*e_id + 4];
-          dSudw = st_vals[12*e_id + 5];
-
-          dSvdu = st_vals[12*e_id + 6];
-          dSvdv = st_vals[12*e_id + 7];
-          dSvdw = st_vals[12*e_id + 8];
-
-          dSwdu = st_vals[12*e_id + 9];
-          dSwdv = st_vals[12*e_id + 10];
-          dSwdw = st_vals[12*e_id + 11];
-
-          /* Fill the explicit and implicit source terms' arrays */
-          tsexp[c_id][0] = cell_f_vol[c_id]
-                         * ( Su
-                           - dSudu * vel[c_id][0]
-                           - dSudv * vel[c_id][1]
-                           - dSudw * vel[c_id][2] );
-
-          tsexp[c_id][1] = cell_f_vol[c_id]
-                         * ( Sv
-                           - dSvdu * vel[c_id][0]
-                           - dSvdv * vel[c_id][1]
-                           - dSvdw * vel[c_id][2] );
-
-          tsexp[c_id][2] = cell_f_vol[c_id]
-                         * ( Sw
-                           - dSwdu * vel[c_id][0]
-                           - dSwdv * vel[c_id][1]
-                           - dSwdw * vel[c_id][2] );
-
-          tsimp[c_id][0][0] = cell_f_vol[c_id]*dSudu;
-          tsimp[c_id][0][1] = cell_f_vol[c_id]*dSudv;
-          tsimp[c_id][0][2] = cell_f_vol[c_id]*dSudw;
-          tsimp[c_id][1][0] = cell_f_vol[c_id]*dSvdu;
-          tsimp[c_id][1][1] = cell_f_vol[c_id]*dSvdv;
-          tsimp[c_id][1][2] = cell_f_vol[c_id]*dSvdw;
-          tsimp[c_id][2][0] = cell_f_vol[c_id]*dSwdu;
-          tsimp[c_id][2][1] = cell_f_vol[c_id]*dSwdv;
-          tsimp[c_id][2][2] = cell_f_vol[c_id]*dSwdw;
-
-        }
-        if (st_vals != NULL)
-          BFT_FREE(st_vals);
-      }
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * User law for material properties
  *
  * Fortran Interface:
@@ -3491,6 +3376,118 @@ cs_gui_linear_solvers(void)
                0, 0, 0,  /* precond degree */
                -1, -1, 1); /* precision multiplier */
         }
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * User momentum source terms.
+ *
+ * parameters:
+ *   vel      <--  fluid velocity
+ *   tsexp    -->  explicit source terms
+ *   tsimp    -->  implicit source terms
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
+                             cs_real_3_t        *restrict tsexp,
+                             cs_real_33_t       *restrict tsimp)
+{
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  double Su, Sv, Sw;
+  double dSudu, dSudv, dSudw;
+  double dSvdu, dSvdv, dSvdw;
+  double dSwdu, dSwdv, dSwdw;
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+#endif
+
+  int n_zones = cs_volume_zone_n_zones();
+
+  cs_tree_node_t *tn_mf
+    = cs_tree_get_node(cs_glob_tree,
+                       "thermophysical_models/source_terms/momentum_formula");
+
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+    if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
+      continue;
+
+    if (_zone_id_is_type(z->id, "momentum_source_term")) {
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
+
+      cs_tree_node_t *tn = _add_zone_id_test_attribute(tn_mf, z->id);
+      const char *formula = cs_tree_node_get_value_str(tn);
+
+      if (formula != NULL) {
+
+        const cs_real_3_t *restrict cell_cen =
+          (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+        cs_real_t *st_vals = cs_meg_source_terms(z->name,
+                                                 z->n_elts,
+                                                 z->elt_ids,
+                                                 cell_cen,
+                                                 "momentum",
+                                                 "momentum_source_term");
+
+        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+          cs_lnum_t c_id = cell_ids[e_id];
+
+          /* Read values from the newly created array */
+          Su = st_vals[12*e_id];
+          Sv = st_vals[12*e_id + 1];
+          Sw = st_vals[12*e_id + 2];
+
+          dSudu = st_vals[12*e_id + 3];
+          dSudv = st_vals[12*e_id + 4];
+          dSudw = st_vals[12*e_id + 5];
+
+          dSvdu = st_vals[12*e_id + 6];
+          dSvdv = st_vals[12*e_id + 7];
+          dSvdw = st_vals[12*e_id + 8];
+
+          dSwdu = st_vals[12*e_id + 9];
+          dSwdv = st_vals[12*e_id + 10];
+          dSwdw = st_vals[12*e_id + 11];
+
+          /* Fill the explicit and implicit source terms' arrays */
+          tsexp[c_id][0] = cell_f_vol[c_id]
+                         * ( Su
+                           - dSudu * vel[c_id][0]
+                           - dSudv * vel[c_id][1]
+                           - dSudw * vel[c_id][2] );
+
+          tsexp[c_id][1] = cell_f_vol[c_id]
+                         * ( Sv
+                           - dSvdu * vel[c_id][0]
+                           - dSvdv * vel[c_id][1]
+                           - dSvdw * vel[c_id][2] );
+
+          tsexp[c_id][2] = cell_f_vol[c_id]
+                         * ( Sw
+                           - dSwdu * vel[c_id][0]
+                           - dSwdv * vel[c_id][1]
+                           - dSwdw * vel[c_id][2] );
+
+          tsimp[c_id][0][0] = cell_f_vol[c_id]*dSudu;
+          tsimp[c_id][0][1] = cell_f_vol[c_id]*dSudv;
+          tsimp[c_id][0][2] = cell_f_vol[c_id]*dSudw;
+          tsimp[c_id][1][0] = cell_f_vol[c_id]*dSvdu;
+          tsimp[c_id][1][1] = cell_f_vol[c_id]*dSvdv;
+          tsimp[c_id][1][2] = cell_f_vol[c_id]*dSvdw;
+          tsimp[c_id][2][0] = cell_f_vol[c_id]*dSwdu;
+          tsimp[c_id][2][1] = cell_f_vol[c_id]*dSwdv;
+          tsimp[c_id][2][2] = cell_f_vol[c_id]*dSwdw;
+
+        }
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
       }
     }
   }
