@@ -85,6 +85,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+use field_operator
 use pointe, only: itypfb
 use cs_c_bindings
 
@@ -102,10 +103,8 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 character(len=80) :: chaine
 integer          ivar, iel, ifac, t_dif_id, key_turb_diff, ifcvsl
-integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iprev, inc
 
-double precision  epsrgp, climgp
 double precision  cexp, cimp, delta_les
 
 double precision, dimension(:), pointer :: crom, fp2m
@@ -193,31 +192,25 @@ if (iturb.eq.41) then
       call field_get_coefa_s (ivarfl(isca(ifm)), coefap)
       call field_get_coefb_s (ivarfl(isca(ifm)), coefbp)
 
-      ! pas de diffusion en entree
+      ! Overwrite diffusion at inlets
       do ifac = 1, nfabor
         coefa_p(ifac) = coefap(ifac)
         coefb_p(ifac) = coefbp(ifac)
         if (itypfb(ifac).eq.i_convective_inlet) then
-          coefa_p(ifac) = 0.d0
-          coefb_p(ifac) = 1.d0
+          coefap(ifac) = 0.d0
+          coefbp(ifac) = 1.d0
         endif
       enddo
 
       call field_get_key_struct_var_cal_opt(ivarfl(isca(ifm)), vcopt_fm)
 
-      imrgrp = vcopt_fm%imrgra
-      nswrgp = vcopt_fm%nswrgr
-      imligp = vcopt_fm%imligr
-      iwarnp = vcopt_fm%iwarni
-      epsrgp = vcopt_fm%epsrgr
-      climgp = vcopt_fm%climgr
+      call field_gradient_scalar(ivarfl(isca(ifm)), iprev, inc, grad)
 
-      call gradient_s                                                         &
-        ( ivarfl(isca(ifm))  , imrgrp , inc    , nswrgp , imligp ,            &
-        iwarnp          , epsrgp , climgp ,                                   &
-        cvara_fm        , coefa_p, coefb_p,                                   &
-        grad )
-
+      ! Put back the value
+      do ifac = 1, nfabor
+        coefap(ifac) = coefa_p(ifac)
+        coefbp(ifac) = coefb_p(ifac)
+      enddo
       deallocate (coefa_p, coefb_p)
 
       do iel = 1, ncel
