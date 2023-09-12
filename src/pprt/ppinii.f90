@@ -272,6 +272,7 @@ do ir = 1, nrgazm
   fs(ir) = zero
 enddo
 
+! TODO : passer en c ?
 do igg = 1, ngazgm
   do it = 1, npot
     ehgazg(igg,it) = zero

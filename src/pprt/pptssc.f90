@@ -102,6 +102,8 @@ real(c_double) :: smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
+integer           ivar, f_id
+
 !===============================================================================
 
 ! Modele de la flamme de diffusion: steady laminar flamelet
@@ -112,8 +114,13 @@ endif
 
 ! Soot model
 
-if (isoot.eq.1) then
-  call sootsc(iscal, smbrs, rovsdt)
+if (isoot.ge.1) then
+  ivar = isca(iscal)
+  if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
+    ! Scalar f_id
+    f_id = ivarfl(ivar)
+    call cs_soot_production(f_id, smbrs, rovsdt)
+  endif
 endif
 
 ! ---> Flamme de premelange : Modele EBU

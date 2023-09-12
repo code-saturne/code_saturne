@@ -97,7 +97,7 @@ double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
 call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
 call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
 if (ippmod(icod3p).eq.1) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-if (isoot.eq.1) then
+if (isoot.ge.1) then
   call field_get_val_s(ivarfl(isca(inpm)), cvar_npm)
   call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
 endif
@@ -138,7 +138,7 @@ if ( isuite.eq.0 ) then
     endif
 
     ! Soot
-    if (isoot.eq.1) then
+    if (isoot.ge.1) then
       cvar_npm(iel) = 0.d0
       cvar_fsm(iel) = 0.d0
     endif
@@ -174,7 +174,7 @@ if ( isuite.eq.0 ) then
     if ( ippmod(icod3p).eq.1 ) then
       call synsca(cvar_scalt)
     endif
-    if (isoot.eq.1) then
+    if (isoot.ge.1) then
       call synsca(cvar_npm)
       call synsca(cvar_fsm)
     endif

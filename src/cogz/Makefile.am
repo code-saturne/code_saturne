@@ -66,6 +66,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_combustion_gas.h \
+cs_soot_model.h \
 cs_cogz_headers.h
 
 # Library source files
@@ -73,6 +74,7 @@ cs_cogz_headers.h
 noinst_LIBRARIES = libcscogz.a
 libcscogz_a_SOURCES = \
 cs_combustion_gas.c \
+cs_soot_model.c \
 coini1.f90 \
 colecd.f90 \
 coprop.f90 \
@@ -100,7 +102,6 @@ lwcver.f90 \
 pdflwc.f90 \
 pdfpp3.f90 \
 pdfpp4.f90 \
-sootsc.f90 \
 cs_steady_laminar_flamelet_init.f90 \
 cs_steady_laminar_flamelet_bcond.f90 \
 cs_steady_laminar_flamelet_physical_prop.f90 \
