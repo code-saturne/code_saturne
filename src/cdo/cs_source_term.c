@@ -441,17 +441,23 @@ _set_vb_function(const cs_xdef_t              *st_def,
     {
       cs_xdef_array_context_t  *cx = st_def->context;
 
-      assert(cx->stride == 1);
-
       *msh_flag |= CS_FLAG_COMP_PVQ;
 
       if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
-        if (st_def->meta & CS_FLAG_DUAL)
-          func = cs_source_term_dcsd_by_pv_array;
+
+        if (st_def->meta & CS_FLAG_DUAL) {
+
+          if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+            func = cs_source_term_dcvd_by_pv_array;
+          else
+            func = cs_source_term_dcsd_by_pv_array;
+
+        }
         else {
           assert(st_def->meta & CS_FLAG_PRIMAL);
           func = cs_source_term_pvsp_by_array;
         }
+
       }
       else if (cs_flag_test(cx->value_location, cs_flag_dual_cell_byc))  {
 
@@ -464,8 +470,14 @@ _set_vb_function(const cs_xdef_t              *st_def,
         }
 
       }
-      else if (cs_flag_test(cx->value_location, cs_flag_dual_cell))
-        func = cs_source_term_dcsd_by_pv_array;
+      else if (cs_flag_test(cx->value_location, cs_flag_dual_cell)) {
+
+        if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+          func = cs_source_term_dcvd_by_pv_array;
+        else
+          func = cs_source_term_dcsd_by_pv_array;
+
+      }
       else if (cs_flag_test(cx->value_location, cs_flag_primal_cell))
         func = cs_source_term_dcsd_by_pc_array;
       else
@@ -1377,6 +1389,53 @@ cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
   assert(cs_flag_test(ac->value_location, cs_flag_primal_vtx));
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += ac->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the contribution for a cell related to a source term and
+ *        add it to the given array of values.
+ *        Case of a vector-valued density defined at dual cells by an array
+ *        defined at (primal) vertices or dual cells
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcvd_by_pv_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
+{
+  CS_NO_WARN_IF_UNUSED(cb);
+  CS_NO_WARN_IF_UNUSED(input);
+  CS_NO_WARN_IF_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  assert(values != NULL && cm != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
+
+  const cs_xdef_array_context_t  *ac = source->context;
+
+  assert(cs_flag_test(ac->value_location, cs_flag_primal_vtx));
+  for (int v = 0; v < cm->n_vc; v++) {
+
+    const double  vc_coef = cm->wvc[v] * cm->vol_c;
+    const double  *ac_v_values = ac->values + 3*cm->v_ids[v];
+    for (int k = 0; k < 3; k++)
+      values[3*v+k] += ac_v_values[k] * vc_coef;
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
