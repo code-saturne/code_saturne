@@ -1631,6 +1631,11 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
     }
 
   }
+  /* Parallel synchronization */
+  if (halo != NULL) {
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_h);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_taup);
+  }
 
   /* Loop over exchange zones */
   for (int ict = 0; ict < _n_ct_zones; ict++) {
@@ -1667,7 +1672,6 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   /* Parallel synchronization */
   if (halo != NULL) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, vel_l);
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_taup);
     if (cfld_yp != NULL)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, cfld_yp->val);
     if (cfld_drift_vel != NULL) {
