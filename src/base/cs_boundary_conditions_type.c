@@ -1410,7 +1410,7 @@ cs_boundary_conditions_type(bool  init,
   /* Put homogeneous Neumann on hydrostatic pressure for iphydr=1
      if not modified by the user */
 
-  if (vp_param->iphydr > 0) {
+  if (vp_param->icalhy > 0) {
     cs_field_t *f_hp = cs_field_by_name("hydrostatic_pressure");
 
     if (   (f_hp->type & CS_FIELD_VARIABLE)
