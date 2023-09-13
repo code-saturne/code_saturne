@@ -1435,6 +1435,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
+    cudaStreamSynchronize(stream);
+
     /* Preconditioning */
 
     c->setup_data->pc_apply(c->setup_data->pc_context, rk, vk);
