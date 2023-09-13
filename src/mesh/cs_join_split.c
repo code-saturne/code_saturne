@@ -2152,7 +2152,7 @@ cs_join_split_faces(cs_join_param_t          param,
                      "%d subfaces\n. You can increase this parameter in"
                      "cs_user_join() or cs_user_periodicity()\n"
                      "by setting the advanced parameter max_sub_face.\n"
-                     "Be cautious, as this may produce a mesh with"
+                     "Be cautious, as this may produce a mesh with "
                      "a poor quality.\n"), param.max_sub_faces);
         cs_join_post_faces_subset("LoopLimitErr",
                                   w,

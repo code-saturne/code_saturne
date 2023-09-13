@@ -588,8 +588,8 @@ _get_tolerance(cs_mesh_t   *mesh,
  *   mesh                <--  pointer to a cs_mesh_t structure
  *   i_face_norm         <--  surface normal of interior faces
  *   b_face_norm         <--  surface normal of border faces
- *   i_face_cog          <--  centre of gravity of interior faces
- *   b_face_cog          <--  centre of gravity of border faces
+ *   i_face_cog          <--  center of gravity of interior faces
+ *   b_face_cog          <--  center of gravity of border faces
  *   loc_vtx_mvt         -->  local vertices displacement
  *   i_face_warp         <--  value of interior faces warping
  *   b_face_warp         <--  value of border faces warping

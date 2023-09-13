@@ -73,24 +73,22 @@ procedure() :: mxicpl, tbicpl, csexit
 
 do numcpl = 1, nbrcpl
 
-  ! L'interpolation face/face doit être définie pour tous les couplages
-  ! de manière identique.
+  ! Face to face interpolation should be defined for all couplings
+  ! in the same manner.
 
   call mxicpl(numcpl, ifaccp, ifcpmx)
 
   ifaccp = ifcpmx
 
-  ! On vérifie si l'une des instances est en résolution en repère relatif
+  ! Check if one of the instances is solved in a relative reference frame.
 
   call mxicpl(numcpl, icorio, icormx(numcpl))
 
-  ! De la même manière, si l'on a une approche ALE sur l'un des
-  ! maillages, on doit mettre à jour la localisation.
+  ! In the same manner, if one of the meshes is defored (ALE) or moves
+  ! (such as with turbomachinery), the location (mesh mapping)
+  ! should be updated.
 
-  call mxicpl(numcpl, iale  , ialemx)
-
-  ! Si on est en turbomachine avec maillages glissant, on doit aussi
-  ! mettre à jour la localisation
+  call mxicpl(numcpl, iale, ialemx)
 
   if (ialemx.eq.1.or.iturbo.eq.2) then
     imajcp(numcpl) = 1
@@ -98,11 +96,10 @@ do numcpl = 1, nbrcpl
     imajcp(numcpl) = 0
   endif
 
-  ! Détermination du nombre de variables couplées entre les deux
-  ! instances du couplage NUMCPL. Toutes les variables d'une instance
-  ! sont couplées, SAUF dans le cas de l'ALE où la vitesse de maillage
-  ! ne sera pas couplée.
-  ! Il faudrait faire quelque en revanche pour les physiques particulières.
+  ! Determine the number of coupled variables betwwen instances of
+  ! coupling numcpl. All variables of a givne instance are coupled,
+  ! EXCEPT for ALE, where the mesh velocity is not coupled.
+  ! Something should be done for specific physical models.
 
   if (iale.eq.0) then
     nvarcp(numcpl) = nvar
@@ -110,33 +107,31 @@ do numcpl = 1, nbrcpl
     nvarcp(numcpl) = nvar - 3
   endif
 
-  ! Nombre total de variable envoyées: max des variables de chaque
-  ! exécutable
+  ! Total number of sent variables. max number of variables for each
+  ! domain.
 
   call mxicpl(numcpl, nvarcp(numcpl), nvcpmx)
 
   nvarto(numcpl) = nvcpmx
 
-  ! Cohérence des modèles de turbulence entre chaque instance de CS ;
-  ! pour l'instant, on ne traite que les cas de couplage entre
-  ! modeles RANS et laminaires, sauf pour le modele v2f (dans ce cas
-  ! il n'y a que du couplage mono-modele)
+  ! Coherencey between turbulence models between each code_saturne instance ;
+  ! Currently, only couplings between RANS and laminar domains is handled,
+  ! except for v2f (where both domains must use the same model).
 
   call tbicpl(numcpl, 1, 1, iturb, iturcp(numcpl))
 
-  if (iturb.eq.50.and.iturcp(numcpl).ne.50) then
+  if (iturb.eq.50 .and. iturcp(numcpl).ne.50) then
     write(nfecra,1000) numcpl
     call csexit(1)
-  elseif (iturb.eq.51.and.iturcp(numcpl).ne.51) then
+  elseif (iturb.eq.51 .and. iturcp(numcpl).ne.51) then
     write(nfecra,1002) numcpl
     call csexit(1)
-  elseif (itytur.eq.4.and.                               &
-       iturcp(numcpl)/10.ne.4) then
+  elseif (itytur.eq.4 .and. iturcp(numcpl)/10.ne.4) then
     write(nfecra,1001) numcpl
     call csexit(1)
   endif
 
-  ! Cohérence des referentiels de resolution
+  ! Coherency between reference frames.
 
   if (icorio.ne.icormx(numcpl)) then
     write(nfecra,1100) numcpl
@@ -146,7 +141,7 @@ do numcpl = 1, nbrcpl
 enddo
 
 !--------
-! FORMAT
+! Format
 !--------
 
  1000 format(                                                     &

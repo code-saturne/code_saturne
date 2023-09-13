@@ -227,7 +227,7 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
  * parameters:
  *   m               <-- pointer to mesh
  *   n_points_cell   <-- number of points in cell
- *   cen_points      <-- center of gravity of points relative to cell centre
+ *   cen_points      <-- center of gravity of points relative to cell center
  *   cov_mat         <-- Covariance matrix of points in cell
  *   c_w_face_normal --> normal vector to the solid plane
  *----------------------------------------------------------------------------*/
@@ -384,7 +384,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   cs_real_t min_vec_tot[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
   cs_real_t max_vec_tot[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
 
-  /* Points local centre of gravity */
+  /* Points local center of gravity */
   cs_real_t *cen_points =
     (cs_real_t *)cs_field_by_name("cell_scan_points_cog")->val;
 

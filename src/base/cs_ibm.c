@@ -1318,16 +1318,11 @@ _tri_surf_trunc(cs_real_3_t x1,
   return surf;
 }
 
-/*
- * Calcule porosité dans un tétra
- * Faces redécoupées e tirancles via centres arretes et celulle
- * un niveau de découpage suffit
- */
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute by dichotomy the volume of the immersed part of a
- *          tetrahedron described by its vertices (x1,x2,x3,x4) based on the
- *          cut-cell method and recursive approach.
+ * \brief Compute (using bisection) the volume of the immersed part of a
+ *        tetrahedron described by its vertices (x1,x2,x3,x4) based on the
+ *        cut-cell method and recursive approach.
  *
  * \param[out] vol          volume
  * \param[in]  x1           point 1
@@ -1335,21 +1330,25 @@ _tri_surf_trunc(cs_real_3_t x1,
  * \param[in]  x3           point 3
  * \param[in]  x4           point 4
  * \param[in]  t            time value for the current time step
- * \param[in]  icut         number of sub-cut for cells in cut-cells algorithm
+ * \param[in]  icut         number of bisections
  * \param[in]  num_object   num of fsi object (if fsi activated)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_tetra_vol_cutcell(cs_real_t *vol,
-                  cs_real_3_t x1,
-                  cs_real_3_t x2,
-                  cs_real_3_t x3,
-                  cs_real_3_t x4,
-                  cs_real_t t,
-                  int icut,
-                  int num_object)
+_tetra_vol_cutcell(cs_real_t    *vol,
+                   cs_real_3_t   x1,
+                   cs_real_3_t   x2,
+                   cs_real_3_t   x3,
+                   cs_real_3_t   x4,
+                   cs_real_t     t,
+                   int           icut,
+                   int           num_object)
 {
+  /*
+   * One subdivision level is enough
+   * (triangles based on cell and edge centers). */
+
   cs_real_3_t cog1234;
   for (int i = 0; i < 3; i++)
     cog1234[i] = (x1[i] + x2[i] + x3[i] + x4[i]) * 0.25;
@@ -1382,7 +1381,8 @@ _tetra_vol_cutcell(cs_real_t *vol,
 
   /* Check if at least one solid vertex, subdivision of the edges and
    * distribution of porosities before recursive call */
-  } else if (icut > 0) {
+  }
+  else if (icut > 0) {
     icut--;
 
     cs_real_3_t x12, x13, x14, x23, x24, x34;

@@ -444,7 +444,7 @@ _compute_face_quantities(cs_lnum_t        n_faces,
           for (cs_lnum_t i = 0; i < 3; i++) {
             vc0[i] = vtx_coord[v0][i] - a_center[i];
             vc1[i] = vtx_coord[v1][i] - a_center[i];
-            /* centre in the relative reference frame (shifted by a_center) */
+            /* center in the relative reference frame (shifted by a_center) */
             vtc[tri_id][i] = vc0[i] + vc1[i];
           }
 
@@ -513,7 +513,7 @@ _compute_face_quantities(cs_lnum_t        n_faces,
           for (cs_lnum_t i = 0; i < 3; i++) {
             vc0[i] = vtx_coord[v0][i] - a_center[i];
             vc1[i] = vtx_coord[v1][i] - a_center[i];
-            /* centre in the relative reference frame (shifted by a_center) */
+            /* center in the relative reference frame (shifted by a_center) */
             vtc[i] = vc0[i] + vc1[i];
           }
 
@@ -1901,7 +1901,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
   if (w_count[1] > 0)
     bft_printf(_("\n"
                  "%llu boundary faces have a too small distance between\n"
-                 "cell centre and face centre.\n"),
+                 "cell center and face center.\n"),
                (unsigned long long)w_count[1]);
 }
 
@@ -3833,7 +3833,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     }
   }
 
-  /* Correction of solid face centre and distance to the immersed wall */
+  /* Correction of solid face center and distance to the immersed wall */
 
   cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
 
@@ -3856,7 +3856,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       cs_real_t c_w_normal_unit[3];
       cs_math_3_normalize(c_w_face_normal[c_id], c_w_normal_unit);
 
-      /* Correction of solid plane centre xw-xc */
+      /* Correction of solid plane center xw-xc */
 
       cs_real_t mat[3][3];
       for (cs_lnum_t i = 0; i < 3; i++) {
