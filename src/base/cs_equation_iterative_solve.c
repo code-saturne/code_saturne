@@ -346,7 +346,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * are disabled
    * If a whole line of the matrix is 0, the diagonal is set to 1 */
   if (mq->has_disable_flag == 1) {
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       if (CS_ABS(dam[cell_id]) < DBL_MIN) {
         dam[cell_id] += 1.;
@@ -356,9 +356,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
-#   pragma omp parallel for
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      dam[iel] /= relaxp;
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      dam[cell_id] /= relaxp;
   }
 
   /*==========================================================================
@@ -431,8 +431,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     }
 
 #   pragma omp for nowait
-    for (cs_lnum_t iel = 0; iel < n_cells_ext; iel++)
-      pvar[iel] = pvark[iel];
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+      pvar[cell_id] = pvark[cell_id];
   }
 
   /* In the following, cs_balance_scalar is called with inc=1,
@@ -477,25 +477,25 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     smbrp);
 
   if (iswdyp >= 1) {
-#   pragma omp parallel for
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      rhs0[iel] = smbrp[iel];
-      smbini[iel] -= rovsdt[iel]*(pvar[iel] - pvara[iel]);
-      smbrp[iel]  += smbini[iel];
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      rhs0[cell_id] = smbrp[cell_id];
+      smbini[cell_id] -= rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
+      smbrp[cell_id]  += smbini[cell_id];
 
-      adxkm1[iel] = 0.;
-      adxk[iel] = 0.;
-      dpvar[iel] = 0.;
+      adxkm1[cell_id] = 0.;
+      adxk[cell_id] = 0.;
+      dpvar[cell_id] = 0.;
     }
 
     /* ||A.dx^0||^2 = 0 */
     nadxk = 0.;
   }
   else {
-#   pragma omp parallel for
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      smbini[iel] -= rovsdt[iel]*(pvar[iel] - pvara[iel]);
-      smbrp[iel]  += smbini[iel];
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      smbini[cell_id] -= rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
+      smbrp[cell_id]  += smbini[cell_id];
     }
   }
 
@@ -541,7 +541,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(n_cells, w1, w1)));
       bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(n_cells, smbrp, smbrp)));
     }
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       w1[cell_id] += smbrp[cell_id];
       /* Remove contributions from penalized cells */
@@ -571,16 +571,16 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* Solving on the increment: dpvar */
 
     if (iswdyp >= 1) {
-#     pragma omp parallel for
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        dpvarm1[iel] = dpvar[iel];
-        dpvar[iel] = 0.;
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        dpvarm1[cell_id] = dpvar[cell_id];
+        dpvar[cell_id] = 0.;
       }
     }
     else {
-#     pragma omp parallel for
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        dpvar[iel] = 0.;
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+        dpvar[cell_id] = 0.;
     }
 
     /* Solver residual */
@@ -615,10 +615,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /* Computation of the variable relaxation coefficient */
       lvar = -1;
 
-#     pragma omp parallel for
-      for (cs_lnum_t iel = 0; iel < n_cells_ext; iel++) {
-        adxkm1[iel] = adxk[iel];
-        adxk[iel] = - rhs0[iel];
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+        adxkm1[cell_id] = adxk[cell_id];
+        adxk[cell_id] = - rhs0[cell_id];
       }
 
       cs_balance_scalar(idtvar,
@@ -670,7 +670,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         else
           beta = 0.;
 
-      } else {
+      }
+      else {
         beta = 0.;
         paxm1ax = 1.;
         paxm1rk = 0.;
@@ -681,10 +682,12 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       if (isweep == 1) {
         alph = 1.;
         beta = 0.;
-      } else if (isweep == 2) {
+      }
+      else if (isweep == 2) {
         beta = 0.;
         alph = -paxkrk/CS_MAX(nadxk, 1e-30*rnorm2);
-      } else {
+      }
+      else {
         alph = -(paxkrk + beta*paxm1ax)/CS_MAX(nadxk, 1e-30*rnorm2);
       }
 
@@ -701,18 +704,20 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* --- Update the solution with the increment */
 
     if (iswdyp <= 0) {
-#     pragma omp parallel for
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        pvar[iel] += dpvar[iel];
-    } else if (iswdyp == 1) {
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+        pvar[cell_id] += dpvar[cell_id];
+    }
+    else if (iswdyp == 1) {
       if (alph < 0.) break;
-#     pragma omp parallel for
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        pvar[iel] += alph*dpvar[iel];
-    } else if (iswdyp >= 2) {
-#     pragma omp parallel for
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        pvar[iel] += alph*dpvar[iel] + beta*dpvarm1[iel];
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+        pvar[cell_id] += alph*dpvar[cell_id];
+    }
+    else if (iswdyp >= 2) {
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+        pvar[cell_id] += alph*dpvar[cell_id] + beta*dpvarm1[cell_id];
     }
 
     /*  ---> Handle parallelism and periodicity */
@@ -723,23 +728,25 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* --- Update the right hand side And compute the new residual */
 
     if (iswdyp <= 0) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
         smbini[iel] -= rovsdt[iel]*dpvar[iel];
         smbrp[iel]   = smbini[iel];
       }
-    } else if (iswdyp == 1) {
-#     pragma omp parallel for
+    }
+    else if (iswdyp == 1) {
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
         smbini[iel] -= rovsdt[iel]*alph*dpvar[iel];
         smbrp[iel]   = smbini[iel];
       }
-    } else if (iswdyp >= 2) {
-#     pragma omp parallel for
+    }
+    else if (iswdyp >= 2) {
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
@@ -847,7 +854,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /* rebuild before-last value of variable */
       cs_real_t *prev_s_pvar;
       BFT_MALLOC(prev_s_pvar, n_cells_ext, cs_real_t);
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         prev_s_pvar[iel] = pvar[iel]-dpvar[iel];
       }
@@ -952,7 +959,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* smbini already contains unsteady terms and mass source terms
        of the RHS updated at each sweep */
 
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       smbrp[iel] = smbini[iel] - rovsdt[iel]*dpvar[iel];
 
@@ -986,7 +993,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* Contribution of the current component to the L2 norm stored in eswork */
 
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       eswork[iel] = pow(smbrp[iel] / cell_vol[iel],2);
   }
@@ -1298,7 +1305,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    * are disabled
    * If a whole line of the matrix is 0, the diagonal is set to 1 */
   if (mq->has_disable_flag == 1) {
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
@@ -1310,7 +1317,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /*  For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
         for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
@@ -1673,13 +1680,14 @@ cs_equation_iterative_solve_vector(int                   idtvar,
         /* < E.dx^(k-1)-E.0; E.dx^k-E.0 > */
         paxm1ax = cs_gdot(3*n_cells, (cs_real_t *)adxk, (cs_real_t *)adxkm1);
 
-        if ((nadxkm1 > 1.e-30*rnorm2)
-         && (nadxk*nadxkm1-pow(paxm1ax,2)) > 1.e-30*rnorm2)
+        if (   (nadxkm1 > 1.e-30*rnorm2)
+            && (nadxk*nadxkm1-pow(paxm1ax,2)) > 1.e-30*rnorm2)
           beta = (paxkrk*paxm1ax - nadxk*paxm1rk)/(nadxk*nadxkm1-pow(paxm1ax,2));
         else
           beta = 0.;
 
-      } else {
+      }
+      else {
         beta = 0.;
         paxm1ax = 1.;
         paxm1rk = 0.;
@@ -1690,10 +1698,12 @@ cs_equation_iterative_solve_vector(int                   idtvar,
       if (isweep == 1) {
         alph = 1.;
         beta = 0.;
-      } else if (isweep == 2) {
+      }
+      else if (isweep == 2) {
         beta = 0.;
         alph = -paxkrk/CS_MAX(nadxk, 1.e-30*rnorm2);
-      } else {
+      }
+      else {
         alph = -(paxkrk + beta*paxm1ax)/CS_MAX(nadxk, 1.e-30*rnorm2);
       }
 
@@ -2190,7 +2200,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
    * are disabled
    * If a whole line of the matrix is 0, the diagonal is set to 1 */
   if (mq->has_disable_flag == 1) {
-# pragma omp parallel for
+# pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t i = 0; i < 6; i++) {
         if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
@@ -2324,7 +2334,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   /* Dynamic relaxation*/
   if (iswdyp >= 1) {
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       for (cs_lnum_t isou = 0; isou < 6; isou++) {
         rhs0[iel][isou] = smbrp[iel][isou];
@@ -2346,7 +2356,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     nadxk = 0.;
   }
   else {
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       for (cs_lnum_t isou = 0; isou < 6; isou++) {
         smbini[iel][isou] =   smbini[iel][isou]
@@ -2410,7 +2420,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   }
 
 
-# pragma omp parallel for
+# pragma omp parallel for  if (n_cells > CS_THR_MIN)
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (cs_lnum_t i = 0; i < 6; i++)
       w1[cell_id][i] += smbrp[cell_id][i];
@@ -2438,11 +2448,11 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   sinfo.n_it = 0;
 
   while ((isweep <= nswmod && residu > epsrsp*rnorm) || isweep == 1) {
-    /* --- Solving on the increment dpvar */
+    /* Solve on the increment dpvar */
 
     /*  Dynamic relaxation of the system */
     if (iswdyp >= 1) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t isou = 0; isou < 6; isou++) {
           dpvarm1[iel][isou] = dpvar[iel][isou];
@@ -2451,7 +2461,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
       }
     }
     else {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t isou = 0; isou < 6; isou++)
           dpvar[iel][isou] = 0.;
@@ -2490,7 +2500,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
       /* Computation of the variable relaxation coefficient */
       lvar = -1;
 
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t isou = 0; isou < 6; isou++) {
           adxkm1[iel][isou] = adxk[iel][isou];
@@ -2543,7 +2553,8 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
         else
           beta = 0.;
 
-      } else {
+      }
+      else {
         beta = 0.;
         paxm1ax = 1.;
         paxm1rk = 0.;
@@ -2554,10 +2565,12 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
       if (isweep == 1) {
         alph = 1.;
         beta = 0.;
-      } else if (isweep == 2) {
+      }
+      else if (isweep == 2) {
         beta = 0.;
         alph = -paxkrk/CS_MAX(nadxk, 1.e-30*rnorm2);
-      } else {
+      }
+      else {
         alph = -(paxkrk + beta*paxm1ax)/CS_MAX(nadxk, 1.e-30*rnorm2);
       }
 
@@ -2574,19 +2587,19 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     /* --- Update the solution with the increment */
 
     if (iswdyp <= 0) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         for (cs_lnum_t isou = 0; isou < 6; isou++)
           pvar[iel][isou] += dpvar[iel][isou];
     }
     else if (iswdyp == 1) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         for (cs_lnum_t isou = 0; isou < 6; isou++)
            pvar[iel][isou] += alph*dpvar[iel][isou];
     }
     else if (iswdyp >= 2) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         for (cs_lnum_t isou = 0; isou < 6; isou++)
           pvar[iel][isou] += alph*dpvar[iel][isou] + beta*dpvarm1[iel][isou];
@@ -2600,7 +2613,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     /* --- Update the right hand and compute the new residual */
 
     if (iswdyp <= 0) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
          * of the RHS updated at each sweep */
@@ -2617,7 +2630,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
       }
     }
     else if (iswdyp == 1) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
          * of the RHS updated at each sweep */
@@ -2634,24 +2647,24 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
       }
     }
     else if (iswdyp == 2) {
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
          * of the RHS updated at each sweep */
         for (cs_lnum_t isou = 0; isou < 6; isou++) {
           smbini[iel][isou] = smbini[iel][isou]
-                            - fimp[iel][isou][0]*(alph*dpvar[iel][0]
-                                                + beta*dpvarm1[iel][0])
-                            - fimp[iel][isou][1]*(alph*dpvar[iel][1]
-                                                + beta*dpvarm1[iel][1])
-                            - fimp[iel][isou][2]*(alph*dpvar[iel][2]
-                                                + beta*dpvarm1[iel][2])
-                            - fimp[iel][isou][3]*(alph*dpvar[iel][3]
-                                                + beta*dpvarm1[iel][3])
-                            - fimp[iel][isou][4]*(alph*dpvar[iel][4]
-                                                + beta*dpvarm1[iel][4])
-                            - fimp[iel][isou][5]*(alph*dpvar[iel][5]
-                                                + beta*dpvarm1[iel][5]);
+                            - fimp[iel][isou][0]*(  alph*dpvar[iel][0]
+                                                  + beta*dpvarm1[iel][0])
+                            - fimp[iel][isou][1]*(  alph*dpvar[iel][1]
+                                                  + beta*dpvarm1[iel][1])
+                            - fimp[iel][isou][2]*(  alph*dpvar[iel][2]
+                                                  + beta*dpvarm1[iel][2])
+                            - fimp[iel][isou][3]*(  alph*dpvar[iel][3]
+                                                  + beta*dpvarm1[iel][3])
+                            - fimp[iel][isou][4]*(  alph*dpvar[iel][4]
+                                                  + beta*dpvarm1[iel][4])
+                            - fimp[iel][isou][5]*(  alph*dpvar[iel][5]
+                                                  + beta*dpvarm1[iel][5]);
           smbrp[iel][isou] = smbini[iel][isou];
         }
       }

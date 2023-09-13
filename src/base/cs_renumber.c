@@ -1439,7 +1439,7 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
 
       /* Build lexical ordering of faces */
 
-#     pragma omp parallel for
+#     pragma omp parallel for  if (n_i_faces > CS_THR_MIN)
       for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
         cs_lnum_t c_id_0 = i_face_cells[f_id][0];
         cs_lnum_t c_id_1 = i_face_cells[f_id][1];
@@ -1481,7 +1481,7 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
 
     /* Build lexical ordering of faces */
 
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_i_faces > CS_THR_MIN)
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
       cs_lnum_t c_id_0 = i_face_cells[f_id][0];
       cs_lnum_t c_id_1 = i_face_cells[f_id][1];
@@ -2249,8 +2249,8 @@ _renum_face_multipass(cs_mesh_t    *mesh,
                       int          *n_no_adj_halo_groups,
                       cs_lnum_t   **group_index)
 {
-  int g_id, t_id;
-  cs_lnum_t fl_id, f_id, c_id_0, c_id_1;
+  int g_id;
+  cs_lnum_t f_id;
 
   cs_lnum_t n_f_cells = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_faces = mesh->n_i_faces;
@@ -2299,10 +2299,10 @@ _renum_face_multipass(cs_mesh_t    *mesh,
      will be defined later based on group and thread ids) */
 
   if (_i_faces_base_ordering == CS_RENUMBER_ADJACENT_LOW) {
-#   pragma omp parallel for private(c_id_0, c_id_1)
+#   pragma omp parallel for  if (n_faces > CS_THR_MIN)
     for (f_id = 0; f_id < n_faces; f_id++) {
-      c_id_0 = i_face_cells[f_id][0];
-      c_id_1 = i_face_cells[f_id][1];
+      cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+      cs_lnum_t c_id_1 = i_face_cells[f_id][1];
       if (c_id_0 < c_id_1) {
         l_face_cells[f_id][0] = c_id_0;
         l_face_cells[f_id][1] = c_id_1;
@@ -2315,10 +2315,10 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     }
   }
   else { /* _i_faces_base_ordering == CS_RENUMBER_ADJACENT_HIGH */
-#   pragma omp parallel for private(c_id_0, c_id_1)
+#   pragma omp parallel for  if (n_faces > CS_THR_MIN)
     for (f_id = 0; f_id < n_faces; f_id++) {
-      c_id_0 = i_face_cells[f_id][0];
-      c_id_1 = i_face_cells[f_id][1];
+      cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+      cs_lnum_t c_id_1 = i_face_cells[f_id][1];
       if (c_id_0 < c_id_1) {
         l_face_cells[f_id][0] = c_id_1;
         l_face_cells[f_id][1] = c_id_0;
@@ -2361,7 +2361,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     /* Get an initial edge distribution */
 
     t_cell_index[0] = 0;
-    for (t_id = 1; t_id < n_g_i_threads; t_id++) {
+    for (int t_id = 1; t_id < n_g_i_threads; t_id++) {
       t_cell_index[t_id] = t_cell_index[t_id-1] + group_size;
       if (t_cell_index[t_id] > n_f_cells)
         t_cell_index[t_id] = n_f_cells;
@@ -2399,7 +2399,9 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
       _n_no_adj_halo_groups = g_id+1;
 
-      for (fl_id = faces_list_assign_size; fl_id < faces_list_size; fl_id++) {
+      for (cs_lnum_t fl_id = faces_list_assign_size;
+           fl_id < faces_list_size;
+           fl_id++) {
         f_id = faces_list[fl_id];
         f_t_id[f_id] = - 1;
       }
@@ -2408,7 +2410,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
     /* Update list of remaining faces */
 
-    for (fl_id = 0; fl_id < faces_list_size; fl_id++) {
+    for (cs_lnum_t fl_id = 0; fl_id < faces_list_size; fl_id++) {
 
       f_id = faces_list[fl_id];
 
@@ -2437,7 +2439,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
   if (faces_list_size > 0) {
 
-    for (fl_id = 0; fl_id < faces_list_size; fl_id++) {
+    for (cs_lnum_t fl_id = 0; fl_id < faces_list_size; fl_id++) {
       f_id = faces_list[fl_id];
       f_t_id[f_id] = g_id*n_i_threads;
       new_to_old_i[new_count++] = f_id;
@@ -2446,7 +2448,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     g_id += 1;
 
     n_t_faces[0] = faces_list_size;
-    for (t_id = 1; t_id < n_i_threads; t_id++)
+    for (int t_id = 1; t_id < n_i_threads; t_id++)
       n_t_faces[t_id] = 0;
 
   }
@@ -2470,7 +2472,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   _group_index[0] = 0;
 
   for (g_id = 0; g_id < _n_groups; g_id++) {
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
       _group_index[(t_id*_n_groups + g_id)*2] = -1;
       _group_index[(t_id*_n_groups + g_id)*2 + 1] = -1;
     }
@@ -2480,7 +2482,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   int f_t_id_prev = - 1;
 #endif
 
-  for (fl_id = 0; fl_id < n_faces; fl_id++) {
+  for (cs_lnum_t fl_id = 0; fl_id < n_faces; fl_id++) {
 
     f_id = new_to_old_i[fl_id];
 
@@ -2491,7 +2493,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     f_t_id_prev = f_t_id[f_id];
 #endif
 
-    t_id = f_t_id[f_id]%n_i_threads;
+    int t_id = f_t_id[f_id]%n_i_threads;
     g_id = (f_t_id[f_id] - t_id) / n_i_threads;
 
     /* Update group index to mark maximum face id */
@@ -2506,7 +2508,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
   f_id = 0;
   for (g_id = 0; g_id < _n_groups; g_id++) {
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
       _group_index[(t_id*_n_groups + g_id)*2] = f_id;
       f_id = CS_MAX(_group_index[(t_id*_n_groups + g_id)*2+1],
                     f_id);
@@ -2514,7 +2516,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   }
 
   for (g_id = 0; g_id < _n_groups; g_id++) {
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
       if (_group_index[(t_id*_n_groups + g_id)*2 + 1] < 0)
         _group_index[(t_id*_n_groups + g_id)*2] = -1;
     }
@@ -5271,9 +5273,6 @@ _renumber_i_test(cs_mesh_t  *mesh)
 
     if (mesh->i_face_numbering->type == CS_NUMBERING_THREADS) {
 
-      int g_id, t_id;
-      cs_lnum_t f_id, c_id_0, c_id_1;
-
       cs_lnum_t counter = 0;
 
       const int n_threads = mesh->i_face_numbering->n_threads;
@@ -5287,18 +5286,18 @@ _renumber_i_test(cs_mesh_t  *mesh)
 
       BFT_MALLOC(accumulator, mesh->n_cells_with_ghosts, cs_lnum_t);
 
-      for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
+      for (cs_lnum_t c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
         accumulator[c_id_0] = 0;
 
-      for (g_id=0; g_id < n_groups; g_id++) {
+      for (int g_id = 0; g_id < n_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id, c_id_0, c_id_1)
-        for (t_id=0; t_id < n_threads; t_id++) {
-          for (f_id = group_index[(t_id*n_groups + g_id)*2];
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_threads; t_id++) {
+          for (cs_lnum_t f_id = group_index[(t_id*n_groups + g_id)*2];
                f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                f_id++) {
-            c_id_0 = mesh->i_face_cells[f_id][0];
-            c_id_1 = mesh->i_face_cells[f_id][1];
+            cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+            cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
             accumulator[c_id_0] += 1;
             accumulator[c_id_1] += 1;
           }
@@ -5306,7 +5305,7 @@ _renumber_i_test(cs_mesh_t  *mesh)
 
       }
 
-      for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
+      for (cs_lnum_t c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
         counter += accumulator[c_id_0];
 
       face_errors = mesh->n_i_faces*2 - counter;
@@ -5315,19 +5314,19 @@ _renumber_i_test(cs_mesh_t  *mesh)
 
       if (face_errors == 0) {
 
-        for (g_id=0; g_id < n_groups; g_id++) {
+        for (int g_id = 0; g_id < n_groups; g_id++) {
 
           bool adj_halo = false;
 
-          for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
+          for (cs_lnum_t c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
             accumulator[c_id_0] = -1;
 
-          for (t_id=0; t_id < n_threads; t_id++) {
-            for (f_id = group_index[(t_id*n_groups + g_id)*2];
+          for (int t_id = 0; t_id < n_threads; t_id++) {
+            for (cs_lnum_t f_id = group_index[(t_id*n_groups + g_id)*2];
                  f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                  f_id++) {
-              c_id_0 = mesh->i_face_cells[f_id][0];
-              c_id_1 = mesh->i_face_cells[f_id][1];
+              cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+              cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
               if (   (accumulator[c_id_0] > -1 && accumulator[c_id_0] != t_id)
                   || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id)) {
                 face_errors += 1;
@@ -5453,9 +5452,6 @@ _renumber_b_test(cs_mesh_t  *mesh)
 
     if (mesh->b_face_numbering->type == CS_NUMBERING_THREADS) {
 
-      int g_id, t_id;
-      cs_lnum_t f_id, c_id;
-
       cs_lnum_t counter = 0;
 
       const int n_threads = mesh->b_face_numbering->n_threads;
@@ -5464,24 +5460,24 @@ _renumber_b_test(cs_mesh_t  *mesh)
 
       BFT_MALLOC(accumulator, mesh->n_cells_with_ghosts, cs_lnum_t);
 
-      for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
+      for (cs_lnum_t c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
         accumulator[c_id] = 0;
 
-      for (g_id=0; g_id < n_groups; g_id++) {
+      for (int g_id = 0; g_id < n_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id, c_id)
-        for (t_id=0; t_id < n_threads; t_id++) {
-          for (f_id = group_index[(t_id*n_groups + g_id)*2];
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_threads; t_id++) {
+          for (cs_lnum_t f_id = group_index[(t_id*n_groups + g_id)*2];
                f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                f_id++) {
-            c_id = mesh->b_face_cells[f_id];
+            cs_lnum_t c_id = mesh->b_face_cells[f_id];
             accumulator[c_id] += 1;
           }
         }
 
       }
 
-      for (c_id = 0; c_id < mesh->n_cells; c_id++)
+      for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++)
         counter += accumulator[c_id];
 
       face_errors = mesh->n_b_faces - counter;
@@ -5490,16 +5486,16 @@ _renumber_b_test(cs_mesh_t  *mesh)
 
       if (face_errors == 0) {
 
-        for (g_id=0; g_id < n_groups; g_id++) {
+        for (int g_id = 0; g_id < n_groups; g_id++) {
 
-          for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
+          for (cs_lnum_t c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
             accumulator[c_id] = -1;
 
-          for (t_id=0; t_id < n_threads; t_id++) {
-            for (f_id = group_index[(t_id*n_groups + g_id)*2];
+          for (int t_id = 0; t_id < n_threads; t_id++) {
+            for (cs_lnum_t f_id = group_index[(t_id*n_groups + g_id)*2];
                  f_id < group_index[(t_id*n_groups + g_id)*2 + 1];
                  f_id++) {
-              c_id = mesh->b_face_cells[f_id];
+              cs_lnum_t c_id = mesh->b_face_cells[f_id];
               if (accumulator[c_id] > -1 && accumulator[c_id] != t_id)
                 face_errors += 1;
               accumulator[c_id] = t_id;
@@ -5515,13 +5511,11 @@ _renumber_b_test(cs_mesh_t  *mesh)
 
     if (mesh->b_face_numbering->type == CS_NUMBERING_VECTORIZE) {
 
-      cs_lnum_t f_id, c_id;
-
       cs_lnum_t counter = 0;
 
       BFT_MALLOC(accumulator, mesh->n_cells_with_ghosts, cs_lnum_t);
 
-      for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
+      for (cs_lnum_t c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
         accumulator[c_id] = 0;
 
 #       if defined(HAVE_OPENMP_SIMD)
@@ -5530,12 +5524,12 @@ _renumber_b_test(cs_mesh_t  *mesh)
 #         pragma dir nodep
 #         pragma GCC ivdep
 #       endif
-        for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
-          c_id = mesh->b_face_cells[f_id];
+        for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+          cs_lnum_t c_id = mesh->b_face_cells[f_id];
           accumulator[c_id] += 1;
         }
 
-      for (c_id = 0; c_id < mesh->n_cells; c_id++)
+      for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++)
         counter += accumulator[c_id];
 
       face_errors = mesh->n_b_faces - counter;
@@ -5546,12 +5540,12 @@ _renumber_b_test(cs_mesh_t  *mesh)
 
         const cs_lnum_t vector_size = mesh->b_face_numbering->vector_size;
 
-        for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
+        for (cs_lnum_t c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
           accumulator[c_id] = -1;
 
-        for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+        for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
           cs_lnum_t block_id = f_id / vector_size;
-          c_id = mesh->b_face_cells[f_id];
+          cs_lnum_t c_id = mesh->b_face_cells[f_id];
           if (accumulator[c_id] == block_id)
             face_errors += 1;
           if (mesh->verbosity > 3)

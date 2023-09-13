@@ -500,7 +500,7 @@ cs_rotation_update_coords(cs_lnum_t    n_coords,
                      (cs_glob_rotation + 1)->invariant,
                      matrix);
 
-# pragma omp parallel for
+# pragma omp parallel for  if (n_coords > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_coords; i++)
     _apply_vector_transfo(matrix, coords[i]);
 }

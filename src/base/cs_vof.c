@@ -671,7 +671,7 @@ cs_vof_compute_linear_rho_mu(const cs_mesh_t  *m)
 
   /* Update mixture density and viscosity on cells */
 
-# pragma omp parallel for
+# pragma omp parallel for  if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t vf = cvar_voidf[c_id];
     cpro_rom[c_id]   = rho2*vf + rho1*(1. - vf);

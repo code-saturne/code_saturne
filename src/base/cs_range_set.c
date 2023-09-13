@@ -177,7 +177,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
 
   /* Use OpenMP pragma in case of first touch */
 
-# pragma omp parallel for
+# pragma omp parallel for  if (n_elts > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_elts; i++)
     g_id[i] = 0;
 
@@ -631,7 +631,7 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
     }
 #endif
 
-#   pragma omp parallel for
+#   pragma omp parallel for  if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++)
       g_id[i] = (cs_gnum_t)i + l_range[0];
 

@@ -278,7 +278,7 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
   const cs_lnum_t *c2v_idx = c2v->idx;
   const cs_lnum_t *c2v_ids = c2v->ids;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for  if (n_cells > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
     local_max[ii] = pvar[ii];
     local_min[ii] = pvar[ii];
@@ -288,7 +288,7 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
   BFT_MALLOC(v_min, n_vertices, cs_real_t);
   BFT_MALLOC(v_max, n_vertices, cs_real_t);
 
-# pragma omp parallel for if (n_vertices > CS_THR_MIN)
+# pragma omp parallel for  if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_vertices; ii++) {
     v_max[ii] = -HUGE_VAL;
     v_min[ii] = HUGE_VAL;
@@ -326,7 +326,7 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
 
   /* Gather min/max values from vertices */
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for  if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -1211,7 +1211,7 @@ cs_field_local_extrema_scalar(int              f_id,
   cs_real_t scalar_min = cs_field_get_key_double(f, key_scamin_id);
 
   /* Bounded by the global extrema */
-# pragma omp parallel for
+# pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     local_max[ii] = CS_MIN(local_max[ii], scalar_max);
     local_min[ii] = CS_MAX(local_min[ii], scalar_min);
@@ -1251,8 +1251,8 @@ cs_field_set_volume_average(cs_field_t     *f,
 
   cs_real_t shift = va - p_va;
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++) {
+# pragma omp parallel for  if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     val[c_id] += shift;
   }
 }
