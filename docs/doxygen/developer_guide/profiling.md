@@ -106,20 +106,20 @@ Several types of tools may be available. We list a few commonly available tools,
   - [Massif](https://valgrind.org/info/tools.html#massif) is a heap profiler,
     allowing measuring the evolution of memory over time.
     Using this tool simply requires defining:
-    ```
+```
     valgrind --tool=massif
-    ```
+```
     as a tool in the advanced run options in the GUI, or running
-    ```
+```
     code_saturne run --tool-args="valgrind --tool=massif"
-    ```
+```
     on the command line.
     The files produced are text files, but can also be visualized with the [Massif-vizualizer](https://apps.kde.org/fr/massif-visualizer/) application where available.
 
   - [Cachegrind](https://valgrind.org/info/tools.html#cachegrind) profiles cache usage, and can be used in a similar manner, using
-    ```
+```
     valgrind --tool=cachegrind
-    ```
+```
     Data may be visualized using the [kcachegrind](https://kcachegrind.github.io/html/Home.html) tool.
     Note also that since cache behavior is simulated, the various cach sizes used may be modified, and the effect on behavior observed.
 
