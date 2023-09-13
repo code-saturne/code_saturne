@@ -346,7 +346,7 @@ cs_boundary_conditions_type(bool  init,
       for (int jj = 0; jj < 11; jj++) {
         const int ii = type_id[jj] - 1;
         if (log_always[jj] || inb[ii] > 0)
-          cs_log_printf(CS_LOG_DEFAULT, _("%-17s %8d %12llu\n"),
+          cs_log_printf(CS_LOG_DEFAULT, _("%-17s  %8d%12llu\n"),
                         info[jj], ii+1, (unsigned long long)inb[ii]);
         is_user_type[ii] = 0;
       }
@@ -365,7 +365,7 @@ cs_boundary_conditions_type(bool  init,
 
       for (int jj = 0; jj < 9; jj++) {
         const int ii = type_id_c[jj] - 1;
-        cs_log_printf(CS_LOG_DEFAULT, _("%-17s %8d %12llu\n"),
+        cs_log_printf(CS_LOG_DEFAULT, _("%-17s  %8d%12llu\n"),
                       info_c[jj], ii+1, (unsigned long long)inb[ii]);
         is_user_type[ii] = 0;
       }
@@ -1631,7 +1631,7 @@ cs_boundary_conditions_type(bool  init,
         for (int jj = 0; jj < 11; jj++) {
           const int ii = type_id[jj] - 1;
           if (log_always[jj] || inb[ii] > 0)
-            cs_log_printf(CS_LOG_DEFAULT, _("%-17s %8d %12llu %18.9e\n"),
+            cs_log_printf(CS_LOG_DEFAULT, _("%-17s  %8d%12llu      %18.9e\n"),
                           info[jj], ii+1, (unsigned long long)inb[ii], flumty[ii]);
           is_user_type[ii] = 0;
         }
@@ -1641,7 +1641,7 @@ cs_boundary_conditions_type(bool  init,
 
         for (int jj = 0; jj < 9; jj++) {
           const int ii = type_id_c[jj] - 1;
-          cs_log_printf(CS_LOG_DEFAULT, _("%-17s %8d %12llu %18.9e\n"),
+          cs_log_printf(CS_LOG_DEFAULT, _("%-17s  %8d%12llu      %18.9e\n"),
                         info_c[jj], ii+1, (unsigned long long)inb[ii],
                         flumty[ii]);
           is_user_type[ii] = 0;
