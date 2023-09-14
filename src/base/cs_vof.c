@@ -120,7 +120,7 @@ BEGIN_C_DECLS
   \var  cs_vof_parameters_t::mu2
         reference molecular viscosity of fluid 2 (kg/(m s))
 
-  \var  cs_vof_parameters_t::sigmaS
+  \var  cs_vof_parameters_t::sigma_s
         reference surface tension (N/m)
 
   \var  cs_vof_parameters_t::idrift
@@ -225,7 +225,7 @@ static cs_vof_parameters_t  _vof_parameters =
   .rho2          = 1.,
   .mu1           = 1.e-3,
   .mu2           = 1.e-5,
-  .sigmaS        = 0.,
+  .sigma_s        = 0.,
   .idrift        = 0,
   .cdrift        = 1.,
   .kdrift        = 0.
@@ -260,7 +260,7 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
                       double   **rho2,
                       double   **mu1,
                       double   **mu2,
-                      double   **sigmaS,
+                      double   **sigma_s,
                       int      **idrift,
                       double   **cdrift,
                       double   **kdrift);
@@ -309,7 +309,7 @@ cs_f_cavitation_get_pointers(double **presat,
  *   rho2   --> pointer to cs_glob_vof_parameters->rho2
  *   mu1    --> pointer to cs_glob_vof_parameters->mu1
  *   mu2    --> pointer to cs_glob_vof_parameters->mu2
- *   sigmaS --> pointer to cs_glob_vof_parameters->sigmaS
+ *   sigma_s --> pointer to cs_glob_vof_parameters->sigma_s
  *   idrift --> pointer to cs_glob_vof_parameters->idrift
  *   cdrift --> pointer to cs_glob_vof_parameters->cdrift
  *   kdrift --> pointer to cs_glob_vof_parameters->kdrift
@@ -321,20 +321,20 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
                       double   **rho2,
                       double   **mu1,
                       double   **mu2,
-                      double   **sigmaS,
+                      double   **sigma_s,
                       int      **idrift,
                       double   **cdrift,
                       double   **kdrift)
 {
-  *ivofmt = &(_vof_parameters.vof_model);
-  *rho1   = &(_vof_parameters.rho1);
-  *rho2   = &(_vof_parameters.rho2);
-  *mu1    = &(_vof_parameters.mu1);
-  *mu2    = &(_vof_parameters.mu2);
-  *sigmaS = &(_vof_parameters.sigmaS);
-  *idrift = &(_vof_parameters.idrift);
-  *cdrift = &(_vof_parameters.cdrift);
-  *kdrift = &(_vof_parameters.kdrift);
+  *ivofmt  = &(_vof_parameters.vof_model);
+  *rho1    = &(_vof_parameters.rho1);
+  *rho2    = &(_vof_parameters.rho2);
+  *mu1     = &(_vof_parameters.mu1);
+  *mu2     = &(_vof_parameters.mu2);
+  *sigma_s = &(_vof_parameters.sigma_s);
+  *idrift  = &(_vof_parameters.idrift);
+  *cdrift  = &(_vof_parameters.cdrift);
+  *kdrift  = &(_vof_parameters.kdrift);
 }
 
 /*----------------------------------------------------------------------------
@@ -958,7 +958,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   cs_real_3_t *coefa_vec;
   cs_real_33_t *coefb_vec;
 
-  const cs_real_t cpro_surftens = _vof_parameters.sigmaS;
+  const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
 
   BFT_MALLOC(curv, n_cells_ext, cs_real_t);
   BFT_MALLOC(pvar, n_cells_ext, cs_real_t);

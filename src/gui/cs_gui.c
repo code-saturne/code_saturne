@@ -3948,7 +3948,7 @@ cs_gui_physical_properties(void)
 
   if (vof_param->vof_model & CS_VOF_ENABLED) {
     const char *st_name = "surface_tension";
-    cs_gui_properties_value(st_name, &vof_param->sigmaS);
+    cs_gui_properties_value(st_name, &vof_param->sigma_s);
   }
 
   if (_thermal_table_needed("specific_heat") == 0)

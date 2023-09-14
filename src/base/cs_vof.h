@@ -89,7 +89,7 @@ typedef struct {
 
   double        mu2;
 
-  double        sigmaS;      /* surface tension */
+  double        sigma_s;     /* surface tension */
 
   int           idrift;      /* drift velocity model */
 

@@ -2159,8 +2159,8 @@ cs_parameters_check(void)
     cs_parameters_is_equal_double(CS_ABORT_DELAYED,
                                   _("while reading reference surface "
                                     "tension value"),
-                                  "cs_glob_vof_parameters->sigmaS",
-                                  cs_glob_vof_parameters->sigmaS,
+                                  "cs_glob_vof_parameters->sigma_s",
+                                  cs_glob_vof_parameters->sigma_s,
                                   0.);
   }
 
