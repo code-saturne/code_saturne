@@ -847,7 +847,7 @@ if (f_id.ge.0) then
           (kmray, zqq,                                               &
           dfir, zent, iz1, iz2, var )
 
-        bpro_rad_inc(c_id, ifac) = pi * var
+        bpro_rad_inc(c_id, ifac) = var
       endif
     enddo
 
