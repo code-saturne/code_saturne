@@ -157,6 +157,12 @@ static cs_atmo_option_t  _atmo_option = {
   .rad_1d_ird = NULL,
   .rad_1d_solu = NULL,
   .rad_1d_sold = NULL,
+  .rad_1d_qw = NULL,
+  .rad_1d_ql = NULL,
+  .rad_1d_qv = NULL,
+  .rad_1d_nc = NULL,
+  .rad_1d_fn = NULL,
+  .rad_1d_aerosols = NULL,
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
@@ -365,6 +371,14 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               int         dim_xyvert[2],
                               int         dim_kmx2[2],
                               int         dim_kmx_nvert[2]);
+
+void
+cs_f_atmo_rad_1d_arrays_get_pointers(cs_real_t **qwvert,
+                                     cs_real_t **qlvert,
+                                     cs_real_t **qvvert,
+                                     cs_real_t **ncvert,
+                                     cs_real_t **fnvert,
+                                     cs_real_t **aevert);
 
 void
 cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
@@ -1782,6 +1796,30 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
     BFT_MALLOC(_atmo_option.rad_1d_sold, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_sold);
   }
+  if (         _atmo_option.rad_1d_qw == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_qw, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qw);
+  }
+  if (         _atmo_option.rad_1d_ql == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_ql, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ql);
+  }
+  if (         _atmo_option.rad_1d_qv == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_qv, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qv);
+  }
+  if (         _atmo_option.rad_1d_nc == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_nc, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_nc);
+  }
+  if (         _atmo_option.rad_1d_fn == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_fn, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_fn);
+  }
+  if (         _atmo_option.rad_1d_aerosols == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_aerosols, n_level * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_aerosols);
+  }
 
   *xyvert = _atmo_option.rad_1d_xy;
   *zvert  = _atmo_option.rad_1d_z;
@@ -1823,6 +1861,22 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   dim_kmx_nvert[0] = _atmo_option.rad_1d_nlevels_max;
   dim_kmx_nvert[1] = _atmo_option.rad_1d_nvert;
 
+}
+
+void
+cs_f_atmo_rad_1d_arrays_get_pointers(cs_real_t **qwvert,
+                                     cs_real_t **qlvert,
+                                     cs_real_t **qvvert,
+                                     cs_real_t **ncvert,
+                                     cs_real_t **fnvert,
+                                     cs_real_t **aevert)
+{
+  *qwvert = _atmo_option.rad_1d_qw;
+  *qlvert = _atmo_option.rad_1d_ql;
+  *qvvert = _atmo_option.rad_1d_qv;
+  *ncvert = _atmo_option.rad_1d_nc;
+  *fnvert = _atmo_option.rad_1d_fn;
+  *aevert = _atmo_option.rad_1d_aerosols;
 }
 
 void

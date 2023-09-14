@@ -73,8 +73,7 @@ integer, dimension(:), pointer :: elt_ids
 
 double precision, allocatable, dimension(:) :: temray, qvray, qlray, ncray
 double precision, allocatable, dimension(:) :: fneray, romray, preray
-double precision, allocatable, dimension(:) :: zproj, ttvert, qvvert, romvert
-double precision, allocatable, dimension(:) :: qwvert, qlvert, ncvert,fnvert
+double precision, allocatable, dimension(:) :: zproj, ttvert, romvert
 double precision, allocatable, dimension(:) :: aeroso, infrad
 double precision, allocatable, dimension(:,:,:) :: coords(:,:,:)
 double precision, dimension(:), pointer :: crom, cpro_pcliq
@@ -84,9 +83,44 @@ double precision, pointer, dimension(:)   :: bvar_tempp
 double precision, pointer, dimension(:)   :: bvar_total_water
 double precision, pointer, dimension(:)   :: bpro_albedo ! all boundary faces
 double precision, pointer, dimension(:)   :: bpro_emissi ! all boundary faces
+integer(c_int), dimension(2) :: dim_kmx_nvert
+type(c_ptr) :: c_qwvert
+type(c_ptr) :: c_qlvert
+type(c_ptr) :: c_qvvert
+type(c_ptr) :: c_ncvert
+type(c_ptr) :: c_fnvert
+type(c_ptr) :: c_aevert
+double precision, dimension(:,:), pointer :: qwvert
+double precision, dimension(:,:), pointer :: qlvert
+double precision, dimension(:,:), pointer :: qvvert
+double precision, dimension(:,:), pointer :: ncvert
+double precision, dimension(:,:), pointer :: fnvert
+double precision, dimension(:,:), pointer :: aevert
 
 save ideb
 data ideb/0/
+
+  interface
+
+    subroutine cs_f_atmo_rad_1d_arrays_get_pointers( &
+         p_qwvert, &
+         p_qlvert, &
+         p_qvvert, &
+         p_ncvert, &
+         p_fnvert, &
+         p_aevert) &
+         bind(C, name='cs_f_atmo_rad_1d_arrays_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_qwvert
+      type(c_ptr), intent(out) :: p_qlvert
+      type(c_ptr), intent(out) :: p_qvvert
+      type(c_ptr), intent(out) :: p_ncvert
+      type(c_ptr), intent(out) :: p_fnvert
+      type(c_ptr), intent(out) :: p_aevert
+    end subroutine cs_f_atmo_rad_1d_arrays_get_pointers
+
+  end interface
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -99,10 +133,26 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   allocate(temray(kmx), qvray(kmx), qlray(kmx), ncray(kmx))
   allocate(fneray(kmx), romray(kmx), preray(kmx))
-  allocate(zproj(kmx), ttvert(kmx*nvert), qvvert(kmx*nvert), romvert(kmx*nvert))
-  allocate(qwvert(kmx*nvert), qlvert(kmx*nvert), ncvert(kmx*nvert))
-  allocate(fnvert(kmx*nvert))
+  allocate(zproj(kmx), ttvert(kmx*nvert), romvert(kmx*nvert))
   allocate(aeroso(kmx))
+
+  ! Get pointers from C
+  call cs_f_atmo_rad_1d_arrays_get_pointers(c_qwvert,  &
+                                            c_qlvert,  &
+                                            c_qvvert,  &
+                                            c_ncvert,  &
+                                            c_fnvert,  &
+                                            c_aevert)
+
+  dim_kmx_nvert(1) = kmx
+  dim_kmx_nvert(2) = nvert
+  call c_f_pointer(c_qwvert, qwvert, [dim_kmx_nvert])
+  call c_f_pointer(c_qlvert, qlvert, [dim_kmx_nvert])
+  call c_f_pointer(c_qvvert, qvvert, [dim_kmx_nvert])
+  call c_f_pointer(c_ncvert, ncvert, [dim_kmx_nvert])
+  call c_f_pointer(c_fnvert, fnvert, [dim_kmx_nvert])
+  call c_f_pointer(c_aevert, aevert, [dim_kmx_nvert])
+
   allocate(coords(3,kmx,nvert))
   allocate(cressm(kmx*nvert), interp(kmx*nvert))
   allocate(infrad(3*kmx*nvert))
@@ -182,8 +232,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! deduce vapor content interpolation
     do ii = 1, nvert
       do k = 1, kvert
-        jj = (ii-1)*kmx + k
-        qvvert(jj) = qwvert(jj)-qlvert(jj)
+        qvvert(k, ii) = qwvert(k, ii)-qlvert(k, ii)
       enddo
     enddo
 
@@ -288,16 +337,16 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! Interpolation of temperature, humidity, density on the vertical
     ! The ref pressure profile is the one computed from the meteo profile
     if (ippmod(iatmos).eq.2.and.moddis.eq.2) then
-      qlray(1) = qlvert(1 + (ii-1)*kmx)
-      ncray(1)  = ncvert(1 + (ii-1)*kmx)
-      fneray(1) = fnvert(1 + (ii-1)*kmx)
+      qlray(1) = qlvert(1, ii)
+      ncray(1)  = ncvert(1, ii)
+      fneray(1) = fnvert(1, ii)
     endif
 
     do k = 2, kvert
       zray(k) = zvert(k)
 
       temray(k) = ttvert(k + (ii-1)*kmx)
-      qvray(k)  = qvvert(k + (ii-1)*kmx)
+      qvray(k)  = qvvert(k, ii)
       romray(k) = romvert(k + (ii-1)*kmx)
 
       ! default values
@@ -306,9 +355,9 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       fneray(k) = 0.d0
 
       if (ippmod(iatmos).eq.2.and.moddis.eq.2) then
-        ncray(k)  = ncvert(k + (ii-1)*kmx)
-        qlray(k)  = qlvert(k + (ii-1)*kmx)
-        fneray(k) = fnvert(k + (ii-1)*kmx)
+        ncray(k)  = ncvert(k, ii)
+        qlray(k)  = qlvert(k, ii)
+        fneray(k) = fnvert(k, ii)
       endif
 
       if (imeteo.eq.0) then
@@ -363,8 +412,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
                /(zray(nbmett) - zray(nbmett - ktamp))
           fpond = (1.d0 + tanh(zrac))/2.d0
           temray(k) = ttvert(k + (ii-1)*kmx)*(1.d0 - fpond) + temray(k)*fpond
-          qvray(k) = qvvert(k + (ii-1)*kmx)*(1.d0 - fpond) + qvray(k)*fpond
-          qlray(k) = qlvert(k + (ii-1)*kmx)*(1.d0 - fpond) + qlray(k)*fpond
+          qvray(k) = qvvert(k, ii)*(1.d0 - fpond) + qvray(k)*fpond
+          qlray(k) = qlvert(k, ii)*(1.d0 - fpond) + qlray(k)*fpond
         endif
       enddo
     endif
@@ -427,7 +476,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   deallocate(temray, qvray, qlray)
   deallocate(fneray, romray, preray)
-  deallocate(zproj, ttvert, qvvert, romvert)
+  deallocate(zproj, ttvert, romvert)
   deallocate(aeroso)
   deallocate(cressm)
   deallocate(interp)

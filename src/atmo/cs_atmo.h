@@ -215,6 +215,19 @@ typedef struct {
   cs_real_t *rad_1d_solu;
   cs_real_t *rad_1d_sold;
 
+  /*! 1D profiles of total water mass fraction along each vertical */
+  cs_real_t *rad_1d_qw;
+  /*! 1D profiles of liquid water mass fraction along each vertical */
+  cs_real_t *rad_1d_ql;
+  /*! 1D profiles of vapor water mass fraction along each vertical */
+  cs_real_t *rad_1d_qv;
+  /*! 1D profiles of number of droplets along each vertical */
+  cs_real_t *rad_1d_nc;
+  /*! 1D profiles of nebulosity along each vertical */
+  cs_real_t *rad_1d_fn;
+  /*! 1D profiles of aerosols along each vertical */
+  cs_real_t *rad_1d_aerosols;
+
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
   cs_real_t domain_orientation;
