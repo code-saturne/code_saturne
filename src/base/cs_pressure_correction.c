@@ -580,7 +580,8 @@ _pressure_correction_fv(int        iterns,
     if (indhyd == 1 || vp_param->iifren == 1) {
 
       const int *auto_flag = cs_atmo_get_auto_flag();
-      const cs_real_t *b_head_loss = cs_boundary_conditions_get_b_head_loss();
+      const cs_real_t *b_head_loss
+        = cs_boundary_conditions_get_b_head_loss(false);
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 

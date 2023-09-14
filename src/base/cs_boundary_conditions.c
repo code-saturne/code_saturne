@@ -2999,14 +2999,16 @@ cs_boundary_conditions_get_legacy_zone_num(const  cs_zone_t  *z)
  *
  * The array is allocated if not previously available.
  *
- * \return  b_head_loss  pointer to boundary head losses array
+ * \param[in]  alloc_if_null   do we need to allocate this if not present ?
+
+ * \return  b_head_loss  pointer to boundary head losses array, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_boundary_conditions_get_b_head_loss(void)
+cs_boundary_conditions_get_b_head_loss(bool  alloc_if_null)
 {
-  if (_b_head_loss == NULL)
+  if (_b_head_loss == NULL && alloc_if_null)
     BFT_REALLOC(_b_head_loss, cs_glob_mesh->n_b_faces, cs_real_t);
 
   return _b_head_loss;

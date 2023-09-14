@@ -216,7 +216,7 @@ cs_boundary_conditions_type(bool  init,
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
 
-  cs_real_t *b_head_loss = NULL;
+  cs_real_t *b_head_loss = cs_boundary_conditions_get_b_head_loss(false);
 
   /* Check consistency of types given in cs_user_boundary_conditions
      =============================================================== */
@@ -355,7 +355,7 @@ cs_boundary_conditions_type(bool  init,
 
       if (inb[CS_FREE_INLET - 1] > 0) {
         vp_param->iifren = 1;
-        b_head_loss = cs_boundary_conditions_get_b_head_loss();
+        b_head_loss = cs_boundary_conditions_get_b_head_loss(true);
       }
       else
         vp_param->iifren = 0;
@@ -397,6 +397,8 @@ cs_boundary_conditions_type(bool  init,
       cs_field_t *f = cs_field_by_id(field_id);
 
       if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->type & CS_FIELD_CDO)
         continue;
 
       cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
@@ -735,10 +737,10 @@ cs_boundary_conditions_type(bool  init,
           icodcl_p[f_id] = 1;
         else if (icodcl_p[f_id] != 0)
           rcodcl1_p[f_id] += - ro0 * cs_math_3_distance_dot_product
-                                          (xyzp0,
-                                           b_face_cog[f_id],
-                                           gxyz)
-                                - p0;
+                                       (xyzp0,
+                                        b_face_cog[f_id],
+                                        gxyz)
+                             - p0;
       }
     }
 
@@ -932,7 +934,6 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-
       if (f->type & CS_FIELD_CDO)
         continue;
 
@@ -1008,6 +1009,8 @@ cs_boundary_conditions_type(bool  init,
       cs_field_t *f = cs_field_by_id(field_id);
 
       if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->type & CS_FIELD_CDO)
         continue;
 
       int *icodcl = f->bc_coeffs->icodcl;
@@ -1162,6 +1165,8 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
+      if (f->type & CS_FIELD_CDO)
+        continue;
 
       int *icodcl = f->bc_coeffs->icodcl;
       cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
@@ -1313,6 +1318,8 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
+      if (f->type & CS_FIELD_CDO)
+        continue;
 
       int *icodcl = f->bc_coeffs->icodcl;
       cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
@@ -1377,7 +1384,6 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-
       if (f->type & CS_FIELD_CDO)
         continue;
 
@@ -1512,6 +1518,8 @@ cs_boundary_conditions_type(bool  init,
       cs_field_t *f = cs_field_by_id(field_id);
 
       if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->type & CS_FIELD_CDO)
         continue;
 
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
