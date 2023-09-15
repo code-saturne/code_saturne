@@ -83,8 +83,8 @@ implicit none
 
 ! Arguments
 
-real(c_double), dimension(nfac) :: secvif
-real(c_double), dimension(nfabor) :: secvib
+real(c_double), dimension(*) :: secvif
+real(c_double), dimension(*) :: secvib
 
 ! Local variables
 
