@@ -155,6 +155,7 @@ cs_get_glob_ctwr_option(void);
  * \brief  Define a cooling tower exchange zone
  *
  * \param[in]  zone_criteria  zone selection criteria
+ * \param[in]  z_id           z_id if zone already created (-1 otherwise)
  * \param[in]  zone_type      exchange zone type
  * \param[in]  delta_t        imposed delta temperature delta between inlet
  *                            and oulet of the zone
@@ -170,6 +171,7 @@ cs_get_glob_ctwr_option(void);
 
 void
 cs_ctwr_define(const char           zone_criteria[],
+               int                  z_id,
                cs_ctwr_zone_type_t  zone_type,
                cs_real_t            delta_t,
                cs_real_t            relax,

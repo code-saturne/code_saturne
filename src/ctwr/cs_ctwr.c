@@ -117,6 +117,7 @@ struct _cs_ctwr_zone_t {
 
   int                  num;        /* Exchange zone number */
   char                *criteria;   /* Exchange zone selection criteria */
+  int                  z_id;       /* id of the volume zone */
   char                *name;       /* Exchange zone name */
   char                *file_name;  /* Exchange zone budget file name */
   cs_ctwr_zone_type_t  type;       /* Zone type */
@@ -1050,7 +1051,8 @@ cs_get_glob_ctwr_option(void)
 /*!
  * \brief  Define a cooling tower exchange zone
  *
- * \param[in]  zone_criteria  zone selection criteria
+ * \param[in]  zone_criteria  zone selection criteria (or NULL)
+ * \param[in]  z_id           z_id if zone already created (-1 otherwise)
  * \param[in]  zone_type      exchange zone type
  * \param[in]  delta_t        imposed delta temperature delta between inlet
  *                            and oulet of the zone
@@ -1066,6 +1068,7 @@ cs_get_glob_ctwr_option(void)
 
 void
 cs_ctwr_define(const char           zone_criteria[],
+               int                  z_id,
                cs_ctwr_zone_type_t  zone_type,
                cs_real_t            delta_t,
                cs_real_t            relax,
@@ -1110,18 +1113,28 @@ cs_ctwr_define(const char           zone_criteria[],
   BFT_MALLOC(ct, 1, cs_ctwr_zone_t);
 
   ct->criteria = NULL;
-  BFT_MALLOC(ct->criteria, strlen(zone_criteria)+1, char);
-  strcpy(ct->criteria, zone_criteria);
-
+  if (zone_criteria != NULL) {
+    BFT_MALLOC(ct->criteria, strlen(zone_criteria)+1, char);
+    strcpy(ct->criteria, zone_criteria);
+  }
   ct->num = _n_ct_zones + 1;
+  ct->z_id = z_id;
 
   ct->type = zone_type;
 
   ct->name = NULL;
-  length = strlen("cooling_towers_") + 3;
-  BFT_MALLOC(ct->name, length, char);
-  sprintf(ct->name, "cooling_towers_%02d", ct->num);
-
+  cs_zone_t *z = NULL;
+  if (z_id > -1) {
+    z = cs_volume_zone_by_id(z_id);
+    length = strlen(z->name) + 1;
+    BFT_MALLOC(ct->name, length, char);
+    strcpy(ct->name, z->name);
+  }
+  else {
+    length = strlen("cooling_towers_") + 3;
+    BFT_MALLOC(ct->name, length, char);
+    sprintf(ct->name, "cooling_towers_%02d", ct->num);
+  }
   ct->file_name = NULL;
 
   ct->delta_t = delta_t;
@@ -1258,18 +1271,30 @@ cs_ctwr_define_zones(void)
        to avoid double counting */
     for (int ict = 0; ict < _n_ct_zones; ict++) {
       cs_ctwr_zone_t *ct = _ct_zone[ict];
-      cs_volume_zone_define(ct->name,
-                            ct->criteria,
-                            CS_VOLUME_ZONE_INITIALIZATION);
+      int z_id = ct->z_id;
+      if (z_id > -1)
+        cs_volume_zone_set_type(z_id, CS_VOLUME_ZONE_INITIALIZATION);
+      else {
+        z_id = cs_volume_zone_define(ct->name,
+                                     ct->criteria,
+                                     CS_VOLUME_ZONE_INITIALIZATION);
+        ct->z_id = z_id;
+      }
     }
   }
   else {
     /* Phase change will  take place only in the packing zones */
     for (int ict = 0; ict < _n_ct_zones; ict++) {
       cs_ctwr_zone_t *ct = _ct_zone[ict];
-      cs_volume_zone_define(ct->name,
-                            ct->criteria,
-                            CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+      int z_id = ct->z_id;
+      if (z_id > -1)
+        cs_volume_zone_set_type(z_id, CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+      else {
+        z_id = cs_volume_zone_define(ct->name,
+                                     ct->criteria,
+                                     CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+        ct->z_id = z_id;
+      }
     }
   }
 }
@@ -1373,29 +1398,57 @@ cs_ctwr_log_setup(void)
   for (int i = 0; i < _n_ct_zones; i++) {
     cs_ctwr_zone_t *ct = _ct_zone[i];
 
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("  Cooling tower zone id: %d\n"
-         "    criterion: ""%s""\n"
-         "    Parameters:\n"
-         "      Lambda of the exchange law: %f\n"
-         "      Exponent n of the exchange law: %f\n"
-         "      Type: %d\n"
-         "      Delta Temperature: %f\n"
-         "        Relaxation: %f\n"
-         "      Injected water temperature: %f\n"
-         "      Injected mass flow rate: %f\n"
-         "      Total surface of ingoing water: %f\n"),
-       ct->num,
-       ct->criteria,
-       ct->xap,
-       ct->xnp,
-       ct->type,
-       ct->delta_t,
-       ct->relax,
-       ct->t_l_bc,
-       ct->q_l_bc,
-       ct->surface);
+    if (ct->criteria != NULL)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("  Cooling tower num: %d\n"
+           "    zone id: %d\n"
+           "    criterion: ""%s""\n"
+           "    Parameters:\n"
+           "      Lambda of the exchange law: %f\n"
+           "      Exponent n of the exchange law: %f\n"
+           "      Type: %d\n"
+           "      Delta Temperature: %f\n"
+           "        Relaxation: %f\n"
+           "      Injected water temperature: %f\n"
+           "      Injected mass flow rate: %f\n"
+           "      Total surface of ingoing water: %f\n"),
+         ct->num,
+         ct->z_id,
+         ct->criteria,
+         ct->xap,
+         ct->xnp,
+         ct->type,
+         ct->delta_t,
+         ct->relax,
+         ct->t_l_bc,
+         ct->q_l_bc,
+         ct->surface);
+    else
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("  Cooling tower zone id: %d\n"
+           "    zone id: %d\n"
+           "    Parameters:\n"
+           "      Lambda of the exchange law: %f\n"
+           "      Exponent n of the exchange law: %f\n"
+           "      Type: %d\n"
+           "      Delta Temperature: %f\n"
+           "        Relaxation: %f\n"
+           "      Injected water temperature: %f\n"
+           "      Injected mass flow rate: %f\n"
+           "      Total surface of ingoing water: %f\n"),
+         ct->num,
+         ct->z_id,
+         ct->xap,
+         ct->xnp,
+         ct->type,
+         ct->delta_t,
+         ct->relax,
+         ct->t_l_bc,
+         ct->q_l_bc,
+         ct->surface);
+
   }
 }
 

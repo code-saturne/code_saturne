@@ -291,7 +291,8 @@ cs_user_zones(void)
     cs_real_t surface = 0.48 * 6540.; /* 48% of the total disc */
     cs_real_t qw = surface *  2.64; /* Water flow rate (kg/s) */
 
-    cs_ctwr_define("2 or 3", /* selection criteria */
+    cs_ctwr_define("2 or 3", /* selection criteria (or NULL) */
+                   -1, /* zone_id (or -1) */
                    CS_CTWR_COUNTER_CURRENT,  /* Zone type */
                    -1., /* Imposed temperature delta if positive */
                    0.1, /* Associated relaxation time */
