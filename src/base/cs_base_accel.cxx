@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -1554,9 +1555,22 @@ cs_omp_target_select_default_device(void)
 
   int n_devices = omp_get_num_devices();
 
-  if (cs_glob_rank_id > -1 && n_devices > 1) {
+  if (getenv("OMP_DEFAULT_DEVICE") != NULL) {
+    device_id = atoi(getenv("OMP_DEFAULT_DEVICE"));
+  }
+  else if (getenv("LIBOMPTARGET_DEVICETYPE") != NULL) {
+    device_id = omp_get_default_device();
+  }
+  else if (n_devices > 1) {
 
-    device_id = cs_glob_node_rank_id*n_devices / cs_glob_node_n_ranks;
+    if (cs_glob_rank_id > -1) {
+      device_id = cs_glob_node_rank_id*n_devices / cs_glob_node_n_ranks;
+      if (device_id >= n_devices)
+        device_id = n_devices - 1;
+    }
+
+    else
+      device_id = omp_get_default_device();
 
     assert(device_id > -1 && device_id < n_devices);
 

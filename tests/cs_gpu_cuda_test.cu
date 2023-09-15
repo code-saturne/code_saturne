@@ -306,13 +306,8 @@ _dot_xy_block_aa(cs_lnum_t    n,
   }
 
   // Write results atomically to memory.
-  if (!lane_id) {
-#if (__CUDA_ARCH__ < 600)
-    atomicAddDouble(res, t_xy);
-#else
+  if (!lane_id)
     atomicAdd(res, t_xy);
-#endif
-  }
 }
 
 #if (CUDART_VERSION >= 11000)

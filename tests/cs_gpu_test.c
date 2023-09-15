@@ -107,7 +107,18 @@ _omp_target_test(void)
   double a[n][m], b[n][m], c[n][m];
 
   int n_devices = omp_get_num_devices();
-  printf("Number of OpenMP target devices %d\n", n_devices);
+
+  printf("Number of OpenMP target devices: %d\n"
+         "Selected OpenMP target device:   %d\n",
+         n_devices, cs_get_device_id());
+
+  #pragma omp target
+  {
+    if (omp_is_initial_device())
+      printf("  Running on host\n");
+    else
+      printf("  Running on device\n");
+  }
 
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m; j++) {
@@ -167,10 +178,19 @@ main (int argc, char *argv[])
   /* Allocation tests */
   /*------------------*/
 
+  cs_omp_target_select_default_device();  /* Initialize device id */
+
   cs_real_t *a0, *a1, *a2;
   CS_MALLOC_HD(a0, 100, cs_real_t, CS_ALLOC_HOST);
-  CS_MALLOC_HD(a1, 100, cs_real_t, CS_ALLOC_HOST_DEVICE);
-  CS_MALLOC_HD(a2, 100, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
+
+  if (cs_get_device_id() > -1) {
+    CS_MALLOC_HD(a1, 100, cs_real_t, CS_ALLOC_HOST_DEVICE);
+    CS_MALLOC_HD(a2, 100, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
+  }
+  else {
+    CS_MALLOC_HD(a1, 100, cs_real_t, CS_ALLOC_HOST);
+    CS_MALLOC_HD(a2, 100, cs_real_t, CS_ALLOC_HOST);
+  }
 
   bft_printf("Number of current allocations: %d\n", cs_get_n_allocations_hd());
 

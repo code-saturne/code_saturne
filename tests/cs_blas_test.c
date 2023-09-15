@@ -36,6 +36,7 @@
 
 #if defined(HAVE_MKL)
 #include <mkl_cblas.h>
+#include <mkl_spblas.h>
 
 #elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS)
 #include <cblas.h>
