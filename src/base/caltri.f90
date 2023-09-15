@@ -739,6 +739,11 @@ allocate(isostd(nfabor+1))
 call pp_models_bc_map
 call cp_models_bc_map
 
+if (     ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0          &
+    .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
+   call co_models_bc_map
+endif
+
 ! First pass for initialization BC types
 ! -- Couplage code_saturne/code_saturne
 
