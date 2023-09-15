@@ -323,6 +323,84 @@ _lewis_factor(const int        evap_model,
   return xlew;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build the list of cells attached to a packing zone
+ *         Function pointer to mesh location elements selection definition.
+ *
+ * \param[in]   input        pointer to a structure cast on-the-fly
+ * \param[in]   m            pointer to associated mesh structure.
+ * \param[in]   location_id  id of associated location.
+ * \param[out]  n_elts       number of selected elements
+ * \param[out]  elt_list     list of selected elements.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_packing_selection(void              *input,
+                   const cs_mesh_t   *m,
+                   int                location_id,
+                   cs_lnum_t         *n_elts,
+                   cs_lnum_t        **elt_ids)
+{
+  CS_UNUSED(location_id);
+
+  const cs_ctwr_zone_t **cts = (const cs_ctwr_zone_t **)input;
+
+  bool  *is_packing = NULL;
+  BFT_MALLOC(is_packing, m->n_cells, bool);
+
+#   pragma omp parallel for if (m->n_cells> CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < m->n_cells; i++)
+    is_packing[i] = false;
+
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = cts[ict];
+
+    const int z_id = ct->z_id;
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+    /* At this stage, zone are not defined contrary to the mesh location
+     * So, we retrieve the mesh location information
+     */
+    const int  ml_id = z->location_id;
+    const cs_lnum_t  _n_elts = cs_mesh_location_get_n_elts(ml_id)[0];
+    const cs_lnum_t  *_elt_ids = cs_mesh_location_get_elt_ids(ml_id);
+
+    if (_elt_ids == NULL)
+      for (cs_lnum_t j = 0; j < _n_elts; j++) is_packing[j] = true;
+    else
+      for (cs_lnum_t j = 0; j < _n_elts; j++) is_packing[_elt_ids[j]] = true;
+
+  }
+
+  /* Count the number of cells attached to a packing zone */
+  cs_lnum_t  n_pack_elts = 0;
+  for (cs_lnum_t i = 0; i < m->n_cells; i++)
+    if (is_packing[i]) n_pack_elts++;
+
+  cs_lnum_t *pack_elts = NULL;
+  if (n_pack_elts < m->n_cells) {
+
+    /* Fill list  */
+    BFT_MALLOC(pack_elts, n_pack_elts, cs_lnum_t);
+
+    cs_lnum_t shift = 0;
+    for (cs_lnum_t i = 0; i < m->n_cells; i++)
+      if (is_packing[i]) pack_elts[shift++] = i;
+
+    assert(shift == n_pack_elts);
+
+  } /* Build elt_ids */
+
+  BFT_FREE(is_packing);
+
+  /* Return pointers */
+  *n_elts = n_pack_elts;
+  *elt_ids = pack_elts;
+}
+
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1297,6 +1375,18 @@ cs_ctwr_define_zones(void)
       }
     }
   }
+
+  /* Define the packing zone (union of all packings), "auto:packings" */
+  {
+    const char  zone_name[] = "auto:packings";
+    int z_id = cs_volume_zone_define_by_func(zone_name,
+                                             _packing_selection,
+                                             _ct_zone, /* input */
+                                             0); /* flag */
+
+    cs_volume_zone_set_overlay(z_id, true);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
