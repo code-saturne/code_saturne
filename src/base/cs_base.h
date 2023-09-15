@@ -551,6 +551,32 @@ cs_base_backtrace_dump(FILE  *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Register a function to be called at the finalization stage.
+ *
+ * The finalization is done in the reverse (first in, last out) sequence
+ * relative to calls of \ref cs_base_at_finalize.
+ *
+ * \param[in]  func  finalization function to call.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_at_finalize(cs_base_atexit_t  *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Call sequence of finalization functions.
+ *
+ * The finalization is done in the reverse (first in, last out) sequence
+ * relative to calls of \ref cs_base_at_finalize.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_finalize_sequence(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Query run-time directory info, using working directory names.
  *
  * Returned names are allocated if non-NULL, so should be deallocated by

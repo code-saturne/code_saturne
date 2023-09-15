@@ -61,6 +61,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "cs_base.h"
 #include "cs_log_iteration.h"
 #include "cs_math.h"
 #include "cs_array.h"
@@ -269,6 +270,8 @@ cs_wall_condensation_1d_thermal_create(int nzones)
     _wall_cond_1d_thermal.ztext[iz]  = 0.;
     _wall_cond_1d_thermal.ztpar0[iz] = 0.;
   }
+
+  cs_base_at_finalize(cs_wall_condensation_1d_thermal_free);
 }
 
 void
@@ -349,6 +352,8 @@ cs_wall_condensation_0d_thermal_create(cs_lnum_t  nvolumes,
   cs_array_real_fill_zero(nvolumes, _wall_cond_0d_thermal.volume_surf);
   cs_array_real_fill_zero(nvolumes, _wall_cond_0d_thermal.volume_t0);
   cs_array_real_fill_zero(nvolumes, _wall_cond_0d_thermal.volume_measure);
+
+  cs_base_at_finalize(cs_wall_condensation_0d_thermal_free);
 }
 
 /*----------------------------------------------------------------------------*/

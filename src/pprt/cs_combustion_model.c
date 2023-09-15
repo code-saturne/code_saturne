@@ -45,6 +45,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
+#include "cs_base.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
@@ -434,6 +435,8 @@ cs_combustion_initialize(void)
       _combustion_model.coal = cs_coal_model_create();
       cs_f_coal_model_map();
     }
+
+    cs_base_at_finalize(cs_combustion_finalize);
   }
 }
 

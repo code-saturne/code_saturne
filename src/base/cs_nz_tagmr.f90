@@ -214,12 +214,6 @@ interface
     integer(c_int), value, intent(in) :: znmurx, nfbpcd, nzones
   end subroutine cs_f_wall_condensation_1d_thermal_mesh_create
 
-  subroutine cs_f_wall_condensation_1d_thermal_free() &
-    bind(C, name='cs_wall_condensation_1d_thermal_free')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_f_wall_condensation_1d_thermal_free
-
   subroutine cs_f_wall_condensation_0d_thermal_get_pointers(xem, t_metal,     &
                                                             xro_m, xcp_m,     &
                                                             xcond_m, m_metal, &
@@ -231,12 +225,6 @@ interface
     type(c_ptr), intent(out) :: xem, t_metal, xro_m, xcp_m, xcond_m
     type(c_ptr), intent(out) :: m_metal, s_metal, v_metal, tmet0
   end subroutine cs_f_wall_condensation_0d_thermal_get_pointers
-
-  subroutine cs_f_wall_condensation_0d_thermal_free() &
-    bind(C, name='cs_wall_condensation_0d_thermal_free')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_f_wall_condensation_0d_thermal_free
 
   subroutine cs_f_wall_condensation_0d_thermal_solve() &
     bind(C, name='cs_wall_condensation_0d_thermal_solve')
@@ -301,15 +289,6 @@ contains
     call c_f_pointer(c_tmet0, tmet0, [nvolumes])
 
   end subroutine init_nz_tagmr
-
-  !=============================================================================
-
-  subroutine finalize_nz_tagmr
-
-    call cs_f_wall_condensation_1d_thermal_free()
-    call cs_f_wall_condensation_0d_thermal_free()
-
-  end subroutine finalize_nz_tagmr
 
   !=============================================================================
 

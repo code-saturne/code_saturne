@@ -45,6 +45,7 @@
 #include "bft_printf.h"
 
 #include "cs_array.h"
+#include "cs_base.h"
 #include "cs_1d_wall_thermal.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -1055,6 +1056,8 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
   cs_array_real_fill_zero(ncmast * nvar, _wall_cond.svcond);
   cs_array_real_fill_zero(ncmast, _wall_cond.flxmst);
   cs_array_lnum_set_value(nvolumes, 1, _wall_cond.itagms);
+
+  cs_base_at_finalize(cs_wall_condensation_free);
 }
 
 /*----------------------------------------------------------------------------*/

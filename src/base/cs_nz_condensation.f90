@@ -265,16 +265,6 @@ interface
     type(c_ptr), intent(out) :: ltmast, itypst, izmast, svcond, flxmst, itagms
   end subroutine cs_f_wall_condensation_get_pointers
 
-  !---------------------------------------------------------------------------
-  !> \brief Deallocate wall condensation arrays
-  !---------------------------------------------------------------------------
-
-  subroutine cs_wall_condensation_free() &
-    bind(C, name='cs_wall_condensation_free')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_wall_condensation_free
-
 end interface
 
 contains
@@ -344,16 +334,6 @@ contains
     call c_f_pointer(c_itagms, itagms, [nvolumes])
 
   end subroutine init_nz_pcond
-
-  !=============================================================================
-
-  subroutine finalize_nz_pcond
-
-    implicit none
-
-    call cs_wall_condensation_free()
-
-  end subroutine finalize_nz_pcond
 
   !=============================================================================
 

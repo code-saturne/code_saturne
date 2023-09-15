@@ -55,7 +55,6 @@
 #include "cs_calcium.h"
 #include "cs_cdo_main.h"
 #include "cs_cell_to_vertex.h"
-#include "cs_combustion_model.h"
 #include "cs_control.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
@@ -81,7 +80,6 @@
 #include "cs_ibm.h"
 #include "cs_join.h"
 #include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
 #include "cs_les_inflow.h"
 #include "cs_log.h"
 #include "cs_log_setup.h"
@@ -635,10 +633,15 @@ _run(void)
   cs_field_destroy_all();
   cs_field_destroy_all_keys();
 
-  /* Free Physical model related structures */
+  /* Free Physical model related structures
+     TODO: extend cs_base_atexit_set mechanism to allow registering
+     model-specific cleanup functions at their activation point,
+     avoiding the need for modification of this function, which
+     should be more "generic". */
+
+  cs_base_finalize_sequence();
 
   cs_lagr_finalize();
-  cs_combustion_finalize();
 
   /* Free main mesh after printing some statistics */
 

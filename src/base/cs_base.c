@@ -181,9 +181,13 @@ static char  *_bft_printf_file_name = NULL;
 static bool   _bft_printf_suppress = false;
 static bool   _cs_trace = false;
 
-/* Additional cleanup steps */
+/* Additional finalization steps */
 
-static cs_base_atexit_t  * _cs_base_atexit = NULL;
+static int                 _cs_base_n_finalize = 0;
+static cs_base_atexit_t  **_cs_base_finalize = NULL;
+
+static cs_base_atexit_t   *_cs_base_atexit = NULL;
+
 static cs_base_sigint_handler_t  * _cs_base_sigint_handler = NULL;
 
 /* Additional MPI communicators */
@@ -2612,6 +2616,48 @@ cs_base_backtrace_dump(FILE  *f,
 
     if (nbr > 0)
       fprintf(f, "End of stack\n\n");
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Register a function to be called at the finalization stage.
+ *
+ * The finalization is done in the reverse (first in, last out) sequence
+ * relative to calls of \ref cs_base_at_finalize.
+ *
+ * \param[in]  func  finalization function to call.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_at_finalize(cs_base_atexit_t  *func)
+{
+  int i = _cs_base_n_finalize;
+
+  _cs_base_n_finalize += 1;
+  BFT_REALLOC(_cs_base_finalize, _cs_base_n_finalize, cs_base_atexit_t *);
+
+  _cs_base_finalize[i] = func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Call sequence of finalization functions.
+ *
+ * The finalization is done in the reverse (first in, last out) sequence
+ * relative to calls of \ref cs_base_at_finalize.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_finalize_sequence(void)
+{
+  if (_cs_base_finalize != NULL) {
+    for (int i = _cs_base_n_finalize - 1; i > -1; i--)
+      _cs_base_finalize[i]();
+    BFT_FREE(_cs_base_finalize);
+    _cs_base_n_finalize = 0;
   }
 }
 

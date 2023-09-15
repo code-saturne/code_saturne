@@ -1169,10 +1169,8 @@ if (nctsmt.gt.0) then
   call finalize_tsma
 endif
 
-if(icondb.gt.0 .or.icondv.eq.0) then
-  call finalize_nz_pcond
+if (icondb.gt.0 .or.icondv.eq.0) then
   call finalize_nz_mesh_tagmr
-  call finalize_nz_tagmr
 endif
 
 if (nfpt1d.gt.0) then

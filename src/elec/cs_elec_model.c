@@ -915,6 +915,8 @@ cs_electrical_model_initialize(void)
   fluid_properties->icp = 0;
   fluid_properties->irovar = 1;
   fluid_properties->ivivar = 1;
+
+  cs_base_at_finalize(cs_electrical_model_finalize);
 }
 
 /*----------------------------------------------------------------------------
