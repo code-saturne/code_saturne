@@ -1427,7 +1427,7 @@ cs_ctwr_log_setup(void)
     else
       cs_log_printf
         (CS_LOG_SETUP,
-         _("  Cooling tower zone id: %d\n"
+         _("  Cooling tower num: %d\n"
            "    zone id: %d\n"
            "    Parameters:\n"
            "      Lambda of the exchange law: %f\n"
