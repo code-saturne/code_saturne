@@ -69,6 +69,8 @@ Release 8.0.1 (2023-08-01)
 
 ### Bug fixes:
 
+- Fix MEG source terms generation using time tables.
+
 - Fix profile point coordinates when snap mode is enabled.
   Before this, the plotted coordinates were not the snapped ones,
   and could depend slightly on partitioning.
