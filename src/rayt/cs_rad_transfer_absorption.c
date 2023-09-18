@@ -157,7 +157,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       || pm_flag[CS_COMBUSTION_EBU] >= 0) {
 
     if (rt_params->imodak > 0) {
-      const cs_combustion_model_t *cm = cs_glob_combustion_model;
+
       const int n_gas_e = cm->n_gas_el_comp;
       const int n_gas_g = cm->n_gas_species;
       cs_real_t Xpro, dmm;
