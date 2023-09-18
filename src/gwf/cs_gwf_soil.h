@@ -629,6 +629,21 @@ cs_gwf_soil_set_user_model_param(cs_gwf_soil_t               *soil,
                                  cs_gwf_soil_free_param_t    *free_param_func);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the value of the polynomial order considered when regularizing
+ *        the Van Genuchten-Mualen soil law near the saturated regime. Advanced
+ *        usage. This function has to be called before calling the function
+ *        \ref cs_gwf_soil_set_vgm_tpf_param
+ *        Default: 2. Available values: 2 or 3.
+ *
+ * \param[in] order       value of the polynomial order (2 or 3)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_set_joining_poly_order(int    order);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

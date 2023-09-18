@@ -768,9 +768,9 @@ _update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
     const double  phi = soil->porosity;
     const double  phi_rhol = phi * mc->l_mass_density;
 
+    const double  g_diff_coef = k_abs/mc->g_viscosity;
     const double  l_diff_coef = k_abs/mc->l_viscosity;
     const double  wl_diff_coef = mc->l_mass_density * l_diff_coef;
-    const double  hg_diff_coef = k_abs/mc->g_viscosity;
 
     /* Loop on cells belonging to this soil */
 
@@ -785,7 +785,7 @@ _update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
 
       /* Update terms for the Darcy flux in the gaz phase */
 
-      mc->diff_g_array[c_id] = hg_diff_coef * krg[c_id];
+      mc->diff_g_array[c_id] = g_diff_coef * krg[c_id];
 
       /* Update terms associated to the water conservation equation */
 
@@ -1400,7 +1400,6 @@ _compute_segregated(const cs_mesh_t              *mesh,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate and initialize the model context structure for two-phase

@@ -95,6 +95,14 @@ static const char _err_empty_soil[] =
 static int  _n_soils = 0;
 static cs_gwf_soil_t  **_soils = NULL;
 
+/* A joining may be used in case of a Van Genuchten Mualen law when considered
+   two-phase flows in porous media. The joining near the saturated regime is
+   performed by a polynomial. There are two choices: 2nd order or 3rd order
+   polynomial. By default, a 2nd order polynomial joining is used. */
+
+static int cs_gwf_soil_joining_poly_order = 2;
+
+
 /* The following array enables to get the soil id related to each cell.
    The array size is equal to n_cells */
 
@@ -332,9 +340,9 @@ _update_iso_soil_vgm_tpf(const cs_real_t              t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the new values of the properties related to
- *        a soil with a Van Genuchten-Mualem.
- *        Variant with smooth joining with a 2nd order polynomial
+ * \brief Compute the new values of the properties related to a soil with a Van
+ *        Genuchten-Mualem.
+ *        Variant with a smooth joining relying on a 2nd order polynomial
  *        Case of an isotropic permeability and a two-phase flow in porous
  *        media.
  *
@@ -348,12 +356,12 @@ _update_iso_soil_vgm_tpf(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_vgm_tpf_joined(const cs_real_t              t_eval,
-                                const cs_mesh_t             *mesh,
-                                const cs_cdo_connect_t      *connect,
-                                const cs_cdo_quantities_t   *cdoq,
-                                const cs_zone_t             *zone,
-                                cs_gwf_soil_t               *soil)
+_update_iso_soil_vgm_tpf_join_poly2(const cs_real_t              t_eval,
+                                    const cs_mesh_t             *mesh,
+                                    const cs_cdo_connect_t      *connect,
+                                    const cs_cdo_quantities_t   *cdoq,
+                                    const cs_zone_t             *zone,
+                                    cs_gwf_soil_t               *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
@@ -408,6 +416,125 @@ _update_iso_soil_vgm_tpf_joined(const cs_real_t              t_eval,
         const double  lcap_e = sp->dsl_plus + 2*delta_slope*dpc_ratio;
 
         lcap[c_id] = dsmax*lcap_e;
+
+      }
+      else {
+
+        const double  pr_e = pc*sp->inv_pr_r;
+        const double  pr_en = pow(pr_e, sp->n);
+
+        sl_e = pow(pr_en + 1, -sp->m);
+        sliq[c_id] = sp->sl_r + dsmax * sl_e;
+        lcap[c_id] = lcap_coef * pr_en/pr_e * sl_e/(1 + pr_en);
+
+      }
+
+      const double  sl_e_coef = 1 - pow(sl_e, sp->inv_m);
+      const double  krl_coef = 1 - pow(sl_e_coef, sp->m);
+
+      krl[c_id] = sqrt(sl_e) * krl_coef * krl_coef;
+      krg[c_id] = sqrt(1 - sl_e) * pow(sl_e_coef, 2*sp->m);
+
+    }
+    else { /* Saturated case */
+
+      sliq[c_id] = sp->sl_s;
+      lcap[c_id] = 0.;
+      krl[c_id] = 1;
+      krg[c_id] = 0.;
+
+    }
+
+  } /* Loop on selected cells */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the new values of the properties related to
+ *        a soil with a Van Genuchten-Mualem.
+ *        Variant with smooth joining with a 3rd order polynomial
+ *        Case of an isotropic permeability and a two-phase flow in porous
+ *        media.
+ *
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
+ * \param[in]      zone          pointer to a cs_zone_t
+ * \param[in, out] soil          pointer to a soil structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_iso_soil_vgm_tpf_join_poly3(const cs_real_t              t_eval,
+                                    const cs_mesh_t             *mesh,
+                                    const cs_cdo_connect_t      *connect,
+                                    const cs_cdo_quantities_t   *cdoq,
+                                    const cs_zone_t             *zone,
+                                    cs_gwf_soil_t               *soil)
+{
+  CS_NO_WARN_IF_UNUSED(t_eval);
+  CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(cdoq);
+
+  if (soil == NULL)
+    return;
+
+  /* Retrieve the soil parameters */
+
+  cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
+
+  /* Retrieve the hydraulic context */
+
+  cs_gwf_tpf_t  *hc = soil->hydraulic_context;
+
+  /* Only isotropic values are considered in this case */
+
+  const double  dsmax = sp->sl_s - sp->sl_r;
+  const double  lcap_coef = dsmax * sp->inv_pr_r * (1 - sp->n);
+
+  /* Retrieve arrays to update */
+
+  cs_real_t  *sliq = hc->l_saturation->val;
+  cs_real_t  *lcap = hc->l_capacity;
+  cs_real_t  *krl = hc->l_rel_permeability;
+  cs_real_t  *krg = hc->g_rel_permeability;
+
+  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
+
+  double  sl_e;
+
+  /* Main loop on cells belonging to this soil */
+
+  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+    const cs_lnum_t  c_id = zone->elt_ids[i];
+    const cs_real_t  pc = hc->c_pressure_cells[c_id];
+
+    if (pc > 0) {
+
+      if (pc < sp->pc_plus) {
+
+        const double  dpc = pc - sp->pc_plus;
+        const double  x = dpc/sp->pc_plus, x2 = x*x;
+
+        const double  smax_conj = 1 - sp->sl_joining;
+        const double  dpc_coef = sp->pc_plus*sp->dsl_plus;
+        const double  c_coef = 3*smax_conj + 2*dpc_coef;
+        const double  d_coef = 2*smax_conj + dpc_coef;
+
+        sl_e = sp->sl_joining + sp->dsl_plus*dpc + c_coef*x2 + d_coef*x2*x;
+        sliq[c_id] = sp->sl_r + dsmax*sl_e;
+
+        const double  lcap_e = sp->dsl_plus +
+          (2*c_coef*x + 3*d_coef*x2)/sp->pc_plus;
+
+        const double threshold = 1e-30;
+        if (dsmax*lcap_e < threshold)
+          lcap[c_id] = threshold;
+        else
+          lcap[c_id] = dsmax*lcap_e;
 
       }
       else {
@@ -601,7 +728,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
       if (perm_type & CS_PROPERTY_ISO)
         if (hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
             hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE)
-          soil->update_properties = _update_iso_soil_vgm_tpf_joined;
+          soil->update_properties = _update_iso_soil_vgm_tpf_join_poly2;
         else
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid type of hydraulic model.\n"
@@ -828,6 +955,9 @@ cs_gwf_soil_log_setup(void)
           cs_log_printf(CS_LOG_SETUP, "%s             ", id);
           cs_log_printf(CS_LOG_SETUP, "Pc+ %5.3e; dSl+ %5.3e; Sl_slope %5.3e\n",
                         sp->pc_plus, sp->dsl_plus, sp->sl_plus_slope);
+          cs_log_printf(CS_LOG_SETUP, "%s             ", id);
+          cs_log_printf(CS_LOG_SETUP, "Joining poly. order: %d\n",
+                        cs_gwf_soil_joining_poly_order);
         }
       }
       break;
@@ -1383,7 +1513,14 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
   if (sl_joining < 1) {
 
     _joining_param_vgm(sp);
-    soil->update_properties = _update_iso_soil_vgm_tpf_joined;
+
+    if (cs_gwf_soil_joining_poly_order == 2)
+      soil->update_properties = _update_iso_soil_vgm_tpf_join_poly2;
+    else if (cs_gwf_soil_joining_poly_order == 3)
+      soil->update_properties = _update_iso_soil_vgm_tpf_join_poly3;
+    else
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid polynomial order (=%d)\n",
+                __func__, cs_gwf_soil_joining_poly_order);
 
   }
   else
@@ -1418,6 +1555,28 @@ cs_gwf_soil_set_user_model_param(cs_gwf_soil_t               *soil,
   soil->model_param = param;
   soil->update_properties = update_func;
   soil->free_model_param = free_param_func;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the value of the polynomial order considered when regularizing
+ *        the Van Genuchten-Mualen soil law near the saturated regime. Advanced
+ *        usage. This function has to be called before calling the function
+ *        \ref cs_gwf_soil_set_vgm_tpf_param
+ *        Default: 2. Available values: 2 or 3.
+ *
+ * \param[in] order       value of the polynomial order (2 or 3)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_set_joining_poly_order(int    order)
+{
+  if (order < 3)
+    cs_gwf_soil_joining_poly_order = 2;
+  else
+    cs_gwf_soil_joining_poly_order = 3;
 }
 
 #if 0
