@@ -47,6 +47,7 @@ from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.TurbulenceModel import TurbulenceModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.LocalizationModel import LocalizationModel
+from code_saturne.model.HgnModel import HgnModel
 from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.model.ElectricalModel import ElectricalModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
@@ -75,6 +76,7 @@ class InitializationModel(Model):
         self.node_fluid      = self.node_prop.xmlInitNode('fluid_properties')
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.node_comp = self.models.xmlGetNode('compressible_model', 'model')
+        self.node_hgn  = self.models.xmlGetNode('hgn_model', 'model')
 
         self.turb = TurbulenceModel(self.case)
         self.therm = ThermalScalarModel(self.case)
@@ -110,6 +112,12 @@ class InitializationModel(Model):
         formula = """velocity[0] = 0.;
 velocity[1] = 0.;
 velocity[2] = 0.;"""
+        return formula
+
+
+    @Variables.noUndo
+    def getDefaultVoidFractionFormula(self):
+        formula = """void_fraction = 0.;"""
         return formula
 
 
@@ -341,6 +349,55 @@ omega = k^0.5/almax;"""
         """
         self.__verifyZone(zone)
         node = self.node_veloce.xmlInitNode('initialization')
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+    def getVoidFractionFormulaComponents(self, zone):
+        exp = self.getVoidFractionFormula(zone)
+        if not exp:
+            exp = self.getDefaultVoidFractionFormula()
+
+        req = [('void_fraction', "void_fraction")]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume'),
+               ('fluid_volume', 'Zone fluid volume')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
+    @Variables.undoLocal
+    def setVoidFractionFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for the void fraction.
+        """
+        self.__verifyZone(zone)
+        node = self.node_hgn.xmlInitNode('initialization')
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlInitChildNode('formula', zone_id=zone)
+        if formula != None:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
+
+
+    @Variables.noUndo
+    def getVoidFractionFormula(self, zone):
+        """
+        Public method.
+        Return the formula for the void fraction.
+        """
+        self.__verifyZone(zone)
+        node = self.node_hgn.xmlInitNode('initialization')
 
         formula = node.xmlGetString('formula', zone_id=zone)
         return formula

@@ -2811,14 +2811,44 @@ void cs_gui_initial_conditions(void)
           }
         }
 
+        /* Void fraction initialization for VoF approach */
+        if (cs_glob_vof_parameters->vof_model > 0) {
+
+          cs_tree_node_t *tn
+            = cs_tree_get_node(cs_glob_tree,
+                               "thermophysical_models/"
+                               "hgn_model/initialization");
+          tn = cs_tree_find_node(tn, "formula");
+          tn = _add_zone_id_test_attribute(tn, z->id);
+          const char *formula = cs_tree_node_get_value_str(tn);
+
+          cs_field_t *c = cs_field_by_name_try("void_fraction");
+
+          if (c == NULL && formula != NULL) {
+            cs_real_t *ini_vals = cs_meg_initialization(z->name,
+                                                        n_cells,
+                                                        cell_ids,
+                                                        cell_cen,
+                                                        "void_fraction");
+            if (ini_vals != NULL) {
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                c->val[c_id] = ini_vals[e_id];
+              }
+              BFT_FREE(ini_vals);
+            }
+          }
+
+        }
+
         /* Pressure initialization for groundwater model */
         if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0) {
-          const char *formula = NULL;
 
           cs_tree_node_t *tn = _find_node_variable("hydraulic_head");
           tn = cs_tree_find_node(tn, "formula");
           tn = _add_zone_id_test_attribute(tn, z->id);
-          formula = cs_tree_node_get_value_str(tn);
+
+          const char *formula = cs_tree_node_get_value_str(tn);
 
           cs_field_t *c = cs_field_by_name_try("hydraulic_head");
 
