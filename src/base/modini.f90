@@ -100,13 +100,6 @@ call field_get_key_id("time_step_factor", kcdtvar)
 ! 1. ENTREES SORTIES entsor
 !===============================================================================
 
-!---> sorties chrono?
-
-if (idtvar.lt.0) then
-  call hide_property(icour)
-  call hide_property(ifour)
-endif
-
 ! Logging and postprocessing output
 
 if (irovar.eq.0) then
@@ -116,11 +109,6 @@ endif
 
 if (ivivar.eq.0) then
   call hide_property(iviscl)
-endif
-
-if (idtvar.lt.0) then
-  call hide_property(icour)
-  call hide_property(ifour)
 endif
 
 !===============================================================================

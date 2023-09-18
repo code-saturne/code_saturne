@@ -278,6 +278,10 @@ call cscpva
 
 call usipph(1, iturb, itherm, iale)
 
+call csidtv()
+
+call csiphy()
+
 ! Gravity and Coriolis
 ! Presence or not of gravity may be needed to determine whether some fields
 ! are created, so this is called before cs_user_model (to provide a
@@ -413,17 +417,13 @@ endif
 !   - Interface code_saturne
 !     ======================
 
-call csidtv()
-
-call csiphy()
-
 ! Postprocessing
 
 call cs_gui_output_boundary
 
 ! Define main properties (pointers, checks, ipp) if not in CDO mode only
 if (icdo.lt.2) then
-   call fldprp
+  call fldprp
 endif
 
 !===============================================================================

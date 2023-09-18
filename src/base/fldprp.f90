@@ -231,7 +231,21 @@ if  (iturb.eq.60) then
 endif
 
 call add_property_field_1d('courant_number', 'CFL', icour)
+if (idtvar.lt.0) then
+  call hide_property(icour)
+endif
+
+if (ivofmt.gt.0) then
+  call add_property_field_1d('volume_courant_number', 'CourantNbVol', iflid)
+  if (idtvar.lt.0) then
+    call hide_property(iflid)
+  endif
+endif
 call add_property_field_1d('fourier_number', 'Fourier Number', ifour)
+if (idtvar.lt.0) then
+  call hide_property(ifour)
+endif
+
 
 ! Total pressure is stored in property field of index iprtot
 ! if the compressible module is not enabled (otherwise Ptot=P*).

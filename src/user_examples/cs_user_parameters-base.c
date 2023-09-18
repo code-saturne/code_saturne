@@ -82,6 +82,15 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
+  /*! [time_stepping_options] */
+
+  /* Time step type */
+
+  cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
+  time_opt->idtvar = CS_TIME_STEP_CONSTANT;
+
+  /*! [time_stepping_options] */
+
   /*! [activate_user_model] */
 
   /* Activate Atmospheric flow model
@@ -725,15 +734,6 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t *domain)
 {
-  /*! [time_stepping_options] */
-
-  /* Time step type */
-
-  cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
-  time_opt->idtvar = CS_TIME_STEP_CONSTANT;
-
-  /*! [time_stepping_options] */
-
   /*! [ref_time_step] */
 
   /* Reference time step dt_ref

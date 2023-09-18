@@ -115,7 +115,7 @@ double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
-double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: imasfl, bmasfl, ivolfl, bvolfl
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: viscl, visct
 
@@ -157,16 +157,15 @@ if (.not. (vcopt_u%iconv.ge.1 .and. icour.ge.1) .and.              &
 endif
 
 ! Pointers to the mass fluxes
-if (ivofmt.eq.0) then
-  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-  call field_get_val_s(iflmas, imasfl)
-  call field_get_val_s(iflmab, bmasfl)
-else
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
+if (ivofmt.gt.0) then
   call field_get_key_int(ivarfl(ivolf2), kimasf, iflmas)
   call field_get_key_int(ivarfl(ivolf2), kbmasf, iflmab)
-  call field_get_val_s(iflmas, imasfl)
-  call field_get_val_s(iflmab, bmasfl)
+  call field_get_val_s(iflmas, ivolfl)
+  call field_get_val_s(iflmab, bvolfl)
 endif
 
 ! Allocate temporary arrays for the time-step resolution
@@ -334,25 +333,25 @@ if (idtvar.ge.0) then
       call matrdt(vcopt_u%iconv, idiff0, isym, coefbt, cofbft,   &
                   imasfl, bmasfl, viscf, viscb, dam)
 
-      if (ivofmt.eq.0) then
+      ! Compute w1 = time step verifying CFL constraint given by the user
+      do iel = 1, ncel
+        w1(iel) = coumax / (max(dam(iel)/(crom(iel)*volume(iel)), epzero))
+      enddo
+
+      ! When using VoF we also compute the volume Courant number (without rho)
+      if (ivofmt.gt.0) then
+
+        call matrdt(vcopt_u%iconv, idiff0, isym, coefbt, cofbft,   &
+                    ivolfl, bvolfl, viscf, viscb, dam)
+
+        ! Compute w1 = time step verifying CFL constraint given by the user
         do iel = 1, ncel
-          w1(iel) = dam(iel)/(crom(iel)*volume(iel))
-        enddo
-      else
-        do iel = 1, ncel
-          w1(iel) = dam(iel)/volume(iel)
+          w1(iel) = min(w1(iel), coumax / (max(dam(iel)/volume(iel), epzero)))
         enddo
       endif
 
-      ! ---> CALCUL DE W1 = PAS DE TEMPS VARIABLE VERIFIANT
-      !       LE NOMBRE DE COURANT MAXIMUM PRESCRIT PAR L'UTILISATEUR
 
-      do iel = 1, ncel
-        w1(iel) = coumax/max(w1(iel), epzero)
-      enddo
-
-      ! PAS DE TEMPS UNIFORME : ON PREND LE MINIMUM DE LA CONTRAINTE
-
+      ! Uniform time step: we take the minimum of the constraint
       if (idtvar.eq.1) then
         w1min = grand
         do iel = 1, ncel
@@ -804,9 +803,10 @@ double precision, allocatable, dimension(:) :: cofbft, coefbt
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:), pointer :: dt
-double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: imasfl, bmasfl, ivolfl, bvolfl
 double precision, dimension(:), pointer :: brom, crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
+double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cpro_cour, cpro_courvol, cpro_four
 
 type(var_cal_opt) :: vcopt_u
 
@@ -849,6 +849,13 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
+if (ivofmt.gt.0) then
+  call field_get_key_int(ivarfl(ivolf2), kimasf, iflmas)
+  call field_get_key_int(ivarfl(ivolf2), kbmasf, iflmab)
+  call field_get_val_s(iflmas, ivolfl)
+  call field_get_val_s(iflmab, bvolfl)
+endif
+
 call field_get_val_s_by_name('dt', dt)
 
 ! Allocate temporary arrays for the time-step resolution
@@ -864,6 +871,9 @@ call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icour, cpro_cour)
+if (ivofmt.gt.0) then
+  call field_get_val_s_by_name("volume_courant_number", cpro_courvol)
+endif
 call field_get_val_s(ifour, cpro_four)
 
 !===============================================================================
@@ -962,6 +972,74 @@ if (vcopt_u%iconv.ge.1 .and. icour.ge.1) then
       endif
       if (cpro_cour(iel).ge.cfmax) then
         cfmax  = cpro_cour(iel)
+        icfmax(1) = iel
+      endif
+    enddo
+
+    xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
+    xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
+    xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
+    xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
+    xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
+    xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
+
+    if (irangp.ge.0) then
+      nbrval = 3
+      call parmnl(nbrval, cfmin, xyzmin)
+      call parmxl(nbrval, cfmax, xyzmax)
+    endif
+
+    if (icfmax(1).gt.0) then
+      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+    else
+      write(nfecra,*) cnom, "Too big to be displayed"
+    endif
+
+    if (icfmin(1).gt.0) then
+      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+    else
+      write(nfecra,*) cnom, "Too big to be displayed"
+    endif
+
+  endif
+
+endif
+
+!===============================================================================
+! Compute VoF Courant number for log
+!===============================================================================
+
+if (vcopt_u%iconv.ge.1 .and. ivofmt.gt.0) then
+
+  idiff0 = 0
+  cnom   =' COURVOL'
+
+  ! Build matrix of  U/DX(Courant) = w1
+
+  ! Non symmetric matrix
+  isym = 2
+
+  call matrdt(vcopt_u%iconv, idiff0, isym, coefbt, cofbft, ivolfl, bvolfl, &
+              viscf, viscb, dam)
+
+  ! Compute min and max Courant numbers
+  cfmax = -grand
+  cfmin =  grand
+  icfmax(1)= 0
+  icfmin(1)= 0
+
+  do iel = 1, ncel
+    cpro_courvol(iel) = dam(iel)/volume(iel) * dt(iel)
+  enddo
+
+  if (vcopt_u%iwarni.ge.2) then
+    do iel = 1, ncel
+      if (cpro_courvol(iel).le.cfmin) then
+        cfmin  = cpro_courvol(iel)
+        icfmin(1) = iel
+      endif
+      if (cpro_courvol(iel).ge.cfmax) then
+        cfmax  = cpro_courvol(iel)
         icfmax(1) = iel
       endif
     enddo

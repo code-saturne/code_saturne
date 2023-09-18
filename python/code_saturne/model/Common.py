@@ -107,6 +107,7 @@ def dicoLabel(name):
                             ('volume_viscosity',              "VolVisc",    "VolVisc"),
                             ('local_time_step',               "pdtlocal",   "LocalTime"),
                             ('courant_number',                "NbCourant",  "CourantNb"),
+                            ('volume_courant_number',         "NbCourantVol", "CourantNbVol"),
                             ('fourier_number',                "NbFourier",  "FourierNb"),
                             ('weight_matrix_X',               "VPsolve1",   "VPsolve1"),
                             ('weight_matrix_Y',               "VPsolve2",   "VPsolve2"),
