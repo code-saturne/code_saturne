@@ -1580,7 +1580,11 @@ _vb_sat_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
     const double  coef =
       lamb_parent * (soil->porosity + tc_parent->rho_kd[soil_id]);
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-    assert(z->elt_ids != NULL);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    if (z->n_elts > 0)
+      assert(z->elt_ids != NULL);
+#endif
 
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
@@ -1664,7 +1668,11 @@ _vb_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
     const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
     const double  rhokd_parent = tc_parent->rho_kd[soil_id];
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-    assert(z->elt_ids != NULL);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    if (z->n_elts > 0)
+      assert(z->elt_ids != NULL);
+#endif
 
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
@@ -1754,7 +1762,11 @@ _vb_sat_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
     const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
     const double  coef = lamb * (soil->porosity + tc_parent->rho_kd[soil_id]);
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-    assert(z->elt_ids != NULL);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    if (z->n_elts > 0)
+      assert(z->elt_ids != NULL);
+#endif
 
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
@@ -1837,13 +1849,16 @@ _vb_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
 
     /* When the soil is saturated, the moisture content is equal to the
-     * porosity
-     */
+     * porosity */
 
     const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
     const double  rhokd_parent = tc_parent->rho_kd[soil_id];
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-    assert(z->elt_ids != NULL);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    if (z->n_elts > 0)
+      assert(z->elt_ids != NULL);
+#endif
 
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
