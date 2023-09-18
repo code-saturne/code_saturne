@@ -488,7 +488,7 @@ _cs_rad_transfer_sol(int                        gg_id,
     if ((gg_id == rt_params->atmo_dr_id)
       || (gg_id == rt_params->atmo_dr_o3_id)) {
       /* Zenithal angle:
-       * muzera is almost cos(za),
+       * muzero is almost cos(za),
        * but take earth curvature into account */
       cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
       vect_s[0] = - sinza * sin(omega);

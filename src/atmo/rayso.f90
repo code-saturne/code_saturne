@@ -207,6 +207,7 @@ integer          ifac, iz1, iz2, f_id, c_id, iel
 double precision za, muzero, muzero_cor,fo,m,mbar,rabar,rabar2,rbar
 double precision rabarc,rbarc, refx, trax, refx0, trax0
 double precision qqvtot,y,ystar
+double precision yp1,ystarp1
 double precision zqm1,zq,xm1,x,xstar,xstarm1
 double precision rrbar,rrbar2s
 double precision tauctot,wh2ol,rm,req,deltaz
@@ -492,19 +493,17 @@ if (muzero.gt.epzero) then
 
   do i = kmray, k1p1, -1
     if(qlray(i).gt.epsc) then
-      if(itop.eq.0) then
+      if (itop.eq.0) then
         itop = i
-        ibase = i
-      else
-        ibase = i
       endif
+      ibase = i
     endif
   enddo
 
   ! if itop = 0, there is no cloud but, nevertheless, it is possible to execute
   ! the adding method for the water vapor (SIR band) only
 
-  if(itop.eq.0) then
+  if (itop.eq.0) then
     itop = k1
     ibase = k1
   endif
@@ -827,8 +826,8 @@ if (muzero.gt.epzero) then
     !flux coming from the top
     fabso3(l)=fo*muzero*(0.647d0- raysoz(m*rayuoz(zray(itop))))*absn(l,n)
   enddo
-  ! If there is no cloud
-  if (itop .gt. 1) then
+  ! If there is a cloud
+  if (itop .gt. k1) then
     do i = k1, itop - 1
       ! addition of ozone absorption for heating in the layers when adding method is used
       zqm1 = zqq(i)
@@ -854,14 +853,17 @@ if (muzero.gt.epzero) then
       ckup_suv_f(i)=dzxaoz(xstar,dzx)/(0.647d0-rrbar-raysoz(xstar))
 
     enddo
+
+    ! Calculation of upward flux above cloud or aerosol layers taking into account
+    ! the upward flux transmitted by cloud or aerosol layers
+    ! if there is no cloud and no aerosol (itop=k1) this term have not to be add
+    do i = itop, kmray-1
+      zq = zray(i+1)!FIXME as above...
+      zbas = zray(itop)
+      xstar = mbar*(rayuoz(zbas) - rayuoz(zq))
+      ufso3(i) = ufso3(itop-1)*(1.d0 -raysoz(xstar))
+    enddo
   endif
-  ! Calculation of upward flux above cloud or aerosol layers taking into account the upward flux transmitted by cloud or aerosol layers
-  do i = itop+1, kmray
-    zq = zray(i)
-    zbas = zray(itop)
-    xstar = mbar*(rayuoz(zbas) - rayuoz(zq))
-    ufso3(i) =ufso3(itop)*(1.d0 -raysoz(xstar))
-  enddo
 
   ! 6.4 Absorption by water vapor and liquid water (H20 band, SIR)
 
@@ -1007,6 +1009,20 @@ if (muzero.gt.epzero) then
     fabsh2o(l) = fabsh2o(l)*fo*muzero
   enddo
 
+  ! In the case with no clouds and aerosol in order to have exactly
+  ! the same expressions in 1D and 3D for the heating rate
+  if (itop.eq.k1) then
+    do i = k1p1, kmray
+      y = m*(qqvtot - qqv(i))
+      if(i.eq.k1p1) y = m*qqvtot
+      yp1 = m*(qqvtot - qqv(i+1))
+      ystar = m*qqvtot + 5.d0/3.d0*qqv(i)
+      if(i.eq.k1p1) ystar = m*qqvtot
+      ystarp1 = m*qqvtot + 5.d0/3.d0*qqv(i+1)
+      fabsh2o(i) = muzero*fo*(raysve(y) - raysve(yp1) + albe*(raysve(ystarp1) &
+                                                             -raysve(ystar)))
+    enddo
+  endif
   ! 5.5 heating in the layers
   rayst(k1) = 0.d0
   rayst_h2o(k1) = 0.d0
@@ -1043,6 +1059,14 @@ if (muzero.gt.epzero) then
     if (i.eq.k1) y = m*qqvtot
     ystar = m*qqvtot + 5.d0/3.d0*qqv(i)
     if(i.eq.k1) ystar = m*qqvtot
+
+    ! to test in the case with no clouds and aerosol in order to have exactly
+    ! the same expressions in 1D and 3D for the fluxes
+    if (itop.eq.k1) then
+      dfsh2o(i) = fo*muzero*(0.353d0-raysve(y))
+      ufsh2o(i) = fo*muzero*(0.353d0-raysve(ystar))*albe
+      ddfsh2o(i) = fo*muzero*(0.353d0-raysve(y))
+    endif
 
     ! (p_i/p_k) * (p_k/p0) = p_i/p0
     !We keep 1013.15 for standard atmosphere ref:LH74

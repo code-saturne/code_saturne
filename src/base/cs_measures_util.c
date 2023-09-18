@@ -264,7 +264,7 @@ cs_interpol_field_on_grid(cs_interpol_grid_t *ig,
     interpolated_values[g_id] = 0.;
 
     /* get z_min and z_max of the level,
-     * Not, first and last levels are truncated */
+     * Note, first and last levels are truncated */
     cs_real_t z_min, z_max;
     if (g_id == 0)
       z_min = g_coords[g_id][2];
