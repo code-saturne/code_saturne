@@ -473,11 +473,12 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
    *==========================================================================*/
 
   /* solving info */
-  cs_solving_info_t sinfo;
+  cs_solving_info_t *sinfo = NULL;
   int key_sinfo_id = cs_field_key_id("solving_info");
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
-    cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+    sinfo = cs_field_get_key_struct_ptr(f, key_sinfo_id);
+    sinfo->n_it = 0;
   }
 
   /* Symmetric matrix, except if advection */
@@ -590,6 +591,10 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_real_t rnorm = sqrt(cs_gdot(m->n_cells, divergfext, divergfext));
   cs_real_t residu = rnorm;
 
+  /* Log */
+  if (sinfo != NULL)
+    sinfo->rhs_norm = residu;
+
   /* Initial Right-Hand-Side */
   cs_diffusion_potential(f_id,
                          m,
@@ -627,6 +632,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
       dpvar[cell_id] = 0.;
 
     ressol = residu;
+
     cs_sles_solve_native(f_id,
                          "",
                          symmetric,
@@ -640,6 +646,10 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          &ressol,
                          rhs,
                          dpvar);
+
+    /* Log */
+    if (sinfo != NULL)
+      sinfo->n_it += niterf;
 
     /* Update variable and right-hand-side */
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
@@ -683,6 +693,14 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                  "Iterations for solver: %d\n", name, sweep, niterf);
     }
 
+  }
+
+  /* For log */
+  if (sinfo != NULL) {
+    if (rnorm > 0.)
+      sinfo->res_norm = residu/rnorm;
+    else
+      sinfo->res_norm = 0.;
   }
 
   cs_sles_free_native(f_id, "");
