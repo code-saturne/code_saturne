@@ -771,8 +771,8 @@ class meg_to_c_interpreter:
         for ktt in self.time_tables.keys():
             _kvals = self.time_tables[ktt]
             glob_tokens[ktt] = \
-                'const cs_real_t {var} = {func});'.format(var=_kvals[0], \
-                                                          func=_kvals[1])
+                'const cs_real_t {var} = {func};'.format(var=_kvals[0], \
+                                                         func=_kvals[1])
 
         for f in known_fields.keys():
             knf_name = known_fields[f]
