@@ -4512,17 +4512,15 @@ cs_sles_it_solve(void                *context,
       amode_rhs = cs_check_device_ptr(rhs);
 
       if (amode_vx == CS_ALLOC_HOST) {
-        CS_MALLOC_HD(_vx, v_size, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
-        cs_prefetch_h2d(_vx, v_size*sizeof(cs_real_t));
-        memcpy(_vx, vx, v_size*sizeof(cs_real_t));
+        CS_MALLOC_HD(_vx, v_size, cs_real_t, CS_ALLOC_DEVICE);
+        cs_copy_h2d(_vx, vx, v_size*sizeof(cs_real_t));
       }
       else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED)
         cs_sync_h2d(_vx);
 
       if (amode_rhs == CS_ALLOC_HOST) {
-        CS_MALLOC_HD(_rhs_w, v_size, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
-        cs_prefetch_h2d(_rhs_w, v_size*sizeof(cs_real_t));
-        memcpy(_rhs_w, rhs, v_size*sizeof(cs_real_t));
+        CS_MALLOC_HD(_rhs_w, v_size, cs_real_t, CS_ALLOC_DEVICE);
+        cs_copy_h2d(_rhs_w, rhs, v_size*sizeof(cs_real_t));
         _rhs = _rhs_w;
       }
       else if (amode_rhs < CS_ALLOC_HOST_DEVICE_SHARED)
@@ -4544,7 +4542,7 @@ cs_sles_it_solve(void                *context,
 
     if (c->on_device) {
       if (amode_vx == CS_ALLOC_HOST) {
-        memcpy(vx, _vx, v_size*sizeof(cs_real_t));
+        cs_copy_d2h(vx, _vx, v_size*sizeof(cs_real_t));
         CS_FREE_HD(_vx);
       }
       else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED)
