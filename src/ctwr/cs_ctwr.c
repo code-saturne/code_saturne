@@ -1377,7 +1377,7 @@ cs_ctwr_define_zones(void)
   }
 
   /* Define the packing zone (union of all packings), "auto:packings" */
-  {
+  if (_n_ct_zones > 0){
     const char  zone_name[] = "auto:packings";
     int z_id = cs_volume_zone_define_by_func(zone_name,
                                              _packing_selection,
