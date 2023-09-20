@@ -409,6 +409,8 @@ cs_gwf_log_setup(void)
     (gw->post_flag & CS_GWF_POST_PERMEABILITY) ? true : false;
   bool  post_gas_density =
     (gw->post_flag & CS_GWF_POST_GAS_MASS_DENSITY) ? true : false;
+  bool  post_soil_state =
+    (gw->post_flag & CS_GWF_POST_SOIL_STATE) ? true : false;
 
   cs_log_printf(CS_LOG_SETUP, "  * GWF | Post:"
                 " Soil capacity %s Liquid saturation %s Permeability %s\n",
@@ -418,8 +420,10 @@ cs_gwf_log_setup(void)
 
   if (gw->model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE ||
       gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Post: Gas mass density %s\n",
-                  cs_base_strtf(post_gas_density));
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Post: Gas mass density %s"
+                  " Soil state %s\n",
+                  cs_base_strtf(post_gas_density),
+                  cs_base_strtf(post_soil_state));
 
   bool  do_balance =
     (gw->post_flag & CS_GWF_POST_DARCY_FLUX_BALANCE) ? true : false;
@@ -1280,10 +1284,9 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
               __func__);
   }
 
-  /* Store the soil id for each cell */
+  /* Finalize the soil setup */
 
-  cs_gwf_soil_check();
-  cs_gwf_soil_build_cell2soil(quant->n_cells);
+  cs_gwf_soil_finalize_setup(gw->model, gw->post_flag, quant->n_cells);
 
   /* Finalize the tracer setup */
 

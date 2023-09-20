@@ -94,6 +94,31 @@ typedef void
  * Type definitions
  *============================================================================*/
 
+/*! \enum cs_gwf_soil_state_t
+ *  \brief Kind of state in which a cell is
+ *
+ * \var CS_GWF_SOIL_STATE_SATURATED
+ *      All the available space in the porous media is liquid
+ *
+ * \var CS_GWF_SOIL_STATE_UNSATURATED
+ *      Only a part of the porous media is filled with liquid
+ *
+ * \var CS_GWF_SOIL_STATE_DRY
+ *      All the available space in the porous media is gas or void
+ *
+ * \var CS_GWF_SOIL_N_STATES
+ */
+
+typedef enum {
+
+  CS_GWF_SOIL_STATE_SATURATED    = 0,
+  CS_GWF_SOIL_STATE_UNSATURATED  = 1,
+  CS_GWF_SOIL_STATE_DRY          = 2,
+
+  CS_GWF_SOIL_N_STATES           = 3,
+
+} cs_gwf_soil_state_t;
+
 /*! \struct cs_gwf_soil_vgm_spf_param_t
  *
  * \brief Structure to handle the Van Genuchten-Mualem model of soil in the
@@ -397,23 +422,27 @@ cs_gwf_soil_free_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Last initialization step for the soil structures/parameters
+ *
+ * \param[in] gwf_model      modelling used for the GWF module
+ * \param[in] post_flag      which post-processing to do
+ * \param[in] n_cells        number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_finalize_setup(cs_gwf_model_type_t    gwf_model,
+                           cs_flag_t              post_flag,
+                           cs_lnum_t              n_cells);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of the settings related to all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_soil_log_setup(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check that at least one soil has been defined and the model of soil
- *        exists.
- *        Raise an error if a problem is encoutered.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_check(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -462,29 +491,6 @@ cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an array storing the associated soil for each cell
- *         The lifecycle of this array is managed by the code.
- *
- * \param[in] n_cells      number of cells
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_build_cell2soil(cs_lnum_t    n_cells);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the array storing the associated soil for each cell
- *
- * \return a pointer to the array
- */
-/*----------------------------------------------------------------------------*/
-
-const short int *
-cs_gwf_soil_get_cell2soil(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Build an array storing the dual volume associated to each vertex
  *        taking into account the porosity of the soil
  *        The computed quantity is stored as a static array. Use the function
@@ -510,6 +516,28 @@ cs_gwf_soil_build_dual_porous_volume(const cs_cdo_quantities_t    *cdoq,
 
 const double *
 cs_gwf_soil_get_dual_porous_volume(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the associated soil for each cell
+ *
+ * \return a pointer to the array
+ */
+/*----------------------------------------------------------------------------*/
+
+const short int *
+cs_gwf_soil_get_cell2soil(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the soil state associated to each cell
+ *
+ * \return a pointer to the array (may be NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+const int *
+cs_gwf_soil_get_soil_state(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

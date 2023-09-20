@@ -113,6 +113,10 @@ static short int *_cell2soil_ids = NULL;
 
 static double  *_dual_porous_volume = NULL;
 
+/* Array storing the soil state */
+
+static int  *_soil_state_array = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -229,6 +233,11 @@ _update_iso_soil_vgm_spf(const cs_real_t              t_eval,
 
       capacity[c_id] = ccoef * coef/h * se_m1;
 
+      if (moisture[c_id] < FLT_MIN)
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
+      else
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
+
     }
     else {
 
@@ -243,6 +252,10 @@ _update_iso_soil_vgm_spf(const cs_real_t              t_eval,
       /* Set the soil capacity */
 
       capacity[c_id] = 0.;
+
+      /* soil state */
+
+      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
 
     }
 
@@ -325,6 +338,11 @@ _update_iso_soil_vgm_tpf(const cs_real_t              t_eval,
       krl[c_id] = sqrt(sl_e) * krl_coef * krl_coef;
       krg[c_id] = sqrt(1 - sl_e) * pow(sl_e_coef, 2*sp->m);
 
+      if (sliq[c_id] < FLT_MIN)
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
+      else
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
+
     }
     else { /* Saturated case */
 
@@ -332,6 +350,8 @@ _update_iso_soil_vgm_tpf(const cs_real_t              t_eval,
       lcap[c_id] = 0.;
       krl[c_id] = 1;
       krg[c_id] = 0.;
+
+      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
 
     }
 
@@ -435,6 +455,11 @@ _update_iso_soil_vgm_tpf_join_poly2(const cs_real_t              t_eval,
       krl[c_id] = sqrt(sl_e) * krl_coef * krl_coef;
       krg[c_id] = sqrt(1 - sl_e) * pow(sl_e_coef, 2*sp->m);
 
+      if (sliq[c_id] < FLT_MIN)
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
+      else
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
+
     }
     else { /* Saturated case */
 
@@ -442,6 +467,8 @@ _update_iso_soil_vgm_tpf_join_poly2(const cs_real_t              t_eval,
       lcap[c_id] = 0.;
       krl[c_id] = 1;
       krg[c_id] = 0.;
+
+      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
 
     }
 
@@ -554,6 +581,11 @@ _update_iso_soil_vgm_tpf_join_poly3(const cs_real_t              t_eval,
       krl[c_id] = sqrt(sl_e) * krl_coef * krl_coef;
       krg[c_id] = sqrt(1 - sl_e) * pow(sl_e_coef, 2*sp->m);
 
+      if (sliq[c_id] < FLT_MIN)
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
+      else
+        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
+
     }
     else { /* Saturated case */
 
@@ -562,9 +594,106 @@ _update_iso_soil_vgm_tpf_join_poly3(const cs_real_t              t_eval,
       krl[c_id] = 1;
       krg[c_id] = 0.;
 
+      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
+
     }
 
   } /* Loop on selected cells */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build an array storing the associated soil for each cell
+ *         The lifecycle of this array is managed by the code.
+ *
+ * \param[in] n_cells      number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_cell2soil(cs_lnum_t    n_cells)
+{
+  BFT_MALLOC(_cell2soil_ids, n_cells, short int);
+
+  if (_n_soils == 1)
+    memset(_cell2soil_ids, 0, sizeof(short int)*n_cells);
+
+  else {
+
+    assert(_n_soils > 1);
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t j = 0; j < n_cells; j++)
+      _cell2soil_ids[j] = -1; /* unset by default */
+
+    for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
+
+      const cs_gwf_soil_t  *soil = _soils[soil_id];
+      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+      assert(z != NULL);
+
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t j = 0; j < z->n_elts; j++)
+        _cell2soil_ids[z->elt_ids[j]] = soil_id;
+
+    } /* Loop on soils */
+
+    /* Check if every cells is associated to a soil */
+
+    for (cs_lnum_t j = 0; j < n_cells; j++)
+      if (_cell2soil_ids[j] == -1)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: At least cell %ld has no related soil.\n",
+                  __func__, (long)j);
+
+  } /* n_soils > 1 */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check that at least one soil has been defined and the model of soil
+ *        exists.
+ *        Raise an error if a problem is encoutered.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_soil_settings(void)
+{
+  if (_n_soils < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Groundwater module is activated but no soil is defined.",
+              __func__);
+  if (_soils == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The soil structure is not allocated whereas %d soils"
+              " have been added.\n", __func__, _n_soils);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    const cs_zone_t  *z = cs_volume_zone_by_id(_soils[i]->zone_id);
+    assert(z != NULL);
+
+    if (_soils[i]->model == CS_GWF_SOIL_N_HYDRAULIC_MODELS)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid model of soil attached to zone %s\n",
+                __func__, z->name);
+
+    if (z->n_g_elts < 1) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" %s: The soil \"%s\" is defined but associated to no cell.\n"
+                 " Please check your settings.\n",
+                 __func__, z->name);
+    }
+
+    if (z->n_elts > 0)
+      if (z->elt_ids == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: One assumes that z->elt_ids != NULL.\n"
+                  " This is not the case for the soil \"%s\"\n",
+                  __func__, z->name);
+
+  } /* Loop on soils */
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -870,6 +999,45 @@ cs_gwf_soil_free_all(void)
   BFT_FREE(_soils);
   BFT_FREE(_cell2soil_ids);
   BFT_FREE(_dual_porous_volume);
+  BFT_FREE(_soil_state_array);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last initialization step for the soil structures/parameters
+ *
+ * \param[in] gwf_model      modelling used for the GWF module
+ * \param[in] post_flag      which post-processing to do
+ * \param[in] n_cells        number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_finalize_setup(cs_gwf_model_type_t    gwf_model,
+                           cs_flag_t              post_flag,
+                           cs_lnum_t              n_cells)
+{
+  /* Check the settings */
+
+  _check_soil_settings();
+
+  /* Store the soil id for each cell */
+
+  _build_cell2soil(n_cells);
+
+  /* Allocate if needed the soil state */
+
+  if ((post_flag & CS_GWF_POST_SOIL_STATE) ||
+      (gwf_model != CS_GWF_MODEL_SATURATED_SINGLE_PHASE)) {
+
+    BFT_MALLOC(_soil_state_array, n_cells, int);
+
+    /* Default initialization */
+
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      _soil_state_array[i] = CS_GWF_SOIL_STATE_SATURATED;
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -976,53 +1144,6 @@ cs_gwf_soil_log_setup(void)
   } /* Loop on soils */
 
   cs_log_printf(CS_LOG_SETUP, "\n");
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check that at least one soil has been defined and the model of soil
- *        exists.
- *        Raise an error if a problem is encoutered.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_check(void)
-{
-  if (_n_soils < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Groundwater module is activated but no soil is defined.",
-              __func__);
-  if (_soils == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: The soil structure is not allocated whereas %d soils"
-              " have been added.\n", __func__, _n_soils);
-
-  for (int i = 0; i < _n_soils; i++) {
-
-    const cs_zone_t  *z = cs_volume_zone_by_id(_soils[i]->zone_id);
-    assert(z != NULL);
-
-    if (_soils[i]->model == CS_GWF_SOIL_N_HYDRAULIC_MODELS)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid model of soil attached to zone %s\n",
-                __func__, z->name);
-
-    if (z->n_g_elts < 1) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" %s: The soil \"%s\" is defined but associated to no cell.\n"
-                 " Please check your settings.\n",
-                 __func__, z->name);
-    }
-
-    if (z->n_elts > 0)
-      if (z->elt_ids == NULL)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: One assumes that z->elt_ids != NULL.\n"
-                  " This is not the case for the soil \"%s\"\n",
-                  __func__, z->name);
-
-  } /* Loop on soils */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1166,68 +1287,6 @@ cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an array storing the associated soil for each cell
- *         The lifecycle of this array is managed by the code.
- *
- * \param[in] n_cells      number of cells
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_build_cell2soil(cs_lnum_t    n_cells)
-{
-  BFT_MALLOC(_cell2soil_ids, n_cells, short int);
-
-  if (_n_soils == 1)
-    memset(_cell2soil_ids, 0, sizeof(short int)*n_cells);
-
-  else {
-
-    assert(_n_soils > 1);
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t j = 0; j < n_cells; j++)
-      _cell2soil_ids[j] = -1; /* unset by default */
-
-    for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
-
-      const cs_gwf_soil_t  *soil = _soils[soil_id];
-      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-
-      assert(z != NULL);
-
-#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-      for (cs_lnum_t j = 0; j < z->n_elts; j++)
-        _cell2soil_ids[z->elt_ids[j]] = soil_id;
-
-    } /* Loop on soils */
-
-    /* Check if every cells is associated to a soil */
-
-    for (cs_lnum_t j = 0; j < n_cells; j++)
-      if (_cell2soil_ids[j] == -1)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: At least cell %ld has no related soil.\n",
-                  __func__, (long)j);
-
-  } /* n_soils > 1 */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the array storing the associated soil for each cell
- *
- * \return a pointer to the array
- */
-/*----------------------------------------------------------------------------*/
-
-const short int *
-cs_gwf_soil_get_cell2soil(void)
-{
-  return _cell2soil_ids;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Build an array storing the dual volume associated to each vertex
  *        taking into account the porosity of the soil
  *        The computed quantity is stored as a static array. Use the function
@@ -1311,6 +1370,34 @@ const double *
 cs_gwf_soil_get_dual_porous_volume(void)
 {
   return _dual_porous_volume;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the associated soil for each cell
+ *
+ * \return a pointer to the array
+ */
+/*----------------------------------------------------------------------------*/
+
+const short int *
+cs_gwf_soil_get_cell2soil(void)
+{
+  return _cell2soil_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the array storing the soil state associated to each cell
+ *
+ * \return a pointer to the array (may be NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+const int *
+cs_gwf_soil_get_soil_state(void)
+{
+  return _soil_state_array;
 }
 
 /*----------------------------------------------------------------------------*/

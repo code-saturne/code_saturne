@@ -2782,8 +2782,8 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                       CS_POST_WRITER_DEFAULT,
                       "gas_mass_density",
                       1,
-                      true,
-                      false,
+                      false,    /* interlace */
+                      false,    /* use parent */
                       CS_POST_TYPE_cs_real_t,
                       gas_mass_density,
                       NULL,
@@ -2793,6 +2793,23 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
     BFT_FREE(gas_mass_density);
 
   } /* Post-processing of the gas mass density */
+
+  if (post_flag & CS_GWF_POST_SOIL_STATE) {
+
+    const int  *soil_state = cs_gwf_soil_get_soil_state();
+
+    if (soil_state != NULL)
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "soil_state",
+                        1,
+                        false,  /* interlace */
+                        true,   /* use_parent */
+                        CS_POST_TYPE_int,
+                        soil_state, NULL, NULL,
+                        time_step);
+
+  } /* Post-processing of the soil state */
 }
 
 /*----------------------------------------------------------------------------*/
