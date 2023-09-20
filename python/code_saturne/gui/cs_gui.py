@@ -179,14 +179,15 @@ def main(argv, pkg):
 
     if spl:
         app.setOverrideCursor(QCursor(Qt.WaitCursor))
-        pixmap = QPixmap('%s/splashscreen.png' % images_path)
+        # Choose correct splahs screen based on solver at runtime
+        if pkg.name == 'code_saturne':
+            pixmap = QPixmap('%s/splashscreen.png' % images_path)
+        else:
+            pixmap = QPixmap('%s/logo_salome_cfd.png' % images_path)
+
         splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
         splash.setMask(pixmap.mask()) # this is useful if the splashscreen is not a regular rectangle...
         splash.show()
-        if pkg.name == 'neptune_cfd':
-            splash.showMessage("%(name)s %(vers)s starting..." \
-                               % {'name': pkg.name, 'vers':pkg.version},
-                               Qt.AlignHCenter | Qt.AlignVCenter, Qt.black)
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 
