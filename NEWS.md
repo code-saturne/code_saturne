@@ -3,6 +3,8 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Fix possible crash with PyQt5 and python 3.10 due to splash screen calls
+
 - Fix code_saturne / code_saturne coupling when some selected elements
   are not located on the coupled domain.
   * This was a side effect of a fix in v7.0.5 for restarting from
