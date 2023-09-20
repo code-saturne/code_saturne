@@ -94,6 +94,31 @@ typedef void
  * Type definitions
  *============================================================================*/
 
+/*! \enum cs_gwf_soil_join_type_t
+ *  \brief Kind of joining function used with closure laws
+ *
+ * \var CS_GWF_SOIL_JOIN_NOTHING
+ *      No joining function
+ *
+ * \var CS_GWF_SOIL_JOIN_C1_HYPERBOLIC
+ *      C1 join using a hyperbolic function
+ *
+ * \var CS_GWF_SOIL_JOIN_C1_EXPONENTIAL
+ *      C1 join using an exponential function
+ *
+ * \var CS_GWF_SOIL_N_JOINS
+ */
+
+typedef enum {
+
+  CS_GWF_SOIL_JOIN_NOTHING,
+  CS_GWF_SOIL_JOIN_C1_HYPERBOLIC,
+  CS_GWF_SOIL_JOIN_C1_EXPONENTIAL,
+
+  CS_GWF_SOIL_N_JOINS
+
+} cs_gwf_soil_join_type_t;
+
 /*! \enum cs_gwf_soil_state_t
  *  \brief Kind of state in which a cell is
  *
@@ -208,27 +233,36 @@ typedef struct {
   double       sl_s;
 
   /*!
-   * Parameters to handle the polynomial joining
+   * Parameters to handle a joining function
    *
-   * \var sl_joining
-   *      Value above which the law is replaced with a second-order polynomial.
-   *      (for instance sl_joining = 0.999). If the value is greater or equal
-   *      than 1.0, there is no polynomial joining.
+   * \var joining_type
+   *      type of joining function to consider
    *
-   * \var pc_plus
-   *      capillarity pressure related to sl_s
+   * \var joining_sle
+   *      Value above which the suction law is replaced with a joining function
+   *      (for instance joining_sle = 0.999 is the default value). If the value
+   *      is greater or equal than 1.0, there is no polynomial joining.
    *
-   * \var dsl_plus
-   *      derivative of sl at pc_plus
+   * \var pc_star
+   *      capillarity pressure related to the value of joining_sle
    *
-   * \var sl_plus_slope
-   *      linear slope between sl=1 and sl=sl_s
+   * \var dsldpc_star_
+   *      derivative of the liquid saturation with respect to the capillarity
+   *      pressure at pc_star
+   *
+   * \var alpha
+   *      optional pre-computed coefficient when a joining function is used
+   *
+   * \var beta
+   *      optional pre-computed coefficient when a joining function is used
    */
 
-  double       sl_joining;
-  double       pc_plus;
-  double       dsl_plus;
-  double       sl_plus_slope;
+  cs_gwf_soil_join_type_t    joining_type;
+  double                     joining_sle;
+  double                     pc_star;
+  double                     dsldpc_star;
+  double                     alpha;
+  double                     beta;
 
 } cs_gwf_soil_vgm_tpf_param_t;
 
@@ -627,7 +661,6 @@ cs_gwf_soil_set_vgm_spf_param(cs_gwf_soil_t         *soil,
  * \param[in]      pr_r         reference (capillarity) pressure
  * \param[in]      sl_r         residual liquid saturation
  * \param[in]      sl_s         saturated (max.) liquid saturation
- * \param[in]      sl_joining   liquid saturation above which a joining is done
  */
 /*----------------------------------------------------------------------------*/
 
@@ -636,8 +669,24 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
                               double                 n,
                               double                 pr_r,
                               double                 sl_r,
-                              double                 sl_s,
-                              double                 sl_joining);
+                              double                 sl_s);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set advanced parameter settings related to a Van Genuchten-Mualen
+ *        soil model
+ *
+ * \param[in, out] soil         pointer to a cs_gwf_soil_t structure
+ * \param[in]      jtype        type of joining function
+ * \param[in]      joining_sle  effective liquid saturation above which the
+ *                              joining function is used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
+                                       cs_gwf_soil_join_type_t    jtype,
+                                       double                     joining_sle);
 
 /*----------------------------------------------------------------------------*/
 /*!
