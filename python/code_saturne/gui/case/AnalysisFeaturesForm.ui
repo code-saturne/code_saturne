@@ -105,10 +105,30 @@
       <string>Flow Models</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="10" column="1">
-       <widget class="QComboBox" name="comboBoxHgn"/>
+      <item row="12" column="0">
+       <widget class="QRadioButton" name="radioButtonNeptuneCFD">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Activate NEPTUNE_CFD module.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Eulerian multiphase (neptune_cfd)</string>
+        </property>
+       </widget>
       </item>
-      <item row="4" column="0">
+      <item row="3" column="1">
+       <widget class="QComboBox" name="comboBoxAtmospheric"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QRadioButton" name="radioButtonAtmospheric">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Models for atmospheric flows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Atmospheric</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
        <widget class="QRadioButton" name="radioButtonJouleEffect">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Electric arcs and Joule heating.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -118,7 +138,28 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="1">
+      <item row="10" column="1">
+       <widget class="QComboBox" name="comboBoxCoalCombustion"/>
+      </item>
+      <item row="1" column="1" rowspan="2">
+       <widget class="QComboBox" name="comboBoxSinglePhase"/>
+      </item>
+      <item row="5" column="1">
+       <widget class="QComboBox" name="comboBoxJouleEffect"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QRadioButton" name="radioButtonGroundwater">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Groundwater flow
+                                     (Richards-equation) model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                 </string>
+        </property>
+        <property name="text">
+         <string>Groundwater</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1">
        <widget class="QCheckBox" name="checkBoxPther">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
@@ -135,81 +176,6 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
-       <widget class="QComboBox" name="comboBoxGasCombustion"/>
-      </item>
-      <item row="10" column="0">
-       <widget class="QRadioButton" name="radioButtonHgn">
-        <property name="text">
-         <string>Homogeneous Eulerian - VoF model</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="1">
-       <widget class="QComboBox" name="comboBoxNeptuneCFD"/>
-      </item>
-      <item row="3" column="0">
-       <widget class="QRadioButton" name="radioButtonAtmospheric">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Models for atmospheric flows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Atmospheric</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QRadioButton" name="radioButtonGroundwater">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Groundwater flow
-                                     (Richards-equation) model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                 </string>
-        </property>
-        <property name="text">
-         <string>Groundwater</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QComboBox" name="comboBoxGroundwater"/>
-      </item>
-      <item row="9" column="1">
-       <widget class="QComboBox" name="comboBoxCoalCombustion"/>
-      </item>
-      <item row="6" column="0">
-       <widget class="QRadioButton" name="radioButtonReactiveFlows">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gas, coal, biomass, and fuel
-                                     combustion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                 </string>
-        </property>
-        <property name="text">
-         <string>Reactive flows (combustion)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QComboBox" name="comboBoxAtmospheric"/>
-      </item>
-      <item row="4" column="1">
-       <widget class="QComboBox" name="comboBoxJouleEffect"/>
-      </item>
-      <item row="11" column="0">
-       <widget class="QRadioButton" name="radioButtonNeptuneCFD">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Activate NEPTUNE_CFD module.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Eulerian multiphase (neptune_cfd)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1" rowspan="2">
-       <widget class="QComboBox" name="comboBoxSinglePhase"/>
-      </item>
-      <item row="6" column="1">
-       <widget class="QComboBox" name="comboBoxReactiveFlows"/>
-      </item>
       <item row="2" column="0">
        <widget class="QRadioButton" name="radioButtonSinglePhase">
         <property name="toolTip">
@@ -222,7 +188,22 @@
         </property>
        </widget>
       </item>
-      <item row="12" column="1">
+      <item row="7" column="0">
+       <widget class="QRadioButton" name="radioButtonReactiveFlows">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gas, coal, biomass, and fuel
+                                     combustion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                 </string>
+        </property>
+        <property name="text">
+         <string>Reactive flows (combustion)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QComboBox" name="comboBoxReactiveFlows"/>
+      </item>
+      <item row="13" column="1">
        <widget class="QCheckBox" name="checkBoxNeptuneHeatMass">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Take into account heat and mass tranfer between phases.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -231,6 +212,35 @@
          <string>Activate phase change heat and mass transfer terms</string>
         </property>
        </widget>
+      </item>
+      <item row="8" column="1">
+       <widget class="QComboBox" name="comboBoxGasCombustion"/>
+      </item>
+      <item row="12" column="1">
+       <widget class="QComboBox" name="comboBoxNeptuneCFD"/>
+      </item>
+      <item row="11" column="0">
+       <widget class="QRadioButton" name="radioButtonHgn">
+        <property name="text">
+         <string>Homogeneous Eulerian - VoF model</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QComboBox" name="comboBoxGroundwater"/>
+      </item>
+      <item row="11" column="1">
+       <widget class="QComboBox" name="comboBoxHgn"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QRadioButton" name="radioButtonCTwr">
+        <property name="text">
+         <string>Cooling towers</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QComboBox" name="comboBoxCTwr"/>
       </item>
      </layout>
     </widget>

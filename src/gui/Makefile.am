@@ -43,6 +43,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/cfbl \
+-I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/turb \

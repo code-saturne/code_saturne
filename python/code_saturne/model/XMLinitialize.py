@@ -915,6 +915,7 @@ class XMLinit(BaseXmlInit):
                     ("c_NO_HCN",                     "radiation_source"),
                     ("Sigma",                        "elec_sigma"),
                     ("IntLuminance_4PI",             "intensity"),
+                    ("volumic_viscosity",            "volume_viscosity"),
                     ("volumic_viscosity",            "volume_viscosity")]
 
         dicoP = {}

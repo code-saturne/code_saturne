@@ -42,6 +42,7 @@ dist_model_PYTHON = \
   CompressibleModel.py \
   ConjugateHeatTransferModel.py \
   CoriolisSourceTermsModel.py \
+  CoolingTowersModel.py \
   DefineUserScalarsModel.py \
   DropletCondensationEvaporationModel.py \
   ElectricalModel.py \

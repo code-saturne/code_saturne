@@ -54,6 +54,7 @@ from code_saturne.model.ElectricalModel import ElectricalModel
 from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 from code_saturne.model.GasCombustionModel import GasCombustionModel
 from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.model.CoolingTowersModel import CoolingTowersModel
 from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.gui.case.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
@@ -250,6 +251,9 @@ class ThermalView(QWidget, Ui_ThermalForm):
             else:
                 self.modelThermal.delItem(5)
                 self.modelThermal.delItem(4)
+
+            if CoolingTowersModel(self.case).getCoolingTowersModel() != 'off':
+                self.comboBoxThermal.setEnabled(False)
 
         # Select the thermal scalar model
 

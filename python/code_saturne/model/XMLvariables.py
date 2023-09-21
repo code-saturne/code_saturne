@@ -306,7 +306,7 @@ class Variables(object):
             self.updateLabel(v1)
 
 
-    def setNewProperty(self, node, tag, dim=None):
+    def setNewProperty(self, node, tag, dim=None, label=None):
         """
         Input a new <property name="my_property" label="ma_propriete">
         in the xmldoc.
@@ -320,6 +320,8 @@ class Variables(object):
                 self.updateLabel(p1)
             except:
                 pass
+            if label is not None:
+                p1['label'] = label
             if not p1['label']: p1['label'] = tag
 
         else:
