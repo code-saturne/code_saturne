@@ -250,6 +250,7 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
   BFT_MALLOC(rho_ui_uj, n_cells_ext, cs_real_6_t);
   BFT_MALLOC(lij, n_cells_ext, cs_real_6_t);
   BFT_MALLOC(w_t, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(w_v, n_cells_ext, cs_real_3_t);
 
   /* Filtering the velocity and its square */
 
