@@ -3,6 +3,9 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix parametric launching with modification of number of time steps of
+  neptune_cfd
+
 - Fix possible crash with PyQt5 and python 3.10 due to splash-screen calls.
 
 - Fix code_saturne / code_saturne coupling when some selected elements
