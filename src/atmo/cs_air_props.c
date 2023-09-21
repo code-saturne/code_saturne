@@ -74,7 +74,8 @@ static cs_air_fluid_props_t _props = {
   .lambda_h = 0.,
   .lambda_l = 0.,
   .droplet_diam = 0.,
-  .molmass_rat = 0.621973644 /* 18.01528 / 28.9647 (usual value 0.622) */
+  .molmass_rat = 0.621973644, /* 18.01528 / 28.9647 (usual value 0.622) */
+  .sigma = 0.073 /* Usual value for air / water surface tension */
 };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

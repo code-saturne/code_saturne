@@ -60,6 +60,7 @@ typedef struct {
   cs_real_t   droplet_diam;    /* Drop diameter for rain zones */
   cs_real_t   molmass_rat;     /* Ratio of the molar mass (H2O) over the
                                   molar mass (air) */
+  cs_real_t   sigma;           /* Surface tension between water and air */
 
 } cs_air_fluid_props_t;
 
