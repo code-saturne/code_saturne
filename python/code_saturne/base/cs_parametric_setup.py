@@ -471,7 +471,7 @@ class case_setup_filter(object):
         """
         self.initTimeStepModel()
 
-        self.timeStepModel.setStopCriterion('iterations_add', n_iter)
+        self.timeStepModel.setStopCriterion('iterations', n_iter)
 
     #---------------------------------------------------------------------------
 
