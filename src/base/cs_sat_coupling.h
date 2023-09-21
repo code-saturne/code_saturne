@@ -143,6 +143,7 @@ void CS_PROCF (defloc, DEFLOC)
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          reverse        : <-- : reverse mode if 1
  * INTEGER          NCESUP         : <-- : number of "support" cells
  * INTEGER          NFBSUP         : <-- : number of "support" boundary faces
  * INTEGER          NCECPL         : <-- : number of coupled cells
@@ -156,6 +157,7 @@ void CS_PROCF (defloc, DEFLOC)
 void CS_PROCF (nbecpl, NBECPL)
 (
  const int        *numcpl,
+       int        *reverse,
        cs_lnum_t  *ncesup,
        cs_lnum_t  *nfbsup,
        cs_lnum_t  *ncecpl,
@@ -334,6 +336,8 @@ void CS_PROCF (varcpl, VARCPL)
  const cs_lnum_t  *nbrloc,
  const int        *ityvar,
  const cs_lnum_t  *stride,
+ const int        *reverse,
+
        cs_real_t  *vardis,
        cs_real_t  *varloc
 );
@@ -405,6 +409,7 @@ void CS_PROCF (mxicpl, MXICPL)
  * \param[in] boundary_loc_criteria boundary face selection criteria for location
  *                                  (not functional)
  * \param[in] volume_loc_criteria   cell selection criteria for location
+ * \param[in] reverse               reverse mode if 1
  * \param[in] verbosity             verbosity level
  *
  * In the case of only 2 code_saturne instances, the 'saturne_name' argument
@@ -421,6 +426,7 @@ cs_sat_coupling_define(const char  *saturne_name,
                        const char  *volume_cpl_criteria,
                        const char  *boundary_loc_criteria,
                        const char  *volume_loc_criteria,
+                       int          reverse,
                        int          verbosity);
 
 /*----------------------------------------------------------------------------
@@ -454,6 +460,7 @@ cs_sat_coupling_by_id(int coupling_id);
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
  *   sat_name           <-- code_saturne application name
+ *   reverse            <-- reverse mode if 1
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -463,6 +470,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
                     const char  *face_loc_sel_c,
                     const char  *cell_loc_sel_c,
                     const char  *sat_name,
+                    int          reverse,
                     int          verbosity);
 
 /*----------------------------------------------------------------------------
@@ -474,6 +482,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
  *   boundary_criteria <-- boundary face selection criteria, or NULL
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   loc_tolerance     <-- location tolerance factor (0.1 recommended)
+ *   reverse           <-- reverse mode if 1
  *   verbosity         <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -485,6 +494,7 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
                              const char             *boundary_loc_criteria,
                              const char             *volume_loc_criteria,
                              float                   loc_tolerance,
+                             int                     reverse,
                              int                     verbosity);
 
 /*----------------------------------------------------------------------------

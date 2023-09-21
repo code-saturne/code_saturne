@@ -30,8 +30,8 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvcp
-!> \param[in]     nvcpto
+!> \param[in]     nvc            number of variable coupled (ordered by id?)
+!> \param[in]     nvcpto         number of variable coupled (9 in this case)
 !> \param[in]     nfbcpl
 !> \param[in]     nfbncp
 !> \param[out]    icodcl        face boundary condition code:
@@ -83,6 +83,7 @@ subroutine csc2cl &
 ! Module files
 !===============================================================================
 
+use atincl
 use paramx
 use numvar
 use optcal
@@ -121,6 +122,7 @@ integer          ifac, iel, isou, icscp
 integer          inc, iprev
 integer          ivar, iflmab
 integer          ipt
+integer          f_id_b_vel
 
 double precision xip   , xiip  , yiip  , ziip
 double precision xjp
@@ -134,6 +136,7 @@ double precision, allocatable, dimension(:,:) :: grad
 
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer :: b_vel
 double precision, dimension(:), pointer :: cvar_var
 
 !===============================================================================
@@ -152,6 +155,11 @@ if (ifaccp.eq.0) then
 ! Face to face mapping assumption
 else
   icscp = icscpd
+endif
+
+call field_get_id_try("b_velocity", f_id_b_vel)
+if (f_id_b_vel.ge.0) then
+  call field_get_val_v(f_id_b_vel, b_vel)
 endif
 
 !===============================================================================
@@ -332,10 +340,19 @@ do ivar = 1, nvcp
 
     do ipt = 1, nfbcpl
 
+      ! get the number if a given coupled face
       ifac = lfbcpl(ipt)
+      ! get the number of the cell linked with the coupled face
       iel  = ifabor(ifac)
 
+      ! Automatic treatment in case of atmospheric module
+      if (ippmod(iatmos).ge.0) then
+        itypfb(ifac) = ientre
+        iautom(ifac) = 1
+      endif
       ! Information from local instance interpolated at I'
+
+      ! If orthogonal  mesh I=Ip  --> xiip=yiip=ziip=0
       xiip = diipb(1,ifac)
       yiip = diipb(2,ifac)
       ziip = diipb(3,ifac)

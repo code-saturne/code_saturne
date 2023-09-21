@@ -184,6 +184,7 @@ do isou = 1, 3
 
   ! For a specific face to face coupling, geometric assumptions are made
 
+  ! If turbomachinery
   if (ifaccp.eq.1) then
 
     do ipt = 1, nptdis

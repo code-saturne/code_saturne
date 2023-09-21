@@ -1578,6 +1578,7 @@ cs_turbomachinery_coupling_add(const char  *sel_criteria,
                                NULL,
                                "all[]",
                                tolerance,
+                               0, /* reverse */
                                verbosity);
 
   _turbomachinery->n_couplings += 1;

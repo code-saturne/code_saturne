@@ -74,7 +74,7 @@ integer          ncedis , nfbdis
 integer          nfbcpg , nfbdig
 integer          ityloc , ityvar
 integer          stride
-
+integer          reverse
 integer, allocatable, dimension(:) :: lcecpl , lfbcpl , lcencp , lfbncp
 integer, allocatable, dimension(:) :: locpts
 
@@ -99,7 +99,7 @@ do numcpl = 1, nbrcpl
 !===============================================================================
 
   call nbecpl                                                     &
- ( numcpl ,                                                       &
+ ( numcpl , reverse,                                              &
    ncesup , nfbsup ,                                              &
    ncecpl , nfbcpl , ncencp , nfbncp )
 
@@ -107,13 +107,13 @@ do numcpl = 1, nbrcpl
   allocate(lcecpl(ncecpl), lcencp(ncencp))
   allocate(lfbcpl(nfbcpl), lfbncp(nfbncp))
 
-!       Liste des cellules et faces de bord localisées
+  ! Liste des cellules et faces de bord localisées
   call lelcpl                                                     &
  ( numcpl ,                                                       &
    ncecpl , nfbcpl ,                                              &
    lcecpl , lfbcpl )
 
-!       Liste des cellules et faces de bord non localisées
+  ! Liste des cellules et faces de bord non localisées
   call lencpl                                                     &
  ( numcpl ,                                                       &
    ncencp , nfbncp ,                                              &
@@ -136,7 +136,6 @@ do numcpl = 1, nbrcpl
   allocate(locpts(nfbdis))
   allocate(coopts(3,nfbdis), djppts(3,nfbdis), dofpts(3,nfbdis))
   allocate(pndpts(nfbdis))
-
   ! Allocate temporary arrays for variables exchange
   if (nfbdis.gt.0) then
     allocate(rvdis(nfbdis,nvarto(numcpl)))
@@ -168,11 +167,10 @@ do numcpl = 1, nbrcpl
     call parcpt(nfbdig)
   endif
 
-! --- Transfert des variables proprement dit.
-
+  ! Transfert des variables proprement dit.
   if (nfbdig.gt.0) then
 
-    call cscpfb                                                   &
+    call cscpfb &
   ( nscal  ,                                                      &
     nfbdis , numcpl , nvarto(numcpl) ,                            &
     locpts ,                                                      &
@@ -196,6 +194,7 @@ do numcpl = 1, nbrcpl
 
       call varcpl &
     ( numcpl , nfbdis , nfbcpl , ityvar , stride , &
+      reverse,                                     &
       rvdis(1, ivarcp) ,                           &
       rvfbr(1, ivarcp) )
 
@@ -314,6 +313,7 @@ integer(c_int) :: itypfb(nfabor)
 ! Local variables
 
 integer          numcpl
+integer          reverse
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
 
@@ -329,7 +329,8 @@ do numcpl = 1, nbrcpl
 
   ! For each coupling
 
-  call nbecpl(numcpl, ncesup, nfbsup,                            &
+  call nbecpl(numcpl, reverse,                    &
+              ncesup, nfbsup,                     &
               ncecpl, nfbcpl, ncencp, nfbncp)
 
   ! Allocate temporary arrays for coupling information

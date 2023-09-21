@@ -332,7 +332,10 @@ do ifac = 1, nfabor
 !       face de sortie (si le flux est rentrant).
     zent = cdgfbo(3,ifac)
 
-    if (imbrication_flag .and.cressman_u) then
+    ! If specified by the user or by code-code coupling
+    if (rcodcl(ifac,iu,1).lt.rinfin*0.5d0) then
+      xuent = rcodcl(ifac,iu,1)
+    else if (imbrication_flag .and.cressman_u) then
       xuent = u_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
@@ -343,7 +346,12 @@ do ifac = 1, nfabor
     endif
 
     xwent = 0.d0
-    if (imbrication_flag .and.cressman_v) then
+    if (rcodcl(ifac,iv,1).lt.rinfin*0.5d0) then
+      xvent = rcodcl(ifac,iv,1)
+      if (rcodcl(ifac,iw,1).lt.rinfin*0.5d0) then
+        xwent = rcodcl(ifac,iw,1)
+      endif
+    else if (imbrication_flag .and.cressman_v) then
       xvent = v_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
@@ -354,7 +362,9 @@ do ifac = 1, nfabor
       xwent = cpro_met_vel(3, iel)
     endif
 
-    if (imbrication_flag .and.cressman_tke) then
+    if (rcodcl(ifac,ik,1).lt.rinfin*0.5d0) then
+      xkent = rcodcl(ifac,ik,1)
+    else if (imbrication_flag .and.cressman_tke) then
       xkent = tke_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
@@ -364,7 +374,9 @@ do ifac = 1, nfabor
       xkent = cpro_met_k(iel)
     endif
 
-    if (imbrication_flag .and.cressman_eps) then
+    if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
+      xeent = rcodcl(ifac,iep,1)
+    else if (imbrication_flag .and.cressman_eps) then
       xeent = eps_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
@@ -374,15 +386,18 @@ do ifac = 1, nfabor
       xeent = cpro_met_eps(iel)
     endif
 
-    if(imbrication_flag .and.cressman_theta                          &
-       .and. ippmod(iatmos).ge.1 ) then
-       tpent = theta_bord(ifac)
-    else if (imeteo.eq.1) then
-      call intprf &
-      (nbmett, nbmetm,                                               &
-       ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
-    else
-      tpent = cpro_met_potemp(iel)
+    if (ippmod(iatmos).ge.1) then
+      if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
+        tpent = rcodcl(ifac,isca(iscalt),1)
+      else if(imbrication_flag .and.cressman_theta) then
+        tpent = theta_bord(ifac)
+      else if (imeteo.eq.1) then
+        call intprf &
+          (nbmett, nbmetm,                                               &
+          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+      else
+        tpent = cpro_met_potemp(iel)
+      endif
     endif
 
     vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)

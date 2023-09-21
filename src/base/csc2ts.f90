@@ -30,17 +30,22 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     ncecpl        number of coupling
-!> \param[in]     lcecpl
+!> \param[in]     n_elts        number of local (distant in reverse mode)
+!>                              overlapped cells
+!> \param[in]     elt_ids       localisation of coupling cells
 !> \param[in]     f_id          field index
 !> \param[in]     f_dim         field dimension
-!> \param[in]     rvcpce        distant variable array
+!> \param[in]     reverse       reverse mode if 1
+!> \param[in]     cw1_received  distant variable array
+!>                              or explicit part for reverse mode
+!> \param[in]     cw2_received  implicit part for reverse mode
 !> \param[in,out] crvexp        explicit source term
+!> \param[in,out] crvimp        working table for implicit part
 !______________________________________________________________________________
 
 subroutine csc2ts &
- ( ncecpl,  lcecpl , f_id, f_dim , rvcpce , &
-   crvexp )
+ ( n_elts , elt_ids , f_id , f_dim , reverse , cw1_received , cw2_received, &
+   crvexp , crvimp)
 
 !===============================================================================
 
@@ -66,17 +71,18 @@ implicit none
 
 ! Arguments
 
-integer          ncecpl
-integer          lcecpl(ncecpl)
+integer          n_elts
 integer          f_id, f_dim
-
+integer          reverse
 double precision crvexp(f_dim, ncelet)
-double precision rvcpce(f_dim, ncecpl)
+double precision crvimp(f_dim, f_dim, ncelet)
+double precision cw1_received(f_dim,n_elts)
+double precision cw2_received(f_dim,f_dim,n_elts)
+integer elt_ids(n_elts)
 
 ! Local variables
-
-integer          isou
-integer          ipt    , ielloc
+integer          isou   , jsou
+integer          ipt    , iel
 double precision xdis   , xloc   , xtau   , rovtau
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cvara_s
@@ -84,43 +90,82 @@ double precision, dimension(:,:), pointer :: cvara_v
 
 !----------------------------------------------------------------------------------
 
-call field_get_val_s(icrom, crom)
+
+!get the array of cells density
+call field_get_val_s(icrom, crom) ! Why icrom and not f_id?
 
 xtau = 100.d0*dtref
+if (reverse.eq.0) then
+  ! For scalars
+  if (f_dim.eq.1) then
+  ! get the previous scalar array values
+    call field_get_val_prev_s(f_id, cvara_s)
 
-! For scalars
-if (f_dim.eq.1) then
-  call field_get_val_prev_s(f_id, cvara_s)
+    do ipt = 1, n_elts
 
-  do ipt = 1, ncecpl
+      ! Get the true localization in the mesh of a given coupled cell
+      iel = elt_ids(ipt)
 
-    ielloc = lcecpl(ipt)
+      rovtau = cell_f_vol(iel)*crom(iel)/xtau
+      xdis = cw1_received(1, ipt)
 
-    rovtau = cell_f_vol(ielloc)*crom(ielloc)/xtau
+      crvexp(1,iel) = crvexp(1,iel) + rovtau*xdis;
+      crvimp(1,1,iel) = crvimp(1,1,iel) - rovtau;
+    enddo
+    ! For vectors and tensors
+  else
+    call field_get_val_prev_v(f_id, cvara_v)
 
-    xdis = rvcpce(1, ipt)
-    xloc = cvara_s(ielloc)
-    crvexp(1,ielloc) = crvexp(1,ielloc) + rovtau*(xdis-xloc) ! TODO Should be implicit to remove constrainte on the time step...
+    do ipt = 1, n_elts
 
-  enddo
+      iel = elt_ids(ipt)
+      rovtau = cell_f_vol(iel)*crom(iel)/xtau
 
-  ! For vectors and tensors
-else
-  call field_get_val_prev_v(f_id, cvara_v)
+      do isou = 1, f_dim
+        xdis = cw1_received(isou,ipt)
+        crvexp(isou,iel) = crvexp(isou,iel) + rovtau*xdis
+        crvimp(isou,isou,iel) = crvimp(isou, isou,iel) - rovtau
+      enddo
 
-  do ipt = 1, ncecpl
+    enddo
+  endif
+endif
 
-    ielloc = lcecpl(ipt)
+if (reverse.eq.1) then
+  ! For scalars
+  if (f_dim.eq.1) then
+  !get the previous scalar array values
+    call field_get_val_prev_s(f_id, cvara_s)
 
-    rovtau = cell_f_vol(ielloc)*crom(ielloc)/xtau
+    do ipt = 1, n_elts
 
-    do isou = 1, f_dim
-      xdis = rvcpce(isou,ipt)
-      xloc = cvara_v(isou,ielloc)
-      crvexp(isou,ielloc) = crvexp(isou,ielloc) + rovtau*(xdis-xloc) ! TODO Should be implicit to remove constrainte on the time step...
+      !get the true localization in the mesh of a given coupled cell
+      iel = elt_ids(ipt)
+
+      crvexp(1,iel) = crvexp(1,iel) + cw1_received(1,ipt)/xtau
+      crvimp(1,1,iel) = crvimp(1,1,iel) - cw2_received(1,1,ipt)/xtau
+
     enddo
 
-  enddo
+
+    ! For vectors and tensors
+  else
+    call field_get_val_prev_v(f_id, cvara_v)
+
+    do ipt = 1, n_elts
+
+      iel = elt_ids(ipt)
+
+      do isou = 1, f_dim
+        crvexp(isou,iel) = crvexp(isou,iel) + cw1_received(isou,ipt)/xtau
+        do jsou = 1, f_dim
+          crvimp(jsou,isou,iel) = crvimp(jsou,isou,iel) &
+                                - cw2_received(jsou,isou,ipt)/xtau
+        enddo
+      enddo
+
+    enddo
+  endif
 endif
 
 !--------

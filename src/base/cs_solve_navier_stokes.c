@@ -858,8 +858,9 @@ _ext_forces(const cs_mesh_t                *m,
       cs_real_t dvol = 0;
       if (cs_mesh_quantities_cell_is_active(mq, c_id) == 1)
         dvol = 1.0/cell_f_vol[c_id];
+      /* FIXME we should add tsimp*vela to tsexp as for head losses */
       for (cs_lnum_t ii = 0; ii < 3; ii++)
-        dfrcxt[c_id][ii] += tsexp[c_id][ii]*dvol;
+        dfrcxt[c_id][ii] += tsexp[c_id][ii] *dvol;
     }
   }
 
@@ -1804,7 +1805,9 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   /* Coupling between two code_saturne instances */
   if (cs_sat_coupling_n_couplings() > 0)
-    cs_sat_coupling_exchange_at_cells(CS_F_(vel)->id, (cs_real_t*)tsexp);
+    cs_sat_coupling_exchange_at_cells(CS_F_(vel)->id,
+                                      (cs_real_t*)tsexp,
+                                      (cs_real_t*)tsimp);
 
   if (eqp_u->ibdtso > 1 && ts->nt_cur > ts->nt_ini
       && (   tso->idtvar == CS_TIME_STEP_CONSTANT

@@ -637,12 +637,13 @@ module cs_c_bindings
     ! Exchange of coupling variables between
     ! tow instances of code_saturne thanks to cells.
 
-    subroutine csccel(f_id, st_exp) &
+    subroutine csccel(f_id, st_exp, st_imp) &
      bind(C, name='cs_sat_coupling_exchange_at_cells')
      use, intrinsic :: iso_c_binding
      implicit none
      integer(c_int), value :: f_id
      real(kind=c_double), dimension(*), intent(inout) :: st_exp
+     real(kind=c_double), dimension(*), intent(inout) :: st_imp
     end subroutine
 
     !---------------------------------------------------------------------------

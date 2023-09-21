@@ -80,6 +80,7 @@ cs_user_saturne_coupling(void)
   /*! [coupling_saturne_1] */
   {
     int  verbosity = 1;
+    int  reverse = 0;
 
     /*-------------------------------------------------------------------------
      * Example 1: coupling with instance "SATURNE_01".
@@ -93,6 +94,7 @@ cs_user_saturne_coupling(void)
                            NULL,
                            NULL,
                            "all[]",
+                           reverse,
                            verbosity);
 
   }
@@ -102,6 +104,7 @@ cs_user_saturne_coupling(void)
   {
 
     int  verbosity = 1;
+    int  reverse = 0;
 
     /*-------------------------------------------------------------------------
      * Example 2: coupling with instance "SATURNE_03".
@@ -116,6 +119,7 @@ cs_user_saturne_coupling(void)
                            "all[]",
                            NULL,
                            "all[]",
+                           reverse,
                            verbosity);
 
   }

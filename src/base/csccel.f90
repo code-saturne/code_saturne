@@ -32,12 +32,13 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     f_id          field id
-!> \param[out]    crvexp        working table for explicit part
+!> \param[in,out] crvexp        working table for explicit part
+!> \param[in,out] crvimp        working table for implicit part
 !______________________________________________________________________________
 
 subroutine csccel &
  ( f_id   ,                                                       &
-   crvexp )                  &
+   crvexp , crvimp )                                              &
    bind(C, name='cs_sat_coupling_exchange_at_cells')
 
 !===============================================================================
@@ -64,11 +65,13 @@ implicit none
 ! Arguments
 
 integer(c_int), value :: f_id
-real(c_double), dimension(3,ncelet) :: crvexp
+real(c_double), dimension(*) :: crvexp
+real(c_double), dimension(*) :: crvimp
 
 ! Local variables
 
-integer          f_dim
+integer          f_dim, f_dim2
+integer          reverse
 integer          numcpl
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
@@ -76,12 +79,15 @@ integer          ncedis , nfbdis
 integer          ncecpg , ncedig
 integer          ityloc , ityvar
 
+
 integer, allocatable, dimension(:) :: lcecpl , lfbcpl
 integer, allocatable, dimension(:) :: locpts
 
 double precision, allocatable, dimension(:,:) :: coopts , djppts , dofpts
 double precision, allocatable, dimension(:) :: pndpts
-double precision, allocatable, dimension(:,:) :: rvdis, rvcel
+double precision, allocatable, dimension(:,:) :: cw1_dis, cw1_loc
+double precision, allocatable, dimension(:,:,:) :: cw2_dis
+double precision, allocatable, dimension(:,:,:) :: cw2_loc
 
 procedure() :: csexit, nbecpl, lelcpl, npdcpl, coocpl, cscpce, varcpl, csc2ts
 
@@ -101,9 +107,8 @@ do numcpl = 1, nbrcpl
 ! 1.  DEFINITION DE CHAQUE COUPLAGE
 !===============================================================================
 
-  call nbecpl                                                     &
-  !==========
- ( numcpl ,                                                       &
+  call nbecpl &
+ ( numcpl , reverse,                                              &
    ncesup , nfbsup ,                                              &
    ncecpl , nfbcpl , ncencp , nfbncp )
 
@@ -112,7 +117,6 @@ do numcpl = 1, nbrcpl
   allocate(lfbcpl(nfbcpl))
 
   call lelcpl                                                     &
-  !==========
  ( numcpl ,                                                       &
    ncecpl , nfbcpl ,                                              &
    lcecpl , lfbcpl )
@@ -128,16 +132,16 @@ do numcpl = 1, nbrcpl
 ! --- Informations géométriques de localisation
 
   call npdcpl(numcpl, ncedis, nfbdis)
-  !==========
 
   ! Allocate temporary arrays for geometric quantities
   allocate(locpts(ncedis))
   allocate(coopts(3,ncedis), djppts(3,ncedis), dofpts(3,ncedis))
   allocate(pndpts(ncedis))
 
-  ! Allocate temporary arrays for variables exchange
-  allocate(rvdis(f_dim, ncedis))
-  allocate(rvcel(f_dim, ncecpl))
+  allocate(cw1_dis(f_dim, ncedis))
+  allocate(cw2_dis(f_dim,f_dim, ncedis))
+  allocate(cw1_loc(f_dim, ncecpl))
+  allocate(cw2_loc(f_dim, f_dim, ncecpl))
 
   call coocpl &
   !==========
@@ -161,58 +165,87 @@ do numcpl = 1, nbrcpl
     call parcpt(ncedig)
   endif
 
-  ! --- Prepare variables to be transfer
+  ! Prepare variables to be transfer
 
-  if (ncedig.gt.0) then
+  if (ncedig.gt.0.and.reverse.eq.0) then
 
     call cscpce &
-  ( ncedis , f_id   , f_dim ,                                     &
-    locpts ,                                                      &
-    coopts , rvdis  )
+  ( ncedis , f_id   , f_dim , &
+    reverse, locpts ,         &
+    coopts , cw1_dis  , cw2_dis )
 
   endif
 
+  if (ncecpg.gt.0.and.reverse.eq.1) then
+
+    call cscpce &
+  ( ncecpl , f_id   , f_dim , &
+    reverse, lcecpl ,         &
+    coopts , cw1_loc  , cw2_loc)
+
+  endif
+
+
   ! Free memory
-  deallocate(locpts)
   deallocate(coopts, djppts, dofpts)
   deallocate(pndpts)
 
-  ! Cet appel est symétrique, donc on teste sur NCEDIG et NCECPG
-  ! (rien a envoyer, rien a recevoir)
+  ! Symmetric call so test on both ncedig and ncecpg (otherwise nothing to do)
   if (ncedig.gt.0.or.ncecpg.gt.0) then
-
-    ! for vectorial exchange
     call varcpl &
-  ( numcpl , ncedis , ncecpl , ityvar , f_dim  ,                  &
-    rvdis  ,                                                      &
-    rvcel  )
+  ( numcpl , ncedis , ncecpl , ityvar , f_dim  , &
+    reverse, cw1_dis  ,                          &
+    cw1_loc )
+
+    ! Second call for the implicit part in reverse mode
+    if (reverse.eq.1) then
+      f_dim2 = f_dim**2
+      call varcpl &
+    ( numcpl , ncedis , ncecpl , ityvar , f_dim2  , &
+      reverse, cw2_dis,                             &
+      cw2_loc )
+
+    endif
 
   endif
 
   ! Free memory
-  deallocate(rvdis)
 
 !===============================================================================
 ! 3.  TRADUCTION DU COUPLAGE EN TERME DE TERMES SOURCES
 !===============================================================================
+  ! Compute source term (n_cells_loc contribution)
+  if (ncecpg.gt.0.and.reverse.eq.0) then
 
-  if (ncecpg.gt.0) then
+    call csc2ts(ncecpl , lcecpl , f_id , f_dim , reverse,  &
+                cw1_loc, cw2_loc,                          &
+                crvexp , crvimp )
 
-    call csc2ts(ncecpl, lcecpl, f_id, f_dim, rvcel, crvexp)
+  endif
+
+  ! Compute source term in reverse mode (n_cells_dist contributions)
+  if (ncedig.gt.0.and.reverse.eq.1) then
+
+    call csc2ts(ncedis , locpts , f_id , f_dim , reverse ,  &
+                cw1_dis, cw2_dis,                          &
+                crvexp , crvimp )
 
   endif
 
   ! Free memory
-  deallocate(rvcel)
+  deallocate(cw1_dis)
+  deallocate(cw1_loc)
+  deallocate(cw2_loc)
+  deallocate(cw2_dis)
   deallocate(lcecpl)
-
+  deallocate(locpts)
 enddo
-!     Fin de la boucle sur les couplages
-
+! End of loop over the coupling
 
 !--------
-! FORMATS
+! Formats
 !--------
+
  1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

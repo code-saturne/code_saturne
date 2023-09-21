@@ -422,7 +422,8 @@ cs_fortran_resize_aux_arrays(void);
 
 void
 cs_sat_coupling_exchange_at_cells(int         f_id,
-                                  cs_real_t   st_exp[]);
+                                  cs_real_t   st_exp[],
+                                  cs_real_t   st_imp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

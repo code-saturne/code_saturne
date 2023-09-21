@@ -89,6 +89,7 @@ typedef struct {
   char    *face_loc_sel_c;  /* Face selection criteria */
   char    *cell_loc_sel_c;  /* Cell selection criteria */
   int      verbosity;       /* Verbosity level */
+  int      reverse;         /* Reverse mode if 1 */
 
 } _cs_sat_coupling_builder_t;
 
@@ -97,11 +98,12 @@ struct _cs_sat_coupling_t {
   char                   *sat_name;        /* Application name */
   cs_sat_coupling_tag_t  *tag_func;        /* Tagging function pointer */
   void                   *tag_context;     /* Tagging context */
+  int                    reverse;          /* Reverse mode */
 
-  char            *face_cpl_sel; /* Face selection criteria */
-  char            *cell_cpl_sel; /* Face selection criteria */
-  char            *face_loc_sel; /* Face selection criteria */
-  char            *cell_loc_sel; /* Face selection criteria */
+  char            *face_cpl_sel; /* Local face overlapped selection criteria */
+  char            *cell_cpl_sel; /* Local cell overlapped selection criteria */
+  char            *face_loc_sel; /* Distant face overlapped selection criteria */
+  char            *cell_loc_sel; /* Distant cell overlapped selection criteria */
 
   ple_locator_t   *localis_cel;  /* Locator associated with cells */
   ple_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
@@ -115,8 +117,8 @@ struct _cs_sat_coupling_t {
                                     interpolated*/
 
   cs_real_t       *distant_dist_fbr; /* Distant vectors (distance JJ') */
-  cs_real_t       *distant_of;
-  cs_real_t       *local_of;
+  cs_real_t       *distant_of;       /* Distant vector OF */
+  cs_real_t       *local_of;         /* Local vector OF */
   cs_real_t       *distant_pond_fbr; /* Distant weighting coefficient */
   cs_real_t       *local_pond_fbr;   /* Local weighting coefficient */
 
@@ -333,6 +335,7 @@ _sat_add_mpi(int builder_id,
                       scb->face_loc_sel_c,
                       scb->cell_loc_sel_c,
                       scb->app_name,
+                      scb->reverse,
                       scb->verbosity);
 
   sat_coupling = cs_sat_coupling_by_id(cs_sat_coupling_n_couplings() - 1);
@@ -813,7 +816,9 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
     surface = sqrt(surface);
 
+    /* n/norm(n) . IF = FJ' */
     distance_fbr_cel /= surface;
+    /* n/norm(n) . IJ = I'J'*/
     distance_cel_cel /= surface;
 
     const cs_real_3_t *restrict b_face_cog
@@ -943,6 +948,7 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
+    /* get the number  and a list of coupled local cells */
     cs_selector_get_cell_list(coupl->cell_loc_sel,
                               &(coupl->nbr_cel_sup),
                               c_elt_list);
@@ -953,14 +959,15 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
+    /* get the number and a list of coupled local faces */
     cs_selector_get_b_face_list(coupl->face_loc_sel,
                                 &(coupl->nbr_fbr_sup),
                                 f_elt_list);
 
   }
 
-  if (coupl->nbr_cel_sup > 0) indic_loc[0] = 1;
-  if (coupl->nbr_fbr_sup > 0) indic_loc[1] = 1;
+  if (coupl->nbr_cel_sup > 0) indic_loc[0] = 1; /* have coupled cells */
+  if (coupl->nbr_fbr_sup > 0) indic_loc[1] = 1; /* have coupled faces */
 
   for (ind = 0 ; ind < 2 ; ind++)
     indic_glob[ind] = indic_loc[ind];
@@ -971,6 +978,7 @@ void CS_PROCF (defloc, DEFLOC)
                    cs_glob_mpi_comm);
 #endif
 
+  /* One rank has coupled cells */
   if (indic_glob[0] > 0) {
 
     sprintf(coupled_mesh_name, _("coupled_cells_%d"), *numcpl);
@@ -983,6 +991,7 @@ void CS_PROCF (defloc, DEFLOC)
 
   }
 
+  /* One rank has coupled faces */
   if (indic_glob[1] > 0) {
 
     sprintf(coupled_mesh_name, _("coupled_faces_%d"), *numcpl);
@@ -1114,7 +1123,7 @@ void CS_PROCF (defloc, DEFLOC)
 
 #if 0
   /* TODO: associate the FVM meshes to the post-processing,
-     with a fonction giving a pointer to the associated FVM structures,
+     with a function giving a pointer to the associated FVM structures,
      and another enabling its compacting or removing */
   {
     fvm_writer_t *w = fvm_writer_init("coupled_mesh",
@@ -1152,6 +1161,7 @@ void CS_PROCF (defloc, DEFLOC)
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
+ * INTEGER          reverse        : <-- : reverse mode if 1
  * INTEGER          NCESUP         : <-- : number of "support" cells
  * INTEGER          NFBSUP         : <-- : number of "support" boundary faces
  * INTEGER          NCECPL         : <-- : number of coupled cells
@@ -1165,6 +1175,7 @@ void CS_PROCF (defloc, DEFLOC)
 void CS_PROCF (nbecpl, NBECPL)
 (
  const int        *numcpl,
+       int        *reverse,
        cs_lnum_t  *ncesup,
        cs_lnum_t  *nfbsup,
        cs_lnum_t  *ncecpl,
@@ -1183,6 +1194,8 @@ void CS_PROCF (nbecpl, NBECPL)
               *numcpl, cs_glob_sat_n_couplings);
   else
     coupl = cs_glob_sat_couplings[*numcpl - 1];
+
+  *reverse = coupl->reverse;
 
   *ncesup = coupl->nbr_cel_sup;
   *nfbsup = coupl->nbr_fbr_sup;
@@ -1425,6 +1438,7 @@ void CS_PROCF (npdcpl, NPDCPL)
  *                                 :     :   each point
  * DOUBLE PRECISION coopts(3,*)    : <-- : distant point coordinates
  * DOUBLE PRECISION djppts(3,*)    : <-- : distant vectors to the coupled face
+ *                                 :     :  (JJ')
  * DOUBLE PRECISION pndpts(*)      : <-- : distant weighting coefficients
  *----------------------------------------------------------------------------*/
 
@@ -1602,8 +1616,8 @@ void CS_PROCF (pondcp, PONDCP)
  *                                 :     : 2 : variables defined at faces
  * INTEGER          STRIDE         : --> : 1 : for scalars
  *                                 :     : 3 : for vectors
- * DOUBLE PRECISION VARDIS(*)      : --> : distant variable(to send)
- * DOUBLE PRECISION VARLOC(*)      : <-- : local variable (to receive)
+ * DOUBLE PRECISION vardis         : --> : distant variable(to send)
+ * DOUBLE PRECISION varloc         : <-- : local variable (to receive)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (varcpl, VARCPL)
@@ -1613,8 +1627,10 @@ void CS_PROCF (varcpl, VARCPL)
  const cs_lnum_t  *nbrloc,
  const int        *ityvar,
  const cs_lnum_t  *stride,
+ const int        *reverse,
        cs_real_t  *vardis,
        cs_real_t  *varloc
+
 )
 {
   cs_lnum_t  n_val_dist_ref = 0;
@@ -1672,7 +1688,7 @@ void CS_PROCF (varcpl, VARCPL)
                                    NULL,
                                    sizeof(cs_real_t),
                                    *stride,
-                                   0);
+                                   *reverse);
   }
 
 }
@@ -1824,6 +1840,7 @@ void CS_PROCF (mxicpl, MXICPL)
  * \param[in] boundary_loc_criteria boundary face selection criteria for location
  *                                  (not functional)
  * \param[in] volume_loc_criteria   cell selection criteria for location
+ * \param[in] reverse               reverse mode if 1
  * \param[in] verbosity             verbosity level
  *
  * In the case of only 2 code_saturne instances, the 'saturne_name' argument
@@ -1840,6 +1857,7 @@ cs_sat_coupling_define(const char  *saturne_name,
                        const char  *volume_cpl_criteria,
                        const char  *boundary_loc_criteria,
                        const char  *volume_loc_criteria,
+                       int          reverse,
                        int          verbosity)
 {
   _cs_sat_coupling_builder_t *scb = NULL;
@@ -1884,6 +1902,7 @@ cs_sat_coupling_define(const char  *saturne_name,
     strcpy(scb->cell_loc_sel_c, volume_loc_criteria);
   }
 
+  scb->reverse = reverse;
   scb->verbosity = verbosity;
 
   _sat_coupling_builder_size += 1;
@@ -1966,6 +1985,7 @@ cs_sat_coupling_all_init(void)
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
  *   sat_name           <-- code_saturne application name
+ *   reverse            <-- reverse mode if 1
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -1975,6 +1995,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
                     const char  *face_loc_sel_c,
                     const char  *cell_loc_sel_c,
                     const char  *sat_name,
+                    int          reverse,
                     int          verbosity)
 {
   cs_sat_coupling_t *sat_coupling = NULL;
@@ -1988,6 +2009,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
   sat_coupling->sat_name = NULL;
   sat_coupling->tag_func = NULL;
   sat_coupling->tag_context = NULL;
+  sat_coupling->reverse = reverse;
 
   if (sat_name != NULL) {
     BFT_MALLOC(sat_coupling->sat_name, strlen(sat_name) + 1, char);
@@ -2064,6 +2086,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
  *   boundary_criteria <-- boundary face selection criteria, or NULL
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   loc_tolerance     <-- location tolerance factor (0.1 recommended)
+ *   reverse           <-- reverse mode if 1
  *   verbosity         <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -2075,6 +2098,7 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
                              const char             *boundary_loc_criteria,
                              const char             *volume_loc_criteria,
                              float                   loc_tolerance,
+                             int                     reverse,
                              int                     verbosity)
 {
   CS_UNUSED(loc_tolerance);
@@ -2084,6 +2108,7 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
                       boundary_loc_criteria,
                       volume_loc_criteria,
                       NULL,
+                      reverse,
                       verbosity);
 
   cs_sat_coupling_t *sat_coupling
