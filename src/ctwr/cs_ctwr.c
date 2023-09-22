@@ -355,7 +355,7 @@ _packing_selection(void              *input,
     is_packing[i] = false;
 
   for (int ict = 0; ict < _n_ct_zones; ict++) {
-    cs_ctwr_zone_t *ct = cts[ict];
+    const cs_ctwr_zone_t *ct = cts[ict];
 
     const int z_id = ct->z_id;
     const cs_zone_t *z = cs_volume_zone_by_id(z_id);
@@ -429,7 +429,6 @@ cs_ctwr_add_variable_fields(void)
 
   /* Fluid properties and physical variables */
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
-  cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 
   /* Set fluid properties parameters */
 
@@ -447,8 +446,6 @@ cs_ctwr_add_variable_fields(void)
    */
 
   cs_field_t *f;
-  int dim1 = 1;
-  int dim3 = 3;
 
   {
     /* Thermal model - Set parameters of calculations (module optcal) */
@@ -474,7 +471,8 @@ cs_ctwr_add_variable_fields(void)
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID){
       int f_id = cs_variable_field_create("temperature",
                                           "Temperature humid air",
-                                          CS_MESH_LOCATION_CELLS, dim1);
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
 
       f = cs_field_by_id(f_id);
 
@@ -495,8 +493,10 @@ cs_ctwr_add_variable_fields(void)
     /* Associate liquid water rain with class 1 */
     int class_id = 1;
 
-    int f_id = cs_variable_field_create("y_p", "Yp rain",
-                                        CS_MESH_LOCATION_CELLS, dim1);
+    int f_id = cs_variable_field_create("y_p",
+                                        "Yp rain",
+                                        CS_MESH_LOCATION_CELLS,
+                                        1);
     f = cs_field_by_id(f_id);
 
     /* Clipping of rain mass fraction 0 < y_p < 1 */
@@ -532,8 +532,10 @@ cs_ctwr_add_variable_fields(void)
      * NB : Temperature of the liquid must be transported after the bulk
      * enthalpy. */
 
-    f_id = cs_variable_field_create("y_p_t_l", "Yp.Tp rain",
-                                    CS_MESH_LOCATION_CELLS, dim1);
+    f_id = cs_variable_field_create("y_p_t_l",
+                                    "Yp.Tp rain",
+                                    CS_MESH_LOCATION_CELLS,
+                                    1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_int(f, keyccl, class_id);
 
@@ -566,10 +568,9 @@ cs_ctwr_add_variable_fields(void)
       sprintf(f_name, "v_p_%02d", class_id);
       sprintf(f_label, "Vp_%02d", class_id);
       f_id = cs_variable_field_create(f_name, f_label,
-                                      CS_MESH_LOCATION_CELLS, dim3);
+                                      CS_MESH_LOCATION_CELLS, 3);
       f = cs_field_by_id(f_id);
       cs_field_set_key_int(f, keyccl, class_id);
-      int scalar_id = cs_add_model_field_indexes(f_id);
 
       /* Scalar with drift, but do not create an additional mass flux */
       drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
@@ -586,8 +587,10 @@ cs_ctwr_add_variable_fields(void)
     int class_id = 2;
 
     /* Mass fraction of liquid */
-    int f_id = cs_variable_field_create("y_l_packing", "Yl packing",
-                                        CS_MESH_LOCATION_CELLS, dim1);
+    int f_id = cs_variable_field_create("y_l_packing",
+                                        "Yl packing",
+                                        CS_MESH_LOCATION_CELLS,
+                                        1);
     f = cs_field_by_id(f_id);
 
     /* Clipping of packing liquid mass fraction 0 < y_l_packing */
@@ -624,8 +627,10 @@ cs_ctwr_add_variable_fields(void)
      * NB : Temperature of the liquid must be transported after the bulk
      * enthalpy. */
 
-    f_id = cs_variable_field_create("enthalpy_liquid", "Enthalpy liq packing",
-        CS_MESH_LOCATION_CELLS, dim1);
+    f_id = cs_variable_field_create("enthalpy_liquid",
+                                    "Enthalpy liq packing",
+                                    CS_MESH_LOCATION_CELLS,
+                                    1);
     /* TODO (from ctvarp.f90) : x_p_h_l or y_p_h_2 */
 
     f = cs_field_by_id(f_id);
@@ -664,8 +669,10 @@ cs_ctwr_add_variable_fields(void)
     /* If not using the atmospheric module, we create the fields */
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID){
       /* Total mass fraction of water in the bulk humid air */
-      int f_id = cs_variable_field_create("ym_water", "Ym water bulk",
-                                          CS_MESH_LOCATION_CELLS, dim1);
+      int f_id = cs_variable_field_create("ym_water",
+                                          "Ym water bulk",
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
 
       f = cs_field_by_id(f_id);
 
@@ -708,8 +715,6 @@ void
 cs_ctwr_add_property_fields(void)
 {
   cs_field_t *f;
-  int dim1 = 1;
-  int dim3 = 3;
   int class_id = 1;
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   bool has_previous = false;
@@ -717,7 +722,6 @@ cs_ctwr_add_property_fields(void)
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-  const int keyccl = cs_field_key_id("scalar_class");
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
   {
@@ -725,7 +729,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("humidity",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -737,7 +741,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("x_s",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -749,7 +753,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("enthalpy",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -761,7 +765,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("temperature_liquid",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -773,7 +777,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("vertvel_l",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -786,7 +790,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("t_rain",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -801,24 +805,26 @@ cs_ctwr_add_property_fields(void)
     /* Particle limit velocity */
     sprintf(f_name, "vg_lim_p_%02d", class_id);
     f = cs_field_create(f_name,
-        field_type,
-        CS_MESH_LOCATION_CELLS,
-        dim3,
-        has_previous);
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3,
+                        has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Terminal velocity rain");
+    // cs_field_set_key_str(f, klbl, "Terminal velocity rain");
+    // FIXME: labels should also be unique, so handle class id here
 
     /* Drift velocity for rain drops */
     sprintf(f_name, "vd_p_%02d", class_id);
     f = cs_field_create(f_name,
-        field_type,
-        CS_MESH_LOCATION_CELLS,
-        dim3,
-        has_previous);
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3,
+                        has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Drift velocity rain");
+    // cs_field_set_key_str(f, klbl, "Drift velocity rain");
+    // FIXME: labels should also be unique, so handle class id here
   }
 
   /* Continuous phase properties */
@@ -828,7 +834,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("x_c",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -840,7 +846,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("b_x_c",
                         field_type,
                         CS_MESH_LOCATION_BOUNDARY_FACES,
-                        dim1,
+                        1,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -853,7 +859,7 @@ cs_ctwr_add_property_fields(void)
     f = cs_field_create("vd_c",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
-                        dim3,
+                        3,
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
@@ -871,14 +877,10 @@ cs_ctwr_bcond(void)
 {
   /* Mesh-related data */
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
   const int *bc_type = cs_glob_bc_type;
-  const int *face_zone_id = cs_boundary_zone_face_zone_id();
 
   /* Fluid properties and physical variables */
-  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
-  const cs_real_t *bfpro_rom = CS_F_(rho_b)->val;
 
   cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
   cs_field_t *y_rain= cs_field_by_name("y_p");
@@ -891,8 +893,6 @@ cs_ctwr_bcond(void)
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cs_lnum_t zone_id = face_zone_id[face_id];
-
     if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET) {
 
       /* The turbulence BC values are calculated upstream using the base
@@ -903,9 +903,7 @@ cs_ctwr_bcond(void)
        * --> Bulk values if not specified by the user
        * Assuming humid air is at conditions '0' */
 
-      cs_lnum_t cell_id = b_face_cells[face_id];
       const cs_real_t xhum = air_prop->humidity0;
-      const cs_real_t rhomoy = bfpro_rom[cell_id];
 
       /* For humid air temperature */
       if (t_h->bc_coeffs->icodcl[face_id] == 0){
@@ -1007,7 +1005,6 @@ cs_ctwr_fields_init0(void)
   /* Fluid properties and physical variables */
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
-  const cs_real_t *bfpro_rom = CS_F_(rho_b)->val;
 
   cs_field_t *t_h = cs_field_by_name("temperature");
   cs_field_t *ylp = cs_field_by_name("y_l_packing");
@@ -1087,7 +1084,6 @@ cs_ctwr_fields_init1(void)
   cs_field_t *t_h = cs_field_by_name("temperature");
   cs_field_t *ylp = cs_field_by_name("y_l_packing");
   cs_field_t *yw  = cs_field_by_name("ym_water");
-  cs_field_t *hlp = cs_field_by_name("enthalpy_liquid");
   cs_field_t *tlp = CS_F_(t_l);
 
   /* Liquid inner mass flux */
@@ -1201,7 +1197,7 @@ cs_ctwr_define(const char           zone_criteria[],
   ct->type = zone_type;
 
   ct->name = NULL;
-  cs_zone_t *z = NULL;
+  const cs_zone_t *z = NULL;
   if (z_id > -1) {
     z = cs_volume_zone_by_id(z_id);
     length = strlen(z->name) + 1;
@@ -1957,7 +1953,6 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
                                                       (bulk) density */
   cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val; /* Liquid velocity
                                                             in packing */
-  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
 
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->i_face_normal;
@@ -1976,7 +1971,6 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
                          cs_glob_physical_constants->gravity[1],
                          cs_glob_physical_constants->gravity[2]};
 
-  cs_real_t norm_g = cs_math_3_norm(gravity);
   cs_real_t g_dir[3];
   cs_math_3_normalize(gravity, g_dir);
 
@@ -2584,7 +2578,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
     /* Continuous phase drift velocity */
     cs_field_t *vd_c = cs_field_by_name("vd_c");
-    cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
 
     /* Rain drift velocity variables */
     char f_name[80];
@@ -3219,9 +3212,6 @@ cs_ctwr_source_term(int              f_id,
 
     /* Drops terminal velocity fields */
     cs_real_3_t *vg_lim_p = (cs_real_3_t *)cs_field_by_name(vg_lim_name)->val;
-    cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
-                           cs_glob_physical_constants->gravity[1],
-                           cs_glob_physical_constants->gravity[2]};
     cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
     cs_real_t *cpro_taup = NULL;
     if (cfld_taup != NULL)
@@ -3229,12 +3219,10 @@ cs_ctwr_source_term(int              f_id,
 
     /* Continuous phase drift velocity */
     cs_real_3_t *vd_c = (cs_real_3_t *)cs_field_by_name("vd_c")->val;
-    cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
 
     /* Rain drift velocity variables */
     char f_name[80];
     sprintf(f_name, "vd_p_%02d", class_id);
-    cs_field_t *vd_p = cs_field_by_name(f_name);
     sprintf(f_name, "v_p_%02d", class_id);
     cs_field_t *f_vp = cs_field_by_name(f_name);
 
