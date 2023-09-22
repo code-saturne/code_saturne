@@ -362,9 +362,7 @@ do ifac = 1, nfabor
       xwent = cpro_met_vel(3, iel)
     endif
 
-    if (rcodcl(ifac,ik,1).lt.rinfin*0.5d0) then
-      xkent = rcodcl(ifac,ik,1)
-    else if (imbrication_flag .and.cressman_tke) then
+    if (imbrication_flag .and.cressman_tke) then
       xkent = tke_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
@@ -373,10 +371,13 @@ do ifac = 1, nfabor
     else
       xkent = cpro_met_k(iel)
     endif
+    if (ik.ge.1) then
+      if (rcodcl(ifac,ik,1).lt.rinfin*0.5d0) then
+        xkent = rcodcl(ifac,ik,1)
+      endif
+    endif
 
-    if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
-      xeent = rcodcl(ifac,iep,1)
-    else if (imbrication_flag .and.cressman_eps) then
+    if (imbrication_flag .and.cressman_eps) then
       xeent = eps_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
@@ -384,6 +385,11 @@ do ifac = 1, nfabor
        zdmet, tmmet, epmet, zent  , ttcabs, xeent )
     else
       xeent = cpro_met_eps(iel)
+    endif
+    if (iep.ge.1) then
+      if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
+        xeent = rcodcl(ifac,iep,1)
+      endif
     endif
 
     if (ippmod(iatmos).ge.1) then
