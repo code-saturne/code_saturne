@@ -571,6 +571,7 @@ cs_ctwr_add_variable_fields(void)
                                       CS_MESH_LOCATION_CELLS, 3);
       f = cs_field_by_id(f_id);
       cs_field_set_key_int(f, keyccl, class_id);
+      cs_add_model_field_indexes(f_id);
 
       /* Scalar with drift, but do not create an additional mass flux */
       drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
