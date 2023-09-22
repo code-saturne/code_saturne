@@ -873,7 +873,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
                     m_atmo = True
                     if node['model'] == 'constant':
                         m_thermal = -1
-                    elif node['model'] in ('dry', 'humid'):
+                    elif node['model'] in ('dry', 'humid', 'humid_ctwr'):
                         m_thermal = 1
             if not m_thermal:
                 node = node_pm.xmlGetNode('compressible_model', 'model')

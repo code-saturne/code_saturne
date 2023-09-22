@@ -51,7 +51,6 @@
 #include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_cf_model.h"
-#include "cs_ctwr.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
 #include "cs_mesh.h"
@@ -1203,7 +1202,6 @@ _get_active_thermophysical_model(char  **model_name,
                           "joule_effect",
                           "atmospheric_flows",
                           "compressible_model",
-                          "cooling_towers",
                           "groundwater_model",
                           "hgn_model"};
   const char *name_o[] = {"gas_combustion"};
@@ -1356,23 +1354,11 @@ cs_gui_physical_model_select(void)
         cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_DRY;
       else if (cs_gui_strcmp(model_value, "humid"))
         cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_HUMID;
+      else if (cs_gui_strcmp(model_value, "humid_ctwr"))
+        cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Invalid atmospheric flow model: %s."),
-                  model_value);
-
-      /* Get and set meteo file if given */
-      _gui_atmo_get_set_meteo_profile();
-
-    }
-    else if (cs_gui_strcmp(model_name, "cooling_towers")) {
-      if (cs_gui_strcmp(model_value, "poppe"))
-        cs_glob_physical_model_flag[CS_COOLING_TOWERS] = CS_CTWR_POPPE;
-      else if (cs_gui_strcmp(model_value, "merkel"))
-        cs_glob_physical_model_flag[CS_COOLING_TOWERS] = CS_CTWR_MERKEL;
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid cooling tower model: %s."),
                   model_value);
 
       /* Get and set meteo file if given */

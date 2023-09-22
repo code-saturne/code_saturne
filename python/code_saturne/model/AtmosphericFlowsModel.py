@@ -39,7 +39,8 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.XMLvariables import Model, Variables
+from code_saturne.model.Common import *
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLmodel     import  ModelTest
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
@@ -50,7 +51,7 @@ from datetime import datetime
 # Atmospheric flows model class
 #-------------------------------------------------------------------------------
 
-class AtmosphericFlowsModel(Model):
+class AtmosphericFlowsModel(Variables, Model):
     """
     Model for atmospheric flows
     """
@@ -58,6 +59,7 @@ class AtmosphericFlowsModel(Model):
     constant            = 'constant'
     dry                 = 'dry'
     humid               = 'humid'
+    humid_ctwr          = 'humid_ctwr'
     read_meteo_data     = 'read_meteo_data'
     large_scale_meteo   = 'large_scale_meteo'
     act_chemistry       = 'activate_chemistry'
@@ -76,7 +78,33 @@ class AtmosphericFlowsModel(Model):
         self.__atmosphericModel = (AtmosphericFlowsModel.off,
                                    AtmosphericFlowsModel.constant,
                                    AtmosphericFlowsModel.dry,
-                                   AtmosphericFlowsModel.humid)
+                                   AtmosphericFlowsModel.humid,
+                                   AtmosphericFlowsModel.humid_ctwr)
+
+        self.var_list_humid = [('ym_water', 'TotWater'),
+                               ('number_of_droplets', 'TotDrop')]
+
+        self.var_list_ctwr = [('y_p', 'Yp rain'),
+                              ('y_p_t_l', 'Yp.Tp rain'),
+                              ('y_l_packing', 'Yl packing'),
+                              ('enthalpy_liquid', 'Enthalpy liq packing'),
+                              ('ym_water', 'Ym water bulk')]
+
+        self.prop_list_dry   = [('real_temperature', 'RealTemp')]
+
+        self.prop_list_humid = [('real_temperature', 'RealTemp'),
+                                ('liquid_water', 'LiqWater')]
+
+        self.prop_list_ctwr   = [('humidity', 'Humidity'),
+                                 ('x_s', 'Humidity sat'),
+                                 ('enthalpy', 'Enthalpy humid air'),
+                                 ('temperature_liquid', 'Temperature liq packing'),
+                                 ('vertvel_l', 'Velocity liq packing'),
+                                 ('t_rain', 'Temperature rain'),
+                                 ('x_c', 'Gas mass fraction')]
+
+
+
         self.__default = {}
         self.__default[self.model] = AtmosphericFlowsModel.off
         self.__default[self.read_meteo_data] = AtmosphericFlowsModel.off
@@ -104,12 +132,14 @@ class AtmosphericFlowsModel(Model):
         self.isInList(model, self.__atmosphericModel)
         self.__node_atmos[self.model] = model
         self.__updateScalarAndProperty()
-        if (model == "humid" or model == "dry"):
+        if (model == "humid" or model == "dry" or model == "humid_ctwr"):
             NumericalParamGlobalModel(self.case).setHydrostaticPressure("on")
             if (model == "dry"):
                 ThermalScalarModel(self.case).setThermalModel('potential_temperature')
-            else:
+            elif (model == "humid"):
                 ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
+            else:
+                ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         else:
             ThermalScalarModel(self.case).setThermalModel('off')
             NumericalParamGlobalModel(self.case).setHydrostaticPressure("off")
@@ -419,38 +449,34 @@ class AtmosphericFlowsModel(Model):
         model = self.getAtmosphericFlowsModel()
         node = self.__node_atmos
 
-        # Update only if getMeteoDataStatus is not off
+        # Start by cleaning all atmo variables and properties in case of
+        # model change.
+        self.__removeVariablesAndProperties()
 
-        if model != AtmosphericFlowsModel.off:
+        # Create specific variables / properties depending on model
+        if model == AtmosphericFlowsModel.dry:
+            self.__fluidProp.setPropertyMode('density', 'predefined_law')
+            for v in self.prop_list_dry:
+                self.setNewProperty(node, v[0], label=v[1])
 
-            if model == AtmosphericFlowsModel.dry:
-                self.__removeScalar(node, 'ym_water')
-                self.__removeScalar(node, 'number_of_droplets')
-                self.__removeProperty(node, 'liquid_water')
-                self.__setProperty(node, 'RealTemp', 'real_temperature')
-                if self.__fluidProp.getPropertyMode('density') == 'constant':
-                    self.__fluidProp.setPropertyMode('density', 'predefined_law')
+        elif model == AtmosphericFlowsModel.humid:
+            self.__fluidProp.setPropertyMode('density', 'predefined_law')
+            for v in self.var_list_humid:
+                self.setNewVariable(node, v[0], tpe="model", label=v[1])
+            for v in self.prop_list_humid:
+                self.setNewProperty(node, v[0], label=v[1])
 
-            elif model == AtmosphericFlowsModel.humid:
-                self.__setScalar(node, 'TotWater', 'ym_water', 'model')
-                self.__setScalar(node, 'TotDrop', 'number_of_droplets', 'model')
-                self.__setProperty(node, 'RealTemp', 'real_temperature')
-                self.__setProperty(node, 'LiqWater', 'liquid_water')
-                if self.__fluidProp.getPropertyMode('density') == 'constant':
-                    self.__fluidProp.setPropertyMode('density', 'predefined_law')
 
-            elif model == AtmosphericFlowsModel.constant:
-                self.__removeScalar(node, 'ym_water')
-                self.__removeScalar(node, 'number_of_droplets')
-                self.__removeProperty(node, 'liquid_water')
-                self.__removeProperty(node, "real_temperature")
-                FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
+        elif model == AtmosphericFlowsModel.humid_ctwr:
+            self.__fluidProp.setPropertyMode('density', 'predefined_law')
+            for v in self.var_list_ctwr:
+                self.setNewVariable(node, v[0], tpe="model", label=v[1])
+            for v in self.prop_list_ctwr:
+                self.setNewProperty(node, v[0], label=v[1])
 
-        else:
-            self.__removeScalar(node, 'ym_water')
-            self.__removeScalar(node, 'number_of_droplets')
-            self.__removeProperty(node, 'liquid_water')
-            self.__removeProperty(node, "real_temperature")
+
+        elif model == AtmosphericFlowsModel.constant:
+            FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
 
 
     def atmosphericFlowsNode(self):
@@ -460,35 +486,21 @@ class AtmosphericFlowsModel(Model):
         return self.__node_atmos
 
 
-    def __setScalar(self, parentNode, labelStr, nameStr, typeStr ):
+    def __removeVariablesAndProperties(self):
         """
-        Create xml scalar
+        Remove variables and properties associated to current model.
         """
-        scalar = parentNode.xmlInitChildNode('variable', name = nameStr)
-        scalar['label'] = labelStr
-        scalar['type']  = typeStr
+        for v in self.var_list_humid:
+            self.__node_atmos.xmlRemoveChild('variable', name=v[0])
+        for v in self.var_list_ctwr:
+            self.__node_atmos.xmlRemoveChild('variable', name=v[0])
+        for v in self.prop_list_dry:
+            self.__node_atmos.xmlRemoveChild('property', name=v[0])
+        for v in self.prop_list_humid:
+            self.__node_atmos.xmlRemoveChild('property', name=v[0])
+        for v in self.prop_list_ctwr:
+            self.__node_atmos.xmlRemoveChild('property', name=v[0])
 
-
-    def __setProperty(self, parentNode, labelStr, nameStr):
-        """
-        Create xml property
-        """
-        prop = parentNode.xmlInitChildNode('property', name = nameStr)
-        prop['label']  = labelStr
-
-
-    def __removeScalar(self, parentNode, nameStr):
-        """
-        Delete scalar
-        """
-        parentNode.xmlRemoveChild('variable', name = nameStr)
-
-
-    def __removeProperty(self, parentNode, nameStr):
-        """
-        Delete property
-        """
-        parentNode.xmlRemoveChild('property', name = nameStr)
 
 #-------------------------------------------------------------------------------
 # AtmosphericFlowsModel test case

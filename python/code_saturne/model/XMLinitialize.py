@@ -543,6 +543,11 @@ class XMLinit(BaseXmlInit):
                         if n:
                             n.xmlRemoveNode()
                         ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
+                    if (mdl == "humid_ctwr"):
+                        n = node.xmlGetNode('scalar', name="temperature_celsius")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
                 else:
                     n = node.xmlGetNode('scalar', name="EnergieT")
                     if n:
@@ -915,7 +920,6 @@ class XMLinit(BaseXmlInit):
                     ("c_NO_HCN",                     "radiation_source"),
                     ("Sigma",                        "elec_sigma"),
                     ("IntLuminance_4PI",             "intensity"),
-                    ("volumic_viscosity",            "volume_viscosity"),
                     ("volumic_viscosity",            "volume_viscosity")]
 
         dicoP = {}
