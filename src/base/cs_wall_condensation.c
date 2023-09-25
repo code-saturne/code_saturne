@@ -444,7 +444,7 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
     {
       const cs_real_t   rough_t = 0.0;
       cs_real_t         uk      = 0.0;
-      const cs_field_t *f_ustar = cs_field_by_name_try("ustar");
+      const cs_field_t *f_ustar = cs_field_by_name_try("boundary_ustar");
       if (f_ustar != NULL) {
         uk = f_ustar->val[ifac];
       }
