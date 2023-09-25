@@ -728,6 +728,88 @@ _update_pressures(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update several arrays associated to the definition of terms involved
+ *        in the resolution of a miscible two-phase flow model with an
+ *        isotropic absolute permeability.
+ *
+ *        Numerical options: coupled solver and diffusive viewpoint of the
+ *        Darcy terms in the conservation equation of the hydrogen
+ *
+ * \param[in, out] mc    pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_iso_mtpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
+{
+  const double  hmh = mc->h_molar_mass * mc->henry_constant;
+  const double  mh_ov_rt =
+    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+
+  const cs_real_t  *pg_cells = mc->g_pressure_cells;
+  const cs_real_t  *l_sat = mc->l_saturation->val;
+  const cs_real_t  *l_cap = mc->l_capacity;
+  const cs_real_t  *krl =  mc->l_rel_permeability;
+  const cs_real_t  *krg =  mc->g_rel_permeability;
+
+  /* Loop on soils */
+
+  for (int soil_id = 0; soil_id < cs_gwf_get_n_soils(); soil_id++) {
+
+    cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+
+    assert(soil != NULL);
+    assert(soil->hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE);
+    assert(soil->abs_permeability_dim == 1);
+
+    const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
+    assert(zone != NULL);
+
+    const double  k_abs = soil->abs_permeability[0][0];
+    const double  phi = soil->porosity;
+    const double  phi_rhol = phi * mc->l_mass_density;
+
+    const double  g_diff_coef = k_abs/mc->g_viscosity;
+    const double  l_diff_coef = k_abs/mc->l_viscosity;
+    const double  wl_diff_coef = mc->l_mass_density * l_diff_coef;
+
+    /* Loop on cells belonging to this soil */
+
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+      const cs_lnum_t  c_id = zone->elt_ids[i];
+
+      const double  rhog_h = mh_ov_rt * pg_cells[c_id];
+      const double  rhol_h = hmh * pg_cells[c_id];
+      const double  sl = l_sat[c_id], sg = 1 - sl;
+      const double  dsl_dpc = l_cap[c_id];
+
+      /* Update terms for the Darcy flux in the gaz phase */
+
+      mc->diff_g_array[c_id] = g_diff_coef * krg[c_id];
+
+      /* Update terms associated to the water conservation equation */
+
+      mc->time_wc_array[c_id] = phi_rhol * dsl_dpc;
+      mc->diff_wl_array[c_id] = wl_diff_coef * krl[c_id];
+
+      /* Update terms associated to the hydrogen conservation equation */
+
+      const double  time_h_coef = phi * ( mh_ov_rt*sg + hmh*sl );
+      mc->time_hc_array[c_id] = time_h_coef + phi * (rhol_h - rhog_h)*dsl_dpc;
+      mc->time_hl_array[c_id] = time_h_coef;
+
+      const double  diff_hc = rhog_h * mc->diff_g_array[c_id];
+      mc->diff_hc_array[c_id] = diff_hc;
+      mc->diff_hl_array[c_id] = diff_hc + rhol_h * l_diff_coef * krl[c_id];
+
+    } /* Loop on cells of the zone (= soil) */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update several arrays associated to the definition of terms involved
  *        in the resolution of an immiscible two-phase flow model with an
  *        isotropic absolute permeability.
  *
@@ -1514,7 +1596,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 
   if (model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE) {
 
-    mc->is_miscible = false;
+    mc->is_miscible = true;
     mc->l_diffusivity_h = 0;      /* immiscible case */
     mc->henry_constant = 1e-20;   /* nearly immiscible case */
 
@@ -2512,11 +2594,11 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
     if (mc->is_miscible) {
       /*       ======== */
 
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Only the immiscible case is available up to now.",
-                __func__);
-
-      //TODO --> cs_gwf_soil_iso_update_mtpf_terms(mc);
+      if (mc->use_diffusion_view_for_darcy)
+        _update_iso_mtpf_coupled_diffview_terms(mc);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: TODO --> Update functions.", __func__);
 
     }
     else { /* Immiscible model
