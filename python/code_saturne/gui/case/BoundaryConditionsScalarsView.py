@@ -58,6 +58,7 @@ from code_saturne.model.CompressibleModel             import CompressibleModel
 from code_saturne.model.CoalCombustionModel           import CoalCombustionModel
 from code_saturne.model.GasCombustionModel            import GasCombustionModel
 from code_saturne.model.AtmosphericFlowsModel         import AtmosphericFlowsModel
+from code_saturne.model.HgnModel                      import HgnModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
@@ -113,18 +114,23 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         self.lineEditValueThermal.textChanged[str].connect(self.slotValueThermal)
         self.lineEditValueSpecies.textChanged[str].connect(self.slotValueSpecies)
+        self.lineEditValueVoidFraction.textChanged[str].connect(self.slotValueVoidFraction)
         self.lineEditValueMeteo.textChanged[str].connect(self.slotValueMeteo)
         self.lineEditExThermal.textChanged[str].connect(self.slotExThermal)
         self.lineEditExSpecies.textChanged[str].connect(self.slotExSpecies)
+        self.lineEditExVoidFraction.textChanged[str].connect(self.slotExVoidFraction)
         self.lineEditExMeteo.textChanged[str].connect(self.slotExMeteo)
 
         self.pushButtonThermal.clicked.connect(self.slotThermalFormula)
         self.pushButtonSpecies.clicked.connect(self.slotSpeciesFormula)
+        self.pushButtonVoidFraction.clicked.connect(self.slotVoidFractionFormula)
         self.pushButtonMeteo.clicked.connect(self.slotMeteoFormula)
         self.comboBoxThermal.activated[str].connect(self.slotThermalChoice)
         self.comboBoxTypeThermal.activated[str].connect(self.slotThermalTypeChoice)
         self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
         self.comboBoxTypeSpecies.activated[str].connect(self.slotSpeciesTypeChoice)
+        self.comboBoxVoidFraction.activated[str].connect(self.slotVoidFractionChoice)
+        self.comboBoxTypeVoidFraction.activated[str].connect(self.slotVoidFractionTypeChoice)
         self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
         self.comboBoxTypeMeteo.activated[str].connect(self.slotMeteoTypeChoice)
 
@@ -134,16 +140,20 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         ## Validators
         validatorValueThermal = DoubleValidator(self.lineEditValueThermal)
         validatorValueSpecies = DoubleValidator(self.lineEditValueSpecies)
+        validatorValueVoidFraction = DoubleValidator(self.lineEditValueVoidFraction)
         validatorValueMeteo = DoubleValidator(self.lineEditValueMeteo)
         validatorExThermal = DoubleValidator(self.lineEditExThermal)
         validatorExSpecies = DoubleValidator(self.lineEditExSpecies)
+        validatorExVoidFraction = DoubleValidator(self.lineEditExVoidFraction)
         validatorExMeteo = DoubleValidator(self.lineEditExMeteo)
 
         self.lineEditValueThermal.setValidator(validatorValueThermal)
         self.lineEditValueSpecies.setValidator(validatorValueSpecies)
+        self.lineEditValueVoidFraction.setValidator(validatorValueVoidFraction)
         self.lineEditValueMeteo.setValidator(validatorValueMeteo)
         self.lineEditExThermal.setValidator(validatorExThermal)
         self.lineEditExSpecies.setValidator(validatorExSpecies)
+        self.lineEditExVoidFraction.setValidator(validatorExVoidFraction)
         self.lineEditExMeteo.setValidator(validatorExMeteo)
 
         self.case.undoStartGlobal()
@@ -158,6 +168,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.nature = boundary.getNature()
         self.therm = ThermalScalarModel(self.case)
         self.sca_mo = DefineUserScalarsModel(self.case)
+        self.hgn = HgnModel(self.case)
         self.comp = CompressibleModel(self.case)
         self.atm = AtmosphericFlowsModel(self.case)
 
@@ -175,6 +186,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
+        self.modelTypeVoidFraction = ComboModel(self.comboBoxTypeVoidFraction, 1, 1)
         self.modelTypeMeteo = ComboModel(self.comboBoxTypeMeteo, 1, 1)
 
         self.modelTypeThermal.addItem(self.tr("Prescribed value"), 'dirichlet')
@@ -183,6 +195,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                                           'dirichlet:temperature')
 
         self.modelTypeSpecies.addItem(self.tr("Prescribed value"), 'dirichlet')
+        self.modelTypeVoidFraction.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeMeteo.addItem(self.tr("Prescribed value"), 'dirichlet')
 
         self.modelTypeThermal.addItem(self.tr("Prescribed value (user law)"),
@@ -192,12 +205,15 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                                           'dirichlet_formula:temperature')
         self.modelTypeSpecies.addItem(self.tr("Prescribed value (user law)"),
                                       'dirichlet_formula')
+        self.modelTypeVoidFraction.addItem(self.tr("Prescribed value (user law)"),
+                                             'dirichlet_formula')
         self.modelTypeMeteo.addItem(self.tr("Prescribed value (user law)"),
                                     'dirichlet_formula')
 
         if self.nature == 'outlet':
             self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
+            self.modelTypeVoidFraction.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux"), 'neumann')
         elif self.nature == 'wall':
             self.initSyrthesInstanceList()
@@ -244,6 +260,16 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelSpecies.setItem(str_model = self.species)
         else:
             self.groupBoxSpecies.hide()
+
+        if self.hgn != 'off' and self.nature != 'wall':
+            self.groupBoxVoidFraction.show()
+            self.modelVoidFraction = ComboModel(self.comboBoxVoidFraction,1,1)
+            self.hgn =  self.hgn.getHgnName()
+            self.hgn_type = self.__boundary.getScalarChoice(self.hgn)
+            self.modelVoidFraction.addItem(self.tr(self.hgn), self.hgn)
+            self.modelVoidFraction.setItem(str_model = self.hgn)
+        else:
+            self.groupBoxVoidFraction.hide()
 
         if self.model_th != 'off':
             self.groupBoxThermal.show()
@@ -304,15 +330,17 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         Initialize widget
         """
-        # Initalize exchange coef
+        # Initialize exchange coef
         self.lineEditExThermal.hide()
         self.labelExThermal.hide()
         self.lineEditExSpecies.hide()
         self.labelExSpecies.hide()
+        self.lineEditExVoidFraction.hide()
+        self.labelExVoidFraction.hide()
         self.lineEditExMeteo.hide()
         self.labelExMeteo.hide()
 
-        # Initalize thermal
+        # Initialize thermal
         self.lineEditValueThermal.hide()
         self.labelValueThermal.hide()
         self.pushButtonThermal.setEnabled(False)
@@ -363,7 +391,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 syrCompleter = QCompleter(self.cht_model.getSyrthesInstancesList())
                 self.lineEditSyrthesInstance.setCompleter(syrCompleter)
 
-        # Initalize species
+        # Initialize species
         self.labelValueSpecies.hide()
         self.lineEditValueSpecies.hide()
         self.pushButtonSpecies.setEnabled(False)
@@ -411,7 +439,48 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             if self.nature == 'groundwater':
                 self.groupBoxSpecies.setTitle('Transport equation')
 
-        # Initalize meteo
+        # Initialize void fraction
+        self.lineEditValueVoidFraction.hide()
+        self.labelValueVoidFraction.hide()
+        self.pushButtonVoidFraction.setEnabled(False)
+        self.pushButtonVoidFraction.setStyleSheet("background-color: None")
+
+        if self.hgn != 'off' and self.nature != 'wall':
+            self.modelTypeVoidFraction.setItem(str_model=self.hgn_type)
+            self.labelValueVoidFraction.setText('Value')
+            self.groupBoxVoidFraction.setTitle('Void fraction')
+
+            if self.hgn_type in ('dirichlet', 'exchange_coefficient', 'neumann'):
+                self.labelValueVoidFraction.show()
+                self.lineEditValueVoidFraction.show()
+
+                if self.hgn_type == 'exchange_coefficient':
+                    self.lineEditExVoidFraction.show()
+                    self.labelExVoidFraction.show()
+                    v = self.__boundary.getScalarValue(self.hgn, 'dirichlet')
+                    w = self.__boundary.getScalarValue(self.hgn, 'exchange_coefficient')
+                    self.lineEditValueVoidFraction.setText(str(v))
+                    self.lineEditExVoidFraction.setText(str(w))
+                else:
+                    v = self.__boundary.getScalarValue(self.hgn, self.hgn_type)
+                    self.lineEditValueVoidFraction.setText(str(v))
+
+                if self.hgn_type == 'neumann':
+                    self.labelValueVoidFraction.setText('Flux')
+                    if self.nature == 'outlet':
+                        self.groupBoxVoidFraction.setTitle('Void fraction for backflow')
+
+            elif self.hgn_type in ('exchange_coefficient_formula', 'dirichlet_formula',
+                              'neumann_formula'):
+                self.pushButtonVoidFraction.setEnabled(True)
+                exp = self.__boundary.getScalarFormula(self.hgn, self.hgn_type)
+                if exp:
+                    self.pushButtonVoidFraction.setStyleSheet("background-color: green")
+                    self.pushButtonVoidFraction.setToolTip(exp)
+                else:
+                    self.pushButtonVoidFraction.setStyleSheet("background-color: red")
+
+        # Initialize meteo
         self.labelValueMeteo.hide()
         self.lineEditValueMeteo.hide()
         self.pushButtonMeteo.setEnabled(False)
@@ -468,6 +537,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         if DefineUserScalarsModel(self.case).getScalarNameList() or\
            DefineUserScalarsModel(self.case).getMeteoScalarsNameList() or\
+           DefineUserScalarsModel(self.case).getHgnName() or\
            DefineUserScalarsModel(self.case).getThermalScalarName():
             self.__setBoundary(boundary)
             self.show()
@@ -522,6 +592,25 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         self.species_type = self.modelTypeSpecies.dicoV2M[str(text)]
         self.__boundary.setScalarChoice(self.species, self.species_type)
+        self.initializeVariables()
+
+
+    @pyqtSlot(str)
+    def slotVoidFractionChoice(self, text):
+        """
+        INPUT label for choice of zone
+        """
+        self.hgn = self.modelVoidFraction.dicoV2M[str(text)]
+        self.initializeVariables()
+
+
+    @pyqtSlot(str)
+    def slotVoidFractionTypeChoice(self, text):
+        """
+        INPUT label for choice of zone
+        """
+        self.hgn_type = self.modelTypeVoidFraction.dicoV2M[str(text)]
+        self.__boundary.setScalarChoice(self.hgn, self.hgn_type)
         self.initializeVariables()
 
 
@@ -644,6 +733,55 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
 
     @pyqtSlot()
+    def slotVoidFractionFormula(self):
+        """
+        """
+        name = self.hgn
+
+        exp = self.__boundary.getScalarFormula(self.hgn, self.hgn_type)
+        exa = """#example: """
+        if self.hgn_type == 'dirichlet_formula':
+            req = [(name, str(name))]
+        elif self.hgn_type == 'neumann_formula':
+            req = [("flux", "flux")]
+        elif self.hgn_type == 'exchange_coefficient_formula':
+            req = [(name, str(name)),("hc", "void fraction coefficient")]
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration'),
+               ('surface', 'Boundary zone surface')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        # Time Tables variables
+        sym += TimeTablesModel(self.case).getTableVariablesListAll()
+
+        c = self.__boundary.getScalarChoice(name)
+
+        dialog = QMegEditorView(parent      = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotVoidFractionFormula -> %s" % str(result))
+            self.__boundary.setScalarFormula(self.hgn, self.hgn_type, str(result))
+            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
+            self.pushButtonVoidFraction.setToolTip(exp)
+
+
+    @pyqtSlot()
     def slotMeteoFormula(self):
         """
         """
@@ -715,6 +853,19 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
 
     @pyqtSlot(str)
+    def slotValueVoidFraction(self, var):
+        """
+        """
+        if self.lineEditValueVoidFraction.validator().state == QValidator.Acceptable:
+            value = from_qvariant(var, float)
+            hgn_type = self.hgn_type.split(':')[0]
+            if hgn_type in ('dirichlet', 'neumann'):
+                self.__boundary.setScalarValue(self.hgn, hgn_type, value)
+            elif hgn_type == 'exchange_coefficient':
+                self.__boundary.setScalarValue(self.hgn, 'dirichlet', value)
+
+
+    @pyqtSlot(str)
     def slotValueMeteo(self, var):
         """
         """
@@ -742,6 +893,16 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         if self.lineEditExSpecies.validator().state == QValidator.Acceptable:
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.species, 'exchange_coefficient', value)
+
+
+    @pyqtSlot(str)
+    def slotExVoidFraction(self, var):
+        """
+        """
+        if self.lineEditExVoidFraction.validator().state == QValidator.Acceptable:
+            value = from_qvariant(var, float)
+            self.__boundary.setScalarValue(self.hgn, 'exchange_coefficient', value)
+
 
     @pyqtSlot(str)
     def slotExMeteo(self, var):

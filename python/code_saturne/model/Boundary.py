@@ -39,6 +39,7 @@ from code_saturne.model.XMLengine    import *
 
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.ThermalScalarModel     import ThermalScalarModel
+from code_saturne.model.HgnModel import HgnModel
 from code_saturne.model.TurbulenceModel import TurbulenceModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
@@ -110,6 +111,7 @@ class Boundary(object) :
                                    'total_energy')
 
         self.sca_model = DefineUserScalarsModel(self.case)
+        self.hgn_model = HgnModel(self.case)
 
         # Create nodes
         if nature not in ["coal_inlet",
@@ -394,6 +396,8 @@ class InletBoundary(Boundary):
 
         self.th_model = ThermalScalarModel(self.case)
 
+        self.hgn_model = HgnModel(self.case)
+
         # Initialize nodes if necessary
 
         self.getVelocityChoice()
@@ -488,6 +492,8 @@ class InletBoundary(Boundary):
                 scalar_list.append(sca)
         if len(self.sca_model.getThermalScalarName()) > 0:
             scalar_list.append(self.sca_model.getThermalScalarName()[0])
+        if self.hgn_model != 'off':
+            scalar_list.append(self.hgn_model.getHgnName())
 
         return scalar_list
 
@@ -2201,6 +2207,8 @@ class OutletBoundary(Boundary) :
                 scalar_list.append(sca)
         if len(self.sca_model.getThermalScalarName()) > 0:
             scalar_list.append(self.sca_model.getThermalScalarName()[0])
+        if self.hgn_model != 'off':
+            scalar_list.append(self.hgn_model.getHgnName())
 
         return scalar_list
 
@@ -2725,6 +2733,8 @@ class GroundwaterBoundary(Boundary) :
                 scalar_list.append(sca)
         if len(self.sca_model.getThermalScalarName()) > 0:
             scalar_list.append(self.sca_model.getThermalScalarName()[0])
+        if self.hgn_model != 'off':
+            scalar_list.append(self.hgn_model.getHgnName())
 
         return scalar_list
 
@@ -2920,6 +2930,8 @@ class WallBoundary(Boundary) :
                 scalar_list.append(sca)
         if len(self.sca_model.getThermalScalarName()) > 0:
             scalar_list.append(self.sca_model.getThermalScalarName()[0])
+        if self.hgn_model != 'off':
+            scalar_list.append(self.hgn_model.getHgnName())
 
         return scalar_list
 

@@ -107,6 +107,19 @@ class HgnModel(Variables, Model):
         return status
 
 
+    @Variables.noUndo
+    def getHgnName(self):
+        """
+        Get name for void fraction scalar
+        """
+        name = ""
+        node = self.node_hgn.xmlGetNode('variable', type='model')
+        if node:
+            name = node['name']
+
+        return name
+
+
     def __removeVariablesAndProperties(self):
         """
         Remove variables and properties associated to current model.

@@ -14,7 +14,16 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout">
-   <property name="margin">
+   <property name="leftMargin">
+    <number>9</number>
+   </property>
+   <property name="topMargin">
+    <number>9</number>
+   </property>
+   <property name="rightMargin">
+    <number>9</number>
+   </property>
+   <property name="bottomMargin">
     <number>9</number>
    </property>
    <property name="spacing">
@@ -29,7 +38,16 @@
       <string>Thermal</string>
      </property>
      <layout class="QGridLayout">
-      <property name="margin">
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
        <number>9</number>
       </property>
       <property name="spacing">
@@ -40,7 +58,16 @@
         <property name="spacing">
          <number>6</number>
         </property>
-        <property name="margin">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
@@ -88,7 +115,16 @@
           <property name="spacing">
            <number>6</number>
           </property>
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <item>
@@ -96,7 +132,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -148,7 +193,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -199,7 +253,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -303,6 +366,353 @@
      </layout>
     </widget>
    </item>
+   <item row="3" column="0">
+    <widget class="QGroupBox" name="groupBoxMeteo">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the
+       boundary conditions for meteo scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+      </string>
+     </property>
+     <property name="title">
+      <string>Meteo scalar</string>
+     </property>
+     <layout class="QGridLayout">
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <item row="0" column="0">
+       <layout class="QHBoxLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>16</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBoxMeteo">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify
+            the boundary conditions for meteo scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>16</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QVBoxLayout">
+          <property name="spacing">
+           <number>6</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="labelMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
+                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
+                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
+                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
+                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
+                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
+                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
+                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
+                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
+                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+               </string>
+              </property>
+              <property name="text">
+               <string>Type</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="comboBoxTypeMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
+                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
+                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
+                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
+                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
+                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
+                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
+                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
+                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
+                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+               </string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButtonMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
+                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
+                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
+                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
+                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
+                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
+                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
+                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
+                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
+                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+               </string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="labelValueMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
+                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
+                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
+                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
+                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
+                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
+                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
+                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
+                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
+                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+               </string>
+              </property>
+              <property name="text">
+               <string>Value</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>16</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEditValueMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
+                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
+                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
+                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
+                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
+                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
+                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
+                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
+                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
+                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+               </string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="labelExMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
+                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
+                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
+                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
+                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
+                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
+                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
+                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
+                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
+                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+               </string>
+              </property>
+              <property name="text">
+               <string>Exchange coefficient</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>16</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEditExMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
+                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
+                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
+                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
+                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
+                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
+                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
+                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
+                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
+                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+               </string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxSpecies">
      <property name="toolTip">
@@ -314,7 +724,16 @@
       <string>Species</string>
      </property>
      <layout class="QGridLayout">
-      <property name="margin">
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
        <number>9</number>
       </property>
       <property name="spacing">
@@ -325,7 +744,16 @@
         <property name="spacing">
          <number>6</number>
         </property>
-        <property name="margin">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
@@ -375,7 +803,16 @@
           <property name="spacing">
            <number>6</number>
           </property>
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <item>
@@ -383,7 +820,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -457,7 +903,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -519,7 +974,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -597,32 +1061,15 @@
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="QGroupBox" name="groupBoxMeteo">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the
-       boundary conditions for meteo scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-      </string>
-     </property>
+    <widget class="QGroupBox" name="groupBoxVoidFraction">
      <property name="title">
-      <string>Meteo scalar</string>
+      <string>Void fraction</string>
      </property>
-     <layout class="QGridLayout">
-      <property name="margin">
-       <number>9</number>
-      </property>
-      <property name="spacing">
-       <number>6</number>
-      </property>
+     <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
-       <layout class="QHBoxLayout">
-        <property name="spacing">
-         <number>6</number>
-        </property>
-        <property name="margin">
-         <number>0</number>
-        </property>
+       <layout class="QHBoxLayout" name="_6">
         <item>
-         <spacer>
+         <spacer name="spacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -635,23 +1082,23 @@
          </spacer>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBoxMeteo">
+         <widget class="QComboBox" name="comboBoxVoidFraction">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify
-            the boundary conditions for meteo scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+            the boundary conditions for scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
            </string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="Line" name="line_3">
+         <widget class="Line" name="line_4">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
         <item>
-         <spacer>
+         <spacer name="spacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -664,35 +1111,53 @@
          </spacer>
         </item>
         <item>
-         <layout class="QVBoxLayout">
+         <layout class="QVBoxLayout" name="_2">
           <property name="spacing">
            <number>6</number>
           </property>
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <item>
-           <layout class="QHBoxLayout">
+           <layout class="QHBoxLayout" name="_3">
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
-             <widget class="QLabel" name="labelMeteo">
+             <widget class="QLabel" name="labelVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
-                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
-                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
-                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
-                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
-                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
-                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
-                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
-                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
-                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
-                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a
+                dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such
+                as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on
+                the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only),
+                &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be
+                variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value
+                and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient
+                (user law): define the scalar value and the exchange coefficient value which can be both variable (For
+                wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
               </property>
               <property name="text">
@@ -701,37 +1166,37 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxTypeMeteo">
+             <widget class="QComboBox" name="comboBoxTypeVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
-                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
-                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
-                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
-                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
-                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
-                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
-                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
-                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
-                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
-                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a
+                dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such
+                as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on
+                the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only),
+                &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be
+                variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value
+                and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient
+                (user law): define the scalar value and the exchange coefficient value which can be both variable (For
+                wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonMeteo">
+             <widget class="QPushButton" name="pushButtonVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
-                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
-                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
-                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
-                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
-                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
-                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
-                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
-                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
-                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
-                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a
+                dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such
+                as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on
+                the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only),
+                &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be
+                variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value
+                and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient
+                (user law): define the scalar value and the exchange coefficient value which can be both variable (For
+                wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
               </property>
               <property name="text">
@@ -746,27 +1211,36 @@
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout">
+           <layout class="QHBoxLayout" name="_4">
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
-             <widget class="QLabel" name="labelValueMeteo">
+             <widget class="QLabel" name="labelValueVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
-                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
-                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
-                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
-                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
-                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
-                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
-                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
-                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
-                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
-                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a
+                dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such
+                as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on
+                the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only),
+                &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be
+                variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value
+                and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient
+                (user law): define the scalar value and the exchange coefficient value which can be both variable (For
+                wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
               </property>
               <property name="text">
@@ -788,19 +1262,19 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditValueMeteo">
+             <widget class="QLineEdit" name="lineEditValueVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
-                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
-                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
-                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
-                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
-                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
-                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
-                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
-                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
-                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
-                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a
+                dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such
+                as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on
+                the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only),
+                &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be
+                variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value
+                and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient
+                (user law): define the scalar value and the exchange coefficient value which can be both variable (For
+                wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
               </property>
              </widget>
@@ -808,27 +1282,36 @@
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout">
+           <layout class="QHBoxLayout" name="_5">
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
-             <widget class="QLabel" name="labelExMeteo">
+             <widget class="QLabel" name="labelExVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
-                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
-                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
-                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
-                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
-                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
-                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
-                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
-                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
-                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
-                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a
+                dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such
+                as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on
+                the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only),
+                &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be
+                variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value
+                and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient
+                (user law): define the scalar value and the exchange coefficient value which can be both variable (For
+                wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
               </property>
               <property name="text">
@@ -850,19 +1333,19 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditExMeteo">
+             <widget class="QLineEdit" name="lineEditExVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
-                the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
-                constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law):
-                define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different
-                criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary
-                condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary
-                conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the
-                meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange
-                coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary
-                conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the
-                exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
+                constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a
+                dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such
+                as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on
+                the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only),
+                &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be
+                variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value
+                and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient
+                (user law): define the scalar value and the exchange coefficient value which can be both variable (For
+                wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
               </property>
              </widget>
@@ -872,7 +1355,7 @@
          </layout>
         </item>
         <item>
-         <spacer>
+         <spacer name="spacer_3">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>

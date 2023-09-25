@@ -79,6 +79,7 @@
 #include "cs_parall.h"
 #include "cs_elec_model.h"
 #include "cs_physical_model.h"
+#include "cs_vof.h"
 #include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
@@ -2442,6 +2443,11 @@ _init_boundaries(void)
           if (f != NULL)
             _boundary_scalar(tn, z, f);
         }
+      }
+
+      /* VoF void fraction */
+      if (cs_glob_vof_parameters->vof_model > 0) {
+        _boundary_scalar(tn, z, CS_F_(void_f));
       }
 
       /* User scalars */
