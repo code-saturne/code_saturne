@@ -884,16 +884,6 @@ _update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
       mc->diff_hc_array[c_id] = diff_hc;
       mc->diff_hl_array[c_id] = diff_hc + rhol_h * l_diff_coef * krl[c_id];
 
-#if 0 /* Debugging purpose */
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "%s: %02d |> di_g: % 8.6e; ti_wc: %8.6e; di_wl: %8.6e;"
-                    " ti_hc: % 8.6e; ti_hl: % 8.6e; di_hc: % 8.6e;"
-                    " di_hl: % 8.6e\n", __func__, c_id,
-                    mc->diff_g_array[c_id], mc->time_wc_array[c_id],
-                    mc->diff_wl_array[c_id], mc->time_hc_array[c_id],
-                    mc->time_hl_array[c_id], mc->diff_hc_array[c_id],
-                    mc->diff_hl_array[c_id]);
-#endif
     } /* Loop on cells of the zone (= soil) */
 
   } /* Loop on soils */
@@ -1598,7 +1588,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 
     mc->is_miscible = true;
     mc->l_diffusivity_h = 0;      /* immiscible case */
-    mc->henry_constant = 1e-20;   /* nearly immiscible case */
+    mc->henry_constant = 1e-7;    /* default value */
 
   }
   else {
@@ -2543,8 +2533,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
 
   }
 
-  if (cs_equation_get_space_scheme(mc->w_eq) !=
-      CS_SPACE_SCHEME_CDOVB)
+  if (cs_equation_get_space_scheme(mc->w_eq) != CS_SPACE_SCHEME_CDOVB)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Incompatible space discretization.", __func__);
 
@@ -2605,7 +2594,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
               ================ */
 
       /* In the immiscible case, l_diffusivity_h should be set to 0 and the
-         henry constat should be very low */
+         henry constant should be very low */
 
       assert(mc->l_diffusivity_h < FLT_MIN);
       assert(mc->henry_constant < 1e-12);
@@ -2616,7 +2605,8 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
         if (mc->use_diffusion_view_for_darcy)
           _update_iso_itpf_coupled_diffview_terms(mc);
         else
-          bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: TODO --> Update functions.", __func__);
 
       }
       else { /* segregated solver
