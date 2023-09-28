@@ -1566,6 +1566,8 @@ if (irangp.ge.0) then
     call parmax (tetmax)
     call parmin (tplumn)
     call parmax (tplumx)
+    call parmin (dlmomin)
+    call parmax (dlmomax)
   endif
 endif
 
