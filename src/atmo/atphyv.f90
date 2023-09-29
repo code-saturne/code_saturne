@@ -254,7 +254,7 @@ double precision a_const
 double precision a_coeff
 double precision alpha,al
 double precision sig_flu ! standard deviation of qw'-alpha*theta'
-double precision var_tl,var_q,cov_tlq
+double precision var_q_tl
 double precision q1,qsup, rvap, rscp
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
@@ -290,11 +290,10 @@ a_const = 2.d0*cmu/2.3d0
 do iel = 1, ncel
 
   a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
-  var_tl= a_coeff*(dtlsd(1,iel)**2 + dtlsd(2,iel)**2 + dtlsd(3,iel)**2)
-  var_q = a_coeff*( dqsd(1,iel)**2 + dqsd(2,iel)**2 + dqsd(3,iel)**2)
-  cov_tlq = a_coeff*(  dtlsd(1,iel)*dqsd(1,iel)   &
-                     + dtlsd(2,iel)*dqsd(2,iel)   &
-                     + dtlsd(3,iel)*dqsd(3,iel))
+
+  var_q_tl = a_coeff * ( (dqsd(1,iel) - alpha * dtlsd(1,iel))**2  &
+                       + (dqsd(2,iel) - alpha * dtlsd(2,iel))**2  &
+                       + (dqsd(3,iel) - alpha * dtlsd(3,iel))**2)
 
   zent = xyzcen(3,iel)
 
@@ -313,7 +312,7 @@ do iel = 1, ncel
   qsl = cs_air_yw_sat(tliq-tkelvi, pp) ! saturated vapor content
   deltaq = qwt - qsl
   alpha = (clatev*qsl/(rvap*tliq**2))*(pp/ps)**rscp
-  sig_flu = sqrt(var_q + alpha**2*var_tl - 2.d0*alpha*cov_tlq) !FIXME a^2 +b^2 -2ab = (a-b)^2, a = a_coeff dqsd; b = alpha dtlsd
+  sig_flu = sqrt(var_q_tl)
 
   if (sig_flu.lt.1.d-30) sig_flu = 1.d-30
   q1 = deltaq/sig_flu
