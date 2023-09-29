@@ -137,6 +137,7 @@ double precision a3, tvsups, dtvsups
 double precision foirs, foirs1, foirs2
 double precision tlsups, fnss
 double precision var, zent, cpvcpa
+logical          is_active
 
 double precision, allocatable :: rov(:), roc(:), rol(:), qv0(:), qc(:)
 double precision, allocatable :: qqc(:), qql(:)
@@ -803,7 +804,9 @@ enddo
 ! at the top of the CFD domain
 call field_get_id_try("spectral_rad_incident_flux", f_id)
 
-if (f_id.ge.0) then
+is_active = cs_rad_time_is_active()
+
+if (f_id.ge.0.and.is_active) then
   call field_get_val_v(f_id, bpro_rad_inc)
 
   call field_get_val_v_by_name("rad_absorption_coeff_up", cpro_ck_up)

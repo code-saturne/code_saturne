@@ -251,7 +251,7 @@ cs_rad_transfer_params_t _rt_params = {
   .dispersion_coeff = 1.,
   .time_control = {
     .type = CS_TIME_CONTROL_TIME_STEP,
-    .at_start = false,
+    .at_start = true,
     .at_end = false,
     .start_nt = -1,
     .end_nt = -1,
@@ -320,6 +320,21 @@ cs_rad_transfer_finalize(void)
   BFT_FREE(_rt_params.vect_s);
   BFT_FREE(_rt_params.angsol);
   BFT_FREE(_rt_params.wq);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Is time step for radiative transfer active?
+ *
+ * \return  true if active, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_rad_time_is_active(void) {
+  const cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  const cs_time_step_t *ts = cs_glob_time_step;
+  return cs_time_control_is_active(&(rt_params->time_control), ts);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -142,6 +142,17 @@ module radiat
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function
+
+    function cs_rad_time_is_active() result(is_active)  &
+      bind(C, name='cs_rad_time_is_active')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      logical(kind=c_bool) :: is_active
+    end function cs_rad_time_is_active
+
+    !---------------------------------------------------------------------------
+
   end interface
 
 contains

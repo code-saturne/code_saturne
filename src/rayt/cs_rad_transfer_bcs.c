@@ -49,6 +49,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_boundary_zone.h"
@@ -236,6 +237,11 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
 void
 cs_rad_transfer_bcs(int bc_type[])
 {
+  const cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  const cs_time_step_t *ts = cs_glob_time_step;
+  /* By pass BCs if time step is not active */
+  bool is_active = cs_time_control_is_active(&(rt_params->time_control),ts);
+
   cs_real_t *dt = CS_F_(dt)->val;
 
   cs_real_t stephn = cs_physical_constants_stephan;
@@ -339,7 +345,7 @@ cs_rad_transfer_bcs(int bc_type[])
    * (if qincid is set to zero, there will be a deficit on the luminance
    *  BC at the first time step with DOM). */
 
-  if (   ipacli == 1
+  if (   ipacli == 1 && is_active
       && cs_glob_rad_transfer_params->restart == false) {
 
     /* If not a restart and first time step. */
@@ -348,10 +354,8 @@ cs_rad_transfer_bcs(int bc_type[])
     cs_real_t *rad_st_impl = CS_FI_(rad_ist, 0)->val;
     cs_real_t *rad_st_expl = CS_FI_(rad_est, 0)->val;
 
-    for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells_with_ghosts; iel++) {
-      rad_st_impl[iel] = 0.0;
-      rad_st_expl[iel] = 0.0;
-    }
+    cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, rad_st_impl);
+    cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, rad_st_expl);
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       f_bhconv->val[face_id] = 0.0;
@@ -383,6 +387,7 @@ cs_rad_transfer_bcs(int bc_type[])
                                    f_beps->val,
                                    text);
 
+    //FIXME we do the contrary of the message...
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
                     "   ** Information on the radiative module\n"

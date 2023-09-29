@@ -225,6 +225,17 @@ void
 cs_rad_transfer_finalize(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Is time step for radiative transfer active?
+ *
+ * \return  true if active, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_rad_time_is_active(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -226,6 +226,7 @@ double precision dzx, dy
 double precision soil_direct_flux , soil_global_flux
 double precision soil_direct_flux_h2o,  soil_global_flux_h2o
 double precision soil_direct_flux_o3,  soil_global_flux_o3
+logical          is_active
 
 double precision, allocatable:: fabsh2o(:),fabso3(:),tauc(:)
 double precision, allocatable:: tau(:,:),pic(:,:),ref(:,:)
@@ -1235,7 +1236,9 @@ endif
 ! and the absorption coefficients
 call field_get_id_try("spectral_rad_incident_flux", f_id)
 
-if (f_id.ge.0) then
+is_active = cs_rad_time_is_active()
+
+if (f_id.ge.0.and.is_active) then
   call field_get_val_v(f_id, bpro_rad_inc)
 
   call field_get_val_v_by_name("rad_absorption_coeff_up", cpro_ck_up)
