@@ -160,7 +160,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   const cs_real_t thets  = time_scheme->thetst;
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
-  cs_real_t viscl0 = phys_pro->viscl0; /* reference pressure */
+  cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
   cs_real_t ro0 = phys_pro->ro0; /* reference density */
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
 
