@@ -2675,20 +2675,24 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
 {
   assert(mc != NULL);
 
-  if (cs_flag_test(post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE) == false)
-    return; /* Nothing to do */
+  if (cs_flag_test(post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE)) {
 
-  /* Balance for the Darcy advective flux in the liquid phase */
+    /* Balance for the Darcy advective flux in the liquid phase */
 
-  cs_gwf_darcy_flux_balance(connect, cdoq,
-                            cs_equation_get_param(mc->w_eq),
-                            mc->l_darcy);
+    cs_gwf_darcy_flux_balance(connect, cdoq,
+                              cs_equation_get_param(mc->w_eq),
+                              mc->l_darcy);
 
-  /* Balance for the Darcy advective flux in the gas phase */
+    /* Balance for the Darcy advective flux in the gas phase */
 
-  cs_gwf_darcy_flux_balance(connect, cdoq,
-                            cs_equation_get_param(mc->h_eq),
-                            mc->g_darcy);
+    cs_gwf_darcy_flux_balance(connect, cdoq,
+                              cs_equation_get_param(mc->h_eq),
+                              mc->g_darcy);
+
+  }
+
+  if (cs_flag_test(post_flag, CS_GWF_POST_SOIL_STATE))
+    cs_gwf_soil_update_soil_state(cdoq->n_cells, mc->l_saturation->val);
 }
 
 /*----------------------------------------------------------------------------*/

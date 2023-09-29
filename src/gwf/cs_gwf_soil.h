@@ -505,6 +505,20 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the soil state associated to each cell w.r.t. the given
+ *        liquid saturation
+ *
+ * \param[in] n_cells      number of mesh cells
+ * \param[in] sliq         values of the liquid saturation in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_update_soil_state(cs_lnum_t            n_cells,
+                              const cs_real_t     *sliq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the definition of the soil porosity and absolute permeability
  *        (which are properties always defined in the GWF module). One relies
  *        on the definition of these properties in each soil.

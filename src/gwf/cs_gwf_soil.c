@@ -299,11 +299,6 @@ _update_iso_soil_vgm_spf(const cs_real_t              t_eval,
 
       capacity[c_id] = ccoef * coef/h * se_m1;
 
-      if (moisture[c_id] < FLT_MIN)
-        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
-      else
-        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
-
     }
     else {
 
@@ -318,10 +313,6 @@ _update_iso_soil_vgm_spf(const cs_real_t              t_eval,
       /* Set the soil capacity */
 
       capacity[c_id] = 0.;
-
-      /* soil state */
-
-      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
 
     }
 
@@ -395,11 +386,6 @@ _update_iso_soil_vgm_tpf_pc(const cs_real_t              t_eval,
       _set_sle_lcap_vg(sp, pc, &sl_e, &(sliq[c_id]), &(lcap[c_id]));
       _set_kr_vgm(sp, sl_e, &(krl[c_id]), &(krg[c_id]));
 
-      if (sliq[c_id] < FLT_MIN)
-        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
-      else
-        _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
-
     }
     else { /* Saturated case */
 
@@ -407,8 +393,6 @@ _update_iso_soil_vgm_tpf_pc(const cs_real_t              t_eval,
       lcap[c_id] = 0.;
       krl[c_id] = 1;
       krg[c_id] = 0.;
-
-      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
 
     }
 
@@ -1501,6 +1485,34 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
     } /* Switch on the soil model */
 
   } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the soil state associated to each cell w.r.t. the given
+ *        liquid saturation
+ *
+ * \param[in] n_cells      number of mesh cells
+ * \param[in] sliq         values of the liquid saturation in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_update_soil_state(cs_lnum_t            n_cells,
+                              const cs_real_t     *sliq)
+{
+  assert(_soil_state_array != NULL);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    if (sliq[c_id] < FLT_MIN)
+      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
+    else if (sliq[c_id] > 1 - FLT_MIN)
+      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
+    else
+      _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

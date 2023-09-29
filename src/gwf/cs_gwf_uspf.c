@@ -696,13 +696,14 @@ cs_gwf_uspf_extra_op(const cs_cdo_connect_t         *connect,
 {
   assert(mc != NULL);
 
-  if (cs_flag_test(post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE) == false)
-    return; /* Nothing to do */
+  if (cs_flag_test(post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE))
+    cs_gwf_darcy_flux_balance(connect,
+                              cdoq,
+                              cs_equation_get_param(mc->richards),
+                              mc->darcy);
 
-  cs_gwf_darcy_flux_balance(connect,
-                            cdoq,
-                            cs_equation_get_param(mc->richards),
-                            mc->darcy);
+  if (cs_flag_test(post_flag, CS_GWF_POST_SOIL_STATE))
+    cs_gwf_soil_update_soil_state(cdoq->n_cells, mc->moisture_field->val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -727,40 +728,35 @@ cs_gwf_uspf_extra_post(int                        mesh_id,
                        const cs_gwf_uspf_t        *mc,
                        const cs_time_step_t       *time_step)
 {
+  CS_NO_WARN_IF_UNUSED(n_cells);
+  CS_NO_WARN_IF_UNUSED(cell_ids);
+  CS_NO_WARN_IF_UNUSED(mc);
+
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */
 
-  assert(mc != NULL);
+  /* Note:
+     - moisture fied (liquid saturation)
+     - capacity field
+     - permeability field
+     are postprocessed if needed using the standard field process */
 
-  if (post_flag & CS_GWF_POST_LIQUID_SATURATION) {
+  if (post_flag & CS_GWF_POST_SOIL_STATE) {
 
-    cs_real_t  *liquid_saturation = NULL;
-    BFT_MALLOC(liquid_saturation, n_cells, cs_real_t);
+    const int  *soil_state = cs_gwf_soil_get_soil_state();
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      liquid_saturation[c_id] =
-        cs_property_get_cell_value(cell_ids[c_id],
-                                   time_step->t_cur,
-                                   mc->moisture_content);
+    if (soil_state != NULL)
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "soil_state",
+                        1,
+                        false,  /* interlace */
+                        true,   /* use_parent */
+                        CS_POST_TYPE_int,
+                        soil_state, NULL, NULL,
+                        time_step);
 
-    cs_post_write_var(mesh_id,
-                      CS_POST_WRITER_DEFAULT,
-                      "liquid_saturation",
-                      1,
-                      false,    /* interlace */
-                      false,    /* use_parent */
-                      CS_POST_TYPE_cs_real_t,
-                      liquid_saturation,
-                      NULL,
-                      NULL,
-                      time_step);
-
-    BFT_FREE(liquid_saturation);
-
-  } /* Post-processing of the liquid saturation */
-
-  /* Note: capacity field and permeability field are postprocessed if needed
-     using the standard field process */
+  } /* Post-processing of the soil state */
 }
 
 /*----------------------------------------------------------------------------*/
