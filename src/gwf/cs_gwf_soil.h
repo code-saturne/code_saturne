@@ -200,17 +200,17 @@ typedef struct {
    *
    * \var m
    *      Value depending of that of n
-   *      m = 1 - 1/n
+   *      Derived quantity: m = 1 - 1/n
    *
    * \var inv_m
-   *      Reciprocal of m. Value depending of that of n
-   *      1/m = 1 + 1/(n-1)
+   *      Derived quantity which is the reciprocal of m. This value is given
+   *      by the identity 1/m = 1 + 1/(n-1)
    *
    * \var pr_r
    *      Reference (capillarity) pressure
    *
    * \var inv_pr_r
-   *      Reciprocal of pr_r
+   *      Derived quantity: Reciprocal of pr_r
    *
    * \var sl_r
    *      Residual liquid saturation
@@ -218,10 +218,8 @@ typedef struct {
    * \var sl_s
    *      Saturated (i.e. maximum) liquid saturation
    *
-   * \var sl_joining
-   *      Value above which the law is replaced with a second-order polynomial.
-   *      (for instance sl_joining = 0.999). If the value is greater or equal
-   *      than 1.0, there is no polynomial joining.
+   * \var sl_range
+   *      Derived quantity: sl_s - sl_r
    */
 
   double       n;
@@ -231,6 +229,7 @@ typedef struct {
   double       inv_pr_r;
   double       sl_r;
   double       sl_s;
+  double       sl_range;
 
   /*!
    * Parameters to handle a joining function
@@ -242,6 +241,12 @@ typedef struct {
    *      Value above which the suction law is replaced with a joining function
    *      (for instance joining_sle = 0.999 is the default value). If the value
    *      is greater or equal than 1.0, there is no polynomial joining.
+   *
+   * \var pc_interpolation
+   *      If true, then one interpolates first the capillarity pressure at the
+   *      cell centers and then evaluates the liquid saturation. If false, one
+   *      evaluates in each cell the liquid saturation at each Pc DoF and then
+   *      interpolates the liquid saturation at the cell center.
    *
    * \var pc_star
    *      capillarity pressure related to the value of joining_sle
@@ -259,8 +264,11 @@ typedef struct {
 
   cs_gwf_soil_join_type_t    joining_type;
   double                     joining_sle;
+  bool                       pc_interpolation;
+
   double                     pc_star;
   double                     dsldpc_star;
+
   double                     alpha;
   double                     beta;
 
@@ -678,6 +686,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
  *
  * \param[in, out] soil         pointer to a cs_gwf_soil_t structure
  * \param[in]      jtype        type of joining function
+ * \param[in]      pc_interp    interpolate Pc rather Sl
  * \param[in]      joining_sle  effective liquid saturation above which the
  *                              joining function is used
  */
@@ -686,6 +695,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
 void
 cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
                                        cs_gwf_soil_join_type_t    jtype,
+                                       bool                       pc_interp,
                                        double                     joining_sle);
 
 /*----------------------------------------------------------------------------*/
