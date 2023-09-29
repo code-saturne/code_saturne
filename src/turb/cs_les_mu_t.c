@@ -288,9 +288,13 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
   }
 
   /* Free memory */
+  BFT_FREE(gradv);
+  BFT_FREE(w0);
   BFT_FREE(mij);
-  BFT_FREE(lij);
+  BFT_FREE(xro);
+  BFT_FREE(xrof);
   BFT_FREE(rho_ui_uj);
+  BFT_FREE(lij);
   BFT_FREE(w_t);
   BFT_FREE(w_v);
 
@@ -346,11 +350,9 @@ cs_les_mu_t_smago_dyn(void)
   /*  Allocate some work arrays */
 
   cs_real_t *w0, *w1, *xro, *xrof;
-  cs_real_6_t *mij;
 
   BFT_MALLOC(w0, n_cells_ext, cs_real_t);
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(mij, n_cells_ext, cs_real_6_t);
   BFT_MALLOC(xro, n_cells_ext, cs_real_t);
   BFT_MALLOC(xrof, n_cells_ext, cs_real_t);
 
@@ -651,6 +653,7 @@ cs_les_mu_t_smago_dyn(void)
                                * cs_math_pow2(delta) * s_n[c_id];
       }
 
+      BFT_FREE(f_sca_vel);
       BFT_FREE(scami);
       BFT_FREE(scamif);
       BFT_FREE(grads);
