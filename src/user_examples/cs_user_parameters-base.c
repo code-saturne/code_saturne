@@ -713,6 +713,10 @@ cs_user_model(void)
     bool transform = true ;
     cs_porosity_from_scan_add_source(source, transform);
   }
+
+  /* Add some sources from a file
+   * The file contains lines with x,y,z (in meters) format */
+  cs_ibm_add_sources_by_file_name("sources.csv");
 }
 
 /*----------------------------------------------------------------------------*/
