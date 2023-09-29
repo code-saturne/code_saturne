@@ -428,8 +428,11 @@ cs_les_mu_t_smago_dyn(void)
   cs_field_t *f_k = cs_field_by_name_try("lagr_k");
   cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
   if (f_k != NULL && f_eps != NULL) {
+    const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+    cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t nu_t = visct[c_id] / crom[c_id];
+      const cs_real_t nu_t = CS_MAX(visct[c_id], cs_math_epzero*viscl0)
+                           / crom[c_id];
       const cs_real_t c0 = cs_turb_crij_c0;
       cs_real_t s = s_n[c_id];
       f_eps->val[c_id] = nu_t * cs_math_pow2(s);
@@ -721,9 +724,11 @@ cs_les_mu_t_smago_const(void)
   cs_field_t *f_k = cs_field_by_name_try("lagr_k");
   cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
   if (f_k != NULL && f_eps != NULL) {
-    cs_real_t c_epsilon = 1.;
+    const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+    cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t nu_t = visct[c_id] / crom[c_id];
+      const cs_real_t nu_t = CS_MAX(visct[c_id], cs_math_epzero*viscl0)
+                           / crom[c_id];
       const cs_real_t c0 = cs_turb_crij_c0;
       cs_real_t s = sqrt(2. * cs_math_33_main_invariant_2(gradv[c_id]));
       f_eps->val[c_id] = nu_t * cs_math_pow2(s);
@@ -867,9 +872,11 @@ cs_les_mu_t_wale(void)
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
   if (f_k != NULL && f_eps != NULL) {
-    cs_real_t c_epsilon = 1.;
+    const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+    cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t nu_t = visct[c_id] / crom[c_id];
+      const cs_real_t nu_t = CS_MAX(visct[c_id], cs_math_epzero*viscl0)
+                           / crom[c_id];
       const cs_real_t c0 = cs_turb_crij_c0;
       cs_real_t s = s_eq[c_id];
       f_eps->val[c_id] = nu_t * cs_math_pow2(s);
