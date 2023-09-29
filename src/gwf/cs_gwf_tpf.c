@@ -2171,8 +2171,12 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
   BFT_MALLOC(mc->g_pressure_cells, n_cells, cs_real_t);
   cs_array_real_fill_zero(n_cells, mc->g_pressure_cells);
 
-  BFT_MALLOC(mc->c_pressure_cells, n_cells, cs_real_t);
-  cs_array_real_fill_zero(n_cells, mc->c_pressure_cells);
+  if (cs_gwf_soil_need_cell_capillarity_pressures()) {
+
+    BFT_MALLOC(mc->c_pressure_cells, n_cells, cs_real_t);
+    cs_array_real_fill_zero(n_cells, mc->c_pressure_cells);
+
+  }
 
   /* Handle the possibility to define some properties on a sub-mesh */
 

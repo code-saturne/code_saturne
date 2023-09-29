@@ -1607,6 +1607,46 @@ cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if one needs to compute the capillarity at the cell centers
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_gwf_soil_need_cell_capillarity_pressures(void)
+{
+  for (int i = 0; i < _n_soils; i++) {
+
+    const cs_gwf_soil_t  *soil = _soils[i];
+
+    if (soil->hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
+        soil->hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE) {
+
+      if (soil->model == CS_GWF_SOIL_USER)
+        return true;  /* Be sure that all quantities are available even if not
+                         needed */
+
+      if (soil->model == CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE) {
+
+        cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
+
+        if (sp->pc_interpolation)
+          return true;
+
+      }
+
+    } /* Two-phase flow modelling */
+
+    /* Other modellings do not imply a capillarity pressure */
+
+  } /* Loop on soils */
+
+  return false; /* Default behavior */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build an array storing the dual volume associated to each vertex
  *        taking into account the porosity of the soil
  *        The computed quantity is stored as a static array. Use the function

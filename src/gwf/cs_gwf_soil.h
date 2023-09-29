@@ -547,6 +547,17 @@ cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if one needs to compute the capillarity at the cell centers
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_gwf_soil_need_cell_capillarity_pressures(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build an array storing the dual volume associated to each vertex
  *        taking into account the porosity of the soil
  *        The computed quantity is stored as a static array. Use the function
