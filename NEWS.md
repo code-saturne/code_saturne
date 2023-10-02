@@ -61,6 +61,10 @@ Release 8.0.2 (unreleased)
 
 - Do not log `source_term_prev_field` type fields by default.
 
+### Architectural changes:
+
+- Fix build for macOS 14.
+
 Release 8.0.1 (2023-08-01)
 --------------------------
 
