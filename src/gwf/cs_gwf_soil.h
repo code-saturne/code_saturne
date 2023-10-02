@@ -106,6 +106,9 @@ typedef void
  * \var CS_GWF_SOIL_JOIN_C1_EXPONENTIAL
  *      C1 join using an exponential function
  *
+ * \var CS_GWF_SOIL_JOIN_C1_POLY_ORDER2
+ *      C1 join using a second order polynomial
+ *
  * \var CS_GWF_SOIL_N_JOINS
  */
 
@@ -114,6 +117,7 @@ typedef enum {
   CS_GWF_SOIL_JOIN_NOTHING,
   CS_GWF_SOIL_JOIN_C1_HYPERBOLIC,
   CS_GWF_SOIL_JOIN_C1_EXPONENTIAL,
+  CS_GWF_SOIL_JOIN_C1_POLY_ORDER2,
 
   CS_GWF_SOIL_N_JOINS
 
@@ -234,43 +238,70 @@ typedef struct {
   /*!
    * Parameters to handle a joining function
    *
-   * \var joining_type
-   *      type of joining function to consider
+   * \var sle_jtype
+   *      type of joining function to consider for the Sle(Pc) curve
    *
-   * \var joining_sle
+   * \var krg_jtype
+   *      type of joining function to consider for the krg(Pc) curve
+   *
+   * \var sle_thres
    *      Value above which the suction law is replaced with a joining function
-   *      (for instance joining_sle = 0.999 is the default value). If the value
+   *      (for instance sle_thres = 0.999 is the default value). If the value
    *      is greater or equal than 1.0, there is no polynomial joining.
    *
-   * \var pc_interpolation
-   *      If true, then one interpolates first the capillarity pressure at the
-   *      cell centers and then evaluates the liquid saturation. If false, one
-   *      evaluates in each cell the liquid saturation at each Pc DoF and then
-   *      interpolates the liquid saturation at the cell center.
+   * \var sl_interpolation
+   *      If true, one evaluates in each cell the liquid saturation at each Pc
+   *      DoF and then interpolates the liquid saturation at the cell center.
+   *      If false, then one interpolates first the capillarity pressure at the
+   *      cell centers and then evaluates the liquid saturation.
    *
    * \var pc_star
-   *      capillarity pressure related to the value of joining_sle
+   *      capillarity pressure related to the value of sle_thres
    *
-   * \var dsldpc_star_
+   * \var dsldpc_star
    *      derivative of the liquid saturation with respect to the capillarity
    *      pressure at pc_star
    *
-   * \var alpha
+   * \var sle_alpha
    *      optional pre-computed coefficient when a joining function is used
+   *      for the effective liquid saturation
    *
-   * \var beta
+   * \var sle_beta
    *      optional pre-computed coefficient when a joining function is used
+   *      for the effective liquid saturation
+   *
+   * \var krg_star
+   *      relative permeability related to the value of sle_thres
+   *
+   * \var dsldpc_star
+   *      derivative of the liquid saturation with respect to the capillarity
+   *      pressure at pc_star
+   *
+   * \var krg_alpha
+   *      optional pre-computed coefficient when a joining function is used
+   *      for the relative permeability in the gaz
+   *
+   * \var krg_beta
+   *      optional pre-computed coefficient when a joining function is used
+   *      for the relative permeability in the gaz
    */
 
-  cs_gwf_soil_join_type_t    joining_type;
-  double                     joining_sle;
-  bool                       pc_interpolation;
+  cs_gwf_soil_join_type_t    sle_jtype;
+  cs_gwf_soil_join_type_t    krg_jtype;
+  double                     sle_thres;
+  bool                       sl_interpolation;
+
+  /* Derived quantities */
 
   double                     pc_star;
   double                     dsldpc_star;
+  double                     sle_alpha;
+  double                     sle_beta;
 
-  double                     alpha;
-  double                     beta;
+  double                     krg_star;
+  double                     dkrgdsl_star;
+  double                     krg_alpha;
+  double                     krg_beta;
 
 } cs_gwf_soil_vgm_tpf_param_t;
 
@@ -709,19 +740,21 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
  * \brief Set advanced parameter settings related to a Van Genuchten-Mualen
  *        soil model
  *
- * \param[in, out] soil         pointer to a cs_gwf_soil_t structure
- * \param[in]      jtype        type of joining function
- * \param[in]      pc_interp    interpolate Pc rather Sl
- * \param[in]      joining_sle  effective liquid saturation above which the
- *                              joining function is used
+ * \param[in, out] soil        pointer to a cs_gwf_soil_t structure
+ * \param[in]      sl_interp   interpolate Sl rather than Pc
+ * \param[in]      sle_jtype   type of joining function for the effective Sl
+ * \param[in]      krg_jtype   type of joining function for krg
+ * \param[in]      sle_thres   value of the effective liquid saturation above
+ *                             which a joining function is used
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
-                                       cs_gwf_soil_join_type_t    jtype,
-                                       bool                       pc_interp,
-                                       double                     joining_sle);
+                                       bool                       sl_interp,
+                                       cs_gwf_soil_join_type_t    sle_jtype,
+                                       cs_gwf_soil_join_type_t    krg_jtype,
+                                       double                     sle_thres);
 
 /*----------------------------------------------------------------------------*/
 /*!
