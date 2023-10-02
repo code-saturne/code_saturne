@@ -368,8 +368,8 @@ const cs_turb_model_t  *cs_glob_turb_model = NULL;
 static cs_turb_ref_values_t
 _turb_ref_values =
 {
-  .almax      = -999,
-  .uref       =-1e13
+  .almax =  -999,
+  .uref  = -1e13
 };
 
 const cs_turb_ref_values_t  *cs_glob_turb_ref_values = &_turb_ref_values;
@@ -2217,7 +2217,7 @@ cs_turb_init_ref_quantities(void)
 {
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  if (_turb_ref_values.almax < 999)
+  if (_turb_ref_values.almax < 0)
     _turb_ref_values.almax = pow(mq->tot_vol, 1./3.);
 
   if (   _turb_model.type == CS_TURB_RANS

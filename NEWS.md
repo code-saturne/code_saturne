@@ -3,6 +3,9 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix user setting of cs_glob_turb_ref_values->almax, which was
+  overwritten in almost all cases (whenever less than 999).
+
 - Fix parametric launching with modification of number of time steps of
   neptune_cfd
 
