@@ -262,9 +262,10 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
   cs_les_filter(6, (cs_real_t*)w_t, (cs_real_t*)rho_ui_uj);
 
   /* <rho u_i>/rho */
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
     for (cs_lnum_t i = 0; i < 3; i++)
       w_v[c_id][i] = xro[c_id]*vel[c_id][i];
+  }
   cs_les_filter(3, (cs_real_t*)w_v, (cs_real_t*)f_vel);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
@@ -297,7 +298,6 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
   BFT_FREE(lij);
   BFT_FREE(w_t);
   BFT_FREE(w_v);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -371,7 +371,6 @@ cs_les_mu_t_smago_dyn(void)
   /* Allocate work arrays */
   cs_real_t *s_n, *sf_n;
   cs_real_t *w2, *w3, *w4;
-  cs_real_3_t *w_v;
   cs_real_3_t *f_vel;
 
   BFT_MALLOC(s_n, n_cells_ext, cs_real_t);
@@ -613,7 +612,8 @@ cs_les_mu_t_smago_dyn(void)
       /* Compute the Li for scalar
        * ========================= */
 
-      cs_real_3_t *f_sca_vel;
+      cs_real_3_t *w_v, *f_sca_vel;
+      BFT_MALLOC(w_v, n_cells_ext, cs_real_3_t);
       BFT_MALLOC(f_sca_vel, n_cells_ext, cs_real_3_t);
 
       /* rho*Y*vel */
@@ -622,6 +622,8 @@ cs_les_mu_t_smago_dyn(void)
           w_v[c_id][i] = xro[c_id]*vel[c_id][i]*cvar_sca[c_id];
       }
       cs_les_filter(3, (cs_real_t*)w_v, (cs_real_t*)f_sca_vel);
+
+      BFT_FREE(w_v);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         /* filter(rho Y vel) - rho filter(rho vel)/rho filter(Y)/rho */
@@ -632,6 +634,8 @@ cs_les_mu_t_smago_dyn(void)
         w1[c_id] = cs_math_3_dot_product(variance, scami[c_id]);
         w2[c_id] = cs_math_3_square_norm(scami[c_id]);
       }
+
+      BFT_FREE(f_sca_vel);
 
       cs_les_filter(1, w1, w3);
       cs_les_filter(1, w2, w4);
@@ -653,7 +657,6 @@ cs_les_mu_t_smago_dyn(void)
                                * cs_math_pow2(delta) * s_n[c_id];
       }
 
-      BFT_FREE(f_sca_vel);
       BFT_FREE(scami);
       BFT_FREE(scamif);
       BFT_FREE(grads);
@@ -665,7 +668,6 @@ cs_les_mu_t_smago_dyn(void)
   BFT_FREE(s_n);
   BFT_FREE(sf_n);
 
-  BFT_FREE(w_v);
   BFT_FREE(f_vel);
   BFT_FREE(w4);
   BFT_FREE(w3);
@@ -749,7 +751,6 @@ cs_les_mu_t_smago_const(void)
 
   /* Free memory */
   BFT_FREE(gradv);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -899,7 +900,6 @@ cs_les_mu_t_wale(void)
 
   /* Free memory */
   BFT_FREE(gradv);
-
 }
 
 /*----------------------------------------------------------------------------*/
