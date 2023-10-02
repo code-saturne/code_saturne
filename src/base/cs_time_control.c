@@ -167,7 +167,7 @@ cs_time_control_is_active(cs_time_control_t     *tc,
       case CS_TIME_CONTROL_TIME_STEP:
         if (   tc->interval_nt > 0
             && ts->nt_cur > ts->nt_prev
-            && (ts->nt_cur - 1) % (tc->interval_nt) == 0)
+            && ts->nt_cur % (tc->interval_nt) == 0)
           retval = true;
         if (tc->start_nt > ts->nt_cur)
           retval = false;
