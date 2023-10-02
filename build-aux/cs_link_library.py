@@ -25,7 +25,7 @@
 
 import sys, os.path
 import argparse
-import subprocess, fnmatch
+import subprocess, fnmatch, platform
 
 #-------------------------------------------------------------------------------
 
@@ -219,6 +219,14 @@ def build_shared_library(linker,
         o_name_v = o_name
         output_v = output
 
+    # OS specific tests.
+
+    is_darwin_23_plus = False
+    if platform.system() == 'Darwin':
+        major = int(platform.release().split('.')[0])
+        if major >= 23:
+            is_darwin_23_plus = True
+
     # TODO:
     # Some flags should already be provided by the caller through
     # the command-line arguments. More things could be moved to
@@ -230,15 +238,18 @@ def build_shared_library(linker,
     if stdlib != 'yes':
         cmd.append("-nostdlib")
 
-    cmd += ["-Wl,-soname", "-Wl," + o_name_v]
+    if not is_darwin_23_plus:
+        cmd += ["-Wl,-soname", "-Wl," + o_name_v]
 
     # Add objects from libraries
 
     if archives:
-        cmd.append("-Wl,-whole-archive")
+        if not is_darwin_23_plus:
+            cmd.append("-Wl,-whole-archive")
         for a in archives:
             cmd.append(a)
-        cmd.append("-Wl,-no-whole-archive")
+        if not is_darwin_23_plus:
+            cmd.append("-Wl,-no-whole-archive")
 
     # Add external objects and archives provided directly
 

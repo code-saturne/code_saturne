@@ -133,7 +133,7 @@ case "$host_os" in
     cflags_default_shared="-fPIC -DPIC"
     fcflags_default_shared="-fPIC -DPIC"
     cxxflags_default_shared="-fPIC -DPIC"
-    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup -undefined error"
+    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup"
     ldflags_default_soname="-install_name @rpath/"
     ;;
   *)
