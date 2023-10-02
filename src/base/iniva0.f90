@@ -370,7 +370,7 @@ if (ivofmt.gt.0) then
 
 endif
 
-call cs_turbulence_init_by_ref_quantities(uref, almax)
+call cs_turbulence_init_by_ref_quantities
 
 !===============================================================================
 ! 5.  CLIPPING DES GRANDEURS SCALAIRES (SF K-EPS VOIR CI DESSUS)

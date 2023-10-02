@@ -3606,23 +3606,11 @@ module cs_c_bindings
     ! Interface to C function initializing turbulence variables based
     ! on reference quantities.
 
-    subroutine cs_turbulence_init_by_ref_quantities(uref, almax) &
+    subroutine cs_turbulence_init_by_ref_quantities() &
       bind(C, name='cs_turbulence_init_by_ref_quantities')
      use, intrinsic :: iso_c_binding
       implicit none
-      real(c_double), intent(in), value :: uref, almax
     end subroutine cs_turbulence_init_by_ref_quantities
-
-    !---------------------------------------------------------------------------
-    ! Interface to C function initializing Rij-epsilon variables based
-    ! on reference quantities.
-
-    subroutine cs_turbulence_rij_init_by_ref_quantities(uref, almax) &
-      bind(C, name='cs_turbulence_rij_init_by_ref_quantities')
-     use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), intent(in), value :: uref, almax
-    end subroutine cs_turbulence_rij_init_by_ref_quantities
 
     !---------------------------------------------------------------------------
     !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
