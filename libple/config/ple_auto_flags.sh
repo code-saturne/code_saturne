@@ -1,6 +1,6 @@
 # Shell script
 
-# Copyright (C) 2005-2022 EDF
+# Copyright (C) 2005-2023 EDF
 
 # This file is part of the PLE software package.  For license
 # information, see the COPYING file in the top level directory of the
@@ -80,7 +80,7 @@ ldflags_default_prf="-g"
 case "$host_os" in
   darwin*)
     cflags_default_shared="-fPIC -DPIC"
-    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup -undefined error"
+    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup"
     ldflags_default_soname="-install_name @rpath/"
     ;;
   *)
