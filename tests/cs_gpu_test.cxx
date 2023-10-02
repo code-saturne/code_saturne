@@ -45,8 +45,10 @@
 
 #include "cs_base_accel.h"
 
-void
-main_cuda(void);
+extern "C" {
+  void
+  main_cuda(void);
+}
 
 #if defined(HAVE_MPI)
 
