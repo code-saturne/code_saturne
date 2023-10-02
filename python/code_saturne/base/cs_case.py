@@ -1389,7 +1389,15 @@ class case:
             cs_exec_environment.write_prepend_path(s,
                                                    'PATH',
                                                    self.package.get_dir("libdir"))
-            s.write('set CS_ROOT_DIR=' + self.package.get_dir("exec_prefix") + '\n')
+
+            s.write('set CS_ROOT_DIR=' + self.package.get_dir("prefix") + '\n')
+
+        # Ensure root directory is set for relocatable builds
+
+        elif self.package.config.features['relocatable'] == "yes":
+            cs_exec_environment.write_export_env(s, 'CS_ROOT_DIR',
+                                                 self.package.get_dir("prefix"))
+            s.write('\n')
 
         # Add MPI directories to PATH if in nonstandard path
 

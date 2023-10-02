@@ -3,6 +3,8 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix reading of JANAF file for relacatable builds.
+
 - Fix user setting of cs_glob_turb_ref_values->almax, which was
   overwritten in almost all cases (whenever less than 999).
 
