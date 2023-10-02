@@ -858,9 +858,9 @@ if (muzero.gt.epzero) then
     ! Calculation of upward flux above cloud or aerosol layers taking into account
     ! the upward flux transmitted by cloud or aerosol layers
     ! if there is no cloud and no aerosol (itop=k1) this term have not to be add
-    do i = itop, kmray-1
-      zq = zray(i+1)!FIXME as above...
-      zbas = zray(itop)
+    do i = itop, kmray
+      zq = zqq(i+1)
+      zbas = zray(itop-1)
       xstar = mbar*(rayuoz(zbas) - rayuoz(zq))
       ufso3(i) = ufso3(itop-1)*(1.d0 -raysoz(xstar))
     enddo
