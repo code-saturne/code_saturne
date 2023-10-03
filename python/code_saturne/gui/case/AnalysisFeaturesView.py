@@ -467,6 +467,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         XMLinitNeptune(self.case).initialize()
 
+        # Ensure that Turbomachinery node is correctly initialized after reset
+        self.tbm.__init__(self.case)
+
 
     def init_neptune(self):
 

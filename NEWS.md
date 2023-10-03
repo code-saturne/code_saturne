@@ -3,6 +3,9 @@ Release 8.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix turbomachinery combobox behaviour in GUI main page when switching from
+  code_saturne to neptune_cfd.
+
 - Fix reading of JANAF file for relacatable builds.
 
 - Fix user setting of cs_glob_turb_ref_values->almax, which was
