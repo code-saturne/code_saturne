@@ -1460,6 +1460,36 @@ cs_property_finalize_setup(void)
   } /* Loop on properties */
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the array associated to the volume definition for the given
+ *        property.
+ *        Available only if there is one definition by array for the volume.
+ *
+ * \param[in] pty     pointer to the property structure
+ *
+ * \return a pointer to the array or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_property_get_array(const cs_property_t     *pty)
+{
+  if (pty == NULL)
+    return NULL;
+  if (pty->n_definitions > 1)
+    return NULL; /* May be too restrictive */
+
+  const cs_xdef_t  *def = pty->defs[0];
+  assert(def != NULL);
+
+  if (def->type == CS_XDEF_BY_ARRAY)
+    return cs_xdef_array_get_values(def);
+  else
+    return NULL;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define a \ref cs_property_data_t structure (not a pointer to this

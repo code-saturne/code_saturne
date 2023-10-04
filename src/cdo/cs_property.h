@@ -619,6 +619,21 @@ cs_property_finalize_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the array associated to the volume definition for the given
+ *        property.
+ *        Available only if there is one definition by array for the volume.
+ *
+ * \param[in] pty     pointer to the property structure
+ *
+ * \return a pointer to the array or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_property_get_array(const cs_property_t     *pty);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a \ref cs_property_data_t structure (not a pointer to this
  *         structure). If property is NULL then one considers that this is a
  *         unitary property
