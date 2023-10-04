@@ -357,86 +357,6 @@ _update_iso_soil_vgm_spf(const cs_real_t              t_eval,
  * \brief Compute the new values of the properties related to a soil with a Van
  *        Genuchten-Mualem.
  *
- *        Case relying on the interpolation of the capillarity pressure at cell
- *        centers.
- *        Case of an isotropic permeability and a two-phase flow in porous
- *        media.
- *
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      mesh          pointer to a cs_mesh_t structure
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
- * \param[in]      zone          pointer to a cs_zone_t
- * \param[in, out] soil          pointer to a soil structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_iso_soil_vgm_tpf_pc(const cs_real_t              t_eval,
-                            const cs_mesh_t             *mesh,
-                            const cs_cdo_connect_t      *connect,
-                            const cs_cdo_quantities_t   *cdoq,
-                            const cs_zone_t             *zone,
-                            cs_gwf_soil_t               *soil)
-{
-  CS_NO_WARN_IF_UNUSED(t_eval);
-  CS_NO_WARN_IF_UNUSED(mesh);
-  CS_NO_WARN_IF_UNUSED(connect);
-  CS_NO_WARN_IF_UNUSED(cdoq);
-
-  if (soil == NULL)
-    return;
-
-  /* Retrieve the soil parameters */
-
-  cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
-
-  /* Retrieve the hydraulic context */
-
-  cs_gwf_tpf_t  *hc = soil->hydraulic_context;
-
-  /* Retrieve arrays to update */
-
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
-
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
-
-  /* Main loop on cells belonging to this soil */
-
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
-
-    const cs_lnum_t  c_id = zone->elt_ids[i];
-    const cs_real_t  pc = hc->c_pressure_cells[c_id];
-
-    if (pc > 0) {
-
-      double  sl_e;
-
-      _set_sle_lcap_vg(sp, pc, &sl_e, &(sliq[c_id]), &(lcap[c_id]));
-      _set_kr_vgm(sp, sl_e, &(krl[c_id]), &(krg[c_id]));
-
-    }
-    else { /* Saturated case */
-
-      sliq[c_id] = sp->sl_s;
-      lcap[c_id] = 0.;
-      krl[c_id] = 1;
-      krg[c_id] = 0.;
-
-    }
-
-  } /* Loop on selected cells */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the new values of the properties related to a soil with a Van
- *        Genuchten-Mualem.
- *
  *        Case relying on the interpolation of the liquid saturation at cell
  *        centers.
  *        Case of an isotropic permeability and a two-phase flow in porous
@@ -452,15 +372,16 @@ _update_iso_soil_vgm_tpf_pc(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_vgm_tpf_sl(const cs_real_t              t_eval,
-                            const cs_mesh_t             *mesh,
-                            const cs_cdo_connect_t      *connect,
-                            const cs_cdo_quantities_t   *cdoq,
-                            const cs_zone_t             *zone,
-                            cs_gwf_soil_t               *soil)
+_update_iso_soil_vgm_tpf(const cs_real_t              t_eval,
+                         const cs_mesh_t             *mesh,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *cdoq,
+                         const cs_zone_t             *zone,
+                         cs_gwf_soil_t               *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(cdoq);
 
   if (soil == NULL)
     return;
@@ -479,12 +400,12 @@ _update_iso_soil_vgm_tpf_sl(const cs_real_t              t_eval,
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
+  cs_real_t  *lsat = cs_property_get_array(hc->lsat_pty);
+  cs_real_t  *lcap = cs_property_get_array(hc->lcap_pty);
+  cs_real_t  *krl = cs_property_get_array(hc->krl_pty);
+  cs_real_t  *krg = cs_property_get_array(hc->krg_pty);
 
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
+  assert(lsat != NULL && lcap != NULL && krl != NULL && krg != NULL);
 
   /* Main loop on cells belonging to this soil */
 
@@ -493,133 +414,30 @@ _update_iso_soil_vgm_tpf_sl(const cs_real_t              t_eval,
 
     const cs_lnum_t  c_id = zone->elt_ids[i];
 
-    double  sliq_csum = 0.;
-    double  lcap_csum = 0.;
-    double  krl_csum = 0.;
-    double  krg_csum = 0.;
-
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
       /* capillarity pressure at vertices */
 
-      const cs_real_t  pc = pc_val[c2v->ids[j]];
-      const cs_real_t  pvc = cdoq->pvol_vc[j];
+      const cs_real_t  pc_v = pc_val[c2v->ids[j]];
 
-      if (pc > 0) {
+      if (pc_v > 0) {
 
-        double  sle_v, sliq_v, lcap_v, krl_v, krg_v;
+        double  sle_v;
 
-        _set_sle_lcap_vg(sp, pc, &sle_v, &sliq_v, &lcap_v);
-        _set_kr_vgm(sp, sle_v, &krl_v, &krg_v);
-
-        sliq_csum += pvc*sliq_v;
-        lcap_csum += pvc*lcap_v;
-        krl_csum += pvc*krl_v;
-        krg_csum += pvc*krg_v;
+        _set_sle_lcap_vg(sp, pc_v, &sle_v, &(lsat[j]), &(lcap[j]));
+        _set_kr_vgm(sp, sle_v, &(krl[j]), &(krg[j]));
 
       }
       else { /* Saturated case */
 
-        sliq_csum += pvc*sp->sl_s;
-        lcap_csum += 0.;
-        krl_csum += pvc;
-        krg_csum += 0;
+        lsat[j] = sp->sl_s;
+        lcap[j] = 0.;
+        krl[j] = 1;
+        krg[j] = 0;
 
       }
 
     } /* Loop on cell vertices */
-
-    /* Compute the cell values */
-
-    const double  inv_volc = 1./cdoq->cell_vol[c_id];
-
-    sliq[c_id] = inv_volc * sliq_csum;
-    lcap[c_id] = inv_volc * lcap_csum;
-    krl[c_id] = inv_volc * krl_csum;
-    krg[c_id] = inv_volc * krg_csum;
-
-  } /* Loop on selected cells */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the new property values related to a soil with a Van
- *        Genuchten-Mualem.
- *
- *        C1 join relying on a hyperbolic function
- *        Case relying on the interpolation of the capillarity pressure at cell
- *        centers.
- *        Case of an isotropic permeability and a two-phase flow in porous
- *        media.
- *
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      mesh          pointer to a cs_mesh_t structure
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
- * \param[in]      zone          pointer to a cs_zone_t
- * \param[in, out] soil          pointer to a soil structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_iso_soil_vgm_tpf_c1_hyperbolic_pc(const cs_real_t              t_eval,
-                                          const cs_mesh_t             *mesh,
-                                          const cs_cdo_connect_t      *connect,
-                                          const cs_cdo_quantities_t   *cdoq,
-                                          const cs_zone_t             *zone,
-                                          cs_gwf_soil_t               *soil)
-{
-  CS_NO_WARN_IF_UNUSED(t_eval);
-  CS_NO_WARN_IF_UNUSED(mesh);
-  CS_NO_WARN_IF_UNUSED(connect);
-  CS_NO_WARN_IF_UNUSED(cdoq);
-
-  if (soil == NULL)
-    return;
-
-  /* Retrieve the soil parameters */
-
-  cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
-
-  /* Retrieve the hydraulic context */
-
-  cs_gwf_tpf_t  *hc = soil->hydraulic_context;
-
-  /* Retrieve arrays to update */
-
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
-
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
-
-  /* Main loop on cells belonging to this soil */
-
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
-
-    double  sl_e;
-
-    const cs_lnum_t  c_id = zone->elt_ids[i];
-    const cs_real_t  pc = hc->c_pressure_cells[c_id];
-
-    if (pc < sp->pc_star) { /* Joining function */
-
-      const double  denum = sp->sle_alpha*(pc - sp->pc_star) + sp->sle_beta;
-
-      sl_e = 1 - 1/denum;
-      sliq[c_id] = sp->sl_r + sp->sl_range*sl_e;
-      lcap[c_id] = sp->sle_alpha / (denum*denum);
-
-    }
-    else { /* pc >= pc_star */
-
-      _set_sle_lcap_vg(sp, pc, &sl_e, &(sliq[c_id]), &(lcap[c_id]));
-
-    }
-
-    _set_kr_vgm(sp, sl_e, &(krl[c_id]), &(krg[c_id]));
 
   } /* Loop on selected cells */
 }
@@ -645,15 +463,16 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_pc(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_vgm_tpf_c1_hyperbolic_sl(const cs_real_t              t_eval,
-                                          const cs_mesh_t             *mesh,
-                                          const cs_cdo_connect_t      *connect,
-                                          const cs_cdo_quantities_t   *cdoq,
-                                          const cs_zone_t             *zone,
-                                          cs_gwf_soil_t               *soil)
+_update_iso_soil_vgm_tpf_c1_hyperbolic(const cs_real_t              t_eval,
+                                       const cs_mesh_t             *mesh,
+                                       const cs_cdo_connect_t      *connect,
+                                       const cs_cdo_quantities_t   *cdoq,
+                                       const cs_zone_t             *zone,
+                                       cs_gwf_soil_t               *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(cdoq);
 
   if (soil == NULL)
     return;
@@ -672,12 +491,12 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_sl(const cs_real_t              t_eval,
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
+  cs_real_t  *lsat = cs_property_get_array(hc->lsat_pty);
+  cs_real_t  *lcap = cs_property_get_array(hc->lcap_pty);
+  cs_real_t  *krl = cs_property_get_array(hc->krl_pty);
+  cs_real_t  *krg = cs_property_get_array(hc->krg_pty);
 
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
+  assert(lsat != NULL && lcap != NULL && krl != NULL && krg != NULL);
 
   /* Main loop on cells belonging to this soil */
 
@@ -686,52 +505,32 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_sl(const cs_real_t              t_eval,
 
     const cs_lnum_t  c_id = zone->elt_ids[i];
 
-    double  sliq_csum = 0.;
-    double  lcap_csum = 0.;
-    double  krl_csum = 0.;
-    double  krg_csum = 0.;
-
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-      double  sle_v, sliq_v, lcap_v, krl_v, krg_v;
+      double  sle_v;
 
       /* capillarity pressure at vertices */
 
-      const cs_real_t  pc = pc_val[c2v->ids[j]];
-      const cs_real_t  pvc = cdoq->pvol_vc[j];
+      const cs_real_t  pc_v = pc_val[c2v->ids[j]];
 
-      if (pc < sp->pc_star) { /* Joining function */
+      if (pc_v < sp->pc_star) { /* Joining function */
 
-        const double  denum = sp->sle_alpha*(pc - sp->pc_star) + sp->sle_beta;
+        const double  denum = sp->sle_alpha*(pc_v - sp->pc_star) + sp->sle_beta;
 
         sle_v = 1 - 1/denum;
-        sliq_v = sp->sl_r + sp->sl_range*sle_v;
-        lcap_v = sp->sle_alpha / (denum*denum);
+        lsat[j] = sp->sl_r + sp->sl_range*sle_v;
+        lcap[j] = sp->sle_alpha / (denum*denum);
 
       }
       else { /* pc >= pc_star */
 
-        _set_sle_lcap_vg(sp, pc, &sle_v, &sliq_v, &lcap_v);
+        _set_sle_lcap_vg(sp, pc_v, &sle_v, &(lsat[j]), &(lcap[j]));
 
       }
 
-      _set_kr_vgm(sp, sle_v, &krl_v, &krg_v);
-
-      sliq_csum += pvc * sliq_v;
-      lcap_csum += pvc * lcap_v;
-      krl_csum += pvc * krl_v;
-      krg_csum += pvc * krg_v;
+      _set_kr_vgm(sp, sle_v, &(krl[j]), &(krg[j]));
 
     } /* Loop on cell vertices */
-
-    /* Compute the cell values */
-
-    const double  inv_volc = 1./cdoq->cell_vol[c_id];
-
-    sliq[c_id] = inv_volc * sliq_csum;
-    lcap[c_id] = inv_volc * lcap_csum;
-    krl[c_id] = inv_volc * krl_csum;
-    krg[c_id] = inv_volc * krg_csum;
 
   } /* Loop on selected cells */
 }
@@ -758,15 +557,16 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_sl(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_vgm_tpf_c1_hyperbolic_sl_krg(const cs_real_t           t_eval,
-                                              const cs_mesh_t          *mesh,
-                                              const cs_cdo_connect_t   *connect,
-                                              const cs_cdo_quantities_t   *cdoq,
-                                              const cs_zone_t          *zone,
-                                              cs_gwf_soil_t            *soil)
+_update_iso_soil_vgm_tpf_c1_hyperbolic_p2(const cs_real_t             t_eval,
+                                          const cs_mesh_t            *mesh,
+                                          const cs_cdo_connect_t     *connect,
+                                          const cs_cdo_quantities_t  *cdoq,
+                                          const cs_zone_t            *zone,
+                                          cs_gwf_soil_t              *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(cdoq);
 
   if (soil == NULL)
     return;
@@ -785,12 +585,12 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_sl_krg(const cs_real_t           t_eval,
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
+  cs_real_t  *lsat = cs_property_get_array(hc->lsat_pty);
+  cs_real_t  *lcap = cs_property_get_array(hc->lcap_pty);
+  cs_real_t  *krl = cs_property_get_array(hc->krl_pty);
+  cs_real_t  *krg = cs_property_get_array(hc->krg_pty);
 
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
+  assert(lsat != NULL && lcap != NULL && krl != NULL && krg != NULL);
 
   /* Main loop on cells belonging to this soil */
 
@@ -799,136 +599,33 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_sl_krg(const cs_real_t           t_eval,
 
     const cs_lnum_t  c_id = zone->elt_ids[i];
 
-    double  sliq_csum = 0.;
-    double  lcap_csum = 0.;
-    double  krl_csum = 0.;
-    double  krg_csum = 0.;
-
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-      double  sle_v, sliq_v, lcap_v, krl_v, krg_v;
+      double  sle_v;
 
       /* capillarity pressure at vertices */
 
-      const cs_real_t  pc = pc_val[c2v->ids[j]];
-      const cs_real_t  pvc = cdoq->pvol_vc[j];
+      const cs_real_t  pc_v = pc_val[c2v->ids[j]];
 
-      if (pc < sp->pc_star) { /* Joining function */
+      if (pc_v < sp->pc_star) { /* Joining function */
 
-        const double  denum = sp->sle_alpha*(pc - sp->pc_star) + sp->sle_beta;
+        const double  denum = sp->sle_alpha*(pc_v - sp->pc_star) + sp->sle_beta;
 
         sle_v = 1 - 1/denum;
-        sliq_v = sp->sl_r + sp->sl_range*sle_v;
-        lcap_v = sp->sle_alpha / (denum*denum);
+        lsat[j] = sp->sl_r + sp->sl_range*sle_v;
+        lcap[j] = sp->sle_alpha / (denum*denum);
 
-        _set_kr_vgm_poly2(sp, sle_v, &krl_v, &krg_v);
+        _set_kr_vgm_poly2(sp, sle_v, &(krl[j]), &(krg[j]));
 
       }
       else { /* pc >= pc_star */
 
-        _set_sle_lcap_vg(sp, pc, &sle_v, &sliq_v, &lcap_v);
-        _set_kr_vgm(sp, sle_v, &krl_v, &krg_v);
+        _set_sle_lcap_vg(sp, pc_v, &sle_v, &(lsat[j]), &(lcap[j]));
+        _set_kr_vgm(sp, sle_v, &(krl[j]), &(krg[j]));
 
       }
 
-      sliq_csum += pvc * sliq_v;
-      lcap_csum += pvc * lcap_v;
-      krl_csum += pvc * krl_v;
-      krg_csum += pvc * krg_v;
-
     } /* Loop on cell vertices */
-
-    /* Compute the cell values */
-
-    const double  inv_volc = 1./cdoq->cell_vol[c_id];
-
-    sliq[c_id] = inv_volc * sliq_csum;
-    lcap[c_id] = inv_volc * lcap_csum;
-    krl[c_id] = inv_volc * krl_csum;
-    krg[c_id] = inv_volc * krg_csum;
-
-  } /* Loop on selected cells */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the new property values related to a soil with a Van
- *        Genuchten-Mualem.
- *
- *        C1 join relying on an exponential function.
- *        Case relying on the interpolation of the capillarity pressure at cell
- *        centers.
- *        Case of an isotropic permeability and a two-phase flow in porous
- *        media.
- *
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      mesh          pointer to a cs_mesh_t structure
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
- * \param[in]      zone          pointer to a cs_zone_t
- * \param[in, out] soil          pointer to a soil structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_iso_soil_vgm_tpf_c1_exponential_pc(const cs_real_t              t_eval,
-                                           const cs_mesh_t             *mesh,
-                                           const cs_cdo_connect_t      *connect,
-                                           const cs_cdo_quantities_t   *cdoq,
-                                           const cs_zone_t             *zone,
-                                           cs_gwf_soil_t               *soil)
-{
-  CS_NO_WARN_IF_UNUSED(t_eval);
-  CS_NO_WARN_IF_UNUSED(mesh);
-  CS_NO_WARN_IF_UNUSED(connect);
-  CS_NO_WARN_IF_UNUSED(cdoq);
-
-  if (soil == NULL)
-    return;
-
-  /* Retrieve the soil parameters */
-
-  cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
-
-  /* Retrieve the hydraulic context */
-
-  cs_gwf_tpf_t  *hc = soil->hydraulic_context;
-
-  /* Retrieve arrays to update */
-
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
-
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
-
-  /* Main loop on cells belonging to this soil */
-
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
-
-    double  sl_e;
-
-    const cs_lnum_t  c_id = zone->elt_ids[i];
-    const cs_real_t  pc = hc->c_pressure_cells[c_id];
-
-    if (pc < sp->pc_star) { /* Joining function */
-
-      const double  dpc = pc - sp->pc_star;
-
-      sl_e = 1 - sp->sle_alpha*exp(sp->sle_beta*dpc);
-      sliq[c_id] = sp->sl_r + sp->sl_range*sl_e;
-      lcap[c_id] = sp->dsldpc_star * exp(sp->sle_beta*dpc);
-
-    }
-    else { /* pc >= pc_star */
-
-      _set_sle_lcap_vg(sp, pc, &sl_e, &(sliq[c_id]), &(lcap[c_id]));
-
-    }
-
-    _set_kr_vgm(sp, sl_e, &(krl[c_id]), &(krg[c_id]));
 
   } /* Loop on selected cells */
 }
@@ -954,15 +651,16 @@ _update_iso_soil_vgm_tpf_c1_exponential_pc(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_vgm_tpf_c1_exponential_sl(const cs_real_t             t_eval,
-                                           const cs_mesh_t            *mesh,
-                                           const cs_cdo_connect_t     *connect,
-                                           const cs_cdo_quantities_t  *cdoq,
-                                           const cs_zone_t            *zone,
-                                           cs_gwf_soil_t              *soil)
+_update_iso_soil_vgm_tpf_c1_exponential(const cs_real_t             t_eval,
+                                        const cs_mesh_t            *mesh,
+                                        const cs_cdo_connect_t     *connect,
+                                        const cs_cdo_quantities_t  *cdoq,
+                                        const cs_zone_t            *zone,
+                                        cs_gwf_soil_t              *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(cdoq);
 
   if (soil == NULL)
     return;
@@ -981,12 +679,12 @@ _update_iso_soil_vgm_tpf_c1_exponential_sl(const cs_real_t             t_eval,
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
+  cs_real_t  *lsat = cs_property_get_array(hc->lsat_pty);
+  cs_real_t  *lcap = cs_property_get_array(hc->lcap_pty);
+  cs_real_t  *krl = cs_property_get_array(hc->krl_pty);
+  cs_real_t  *krg = cs_property_get_array(hc->krg_pty);
 
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
+  assert(lsat != NULL && lcap != NULL && krl != NULL && krg != NULL);
 
   /* Main loop on cells belonging to this soil */
 
@@ -995,52 +693,32 @@ _update_iso_soil_vgm_tpf_c1_exponential_sl(const cs_real_t             t_eval,
 
     const cs_lnum_t  c_id = zone->elt_ids[i];
 
-    double  sliq_csum = 0.;
-    double  lcap_csum = 0.;
-    double  krl_csum = 0.;
-    double  krg_csum = 0.;
-
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-      double  sle_v, sliq_v, lcap_v, krl_v, krg_v;
+      double  sle_v;
 
       /* capillarity pressure at vertices */
 
-      const cs_real_t  pc = pc_val[c2v->ids[j]];
-      const cs_real_t  pvc = cdoq->pvol_vc[j];
+      const cs_real_t  pc_v = pc_val[c2v->ids[j]];
 
-      if (pc < sp->pc_star) { /* Joining function */
+      if (pc_v < sp->pc_star) { /* Joining function */
 
-        const double  dpc = pc - sp->pc_star;
+        const double  dpc = pc_v - sp->pc_star;
 
         sle_v = 1 - sp->sle_alpha*exp(sp->sle_beta*dpc);
-        sliq_v = sp->sl_r + sp->sl_range*sle_v;
-        lcap_v = sp->dsldpc_star * exp(sp->sle_beta*dpc);
+        lsat[j] = sp->sl_r + sp->sl_range*sle_v;
+        lcap[j] = sp->dsldpc_star * exp(sp->sle_beta*dpc);
 
       }
       else { /* pc >= pc_star */
 
-        _set_sle_lcap_vg(sp, pc, &sle_v, &sliq_v, &lcap_v);
+        _set_sle_lcap_vg(sp, pc_v, &sle_v, &(lsat[j]), &(lcap[j]));
 
       }
 
-      _set_kr_vgm(sp, sle_v, &krl_v, &krg_v);
-
-      sliq_csum += pvc * sliq_v;
-      lcap_csum += pvc * lcap_v;
-      krl_csum += pvc * krl_v;
-      krg_csum += pvc * krg_v;
+      _set_kr_vgm(sp, sle_v, &(krl[j]), &(krg[j]));
 
     } /* Loop on cell vertices */
-
-    /* Compute the cell values */
-
-    const double  inv_volc = 1./cdoq->cell_vol[c_id];
-
-    sliq[c_id] = inv_volc * sliq_csum;
-    lcap[c_id] = inv_volc * lcap_csum;
-    krl[c_id] = inv_volc * krl_csum;
-    krg[c_id] = inv_volc * krg_csum;
 
   } /* Loop on selected cells */
 }
@@ -1067,15 +745,16 @@ _update_iso_soil_vgm_tpf_c1_exponential_sl(const cs_real_t             t_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_vgm_tpf_c1_exponential_sl_krg(const cs_real_t          t_eval,
-                                               const cs_mesh_t         *mesh,
-                                               const cs_cdo_connect_t  *connect,
-                                               const cs_cdo_quantities_t  *cdoq,
-                                               const cs_zone_t         *zone,
-                                               cs_gwf_soil_t           *soil)
+_update_iso_soil_vgm_tpf_c1_exponential_p2(const cs_real_t             t_eval,
+                                           const cs_mesh_t            *mesh,
+                                           const cs_cdo_connect_t     *connect,
+                                           const cs_cdo_quantities_t  *cdoq,
+                                           const cs_zone_t            *zone,
+                                           cs_gwf_soil_t              *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
+  CS_NO_WARN_IF_UNUSED(cdoq);
 
   if (soil == NULL)
     return;
@@ -1094,12 +773,12 @@ _update_iso_soil_vgm_tpf_c1_exponential_sl_krg(const cs_real_t          t_eval,
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *sliq = hc->l_saturation->val;
-  cs_real_t  *lcap = hc->l_capacity;
-  cs_real_t  *krl = hc->l_rel_permeability;
-  cs_real_t  *krg = hc->g_rel_permeability;
+  cs_real_t  *lsat = cs_property_get_array(hc->lsat_pty);
+  cs_real_t  *lcap = cs_property_get_array(hc->lcap_pty);
+  cs_real_t  *krl = cs_property_get_array(hc->krl_pty);
+  cs_real_t  *krg = cs_property_get_array(hc->krg_pty);
 
-  assert(sliq != NULL && lcap != NULL && krl != NULL && krg != NULL);
+  assert(lsat != NULL && lcap != NULL && krl != NULL && krg != NULL);
 
   /* Main loop on cells belonging to this soil */
 
@@ -1108,53 +787,33 @@ _update_iso_soil_vgm_tpf_c1_exponential_sl_krg(const cs_real_t          t_eval,
 
     const cs_lnum_t  c_id = zone->elt_ids[i];
 
-    double  sliq_csum = 0.;
-    double  lcap_csum = 0.;
-    double  krl_csum = 0.;
-    double  krg_csum = 0.;
-
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-      double  sle_v, sliq_v, lcap_v, krl_v, krg_v;
+      double  sle_v;
 
       /* capillarity pressure at vertices */
 
-      const cs_real_t  pc = pc_val[c2v->ids[j]];
-      const cs_real_t  pvc = cdoq->pvol_vc[j];
+      const cs_real_t  pc_v = pc_val[c2v->ids[j]];
 
-      if (pc < sp->pc_star) { /* Joining function */
+      if (pc_v < sp->pc_star) { /* Joining function */
 
-        const double  dpc = pc - sp->pc_star;
+        const double  dpc = pc_v - sp->pc_star;
 
         sle_v = 1 - sp->sle_alpha*exp(sp->sle_beta*dpc);
-        sliq_v = sp->sl_r + sp->sl_range*sle_v;
-        lcap_v = sp->dsldpc_star * exp(sp->sle_beta*dpc);
+        lsat[j] = sp->sl_r + sp->sl_range*sle_v;
+        lcap[j] = sp->dsldpc_star * exp(sp->sle_beta*dpc);
 
-        _set_kr_vgm_poly2(sp, sle_v, &krl_v, &krg_v);
+        _set_kr_vgm_poly2(sp, sle_v, &(krl[j]), &(krg[j]));
 
       }
       else { /* pc >= pc_star */
 
-        _set_sle_lcap_vg(sp, pc, &sle_v, &sliq_v, &lcap_v);
-        _set_kr_vgm(sp, sle_v, &krl_v, &krg_v);
+        _set_sle_lcap_vg(sp, pc_v, &sle_v, &(lsat[j]), &(lcap[j]));
+        _set_kr_vgm(sp, sle_v, &(krl[j]), &(krg[j]));
 
       }
 
-      sliq_csum += pvc * sliq_v;
-      lcap_csum += pvc * lcap_v;
-      krl_csum += pvc * krl_v;
-      krg_csum += pvc * krg_v;
-
     } /* Loop on cell vertices */
-
-    /* Compute the cell values */
-
-    const double  inv_volc = 1./cdoq->cell_vol[c_id];
-
-    sliq[c_id] = inv_volc * sliq_csum;
-    lcap[c_id] = inv_volc * lcap_csum;
-    krl[c_id] = inv_volc * krl_csum;
-    krg[c_id] = inv_volc * krg_csum;
 
   } /* Loop on selected cells */
 }
@@ -1883,46 +1542,6 @@ cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if one needs to compute the capillarity at the cell centers
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_gwf_soil_need_cell_capillarity_pressures(void)
-{
-  for (int i = 0; i < _n_soils; i++) {
-
-    const cs_gwf_soil_t  *soil = _soils[i];
-
-    if (soil->hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
-        soil->hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE) {
-
-      if (soil->model == CS_GWF_SOIL_USER)
-        return true;  /* Be sure that all quantities are available even if not
-                         needed */
-
-      if (soil->model == CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE) {
-
-        cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
-
-        if (!sp->sl_interpolation)
-          return true;
-
-      }
-
-    } /* Two-phase flow modelling */
-
-    /* Other modellings do not imply a capillarity pressure */
-
-  } /* Loop on soils */
-
-  return false; /* Default behavior */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Build an array storing the dual volume associated to each vertex
  *        taking into account the porosity of the soil
  *        The computed quantity is stored as a static array. Use the function
@@ -2227,7 +1846,6 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
   /* Additional advanced settings (default settings) */
 
   cs_gwf_soil_set_vgm_tpf_advanced_param(soil,
-                                         true, /* Sl interpolation */
                                          CS_GWF_SOIL_JOIN_C1_EXPONENTIAL,
                                          CS_GWF_SOIL_JOIN_NOTHING,
                                          0.9999);
@@ -2239,7 +1857,6 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
  *        soil model
  *
  * \param[in, out] soil        pointer to a cs_gwf_soil_t structure
- * \param[in]      sl_interp   interpolate Sl rather than Pc
  * \param[in]      sle_jtype   type of joining function for the effective Sl
  * \param[in]      krg_jtype   type of joining function for krg
  * \param[in]      sle_thres   value of the effective liquid saturation above
@@ -2249,7 +1866,6 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
 
 void
 cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
-                                       bool                       sl_interp,
                                        cs_gwf_soil_join_type_t    sle_jtype,
                                        cs_gwf_soil_join_type_t    krg_jtype,
                                        double                     sle_thres)
@@ -2271,14 +1887,6 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
   sp->sle_jtype = sle_jtype;
   sp->krg_jtype = krg_jtype;
   sp->sle_thres = sle_thres;
-  sp->sl_interpolation = sl_interp;
-
-  if (!sl_interp) {
-    if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf("Joining function for krg not taken into account.");
-    }
-  }
 
   switch (soil->abs_permeability_dim) {
 
@@ -2288,10 +1896,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
     if (sle_thres > 1 - FLT_MIN) { /* No joining function */
 
       sp->sle_jtype = CS_GWF_SOIL_JOIN_NOTHING;
-      if (sl_interp)
-        soil->update_properties = _update_iso_soil_vgm_tpf_sl;
-      else
-        soil->update_properties = _update_iso_soil_vgm_tpf_pc;
+      soil->update_properties = _update_iso_soil_vgm_tpf;
 
     }
     else {
@@ -2299,44 +1904,29 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
       switch (sle_jtype) {
 
       case CS_GWF_SOIL_JOIN_NOTHING:
-        if (sl_interp) {
-          soil->update_properties = _update_iso_soil_vgm_tpf_sl;
-          if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING) {
-            cs_base_warn(__FILE__, __LINE__);
-            bft_printf("Joining function for krg not taken into account.");
-          }
+        soil->update_properties = _update_iso_soil_vgm_tpf;
+        if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING) {
+          cs_base_warn(__FILE__, __LINE__);
+          bft_printf("Joining function for krg not taken into account.");
         }
-        else
-          soil->update_properties = _update_iso_soil_vgm_tpf_pc;
         break;
 
       case CS_GWF_SOIL_JOIN_C1_HYPERBOLIC:
         sp->sle_jtype = CS_GWF_SOIL_JOIN_C1_HYPERBOLIC;
         _joining_param_vgm(sp);
-        if (sl_interp) {
-          if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING)
-            soil->update_properties =
-              _update_iso_soil_vgm_tpf_c1_hyperbolic_sl_krg;
-          else
-            soil->update_properties = _update_iso_soil_vgm_tpf_c1_hyperbolic_sl;
-        }
+        if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING)
+          soil->update_properties = _update_iso_soil_vgm_tpf_c1_hyperbolic_p2;
         else
-          soil->update_properties = _update_iso_soil_vgm_tpf_c1_hyperbolic_pc;
+          soil->update_properties = _update_iso_soil_vgm_tpf_c1_hyperbolic;
         break;
 
       case CS_GWF_SOIL_JOIN_C1_EXPONENTIAL:
         sp->sle_jtype = CS_GWF_SOIL_JOIN_C1_EXPONENTIAL;
         _joining_param_vgm(sp);
-        if (sl_interp) {
-          if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING)
-            soil->update_properties =
-              _update_iso_soil_vgm_tpf_c1_exponential_sl_krg;
-          else
-            soil->update_properties =
-              _update_iso_soil_vgm_tpf_c1_exponential_sl;
-        }
+        if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING)
+          soil->update_properties = _update_iso_soil_vgm_tpf_c1_exponential_p2;
         else
-          soil->update_properties = _update_iso_soil_vgm_tpf_c1_exponential_pc;
+          soil->update_properties = _update_iso_soil_vgm_tpf_c1_exponential;
         break;
 
       default:

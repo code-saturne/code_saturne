@@ -102,6 +102,33 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the given property with a newly allocated array.
+ *
+ * \param[in] array_size     size of the array to allocate
+ * \param[in] location_flag  where the values are defined
+ * \param[in] pty            pointer to a property structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_add_pty_array(cs_lnum_t         array_size,
+               cs_flag_t         location_flag,
+               cs_property_t    *pty)
+{
+  cs_real_t  *array = NULL;
+  BFT_MALLOC(array, array_size, cs_real_t);
+  cs_array_real_fill_zero(array_size, array);
+
+  cs_property_def_by_array(pty,
+                           NULL,           /* all cells */
+                           location_flag,  /* data location */
+                           array,
+                           true,           /* xdef is owner */
+                           true);          /* full length */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -607,7 +634,7 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
   g_darcy->update_func(connect,
                        cdoq,
                        mc->g_pressure->val,
-                       mc->g_pressure_cells,
+                       NULL,
                        t_eval,
                        cur2prev,
                        g_darcy);
@@ -649,6 +676,8 @@ _update_pressures(const cs_cdo_connect_t      *connect,
                   bool                         cur2prev,
                   cs_gwf_tpf_t                *mc)
 {
+  CS_NO_WARN_IF_UNUSED(connect);
+
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
   /* Compute either the capillarity pressure or the gas pressure accordind to
@@ -707,22 +736,6 @@ _update_pressures(const cs_cdo_connect_t      *connect,
     }
 
   }
-
-  /* Interpolate cell values of the capillarity pressure from the vertex
-     ones. The capillarity pressure at cells is used to update quantities
-     related to a soil model */
-
-  if (mc->c_pressure_cells != NULL)
-    cs_reco_pv_at_cell_centers(connect->c2v, cdoq,
-                               mc->c_pressure->val,
-                               mc->c_pressure_cells);
-
-  /* Interpolate cell values of the gas pressure from the vertex ones */
-
-  if (mc->g_pressure_cells != NULL)
-    cs_reco_pv_at_cell_centers(connect->c2v, cdoq,
-                               mc->g_pressure->val,
-                               mc->g_pressure_cells);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -734,24 +747,45 @@ _update_pressures(const cs_cdo_connect_t      *connect,
  *        Numerical options: coupled solver and diffusive viewpoint of the
  *        Darcy terms in the conservation equation of the hydrogen
  *
- * \param[in, out] mc    pointer to the model context to update
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] mc         pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_mtpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
+_update_iso_mtpf_coupled_diffview_terms(const cs_cdo_connect_t      *connect,
+                                        const cs_cdo_quantities_t   *cdoq,
+                                        cs_gwf_tpf_t                *mc)
 {
+  const cs_adjacency_t  *c2v = connect->c2v;
+
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
 
-  const cs_real_t  *pg_cells = mc->g_pressure_cells;
-  const cs_real_t  *l_sat = mc->l_saturation->val;
-  const cs_real_t  *l_cap = mc->l_capacity;
-  const cs_real_t  *krl =  mc->l_rel_permeability;
-  const cs_real_t  *krg =  mc->g_rel_permeability;
+  /* Values of the current pressure fields used for the update stage */
 
-  /* Loop on soils */
+  const cs_real_t  *pg = mc->g_pressure->val;
+
+  /* Retrieve the arrays storing the property values */
+
+  const cs_real_t  *lsat = cs_property_get_array(mc->lsat_pty);
+  const cs_real_t  *lcap = cs_property_get_array(mc->lcap_pty);
+  const cs_real_t  *krl = cs_property_get_array(mc->krl_pty);
+  const cs_real_t  *krg = cs_property_get_array(mc->krg_pty);
+
+  /* Retrieve arrays to update */
+
+  cs_real_t  *diff_g_array = cs_property_get_array(mc->diff_g_pty);
+  cs_real_t  *diff_wl_array = cs_property_get_array(mc->diff_wl_pty);
+  cs_real_t  *diff_hc_array = cs_property_get_array(mc->diff_hc_pty);
+  cs_real_t  *diff_hl_array = cs_property_get_array(mc->diff_hl_pty);
+  cs_real_t  *time_wc_array = cs_property_get_array(mc->time_wc_pty);
+  cs_real_t  *time_hc_array = cs_property_get_array(mc->time_hc_pty);
+  cs_real_t  *time_hl_array = cs_property_get_array(mc->time_hl_pty);
+
+  /* Main loop on soils */
 
   for (int soil_id = 0; soil_id < cs_gwf_get_n_soils(); soil_id++) {
 
@@ -763,6 +797,8 @@ _update_iso_mtpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
 
     const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
     assert(zone != NULL);
+
+    /* Soil properties and its derived quantities */
 
     const double  k_abs = soil->abs_permeability[0][0];
     const double  phi = soil->porosity;
@@ -778,29 +814,53 @@ _update_iso_mtpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
 
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      const double  rhog_h = mh_ov_rt * pg_cells[c_id];
-      const double  rhol_h = hmh * pg_cells[c_id];
-      const double  sl = l_sat[c_id], sg = 1 - sl;
-      const double  dsl_dpc = l_cap[c_id];
+      double  diff_g = 0, time_wc = 0, diff_wl = 0, time_hc = 0, time_hl = 0;
+      double  diff_hc = 0, diff_hl = 0;
 
-      /* Update terms for the Darcy flux in the gaz phase */
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-      mc->diff_g_array[c_id] = g_diff_coef * krg[c_id];
+        const cs_lnum_t  v_id = c2v->ids[j];
 
-      /* Update terms associated to the water conservation equation */
+        const double  rhog_h = mh_ov_rt * pg[v_id];
+        const double  rhol_h = hmh * pg[v_id];
+        const double  pvc = cdoq->pvol_vc[j];
+        const double  sl = lsat[c_id], sg = 1 - sl;
+        const double  dsl_dpc = lcap[c_id];
+        const double  krg_coef = krg[j] * g_diff_coef;
 
-      mc->time_wc_array[c_id] = phi_rhol * dsl_dpc;
-      mc->diff_wl_array[c_id] = wl_diff_coef * krl[c_id];
+        /* Update terms for the Darcy flux in the gaz phase */
 
-      /* Update terms associated to the hydrogen conservation equation */
+        diff_g += pvc * krg_coef;
 
-      const double  time_h_coef = phi * ( mh_ov_rt*sg + hmh*sl );
-      mc->time_hc_array[c_id] = time_h_coef + phi * (rhol_h - rhog_h)*dsl_dpc;
-      mc->time_hl_array[c_id] = time_h_coef;
+        /* Update terms associated to the water conservation equation */
 
-      const double  diff_hc = rhog_h * mc->diff_g_array[c_id];
-      mc->diff_hc_array[c_id] = diff_hc;
-      mc->diff_hl_array[c_id] = diff_hc + rhol_h * l_diff_coef * krl[c_id];
+        time_wc += pvc * dsl_dpc;
+        diff_wl += pvc * krl[j];
+
+        /* Update terms associated to the hydrogen conservation equation */
+
+        const double  time_h_coef = mh_ov_rt*sg + hmh*sl;
+
+        time_hc += pvc * (time_h_coef + (rhol_h - rhog_h) * dsl_dpc);
+        time_hl += pvc * time_h_coef;
+
+        diff_hc += pvc * rhog_h * krg_coef;
+        diff_hl += pvc * (rhog_h * krg_coef + rhol_h * l_diff_coef * krl[j]);
+
+      } /* Loop on cell vertices */
+
+      /* Define the cell values (what is stored in properties associated to
+         each term of an equation) */
+
+      const double  inv_volc = 1./cdoq->cell_vol[c_id];
+
+      diff_g_array[c_id]  = inv_volc * diff_g;
+      time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
+      diff_wl_array[c_id] = inv_volc * diff_wl * wl_diff_coef;
+      time_hc_array[c_id] = inv_volc * time_hc * phi;
+      time_hl_array[c_id] = inv_volc * time_hl * phi;
+      diff_hc_array[c_id] = inv_volc * diff_hc;
+      diff_hl_array[c_id] = inv_volc * diff_hl;
 
     } /* Loop on cells of the zone (= soil) */
 
@@ -816,24 +876,45 @@ _update_iso_mtpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
  *        Numerical options: coupled solver and diffusive viewpoint of the
  *        Darcy terms in the conservation equation of the hydrogen
  *
- * \param[in, out] mc    pointer to the model context to update
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] mc         pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
+_update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
+                                        const cs_cdo_quantities_t  *cdoq,
+                                        cs_gwf_tpf_t               *mc)
 {
+  const cs_adjacency_t  *c2v = connect->c2v;
+
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
 
-  const cs_real_t  *pg_cells = mc->g_pressure_cells;
-  const cs_real_t  *l_sat = mc->l_saturation->val;
-  const cs_real_t  *l_cap = mc->l_capacity;
-  const cs_real_t  *krl =  mc->l_rel_permeability;
-  const cs_real_t  *krg =  mc->g_rel_permeability;
+  /* Values of the current gas pressure field used for the update stage */
 
-  /* Loop on soils */
+  const cs_real_t  *pg = mc->g_pressure->val;
+
+  /* Retrieve the arrays storing the property values */
+
+  const cs_real_t  *lsat = cs_property_get_array(mc->lsat_pty);
+  const cs_real_t  *lcap = cs_property_get_array(mc->lcap_pty);
+  const cs_real_t  *krl = cs_property_get_array(mc->krl_pty);
+  const cs_real_t  *krg = cs_property_get_array(mc->krg_pty);
+
+  /* Retrieve arrays to update */
+
+  cs_real_t  *diff_g_array = cs_property_get_array(mc->diff_g_pty);
+  cs_real_t  *diff_wl_array = cs_property_get_array(mc->diff_wl_pty);
+  cs_real_t  *diff_hc_array = cs_property_get_array(mc->diff_hc_pty);
+  cs_real_t  *diff_hl_array = cs_property_get_array(mc->diff_hl_pty);
+  cs_real_t  *time_wc_array = cs_property_get_array(mc->time_wc_pty);
+  cs_real_t  *time_hc_array = cs_property_get_array(mc->time_hc_pty);
+  cs_real_t  *time_hl_array = cs_property_get_array(mc->time_hl_pty);
+
+  /* Main loop on soils */
 
   for (int soil_id = 0; soil_id < cs_gwf_get_n_soils(); soil_id++) {
 
@@ -845,6 +926,8 @@ _update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
 
     const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
     assert(zone != NULL);
+
+    /* Soil properties and its derived quantities */
 
     const double  k_abs = soil->abs_permeability[0][0];
     const double  phi = soil->porosity;
@@ -860,29 +943,53 @@ _update_iso_itpf_coupled_diffview_terms(cs_gwf_tpf_t     *mc)
 
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      const double  rhog_h = mh_ov_rt * pg_cells[c_id];
-      const double  rhol_h = hmh * pg_cells[c_id];
-      const double  sl = l_sat[c_id], sg = 1 - sl;
-      const double  dsl_dpc = l_cap[c_id];
+      double  diff_g = 0, time_wc = 0, diff_wl = 0, time_hc = 0, time_hl = 0;
+      double  diff_hc = 0, diff_hl = 0;
 
-      /* Update terms for the Darcy flux in the gaz phase */
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-      mc->diff_g_array[c_id] = g_diff_coef * krg[c_id];
+        const cs_lnum_t  v_id = c2v->ids[j];
 
-      /* Update terms associated to the water conservation equation */
+        const double  rhog_h = mh_ov_rt * pg[v_id];
+        const double  rhol_h = hmh * pg[v_id];
+        const double  pvc = cdoq->pvol_vc[j];
+        const double  sl = lsat[j], sg = 1 - sl;
+        const double  dsl_dpc = lcap[j];
+        const double  krg_coef = krg[j] * g_diff_coef;
 
-      mc->time_wc_array[c_id] = phi_rhol * dsl_dpc;
-      mc->diff_wl_array[c_id] = wl_diff_coef * krl[c_id];
+        /* Update terms for the Darcy flux in the gas phase */
 
-      /* Update terms associated to the hydrogen conservation equation */
+        diff_g += pvc * krg_coef;
 
-      const double  time_h_coef = phi * ( mh_ov_rt*sg + hmh*sl );
-      mc->time_hc_array[c_id] = time_h_coef + phi * (rhol_h - rhog_h)*dsl_dpc;
-      mc->time_hl_array[c_id] = time_h_coef;
+        /* Update terms associated to the water conservation equation */
 
-      const double  diff_hc = rhog_h * mc->diff_g_array[c_id];
-      mc->diff_hc_array[c_id] = diff_hc;
-      mc->diff_hl_array[c_id] = diff_hc + rhol_h * l_diff_coef * krl[c_id];
+        time_wc += pvc * dsl_dpc;
+        diff_wl += pvc * krl[j];
+
+        /* Update terms associated to the hydrogen conservation equation */
+
+        const double  time_h_coef = mh_ov_rt*sg + hmh*sl;
+
+        time_hc += pvc * (time_h_coef + (rhol_h - rhog_h) * dsl_dpc);
+        time_hl += pvc * time_h_coef;
+
+        diff_hc += pvc * rhog_h * krg_coef;
+        diff_hl += pvc * (rhog_h * krg_coef + rhol_h * l_diff_coef * krl[j]);
+
+      } /* Loop on cell vertices */
+
+      /* Define the cell values (what is stored in properties associated to
+         each term of an equation) */
+
+      const double  inv_volc = 1./cdoq->cell_vol[c_id];
+
+      diff_g_array[c_id]  = inv_volc * diff_g;
+      time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
+      diff_wl_array[c_id] = inv_volc * diff_wl * wl_diff_coef;
+      time_hc_array[c_id] = inv_volc * time_hc * phi;
+      time_hl_array[c_id] = inv_volc * time_hl * phi;
+      diff_hc_array[c_id] = inv_volc * diff_hc;
+      diff_hl_array[c_id] = inv_volc * diff_hl;
 
     } /* Loop on cells of the zone (= soil) */
 
@@ -1527,7 +1634,14 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   /* Properties
    * ----------
    *
-   * Adding the properties related to the permeability (diffusion) is
+   */
+
+  mc->krl_pty = cs_property_subcell_add("krl_pty", CS_PROPERTY_ISO);
+  mc->krg_pty = cs_property_subcell_add("krg_pty", CS_PROPERTY_ISO);
+  mc->lsat_pty = cs_property_subcell_add("lsat_pty", CS_PROPERTY_ISO);
+  mc->lcap_pty = cs_property_subcell_add("lcap_pty", CS_PROPERTY_ISO);
+
+  /* Note: Adding the properties related to the permeability (diffusion) is
    * postponed since one has to know which type of permeability is considered
    * (iso, ortho, or anisotropic) and this information is a result of the type
    * of soils which have been added.
@@ -1560,26 +1674,8 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   /* The properties will be defined using arrays.
    * Store these arrays of property values associated to equation terms */
 
-  mc->time_wc_array = NULL;
-  mc->diff_wl_array = NULL;
-
-  mc->time_hc_array = NULL;
-  mc->diff_hc_array = NULL;
-  mc->time_hl_array = NULL;
-  mc->diff_hl_array = NULL;
-
   mc->srct_w_array = NULL;
   mc->srct_h_array = NULL;
-  mc->reac_h_array = NULL;
-
-  /* Array of additional variable or property values */
-
-  mc->l_rel_permeability = NULL;
-  mc->g_rel_permeability = NULL;
-  mc->c_pressure_cells = NULL;
-  mc->g_pressure_cells = NULL;
-  mc->l_capacity = NULL;
-  mc->l_saturation_submesh = NULL;
 
   /* Model parameters (default values) */
   /* ---------------- */
@@ -1610,7 +1706,6 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 
   mc->use_coupled_solver = true;
   mc->use_incremental_solver = false;
-  mc->use_definition_on_submesh = false;
   mc->use_diffusion_view_for_darcy = true;
 
   mc->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
@@ -1658,25 +1753,8 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc)
   cs_gwf_darcy_flux_free(&(mc->g_darcy));
   cs_gwf_darcy_flux_free(&(mc->t_darcy));
 
-  BFT_FREE(mc->time_wc_array);
-  BFT_FREE(mc->diff_wl_array);
-  BFT_FREE(mc->time_hc_array);
-  BFT_FREE(mc->diff_hc_array);
-  BFT_FREE(mc->time_hl_array);
-  BFT_FREE(mc->diff_hl_array);
-
   BFT_FREE(mc->srct_w_array);
   BFT_FREE(mc->srct_h_array);
-  BFT_FREE(mc->reac_h_array);
-
-  BFT_FREE(mc->diff_g_array);
-
-  BFT_FREE(mc->l_rel_permeability);
-  BFT_FREE(mc->g_rel_permeability);
-  BFT_FREE(mc->c_pressure_cells);
-  BFT_FREE(mc->g_pressure_cells);
-  BFT_FREE(mc->l_capacity);
-  BFT_FREE(mc->l_saturation_submesh);
 
   /* Free the structure handling the convergence of the non-linear algorithm */
 
@@ -1722,9 +1800,6 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *mc)
 
   if (mc->use_incremental_solver)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Incremental solver\n");
-
-  if (mc->use_definition_on_submesh)
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Definition on submesh activated\n");
 
   if (mc->use_diffusion_view_for_darcy)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Diffusion view for Darcy terms\n");
@@ -1796,6 +1871,7 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
                                                         adv_status);
   mc->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
   mc->g_darcy->adv_field = g_adv_field;
+
   if (!mc->use_diffusion_view_for_darcy) {
 
     cs_adv_field_t  *t_adv_field = cs_advection_field_add("t_darcy_field",
@@ -1874,20 +1950,9 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
      * - unsteady term for hydrogen eq. in the liquid phase   (1,0)-block
      */
 
-    if (mc->use_definition_on_submesh) {
-
-      mc->time_wc_pty = cs_property_subcell_add("time_wc_pty", CS_PROPERTY_ISO);
-      mc->time_hc_pty = cs_property_subcell_add("time_hc_pty", CS_PROPERTY_ISO);
-      mc->time_hl_pty = cs_property_subcell_add("time_hl_pty", CS_PROPERTY_ISO);
-
-    }
-    else {
-
-      mc->time_wc_pty = cs_property_add("time_wc_pty", CS_PROPERTY_ISO);
-      mc->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
-      mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
-
-    }
+    mc->time_wc_pty = cs_property_add("time_wc_pty", CS_PROPERTY_ISO);
+    mc->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
+    mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
 
     /* Add terms to the water equation */
     /* ------------------------------- */
@@ -1950,10 +2015,7 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
     /* Properties */
     /* ---------- */
 
-    if (mc->use_definition_on_submesh)
-      mc->time_hc_pty = cs_property_subcell_add("time_hc_pty", CS_PROPERTY_ISO);
-    else
-      mc->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
+    mc->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
 
     /* Add terms to the water equation */
     /* ------------------------------- */
@@ -2156,101 +2218,39 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
   /* Allocate and initialize arrays for the physical properties */
   /* ---------------------------------------------------------- */
 
-  /* Relative permeability in the liquid and gas phase.
-   * One assumes that the medium is saturated by default */
+  /* Relative permeability in the liquid and gas phase */
 
-  BFT_MALLOC(mc->l_rel_permeability, n_cells, cs_real_t);
-  cs_array_real_set_scalar(n_cells, 1., mc->l_rel_permeability);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->krl_pty);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->krg_pty);
 
-  BFT_MALLOC(mc->g_rel_permeability, n_cells, cs_real_t);
-  cs_array_real_set_scalar(n_cells, 1., mc->g_rel_permeability);
+  /* Liquid saturation and liquid capacity */
 
-  /* Interpolation of the gas pressure at cell centers is used to define the
-   * properties associated to some terms in hydrogen eq. */
-
-  BFT_MALLOC(mc->g_pressure_cells, n_cells, cs_real_t);
-  cs_array_real_fill_zero(n_cells, mc->g_pressure_cells);
-
-  if (cs_gwf_soil_need_cell_capillarity_pressures()) {
-
-    BFT_MALLOC(mc->c_pressure_cells, n_cells, cs_real_t);
-    cs_array_real_fill_zero(n_cells, mc->c_pressure_cells);
-
-  }
-
-  /* Handle the possibility to define some properties on a sub-mesh */
-
-  cs_lnum_t  _size = n_cells;
-  cs_flag_t  _loc = cs_flag_primal_cell;
-
-  if (mc->use_definition_on_submesh) {
-
-    _size = c2v_size;
-    _loc = cs_flag_dual_cell_byc;
-
-    BFT_MALLOC(mc->l_saturation_submesh, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->l_saturation_submesh);
-
-  }
-
-  BFT_MALLOC(mc->l_capacity, _size, cs_real_t);
-  cs_array_real_fill_zero(_size, mc->l_capacity);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->lsat_pty);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->lcap_pty);
 
   /* Properties associated to terms in equations */
   /* ------------------------------------------- */
 
   /* Diffusion property for the water equation */
 
-  BFT_MALLOC(mc->diff_wl_array, n_cells, cs_real_t);
-  cs_array_real_fill_zero(n_cells, mc->diff_wl_array);
-
-  cs_property_def_by_array(mc->diff_wl_pty,
-                           NULL,                 /* all cells */
-                           cs_flag_primal_cell,  /* data location */
-                           mc->diff_wl_array,
-                           false,                /* xdef not owner */
-                           true);                /* full length */
+  _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_wl_pty);
 
   /* Diffusion property for the definition of the Darcy field in the gas
      phase */
 
-  BFT_MALLOC(mc->diff_g_array, n_cells, cs_real_t);
-  cs_array_real_fill_zero(n_cells, mc->diff_g_array);
-
-  cs_property_def_by_array(mc->diff_g_pty,
-                           NULL,                 /* all cells */
-                           cs_flag_primal_cell,  /* data location */
-                           mc->diff_g_array,
-                           false,                /* xdef not owner */
-                           true);                /* full length */
+  _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_g_pty);
 
   if (mc->use_diffusion_view_for_darcy) {
 
     /* Diffusion property in the hydrogen equation (associated to Pc in the
        case of a coupled solver or to Pg in the case of a segregated solver) */
 
-    BFT_MALLOC(mc->diff_hc_array, n_cells, cs_real_t);
-    cs_array_real_fill_zero(n_cells, mc->diff_hc_array);
-
-    cs_property_def_by_array(mc->diff_hc_pty,
-                             NULL,                 /* all cells */
-                             cs_flag_primal_cell,  /* data location */
-                             mc->diff_hc_array,
-                             false,                /* xdef not owner */
-                             true);                /* full length */
+    _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_hc_pty);
 
     /* Diffusion property in the hydrogen equation associated to Pl. This is
        used to define a source term in the case of a segregated solver. */
 
-    BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
-    cs_array_real_fill_zero(n_cells, mc->diff_hl_array);
-
-    cs_property_def_by_array(mc->diff_hl_pty,
-                             NULL,                /* all cells */
-                             cs_flag_primal_cell, /* data location */
-                             mc->diff_hl_array,
-                             false,               /* xdef not owner */
-                             true);               /* full length */
+    _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_hl_pty);
 
   }
 
@@ -2260,35 +2260,9 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
 
     /* Define the arrays storing the time property for all blocks */
 
-    BFT_MALLOC(mc->time_wc_array, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->time_wc_array);
-
-    cs_property_def_by_array(mc->time_wc_pty,
-                             NULL,     /* all cells */
-                             _loc,     /* data location */
-                             mc->time_wc_array,
-                             false,    /* xdef not owner */
-                             true);    /* full length */
-
-    BFT_MALLOC(mc->time_hl_array, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->time_hl_array);
-
-    cs_property_def_by_array(mc->time_hl_pty,
-                             NULL,     /* all cells */
-                             _loc,     /* data location */
-                             mc->time_hl_array,
-                             false,    /* xdef not owner */
-                             true);    /* full length */
-
-    BFT_MALLOC(mc->time_hc_array, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->time_hc_array);
-
-    cs_property_def_by_array(mc->time_hc_pty,
-                             NULL,     /* all cells */
-                             _loc,     /* data location */
-                             mc->time_hc_array,
-                             false,    /* xdef not owner */
-                             true);    /* full length */
+    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_wc_pty);
+    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_hl_pty);
+    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_hc_pty);
 
   }
   else { /* Segregated solver */
@@ -2298,19 +2272,15 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
 
     /* Source term */
 
-    BFT_MALLOC(mc->srct_w_array, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->srct_w_array);
+    BFT_MALLOC(mc->srct_w_array, n_cells, cs_real_t);
+    cs_array_real_fill_zero(n_cells, mc->srct_w_array);
 
-    cs_xdef_t  *wst_def =
-      cs_equation_add_source_term_by_array(w_eqp,
-                                           NULL,    /* all cells */
-                                           _loc,    /* data location */
-                                           mc->srct_w_array,
-                                           false,   /* xdef not owner */
-                                           true);   /* full length */
-
-    if (mc->use_definition_on_submesh)
-      cs_xdef_array_set_adjacency(wst_def, c2v);
+    cs_equation_add_source_term_by_array(w_eqp,
+                                         NULL,    /* all cells */
+                                         cs_flag_primal_cell,
+                                         mc->srct_w_array,
+                                         false,   /* xdef not owner */
+                                         true);   /* full length */
 
     /* Treatment of the hydrogen mass conservation */
     /* ------------------------------------------- */
@@ -2318,51 +2288,23 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
     /* Source term (second one; the first is associated to a stiffness term and
        relies on a builder hook function) */
 
-    BFT_MALLOC(mc->srct_h_array, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->srct_h_array);
+    BFT_MALLOC(mc->srct_h_array, n_cells, cs_real_t);
+    cs_array_real_fill_zero(n_cells, mc->srct_h_array);
 
-    cs_xdef_t  *hst_def =
-      cs_equation_add_source_term_by_array(h_eqp,
-                                           NULL,   /* all cells */
-                                           _loc,   /* data location */
-                                           mc->srct_h_array,
-                                           false,  /* xdef not owner */
-                                           true);  /* full length */
-
-    if (mc->use_definition_on_submesh)
-      cs_xdef_array_set_adjacency(hst_def, c2v);
+    cs_equation_add_source_term_by_array(h_eqp,
+                                         NULL,   /* all cells */
+                                         cs_flag_primal_cell,
+                                         mc->srct_h_array,
+                                         false,  /* xdef not owner */
+                                         true);  /* full length */
 
     /* Unsteady term */
 
-    BFT_MALLOC(mc->time_hc_array, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->time_hc_array);
-
-    cs_xdef_t  *th_pty_def =
-      cs_property_def_by_array(mc->time_hc_pty,
-                               NULL,        /* all cells */
-                               _loc,        /* data location */
-                               mc->time_hc_array,
-                               false,       /* xdef not owner */
-                               true);       /* full length */
-
-    if (mc->use_definition_on_submesh)
-      cs_xdef_array_set_adjacency(th_pty_def, c2v);
+    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_hc_pty);
 
     /* Reaction term */
 
-    BFT_MALLOC(mc->reac_h_array, _size, cs_real_t);
-    cs_array_real_fill_zero(_size, mc->reac_h_array);
-
-    cs_xdef_t  *rh_pty_def =
-      cs_property_def_by_array(mc->reac_h_pty,
-                               NULL,     /* all cells */
-                               _loc,     /* data location */
-                               mc->reac_h_array,
-                               false,    /* xdef not owner */
-                               true);    /* full length */
-
-    if (mc->use_definition_on_submesh)
-      cs_xdef_array_set_adjacency(rh_pty_def, c2v);
+    _add_pty_array(n_cells, cs_flag_primal_cell, mc->reac_h_pty);
 
   } /* Segregated solver */
 }
@@ -2546,12 +2488,12 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
   _update_pressures(connect, cdoq, update_flag, cur2prev, mc);
 
   /* Update properties related to soils:
-   * - l_rel_permeability, g_rel_permeability
+   * - relative permeabilities: krl, krg
    * - liquid_saturation
-   * - capacity: \frac{\partial S_l}{\partial P_c}
+   * - liquid capacity: \frac{\partial S_l}{\partial P_c}
    *
    * Either a call to a user-defined function or a predefined function if the
-   * soil corresponds to a known model
+   * soil corresponds to a pre-defined model
    */
 
   cs_gwf_soil_update(time_eval, mesh, connect, cdoq);
@@ -2559,23 +2501,21 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
   /* Define the liquid saturation in each cell when the liquid saturation has
      been defined on the submesh */
 
-  if (mc->use_definition_on_submesh) {
+  const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_real_t  *lsat_c2v = cs_property_get_array(mc->lsat_pty);
+  cs_real_t  *lsat = mc->l_saturation->val;
 
-    const cs_adjacency_t  *c2v = connect->c2v;
-    cs_real_t  *l_sat = mc->l_saturation->val;
+  /* Compute the average liquid saturation in each cell */
 
-    /* Compute the average liquid saturation in each cell */
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+    cs_real_t  _sat = 0;
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      _sat += lsat_c2v[j] * cdoq->pvol_vc[j];
+    lsat[c_id] = _sat/cdoq->cell_vol[c_id];
 
-      cs_real_t  _sat = 0;
-      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        _sat += mc->l_saturation_submesh[j] * cdoq->pvol_vc[j];
-      l_sat[c_id] = _sat/cdoq->cell_vol[c_id];
-
-    } /* Loop on cells */
-
-  } /* Properties on submesh */
+  } /* Loop on cells */
 
   /* Update arrays associated to each term */
 
@@ -2588,7 +2528,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
       /*       ======== */
 
       if (mc->use_diffusion_view_for_darcy)
-        _update_iso_mtpf_coupled_diffview_terms(mc);
+        _update_iso_mtpf_coupled_diffview_terms(connect, cdoq, mc);
       else
         bft_error(__FILE__, __LINE__, 0,
                   "%s: TODO --> Update functions.", __func__);
@@ -2607,7 +2547,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
         /*    ------------------- */
 
         if (mc->use_diffusion_view_for_darcy)
-          _update_iso_itpf_coupled_diffview_terms(mc);
+          _update_iso_itpf_coupled_diffview_terms(connect, cdoq, mc);
         else
           bft_error(__FILE__, __LINE__, 0,
                     "%s: TODO --> Update functions.", __func__);
@@ -2618,18 +2558,10 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
 
         if (mc->use_diffusion_view_for_darcy) {
 
-          if (mc->use_incremental_solver) {
-            if (mc->use_definition_on_submesh)
-              bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
-            else
-              bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
-          }
-          else {
-            if (mc->use_definition_on_submesh)
-              bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
-            else
-              bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
-          }
+          if (mc->use_incremental_solver)
+            bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
+          else
+            bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
 
         }
         else
@@ -2734,61 +2666,46 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
   if (post_flag & CS_GWF_POST_SOIL_CAPACITY) {
 
-    if (mc->l_capacity == NULL) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf("%s: Requested postprocessing for capacity but not"
-                 " allocated.\n This postprocessing is skipped.\n", __func__);
-    }
-    else {
+    const cs_real_t  *lcap_c2v = cs_property_get_array(mc->lcap_pty);
+    const cs_adjacency_t  *c2v = connect->c2v;
 
-      bool  use_parent = true;
-      cs_real_t  *l_capacity = NULL;
+    cs_real_t  *lcap = NULL;
+    BFT_MALLOC(lcap, n_cells, cs_real_t);
 
-      if (mc->use_definition_on_submesh) {
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-        const cs_adjacency_t  *c2v = connect->c2v;
+      cs_lnum_t  c_id =
+        (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
 
-        BFT_MALLOC(l_capacity, n_cells, cs_real_t);
-        use_parent = false;
-
-        for (cs_lnum_t i = 0; i < n_cells; i++) {
-
-          cs_lnum_t  c_id =
-            (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
-
-          l_capacity[c_id] = 0;
-          for (cs_lnum_t j = c2v->idx[c_id]; c2v->idx[c_id+1]; j++)
-            l_capacity[c_id] = cdoq->pvol_vc[j] * mc->l_capacity[j];
-          l_capacity[c_id] /= cdoq->cell_vol[c_id];
-
-        }
-
-      }
-      else
-        l_capacity = mc->l_capacity;
-
-      cs_post_write_var(mesh_id,
-                        CS_POST_WRITER_DEFAULT,
-                        "l_capacity",
-                        1,
-                        false,        /* interlace */
-                        use_parent,
-                        CS_POST_TYPE_cs_real_t,
-                        l_capacity,
-                        NULL,
-                        NULL,
-                        time_step);
-
-      if (l_capacity != mc->l_capacity)
-        BFT_FREE(l_capacity);
+      lcap[c_id] = 0;
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        lcap[c_id] = cdoq->pvol_vc[j] * lcap_c2v[j];
+      lcap[c_id] /= cdoq->cell_vol[c_id];
 
     }
+
+    cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_DEFAULT,
+                      "l_capacity",
+                      1,
+                      false,        /* interlace */
+                      false,        /* use parent */
+                      CS_POST_TYPE_cs_real_t,
+                      lcap,
+                      NULL,
+                      NULL,
+                      time_step);
+
+    BFT_FREE(lcap);
 
   } /* Postprocess the soil capacity */
 
   if (post_flag & CS_GWF_POST_PERMEABILITY) {
 
-    /* permeability = abs_permeability * l_rel_permeability */
+    const cs_real_t  *krl_c2v = cs_property_get_array(mc->krl_pty);
+    const cs_adjacency_t  *c2v = connect->c2v;
+
+    /* permeability = krl * abs_permeability */
 
     cs_real_t  *permeability = NULL;
     int  dim = cs_property_get_dim(abs_perm);
@@ -2800,36 +2717,51 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
       for (cs_lnum_t i = 0; i < n_cells; i++) {
 
+        cs_lnum_t  c_id =
+          (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
+
         cs_real_t  tensor[3][3];
 
-        cs_property_get_cell_tensor(cell_ids[i],
+        cs_property_get_cell_tensor(c_id,
                                     time_step->t_cur,
                                     abs_perm,
                                     false, /* inversion */
                                     tensor);
 
+        double  krl_cell = 0;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          krl_cell = cdoq->pvol_vc[j] * krl_c2v[j];
+        krl_cell /= cdoq->cell_vol[c_id];
+
         cs_real_t  *_cell_perm = permeability + post_dim*i;
         for (int ki = 0; ki < 3; ki++)
           for (int kj = 0; kj < 3; kj++)
-            _cell_perm[3*ki+kj] = tensor[ki][kj];
+            _cell_perm[3*ki+kj] = krl_cell * tensor[ki][kj];
 
-      }
+      } /* Loop on selected cells */
 
     }
     else {
 
       BFT_MALLOC(permeability, n_cells, cs_real_t);
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        permeability[c_id] = cs_property_get_cell_value(cell_ids[c_id],
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+        cs_lnum_t  c_id =
+          (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
+
+        permeability[c_id] = cs_property_get_cell_value(c_id,
                                                         time_step->t_cur,
                                                         abs_perm);
+        double  krl_cell = 0;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          krl_cell = cdoq->pvol_vc[j] * krl_c2v[j];
+        krl_cell /= cdoq->cell_vol[c_id];
 
-    }
+        permeability[c_id] *= krl_cell;
 
-    assert(mc->l_rel_permeability != NULL);
-    for (cs_lnum_t c = 0; c < n_cells; c++)
-      for (int k = 0; k < post_dim; k++)
-        permeability[post_dim*c+k] *= mc->l_rel_permeability[cell_ids[c]];
+      } /* Loop on selected cells */
+
+    } /* post_dim */
 
     cs_post_write_var(mesh_id,
                       CS_POST_WRITER_DEFAULT,
@@ -2849,14 +2781,28 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
   if (post_flag & CS_GWF_POST_GAS_MASS_DENSITY) {
 
+    const cs_adjacency_t  *c2v = connect->c2v;
+    const cs_real_t  *pg = mc->g_pressure->val;
+
     const double  mh_ov_rt =
       mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
 
     cs_real_t  *gas_mass_density = NULL;
     BFT_MALLOC(gas_mass_density, n_cells, cs_real_t);
 
-    for (cs_lnum_t c = 0; c < n_cells; c++)
-      gas_mass_density[c] = mh_ov_rt * mc->g_pressure_cells[c];
+    for (cs_lnum_t c = 0; c < n_cells; c++) {
+
+      cs_lnum_t  c_id =
+        (cell_ids == NULL || n_cells == cdoq->n_cells) ? c : cell_ids[c];
+
+      double  pg_cell = 0;
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        pg_cell = cdoq->pvol_vc[j] * pg[c2v->ids[j]];
+      pg_cell /= cdoq->cell_vol[c_id];
+
+      gas_mass_density[c_id] = mh_ov_rt * pg_cell;
+
+    } /* Loop on selected cells */
 
     cs_post_write_var(mesh_id,
                       CS_POST_WRITER_DEFAULT,

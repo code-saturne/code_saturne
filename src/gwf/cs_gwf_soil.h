@@ -249,12 +249,6 @@ typedef struct {
    *      (for instance sle_thres = 0.999 is the default value). If the value
    *      is greater or equal than 1.0, there is no polynomial joining.
    *
-   * \var sl_interpolation
-   *      If true, one evaluates in each cell the liquid saturation at each Pc
-   *      DoF and then interpolates the liquid saturation at the cell center.
-   *      If false, then one interpolates first the capillarity pressure at the
-   *      cell centers and then evaluates the liquid saturation.
-   *
    * \var pc_star
    *      capillarity pressure related to the value of sle_thres
    *
@@ -289,7 +283,6 @@ typedef struct {
   cs_gwf_soil_join_type_t    sle_jtype;
   cs_gwf_soil_join_type_t    krg_jtype;
   double                     sle_thres;
-  bool                       sl_interpolation;
 
   /* Derived quantities */
 
@@ -578,17 +571,6 @@ cs_gwf_soil_define_sspf_property(cs_property_t   *moisture_content);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if one needs to compute the capillarity at the cell centers
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_gwf_soil_need_cell_capillarity_pressures(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Build an array storing the dual volume associated to each vertex
  *        taking into account the porosity of the soil
  *        The computed quantity is stored as a static array. Use the function
@@ -741,7 +723,6 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
  *        soil model
  *
  * \param[in, out] soil        pointer to a cs_gwf_soil_t structure
- * \param[in]      sl_interp   interpolate Sl rather than Pc
  * \param[in]      sle_jtype   type of joining function for the effective Sl
  * \param[in]      krg_jtype   type of joining function for krg
  * \param[in]      sle_thres   value of the effective liquid saturation above
@@ -751,7 +732,6 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
 
 void
 cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
-                                       bool                       sl_interp,
                                        cs_gwf_soil_join_type_t    sle_jtype,
                                        cs_gwf_soil_join_type_t    krg_jtype,
                                        double                     sle_thres);

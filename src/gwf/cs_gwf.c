@@ -505,7 +505,6 @@ cs_gwf_get_two_phase_model(void)
  *
  * \param[in] use_coupled_solver            true/false
  * \param[in] use_incremental_solver        true/false
- * \param[in] use_definition_on_submesh     true/false
  * \param[in] use_diffusion_view_for_darcy  true/false
  */
 /*----------------------------------------------------------------------------*/
@@ -513,7 +512,6 @@ cs_gwf_get_two_phase_model(void)
 void
 cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
                                        bool    use_incremental_solver,
-                                       bool    use_definition_on_submesh,
                                        bool    use_diffusion_view_for_darcy)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
@@ -525,7 +523,6 @@ cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
 
   mc->use_coupled_solver = use_coupled_solver;
   mc->use_incremental_solver = use_incremental_solver;
-  mc->use_definition_on_submesh = use_definition_on_submesh;
   mc->use_diffusion_view_for_darcy = use_diffusion_view_for_darcy;
 }
 

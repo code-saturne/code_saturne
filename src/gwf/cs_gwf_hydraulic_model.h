@@ -374,7 +374,27 @@ typedef struct {
    *
    * \var diff_g_pty
    * Property used in the definition of the Darcy flux in the gas phase
+   *
+   * \var krl_pty
+   * Property related to the relative permeability in the liquid phase
+   *
+   * \var krg_pty
+   * Property related to the relative permeability in the gas phase
+   *
+   * \var lsat_pty
+   * Property related to the liquid saturation
+   *
+   * \var lcap_pty
+   * Property related to the liquid capacity (derivative of the liquid
+   * saturation w.r.t. the capillarity pressure)
    */
+
+  cs_property_t                *krl_pty;
+  cs_property_t                *krg_pty;
+  cs_property_t                *lsat_pty;
+  cs_property_t                *lcap_pty;
+
+  /* Properties associated to a discret term in the system of equations */
 
   cs_property_t                *time_wc_pty;
   cs_property_t                *diff_wl_pty;
@@ -422,51 +442,6 @@ typedef struct {
    * @name Additional arrays
    * @{
    *
-   * \var time_wc_array
-   *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the water conservation equation associated to the
-   *      capillarity pressure as variable. This array is linked to the \ref
-   *      time_wc_pty (size = n_cells or c2v->idx[n_cells] if the definition
-   *      relies on a submesh)
-   *
-   * \var diff_wl_array
-   *      Values in each cell of the coefficient appearing in the diffusion
-   *      term in the water conservation equation. This array is linked to the
-   *      \ref diff_wl_pty (size = n_cells)
-   *
-   * \var time_hc_array
-   *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the hydrogen conservation equation associated to the
-   *      capillarity pressure. This array is linked to the \ref time_hc_pty
-   *      (size = n_cells or c2v->idx[n_cells] if the definition relies on a
-   *      submesh)
-   *
-   * \var diff_hc_array
-   *      Values in each cell of the coefficient appearing in the diffusion
-   *      term in the hydrogen conservation equation associated to the
-   *      capillarity pressure This array is linked to the \ref diff_hc_pty
-   *      (size = n_cells). This term may be useless according to the numerical
-   *      options.
-   *
-   * \var time_hl_array
-   *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the hydrogen conservation equation w.r.t. the
-   *      pressure in the liquid phase. This array is linked to the \ref
-   *      time_hl_pty (size = n_cells or c2v->idx[n_cells] if the definition
-   *      relies on a submesh)
-   *
-   * \var diff_hl_array
-   *      Values in each cell of the coefficient appearing in the diffusion
-   *      term in the hydrogen conservation equation w.r.t. the pressure in the
-   *      liquid phase.  This array is linked to the \ref diff_hl_pty (size
-   *      = n_cells)
-   *
-   * \var reac_h_array
-   *      Values of the reaction coefficient appearing in the diffusion term in
-   *      the hydrogen conservation equation w.r.t. the pressure in the liquid
-   *      phase.  This array is linked to the \ref diff_hl_pty (size = n_cells
-   *      or c2v->idx[n_cells] if the definition relies on a submesh)
-   *
    * \var srct_w_array
    *      Values of the source terms for the water conservation equation. Only
    *      used if a segregated solver is considered. Size = n_cells or
@@ -476,84 +451,10 @@ typedef struct {
    *      Values of the source terms for the hydrogen conservation equation.
    *      Only used if a segregated solver is considered. Size = n_cells or
    *      c2v->idx[n_cells] if the definition relies on a submesh
-   *
-   * \var reac_h_array
-   *      Values of the reaction coefficient appearing in the hydrogen
-   *      conservation equation. Only used if a segregated solver is
-   *      considered. Size = n_cells or c2v->idx[n_cells] if the definition
-   *      relies on a submesh
-   *
-   * \var diff_g_array
-   *      Values of the diffusion coefficient used to compute the Darcy flux
-   *      in the gaz phase. Size = n_cells
    */
-
-  cs_real_t                    *time_wc_array;
-  cs_real_t                    *diff_wl_array;
-
-  cs_real_t                    *time_hc_array;
-  cs_real_t                    *diff_hc_array;
-
-  cs_real_t                    *time_hl_array;
-  cs_real_t                    *diff_hl_array;
 
   cs_real_t                    *srct_w_array;
   cs_real_t                    *srct_h_array;
-  cs_real_t                    *reac_h_array;
-
-  cs_real_t                    *diff_g_array;
-
-  /*
-   * \var l_rel_permeability
-   *      Values in each cell of the relative permeability in the liquid phase.
-   *      This quantity is used either in the water conservation or in the
-   *      hydrogen conservation. This enables also to recover the (full)
-   *      permeability in the liquid phase since
-   *      permeability = abs_permeability * rel_l_permeability
-   *      This quantity is defined by the soil model.
-   *
-   * \var g_rel_permeability
-   *      Values in each cell of the relative permeability in the gas phase.
-   *      This quantity is used either in the water conservation or in the
-   *      hydrogen conservation. This enables also to recover the (full)
-   *      permeability in the gas phase since
-   *      permeability = abs_permeability * rel_l_permeability
-   *      This quantity is defined by the soil model.
-   *
-   * \var c_pressure_cells
-   *      Values in each cell of the capillarity pressure. This quantity is the
-   *      one used to update the variable related to a soil model such as the
-   *      liquid and gaseous relative permeabilities or the liquid saturation.
-   *
-   * \var g_pressure_cells
-   *      Values in each cell of the gas pressure. This quantity is the one
-   *      used to update the unsteady/diffusion term coefficients in the
-   *      conservation equation for the gas component. This quantity can also
-   *      be useful for post-processing purposes.
-   *
-   * \var l_capacity
-   *      Values in each cell of the soil capacity defined as
-   *      \f$ \frac{\partial S_l}{\partial P_c} \f$
-   *      This quantity is defined by the soil model.
-   *
-   * \var l_saturation_submesh
-   *      Array storing the current values of the liquid saturation on a
-   *      submesh. This submesh corresponds to the subdivision of the primal
-   *      mesh by the dual mesh associated to each vertex (scanned this array
-   *      with the c2v adjacency structure). This array is allocated only if
-   *      the option CS_GWF_LIQUID_SATURATION_ON_SUBMESH is switch on.
-   */
-
-  cs_real_t                    *l_rel_permeability;
-  cs_real_t                    *g_rel_permeability;
-
-  /* These arrays are not always allocated. It depends on the numerical
-     settings */
-
-  cs_real_t                    *c_pressure_cells;
-  cs_real_t                    *g_pressure_cells;
-  cs_real_t                    *l_capacity;
-  cs_real_t                    *l_saturation_submesh;
 
   /*!
    * @}
@@ -626,9 +527,6 @@ typedef struct {
    *        the problem using increment and to iterate on the non-linear
    *        process (for instance whith a Picard or Anderson acceleration)
    *
-   * \var use_definition_on_submesh
-   * \brief Consider a submesh to define the liquid saturation
-   *
    * \var use_diffusion_view_for_darcy
    * \brief Use a diffusion term for the discretization of the Darcy terms in
    *        the conservation equation for the mass of hydrogen. The default
@@ -655,7 +553,6 @@ typedef struct {
 
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;
-  bool                           use_definition_on_submesh;
   bool                           use_diffusion_view_for_darcy;
 
   cs_param_nl_algo_t             nl_algo_type;
