@@ -904,7 +904,6 @@ _update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
 {
   const cs_adjacency_t  *c2v = connect->c2v;
 
-  const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
 
@@ -949,8 +948,7 @@ _update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
     const double  phi_rhol = phi * mc->l_mass_density;
 
     const double  g_diff_coef = k_abs/mc->g_viscosity;
-    const double  l_diff_coef = k_abs/mc->l_viscosity;
-    const double  wl_diff_coef = mc->l_mass_density * l_diff_coef;
+    const double  wl_diff_coef = mc->l_mass_density * k_abs/mc->l_viscosity;
 
     /* Loop on cells belonging to this soil */
 
@@ -964,17 +962,17 @@ _update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
         const cs_lnum_t  v_id = c2v->ids[j];
+        const double  pvc = cdoq->pvol_vc[j];
 
         const double  rhog_h = mh_ov_rt * pg[v_id];
-        const double  rhol_h = hmh * pg[v_id];
-        const double  pvc = cdoq->pvol_vc[j];
         const double  sl = lsat[j], sg = 1 - sl;
         const double  dsl_dpc = lcap[j];
-        const double  krg_coef = krg[j] * g_diff_coef;
 
         /* Update terms for the Darcy flux in the gas phase */
 
-        diff_g += pvc * krg_coef;
+        const double  diff_g_term = pvc * krg[j] * g_diff_coef;
+
+        diff_g += diff_g_term;
 
         /* Update terms associated to the water conservation equation */
 
@@ -983,13 +981,15 @@ _update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
 
         /* Update terms associated to the hydrogen conservation equation */
 
-        const double  time_h_coef = mh_ov_rt*sg + hmh*sl;
+        const double  time_h_coef = mh_ov_rt*sg;
 
-        time_hc += pvc * (time_h_coef + (rhol_h - rhog_h) * dsl_dpc);
+        time_hc += pvc * (time_h_coef - rhog_h * dsl_dpc);
         time_hl += pvc * time_h_coef;
 
-        diff_hc += pvc * rhog_h * krg_coef;
-        diff_hl += pvc * (rhog_h * krg_coef + rhol_h * l_diff_coef * krl[j]);
+        const double  diff_h_coef = diff_g_term * rhog_h;
+
+        diff_hc += diff_h_coef;
+        diff_hl += diff_h_coef;
 
       } /* Loop on cell vertices */
 
@@ -999,8 +999,10 @@ _update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
       const double  inv_volc = 1./cdoq->cell_vol[c_id];
 
       diff_g_array[c_id]  = inv_volc * diff_g;
+
       time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
       diff_wl_array[c_id] = inv_volc * diff_wl * wl_diff_coef;
+
       time_hc_array[c_id] = inv_volc * time_hc * phi;
       time_hl_array[c_id] = inv_volc * time_hl * phi;
       diff_hc_array[c_id] = inv_volc * diff_hc;
@@ -1702,11 +1704,11 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
     mc->henry_constant = 1e-7;    /* default value */
 
   }
-  else {
+  else { /* immiscible case */
 
     mc->is_miscible = false;
-    mc->l_diffusivity_h = 0;      /* immiscible case */
-    mc->henry_constant = 1e-20;   /* nearly immiscible case */
+    mc->l_diffusivity_h = 0;
+    mc->henry_constant = 0;
 
   }
 
