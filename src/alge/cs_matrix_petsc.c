@@ -156,11 +156,11 @@ static char _init_status = 0; /* 0 at start,  1 if initialized, 2 if finalized *
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_aij(const cs_matrix_t  *matrix,
-               bool                exclude_diag,
-               bool                sync,
-               cs_real_t          *restrict x,
-               cs_real_t          *restrict y)
+_mat_vec_p_aij(cs_matrix_t  *matrix,
+               bool          exclude_diag,
+               bool          sync,
+               cs_real_t    *restrict x,
+               cs_real_t    *restrict y)
 {
   CS_NO_WARN_IF_UNUSED(sync);
   assert(exclude_diag == false);

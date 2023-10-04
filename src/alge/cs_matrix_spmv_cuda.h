@@ -111,11 +111,11 @@ cs_matrix_spmv_cuda_get_stream(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t           d_x[restrict],
-                           cs_real_t           d_y[restrict]);
+cs_matrix_spmv_cuda_native(cs_matrix_t  *matrix,
+                           bool          exclude_diag,
+                           bool          sync,
+                           cs_real_t     d_x[restrict],
+                           cs_real_t     d_y[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -130,11 +130,11 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_csr(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           d_x[restrict],
-                        cs_real_t           d_y[restrict]);
+cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
+                        bool          exclude_diag,
+                        bool          sync,
+                        cs_real_t     d_x[restrict],
+                        cs_real_t     d_y[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -168,11 +168,11 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_msr(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           d_x[restrict],
-                        cs_real_t           d_y[restrict]);
+cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
+                        bool          exclude_diag,
+                        bool          sync,
+                        cs_real_t     d_x[restrict],
+                        cs_real_t     d_y[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -219,6 +219,11 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
  *        cuSPARSE version.
+ *
+ * Remark: this functions is available with older cuSPARSE versions not
+ *         providing the generic API, because they
+ *         assume dense matrixes are always in column-major order, while
+ *         row-major is needed with interleaved blocks.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,

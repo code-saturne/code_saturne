@@ -586,11 +586,11 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                    bool                exclude_diag,
-                    bool                sync,
-                    cs_real_t           x[restrict],
-                    cs_real_t           y[restrict])
+_mat_vec_p_l_native(cs_matrix_t  *matrix,
+                    bool          exclude_diag,
+                    bool          sync,
+                    cs_real_t     x[restrict],
+                    cs_real_t     y[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
 
@@ -660,11 +660,11 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                      bool                exclude_diag,
-                      bool                sync,
-                      cs_real_t           x[restrict],
-                      cs_real_t           y[restrict])
+_b_mat_vec_p_l_native(cs_matrix_t  *matrix,
+                      bool          exclude_diag,
+                      bool          sync,
+                      cs_real_t     x[restrict],
+                      cs_real_t     y[restrict])
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -739,11 +739,11 @@ _b_mat_vec_p_l_native(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_bb_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                       bool                exclude_diag,
-                       bool                sync,
-                       cs_real_t           x[restrict],
-                       cs_real_t           y[restrict])
+_bb_mat_vec_p_l_native(cs_matrix_t  *matrix,
+                       bool          exclude_diag,
+                       bool          sync,
+                       cs_real_t     x[restrict],
+                       cs_real_t     y[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
 
@@ -818,11 +818,11 @@ _bb_mat_vec_p_l_native(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_3_3_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           x[restrict],
-                        cs_real_t           y[restrict])
+_3_3_mat_vec_p_l_native(cs_matrix_t  *matrix,
+                        bool          exclude_diag,
+                        bool          sync,
+                        cs_real_t     x[restrict],
+                        cs_real_t     y[restrict])
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -900,11 +900,11 @@ _3_3_mat_vec_p_l_native(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_6_6_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           x[restrict],
-                        cs_real_t           y[restrict])
+_6_6_mat_vec_p_l_native(cs_matrix_t  *matrix,
+                        bool          exclude_diag,
+                        bool          sync,
+                        cs_real_t     x[restrict],
+                        cs_real_t     y[restrict])
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -982,11 +982,11 @@ _6_6_mat_vec_p_l_native(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_native_fixed(const cs_matrix_t  *matrix,
-                            bool                exclude_diag,
-                            bool                sync,
-                            cs_real_t           x[restrict],
-                            cs_real_t           y[restrict])
+_b_mat_vec_p_l_native_fixed(cs_matrix_t  *matrix,
+                            bool          exclude_diag,
+                            bool          sync,
+                            cs_real_t     x[restrict],
+                            cs_real_t     y[restrict])
 {
   if (matrix->db_size == 3)
     _3_3_mat_vec_p_l_native(matrix, exclude_diag, sync, x, y);
@@ -1012,11 +1012,11 @@ _b_mat_vec_p_l_native_fixed(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           x[restrict],
-                        cs_real_t           y[restrict])
+_mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
+                        bool          exclude_diag,
+                        bool          sync,
+                        cs_real_t     x[restrict],
+                        cs_real_t     y[restrict])
 {
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
@@ -1105,11 +1105,11 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
-                          bool                exclude_diag,
-                          bool                sync,
-                          cs_real_t           x[restrict],
-                          cs_real_t           y[restrict])
+_b_mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
+                          bool          exclude_diag,
+                          bool          sync,
+                          cs_real_t     x[restrict],
+                          cs_real_t     y[restrict])
 {
   const cs_lnum_t db_size = matrix->db_size;
 
@@ -1206,11 +1206,11 @@ _b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
-                               bool                exclude_diag,
-                               bool                sync,
-                               cs_real_t           x[restrict],
-                               cs_real_t           y[restrict])
+_mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
+                               bool          exclude_diag,
+                               bool          sync,
+                               cs_real_t     x[restrict],
+                               cs_real_t     y[restrict])
 {
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -1281,11 +1281,11 @@ _mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
-                                 bool                exclude_diag,
-                                 bool                sync,
-                                 cs_real_t           x[restrict],
-                                 cs_real_t           y[restrict])
+_b_mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
+                                 bool          exclude_diag,
+                                 bool          sync,
+                                 cs_real_t     x[restrict],
+                                 cs_real_t     y[restrict])
 {
   const cs_lnum_t db_size = matrix->db_size;
 
@@ -1366,11 +1366,11 @@ _b_mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t           x[restrict],
-                           cs_real_t           y[restrict])
+_mat_vec_p_l_native_vector(cs_matrix_t  *matrix,
+                           bool          exclude_diag,
+                           bool          sync,
+                           cs_real_t     x[restrict],
+                           cs_real_t     y[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
@@ -1454,11 +1454,11 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_csr(const cs_matrix_t  *matrix,
-                 bool                exclude_diag,
-                 bool                sync,
-                 cs_real_t          *restrict x,
-                 cs_real_t          *restrict y)
+_mat_vec_p_l_csr(cs_matrix_t  *matrix,
+                 bool          exclude_diag,
+                 bool          sync,
+                 cs_real_t    *restrict x,
+                 cs_real_t    *restrict y)
 {
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
@@ -1518,11 +1518,11 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
 #if defined (HAVE_MKL)
 
 static void
-_mat_vec_p_l_csr_mkl(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t          *restrict x,
-                     cs_real_t          *restrict y)
+_mat_vec_p_l_csr_mkl(cs_matrix_t  *matrix,
+                     bool          exclude_diag,
+                     bool          sync,
+                     cs_real_t    *restrict x,
+                     cs_real_t    *restrict y)
 {
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
@@ -1566,11 +1566,11 @@ _mat_vec_p_l_csr_mkl(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                 bool                exclude_diag,
-                 bool                sync,
-                 cs_real_t          *restrict x,
-                 cs_real_t          *restrict y)
+_mat_vec_p_l_msr(cs_matrix_t  *matrix,
+                 bool          exclude_diag,
+                 bool          sync,
+                 cs_real_t    *restrict x,
+                 cs_real_t    *restrict y)
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -1642,11 +1642,11 @@ _mat_vec_p_l_msr(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_msr_omp_sched(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t          *restrict x,
-                           cs_real_t          *restrict y)
+_mat_vec_p_l_msr_omp_sched(cs_matrix_t  *matrix,
+                           bool          exclude_diag,
+                           bool          sync,
+                           cs_real_t    *restrict x,
+                           cs_real_t    *restrict y)
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -1767,11 +1767,11 @@ _mat_vec_p_l_msr_omp_sched(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t           x[restrict],
-                           cs_real_t           y[restrict])
+_b_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
+                           bool          exclude_diag,
+                           bool          sync,
+                           cs_real_t     x[restrict],
+                           cs_real_t     y[restrict])
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -1852,11 +1852,11 @@ _b_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t          *restrict x,
-                     cs_real_t          *restrict y)
+_b_mat_vec_p_l_msr_3(cs_matrix_t  *matrix,
+                     bool          exclude_diag,
+                     bool          sync,
+                     cs_real_t    *restrict x,
+                     cs_real_t    *restrict y)
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -1933,11 +1933,11 @@ _b_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_msr_6(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t           x[restrict],
-                     cs_real_t           y[restrict])
+_b_mat_vec_p_l_msr_6(cs_matrix_t  *matrix,
+                     bool          exclude_diag,
+                     bool          sync,
+                     cs_real_t     x[restrict],
+                     cs_real_t     y[restrict])
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -2016,11 +2016,11 @@ _b_mat_vec_p_l_msr_6(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                   bool                exclude_diag,
-                   bool                sync,
-                   cs_real_t           x[restrict],
-                   cs_real_t           y[restrict])
+_b_mat_vec_p_l_msr(cs_matrix_t  *matrix,
+                   bool          exclude_diag,
+                   bool          sync,
+                   cs_real_t     x[restrict],
+                   cs_real_t     y[restrict])
 {
   if (matrix->db_size == 3)
     _b_mat_vec_p_l_msr_3(matrix, exclude_diag, sync, x, y);
@@ -2044,11 +2044,11 @@ _b_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_bb_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
-                      bool                exclude_diag,
-                      bool                sync,
-                      cs_real_t           x[restrict],
-                      cs_real_t           y[restrict])
+_bb_mat_vec_p_l_msr_3(cs_matrix_t  *matrix,
+                      bool          exclude_diag,
+                      bool          sync,
+                      cs_real_t     x[restrict],
+                      cs_real_t     y[restrict])
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -2141,11 +2141,11 @@ _bb_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_bb_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
-                            bool                exclude_diag,
-                            bool                sync,
-                            cs_real_t           x[restrict],
-                            cs_real_t           y[restrict])
+_bb_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
+                            bool          exclude_diag,
+                            bool          sync,
+                            cs_real_t     x[restrict],
+                            cs_real_t     y[restrict])
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -2238,11 +2238,11 @@ _bb_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_bb_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                    bool                exclude_diag,
-                    bool                sync,
-                    cs_real_t           x[restrict],
-                    cs_real_t           y[restrict])
+_bb_mat_vec_p_l_msr(cs_matrix_t  *matrix,
+                    bool          exclude_diag,
+                    bool          sync,
+                    cs_real_t     x[restrict],
+                    cs_real_t     y[restrict])
 {
   if (matrix->eb_size == 3)
     _bb_mat_vec_p_l_msr_3(matrix, exclude_diag, sync, x, y);
@@ -2267,11 +2267,11 @@ _bb_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
 #if defined (HAVE_MKL)
 
 static void
-_mat_vec_p_l_msr_mkl(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t           x[restrict],
-                     cs_real_t           y[restrict])
+_mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
+                     bool          exclude_diag,
+                     bool          sync,
+                     cs_real_t     x[restrict],
+                     cs_real_t     y[restrict])
 {
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -2321,11 +2321,11 @@ _mat_vec_p_l_msr_mkl(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_dist(const cs_matrix_t  *matrix,
-                  bool                exclude_diag,
-                  bool                sync,
-                  cs_real_t          *restrict x,
-                  cs_real_t          *restrict y)
+_mat_vec_p_l_dist(cs_matrix_t  *matrix,
+                  bool          exclude_diag,
+                  bool          sync,
+                  cs_real_t    *restrict x,
+                  cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -2388,11 +2388,11 @@ _mat_vec_p_l_dist(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_l_dist_omp_sched(const cs_matrix_t  *matrix,
-                           bool                 exclude_diag,
-                           bool                 sync,
-                           cs_real_t           *restrict x,
-                           cs_real_t           *restrict y)
+_mat_vec_p_l_dist_omp_sched(cs_matrix_t  *matrix,
+                            bool          exclude_diag,
+                            bool          sync,
+                            cs_real_t    *restrict x,
+                            cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -2453,11 +2453,11 @@ _mat_vec_p_l_dist_omp_sched(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_dist_generic(const cs_matrix_t  *matrix,
-                            bool                exclude_diag,
-                            bool                sync,
-                            cs_real_t           x[restrict],
-                            cs_real_t           y[restrict])
+_b_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
+                            bool          exclude_diag,
+                            bool          sync,
+                            cs_real_t     x[restrict],
+                            cs_real_t     y[restrict])
 {
   /* Initialize halo synchronization */
 
@@ -2522,11 +2522,11 @@ _b_mat_vec_p_l_dist_generic(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_dist_3(const cs_matrix_t  *matrix,
-                      bool                exclude_diag,
-                      bool                sync,
-                      cs_real_t          *restrict x,
-                      cs_real_t          *restrict y)
+_b_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
+                      bool          exclude_diag,
+                      bool          sync,
+                      cs_real_t    *restrict x,
+                      cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -2587,11 +2587,11 @@ _b_mat_vec_p_l_dist_3(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_dist_6(const cs_matrix_t  *matrix,
-                      bool                exclude_diag,
-                      bool                sync,
-                      cs_real_t           x[restrict],
-                      cs_real_t           y[restrict])
+_b_mat_vec_p_l_dist_6(cs_matrix_t  *matrix,
+                      bool          exclude_diag,
+                      bool          sync,
+                      cs_real_t     x[restrict],
+                      cs_real_t     y[restrict])
 {
   /* Initialize halo synchronization */
 
@@ -2654,11 +2654,11 @@ _b_mat_vec_p_l_dist_6(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_mat_vec_p_l_dist(const cs_matrix_t  *matrix,
-                    bool                exclude_diag,
-                    bool                sync,
-                    cs_real_t           x[restrict],
-                    cs_real_t           y[restrict])
+_b_mat_vec_p_l_dist(cs_matrix_t  *matrix,
+                    bool          exclude_diag,
+                    bool          sync,
+                    cs_real_t     x[restrict],
+                    cs_real_t     y[restrict])
 {
   if (matrix->db_size == 3)
     _b_mat_vec_p_l_dist_3(matrix, exclude_diag, sync, x, y);
@@ -2682,11 +2682,11 @@ _b_mat_vec_p_l_dist(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_bb_mat_vec_p_l_dist_3(const cs_matrix_t  *matrix,
-                       bool                exclude_diag,
-                       bool                sync,
-                       cs_real_t           x[restrict],
-                       cs_real_t           y[restrict])
+_bb_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
+                       bool          exclude_diag,
+                       bool          sync,
+                       cs_real_t     x[restrict],
+                       cs_real_t     y[restrict])
 {
   /* Initialize halo synchronization */
 
@@ -2756,11 +2756,11 @@ _bb_mat_vec_p_l_dist_3(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_bb_mat_vec_p_l_dist_generic(const cs_matrix_t  *matrix,
-                             bool                exclude_diag,
-                             bool                sync,
-                             cs_real_t           x[restrict],
-                             cs_real_t           y[restrict])
+_bb_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
+                             bool          exclude_diag,
+                             bool          sync,
+                             cs_real_t     x[restrict],
+                             cs_real_t     y[restrict])
 {
   /* Initialize halo synchronization */
 
@@ -2831,11 +2831,11 @@ _bb_mat_vec_p_l_dist_generic(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_bb_mat_vec_p_l_dist(const cs_matrix_t  *matrix,
-                    bool                exclude_diag,
-                    bool                sync,
-                    cs_real_t           x[restrict],
-                    cs_real_t           y[restrict])
+_bb_mat_vec_p_l_dist(cs_matrix_t  *matrix,
+                     bool          exclude_diag,
+                     bool          sync,
+                     cs_real_t     x[restrict],
+                     cs_real_t     y[restrict])
 {
   if (matrix->eb_size == 3)
     _bb_mat_vec_p_l_dist_3(matrix, exclude_diag, sync, x, y);
@@ -2860,11 +2860,11 @@ _bb_mat_vec_p_l_dist(const cs_matrix_t  *matrix,
 #if defined (HAVE_MKL)
 
 static void
-_mat_vec_p_l_dist_mkl(const cs_matrix_t  *matrix,
-                      bool                exclude_diag,
-                      bool                sync,
-                      cs_real_t           x[restrict],
-                      cs_real_t           y[restrict])
+_mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
+                      bool          exclude_diag,
+                      bool          sync,
+                      cs_real_t     x[restrict],
+                      cs_real_t     y[restrict])
 {
   /* Initialize halo synchronization */
 

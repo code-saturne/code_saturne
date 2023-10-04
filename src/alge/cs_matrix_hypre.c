@@ -185,11 +185,11 @@ _ensure_device_setup(int  use_device)
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_parcsr(const cs_matrix_t  *matrix,
-                  bool                exclude_diag,
-                  bool                sync,
-                  cs_real_t          *restrict x,
-                  cs_real_t          *restrict y)
+_mat_vec_p_parcsr(cs_matrix_t  *matrix,
+                  bool          exclude_diag,
+                  bool          sync,
+                  cs_real_t    *restrict x,
+                  cs_real_t    *restrict y)
 {
   assert(exclude_diag == false);
 

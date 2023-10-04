@@ -97,7 +97,7 @@ typedef cs_matrix_assembler_values_t *
  * Function pointer for matrix-veector product (y = A.x).
  *
  * parameters:
- *   matrix       <-- pointer to matrix structure
+ *   matrix       <-> pointer to matrix structure
  *   exclude_diag <-- if true, compute (A-D).x instead of A.x
  *   sync         <-- if true, synchronize ghost values
  *   x            <-- x input vector (may be synchronized by this function)
@@ -105,11 +105,11 @@ typedef cs_matrix_assembler_values_t *
  *----------------------------------------------------------------------------*/
 
 typedef void
-(cs_matrix_vector_product_t) (const cs_matrix_t  *matrix,
-                              bool                exclude_diag,
-                              bool                sync,
-                              cs_real_t          *restrict x,
-                              cs_real_t          *restrict y);
+(cs_matrix_vector_product_t) (cs_matrix_t  *matrix,
+                              bool          exclude_diag,
+                              bool          sync,
+                              cs_real_t    *restrict x,
+                              cs_real_t    *restrict y);
 
 /*----------------------------------------------------------------------------
  * Matrix types

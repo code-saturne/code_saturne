@@ -1295,17 +1295,17 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
  * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (device)
- * \param[out]  d_y           resulting vector (device)
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_csr(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           d_x[restrict],
-                        cs_real_t           d_y[restrict])
+cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
+                        bool          exclude_diag,
+                        bool          sync,
+                        cs_real_t     d_x[restrict],
+                        cs_real_t     d_y[restrict])
 {
   const cs_matrix_struct_csr_t *ms
     = (const cs_matrix_struct_csr_t *)matrix->structure;
@@ -1514,11 +1514,11 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_msr(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           d_x[restrict],
-                        cs_real_t           d_y[restrict])
+cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
+                        bool          exclude_diag,
+                        bool          sync,
+                        cs_real_t     d_x[restrict],
+                        cs_real_t     d_y[restrict])
 {
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -1809,10 +1809,10 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
  * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
  *        cuSPARSE version.
  *
- * Remmark: this functions is available with older cuSPARSE versions not
- *          providing the generic API, because they
- *          assume dense matrixes are always in column-major order, while
- *          row-major is needed with interleaved blocks.
+ * Remark: this functions is available with older cuSPARSE versions not
+ *         providing the generic API, because they
+ *         assume dense matrixes are always in column-major order, while
+ *         row-major is needed with interleaved blocks.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
