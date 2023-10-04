@@ -784,7 +784,7 @@ _svb_imp_euler_lumped_incr(const cs_equation_param_t   *eqp,
  * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
  *        Case of an implicit Euler time scheme with a lumped mass matrix and a
  *        property defined on a partition of the cell (the dual volume
- *        interected by the primal cell)
+ *        intersected by the primal cell)
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -798,12 +798,12 @@ _svb_imp_euler_lumped_incr(const cs_equation_param_t   *eqp,
 
 static void
 _svb_imp_euler_lumped_subcell(const cs_equation_param_t   *eqp,
-                                   const cs_cell_mesh_t        *cm,
-                                   const cs_hodge_t            *mass_hodge,
-                                   const double                 inv_dtcur,
-                                   cs_equation_builder_t       *eqb,
-                                   cs_cell_builder_t           *cb,
-                                   cs_cell_sys_t               *csys)
+                              const cs_cell_mesh_t        *cm,
+                              const cs_hodge_t            *mass_hodge,
+                              const double                 inv_dtcur,
+                              cs_equation_builder_t       *eqb,
+                              cs_cell_builder_t           *cb,
+                              cs_cell_sys_t               *csys)
 {
   CS_UNUSED(mass_hodge);
   CS_UNUSED(eqb);
