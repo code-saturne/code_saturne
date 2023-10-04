@@ -1093,20 +1093,6 @@ _n_stat_types(void)
 
 /*---------------------------------------------------------------------------*/
 /*!
- * \brief Return number of possible statistics types including events.
- *
- * \return number of possible statistics types
- */
-/*---------------------------------------------------------------------------*/
-
-inline static int
-_n_e_stat_types(void)
-{
-  return CS_LAGR_STAT_ATTR + CS_LAGR_N_E_ATTRIBUTES;
-}
-
-/*---------------------------------------------------------------------------*/
-/*!
  * \brief Create statistical weight
  *
  * \param[in]   stat_group  statistics group (particle or event)

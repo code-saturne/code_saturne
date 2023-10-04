@@ -392,8 +392,6 @@ cs_coal_boundary_conditions(int  bc_type[])
   cs_combustion_model_t *cm = cs_glob_combustion_model;
   cs_coal_model_t *coal = cm->coal;
 
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-
   const int n_coals = coal->n_coals;
 
   cs_field_t *f = NULL;
@@ -853,8 +851,6 @@ cs_coal_boundary_conditions(int  bc_type[])
 
   if (cm->idrift == 1) {
 
-    int i_shift = 0;
-
     for (int icha = 0; icha < n_coals; icha++) {
 
       for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++) {
@@ -899,8 +895,6 @@ cs_coal_boundary_conditions(int  bc_type[])
         }
 
       } /* loop on classes */
-
-      i_shift += coal->n_classes_per_coal[icha];
 
     } /* loop on coals */
 

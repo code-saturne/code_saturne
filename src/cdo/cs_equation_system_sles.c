@@ -157,7 +157,9 @@ cs_equation_system_sles_init(int                            n_eqs,
   CS_UNUSED(n_eqs);
   assert(sysp != NULL);
 
+#if defined(HAVE_MUMPS)
   const cs_param_sles_t  *sys_slesp = sysp->sles_param;
+#endif
 
   switch (sysp->sles_strategy) {
 

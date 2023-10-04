@@ -31,11 +31,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 BEGIN_C_DECLS
 
 /*=============================================================================

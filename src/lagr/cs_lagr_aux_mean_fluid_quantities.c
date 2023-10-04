@@ -323,7 +323,6 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       }
 
       cs_var_cal_opt_t vcopt_vel;
-      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
       /* Get the calculation option from the velocity field */
       cs_field_get_key_struct(extra->vel, key_cal_opt_id, &vcopt_vel);

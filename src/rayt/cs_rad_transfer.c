@@ -332,7 +332,7 @@ cs_rad_transfer_finalize(void)
 
 bool
 cs_rad_time_is_active(void) {
-  const cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
   const cs_time_step_t *ts = cs_glob_time_step;
   return cs_time_control_is_active(&(rt_params->time_control), ts);
 }

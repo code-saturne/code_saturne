@@ -239,9 +239,6 @@ _set_default_input_if_needed(void)
 
   if (_n_mesh_files == 0) {
 
-    cs_preprocessor_data_restart_mode_t restart_mode
-      = cs_preprocessor_data_get_restart_mode();
-
     switch(_input_present%100) {
     case 1:
       input_path = _input_default;

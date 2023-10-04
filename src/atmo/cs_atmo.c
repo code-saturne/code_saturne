@@ -2167,7 +2167,6 @@ cs_soil_model(void)
   int z_id = cs_glob_atmo_option->soil_zone_id;
   if (z_id > -1) {
 
-    const cs_domain_t *domain = cs_glob_domain;
     cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
     const cs_real_t stephn = cs_physical_constants_stephan;

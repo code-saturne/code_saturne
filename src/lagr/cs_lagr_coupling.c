@@ -473,8 +473,6 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
           cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
                                                      CS_LAGR_CELL_ID);
-          cs_lnum_t icha = cs_lagr_particle_get_lnum(particle, p_am,
-                                                     CS_LAGR_COAL_ID);
 
           cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
                                                           CS_LAGR_MASS);

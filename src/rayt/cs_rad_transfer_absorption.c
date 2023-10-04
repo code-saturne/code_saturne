@@ -159,10 +159,11 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
     if (rt_params->imodak > 0) {
 
       const int n_gas_e = cm->n_gas_el_comp;
-      const int n_gas_g = cm->n_gas_species;
-      cs_real_t Xpro, dmm;
-      double xk[n_gas_e], yi[2];
+      cs_real_t xpro;
+      double xk[n_gas_e], yi[3];
       double yk[n_gas_e];
+
+      assert(n_gas_e <= 3);  /* for consistency of yi[] usage. */
 
       const cs_real_t xsoot = cm->gas->xsoot;
       const cs_real_t rosoot = cm->gas->rosoot;
@@ -208,10 +209,10 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         yi[1] = cpro_ym2[cell_id];
         yi[2] = cpro_ym3[cell_id];
         cs_combustion_gas_yg2xye(yi, yk, xk);
-        Xpro = (xk[2] + xk[3]);
+        xpro = (xk[2] + xk[3]);
         w3[cell_id] = ys * crom[cell_id] / rosoot;
-        if (rt_params->imodak ==2){
-          cpro_cak0[cell_id] =  1225. * w3[cell_id] * cpro_temp[cell_id] +0.1 * Xpro;
+        if (rt_params->imodak ==2) {
+          cpro_cak0[cell_id] =  1225. * w3[cell_id] * cpro_temp[cell_id] +0.1 * xpro;
         }
       }
       if (rt_params->imodak == 1) {

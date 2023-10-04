@@ -2558,7 +2558,6 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   cs_lnum_t  i, k, tr_id, rank, shift, ghost_id;
   cs_real_t matrix[3][4];
 
-  cs_lnum_t  n_recv_particles = 0;
   cs_lnum_t  particle_count = 0;
 
   cs_lnum_t  n_merged_particles = 0;
@@ -2589,7 +2588,6 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
     _lagr_halo_count(mesh, lag_halo, particles);
 
     for (i = 0; i < halo->n_c_domains; i++) {
-      n_recv_particles += lag_halo->recv_count[i];
       lag_halo->send_count[i] = 0;
     }
   }

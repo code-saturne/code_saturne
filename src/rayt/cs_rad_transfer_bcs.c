@@ -237,8 +237,9 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
 void
 cs_rad_transfer_bcs(int bc_type[])
 {
-  const cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
   const cs_time_step_t *ts = cs_glob_time_step;
+
   /* By pass BCs if time step is not active */
   bool is_active = cs_time_control_is_active(&(rt_params->time_control),ts);
 
