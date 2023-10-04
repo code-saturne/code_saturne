@@ -71,7 +71,9 @@ if test "x$cs_have_cuda" != "xno" ; then
     CUDA_ARCH_NUM="60 70 80"
   fi
 
-  NVCCFLAGS="-ccbin $CXX -DHAVE_CONFIG_H"  # wrap C++ compiler arount nvcc
+  user_nvccflags="${NVCCFLAGS}"
+
+  NVCCFLAGS="-DHAVE_CONFIG_H"  # wrap C++ compiler arount nvcc
   if test "$CUDA_ARCH_NUM" != ""; then
     touch conftest.cu
     for cu_arch in $CUDA_ARCH_NUM; do
@@ -84,6 +86,10 @@ if test "x$cs_have_cuda" != "xno" ; then
   fi
 
   NVCCFLAGS="${NVCCFLAGS} -Xptxas -v"
+
+  if test "$user_nvccflags" != ""; then
+    NVCCFLAGS="${NVCCFLAGS} ${user_nvccflags}"
+  fi
 
   AC_DEFINE([HAVE_CUDA], 1, [CUDA offload support])
 
