@@ -339,6 +339,7 @@ if (idtvar.ge.0) then
       enddo
 
       ! When using VoF we also compute the volume Courant number (without rho)
+      ! It replaces the mass Courant number constraint
       if (ivofmt.gt.0) then
 
         call matrdt(vcopt_u%iconv, idiff0, isym, coefbt, cofbft,   &
@@ -346,7 +347,7 @@ if (idtvar.ge.0) then
 
         ! Compute w1 = time step verifying CFL constraint given by the user
         do iel = 1, ncel
-          w1(iel) = min(w1(iel), coumax / (max(dam(iel)/volume(iel), epzero)))
+          w1(iel) = coumax / (max(dam(iel)/volume(iel), epzero))
         enddo
       endif
 
