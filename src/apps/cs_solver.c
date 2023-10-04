@@ -52,6 +52,7 @@
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
 #include "cs_boundary_zone.h"
+#include "cs_boundary_conditions.h"
 #include "cs_calcium.h"
 #include "cs_cdo_main.h"
 #include "cs_cell_to_vertex.h"
@@ -550,6 +551,10 @@ _run(void)
 
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
+
+  /* Free the boundary conditions face type and face zone arrays */
+
+  cs_boundary_conditions_free();
 
   /* Final stage for CDO/HHO schemes */
 
