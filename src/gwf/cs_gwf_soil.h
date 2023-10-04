@@ -479,6 +479,19 @@ cs_gwf_soil_by_name(const char    *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve a zone associated to a soil from its id
+ *
+ * \param[in] soil_id      id to look for
+ *
+ * \return a pointer to a zone structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_zone_t *
+cs_gwf_soil_get_zone(int   soil_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Free all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/

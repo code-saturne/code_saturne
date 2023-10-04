@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -58,6 +59,7 @@
 #include "cs_post.h"
 #include "cs_property.h"
 #include "cs_reco.h"
+#include "cs_time_plot.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
@@ -88,6 +90,7 @@ BEGIN_C_DECLS
 /* Redefined names of function from cs_math to get shorter names */
 
 #define CS_GWF_TPF_DBG 0
+#define CS_GWF_TPF_N_OUTPUT_VARS  5
 
 /*============================================================================
  * Local definitions
@@ -98,6 +101,18 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+static cs_time_plot_t   *cs_gwf_tpf_time_plot = NULL;
+
+static const char _output_varnames[CS_GWF_TPF_N_OUTPUT_VARS][32] = {
+
+  "Pg",
+  "Pl",
+  "Pc",
+  "Sliq",
+  "Cliq"
+
+};
 
 /*============================================================================
  * Private function prototypes
@@ -1739,6 +1754,9 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 void
 cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc)
 {
+  if (cs_gwf_tpf_time_plot != NULL)
+    cs_time_plot_finalize(&cs_gwf_tpf_time_plot);
+
   if (p_mc == NULL)
     return;
   if (*p_mc == NULL)
@@ -2158,6 +2176,61 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
   cs_field_set_key_int(mc->l_saturation, log_key, 1);
   if (post_flag & CS_GWF_POST_LIQUID_SATURATION)
     cs_field_set_key_int(mc->l_saturation, post_key, 1);
+
+  if (post_flag & CS_GWF_POST_SOIL_MINMAX) {
+
+    int  n_soils = cs_gwf_get_n_soils();
+
+    /* There are 3 pressures (liquid, gas and capillarity), the liquid
+       saturation and the liquid capacity. For each variable, two quantities
+       are considered: the min. and the max. */
+
+    int  n_outputs = 2 * CS_GWF_TPF_N_OUTPUT_VARS * n_soils;
+    char  **labels;
+    BFT_MALLOC(labels, n_outputs, char *);
+
+    for (int i = 0; i < n_soils; i++) {
+
+      const cs_zone_t  *z = cs_gwf_soil_get_zone(i);
+
+      int  min_shift = CS_GWF_TPF_N_OUTPUT_VARS*i;
+      int  max_shift = CS_GWF_TPF_N_OUTPUT_VARS*(n_soils + i);
+
+      for (int j = 0; j < CS_GWF_TPF_N_OUTPUT_VARS; j++) {
+
+        const char  *vname = _output_varnames[j];
+        int  len = strlen(z->name) + strlen(vname) + 4;
+
+        char *min_name = NULL;
+        BFT_MALLOC(min_name, len + 1, char);
+        sprintf(min_name, "%s-%sMin", z->name, vname);
+        labels[min_shift + j] = min_name;
+
+        char *max_name = NULL;
+        BFT_MALLOC(max_name, len + 1, char);
+        sprintf(max_name, "%s-%sMax", z->name, vname);
+        labels[max_shift + j] = max_name;
+
+      } /* Loop on variables */
+
+    } /* Loop on soils */
+
+    cs_gwf_tpf_time_plot = cs_time_plot_init_probe("gwf",
+                                                   "",
+                                                   CS_TIME_PLOT_CSV,
+                                                   false,
+                                                   180,   /* flush time */
+                                                   -1,
+                                                   n_outputs,
+                                                   NULL,
+                                                   NULL,
+                                                   labels);
+
+    for (int i = 0; i < n_outputs; i++)
+      BFT_FREE(labels[i]);
+    BFT_FREE(labels);
+
+  } /* Min/Max output */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2598,16 +2671,18 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
  *
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      ts         pointer to a cs_time_step_t struct.
  * \param[in]      post_flag  requested quantities to be postprocessed
  * \param[in, out] mc         pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
-                    const cs_cdo_quantities_t       *cdoq,
-                    cs_flag_t                        post_flag,
-                    cs_gwf_tpf_t                    *mc)
+cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
+                    const cs_cdo_quantities_t    *cdoq,
+                    const cs_time_step_t         *ts,
+                    cs_flag_t                     post_flag,
+                    cs_gwf_tpf_t                 *mc)
 {
   assert(mc != NULL);
 
@@ -2629,6 +2704,87 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
 
   if (cs_flag_test(post_flag, CS_GWF_POST_SOIL_STATE))
     cs_gwf_soil_update_soil_state(cdoq->n_cells, mc->l_saturation->val);
+
+  if (cs_flag_test(post_flag, CS_GWF_POST_SOIL_MINMAX)) {
+
+    const cs_adjacency_t  *c2v = connect->c2v;
+
+    const cs_real_t  *pc = mc->c_pressure->val;
+    const cs_real_t  *pg = mc->g_pressure->val;
+    const cs_real_t  *pl = mc->l_pressure->val;
+    const cs_real_t  *lsat = cs_property_get_array(mc->lsat_pty);
+    const cs_real_t  *lcap = cs_property_get_array(mc->lcap_pty);
+
+    int  n_soils = cs_gwf_get_n_soils();
+    int  n_outputs = 2 * n_soils * CS_GWF_TPF_N_OUTPUT_VARS;
+    int  n_min_outputs = n_soils * CS_GWF_TPF_N_OUTPUT_VARS;
+
+    cs_real_t  *output_values = NULL;
+
+    BFT_MALLOC(output_values, n_outputs, cs_real_t);
+
+    cs_real_t  *min_outputs = output_values;
+    cs_real_t  *max_outputs = output_values + n_min_outputs;
+
+    for (int i = 0; i < n_min_outputs; i++)
+      min_outputs[i] =  DBL_MAX; /* min */
+    for (int i = 0; i < n_min_outputs; i++)
+      max_outputs[i] = -DBL_MAX; /* max */
+
+    for (int id = 0; id < n_soils; id++) {
+
+      cs_real_t  *_minv = min_outputs + CS_GWF_TPF_N_OUTPUT_VARS*id;
+      cs_real_t  *_maxv = max_outputs + CS_GWF_TPF_N_OUTPUT_VARS*id;
+
+      const cs_zone_t  *z = cs_gwf_soil_get_zone(id);
+      assert(z != NULL);
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = z->elt_ids[i];
+
+        for (cs_lnum_t ii = c2v->idx[c_id]; ii < c2v->idx[c_id+1]; ii++) {
+
+          const cs_lnum_t  v_id = c2v->ids[ii];
+
+          _minv[0] = fmin(_minv[0], pg[v_id]); /* PgMin */
+          _maxv[0] = fmax(_maxv[0], pg[v_id]); /* PgMax */
+
+          _minv[1] = fmin(_minv[1], pl[v_id]); /* PlMin */
+          _maxv[1] = fmax(_maxv[1], pl[v_id]); /* PlMax */
+
+          _minv[2] = fmin(_minv[2], pc[v_id]); /* PcMin */
+          _maxv[2] = fmax(_maxv[2], pc[v_id]); /* PcMax */
+
+          _minv[3] = fmin(_minv[3], lsat[ii]); /* SlMin */
+          _maxv[3] = fmax(_maxv[3], lsat[ii]); /* SlMax */
+
+          _minv[4] = fmin(_minv[4], lcap[ii]); /* ClMin */
+          _maxv[4] = fmax(_maxv[4], lcap[ii]); /* ClMax */
+
+        } /* Loop on cell vertices */
+
+      } /* Loop on zone cells */
+
+    } /* Loop on soils */
+
+    if (cs_glob_n_ranks > 1) {
+
+      cs_parall_min(n_min_outputs, CS_REAL_TYPE, min_outputs);
+      cs_parall_max(n_min_outputs, CS_REAL_TYPE, max_outputs);
+
+    }
+
+    if (cs_glob_rank_id < 1 && cs_gwf_tpf_time_plot != NULL)
+      cs_time_plot_vals_write(cs_gwf_tpf_time_plot,
+                              ts->nt_cur,
+                              ts->t_cur,
+                              n_outputs,
+                              output_values);
+
+    BFT_FREE(output_values);
+
+  } /* Min./Max. output */
 }
 
 /*----------------------------------------------------------------------------*/

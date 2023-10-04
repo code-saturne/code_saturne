@@ -487,16 +487,18 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations for the groundwater flow module
+ * \brief Predefined extra-operations for the groundwater flow module
  *
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in] ts        pointer to a cs_time_step_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
-                const cs_cdo_quantities_t   *cdoq);
+                const cs_cdo_quantities_t   *cdoq,
+                const cs_time_step_t        *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!

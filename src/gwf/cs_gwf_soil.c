@@ -1138,6 +1138,29 @@ cs_gwf_soil_by_name(const char    *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve a zone associated to a soil from its id
+ *
+ * \param[in] soil_id      id to look for
+ *
+ * \return a pointer to a zone structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_zone_t *
+cs_gwf_soil_get_zone(int   soil_id)
+{
+  if (soil_id > -1 && soil_id < _n_soils) {
+
+    const cs_gwf_soil_t  *soil = _soils[soil_id];
+    return cs_volume_zone_by_id(soil->zone_id);
+
+  }
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Free all cs_gwf_soil_t structures
  */
 /*----------------------------------------------------------------------------*/

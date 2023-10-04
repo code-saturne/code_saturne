@@ -1544,12 +1544,14 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
  *
  * \param[in] connect   pointer to a cs_cdo_connect_t structure
  * \param[in] cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in] ts        pointer to a cs_time_step_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
-                const cs_cdo_quantities_t   *cdoq)
+                const cs_cdo_quantities_t   *cdoq,
+                const cs_time_step_t        *ts)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -1568,7 +1570,7 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
-    cs_gwf_tpf_extra_op(connect, cdoq, gw->post_flag, gw->model_context);
+    cs_gwf_tpf_extra_op(connect, cdoq, ts, gw->post_flag, gw->model_context);
     break;
 
   default:

@@ -208,16 +208,18 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
  *
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      ts         pointer to a cs_time_step_t struct.
  * \param[in]      post_flag  requested quantities to be postprocessed
  * \param[in, out] mc         pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_extra_op(const cs_cdo_connect_t          *connect,
-                    const cs_cdo_quantities_t       *cdoq,
-                    cs_flag_t                        post_flag,
-                    cs_gwf_tpf_t                    *mc);
+cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
+                    const cs_cdo_quantities_t    *cdoq,
+                    const cs_time_step_t         *ts,
+                    cs_flag_t                     post_flag,
+                    cs_gwf_tpf_t                 *mc);
 
 /*----------------------------------------------------------------------------*/
 /*!

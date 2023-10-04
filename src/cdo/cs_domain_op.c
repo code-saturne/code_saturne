@@ -508,7 +508,9 @@ cs_domain_post(cs_domain_t  *domain)
     /* 5.a Specific extra operations for the GWF module */
 
     if (cs_gwf_is_activated())
-      cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
+      cs_gwf_extra_op(domain->connect,
+                      domain->cdo_quantities,
+                      domain->time_step);
 
     /* 5.b Specific extra operations for the Maxwell module */
 
