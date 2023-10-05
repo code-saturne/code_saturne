@@ -291,10 +291,6 @@ do iel = 1, ncel
 
   a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
 
-  var_q_tl = a_coeff * ( (dqsd(1,iel) - alpha * dtlsd(1,iel))**2  &
-                       + (dqsd(2,iel) - alpha * dtlsd(2,iel))**2  &
-                       + (dqsd(3,iel) - alpha * dtlsd(3,iel))**2)
-
   zent = xyzcen(3,iel)
 
   if (imeteo.eq.0) then
@@ -308,18 +304,22 @@ do iel = 1, ncel
 
   xvart = cvar_vart(iel) ! thermal scalar: liquid potential temperature
   tliq = xvart*(pp/ps)**rscp ! liquid temperature
-  qwt  = cvar_totwt(iel) ! total water content
   qsl = cs_air_yw_sat(tliq-tkelvi, pp) ! saturated vapor content
-  deltaq = qwt - qsl
   alpha = (clatev*qsl/(rvap*tliq**2))*(pp/ps)**rscp
-  sig_flu = sqrt(var_q_tl)
 
-  if (sig_flu.lt.1.d-30) sig_flu = 1.d-30
+  var_q_tl = a_coeff * ( (dqsd(1,iel) - alpha * dtlsd(1,iel))**2  &
+                       + (dqsd(2,iel) - alpha * dtlsd(2,iel))**2  &
+                       + (dqsd(3,iel) - alpha * dtlsd(3,iel))**2)
+
+  sig_flu = max(sqrt(var_q_tl), 1.d-30)
+
+  qwt  = cvar_totwt(iel) ! total water content
+  deltaq = qwt - qsl
   q1 = deltaq/sig_flu
   al = 1.d0/(1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
   qsup = qsl/sig_flu
 
-  nebdia(iel) = 0.5d0*(1.d0 + erf(q1/sqrt(2.d0)))
+  nebdia(iel) = 0.5d0*(1.d0 + erf(q1/dsqrt(2.d0)))
 
   !FIXME MF : put in input of the global function...
   yw_liq = (sig_flu                                                               &
