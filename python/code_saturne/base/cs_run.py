@@ -125,8 +125,9 @@ class multi_append_kv(argparse.Action):
         if getattr(namespace, self.dest) is None:
             setattr(namespace, self.dest, dict())
         for value in values:
-            key, value = value.split('=')
-            getattr(namespace, self.dest)[key] = value
+            for entry in value.split(';'):
+                key, val = entry.split('=')
+                getattr(namespace, self.dest)[key] = val
 
 #-------------------------------------------------------------------------------
 # Build command-line arguments parser
@@ -153,7 +154,8 @@ def arg_parser(argv):
                         help="number of OpenMP threads per task")
 
     parser.add_argument("--notebook-args", nargs='*', action = multi_append_kv,
-                        help="key=value pairs to pass to user scripts and notebook")
+                        help="key=value pairs to pass to user scripts and notebook. " \
+                        + "Multiple entries are separated by ;")
 
     parser.add_argument("--parametric-args", nargs='*', action = multi_append,
                         help="key=value pairs to pass to cs_parametric filter")
