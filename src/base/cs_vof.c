@@ -1233,7 +1233,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
       normalface[idim] = gradface[idim] / (normgrad+delta);
 
     cpro_idriftf[f_id] =
-      fluxfactor*cs_math_3_dot_product(normalface, i_face_normal);
+      fluxfactor*cs_math_3_dot_product(normalface, i_face_normal[f_id]);
   }
 
   BFT_FREE(voidf_grad);
