@@ -1178,7 +1178,7 @@ if (muzero.gt.epzero) then
 
     ckup_suv_f(k) = (ckup_suv_f(k)+ck_aero_o3f)*(1.d0-fneray(k))+&
       (ckup_suv_f(k)+ckapcf)*(fneray(k))
-    ckdown_suv_r(k) = (ckdown_suv_r(k) +  ck_aero_h2od)*(1.d0-fneray(k))+&
+    ckdown_suv_r(k) = (ckdown_suv_r(k) +  ck_aero_o3d)*(1.d0-fneray(k))+&
       (ckdown_suv_r(k)+ckapcd)*(fneray(k))
 
     ckdown_suv_f(k) = (ckdown_suv_f(k) +  ck_aero_o3f)*(1.d0-fneray(k))+&
