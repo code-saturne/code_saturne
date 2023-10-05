@@ -174,7 +174,7 @@ _set_kr_vgm(const cs_gwf_soil_vgm_tpf_param_t    *sp,
  * \brief Compute the relative permeabilities for a soil associated to a Van
  *        Genuchten-Mualem model and a two-phase flow model.
  *        Case of a joining function relying on a 2nd order polynomial for the
- *        relative permeability in the gas phase
+ *        relative permeability in the gas and liquid phase
  *
  * \param[in]  sp        set of modelling parameters
  * \param[in]  sl_e      effective liquid saturation
@@ -189,12 +189,10 @@ _set_kr_vgm_poly2(const cs_gwf_soil_vgm_tpf_param_t    *sp,
                   double                               *krl,
                   double                               *krg)
 {
-  const double  sl_e_coef = 1 - pow(sl_e, sp->inv_m);
-  const double  krl_coef = 1 - pow(sl_e_coef, sp->m);
   const double  ds = sl_e - sp->sle_thres;
 
-  *krl = sqrt(sl_e) * krl_coef * krl_coef;
-  *krg = sp->krg_alpha * ds*ds + sp->krg_beta * ds + sp->krg_star;
+  *krl = sp->krl_alpha * ds*ds + sp->dkrldsl_star * ds + sp->krl_star;
+  *krg = sp->krg_alpha * ds*ds + sp->dkrgdsl_star * ds + sp->krg_star;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -209,6 +207,8 @@ _set_kr_vgm_poly2(const cs_gwf_soil_vgm_tpf_param_t    *sp,
 static void
 _joining_param_vgm(cs_gwf_soil_vgm_tpf_param_t    *sp)
 {
+  assert(sp->sle_thres < 1);
+
   const double  sle = sp->sle_thres, sle_conj = 1./(1 - sle);
 
   sp->pc_star = sp->pr_r * pow( pow(sle,-sp->inv_m)-1, 1./sp->n );
@@ -230,16 +230,20 @@ _joining_param_vgm(cs_gwf_soil_vgm_tpf_param_t    *sp)
     sp->sle_beta = -sp->dsldpc_star*sle_conj;
   }
 
-  if (sp->krg_jtype == CS_GWF_SOIL_JOIN_C1_POLY_ORDER2) {
+  if (sp->kr_jtype == CS_GWF_SOIL_JOIN_C1_POLY_ORDER2) {
 
     const double  sle_coef = 1 - pow(sle, sp->inv_m);
+    const double  krl_coef = 1 - pow(sle_coef, sp->m);
 
     sp->krg_star = sqrt(1 - sle) * pow(sle_coef, 2*sp->m);
     sp->dkrgdsl_star = -sqrt(1 - sle) * pow(sle_coef, 2*sp->m-1) *
       ( 0.5*sle_coef*sle_conj + 2*pow(sle, (1-sp->m)*sp->inv_m) );
+    sp->krg_alpha = -sle_conj * ( sp->krg_star*sle_conj + sp->dkrgdsl_star );
 
-    sp->krg_beta = sp->dkrgdsl_star;
-    sp->krg_alpha = sle_conj * ( -sp->krg_star*sle_conj - sp->krg_beta );
+    sp->krl_star = sqrt(sle) * krl_coef*krl_coef;
+    sp->dkrldsl_star = sqrt(sle) * krl_coef *
+      (krl_coef/(2*sle) + 2*pow(sle, 1./(sp->m*sp->n))*pow(sle_coef, sp->m-1));
+    sp->krl_alpha = sle_conj * ( (1-sp->krl_star)*sle_conj - sp->dkrldsl_star );
 
   }
 }
@@ -1361,7 +1365,7 @@ cs_gwf_soil_log_setup(void)
                     "%s: Invalid joining function.", __func__);
         }
 
-        switch(sp->krg_jtype) {
+        switch(sp->kr_jtype) {
         case CS_GWF_SOIL_JOIN_NOTHING:
         case CS_GWF_SOIL_JOIN_C1_EXPONENTIAL:
         case CS_GWF_SOIL_JOIN_C1_HYPERBOLIC:
@@ -1371,6 +1375,8 @@ cs_gwf_soil_log_setup(void)
         case CS_GWF_SOIL_JOIN_C1_POLY_ORDER2:
           cs_log_printf(CS_LOG_SETUP,
                         "%s C1 2nd order poly. joining function for krg\n", id);
+          cs_log_printf(CS_LOG_SETUP,
+                        "%s C1 2nd order poly. joining function for krl\n", id);
           break;
 
         default:
@@ -1881,7 +1887,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
  *
  * \param[in, out] soil        pointer to a cs_gwf_soil_t structure
  * \param[in]      sle_jtype   type of joining function for the effective Sl
- * \param[in]      krg_jtype   type of joining function for krg
+ * \param[in]      kr_jtype    type of joining function for krg and krl
  * \param[in]      sle_thres   value of the effective liquid saturation above
  *                             which a joining function is used
  */
@@ -1890,7 +1896,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
 void
 cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
                                        cs_gwf_soil_join_type_t    sle_jtype,
-                                       cs_gwf_soil_join_type_t    krg_jtype,
+                                       cs_gwf_soil_join_type_t    kr_jtype,
                                        double                     sle_thres)
 {
   if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
@@ -1908,7 +1914,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
   /* Set the wanted behavior according to the joining type */
 
   sp->sle_jtype = sle_jtype;
-  sp->krg_jtype = krg_jtype;
+  sp->kr_jtype = kr_jtype;
   sp->sle_thres = sle_thres;
 
   switch (soil->abs_permeability_dim) {
@@ -1928,7 +1934,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
 
       case CS_GWF_SOIL_JOIN_NOTHING:
         soil->update_properties = _update_iso_soil_vgm_tpf;
-        if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING) {
+        if (kr_jtype != CS_GWF_SOIL_JOIN_NOTHING) {
           cs_base_warn(__FILE__, __LINE__);
           bft_printf("Joining function for krg not taken into account.");
         }
@@ -1937,7 +1943,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
       case CS_GWF_SOIL_JOIN_C1_HYPERBOLIC:
         sp->sle_jtype = CS_GWF_SOIL_JOIN_C1_HYPERBOLIC;
         _joining_param_vgm(sp);
-        if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING)
+        if (kr_jtype != CS_GWF_SOIL_JOIN_NOTHING)
           soil->update_properties = _update_iso_soil_vgm_tpf_c1_hyperbolic_p2;
         else
           soil->update_properties = _update_iso_soil_vgm_tpf_c1_hyperbolic;
@@ -1946,7 +1952,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
       case CS_GWF_SOIL_JOIN_C1_EXPONENTIAL:
         sp->sle_jtype = CS_GWF_SOIL_JOIN_C1_EXPONENTIAL;
         _joining_param_vgm(sp);
-        if (krg_jtype != CS_GWF_SOIL_JOIN_NOTHING)
+        if (kr_jtype != CS_GWF_SOIL_JOIN_NOTHING)
           soil->update_properties = _update_iso_soil_vgm_tpf_c1_exponential_p2;
         else
           soil->update_properties = _update_iso_soil_vgm_tpf_c1_exponential;

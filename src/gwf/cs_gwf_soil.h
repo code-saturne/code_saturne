@@ -241,8 +241,9 @@ typedef struct {
    * \var sle_jtype
    *      type of joining function to consider for the Sle(Pc) curve
    *
-   * \var krg_jtype
-   *      type of joining function to consider for the krg(Pc) curve
+   * \var kr_jtype
+   *      type of joining function to consider for the krg(Sl) and krl(Sl)
+   *      curves
    *
    * \var sle_thres
    *      Value above which the suction law is replaced with a joining function
@@ -265,23 +266,30 @@ typedef struct {
    *      for the effective liquid saturation
    *
    * \var krg_star
-   *      relative permeability related to the value of sle_thres
+   *      relative permeability in the gas phase for the value sle_thres
    *
-   * \var dsldpc_star
-   *      derivative of the liquid saturation with respect to the capillarity
-   *      pressure at pc_star
+   * \var dkrgdsl_star
+   *      derivative of the relative permeability in the gas with respect to
+   *      the liquid saturation at sle_thres
    *
    * \var krg_alpha
-   *      optional pre-computed coefficient when a joining function is used
-   *      for the relative permeability in the gaz
+   *      pre-computed coefficient when a joining function is used for the
+   *      relative permeability in the gaz
    *
-   * \var krg_beta
-   *      optional pre-computed coefficient when a joining function is used
-   *      for the relative permeability in the gaz
+   * \var krl_star
+   *      relative permeability in the liquid phase for the value sle_thres
+   *
+   * \var dkrldsl_star
+   *      derivative of the relative permeability in the liquid with respect to
+   *      the liquid saturation at sle_thres
+   *
+   * \var krl_alpha
+   *      pre-computed coefficient when a joining function is used for the
+   *      relative permeability in the liquid
    */
 
   cs_gwf_soil_join_type_t    sle_jtype;
-  cs_gwf_soil_join_type_t    krg_jtype;
+  cs_gwf_soil_join_type_t    kr_jtype;
   double                     sle_thres;
 
   /* Derived quantities */
@@ -294,7 +302,10 @@ typedef struct {
   double                     krg_star;
   double                     dkrgdsl_star;
   double                     krg_alpha;
-  double                     krg_beta;
+
+  double                     krl_star;
+  double                     dkrldsl_star;
+  double                     krl_alpha;
 
 } cs_gwf_soil_vgm_tpf_param_t;
 
@@ -737,7 +748,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
  *
  * \param[in, out] soil        pointer to a cs_gwf_soil_t structure
  * \param[in]      sle_jtype   type of joining function for the effective Sl
- * \param[in]      krg_jtype   type of joining function for krg
+ * \param[in]      kr_jtype    type of joining function for krg and krl
  * \param[in]      sle_thres   value of the effective liquid saturation above
  *                             which a joining function is used
  */
@@ -746,7 +757,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
 void
 cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
                                        cs_gwf_soil_join_type_t    sle_jtype,
-                                       cs_gwf_soil_join_type_t    krg_jtype,
+                                       cs_gwf_soil_join_type_t    kr_jtype,
                                        double                     sle_thres);
 
 /*----------------------------------------------------------------------------*/
