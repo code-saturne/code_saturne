@@ -260,7 +260,7 @@ cs_user_model(void)
     /* Example 3: Add a new soil based on the Van Genuchten-Mualem model for
        all the mesh cells */
 
-    cs_gwf_soil_model_t  model = CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE;
+    cs_gwf_soil_model_t  model = CS_GWF_SOIL_VGM_SINGLE_PHASE;
     cs_gwf_soil_t  *s = cs_gwf_add_iso_soil("cells", /* volume zone name */
                                             1800,    /* bulk mass density */
                                             3e-1,    /* absolute permeability */

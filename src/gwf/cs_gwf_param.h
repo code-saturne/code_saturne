@@ -243,7 +243,7 @@ typedef enum {
  * model, there no evolution taken into account. The liquid saturation and the
  * permeability are considered as constant.
  *
- * \var CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE
+ * \var CS_GWF_SOIL_VGM_SINGLE_PHASE
  * Van Genuchten-Mualem laws defining the evolution of the effective liquid
  * saturation (also called dimensionless moisture content) and the relative
  * permeability in the case of (unsaturated) single-phase flow in a porous
@@ -258,7 +258,7 @@ typedef enum {
  * k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
  * where m = 1 -  1/n
  *
- * \var CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE
+ * \var CS_GWF_SOIL_VGM_TWO_PHASE
  * Van Genuchten-Mualem laws defining the evolution of the effective liquid
  * saturation, the relative permeabilities in the liquid and gaz in the case of
  * (unsaturated) two-phase flow in a porous media
@@ -279,8 +279,8 @@ typedef enum {
 typedef enum {
 
   CS_GWF_SOIL_SATURATED,
-  CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE,
-  CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE,
+  CS_GWF_SOIL_VGM_SINGLE_PHASE,
+  CS_GWF_SOIL_VGM_TWO_PHASE,
   CS_GWF_SOIL_USER,
 
   CS_GWF_SOIL_N_HYDRAULIC_MODELS

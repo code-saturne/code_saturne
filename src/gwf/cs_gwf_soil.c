@@ -1022,7 +1022,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
                 " of type CS_GWF_SOIL_SATURATED.\n", __func__);
     break;
 
-  case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
+  case CS_GWF_SOIL_VGM_SINGLE_PHASE:
     {
       cs_gwf_soil_vgm_spf_param_t  *sp = NULL;
 
@@ -1051,7 +1051,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
     }
     break;
 
-  case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
+  case CS_GWF_SOIL_VGM_TWO_PHASE:
     {
       cs_gwf_soil_vgm_tpf_param_t  *sp = NULL;
 
@@ -1183,7 +1183,7 @@ cs_gwf_soil_free_all(void)
 
       switch (soil->model) {
 
-      case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
+      case CS_GWF_SOIL_VGM_SINGLE_PHASE:
         {
           cs_gwf_soil_vgm_spf_param_t  *sp = soil->model_param;
 
@@ -1192,7 +1192,7 @@ cs_gwf_soil_free_all(void)
         }
         break;
 
-      case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
+      case CS_GWF_SOIL_VGM_TWO_PHASE:
         {
           cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
@@ -1308,7 +1308,7 @@ cs_gwf_soil_log_setup(void)
         cs_log_printf(CS_LOG_SETUP, "%s Model: *Saturated*\n", id);
       break;
 
-    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
+    case CS_GWF_SOIL_VGM_SINGLE_PHASE:
       {
         const cs_gwf_soil_vgm_spf_param_t  *sp = soil->model_param;
 
@@ -1323,7 +1323,7 @@ cs_gwf_soil_log_setup(void)
       }
       break;
 
-    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
+    case CS_GWF_SOIL_VGM_TWO_PHASE:
       {
         const cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
@@ -1421,8 +1421,8 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 
     switch (soil->model) {
 
-    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE:
-    case CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE:
+    case CS_GWF_SOIL_VGM_SINGLE_PHASE:
+    case CS_GWF_SOIL_VGM_TWO_PHASE:
     case CS_GWF_SOIL_USER:
       {
         assert(soil->update_properties != NULL);
@@ -1783,7 +1783,7 @@ cs_gwf_soil_set_vgm_spf_param(cs_gwf_soil_t         *soil,
 
   cs_gwf_soil_vgm_spf_param_t  *sp = soil->model_param;
 
-  if (soil->model != CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_SINGLE_PHASE)
+  if (soil->model != CS_GWF_SOIL_VGM_SINGLE_PHASE)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil model is not Van Genuchten\n", __func__);
   if (sp == NULL)
@@ -1839,7 +1839,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
 
   cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
-  if (soil->model != CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE)
+  if (soil->model != CS_GWF_SOIL_VGM_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil model is not the one expected\n", __func__);
   if (sp == NULL)
@@ -1897,7 +1897,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
 
   cs_gwf_soil_vgm_tpf_param_t  *sp = soil->model_param;
 
-  if (soil->model != CS_GWF_SOIL_VAN_GENUCHTEN_MUALEM_TWO_PHASE)
+  if (soil->model != CS_GWF_SOIL_VGM_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil model is not the one expected\n", __func__);
   if (soil->abs_permeability_dim != 1)
