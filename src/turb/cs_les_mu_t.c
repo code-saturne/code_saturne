@@ -108,11 +108,11 @@ static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
-                              cs_real_t sf_n[],
-                              cs_real_3_t *f_vel,
-                              cs_real_t mijmij[],
-                              cs_real_t mijlij[])
+cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
+                              cs_real_t  sf_n[],
+                              cs_real_t  f_vel[][3],
+                              cs_real_t  mijmij[],
+                              cs_real_t  mijlij[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
@@ -210,7 +210,7 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
    *       sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2)) */
 
   /* Calculation of Mij
-   *===================== */
+   * ================== */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
