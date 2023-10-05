@@ -325,7 +325,7 @@ cs_user_physical_properties_turb_viscosity(cs_domain_t      *domain)
   /* Calculation of (dynamic) viscosity
    * ================================== */
 
-  cs_real_t *visct = CS_F_(mu)->val;
+  cs_real_t *visct = CS_F_(mu_t)->val;
   const cs_real_t *crom  = CS_F_(rho)->val;
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t coef = cpro_smago[c_id];
