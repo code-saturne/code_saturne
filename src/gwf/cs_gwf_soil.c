@@ -191,10 +191,10 @@ _set_kr_vgm_poly2(const cs_gwf_soil_vgm_tpf_param_t    *sp,
 {
   const double  sl_e_coef = 1 - pow(sl_e, sp->inv_m);
   const double  krl_coef = 1 - pow(sl_e_coef, sp->m);
-  const double  delta_s = sl_e - sp->sle_thres;
+  const double  ds = sl_e - sp->sle_thres;
 
   *krl = sqrt(sl_e) * krl_coef * krl_coef;
-  *krg = sp->krg_alpha*delta_s*delta_s + sp->krg_beta*delta_s + sp->krg_star;
+  *krg = sp->krg_alpha * ds*ds + sp->krg_beta * ds + sp->krg_star;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -238,8 +238,8 @@ _joining_param_vgm(cs_gwf_soil_vgm_tpf_param_t    *sp)
     sp->dkrgdsl_star = -sqrt(1 - sle) * pow(sle_coef, 2*sp->m-1) *
       ( 0.5*sle_coef*sle_conj + 2*pow(sle, (1-sp->m)*sp->inv_m) );
 
-    sp->krg_beta = 1/sle*sp->dkrgdsl_star;
-    sp->krg_alpha = sle_conj * ( sp->krg_star*sle_conj - sp->krg_beta );
+    sp->krg_beta = sp->dkrgdsl_star;
+    sp->krg_alpha = sle_conj * ( -sp->krg_star*sle_conj - sp->krg_beta );
 
   }
 }
