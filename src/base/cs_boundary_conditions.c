@@ -2463,12 +2463,12 @@ cs_boundary_conditions_free(void)
   BFT_FREE(_bc_open);
   _n_bc_open = 0;
 
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
+  if (cs_glob_bc_pm_info != NULL) {
     BFT_FREE(cs_glob_bc_pm_info->iautom);
-
-  BFT_FREE(cs_glob_bc_pm_info->izfppp);
-  BFT_FREE(cs_glob_bc_pm_info->itrifb);
-  BFT_FREE(cs_glob_bc_pm_info);
+    BFT_FREE(cs_glob_bc_pm_info->izfppp);
+    BFT_FREE(cs_glob_bc_pm_info->itrifb);
+    BFT_FREE(cs_glob_bc_pm_info);
+  }
 
   BFT_FREE(_b_head_loss);
 }
