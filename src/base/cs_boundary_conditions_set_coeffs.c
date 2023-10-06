@@ -2838,7 +2838,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               for (int isou = 0; isou < 3; isou++) {
                 cofar_tf[f_id][isou] = coefa_tf[f_id][isou];
                 for (int jsou = 0; jsou < 3; jsou++)
-                     cofbr_tf[f_id][isou][jsou] = coefb_tf[f_id][isou][jsou];
+                  cofbr_tf[f_id][isou][jsou] = coefb_tf[f_id][isou][jsou];
               }
             }
 

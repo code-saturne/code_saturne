@@ -1607,7 +1607,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* Density at time (n) */
   cs_real_t *croma = crom_eos;
   cs_real_t *broma = brom_eos;
-  if (fp->irovar == 1){
+  if (fp->irovar == 1) {
     croma = CS_F_(rho)->val_pre;
     broma = CS_F_(rho_b)->val_pre;
   }
