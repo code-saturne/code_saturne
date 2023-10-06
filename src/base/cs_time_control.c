@@ -91,6 +91,7 @@ static const cs_time_control_t  cs_time_control_default
 = {
   .type = CS_TIME_CONTROL_TIME_STEP,
   .at_start = false,
+  .at_first = false,
   .at_end = false,
   .start_nt = -1,
   .end_nt = -1,
@@ -195,6 +196,8 @@ cs_time_control_is_active(cs_time_control_t     *tc,
     }
 
     if (ts->nt_cur == ts->nt_prev && tc->at_start)
+      retval = true;
+    if (ts->nt_cur == 1 && tc->at_first)
       retval = true;
     if (ts->nt_cur == ts->nt_max && tc->at_end)
       retval = true;

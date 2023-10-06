@@ -252,6 +252,7 @@ cs_rad_transfer_params_t _rt_params = {
   .time_control = {
     .type = CS_TIME_CONTROL_TIME_STEP,
     .at_start = true,
+    .at_first = true,
     .at_end = false,
     .start_nt = -1,
     .end_nt = -1,

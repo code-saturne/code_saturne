@@ -99,8 +99,9 @@ typedef struct {
 
   cs_time_control_type_t  type;   /* control type */
 
-  bool       at_start;            /* always active at start ? */
-  bool       at_end;              /* always active at end ? */
+  bool       at_start;            /* always active at start? */
+  bool       at_first;            /* always active at first it? */
+  bool       at_end;              /* always active at end? */
 
   union {
     int      start_nt;            /* update start time step */
