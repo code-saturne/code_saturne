@@ -1284,12 +1284,16 @@ _update_iso_itpf_pcpg_coupled_diffview(const cs_cdo_connect_t     *connect,
 /*!
  * \brief Initialize the non-linear algorithm.
  *
- * \param[in, out] tpf        pointer to the model context structure
+ * \param[in]      pa       1st pressure field
+ * \param[in]      pb       2nd pressure field
+ * \param[in, out] tpf      pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_non_linear_algo(cs_gwf_tpf_t          *tpf)
+_init_non_linear_algo(const cs_field_t     *pa,
+                      const cs_field_t     *pb,
+                      cs_gwf_tpf_t         *tpf)
 {
   if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
     return;
@@ -1306,15 +1310,13 @@ _init_non_linear_algo(cs_gwf_tpf_t          *tpf)
      previous operation
   */
 
-  const cs_real_t  *pg_0 = tpf->g_pressure->val;
-  const cs_real_t  *pl_0 = tpf->l_pressure->val;
+  const cs_real_t  *pa_0 = pa->val;
+  const cs_real_t  *pb_0 = pb->val;
 
-  /* Set the normalization factor. Performed with Pg and Pl even if Pc is used
-     in the resolution. One prefers to use Pg since it also appears in the
-     different terms for the h_eq. */
+  /* Set the normalization factor. */
 
-  double  normalization = cs_cdo_blas_square_norm_pvsp(pg_0);
-  normalization += cs_cdo_blas_square_norm_pvsp(pl_0);
+  double  normalization = cs_cdo_blas_square_norm_pvsp(pa_0);
+  normalization += cs_cdo_blas_square_norm_pvsp(pb_0);
   normalization = sqrt(normalization);
   if (normalization < cs_math_zero_threshold)
     normalization = 1.0;
@@ -1413,12 +1415,12 @@ _check_cvg_nl_dpc(const cs_real_t          *dpc_iter,
  * \brief Check the convergence of the non-linear algorithm in case of TPF
  *        model
  *
- * \param[in]      nl_algo_type type of non-linear algorithm
- * \param[in]      pc_pre_iter  previous iterate values for the gas pressure
- * \param[in, out] pc_cur_iter  current iterate values for the gas pressure
- * \param[in]      pl_pre_iter  previous iterate values for the liquid pressure
- * \param[in, out] pl_cur_iter  current iterate values for the liquid pressure
- * \param[in, out] algo         pointer to a cs_iter_algo_t structure
+ * \param[in]      nl_algo_type  type of non-linear algorithm
+ * \param[in]      pa_pre_iter   previous iterate values for the 1st pressure
+ * \param[in, out] pa_cur_iter   current  iterate values for the 1st pressure
+ * \param[in]      pb_pre_iter   previous iterate values for the 2nd pressure
+ * \param[in, out] pb_cur_iter   current  iterate values for the 2nd pressure
+ * \param[in, out] algo          pointer to a cs_iter_algo_t structure
  *
  * \return the convergence state
  */
@@ -1426,10 +1428,10 @@ _check_cvg_nl_dpc(const cs_real_t          *dpc_iter,
 
 static cs_sles_convergence_state_t
 _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
-              const cs_real_t          *pc_pre_iter,
-              cs_real_t                *pc_cur_iter,
-              const cs_real_t          *pl_pre_iter,
-              cs_real_t                *pl_cur_iter,
+              const cs_real_t          *pa_pre_iter,
+              cs_real_t                *pa_cur_iter,
+              const cs_real_t          *pb_pre_iter,
+              cs_real_t                *pb_cur_iter,
               cs_iter_algo_t           *algo)
 {
   if (nl_algo_type == CS_PARAM_NL_ALGO_NONE)
@@ -1439,11 +1441,11 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-    /* pg_* arrays gather pg and pl (this is done during the solve step) */
+    /* pg_* arrays gather pg and pb (this is done during the solve step) */
 
     cs_iter_algo_update_anderson(algo,
-                                 pc_cur_iter, /* updated during the process */
-                                 pc_pre_iter,
+                                 pa_cur_iter, /* updated during the process */
+                                 pa_pre_iter,
                                  cs_cdo_blas_dotprod_2pvsp,
                                  cs_cdo_blas_square_norm_2pvsp);
 
@@ -1451,10 +1453,10 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   /* Update the residual */
 
-  double delta_pc = cs_cdo_blas_square_norm_pvsp_diff(pc_pre_iter, pc_cur_iter);
-  double delta_pl = cs_cdo_blas_square_norm_pvsp_diff(pl_pre_iter, pl_cur_iter);
+  double delta_pa = cs_cdo_blas_square_norm_pvsp_diff(pa_pre_iter, pa_cur_iter);
+  double delta_pb = cs_cdo_blas_square_norm_pvsp_diff(pb_pre_iter, pb_cur_iter);
 
-  cs_iter_algo_update_residual(algo, sqrt(delta_pc + delta_pl));
+  cs_iter_algo_update_residual(algo, sqrt(delta_pa + delta_pb));
 
   /* Update the convergence members */
 
@@ -1463,12 +1465,16 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   /* Monitoring */
 
-  cs_iter_algo_log_cvg(algo, "# GWF.TPF");
+  if (algo->verbosity > 1) {
 
-  if (algo->verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\t||D_Pc||=%10.6e, ||D_Pl||=%10.6e\n",
-                  sqrt(delta_pc), sqrt(delta_pl));
+    cs_iter_algo_log_cvg(algo, "# GWF.TPF");
+
+    if (algo->verbosity > 2)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "\t||D_Pa||=%10.6e, ||D_Pb||=%10.6e\n",
+                    sqrt(delta_pa), sqrt(delta_pb));
+
+  }
 
   return cvg_status;
 }
@@ -1485,6 +1491,8 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step    pointer to a cs_time_step_t structure
  * \param[in]      option_flag  calculation option related to the GWF module
+ * \param[in, out] pa           field pointer for the 1st pressure
+ * \param[in, out] pb           field pointer for the 2nd pressure
  * \param[in, out] tpf          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
@@ -1495,6 +1503,8 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
                         const cs_cdo_quantities_t    *cdoq,
                         const cs_time_step_t         *time_step,
                         cs_flag_t                     option_flag,
+                        cs_field_t                   *pa,
+                        cs_field_t                   *pb,
                         cs_gwf_tpf_t                 *tpf)
 {
   bool cur2prev = true;
@@ -1504,23 +1514,25 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
   assert(algo != NULL);
   assert(tpf->nl_algo_type == CS_PARAM_NL_ALGO_PICARD);
 
-  _init_non_linear_algo(tpf);
+  _init_non_linear_algo(pa, pb, tpf);
 
-  cs_real_t  *pc_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
-  cs_real_t  *pc_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
+  cs_real_t  *pa_kp1 = NULL, *pb_kp1 = NULL;  /* at ^{n+1,k+1} */
+  cs_real_t  *pa_k = NULL, *pb_k = NULL;      /* at ^{n+1,k} */
 
-  BFT_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
-  BFT_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
+  BFT_MALLOC(pa_k, cdoq->n_vertices, cs_real_t);
+  BFT_MALLOC(pb_k, cdoq->n_vertices, cs_real_t);
 
-  pc_kp1 = tpf->c_pressure->val; /* val stores always the latest values */
-  pl_kp1 = tpf->l_pressure->val;
+  pa_kp1 = pa->val; /* val stores always the latest values */
+  pb_kp1 = pb->val;
 
   do {
 
     /* current values: n+1,k */
 
-    cs_array_real_copy(cdoq->n_vertices, tpf->c_pressure->val, pc_k);
-    cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val, pl_k);
+    cs_array_real_copy(cdoq->n_vertices, pa->val, pa_k);
+    cs_array_real_copy(cdoq->n_vertices, pb->val, pb_k);
+
+    /* pa and pb values are update during the coupled resolution */
 
     cs_equation_system_solve(cur2prev, tpf->system);
 
@@ -1530,8 +1542,8 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
 
       const double  relax = tpf->nl_relax_factor;
       for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
-        pc_kp1[i] = pc_kp1[i]*relax + pc_k[i]*(1-relax);
-        pl_kp1[i] = pl_kp1[i]*relax + pl_k[i]*(1-relax);
+        pa_kp1[i] = pa_kp1[i]*relax + pa_k[i]*(1-relax);
+        pb_kp1[i] = pb_kp1[i]*relax + pb_k[i]*(1-relax);
       }
 
     }
@@ -1547,8 +1559,14 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
     cur2prev = false;
     update_flag = 0;
 
-  } while (_check_cvg_nl(tpf->nl_algo_type, pc_k, pc_kp1, pl_k, pl_kp1,
+  } while (_check_cvg_nl(tpf->nl_algo_type, pa_k, pa_kp1, pb_k, pb_kp1,
                          algo) == CS_SLES_ITERATING);
+
+  if (algo->verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "# GWF.TPF.Picard (exit) n_iter: %4d residual: %9.6e\n",
+                  cs_iter_algo_get_n_iter(algo),
+                  cs_iter_algo_get_residual(algo));
 
   /* If something wrong happens, write a message in the listing */
 
@@ -1559,8 +1577,8 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
 
   /* Free temporary arrays and structures */
 
-  BFT_FREE(pc_k);
-  BFT_FREE(pl_k);
+  BFT_FREE(pa_k);
+  BFT_FREE(pb_k);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1575,6 +1593,8 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step    pointer to a cs_time_step_t structure
  * \param[in]      option_flag  calculation option related to the GWF module
+ * \param[in, out] pa           field pointer for the 1st pressure
+ * \param[in, out] pb           field pointer for the 2nd pressure
  * \param[in, out] tpf          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
@@ -1585,6 +1605,8 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
                           const cs_cdo_quantities_t    *cdoq,
                           const cs_time_step_t         *time_step,
                           cs_flag_t                     option_flag,
+                          cs_field_t                   *pa,
+                          cs_field_t                   *pb,
                           cs_gwf_tpf_t                 *tpf)
 {
   bool  cur2prev = false;
@@ -1596,27 +1618,27 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
   /* A first resolution has been done followed by an update */
 
-  cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
-  cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
+  cs_real_t  *pa_kp1 = NULL, *pb_kp1 = NULL;  /* at ^{n+1,k+1} */
+  cs_real_t  *pa_k = NULL, *pb_k = NULL;      /* at ^{n+1,k} */
 
-  BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
-  pl_k = pg_k + cdoq->n_vertices;
+  BFT_MALLOC(pa_k, 2*cdoq->n_vertices, cs_real_t);
+  pb_k = pa_k + cdoq->n_vertices;
 
-  cs_array_real_copy(cdoq->n_vertices, tpf->g_pressure->val_pre, pg_k);
-  cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val_pre, pl_k);
+  cs_array_real_copy(cdoq->n_vertices, pa->val_pre, pa_k);
+  cs_array_real_copy(cdoq->n_vertices, pb->val_pre, pb_k);
 
   /* One needs only one array gathering the liquid and gas pressures */
 
-  BFT_MALLOC(pg_kp1, 2*cdoq->n_vertices, cs_real_t);
-  pl_kp1 = pg_kp1 + cdoq->n_vertices;
+  BFT_MALLOC(pa_kp1, 2*cdoq->n_vertices, cs_real_t);
+  pb_kp1 = pa_kp1 + cdoq->n_vertices;
 
-  cs_array_real_copy(cdoq->n_vertices, tpf->g_pressure->val, pg_kp1);
-  cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val, pl_kp1);
+  cs_array_real_copy(cdoq->n_vertices, pa->val, pa_kp1);
+  cs_array_real_copy(cdoq->n_vertices, pb->val, pb_kp1);
 
   /* Set the normalization factor */
 
-  double  normalization = cs_cdo_blas_square_norm_pvsp(pg_k);
-  normalization += cs_cdo_blas_square_norm_pvsp(pl_k);
+  double  normalization = cs_cdo_blas_square_norm_pvsp(pa_k);
+  normalization += cs_cdo_blas_square_norm_pvsp(pb_k);
   normalization = sqrt(normalization);
   if (normalization < cs_math_zero_threshold)
     normalization = 1.0;
@@ -1626,20 +1648,20 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   /* Main non-linear loop */
 
   while (_check_cvg_nl(tpf->nl_algo_type,
-                       pg_k, pg_kp1, pl_k, pl_kp1,
+                       pa_k, pa_kp1, pb_k, pb_kp1,
                        algo) == CS_SLES_ITERATING) {
 
-    cs_array_real_copy(cdoq->n_vertices, pg_kp1, pg_k);
-    cs_array_real_copy(cdoq->n_vertices, pl_kp1, pl_k);
+    cs_array_real_copy(cdoq->n_vertices, pa_kp1, pa_k);
+    cs_array_real_copy(cdoq->n_vertices, pb_kp1, pb_k);
 
     /* Update the variables related to the groundwater flow system.
-     * In case of an Anderson acceleration, pg_kp1 and pl_kp1 may be
+     * In case of an Anderson acceleration, pa_kp1 and pb_kp1 may be
      * updated */
 
     if (cs_iter_algo_get_n_iter(algo) >= tpf->anderson_param.starting_iter) {
 
-      cs_array_real_copy(cdoq->n_vertices, pg_kp1, tpf->g_pressure->val);
-      cs_array_real_copy(cdoq->n_vertices, pl_kp1, tpf->l_pressure->val);
+      cs_array_real_copy(cdoq->n_vertices, pa_kp1, pa->val);
+      cs_array_real_copy(cdoq->n_vertices, pb_kp1, pb->val);
 
     }
 
@@ -1653,8 +1675,8 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
     cs_equation_system_solve(cur2prev, tpf->system);
 
-    cs_array_real_copy(cdoq->n_vertices, tpf->g_pressure->val, pg_kp1);
-    cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val, pl_kp1);
+    cs_array_real_copy(cdoq->n_vertices, pa->val, pa_kp1);
+    cs_array_real_copy(cdoq->n_vertices, pb->val, pb_kp1);
 
   } /* Until convergence */
 
@@ -1666,6 +1688,12 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
                     option_flag,
                     tpf);
 
+  if (algo->verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "# GWF.TPF.AndersonAcc (exit) n_iter: %4d residual: %9.6e\n",
+                  cs_iter_algo_get_n_iter(algo),
+                  cs_iter_algo_get_residual(algo));
+
   /* If something wrong happens, write a message in the listing */
 
   cs_iter_algo_check_warning(__func__,
@@ -1675,8 +1703,8 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
   /* Free temporary arrays and structures */
 
-  BFT_FREE(pg_k);
-  BFT_FREE(pg_kp1);
+  BFT_FREE(pa_k);
+  BFT_FREE(pa_kp1);
   cs_iter_algo_release_anderson_arrays(algo->context);
 }
 
@@ -3042,33 +3070,56 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
 
   case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
   case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
-    switch (tpf->nl_algo_type) {
+    {
+      cs_field_t  *pa = NULL, *pb = NULL;
 
-    case CS_PARAM_NL_ALGO_NONE: /* Linear case */
-      cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
+      if (tpf->solver_type == CS_GWF_TPF_SOLVER_PCPG_COUPLED)
+        pa = tpf->c_pressure, pb = tpf->g_pressure;
+      else
+        pa = tpf->l_pressure, pb = tpf->c_pressure;
 
-      /* Update the variables related to the groundwater flow system */
+      switch (tpf->nl_algo_type) {
 
-      cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
-                        CS_FLAG_CURRENT_TO_PREVIOUS,
-                        option_flag,
-                        tpf);
-      break;
+      case CS_PARAM_NL_ALGO_NONE: /* Linear case */
+        cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
 
-    case CS_PARAM_NL_ALGO_PICARD:
-      _compute_coupled_picard(mesh, connect, cdoq, time_step,
-                              option_flag,
-                              tpf);
-      break;
+        /* Update the variables related to the groundwater flow system */
 
-    case CS_PARAM_NL_ALGO_ANDERSON:
-      _compute_coupled_anderson(mesh, connect, cdoq, time_step,
+        cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
+                          CS_FLAG_CURRENT_TO_PREVIOUS,
+                          option_flag,
+                          tpf);
+        break;
+
+      case CS_PARAM_NL_ALGO_PICARD:
+        _compute_coupled_picard(mesh, connect, cdoq, time_step,
                                 option_flag,
+                                pa, pb,
                                 tpf);
-      break;
+        break;
 
-    default:
-      break; /* Nothing else to do */
+      case CS_PARAM_NL_ALGO_ANDERSON:
+        {
+          cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
+
+          /* Update the variables related to the groundwater flow system */
+
+          cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
+                            CS_FLAG_CURRENT_TO_PREVIOUS,
+                            option_flag,
+                            tpf);
+
+          _compute_coupled_anderson(mesh, connect, cdoq, time_step,
+                                    option_flag,
+                                    pa, pb,
+                                    tpf);
+        }
+        break;
+
+      default:
+        break; /* Nothing else to do */
+
+      } /* Switch on the type of algorithm */
     }
     break;
 
