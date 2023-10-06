@@ -244,57 +244,6 @@ _set_coupled_system(cs_gwf_tpf_t    *tpf)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Log the setup related to the modelling of miscible two-phase flows
- *
- * \param[in] tpf   pointer to the model context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_mtpf_log_setup(cs_gwf_tpf_t   *tpf)
-{
-  if (tpf == NULL)
-    return;
-
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Water mass density: %5.3e, viscosity: %5.3e,"
-                " molar mass: %5.3e\n", tpf->l_mass_density, tpf->l_viscosity,
-                tpf->w_molar_mass);
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Henry constant: %5.3e\n", tpf->henry_constant);
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Gas component: viscosity: %5.3e, diffusivity"
-                " in the liquid phase: %5.3e, molar mass: %5.3e\n",
-                tpf->g_viscosity, tpf->l_diffusivity_h, tpf->h_molar_mass);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Log the setup related to the modelling of immiscible two-phase flows
- *
- * \param[in] tpf   pointer to the model context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_itpf_log_setup(cs_gwf_tpf_t   *tpf)
-{
-  if (tpf == NULL)
-    return;
-
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Water mass density: %5.3e, viscosity: %5.3e\n",
-                tpf->l_mass_density, tpf->l_viscosity);
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Henry constant: %5.3e (Should be very low)\n",
-                tpf->henry_constant);
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Gas component viscosity: %5.3e, molar mass: %5.3e\n",
-                tpf->g_viscosity, tpf->h_molar_mass);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Add a source term relying on the stiffness matrix of the conservation
           equation for the hydrogen when a segregated solver is used. Case of a
           vertex-based scheme.
@@ -2555,13 +2504,31 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf)
   if (tpf == NULL)
     return;
 
-  if (tpf->is_miscible)
-    _mtpf_log_setup(tpf);
-  else
-    _itpf_log_setup(tpf);
-
-  cs_log_printf(CS_LOG_SETUP, "  * GWF | Reference temperature: %5.2f K\n",
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Reference temperature: %5.2f K\n",
                 tpf->ref_temperature);
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | %14s | mass density: %5.3e, viscosity: %5.3e\n",
+                "Water", tpf->l_mass_density, tpf->l_viscosity);
+
+  if (tpf->is_miscible) {
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * GWF | %14s | viscosity: %5.3e, saturated diffusivity"
+                  " in the liquid phase: %5.3e, molar mass: %5.3e\n",
+                  "Gas component", tpf->g_viscosity, tpf->l_diffusivity_h,
+                  tpf->h_molar_mass);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * GWF | Henry constant: %5.3e\n", tpf->henry_constant);
+
+  }
+  else {
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * GWF | %14s | viscosity: %5.3e, molar mass: %5.3e\n",
+                  "Gas component", tpf->g_viscosity, tpf->h_molar_mass);
+
+  }
 
   switch(tpf->solver_type) {
 
