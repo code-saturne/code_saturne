@@ -1254,8 +1254,6 @@ _update_iso_itpf_pcpg_coupled_diffview(const cs_cdo_connect_t     *connect,
         time_hc += pvc * (-rhog_h) * dsl_dpc;
         time_hg += pvc * time_h_coef;
 
-        const double  diff_h_coef =
-
         diff_hg += diff_g_term * rhog_h;
 
       } /* Loop on cell vertices */
@@ -2866,7 +2864,7 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
                                                    n_outputs,
                                                    NULL,
                                                    NULL,
-                                                   labels);
+                                                   (const char **)labels);
 
     for (int i = 0; i < n_outputs; i++)
       BFT_FREE(labels[i]);

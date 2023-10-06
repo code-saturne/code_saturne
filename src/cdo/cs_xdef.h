@@ -426,7 +426,7 @@ cs_xdef_get_scalar_value(cs_xdef_t     *def)
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t *
-cs_xdef_array_get_values(cs_xdef_t     *def)
+cs_xdef_array_get_values(const cs_xdef_t     *def)
 {
   if (def == NULL)
     return NULL;

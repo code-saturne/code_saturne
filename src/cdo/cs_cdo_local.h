@@ -242,7 +242,7 @@ typedef struct {
   double      *f_diam;      /*!< diameters of local faces */
   double      *hfc;         /*!< height of the pyramid of basis f and apex c */
   cs_quant_t  *face;        /*!< face quantities (xf, area and unit normal) */
-  cs_nvec3_t  *dedge;      /*!< dual edge quantities (length and unit vector) */
+  cs_nvec3_t  *dedge;       /*!< dual edge quantities (length + unit vector) */
   cs_real_t   *pvol_f;      /*!< volume associated to a face in the cell */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
