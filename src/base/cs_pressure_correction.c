@@ -534,7 +534,7 @@ _pressure_correction_fv(int        iterns,
 
     /* This computation is needed only if there are outlet faces */
 
-    if (ifcsor > 0 || open_bcs_flag != 0)
+    if (ifcsor > -1 || open_bcs_flag != 0)
       cs_hydrostatic_pressure_compute(&indhyd, iterns,
                                       frcxt, dfrcxt, cvar_hydro_pres,
                                       iflux, bflux, i_visc, b_visc,

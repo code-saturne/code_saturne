@@ -497,7 +497,7 @@ cs_boundary_conditions_type(bool  init,
 
   cs_real_t xyzref[3] = {0., 0., 0.};
 
-  if (_itbslb > 0) {
+  if (_itbslb > -1) {
 
     /* If irangd is the local rank, we assign PI' to xyzref(4)
        (this is always the case in serial mode) */
@@ -586,7 +586,7 @@ cs_boundary_conditions_type(bool  init,
     xyzp0[1] = xyzref[1];
     xyzp0[2] = xyzref[2];
 
-    if (_itbslb > 0)
+    if (_itbslb > -1)
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("\n"
@@ -616,7 +616,7 @@ cs_boundary_conditions_type(bool  init,
 
   /* No need to compute pressure gradient for frozen field computations */
 
-  if (   _itbslb > 0
+  if (   _itbslb > -1
       && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
 
     cs_real_3_t *frcxt = NULL;
