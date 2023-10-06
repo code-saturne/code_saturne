@@ -677,7 +677,7 @@ _pressure_correction_fv(int        iterns,
               cs_real_t cfl =   -(bmasfl[f_id]/b_face_surf[f_id]*dt[c_id])
                               / (2.*rho*b_dist[f_id])*(1. + kpdc);
 
-              cs_real_t pimp = - cvar_pr[c_id]
+              cs_real_t pimp = coefa_dp[f_id] - cvar_pr[c_id]
                                -   0.5 * (1. + kpdc) * bmasfl[f_id]*bpmasf
                                  / cs_math_pow2(b_face_surf[f_id]);
 
