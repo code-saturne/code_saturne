@@ -1516,8 +1516,6 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *restrict)fvq->cell_f_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
@@ -1526,10 +1524,6 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
-  const cs_real_3_t *restrict i_f_face_cog_0
-     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_0;
-  const cs_real_3_t *restrict i_f_face_cog_1
-     = (const cs_real_3_t *restrict)fvq->i_f_face_cog_1;
   const cs_real_3_t *b_face_normal
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
 
@@ -1548,49 +1542,22 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
 
   /* Contribution from interior faces */
 
-  /* TODO change i_f_face_normal into i_f_face_normal_0 or 1
-   * TODO merge the two loops, by default they should point toward the same
-   * array */
-
-  if (cs_glob_porous_model == 3) {
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              cor_mat[ii][i][j] +=   (  i_f_face_cog_0[f_id][i]
-                                      - cell_f_cen[ii][i])
-                                   * i_f_face_normal[f_id][j];
-              cor_mat[jj][i][j] -=   (  i_f_face_cog_1[f_id][i]
-                                      - cell_f_cen[jj][i])
-                                   * i_f_face_normal[f_id][j];
-            }
-          }
-        }
-      }
-    }
-  }
-  else {
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              cor_mat[ii][i][j] +=   (i_face_cog[f_id][i] - cell_f_cen[ii][i])
-                                   * i_face_normal[f_id][j];
-              cor_mat[jj][i][j] -=   (i_face_cog[f_id][i] - cell_f_cen[jj][i])
-                                   * i_face_normal[f_id][j];
-            }
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           f_id++) {
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            cor_mat[ii][i][j] +=   (  i_face_cog[f_id][i]
+                                    - cell_f_cen[ii][i])
+                                 * i_f_face_normal[f_id][j];
+            cor_mat[jj][i][j] -=   (  i_face_cog[f_id][i]
+                                    - cell_f_cen[jj][i])
+                                 * i_f_face_normal[f_id][j];
           }
         }
       }
@@ -4622,10 +4589,8 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
-  const cs_real_3_t *restrict i_f_face_cog_0
-    = (const cs_real_3_t *restrict)fvq->i_f_face_cog_0;
-  const cs_real_3_t *restrict i_f_face_cog_1
-    = (const cs_real_3_t *restrict)fvq->i_f_face_cog_1;
+  const cs_real_3_t *restrict i_f_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
     = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
 
@@ -4823,14 +4788,14 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
           cs_real_t pfaci
             =  ktpond
-                 * (  (i_f_face_cog_0[f_id][0] - cell_f_cen[ii][0])*f_ext[ii][0]
-                    + (i_f_face_cog_0[f_id][1] - cell_f_cen[ii][1])*f_ext[ii][1]
-                    + (i_f_face_cog_0[f_id][2] - cell_f_cen[ii][2])*f_ext[ii][2]
+                 * (  (i_f_face_cog[f_id][0] - cell_f_cen[ii][0])*f_ext[ii][0]
+                    + (i_f_face_cog[f_id][1] - cell_f_cen[ii][1])*f_ext[ii][1]
+                    + (i_f_face_cog[f_id][2] - cell_f_cen[ii][2])*f_ext[ii][2]
                     + poro[0])
             +  (1.0 - ktpond)
-                 * (  (i_f_face_cog_1[f_id][0] - cell_f_cen[jj][0])*f_ext[jj][0]
-                    + (i_f_face_cog_1[f_id][1] - cell_f_cen[jj][1])*f_ext[jj][1]
-                    + (i_f_face_cog_1[f_id][2] - cell_f_cen[jj][2])*f_ext[jj][2]
+                 * (  (i_f_face_cog[f_id][0] - cell_f_cen[jj][0])*f_ext[jj][0]
+                    + (i_f_face_cog[f_id][1] - cell_f_cen[jj][1])*f_ext[jj][1]
+                    + (i_f_face_cog[f_id][2] - cell_f_cen[jj][2])*f_ext[jj][2]
                     + poro[1]);
           cs_real_t pfacj = pfaci;
 

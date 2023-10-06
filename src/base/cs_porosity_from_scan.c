@@ -718,7 +718,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       for (cs_lnum_t i = 0; i < n_points_dist; i++) {
         cs_lnum_t c_id = dist_loc[i];
 
-        if (f_nb_scan->val[c_id] > 1.)  {// at least 2 points to compute distance
+        if (f_nb_scan->val[c_id] > 1.)  { // at least 2 points to compute distance
 
           for (cs_lnum_t idim = 0; idim < 3; idim++)
             vec_w_point[idim] = dist_coords[i*3 + idim]
@@ -1001,20 +1001,20 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
 void
 cs_ibm_add_sources_by_file_name(const char *file_name)
 {
-  if (file_name == NULL) 
+  if (file_name == NULL)
     bft_error(__FILE__,__LINE__, 0, _("Could not read scanner sources file"));
-  
+
   /* read the csv file */
   const int s_col_idx[3] = {0, 1, 2}; /* columns to read */
   int nb_scan = 0, nb_cols = 0;
   char ***csv_data = cs_file_csv_parse(file_name,
-				       ",", /* separator */
-				       0, /* n_headers */
-				       3, /* 3 columns to read */
-				       s_col_idx,
-				       true, /* ignore_missing_tokens */
-				       &nb_scan,
-				       &nb_cols);
+                                       ",", /* separator */
+                                       0, /* n_headers */
+                                       3, /* 3 columns to read */
+                                       s_col_idx,
+                                       true, /* ignore_missing_tokens */
+                                       &nb_scan,
+                                       &nb_cols);
 
   /* loop on the scanner sources */
   for (int i = 0; i < nb_scan; i++) {
@@ -1028,7 +1028,7 @@ cs_ibm_add_sources_by_file_name(const char *file_name)
     /* Add source */
     bool transform = true;
     cs_porosity_from_scan_add_source(source, transform);
-  } 
+  }
   // Free data which is no longer needed.
   for (int i = 0; i < nb_scan; i++) {
     for (int j = 0; j < nb_cols; j++)

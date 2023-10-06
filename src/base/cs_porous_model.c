@@ -220,6 +220,7 @@ cs_porous_model_init_disable_flag(void)
 void
 cs_porous_model_set_has_disable_flag(int  flag)
 {
+  cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   mq->has_disable_flag = flag;
@@ -234,8 +235,6 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->b_f_face_normal = mq->b_face_normal;
         mq->i_f_face_surf   = mq->i_face_surf;
         mq->b_f_face_surf   = mq->b_face_surf;
-        mq->i_f_face_cog_0 = mq->i_face_cog;
-        mq->i_f_face_cog_1 = mq->i_face_cog;
         mq->b_f_face_cog = mq->b_face_cog;
         mq->i_f_face_factor = NULL;
         mq->b_f_face_factor = NULL;
@@ -258,8 +257,6 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->i_f_face_factor
           = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
         mq->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
-        mq->i_f_face_cog_0  = cs_field_by_name("i_f_face_cog_0")->val;
-        mq->i_f_face_cog_1  = cs_field_by_name("i_f_face_cog_1")->val;
         mq->b_f_face_cog    = cs_field_by_name("b_f_face_cog")->val;
         mq->cell_f_cen      = cs_field_by_name("cell_f_cen")->val;
         mq->cell_s_cen      = cs_field_by_name("cell_s_cen")->val;
@@ -299,7 +296,7 @@ cs_porous_model_init_fluid_quantities(void)
 void
 cs_f_mesh_quantities_solid_compute(void)
 {
-  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   cs_real_3_t *cen_points = NULL;

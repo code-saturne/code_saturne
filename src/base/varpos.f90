@@ -525,24 +525,6 @@ if (iporos.ge.1) then
                       f_id)
     call hide_property(f_id)
 
-    f_name = 'i_f_face_cog_0'
-    call field_create(f_name,&
-                      itycat,&
-                      2,& ! location: inner faces
-                      3,& ! dimension
-                      .false.,&
-                      f_id)
-    call hide_property(f_id)
-
-    f_name = 'i_f_face_cog_1'
-    call field_create(f_name,&
-                      itycat,&
-                      2,& ! location: inner faces
-                      3,& ! dimension
-                      .false.,&
-                      f_id)
-    call hide_property(f_id)
-
     f_name = 'b_f_face_normal'
     call field_create(f_name,&
                       itycat,&
