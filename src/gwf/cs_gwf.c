@@ -503,16 +503,16 @@ cs_gwf_get_two_phase_model(void)
 /*!
  * \brief Set the numerical options related to the two phase flow models
  *
- * \param[in] use_coupled_solver            true/false
- * \param[in] use_incremental_solver        true/false
- * \param[in] use_diffusion_view_for_darcy  true/false
+ * \param[in] solver                             type of solver
+ * \param[in] use_incremental_solver             true/false
+ * \param[in] use_diffusion_view_for_darcy       true/false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
-                                       bool    use_incremental_solver,
-                                       bool    use_diffusion_view_for_darcy)
+cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_solver_type_t    solver,
+                                       bool        use_incremental_solver,
+                                       bool        use_diffusion_view_for_darcy)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -521,9 +521,49 @@ cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
   cs_gwf_tpf_t  *mc = gw->model_context;
   assert(mc != NULL);
 
-  mc->use_coupled_solver = use_coupled_solver;
-  mc->use_incremental_solver = use_incremental_solver;
-  mc->use_diffusion_view_for_darcy = use_diffusion_view_for_darcy;
+  mc->solver_type = solver;
+
+  switch (solver) {
+
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+    mc->use_coupled_solver = true;
+    mc->use_diffusion_view_for_darcy = use_diffusion_view_for_darcy;
+    mc->use_incremental_solver = use_incremental_solver;
+    break;
+
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    mc->use_coupled_solver = true;
+    mc->use_diffusion_view_for_darcy = true; /* No other choice */
+    mc->use_incremental_solver = use_incremental_solver;
+
+    if (!use_diffusion_view_for_darcy) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" Change an invalid user setting:\n"
+                 "   Use a diffusion viewpoint for the Darcy term.\n");
+    }
+    break;
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
+    mc->use_coupled_solver = false;
+    mc->use_diffusion_view_for_darcy = true; /* No other choice */
+    mc->use_incremental_solver = true;       /* No other choice */
+
+    if (!use_diffusion_view_for_darcy) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" Change an invalid user setting:\n"
+                 "   Use a diffusion viewpoint for the Darcy term.\n");
+    }
+
+    if (!use_incremental_solver) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" Change an invalid user setting:\n"
+                 "   Force an incremental resolution.\n");
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid setting", __func__);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

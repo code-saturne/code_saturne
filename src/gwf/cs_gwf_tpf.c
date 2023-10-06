@@ -117,6 +117,7 @@ static const char _output_varnames[CS_GWF_TPF_N_OUTPUT_VARS][32] = {
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the given property with a newly allocated array.
@@ -147,53 +148,149 @@ _add_pty_array(cs_lnum_t         array_size,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if one needs a diffusion term in the conservation of the gas
+ *        component in the case of (Pc, Pg) coupled solver
+ *
+ * \param[in] tpf   pointer to the structure managing the TPF models
+ *
+ * \returns true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_pcpg_coupled_solver_needs_diffusion(const cs_gwf_tpf_t     *tpf)
+{
+  assert(tpf != NULL);
+  if (tpf->use_diffusion_view_for_darcy)
+    return true;
+  else {
+    if (tpf->is_miscible)
+      return true;
+    else
+      return false;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Default settings to apply to the given cs_equation_param_t
+ *
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_set_default_eqp_settings(cs_equation_param_t      *eqp)
+{
+  if (eqp == NULL)
+    return;
+
+  cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
+  cs_equation_param_set(eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
+  cs_equation_param_set(eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the different blocks building the coupled system
+ *
+ * \param[in, out] tpf     model context. Point to a cs_gwf_tpf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_set_coupled_system(cs_gwf_tpf_t    *tpf)
+{
+  /* Define the coupled system of equations */
+  /* -------------------------------------- */
+
+  cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(tpf->h_eq);
+
+  _set_default_eqp_settings(b00_w_eqp);
+  _set_default_eqp_settings(b11_h_eqp);
+
+  /* Create the (0,1)-block related to the water in the gas phase */
+
+  tpf->b01_w_eqp = cs_equation_param_create("block01_w_eq",
+                                           CS_EQUATION_TYPE_GROUNDWATER,
+                                           1,
+                                           CS_PARAM_BC_HMG_NEUMANN);
+
+  _set_default_eqp_settings(tpf->b01_w_eqp);
+
+  /* Create the (1,0)-block related to the hydrogen in the liquid phase */
+
+  tpf->b10_h_eqp = cs_equation_param_create("block10_h_eq",
+                                           CS_EQUATION_TYPE_GROUNDWATER,
+                                           1,
+                                           CS_PARAM_BC_HMG_NEUMANN);
+
+  _set_default_eqp_settings(tpf->b10_h_eqp);
+
+  /* Add a 2x2 system of coupled equations and define each block */
+
+  tpf->system = cs_equation_system_add("two_phase_flow_porous_media",
+                                      2,   /* system size */
+                                      1);  /* scalar-valued block */
+
+  /* Set all the blocks in the coupled system */
+
+  cs_equation_system_assign_equation(0, tpf->w_eq, tpf->system);  /* (0,0) */
+  cs_equation_system_assign_equation(1, tpf->h_eq, tpf->system);  /* (1,1) */
+  cs_equation_system_assign_param(0, 1, tpf->b01_w_eqp, tpf->system);
+  cs_equation_system_assign_param(1, 0, tpf->b10_h_eqp, tpf->system);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Log the setup related to the modelling of miscible two-phase flows
  *
- * \param[in] mc   pointer to the model context structure
+ * \param[in] tpf   pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_log_setup(cs_gwf_tpf_t   *mc)
+_mtpf_log_setup(cs_gwf_tpf_t   *tpf)
 {
-  if (mc == NULL)
+  if (tpf == NULL)
     return;
 
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Water mass density: %5.3e, viscosity: %5.3e,"
-                " molar mass: %5.3e\n", mc->l_mass_density, mc->l_viscosity,
-                mc->w_molar_mass);
+                " molar mass: %5.3e\n", tpf->l_mass_density, tpf->l_viscosity,
+                tpf->w_molar_mass);
   cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Henry constant: %5.3e\n", mc->henry_constant);
+                "  * GWF | Henry constant: %5.3e\n", tpf->henry_constant);
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Gas component: viscosity: %5.3e, diffusivity"
                 " in the liquid phase: %5.3e, molar mass: %5.3e\n",
-                mc->g_viscosity, mc->l_diffusivity_h, mc->h_molar_mass);
+                tpf->g_viscosity, tpf->l_diffusivity_h, tpf->h_molar_mass);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Log the setup related to the modelling of immiscible two-phase flows
  *
- * \param[in] mc   pointer to the model context structure
+ * \param[in] tpf   pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_itpf_log_setup(cs_gwf_tpf_t   *mc)
+_itpf_log_setup(cs_gwf_tpf_t   *tpf)
 {
-  if (mc == NULL)
+  if (tpf == NULL)
     return;
 
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Water mass density: %5.3e, viscosity: %5.3e\n",
-                mc->l_mass_density, mc->l_viscosity);
+                tpf->l_mass_density, tpf->l_viscosity);
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Henry constant: %5.3e (Should be very low)\n",
-                mc->henry_constant);
+                tpf->henry_constant);
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Gas component viscosity: %5.3e, molar mass: %5.3e\n",
-                mc->g_viscosity, mc->h_molar_mass);
+                tpf->g_viscosity, tpf->h_molar_mass);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -237,7 +334,7 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
   const cs_cdovb_scaleq_t  *eqc = (const cs_cdovb_scaleq_t *)eq_context;
   assert(csys->n_dofs == cm->n_vc);
 
-  cs_gwf_tpf_t  *mc = context;
+  cs_gwf_tpf_t  *tpf = context;
 
   /* Modify the property data associated to the hodge operator related to the
      diffusion term */
@@ -245,7 +342,7 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
   cs_property_data_t  *saved = diff_hodge->pty_data;
   cs_property_data_t  tmp = cs_property_data_define(saved->need_tensor,
                                                     saved->need_eigen,
-                                                    mc->diff_hl_pty);
+                                                    tpf->diff_hl_pty);
 
   diff_hodge->pty_data = &tmp;
 
@@ -262,7 +359,7 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
 
   double  *vec = cb->values, *matvec = cb->values + cm->n_vc;
   for (int v = 0; v < cm->n_vc; v++)
-    vec[v] = mc->l_pressure->val[cm->v_ids[v]];
+    vec[v] = tpf->l_pressure->val[cm->v_ids[v]];
 
   cs_sdm_square_matvec(cb->loc, vec, matvec);
 
@@ -318,7 +415,7 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *mc = (cs_gwf_tpf_t *)darcy->update_input;
+  cs_gwf_tpf_t  *tpf = (cs_gwf_tpf_t *)darcy->update_input;
 
   /* Update the array of flux values associated to the advection field.
    *
@@ -327,18 +424,38 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
    * need to define a new property which is very close to the diff_wl_pty
    */
 
-  cs_property_set_scaling_factor(mc->diff_wl_pty, 1./mc->l_mass_density);
+  if (tpf->solver_type != CS_GWF_TPF_SOLVER_PCPG_COUPLED) {
 
-  cs_equation_compute_diffusive_flux(mc->w_eq,
-                                     NULL, /* eqp --> default */
-                                     NULL, /* diff_pty --> default */
-                                     dof_values,
-                                     cell_values,
-                                     darcy->flux_location,
-                                     t_eval,
-                                     darcy->flux_val);
+    cs_property_set_scaling_factor(tpf->diff_wl_pty, 1./tpf->l_mass_density);
 
-  cs_property_unscale(mc->diff_wl_pty);
+    cs_equation_compute_diffusive_flux(tpf->w_eq,
+                                       NULL, /* eqp --> default */
+                                       NULL, /* diff_pty --> default */
+                                       dof_values,
+                                       cell_values,
+                                       darcy->flux_location,
+                                       t_eval,
+                                       darcy->flux_val);
+
+    cs_property_unscale(tpf->diff_wl_pty);
+
+  }
+  else { /* CS_GWF_TPF_SOLVER_PCPG_COUPLED */
+
+    cs_property_set_scaling_factor(tpf->diff_wg_pty, 1./tpf->l_mass_density);
+
+    cs_equation_compute_diffusive_flux(tpf->w_eq,
+                                       NULL, /* eqp --> default */
+                                       tpf->diff_wg_pty,
+                                       dof_values,
+                                       cell_values,
+                                       darcy->flux_location,
+                                       t_eval,
+                                       darcy->flux_val);
+
+    cs_property_unscale(tpf->diff_wg_pty);
+
+  }
 
   /* Update the velocity field at cell centers induced by the Darcy flux */
 
@@ -352,7 +469,7 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
   /* Update the Darcy flux at the boundary (take into account the BCs) since
      the liquid pressure is the unknown */
 
-  cs_gwf_darcy_flux_update_on_boundary(t_eval, mc->w_eq, adv);
+  cs_gwf_darcy_flux_update_on_boundary(t_eval, tpf->w_eq, adv);
 
   cs_field_t  *bdy_nflx =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
@@ -412,14 +529,14 @@ _update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *mc = darcy->update_input;
-  cs_equation_t  *eq = mc->h_eq;
+  cs_gwf_tpf_t  *tpf = darcy->update_input;
+  cs_equation_t  *eq = tpf->h_eq;
 
   /* Update the array of flux values associated to the advection field */
 
   cs_equation_compute_diffusive_flux(eq,
                                      NULL, /* eqp --> default */
-                                     mc->diff_g_pty,
+                                     tpf->diff_g_pty,
                                      dof_values,
                                      cell_values,
                                      darcy->flux_location,
@@ -499,8 +616,8 @@ _update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *mc = darcy->update_input;
-  cs_equation_t  *eq = mc->h_eq;
+  cs_gwf_tpf_t  *tpf = darcy->update_input;
+  cs_equation_t  *eq = tpf->h_eq;
 
   /* Update the array of flux values associated to the advection field */
 
@@ -582,13 +699,13 @@ _update_darcy_t(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *mc = darcy->update_input;
-  const cs_gwf_darcy_flux_t  *l_darcy = mc->l_darcy;
-  const cs_gwf_darcy_flux_t  *g_darcy = mc->g_darcy;
+  cs_gwf_tpf_t  *tpf = darcy->update_input;
+  const cs_gwf_darcy_flux_t  *l_darcy = tpf->l_darcy;
+  const cs_gwf_darcy_flux_t  *g_darcy = tpf->g_darcy;
 
-  const double  hmh = mc->h_molar_mass * mc->henry_constant;
+  const double  hmh = tpf->h_molar_mass * tpf->henry_constant;
   const double  mh_ov_rt =
-    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+    tpf->h_molar_mass / (tpf->ref_temperature * cs_physical_constants_r);
   const cs_adjacency_t  *c2e = connect->c2e;
 
 # pragma omp parallel for if (6*cdoq->n_cells > CS_THR_MIN)
@@ -614,7 +731,7 @@ _update_darcy_t(const cs_cdo_connect_t      *connect,
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      cur2prev     true or false
- * \param[in, out] mc           pointer to a TPF model context
+ * \param[in, out] tpf          pointer to a TPF model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -623,16 +740,16 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
                      const cs_cdo_quantities_t   *cdoq,
                      cs_real_t                    t_eval,
                      bool                         cur2prev,
-                     cs_gwf_tpf_t                *mc)
+                     cs_gwf_tpf_t                *tpf)
 {
   cs_real_t  *dof_vals = NULL, *cell_vals = NULL;
 
   /* Darcy velocity/flux in the liquid phase. The liquid pressure is the
      unknown for the coupled and the segregated solver */
 
-  cs_gwf_darcy_flux_t  *l_darcy = mc->l_darcy;
+  cs_gwf_darcy_flux_t  *l_darcy = tpf->l_darcy;
 
-  cs_gwf_get_value_pointers(mc->w_eq, &dof_vals, &cell_vals);
+  cs_gwf_get_value_pointers(tpf->w_eq, &dof_vals, &cell_vals);
 
   l_darcy->update_func(connect,
                        cdoq,
@@ -644,22 +761,22 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
 
   /* Darcy velocity/flux in the gas phase. */
 
-  cs_gwf_darcy_flux_t  *g_darcy = mc->g_darcy;
+  cs_gwf_darcy_flux_t  *g_darcy = tpf->g_darcy;
 
   g_darcy->update_func(connect,
                        cdoq,
-                       mc->g_pressure->val,
+                       tpf->g_pressure->val,
                        NULL,
                        t_eval,
                        cur2prev,
                        g_darcy);
 
-  if (!mc->use_diffusion_view_for_darcy) {
+  if (!tpf->use_diffusion_view_for_darcy) {
 
     /* Only useful for the computation of the advective term in the
        conservation equation for the hydrogen */
 
-    cs_gwf_darcy_flux_t  *t_darcy = mc->t_darcy;
+    cs_gwf_darcy_flux_t  *t_darcy = tpf->t_darcy;
 
     t_darcy->update_func(connect,
                          cdoq,
@@ -680,7 +797,7 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      update_flag  metadata associated to type of operation to do
  * \param[in]      cur2prev     true or false
- * \param[in, out] mc           pointer to a TPF model context
+ * \param[in, out] tpf          pointer to a TPF model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -689,68 +806,137 @@ _update_pressures(const cs_cdo_connect_t      *connect,
                   const cs_cdo_quantities_t   *cdoq,
                   cs_flag_t                    update_flag,
                   bool                         cur2prev,
-                  cs_gwf_tpf_t                *mc)
+                  cs_gwf_tpf_t                *tpf)
 {
   CS_NO_WARN_IF_UNUSED(connect);
 
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
-  /* Compute either the capillarity pressure or the gas pressure accordind to
-     the choice of solver. Pressure variables which are solved have already
-     been updated */
+  /* Knowing that Pc = Pg - Pl, compute the remaining pressure.  This depends
+     on the choice of the solver. Pressure variables which are solved have
+     already been updated */
 
-  const cs_real_t  *l_pr = mc->l_pressure->val;
+  switch(tpf->solver_type) {
 
-  if (mc->use_coupled_solver) {
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+    {
+      /* Main pressure variables: gas and capillarity pressures */
 
-    /* Main pressure variables: liquid and capillarity pressures */
+      const cs_real_t  *g_pr = tpf->g_pressure->val;
+      const cs_real_t  *c_pr = tpf->c_pressure->val;
+      cs_real_t  *l_pr = tpf->l_pressure->val;
 
-    const cs_real_t  *c_pr = mc->c_pressure->val;
-    cs_real_t  *g_pr = mc->g_pressure->val;
+      if (cur2prev && !cs_flag_test(update_flag, CS_FLAG_INITIALIZATION))
+        cs_field_current_to_previous(tpf->l_pressure);
 
-    if (cur2prev && !cs_flag_test(update_flag, CS_FLAG_INITIALIZATION))
-      cs_field_current_to_previous(mc->g_pressure);
+      /* Compute the new values of the liquid pressure at vertices */
 
-    /* Compute the new values of the gas pressure at vertices */
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_vertices; i++)
+        l_pr[i] = g_pr[i] - c_pr[i];
 
-#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_vertices; i++)
-      g_pr[i] = l_pr[i] + c_pr[i];
+      /* Avoid to add an unsteady contribution at the first iteration  */
 
-    /* Avoid to add an unsteady contribution at the first iteration  */
-
-    if (update_flag & CS_FLAG_INITIALIZATION) {
-      cs_array_real_copy(n_vertices, c_pr, mc->c_pressure->val_pre);
-      cs_array_real_copy(n_vertices, l_pr, mc->l_pressure->val_pre);
-      cs_field_current_to_previous(mc->g_pressure);
+      if (update_flag & CS_FLAG_INITIALIZATION) {
+        cs_array_real_copy(n_vertices, c_pr, tpf->c_pressure->val_pre);
+        cs_array_real_copy(n_vertices, g_pr, tpf->g_pressure->val_pre);
+        cs_field_current_to_previous(tpf->l_pressure);
+      }
     }
+    break;
 
-  }
-  else { /* Segregated solver */
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    {
+      /* Main pressure variables: liquid and capillarity pressures */
 
-    /* Main pressure variables: liquid and gas pressures */
+      const cs_real_t  *l_pr = tpf->l_pressure->val;
+      const cs_real_t  *c_pr = tpf->c_pressure->val;
+      cs_real_t  *g_pr = tpf->g_pressure->val;
 
-    const cs_real_t  *g_pr = mc->g_pressure->val;
-    cs_real_t  *c_pr = mc->c_pressure->val;
+      if (cur2prev && !cs_flag_test(update_flag, CS_FLAG_INITIALIZATION))
+        cs_field_current_to_previous(tpf->g_pressure);
 
-    if (cur2prev && !cs_flag_test(update_flag, CS_FLAG_INITIALIZATION))
-      cs_field_current_to_previous(mc->c_pressure);
+      /* Compute the new values of the gas pressure at vertices */
 
-    /* Compute the values of the capillarity pressure at vertices */
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_vertices; i++)
+        g_pr[i] = l_pr[i] + c_pr[i];
 
-#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_vertices; i++)
-      c_pr[i] = g_pr[i] - l_pr[i];
+      /* Avoid to add an unsteady contribution at the first iteration  */
 
-    /* Avoid to add an unsteady contribution at the first iteration  */
-
-    if (update_flag & CS_FLAG_INITIALIZATION) {
-      cs_array_real_copy(n_vertices, c_pr, mc->c_pressure->val_pre);
-      cs_array_real_copy(n_vertices, g_pr, mc->g_pressure->val_pre);
-      cs_field_current_to_previous(mc->c_pressure);
+      if (update_flag & CS_FLAG_INITIALIZATION) {
+        cs_array_real_copy(n_vertices, c_pr, tpf->c_pressure->val_pre);
+        cs_array_real_copy(n_vertices, l_pr, tpf->l_pressure->val_pre);
+        cs_field_current_to_previous(tpf->g_pressure);
+      }
     }
+    break;
 
-  }
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
+    {
+      /* Main pressure variables: liquid and gas pressures */
+
+      const cs_real_t  *l_pr = tpf->l_pressure->val;
+      const cs_real_t  *g_pr = tpf->g_pressure->val;
+      cs_real_t  *c_pr = tpf->c_pressure->val;
+
+      if (cur2prev && !cs_flag_test(update_flag, CS_FLAG_INITIALIZATION))
+        cs_field_current_to_previous(tpf->c_pressure);
+
+      /* Compute the values of the capillarity pressure at vertices */
+
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_vertices; i++)
+        c_pr[i] = g_pr[i] - l_pr[i];
+
+      /* Avoid to add an unsteady contribution at the first iteration  */
+
+      if (update_flag & CS_FLAG_INITIALIZATION) {
+        cs_array_real_copy(n_vertices, c_pr, tpf->c_pressure->val_pre);
+        cs_array_real_copy(n_vertices, g_pr, tpf->g_pressure->val_pre);
+        cs_field_current_to_previous(tpf->c_pressure);
+      }
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
+    break;
+
+  } /* Switch on the type of solver */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the liquid saturation at cells. Must be done after the update
+ *        of the liquid saturation defined following the c2v adjacency
+ *
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] tpf        pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_liquid_saturation_at_cells(const cs_cdo_connect_t      *connect,
+                                   const cs_cdo_quantities_t   *cdoq,
+                                   cs_gwf_tpf_t                *tpf)
+{
+  const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_real_t  *lsat_c2v = cs_property_get_array(tpf->lsat_pty);
+  cs_real_t  *lsat = tpf->l_saturation->val;
+
+  /* Compute the average liquid saturation in each cell */
+
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    cs_real_t  _sat = 0;
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      _sat += lsat_c2v[j] * cdoq->pvol_vc[j];
+    lsat[c_id] = _sat/cdoq->cell_vol[c_id];
+
+  } /* Loop on cells */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -759,46 +945,46 @@ _update_pressures(const cs_cdo_connect_t      *connect,
  *        in the resolution of a miscible two-phase flow model with an
  *        isotropic absolute permeability.
  *
- *        Numerical options: coupled solver and diffusive viewpoint of the
- *        Darcy terms in the conservation equation of the hydrogen
+ *        Numerical options: (Pl, Pc) coupled solver and diffusive viewpoint of
+ *        the Darcy terms in the conservation equation of the hydrogen
  *
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in, out] mc         pointer to the model context to update
+ * \param[in, out] tpf        pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_mtpf_coupled_diffview_terms(const cs_cdo_connect_t      *connect,
-                                        const cs_cdo_quantities_t   *cdoq,
-                                        cs_gwf_tpf_t                *mc)
+_update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
+                              const cs_cdo_quantities_t   *cdoq,
+                              cs_gwf_tpf_t                *tpf)
 {
   const cs_adjacency_t  *c2v = connect->c2v;
 
-  const double  hmh = mc->h_molar_mass * mc->henry_constant;
+  const double  hmh = tpf->h_molar_mass * tpf->henry_constant;
   const double  mh_ov_rt =
-    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+    tpf->h_molar_mass / (tpf->ref_temperature * cs_physical_constants_r);
 
   /* Values of the current pressure fields used for the update stage */
 
-  const cs_real_t  *pg = mc->g_pressure->val;
+  const cs_real_t  *pg = tpf->g_pressure->val;
 
   /* Retrieve the arrays storing the property values */
 
-  const cs_real_t  *lsat = cs_property_get_array(mc->lsat_pty);
-  const cs_real_t  *lcap = cs_property_get_array(mc->lcap_pty);
-  const cs_real_t  *krl = cs_property_get_array(mc->krl_pty);
-  const cs_real_t  *krg = cs_property_get_array(mc->krg_pty);
+  const cs_real_t  *lsat = cs_property_get_array(tpf->lsat_pty);
+  const cs_real_t  *lcap = cs_property_get_array(tpf->lcap_pty);
+  const cs_real_t  *krl = cs_property_get_array(tpf->krl_pty);
+  const cs_real_t  *krg = cs_property_get_array(tpf->krg_pty);
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *diff_g_array = cs_property_get_array(mc->diff_g_pty);
-  cs_real_t  *diff_wl_array = cs_property_get_array(mc->diff_wl_pty);
-  cs_real_t  *diff_hc_array = cs_property_get_array(mc->diff_hc_pty);
-  cs_real_t  *diff_hl_array = cs_property_get_array(mc->diff_hl_pty);
-  cs_real_t  *time_wc_array = cs_property_get_array(mc->time_wc_pty);
-  cs_real_t  *time_hc_array = cs_property_get_array(mc->time_hc_pty);
-  cs_real_t  *time_hl_array = cs_property_get_array(mc->time_hl_pty);
+  cs_real_t  *diff_g_array = cs_property_get_array(tpf->diff_g_pty);
+  cs_real_t  *diff_wl_array = cs_property_get_array(tpf->diff_wl_pty);
+  cs_real_t  *diff_hc_array = cs_property_get_array(tpf->diff_hc_pty);
+  cs_real_t  *diff_hl_array = cs_property_get_array(tpf->diff_hl_pty);
+  cs_real_t  *time_wc_array = cs_property_get_array(tpf->time_wc_pty);
+  cs_real_t  *time_hc_array = cs_property_get_array(tpf->time_hc_pty);
+  cs_real_t  *time_hl_array = cs_property_get_array(tpf->time_hl_pty);
 
   /* Main loop on soils */
 
@@ -817,11 +1003,11 @@ _update_iso_mtpf_coupled_diffview_terms(const cs_cdo_connect_t      *connect,
 
     const double  k_abs = soil->abs_permeability[0][0];
     const double  phi = soil->porosity;
-    const double  phi_rhol = phi * mc->l_mass_density;
+    const double  phi_rhol = phi * tpf->l_mass_density;
 
-    const double  g_diff_coef = k_abs/mc->g_viscosity;
-    const double  l_diff_coef = k_abs/mc->l_viscosity;
-    const double  wl_diff_coef = mc->l_mass_density * l_diff_coef;
+    const double  g_diff_coef = k_abs/tpf->g_viscosity;
+    const double  l_diff_coef = k_abs/tpf->l_viscosity;
+    const double  wl_diff_coef = tpf->l_mass_density * l_diff_coef;
 
     /* Loop on cells belonging to this soil */
 
@@ -888,45 +1074,45 @@ _update_iso_mtpf_coupled_diffview_terms(const cs_cdo_connect_t      *connect,
  *        in the resolution of an immiscible two-phase flow model with an
  *        isotropic absolute permeability.
  *
- *        Numerical options: coupled solver and diffusive viewpoint of the
- *        Darcy terms in the conservation equation of the hydrogen
+ *        Numerical options: (Pl, Pc) coupled solver and diffusive viewpoint of
+ *        the Darcy terms in the conservation equation of the hydrogen
  *
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in, out] mc         pointer to the model context to update
+ * \param[in, out] tpf        pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
-                                        const cs_cdo_quantities_t  *cdoq,
-                                        cs_gwf_tpf_t               *mc)
+_update_iso_itpf_plpc_coupled(const cs_cdo_connect_t     *connect,
+                              const cs_cdo_quantities_t  *cdoq,
+                              cs_gwf_tpf_t               *tpf)
 {
   const cs_adjacency_t  *c2v = connect->c2v;
 
   const double  mh_ov_rt =
-    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+    tpf->h_molar_mass / (tpf->ref_temperature * cs_physical_constants_r);
 
   /* Values of the current gas pressure field used for the update stage */
 
-  const cs_real_t  *pg = mc->g_pressure->val;
+  const cs_real_t  *pg = tpf->g_pressure->val;
 
   /* Retrieve the arrays storing the property values */
 
-  const cs_real_t  *lsat = cs_property_get_array(mc->lsat_pty);
-  const cs_real_t  *lcap = cs_property_get_array(mc->lcap_pty);
-  const cs_real_t  *krl = cs_property_get_array(mc->krl_pty);
-  const cs_real_t  *krg = cs_property_get_array(mc->krg_pty);
+  const cs_real_t  *lsat = cs_property_get_array(tpf->lsat_pty);
+  const cs_real_t  *lcap = cs_property_get_array(tpf->lcap_pty);
+  const cs_real_t  *krl = cs_property_get_array(tpf->krl_pty);
+  const cs_real_t  *krg = cs_property_get_array(tpf->krg_pty);
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *diff_g_array = cs_property_get_array(mc->diff_g_pty);
-  cs_real_t  *diff_wl_array = cs_property_get_array(mc->diff_wl_pty);
-  cs_real_t  *diff_hc_array = cs_property_get_array(mc->diff_hc_pty);
-  cs_real_t  *diff_hl_array = cs_property_get_array(mc->diff_hl_pty);
-  cs_real_t  *time_wc_array = cs_property_get_array(mc->time_wc_pty);
-  cs_real_t  *time_hc_array = cs_property_get_array(mc->time_hc_pty);
-  cs_real_t  *time_hl_array = cs_property_get_array(mc->time_hl_pty);
+  cs_real_t  *diff_g_array = cs_property_get_array(tpf->diff_g_pty);
+  cs_real_t  *diff_wl_array = cs_property_get_array(tpf->diff_wl_pty);
+  cs_real_t  *diff_hc_array = cs_property_get_array(tpf->diff_hc_pty);
+  cs_real_t  *diff_hl_array = cs_property_get_array(tpf->diff_hl_pty);
+  cs_real_t  *time_wc_array = cs_property_get_array(tpf->time_wc_pty);
+  cs_real_t  *time_hc_array = cs_property_get_array(tpf->time_hc_pty);
+  cs_real_t  *time_hl_array = cs_property_get_array(tpf->time_hl_pty);
 
   /* Main loop on soils */
 
@@ -945,10 +1131,10 @@ _update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
 
     const double  k_abs = soil->abs_permeability[0][0];
     const double  phi = soil->porosity;
-    const double  phi_rhol = phi * mc->l_mass_density;
+    const double  phi_rhol = phi * tpf->l_mass_density;
 
-    const double  g_diff_coef = k_abs/mc->g_viscosity;
-    const double  wl_diff_coef = mc->l_mass_density * k_abs/mc->l_viscosity;
+    const double  g_diff_coef = k_abs/tpf->g_viscosity;
+    const double  wl_diff_coef = tpf->l_mass_density * k_abs/tpf->l_viscosity;
 
     /* Loop on cells belonging to this soil */
 
@@ -1015,19 +1201,151 @@ _update_iso_itpf_coupled_diffview_terms(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize the non-linear algorithm.
+ * \brief Update several arrays associated to the definition of terms involved
+ *        in the resolution of an immiscible two-phase flow model with an
+ *        isotropic absolute permeability.
  *
- * \param[in, out] mc           pointer to the model context structure
+ *        Numerical options: (Pc, Pg) coupled solver and diffusive viewpoint of
+ *        the Darcy terms in the conservation equation of the hydrogen
+ *
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] tpf        pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_non_linear_algo(cs_gwf_tpf_t                  *mc)
+_update_iso_itpf_pcpg_coupled_diffview(const cs_cdo_connect_t     *connect,
+                                       const cs_cdo_quantities_t  *cdoq,
+                                       cs_gwf_tpf_t               *tpf)
 {
-  if (mc->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  const double  mh_ov_rt =
+    tpf->h_molar_mass / (tpf->ref_temperature * cs_physical_constants_r);
+
+  /* Values of the current gas pressure field used for the update stage */
+
+  const cs_real_t  *pg = tpf->g_pressure->val;
+
+  /* Retrieve the arrays storing the property values */
+
+  const cs_real_t  *lsat = cs_property_get_array(tpf->lsat_pty);
+  const cs_real_t  *lcap = cs_property_get_array(tpf->lcap_pty);
+  const cs_real_t  *krl = cs_property_get_array(tpf->krl_pty);
+  const cs_real_t  *krg = cs_property_get_array(tpf->krg_pty);
+
+  /* Retrieve arrays to update */
+
+  cs_real_t  *diff_g_array = cs_property_get_array(tpf->diff_g_pty);
+
+  cs_real_t  *time_wc_array = cs_property_get_array(tpf->time_wc_pty);
+  cs_real_t  *diff_wc_array = cs_property_get_array(tpf->diff_wc_pty);
+  cs_real_t  *diff_wg_array = cs_property_get_array(tpf->diff_wg_pty);
+
+  cs_real_t  *time_hc_array = cs_property_get_array(tpf->time_hc_pty);
+  cs_real_t  *time_hg_array = cs_property_get_array(tpf->time_hg_pty);
+  cs_real_t  *diff_hg_array = cs_property_get_array(tpf->diff_hg_pty);
+
+  /* Main loop on soils */
+
+  for (int soil_id = 0; soil_id < cs_gwf_get_n_soils(); soil_id++) {
+
+    cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
+
+    assert(soil != NULL);
+    assert(soil->hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
+    assert(soil->abs_permeability_dim == 1);
+
+    const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
+    assert(zone != NULL);
+
+    /* Soil properties and its derived quantities */
+
+    const double  k_abs = soil->abs_permeability[0][0];
+    const double  phi = soil->porosity;
+    const double  phi_rhol = phi * tpf->l_mass_density;
+
+    const double  g_diff_coef = k_abs/tpf->g_viscosity;
+    const double  rhol_diff_coef = tpf->l_mass_density * k_abs/tpf->l_viscosity;
+
+    /* Loop on cells belonging to this soil */
+
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+      const cs_lnum_t  c_id = zone->elt_ids[i];
+
+      double  diff_g = 0, time_wc = 0, diff_wg = 0, time_hc = 0, time_hg = 0;
+      double  diff_hg = 0;
+
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+        const cs_lnum_t  v_id = c2v->ids[j];
+        const double  pvc = cdoq->pvol_vc[j];
+
+        const double  rhog_h = mh_ov_rt * pg[v_id];
+        const double  sl = lsat[j], sg = 1 - sl;
+        const double  dsl_dpc = lcap[j];
+
+        /* Update terms for the Darcy flux in the gas phase */
+
+        const double  diff_g_term = pvc * krg[j] * g_diff_coef;
+
+        diff_g += diff_g_term;
+
+        /* Update terms associated to the water conservation equation */
+
+        time_wc += pvc * dsl_dpc;
+        diff_wg += pvc * krl[j];
+
+        /* Update terms associated to the hydrogen conservation equation */
+
+        const double  time_h_coef = mh_ov_rt*sg;
+
+        time_hc += pvc * (-rhog_h) * dsl_dpc;
+        time_hg += pvc * time_h_coef;
+
+        const double  diff_h_coef =
+
+        diff_hg += diff_g_term * rhog_h;
+
+      } /* Loop on cell vertices */
+
+      /* Define the cell values (what is stored in properties associated to
+         each term of an equation) */
+
+      const double  inv_volc = 1./cdoq->cell_vol[c_id];
+
+      diff_g_array[c_id]  = inv_volc * diff_g;
+
+      time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
+      diff_wg_array[c_id] = inv_volc * diff_wg * rhol_diff_coef;
+      diff_wc_array[c_id] = -diff_wg_array[c_id];
+
+      time_hc_array[c_id] = inv_volc * time_hc * phi;
+      time_hg_array[c_id] = inv_volc * time_hg * phi;
+      diff_hg_array[c_id] = inv_volc * diff_hg;
+
+    } /* Loop on cells of the zone (= soil) */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the non-linear algorithm.
+ *
+ * \param[in, out] tpf        pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_non_linear_algo(cs_gwf_tpf_t          *tpf)
+{
+  if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
     return;
 
-  cs_iter_algo_t  *algo = mc->nl_algo;
+  cs_iter_algo_t  *algo = tpf->nl_algo;
   assert(algo != NULL);
 
   cs_iter_algo_reset(algo);
@@ -1039,8 +1357,8 @@ _init_non_linear_algo(cs_gwf_tpf_t                  *mc)
      previous operation
   */
 
-  const cs_real_t  *pg_0 = mc->g_pressure->val;
-  const cs_real_t  *pl_0 = mc->l_pressure->val;
+  const cs_real_t  *pg_0 = tpf->g_pressure->val;
+  const cs_real_t  *pl_0 = tpf->l_pressure->val;
 
   /* Set the normalization factor. Performed with Pg and Pl even if Pc is used
      in the resolution. One prefers to use Pg since it also appears in the
@@ -1218,7 +1536,7 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step    pointer to a cs_time_step_t structure
  * \param[in]      option_flag  calculation option related to the GWF module
- * \param[in, out] mc           pointer to the casted model context
+ * \param[in, out] tpf          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1228,16 +1546,16 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
                         const cs_cdo_quantities_t    *cdoq,
                         const cs_time_step_t         *time_step,
                         cs_flag_t                     option_flag,
-                        cs_gwf_tpf_t                 *mc)
+                        cs_gwf_tpf_t                 *tpf)
 {
   bool cur2prev = true;
   cs_flag_t  update_flag = CS_FLAG_CURRENT_TO_PREVIOUS;
 
-  cs_iter_algo_t  *algo = mc->nl_algo;
+  cs_iter_algo_t  *algo = tpf->nl_algo;
   assert(algo != NULL);
-  assert(mc->nl_algo_type == CS_PARAM_NL_ALGO_PICARD);
+  assert(tpf->nl_algo_type == CS_PARAM_NL_ALGO_PICARD);
 
-  _init_non_linear_algo(mc);
+  _init_non_linear_algo(tpf);
 
   cs_real_t  *pc_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
   cs_real_t  *pc_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
@@ -1245,23 +1563,23 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
   BFT_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
   BFT_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
 
-  pc_kp1 = mc->c_pressure->val; /* val stores always the latest values */
-  pl_kp1 = mc->l_pressure->val;
+  pc_kp1 = tpf->c_pressure->val; /* val stores always the latest values */
+  pl_kp1 = tpf->l_pressure->val;
 
   do {
 
     /* current values: n+1,k */
 
-    cs_array_real_copy(cdoq->n_vertices, mc->c_pressure->val, pc_k);
-    cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val, pl_k);
+    cs_array_real_copy(cdoq->n_vertices, tpf->c_pressure->val, pc_k);
+    cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val, pl_k);
 
-    cs_equation_system_solve(cur2prev, mc->system);
+    cs_equation_system_solve(cur2prev, tpf->system);
 
     /* current values: n+1,k+1 now */
 
-    if (cs_iter_algo_get_n_iter(algo) > 0 && mc->nl_relax_factor < 1.0) {
+    if (cs_iter_algo_get_n_iter(algo) > 0 && tpf->nl_relax_factor < 1.0) {
 
-      const double  relax = mc->nl_relax_factor;
+      const double  relax = tpf->nl_relax_factor;
       for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
         pc_kp1[i] = pc_kp1[i]*relax + pc_k[i]*(1-relax);
         pl_kp1[i] = pl_kp1[i]*relax + pl_k[i]*(1-relax);
@@ -1273,21 +1591,21 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
 
     cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
                       update_flag, option_flag,
-                      mc);
+                      tpf);
 
     /* After the first resolution, no cur2prev anymore */
 
     cur2prev = false;
     update_flag = 0;
 
-  } while (_check_cvg_nl(mc->nl_algo_type, pc_k, pc_kp1, pl_k, pl_kp1,
+  } while (_check_cvg_nl(tpf->nl_algo_type, pc_k, pc_kp1, pl_k, pl_kp1,
                          algo) == CS_SLES_ITERATING);
 
   /* If something wrong happens, write a message in the listing */
 
   cs_iter_algo_check_warning(__func__,
-                             mc->system->param->name,
-                             cs_param_get_nl_algo_label(mc->nl_algo_type),
+                             tpf->system->param->name,
+                             cs_param_get_nl_algo_label(tpf->nl_algo_type),
                              algo);
 
   /* Free temporary arrays and structures */
@@ -1308,7 +1626,7 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step    pointer to a cs_time_step_t structure
  * \param[in]      option_flag  calculation option related to the GWF module
- * \param[in, out] mc           pointer to the casted model context
+ * \param[in, out] tpf          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1318,11 +1636,11 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
                           const cs_cdo_quantities_t    *cdoq,
                           const cs_time_step_t         *time_step,
                           cs_flag_t                     option_flag,
-                          cs_gwf_tpf_t                 *mc)
+                          cs_gwf_tpf_t                 *tpf)
 {
   bool  cur2prev = false;
   cs_flag_t  update_flag = 0;   /* No current to previous operation */
-  cs_iter_algo_t  *algo = mc->nl_algo;
+  cs_iter_algo_t  *algo = tpf->nl_algo;
   assert(algo != NULL);
 
   cs_iter_algo_reset(algo);
@@ -1335,16 +1653,16 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
   pl_k = pg_k + cdoq->n_vertices;
 
-  cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val_pre, pg_k);
-  cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val_pre, pl_k);
+  cs_array_real_copy(cdoq->n_vertices, tpf->g_pressure->val_pre, pg_k);
+  cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val_pre, pl_k);
 
   /* One needs only one array gathering the liquid and gas pressures */
 
   BFT_MALLOC(pg_kp1, 2*cdoq->n_vertices, cs_real_t);
   pl_kp1 = pg_kp1 + cdoq->n_vertices;
 
-  cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val, pg_kp1);
-  cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val, pl_kp1);
+  cs_array_real_copy(cdoq->n_vertices, tpf->g_pressure->val, pg_kp1);
+  cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val, pl_kp1);
 
   /* Set the normalization factor */
 
@@ -1358,7 +1676,7 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
   /* Main non-linear loop */
 
-  while (_check_cvg_nl(mc->nl_algo_type,
+  while (_check_cvg_nl(tpf->nl_algo_type,
                        pg_k, pg_kp1, pl_k, pl_kp1,
                        algo) == CS_SLES_ITERATING) {
 
@@ -1369,25 +1687,25 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
      * In case of an Anderson acceleration, pg_kp1 and pl_kp1 may be
      * updated */
 
-    if (cs_iter_algo_get_n_iter(algo) >= mc->anderson_param.starting_iter) {
+    if (cs_iter_algo_get_n_iter(algo) >= tpf->anderson_param.starting_iter) {
 
-      cs_array_real_copy(cdoq->n_vertices, pg_kp1, mc->g_pressure->val);
-      cs_array_real_copy(cdoq->n_vertices, pl_kp1, mc->l_pressure->val);
+      cs_array_real_copy(cdoq->n_vertices, pg_kp1, tpf->g_pressure->val);
+      cs_array_real_copy(cdoq->n_vertices, pl_kp1, tpf->l_pressure->val);
 
     }
 
     cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
                       update_flag,
                       option_flag,
-                      mc);
+                      tpf);
 
     /* Build and solve the linear system related to the coupled system of
        equations. First call: current --> previous and then no operation */
 
-    cs_equation_system_solve(cur2prev, mc->system);
+    cs_equation_system_solve(cur2prev, tpf->system);
 
-    cs_array_real_copy(cdoq->n_vertices, mc->g_pressure->val, pg_kp1);
-    cs_array_real_copy(cdoq->n_vertices, mc->l_pressure->val, pl_kp1);
+    cs_array_real_copy(cdoq->n_vertices, tpf->g_pressure->val, pg_kp1);
+    cs_array_real_copy(cdoq->n_vertices, tpf->l_pressure->val, pl_kp1);
 
   } /* Until convergence */
 
@@ -1397,13 +1715,13 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
                     update_flag,
                     option_flag,
-                    mc);
+                    tpf);
 
   /* If something wrong happens, write a message in the listing */
 
   cs_iter_algo_check_warning(__func__,
-                             mc->system->param->name,
-                             cs_param_get_nl_algo_label(mc->nl_algo_type),
+                             tpf->system->param->name,
+                             cs_param_get_nl_algo_label(tpf->nl_algo_type),
                              algo);
 
   /* Free temporary arrays and structures */
@@ -1423,7 +1741,7 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      option_flag  calculation option related to the GWF module
- * \param[in, out] mc           pointer to the casted model context
+ * \param[in, out] tpf          pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1433,14 +1751,14 @@ _compute_segregated(const cs_mesh_t              *mesh,
                     const cs_cdo_connect_t       *connect,
                     const cs_cdo_quantities_t    *cdoq,
                     cs_flag_t                     option_flag,
-                    cs_gwf_tpf_t                 *mc)
+                    cs_gwf_tpf_t                 *tpf)
 {
-  assert(mc->use_incremental_solver);
+  assert(tpf->use_incremental_solver);
 
   /* Copy the state for time t^n into field->val_pre */
 
-  cs_field_current_to_previous(mc->g_pressure);
-  cs_field_current_to_previous(mc->l_pressure);
+  cs_field_current_to_previous(tpf->g_pressure);
+  cs_field_current_to_previous(tpf->l_pressure);
 
   /* Since the cur2prev operation has been done, avoid to do it again */
 
@@ -1449,12 +1767,12 @@ _compute_segregated(const cs_mesh_t              *mesh,
 
   /* Initialize the non-linear algorithm */
 
-  cs_iter_algo_t  *algo = mc->nl_algo;
+  cs_iter_algo_t  *algo = tpf->nl_algo;
   assert(algo != NULL);
 
   cs_iter_algo_reset(algo);
 
-  double  normalization = cs_cdo_blas_square_norm_pvsp(mc->c_pressure->val);
+  double  normalization = cs_cdo_blas_square_norm_pvsp(tpf->c_pressure->val);
 
   if (normalization < cs_math_zero_threshold)
     normalization = 1.0;
@@ -1471,16 +1789,16 @@ _compute_segregated(const cs_mesh_t              *mesh,
    *
    */
 
-  cs_equation_solve(cur2prev, mesh, mc->w_eq);
+  cs_equation_solve(cur2prev, mesh, tpf->w_eq);
 
-  cs_equation_solve(cur2prev, mesh, mc->h_eq);
+  cs_equation_solve(cur2prev, mesh, tpf->h_eq);
 
   /* Update the variables related to the groundwater flow system */
 
   cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
                     CS_FLAG_CURRENT_TO_PREVIOUS, /* Force this operation */
                     option_flag,
-                    mc);
+                    tpf);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
   char  label[32];
@@ -1523,22 +1841,22 @@ _compute_segregated(const cs_mesh_t              *mesh,
   cs_real_t  *dpc_kp1 = NULL;
   BFT_MALLOC(dpc_kp1, mesh->n_vertices, cs_real_t);
 
-  _get_capillarity_pressure_increment(mesh, mc->w_eq, mc->h_eq, dpc_kp1);
+  _get_capillarity_pressure_increment(mesh, tpf->w_eq, tpf->h_eq, dpc_kp1);
 
   while(_check_cvg_nl_dpc(dpc_kp1, algo) == CS_SLES_ITERATING) {
 
     /* Solve step */
 
-    cs_equation_solve(cur2prev, mesh, mc->w_eq);
+    cs_equation_solve(cur2prev, mesh, tpf->w_eq);
 
-    cs_equation_solve(cur2prev, mesh, mc->h_eq);
+    cs_equation_solve(cur2prev, mesh, tpf->h_eq);
 
     /* Update the variables related to the groundwater flow system */
 
     cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
                       update_flag,
                       option_flag,
-                      mc);
+                      tpf);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
     n_iter = cs_iter_algo_get_n_iter(algo);
@@ -1577,7 +1895,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
                              time_step);
 #endif
 
-    _get_capillarity_pressure_increment(mesh, mc->w_eq, mc->h_eq, dpc_kp1);
+    _get_capillarity_pressure_increment(mesh, tpf->w_eq, tpf->h_eq, dpc_kp1);
 
   } /* while not converged */
 
@@ -1585,10 +1903,455 @@ _compute_segregated(const cs_mesh_t              *mesh,
 
   cs_iter_algo_check_warning(__func__,
                              "Segregated incremental TPF solver",
-                             cs_param_get_nl_algo_label(mc->nl_algo_type),
+                             cs_param_get_nl_algo_label(tpf->nl_algo_type),
                              algo);
 
   BFT_FREE(dpc_kp1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the model context
+ *
+ *        Case of a two-phase flows model in porous media using a coupled
+ *        solver and the couple (Pc, Pg) as main unknowns
+ *
+ * \param[in, out] tpf         pointer to the model context structure
+ * \param[in, out] perm_type   type of permeability to handle
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_pcpg_coupled_solver(cs_gwf_tpf_t            *tpf,
+                          cs_property_type_t       perm_type)
+{
+  /* Equations and the coupled system
+   * ================================
+   *
+   * Notations are the following :
+   * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
+   * - indice "c" refers to the capillarity pressure
+   * - Two components: water denoted by "w" and a gaseous component (let's say
+   *   hydrogen) denoted by "h". The gaseous component is present in the two
+   *   phases whereas water is only considered in the liquid phase.
+   *
+   * The resulting linear algebraic system (one applies a linearization) is
+   * defined as follows:
+   *
+   *                              cap.   liq
+   * water mass conservation    | b00  | b01 ||P_c|   | b_w |
+   *                            |------|-----||---| = |-----|
+   * hydrogen mass conservation | b10  | b11 ||P_g|   | b_h |
+   *
+   * This is a coupled system. Coupling terms are collected inside M_01 and M_10
+   */
+
+  tpf->w_eq = cs_equation_add("w_conservation",        /* equation name */
+                              "capillarity_pressure",  /* variable name */
+                              CS_EQUATION_TYPE_GROUNDWATER,
+                              1,
+                              CS_PARAM_BC_HMG_NEUMANN);
+
+  tpf->h_eq = cs_equation_add("h_conservation",   /* equation name */
+                              "gas_pressure",     /* variable name */
+                              CS_EQUATION_TYPE_GROUNDWATER,
+                              1,
+                              CS_PARAM_BC_HMG_NEUMANN);
+
+  cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(tpf->h_eq);
+
+  _set_coupled_system(tpf);
+
+  /* Properties
+   * ========== */
+
+  /* Conservation of the mass of water
+   * --------------------------------- */
+
+  /* (0,0)-block */
+
+  tpf->time_wc_pty = cs_property_add("time_wc_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(b00_w_eqp, tpf->time_wc_pty);
+
+  tpf->diff_wc_pty = cs_property_add("diff_wc_pty", perm_type);
+  cs_equation_add_diffusion(b00_w_eqp, tpf->diff_wc_pty);
+
+  /* (0,1)-block */
+
+  tpf->diff_wg_pty = cs_property_add("diff_wg_pty", perm_type);
+  cs_equation_add_diffusion(tpf->b01_w_eqp, tpf->diff_wg_pty);
+
+  /* Conservation of the mass of component mainly present in the gas phase
+   * --------------------------------------------------------------------- */
+
+  /* (1,0)-block */
+
+  tpf->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(tpf->b10_h_eqp, tpf->time_hc_pty);
+
+  if (tpf->is_miscible) {
+
+    tpf->diff_hc_pty = cs_property_add("diff_hc_pty", perm_type);
+    cs_equation_add_diffusion(tpf->b10_h_eqp, tpf->diff_hc_pty);
+
+  }
+
+  /* (1,1)-block */
+
+  tpf->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(b11_h_eqp, tpf->time_hg_pty);
+
+  if (_pcpg_coupled_solver_needs_diffusion(tpf)) {
+
+    tpf->diff_hg_pty = cs_property_add("diff_hg_pty", perm_type);
+    cs_equation_add_diffusion(b11_h_eqp, tpf->diff_hg_pty);
+
+  }
+
+  if (!tpf->use_diffusion_view_for_darcy) /* Advection viewpoint */
+    cs_equation_add_advection(b11_h_eqp, tpf->t_darcy->adv_field);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize the setup stage (allocation of arrays for instance) in the
+ *        case of a two-phase flows model in porous media using a coupled
+ *        solver and the couple (Pc, Pg) as main unknowns
+ *
+ * \param[in]      connect     set of additional connectivities for CDO
+ * \param[in, out] tpf         pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_finalize_setup_pcpg_coupled_solver(const cs_cdo_connect_t  *connect,
+                                    cs_gwf_tpf_t            *tpf)
+{
+  const cs_lnum_t  n_cells = connect->n_cells;
+
+  /* Conservation of the mass of water
+   * --------------------------------- */
+
+  /* Unsteady term associated to Pc */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_wc_pty);
+
+  /* Diffusion term associated to Pc */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_wc_pty);
+
+  /* Diffusion term associated to Pg */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_wg_pty);
+
+  /* Conservation of the mass of component mainly present in the gas phase
+   * --------------------------------------------------------------------- */
+
+  /* Unsteady term associated to Pc */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_hc_pty);
+
+  if (tpf->is_miscible) /* Diffusion term associated to Pc */
+    _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hc_pty);
+
+  if (_pcpg_coupled_solver_needs_diffusion(tpf)) {
+
+    /* Diffusion term associated to Pg */
+
+    _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hg_pty);
+
+  }
+
+  /* Unsteady term associated to Pg */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_hg_pty);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the model context
+ *
+ *        Case of a two-phase flows model in porous media using a coupled
+ *        solver and the couple (Pc, Pg) as main unknowns
+ *
+ * \param[in, out] tpf         pointer to the model context structure
+ * \param[in, out] perm_type   type of permeability to handle
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_plpc_coupled_solver(cs_gwf_tpf_t            *tpf,
+                          cs_property_type_t       perm_type)
+{
+  /* Equations and the coupled system
+   * ================================
+   *
+   * Notations are the following :
+   * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
+   * - indice "c" refers to the capillarity pressure
+   * - Two components: water denoted by "w" and a gaseous component (let's say
+   *   hydrogen) denoted by "h". The gaseous component is present in the two
+   *   phases whereas water is only considered in the liquid phase.
+   *
+   * The resulting linear algebraic system (one applies a linearization) is
+   * defined as follows:
+   *
+   *                              liq.   cap.
+   * water mass conservation    | b00  | b01 ||P_l|   | b_w |
+   *                            |------|-----||---| = |-----|
+   * hydrogen mass conservation | b10  | b11 ||P_c|   | b_h |
+   *
+   * This is a coupled system. Coupling terms are collected inside b01 and b10
+   */
+
+  tpf->w_eq = cs_equation_add("w_conservation",   /* equation name */
+                              "liquid_pressure",  /* variable name */
+                              CS_EQUATION_TYPE_GROUNDWATER,
+                              1,
+                              CS_PARAM_BC_HMG_NEUMANN);
+
+  tpf->h_eq = cs_equation_add("h_conservation",       /* equation name */
+                              "capillarity_pressure", /* variable name */
+                              CS_EQUATION_TYPE_GROUNDWATER,
+                              1,
+                              CS_PARAM_BC_HMG_NEUMANN);
+
+  cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(tpf->h_eq);
+
+  _set_coupled_system(tpf);
+
+  /* Properties
+   * ========== */
+
+  /* Conservation of the mass of water
+   * --------------------------------- */
+
+  /* (0,0)-block */
+
+  tpf->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
+  cs_equation_add_diffusion(b00_w_eqp, tpf->diff_wl_pty);
+
+  /* (0,1)-block */
+
+  tpf->time_wc_pty = cs_property_add("time_wc_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(tpf->b01_w_eqp, tpf->time_wc_pty);
+
+  /* Conservation of the mass of component mainly present in the gas phase
+   * --------------------------------------------------------------------- */
+
+  /* (1,1)-block */
+
+  tpf->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(b11_h_eqp, tpf->time_hc_pty);
+
+  tpf->diff_hc_pty = cs_property_add("diff_hc_pty", perm_type);
+  cs_equation_add_diffusion(b11_h_eqp, tpf->diff_hc_pty);
+
+  /* (1,0)-block */
+
+  tpf->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(tpf->b10_h_eqp, tpf->time_hl_pty);
+
+  tpf->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
+  cs_equation_add_diffusion(tpf->b10_h_eqp, tpf->diff_hl_pty);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize the setup stage (allocation of arrays for instance) in the
+ *        case of a two-phase flows model in porous media using a coupled
+ *        solver and the couple (Pl, Pc) as main unknowns
+ *
+ * \param[in]      connect     set of additional connectivities for CDO
+ * \param[in, out] tpf         pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_finalize_setup_plpc_coupled_solver(const cs_cdo_connect_t  *connect,
+                                    cs_gwf_tpf_t            *tpf)
+{
+  const cs_lnum_t  n_cells = connect->n_cells;
+
+  /* Conservation of the mass of water
+   * --------------------------------- */
+
+  /* Unsteady term associated to Pc */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_wc_pty);
+
+  /* Diffusion term associated to Pl */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_wl_pty);
+
+  /* Conservation of the mass of component mainly present in the gas phase
+   * --------------------------------------------------------------------- */
+
+  /* Unsteady term associated to Pc */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_hc_pty);
+
+  /* Diffusion term associated to Pc */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hc_pty);
+
+  /* Unsteady term associated to Pl */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_hl_pty);
+
+  /* Diffusion term associated to Pl */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hl_pty);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the model context
+ *
+ *        Case of a two-phase flows model in porous media using a segregated
+ *        solver and the couple (Pl, Pg) as main unknowns
+ *
+ * \param[in, out] tpf         pointer to the model context structure
+ * \param[in, out] perm_type   type of permeability to handle
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_plpg_segregated_solver(cs_gwf_tpf_t            *tpf,
+                             cs_property_type_t       perm_type)
+{
+ /* Equations
+  * =========
+  *
+  * Notations are the following :
+  * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
+  * - indice "c" refers to the capillarity pressure
+  * - Two components: water denoted by "w" and a gaseous component (let's say
+  *   hydrogen) denoted by "h". The gaseous component is present in the two
+  *   phases whereas water is only considered in the liquid phase.
+  */
+
+  tpf->w_eq = cs_equation_add("w_conservation",   /* equation name */
+                              "liquid_pressure",  /* variable name */
+                              CS_EQUATION_TYPE_GROUNDWATER,
+                              1,
+                              CS_PARAM_BC_HMG_NEUMANN);
+
+  tpf->h_eq = cs_equation_add("h_conservation",  /* equation name */
+                              "gas_pressure",    /* variable name */
+                              CS_EQUATION_TYPE_GROUNDWATER,
+                              1,
+                              CS_PARAM_BC_HMG_NEUMANN);
+
+  cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
+
+  /* Properties
+   * ========== */
+
+  /* Conservation of the mass of water
+   * --------------------------------- */
+
+  /* used both for the unsteady term and the computation of the source term.
+   * \partial_t Pc = \partial_t Pg - \partial_t Pl */
+
+  tpf->time_wc_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(h_eqp, tpf->time_wc_pty);
+
+  tpf->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
+  cs_equation_add_diffusion(w_eqp, tpf->diff_wl_pty);
+
+  /* Conservation of the mass of component mainly present in the gas phase
+   * --------------------------------------------------------------------- */
+
+  tpf->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(h_eqp, tpf->time_hc_pty);
+
+  tpf->diff_hc_pty = cs_property_add("diff_hc_pty", perm_type);
+  cs_equation_add_diffusion(h_eqp, tpf->diff_hc_pty);
+
+  tpf->reac_h_pty = cs_property_add("reac_h_pty", CS_PROPERTY_ISO);
+  cs_equation_add_reaction(h_eqp, tpf->reac_h_pty);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize the setup stage (allocation of arrays for instance) in the
+ *        case of a two-phase flows model in porous media using a segregated
+ *        solver and the couple (Pl, Pg) as main unknowns
+ *
+ * \param[in]      connect     set of additional connectivities for CDO
+ * \param[in, out] tpf         pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_finalize_setup_plpg_segregated_solver(const cs_cdo_connect_t  *connect,
+                                       cs_gwf_tpf_t            *tpf)
+{
+  cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
+
+  const cs_lnum_t  n_cells = connect->n_cells;
+
+  /* Conservation of the mass of water
+   * --------------------------------- */
+
+  /* Unsteady term */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_wc_pty);
+
+  /* Diffusion term */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_wl_pty);
+
+  /* Source term */
+
+  BFT_MALLOC(tpf->srct_w_array, n_cells, cs_real_t);
+  cs_array_real_fill_zero(n_cells, tpf->srct_w_array);
+
+  cs_equation_add_source_term_by_array(w_eqp,
+                                       NULL,    /* all cells */
+                                       cs_flag_primal_cell,
+                                       tpf->srct_w_array,
+                                       false,   /* xdef not owner */
+                                       true);   /* full length */
+
+  /* Conservation of the mass of component mainly present in the gas phase
+   * --------------------------------------------------------------------- */
+
+  /* Unsteady term (associated to Pg in the case of a segregated solver) */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_hc_pty);
+
+  /* Diffusion property in the hydrogen equation (associated to Pg in the
+     case of a segregated solver) */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hc_pty);
+
+  /* Diffusion property in the hydrogen equation associated to Pl. This is
+     used to define a source term in the case of a segregated solver. */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hl_pty);
+
+  /* Reaction term */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->reac_h_pty);
+
+  /* Source term (second one; the first is associated to a stiffness term and
+     relies on a builder hook function) */
+
+  BFT_MALLOC(tpf->srct_h_array, n_cells, cs_real_t);
+  cs_array_real_fill_zero(n_cells, tpf->srct_h_array);
+
+  cs_equation_add_source_term_by_array(h_eqp,
+                                       NULL,   /* all cells */
+                                       cs_flag_primal_cell,
+                                       tpf->srct_h_array,
+                                       false,  /* xdef not owner */
+                                       true);  /* full length */
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1596,6 +2359,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate and initialize the model context structure for two-phase
@@ -1613,50 +2377,35 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   assert(model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
          model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
 
-  cs_gwf_tpf_t  *mc = NULL;
+  cs_gwf_tpf_t  *tpf = NULL;
 
-  BFT_MALLOC(mc, 1, cs_gwf_tpf_t);
-
-  /* Create a new equation associated to the mass conservation of water. The
-     unknown is the capillarity pressure. This will stand for the (0,0)-block
-     if a coupled system is considered. */
-
-  mc->w_eq = cs_equation_add("w_conservation",   /* equation name */
-                             "liquid_pressure",  /* variable name */
-                             CS_EQUATION_TYPE_GROUNDWATER,
-                             1,
-                             CS_PARAM_BC_HMG_NEUMANN);
-
-  cs_equation_param_t  *w_eqp = cs_equation_get_param(mc->w_eq);
-
-  cs_equation_param_set(w_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
-  cs_equation_param_set(w_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
-  cs_equation_param_set(w_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
+  BFT_MALLOC(tpf, 1, cs_gwf_tpf_t);
 
   /* Set to NULL since one has to know if a coupled or segregated solver is
-     used */
+     used or what couple of variables is considered */
 
-  mc->h_eq = NULL;
-  mc->b01_w_eqp = NULL;
-  mc->b10_h_eqp = NULL;
-  mc->system = NULL;
+  tpf->w_eq = NULL;
+  tpf->h_eq = NULL;
+  tpf->b01_w_eqp = NULL;
+  tpf->b10_h_eqp = NULL;
+  tpf->system = NULL;
 
   /* Advection fields */
   /* ---------------- */
 
-  mc->l_darcy = NULL;
-  mc->g_darcy = NULL;
-  mc->t_darcy = NULL;
+  tpf->l_darcy = NULL;
+  tpf->g_darcy = NULL;
+  tpf->t_darcy = NULL;
 
   /* Properties
    * ----------
    *
    */
 
-  mc->krl_pty = cs_property_subcell_add("krl_pty", CS_PROPERTY_ISO);
-  mc->krg_pty = cs_property_subcell_add("krg_pty", CS_PROPERTY_ISO);
-  mc->lsat_pty = cs_property_subcell_add("lsat_pty", CS_PROPERTY_ISO);
-  mc->lcap_pty = cs_property_subcell_add("lcap_pty", CS_PROPERTY_ISO);
+  tpf->krl_pty = cs_property_subcell_add("krl_pty", CS_PROPERTY_ISO);
+  tpf->krg_pty = cs_property_subcell_add("krg_pty", CS_PROPERTY_ISO);
+  tpf->lsat_pty = cs_property_subcell_add("lsat_pty", CS_PROPERTY_ISO);
+  tpf->lcap_pty = cs_property_subcell_add("lcap_pty", CS_PROPERTY_ISO);
 
   /* Note: Adding the properties related to the permeability (diffusion) is
    * postponed since one has to know which type of permeability is considered
@@ -1666,24 +2415,30 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 
   /* Properties related to the water equation  */
 
-  mc->time_wc_pty = NULL;
-  mc->diff_wl_pty = NULL;
+  tpf->time_wc_pty = NULL;
+  tpf->diff_wl_pty = NULL;
+  tpf->diff_wc_pty = NULL;       /* only if (Pc, Pg) is used */
+  tpf->diff_wg_pty = NULL;       /* only if (Pc, Pg) is used */
 
   /* Properties related to the hydrogen equation  */
 
-  mc->time_hc_pty = NULL;
-  mc->diff_hc_pty = NULL;
-  mc->time_hl_pty = NULL;
-  mc->diff_hl_pty = NULL;
-  mc->reac_h_pty = NULL;
+  tpf->time_hc_pty = NULL;
+  tpf->time_hl_pty = NULL;       /* only if (Pc, Pl) is used */
+  tpf->time_hg_pty = NULL;       /* only if (Pc, Pg) is used */
+
+  tpf->diff_hc_pty = NULL;
+  tpf->diff_hl_pty = NULL;       /* only if (Pc, Pl) is used */
+  tpf->diff_hg_pty = NULL;       /* only if (Pc, Pl) is used */
+
+  tpf->reac_h_pty = NULL;
 
   /* Fields */
   /* ------ */
 
-  mc->c_pressure = NULL;
-  mc->l_pressure = NULL;
-  mc->g_pressure = NULL;
-  mc->l_saturation = NULL;
+  tpf->c_pressure = NULL;
+  tpf->l_pressure = NULL;
+  tpf->g_pressure = NULL;
+  tpf->l_saturation = NULL;
 
   /* Arrays */
   /* ------ */
@@ -1691,57 +2446,58 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   /* The properties will be defined using arrays.
    * Store these arrays of property values associated to equation terms */
 
-  mc->srct_w_array = NULL;
-  mc->srct_h_array = NULL;
+  tpf->srct_w_array = NULL;
+  tpf->srct_h_array = NULL;
 
   /* Model parameters (default values) */
   /* ---------------- */
 
   if (model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE) {
 
-    mc->is_miscible = true;
-    mc->l_diffusivity_h = 0;      /* immiscible case */
-    mc->henry_constant = 1e-7;    /* default value */
+    tpf->is_miscible = true;
+    tpf->l_diffusivity_h = 0;      /* immiscible case */
+    tpf->henry_constant = 1e-7;    /* default value */
 
   }
   else { /* immiscible case */
 
-    mc->is_miscible = false;
-    mc->l_diffusivity_h = 0;
-    mc->henry_constant = 0;
+    tpf->is_miscible = false;
+    tpf->l_diffusivity_h = 0;
+    tpf->henry_constant = 0;
 
   }
 
-  mc->l_mass_density = 1000;
-  mc->l_viscosity = 1e-3;
-  mc->g_viscosity = 2e-5;
-  mc->w_molar_mass = 18e-3;
-  mc->h_molar_mass = 3e-3;
-  mc->ref_temperature = 280;    /* in Kelvin */
+  tpf->l_mass_density = 1000;
+  tpf->l_viscosity = 1e-3;
+  tpf->g_viscosity = 2e-5;
+  tpf->w_molar_mass = 18e-3;
+  tpf->h_molar_mass = 3e-3;
+  tpf->ref_temperature = 280;    /* in Kelvin */
 
   /* Numerical parameters (default values) */
 
-  mc->use_coupled_solver = true;
-  mc->use_incremental_solver = false;
-  mc->use_diffusion_view_for_darcy = true;
+  tpf->solver_type = CS_GWF_TPF_SOLVER_PCPG_COUPLED;
+  tpf->use_coupled_solver = true;
+  tpf->use_incremental_solver = false;
+  tpf->use_diffusion_view_for_darcy = true;
 
-  mc->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
+  tpf->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
-  mc->nl_relax_factor = 1.0;
-  mc->nl_cvg_param.n_max_iter = 50;
-  mc->nl_cvg_param.rtol = 1e-5;
-  mc->nl_cvg_param.atol = 1e-10;
-  mc->nl_cvg_param.dtol = 1e3;
+  tpf->nl_relax_factor = 1.0;
+  tpf->nl_cvg_param.n_max_iter = 50;
+  tpf->nl_cvg_param.rtol = 1e-5;
+  tpf->nl_cvg_param.atol = 1e-10;
+  tpf->nl_cvg_param.dtol = 1e3;
 
-  mc->anderson_param.n_max_dir = 5;
-  mc->anderson_param.starting_iter = 3;
-  mc->anderson_param.max_cond = -1; /* No test by default */
-  mc->anderson_param.beta = 1.0;    /* No damping by default */
-  mc->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
+  tpf->anderson_param.n_max_dir = 5;
+  tpf->anderson_param.starting_iter = 3;
+  tpf->anderson_param.max_cond = -1; /* No test by default */
+  tpf->anderson_param.beta = 1.0;    /* No damping by default */
+  tpf->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
-  mc->nl_algo = NULL;
+  tpf->nl_algo = NULL;
 
-  return mc;
+  return tpf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1749,39 +2505,39 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
  * \brief Free the context structure associated to the modelling of two-phase
  *        flows in a porous media
  *
- * \param[in, out] p_mc   pointer of pointer to the model context structure
+ * \param[in, out] p_tpf   pointer of pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc)
+cs_gwf_tpf_free(cs_gwf_tpf_t    **p_tpf)
 {
   if (cs_gwf_tpf_time_plot != NULL)
     cs_time_plot_finalize(&cs_gwf_tpf_time_plot);
 
-  if (p_mc == NULL)
+  if (p_tpf == NULL)
     return;
-  if (*p_mc == NULL)
+  if (*p_tpf == NULL)
     return;
 
-  cs_gwf_tpf_t  *mc = *p_mc;
+  cs_gwf_tpf_t  *tpf = *p_tpf;
 
   /* System of equations are freed elsewhere (just after having freed
      cs_equation_t structures) */
 
-  cs_gwf_darcy_flux_free(&(mc->l_darcy));
-  cs_gwf_darcy_flux_free(&(mc->g_darcy));
-  cs_gwf_darcy_flux_free(&(mc->t_darcy));
+  cs_gwf_darcy_flux_free(&(tpf->l_darcy));
+  cs_gwf_darcy_flux_free(&(tpf->g_darcy));
+  cs_gwf_darcy_flux_free(&(tpf->t_darcy));
 
-  BFT_FREE(mc->srct_w_array);
-  BFT_FREE(mc->srct_h_array);
+  BFT_FREE(tpf->srct_w_array);
+  BFT_FREE(tpf->srct_h_array);
 
   /* Free the structure handling the convergence of the non-linear algorithm */
 
-  cs_iter_algo_free(&(mc->nl_algo));
+  cs_iter_algo_free(&(tpf->nl_algo));
 
-  BFT_FREE(mc);
-  *p_mc = NULL;
+  BFT_FREE(tpf);
+  *p_tpf = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1789,54 +2545,69 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_mc)
  * \brief Log the setup related to the model context of two-phase flows.
  *        Common to the different sub-models relying on two-phase flows.
  *
- * \param[in] mc      pointer to the model context structure
+ * \param[in] tpf      pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *mc)
+cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf)
 {
-  if (mc == NULL)
+  if (tpf == NULL)
     return;
 
-  if (mc->is_miscible)
-    _mtpf_log_setup(mc);
+  if (tpf->is_miscible)
+    _mtpf_log_setup(tpf);
   else
-    _itpf_log_setup(mc);
+    _itpf_log_setup(tpf);
 
   cs_log_printf(CS_LOG_SETUP, "  * GWF | Reference temperature: %5.2f K\n",
-                mc->ref_temperature);
+                tpf->ref_temperature);
 
-  cs_gwf_darcy_flux_log(mc->l_darcy);
-  cs_gwf_darcy_flux_log(mc->g_darcy);
+  switch(tpf->solver_type) {
 
-  if (!mc->use_diffusion_view_for_darcy)
-    cs_gwf_darcy_flux_log(mc->t_darcy);
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | (Pc, Pg) coupled solver\n");
+    if (tpf->use_diffusion_view_for_darcy)
+      cs_log_printf(CS_LOG_SETUP, "  * GWF | Diffusive view for Darcy terms\n");
+    else
+      cs_log_printf(CS_LOG_SETUP, "  * GWF | Advective view for Darcy terms\n");
+    break;
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | (Pl, Pc) coupled solver\n");
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Diffusive view for Darcy terms\n");
+    break;
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | (Pl, Pg) segregated solver\n");
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Diffusive view for Darcy terms\n");
+    break;
 
-  if (mc->use_coupled_solver)
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Coupled solver\n");
-  else
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Segregated solver\n");
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid setting", __func__);
 
-  if (mc->use_incremental_solver)
+  }
+
+  if (tpf->use_incremental_solver)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Incremental solver\n");
 
-  if (mc->use_diffusion_view_for_darcy)
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Diffusion view for Darcy terms\n");
+  cs_gwf_darcy_flux_log(tpf->l_darcy);
+  cs_gwf_darcy_flux_log(tpf->g_darcy);
 
-  if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
+  if (!tpf->use_diffusion_view_for_darcy)
+    cs_gwf_darcy_flux_log(tpf->t_darcy);
+
+  if (tpf->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Non-linear algo.: %s\n",
-                  cs_param_get_nl_algo_name(mc->nl_algo_type));
+                  cs_param_get_nl_algo_name(tpf->nl_algo_type));
 
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Tolerances of non-linear algo:"
                   " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; max_iter: %d\n",
-                  mc->nl_cvg_param.rtol, mc->nl_cvg_param.atol,
-                  mc->nl_cvg_param.dtol, mc->nl_cvg_param.n_max_iter);
+                  tpf->nl_cvg_param.rtol, tpf->nl_cvg_param.atol,
+                  tpf->nl_cvg_param.dtol, tpf->nl_cvg_param.n_max_iter);
 
-    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+    if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-      const cs_iter_algo_param_aac_t  aap = mc->anderson_param;
+      const cs_iter_algo_param_aac_t  aap = tpf->anderson_param;
 
       cs_log_printf(CS_LOG_SETUP, "  * GWF | Anderson param: max. dir: %d; "
                     " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
@@ -1855,27 +2626,24 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *mc)
  *        the function cs_user_model()
  *        Case of a two-phase flows model in porous media
  *
- * \param[in, out] mc          pointer to the model context structure
+ * \param[in, out] tpf         pointer to the model context structure
  * \param[in]      verbosity   verbosity level
  * \param[in, out] perm_type   type of permeability to handle
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
+cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
                 int                      verbosity,
                 cs_property_type_t       perm_type)
 {
-  if (mc == NULL)
+  if (tpf == NULL)
     return;
 
-  if (mc->w_eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Water equation is emty.", __func__);
+  /* Property common to all solvers. This property is used to compute the Darcy
+     flux in the gas phase */
 
-  /* Property common to all solvers */
-
-  mc->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
-  mc->diff_g_pty = cs_property_add("diff_g_pty", perm_type);
+  tpf->diff_g_pty = cs_property_add("diff_g_pty", perm_type);
 
   /* Darcy flux (one assumes a CDOVB space discretization) */
 
@@ -1884,197 +2652,64 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
 
   cs_adv_field_t  *l_adv_field = cs_advection_field_add("l_darcy_field",
                                                         adv_status);
-  mc->l_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-  mc->l_darcy->adv_field = l_adv_field;
+  tpf->l_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  tpf->l_darcy->adv_field = l_adv_field;
 
   cs_adv_field_t  *g_adv_field = cs_advection_field_add("g_darcy_field",
                                                         adv_status);
-  mc->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-  mc->g_darcy->adv_field = g_adv_field;
+  tpf->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  tpf->g_darcy->adv_field = g_adv_field;
 
-  if (!mc->use_diffusion_view_for_darcy) {
+  if (!tpf->use_diffusion_view_for_darcy) {
 
     cs_adv_field_t  *t_adv_field = cs_advection_field_add("t_darcy_field",
                                                           adv_status);
-    mc->t_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
-    mc->t_darcy->adv_field = t_adv_field;
+    tpf->t_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+    tpf->t_darcy->adv_field = t_adv_field;
 
   }
 
-  if (mc->use_coupled_solver) {
+  /* Define the system of equations */
+  /* ------------------------------ */
 
-    /* Define the system of equations */
-    /* ------------------------------ */
+  switch(tpf->solver_type) {
 
-    /* Create a new equation associated to the mass conservation of gas
-       (hydrogen for instance). The unknown is the capillarity pressure. This
-       will stand for the (1,1)-block if a coupled system is considered. */
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+    _init_pcpg_coupled_solver(tpf, perm_type);
+    break;
 
-    mc->h_eq = cs_equation_add("h_conservation",       /* equation name */
-                               "capillarity_pressure", /* variable name */
-                               CS_EQUATION_TYPE_GROUNDWATER,
-                               1,
-                               CS_PARAM_BC_HMG_NEUMANN);
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    _init_plpc_coupled_solver(tpf, perm_type);
+    break;
 
-    cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(mc->w_eq);
-    cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(mc->h_eq);
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
+    _init_plpg_segregated_solver(tpf, perm_type);
+    break;
 
-    cs_equation_param_set(b11_h_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
-    cs_equation_param_set(b11_h_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
-    cs_equation_param_set(b11_h_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
+  }
 
-    /* Define the coupled system of equations */
-    /* -------------------------------------- */
+  /* Settings for the treatment of the non-linearity */
 
-    /* Create the (0,1)-block related to the water in the gas phase */
+  if (tpf->use_incremental_solver) {
 
-    mc->b01_w_eqp = cs_equation_param_create("block01_w_eq",
-                                             CS_EQUATION_TYPE_GROUNDWATER,
-                                             1,
-                                             CS_PARAM_BC_HMG_NEUMANN);
+    cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
+    cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
 
-    cs_equation_param_set(mc->b01_w_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
-    cs_equation_param_set(mc->b01_w_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
-    cs_equation_param_set(mc->b01_w_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
-
-    /* Create the (1,0)-block related to the hydrogen in the liquid phase */
-
-    mc->b10_h_eqp = cs_equation_param_create("block10_h_eq",
-                                             CS_EQUATION_TYPE_GROUNDWATER,
-                                             1,
-                                             CS_PARAM_BC_HMG_NEUMANN);
-
-    cs_equation_param_set(mc->b10_h_eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
-    cs_equation_param_set(mc->b10_h_eqp, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
-    cs_equation_param_set(mc->b10_h_eqp, CS_EQKEY_HODGE_REAC_ALGO, "voronoi");
-
-    /* Add a 2x2 system of coupled equations and define each block */
-
-    mc->system = cs_equation_system_add("two_phase_flow_porous_media",
-                                        2,   /* system size */
-                                        1);  /* scalar-valued block */
-
-    /* Set all the blocks in the coupled system */
-
-    cs_equation_system_assign_equation(0, mc->w_eq, mc->system);  /* (0,0) */
-    cs_equation_system_assign_equation(1, mc->h_eq, mc->system);  /* (1,1) */
-    cs_equation_system_assign_param(0, 1, mc->b01_w_eqp, mc->system);
-    cs_equation_system_assign_param(1, 0, mc->b10_h_eqp, mc->system);
-
-    /* Properties
-     * ----------
-     *
-     * - diffusion term for water eq. in the liquid phase     (0,0)-block
-     * - unsteady term for water eq. in the liquid phase      (0,1) block
-     * - unsteady term for hydrogen eq. in the gaseous phase  (1,1)-block
-     * - unsteady term for hydrogen eq. in the liquid phase   (1,0)-block
-     */
-
-    mc->time_wc_pty = cs_property_add("time_wc_pty", CS_PROPERTY_ISO);
-    mc->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
-    mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
-
-    /* Add terms to the water equation */
-    /* ------------------------------- */
-
-    cs_equation_add_time(mc->b01_w_eqp, mc->time_wc_pty);
-
-    cs_equation_add_diffusion(b00_w_eqp, mc->diff_wl_pty);
-
-    /* Add terms to the hydrogen equation */
-    /* ---------------------------------- */
-
-    cs_equation_add_time(mc->b10_h_eqp, mc->time_hl_pty);
-    cs_equation_add_time(b11_h_eqp, mc->time_hc_pty);
-
-    if (mc->use_diffusion_view_for_darcy) {
-
-      mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
-      mc->diff_hc_pty = cs_property_add("diff_hc_pty", perm_type);
-
-      cs_equation_add_diffusion(mc->b10_h_eqp, mc->diff_hl_pty);
-      cs_equation_add_diffusion(b11_h_eqp, mc->diff_hc_pty);
-
-    }
-    else { /* Advection viewpoint */
-
-      cs_equation_add_advection(mc->b10_h_eqp, mc->t_darcy->adv_field);
-      cs_equation_add_advection(b11_h_eqp, mc->t_darcy->adv_field);
-
-    }
-
-    if (mc->use_incremental_solver) {
-
-      b00_w_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
-      b11_h_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
-
-    }
+    w_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
+    h_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
   }
-  else { /* Segregated solver */
 
-    /* Create a new equation associated to the mass conservation of gas
-       (hydrogen for instance). The unknown is the capillarity pressure. This
-       will stand for the (1,1)-block if a coupled system is considered. */
-
-    mc->h_eq = cs_equation_add("h_conservation",  /* equation name */
-                               "gas_pressure",    /* variable name */
-                               CS_EQUATION_TYPE_GROUNDWATER,
-                               1,
-                               CS_PARAM_BC_HMG_NEUMANN);
-
-    cs_equation_param_t  *w_eqp = cs_equation_get_param(mc->w_eq);
-    cs_equation_param_t  *h_eqp = cs_equation_get_param(mc->h_eq);
-
-    /* Segregated solver are always solved by increment and relies on an
-     * advection viewpoint of the Darcy terms */
-
-    mc->use_incremental_solver = true;
-    mc->use_diffusion_view_for_darcy = false;
-
-    /* Properties */
-    /* ---------- */
-
-    mc->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
-
-    /* Add terms to the water equation */
-    /* ------------------------------- */
-
-    cs_equation_add_diffusion(w_eqp, mc->diff_wl_pty);
-
-    /* Add terms to the hydrogen equation */
-    /* ---------------------------------- */
-
-    cs_equation_add_time(h_eqp, mc->time_hc_pty);
-    cs_equation_add_reaction(h_eqp, mc->reac_h_pty);
-
-    if (mc->use_diffusion_view_for_darcy) {
-
-      mc->diff_hc_pty = cs_property_add("diff_hc_pty", perm_type);
-
-      cs_equation_add_diffusion(h_eqp, mc->diff_hc_pty);
-
-    }
-    else
-      cs_equation_add_advection(h_eqp, mc->t_darcy->adv_field);
-
-    if (mc->use_incremental_solver) {
-
-      w_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
-      h_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
-
-    }
-
-  } /* Segregated or coupled solver */
-
-  if (mc->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
-    mc->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
+  if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
+    tpf->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
                                                     verbosity,
-                                                    mc->nl_cvg_param);
-  else if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-    mc->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
+                                                    tpf->nl_cvg_param);
+  else if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+    tpf->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
                                                     verbosity,
-                                                    mc->nl_cvg_param);
+                                                    tpf->nl_cvg_param);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2084,18 +2719,18 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *mc,
  *        Case of a miscible or immiscible model.
  *
  * \param[in]      post_flag   optional postprocessing request(s)
- * \param[in, out] mc          pointer to the casted model context
+ * \param[in, out] tpf         pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
-                      cs_gwf_tpf_t     *mc)
+                      cs_gwf_tpf_t     *tpf)
 {
-  if (mc == NULL)
+  if (tpf == NULL)
     return;
 
-  if (mc->w_eq == NULL || mc->h_eq == NULL)
+  if (tpf->w_eq == NULL || tpf->h_eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Equations are not defined for this model. Stop execution.\n",
               __func__);
@@ -2108,8 +2743,8 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
 
   /* Retrieve the pointers to the structure storing the equation parameters */
 
-  cs_equation_param_t  *w_eqp = cs_equation_get_param(mc->w_eq);
-  cs_equation_param_t  *h_eqp = cs_equation_get_param(mc->h_eq);
+  cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
 
   assert(w_eqp->space_scheme == h_eqp->space_scheme);
 
@@ -2122,46 +2757,56 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
 
   /* Add the variable fields (Keep always the previous state) */
 
-  cs_equation_predefined_create_field(1, mc->w_eq);
-  cs_equation_predefined_create_field(1, mc->h_eq);
+  cs_equation_predefined_create_field(1, tpf->w_eq);
+  cs_equation_predefined_create_field(1, tpf->h_eq);
 
-  /* Set fields related to variables */
+  /* Set fields related to variables.
+   * One has to be consistent with the location of DoFs for the w_eq and h_eq
+   */
 
-  mc->l_pressure = cs_equation_get_field(mc->w_eq);
+  switch(tpf->solver_type) {
 
-  if (mc->use_coupled_solver) {
-
-    mc->c_pressure = cs_equation_get_field(mc->h_eq);
-
-    /* One has to be consistent with the location of DoFs for the w_eq and h_eq
-     * which are respectively related to the l_pressure and c_pressure */
-
-    mc->g_pressure = cs_field_create("gas_pressure",
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+    tpf->c_pressure = cs_equation_get_field(tpf->w_eq);
+    tpf->g_pressure = cs_equation_get_field(tpf->h_eq);
+    tpf->l_pressure = cs_field_create("liquid_pressure",
                                      field_mask,
                                      loc_id,
                                      1,
                                      true); /* has_previous */
 
-    cs_field_set_key_int(mc->g_pressure, log_key, 1);
-    cs_field_set_key_int(mc->g_pressure, post_key, 1);
+    cs_field_set_key_int(tpf->l_pressure, log_key, 1);
+    cs_field_set_key_int(tpf->l_pressure, post_key, 1);
+    break;
 
-  }
-  else {
-
-    mc->g_pressure = cs_equation_get_field(mc->h_eq);
-
-    /* One has to be consistent with the location of DoFs for the w_eq and h_eq
-     * which are respectively related to the l_pressure and g_pressure */
-
-    mc->c_pressure = cs_field_create("capillarity_pressure",
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    tpf->l_pressure = cs_equation_get_field(tpf->w_eq);
+    tpf->c_pressure = cs_equation_get_field(tpf->h_eq);
+    tpf->g_pressure = cs_field_create("gas_pressure",
                                      field_mask,
                                      loc_id,
                                      1,
                                      true); /* has_previous */
 
-    cs_field_set_key_int(mc->c_pressure, log_key, 1);
-    cs_field_set_key_int(mc->c_pressure, post_key, 1);
+    cs_field_set_key_int(tpf->g_pressure, log_key, 1);
+    cs_field_set_key_int(tpf->g_pressure, post_key, 1);
+    break;
 
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
+    tpf->l_pressure = cs_equation_get_field(tpf->w_eq);
+    tpf->g_pressure = cs_equation_get_field(tpf->h_eq);
+    tpf->c_pressure = cs_field_create("capillarity_pressure",
+                                     field_mask,
+                                     loc_id,
+                                     1,
+                                     true); /* has_previous */
+
+    cs_field_set_key_int(tpf->c_pressure, log_key, 1);
+    cs_field_set_key_int(tpf->c_pressure, post_key, 1);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
   }
 
   /* Create a liquid saturation field attached to cells: S_l (only keep the
@@ -2169,15 +2814,15 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
 
   int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
 
-  mc->l_saturation = cs_field_create("liquid_saturation",
+  tpf->l_saturation = cs_field_create("liquid_saturation",
                                      pty_mask,
                                      c_loc_id,
                                      1,     /* dimension */
                                      false); /* has_previous */
 
-  cs_field_set_key_int(mc->l_saturation, log_key, 1);
+  cs_field_set_key_int(tpf->l_saturation, log_key, 1);
   if (post_flag & CS_GWF_POST_LIQUID_SATURATION)
-    cs_field_set_key_int(mc->l_saturation, post_key, 1);
+    cs_field_set_key_int(tpf->l_saturation, post_key, 1);
 
   if (post_flag & CS_GWF_POST_SOIL_MINMAX) {
 
@@ -2243,7 +2888,7 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
  * \param[in]      flag      optional settings for the module
- * \param[in, out] mc        pointer to the casted model context
+ * \param[in, out] tpf       pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2251,7 +2896,7 @@ void
 cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *cdoq,
                           cs_flag_t                    flag,
-                          cs_gwf_tpf_t                *mc)
+                          cs_gwf_tpf_t                *tpf)
 {
   CS_NO_WARN_IF_UNUSED(flag);   /* will be useful for gravity effect */
 
@@ -2259,11 +2904,11 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
   const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  c2v_size = c2v->idx[n_cells];
 
-  cs_equation_param_t  *w_eqp = cs_equation_get_param(mc->w_eq);
-  cs_equation_param_t  *h_eqp = cs_equation_get_param(mc->h_eq);
+  cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
 
-  assert(cs_equation_get_type(mc->w_eq) == CS_EQUATION_TYPE_GROUNDWATER);
-  assert(cs_equation_get_type(mc->h_eq) == CS_EQUATION_TYPE_GROUNDWATER);
+  assert(cs_equation_get_type(tpf->w_eq) == CS_EQUATION_TYPE_GROUNDWATER);
+  assert(cs_equation_get_type(tpf->h_eq) == CS_EQUATION_TYPE_GROUNDWATER);
   assert(w_eqp->space_scheme == h_eqp->space_scheme);
 
   if (w_eqp->space_scheme != CS_SPACE_SCHEME_CDOVB)
@@ -2273,115 +2918,61 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
   /* -------------------------------------------------------- */
 
   cs_gwf_darcy_flux_define(connect, cdoq, w_eqp->space_scheme,
-                           mc, _update_darcy_l,
-                           mc->l_darcy);
+                           tpf, _update_darcy_l,
+                           tpf->l_darcy);
 
-  if (mc->use_coupled_solver)
+  if (tpf->use_coupled_solver)
     cs_gwf_darcy_flux_define(connect, cdoq, h_eqp->space_scheme,
-                             mc, _update_darcy_g_coupled,
-                             mc->g_darcy);
+                             tpf, _update_darcy_g_coupled,
+                             tpf->g_darcy);
   else
     cs_gwf_darcy_flux_define(connect, cdoq, h_eqp->space_scheme,
-                             mc, _update_darcy_g_segregated,
-                             mc->g_darcy);
+                             tpf, _update_darcy_g_segregated,
+                             tpf->g_darcy);
 
-  if (!mc->use_diffusion_view_for_darcy)
+  if (!tpf->use_diffusion_view_for_darcy)
     cs_gwf_darcy_flux_define(connect, cdoq, w_eqp->space_scheme,
-                             mc, _update_darcy_t,
-                             mc->t_darcy);
+                             tpf, _update_darcy_t,
+                             tpf->t_darcy);
+
+  /* Diffusion property for the definition of the Darcy field in the gas
+     phase */
+
+  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_g_pty);
 
   /* Allocate and initialize arrays for the physical properties */
   /* ---------------------------------------------------------- */
 
   /* Relative permeability in the liquid and gas phase */
 
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->krl_pty);
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->krg_pty);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krl_pty);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krg_pty);
 
   /* Liquid saturation and liquid capacity */
 
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->lsat_pty);
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, mc->lcap_pty);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lsat_pty);
+  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lcap_pty);
 
   /* Properties associated to terms in equations */
   /* ------------------------------------------- */
 
-  /* Diffusion property for the water equation */
+  switch(tpf->solver_type) {
 
-  _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_wl_pty);
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+    _finalize_setup_pcpg_coupled_solver(connect, tpf);
+    break;
 
-  /* Diffusion property for the definition of the Darcy field in the gas
-     phase */
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    _finalize_setup_plpc_coupled_solver(connect, tpf);
+    break;
 
-  _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_g_pty);
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
+    _finalize_setup_plpg_segregated_solver(connect, tpf);
+    break;
 
-  if (mc->use_diffusion_view_for_darcy) {
-
-    /* Diffusion property in the hydrogen equation (associated to Pc in the
-       case of a coupled solver or to Pg in the case of a segregated solver) */
-
-    _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_hc_pty);
-
-    /* Diffusion property in the hydrogen equation associated to Pl. This is
-       used to define a source term in the case of a segregated solver. */
-
-    _add_pty_array(n_cells, cs_flag_primal_cell, mc->diff_hl_pty);
-
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
   }
-
-  /* Settings now depending on the choice of the solver */
-
-  if (mc->use_coupled_solver) {
-
-    /* Define the arrays storing the time property for all blocks */
-
-    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_wc_pty);
-    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_hl_pty);
-    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_hc_pty);
-
-  }
-  else { /* Segregated solver */
-
-    /* Treatment of the water mass conservation */
-    /* ---------------------------------------- */
-
-    /* Source term */
-
-    BFT_MALLOC(mc->srct_w_array, n_cells, cs_real_t);
-    cs_array_real_fill_zero(n_cells, mc->srct_w_array);
-
-    cs_equation_add_source_term_by_array(w_eqp,
-                                         NULL,    /* all cells */
-                                         cs_flag_primal_cell,
-                                         mc->srct_w_array,
-                                         false,   /* xdef not owner */
-                                         true);   /* full length */
-
-    /* Treatment of the hydrogen mass conservation */
-    /* ------------------------------------------- */
-
-    /* Source term (second one; the first is associated to a stiffness term and
-       relies on a builder hook function) */
-
-    BFT_MALLOC(mc->srct_h_array, n_cells, cs_real_t);
-    cs_array_real_fill_zero(n_cells, mc->srct_h_array);
-
-    cs_equation_add_source_term_by_array(h_eqp,
-                                         NULL,   /* all cells */
-                                         cs_flag_primal_cell,
-                                         mc->srct_h_array,
-                                         false,  /* xdef not owner */
-                                         true);  /* full length */
-
-    /* Unsteady term */
-
-    _add_pty_array(n_cells, cs_flag_primal_cell, mc->time_hc_pty);
-
-    /* Reaction term */
-
-    _add_pty_array(n_cells, cs_flag_primal_cell, mc->reac_h_pty);
-
-  } /* Segregated solver */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2391,65 +2982,65 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in, out] mc          pointer to the casted model context
+ * \param[in, out] tpf         pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
                        const cs_cdo_quantities_t     *cdoq,
-                       cs_gwf_tpf_t                  *mc)
+                       cs_gwf_tpf_t                  *tpf)
 {
   CS_NO_WARN_IF_UNUSED(connect);
 
-  if (mc == NULL)
+  if (tpf == NULL)
     return;
 
   /* Set a builder hook function if needed */
 
-  if (!mc->use_coupled_solver) {
+  if (tpf->solver_type == CS_GWF_TPF_SOLVER_PLPG_SEGREGATED) {
 
     /* Add a hook function to define the source term. This operation should
        be done after that the corresponding equation has been initialized
        (a builder structure has to be defined) */
 
-    cs_equation_add_build_hook(mc->h_eq,
-                               mc,                   /* hook context */
+    cs_equation_add_build_hook(tpf->h_eq,
+                               tpf,                   /* hook context */
                                _build_h_eq_diff_st); /* hook function */
 
   }
 
   /* Initialize the non-linear algorithm if needed */
 
-  if (mc->use_incremental_solver) {
+  if (tpf->use_incremental_solver) {
 
     /* This model is non-linear so that one needs an iterative algorithm to
        manage this non-linearity */
 
-    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-      mc->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
+    if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+      tpf->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
   }
 
-  if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
+  if (tpf->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
     /* One assumes that the discretization schemes are all set to CDO
        vertex-based schemes */
 
-    assert(mc->h_eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB);
-    assert(mc->w_eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB);
+    assert(tpf->h_eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB);
+    assert(tpf->w_eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB);
 
     cs_lnum_t  size = cdoq->n_vertices;
-    if (mc->use_coupled_solver)
+    if (tpf->use_coupled_solver)
       size *= 2;
 
     /* Apply the convergence settings */
 
-    cs_iter_algo_set_cvg_param(mc->nl_algo, mc->nl_cvg_param);
+    cs_iter_algo_set_cvg_param(tpf->nl_algo, tpf->nl_cvg_param);
 
-    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-      cs_iter_algo_set_anderson_param(mc->nl_algo,
-                                      mc->anderson_param,
+    if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+      cs_iter_algo_set_anderson_param(tpf->nl_algo,
+                                      tpf->anderson_param,
                                       size);
 
   }
@@ -2465,7 +3056,7 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step    pointer to a cs_time_step_t structure
  * \param[in]      option_flag  calculation option related to the GWF module
- * \param[in, out] mc           pointer to the model context structure
+ * \param[in, out] tpf          pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2475,47 +3066,55 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
                    const cs_cdo_quantities_t     *cdoq,
                    const cs_time_step_t          *time_step,
                    cs_flag_t                      option_flag,
-                   cs_gwf_tpf_t                  *mc)
+                   cs_gwf_tpf_t                  *tpf)
 {
-  if (mc == NULL)
+  if (tpf == NULL)
     return;
 
-  if (mc->use_coupled_solver) {
+  switch(tpf->solver_type) {
 
-    switch (mc->nl_algo_type) {
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    switch (tpf->nl_algo_type) {
 
     case CS_PARAM_NL_ALGO_NONE: /* Linear case */
-      cs_equation_system_solve(true, mc->system); /* cur2prev = true */
+      cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
 
       /* Update the variables related to the groundwater flow system */
 
       cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
                         CS_FLAG_CURRENT_TO_PREVIOUS,
                         option_flag,
-                        mc);
+                        tpf);
       break;
 
     case CS_PARAM_NL_ALGO_PICARD:
       _compute_coupled_picard(mesh, connect, cdoq, time_step,
                               option_flag,
-                              mc);
+                              tpf);
       break;
 
     case CS_PARAM_NL_ALGO_ANDERSON:
       _compute_coupled_anderson(mesh, connect, cdoq, time_step,
                                 option_flag,
-                                mc);
+                                tpf);
       break;
 
     default:
       break; /* Nothing else to do */
     }
+    break;
 
-  }
-  else
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
     _compute_segregated(mesh, time_step, connect, cdoq,
                         option_flag,
-                        mc);
+                        tpf);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
+
+  } /* Switch on the type of solver */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2529,7 +3128,7 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
  * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      update_flag  metadata associated to type of operation to do
  * \param[in]      option_flag  calculation option related to the GWF module
- * \param[in, out] mc           pointer to a TPF model context
+ * \param[in, out] tpf           pointer to a TPF model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2540,7 +3139,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
                   const cs_time_step_t        *ts,
                   cs_flag_t                    update_flag,
                   cs_flag_t                    option_flag,
-                  cs_gwf_tpf_t                *mc)
+                  cs_gwf_tpf_t                *tpf)
 {
   CS_NO_WARN_IF_UNUSED(option_flag); /* For a later usage (gravity) */
 
@@ -2549,18 +3148,18 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
 
   if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
 
-    time_eval = cs_equation_get_time_eval(ts, mc->w_eq);
+    time_eval = cs_equation_get_time_eval(ts, tpf->w_eq);
     cur2prev = true;
 
   }
 
-  if (cs_equation_get_space_scheme(mc->w_eq) != CS_SPACE_SCHEME_CDOVB)
+  if (cs_equation_get_space_scheme(tpf->w_eq) != CS_SPACE_SCHEME_CDOVB)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Incompatible space discretization.", __func__);
 
   /* Update pressures fields/arrays */
 
-  _update_pressures(connect, cdoq, update_flag, cur2prev, mc);
+  _update_pressures(connect, cdoq, update_flag, cur2prev, tpf);
 
   /* Update properties related to soils:
    * - relative permeabilities: krl, krg
@@ -2576,84 +3175,79 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
   /* Define the liquid saturation in each cell when the liquid saturation has
      been defined on the submesh */
 
-  const cs_adjacency_t  *c2v = connect->c2v;
-  const cs_real_t  *lsat_c2v = cs_property_get_array(mc->lsat_pty);
-  cs_real_t  *lsat = mc->l_saturation->val;
+  _update_liquid_saturation_at_cells(connect, cdoq, tpf);
 
-  /* Compute the average liquid saturation in each cell */
+  /* Update arrays associated to each term of the equations */
 
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+  switch(tpf->solver_type) {
 
-    cs_real_t  _sat = 0;
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      _sat += lsat_c2v[j] * cdoq->pvol_vc[j];
-    lsat[c_id] = _sat/cdoq->cell_vol[c_id];
+  case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
+    /* ============================== */
+    switch (cs_property_get_dim(tpf->diff_wg_pty)) {
 
-  } /* Loop on cells */
-
-  /* Update arrays associated to each term */
-
-  switch (cs_property_get_dim(mc->diff_wl_pty)) {
-
-  case 1: /* Isotropic case */
-    /*       ++++++++++++++ */
-
-    if (mc->is_miscible) {
-      /*       ======== */
-
-      if (mc->use_diffusion_view_for_darcy)
-        _update_iso_mtpf_coupled_diffview_terms(connect, cdoq, mc);
+    case 1: /* Isotropic case */
+      /*       ++++++++++++++ */
+      if (tpf->is_miscible)
+        bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
+      //_update_iso_mtpf_pcpg_coupled(connect, cdoq, tpf);
       else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: TODO --> Update functions.", __func__);
+        _update_iso_itpf_pcpg_coupled_diffview(connect, cdoq, tpf);
+      break;
 
-    }
-    else { /* Immiscible model
-              ================ */
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Only the isotropic case is available up to now.",
+                __func__);
+      break;
 
-      /* In the immiscible case, l_diffusivity_h should be set to 0 and the
-         henry constant should be very low */
+    } /* Switch on the permeability type */
+    break;
 
-      assert(mc->l_diffusivity_h < FLT_MIN);
-      assert(mc->henry_constant < 1e-12);
+  case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
+    /* ============================== */
+    switch (cs_property_get_dim(tpf->diff_wl_pty)) {
 
-      if (mc->use_coupled_solver) {
-        /*    ------------------- */
+    case 1: /* Isotropic case */
+      /*       ++++++++++++++ */
+      if (tpf->is_miscible)
+        _update_iso_mtpf_plpc_coupled(connect, cdoq, tpf);
+      else
+        _update_iso_itpf_plpc_coupled(connect, cdoq, tpf);
+      break;
 
-        if (mc->use_diffusion_view_for_darcy)
-          _update_iso_itpf_coupled_diffview_terms(connect, cdoq, mc);
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: TODO --> Update functions.", __func__);
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Only the isotropic case is available up to now.",
+                __func__);
+      break;
 
-      }
-      else { /* segregated solver
-                ----------------- */
+    } /* Switch on the permeability type */
+    break;
 
-        if (mc->use_diffusion_view_for_darcy) {
+  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
+    /* ================================= */
 
-          if (mc->use_incremental_solver)
-            bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
-          else
-            bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
+    switch (cs_property_get_dim(tpf->diff_wl_pty)) {
 
-        }
-        else
-          bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
+    case 1: /* Isotropic case */
+      /*       ++++++++++++++ */
+      bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
+      break;
 
-      }
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Only the isotropic case is available up to now.",
+                __func__);
+      break;
 
-    }
+    } /* Switch on the permeability type */
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Only the isotropic case is available up to now.",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
     break;
 
-  } /* Switch on the permeability type */
+  } /* Switch on solver type */
 
   /* Update the Darcy fluxes. This should be done at the end since one needs
      the new state for:
@@ -2661,7 +3255,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
      - krl, krg, etc.
   */
 
-  _update_darcy_fluxes(connect, cdoq, time_eval, cur2prev, mc);
+  _update_darcy_fluxes(connect, cdoq, time_eval, cur2prev, tpf);
 
   return time_eval;
 }
@@ -2675,7 +3269,7 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
  * \param[in]      ts         pointer to a cs_time_step_t struct.
  * \param[in]      post_flag  requested quantities to be postprocessed
- * \param[in, out] mc         pointer to the casted model context
+ * \param[in, out] tpf        pointer to the casted model context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2684,38 +3278,38 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
                     const cs_cdo_quantities_t    *cdoq,
                     const cs_time_step_t         *ts,
                     cs_flag_t                     post_flag,
-                    cs_gwf_tpf_t                 *mc)
+                    cs_gwf_tpf_t                 *tpf)
 {
-  assert(mc != NULL);
+  assert(tpf != NULL);
 
   if (cs_flag_test(post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE)) {
 
     /* Balance for the Darcy advective flux in the liquid phase */
 
     cs_gwf_darcy_flux_balance(connect, cdoq,
-                              cs_equation_get_param(mc->w_eq),
-                              mc->l_darcy);
+                              cs_equation_get_param(tpf->w_eq),
+                              tpf->l_darcy);
 
     /* Balance for the Darcy advective flux in the gas phase */
 
     cs_gwf_darcy_flux_balance(connect, cdoq,
-                              cs_equation_get_param(mc->h_eq),
-                              mc->g_darcy);
+                              cs_equation_get_param(tpf->h_eq),
+                              tpf->g_darcy);
 
   }
 
   if (cs_flag_test(post_flag, CS_GWF_POST_SOIL_STATE))
-    cs_gwf_soil_update_soil_state(cdoq->n_cells, mc->l_saturation->val);
+    cs_gwf_soil_update_soil_state(cdoq->n_cells, tpf->l_saturation->val);
 
   if (cs_flag_test(post_flag, CS_GWF_POST_SOIL_MINMAX)) {
 
     const cs_adjacency_t  *c2v = connect->c2v;
 
-    const cs_real_t  *pc = mc->c_pressure->val;
-    const cs_real_t  *pg = mc->g_pressure->val;
-    const cs_real_t  *pl = mc->l_pressure->val;
-    const cs_real_t  *lsat = cs_property_get_array(mc->lsat_pty);
-    const cs_real_t  *lcap = cs_property_get_array(mc->lcap_pty);
+    const cs_real_t  *pc = tpf->c_pressure->val;
+    const cs_real_t  *pg = tpf->g_pressure->val;
+    const cs_real_t  *pl = tpf->l_pressure->val;
+    const cs_real_t  *lsat = cs_property_get_array(tpf->lsat_pty);
+    const cs_real_t  *lcap = cs_property_get_array(tpf->lcap_pty);
 
     int  n_soils = cs_gwf_get_n_soils();
     int  n_outputs = 2 * n_soils * CS_GWF_TPF_N_OUTPUT_VARS;
@@ -2799,7 +3393,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
  * \param[in] cell_ids     list of cells (0 to n-1)
  * \param[in] post_flag    flag gathering quantities to postprocess
  * \param[in] abs_perm     property for the absolute permeability
- * \param[in] mc           pointer to the model context structure
+ * \param[in] tpf          pointer to the model context structure
  * \param[in] connect      pointer to additional connectivities for CDO
  * \param[in] cdoq         pointer to additional mesh quantities for CDO
  * \param[in] time_step    pointer to a cs_time_step_t struct.
@@ -2812,7 +3406,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                       const cs_lnum_t             cell_ids[],
                       cs_flag_t                   post_flag,
                       const cs_property_t        *abs_perm,
-                      const cs_gwf_tpf_t         *mc,
+                      const cs_gwf_tpf_t         *tpf,
                       const cs_cdo_connect_t     *connect,
                       const cs_cdo_quantities_t  *cdoq,
                       const cs_time_step_t       *time_step)
@@ -2820,11 +3414,11 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */
 
-  assert(mc != NULL);
+  assert(tpf != NULL);
 
   if (post_flag & CS_GWF_POST_SOIL_CAPACITY) {
 
-    const cs_real_t  *lcap_c2v = cs_property_get_array(mc->lcap_pty);
+    const cs_real_t  *lcap_c2v = cs_property_get_array(tpf->lcap_pty);
     const cs_adjacency_t  *c2v = connect->c2v;
 
     cs_real_t  *lcap = NULL;
@@ -2860,7 +3454,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
   if (post_flag & CS_GWF_POST_PERMEABILITY) {
 
-    const cs_real_t  *krl_c2v = cs_property_get_array(mc->krl_pty);
+    const cs_real_t  *krl_c2v = cs_property_get_array(tpf->krl_pty);
     const cs_adjacency_t  *c2v = connect->c2v;
 
     /* permeability = krl * abs_permeability */
@@ -2940,10 +3534,10 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
   if (post_flag & CS_GWF_POST_GAS_MASS_DENSITY) {
 
     const cs_adjacency_t  *c2v = connect->c2v;
-    const cs_real_t  *pg = mc->g_pressure->val;
+    const cs_real_t  *pg = tpf->g_pressure->val;
 
     const double  mh_ov_rt =
-      mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+      tpf->h_molar_mass / (tpf->ref_temperature * cs_physical_constants_r);
 
     cs_real_t  *gas_mass_density = NULL;
     BFT_MALLOC(gas_mass_density, n_cells, cs_real_t);

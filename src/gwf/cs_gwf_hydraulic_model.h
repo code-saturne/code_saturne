@@ -232,6 +232,40 @@ typedef struct {
 /* Two-phase flows in a porous media */
 /* +++++++++++++++++++++++++++++++++ */
 
+/*!
+ * \enum cs_gwf_tpf_solver_type_t
+ * \brief Type of solver considered for a two-phase flow model
+ *
+ * \var CS_GWF_TPF_SOLVER_PCPG_COUPLED
+ *      (Pc, Pg) is the couple of main unknowns. Pc for the conservation of the
+ *      mass of water and Pg for the conservation of the mass of componenet
+ *      mainly present in the gas phase (H2 for instance). A fully approach
+ *      solver is considered to solve the system of equations.
+ *
+ * \var CS_GWF_TPF_SOLVER_PLPC_COUPLED
+ *      (Pc, Pl) is the couple of main unknowns. Pl for the conservation of the
+ *      mass of water and Pc for the conservation of the mass of componenet
+ *      mainly present in the gas phase (H2 for instance). A fully approach
+ *      solver is considered to solve the system of equations.
+ *
+ * \var CS_GWF_TPF_SOLVER_PLPG_SEGREGATED
+ *      (Pl, Pg) is the couple of main unknowns. Pl for the conservation of the
+ *      mass of water and Pg for the conservation of the mass of componenet
+ *      mainly present in the gas phase (H2 for instance). A segregated approach
+ *      is considered to solve the system of equations.
+ */
+
+typedef enum {
+
+  CS_GWF_TPF_SOLVER_PCPG_COUPLED,
+  CS_GWF_TPF_SOLVER_PLPC_COUPLED,
+  CS_GWF_TPF_SOLVER_PLPG_SEGREGATED,
+
+  CS_GWF_TPF_N_SOLVERS
+
+} cs_gwf_tpf_solver_type_t;
+
+
 /*! \struct cs_gwf_tpf_t
  *
  * \brief Structure to handle the modelling of miscible or immiscible two-phase
@@ -246,8 +280,7 @@ typedef struct {
  *   - No water in the gaseous phase
  *   - Incompressibility of the liquid phase
  *   - Hydrogen pressure is given by the "perfect gas" law in the gas phase and
- *     the Henry's law in the liquid phase
- *
+ *     the Henry's law in the liquid phase (when a miscible model is used)
  * The two primitive variables are the capillarity and liquid pressures with a
  * specific treatment in the saturated case (cf. the cited article or
  * Angelini's PhD thesis)
@@ -258,16 +291,6 @@ typedef struct {
  * - Two components: water denoted by "w" and a gaseous component (let's say
  *   hydrogen) denoted by "h". The gaseous component is present in the two
  *   phases whereas water is only considered in the liquid phase.
- *
- * The resulting linear algebraic system (one applies a linearization) is
- * defined as follows:
- *
- *                              cap.    liq
- * water mass conservation    | M_00  | M_01 ||P_c|   | b_w |
- *                            |-------|------||---| = |-----|
- * hydrogen mass conservation | M_10  | M_11 ||P_l|   | b_h |
- *
- * This is a coupled system. Coupling terms are collected inside M_01 and M_10
  */
 
 typedef struct {
@@ -343,6 +366,19 @@ typedef struct {
    * @name Properties related to the model
    * @{
    *
+   * \var krl_pty
+   * Property related to the relative permeability in the liquid phase
+   *
+   * \var krg_pty
+   * Property related to the relative permeability in the gas phase
+   *
+   * \var lsat_pty
+   * Property related to the liquid saturation
+   *
+   * \var lcap_pty
+   * Property related to the liquid capacity (derivative of the liquid
+   * saturation w.r.t. the capillarity pressure)
+   *
    * \var time_wc_pty
    * Property related to the unsteady term of the water conservation equation
    * w.r.t. the capillarity pressure
@@ -351,6 +387,14 @@ typedef struct {
    * Property related to the diffusion term of the water conservation equation
    * w.r.t. the pressure in the liquid phase
    *
+   * \var diff_wc_pty
+   * Property related to the diffusion term of the water conservation equation
+   * w.r.t. the capillarity
+   *
+   * \var diff_wg_pty
+   * Property related to the diffusion term of the water conservation equation
+   * w.r.t. the pressure in the gas phase
+   *
    * \var time_hc_pty
    * Property related to the unsteady term of the hydrogen conservation equation
    * w.r.t. the capillarity pressure
@@ -358,6 +402,14 @@ typedef struct {
    * \var diff_hc_pty
    * Property related to the diffusion term of the hydrogen conservation
    * equation w.r.t. the capillarity pressure
+   *
+   * \var time_hg_pty
+   * Property related to the unsteady term of the hydrogen conservation equation
+   * w.r.t. the pressure in the gas phase
+   *
+   * \var diff_hg_pty
+   * Property related to the diffusion term of the hydrogen conservation
+   * equation w.r.t. the pressure in the gas phase
    *
    * \var time_hl_pty
    * Property related to the unsteady term of the hydrogen conservation equation
@@ -374,19 +426,6 @@ typedef struct {
    *
    * \var diff_g_pty
    * Property used in the definition of the Darcy flux in the gas phase
-   *
-   * \var krl_pty
-   * Property related to the relative permeability in the liquid phase
-   *
-   * \var krg_pty
-   * Property related to the relative permeability in the gas phase
-   *
-   * \var lsat_pty
-   * Property related to the liquid saturation
-   *
-   * \var lcap_pty
-   * Property related to the liquid capacity (derivative of the liquid
-   * saturation w.r.t. the capillarity pressure)
    */
 
   cs_property_t                *krl_pty;
@@ -398,9 +437,14 @@ typedef struct {
 
   cs_property_t                *time_wc_pty;
   cs_property_t                *diff_wl_pty;
+  cs_property_t                *diff_wc_pty;
+  cs_property_t                *diff_wg_pty;
 
   cs_property_t                *time_hc_pty;
   cs_property_t                *diff_hc_pty;
+
+  cs_property_t                *time_hg_pty;
+  cs_property_t                *diff_hg_pty;
 
   cs_property_t                *time_hl_pty;
   cs_property_t                *diff_hl_pty;
@@ -408,6 +452,7 @@ typedef struct {
   cs_property_t                *reac_h_pty;
 
   cs_property_t                *diff_g_pty;
+  cs_property_t                *diff_w_pty;
 
   /*!
    * @}
@@ -513,6 +558,10 @@ typedef struct {
    * @name Numerical parameters
    * @{
    *
+   * \var solver_type
+   * \brief Type of solver considered to solve the system of equations (choice
+   *        of main unknowns and strategy of resolution (coupled/segregated))
+   *
    * \var use_coupled_solver
    * \brief When a model relies on several coupled equations, there are two
    *        main options to build and solve the system of equations. Either use
@@ -551,6 +600,7 @@ typedef struct {
    *      Structure used to manage the non-linearities
    */
 
+  cs_gwf_tpf_solver_type_t       solver_type;
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;
   bool                           use_diffusion_view_for_darcy;
