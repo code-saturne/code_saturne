@@ -623,6 +623,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         fvm_writer_finalize(writer);
         pts_mesh = fvm_nodal_destroy(pts_mesh);
         BFT_FREE(fvm_name);
+        BFT_FREE(f_name);
       }
 
       /* Now build locator
@@ -698,6 +699,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
           cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
         }
       }
+
+      BFT_FREE(dist_colors);
 
       _incremental_solid_plane_from_points(m,
                                            n_points_dist,
