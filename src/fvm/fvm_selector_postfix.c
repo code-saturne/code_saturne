@@ -48,6 +48,8 @@
 
 #include "fvm_defs.h"
 
+#include "cs_notebook.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -1223,6 +1225,71 @@ _is_float(const char  *str,
 }
 
 /*----------------------------------------------------------------------------
+ * Check if a string defines a notebook parameter and get its value
+ *
+ * parameters:
+ *   str   <-- string parsed
+ *   value --> floating-point conversion
+ *
+ * returns:
+ *   true if the string defines a notebook parameter, false otherwise
+ *----------------------------------------------------------------------------*/
+
+static bool
+_is_notebook(const char *str,
+             double     *value)
+{
+  bool retcode = false;
+  *value = 0.0;
+
+  /* Check if the provided string is a notebook parameter.
+   * If it is the case return the value and correct retcode. */
+
+  int dummy;
+  if (cs_notebook_parameter_is_present(str, &dummy)) {
+    *value = (double)cs_notebook_parameter_value_by_name(str);
+    retcode = true;
+    bft_printf("%s[L%d] - Found token \"%s\" with value = %f\n",
+               __func__, __LINE__, str, *value);
+  }
+
+  return retcode;
+}
+
+/*----------------------------------------------------------------------------
+ * Check if a string defines a floating-point number or a notebook parameter
+ * and scan its value
+ *
+ * parameters:
+ *   str   <-- string parsed
+ *   value --> floating-point conversion
+ *
+ * returns:
+ *   true if the string defines a floating-point number or a notebook paramter,
+ *   false otherwise
+ *----------------------------------------------------------------------------*/
+
+static bool
+_is_float_or_notebook(const char *str,
+                      double     *value)
+{
+  bool retcode = false;
+
+  /* Check if the string is a float, then if its a notebook parameter.
+   * Since both functions set the value of "*value" pointer, we do the checks
+   * in a given order using if else conditions. */
+
+  if (_is_float(str, value)) {
+    retcode = true;
+  }
+  else if (_is_notebook(str, value)) {
+    retcode = true;
+  }
+
+  return retcode;
+}
+
+/*----------------------------------------------------------------------------
  * Handle a parsing error.
  *
  * parameters:
@@ -1649,7 +1716,7 @@ _parse_geometric_args(_operator_code_t          opcode,
 
     tok =  te->tokens + te->token_id[i];
 
-    if (_is_float(tok, val + n_vals)) {
+    if (_is_float_or_notebook(tok, val + n_vals)) {
       tok =  te->tokens + te->token_id[++i];
       n_vals++;
       if (n_vals > 12)
@@ -1749,7 +1816,7 @@ _parse_geometric_args(_operator_code_t          opcode,
         if (strcmp(te->tokens + te->token_id[i+1], "="))
           error = true;
         tok =  te->tokens + te->token_id[i+2];
-        if (_is_float(tok, &epsilon)) {
+        if (_is_float_or_notebook(tok, &epsilon)) {
           have_epsilon = true;
           i += 3;
         }
@@ -2057,9 +2124,11 @@ _parse_for_coord_conditions(const char               *infix,
   }
 
   if (j == 0)
-    has_coord_cond = _is_float(te->tokens + te->token_id[i + 1], &val);
+    has_coord_cond
+      = _is_float_or_notebook(te->tokens + te->token_id[i + 1], &val);
   else if (j == 1)
-    has_coord_cond = _is_float(te->tokens + te->token_id[i - 1], &val);
+    has_coord_cond
+      = _is_float_or_notebook(te->tokens + te->token_id[i - 1], &val);
 
   /* If we have a valid syntax, add it to postfix */
 
@@ -2133,7 +2202,8 @@ _parse_for_coord_conditions(const char               *infix,
       return;
     }
 
-    has_coord_cond = _is_float(te->tokens + te->token_id[i + 1], &val);
+    has_coord_cond
+      = _is_float_or_notebook(te->tokens + te->token_id[i + 1], &val);
 
     /* If we have a valid syntax, add it to postfix */
 
