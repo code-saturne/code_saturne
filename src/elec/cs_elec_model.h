@@ -292,6 +292,21 @@ cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Convert single enthalpy value to temperature.
+ *
+ * \param[in]       ym      mass fraction for each gas
+ * \param[in, out]  enthal  enthlapy value
+ *
+ * \return  temperature value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_elec_convert_h_to_t(const cs_real_t  ym[],
+                       cs_real_t        enthal);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Convert temperature to enthalpy at all cells
  *
  * This handles both user and model temperature conversions, so can be used
@@ -325,6 +340,21 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
                              const cs_lnum_t  face_ids[],
                              const cs_real_t  t[],
                              cs_real_t        h[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert single temperature value to enthalpy.
+ *
+ * \param[in]       ym    mass fraction for each gas
+ * \param[in, out]  temp  temperature value
+ *
+ * \return  enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_elec_convert_t_to_h(const cs_real_t ym[],
+                       cs_real_t       temp);
 
 /*----------------------------------------------------------------------------*/
 /*!
