@@ -2646,16 +2646,14 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
                            const cs_cocg_t                 cocgb[restrict][6],
                            cs_cocg_t                       cocg[restrict][6])
 {
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) ma->cell_b_faces;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
+  const cs_real_3_t *restrict b_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *restrict)fvq->b_dist;
   const cs_real_3_t *restrict diipb
@@ -2668,43 +2666,32 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
     cs_lnum_t c_id = m->b_cells[ii];
     for (cs_lnum_t ll = 0; ll < 6; ll++)
       cocg[c_id][ll] = cocgb[ii][ll];
-  }
 
-  /* Contribution from regular boundary faces */
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
-# pragma omp parallel for
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+    for (cs_lnum_t i = s_id; i < e_id; i++) { /* loop on boundary faces */
 
-    for (cs_lnum_t f_id = b_group_index[t_id*2];
-         f_id < b_group_index[t_id*2 + 1];
-         f_id++) {
-
-      cs_lnum_t ii = b_face_cells[f_id];
+      cs_lnum_t f_id = cell_b_faces[i];
 
       cs_real_t umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
-      cs_real_t udbfs = 1. / b_face_surf[f_id];
 
       cs_real_t dddij[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        dddij[ll] =   udbfs * b_face_normal[f_id][ll]
+        dddij[ll] =   b_face_u_normal[f_id][ll]
                     + umcbdd * diipb[f_id][ll];
 
-      cocg[ii][0] += dddij[0]*dddij[0];
-      cocg[ii][1] += dddij[1]*dddij[1];
-      cocg[ii][2] += dddij[2]*dddij[2];
-      cocg[ii][3] += dddij[0]*dddij[1];
-      cocg[ii][4] += dddij[1]*dddij[2];
-      cocg[ii][5] += dddij[0]*dddij[2];
+      cocg[c_id][0] += dddij[0]*dddij[0];
+      cocg[c_id][1] += dddij[1]*dddij[1];
+      cocg[c_id][2] += dddij[2]*dddij[2];
+      cocg[c_id][3] += dddij[0]*dddij[1];
+      cocg[c_id][4] += dddij[1]*dddij[2];
+      cocg[c_id][5] += dddij[0]*dddij[2];
 
-    } /* loop on faces */
+      _math_6_inv_cramer_sym_in_place(cocg[c_id]);
+    } /* loop on boundary faces */
 
-  } /* loop on threads */
-
-# pragma omp parallel for if(m->n_b_cells < CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < m->n_b_cells; ii++) {
-    cs_lnum_t c_id = m->b_cells[ii];
-    _math_6_inv_cramer_sym_in_place(cocg[c_id]);
-  }
+  } /* loop on boundary cells */
 }
 
 /*----------------------------------------------------------------------------
