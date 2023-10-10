@@ -1341,6 +1341,14 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_drift] */
 
+  /* Example: to change the turbulent Schmidt number */
+  /*-------------------------------------------------*/
+  {
+    cs_field_set_key_double(CS_F_(t),
+                            cs_field_key_id("turbulent_schmidt"),
+                            0.7);
+  }
+
   /* Example: activate mesh robustness options */
   /*-------------------------------------------*/
 
