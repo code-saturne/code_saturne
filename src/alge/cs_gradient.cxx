@@ -2688,8 +2688,9 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
       cocg[c_id][4] += dddij[1]*dddij[2];
       cocg[c_id][5] += dddij[0]*dddij[2];
 
-      _math_6_inv_cramer_sym_in_place(cocg[c_id]);
     } /* loop on boundary faces */
+
+    _math_6_inv_cramer_sym_in_place(cocg[c_id]);
 
   } /* loop on boundary cells */
 }
