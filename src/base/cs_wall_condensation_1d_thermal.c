@@ -330,7 +330,6 @@ cs_wall_condensation_1d_thermal_free(void)
 void
 cs_wall_condensation_0d_thermal_create(cs_lnum_t  nvolumes,
                                        cs_lnum_t  ncmast)
-
 {
   _wall_cond_0d_thermal.nvolumes = nvolumes;
   BFT_MALLOC(_wall_cond_0d_thermal.volume_t, ncmast, cs_real_2_t);
