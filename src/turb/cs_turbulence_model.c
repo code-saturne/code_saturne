@@ -1698,32 +1698,26 @@ cs_turb_model_log_setup(void)
                                 "  Continuous phase:\n\n"));
 
   if (turb_model->type == CS_TURB_RANS)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("    RANS model (type = CS_TURB_RANS)\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    RANS model (type = CS_TURB_RANS)\n"));
   else if (turb_model->type == CS_TURB_LES)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("   LES model (type = CS_TURB_LES)\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("   LES model (type = CS_TURB_LES)\n"));
   else if (turb_model->order == CS_TURB_ALGEBRAIC)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("   Algebraic model (order = CS_TURB_ALGEBRAIC)\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("   Algebraic model (order = CS_TURB_ALGEBRAIC)\n"));
   else if (turb_model->order == CS_TURB_FIRST_ORDER)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("   First order model (order = CS_TURB_FIRST_ORDER)\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("   First order model (order = CS_TURB_FIRST_ORDER)\n"));
   else if (turb_model->order == CS_TURB_SECOND_ORDER)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("   Second order model (order = CS_TURB_SECOND_ORDER)\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("   Second order model (order = CS_TURB_SECOND_ORDER)\n"));
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("\n    %s\n"
-       "      (iturb = %s)\n\n"),
-     _turbulence_model_name(turb_model->iturb),
-     _turbulence_model_enum_name(turb_model->iturb));
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n    %s\n"
+                  "      (iturb = %s)\n\n"),
+                _turbulence_model_name(turb_model->iturb),
+                _turbulence_model_enum_name(turb_model->iturb));
 
   const char *iwallf_value_str[]
     = {N_("Disabled"),
@@ -1736,11 +1730,10 @@ cs_turb_model_log_setup(void)
        N_("All y+")};
 
   if (wall_fns->iwallf >= 0)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("    iwallf                      (wall function:\n"
-         "                                 %s)\n"),
-       iwallf_value_str[wall_fns->iwallf]);
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    iwallf                      (wall function:\n"
+                    "                                 %s)\n"),
+                  iwallf_value_str[wall_fns->iwallf]);
 
   const char *iwalfs_value_str[]
     = {N_("Arparci and Larsen"),
@@ -1797,11 +1790,10 @@ cs_turb_model_log_setup(void)
       cs_real_t relaxvk = var_cal_opt.relaxv;
       cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
       cs_real_t relaxve = var_cal_opt.relaxv;
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    relaxv:      %14.5e for k (Relaxation)\n"
-           "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
-           relaxvk, relaxve);
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    relaxv:      %14.5e for k (Relaxation)\n"
+                      "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
+                    relaxvk, relaxve);
     }
     else
       cs_log_printf(CS_LOG_SETUP, _("\n"));
@@ -1813,6 +1805,7 @@ cs_turb_model_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:        %14.5e (Characteristic velocity)\n"
+                    "    reinit_turb: %14d (Advanced re-init)\n"
                     "    irijco:      %14d (Coupled resolution)\n"
                     "    irijnu:      %14d (Matrix stabilization)\n"
                     "    irijrb:      %14d (Reconstruct at boundaries)\n"
@@ -1820,6 +1813,7 @@ cs_turb_model_log_setup(void)
                     "    iclsyr:      %14d (Symmetry implicitation)\n"
                     "    iclptr:      %14d (Wall implicitation)\n"),
                   cs_glob_turb_ref_values->uref,
+                  cs_glob_turb_rans_model->reinit_turb,
                   cs_glob_turb_rans_model->irijco,
                   cs_glob_turb_rans_model->irijnu,
                   cs_glob_turb_rans_model->irijrb,
@@ -1856,34 +1850,34 @@ cs_turb_model_log_setup(void)
   }
   else if (turb_model->type == CS_TURB_LES) {
     cs_log_printf(CS_LOG_SETUP,
-       _("    csmago:      %14.5e (Smagorinsky constant)\n"
-         "    cwale:       %14.5e (WALE model constant)\n"
-         "    xlesfl:      %14.5e (Filter with in a cell is)\n"
-         "    ales:        %14.5e (written as)\n"
-         "    bles:        %14.5e (xlesfl*(ales*volume)**(bles))\n"
-         "    idries:      %14d (=1 Van Driest damping)\n"
-         "    cdries:      %14.5e (Van Driest constant)\n"
-         "    xlesfd:      %14.5e (Ratio between the explicit)\n"
-         "                                (filter and LES filter)\n"
-         "                                (recommended value: 1.5)\n"
-         "    smagmx:      %14.5e (Max Smagorinsky in the)\n"
-         "                                (dynamic model case)\n"),
-         cs_turb_csmago, cs_turb_cwale, cs_turb_xlesfl,
-         cs_turb_ales, cs_turb_bles, cs_glob_turb_les_model->idries,
-         cs_turb_cdries, cs_turb_xlesfd, cs_turb_csmago_max);
+                  _("    csmago:      %14.5e (Smagorinsky constant)\n"
+                    "    cwale:       %14.5e (WALE model constant)\n"
+                    "    xlesfl:      %14.5e (Filter with in a cell is)\n"
+                    "    ales:        %14.5e (written as)\n"
+                    "    bles:        %14.5e (xlesfl*(ales*volume)**(bles))\n"
+                    "    idries:      %14d (=1 Van Driest damping)\n"
+                    "    cdries:      %14.5e (Van Driest constant)\n"
+                    "    xlesfd:      %14.5e (Ratio between the explicit)\n"
+                    "                                (filter and LES filter)\n"
+                    "                                (recommended value: 1.5)\n"
+                    "    smagmx:      %14.5e (Max Smagorinsky in the)\n"
+                    "                                (dynamic model case)\n"),
+                  cs_turb_csmago, cs_turb_cwale, cs_turb_xlesfl,
+                  cs_turb_ales, cs_turb_bles, cs_glob_turb_les_model->idries,
+                  cs_turb_cdries, cs_turb_xlesfd, cs_turb_csmago_max);
 
   }
   else if (turb_model->iturb == CS_TURB_V2F_PHI) {
 
     cs_log_printf(CS_LOG_SETUP,
-       _("    uref:        %14.5e (Characteristic velocity)\n"
-         "    iclkep:      %14d (k-epsilon clipping model)\n"
-         "    ikecou:      %14d (k-epsilon coupling mode)\n"
-         "    igrake:      %14d (Account for gravity)\n"),
-         cs_glob_turb_ref_values->uref,
-         cs_glob_turb_rans_model->iclkep,
-         cs_glob_turb_rans_model->ikecou,
-         cs_glob_turb_rans_model->igrake);
+                  _("    uref:        %14.5e (Characteristic velocity)\n"
+                    "    iclkep:      %14d (k-epsilon clipping model)\n"
+                    "    ikecou:      %14d (k-epsilon coupling mode)\n"
+                    "    igrake:      %14d (Account for gravity)\n"),
+                  cs_glob_turb_ref_values->uref,
+                  cs_glob_turb_rans_model->iclkep,
+                  cs_glob_turb_rans_model->ikecou,
+                  cs_glob_turb_rans_model->igrake);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
@@ -1893,11 +1887,10 @@ cs_turb_model_log_setup(void)
       relaxvk = var_cal_opt.relaxv;
       cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
       relaxve = var_cal_opt.relaxv;
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    relaxv:      %14.5e for k (Relaxation)\n"
-           "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
-           relaxvk, relaxve);
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    relaxv:      %14.5e for k (Relaxation)\n"
+                      "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
+                    relaxvk, relaxve);
 
     }
     else
@@ -1914,16 +1907,16 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-       _("    uref:        %14.5e (Characteristic velocity)\n"
-         "    iclkep:      %14d (k-epsilon clipping model)\n"
-         "    ikecou:      %14d (k-epsilon coupling mode)\n"
-         "    hybrid_turb: %s\n"
-         "    igrake:      %14d (Account for gravity)\n"),
-         cs_glob_turb_ref_values->uref,
-         cs_glob_turb_rans_model->iclkep,
-         cs_glob_turb_rans_model->ikecou,
-         hybrid_turb_value_str[turb_model->hybrid_turb],
-         cs_glob_turb_rans_model->igrake);
+                  _("    uref:        %14.5e (Characteristic velocity)\n"
+                    "    iclkep:      %14d (k-epsilon clipping model)\n"
+                    "    ikecou:      %14d (k-epsilon coupling mode)\n"
+                    "    hybrid_turb: %s\n"
+                    "    igrake:      %14d (Account for gravity)\n"),
+                  cs_glob_turb_ref_values->uref,
+                  cs_glob_turb_rans_model->iclkep,
+                  cs_glob_turb_rans_model->ikecou,
+                  hybrid_turb_value_str[turb_model->hybrid_turb],
+                  cs_glob_turb_rans_model->igrake);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
@@ -1933,11 +1926,10 @@ cs_turb_model_log_setup(void)
       relaxvk = var_cal_opt.relaxv;
       cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
       relaxve = var_cal_opt.relaxv;
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    relaxv:      %14.5e for k (Relaxation)\n"
-           "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
-           relaxvk, relaxve);
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    relaxv:      %14.5e for k (Relaxation)\n"
+                      "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
+                    relaxvk, relaxve);
 
     }
     else
@@ -1954,14 +1946,16 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-       _("    uref:        %14.5e (Characteristic velocity)\n"
-         "    ikecou:      %14d (k-epsilon coupling mode)\n"
-         "    hybrid_turb: %s\n"
-         "    igrake:      %14d (Account for gravity)\n"),
-         cs_glob_turb_ref_values->uref,
-         cs_glob_turb_rans_model->ikecou,
-         hybrid_turb_value_str[turb_model->hybrid_turb],
-         cs_glob_turb_rans_model->igrake);
+                  _("    uref:        %14.5e (Characteristic velocity)\n"
+                    "    ikecou:      %14d (k-epsilon coupling mode)\n"
+                    "    reinit_turb: %14d (Advanced re-init)\n"
+                    "    hybrid_turb: %s\n"
+                    "    igrake:      %14d (Account for gravity)\n"),
+                  cs_glob_turb_ref_values->uref,
+                  cs_glob_turb_rans_model->ikecou,
+                  cs_glob_turb_rans_model->reinit_turb,
+                  hybrid_turb_value_str[turb_model->hybrid_turb],
+                  cs_glob_turb_rans_model->igrake);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
@@ -1971,9 +1965,9 @@ cs_turb_model_log_setup(void)
       cs_field_get_key_struct(CS_F_(omg), key_cal_opt_id, &var_cal_opt);
       cs_real_t relaxvo = var_cal_opt.relaxv;
       cs_log_printf(CS_LOG_SETUP,
-         _("    relaxv:      %14.5e for k (Relaxation)\n"
-           "    relaxv:      %14.5e for omega (Relaxation)\n"),
-           relaxvk, relaxvo);
+                    _("    relaxv:      %14.5e for k (Relaxation)\n"
+                      "    relaxv:      %14.5e for omega (Relaxation)\n"),
+                    relaxvk, relaxvo);
     }
     else
       cs_log_printf(CS_LOG_SETUP,_("\n"));
@@ -1983,10 +1977,10 @@ cs_turb_model_log_setup(void)
 
     cs_field_get_key_struct(CS_F_(nusa), key_cal_opt_id, &var_cal_opt);
     cs_log_printf(CS_LOG_SETUP,
-       _("    uref:        %14.5e (Characteristic velocity)\n"
-         "    relaxv:      %14.5e for nu (Relaxation)\n"),
-         cs_glob_turb_ref_values->uref,
-         var_cal_opt.relaxv);
+                  _("    uref:        %14.5e (Characteristic velocity)\n"
+                    "    relaxv:      %14.5e for nu (Relaxation)\n"),
+                  cs_glob_turb_ref_values->uref,
+                  var_cal_opt.relaxv);
 
   }
 
