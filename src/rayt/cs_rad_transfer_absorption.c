@@ -44,6 +44,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
+#include "cs_assert.h"
 #include "cs_base.h"
 #include "cs_combustion_gas.h"
 #include "cs_field.h"
@@ -159,11 +160,15 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
     if (rt_params->imodak > 0) {
 
       const int n_gas_e = cm->n_gas_el_comp;
+      const int n_gas_g = cm->n_gas_species;
       cs_real_t xpro;
-      double xk[n_gas_e], yi[3];
-      double yk[n_gas_e];
 
-      assert(n_gas_e <= 3);  /* for consistency of yi[] usage. */
+      cs_real_t *_w;
+      BFT_MALLOC(_w, n_gas_e + n_gas_g + n_gas_e, cs_real_t);
+
+      cs_real_t *xk = _w;
+      cs_real_t *yi = _w + n_gas_e;
+      cs_real_t *yk = _w + (n_gas_e + n_gas_g);
 
       const cs_real_t xsoot = cm->gas->xsoot;
       const cs_real_t rosoot = cm->gas->rosoot;
@@ -208,6 +213,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         yi[0] = cpro_ym1[cell_id];
         yi[1] = cpro_ym2[cell_id];
         yi[2] = cpro_ym3[cell_id];
+
+        cs_assert(n_gas_g <= 3);  /* Otherwise fill values */
+
         cs_combustion_gas_yg2xye(yi, yk, xk);
         xpro = (xk[2] + xk[3]);
         w3[cell_id] = ys * crom[cell_id] / rosoot;
@@ -219,6 +227,8 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       if (rt_params->imodak == 1) {
         cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
       }
+
+      BFT_FREE(_w);
     }
     else if (rt_params->imfsck == 2) {
 
