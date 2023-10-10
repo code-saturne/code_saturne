@@ -971,8 +971,8 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
 
         const cs_lnum_t  v_id = c2v->ids[j];
 
-        const double  rhog_h = mh_ov_rt * pg[v_id];
-        const double  rhol_h = hmh * pg[v_id];
+        const double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
+        const double  rhol_h = (pg[v_id] > 0) ? hmh * pg[v_id] : 0.;
         const double  pvc = cdoq->pvol_vc[j];
         const double  sl = lsat[c_id], sg = 1 - sl;
         const double  dsl_dpc = lcap[c_id];
@@ -1099,9 +1099,9 @@ _update_iso_itpf_plpc_coupled(const cs_cdo_connect_t     *connect,
         const cs_lnum_t  v_id = c2v->ids[j];
         const double  pvc = cdoq->pvol_vc[j];
 
-        const double  rhog_h = mh_ov_rt * pg[v_id];
         const double  sl = lsat[j], sg = 1 - sl;
         const double  dsl_dpc = lcap[j];
+        const double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
 
         /* Update terms for the Darcy flux in the gas phase */
 
@@ -1232,7 +1232,7 @@ _update_iso_itpf_pcpg_coupled_diffview(const cs_cdo_connect_t     *connect,
         const cs_lnum_t  v_id = c2v->ids[j];
         const double  pvc = cdoq->pvol_vc[j];
 
-        const double  rhog_h = mh_ov_rt * pg[v_id];
+        const double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
         const double  sl = lsat[j], sg = 1 - sl;
         const double  dsl_dpc = lcap[j];
 
