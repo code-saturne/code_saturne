@@ -1197,8 +1197,14 @@ class Studies(object):
         # call smgr xml backward compatibility
 
         if not smgr:
-            smgr = XMLengine.Case(package=self.__pkg, file_name=filename,
-                                  studymanager=True)
+            try:
+                smgr = XMLengine.Case(package=self.__pkg, file_name=filename,
+                                      studymanager=True)
+            except Exception as error:
+                print("\n  /!\ ERROR while reading studymanager file :\n"
+                      + str(error))
+                sys.exit()
+
             smgr['xmlfile'] = filename
 
             # minimal modification of xml for now
