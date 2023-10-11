@@ -109,6 +109,19 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             cs_cocg_6_t         *restrict cocgb,
                             cs_real_3_t         *restrict grad);
 
+void
+cs_lsq_vector_gradient_cuda(const cs_mesh_t        *m,
+                     const cs_mesh_adjacencies_t   *madj,
+                     const cs_mesh_quantities_t    *fvq,
+                     const cs_halo_type_t           halo_type,
+                     const int                      inc,
+                     const cs_real_3_t    *restrict coefav,
+                     const cs_real_33_t   *restrict coefbv,
+                     const cs_real_3_t    *restrict pvar,
+                     const cs_real_t      *restrict c_weight,
+                     cs_real_33_t         *restrict gradv,
+                     cs_real_33_t         *restrict rhs);
+
 #endif /* defined(HAVE_CUDA) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

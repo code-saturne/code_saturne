@@ -224,7 +224,7 @@ cs_cuda_mem_free(void         *p,
   CS_CUDA_CHECK_CALL(cudaFree(p), file_name, line_num);
 
 #if 0
-  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);
+  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num));
 #endif
 }
 
@@ -257,7 +257,7 @@ cs_cuda_mem_free_host(void         *p,
   CS_CUDA_CHECK_CALL(cudaFreeHost(p), file_name, line_num);
 
 #if 0
-  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);
+  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num));
 #endif
 }
 

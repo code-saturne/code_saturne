@@ -6890,6 +6890,13 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   cs_cocg_6_t  *restrict cocgb_s = NULL;
   cs_cocg_6_t *restrict cocg = NULL;
+
+#if defined(HAVE_CUDA)
+  bool accel = (cs_get_device_id() > -1) ? true : false;
+#else
+  bool accel = false;
+#endif
+
   _get_cell_cocg_lsq(m, halo_type, false, fvq, &cocg, &cocgb_s);
 
   cs_real_33_t *rhs;
@@ -6898,13 +6905,27 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
-
-# pragma omp parallel for
+#if defined(HAVE_CUDA)
+  cs_lsq_vector_gradient_cuda(
+    m,
+    madj,
+    fvq,
+    halo_type,
+    inc,
+    coefav,
+    coefbv,
+    pvar,
+    c_weight,
+    gradv,
+    rhs);
+#else
+  # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
         rhs[c_id][i][j] = 0.0;
   }
+
 
   /* Contribution from interior faces */
 
@@ -6959,6 +6980,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
+#endif 
 
   /* Contribution from extended neighborhood */
 
@@ -7031,6 +7053,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   /* Compute gradient */
   /*------------------*/
 
+  #pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
