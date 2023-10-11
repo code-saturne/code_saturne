@@ -265,6 +265,26 @@ typedef enum {
 
 } cs_gwf_tpf_solver_type_t;
 
+/*!
+ * \enum cs_gwf_tpf_approx_type_t
+ * \brief Type of approximation used for the computation of unsteady or
+ *        diffusion properties
+ *
+ */
+
+typedef enum {
+
+  CS_GWF_TPF_APPROX_PC_CELL_AVERAGE, /* most diffusive, effet retard */
+  CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_MAX,
+  CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_AVERAGE,
+  CS_GWF_TPF_APPROX_SL_VTX_SUBCELL_AVERAGE,
+  CS_GWF_TPF_APPROX_PG_VTX_SUBCELL_AVERAGE,
+  CS_GWF_TPF_APPROX_VTX_SUBCELL,
+  CS_GWF_TPF_APPROX_VTX_SUBCELL_AVERAGE,
+
+  CS_GWF_TPF_N_APPROX
+
+} cs_gwf_tpf_approx_type_t;
 
 /*! \struct cs_gwf_tpf_t
  *
@@ -558,6 +578,10 @@ typedef struct {
    * @name Numerical parameters
    * @{
    *
+   * \var approx_type
+   * \brief type of approximation used for the computation of diffusion,
+   *        unsteady coefficients
+   *
    * \var solver_type
    * \brief Type of solver considered to solve the system of equations (choice
    *        of main unknowns and strategy of resolution (coupled/segregated))
@@ -600,6 +624,7 @@ typedef struct {
    *      Structure used to manage the non-linearities
    */
 
+  cs_gwf_tpf_approx_type_t       approx_type;
   cs_gwf_tpf_solver_type_t       solver_type;
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;

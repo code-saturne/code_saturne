@@ -570,12 +570,13 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_p2(const cs_real_t             t_eval,
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
-  CS_NO_WARN_IF_UNUSED(cdoq);
 
   if (soil == NULL)
     return;
 
   const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
 
   /* Retrieve the soil parameters */
 
@@ -598,40 +599,129 @@ _update_iso_soil_vgm_tpf_c1_hyperbolic_p2(const cs_real_t             t_eval,
 
   /* Main loop on cells belonging to this soil */
 
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+  switch (hc->approx_type) {
 
-    const cs_lnum_t  c_id = zone->elt_ids[i];
+  case CS_GWF_TPF_APPROX_PC_CELL_AVERAGE:
+#   pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+      const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      double  sle_v;
+      /* Mean value of the capillarity pressure in the current cell */
 
-      /* capillarity pressure at vertices */
+      double pc_sum = 0;
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        pc_sum += cdoq->pvol_vc[j]*pc_val[c2v->ids[j]];
 
-      const cs_real_t  pc_v = pc_val[c2v->ids[j]];
+      const double pc_c = pc_sum/cdoq->cell_vol[c_id];
 
-      if (pc_v < sp->pc_star) { /* Joining function */
+      double  sle_c;
 
-        const double  denum = sp->sle_alpha*(pc_v - sp->pc_star) + sp->sle_beta;
+      if (pc_c < sp->pc_star) { /* Joining function */
 
-        sle_v = 1 - 1/denum;
-        lsat[j] = sp->sl_r + sp->sl_range*sle_v;
-        lcap[j] = sp->sle_alpha / (denum*denum);
+        const double  denum = sp->sle_alpha*(pc_c-sp->pc_star) + sp->sle_beta;
 
-        _set_kr_vgm_poly2(sp, sle_v, &(krl[j]), &(krg[j]));
+        sle_c = 1 - 1/denum;
+        lsat[c_id] = sp->sl_r + sp->sl_range*sle_c;
+        lcap[c_id] = sp->sle_alpha / (denum*denum);
+
+        _set_kr_vgm_poly2(sp, sle_c, &(krl[c_id]), &(krg[c_id]));
 
       }
       else { /* pc >= pc_star */
 
-        _set_sle_lcap_vg(sp, pc_v, &sle_v, &(lsat[j]), &(lcap[j]));
-        _set_kr_vgm(sp, sle_v, &(krl[j]), &(krg[j]));
+        _set_sle_lcap_vg(sp, pc_c, &sle_c, &(lsat[c_id]), &(lcap[c_id]));
+        _set_kr_vgm(sp, sle_c, &(krl[c_id]), &(krg[c_id]));
 
       }
 
-    } /* Loop on cell vertices */
+    } /* Loop on selected cells */
+    break;
 
-  } /* Loop on selected cells */
+  case CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_MAX:
+#   pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+      const cs_lnum_t  c_id = zone->elt_ids[i];
+
+      /* Mean value of the capillarity pressure in the current cell */
+
+      for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
+
+        const cs_lnum_t  e_id = c2e->ids[j];
+        const cs_lnum_t  *v_id = e2v->ids + 2*e_id;
+        const double  pc_e = (pc_val[v_id[0]] > pc_val[v_id[1]]) ?
+          pc_val[v_id[0]] : pc_val[v_id[1]];
+
+        double  sle_e;
+
+        if (pc_e < sp->pc_star) { /* Joining function */
+
+          const double  denum = sp->sle_alpha*(pc_e-sp->pc_star) + sp->sle_beta;
+
+          sle_e = 1 - 1/denum;
+          lsat[j] = sp->sl_r + sp->sl_range*sle_e;
+          lcap[j] = sp->sle_alpha / (denum*denum);
+
+          _set_kr_vgm_poly2(sp, sle_e, &(krl[j]), &(krg[j]));
+
+        }
+        else { /* pc >= pc_star */
+
+          _set_sle_lcap_vg(sp, pc_e, &sle_e, &(lsat[j]), &(lcap[j]));
+          _set_kr_vgm(sp, sle_e, &(krl[j]), &(krg[j]));
+
+        }
+
+      } /* Loop on cell edges */
+
+    } /* Loop on selected cells */
+    break;
+
+  case CS_GWF_TPF_APPROX_SL_VTX_SUBCELL_AVERAGE:
+  case CS_GWF_TPF_APPROX_PG_VTX_SUBCELL_AVERAGE:
+  case CS_GWF_TPF_APPROX_VTX_SUBCELL_AVERAGE:
+  case CS_GWF_TPF_APPROX_VTX_SUBCELL:
+#   pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+      const cs_lnum_t  c_id = zone->elt_ids[i];
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+        double  sle_v;
+
+        /* capillarity pressure at vertices */
+
+        const cs_real_t  pc_v = pc_val[c2v->ids[j]];
+
+        if (pc_v < sp->pc_star) { /* Joining function */
+
+          const double  denum = sp->sle_alpha*(pc_v-sp->pc_star) + sp->sle_beta;
+
+          sle_v = 1 - 1/denum;
+          lsat[j] = sp->sl_r + sp->sl_range*sle_v;
+          lcap[j] = sp->sle_alpha / (denum*denum);
+
+          _set_kr_vgm_poly2(sp, sle_v, &(krl[j]), &(krg[j]));
+
+        }
+        else { /* pc >= pc_star */
+
+          _set_sle_lcap_vg(sp, pc_v, &sle_v, &(lsat[j]), &(lcap[j]));
+          _set_kr_vgm(sp, sle_v, &(krl[j]), &(krg[j]));
+
+        }
+
+      } /* Loop on cell vertices */
+
+    } /* Loop on selected cells */
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid way to approximate coefficients.", __func__);
+    break;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

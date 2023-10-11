@@ -871,21 +871,41 @@ _update_liquid_saturation_at_cells(const cs_cdo_connect_t      *connect,
                                    const cs_cdo_quantities_t   *cdoq,
                                    cs_gwf_tpf_t                *tpf)
 {
-  const cs_adjacency_t  *c2v = connect->c2v;
-  const cs_real_t  *lsat_c2v = cs_property_get_array(tpf->lsat_pty);
-  cs_real_t  *lsat = tpf->l_saturation->val;
+  switch (tpf->approx_type) {
 
-  /* Compute the average liquid saturation in each cell */
+  case CS_GWF_TPF_APPROX_PC_CELL_AVERAGE:
+    cs_array_real_copy(cdoq->n_cells,
+                       cs_property_get_array(tpf->lsat_pty),
+                       tpf->l_saturation->val);
+    break;
 
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+  case CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_MAX:
+    {
+      const cs_adjacency_t  *c2e = connect->c2e;
+      const cs_real_t  *lsat_c2e = cs_property_get_array(tpf->lsat_pty);
+      cs_real_t  *lsat = tpf->l_saturation->val;
 
-    cs_real_t  _sat = 0;
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      _sat += lsat_c2v[j] * cdoq->pvol_vc[j];
-    lsat[c_id] = _sat/cdoq->cell_vol[c_id];
+      /* Compute the average liquid saturation in each cell */
 
-  } /* Loop on cells */
+#     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+        cs_real_t  _sat = 0;
+        for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++)
+          _sat += lsat_c2e[j] * cdoq->pvol_ec[j];
+        lsat[c_id] = _sat/cdoq->cell_vol[c_id];
+
+      } /* Loop on cells */
+    }
+    break;
+
+  default: /* Reconstruct the average liquid saturation in each cell */
+    cs_reco_scalar_vbyc2c_full(connect->c2v, cdoq,
+                               cs_property_get_array(tpf->lsat_pty),
+                               tpf->l_saturation->val);
+    break;
+
+  } /* Switch on the approximation type */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1087,63 +1107,307 @@ _update_iso_itpf_plpc_coupled(const cs_cdo_connect_t     *connect,
 
     /* Loop on cells belonging to this soil */
 
-    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+    switch (tpf->approx_type) {
 
-      const cs_lnum_t  c_id = zone->elt_ids[i];
+      /* ================================= */
+    case CS_GWF_TPF_APPROX_PC_CELL_AVERAGE:
+      /* ================================= */
 
-      double  diff_g = 0, time_wc = 0, diff_wl = 0, time_hc = 0, time_hl = 0;
-      double  diff_hc = 0, diff_hl = 0;
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+        const cs_lnum_t  c_id = zone->elt_ids[i];
 
-        const cs_lnum_t  v_id = c2v->ids[j];
-        const double  pvc = cdoq->pvol_vc[j];
+        /* Compute the mean value in a cell */
 
-        const double  sl = lsat[j], sg = 1 - sl;
-        const double  dsl_dpc = lcap[j];
-        const double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
+        double  rho_sum = 0;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const cs_lnum_t  v_id = c2v->ids[j];
+          const double  pvc = cdoq->pvol_vc[j];
+
+          double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
+          rho_sum += pvc * rhog_h;
+
+        }
+
+        const double  rhog_h_cell = rho_sum/cdoq->cell_vol[c_id];
 
         /* Update terms for the Darcy flux in the gas phase */
 
-        const double  diff_g_term = pvc * krg[j] * g_diff_coef;
-
-        diff_g += diff_g_term;
+        diff_g_array[c_id] = krg[c_id] * g_diff_coef;
 
         /* Update terms associated to the water conservation equation */
 
-        time_wc += pvc * dsl_dpc;
-        diff_wl += pvc * krl[j];
+        time_wc_array[c_id] = lcap[c_id] * phi_rhol;
+        diff_wl_array[c_id] = krl[c_id] * wl_diff_coef;
 
         /* Update terms associated to the hydrogen conservation equation */
 
-        const double  time_h_coef = mh_ov_rt*sg;
+        const double  time_h_coef = mh_ov_rt*(1 - lsat[c_id]);
 
-        time_hc += pvc * (time_h_coef - rhog_h * dsl_dpc);
-        time_hl += pvc * time_h_coef;
+        time_hc_array[c_id] = (time_h_coef - rhog_h_cell * lcap[c_id]) * phi;
+        time_hl_array[c_id] = time_h_coef * phi;
 
-        const double  diff_h_coef = diff_g_term * rhog_h;
+        const double  diff_h_coef = krg[c_id] * g_diff_coef * rhog_h_cell;
 
-        diff_hc += diff_h_coef;
-        diff_hl += diff_h_coef;
+        diff_hc_array[c_id] = diff_h_coef;
+        diff_hl_array[c_id] = diff_h_coef;
 
-      } /* Loop on cell vertices */
+      } /* Loop on cells belonging to the (zone) soil */
+      break;
 
-      /* Define the cell values (what is stored in properties associated to
-         each term of an equation) */
+      /* ====================================== */
+    case CS_GWF_TPF_APPROX_VTX_SUBCELL_AVERAGE:
+      /* ====================================== */
 
-      const double  inv_volc = 1./cdoq->cell_vol[c_id];
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-      diff_g_array[c_id]  = inv_volc * diff_g;
+        const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
-      diff_wl_array[c_id] = inv_volc * diff_wl * wl_diff_coef;
+        /* Compute the mean values in a cell */
 
-      time_hc_array[c_id] = inv_volc * time_hc * phi;
-      time_hl_array[c_id] = inv_volc * time_hl * phi;
-      diff_hc_array[c_id] = inv_volc * diff_hc;
-      diff_hl_array[c_id] = inv_volc * diff_hl;
+        double  rho_sum = 0, sl_sum = 0, dsldpc_sum = 0;
+        double  krg_sum = 0, krl_sum = 0;
 
-    } /* Loop on cells of the zone (= soil) */
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const cs_lnum_t  v_id = c2v->ids[j];
+          const double  pvc = cdoq->pvol_vc[j];
+
+          sl_sum += pvc * lsat[j];
+          dsldpc_sum += pvc * lcap[j];
+          krl_sum += pvc * krl[j];
+          krg_sum += pvc * krg[j];
+
+          double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
+          rho_sum += pvc * rhog_h;
+
+        }
+
+        const double  inv_volc = 1./cdoq->cell_vol[c_id];
+        const double  sl_cell = sl_sum*inv_volc;
+        const double  sg_cell = 1 - sl_cell;
+        const double  dsldpc_cell = dsldpc_sum*inv_volc;
+        const double  rhog_h_cell = rho_sum*inv_volc;
+        const double  krl_cell = krl_sum*inv_volc;
+        const double  krg_cell = krg_sum*inv_volc;
+
+        /* Update terms for the Darcy flux in the gas phase */
+
+        diff_g_array[c_id] = krg_cell * g_diff_coef;
+
+        /* Update terms associated to the water conservation equation */
+
+        time_wc_array[c_id] = dsldpc_cell * phi_rhol;
+        diff_wl_array[c_id] = krl_cell * wl_diff_coef;
+
+        /* Update terms associated to the hydrogen conservation equation */
+
+        const double  time_h_coef = mh_ov_rt*sg_cell;
+
+        time_hc_array[c_id] = (time_h_coef - rhog_h_cell * dsldpc_cell) * phi;
+        time_hl_array[c_id] = time_h_coef * phi;
+
+        const double  diff_h_coef = krg_cell * g_diff_coef * rhog_h_cell;
+
+        diff_hc_array[c_id] = diff_h_coef;
+        diff_hl_array[c_id] = diff_h_coef;
+
+      } /* Loop on cells belonging to the (zone) soil */
+      break;
+
+      /* ======================================== */
+    case CS_GWF_TPF_APPROX_SL_VTX_SUBCELL_AVERAGE:
+      /* ======================================== */
+
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+        const cs_lnum_t  c_id = zone->elt_ids[i];
+
+        /* Compute the mean values in a cell */
+
+        double  sl_sum = 0, dsldpc_sum = 0;
+
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const double  pvc = cdoq->pvol_vc[j];
+
+          sl_sum += pvc*lsat[j];
+          dsldpc_sum += pvc*lcap[j];
+
+        }
+
+        const double  inv_volc = 1./cdoq->cell_vol[c_id];
+        const double  sl_cell = sl_sum*inv_volc;
+        const double  sg_cell = 1 - sl_cell;
+        const double  dsldpc_cell = dsldpc_sum*inv_volc;
+
+        double  time_hc = 0, diff_g = 0, diff_wl = 0, diff_hc = 0, diff_hl = 0;
+
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const cs_lnum_t  v_id = c2v->ids[j];
+          const double  pvc = cdoq->pvol_vc[j];
+          const double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
+
+          /* Update terms for the Darcy flux in the gas phase */
+
+          diff_g += pvc * krg[j] * g_diff_coef;
+
+          /* Update terms associated to the water conservation equation */
+
+          diff_wl += pvc * krl[j]; /* (* wl_diff_coef) */
+
+          /* Update terms associated to the hydrogen conservation equation */
+
+          time_hc += pvc * rhog_h * dsldpc_cell;
+
+          const double  diff_h_coef = krg[j] * g_diff_coef * rhog_h;
+
+          diff_hc += pvc * diff_h_coef;
+          diff_hl += pvc * diff_h_coef;
+
+        }
+
+        diff_g_array[c_id] = diff_g * inv_volc;
+
+        time_wc_array[c_id] = dsldpc_cell * phi_rhol;
+        diff_wl_array[c_id] = diff_wl * inv_volc * wl_diff_coef;
+
+        time_hc_array[c_id] = (mh_ov_rt*sg_cell - inv_volc*time_hc) * phi;
+        time_hl_array[c_id] = mh_ov_rt * sg_cell * phi;
+        diff_hc_array[c_id] = diff_hc * inv_volc;
+        diff_hl_array[c_id] = diff_hl * inv_volc;
+
+      } /* Loop on cells belonging to the (zone) soil */
+      break;
+
+      /* ======================================== */
+    case CS_GWF_TPF_APPROX_PG_VTX_SUBCELL_AVERAGE:
+      /* ======================================== */
+
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+        const cs_lnum_t  c_id = zone->elt_ids[i];
+        const double  inv_volc = 1./cdoq->cell_vol[c_id];
+
+        /* Compute the mean values in a cell */
+
+        double  pg_sum = 0;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          pg_sum += pg[c2v->ids[j]] * cdoq->pvol_vc[j];
+
+        const double  pg_cell = pg_sum*inv_volc;
+        const double  rhog_h_cell = mh_ov_rt * pg_cell;
+
+        double  time_wc = 0, time_hc = 0, time_hl = 0;
+        double  diff_g = 0, diff_wl = 0, diff_hc = 0, diff_hl = 0;
+
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const double  pvc = cdoq->pvol_vc[j];
+          const double  sg = 1 - lsat[j];
+          const double  dsldpc = lcap[j];
+
+          /* Update terms for the Darcy flux in the gas phase */
+
+          diff_g += pvc * krg[j] * g_diff_coef;
+
+          /* Update terms associated to the water conservation equation */
+
+          time_wc += pvc * dsldpc; /* (* phi_rhol) */
+          diff_wl += pvc * krl[j]; /* (* wl_diff_coef) */
+
+          /* Update terms associated to the hydrogen conservation equation */
+
+          const double  time_h_coef = mh_ov_rt * sg;
+
+          time_hc += pvc * (time_h_coef - rhog_h_cell * dsldpc);
+          time_hl += pvc * time_h_coef;
+
+          const double  diff_h_coef = krg[j] * g_diff_coef * rhog_h_cell;
+
+          diff_hc += pvc * diff_h_coef;
+          diff_hl += pvc * diff_h_coef;
+
+        }
+
+        diff_g_array[c_id] = diff_g * inv_volc;
+
+        time_wc_array[c_id] = time_wc * inv_volc * phi_rhol;
+        diff_wl_array[c_id] = diff_wl * inv_volc * wl_diff_coef;
+
+        time_hc_array[c_id] = time_hc * inv_volc * phi;
+        time_hl_array[c_id] = time_hl * inv_volc * phi;
+        diff_hc_array[c_id] = diff_hc * inv_volc;
+        diff_hl_array[c_id] = diff_hl * inv_volc;
+
+      } /* Loop on cells belonging to the (zone) soil */
+      break;
+
+      /* ============================= */
+    case CS_GWF_TPF_APPROX_VTX_SUBCELL:
+      /* ============================= */
+
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+        const cs_lnum_t  c_id = zone->elt_ids[i];
+
+        double  time_wc = 0, time_hc = 0, time_hl = 0;
+        double  diff_g = 0, diff_wl = 0, diff_hc = 0, diff_hl = 0;
+
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const cs_lnum_t  v_id = c2v->ids[j];
+          const double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
+
+          const double  pvc = cdoq->pvol_vc[j];
+          const double  sg = 1 - lsat[j];
+          const double  dsldpc = lcap[j];
+
+          /* Update terms for the Darcy flux in the gas phase */
+
+          diff_g += pvc * krg[j] * g_diff_coef;
+
+          /* Update terms associated to the water conservation equation */
+
+          time_wc += pvc * dsldpc; /* (* phi_rhol) */
+          diff_wl += pvc * krl[j]; /* (* wl_diff_coef) */
+
+          /* Update terms associated to the hydrogen conservation equation */
+
+          const double  time_h_coef = mh_ov_rt * sg;
+
+          time_hc += pvc * (time_h_coef - rhog_h * dsldpc);
+          time_hl += pvc * time_h_coef;
+
+          const double  diff_h_coef = krg[j] * g_diff_coef * rhog_h;
+
+          diff_hc += pvc * diff_h_coef;
+          diff_hl += pvc * diff_h_coef;
+
+        }
+
+        const double  inv_volc = 1./cdoq->cell_vol[c_id];
+
+        diff_g_array[c_id] = diff_g * inv_volc;
+
+        time_wc_array[c_id] = time_wc * inv_volc * phi_rhol;
+        diff_wl_array[c_id] = diff_wl * inv_volc * wl_diff_coef;
+
+        time_hc_array[c_id] = time_hc * inv_volc * phi;
+        time_hl_array[c_id] = time_hl * inv_volc * phi;
+        diff_hc_array[c_id] = diff_hc * inv_volc;
+        diff_hl_array[c_id] = diff_hl * inv_volc;
+
+      } /* Loop on cells belonging to the (zone) soil */
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid way to approximate coefficients.", __func__);
+      break;
+    }
 
   } /* Loop on soils */
 }
@@ -2373,14 +2637,12 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   tpf->t_darcy = NULL;
 
   /* Properties
-   * ----------
-   *
-   */
+   * ---------- */
 
-  tpf->krl_pty = cs_property_subcell_add("krl_pty", CS_PROPERTY_ISO);
-  tpf->krg_pty = cs_property_subcell_add("krg_pty", CS_PROPERTY_ISO);
-  tpf->lsat_pty = cs_property_subcell_add("lsat_pty", CS_PROPERTY_ISO);
-  tpf->lcap_pty = cs_property_subcell_add("lcap_pty", CS_PROPERTY_ISO);
+  tpf->krl_pty = NULL;
+  tpf->krg_pty = NULL;
+  tpf->lsat_pty = NULL;
+  tpf->lcap_pty = NULL;
 
   /* Note: Adding the properties related to the permeability (diffusion) is
    * postponed since one has to know which type of permeability is considered
@@ -2451,6 +2713,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 
   /* Numerical parameters (default values) */
 
+  tpf->approx_type = CS_GWF_TPF_APPROX_SL_VTX_SUBCELL_AVERAGE;
   tpf->solver_type = CS_GWF_TPF_SOLVER_PCPG_COUPLED;
   tpf->use_coupled_solver = true;
   tpf->use_incremental_solver = false;
@@ -2556,6 +2819,47 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf)
 
   }
 
+  switch(tpf->approx_type) {
+
+  case CS_GWF_TPF_APPROX_PC_CELL_AVERAGE:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Approximation: %s\n",
+                  "CS_GWF_TPF_APPROX_PC_CELL_AVERAGE");
+    break;
+
+  case CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_AVERAGE:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Approximation: %s\n",
+                  "CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_AVERAGE");
+    break;
+
+  case CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_MAX:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Approximation: %s\n",
+                  "CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_MAX");
+    break;
+
+  case CS_GWF_TPF_APPROX_PG_VTX_SUBCELL_AVERAGE:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Approximation: %s\n",
+                  "CS_GWF_TPF_APPROX_PG_VTX_SUBCELL_AVERAGE");
+    break;
+
+  case CS_GWF_TPF_APPROX_SL_VTX_SUBCELL_AVERAGE:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Approximation: %s\n",
+                  "CS_GWF_TPF_APPROX_SL_VTX_SUBCELL_AVERAGE");
+    break;
+
+  case CS_GWF_TPF_APPROX_VTX_SUBCELL:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Approximation: %s\n",
+                  "CS_GWF_TPF_APPROX_VTX_SUBCELL");
+    break;
+
+  case CS_GWF_TPF_APPROX_VTX_SUBCELL_AVERAGE:
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Approximation: %s\n",
+                  "CS_GWF_TPF_APPROX_VTX_SUBCELL_AVERAGE");
+    break;
+
+  default:
+    break;
+  }
+
   switch(tpf->solver_type) {
 
   case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
@@ -2637,6 +2941,24 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
      flux in the gas phase */
 
   tpf->diff_g_pty = cs_property_add("diff_g_pty", perm_type);
+
+  switch (tpf->approx_type) {
+
+  case CS_GWF_TPF_APPROX_PC_CELL_AVERAGE:
+    tpf->krl_pty = cs_property_add("krl_pty", CS_PROPERTY_ISO);
+    tpf->krg_pty = cs_property_add("krg_pty", CS_PROPERTY_ISO);
+    tpf->lsat_pty = cs_property_add("lsat_pty", CS_PROPERTY_ISO);
+    tpf->lcap_pty = cs_property_add("lcap_pty", CS_PROPERTY_ISO);
+    break;
+
+  default:
+    tpf->krl_pty = cs_property_subcell_add("krl_pty", CS_PROPERTY_ISO);
+    tpf->krg_pty = cs_property_subcell_add("krg_pty", CS_PROPERTY_ISO);
+    tpf->lsat_pty = cs_property_subcell_add("lsat_pty", CS_PROPERTY_ISO);
+    tpf->lcap_pty = cs_property_subcell_add("lcap_pty", CS_PROPERTY_ISO);
+    break;
+
+  }
 
   /* Darcy flux (one assumes a CDOVB space discretization) */
 
@@ -2810,7 +3132,7 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
   tpf->l_saturation = cs_field_create("liquid_saturation",
                                      pty_mask,
                                      c_loc_id,
-                                     1,     /* dimension */
+                                     1,      /* dimension */
                                      false); /* has_previous */
 
   cs_field_set_key_int(tpf->l_saturation, log_key, 1);
@@ -2893,9 +3215,11 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
 {
   CS_NO_WARN_IF_UNUSED(flag);   /* will be useful for gravity effect */
 
-  const cs_adjacency_t  *c2v = connect->c2v;
   const cs_lnum_t  n_cells = connect->n_cells;
+  const cs_adjacency_t  *c2v = connect->c2v;
   const cs_lnum_t  c2v_size = c2v->idx[n_cells];
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_lnum_t  c2e_size = c2e->idx[n_cells];
 
   cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
   cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
@@ -2936,15 +3260,43 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
   /* Allocate and initialize arrays for the physical properties */
   /* ---------------------------------------------------------- */
 
-  /* Relative permeability in the liquid and gas phase */
+  switch (tpf->approx_type) {
+  case CS_GWF_TPF_APPROX_PC_CELL_AVERAGE:
+    /* Relative permeability in the liquid and gas phase */
 
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krl_pty);
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krg_pty);
+    _add_pty_array(n_cells, cs_flag_primal_cell, tpf->krl_pty);
+    _add_pty_array(n_cells, cs_flag_primal_cell, tpf->krg_pty);
 
-  /* Liquid saturation and liquid capacity */
+    /* Liquid saturation and liquid capacity */
 
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lsat_pty);
-  _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lcap_pty);
+    _add_pty_array(n_cells, cs_flag_primal_cell, tpf->lsat_pty);
+    _add_pty_array(n_cells, cs_flag_primal_cell, tpf->lcap_pty);
+    break;
+
+  case CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_MAX:
+    /* Relative permeability in the liquid and gas phase */
+
+    _add_pty_array(c2e_size, cs_flag_primal_edge, tpf->krl_pty);
+    _add_pty_array(c2e_size, cs_flag_primal_edge, tpf->krg_pty);
+
+    /* Liquid saturation and liquid capacity */
+
+    _add_pty_array(c2e_size, cs_flag_primal_edge, tpf->lsat_pty);
+    _add_pty_array(c2e_size, cs_flag_primal_edge, tpf->lcap_pty);
+    break;
+
+  default:
+    /* Relative permeability in the liquid and gas phase */
+
+    _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krl_pty);
+    _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krg_pty);
+
+    /* Liquid saturation and liquid capacity */
+
+    _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lsat_pty);
+    _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lcap_pty);
+    break;
+  }
 
   /* Properties associated to terms in equations */
   /* ------------------------------------------- */

@@ -503,16 +503,18 @@ cs_gwf_get_two_phase_model(void)
 /*!
  * \brief Set the numerical options related to the two phase flow models
  *
- * \param[in] solver                             type of solver
- * \param[in] use_incremental_solver             true/false
- * \param[in] use_diffusion_view_for_darcy       true/false
+ * \param[in] approx                          type of coefficient approximation
+ * \param[in] solver                          type of solver
+ * \param[in] use_incremental_solver          true/false
+ * \param[in] use_diffusion_view_for_darcy    true/false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_solver_type_t    solver,
-                                       bool        use_incremental_solver,
-                                       bool        use_diffusion_view_for_darcy)
+cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t   approx,
+                                       cs_gwf_tpf_solver_type_t   solver,
+                                       bool       use_incremental_solver,
+                                       bool       use_diffusion_view_for_darcy)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -521,6 +523,7 @@ cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_solver_type_t    solver,
   cs_gwf_tpf_t  *mc = gw->model_context;
   assert(mc != NULL);
 
+  mc->approx_type = approx;
   mc->solver_type = solver;
 
   switch (solver) {
