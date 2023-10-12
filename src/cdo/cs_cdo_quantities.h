@@ -613,6 +613,25 @@ cs_quant_get_face_center(cs_lnum_t                    f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the face surface for a primal face (interior or border)
+ *
+ * \param[in]  f_id    id related to the face (f_id > n_i_face -> border face)
+ * \param[in]  cdoq    pointer to a cs_cdo_quantities_t structure
+ *
+ * \return the value of the face surface
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+cs_quant_get_face_surf(cs_lnum_t                    f_id,
+                       const cs_cdo_quantities_t   *cdoq)
+{
+  return (f_id < cdoq->n_i_faces) ?
+    cdoq->i_face_surf[f_id] : cdoq->b_face_surf[f_id - cdoq->n_i_faces];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a cs_quant_t structure for a primal face (interior or border)
  *
  * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)
