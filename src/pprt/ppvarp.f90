@@ -118,6 +118,16 @@ interface
 
 end interface
 
+interface
+
+  subroutine cs_rad_transfer_add_variable_fields()  &
+    bind(C, name='cs_rad_transfer_add_variable_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_rad_transfer_add_variable_fields
+
+end interface
+
 !===============================================================================
 
 ! Key ids for clipping
@@ -256,6 +266,9 @@ if (ippmod(igmix).ge.0) then
   ! MAP to C API
   call cs_field_pointer_map_gas_mix
 endif
+
+! Radiative transfer
+call cs_rad_transfer_add_variable_fields()
 
 return
 end subroutine

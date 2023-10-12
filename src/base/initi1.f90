@@ -146,8 +146,6 @@ call ppini1
 
 call elec_option_init
 
-call cs_rad_transfer_options
-
 if (ippmod(iatmos).ge.0) call cs_at_data_assim_initialize
 
 ! Lagrangian model options

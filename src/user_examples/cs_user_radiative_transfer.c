@@ -72,108 +72,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User function for input of radiative transfer module options.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_radiative_transfer_parameters(void)
-{
-  /*! [cs_user_radiative_transfer_parameters] */
-
-  /* indicate whether the radiation variables should be
-     initialized (=0) or read from a restart file (=1) */
-
-  cs_glob_rad_transfer_params->restart = (cs_restart_present()) ? 1 : 0;
-
-  /* Update period of the radiation module */
-
-  cs_time_control_init_by_time_step
-    (&( cs_glob_rad_transfer_params->time_control),
-     - 1,     /* nt_start */
-     -1,      /* nt_end */
-     5,       /* interval */
-     true,    /* at start */
-     false);  /* at end */
-
-  /* Quadrature Sn (n(n+2) directions)
-
-     1: S4 (24 directions)
-     2: S6 (48 directions)
-     3: S8 (80 directions)
-
-     Quadrature Tn (8n^2 directions)
-
-     4: T2 (32 directions)
-     5: T4 (128 directions)
-     6: Tn (8*ndirec^2 directions)
-  */
-
-  cs_glob_rad_transfer_params->i_quadrature = 4;
-
-  /* Number of directions, only for Tn quadrature */
-  cs_glob_rad_transfer_params->ndirec = 3;
-
-  /* Method used to calculate the radiative source term:
-     - 0: semi-analytic calculation (required with transparent media)
-     - 1: conservative calculation
-     - 2: semi-analytic calculation corrected
-          in order to be globally conservative
-     (If the medium is transparent, the choice has no effect) */
-
-  cs_glob_rad_transfer_params->idiver = 2;
-
-  /* Verbosity level in the log concerning the calculation of
-     the wall temperatures (0, 1 or 2) */
-
-  cs_glob_rad_transfer_params->iimpar = 1;
-
-  /* Verbosity mode for the radiance (0, 1 or 2) */
-
-  cs_glob_rad_transfer_params->verbosity = 1;
-
-  /* Compute the absorption coefficient through a model (if different from 0),
-     or use a constant absorption coefficient (if 0).
-     Useful ONLY when gas or coal combustion is activated
-     - imodak = 1: ADF model with 8 wave length intervals
-     - imodak = 2: Magnussen et al. and Kent and Honnery models */
-
-  cs_glob_rad_transfer_params->imodak = 2;
-
-  /* Compute the absorption coefficient via ADF model
-     Useful ONLY when coal combustion is activated
-     imoadf = 0: switch off the ADF model
-     imoadf = 1: switch on the ADF model (with 8 bands ADF08)
-     imoadf = 2: switch on the ADF model (with 50 bands ADF50) */
-
-  cs_glob_rad_transfer_params->imoadf = 1;
-
-  /* Compute the absorption coefficient through FSCK model (if 1)
-     Useful ONLY when coal combustion is activated
-     imfsck = 1: activated
-     imfsck = 0: not activated */
-
-  cs_glob_rad_transfer_params->imfsck = 1;
-
-  /* Activate  3D radiative models for  atmospheric flows
-       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR: direct solar
-       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND: direct solar
-       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR: diffuse solar
-       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND: diffuse solar
-       atmo_model |=  CS_RAD_ATMO_3D_INFRARED: Infrared
-       */
-
-  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR;
-  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND;
-  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR;
-  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND;
-  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_INFRARED;
-
-  /*! [cs_user_radiative_transfer_parameters] */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Absorption coefficient for radiative module
  *
  * It is necessary to define the value of the fluid's absorption coefficient Ck.
@@ -280,14 +178,6 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   coefap    boundary condition work array for the radiance
- *                         (explicit part)
- * \param[in]   coefbp    boundary condition work array for the radiance
- *                         (implicit part)
- * \param[in]   cofafp    boundary condition work array for the diffusion
- *                        of the radiance (explicit part)
- * \param[in]   cofbfp    boundary condition work array for the diffusion
- *                        of the radiance (implicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
  * \param[in]   xlam      conductivity (W/m/K)
@@ -300,10 +190,6 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 
 void
 cs_user_rad_transfer_net_flux(const int        bc_type[],
-                              const cs_real_t  coefap[],
-                              const cs_real_t  coefbp[],
-                              const cs_real_t  cofafp[],
-                              const cs_real_t  cofbfp[],
                               const cs_real_t  twall[],
                               const cs_real_t  qincid[],
                               const cs_real_t  xlam[],
@@ -318,6 +204,8 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
 
   /*< [init]*/
   /* Initializations */
+  /* get BC coeffs for radiance (explicit part of the first band) */
+  cs_real_t *coefap = CS_FI_(radiance, 0)->bc_coeffs->a;
 
   /*< [init]*/
 

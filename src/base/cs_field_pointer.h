@@ -170,6 +170,7 @@ typedef enum {
 
   CS_ENUMF_(rad_energy),   /*!< Radiative energy */
   CS_ENUMF_(rad_q),        /*!< Radiative flux */
+  CS_ENUMF_(radiance),     /*!< (spectral) radiance field */
 
   CS_ENUMF_(rad_est),      /*!< Radiative flux explicit source term */
   CS_ENUMF_(rad_ist),      /*!< Radiative flux implicit source term */

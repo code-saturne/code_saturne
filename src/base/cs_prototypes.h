@@ -119,6 +119,20 @@ extern void CS_PROCF (initi1, INITI1)
  *   f_id <--   field id
  *
  * returns:
+ *   variable number for defined field
+ *----------------------------------------------------------------------------*/
+
+int
+cs_add_variable_field_indexes(int  f_id);
+
+/*----------------------------------------------------------------------------
+ * Add field indexes associated with a new non-user solved variable,
+ * with default options
+ *
+ * parameters:
+ *   f_id <--   field id
+ *
+ * returns:
  *   scalar number for defined field
  *----------------------------------------------------------------------------*/
 
@@ -947,13 +961,6 @@ cs_user_matrix_tuning(void);
 void
 cs_user_parameters(cs_domain_t *domain);
 
-/*----------------------------------------------------------------------------
- * User function for input of radiative transfer module options.
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_radiative_transfer_parameters(void);
-
 /*-----------------------------------------------------------------------------
  * User subroutine for input of radiative transfer boundary conditions
  *----------------------------------------------------------------------------*/
@@ -1061,10 +1068,6 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 
 void
 cs_user_rad_transfer_net_flux(const int        itypfb[],
-                              const cs_real_t  coefap[],
-                              const cs_real_t  coefbp[],
-                              const cs_real_t  cofafp[],
-                              const cs_real_t  cofbfp[],
                               const cs_real_t  twall[],
                               const cs_real_t  qincid[],
                               const cs_real_t  xlam[],

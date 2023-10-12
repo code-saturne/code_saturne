@@ -717,6 +717,105 @@ cs_user_model(void)
   /* Add some sources from a file
    * The file contains lines with x,y,z (in meters) format */
   cs_ibm_add_sources_by_file_name("sources.csv");
+
+  /* Example: setup options for radiative transfer
+   * --------------------------------------------- */
+
+  /*! [cs_user_radiative_transfer_parameters] */
+
+  /* Local pointer to global parameters, for conciseness */
+
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+
+  /* indicate whether the radiation variables should be
+     initialized (=0) or read from a restart file (=1) */
+
+  rt_params->restart = (cs_restart_present()) ? 1 : 0;
+
+  /* Update period of the radiation module */
+
+  cs_time_control_init_by_time_step
+    (&( rt_params->time_control),
+     - 1,     /* nt_start */
+     -1,      /* nt_end */
+     5,       /* interval */
+     true,    /* at start */
+     false);  /* at end */
+
+  /* Quadrature Sn (n(n+2) directions)
+
+     1: S4 (24 directions)
+     2: S6 (48 directions)
+     3: S8 (80 directions)
+
+     Quadrature Tn (8n^2 directions)
+
+     4: T2 (32 directions)
+     5: T4 (128 directions)
+     6: Tn (8*ndirec^2 directions)
+  */
+
+  rt_params->i_quadrature = 4;
+
+  /* Number of directions, only for Tn quadrature */
+  rt_params->ndirec = 3;
+
+  /* Method used to calculate the radiative source term:
+     - 0: semi-analytic calculation (required with transparent media)
+     - 1: conservative calculation
+     - 2: semi-analytic calculation corrected
+          in order to be globally conservative
+     (If the medium is transparent, the choice has no effect) */
+
+  rt_params->idiver = 2;
+
+  /* Verbosity level in the log concerning the calculation of
+     the wall temperatures (0, 1 or 2) */
+
+  rt_params->iimpar = 1;
+
+  /* Verbosity mode for the radiance (0, 1 or 2) */
+
+  rt_params->verbosity = 1;
+
+  /* Compute the absorption coefficient through a model (if different from 0),
+     or use a constant absorption coefficient (if 0).
+     Useful ONLY when gas or coal combustion is activated
+     - imodak = 1: ADF model with 8 wave length intervals
+     - imodak = 2: Magnussen et al. and Kent and Honnery models */
+
+  rt_params->imodak = 2;
+
+  /* Compute the absorption coefficient via ADF model
+     Useful ONLY when coal combustion is activated
+     imoadf = 0: switch off the ADF model
+     imoadf = 1: switch on the ADF model (with 8 bands ADF08)
+     imoadf = 2: switch on the ADF model (with 50 bands ADF50) */
+
+  rt_params->imoadf = 1;
+
+  /* Compute the absorption coefficient through FSCK model (if 1)
+     Useful ONLY when coal combustion is activated
+     imfsck = 1: activated
+     imfsck = 0: not activated */
+
+  rt_params->imfsck = 1;
+
+  /* Activate  3D radiative models for  atmospheric flows
+       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR: direct solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND: direct solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR: diffuse solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND: diffuse solar
+       atmo_model |=  CS_RAD_ATMO_3D_INFRARED: Infrared
+  */
+
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_INFRARED;
+
+  /*! [cs_user_radiative_transfer_parameters] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1626,7 +1725,6 @@ cs_user_parameters(cs_domain_t *domain)
   cs_restart_set_n_max_checkpoints(2);
   /*! [change_nsave_checkpoint_files] */
 
-
   /*-----------------------------------------------------------------*/
 
   /* Cooling tower:
@@ -1648,7 +1746,6 @@ cs_user_parameters(cs_domain_t *domain)
   air_prop->humidity0 = 0.0;
   air_prop->droplet_diam = 0.005;
   /*! [cs_user_cooling_towers] */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1822,14 +1919,13 @@ cs_user_finalize_setup(cs_domain_t     *domain)
     }
   }
 
-  /* Initialize position of each vertical*/
+  /* Initialize position of each vertical */
   for (int i = 0; i < at_opt->rad_1d_nvert; i++) {
     at_opt->rad_1d_xy[0 * at_opt->rad_1d_nvert + i] = 50.; /* X coord */
     at_opt->rad_1d_xy[1 * at_opt->rad_1d_nvert + i] = 50.; /* Y coord */
     at_opt->rad_1d_xy[2 * at_opt->rad_1d_nvert + i] = 1.; /* kmin in case of
-                                                             relief */
+                                                             non-flat terrain */
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -69,6 +69,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief User function for input of radiative transfer module options.
+ *
+ * \deprecated Use cs_user_model instead.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -118,14 +120,6 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   coefap    boundary condition work array for the radiance
- *                         (explicit part)
- * \param[in]   coefbp    boundary condition work array for the radiance
- *                         (implicit part)
- * \param[in]   cofafp    boundary condition work array for the diffusion
- *                        of the radiance (explicit part)
- * \param[in]   cofbfp    boundary condition work array for the diffusion
- *                        of the radiance (implicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
  * \param[in]   xlam      conductivity (W/m/K)
@@ -139,10 +133,6 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 #pragma weak cs_user_rad_transfer_net_flux
 void
 cs_user_rad_transfer_net_flux(const int        bc_type[],
-                              const cs_real_t  coefap[],
-                              const cs_real_t  coefbp[],
-                              const cs_real_t  cofafp[],
-                              const cs_real_t  cofbfp[],
                               const cs_real_t  twall[],
                               const cs_real_t  qincid[],
                               const cs_real_t  xlam[],
@@ -152,10 +142,6 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
                               cs_real_t        net_flux[])
 {
   CS_UNUSED(bc_type);
-  CS_UNUSED(coefap);
-  CS_UNUSED(coefbp);
-  CS_UNUSED(cofafp);
-  CS_UNUSED(cofbfp);
   CS_UNUSED(twall);
   CS_UNUSED(qincid);
   CS_UNUSED(xlam);

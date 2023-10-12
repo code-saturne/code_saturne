@@ -37,7 +37,7 @@
 #include "cs_rad_transfer_fsck.h"
 #include "cs_rad_transfer_modak.h"
 #include "cs_rad_transfer_options.h"
-#include "cs_rad_transfer_property_fields.h"
+#include "cs_rad_transfer_fields.h"
 #include "cs_rad_transfer_pun.h"
 #include "cs_rad_transfer_restart.h"
 #include "cs_rad_transfer_solve.h"

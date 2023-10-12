@@ -50,10 +50,14 @@
 #include "cs_mesh_location.h"
 
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
+#include "cs_gui_output.h"
+#include "cs_gui_radiative_transfer.h"
 
 #include "cs_parameters.h"
 #include "cs_post.h"
+#include "cs_prototypes.h"
 
 #include "cs_rad_transfer.h"
 
@@ -61,7 +65,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_rad_transfer_property_fields.h"
+#include "cs_rad_transfer_fields.h"
 #include "cs_physical_model.h"
 /*----------------------------------------------------------------------------*/
 
@@ -73,9 +77,10 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-/*  \file cs_rad_transfer_property_field.c    */
-/*  \brief Properties definitions for radiative model.     */
-
+/*  \file cs_rad_transfer_fields.c
+ *
+ * \brief Properties definitions for radiative model.
+*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -85,21 +90,78 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create variable fields for radiative solver
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rad_transfer_add_variable_fields(void)
+{
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  if (rt_params->type <= CS_RAD_TRANSFER_NONE)
+    return;
+
+  /* radiance (per band) */
+  for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {
+    char f_name[80];
+    char f_label[80];
+    char suffix[16];
+
+    snprintf(suffix,  15, "_%02d", gg_id);
+    suffix[15] = '\0';
+
+    snprintf(f_name, 63, "radiance%s", suffix); f_name[63] = '\0';
+    snprintf(f_label, 63, "Radiance%s", suffix); f_label[63]  = '\0';
+    int f_id = cs_variable_field_create(f_name,
+                                        f_label,
+                                        CS_MESH_LOCATION_CELLS,
+                                        1);
+
+    cs_field_t *f = cs_field_by_id(f_id);
+    cs_add_variable_field_indexes(f->id);
+
+    cs_field_pointer_map_indexed(CS_ENUMF_(radiance), gg_id, f);
+
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->verbosity =  rt_params->verbosity - 1;
+    eqp->iconv = 1; /* pure convection */
+    eqp->idiff  = 0; /* no diffusion */
+    eqp->istat = 0; /* no unsteady term */
+    eqp->idircl= 0; /* No reinforcement of diagonal */
+    eqp->idifft = 0;
+    eqp->isstpc =  0;
+    eqp->nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
+    eqp->imrgra =  cs_glob_space_disc->imrgra;
+    eqp->blencv =  0; /* Pure upwind...*/
+    eqp->epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+
+    if (rt_params->dispersion) {
+      eqp->idiff  =  1; /* Added face diffusion */
+      eqp->nswrgr = 20;
+      eqp->nswrsm =  2;
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create property fields for radiative solver
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_prp(void)
+cs_rad_transfer_add_property_fields(void)
 {
-  if (cs_glob_rad_transfer_params->type <= CS_RAD_TRANSFER_NONE)
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  if (rt_params->type <= CS_RAD_TRANSFER_NONE)
     return;
 
   const int keylbl = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
 
-  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
   cs_field_t *f = NULL;
 
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
@@ -243,52 +305,6 @@ cs_rad_transfer_prp(void)
       cs_field_set_key_str(f, keylbl, f_label);
 
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), irphas, f);
-    }
-  }
-
-  /* Add bands for Direct Solar, diFUse solar and InfraRed
-   * and for solar: make the distinction between UV-visible (absorbed by O3)
-   * and Solar IR (SIR) absobed by H2O
-   * if activated */
-  {
-    if (rt_params->atmo_model
-        != CS_RAD_ATMO_3D_NONE)
-      rt_params->nwsgg = 0;
-
-    /* Fields for atmospheric Direct Solar (DR) model
-     * (SIR only if SUV is not activated) */
-    if (rt_params->atmo_model
-        & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
-      rt_params->atmo_dr_id = rt_params->nwsgg;
-      rt_params->nwsgg++;
-    }
-
-    /* Fields for atmospheric Direct Solar (DR) model
-     * (SUV band) */
-    if (rt_params->atmo_model
-        & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND) {
-      rt_params->atmo_dr_o3_id = rt_params->nwsgg;
-      rt_params->nwsgg++;
-    }
-
-    /* Fields for atmospheric diFfuse Solar (DF) model
-     * (SIR only if SUV is activated) */
-    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
-      rt_params->atmo_df_id = rt_params->nwsgg;
-      rt_params->nwsgg++;
-    }
-
-    /* Fields for atmospheric diFfuse Solar (DF) model
-     * (SUV band) */
-    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
-      rt_params->atmo_df_o3_id = rt_params->nwsgg;
-      rt_params->nwsgg++;
-    }
-
-    /* Fields for atmospheric infrared absorption model */
-    if (rt_params->atmo_model & CS_RAD_ATMO_3D_INFRARED) {
-      rt_params->atmo_ir_id = rt_params->nwsgg;
-      rt_params->nwsgg++;
     }
   }
 
@@ -547,6 +563,10 @@ cs_rad_transfer_prp(void)
     cs_field_set_key_str(f, keylbl, "Convective_exch_coef");
     cs_field_pointer_map(CS_ENUMF_(hconv), f);
   }
+
+  /* Postprocessing */
+
+  cs_gui_radiative_transfer_postprocess();
 }
 
 /*----------------------------------------------------------------------------*/

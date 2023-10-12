@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_PROPERTY_FIELDS__
-#define __CS_RAD_TRANSFER_PROPERTY_FIELDS__
+#ifndef __CS_RAD_TRANSFER_FIELDS__
+#define __CS_RAD_TRANSFER_FIELDS__
 
 /*============================================================================
  * Radiation solver operations.
@@ -57,15 +57,24 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create variable fields for radiative solver
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rad_transfer_add_variable_fields(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create property fields for radiative solver
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_prp(void);
+cs_rad_transfer_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_PROPERTY_FIELDS__ */
+#endif /* __CS_RAD_TRANSFER_FIELDS__ */

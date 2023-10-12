@@ -227,6 +227,12 @@ interface
     real(c_double), value :: value
   end subroutine cs_runaway_check_define_field_max
 
+  subroutine cs_user_radiative_transfer_parameters()  &
+       bind(C, name='cs_user_radiative_transfer_parameters')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_user_radiative_transfer_parameters
+
   ! Interface to C function to initialize CDO model structures
 
   subroutine cs_f_domain_setup_init_model_context()  &
@@ -295,6 +301,14 @@ call csiphy()
 ! before property fields are created).
 call cs_gui_physical_constants
 
+! Activate radiative transfer model
+
+! This module must be activated early so as to reserve the associated
+! variables in some physical models.
+
+call cs_gui_radiative_transfer_parameters
+call cs_user_radiative_transfer_parameters ! deprecated, kept for compatibility
+
 ! Flow and other models selection through user C function
 call cs_user_model
 
@@ -336,16 +350,7 @@ call cs_velocity_pressure_set_solid
 
 call cfnmtd(ficfpp, len(ficfpp))
 
-! --- Activation du module transferts radiatifs
-
-!     Il est necessaire de connaitre l'activation du module transferts
-!     radiatifs tres tot de maniere a pouvoir reserver les variables
-!     necessaires dans certaines physiques particuliere
-
-!   - Interface code_saturne
-!     ======================
-
-call cs_gui_radiative_transfer_parameters
+call cs_rad_transfer_options
 
 ! Define fields for variables, check and build iscapp
 ! and computes the number of user scalars (nscaus)

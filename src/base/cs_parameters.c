@@ -59,6 +59,7 @@
 #include "cs_physical_model.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
+#include "cs_rad_transfer_fields.h"
 #include "cs_turbulence_model.h"
 #include "cs_time_moment.h"
 #include "cs_thermal_model.h"
@@ -1518,6 +1519,9 @@ cs_parameters_define_auxiliary_fields(void)
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
+
+  /* Property fields relative to radiative transfer */
+  cs_rad_transfer_add_property_fields();
 }
 
 /*----------------------------------------------------------------------------*/
