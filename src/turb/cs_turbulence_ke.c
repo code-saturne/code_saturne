@@ -140,8 +140,8 @@ _tsepls(cs_real_t w1[])
   const cs_lnum_t   *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_real_t   *restrict weight = fvq->weight;
-  const cs_real_3_t *surfac = (const cs_real_3_t *) fvq->i_face_normal;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) fvq->b_face_normal;
+  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) fvq->i_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) fvq->b_face_normal;
 
   /* Initialization
    * ============== */
@@ -181,9 +181,9 @@ _tsepls(cs_real_t w1[])
       duidxk[0] = pnd * gradv[ii][isou][0] + (1. - pnd) * gradv[jj][isou][0];
       duidxk[1] = pnd * gradv[ii][isou][1] + (1. - pnd) * gradv[jj][isou][1];
       duidxk[2] = pnd * gradv[ii][isou][2] + (1. - pnd) * gradv[jj][isou][2];
-      njsj[0]   = surfac[face_id][0];
-      njsj[1]   = surfac[face_id][1];
-      njsj[2]   = surfac[face_id][2];
+      njsj[0]   = i_face_normal[face_id][0];
+      njsj[1]   = i_face_normal[face_id][1];
+      njsj[2]   = i_face_normal[face_id][2];
       for (cs_lnum_t k = 0; k < 3; k++){
         for (cs_lnum_t j = 0; j < 3; j++){
           w7[ii][j][k] += duidxk[k]*njsj[j];
@@ -203,9 +203,9 @@ _tsepls(cs_real_t w1[])
       duidxk[0] = gradv[ii][isou][0];
       duidxk[1] = gradv[ii][isou][1];
       duidxk[2] = gradv[ii][isou][2];
-      njsj[0]   = surfbo[face_id][0];
-      njsj[1]   = surfbo[face_id][1];
-      njsj[2]   = surfbo[face_id][2];
+      njsj[0]   = b_face_normal[face_id][0];
+      njsj[1]   = b_face_normal[face_id][1];
+      njsj[2]   = b_face_normal[face_id][2];
       for (cs_lnum_t k = 0; k < 3; k++){
         for (cs_lnum_t j = 0; j < 3; j++){
           w7[ii][j][k] += duidxk[k]*njsj[j];

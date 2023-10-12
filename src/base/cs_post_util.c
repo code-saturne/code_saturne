@@ -497,9 +497,9 @@ cs_post_stress_tangential(cs_lnum_t        n_b_faces,
                           const cs_lnum_t  b_face_ids[],
                           cs_real_3_t      stress[])
 {
-  const cs_real_3_t *surfbo =
+  const cs_real_3_t *b_face_normal =
     (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-  const cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_surf;
+  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   const cs_real_3_t *forbr =
     (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
   cs_lnum_t ifac;
@@ -507,10 +507,10 @@ cs_post_stress_tangential(cs_lnum_t        n_b_faces,
 
   for (cs_lnum_t iloc = 0 ; iloc < n_b_faces; iloc++) {
     ifac = b_face_ids[iloc];
-    srfbn = surfbn[ifac];
-    srfnor[0] = surfbo[ifac][0] / srfbn;
-    srfnor[1] = surfbo[ifac][1] / srfbn;
-    srfnor[2] = surfbo[ifac][2] / srfbn;
+    srfbn = b_face_surf[ifac];
+    srfnor[0] = b_face_normal[ifac][0] / srfbn;
+    srfnor[1] = b_face_normal[ifac][1] / srfbn;
+    srfnor[2] = b_face_normal[ifac][2] / srfbn;
     fornor =   forbr[ifac][0]*srfnor[0]
              + forbr[ifac][1]*srfnor[1]
              + forbr[ifac][2]*srfnor[2];

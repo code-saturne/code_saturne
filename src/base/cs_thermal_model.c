@@ -709,41 +709,41 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
 
   const cs_equation_param_t *eqp_u
     = cs_field_get_equation_param_const(f_vel);
-  const cs_real_3_t *surfac = (const cs_real_3_t *) fvq->i_face_normal;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) fvq->b_face_normal;
+  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) fvq->i_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) fvq->b_face_normal;
 
   if (eqp_u->blencv > 0 && eqp_u->ischcv == 1) {
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
       cflp[ii] += dt[ii] /(croma[ii] * cell_f_vol[ii])
-        * (alphafij[f_id] * (  trav2[ii][0] * surfac[f_id][0]
-                             + trav2[ii][1] * surfac[f_id][1]
-                             + trav2[ii][2] * surfac[f_id][2])
-            + (1 - alphafij[f_id]) * (  trav2[jj][0] * surfac[f_id][0]
-                                      + trav2[jj][1] * surfac[f_id][1]
-                                      + trav2[jj][2] * surfac[f_id][2]));
+        * (alphafij[f_id] * (  trav2[ii][0] * i_face_normal[f_id][0]
+                             + trav2[ii][1] * i_face_normal[f_id][1]
+                             + trav2[ii][2] * i_face_normal[f_id][2])
+            + (1 - alphafij[f_id]) * (  trav2[jj][0] * i_face_normal[f_id][0]
+                                      + trav2[jj][1] * i_face_normal[f_id][1]
+                                      + trav2[jj][2] * i_face_normal[f_id][2]));
       cflp[ii] += dt[ii] /(croma[ii] * cell_f_vol[ii])
         * (1 - eqp_u-> thetav) * dt[ii]
-        * pow(  cs_math_pow2(surfac[f_id][0])
-              + cs_math_pow2(surfac[f_id][1])
-              + cs_math_pow2(surfac[f_id][2]), 0.5)
+        * pow(  cs_math_pow2(i_face_normal[f_id][0])
+              + cs_math_pow2(i_face_normal[f_id][1])
+              + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
         * (cvara_pr[ii] - cvara_pr[jj])
         / pow(  cs_math_pow2(cell_cen[jj][0] - cell_cen[ii][0])
               + cs_math_pow2(cell_cen[jj][1] - cell_cen[ii][1])
               + cs_math_pow2(cell_cen[jj][2] - cell_cen[ii][2]), 0.5);
       cflp[jj] -= dt[jj] /(croma[jj] * cell_f_vol[jj])
-        * (alphafij[f_id] * (  trav2[ii][0] * surfac[f_id][0]
-                             + trav2[ii][1] * surfac[f_id][1]
-                             + trav2[ii][2] * surfac[f_id][2])
-           + (1 - alphafij[f_id]) * (  trav2[jj][0] * surfac[f_id][0]
-                                     + trav2[jj][1] * surfac[f_id][1]
-                                     + trav2[jj][2] * surfac[f_id][2]));
+        * (alphafij[f_id] * (  trav2[ii][0] * i_face_normal[f_id][0]
+                             + trav2[ii][1] * i_face_normal[f_id][1]
+                             + trav2[ii][2] * i_face_normal[f_id][2])
+           + (1 - alphafij[f_id]) * (  trav2[jj][0] * i_face_normal[f_id][0]
+                                     + trav2[jj][1] * i_face_normal[f_id][1]
+                                     + trav2[jj][2] * i_face_normal[f_id][2]));
       cflp[jj] -= dt[jj] / (croma[jj]*cell_f_vol[jj])
         * (1 - eqp_u-> thetav) * dt[jj]
-        * pow(  cs_math_pow2(surfac[f_id][0])
-              + cs_math_pow2(surfac[f_id][1])
-              + cs_math_pow2(surfac[f_id][2]), 0.5)
+        * pow(  cs_math_pow2(i_face_normal[f_id][0])
+              + cs_math_pow2(i_face_normal[f_id][1])
+              + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
         * (cvara_pr[jj] - cvara_pr[ii])
         / pow(  cs_math_pow2(cell_cen[jj][0] - cell_cen[ii][0])
               + cs_math_pow2(cell_cen[jj][1] - cell_cen[ii][1])
@@ -752,9 +752,9 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       cs_lnum_t ii = b_face_cells[f_id];
       cflp[ii] +=    dt[ii] / (croma[ii] * cell_f_vol[ii])
-                   * (  trav2[ii][0]*surfbo[f_id][0]
-                      + trav2[ii][1]*surfbo[f_id][1]
-                      + trav2[ii][2]*surfbo[f_id][2]);
+                   * (  trav2[ii][0]*b_face_normal[f_id][0]
+                      + trav2[ii][1]*b_face_normal[f_id][1]
+                      + trav2[ii][2]*b_face_normal[f_id][2]);
     }
   }
   else if (eqp_u->blencv <= 0 && eqp_u->ischcv == 1) {
@@ -763,38 +763,38 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
       cs_lnum_t jj = i_face_cells[f_id][1];
       if (imasfl[f_id] > 0) {
         cflp[ii] +=   dt[ii] /(croma[ii] * cell_f_vol[ii])
-                    * (  trav2[ii][0] * surfac[f_id][0]
-                       + trav2[ii][1] * surfac[f_id][1]
-                       + trav2[ii][2] * surfac[f_id][2]);
+                    * (  trav2[ii][0] * i_face_normal[f_id][0]
+                       + trav2[ii][1] * i_face_normal[f_id][1]
+                       + trav2[ii][2] * i_face_normal[f_id][2]);
         cflp[jj] -=   dt[ii] /(croma[ii] * cell_f_vol[ii])
-                    * (  trav2[ii][0] * surfac[f_id][0]
-                       + trav2[ii][1] * surfac[f_id][1]
-                       + trav2[ii][2] * surfac[f_id][2]);
+                    * (  trav2[ii][0] * i_face_normal[f_id][0]
+                       + trav2[ii][1] * i_face_normal[f_id][1]
+                       + trav2[ii][2] * i_face_normal[f_id][2]);
       }
       else {
         cflp[ii] +=   dt[ii] /(croma[ii] * cell_f_vol[ii])
-                    * (  trav2[jj][0] * surfac[f_id][0]
-                       + trav2[jj][1] * surfac[f_id][1]
-                       + trav2[jj][2] * surfac[f_id][2]);
+                    * (  trav2[jj][0] * i_face_normal[f_id][0]
+                       + trav2[jj][1] * i_face_normal[f_id][1]
+                       + trav2[jj][2] * i_face_normal[f_id][2]);
         cflp[jj] -= dt[ii] /(croma[ii] * cell_f_vol[ii])
-          * (trav2[jj][0] * surfac[f_id][0]
-              + trav2[jj][1] * surfac[f_id][1]
-              + trav2[jj][2] * surfac[f_id][2]);
+          * (trav2[jj][0] * i_face_normal[f_id][0]
+              + trav2[jj][1] * i_face_normal[f_id][1]
+              + trav2[jj][2] * i_face_normal[f_id][2]);
       }
       cflp[ii] +=   dt[ii] /(croma[ii] * cell_f_vol[ii])
                   * (1 - eqp_u-> thetav) * dt[ii]
-                  * pow(  cs_math_pow2(surfac[f_id][0])
-                        + cs_math_pow2(surfac[f_id][1])
-                        + cs_math_pow2(surfac[f_id][2]), 0.5)
+                  * pow(  cs_math_pow2(i_face_normal[f_id][0])
+                        + cs_math_pow2(i_face_normal[f_id][1])
+                        + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
                   * (cvara_pr[ii] - cvara_pr[jj])
                   / pow(  cs_math_pow2(cell_cen[jj][0] - cell_cen[ii][0])
                         + cs_math_pow2(cell_cen[jj][1] - cell_cen[ii][1])
                         + cs_math_pow2(cell_cen[jj][2] - cell_cen[ii][2]), 0.5);
       cflp[jj] -=   dt[jj] /(croma[jj]*cell_f_vol[jj])
                   * (1 - eqp_u-> thetav) * dt[jj]
-                  * pow(  cs_math_pow2(surfac[f_id][0])
-                        + cs_math_pow2(surfac[f_id][1])
-                        + cs_math_pow2(surfac[f_id][2]), 0.5)
+                  * pow(  cs_math_pow2(i_face_normal[f_id][0])
+                        + cs_math_pow2(i_face_normal[f_id][1])
+                        + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
                   * (cvara_pr[jj] - cvara_pr[ii])
                   / pow(  cs_math_pow2(cell_cen[jj][0] - cell_cen[ii][0])
                         + cs_math_pow2(cell_cen[jj][1] - cell_cen[ii][1])
@@ -804,9 +804,9 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       cs_lnum_t ii = b_face_cells[f_id];
       cflp[ii] +=    dt[ii] / (croma[ii] * cell_f_vol[ii])
-                   * (  trav2[ii][0]*surfbo[f_id][0]
-                      + trav2[ii][1]*surfbo[f_id][1]
-                      + trav2[ii][2]*surfbo[f_id][2]);
+                   * (  trav2[ii][0]*b_face_normal[f_id][0]
+                      + trav2[ii][1]*b_face_normal[f_id][1]
+                      + trav2[ii][2]*b_face_normal[f_id][2]);
     }
   }
 }
