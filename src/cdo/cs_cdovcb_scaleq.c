@@ -62,6 +62,7 @@
 #include "cs_post.h"
 #include "cs_quadrature.h"
 #include "cs_reco.h"
+#include "cs_reco_cw.h"
 #include "cs_scheme_geometry.h"
 #include "cs_sles.h"
 #include "cs_source_term.h"
@@ -3054,7 +3055,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
       /* Interpolate a value at the face center */
 
-      p_f = cs_reco_scalar_v2f_fw(fm, p_v);
+      p_f = cs_reco_cw_scalar_v2f_fw(fm, p_v);
 
       /* Compute the local diffusive flux */
 
@@ -3108,7 +3109,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
         for (short int v = 0; v < fm->n_vf; v++)
           p_v[v] = pdi[fm->v_ids[v]];
 
-        p_f = cs_reco_scalar_v2f_fw(fm, p_v);
+        p_f = cs_reco_cw_scalar_v2f_fw(fm, p_v);
 
         /* Compute the diffusive flux seen from cell c1 */
 

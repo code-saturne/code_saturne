@@ -47,6 +47,7 @@
 #include "cs_field.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
+#include "cs_reco_cw.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -726,12 +727,25 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
     /* Reconstruct (or interpolate) value at the current cell center */
 
-    for (int k = 0; k < stride; k++)
-      eval[k] = 0;
+    if (stride == 1)
+      eval[0] = cs_reco_cw_scalar_v2c(cm, cx->values);
+    else
+      cs_reco_cw_stride_v2c(stride, cm, cx->values, eval);
 
-    for (short int v = 0; v < cm->n_vc; v++)
-      for (int k = 0; k < stride; k++)
-        eval[k] += cm->wvc[v] * cx->values[stride*cm->v_ids[v] + k];
+  }
+  else if (cs_flag_test(cx->value_location, cs_flag_dual_cell_byc)) {
+
+    const cs_adjacency_t  *adj = cx->adjacency;
+    assert(adj != NULL);
+    assert(cx->full_length == true);
+
+    /* Reconstruct (or interpolate) value at the current cell center */
+
+    if (stride == 1)
+      eval[0] = cs_reco_cw_scalar_vbyc2c(cm, cx->values + adj->idx[cm->c_id]);
+    else
+      cs_reco_cw_stride_vbyc2c(stride, cm, cx->values + adj->idx[cm->c_id],
+                               eval);
 
   }
   else if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {

@@ -63,6 +63,7 @@
 #include "cs_post.h"
 #include "cs_quadrature.h"
 #include "cs_reco.h"
+#include "cs_reco_cw.h"
 #include "cs_scheme_geometry.h"
 #include "cs_search.h"
 #include "cs_sles.h"
@@ -4529,7 +4530,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
             /* Interpolate also the value of the potential at the cell center */
 
-            pot[cm->n_vc] = cs_reco_scalar_v2c_cw(cm, pot);
+            pot[cm->n_vc] = cs_reco_cw_scalar_v2c_loc(cm, pot);
 
             cs_cdo_diffusion_wbs_vbyf_flux(f, cm, pot, hodge, cb, flux);
 

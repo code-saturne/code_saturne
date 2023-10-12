@@ -609,103 +609,6 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Reconstruct the value at the face center from an array of values
- *        defined on primal vertices.
- *
- * \param[in] fm     pointer to cs_face_mesh_t structure
- * \param[in] p_v    pointer to an array of values (local to this face)
- *
- * \return the value of the reconstruction at the face center
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-cs_reco_scalar_v2f_fw(const cs_face_mesh_t    *fm,
-                      const cs_real_t         *p_v)
-{
-  cs_real_t  p_f = 0.;
-
-  if (p_v == NULL)
-    return p_f;
-
-  const cs_quant_t  pfq = fm->face;
-
-  for (short int e = 0; e < fm->n_ef; e++)
-    p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * fm->tef[e];
-  p_f *= 0.5 / pfq.meas;
-
-  return p_f;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Reconstruct the value at the face center from an array of values
- *        defined on primal vertices.
- *
- * \param[in] f      id of the face in the cellwise numbering
- * \param[in] cm     pointer to cs_cell_mesh_t structure
- * \param[in] p_v    pointer to an array of values (local to the cell)
- *
- * \return the value of the reconstruction at the face center
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-cs_reco_scalar_v2f_cw(const short int          f,
-                      const cs_cell_mesh_t    *cm,
-                      const cs_real_t         *p_v)
-{
-  cs_real_t  p_f = 0.;
-
-  if (p_v == NULL)
-    return p_f;
-
-  assert(cs_eflag_test(cm->flag,
-                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
-                       CS_FLAG_COMP_FE));
-
-  for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
-    const short int  *v = cm->e2v_ids + 2*cm->f2e_ids[ie];
-    p_f += (p_v[v[0]] + p_v[v[1]]) * cm->tef[ie];
-  }
-  p_f *= 0.5 / cm->face[f].meas;
-
-  return p_f;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Reconstruct the value of a scalar potential at the cell center from
- *        an array of values defined on primal vertices.
- *        Algorithm based on the cs_cell_mesh_t structure.
- *
- * \param[in] cm    pointer to a cs_cell_mesh_t structure
- * \param[in] p_v   pointer to the array of values at vertices (size: n_vc)
- *
- * \return the value of the reconstruction at the cell center
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-cs_reco_scalar_v2c_cw(const cs_cell_mesh_t     *cm,
-                      const cs_real_t          *p_v)
-{
-  cs_real_t  p_c = 0.;
-
-  if (p_v == NULL || cm == NULL)
-    return p_c;
-
-  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ)); /* Sanity check */
-
-  /* Reconstruct the value at the cell center */
-  for (short int v = 0; v < cm->n_vc; v++)
-    p_c += cm->wvc[v] * p_v[v];
-
-  return p_c;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Reconstruct the value at cell center from an array of values defined
  *        at primal vertices.
  *        Case of scalar-valued array with all cells selected.
@@ -747,6 +650,30 @@ cs_reco_vector_v2c_full(const cs_adjacency_t        *c2v,
 {
   cs_reco_vector_v2c(cdoq->n_cells, NULL, c2v, cdoq, array, false, reco);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (v, c) --> array which can be scanned by the c2v
+ *        adjacency).
+ *        Case of scalar-valued array with all cells selected.
+ *
+ * \param[in]      c2v           cell -> vertices connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at (v,c)
+ * \param[in, out] reco          reconstructed values at the cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_reco_scalar_vbyc2c_full(const cs_adjacency_t        *c2v,
+                           const cs_cdo_quantities_t   *cdoq,
+                           const double                *array,
+                           cs_real_t                   *reco)
+{
+  cs_reco_scalar_vbyc2c(cdoq->n_cells, NULL, c2v, cdoq, array, false, reco);
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
