@@ -410,10 +410,10 @@ class Case(object):
                             + " --id " + self.run_id
 
                     if self.notebook:
-                        cmd += " --notebook-args=" + self.notebook
+                        cmd += " --notebook-args " + self.notebook
 
                     if self.parametric:
-                        cmd += " --parametric-args=" + '"' + self.parametric + '"'
+                        cmd += " --parametric-args " + '"' + self.parametric + '"'
 
                     if self.kw_args:
                         if self.kw_args.find(" ") < 0:
@@ -438,10 +438,10 @@ class Case(object):
                     + " --id " + self.run_id
 
             if self.notebook:
-                cmd += " --notebook-args=" + self.notebook
+                cmd += " --notebook-args " + self.notebook
 
             if self.parametric:
-                cmd += " --parametric-args=" + '"' + self.parametric + '"'
+                cmd += " --parametric-args " + '"' + self.parametric + '"'
 
             if self.kw_args:
                 if self.kw_args.find(" ") < 0:
@@ -623,7 +623,7 @@ class Case(object):
         if self.kw_args:
             if self.kw_args.find(" ") < 0:
                 self.kw_args += " "  # workaround for arg-parser issue
-            run_cmd += " --kw-args=" + '"' + self.kw_args + '"'
+            run_cmd += " --kw-args " + '"' + self.kw_args + '"'
 
         n_procs = self.__data['n_procs']
         if n_procs:
