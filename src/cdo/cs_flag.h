@@ -162,17 +162,20 @@ typedef unsigned char       cs_mask_t;   /* Elementary flag */
  *============================================================================*/
 
 /* Default locations */
+
 extern const cs_flag_t  cs_flag_primal_vtx;
 extern const cs_flag_t  cs_flag_primal_edge;
 extern const cs_flag_t  cs_flag_primal_face;
 extern const cs_flag_t  cs_flag_primal_cell;
-extern const cs_flag_t  cs_flag_vertex; /* equal to cs_flag_primal_vtx */
-extern const cs_flag_t  cs_flag_cell;   /* equal to cs_flag_primal_cell */
+extern const cs_flag_t  cs_flag_vertex;      /* equal to cs_flag_primal_vtx */
+extern const cs_flag_t  cs_flag_cell;        /* equal to cs_flag_primal_cell */
 extern const cs_flag_t  cs_flag_boundary_face;
 
 extern const cs_flag_t  cs_flag_dual_vtx;
 extern const cs_flag_t  cs_flag_dual_face;
 extern const cs_flag_t  cs_flag_dual_cell;
+
+extern const cs_flag_t  cs_flag_primal_edge_byc;
 extern const cs_flag_t  cs_flag_dual_cell_byc;
 extern const cs_flag_t  cs_flag_dual_face_byc;
 

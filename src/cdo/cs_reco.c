@@ -68,6 +68,35 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (e, c) --> array which can be scanned by the c2e
+ *        adjacency).
+ *        Case of scalar-valued array.
+ *
+ * \param[in] c_id       cell id
+ * \param[in] c2e        cell -> edges connectivity
+ * \param[in] cdoq       pointer to the additional quantities struct.
+ * \param[in] array      pointer to the array of values at (e,c)
+ *
+ * \return the reconstructed values at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline double
+_scalar_ebyc2c(cs_lnum_t                    c_id,
+               const cs_adjacency_t        *c2e,
+               const cs_cdo_quantities_t   *cdoq,
+               const double                *array)
+{
+  double reco_sum = 0;
+  for (cs_lnum_t je = c2e->idx[c_id]; je < c2e->idx[c_id+1]; je++)
+    reco_sum += cdoq->pvol_ec[je] * array[je];
+
+  return reco_sum/cdoq->cell_vol[c_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
  *        for each couple (v, c) --> array which can be scanned by the c2v
  *        adjacency).
  *        Case of scalar-valued array.
@@ -582,6 +611,71 @@ cs_reco_scalar_vbyc2c(cs_lnum_t                    n_cells,
 
         const cs_lnum_t  c_id = cell_ids[i];
         reco[c_id] = _scalar_vbyc2c(c_id, c2v, cdoq, array);
+
+      }
+
+    } /* dense_ouput ? */
+
+  } /* cell_ids != NULL ? */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (e, c) --> array which can be scanned by the c2e
+ *        adjacency).
+ *        Case of scalar-valued array.
+ *
+ * \param[in]      n_cells       number of selected cells
+ * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      c2e           cell -> edges connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at (e,c)
+ * \param[in]      dense_ouput   apply cell_ids on the reco array
+ * \param[in, out] reco          reconstructed values at the cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_ebyc2c(cs_lnum_t                    n_cells,
+                      const cs_lnum_t             *cell_ids,
+                      const cs_adjacency_t        *c2e,
+                      const cs_cdo_quantities_t   *cdoq,
+                      const double                *array,
+                      bool                         dense_ouput,
+                      cs_real_t                   *reco)
+{
+  if (array == NULL)
+    return;
+
+  assert(cdoq->pvol_ec != NULL);
+
+  if (cell_ids == NULL) { /* No indirection to apply */
+
+    assert(c2e != NULL && cdoq != NULL);
+    assert(n_cells == cdoq->n_cells);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      reco[c_id] = _scalar_ebyc2c(c_id, c2e, cdoq, array);
+
+  }
+  else { /* There is a list of selected cells */
+
+    if (dense_ouput) {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        reco[i] = _scalar_ebyc2c(cell_ids[i], c2e, cdoq, array);
+
+    }
+    else {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+        const cs_lnum_t  c_id = cell_ids[i];
+        reco[c_id] = _scalar_ebyc2c(c_id, c2e, cdoq, array);
 
       }
 

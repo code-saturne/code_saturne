@@ -703,6 +703,7 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
   /* Array is assumed to be interlaced */
 
   if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
+    /*                                 =================== */
 
     if (cx->full_length)
       for (int k = 0; k < stride; k++)
@@ -721,6 +722,7 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
   }
   else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
+    /*                                      ================== */
 
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
     assert(cx->full_length == true);
@@ -734,6 +736,7 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
   }
   else if (cs_flag_test(cx->value_location, cs_flag_dual_cell_byc)) {
+    /*                                      ===================== */
 
     const cs_adjacency_t  *adj = cx->adjacency;
     assert(adj != NULL);
@@ -748,7 +751,21 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
                                eval);
 
   }
+  else if (cs_flag_test(cx->value_location, cs_flag_primal_edge_byc)) {
+    /*                                      ======================= */
+
+    const cs_adjacency_t  *adj = cx->adjacency;
+    assert(adj != NULL);
+    assert(cx->full_length == true);
+    assert(stride == 1);
+
+    /* Reconstruct (or interpolate) value at the current cell center */
+
+    eval[0] = cs_reco_cw_scalar_ebyc2c(cm, cx->values + adj->idx[cm->c_id]);
+
+  }
   else if (cs_flag_test(cx->value_location, cs_flag_dual_face_byc)) {
+    /*                                      ===================== */
 
     const cs_adjacency_t  *adj = cx->adjacency;
     assert(adj != NULL);

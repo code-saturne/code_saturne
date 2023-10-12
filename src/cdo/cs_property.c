@@ -2436,10 +2436,11 @@ cs_property_def_by_array(cs_property_t      *pty,
     pty->get_eval_at_cell[id] = cs_xdef_eval_nd_at_cells_by_array;
   pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_array;
 
-  if (cs_flag_test(val_location, cs_flag_primal_cell)   == false &&
-      cs_flag_test(val_location, cs_flag_primal_vtx)    == false &&
-      cs_flag_test(val_location, cs_flag_dual_face_byc) == false &&
-      cs_flag_test(val_location, cs_flag_dual_cell_byc) == false)
+  if (cs_flag_test(val_location, cs_flag_primal_cell)     == false &&
+      cs_flag_test(val_location, cs_flag_primal_vtx)      == false &&
+      cs_flag_test(val_location, cs_flag_primal_edge_byc) == false &&
+      cs_flag_test(val_location, cs_flag_dual_face_byc)   == false &&
+      cs_flag_test(val_location, cs_flag_dual_cell_byc)   == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Property \"%s\". Case not available.\n",
               __func__, pty->name);

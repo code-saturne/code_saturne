@@ -252,6 +252,38 @@ cs_reco_cw_scalar_vbyc2c(const cs_cell_mesh_t      *cm,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct a scalar value at the cell center.
+ *        array is scanned thanks to the c2e connectivity. Pointer is already
+ *        located at the beginning of the cell sequence, i.e. a shift equal to
+ *        c2e->idx[cm->c_id] has been done.
+ *
+ * \param[in] cm        pointer to a cs_cell_mesh_t structure
+ * \param[in] array     array of values for each couple (v,c)
+ *
+ * \return the reconstructed value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_reco_cw_scalar_ebyc2c(const cs_cell_mesh_t      *cm,
+                         const cs_real_t           *array)
+{
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEC));
+
+  cs_real_t  val_c = 0;
+
+  if (array == NULL)
+    return val_c;
+
+  for (short int e = 0; e < cm->n_ec; e++)
+    val_c += cm->pvol_e[e] * array[e];
+  val_c /= cm->vol_c;
+
+  return val_c;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

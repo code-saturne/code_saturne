@@ -61,12 +61,15 @@ const cs_flag_t  cs_flag_dual_vtx  = CS_FLAG_DUAL | CS_FLAG_VERTEX;
 const cs_flag_t  cs_flag_dual_edge = CS_FLAG_DUAL | CS_FLAG_EDGE;
 const cs_flag_t  cs_flag_dual_face = CS_FLAG_DUAL | CS_FLAG_FACE;
 const cs_flag_t  cs_flag_dual_cell = CS_FLAG_DUAL | CS_FLAG_CELL;
+
+const cs_flag_t  cs_flag_primal_edge_byc =
+  CS_FLAG_PRIMAL | CS_FLAG_EDGE | CS_FLAG_BY_CELL;
 const cs_flag_t  cs_flag_dual_cell_byc =
-  CS_FLAG_DUAL | CS_FLAG_CELL | CS_FLAG_BY_CELL;;
+  CS_FLAG_DUAL   | CS_FLAG_CELL | CS_FLAG_BY_CELL;;
 const cs_flag_t  cs_flag_dual_face_byc =
-  CS_FLAG_DUAL | CS_FLAG_FACE | CS_FLAG_BY_CELL;
+  CS_FLAG_DUAL   | CS_FLAG_FACE | CS_FLAG_BY_CELL;
 const cs_flag_t  cs_flag_dual_closure_byf =
-  CS_FLAG_DUAL | CS_FLAG_CELL | CS_FLAG_BORDER | CS_FLAG_BY_FACE;
+  CS_FLAG_DUAL   | CS_FLAG_CELL | CS_FLAG_BORDER | CS_FLAG_BY_FACE;
 
 /* Additional flags with a more consistent naming when used with FV schemes for
    which the notion of primal/dual is not used */

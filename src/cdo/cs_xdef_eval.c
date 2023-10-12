@@ -872,6 +872,12 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
                           dense_output,
                           eval);
 
+  else if (cs_flag_test(cx->value_location, cs_flag_primal_edge_byc))
+    cs_reco_scalar_ebyc2c(n_elts, elt_ids, connect->c2e, quant,
+                          cx->values,
+                          dense_output,
+                          eval);
+
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid support for the input array", __func__);

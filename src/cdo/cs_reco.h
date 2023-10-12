@@ -196,6 +196,32 @@ cs_reco_scalar_vbyc2c(cs_lnum_t                    n_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (e, c) --> array which can be scanned by the c2e
+ *        adjacency).
+ *        Case of scalar-valued array.
+ *
+ * \param[in]      n_cells       number of selected cells
+ * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      c2e           cell -> edges connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at (e,c)
+ * \param[in]      dense_ouput   apply cell_ids on the reco array
+ * \param[in, out] reco          reconstructed values at the cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_ebyc2c(cs_lnum_t                    n_cells,
+                      const cs_lnum_t             *cell_ids,
+                      const cs_adjacency_t        *c2e,
+                      const cs_cdo_quantities_t   *cdoq,
+                      const double                *array,
+                      bool                         dense_ouput,
+                      cs_real_t                   *reco);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reconstruct the value at all cell centers from an array of values
  *        defined on primal vertices.
  *        Case of vector-valued fields.
@@ -672,6 +698,29 @@ cs_reco_scalar_vbyc2c_full(const cs_adjacency_t        *c2v,
                            cs_real_t                   *reco)
 {
   cs_reco_scalar_vbyc2c(cdoq->n_cells, NULL, c2v, cdoq, array, false, reco);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (e, c) --> array which can be scanned by the c2e
+ *        adjacency).
+ *        Case of scalar-valued array with all cells selected.
+ *
+ * \param[in]      c2e           cell -> edges connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at (e,c)
+ * \param[in, out] reco          reconstructed values at the cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_reco_scalar_ebyc2c_full(const cs_adjacency_t        *c2e,
+                           const cs_cdo_quantities_t   *cdoq,
+                           const double                *array,
+                           cs_real_t                   *reco)
+{
+  cs_reco_scalar_ebyc2c(cdoq->n_cells, NULL, c2e, cdoq, array, false, reco);
 }
 
 /*----------------------------------------------------------------------------*/
