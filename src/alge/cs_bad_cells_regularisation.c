@@ -660,7 +660,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   }
 
 #if 0
-  /* Boudanry projection... should be consistent with BCs... */
+  /* Boundary projection... should be consistent with BCs... */
   if (boundary_projection == 1) {
     const cs_lnum_t n_b_faces = mesh->n_b_faces;
     const cs_real_t *distbr = mq->b_dist;

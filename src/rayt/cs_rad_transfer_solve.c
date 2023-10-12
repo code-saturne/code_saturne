@@ -497,7 +497,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
       if (verbosity > 0)
         bft_printf("     Solar direction [%f, %f, %f] \n",
-            vect_s[0], vect_s[1], vect_s[2]);
+                   vect_s[0], vect_s[1], vect_s[2]);
     }
   }
 
@@ -645,7 +645,7 @@ _cs_rad_transfer_sol(int                        gg_id,
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
             cs_rad_transfer_bc_coeffs(bc_type,
                                       vect_s,
-                                      NULL, /* only usefull for P1 */
+                                      NULL, /* only useful for P1 */
                                       bpro_eps,
                                       w_gg,
                                       gg_id,
@@ -857,6 +857,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   /* Finalize spectral incident flux to boundary */
   if (f_qinspe != NULL) {
+
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       f_qinspe->val[gg_id + face_id * stride] = f_qincid->val[face_id];
 
@@ -901,7 +902,8 @@ _cs_rad_transfer_sol(int                        gg_id,
         int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
           * c_stefan * cs_math_pow3(tempk[cell_id]);
       }
-    } else {
+    }
+    else {
       cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
       cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
 
@@ -1845,6 +1847,8 @@ cs_rad_transfer_solve(int  bc_type[])
                              * cpro_cak[cell_id]
                              * cell_vol[cell_id];
       }
+
+      /* TODO: add USER function here */
 
       /* Update boundary condition coefficients:
        * default ones, identical for each directions, may be overwritten
