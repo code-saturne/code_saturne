@@ -3789,7 +3789,7 @@ cs_cdovb_scaleq_get_cell_values(void      *context,
   /* Compute the values at cell centers from an interpolation of the field
      values defined at vertices */
 
-  cs_reco_pv_at_cell_centers(connect->c2v, quant, vtx_values, eqc->cell_values);
+  cs_reco_scalar_v2c_full(connect->c2v, quant, vtx_values, eqc->cell_values);
 
   return eqc->cell_values;
 }
@@ -4529,7 +4529,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
             /* Interpolate also the value of the potential at the cell center */
 
-            pot[cm->n_vc] = cs_reco_cw_scalar_pv_at_cell_center(cm, pot);
+            pot[cm->n_vc] = cs_reco_scalar_v2c_cw(cm, pot);
 
             cs_cdo_diffusion_wbs_vbyf_flux(f, cm, pot, hodge, cb, flux);
 
@@ -4649,7 +4649,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
         /* Compute the local advective flux */
 
         cs_advection_field_get_cell_vector(c_id, eqp->adv_field, &adv_c);
-        cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
+        cs_reco_scalar_v2f(1, &f_id, connect, quant, pdi, true, &pf);
 
         /* Update the convective flux */
 
@@ -4682,6 +4682,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
           const double  coef = 0.5 * sgn * f.meas; /* mean value at the face */
 
           /* Compute the local diffusive flux */
+
           cs_reco_grad_cell_from_pv(c_id, connect, quant, pdi, gc);
           cs_property_get_cell_tensor(c_id, t_cur,
                                       eqp->diffusion_property,
@@ -4698,7 +4699,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
           /* Compute the local advective flux */
 
-          cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
+          cs_reco_scalar_v2f(1, &f_id, connect, quant, pdi, true, &pf);
 
           /* Evaluate the advection field at the face */
 

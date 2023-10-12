@@ -3399,7 +3399,7 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
   cs_compute_grdfc_cw(f, cm, grd_c);
 
   const cs_real_t  *p_v = pot;
-  const cs_real_t  p_f = cs_reco_cw_scalar_pv_at_face_center(f, cm, p_v);
+  const cs_real_t  p_f = cs_reco_scalar_v2f_cw(f, cm, p_v);
 
   /* Compute p_c - p_f (where p_c is the reconstructed values at the
      cell center */

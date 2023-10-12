@@ -860,35 +860,18 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
       cs_array_real_copy(n_elts, cx->values, eval);
 
   }
-  else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx)) {
+  else if (cs_flag_test(cx->value_location, cs_flag_primal_vtx))
+    cs_reco_scalar_v2c(n_elts, elt_ids, connect->c2v, quant,
+                       cx->values,
+                       dense_output,
+                       eval);
 
-    assert(connect != NULL && quant != NULL);
-    if (elt_ids != NULL && !dense_output) {
+  else if (cs_flag_test(cx->value_location, cs_flag_dual_cell_byc))
+    cs_reco_scalar_vbyc2c(n_elts, elt_ids, connect->c2v, quant,
+                          cx->values,
+                          dense_output,
+                          eval);
 
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        const cs_lnum_t  c_id = elt_ids[i];
-        cs_reco_pv_at_cell_center(c_id, connect->c2v, quant, cx->values,
-                                  eval + c_id);
-      }
-
-    }
-    else if (elt_ids != NULL && dense_output) {
-
-      for (cs_lnum_t i = 0; i < n_elts; i++)
-        cs_reco_pv_at_cell_center(elt_ids[i], connect->c2v, quant, cx->values,
-                                  eval + i);
-
-    }
-    else {
-
-      assert(elt_ids == NULL);
-      for (cs_lnum_t i = 0; i < n_elts; i++)
-        cs_reco_pv_at_cell_center(i, connect->c2v, quant, cx->values,
-                                  eval + i);
-
-    }
-
-  }
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid support for the input array", __func__);
@@ -1220,49 +1203,15 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
 
   case CS_MESH_LOCATION_VERTICES: /* One operates a reconstruction at the cell
                                      centers */
-    assert(connect != NULL);
     if (field->dim > 1)
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid dimension for field \"%s\".",
-                __func__, field->name);
+                " %s: Dimension %d not handled for field \"%s\".",
+                __func__, field->dim, field->name);
 
-    if (elt_ids != NULL && !dense_output) {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-        const cs_lnum_t  c_id = elt_ids[i];
-        cs_reco_pv_at_cell_center(c_id,
-                                  connect->c2v,
-                                  quant,
-                                  values,
-                                  eval + c_id);
-
-      }
-    }
-    else if (elt_ids != NULL && dense_output) {
-
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-        const cs_lnum_t  c_id = elt_ids[i];
-        cs_reco_pv_at_cell_center(c_id,
-                                  connect->c2v,
-                                  quant,
-                                  values,
-                                  eval + i);
-
-      }
-
-    }
-    else {
-
-      assert(elt_ids == NULL);
-      for (cs_lnum_t c_id = 0; c_id < n_elts; c_id++)
-        cs_reco_pv_at_cell_center(c_id,
-                                  connect->c2v,
-                                  quant,
-                                  values,
-                                  eval + c_id);
-
-    }
+    cs_reco_scalar_v2c(n_elts, elt_ids, connect->c2v, quant,
+                       values,
+                       dense_output,
+                       eval);
     break;
 
   default:

@@ -1697,10 +1697,8 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
 
         case CS_MESH_LOCATION_VERTICES:
           assert(field->dim == 3);
-          cs_reco_vect_pv_at_cell_centers(cs_cdo_connect->c2v,
-                                          cdoq,
-                                          field->val,
-                                          cell_values);
+          cs_reco_vector_v2c_full(cs_cdo_connect->c2v, cdoq, field->val,
+                                  cell_values);
           break;
 
         default:

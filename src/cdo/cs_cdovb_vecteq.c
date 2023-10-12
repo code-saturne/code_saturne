@@ -1671,8 +1671,7 @@ cs_cdovb_vecteq_get_cell_values(void      *context,
   /* Compute the values at cell centers from an interpolation of the field
      values defined at vertices */
 
-  cs_reco_vect_pv_at_cell_centers(connect->c2v, quant, vtx_values,
-                                  eqc->cell_values);
+  cs_reco_vector_v2c_full(connect->c2v, quant, vtx_values, eqc->cell_values);
 
   return eqc->cell_values;
 }
