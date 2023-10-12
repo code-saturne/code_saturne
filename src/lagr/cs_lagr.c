@@ -1834,8 +1834,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   cs_lnum_t n_b_faces = mesh->n_b_faces;
 
   cs_lnum_t *ifabor = mesh->b_face_cells;
-  cs_real_t *surfbo = cs_glob_mesh_quantities->b_face_surf;
-  cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_normal;
+  cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   /* Allocate arrays depending on user options */
 
@@ -1896,7 +1895,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           cs_real_t _ustar = CS_MAX(extra->ustar->val[ifac], 1e-15);
 
-          cs_real_t surfb = surfbo[ifac];
+          cs_real_t surfb = b_face_surf[ifac];
           ustarmoy     = ustarmoy + surfb * _ustar;
           surftot      = surftot + surfb;
           vislen[ifac] = visccf / _ustar; // nu /u*
@@ -2663,7 +2662,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
               += cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
             bound_stat[lag_bdi->iclogh * n_b_faces + face_id]
               +=  cs_lagr_particles_get_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT)
-                  * cs_math_pi * cs_math_sq(p_diam) * 0.25 / surfbn[face_id];
+                  * cs_math_pi * cs_math_sq(p_diam) * 0.25 / b_face_surf[face_id];
 
           }
 
