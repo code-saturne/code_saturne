@@ -418,7 +418,7 @@ class Case(object):
                     if self.kw_args:
                         if self.kw_args.find(" ") < 0:
                             self.kw_args += " "  # workaround for arg-parser issue
-                        cmd += " --kw-args=" + '"' + self.kw_args + '"'
+                        cmd += " --kw-args " + '"' + self.kw_args + '"'
 
                     node_retval, t = run_studymanager_command(cmd, log_run)
 
@@ -446,7 +446,7 @@ class Case(object):
             if self.kw_args:
                 if self.kw_args.find(" ") < 0:
                     self.kw_args += " "  # workaround for arg-parser issue
-                cmd += " --kw-args=" + '"' + self.kw_args + '"'
+                cmd += " --kw-args " + '"' + self.kw_args + '"'
 
             # Check if case has already been prepared in dest/STUDY/CASE
 
