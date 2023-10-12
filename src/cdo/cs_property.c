@@ -2700,8 +2700,7 @@ cs_property_evaluate_def(const cs_property_t    *pty,
               "%s: Invalid type of definition. Property \"%s\"; Zone \"%s\".\n",
               __func__, pty->name, z->name);
 
-  if (def->z_id != 0) { /* Not the full support */
-
+  if (def->z_id != 0) /* Not the full support */
     pty->get_eval_at_cell[def_id](z->n_elts,
                                   z->elt_ids,
                                   dense_output,
@@ -2712,21 +2711,7 @@ cs_property_evaluate_def(const cs_property_t    *pty,
                                   def->context,
                                   eval);
 
-    if (pty->type & CS_PROPERTY_SCALED) {
-      int pty_dim = cs_property_get_dim(pty);
-      if (dense_output) /* No indirection to apply */
-        cs_array_real_scale(z->n_elts, pty_dim, NULL,
-                            pty->scaling_factor,
-                            eval);
-      else
-        cs_array_real_scale(z->n_elts, pty_dim, z->elt_ids,
-                            pty->scaling_factor,
-                            eval);
-    }
-
-  }
-  else { /* All elements are selected: elt_ids = NULL */
-
+  else /* All elements are selected: elt_ids = NULL */
     pty->get_eval_at_cell[def_id](z->n_elts,
                                   NULL,
                                   dense_output,
@@ -2736,13 +2721,6 @@ cs_property_evaluate_def(const cs_property_t    *pty,
                                   t_eval,
                                   def->context,
                                   eval);
-
-    if (pty->type & CS_PROPERTY_SCALED)
-      cs_array_real_scale(z->n_elts, cs_property_get_dim(pty), NULL,
-                          pty->scaling_factor,
-                          eval);
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/
