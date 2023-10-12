@@ -61,14 +61,14 @@ BEGIN_C_DECLS
  *
  * \param[in]       iband     number of the i-th gray gas
  * \param[in]       bc_type   boundary face types
- * \param[in, out]  coefap    boundary condition work array for the luminance
+ * \param[in, out]  coefap    boundary condition work array for the radiance
  *                             (explicit part)
- * \param[in, out]  coefbp    boundary condition work array for the luminance
+ * \param[in, out]  coefbp    boundary condition work array for the radiance
  *                             (implicit part)
  * \param[in, out]  cofafp    boundary condition work array for the diffusion
- *                             of the luminance (explicit part)
+ *                             of the radiance (explicit part)
  * \param[in, out]  cofbfp    boundary condition work array for the diffusion
- *                             of the luminance (implicit part)
+ *                             of the radiance (implicit part)
  * \param[in, out]  flurds    pseudo mass flux work array (interior faces)
  * \param[in, out]  flurdb    pseudo mass flux work array (boundary faces)
  * \param[in, out]  viscf     visc*surface/dist work array at interior faces

@@ -343,7 +343,7 @@ cs_rad_transfer_bcs(int bc_type[])
   /* If no restart info is available, then initialization at first pass,
    * for qincid:
    *   qincid <= stephn*tint**4
-   * (if qincid is set to zero, there will be a deficit on the luminance
+   * (if qincid is set to zero, there will be a deficit on the radiance
    *  BC at the first time step with DOM). */
 
   if (   ipacli == 1 && is_active
@@ -1432,7 +1432,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   cs_boundary_conditions_error(bc_type, NULL);
 
-  /* --> Check luminance boundary conditions arrays
+  /* --> Check radiance boundary conditions arrays
    *     In the case of the P-1 approximation, the value of coefap can be
    *     large (of the order of twall**4), hence the value of coefmn */
 

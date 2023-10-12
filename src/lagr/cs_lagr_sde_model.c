@@ -252,7 +252,7 @@ _lagtmp(cs_lnum_t        npt,
 
     /* Equivalent radiative temperature */
 
-    cs_real_t temprayo = pow(extra->luminance->val[cell_id]
+    cs_real_t temprayo = pow(extra->rad_energy->val[cell_id]
                              / (4.0 * _c_stephan), 0.25);
 
     /* Build system (phith given by _lagich is in W) */
@@ -362,7 +362,7 @@ _lagtmp(cs_lnum_t        npt,
 
     /* Radiation */
 
-    cs_real_t phirayo   =    extra->luminance->val[cell_id] / 4.0
+    cs_real_t phirayo   =    extra->rad_energy->val[cell_id] / 4.0
                           - _c_stephan * pow(part_temp[0], 4);
 
     cs_real_t aux1      =  cs_lagr_particle_get_real(particle, p_am,
@@ -819,7 +819,7 @@ _lagitp(const cs_real_t  tempct[])
                                                             1, CS_LAGR_TEMPERATURE);
 
         cs_real_t srad =    cs_math_pi * pow(prev_p_diam, 2.0) * p_eps
-                          * (extra->luminance->val[cell_id]
+                          * (extra->rad_energy->val[cell_id]
                         - 4.0 * _c_stephan * pow (prev_p_temp,4));
         pip[ip] =   cs_lagr_particle_get_real_n(particle, p_am, 1,
                                                  CS_LAGR_FLUID_TEMPERATURE)
@@ -832,7 +832,7 @@ _lagitp(const cs_real_t  tempct[])
         cs_real_t p_temp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE);
 
         cs_real_t srad =    cs_math_pi * pow(p_diam, 2.0) * p_eps
-                          * (extra->luminance->val[cell_id]
+                          * (extra->rad_energy->val[cell_id]
                         - 4.0 * _c_stephan *  pow(p_temp , 4));
         pip[ip] =  cs_lagr_particle_get_real(particle, p_am,
                                               CS_LAGR_FLUID_TEMPERATURE)

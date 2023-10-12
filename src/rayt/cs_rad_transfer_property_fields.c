@@ -106,7 +106,7 @@ cs_rad_transfer_prp(void)
   int location_id = CS_MESH_LOCATION_CELLS;
 
   {
-    f = cs_field_create("luminance",
+    f = cs_field_create("rad_energy",
                         field_type,
                         location_id,
                         1,
@@ -117,9 +117,9 @@ cs_rad_transfer_prp(void)
     cs_field_set_key_int(f, keylog, 0);
 
     /* set label */
-    cs_field_set_key_str(f, keylbl, "Luminance");
+    cs_field_set_key_str(f, keylbl, "Rad energy");
 
-    cs_field_pointer_map(CS_ENUMF_(rad_lumin), f);
+    cs_field_pointer_map(CS_ENUMF_(rad_energy), f);
   }
 
   {

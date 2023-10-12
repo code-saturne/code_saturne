@@ -1725,7 +1725,7 @@ cs_user_finalize_setup(cs_domain_t     *domain)
 
   /*! [setup_post_lum] */
   {
-    cs_field_t *f = cs_field_by_name_try("luminance");
+    cs_field_t *f = cs_field_by_name_try("rad_energy");
     if (f != NULL)
       cs_field_set_key_int_bits(f,
                                 cs_field_key_id("post_vis"),

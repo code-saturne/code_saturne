@@ -356,7 +356,7 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .viscl = NULL,
      .cpro_viscls = NULL,
      .cpro_cp = NULL,
-     .luminance = NULL,
+     .rad_energy = NULL,
      .x_oxyd = NULL,
      .x_eau = NULL,
      .x_m = NULL,
@@ -708,7 +708,7 @@ _lagr_map_fields_default(void)
 
   _lagr_extra_module.pressure  = cs_field_by_name_try("pressure");
 
-  _lagr_extra_module.luminance = cs_field_by_name_try("luminance");
+  _lagr_extra_module.rad_energy = cs_field_by_name_try("rad_energy");
 
   _lagr_extra_module.lagr_time = cs_field_by_name_try("lagr_time");
 

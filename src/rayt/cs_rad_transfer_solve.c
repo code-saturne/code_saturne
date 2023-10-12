@@ -1295,7 +1295,7 @@ cs_rad_transfer_solve(int  bc_type[])
   BFT_MALLOC(int_emi, n_cells_ext, cs_real_t);
   BFT_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
 
-  cs_real_t *cpro_lumin = CS_F_(rad_lumin)->val;
+  cs_real_t *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q = (cs_real_3_t *)(CS_F_(rad_q)->val);
 
   /* Work arrays */

@@ -169,7 +169,7 @@ typedef enum {
   CS_ENUMF_(magfl),        /*!< magnetic field */
   CS_ENUMF_(elefl),        /*!< electric field */
 
-  CS_ENUMF_(rad_lumin),    /*!< Radiative luminance */
+  CS_ENUMF_(rad_energy),   /*!< Radiative energy */
   CS_ENUMF_(rad_q),        /*!< Radiative flux */
 
   CS_ENUMF_(rad_est),      /*!< Radiative flux explicit source term */

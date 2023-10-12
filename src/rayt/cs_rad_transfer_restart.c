@@ -170,7 +170,7 @@ cs_rad_transfer_write(void)
 
   cs_restart_write_field_vals(rp, CS_FI_(rad_est, 0)->id, 0);
   cs_restart_write_field_vals(rp, CS_FI_(rad_ist, 0)->id, 0);
-  cs_restart_write_field_vals(rp, CS_F_(rad_lumin)->id, 0);
+  cs_restart_write_field_vals(rp, CS_F_(rad_energy)->id, 0);
 
   cs_restart_write_fields(rp, CS_RESTART_RAD_TRANSFER);
 
@@ -290,7 +290,7 @@ cs_rad_transfer_read(void)
   nberro += ierror;
   ierror = cs_restart_read_field_vals(rp,  CS_FI_(rad_ist, 0)->id, 0);
   nberro += ierror;
-  ierror = cs_restart_read_field_vals(rp, CS_F_(rad_lumin)->id, 0);
+  ierror = cs_restart_read_field_vals(rp, CS_F_(rad_energy)->id, 0);
   nberro += ierror;
 
   cs_restart_read_fields(rp, CS_RESTART_RAD_TRANSFER);

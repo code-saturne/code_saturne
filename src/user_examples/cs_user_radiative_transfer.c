@@ -280,14 +280,14 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   coefap    boundary condition work array for the luminance
+ * \param[in]   coefap    boundary condition work array for the radiance
  *                         (explicit part)
- * \param[in]   coefbp    boundary condition work array for the luminance
+ * \param[in]   coefbp    boundary condition work array for the radiance
  *                         (implicit part)
  * \param[in]   cofafp    boundary condition work array for the diffusion
- *                        of the luminance (explicit part)
+ *                        of the radiance (explicit part)
  * \param[in]   cofbfp    boundary condition work array for the diffusion
- *                        of the luminance (implicit part)
+ *                        of the radiance (implicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
  * \param[in]   xlam      conductivity (W/m/K)

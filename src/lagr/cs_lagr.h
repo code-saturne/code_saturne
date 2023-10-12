@@ -955,8 +955,8 @@ typedef struct {
   /* Fluid specific heat capacity */
   cs_field_t *cpro_cp;
 
-  /* Radiat.       */
-  cs_field_t *luminance;
+  /* Radiative energy */
+  cs_field_t *rad_energy;
 
   /* Combustion    */
   cs_field_t *x_oxyd;
