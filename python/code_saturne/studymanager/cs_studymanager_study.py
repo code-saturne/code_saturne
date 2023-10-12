@@ -34,6 +34,7 @@ import string
 import time
 import logging
 import fnmatch
+import math
 from collections import OrderedDict
 
 #-------------------------------------------------------------------------------
@@ -174,40 +175,41 @@ class Case(object):
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
         """
-        self.__log_file  = rlog
-        self.__diff      = diff
-        self.__parser    = parser
-        self.__data      = data
-        self.__repo      = repo
-        self.__dest      = dest
+        self.__log_file    = rlog
+        self.__diff        = diff
+        self.__parser      = parser
+        self.__data        = data
+        self.__repo        = repo
+        self.__dest        = dest
 
-        self.pkg         = pkg
-        self.study       = study
+        self.pkg           = pkg
+        self.study         = study
 
-        self.node        = data['node']
-        self.label       = data['label']
-        self.compute     = data['compute']
-        self.plot        = data['post']
-        self.run_id      = data['run_id']
-        self.compare     = data['compare']
-        self.n_procs     = data['n_procs']
-        self.depends     = data['depends']
+        self.node          = data['node']
+        self.label         = data['label']
+        self.compute       = data['compute']
+        self.plot          = data['post']
+        self.run_id        = data['run_id']
+        self.compare       = data['compare']
+        self.n_procs       = data['n_procs']
+        self.depends       = data['depends']
+        self.expected_time = data['expected_time']
 
-        self.parametric  = data['parametric']
-        self.notebook    = data['notebook']
-        self.kw_args     = data['kw_args']
+        self.parametric    = data['parametric']
+        self.notebook      = data['notebook']
+        self.kw_args       = data['kw_args']
 
-        self.is_compiled = "not done"
-        self.is_run      = "not done"
-        self.is_time     = None
-        self.is_plot     = "not done"
-        self.is_compare  = "not done"
-        self.disabled    = False
-        self.threshold   = "default"
-        self.diff_value  = [] # list of differences (in case of comparison)
-        self.m_size_eq   = True # mesh sizes equal (in case of comparison)
-        self.subdomains  = None
-        self.level       = None # level of the node in the dependency graph
+        self.is_compiled   = "not done"
+        self.is_run        = "not done"
+        self.is_time       = None
+        self.is_plot       = "not done"
+        self.is_compare    = "not done"
+        self.disabled      = False
+        self.threshold     = "default"
+        self.diff_value    = [] # list of differences (in case of comparison)
+        self.m_size_eq     = True # mesh sizes equal (in case of comparison)
+        self.subdomains    = None
+        self.level         = None # level of the node in the dependency graph
 
         # Run_dir and Title are based on study, label and run_id
         self.resu = "RESU"
@@ -1132,8 +1134,10 @@ class Studies(object):
         self.__ref               = options.reference
         self.__postpro           = options.post
         self.__slurm_batch_size  = options.slurm_batch_size
-        self.__slurm_batch_wtime = options.slurm_batch_wtime
+        # Convert in minutes
+        self.__slurm_batch_wtime = options.slurm_batch_wtime * 60.
         self.__slurm_batch_args  = options.slurm_batch_args
+        self.__slurm_time_factor = 1.15
         self.__sheet             = options.sheet
         self.__default_fmt       = options.default_fmt
         # do not use tex in matpl(built-in mathtext is used instead)
@@ -1784,15 +1788,17 @@ class Studies(object):
     def run_slurm_batches(self):
         """
         Run all cases in slurm batch mode.
-        Number of case per batch and maximum wall time are given by smgr options.
+        The number of case per batch is limited by a maximum number and a maximum
+        wall time given by smgr options. Expected times are used to compute wall
+        time.
         """
 
         slurm_batch_template = """#!/bin/sh
 #SBATCH --ntasks={0}
-#SBATCH --time={1}:00:00
-#SBATCH --output=vnv_{2}
-#SBATCH --error=vnv_{2}
-#SBATCH --job-name=saturne_vnv_{2}
+#SBATCH --time={1}:{2}:00
+#SBATCH --output=vnv_{3}
+#SBATCH --error=vnv_{3}
+#SBATCH --job-name=saturne_vnv_{3}
 """
         cur_batch_id = 0
         job_id_list = []
@@ -1810,6 +1816,7 @@ class Studies(object):
 
                 batch_cmd = ""
                 cur_batch_size = 0
+                batch_total_time = 0
 
                 # loop on cases of the sub graph
                 for case in self.graph.extract_sub_graph(level,nproc+1).graph_dict:
@@ -1821,19 +1828,32 @@ class Studies(object):
                             if self.__n_iter is not None:
                                 case.add_control_file(self.__n_iter)
 
-                            # append content of batch command with run of the case
-                            batch_cmd += case.build_run_batch()
-                            cur_batch_size += 1
+                            # check future submission total time and submit previous batch if not empty
+                            submit_prev = False
+                            if (cur_batch_size == 0) or (batch_total_time + \
+                               self.__slurm_time_factor * float(case.expected_time) < \
+                               self.__slurm_batch_wtime):
+                                # append content of batch command with run of the case
+                                batch_cmd += case.build_run_batch()
+                                cur_batch_size += 1
+                                # multiply by time factor to prevent failure
+                                batch_total_time += self.__slurm_time_factor * \
+                                                    float(case.expected_time)
+                            else:
+                                submit_prev = True
 
-                            # submit once batch size is reached
-                            if cur_batch_size >= self.__slurm_batch_size:
+                            # submit once batch size or wall time is reached
+                            if cur_batch_size >= self.__slurm_batch_size or submit_prev or \
+                               batch_total_time >= self.__slurm_batch_wtime:
                                 slurm_batch_name = "slurm_batch_file_" + \
                                                    str(cur_batch_id) + ".sh"
                                 slurm_batch_file = open(slurm_batch_name, mode='w')
 
                                 # fill file with template
+                                hh, mm = divmod(batch_total_time, 60.)
                                 cmd = slurm_batch_template.format(nproc+1,
-                                                                  self.__slurm_batch_wtime,
+                                                                  math.ceil(hh),
+                                                                  math.ceil(mm),
                                                                   cur_batch_id)
 
                                 # add exclusive option to batch template for
@@ -1882,7 +1902,16 @@ class Studies(object):
                                 batch_cmd = ""
                                 cur_batch_id += 1
                                 cur_batch_size = 0
+                                batch_total_time = 0
                                 slurm_batch_file.close()
+
+                            # complete batch info as previous one was submitted
+                            if submit_prev:
+                                # append content of batch command with run of the case
+                                batch_cmd += case.build_run_batch()
+                                cur_batch_size += 1
+                                # multiply by time factor to prevent failure
+                                batch_total_time += self.__slurm_time_factor * float(case.expected_time)
 
                 if cur_batch_size > 0:
                     slurm_batch_name = "slurm_batch_file_" + \
@@ -1890,9 +1919,10 @@ class Studies(object):
                     slurm_batch_file = open(slurm_batch_name, mode='w')
 
                     # fill file with template
-                    cmd = slurm_batch_template.format(nproc+1,
-                                                      self.__slurm_batch_wtime,
-                                                      cur_batch_id)
+                    hh, mm = divmod(batch_total_time, 60.)
+                    cmd = slurm_batch_template.format(nproc+1, math.ceil(hh),
+                                                      math.ceil(mm), cur_batch_id)
+
                     # add exclusive option to batch template for
                     # computation with at least 6 processors
                     if nproc+1 > 5:
@@ -1939,6 +1969,7 @@ class Studies(object):
                     batch_cmd = ""
                     cur_batch_id += 1
                     cur_batch_size = 0
+                    batch_total_time = 0
                     slurm_batch_file.close()
 
             job_id_list = cur_job_id_list

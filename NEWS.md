@@ -32,6 +32,13 @@ Master (not on release branches yet)
 - Compressible flows: remove uscfx1 and uscfx2 user-defined functions.
   Standard functions such as cs_user_parameters can be used instead.
 
+### Studymanager:
+
+- Both options --slurm-batch-wtime=H and --slurm-batch-size=N allow to submit
+  batches of cases using the SLURM resource manager on cluster. New keywork
+  expected_time (HH:MM) can be used in smgr xml file to define expected
+  computation time.
+
 Release 8.1.0 (2023-12-13)
 --------------------------
 
