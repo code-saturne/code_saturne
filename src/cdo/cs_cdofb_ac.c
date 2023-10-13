@@ -987,7 +987,7 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
   cs_equation_param_t *mom_eqp = cc->momentum->param;
   cs_equation_builder_t  *mom_eqb = cc->momentum->builder;
 
-  mom_eqb->bd_msh_flag |= CS_FLAG_COMP_PFC;
+  mom_eqb->bdy_flag |= CS_FLAG_COMP_PFC;
 
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */

@@ -1388,7 +1388,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
 
-  eqb->bd_msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+  eqb->bdy_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
     CS_FLAG_COMP_FEQ | CS_FLAG_COMP_FV;
 
   bool  need_eigen =
@@ -1414,7 +1414,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
       else
@@ -1423,7 +1423,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_BUBBLE:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_iso_stiffness;
       else
@@ -1432,7 +1432,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
       break;
 
@@ -1472,7 +1472,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_HODGE_ALGO_COST:
     case CS_HODGE_ALGO_BUBBLE:
     case CS_HODGE_ALGO_VORONOI:
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
@@ -1499,7 +1499,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
     switch (eqp->diffusion_hodgep.algo) {
 
     case CS_HODGE_ALGO_COST:
@@ -1520,7 +1520,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
     switch (eqp->diffusion_hodgep.algo) {
 
     case CS_HODGE_ALGO_COST:
@@ -1655,7 +1655,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     /* Boundary conditions for advection */
 
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PEQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_PEQ;
     eqc->add_advection_bc = cs_cdo_advection_vb_bc;
 
   }

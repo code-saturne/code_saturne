@@ -871,7 +871,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
 
-  eqb->bd_msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+  eqb->bdy_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
     CS_FLAG_COMP_FEQ;
 
   bool  need_eigen =
@@ -899,7 +899,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
       else
@@ -908,7 +908,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_BUBBLE:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_iso_stiffness;
       else
@@ -917,7 +917,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
       break;
 
@@ -958,7 +958,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vvb_ocs_weak_dirichlet;
     break;
 
@@ -975,7 +975,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* There is at least one face with a sliding condition to handle */
 
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vvb_ocs_sliding;
 
   }

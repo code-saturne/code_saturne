@@ -1044,7 +1044,7 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
-    cs_eflag_t  msh_flag = eqb->st_msh_flag;
+    cs_eflag_t  msh_flag = eqb->src_flag;
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {

@@ -90,23 +90,22 @@ typedef void
 
 struct _equation_builder_t {
 
-  bool         init_step;    /*!< true if this is the initialization step */
+  bool         init_step;  /*!< true if this is the initialization step */
 
   /*!
    * @name Flags to know what to build and how to build such terms
    * @{
    */
 
-  cs_eflag_t   msh_flag;     /*!< Information related to what to build in a
-                              *   \ref cs_cell_mesh_t structure for a generic
-                              *   cell */
-  cs_eflag_t   bd_msh_flag;  /*!< Information related to what to build in a
-                              *   \ref cs_cell_mesh_t structure for a cell close
-                              *   to the boundary */
-  cs_eflag_t   st_msh_flag;  /*!< Information related to what to build in a
-                              *   \ref cs_cell_mesh_t structure when only the
-                              *   source term has to be built */
-  cs_flag_t    sys_flag;     /*!< Information related to the sytem */
+  cs_eflag_t   msh_flag;   /*!< Flag storing which quantities to build in a
+                            *   \ref cs_cell_mesh_t structure for all cells */
+  cs_eflag_t   bdy_flag;   /*!< Flag storing which quantities to build in a
+                            *   \ref cs_cell_mesh_t structure for a boundary
+                            *   cell */
+  cs_eflag_t   src_flag;   /*!< Flag storing which quantities to build in a
+                            *   \ref cs_cell_mesh_t structure for the specific
+                            *   computation of source terms */
+  cs_flag_t    sys_flag;   /*!< Metadata related to the sytem */
 
   /*!
    * @}
@@ -244,15 +243,19 @@ struct _equation_builder_t {
 };
 
 /*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*============================================================================
  * Inline public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Retrieve the flag to give for building a cs_cell_mesh_t structure
+ * \brief Retrieve the flag to give for building a cs_cell_mesh_t structure
  *
- * \param[in]  cell_flag   flag related to the current cell
- * \param[in]  eqb         pointer to a cs_equation_builder_t structure
+ * \param[in] cell_flag   flag related to the current cell
+ * \param[in] eqb         pointer to a cs_equation_builder_t structure
  *
  * \return the flag to set for the current cell
  */
@@ -262,17 +265,32 @@ static inline cs_eflag_t
 cs_equation_builder_cell_mesh_flag(cs_flag_t                      cell_flag,
                                    const cs_equation_builder_t   *eqb)
 {
-  cs_eflag_t  _flag = eqb->msh_flag | eqb->st_msh_flag;
-
   if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)
-    _flag |= eqb->bd_msh_flag;
-
-  return _flag;
+    return eqb->msh_flag | eqb->src_flag | eqb->bdy_flag;
+  else
+    return eqb->msh_flag | eqb->src_flag;
 }
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the default flags used to know which quantities have to be
+ *        built by each cs_cell_mesh_t structure before building the linear
+ *        system
+ *
+ * \param[in] msh_flag    flag for all cells
+ * \param[in] bdy_flag    flag for all boundary cells
+ * \param[in] src_flag    flag for cells with source terms
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_builder_update_default_flags(cs_eflag_t    msh_flag,
+                                         cs_eflag_t    bdy_flag,
+                                         cs_eflag_t    src_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -343,6 +361,21 @@ cs_equation_builder_free(cs_equation_builder_t  **p_builder);
 
 void
 cs_equation_builder_reset(cs_equation_builder_t  *eqb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the default flags used to know which quantities have to be
+ *        built by each cs_cell_mesh_t structure before building the linear
+ *        system
+ *
+ * \param[in] msh_flag    flag for all cells
+ * \param[in] bdy_flag    flag for all boundary cells
+ * \param[in] src_flag    flag for cells with source terms
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_builder_apply_default_flags(cs_equation_builder_t  *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!

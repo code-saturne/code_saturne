@@ -1631,7 +1631,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
 
-  eqb->bd_msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
+  eqb->bdy_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
     CS_FLAG_COMP_FEQ;
 
   BFT_MALLOC(eqc->face_values, 3*n_faces, cs_real_t);
@@ -1723,12 +1723,12 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_wsym_dirichlet;
     break;
 
@@ -1744,7 +1744,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* There is at least one face with a sliding condition to handle */
 
-    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
 
   }

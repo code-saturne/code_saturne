@@ -2699,6 +2699,11 @@ cs_equation_define_context_structures(void)
                                             eq->boundary_flux_id,
                                             eq->builder);
 
+    /* The following step should be done after the setup stage so that the
+       modelling options have set the default flags if needed */
+
+    cs_equation_builder_apply_default_flags(eq->builder);
+
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 

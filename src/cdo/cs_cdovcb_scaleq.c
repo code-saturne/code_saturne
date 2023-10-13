@@ -1044,7 +1044,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV  |
     CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC |
     CS_FLAG_COMP_HFQ;
-  eqb->bd_msh_flag = 0;
+  eqb->bdy_flag = 0;
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -1101,7 +1101,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Non-homogeneous Neumann BCs */
 
   if (eqb->face_bc->n_nhmg_neu_faces > 0)
-    eqb->bd_msh_flag = CS_FLAG_COMP_FV;
+    eqb->bdy_flag = CS_FLAG_COMP_FV;
 
   /* Advection term */
 

@@ -71,6 +71,17 @@ BEGIN_C_DECLS
 #define CS_EQUATION_BUILDER_DBG        0 /* Debug level */
 
 /*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/* Default flag defining quantities to be built by each cs_cell_mesh_t
+   structure before building the linear system */
+
+static cs_eflag_t  _equation_builder_default_msh_flag = 0;
+static cs_eflag_t  _equation_builder_default_bdy_flag = 0;
+static cs_eflag_t  _equation_builder_default_src_flag = 0;
+
+/*============================================================================
  * Local private variables
  *============================================================================*/
 
@@ -83,6 +94,28 @@ BEGIN_C_DECLS
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the default flags used to know which quantities have to be
+ *        built by each cs_cell_mesh_t structure before building the linear
+ *        system
+ *
+ * \param[in] msh_flag    flag for all cells
+ * \param[in] bdy_flag    flag for all boundary cells
+ * \param[in] src_flag    flag for cells with source terms
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_builder_update_default_flags(cs_eflag_t    msh_flag,
+                                         cs_eflag_t    bdy_flag,
+                                         cs_eflag_t    src_flag)
+{
+  _equation_builder_default_msh_flag |= msh_flag;
+  _equation_builder_default_bdy_flag |= bdy_flag;
+  _equation_builder_default_src_flag |= src_flag;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -109,8 +142,8 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
   /* Initialize flags used to knows what kind of cell quantities to build */
 
   eqb->msh_flag = 0;
-  eqb->bd_msh_flag = 0;
-  eqb->st_msh_flag = 0;
+  eqb->bdy_flag = 0;
+  eqb->src_flag = 0;
   if (eqp->dim > 1)
     eqb->sys_flag = CS_FLAG_SYS_VECTOR;
   else
@@ -153,12 +186,12 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 
     /* Default initialization */
 
-    eqb->st_msh_flag = cs_source_term_init(eqp->space_scheme,
-                                           eqp->n_source_terms,
-                       (cs_xdef_t *const *)eqp->source_terms,
-                                           eqb->compute_source,
-                                           &(eqb->sys_flag),
-                                           &(eqb->source_mask));
+    eqb->src_flag = cs_source_term_init(eqp->space_scheme,
+                                        eqp->n_source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
+                                        eqb->compute_source,
+                                        &(eqb->sys_flag),
+                                        &(eqb->source_mask));
 
   } /* There is at least one source term */
 
@@ -347,6 +380,29 @@ cs_equation_builder_reset(cs_equation_builder_t  *eqb)
   eqb->init_step = true;
   BFT_FREE(eqb->enforced_values);
   BFT_FREE(eqb->dir_values);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the default flags used to know which quantities have to be
+ *        built by each cs_cell_mesh_t structure before building the linear
+ *        system
+ *
+ * \param[in] msh_flag    flag for all cells
+ * \param[in] bdy_flag    flag for all boundary cells
+ * \param[in] src_flag    flag for cells with source terms
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_builder_apply_default_flags(cs_equation_builder_t  *eqb)
+{
+  if (eqb == NULL)
+    return;
+
+  eqb->msh_flag |= _equation_builder_default_msh_flag;
+  eqb->bdy_flag |= _equation_builder_default_bdy_flag;
+  eqb->src_flag |= _equation_builder_default_src_flag;
 }
 
 /*----------------------------------------------------------------------------*/
