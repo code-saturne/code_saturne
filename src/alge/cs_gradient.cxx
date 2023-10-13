@@ -6916,6 +6916,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     coefbv,
     pvar,
     c_weight,
+    cocg,
     gradv,
     rhs);
 #else
@@ -6925,7 +6926,6 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
       for (cs_lnum_t j = 0; j < 3; j++)
         rhs[c_id][i][j] = 0.0;
   }
-
 
   /* Contribution from interior faces */
 
@@ -6980,7 +6980,6 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
-#endif 
 
   /* Contribution from extended neighborhood */
 
@@ -7069,6 +7068,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
                           + rhs[c_id][i][2] * cocg[c_id][2];
     }
   }
+#endif 
 
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
