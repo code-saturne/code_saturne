@@ -1192,13 +1192,17 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
   /* Initialization */
 
   /* Pointer to the spectral flux density field */
-  cs_field_t *f_qinspe = NULL;
+  cs_field_t *f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  /* For ADF model or FSCK model or Atmo */
-  f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
+  cs_real_t *q_incid = NULL;
+  cs_lnum_t stride = 1;
+  if (f_qinspe != NULL) {
+    q_incid = f_qinspe->val;
+    stride = f_qinspe->dim;
+  }
+  else
+    q_incid = cs_field_by_name("rad_incident_flux")->val;
 
-  /* Pointer to the radiative incident flux field */
-  cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
 
   /* Pointer to the wall emissivity field */
   cs_field_t *f_eps = cs_field_by_name("emissivity");
@@ -1230,10 +1234,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       /* Copy the appropriate flux density to the local variable qpatmp*/
 
       /* Value of the flux density at the boundary face */
-      if (f_qinspe != NULL)
-        qpatmp = f_qinspe->val[face_id * f_qinspe->dim + gg_id];
-      else
-        qpatmp = f_qincid->val[face_id];
+      qpatmp = q_incid[face_id * stride + gg_id];
 
       /* Dirichlet Boundary Conditions  */
 
@@ -1443,7 +1444,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       bc_type[face_id] = -CS_ABS(bc_type[face_id]);
   }
 
-  cs_boundary_conditions_error(bc_type, "Luminance BC values");
+  cs_boundary_conditions_error(bc_type, "Radiance BC values");
 }
 
 /*----------------------------------------------------------------------------*/
