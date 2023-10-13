@@ -109,7 +109,7 @@ BEGIN_C_DECLS
  *
  * \param[in, out]  domain        pointer to a cs_domain_t structure
  * \param[in]       bc_type       boundary face types
- * \param[in]       isothp        boundary face type for radiative transfer
+ * \param[out]      isothp        boundary face type for radiative transfer
  * \param[out]      tmin          min allowed value of the wall temperature
  * \param[out]      tmax          max allowed value of the wall temperature
  * \param[in]       tx            relaxation coefficient (0 < tx < 1)

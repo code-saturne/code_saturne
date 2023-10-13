@@ -63,7 +63,6 @@ BEGIN_C_DECLS
  * \param[in]  tmin     minimum allowed temperature (clip to this value)
  * \param[in]  tmax     maximum allowed temperature (clip to this value)
  * \param[in]  tx       temperature relaxtion parameter
- * \param[out] tparop   wall temperature in Kelvin
  * \param[in]  qincip   radiative flux density at boundaries
  * \param[in]  textp    exterior boundary temperature in degrees C
  * \param[in]  xlamp    thermal conductivity coefficient of wall faces (w/m/k)
@@ -72,23 +71,24 @@ BEGIN_C_DECLS
  * \param[in]  hfconp   boundary fluid exchange coefficient
  * \param[in]  flconp   boundary convective flux density
  * \param[in]  tempkp   temperature in Kelvin
+ * \param[out] twall    wall temperature in Kelvin
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_wall_flux(int         isothp[],
-                          cs_real_t   tmin,
-                          cs_real_t   tmax,
-                          cs_real_t   tx,
-                          cs_real_t   tparop[],
-                          cs_real_t   qincip[],
-                          cs_real_t   textp[],
-                          cs_real_t   xlamp[],
-                          cs_real_t   epap[],
-                          cs_real_t   epsp[],
-                          cs_real_t   hfconp[],
-                          cs_real_t   flconp[],
-                          cs_real_t   tempkp[]);
+cs_rad_transfer_compute_wall_t(int         isothp[],
+                               cs_real_t   tmin,
+                               cs_real_t   tmax,
+                               cs_real_t   tx,
+                               cs_real_t   qincip[],
+                               cs_real_t   textp[],
+                               cs_real_t   xlamp[],
+                               cs_real_t   epap[],
+                               cs_real_t   epsp[],
+                               cs_real_t   hfconp[],
+                               cs_real_t   flconp[],
+                               cs_real_t   tempkp[],
+                               cs_real_t   twall[]);
 
 /*----------------------------------------------------------------------------*/
 

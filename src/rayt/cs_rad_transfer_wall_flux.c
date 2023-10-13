@@ -94,7 +94,6 @@ BEGIN_C_DECLS
  * \param[in]  tmin     minimum allowed temperature (clip to this value)
  * \param[in]  tmax     maximum allowed temperature (clip to this value)
  * \param[in]  tx       temperature relaxtion parameter
- * \param[out] tparop   wall temperature in Kelvin
  * \param[in]  qincip   radiative flux density at boundaries
  * \param[in]  textp    exterior boundary temperature in degrees C
  * \param[in]  xlamp    thermal conductivity coefficient of wall faces (w/m/k)
@@ -103,23 +102,24 @@ BEGIN_C_DECLS
  * \param[in]  hfconp   boundary fluid exchange coefficient
  * \param[in]  flconp   boundary convective flux density
  * \param[in]  tempkp   temperature in Kelvin
+ * \param[out] twall    wall temperature in Kelvin
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_wall_flux(int         isothp[],
-                          cs_real_t   tmin,
-                          cs_real_t   tmax,
-                          cs_real_t   tx,
-                          cs_real_t   tparop[],
-                          cs_real_t   qincip[],
-                          cs_real_t   textp[],
-                          cs_real_t   xlamp[],
-                          cs_real_t   epap[],
-                          cs_real_t   epsp[],
-                          cs_real_t   hfconp[],
-                          cs_real_t   flconp[],
-                          cs_real_t   tempkp[])
+cs_rad_transfer_compute_wall_t(int         isothp[],
+                               cs_real_t   tmin,//FIXME trouver un autre moyen pour donner des min/max sur t_paroi? passer par un champ ?
+                               cs_real_t   tmax,
+                               cs_real_t   tx,
+                               cs_real_t   qincip[],
+                               cs_real_t   textp[],
+                               cs_real_t   xlamp[],
+                               cs_real_t   epap[],
+                               cs_real_t   epsp[],
+                               cs_real_t   hfconp[],
+                               cs_real_t   flconp[],
+                               cs_real_t   tempkp[],
+                               cs_real_t   twall[])
 {
   const int     nb1int = 5;
   const int     nb2int = 5;
@@ -208,7 +208,7 @@ cs_rad_transfer_wall_flux(int         isothp[],
       /* Computation */
       qconv = flconp[ifac];
       cs_real_t qinci = qincip[ifac];
-      cs_real_t sigt4 = stephn * cs_math_pow4(tparop[ifac]);
+      cs_real_t sigt4 = stephn * cs_math_pow4(twall[ifac]);
       cs_real_t epp   = epsp[ifac];
       qrayt = epp * (qinci - sigt4);
     }
@@ -232,9 +232,9 @@ cs_rad_transfer_wall_flux(int         isothp[],
 
         cs_real_t esl    = epap[ifac] / xlamp[ifac];
         cs_real_t epp    = epsp[ifac];
-        cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
-        qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
-        detep  =   (esl * (qconv + qrayt) - (tparop[ifac] - textp[ifac]))
+        cs_real_t sigt3  = stephn * cs_math_pow3(twall[ifac]);
+        qrayt  = epp * (qinci - sigt3 * twall[ifac]);
+        detep  =   (esl * (qconv + qrayt) - (twall[ifac] - textp[ifac]))
                  / (1.0 + 4.0*esl*epp*sigt3 + esl*hfconp[ifac]);
       }
       else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
@@ -242,7 +242,7 @@ cs_rad_transfer_wall_flux(int         isothp[],
         iipref = 1;
 
         cs_real_t esl    = epap[ifac] / xlamp[ifac];
-        detep  =   (esl * qconv - (tparop[ifac] - textp[ifac]))
+        detep  =   (esl * qconv - (twall[ifac] - textp[ifac]))
                  / (1.0 + esl*hfconp[ifac]);
       }
       else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
@@ -250,22 +250,22 @@ cs_rad_transfer_wall_flux(int         isothp[],
         iifgrn = 1;
 
         cs_real_t epp    = epsp[ifac];
-        cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
-        qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
+        cs_real_t sigt3  = stephn * cs_math_pow3(twall[ifac]);
+        qrayt  = epp * (qinci - sigt3 * twall[ifac]);
         detep  =   (qconv + qrayt - th_rcodcl3[ifac])
                  / (4.0 * epp * sigt3 + hfconp[ifac]);
       }
 
-      cs_real_t rapp   = detep / tparop[ifac];
+      cs_real_t rapp   = detep / twall[ifac];
       cs_real_t abrapp = CS_ABS(rapp);
 
       /* Relaxation */
       if (abrapp >= tx) {
         nrelax++;
-        tparop[ifac] *= 1.0 + tx * rapp / abrapp;
+        twall[ifac] *= 1.0 + tx * rapp / abrapp;
       }
       else
-        tparop[ifac] += detep;
+        twall[ifac] += detep;
 
       rapmax = CS_MAX(rapmax, abrapp);
       if (rapp <= 0.0)
@@ -274,13 +274,13 @@ cs_rad_transfer_wall_flux(int         isothp[],
         nplus++;
 
       /* Clipping */
-      if (tparop[ifac] < tmin) {
+      if (twall[ifac] < tmin) {
         n1min++;
-        tparop[ifac] = tmin;
+        twall[ifac] = tmin;
       }
-      if (tparop[ifac] > tmax) {
+      if (twall[ifac] > tmax) {
         n1max++;
-        tparop[ifac] = tmax;
+        twall[ifac] = tmax;
       }
 
     }
@@ -295,20 +295,20 @@ cs_rad_transfer_wall_flux(int         isothp[],
 
       /* Computation */
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
-      tparop[ifac] =  (hfconp[ifac] * tempkp[iel] - th_rcodcl3[ifac])
+      twall[ifac] =  (hfconp[ifac] * tempkp[iel] - th_rcodcl3[ifac])
                      / CS_MAX(hfconp[ifac], cs_math_epzero);
 
       qconv = flconp[ifac];
       qrayt = 0.0;
 
       /* Clipping */
-      if (tparop[ifac] < tmin) {
+      if (twall[ifac] < tmin) {
         n1min++;
-        tparop[ifac] = tmin;
+        twall[ifac] = tmin;
       }
-      if (tparop[ifac] > tmax) {
+      if (twall[ifac] > tmax) {
         n1max++;
-        tparop[ifac] = tmax;
+        twall[ifac] = tmax;
       }
 
     }
@@ -319,20 +319,20 @@ cs_rad_transfer_wall_flux(int         isothp[],
         || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T
         || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX
         || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
-      if (tpmax <= tparop[ifac]) {
+      if (tpmax <= twall[ifac]) {
         ifacmx = ifac;
-        tpmax  = tparop[ifac];
+        tpmax  = twall[ifac];
         qcmax  = qconv;
         qrmax  = qrayt;
       }
-      if (tpmin >= tparop[ifac]) {
+      if (tpmin >= twall[ifac]) {
         ifacmn = ifac;
-        tpmin  = tparop[ifac];
+        tpmin  = twall[ifac];
         qcmin  = qconv;
         qrmin  = qrayt;
       }
-      tzomax[log_z_id] = CS_MAX(tzomax[log_z_id], tparop[ifac]);
-      tzomin[log_z_id] = CS_MIN(tzomin[log_z_id], tparop[ifac]);
+      tzomax[log_z_id] = CS_MAX(tzomax[log_z_id], twall[ifac]);
+      tzomin[log_z_id] = CS_MIN(tzomin[log_z_id], twall[ifac]);
     }
 
   }
@@ -376,8 +376,8 @@ cs_rad_transfer_wall_flux(int         isothp[],
         int log_z_id = b_face_class_id[ifac];
 
         if (indtp[log_z_id] != 0) {
-          cs_real_t tp4 = cs_math_pow4(tparop[ifac]);
-          tzomoy[log_z_id] += tparop[ifac] * srfbn;
+          cs_real_t tp4 = cs_math_pow4(twall[ifac]);
+          tzomoy[log_z_id] += twall[ifac] * srfbn;
           flunet[log_z_id] += epsp[ifac] * (qincip[ifac] - stephn * tp4) * srfbn;
           radios[log_z_id] += - (epsp[ifac] * stephn * tp4
                            + (1.0 - epsp[ifac]) * qincip[ifac]) * srfbn;
