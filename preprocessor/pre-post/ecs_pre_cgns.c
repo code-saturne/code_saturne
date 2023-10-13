@@ -270,7 +270,7 @@ ecs_loc_pre_cgns__cree(const char  *nom_fichier,
       (__FILE__, __LINE__, 0,
        _("CGNS error:\n%s\n\n"
          "This may be due to a CGNS library supporting only ADF (legacy)\n"
-         "or HDF5 (future default) and the file not matching. In this case,\n"
+         "or HDF5 (default) and the file not matching. In this case,\n"
          "running the adf2hdf of hdf2adf converters may solve the issue."),
        cg_get_error());
 
@@ -1386,19 +1386,18 @@ ecs_loc_pre_cgns__marque_som(const ecs_loc_cgns_base_t  *base_maillage,
  *----------------------------------------------------------------------------*/
 
 static void
-ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
-                                    size_t                 nbr_elt_ent[],
-                                    ecs_size_t            *elt_pos_som_ent[],
-                                    ecs_int_t             *elt_val_som_ent[],
-                                    int                    nzones,
-                                    ecs_loc_cgns_zone_t   *tab_zone,
-                                    int                    nbr_boco_tot,
-                                    ecs_loc_cgns_boco_t   *tab_boco,
-                                    ecs_int_t             *nbr_boco_som,
-                                    ecs_int_t            **ind_nom_boco_som,
-                                    ecs_int_t            **nbr_sselt_boco_som,
-                                    ecs_int_t           ***tab_sselt_boco_som
-)
+ecs_loc_pre_cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
+                                   size_t                 nbr_elt_ent[],
+                                   ecs_size_t            *elt_pos_som_ent[],
+                                   ecs_int_t             *elt_val_som_ent[],
+                                   int                    nzones,
+                                   ecs_loc_cgns_zone_t   *tab_zone,
+                                   int                    nbr_boco_tot,
+                                   ecs_loc_cgns_boco_t   *tab_boco,
+                                   ecs_int_t             *nbr_boco_som,
+                                   ecs_int_t            **ind_nom_boco_som,
+                                   ecs_int_t            **nbr_sselt_boco_som,
+                                   ecs_int_t           ***tab_sselt_boco_som)
 {
 
   size_t       cpt_sselt;
@@ -2059,6 +2058,44 @@ ecs_loc_pre_cgns__init_elt_type(ecs_cgns_elt_t elt_type[NofValidElementTypes])
 }
 
 /*----------------------------------------------------------------------------
+ * Extract zone face shifts
+ *----------------------------------------------------------------------------*/
+
+static ecs_int_t *
+ecs_loc_pre_cgns__face_num_b(const ecs_loc_cgns_zone_t  *ptr_zone,
+                             const ecs_cgns_elt_t        ecs_cgns_elt_liste_c[])
+{
+  ecs_int_t   face_id_shift = 0;
+
+  ecs_int_t *face_num_b = NULL;
+  ECS_MALLOC(face_num_b, ptr_zone->nbr_sections*3, ecs_int_t);
+
+  for (int ind_section = 0;
+       ind_section < ptr_zone->nbr_sections;
+       ind_section++) {
+
+    ecs_loc_cgns_section_t  *ptr_section = ptr_zone->tab_sections + ind_section;
+
+    face_num_b[ind_section*3] = -1;
+    face_num_b[ind_section*3+1] = -1;
+    face_num_b[ind_section*3+2] = -1;
+
+    if (ptr_section->type == CS_CG_ENUM(MIXED))
+      continue;
+
+    ecs_elt_typ_t  ecs_typ = ecs_cgns_elt_liste_c[ptr_section->type].ecs_type;
+    if (ecs_maillage_pre__ret_typ_geo(ecs_typ) == ECS_ENTMAIL_FAC) {
+      face_num_b[ind_section*3] = ptr_section->num_elt_deb;
+      face_num_b[ind_section*3+1] = ptr_section->num_elt_fin;
+      face_num_b[ind_section*3+2] = face_id_shift - ptr_section->num_elt_deb + 1;
+      face_id_shift += ptr_section->num_elt_fin - ptr_section->num_elt_deb + 1;
+    }
+  }
+
+  return face_num_b;
+}
+
+/*----------------------------------------------------------------------------
  *                        Lecture des éléments
  *----------------------------------------------------------------------------*/
 
@@ -2614,6 +2651,9 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     else if (ptr_zone->type == CS_CG_ENUM(Unstructured)) {
 
+      ecs_int_t *face_num_b
+        = ecs_loc_pre_cgns__face_num_b(ptr_zone, ecs_cgns_elt_liste_c);
+
       for (ind_section = 0;
            ind_section < ptr_zone->nbr_sections;
            ind_section++) {
@@ -2660,6 +2700,13 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
               ecs_int_t num_fac = *(ptr_ele + ind_fac);
               if (num_fac < 0)
                 num_fac = -num_fac;
+              for (int l = 0; l < ptr_zone->nbr_sections; l++) {
+                if (   num_fac >= face_num_b[l*3]
+                    && num_fac <= face_num_b[l*3+1]) {
+                  num_fac += face_num_b[l*3+2];
+                  break;
+                }
+              }
               num_fac += face_id_shift;
               connect_size +=   pos_som_fac[num_fac]
                               - pos_som_fac[num_fac - 1] + 1;
@@ -2812,7 +2859,17 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             for (ecs_int_t i = 0; i < nbr_fac_elt; i++) {
 
               ecs_int_t num_fac = *(ptr_ele + i);
-              ecs_int_t ind_fac = ECS_ABS(num_fac) - 1 + face_id_shift;
+              ecs_int_t _num_fac = ECS_ABS(num_fac);
+              ecs_int_t ind_fac = _num_fac - 1;
+
+              for (int l = 0; l < ptr_zone->nbr_sections; l++) {
+                if (   _num_fac >= face_num_b[l*3]
+                    && _num_fac <= face_num_b[l*3+1]) {
+                  ind_fac = _num_fac + face_num_b[l*3+2] - 1;
+                  break;
+                }
+              }
+              ind_fac += face_id_shift;
 
               size_t s_id = pos_som_fac[ind_fac] - 1;
               size_t e_id = pos_som_fac[ind_fac + 1] - 1;
@@ -2892,6 +2949,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
       } /* Fin boucle sur les sections */
 
+      ECS_FREE(face_num_b);
+
     } /* Fin traitement structuré/non structuré */
 
     num_som_deb += ptr_zone->nbr_som;
@@ -2920,18 +2979,18 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
   /* Création des entités supplémentaires pour porter les C.L. aux sommets */
   /*-----------------------------------------------------------------------*/
 
-  ecs_loc_pre__cgns__cree_ent_inf_som(base_maillage,
-                                      cpt_elt_ent,
-                                      elt_pos_som_ent,
-                                      elt_val_som_ent,
-                                      nzones,
-                                      tab_zone,
-                                      nbr_boco_tot,
-                                      tab_boco,
-                                      nbr_boco_som,
-                                      ind_nom_boco_som,
-                                      nbr_sselt_boco_som,
-                                      tab_sselt_boco_som);
+  ecs_loc_pre_cgns__cree_ent_inf_som(base_maillage,
+                                     cpt_elt_ent,
+                                     elt_pos_som_ent,
+                                     elt_val_som_ent,
+                                     nzones,
+                                     tab_zone,
+                                     nbr_boco_tot,
+                                     tab_boco,
+                                     nbr_boco_som,
+                                     ind_nom_boco_som,
+                                     nbr_sselt_boco_som,
+                                     tab_sselt_boco_som);
 
   /* Transfert des valeurs lues dans les structures d'entité de maillage */
   /*=====================================================================*/
