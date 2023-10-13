@@ -295,7 +295,7 @@ cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
       epsp[face_id] = 0.9;
 
       /* Conduction flux (W/m2) */
-      f_th->bc_coeffs->rcodcl2[face_id] = 0.0;
+      f_th->bc_coeffs->rcodcl3[face_id] = 0.0;
 
     }
 
@@ -337,7 +337,7 @@ cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
       isothp[face_id] = CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX;
 
       /* Conduction flux (W/m2)*/
-      f_th->bc_coeffs->rcodcl2[face_id] = 0.0;
+      f_th->bc_coeffs->rcodcl3[face_id] = 0.0;
 
     }
 
