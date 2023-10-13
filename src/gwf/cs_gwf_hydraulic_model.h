@@ -274,13 +274,12 @@ typedef enum {
 
 typedef enum {
 
-  CS_GWF_TPF_APPROX_PC_CELL_AVERAGE, /* most diffusive, effet retard */
-  CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_MAX,
-  CS_GWF_TPF_APPROX_PC_EDGE_SUBCELL_AVERAGE,
-  CS_GWF_TPF_APPROX_SL_VTX_SUBCELL_AVERAGE,
-  CS_GWF_TPF_APPROX_PG_VTX_SUBCELL_AVERAGE,
-  CS_GWF_TPF_APPROX_VTX_SUBCELL,
-  CS_GWF_TPF_APPROX_VTX_SUBCELL_AVERAGE,
+  CS_GWF_TPF_APPROX_PC_CELL_AVERAGE,
+  CS_GWF_TPF_APPROX_PC_CELL_VERTEX_AVERAGE,
+  CS_GWF_TPF_APPROX_PC_EDGE_AVERAGE,
+  CS_GWF_TPF_APPROX_PC_VERTEX_AVERAGE,
+
+  CS_GWF_TPF_APPROX_VERTEX_SUBCELL,
 
   CS_GWF_TPF_N_APPROX
 
@@ -625,6 +624,7 @@ typedef struct {
    */
 
   cs_gwf_tpf_approx_type_t       approx_type;
+  double                         cell_weight;
   cs_gwf_tpf_solver_type_t       solver_type;
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;
