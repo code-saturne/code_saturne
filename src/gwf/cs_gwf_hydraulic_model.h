@@ -581,6 +581,18 @@ typedef struct {
    * \brief type of approximation used for the computation of diffusion,
    *        unsteady coefficients
    *
+   * \var cell_weight
+   * \brief weight associated to the cell value w.r.t. to the values at
+   *        vertices when a \ref CS_GWF_TPF_APPROX_PC_CELL_VERTEX_AVERAGE
+   *        choice is set for 'approx_type'. If the value is < 0 or > 1, then
+   *        the default settings is kept.
+   *
+   * \var upwind_weight
+   * \brief weight associated to the upwind value w.r.t. to the centered value
+   *        There is no effect when \ref CS_GWF_TPF_APPROX_VERTEX_SUBCELL is
+   *        chosen to approximate coefficients. If the value is < 0 or > 1,
+   *        then the default settings is kept.
+   *
    * \var solver_type
    * \brief Type of solver considered to solve the system of equations (choice
    *        of main unknowns and strategy of resolution (coupled/segregated))
@@ -609,8 +621,8 @@ typedef struct {
    *      Type of algorithm to solve the non-linearities
    *
    * \var nl_relax_factor
-   *      Value of the relaxation factor in the non-linear algorithm. A classical
-   *      choice is between 0.70 and 0.95
+   *      Value of the relaxation factor in the non-linear algorithm. A
+   *      classical choice is between 0.70 and 0.95
    *
    * \var nl_cvg_param
    *      Set of parameters to drive the convergence of the non-linear solver
@@ -625,6 +637,7 @@ typedef struct {
 
   cs_gwf_tpf_approx_type_t       approx_type;
   double                         cell_weight;
+  double                         upwind_weight;
   cs_gwf_tpf_solver_type_t       solver_type;
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;
