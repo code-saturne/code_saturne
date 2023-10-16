@@ -47,6 +47,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_printf.h"
+
 #include "cs_1d_wall_thermal.h"
 #include "cs_ale.h"
 #include "cs_array.h"
@@ -151,13 +153,6 @@ cs_f_clsyvt(cs_real_t  velipb[][3],
             cs_real_t  rijipb[][6]);
 
 void
-cs_f_altycl(int        *itypfb,
-            int        *ale_bc_type,
-            int        *impale,
-            bool        init,
-            cs_real_t   dt[]);
-
-void
 cs_f_cscloc(void);
 
 void
@@ -179,6 +174,309 @@ cs_f_user_boundary_conditions_wrapper(const cs_lnum_t  itrifb[],
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute boundary condition code for ALE
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_condition_ale_type(const cs_mesh_t             *m,
+                             const cs_mesh_quantities_t  *mq,
+                             const bool                  init,
+                             const cs_real_t             dt[],
+                             const int                   bc_type[])
+{
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  const cs_real_t *surfbn = mq->b_face_surf;
+  const cs_real_3_t *surfbo = (const cs_real_3_t *)mq->b_face_normal;
+
+  /* Initialization
+   * -------------- */
+
+  int *impale = cs_glob_ale_data->impale;
+  int *ale_bc_type = cs_glob_ale_data->bc_type;
+
+  cs_real_3_t *disale
+    = (cs_real_3_t *)cs_field_by_name("mesh_displacement")->val;
+
+  cs_real_3_t *xyzno0 = (cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
+
+  /* Set to 0 non specified rcodcl for mesh velocity arrays */
+
+  cs_field_build_bc_codes_all();
+
+  int *icodcl_mesh_u = NULL;
+  cs_real_t *_rcodcl1_mesh_u = NULL;
+  cs_real_t *rcodcl1_mesh_u = NULL;
+  cs_real_t *rcodcl1_vel = CS_F_(vel)->bc_coeffs->rcodcl1;
+
+  if (CS_F_(mesh_u)->bc_coeffs != NULL) {
+    icodcl_mesh_u = CS_F_(mesh_u)->bc_coeffs->icodcl;
+    rcodcl1_mesh_u = CS_F_(mesh_u)->bc_coeffs->rcodcl1;
+  }
+
+  if (cs_glob_ale == CS_ALE_CDO) {
+    const int size_uma = (CS_F_(mesh_u)->dim + 1)*n_b_faces;
+    BFT_MALLOC(_rcodcl1_mesh_u, size_uma, cs_real_t);
+    rcodcl1_mesh_u = _rcodcl1_mesh_u;
+  }
+
+# pragma omp parallel for  if (n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
+      if (rcodcl1_mesh_u[n_b_faces*ii + face_id] > cs_math_infinite_r*0.5)
+        rcodcl1_mesh_u[n_b_faces*ii + face_id] = 0;
+    }
+  }
+
+  /* Check the consistency of BC types
+   * --------------------------------- */
+
+  int ierror[1] = {0};
+
+  /* When using CDO solver, no need for checks. */
+  if (cs_glob_ale == CS_ALE_CDO) {
+
+    cs_real_3_t *b_fluid_vel = NULL;
+    BFT_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
+
+    cs_array_real_fill_zero(3*n_b_faces, (cs_real_t *)b_fluid_vel);
+
+    cs_ale_update_bcs(ale_bc_type, b_fluid_vel);
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        rcodcl1_mesh_u[n_b_faces*ii + face_id] = b_fluid_vel[face_id][ii];
+    }
+
+    BFT_FREE(b_fluid_vel);
+
+  }
+
+  if (cs_glob_ale != CS_ALE_CDO) {
+
+#   pragma omp parallel for  if (n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (   ale_bc_type[face_id] != 0
+          && ale_bc_type[face_id] != CS_BOUNDARY_ALE_FIXED
+          && ale_bc_type[face_id] != CS_BOUNDARY_ALE_SLIDING
+          && ale_bc_type[face_id] != CS_BOUNDARY_ALE_FREE_SURFACE
+          && ale_bc_type[face_id] != CS_BOUNDARY_ALE_IMPOSED_VEL) {
+        if (ale_bc_type[face_id] > 0)
+          ale_bc_type[face_id] = -ale_bc_type[face_id];
+        ierror[0]++;
+      }
+    }
+
+    cs_parall_max(1, CS_INT_TYPE, &ierror[0]);
+
+    if (ierror[0] != 0) {
+      bft_printf("ALE METHOD\n"
+                 "At least one boundary face has an unknown boundary type.\n"
+                 "  The calculation will not be run."
+                 "Check boundary condition definitions.");
+      cs_boundary_conditions_error(ale_bc_type, NULL);
+    }
+
+    /* Conversion into BC and values
+     *-------------------------------*/
+
+    const cs_real_3_t *vtx_coord = (const cs_real_3_t *)m->vtx_coord;
+
+    /* If all the nodes of a face have an imposed displacement, rcodcl is
+       computed or overwritten, ale bc type is therfore
+       CS_BOUNDARY_ALE_IMPOSED_VEL */
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+      int iecrw = 0, icpt  = 0;
+      cs_real_t ddep_xyz[3] = {0, 0, 0};
+
+      const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+      const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
+
+      for (cs_lnum_t ii = s; ii < e; ii++) {
+        const cs_lnum_t vtx_id = m->b_face_vtx_lst[ii];
+        if (impale[vtx_id] == 0)
+          iecrw++;
+        icpt++;
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          ddep_xyz[jj]
+            += disale[vtx_id][jj] + xyzno0[vtx_id][jj] - vtx_coord[vtx_id][jj];
+      }
+
+      if (iecrw == 0 && ale_bc_type[face_id] != CS_BOUNDARY_ALE_SLIDING) {
+
+        const cs_lnum_t c_id = b_face_cells[face_id];
+        ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          rcodcl1_mesh_u[n_b_faces*ii + face_id] = ddep_xyz[ii]/dt[c_id]/icpt;
+      }
+    }
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+      int icpt = 0;
+
+      if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_FIXED) {
+        icpt = 0;
+        if (icodcl_mesh_u[face_id] == 0) {
+          icpt ++;
+          icodcl_mesh_u[face_id] = 1;
+          rcodcl1_mesh_u[face_id] = 0;
+        }
+        if (icodcl_mesh_u[n_b_faces + face_id] == 0) {
+          icpt ++;
+          icodcl_mesh_u[n_b_faces + face_id] = 1;
+          rcodcl1_mesh_u[n_b_faces + face_id] = 0;
+        }
+        if (icodcl_mesh_u[n_b_faces*2 + face_id] == 0) {
+          icpt ++;
+          icodcl_mesh_u[n_b_faces*2 + face_id] = 1;
+          rcodcl1_mesh_u[n_b_faces*2 + face_id] = 0;
+        }
+
+        if (icpt == 3) {
+          const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+          const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
+          for (cs_lnum_t ii = s; ii < e; ii++) {
+            const cs_lnum_t vtx_id = m->b_face_vtx_lst[ii];
+            if (impale[vtx_id] == 0) {
+              impale[vtx_id] = 1;
+              for (cs_lnum_t jj = 0; jj < 3; jj++)
+                disale[vtx_id][jj] = 0;
+            }
+          }
+        }
+      }
+
+      /* Sliding face */
+      else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_SLIDING) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          if (icodcl_mesh_u[n_b_faces*ii + face_id] == 0)
+            icodcl_mesh_u[n_b_faces*ii + face_id] = 4;
+      }
+
+      /* Imposed mesh velocity face */
+      else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_IMPOSED_VEL) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          if (icodcl_mesh_u[n_b_faces*ii + face_id] == 0)
+            icodcl_mesh_u[n_b_faces*ii + face_id] = 1;
+      }
+
+      /* Free surface face: the mesh velocity is imposed by the mass flux */
+      else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_FREE_SURFACE) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          if (icodcl_mesh_u[n_b_faces*ii + face_id] == 0)
+            icodcl_mesh_u[n_b_faces*ii + face_id] = 1;
+      }
+
+    }
+
+    /* Check icodcl consistency
+     * ------------------------ */
+
+    int irkerr = -1;
+    int icoder[2] = {-1, -1};
+
+    /* When called before time loop, some values are not yet available. */
+    if (init == true)
+      return;
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (   icodcl_mesh_u[face_id] != 1
+          && icodcl_mesh_u[face_id] != 2
+          && icodcl_mesh_u[face_id] != 3
+          && icodcl_mesh_u[face_id] != 4) {
+        if (ale_bc_type[face_id] > 0)
+          ale_bc_type[face_id] = -ale_bc_type[face_id];
+        ierror[0] ++;
+      }
+
+      if (ale_bc_type[face_id] < 0) {
+        irkerr = cs_glob_rank_id;
+        icoder[0] = -ale_bc_type[face_id];
+        icoder[1] = icodcl_mesh_u[face_id];
+      }
+    }
+
+    cs_parall_max(1, CS_INT_TYPE, ierror);
+
+    if (ierror[0] > 0) {
+      cs_parall_max(1, CS_INT_TYPE, &irkerr);
+      cs_parall_bcast(irkerr, 2, CS_INT_TYPE, icoder);
+
+      bft_printf(_("ALE method\n\n"
+                   "At least one boundary face has the following boundary "
+                   "conditions for mesh velocity:\n\n"
+                   "  ale_bc_type: %d\n"
+                   "  mesh_u->bc_coeffs->icodcl[face_id]: %d\n\n"
+                   "The only allowed values for icodcl are\n"
+                   "  1: Dirichlet\n"
+                   "  2: Convective outlet\n"
+                   "  3: Neumann\n"
+                   "  4: Slip\n\n"
+                   "Check boundary condition definitions.\n"),
+                 icoder[0], icoder[1]);
+
+      cs_boundary_conditions_error(ale_bc_type, NULL);
+    }
+
+  } /* if (cs_glob_ale != CS_ALE_CDO) */
+
+  /* Fluid velocity BCs for walls and symmetries
+   * (due to mesh movement)
+   * ------------------------------------------- */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+    if (ale_bc_type[face_id] != CS_BOUNDARY_ALE_IMPOSED_VEL)
+      continue;
+
+    if (bc_type[face_id] == CS_SYMMETRY)
+      for(int ii = 0; ii < 3; ii++)
+        rcodcl1_vel[n_b_faces*ii + face_id]
+          = rcodcl1_mesh_u[n_b_faces*ii + face_id];
+
+    if (   bc_type[face_id] != CS_SMOOTHWALL
+        && bc_type[face_id] != CS_ROUGHWALL)
+      continue;
+
+    if (   rcodcl1_vel[n_b_faces*0 + face_id] > cs_math_infinite_r*0.5
+        && rcodcl1_vel[n_b_faces*1 + face_id] > cs_math_infinite_r*0.5
+        && rcodcl1_vel[n_b_faces*2 + face_id] > cs_math_infinite_r*0.5) {
+      for (int ii = 0; ii < 3; ii++)
+        rcodcl1_vel[n_b_faces*ii + face_id]
+          = rcodcl1_mesh_u[n_b_faces*ii + face_id];
+    }
+    else {
+      for (int ii = 0; ii < 3; ii++)
+        if (rcodcl1_vel[n_b_faces*ii + face_id] > cs_math_infinite_r*0.5)
+          rcodcl1_vel[n_b_faces*ii + face_id] = 0;
+
+      const cs_real_t srfbnf = surfbn[face_id];
+      const cs_real_t rnxyz[3] = {surfbo[face_id][0]/srfbnf,
+                                  surfbo[face_id][1]/srfbnf,
+                                  surfbo[face_id][2]/srfbnf};
+
+      const cs_real_t rcodcxyz[3] = {rcodcl1_vel[n_b_faces*0 + face_id],
+                                     rcodcl1_vel[n_b_faces*1 + face_id],
+                                     rcodcl1_vel[n_b_faces*2 + face_id]};
+      cs_real_t rcodsn = 0;
+      for (int ii = 0; ii < 3; ii++)
+        rcodsn
+          += (rcodcl1_mesh_u[n_b_faces*ii + face_id] - rcodcxyz[ii])*rnxyz[ii];
+
+      for (int ii = 0; ii < 3; ii++)
+        rcodcl1_vel[n_b_faces*ii + face_id] = rcodcxyz[ii] + rcodsn*rnxyz[ii];
+    }
+
+  }
+
+  BFT_FREE(_rcodcl1_mesh_u);
+}
 
 /*============================================================================
  * Public function definitions
@@ -546,11 +844,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     }
 
     if (cs_glob_ale > CS_ALE_NONE)
-      cs_f_altycl(bc_type,
-                  ale_bc_type,
-                  impale,
-                  false,
-                  dt);
+      _boundary_condition_ale_type(mesh,
+                                   fvq,
+                                   false,
+                                   dt,
+                                   bc_type);
 
     if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
       cs_f_mmtycl(bc_type);
@@ -3433,7 +3731,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 void
 cs_boundary_conditions_set_coeffs_init(void)
 {
-  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_t  *mesh = cs_glob_mesh;;
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
   const cs_lnum_t n_vertices  = mesh->n_vertices;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
@@ -3509,15 +3807,15 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   cs_internal_coupling_bcs(bc_type);
 
-  /* Treatment of types of bcs given by itypfb
+  /* Treatment of types of bcs given by bc_type
      ----------------------------------------- */
 
-  if (cs_glob_ale >= 1)
-    cs_f_altycl(bc_type,
-                ale_bc_type,
-                impale,
-                true,
-                dt);
+  if (cs_glob_ale > CS_ALE_NONE)
+    _boundary_condition_ale_type(mesh,
+                                 cs_glob_mesh_quantities,
+                                 true,
+                                 dt,
+                                 bc_type);
 
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
     cs_f_mmtycl(bc_type);

@@ -272,7 +272,6 @@ endif
 
 libcsbase_a_SOURCES = \
 addfld.f90 \
-altycl.f90 \
 calhyd.f90 \
 caltri.f90 \
 cs_mass_source_terms.c \
