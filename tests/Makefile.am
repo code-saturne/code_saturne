@@ -237,17 +237,17 @@ cs_rank_neighbors_test_SOURCES  = cs_rank_neighbors_test.c
 cs_rank_neighbors_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_rank_neighbors_test_LDADD    = $(LDADD_CS_TESTS)
 
-fvm_selector_test_SOURCES  = fvm_selector_test.c
-fvm_selector_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-fvm_selector_test_LDADD    = \
-$(top_builddir)/src/fvm/libfvm.a \
-$(LDADD_CS_TESTS)
+fvm_selector_test$(EXEEXT):
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o fvm_selector_postfix_test \
+	$(top_srcdir)/tests/fvm_selector_test.c
 
-fvm_selector_postfix_test_SOURCES  = fvm_selector_postfix_test.c
-fvm_selector_postfix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-fvm_selector_postfix_test_LDADD    = \
-$(top_builddir)/src/fvm/libfvm.a \
-$(LDADD_CS_TESTS)
+fvm_selector_postfix_test$(EXEEXT):
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o fvm_selector_postfix_test \
+	$(top_srcdir)/tests/fvm_selector_postfix_test.c
 
 cs_sizes_test_SOURCES  = cs_sizes_test.c
 cs_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
