@@ -122,6 +122,34 @@ typedef void
                     cs_gwf_tpf_t                *tpf,
                     double                      *rhog_h);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for the way to compute the value(s) of the mass
+ *        density in the gas phase for the component.
+ *
+ * \param[in]      id        entity id
+ * \param[in]      h_mh      pre-computed scaling coefficient for rhol_h
+ * \param[in]      mh_ov_rt  pre-computed scaling coefficient for rhog_h
+ * \param[in]      connect   additional adjacencies for CDO schemes
+ * \param[in]      cdoq      additional quantities for CDO schemes
+ * \param[in]      pg        values of the gas pressure
+ * \param[in, out] tpf       pointer to the model context to update
+ * \param[out]     rhog_h    computed value
+ * \param[out]     rhol_h    computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(_compute_rhogl_h_t)(cs_lnum_t                    id,
+                     double                       h_mh,
+                     double                       mh_ov_rt,
+                     const cs_cdo_connect_t      *connect,
+                     const cs_cdo_quantities_t   *cdoq,
+                     const cs_real_t             *pg,
+                     cs_gwf_tpf_t                *tpf,
+                     double                      *rhog_h,
+                     double                      *rhol_h);
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -138,7 +166,8 @@ static const char _output_varnames[CS_GWF_TPF_N_OUTPUT_VARS][32] = {
 
 };
 
-static _compute_rhog_h_t  *compute_rhog_h = NULL;
+static _compute_rhog_h_t   *compute_rhog_h = NULL;
+static _compute_rhogl_h_t  *compute_rhogl_h = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -247,13 +276,53 @@ _rhog_h_vtx(cs_lnum_t                    v_id,
   CS_NO_WARN_IF_UNUSED(tpf);
 
   const double  pg_vtx = pg[v_id];
-  *rhog_h = (pg_vtx > 0) ? mh_ov_rt * pg_vtx : 0.;
+  *rhog_h = mh_ov_rt * pg_vtx;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for the way to compute the value of the mass density
+ *        in the gas phase and in the liquid phase for the component. Clip
+ *        value at mesh vertices.
+ *
+ * \param[in]      v_id      vertex id
+ * \param[in]      h_mh      pre-computed scaling coefficient for rhol_h
+ * \param[in]      mh_ov_rt  pre-computed scaling coefficient for rhog_h
+ * \param[in]      connect   additional adjacencies for CDO schemes
+ * \param[in]      cdoq      additional quantities for CDO schemes
+ * \param[in]      pg        values of the gas pressure
+ * \param[in, out] tpf       pointer to the model context to update
+ * \param[out]     rhog_h    computed value
+ * \param[out]     rhol_h    computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_rhogl_h_vtx(cs_lnum_t                    v_id,
+             double                       h_mh,
+             double                       mh_ov_rt,
+             const cs_cdo_connect_t      *connect,
+             const cs_cdo_quantities_t   *cdoq,
+             const cs_real_t             *pg,
+             cs_gwf_tpf_t                *tpf,
+             double                      *rhog_h,
+             double                      *rhol_h)
+{
+  CS_NO_WARN_IF_UNUSED(connect);
+  CS_NO_WARN_IF_UNUSED(cdoq);
+  CS_NO_WARN_IF_UNUSED(tpf);
+
+  const double  p = pg[v_id];
+
+  *rhog_h = mh_ov_rt * p;
+  *rhol_h = h_mh * p;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the value(s) of the mass density in the gas phase for the
- *        component. Average over all cell vertices.
+ *        component. Average over all cell vertices. Clip negative gas
+ *        pressures.
  *
  * \param[in]      c_id      cell id
  * \param[in]      mh_ov_rt  value of the pre-computed scaling coefficient
@@ -274,6 +343,8 @@ _rhog_h_cell_mean(cs_lnum_t                    c_id,
                   cs_gwf_tpf_t                *tpf,
                   double                      *rhog_h)
 {
+  CS_NO_WARN_IF_UNUSED(tpf);
+
   const cs_adjacency_t  *c2v = connect->c2v;
 
   /* Compute the mean value in a cell */
@@ -284,7 +355,52 @@ _rhog_h_cell_mean(cs_lnum_t                    c_id,
 
   const double  pg_cell = pg_sum/cdoq->cell_vol[c_id];
 
-  *rhog_h = fmax(0., mh_ov_rt*pg_cell);
+  *rhog_h = mh_ov_rt*pg_cell;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for the way to compute the value of the mass density
+ *        in the gas phase and liquid phase for the component. Clip value at
+ *        mesh vertices.
+ *
+ * \param[in]      c_id      cell id
+ * \param[in]      h_mh      pre-computed scaling coefficient for rhol_h
+ * \param[in]      mh_ov_rt  pre-computed scaling coefficient for rhog_h
+ * \param[in]      connect   additional adjacencies for CDO schemes
+ * \param[in]      cdoq      additional quantities for CDO schemes
+ * \param[in]      pg        values of the gas pressure
+ * \param[in, out] tpf       pointer to the model context to update
+ * \param[out]     rhog_h    computed value
+ * \param[out]     rhol_h    computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rhogl_h_cell_mean(cs_lnum_t                    c_id,
+                   double                       h_mh,
+                   double                       mh_ov_rt,
+                   const cs_cdo_connect_t      *connect,
+                   const cs_cdo_quantities_t   *cdoq,
+                   const cs_real_t             *pg,
+                   cs_gwf_tpf_t                *tpf,
+                   double                      *rhog_h,
+                   double                      *rhol_h)
+{
+  CS_NO_WARN_IF_UNUSED(tpf);
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  /* Compute the mean value in a cell */
+
+  double  pg_sum = 0;
+  for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+    pg_sum += cdoq->pvol_vc[j] * pg[c2v->ids[j]];
+
+  const double  pg_cell = pg_sum/cdoq->cell_vol[c_id];
+
+  *rhog_h = mh_ov_rt * pg_cell;
+  *rhol_h = h_mh * pg_cell;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -319,7 +435,7 @@ _rhog_h_cell_upw(cs_lnum_t                    c_id,
 
   /* Compute the upwind mean value in a cell */
 
-  double  pg_mean = 0., pg_sum = 0;
+  double  pg_cen = 0., pg_upw = 0;
   for (cs_lnum_t j = c2e->idx[c_id] + 1; j < c2e->idx[c_id+1]; j++) {
 
     const cs_lnum_t  e_id = c2e->ids[j];
@@ -328,22 +444,85 @@ _rhog_h_cell_upw(cs_lnum_t                    c_id,
     const cs_lnum_t  v1 = (v_id[0] == v0) ? v_id[1] : v_id[0];
     const cs_real_t  pg_v0 = pg[v0], pg_v1 = pg[v1];
 
-    pg_mean += cdoq->pvol_ec[j] * (pg_v0 + pg_v1);
+    pg_cen += cdoq->pvol_ec[j] * (pg_v0 + pg_v1);
 
     /* Darcy flux is -grad() */
 
     if (cs_math_3_dot_product(grdpg, cdoq->edge_vector + 3*e_id) < 0)
-      pg_sum += cdoq->pvol_ec[j] * pg_v1;
+      pg_upw += cdoq->pvol_ec[j] * pg_v1;
     else
-      pg_sum += cdoq->pvol_ec[j] * pg_v0;
+      pg_upw += cdoq->pvol_ec[j] * pg_v0;
 
   }
 
   const double  vol_c = cdoq->cell_vol[c_id];
-  const double  rho_coef = mh_ov_rt / vol_c;
-
   const double  w = tpf->upwind_weight;
-  *rhog_h = fmax(0., rho_coef * (w*pg_sum + (1-w)*0.5*pg_mean));
+
+  *rhog_h = mh_ov_rt / vol_c * (w*pg_upw + (1-w)*0.5*pg_cen);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the value(s) of the mass density in the gas phase for the
+ *        component. Average over all cell vertices. Enable of portion of
+ *        upwinding.
+ *
+ * \param[in]      c_id      cell id
+ * \param[in]      mh_ov_rt  value of the pre-computed scaling coefficient
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      pg        values of the gas pressure
+ * \param[in, out] tpf       pointer to the model context to update
+ * \param[out]     rhog_h    computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rhogl_h_cell_upw(cs_lnum_t                    c_id,
+                  double                       h_mh,
+                  double                       mh_ov_rt,
+                  const cs_cdo_connect_t      *connect,
+                  const cs_cdo_quantities_t   *cdoq,
+                  const cs_real_t             *pg,
+                  cs_gwf_tpf_t                *tpf,
+                  double                      *rhog_h,
+                  double                      *rhol_h)
+{
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
+  const cs_real_t  *pl = tpf->l_pressure->val;
+
+  cs_real_3_t  grdpg, grdpl;
+  cs_reco_2grad_cell_from_pv(c_id, connect, cdoq, pg, pl, grdpg, grdpl);
+
+  /* Compute the upwind mean value in a cell */
+
+  double  pg_cen = 0., pg_g_upw = 0, pg_l_upw = 0;
+  for (cs_lnum_t j = c2e->idx[c_id] + 1; j < c2e->idx[c_id+1]; j++) {
+
+    const cs_lnum_t  e_id = c2e->ids[j];
+    const cs_lnum_t  *v_id = e2v->ids + 2*e_id;
+    const cs_lnum_t  v0 = (e2v->sgn[2*e_id] < 0) ? v_id[0] : v_id[1];
+    const cs_lnum_t  v1 = (v_id[0] == v0) ? v_id[1] : v_id[0];
+    const cs_real_t  pg_v0 = pg[v0], pg_v1 = pg[v1];
+
+    pg_cen += cdoq->pvol_ec[j] * (pg_v0 + pg_v1);
+
+    /* Darcy flux is -grad() */
+
+    if (cs_math_3_dot_product(grdpg, cdoq->edge_vector + 3*e_id) < 0)
+      pg_g_upw += cdoq->pvol_ec[j] * pg_v1;
+    else
+      pg_g_upw += cdoq->pvol_ec[j] * pg_v0;
+
+  }
+
+  const double  upww = tpf->upwind_weight;
+  const double  inv_vol_c = 1./cdoq->cell_vol[c_id];
+  const double  p = (upww*pg_g_upw + (1-upww)*0.5*pg_cen);
+
+  *rhog_h = inv_vol_c * mh_ov_rt * p;
+  *rhol_h = inv_vol_c * h_mh     * p;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1066,59 +1245,118 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
 
     /* Loop on cells belonging to this soil */
 
-    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+    switch (tpf->approx_type) {
 
-      const cs_lnum_t  c_id = zone->elt_ids[i];
+      /* ================================= */
+    case CS_GWF_TPF_APPROX_PC_CELL_AVERAGE:
+    case CS_GWF_TPF_APPROX_PC_CELL_VERTEX_AVERAGE:
+    case CS_GWF_TPF_APPROX_PC_EDGE_AVERAGE:
+    case CS_GWF_TPF_APPROX_PC_VERTEX_AVERAGE:
+      /* ================================= */
 
-      double  diff_g = 0, time_wc = 0, diff_wl = 0, time_hc = 0, time_hl = 0;
-      double  diff_hc = 0, diff_hl = 0;
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+        const cs_lnum_t  c_id = zone->elt_ids[i];
 
-        const cs_lnum_t  v_id = c2v->ids[j];
+        double  rhog_h, rhol_h;
+        compute_rhogl_h(c_id, hmh, mh_ov_rt, connect, cdoq, pg, tpf,
+                        &rhog_h, &rhol_h);
 
-        const double  rhog_h = (pg[v_id] > 0) ? mh_ov_rt * pg[v_id] : 0.;
-        const double  rhol_h = (pg[v_id] > 0) ? hmh * pg[v_id] : 0.;
-        const double  pvc = cdoq->pvol_vc[j];
-        const double  sl = lsat[c_id], sg = 1 - sl;
-        const double  dsl_dpc = lcap[c_id];
-        const double  krg_coef = krg[j] * g_diff_coef;
+        const double  krg_coef = krg[c_id] * g_diff_coef;
+        const double  krl_coef = krl[c_id] * l_diff_coef;
 
-        /* Update terms for the Darcy flux in the gaz phase */
+        /* Update terms for the Darcy flux in the gas phase */
 
-        diff_g += pvc * krg_coef;
+        diff_g_array[c_id] = krg_coef;
 
         /* Update terms associated to the water conservation equation */
 
-        time_wc += pvc * dsl_dpc;
-        diff_wl += pvc * krl[j];
+        const double  dsl_dpc = lcap[c_id];
+
+        time_wc_array[c_id] = dsl_dpc * phi_rhol;
+        diff_wl_array[c_id] = tpf->l_mass_density * krl_coef;
 
         /* Update terms associated to the hydrogen conservation equation */
 
-        const double  time_h_coef = mh_ov_rt*sg + hmh*sl;
+        const double  sl = lsat[c_id];
+        const double  time_h_coef = mh_ov_rt*(1 - sl) + hmh*sl;
 
-        time_hc += pvc * (time_h_coef + (rhol_h - rhog_h) * dsl_dpc);
-        time_hl += pvc * time_h_coef;
+        time_hc_array[c_id] = (time_h_coef + (rhol_h - rhog_h) * dsl_dpc) * phi;
+        time_hl_array[c_id] =  time_h_coef * phi;
+        diff_hc_array[c_id] = rhog_h * krg_coef;
+        diff_hl_array[c_id] = rhog_h * krg_coef + rhol_h * krl_coef;
 
-        diff_hc += pvc * rhog_h * krg_coef;
-        diff_hl += pvc * (rhog_h * krg_coef + rhol_h * l_diff_coef * krl[j]);
+      } /* Loop on cells of the zone (= soil) */
+      break;
 
-      } /* Loop on cell vertices */
+      /* ================================ */
+    case CS_GWF_TPF_APPROX_VERTEX_SUBCELL:
+      /* ================================ */
 
-      /* Define the cell values (what is stored in properties associated to
-         each term of an equation) */
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-      const double  inv_volc = 1./cdoq->cell_vol[c_id];
+        const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      diff_g_array[c_id]  = inv_volc * diff_g;
-      time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
-      diff_wl_array[c_id] = inv_volc * diff_wl * wl_diff_coef;
-      time_hc_array[c_id] = inv_volc * time_hc * phi;
-      time_hl_array[c_id] = inv_volc * time_hl * phi;
-      diff_hc_array[c_id] = inv_volc * diff_hc;
-      diff_hl_array[c_id] = inv_volc * diff_hl;
+        double  diff_g = 0, time_wc = 0, diff_wl = 0, time_hc = 0, time_hl = 0;
+        double  diff_hc = 0, diff_hl = 0;
 
-    } /* Loop on cells of the zone (= soil) */
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const cs_lnum_t  v_id = c2v->ids[j];
+
+          double  rhog_h, rhol_h;
+          compute_rhogl_h(v_id, hmh, mh_ov_rt, connect, cdoq, pg, tpf,
+                          &rhog_h, &rhol_h);
+
+          const double  pvc = cdoq->pvol_vc[j];
+          const double  sl = lsat[j], sg = 1 - sl;
+          const double  dsl_dpc = lcap[j];
+          const double  krg_coef = krg[j] * g_diff_coef;
+
+          /* Update terms for the Darcy flux in the gaz phase */
+
+          diff_g += pvc * krg_coef;
+
+          /* Update terms associated to the water conservation equation */
+
+          time_wc += pvc * dsl_dpc;
+          diff_wl += pvc * krl[j];
+
+          /* Update terms associated to the hydrogen conservation equation */
+
+          const double  time_h_coef = mh_ov_rt*sg + hmh*sl;
+
+          time_hc += pvc * (time_h_coef + (rhol_h - rhog_h) * dsl_dpc);
+          time_hl += pvc * time_h_coef;
+
+          diff_hc += pvc * rhog_h * krg_coef;
+          diff_hl += pvc * (rhog_h * krg_coef + rhol_h * l_diff_coef * krl[j]);
+
+        } /* Loop on cell vertices */
+
+        /* Define the cell values (what is stored in properties associated to
+           each term of an equation) */
+
+        const double  inv_volc = 1./cdoq->cell_vol[c_id];
+
+        diff_g_array[c_id]  = inv_volc * diff_g;
+
+        time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
+        diff_wl_array[c_id] = inv_volc * diff_wl * wl_diff_coef;
+
+        time_hc_array[c_id] = inv_volc * time_hc * phi;
+        time_hl_array[c_id] = inv_volc * time_hl * phi;
+        diff_hc_array[c_id] = inv_volc * diff_hc;
+        diff_hl_array[c_id] = inv_volc * diff_hl;
+
+      } /* Loop on cells of the zone (= soil) */
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid way to approximate coefficients.", __func__);
+      break;
+    }
 
   } /* Loop on soils */
 }
@@ -3087,14 +3325,18 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
 
   case CS_GWF_TPF_APPROX_VERTEX_SUBCELL:
     compute_rhog_h = _rhog_h_vtx;
+    compute_rhogl_h = _rhogl_h_vtx;
     break;
 
   default:
-    if (fabs(tpf->upwind_weight) < FLT_MIN) /* = 0 */
+    if (fabs(tpf->upwind_weight) < FLT_MIN) { /* = 0 */
       compute_rhog_h = _rhog_h_cell_mean;
+      compute_rhogl_h = _rhogl_h_cell_mean;
+    }
     else {
       tpf->upwind_weight = fmax(0., fmin(1., tpf->upwind_weight));
       compute_rhog_h = _rhog_h_cell_upw;
+      compute_rhogl_h = _rhogl_h_cell_upw;
     }
     break;
 
