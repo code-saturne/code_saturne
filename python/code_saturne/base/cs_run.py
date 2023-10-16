@@ -125,9 +125,11 @@ class multi_append_kv(argparse.Action):
         if getattr(namespace, self.dest) is None:
             setattr(namespace, self.dest, dict())
         for value in values:
-            for entry in value.split(';'):
-                key, val = entry.split('=')
-                getattr(namespace, self.dest)[key] = val
+            # allow unpacking following ";" and " "
+            for e1 in value.split(';'):
+                for e2 in e1.strip().split():
+                    key, val = e2.strip().split('=')
+                    getattr(namespace, self.dest)[key] = val
 
 #-------------------------------------------------------------------------------
 # Build command-line arguments parser
