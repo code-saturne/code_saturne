@@ -195,6 +195,7 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_qwstar = DBL_MAX,
   .meteo_qw1 = DBL_MAX,
   .meteo_qw2 = DBL_MAX,
+  .meteo_ql0 = 0.,
   .meteo_evapor = DBL_MAX,
   .meteo_sensi = DBL_MAX,
   .meteo_psea = 101325.,
@@ -2487,12 +2488,22 @@ cs_atmo_init_meteo_profiles(void)
     bft_error(__FILE__,__LINE__, 0,
               _("Atmo meteo profiles: gravity must not be 0.\n"));
 
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
-
   /* Reference fluid properties set from meteo values */
   phys_pro->p0 = aopt->meteo_psea;
   phys_pro->t0 = aopt->meteo_t0; /* ref temp T0 */
-  phys_pro->ro0 = phys_pro->p0/(rair * aopt->meteo_t0); /* ref density T0 */
+
+  /* Compute reference q_l, theta_liq and rho */
+  cs_real_t t_c = aopt->meteo_t0 - cs_physical_constants_celsius_to_kelvin;
+  cs_real_t q_sat = cs_air_yw_sat(t_c, aopt->meteo_psea);
+  aopt->meteo_ql0 = CS_MAX(aopt->meteo_qw0 - q_sat, 0.);
+  cs_real_t rvsra = phys_pro->rvsra;
+  cs_real_t rhum = rair*(1. + (rvsra - 1.)*(aopt->meteo_qw0 - aopt->meteo_ql0)
+                        - aopt->meteo_ql0);
+  phys_pro->ro0 = phys_pro->p0/(rhum * aopt->meteo_t0); /* ref density T0 */
+  cs_real_t clatev = phys_pro->clatev;
+  cs_real_t theta0 = (aopt->meteo_t0 - clatev/cp0 * aopt->meteo_ql0)
+                   * pow(pref/ aopt->meteo_psea, rscp);
+
 
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
@@ -2682,7 +2693,7 @@ cs_atmo_init_meteo_profiles(void)
     aopt->meteo_qw0    = qw1
       - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
     aopt->meteo_t0     = t1
-      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
+      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;//FIXME conversion theta->T
 
   }
 
@@ -2730,13 +2741,14 @@ cs_atmo_init_meteo_profiles(void)
 
   bft_printf("\n Meteo preprocessing values for computation:\n"
              "  dlmo=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n qwstar=%17.9e\n"
-             " t0=%17.9e\n qw0=%17.9e\n",
+             " t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n",
              aopt->meteo_dlmo,
              aopt->meteo_ustar0,
              aopt->meteo_tstar,
              aopt->meteo_qwstar,
              aopt->meteo_t0,
-             aopt->meteo_qw0);
+             aopt->meteo_qw0,
+             aopt->meteo_ql0);
 }
 
 /*----------------------------------------------------------------------------*/
