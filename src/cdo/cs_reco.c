@@ -1332,14 +1332,14 @@ cs_reco_grad_33_cell_from_fb_dofs(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value at the cell center of the gradient of a field
- *         defined on primal vertices.
+ * \brief Reconstruct the constant gradient vector in a cell (the mean value)
+ *        from the value at mesh vertices.
  *
  * \param[in]      c_id     cell id
  * \param[in]      connect  pointer to a cs_cdo_connect_t structure
  * \param[in]      quant    pointer to the additional quantities struct.
  * \param[in]      pdi      pointer to the array of values
- * \param[in, out] val_xc   value of the reconstructed gradient at cell center
+ * \param[in, out] grdc     value of the reconstructed gradient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1348,9 +1348,9 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
                           const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *pdi,
-                          cs_real_t                    val_xc[])
+                          cs_real_t                    grdc[])
 {
-  val_xc[0] = val_xc[1] = val_xc[2] = 0.;
+  grdc[0] = grdc[1] = grdc[2] = 0.;
 
   if (pdi == NULL)
     return;
@@ -1364,21 +1364,82 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
   for (cs_lnum_t i = 0; i < c2e_idx[1] - c2e_idx[0]; i++) {
 
     const cs_lnum_t  shift_e = 2*c2e_ids[i];
-    const short int  sgn_v1 = e2v->sgn[shift_e];
-    const cs_real_t  pv1 = pdi[e2v->ids[shift_e]];
-    const cs_real_t  pv2 = pdi[e2v->ids[shift_e+1]];
-    const cs_real_t  gdi_e = sgn_v1*(pv1 - pv2);
+    const short int  sgn_va = e2v->sgn[shift_e];
+    const cs_lnum_t  va = e2v->ids[shift_e], vb = e2v->ids[shift_e+1];
+
+    const cs_real_t  gdi_e = sgn_va*(pdi[va] - pdi[vb]);
 
     for (int k = 0; k < 3; k++)
-      val_xc[k] += gdi_e * dface[3*i+k];
+      grdc[k] += gdi_e * dface[3*i+k];
 
   } /* Loop on cell edges */
 
-  /* Divide by cell volume */
+  /* Divide by the cell volume */
 
   const double  invvol = 1/quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
-    val_xc[k] *= invvol;
+    grdc[k] *= invvol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the constant gradient vector in a cell (the mean value)
+ *        from the value at mesh vertices. Case of two scalar fields.
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      p1di     pointer to the array of values
+ * \param[in]      p2di     pointer to the array of values
+ * \param[in, out] grd1c    value of the reconstructed gradient for p1
+ * \param[in, out] grd2c    value of the reconstructed gradient for p2
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_2grad_cell_from_pv(cs_lnum_t                    c_id,
+                           const cs_cdo_connect_t      *connect,
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_real_t             *p1di,
+                           const cs_real_t             *p2di,
+                           cs_real_t                    grd1c[],
+                           cs_real_t                    grd2c[])
+{
+  grd1c[0] = grd1c[1] = grd1c[2] = 0.;
+  grd2c[0] = grd2c[1] = grd2c[2] = 0.;
+
+  if (p1di == NULL || p2di == NULL)
+    return;
+
+  const cs_adjacency_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_lnum_t  *c2e_idx = c2e->idx + c_id;
+  const cs_lnum_t  *c2e_ids = c2e->ids + c2e_idx[0];
+  const cs_real_t  *dface = quant->dface_normal + 3*c2e_idx[0];
+
+  for (cs_lnum_t i = 0; i < c2e_idx[1] - c2e_idx[0]; i++) {
+
+    const cs_lnum_t  shift_e = 2*c2e_ids[i];
+    const short int  sgn_va = e2v->sgn[shift_e];
+    const cs_lnum_t  va = e2v->ids[shift_e], vb = e2v->ids[shift_e+1];
+
+    const cs_real_t  g1di_e = sgn_va*(p1di[va] - p1di[vb]);
+    const cs_real_t  g2di_e = sgn_va*(p2di[va] - p2di[vb]);
+
+    for (int k = 0; k < 3; k++) {
+      grd1c[k] += g1di_e * dface[3*i+k];
+      grd2c[k] += g2di_e * dface[3*i+k];
+    }
+
+  } /* Loop on cell edges */
+
+  /* Divide by the cell volume */
+
+  const double  invvol = 1/quant->cell_vol[c_id];
+  for (int k = 0; k < 3; k++) {
+    grd1c[k] *= invvol;
+    grd2c[k] *= invvol;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

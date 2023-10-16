@@ -495,14 +495,14 @@ cs_reco_grad_33_cell_from_fb_dofs(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value at the cell center of the gradient of a field
- *         defined on primal vertices.
+ * \brief Reconstruct the constant gradient vector in a cell (the mean value)
+ *        from the value at mesh vertices.
  *
- * \param[in]      c_id    cell id
+ * \param[in]      c_id     cell id
  * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant   pointer to the additional quantities struct.
- * \param[in]      pdi     pointer to the array of values
- * \param[in, out] val_xc  value of the reconstructed gradient at cell center
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      pdi      pointer to the array of values
+ * \param[in, out] grdc     value of the reconstructed gradient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -511,7 +511,31 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
                           const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *pdi,
-                          cs_real_t                    val_xc[]);
+                          cs_real_t                    grdc[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the constant gradient vector in a cell (the mean value)
+ *        from the value at mesh vertices. Case of two scalar fields.
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      p1di     pointer to the array of values
+ * \param[in]      p2di     pointer to the array of values
+ * \param[in, out] grd1c    value of the reconstructed gradient for p1
+ * \param[in, out] grd2c    value of the reconstructed gradient for p2
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_2grad_cell_from_pv(cs_lnum_t                    c_id,
+                           const cs_cdo_connect_t      *connect,
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_real_t             *p1di,
+                           const cs_real_t             *p2di,
+                           cs_real_t                    grd1c[],
+                           cs_real_t                    grd2c[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
