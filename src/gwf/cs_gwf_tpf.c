@@ -220,58 +220,6 @@ _set_default_eqp_settings(cs_equation_param_t      *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define the different blocks building the coupled system
- *
- * \param[in, out] tpf     model context. Point to a cs_gwf_tpf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_set_coupled_system(cs_gwf_tpf_t    *tpf)
-{
-  /* Define the coupled system of equations */
-  /* -------------------------------------- */
-
-  cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(tpf->w_eq);
-  cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(tpf->h_eq);
-
-  _set_default_eqp_settings(b00_w_eqp);
-  _set_default_eqp_settings(b11_h_eqp);
-
-  /* Create the (0,1)-block related to the water in the gas phase */
-
-  tpf->b01_w_eqp = cs_equation_param_create("block01_w_eq",
-                                           CS_EQUATION_TYPE_GROUNDWATER,
-                                           1,
-                                           CS_PARAM_BC_HMG_NEUMANN);
-
-  _set_default_eqp_settings(tpf->b01_w_eqp);
-
-  /* Create the (1,0)-block related to the hydrogen in the liquid phase */
-
-  tpf->b10_h_eqp = cs_equation_param_create("block10_h_eq",
-                                           CS_EQUATION_TYPE_GROUNDWATER,
-                                           1,
-                                           CS_PARAM_BC_HMG_NEUMANN);
-
-  _set_default_eqp_settings(tpf->b10_h_eqp);
-
-  /* Add a 2x2 system of coupled equations and define each block */
-
-  tpf->system = cs_equation_system_add("two_phase_flow_porous_media",
-                                      2,   /* system size */
-                                      1);  /* scalar-valued block */
-
-  /* Set all the blocks in the coupled system */
-
-  cs_equation_system_assign_equation(0, tpf->w_eq, tpf->system);  /* (0,0) */
-  cs_equation_system_assign_equation(1, tpf->h_eq, tpf->system);  /* (1,1) */
-  cs_equation_system_assign_param(0, 1, tpf->b01_w_eqp, tpf->system);
-  cs_equation_system_assign_param(1, 0, tpf->b10_h_eqp, tpf->system);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute the value(s) of the mass density in the gas phase for the
  *        component. Clip value at mesh vertices.
  *
@@ -2087,6 +2035,58 @@ _compute_segregated(const cs_mesh_t              *mesh,
                              algo);
 
   BFT_FREE(dpc_kp1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the different blocks building the coupled system
+ *
+ * \param[in, out] tpf     model context. Point to a cs_gwf_tpf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_coupled_system(cs_gwf_tpf_t    *tpf)
+{
+  /* Define the coupled system of equations */
+  /* -------------------------------------- */
+
+  cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(tpf->w_eq);
+  cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(tpf->h_eq);
+
+  _set_default_eqp_settings(b00_w_eqp);
+  _set_default_eqp_settings(b11_h_eqp);
+
+  /* Create the (0,1)-block related to the water in the gas phase */
+
+  tpf->b01_w_eqp = cs_equation_param_create("block01_w_eq",
+                                           CS_EQUATION_TYPE_GROUNDWATER,
+                                           1,
+                                           CS_PARAM_BC_HMG_NEUMANN);
+
+  _set_default_eqp_settings(tpf->b01_w_eqp);
+
+  /* Create the (1,0)-block related to the hydrogen in the liquid phase */
+
+  tpf->b10_h_eqp = cs_equation_param_create("block10_h_eq",
+                                           CS_EQUATION_TYPE_GROUNDWATER,
+                                           1,
+                                           CS_PARAM_BC_HMG_NEUMANN);
+
+  _set_default_eqp_settings(tpf->b10_h_eqp);
+
+  /* Add a 2x2 system of coupled equations and define each block */
+
+  tpf->system = cs_equation_system_add("two_phase_flow_porous_media",
+                                      2,   /* system size */
+                                      1);  /* scalar-valued block */
+
+  /* Set all the blocks in the coupled system */
+
+  cs_equation_system_assign_equation(0, tpf->w_eq, tpf->system);  /* (0,0) */
+  cs_equation_system_assign_equation(1, tpf->h_eq, tpf->system);  /* (1,1) */
+  cs_equation_system_assign_param(0, 1, tpf->b01_w_eqp, tpf->system);
+  cs_equation_system_assign_param(1, 0, tpf->b10_h_eqp, tpf->system);
 }
 
 /*----------------------------------------------------------------------------*/
