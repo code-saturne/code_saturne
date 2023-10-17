@@ -1334,13 +1334,13 @@ cs_cdocb_scaleq_setup(cs_real_t                      t_eval,
   BFT_MALLOC(eqb->dir_values, cdoq->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(cdoq->n_b_faces, eqb->dir_values);
 
-  cs_equation_compute_dirichlet_cb(mesh,
-                                   cdoq,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   t_eval,
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_faces(mesh,
+                                    cdoq,
+                                    connect,
+                                    eqp,
+                                    eqb->face_bc,
+                                    t_eval,
+                                    eqb->dir_values);
 
   /* Internal enforcement of DoFs */
 

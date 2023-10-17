@@ -635,7 +635,7 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
   else if (mesh != NULL)
     v_coords = mesh->vtx_coord;
   else {
-    v_coords = NULL;/* avoid a compilation warning */
+    v_coords = NULL; /* avoid a compilation warning */
     bft_error(__FILE__, __LINE__, 0, "%s: No vertex coordinates available.",
               __func__);
   }

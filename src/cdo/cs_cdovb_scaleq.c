@@ -2052,15 +2052,12 @@ cs_cdovb_scaleq_setup(cs_real_t                      t_eval,
 
   BFT_MALLOC(eqb->dir_values, quant->n_vertices, cs_real_t);
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _svb_cell_builder[0], /* static variable */
-                                   vtx_bc_flag,
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       vtx_bc_flag,
+                                       eqb->dir_values);
 
   /* Internal enforcement of DoFs */
 
@@ -2421,15 +2418,12 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _svb_cell_builder[0], /* static variable */
-                                   eqc->vtx_bc_flag,
-                                   v_vals);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       eqc->vtx_bc_flag,
+                                       v_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4483,12 +4477,12 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           /* Robin BC expression: -K du/dn = alpha*(u - u0) + beta */
 
-          cs_equation_compute_robin(cb->t_bc_eval,
-                                    face_bc->def_ids[bf_id],
-                                    f,
-                                    eqp,
-                                    cm,
-                                    robin_values);
+          cs_equation_bc_cw_robin(cb->t_bc_eval,
+                                  face_bc->def_ids[bf_id],
+                                  f,
+                                  eqp,
+                                  cm,
+                                  robin_values);
 
           const cs_real_t  alpha = robin_values[0];
           const cs_real_t  u0 = robin_values[1];

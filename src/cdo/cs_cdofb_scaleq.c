@@ -179,10 +179,10 @@ _setup(cs_real_t                     t_eval,
   BFT_MALLOC(eqb->dir_values, quant->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(quant->n_b_faces, eqb->dir_values);
 
-  cs_equation_compute_dirichlet_fb(mesh, quant, connect, eqp, eqb->face_bc,
-                                   t_eval,
-                                   cs_cdofb_cell_bld[0], /* static variable */
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_faces(mesh, quant, connect,
+                                    eqp, eqb->face_bc,
+                                    t_eval,
+                                    eqb->dir_values);
 
   /* Internal enforcement of DoFs  */
 
@@ -1250,14 +1250,14 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
 
-  cs_equation_compute_dirichlet_fb(mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   t_eval,
-                                   cs_cdofb_cell_bld[0],
-                                   f_vals + quant->n_i_faces);
+  cs_real_t  *b_f_vals = f_vals + quant->n_i_faces;
+  cs_equation_bc_dirichlet_at_faces(mesh,
+                                    quant,
+                                    connect,
+                                    eqp,
+                                    eqb->face_bc,
+                                    t_eval,
+                                    b_f_vals);
 
   if (eqc->face_values_pre != NULL)
     cs_array_real_copy(quant->n_faces, eqc->face_values, eqc->face_values_pre);

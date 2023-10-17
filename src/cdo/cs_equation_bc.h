@@ -99,22 +99,22 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the values for the normal boundary flux stemming from the
- *         Neumann boundary conditions (zero is left where a Dirichlet is
- *         set. This can be updated later one)
+ * \brief Set the values for the normal boundary flux stemming from the Neumann
+ *        boundary conditions (zero is left where a Dirichlet is set. This can
+ *        be updated later on)
  *
- * \param[in]       t_eval   time at which one performs the evaluation
- * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
- * \param[in]       eqp      pointer to a cs_equation_param_t structure
- * \param[in, out]  values   pointer to the array of values to set
+ * \param[in]      t_eval   time at which one performs the evaluation
+ * \param[in]      cdoq     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] values   pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
-                                       const cs_cdo_quantities_t  *cdoq,
-                                       const cs_equation_param_t  *eqp,
-                                       cs_real_t                  *values);
+cs_equation_bc_init_boundary_flux(cs_real_t                     t_eval,
+                                  const cs_cdo_quantities_t    *cdoq,
+                                  const cs_equation_param_t    *eqp,
+                                  cs_real_t                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -245,8 +245,8 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
- *          vertices
+ * \brief Compute the values of the Dirichlet BCs when DoFs are attached to
+ *        vertices
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      mesh        pointer to a cs_mesh_t structure
@@ -254,53 +254,26 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] bcflag      pointer to an array storing type of BC
  * \param[in, out] values      pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
-                                 const cs_mesh_t            *mesh,
-                                 const cs_cdo_quantities_t  *quant,
-                                 const cs_cdo_connect_t     *connect,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_face_t     *face_bc,
-                                 cs_cell_builder_t          *cb,
-                                 cs_flag_t                  *bcflag,
-                                 cs_real_t                  *values);
+cs_equation_bc_dirichlet_at_vertices(cs_real_t                   t_eval,
+                                     const cs_mesh_t            *mesh,
+                                     const cs_cdo_quantities_t  *quant,
+                                     const cs_cdo_connect_t     *connect,
+                                     const cs_equation_param_t  *eqp,
+                                     const cs_cdo_bc_face_t     *face_bc,
+                                     cs_flag_t                  *bcflag,
+                                     cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the values of the Dirichlet BCs when DoFs are attached to CDO
- *        face-based schemes
- *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
- * \param[in]      t_eval     time at which one evaluates the boundary cond.
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- * \param[in, out] values     pointer to the array of values to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
-                                 const cs_cdo_quantities_t  *quant,
-                                 const cs_cdo_connect_t     *connect,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_face_t     *face_bc,
-                                 cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb,
-                                 cs_real_t                  *values);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
- *          CDO cell-based schemes
+ * \brief Compute the values of the Dirichlet BCs at boundary faces.
+ *        This can be applied to CDO face-based schemes (DoFs are attached to
+ *        primal faces), to CDO cell-based schemes or even to FV schemes.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
@@ -313,35 +286,13 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
-                                 const cs_cdo_quantities_t  *quant,
-                                 const cs_cdo_connect_t     *connect,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_face_t     *face_bc,
-                                 cs_real_t                   t_eval,
-                                 cs_real_t                  *values);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the values of the Neumann BCs when DoFs are attached to
- *          CDO cell-based schemes
- * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in]      def_id      id of the definition for setting the Neumann BC
- * \param[in]      f           local face number in the cs_cell_mesh_t
- * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in, out] neu_values  array storing the Neumann values for all DoFs
-
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_compute_neumann_cb(cs_real_t                   t_eval,
-                               short int                   def_id,
-                               short int                   f,
-                               const cs_equation_param_t  *eqp,
-                               const cs_cell_mesh_t       *cm,
-                               double                     *neu_values);
+cs_equation_bc_dirichlet_at_faces(const cs_mesh_t            *mesh,
+                                  const cs_cdo_quantities_t  *quant,
+                                  const cs_cdo_connect_t     *connect,
+                                  const cs_equation_param_t  *eqp,
+                                  const cs_cdo_bc_face_t     *face_bc,
+                                  cs_real_t                   t_eval,
+                                  cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -460,7 +411,8 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Robin BCs
+ * \brief Compute the values of the Robin BCs for a face (cell-wise compute
+ *        relying on the cs_cell_mesh_t structure)
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
@@ -472,18 +424,19 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_robin(cs_real_t                    t_eval,
-                          short int                    def_id,
-                          short int                    f,
-                          const cs_equation_param_t   *eqp,
-                          const cs_cell_mesh_t        *cm,
-                          double                      *rob_values);
+cs_equation_bc_cw_robin(cs_real_t                    t_eval,
+                        short int                    def_id,
+                        short int                    f,
+                        const cs_equation_param_t   *eqp,
+                        const cs_cell_mesh_t        *cm,
+                        double                      *rob_values);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the tangential component lying on the domain
- *          boundary. Kind of BCs used when DoFs are attached to CDO (primal)
- *          edge-based schemes. One sets the values of the circulation.
+ * \brief Compute the values of the circulation along primal edges lying on the
+ *        domain boundary (the integral of the tangential component of
+ *        vector-valued field). This is used for CDO edge-based schemes where
+ *        DoFs are attached to (primal) edge-based schemes.
  *
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
  * \param[in]      mesh       pointer to a cs_mesh_t structure
@@ -495,12 +448,12 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
-                                   const cs_mesh_t             *mesh,
-                                   const cs_cdo_quantities_t   *quant,
-                                   const cs_cdo_connect_t      *connect,
-                                   const cs_equation_param_t   *eqp,
-                                   cs_real_t                   *values);
+cs_equation_bc_circulation_at_edges(cs_real_t                    t_eval,
+                                    const cs_mesh_t             *mesh,
+                                    const cs_cdo_quantities_t   *quant,
+                                    const cs_cdo_connect_t      *connect,
+                                    const cs_equation_param_t   *eqp,
+                                    cs_real_t                   *values);
 
 /*----------------------------------------------------------------------------*/
 /*!

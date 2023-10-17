@@ -196,15 +196,12 @@ _vvb_setup(cs_real_t                      t_eval,
 
   BFT_MALLOC(eqb->dir_values, 3*quant->n_vertices, cs_real_t);
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _vvb_cell_builder[0], /* static variable */
-                                   vtx_bc_flag,
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       vtx_bc_flag,
+                                       eqb->dir_values);
 
   /* Internal enforcement of DoFs */
 
@@ -1314,15 +1311,12 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _vvb_cell_builder[0], /* static variable */
-                                   eqc->vtx_bc_flag,
-                                   v_vals);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       eqc->vtx_bc_flag,
+                                       v_vals);
 }
 
 /*----------------------------------------------------------------------------*/
