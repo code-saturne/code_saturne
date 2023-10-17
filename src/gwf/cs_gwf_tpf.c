@@ -1196,6 +1196,7 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
   const cs_adjacency_t  *c2v = connect->c2v;
 
   const double  hmh = tpf->h_molar_mass * tpf->henry_constant;
+  const double  hmh_dhl = hmh * tpf->l_diffusivity_h;
   const double  mh_ov_rt =
     tpf->h_molar_mass / (tpf->ref_temperature * cs_physical_constants_r);
 
@@ -1237,11 +1238,10 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
 
     const double  k_abs = soil->abs_permeability[0][0];
     const double  phi = soil->porosity;
-    const double  phi_rhol = phi * tpf->l_mass_density;
-
+    const double  rhol = tpf->l_mass_density;
+    const double  phi_rhol = phi * rhol;
     const double  g_diff_coef = k_abs/tpf->g_viscosity;
     const double  l_diff_coef = k_abs/tpf->l_viscosity;
-    const double  wl_diff_coef = tpf->l_mass_density * l_diff_coef;
 
     /* Loop on cells belonging to this soil */
 
@@ -1274,7 +1274,7 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
         const double  dsl_dpc = lcap[c_id];
 
         time_wc_array[c_id] = dsl_dpc * phi_rhol;
-        diff_wl_array[c_id] = tpf->l_mass_density * krl_coef;
+        diff_wl_array[c_id] = krl_coef * rhol;
 
         /* Update terms associated to the hydrogen conservation equation */
 
@@ -1283,8 +1283,11 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
 
         time_hc_array[c_id] = (time_h_coef + (rhol_h - rhog_h) * dsl_dpc) * phi;
         time_hl_array[c_id] =  time_h_coef * phi;
-        diff_hc_array[c_id] = rhog_h * krg_coef;
-        diff_hl_array[c_id] = rhog_h * krg_coef + rhol_h * krl_coef;
+
+        const double  diff_h_common_coef = rhog_h * krg_coef + sl * hmh_dhl;
+
+        diff_hc_array[c_id] = diff_h_common_coef;
+        diff_hl_array[c_id] = diff_h_common_coef + rhol_h * krl_coef;
 
       } /* Loop on cells of the zone (= soil) */
       break;
@@ -1312,6 +1315,7 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
           const double  sl = lsat[j], sg = 1 - sl;
           const double  dsl_dpc = lcap[j];
           const double  krg_coef = krg[j] * g_diff_coef;
+          const double  krl_coef = krl[j] * l_diff_coef;
 
           /* Update terms for the Darcy flux in the gaz phase */
 
@@ -1320,7 +1324,7 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
           /* Update terms associated to the water conservation equation */
 
           time_wc += pvc * dsl_dpc;
-          diff_wl += pvc * krl[j];
+          diff_wl += pvc * krl_coef;
 
           /* Update terms associated to the hydrogen conservation equation */
 
@@ -1329,8 +1333,10 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
           time_hc += pvc * (time_h_coef + (rhol_h - rhog_h) * dsl_dpc);
           time_hl += pvc * time_h_coef;
 
-          diff_hc += pvc * rhog_h * krg_coef;
-          diff_hl += pvc * (rhog_h * krg_coef + rhol_h * l_diff_coef * krl[j]);
+          const double  diff_h_common_coef = rhog_h * krg_coef + sl * hmh_dhl;
+
+          diff_hc += pvc * diff_h_common_coef;
+          diff_hl += pvc * (diff_h_common_coef + rhol_h * krl_coef);
 
         } /* Loop on cell vertices */
 
@@ -1342,7 +1348,7 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
         diff_g_array[c_id]  = inv_volc * diff_g;
 
         time_wc_array[c_id] = inv_volc * time_wc * phi_rhol;
-        diff_wl_array[c_id] = inv_volc * diff_wl * wl_diff_coef;
+        diff_wl_array[c_id] = inv_volc * diff_wl * rhol;
 
         time_hc_array[c_id] = inv_volc * time_hc * phi;
         time_hl_array[c_id] = inv_volc * time_hl * phi;
