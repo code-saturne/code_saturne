@@ -2919,9 +2919,13 @@ cs_ctwr_source_term(int              f_id,
         /* Liquid mass flux */
         cs_real_t mass_flux_l = rho_h[cell_id] * y_l[cell_id] * vel_l[cell_id];
 
-        /* Evaporation coefficient 'Beta_x' times exchange surface 'a' */
-        cs_real_t beta_x_ai
-          = a_0*mass_flux_l*pow((mass_flux_h/mass_flux_l), xnp);
+        /* Evaporation coefficient 'Beta_x' (kg/m2/s) times exchange surface
+         * per unit of volume 'ai' (m2/m3)*/
+        cs_real_t beta_x_ai = 0.;
+        /* There is evaporation only if we have an injected liquid flow */
+        if (mass_flux_l > 0.){
+          beta_x_ai = a_0*mass_flux_l*pow((mass_flux_h/mass_flux_l), xnp);
+        }
 
         /* Source terms for the different equations */
 
