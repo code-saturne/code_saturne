@@ -2102,7 +2102,8 @@ cs_property_def_by_time_func(cs_property_t      *pty,
   int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_time_func_context_t  tfc = { .func = func,
+  cs_xdef_time_func_context_t  tfc = { .z_id = z_id,
+                                       .func = func,
                                        .input = input,
                                        .free_input = NULL };
 
@@ -2181,7 +2182,8 @@ cs_property_boundary_def_by_time_func(cs_property_t      *pty,
   int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_time_func_context_t  tfc = { .func = func,
+  cs_xdef_time_func_context_t  tfc = { .z_id = z_id,
+                                       .func = func,
                                        .input = input,
                                        .free_input = NULL };
 

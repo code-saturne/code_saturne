@@ -365,6 +365,12 @@ typedef struct {
 
 typedef struct {
 
+  /*! \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   */
+
+  int                    z_id;
+
   /*! \var func
    * pointer to a \ref cs_time_func_t to call
    */
