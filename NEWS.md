@@ -1,3 +1,11 @@
+Release 8.0.3 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix cooling towers thermal exchange source terms in the packing zone.
+
+
 Release 8.0.2 (2023-10-10)
 --------------------------
 

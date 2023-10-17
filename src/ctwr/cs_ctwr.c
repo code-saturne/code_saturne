@@ -2563,6 +2563,9 @@ cs_ctwr_source_term(int              f_id,
         /* Injected liquid enthalpy equation (solve in drift model form)
          * NB: it is in fact "y_l x h_l" */
         else if (f_id == (CS_F_(h_l)->id)) {
+          /* Liquid temperature in Kelvin */
+          cs_real_t t_l_k = t_l[cell_id]
+                            + cs_physical_constants_celsius_to_kelvin;
           /* Implicit term */
           cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
           cs_real_t l_imp_st = vol_mass_source;
@@ -2575,7 +2578,11 @@ cs_ctwr_source_term(int              f_id,
             cs_real_t coefh = vol_beta_x_ai * (xlew * cp_h
                 + (x_s_tl - x[cell_id]) * cp_v
                 / (1. + x[cell_id]));
-            exp_st[cell_id] += coefh * (t_h[cell_id] - t_l[cell_id]);
+
+            exp_st[cell_id] -= vol_beta_x_ai * ((x_s_tl - x[cell_id])
+                                                * (cp_v * t_l_k + hv0)
+                                                + xlew * cp_h
+                                                *(t_l[cell_id] - t_h[cell_id]));
             /* Over saturated */
           }
           else {
