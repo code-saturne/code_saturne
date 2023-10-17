@@ -512,8 +512,7 @@ cs_ctwr_add_variable_fields(void)
      * (here : injected liquid water variables)
      * We set the bit corresponding to drift flux computation to 1.
      * TODO (from old .f90 file) : make it optional ?*/
-    int drift = CS_DRIFT_SCALAR_ON;
-    drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+    int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
 
     cs_field_set_key_int(f, keydri, drift);
 
@@ -543,7 +542,7 @@ cs_ctwr_add_variable_fields(void)
     /* Scalar with drift, but do not create an additional mass flux for the
      * enthalpy (use ^= to reset the bit for drift flux calculation).
      * It reuses the mass flux already identified with the mass fraction. */
-    drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+    drift = CS_DRIFT_SCALAR_ON;
 
     cs_field_set_key_int(f, keydri, drift);
 
@@ -575,7 +574,7 @@ cs_ctwr_add_variable_fields(void)
       cs_add_model_field_indexes(f_id);
 
       /* Scalar with drift, but do not create an additional mass flux */
-      drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+      drift = CS_DRIFT_SCALAR_ON;
       cs_field_set_key_int(f, keydri, drift);
 
       //TODO : Check equation parameters to set for v_p_ */
@@ -606,9 +605,8 @@ cs_ctwr_add_variable_fields(void)
      * (here : injected liquid water variables)
      * We set the bit corresponding to drift flux computation to 1.
      * TODO (from old .f90 file) : make it optional ?*/
-    int drift = CS_DRIFT_SCALAR_ON;
-    drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
-    drift |= CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
+    int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX
+                + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
 
     cs_field_set_key_int(f, keydri, drift);
 
@@ -644,7 +642,7 @@ cs_ctwr_add_variable_fields(void)
     /* Scalar with drift, but do not create an additional mass flux for the
      * enthalpy (use ^= to reset the bit for drift flux calculation).
      * It reuses the mass flux already identified with the mass fraction. */
-    drift ^= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+    drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
 
     cs_field_set_key_int(f, keydri, drift);
 
