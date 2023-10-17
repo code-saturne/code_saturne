@@ -3885,12 +3885,12 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
     const cs_real_t  *pc = tpf->c_pressure->val;
     const cs_real_t  *pg = tpf->g_pressure->val;
     const cs_real_t  *pl = tpf->l_pressure->val;
-    const cs_real_t  *lsat = cs_property_get_array(tpf->lsat_pty);
+    const cs_real_t  *lsat = tpf->l_saturation->val;
     const cs_real_t  *lcap = cs_property_get_array(tpf->lcap_pty);
 
-    int  n_soils = cs_gwf_get_n_soils();
-    int  n_outputs = 2 * n_soils * CS_GWF_TPF_N_OUTPUT_VARS;
-    int  n_min_outputs = n_soils * CS_GWF_TPF_N_OUTPUT_VARS;
+    const int  n_soils = cs_gwf_get_n_soils();
+    const int  n_min_outputs = n_soils * CS_GWF_TPF_N_OUTPUT_VARS;
+    const int  n_outputs = 2 * n_min_outputs;
 
     cs_real_t  *output_values = NULL;
 
@@ -3915,6 +3915,18 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
         const cs_lnum_t  c_id = z->elt_ids[i];
+        const double  _lsat = lsat[c_id];
+
+        _minv[3] = fmin(_minv[3], _lsat); /* SlMin */
+        _maxv[3] = fmax(_maxv[3], _lsat); /* SlMax */
+
+        if (tpf->approx_type != CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
+
+          const double _lcap = lcap[c_id];
+          _minv[4] = fmin(_minv[4], _lcap); /* ClMin */
+          _maxv[4] = fmax(_maxv[4], _lcap); /* ClMax */
+
+        }
 
         for (cs_lnum_t ii = c2v->idx[c_id]; ii < c2v->idx[c_id+1]; ii++) {
 
@@ -3929,11 +3941,12 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
           _minv[2] = fmin(_minv[2], pc[v_id]); /* PcMin */
           _maxv[2] = fmax(_maxv[2], pc[v_id]); /* PcMax */
 
-          _minv[3] = fmin(_minv[3], lsat[ii]); /* SlMin */
-          _maxv[3] = fmax(_maxv[3], lsat[ii]); /* SlMax */
+          if (tpf->approx_type == CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
 
-          _minv[4] = fmin(_minv[4], lcap[ii]); /* ClMin */
-          _maxv[4] = fmax(_maxv[4], lcap[ii]); /* ClMax */
+            _minv[4] = fmin(_minv[4], lcap[ii]); /* ClMin */
+            _maxv[4] = fmax(_maxv[4], lcap[ii]); /* ClMax */
+
+          }
 
         } /* Loop on cell vertices */
 
