@@ -3268,9 +3268,10 @@ cs_ctwr_source_term(int              f_id,
           else if (f_id == cfld_yt_rain->id) {
             // FIXME: There should be a y_p factor in there so that
             // mass and enthalpy are compatible
-            //The transported variable is y_rain * H_rain
-            vol_mass_source = vol_mass_source * cp_l;
-            // For temperature equation of the rain
+            /* The transported variable is y_rain * T_rain */
+            /* Since it is treated as a scalar, no multiplication by cp_l is
+             * required */
+            /* For temperature equation of the rain */
             exp_st[cell_id_rain] +=   vol_mass_source
                                     * (t_l[cell_id_leak]
                                        - f_var[cell_id_rain]);
