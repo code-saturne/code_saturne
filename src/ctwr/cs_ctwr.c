@@ -140,6 +140,7 @@ struct _cs_ctwr_zone_t {
 
   cs_real_t  xleak_fac;          /* Leakage factor (ratio of outlet/inlet
                                     flow rate) */
+  cs_real_t  v_liq_pack;         /* Vertical liquid film velocity in packing */
 
   cs_lnum_t  n_cells;            /* Number of air cells belonging to the zone */
 
@@ -1225,6 +1226,8 @@ cs_ctwr_define(const char           zone_criteria[],
   ct->surface = surface;
 
   ct->xleak_fac = xleak_fac;
+  ct->v_liq_pack = 0.1; /* Usual value of liquid film velocity in packing,
+                           see Jourdan et al. 2022 IEC research */
 
   ct->n_cells = 0;
 
@@ -1898,7 +1901,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
       /* Initialize the liquid vertical velocity component
        * this is correct for droplet and extended for other packing zones */
-      vel_l[cell_id] = cpro_taup[cell_id] * cs_math_3_norm(gravity);
+      vel_l[cell_id] = ct->v_liq_pack;
 
       /* Note that rho_h * Y_l * vel_l * Stot = q_l_bc */
       cs_real_t y_l_bc =   ct->q_l_bc
@@ -2381,7 +2384,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
       /* Initialize the liquid vertical velocity component
        * this is correct for droplet and extended for other packing zones */
-      vel_l[cell_id] = cpro_taup[cell_id] * cs_math_3_norm(gravity);
+      vel_l[cell_id] = ct->v_liq_pack;
 
     }
   }
