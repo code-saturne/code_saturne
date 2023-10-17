@@ -777,8 +777,8 @@ cs_gwf_add_iso_soil(const char                *z_name,
 
   if (zone == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " Zone %s related to the same soil is not defined.\n"
-              " Stop adding a new soil.", z_name);
+              "%s: Zone named \"%s\" is not defined.\n"
+              " Stop adding a new soil.", __func__, z_name);
 
   assert(density > 0);
   assert(k_abs > 0);
@@ -829,8 +829,8 @@ cs_gwf_add_aniso_soil(const char                *z_name,
 
   if (zone == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " Zone %s related to the same soil is not defined.\n"
-              " Stop adding a new soil.", z_name);
+              "%s: Zone named \"%s\" is not defined.\n"
+              " Stop adding a new soil.", __func__, z_name);
 
   assert(density > 0);
   assert(porosity > 0);
