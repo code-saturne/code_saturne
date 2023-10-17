@@ -2317,12 +2317,12 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
     /* Clippings of water mass fraction */
     if (y_w[cell_id] < 0.0){
       y_w[cell_id] = 0;
-      nclip_yw_min += 1; //TODO : print it
+      nclip_yw_min += 1;
     }
 
     if (y_w[cell_id] >= 1.0){
       y_w[cell_id] = 1. - cs_math_epzero;
-      nclip_yw_max += 1; //TODO : print it
+      nclip_yw_max += 1;
     }
     x[cell_id] = y_w[cell_id]/(1.0-y_w[cell_id]);
 
@@ -2398,6 +2398,19 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
       drift_vel[cell_id][2] = cpro_taup[cell_id] * gravity[2];
     }
 
+  }
+
+  cs_gnum_t n_g_clip_yw_min = nclip_yw_min;
+  cs_gnum_t n_g_clip_yw_max = nclip_yw_max;
+
+  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_min);
+  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_max);
+
+  /* Printing clips in listing */
+  if (n_g_clip_yw_min >= 1 || n_g_clip_yw_max >= 1) {
+    bft_printf("WARNING : clipping on water mass fraction at restart in"
+               "cs_ctwr_restart_field_vars : min_clip = %llu, max_clip = %llu\n",
+                n_g_clip_yw_min, n_g_clip_yw_max);
   }
 
   /* Loop over exchange zones */
@@ -2531,21 +2544,22 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     /* Clippings of water mass fraction */
     if (y_w[cell_id] < 0.0){
       y_w[cell_id] = 0;
-      nclip_yw_min += 1; //TODO : print it
+      nclip_yw_min += 1;
     }
     if (y_w[cell_id] >= 1.0){
       y_w[cell_id] = 1. - cs_math_epzero;
-      nclip_yw_max += 1; //TODO : print it
+      nclip_yw_max += 1;
     }
     if (y_p != NULL) {
       if (y_p[cell_id] < 0.0){
-        y_p[cell_id] = 0; //TODO count it
+        y_p[cell_id] = 0;
         nclip_yp_min += 1;
       }
       if ((y_p[cell_id] + y_w[cell_id]) >= 1.0){
-        y_p[cell_id] = 1. - y_w[cell_id] - cs_math_epzero; //TODO count it
+        y_p[cell_id] = 1. - y_w[cell_id] - cs_math_epzero;
         nclip_yp_max += 1;
       }
+
       /* Continuous phase mass fraction */
       cpro_x1[cell_id] = 1. - y_p[cell_id];
       //TODO not one for rain zones - Why not?
@@ -2602,6 +2616,30 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
                                          molmassrat,
                                          t_h[cell_id]);
 
+  }
+
+  cs_gnum_t n_g_clip_yw_min = nclip_yw_min;
+  cs_gnum_t n_g_clip_yw_max = nclip_yw_max;
+
+  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_min);
+  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_max);
+
+  cs_gnum_t n_g_clip_yp_min = nclip_yp_min;
+  cs_gnum_t n_g_clip_yp_max = nclip_yp_max;
+
+  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yp_min);
+  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yp_max);
+
+  /* Printing clips in listing */
+  if (n_g_clip_yp_min >= 1 || n_g_clip_yp_max >= 1) {
+    bft_printf("WARNING : clipping on rain mass fraction"
+                "in cs_ctwr_phyvar_update : min_clip = %llu, max_clip = %llu\n",
+                n_g_clip_yp_min, n_g_clip_yp_max);
+  }
+  if (n_g_clip_yw_min >= 1 || n_g_clip_yw_max >= 1) {
+    bft_printf("WARNING : clipping on water mass fraction"
+                "in cs_ctwr_phyvar_update : min_clip = %llu, max_clip = %llu\n",
+                n_g_clip_yw_min, n_g_clip_yw_max);
   }
 
   /* If solving rain velocity */
@@ -3206,7 +3244,7 @@ cs_ctwr_source_term(int              f_id,
             cell_id_rain = i_face_cells[face_id][1];
           }
 
-          /* Nowte: vol_mass_source must not be multiplied by
+          /* Note: vol_mass_source must not be multiplied by
            * cell_f_vol[cell_id_rain]
            * because mass source computed from liq_mass_flow is
            * already in kg/s associated to the facing rain cell */
