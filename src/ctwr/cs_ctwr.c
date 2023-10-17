@@ -751,6 +751,19 @@ cs_ctwr_add_property_fields(void)
   }
 
   {
+    /* Relative humidity field */
+    f = cs_field_create("x_rel",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Humidity rel");
+  }
+
+
+  {
     /* Humid air enthalpy field */
     f = cs_field_create("enthalpy",
                         field_type,
@@ -2459,6 +2472,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   cs_real_t *x = (cs_real_t *)CS_F_(humid)->val;      /* Absolute humidity
                                                          in bulk air */
   cs_real_t *x_s = cs_field_by_name("x_s")->val;      /* Saturated humidity */
+  cs_real_t *x_rel = cs_field_by_name("x_rel")->val;  /* Relative humidity */
 
   /* Packing zone variables */
   cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;      /* Liquid temperature */
@@ -2537,6 +2551,10 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
     /* Saturated humidity */
     x_s[cell_id] = cs_air_x_sat(t_h[cell_id], p0);
+
+    /*Relative humidity */
+    x_rel[cell_id] = x[cell_id] / x_s[cell_id];
+
 
     /* Update the humid air temperature using new enthalpy but old
      * Specific heat */
