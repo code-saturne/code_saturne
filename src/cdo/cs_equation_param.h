@@ -1996,6 +1996,31 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define and initialize a new structure to set a boundary condition
+ *        related to the given equation param structure
+ *        ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *        Definition relying on a \ref cs_time_func_t function pointer
+ *
+ * \param[in, out] eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type  type of boundary condition to add
+ * \param[in]      z_name   name of the associated zone (if NULL or "" if
+ *                          all cells are considered)
+ * \param[in]      t_func   pointer to an analytic function defining the value
+ * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
+                                const cs_param_bc_type_t    bc_type,
+                                const char                 *z_name,
+                                cs_time_func_t             *t_func,
+                                void                       *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given cs_equation_param_t structure
  *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
