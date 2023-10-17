@@ -277,17 +277,10 @@ const cs_real_t cs_elec_epszer = 8.854e-12;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 void
-cs_f_elec_model_get_pointers(int     **ngazge,
-                             int     **ielcor,
+cs_f_elec_model_get_pointers(int     **ielcor,
                              double  **pot_diff,
                              double  **coejou,
-                             double  **elcou,
-                             double  **couimp,
-                             int     **irestrike,
-                             int     **ntdcla,
-                             double  **restrike_point_x,
-                             double  **restrike_point_y,
-                             double  **restrike_point_z);
+                             double  **elcou);
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global electric model structure.
@@ -296,40 +289,22 @@ cs_f_elec_model_get_pointers(int     **ngazge,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   ngazge         --> pointer to cs_glob_elec_properties->ngaz
  *   ielcor         --> pointer to cs_glob_elec_option->ielcor
  *   pot_diff       --> pointer to cs_glob_elec_option->pot_diff
  *   coejou         --> pointer to cs_glob_elec_option->coejou
  *   elcou          --> pointer to cs_glob_elec_option->elcou
- *   irestrike      --> pointer to cs_glob_elec_option->irestrike
- *   ntdcla         --> pointer to cs_glob_elec_option->ntdcla
- *   restrike_point --> pointer to cs_glob_elec_option->restrike_point
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_elec_model_get_pointers(int     **ngazge,
-                             int     **ielcor,
+cs_f_elec_model_get_pointers(int     **ielcor,
                              double  **pot_diff,
                              double  **coejou,
-                             double  **elcou,
-                             double  **couimp,
-                             int     **irestrike,
-                             int     **ntdcla,
-                             double  **restrike_point_x,
-                             double  **restrike_point_y,
-                             double  **restrike_point_z)
+                             double  **elcou)
 {
-  *ngazge           = &(_elec_properties.ngaz);
   *ielcor           = &(_elec_option.ielcor);
   *pot_diff         = &(_elec_option.pot_diff);
   *coejou           = &(_elec_option.coejou);
   *elcou            = &(_elec_option.elcou);
-  *couimp           = &(_elec_option.couimp);
-  *irestrike        = &(_elec_option.irestrike);
-  *ntdcla           = &(_elec_option.ntdcla);
-  *restrike_point_x = &(_elec_option.restrike_point[0]);
-  *restrike_point_y = &(_elec_option.restrike_point[1]);
-  *restrike_point_z = &(_elec_option.restrike_point[2]);
 }
 
 /*============================================================================
