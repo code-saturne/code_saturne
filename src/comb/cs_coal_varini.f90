@@ -37,7 +37,6 @@ subroutine cs_coal_varini
 !     les variables de calcul,
 !     les valeurs du pas de temps
 
-
 ! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
 !     ou relues d'un fichier suite
 ! On ne dispose des variables VISCLS, CP (quand elles sont
@@ -82,27 +81,16 @@ implicit none
 
 ! Local variables
 
-integer          iel, ige, icla, icha, ifac
+integer          iel, ige, icha, ifac
 
 double precision t1init, h1init, coefe(ngazem)
 double precision t2init
 double precision f1mc(ncharm), f2mc(ncharm)
-double precision xkent, xeent, d2s3
 
 integer ioxy
 double precision wmh2o,wmco2,wmn2,wmo2,dmas
 
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
-double precision, dimension(:), pointer :: cvar_fb, cvar_omg
-double precision, dimension(:,:), pointer :: cvar_rij
-double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
-double precision, dimension(:), pointer :: cvar_xwtcl
-double precision, dimension(:), pointer :: cvar_h2cl
 double precision, dimension(:), pointer :: cvar_scalt, cvar_xch
-double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
-double precision, dimension(:), pointer :: cvar_f4m, cvar_f5m, cvar_f6m
-double precision, dimension(:), pointer :: cvar_f7m, cvar_f8m, cvar_f9m
-double precision, dimension(:), pointer :: cvar_fvp2m
 double precision, dimension(:), pointer :: cvar_yco2, cvar_yhcn, cvar_ynh3
 double precision, dimension(:), pointer :: cvar_yno, cvar_hox
 double precision, dimension(:), pointer :: cpro_x1, bpro_x1
@@ -126,14 +114,6 @@ interface
 end interface
 
 !===============================================================================
-
-! NOMBRE DE PASSAGES DANS LA ROUTINE
-
-integer          ipass
-data             ipass /0/
-save             ipass
-
-!===============================================================================
 ! 1. Initializations
 !===============================================================================
 
@@ -141,46 +121,9 @@ save             ipass
 call field_get_val_s_by_name("x_c", cpro_x1)
 call field_get_val_s_by_name("b_x_c", bpro_x1)
 
-ipass = ipass + 1
-
-d2s3 = 2.d0/3.d0
-
-if (itytur.eq.2) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (itytur.eq.3) then
-  call field_get_val_v(ivarfl(irij), cvar_rij)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (iturb.eq.50) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-  call field_get_val_s(ivarfl(iphi), cvar_phi)
-  call field_get_val_s(ivarfl(ifb), cvar_fb)
-elseif (iturb.eq.60) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iomg), cvar_omg)
-endif
-
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-call field_get_val_s_by_name("x_c_h",cvar_xch)
+call field_get_val_s_by_name("x_c_h", cvar_xch)
 
-if (noxyd.ge.2) then
-  call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
-endif
-if (noxyd.ge.3) then
-  call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
-endif
-if (ippmod(iccoal).ge.1) then
-  call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
-endif
-call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
-if (ihtco2.eq.1) then
-  call field_get_val_s(ivarfl(isca(if8m)), cvar_f8m)
-endif
-if (ihth2o.eq.1) then
-  call field_get_val_s(ivarfl(isca(if9m)), cvar_f9m)
-endif
-call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
 if (ieqco2.ge.1) then
   call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
 endif
@@ -195,53 +138,7 @@ endif
 ! 2. Variable initialization
 !===============================================================================
 
-! RQ IMPORTANTE : pour la combustion CP, 1 seul passage suffit
-
-if ( isuite.eq.0 .and. ipass.eq.1 ) then
-
-! --> Initialisation de k et epsilon
-
-  xkent = 1.d-10
-  xeent = 1.d-10
-
-! ---- TURBULENCE
-
-  if (itytur.eq.2) then
-
-    do iel = 1, ncel
-      cvar_k(iel)  = xkent
-      cvar_ep(iel) = xeent
-    enddo
-
-  elseif (itytur.eq.3) then
-
-    do iel = 1, ncel
-      cvar_rij(1,iel) = d2s3*xkent
-      cvar_rij(2,iel) = d2s3*xkent
-      cvar_rij(3,iel) = d2s3*xkent
-      cvar_rij(4,iel) = 0.d0
-      cvar_rij(5,iel) = 0.d0
-      cvar_rij(6,iel) = 0.d0
-      cvar_ep(iel)  = xeent
-    enddo
-
-  elseif (iturb.eq.50) then
-
-    do iel = 1, ncel
-      cvar_k(iel)   = xkent
-      cvar_ep(iel)  = xeent
-      cvar_phi(iel) = d2s3
-      cvar_fb(iel)  = 0.d0
-    enddo
-
-  elseif (iturb.eq.60) then
-
-    do iel = 1, ncel
-      cvar_k(iel)   = xkent
-      cvar_omg(iel) = xeent/cmu/xkent
-    enddo
-
-  endif
+if (isuite.eq.0) then
 
   ! --> All the domain is filled with the first oxidizer at TINITK
   !                   ============================================
@@ -250,33 +147,6 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
   t1init = t0
   t2init = t0
-
-! ------ Variables de transport relatives a la phase solide :
-!        calcul de H
-
-  do icla = 1, nclacp
-    icha = ichcor(icla)
-
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
-    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
-    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
-    if ( ippmod(iccoal) .eq. 1 ) then
-      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
-    endif
-
-    do iel = 1, ncel
-
-      cvar_xchcl(iel) = zero
-      cvar_xckcl(iel) = zero
-      cvar_xnpcl(iel) = zero
-      cvar_h2cl(iel) = zero
-      if ( ippmod(iccoal) .eq. 1 ) then
-        cvar_xwtcl(iel) = zero
-      endif
-
-    enddo
-  enddo
 
   ! ------ Transported variables for the mix (solid+carrying gas)^2
 
@@ -309,78 +179,40 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     cvar_xch(iel)   = h1init
   enddo
 
-  ! ------ Transported variables for the mix (passive scalars, variance)
-!        (scalaires passifs et variances associees)
+  ! Transported variables for the mix (passive scalars, variance)
 
-  do icha = 1, ncharb
-    call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
-    call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
+  if (ieqco2.ge.1) then
+    ioxy   = 1
+    wmo2   = wmole(io2)
+    wmco2  = wmole(ico2)
+    wmh2o  = wmole(ih2o)
+    wmn2   = wmole(in2)
+    dmas = (  oxyo2 (ioxy)*wmo2 +oxyn2 (ioxy)*wmn2              &
+            + oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2)
+    xco2 = oxyco2(ioxy)*wmco2/dmas
+
     do iel = 1, ncel
-      cvar_f1m(iel) = zero
-      cvar_f2m(iel) = zero
-    enddo
-  enddo
-
-  do iel = 1, ncel
-
-    if ( noxyd .ge. 2 ) then
-      cvar_f4m(iel) = zero
-    endif
-    if ( noxyd .ge. 3 ) then
-      cvar_f5m(iel) = zero
-    endif
-    if ( ippmod(iccoal) .ge. 1 ) then
-      cvar_f6m(iel) = zero
-    endif
-!
-    cvar_f7m(iel) = zero
-!
-    if ( ihtco2 .eq. 1 ) then
-      cvar_f8m(iel) = zero
-    endif
-    if ( ihth2o .eq. 1 ) then
-      cvar_f9m(iel) = zero
-    endif
-!
-    cvar_fvp2m(iel) = zero
-!
-    if ( ieqco2.ge.1 ) then
-
-      ioxy   =  1
-      wmo2   = wmole(io2)
-      wmco2  = wmole(ico2)
-      wmh2o  = wmole(ih2o)
-      wmn2   = wmole(in2)
-      dmas = ( oxyo2 (ioxy)*wmo2 +oxyn2 (ioxy)*wmn2               &
-              +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2 )
-      xco2 = oxyco2(ioxy)*wmco2/dmas
       cvar_yco2(iel) = oxyco2(ioxy)*wmco2/dmas
-    endif
-    if ( ieqnox.eq.1 ) then
-      cvar_yhcn(iel) = zero
-! Initialisation du NH3
-      cvar_ynh3(iel) = zero
-      cvar_yno(iel) = zero
+    enddo
+  endif
+
+  if (ieqnox.eq.1) then
+    do iel = 1, ncel
       cvar_hox(iel) = h1init
-    endif
-
-  enddo
-
-endif
-
-if (ipass.eq.1) then
-
-  do iel = 1, ncel
-    ! Initialization of the continuous mass fraction
-    cpro_x1(iel) = 1.d0
-  enddo
-
-  ! Initialization of the continuous mass fraction AT the BCs
-  do ifac = 1, nfabor
-    bpro_x1(ifac) = 1.d0
-  enddo
+    enddo
+  endif
 
 endif
+
+do iel = 1, ncel
+  ! Initialization of the continuous mass fraction
+  cpro_x1(iel) = 1.d0
+enddo
+
+! Initialization of the continuous mass fraction AT the BCs
+do ifac = 1, nfabor
+  bpro_x1(ifac) = 1.d0
+enddo
 
 !--------
 ! Formats
