@@ -542,10 +542,6 @@ typedef struct {
    * \var l_diffusivity_h
    *      Molecular diffusivity of the hydrogen in the liquid phase in m^2.s^-1
    *
-   * \var w_molar_mass
-   *      Molar mass of the main component in the liquid phase (e.g. water) in
-   *      kg.mol^-1
-   *
    * \var h_molar_mass
    *      Molar mass of the main component in the gas phase (e.g. hydrogen) in
    *      kg.mol^-1
@@ -567,7 +563,6 @@ typedef struct {
   cs_real_t                     l_viscosity;
   cs_real_t                     g_viscosity;
   cs_real_t                     l_diffusivity_h;
-  cs_real_t                     w_molar_mass;
   cs_real_t                     h_molar_mass;
   cs_real_t                     ref_temperature;
   cs_real_t                     henry_constant;

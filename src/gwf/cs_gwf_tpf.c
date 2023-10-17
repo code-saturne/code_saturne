@@ -2886,7 +2886,6 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   tpf->l_mass_density = 1000;
   tpf->l_viscosity = 1e-3;
   tpf->g_viscosity = 2e-5;
-  tpf->w_molar_mass = 18e-3;
   tpf->h_molar_mass = 3e-3;
   tpf->ref_temperature = 280;    /* in Kelvin */
 
