@@ -95,10 +95,6 @@ cs_ale_data_t  *cs_glob_ale_data = &_cs_glob_ale_data;
 void
 cs_f_ale_get_pointers(int  **iale);
 
-void
-cs_f_ale_bc_get_pointers(int **impale,
-                         int **bc_type);
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -111,18 +107,6 @@ void
 cs_f_ale_get_pointers(int **iale)
 {
   *iale = (int *)(&cs_glob_ale);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointer to cs_glob_ale_info->impale and cs_glob_ale_data->bc_type
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_ale_bc_get_pointers(int **impale,
-                         int **bc_type)
-{
-  *impale = cs_glob_ale_data->impale;
-  *bc_type = cs_glob_ale_data->bc_type;
 }
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1543,17 +1527,16 @@ cs_ale_update_bcs(int         *ale_bc_type,
  * It also updates the mesh displacement
  * so that it can be used to update mass fluxes (due to mesh displacement).
  *
- * \param[in]       iterns        Navier-Stokes iteration number
- * \param[in]       impale        Indicator for fixed node displacement
- * \param[in]       ale_bc_type   Type of boundary for ALE
+ * \param[in]  iterns  Navier-Stokes iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_solve_mesh_velocity(int         iterns,
-                           const int  *impale,
-                           const int  *ale_bc_type)
+cs_ale_solve_mesh_velocity(int  iterns)
 {
+  const int  *impale = cs_glob_ale_data->impale;
+  const int  *ale_bc_type = cs_glob_ale_data->bc_type;
+
   if (cs_glob_ale == CS_ALE_LEGACY)
     _ale_solve_poisson_legacy(cs_glob_domain, iterns, impale, ale_bc_type);
 

@@ -143,11 +143,9 @@ cs_f_navier_stokes_total_pressure(void);
 
 void
 cs_f_solve_navier_stokes(const int      iterns,
-                         int            *icvrge,
+                         int           *icvrge,
                          const int      itrale,
-                         int            impale[],
-                         int            isostd[],
-                         int            ale_bc_type[]);
+                         int            isostd[]);
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -208,7 +206,6 @@ _st_exp_head_loss(cs_lnum_t          ncepdc,
  * \param[in]      mq      pointer to associated mesh quantities structure
  * \param[in]      crom    density at cells
  * \param[in]      brom    density at boundary faces
- * \param[in]      impale  indicator of imposed displacement
  * \param[in, out] imasfl  interior face mass flux
  * \param[in, out] bmasfl  boundary face mass flux
  */
@@ -549,7 +546,6 @@ _div_rij(const cs_mesh_t     *m,
  * \param[in]      dt      time step at cells
  * \param[in]      crom    density at cells
  * \param[in]      brom    density at boundary faces
- * \param[in]      impale  indicator of imposed displacement
  * \param[in, out] imasfl  interior face mass flux
  * \param[in, out] bmasfl  boundary face mass flux
  */
@@ -2928,16 +2924,12 @@ void
 cs_f_solve_navier_stokes(const int   iterns,
                          int        *icvrge,
                          const int   itrale,
-                         int         impale[],
-                         int         isostd[],
-                         int         ale_bc_type[])
+                         int         isostd[])
 {
   cs_solve_navier_stokes(iterns,
                          icvrge,
                          itrale,
-                         impale,
-                         isostd,
-                         ale_bc_type);
+                         isostd);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3045,10 +3037,8 @@ cs_solve_navier_stokes_update_total_pressure(const cs_mesh_t              *m,
  * \param[in]     iterns        index of the iteration on Navier-Stokes
  * \param[in]     icvrge        convergence indicator
  * \param[in]     itrale        number of the current ALE iteration
- * \param[in]     impale        indicator of imposed displacement
  * \param[in]     isostd        indicator of standard outlet
  *                              + index of the reference face
- * \param[in]     ale_bc_type   Type of boundary for ALE
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3056,9 +3046,7 @@ void
 cs_solve_navier_stokes(const int   iterns,
                        int        *icvrge,
                        const int   itrale,
-                       const int  *impale,
-                       const int   isostd[],
-                       int         ale_bc_type[])
+                       const int   isostd[])
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -3769,7 +3757,7 @@ cs_solve_navier_stokes(const int   iterns,
 
   if (cs_glob_ale > CS_ALE_NONE) {
     if (itrale > cs_glob_ale_n_ini_f)
-      cs_ale_solve_mesh_velocity(iterns, impale, ale_bc_type);
+      cs_ale_solve_mesh_velocity(iterns);
   }
 
   /* Update of the fluid velocity field

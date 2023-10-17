@@ -198,11 +198,6 @@ void
 cs_user_boundary_conditions_wrapper(int  *itypcl);
 
 void
-cs_user_boundary_conditions_ale_wrapper(int  *itypcl,
-                                        int  *ialtyb,
-                                        int  *impale);
-
-void
 cs_user_extra_operations_wrapper(void);
 
 void

@@ -278,27 +278,23 @@ interface
     real(kind=c_double), dimension(*) :: smacel
   end subroutine cs_volume_mass_injection_eval
 
-  subroutine cs_turbulence_htles &
-       () &
+  subroutine cs_turbulence_htles() &
     bind(C, name='cs_turbulence_htles')
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_turbulence_htles
 
-  subroutine cs_solve_navier_stokes  &
-       (iterns, icvrge, itrale,      &
-        impale, isostd, ale_bc_type) &
+  subroutine cs_f_solve_navier_stokes  &
+     (iterns, icvrge, itrale, isostd) &
    bind(C, name='cs_f_solve_navier_stokes')
     use, intrinsic :: iso_c_binding
     implicit none
     integer(c_int) :: icvrge
     integer(c_int), value :: iterns, itrale
-    integer(c_int), dimension(*) :: ale_bc_type
-    integer(c_int), dimension(*) :: impale, isostd
-  end subroutine cs_solve_navier_stokes
+    integer(c_int), dimension(*) :: isostd
+  end subroutine cs_f_solve_navier_stokes
 
-  subroutine cs_soil_model &
-       () &
+  subroutine cs_soil_model() &
     bind(C, name='cs_soil_model')
     use, intrinsic :: iso_c_binding
     implicit none
@@ -914,7 +910,7 @@ do while (iterns.le.nterup)
     ! Otherwise it is done in cs_solve_navier_stokes.c
     if (itrale.eq.0) then
 
-      call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
+      call cs_ale_solve_mesh_velocity(iterns)
       must_return = .true.
 
     endif
@@ -1007,8 +1003,7 @@ do while (iterns.le.nterup)
 
     ! Coupled solving of the velocity components
 
-    call cs_solve_navier_stokes(iterns, icvrge, itrale, &
-                                impale, isostd, ialtyb)
+    call cs_f_solve_navier_stokes(iterns, icvrge, itrale, isostd)
 
     ! Update local pointer arrays for transient turbomachinery computations
     call field_get_val_s_by_name('dt', dt)

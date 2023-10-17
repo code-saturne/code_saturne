@@ -176,16 +176,12 @@ cs_ale_update_bcs(int         *ale_bc_type,
  * It also updates the mesh displacement
  * so that it can be used to update mass fluxes (due to mesh displacement).
  *
- * \param[in]       iterns        Navier-Stokes iteration number
- * \param[in]       impale        Indicator for fixed node displacement
- * \param[in]       ale_bc_type   Type of boundary for ALE
+ * \param[in]  iterns  Navier-Stokes iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_solve_mesh_velocity(int         iterns,
-                           const int  *impale,
-                           const int  *ale_bc_type);
+cs_ale_solve_mesh_velocity(int  iterns);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -163,7 +163,8 @@ void
 cs_f_cscfbr_init(int *itypfb);
 
 void
-cs_f_vericl(int *itypfb);
+cs_f_vericl(int *itypfb,
+            int *ialtyb);
 
 void
 cs_f_user_boundary_conditions_wrapper(const cs_lnum_t  itrifb[],
@@ -863,7 +864,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    * 3) Check the consistency of the bcs
    *--------------------------------------------------------------------------*/
 
-  cs_f_vericl(bc_type);
+  cs_f_vericl(bc_type, ale_bc_type);
 
   /*--------------------------------------------------------------------------
    * 4) Variables
@@ -3854,8 +3855,9 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   /* When called before time loop, some values are not yet available. */
 
-  if (nt_cur > nt_prev)
-    cs_f_vericl(bc_type);
+  if (nt_cur > nt_prev) {
+    cs_f_vericl(bc_type, ale_bc_type);
+  }
 
   cs_field_free_bc_codes_all();
 }

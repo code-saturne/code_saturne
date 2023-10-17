@@ -22,9 +22,8 @@
 
 subroutine majgeo &
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
-   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 ,          &
-   iface2 , ifabo2 , ifmfb2 , ifmce2 ,                            &
-   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , isymp2 , isoli2 ,          &
+   ncelg2 , nfacg2 , nfbrg2 , nsomg2 ,                            &
+   iface2 , ifabo2 , isymp2 , isoli2 ,                            &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
    cdgfa2 , cdgfb2 , xyzno2 ,                                     &
@@ -50,19 +49,11 @@ subroutine majgeo &
 ! nfac2            ! i  ! <-- ! nombre de faces internes                       !
 ! nfabo2           ! i  ! <-- ! nombre de faces de bord                        !
 ! nsom2            ! i  ! <-- ! nombre de sommets                              !
-! lndfa2           ! i  ! <-- ! taille de lndfac                               !
-! lndfb2           ! i  ! <-- ! taille de lndfbr                               !
 ! ncelb2           ! i  ! <-- ! number of boundary cells
 ! ncelg2           ! i  ! <-- ! nombre global de cellules                      !
 ! nfacg2           ! i  ! <-- ! nombre global de faces internes                !
 ! nfbrg2           ! i  ! <-- ! nombre global de faces de bord                 !
 ! nsomg2           ! i  ! <-- ! nombre global de sommets                       !
-! nthdi2           ! i  ! <-- ! nb. max de threads par groupe de faces inter   !
-! nthdb2           ! i  ! <-- ! nb. max de threads par groupe de faces de bord !
-! ngrpi2           ! i  ! <-- ! nb. groupes de faces interieures               !
-! ngrpb2           ! i  ! <-- ! nb. groupes de faces de bord                   !
-! idxfi            ! ia ! <-- ! index pour faces internes                      !
-! idxfb            ! ia ! <-- ! index pour faces de bord                       !
 ! iface2           ! ia ! <-- ! interior face->cells connectivity              !
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
 ! ifmfb2           ! ia ! <-- ! boundary face family number                    !
@@ -117,16 +108,10 @@ implicit none
 ! Arguments
 
 integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
-integer(c_int), intent(in) :: lndfa2, lndfb2
 integer(kind=8), intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
 
 integer(c_int), dimension(2,nfac2), target :: iface2
-integer(c_int), dimension(ncele2), target :: ifmce2
-integer(c_int), dimension(nfabo2), target :: ifabo2, ifmfb2
-integer(c_int), dimension(nfac2+1), target :: ipnfa2
-integer(c_int), dimension(lndfa2), target :: nodfa2
-integer(c_int), dimension(nfabo2+1), target :: ipnfb2
-integer(c_int), dimension(lndfb2), target :: nodfb2
+integer(c_int), dimension(nfabo2), target :: ifabo2
 integer(c_int), dimension(nfabo2), target :: isymp2
 integer(c_int), dimension(*), target :: isoli2
 
@@ -173,9 +158,6 @@ ncelet = ncele2
 nfac = nfac2
 nfabor = nfabo2
 
-lndfac = lndfa2
-lndfbr = lndfb2
-
 ! Now update ndimfb
 if (nfabor.eq.0) then
   ndimfb = 1
@@ -200,14 +182,6 @@ nsomgb = nsomg2
 
 ifacel_0 => iface2(1:2,1:nfac)
 ifabor_0 => ifabo2(1:nfabor)
-
-ifmfbr => ifmfb2(1:nfabor)
-ifmcel => ifmce2(1:ncelet)
-
-ipnfac_0 => ipnfa2(1:nfac+1)
-nodfac_0 => nodfa2(1:lndfac)
-ipnfbr_0 => ipnfb2(1:nfabor+1)
-nodfbr_0 => nodfb2(1:lndfbr)
 
 xyzcen => xyzce2(1:3,1:ncelet)
 

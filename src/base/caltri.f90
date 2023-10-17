@@ -465,11 +465,6 @@ call field_allocate_or_map_all
 
 call field_get_val_s_by_name('dt', dt)
 
-! BC mappings for ALE array (impale and ialtyb)
-if (iale.ge.1) then
-  call ale_models_bc_maps
-endif
-
 call iniva0(nscal)
 
 ! Compute the porosity if needed
