@@ -953,6 +953,24 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                   counter);
       break;
 
+    case CS_XDEF_BY_TIME_FUNCTION:
+      {
+        cs_xdef_time_func_context_t  *tfc = def->context;
+        assert(tfc != NULL);
+
+        /* Get the Dirichlet value */
+
+        cs_real_t  bc_val;
+        tfc->func(t_eval, tfc->input, &bc_val);
+
+        _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
+                                    &bc_val,
+                                    true, /* is constant for all vertices ? */
+                                    bcvals,
+                                    counter);
+    }
+    break;
+
     case CS_XDEF_BY_ARRAY:
       {
         cs_real_t  *eval = cb->values;
@@ -1130,6 +1148,48 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
             cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
                                               constant_val,
                                               values);
+        }
+        break;
+
+      case CS_XDEF_BY_TIME_FUNCTION:
+        {
+          cs_xdef_time_func_context_t  *tfc = def->context;
+          assert(tfc != NULL);
+
+          if (def->dim == 1) {
+
+            cs_real_t  bc_val;
+            tfc->func(t_eval, tfc->input, &bc_val);
+
+            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
+                                               bc_val,
+                                               values);
+
+          }
+          else if (def->dim == 3) {
+
+            cs_real_t  bc_val[3];
+            tfc->func(t_eval, tfc->input, bc_val);
+
+            cs_array_real_set_vector_on_subset(bz->n_elts, elt_ids,
+                                               bc_val,
+                                               values);
+
+          }
+          else {
+
+            cs_real_t  *bc_val = NULL;
+            BFT_MALLOC(bc_val, def->dim, cs_real_t);
+
+            tfc->func(t_eval, tfc->input, bc_val);
+
+            cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
+                                              bc_val,
+                                              values);
+
+            BFT_FREE(bc_val);
+
+          }
         }
         break;
 
@@ -1320,6 +1380,48 @@ cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
             cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
                                               constant_val,
                                               values);
+        }
+        break;
+
+      case CS_XDEF_BY_TIME_FUNCTION:
+        {
+          cs_xdef_time_func_context_t  *tfc = def->context;
+          assert(tfc != NULL);
+
+          if (def->dim == 1) {
+
+            cs_real_t  bc_val;
+            tfc->func(t_eval, tfc->input, &bc_val);
+
+            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
+                                               bc_val,
+                                               values);
+
+          }
+          else if (def->dim == 3) {
+
+            cs_real_t  bc_val[3];
+            tfc->func(t_eval, tfc->input, bc_val);
+
+            cs_array_real_set_vector_on_subset(bz->n_elts, elt_ids,
+                                               bc_val,
+                                               values);
+
+          }
+          else {
+
+            cs_real_t  *bc_val = NULL;
+            BFT_MALLOC(bc_val, def->dim, cs_real_t);
+
+            tfc->func(t_eval, tfc->input, bc_val);
+
+            cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
+                                              bc_val,
+                                              values);
+
+            BFT_FREE(bc_val);
+
+          }
         }
         break;
 
@@ -1581,6 +1683,20 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
                                          neu_values);
     break;
 
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux;
+      tfc->func(t_eval, tfc->input, &flux);
+
+      cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval, &flux, neu_values);
+    }
+    break;
+
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_cw_eval_flux_v_by_scalar_analytic(cm, f, t_eval,
                                               def->context,
@@ -1678,6 +1794,20 @@ cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
   case CS_XDEF_BY_VALUE:
     cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval, def->context,
                                          neu_values);
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux[3];
+      tfc->func(t_eval, tfc->input, flux);
+
+      cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval, flux, neu_values);
+    }
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1780,6 +1910,20 @@ cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
     }
     break;
 
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux;
+      tfc->func(t_eval, tfc->input, &flux);
+
+      neu_values[f] = cm->face[f].meas * flux;
+    }
+    break;
+
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_cw_eval_flux_by_scalar_analytic(cm, f, t_eval,
                                             def->context,
@@ -1860,6 +2004,21 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
   case CS_XDEF_BY_VALUE:
     cs_xdef_cw_eval_flux_by_vector_val(cm, f, t_eval, def->context,
                                        neu_values);
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux[3];
+      tfc->func(t_eval, tfc->input, flux);
+
+      neu_values[f] = cm->face[f].meas
+        * cs_math_3_dot_product(cm->face[f].unitv, flux);
+    }
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1948,6 +2107,21 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
 
       for (int k = 0; k < 3; k++)
         neu_values[3*f+k] = cm->face[f].meas * input[k];
+    }
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux[3];
+      tfc->func(t_eval, tfc->input, flux);
+
+      for (int k = 0; k < 3; k++)
+        neu_values[3*f+k] = cm->face[f].meas * flux[k];
     }
     break;
 
