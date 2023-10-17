@@ -624,6 +624,9 @@ cs_ctwr_add_variable_fields(void)
     eqp->idiff  = 0;
     eqp->idifft = 0;
 
+    /* Do not show yl_packing in post-processing */
+    cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
+
     /* Transport and solve for the temperature of the liquid - with the same
      * drift as the mass fraction Y_l in the rain zones.
      * NB : Temperature of the liquid must be transported after the bulk
@@ -726,6 +729,8 @@ cs_ctwr_add_property_fields(void)
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
+
+  /* Humid air properties */
   {
     /* Humidity field */
     f = cs_field_create("humidity",
@@ -775,6 +780,7 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_str(f, klbl, "Enthalpy humid air");
   }
 
+  /* Liquid properties in packing */
   {
     /* Liquid temperature in packing */
     f = cs_field_create("temperature_liquid",
@@ -800,6 +806,20 @@ cs_ctwr_add_property_fields(void)
 
   }
 
+  {
+    /* Liquid mass flux in packing */
+    f = cs_field_create("mass_flux_l",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Mass flux liq packing");
+
+  }
+
+  /* Liquid properties in rain */
   {
     /* Rain temperature */
     f = cs_field_create("t_rain",
@@ -2479,6 +2499,9 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;      /* Liquid enthalpy */
   cs_real_t *y_l = (cs_real_t *)CS_F_(y_l_pack)->val; /* Liquid mass per unit
                                                          cell volume*/
+  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val; /* Liquid vertical
+                                                            velocity */
+  cs_real_t *mf_l = cs_field_by_name("mass_flux_l")->val; /* Liquid mass flux */
 
   cs_real_t *liq_mass_flow
     = cs_field_by_name("inner_mass_flux_y_l_packing")->val; //FIXME
@@ -2647,6 +2670,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       if (y_l[cell_id] > 0.) {
         cs_real_t h_liq = h_l[cell_id] / y_l[cell_id];
         t_l[cell_id] = cs_liq_h_to_t(h_liq);
+        mf_l[cell_id] = y_l[cell_id] * rho_h[cell_id] * vel_l[cell_id];
       }
     }
 
