@@ -533,7 +533,7 @@ cs_ctwr_add_variable_fields(void)
      * enthalpy. */
 
     f_id = cs_variable_field_create("y_p_t_l",
-                                    "Yp.Tp rain",
+                                    "Yl.Tl rain",
                                     CS_MESH_LOCATION_CELLS,
                                     1);
     f = cs_field_by_id(f_id);
@@ -2468,7 +2468,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   /* Variable and properties for rain zones */
   cs_field_t *cfld_yp = cs_field_by_name_try("y_p");   /* Rain mass fraction */
-  cs_real_t *yp_tp = cs_field_by_name("y_p_t_l")->val; /* Yp times Tp */
+  cs_real_t *yt_rain = cs_field_by_name("y_p_t_l")->val; /* Yp times Tp */
   cs_real_t *t_rain = cs_field_by_name("t_rain")->val; /* Rain temperature */
 
   cs_real_t *y_p = NULL;
@@ -2514,7 +2514,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
       /* Recompute real rain temperature from Yp.Tp */
       if (y_p[cell_id] > 1.e-4){
-        t_rain[cell_id] = yp_tp[cell_id] / y_p[cell_id];
+        t_rain[cell_id] = yt_rain[cell_id] / y_p[cell_id];
       }
       else {
         t_rain[cell_id] = 0.;
@@ -2738,7 +2738,7 @@ cs_ctwr_source_term(int              f_id,
 
   /* Variable and properties for rain drops */
   cs_field_t *cfld_yp = cs_field_by_name("y_p");     /* Rain mass fraction */
-  cs_field_t *cfld_tp = cs_field_by_name("y_p_t_l"); /* Yp times Tp */
+  cs_field_t *cfld_yt_rain = cs_field_by_name("y_p_t_l"); /* Yp times Tp */
   cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_y_p"); /* Rain drift
                                                                      velocity */
 
@@ -2948,7 +2948,7 @@ cs_ctwr_source_term(int              f_id,
 
     if (cfld_yp != NULL) {
       cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
-      cs_real_t *temp_rain = (cs_real_t *)cfld_tp->val;
+      cs_real_t *temp_rain = (cs_real_t *)cs_field_by_name("t_rain")->val;
 
       for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
@@ -3077,7 +3077,7 @@ cs_ctwr_source_term(int              f_id,
 
           /* Rain temperature equation (solve in drift model form)
            * NB: it should be in fact "y_rain x T_rain" */  //FIX ME
-          else if (f_id == cfld_tp->id) {
+          else if (f_id == cfld_yt_rain->id) {
             /* Implicit term */
             //          cs_real_t l_imp_st = vol_mass_source * cp_l;
             cs_real_t l_imp_st = vol_mass_source;
@@ -3184,7 +3184,7 @@ cs_ctwr_source_term(int              f_id,
             imp_st[cell_id_rain] += vol_mass_source;
           }
           /* Rain temperature */
-          else if (f_id == cfld_tp->id) {
+          else if (f_id == cfld_yt_rain->id) {
             // FIXME: There should be a y_p factor in there so that
             // mass and enthalpy are compatible
             //The transported variable is y_rain * H_rain
