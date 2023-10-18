@@ -2275,6 +2275,23 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
     cs_cell_sys_dump("\n>> Cell system after time", csys);
 #endif
 
+  /* Apply the Neumann BCs on the diagonal block. The diagonal should have the
+     value for the row (i.e. neumann induced from the extra-diagonal blocks) */
+
+  if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE && diag_block) {
+
+    /* Neumann boundary conditions:
+     * The common practice is to define Phi_neu = - lambda * grad(u) . n_fc
+     * An outward flux is a positive flux whereas an inward flux is negative
+     * The minus just above implies the minus just below */
+
+    if (csys->has_nhmg_neumann) {
+      for (short int v  = 0; v < cm->n_vc; v++)
+        csys->rhs[v] -= csys->neu_values[v];
+    }
+
+  }
+
   /* Compute a norm of the RHS for the normalization of the residual of the
      linear system to solve. This is done before applying BCs to not take into
      account it. */

@@ -514,8 +514,8 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
 
     for (int j_eq = 0; j_eq < n_equations; j_eq++) {
 
-      int  ij = i_eq*n_equations + j_eq;
-      bool  diag_block = (i_eq == j_eq) ? true : false;
+      const int  ij = i_eq*n_equations + j_eq;
+      const bool  diag_block = (i_eq == j_eq) ? true : false;
 
       cs_equation_core_t  *block_ij = blocks[ij];
 
