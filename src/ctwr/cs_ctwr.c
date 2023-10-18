@@ -2407,7 +2407,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   /* Printing clips in listing */
   if (n_g_clip_yw_min >= 1 || n_g_clip_yw_max >= 1) {
     bft_printf("WARNING : clipping on water mass fraction at restart in"
-               "cs_ctwr_restart_field_vars : min_clip = %llu, max_clip = %llu\n",
+               "cs_ctwr_restart_field_vars : min_clip = %lu, max_clip = %lu\n",
                 n_g_clip_yw_min, n_g_clip_yw_max);
   }
 
@@ -2631,12 +2631,12 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   /* Printing clips in listing */
   if (n_g_clip_yp_min >= 1 || n_g_clip_yp_max >= 1) {
     bft_printf("WARNING : clipping on rain mass fraction"
-                "in cs_ctwr_phyvar_update : min_clip = %llu, max_clip = %llu\n",
+                "in cs_ctwr_phyvar_update : min_clip = %lu, max_clip = %lu\n",
                 n_g_clip_yp_min, n_g_clip_yp_max);
   }
   if (n_g_clip_yw_min >= 1 || n_g_clip_yw_max >= 1) {
     bft_printf("WARNING : clipping on water mass fraction"
-                "in cs_ctwr_phyvar_update : min_clip = %llu, max_clip = %llu\n",
+                "in cs_ctwr_phyvar_update : min_clip = %lu, max_clip = %lu\n",
                 n_g_clip_yw_min, n_g_clip_yw_max);
   }
 
