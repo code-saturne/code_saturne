@@ -337,6 +337,21 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
     }
     break;
 
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *a = (cs_xdef_time_func_context_t *)context;
+      cs_xdef_time_func_context_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
+      b->z_id = a->z_id;
+      b->func = a->func;
+      b->input = a->input;
+      b->free_input = a->free_input;
+
+      d->context = b;
+    }
+    break;
+
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
       cs_xdef_analytic_context_t  *a = (cs_xdef_analytic_context_t *)context;
