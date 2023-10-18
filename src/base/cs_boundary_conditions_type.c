@@ -1240,8 +1240,8 @@ cs_boundary_conditions_type(bool  init,
                 bc_type[f_id] = - abs(bc_type[f_id]);
                 if (err_flags[0] < 2) {
                   err_flags[0] = err_flags[0] + 2;
-                  if (err_flags[1] < 0)
-                    err_flags[1] = f_id;
+                  /* last field id */
+                  err_flags[1] = CS_MAX(err_flags[1], f->id);
                 }
               }
             }
