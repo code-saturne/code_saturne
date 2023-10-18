@@ -238,9 +238,9 @@ _order_by_direction(void)
   cs_real_t *s;
   BFT_MALLOC(s, n_cells, cs_real_t);
 
-  for (int ii = -1; ii < 2; ii+=2) {
-    for (int jj = -1; jj < 2; jj+=2) {
-      for (int kk = -1; kk < 2; kk+=2) {
+  for (int kk = -1; kk < 2; kk+=2) {
+    for (int ii = -1; ii < 2; ii+=2) {
+      for (int jj = -1; jj < 2; jj+=2) {
         for (int dir_id = 0; dir_id < cs_glob_rad_transfer_params->ndirs; dir_id++) {
 
           cs_real_t v[3] = {ii*cs_glob_rad_transfer_params->vect_s[dir_id][0],
