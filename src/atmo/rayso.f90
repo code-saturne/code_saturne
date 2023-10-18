@@ -328,12 +328,15 @@ ibase = 0
 epsc=1.d-8
 
 do k = 1,kmray
-
+  w0_sir(k) = 0.d0
+  w0_suv(k) = 0.d0
+  g_apc_sir(k) = 0.d0
+  g_apc_suv(k) = 0.d0
   ! TODO usefull ?
   if (qlray(k).lt.epsc) then
     qlray(k) = 0.d0
     fneray(k)=0.d0
- endif
+  endif
 enddo
 
 do k = 1, kmx+1
