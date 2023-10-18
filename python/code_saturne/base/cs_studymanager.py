@@ -87,6 +87,10 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="runcase", default=False,
                       help="run all cases")
 
+    parser.add_option("--state",
+                      action="store_true", dest="casestate", default=False,
+                      help="analyze state for all cases")
+
     parser.add_option("--n-procs",  dest="n_procs", default=None, type="int",
                       help="Optional number of processors requested for the computations")
 
@@ -278,9 +282,10 @@ def run_studymanager(pkg, options):
       3. create all studies,
       4. compile sources
       5. run all cases
-      6. compare results
-      7. plot result
-      8. reporting by mail
+      6. report state
+      7. compare results
+      8. plot result
+      9. reporting by mail
     """
 
     # Source environment if required before importing studymanager modules, as
@@ -359,7 +364,8 @@ def run_studymanager(pkg, options):
     if options.test_compilation:
         studies.test_compilation()
 
-    if options.compare or options.post or options.runcase or options.sheet:
+    if options.compare or options.post or options.runcase or \
+        options.sheet or options.casestate:
 
         # Create dependency graph based on all studies and cases
         studies.dump_graph()
@@ -393,6 +399,11 @@ def run_studymanager(pkg, options):
 
     if options.debug:
         print(" run_studymanager() >> Exits runs")
+
+    # Report state
+
+    if options.casestate:
+        studies.report_state()
 
     # Compare checkpoint files
 

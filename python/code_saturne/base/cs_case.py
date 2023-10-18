@@ -359,7 +359,7 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
             for l in lines[-40:]:
                 if l[:15] == '  Elapsed time:':
                     info['compute_time'] = float(l[15:].strip().split(' ')[0])
-                if l[:17] == '  Total CPU time:':
+                if l[:17] == '  Total CPU time:' or l[:16] == '  User CPU time:':
                     info['compute_time_usage'] = float(l[17:].strip().split(' ')[0])
                 if l[:20] == '  Total memory used:':
                     c_mem_max = l[20:].strip().split()
@@ -384,10 +384,21 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
         f.close
 
         if state == case_state.UNKNOWN:
-            if info['compute_time']:
-                state = case_state.FINALIZED
+            if os.path.isfile(os.path.join(run_dir, 'run_status.exceeded_time_limit')):
+                state = case_state.EXCEEDED_TIME_LIMIT
+            elif os.path.isfile(os.path.join(run_dir, 'run_status.saving')):
+                state = case_state.FINALIZING
             else:
-                state = case_state.RUNNING
+                if info['compute_time']:
+                    if os.path.isfile(os.path.join(run_dir, 'run_status.exec_dir')):
+                        state = case_state.COMPUTED
+                    # Note that the following test is incomplete, 
+                    elif os.path.isfile(os.path.join(run_dir, 'run_solver')):
+                        state = case_state.COMPUTED
+                    else:
+                        state = case_state.FINALIZED
+                else:
+                    state = case_state.RUNNING
 
     if state == case_state.UNKNOWN:
         for m in ('mesh_input.csm', 'mesh_input'):
@@ -1864,10 +1875,29 @@ class case:
 
         self.summary_init(exec_env)
 
+        err_str = ''
         for d in self.domains:
-            d.preprocess()
+            try:
+                d.preprocess()
+            except Exception as e:
+                import traceback
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err_str = str(exc_value)
+                sys.stdout.write(" Error: " + err_str + '.\n\n')
+                p_err = os.path.join(d.exec_dir, 'error')
+                try:
+                    f = open(p_err, 'w')
+                    traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                              limit=2, file=f)
+                    f.close()
+                except Exception:
+                    pass
+                if not d.error:
+                    d.error = "preprocess"
             if len(d.error) > 0:
                 self.error = d.error
+                if not err_str:
+                    err_str = d.error
 
         s_path = self.generate_solver_script(exec_env)
 
@@ -1878,7 +1908,7 @@ class case:
         else:
             status = 'failed'
 
-        self.update_scripts_tmp('preprocessing', status, self.error)
+        self.update_scripts_tmp('preprocessing', status, err_str)
 
         # Standard or error exit
 
