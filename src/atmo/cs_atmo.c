@@ -191,7 +191,7 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_t1 = 0.,
   .meteo_t2 = 0.,
   .meteo_tstar = 0.,
-  .meteo_qw0 = DBL_MAX,
+  .meteo_qw0 = 0.,
   .meteo_qwstar = DBL_MAX,
   .meteo_qw1 = DBL_MAX,
   .meteo_qw2 = DBL_MAX,
@@ -2730,7 +2730,7 @@ cs_atmo_init_meteo_profiles(void)
   /* Force the computation of z_ground */
   aopt->compute_z_ground = true;
 
-  if (is_humid && aopt->meteo_qw0 <= 0. && aopt->meteo_qw1 < 0
+  if (is_humid && aopt->meteo_qw0 < 0. && aopt->meteo_qw1 < 0
       && aopt->meteo_qw2 < 0)
     bft_error(__FILE__,
               __LINE__,
