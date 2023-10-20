@@ -81,6 +81,7 @@
 #include "cs_restart.h"
 #include "cs_selector.h"
 #include "cs_thermal_model.h"
+#include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
@@ -435,6 +436,10 @@ cs_ctwr_add_variable_fields(void)
 
   /* Variable density */
   fp->irovar = 1;
+  /* Activate compressibility */
+  cs_velocity_pressure_model_t *vp_model =
+    cs_get_glob_velocity_pressure_model();
+  vp_model->idilat = 2;
   /* Constant molecular viscosity */
   fp->ivivar = 0;
 
