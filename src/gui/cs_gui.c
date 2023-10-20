@@ -4821,13 +4821,6 @@ cs_gui_zones(void)
     /* Check if zone is used to define variable physical properties */
     if (_zone_is_type(tn, "physical_properties"))
       type_flag = type_flag | CS_VOLUME_ZONE_PHYSICAL_PROPERTIES;
-    else {
-      /* FIXME: zone all_cells is used for physical properties no matter what.
-       * Will be changed in v7.1 for a cleaner definition
-       */
-      if (cs_gui_strcmp(name, "all_cells"))
-        type_flag = type_flag | CS_VOLUME_ZONE_PHYSICAL_PROPERTIES;
-    }
 
     /* Finally, define zone */
 
