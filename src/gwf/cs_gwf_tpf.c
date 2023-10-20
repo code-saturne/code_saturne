@@ -1846,7 +1846,8 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   } /* Anderson acceleration */
 
-  /* Update the residual */
+  /* Update the residual (parallel sync. done) */
+
 
   double delta_pa = cs_cdo_blas_square_norm_pvsp_diff(pa_pre_iter, pa_cur_iter);
   double delta_pb = cs_cdo_blas_square_norm_pvsp_diff(pb_pre_iter, pb_cur_iter);
