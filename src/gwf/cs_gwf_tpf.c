@@ -4009,44 +4009,51 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
   if (post_flag & CS_GWF_POST_SOIL_CAPACITY) {
 
-    const cs_real_t  *lcap_c2v = cs_property_get_array(tpf->lcap_pty);
-    const cs_adjacency_t  *c2v = connect->c2v;
+    if (tpf->approx_type == CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
 
-    cs_real_t  *lcap = NULL;
-    BFT_MALLOC(lcap, n_cells, cs_real_t);
+      cs_real_t  *lcap_cell = NULL;
+      BFT_MALLOC(lcap_cell, n_cells, cs_real_t);
 
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      cs_reco_scalar_vbyc2c(n_cells, cell_ids,
+                            connect->c2v, cdoq,
+                            cs_property_get_array(tpf->lcap_pty),
+                            true, /* dense output */
+                            lcap_cell);
 
-      cs_lnum_t  c_id =
-        (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "l_capacity",
+                        1,
+                        false,        /* interlace */
+                        false,        /* use parent */
+                        CS_POST_TYPE_cs_real_t,
+                        lcap_cell,
+                        NULL,
+                        NULL,
+                        time_step);
 
-      lcap[c_id] = 0;
-      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        lcap[c_id] = cdoq->pvol_vc[j] * lcap_c2v[j];
-      lcap[c_id] /= cdoq->cell_vol[c_id];
+      BFT_FREE(lcap_cell);
 
     }
+    else { /* The array storing the soil capacity is alrady defined at cells */
 
-    cs_post_write_var(mesh_id,
-                      CS_POST_WRITER_DEFAULT,
-                      "l_capacity",
-                      1,
-                      false,        /* interlace */
-                      false,        /* use parent */
-                      CS_POST_TYPE_cs_real_t,
-                      lcap,
-                      NULL,
-                      NULL,
-                      time_step);
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "l_capacity",
+                        1,
+                        false,       /* interlace */
+                        true,        /* use parent */
+                        CS_POST_TYPE_cs_real_t,
+                        cs_property_get_array(tpf->lcap_pty),
+                        NULL,
+                        NULL,
+                        time_step);
 
-    BFT_FREE(lcap);
+    }
 
   } /* Postprocess the soil capacity */
 
   if (post_flag & CS_GWF_POST_PERMEABILITY) {
-
-    const cs_real_t  *krl_c2v = cs_property_get_array(tpf->krl_pty);
-    const cs_adjacency_t  *c2v = connect->c2v;
 
     /* permeability = krl * abs_permeability */
 
@@ -4054,55 +4061,104 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
     int  dim = cs_property_get_dim(abs_perm);
     int  post_dim = (dim == 1) ? 1 : 9;
 
+    BFT_MALLOC(permeability, post_dim*n_cells, cs_real_t);
+
     if (dim > 1) {
 
-      BFT_MALLOC(permeability, post_dim*n_cells, cs_real_t);
+      if (tpf->approx_type == CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
 
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        const cs_real_t  *krl_c2v = cs_property_get_array(tpf->krl_pty);
+        const cs_adjacency_t  *c2v = connect->c2v;
 
-        cs_lnum_t  c_id =
-          (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
+        for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-        cs_real_t  tensor[3][3];
+          cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
+            i : cell_ids[i];
+          cs_real_t  tensor[3][3];
 
-        cs_property_get_cell_tensor(c_id,
-                                    time_step->t_cur,
-                                    abs_perm,
-                                    false, /* inversion */
-                                    tensor);
+          cs_property_get_cell_tensor(c_id,
+                                      time_step->t_cur,
+                                      abs_perm,
+                                      false, /* inversion */
+                                      tensor);
 
-        double  krl_cell = 0;
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          krl_cell = cdoq->pvol_vc[j] * krl_c2v[j];
-        krl_cell /= cdoq->cell_vol[c_id];
+          double  krl_cell = 0;
+          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+            krl_cell = cdoq->pvol_vc[j] * krl_c2v[j];
+          krl_cell /= cdoq->cell_vol[c_id];
 
-        cs_real_t  *_cell_perm = permeability + post_dim*i;
-        for (int ki = 0; ki < 3; ki++)
-          for (int kj = 0; kj < 3; kj++)
-            _cell_perm[3*ki+kj] = krl_cell * tensor[ki][kj];
+          cs_real_t  *_cell_perm = permeability + post_dim*i;
+          for (int ki = 0; ki < 3; ki++)
+            for (int kj = 0; kj < 3; kj++)
+              _cell_perm[3*ki+kj] = krl_cell * tensor[ki][kj];
 
-      } /* Loop on selected cells */
+        } /* Loop on selected cells */
+
+      }
+      else {
+
+        const cs_real_t  *krl_cell = cs_property_get_array(tpf->krl_pty);
+
+        for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+          cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
+            i : cell_ids[i];
+          cs_real_t  tensor[3][3];
+
+          cs_property_get_cell_tensor(c_id,
+                                      time_step->t_cur,
+                                      abs_perm,
+                                      false, /* inversion */
+                                      tensor);
+
+          cs_real_t  *_cell_perm = permeability + post_dim*i;
+          for (int ki = 0; ki < 3; ki++)
+            for (int kj = 0; kj < 3; kj++)
+              _cell_perm[3*ki+kj] = krl_cell[c_id] * tensor[ki][kj];
+
+        } /* Loop on selected cells */
+      }
 
     }
-    else {
+    else { /* dim = 1 */
 
-      BFT_MALLOC(permeability, n_cells, cs_real_t);
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
+      /* One uses permeability to store the evaluation of the relative
+         permeabilty if needed */
 
-        cs_lnum_t  c_id =
-          (cell_ids == NULL || n_cells == cdoq->n_cells) ? i : cell_ids[i];
+      if (tpf->approx_type == CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
 
-        permeability[c_id] = cs_property_get_cell_value(c_id,
-                                                        time_step->t_cur,
-                                                        abs_perm);
-        double  krl_cell = 0;
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          krl_cell = cdoq->pvol_vc[j] * krl_c2v[j];
-        krl_cell /= cdoq->cell_vol[c_id];
+        cs_reco_scalar_vbyc2c(n_cells, cell_ids,
+                              connect->c2v, cdoq,
+                              cs_property_get_array(tpf->krl_pty),
+                              true, /* dense output */
+                              permeability);
 
-        permeability[c_id] *= krl_cell;
+        if (cs_property_is_uniform(abs_perm)) {
 
-      } /* Loop on selected cells */
+          const double  abs_perm_value =
+            cs_property_get_cell_value(0, time_step->t_cur, abs_perm);
+
+          for (cs_lnum_t i = 0; i < n_cells; i++)
+            permeability[i] *= abs_perm_value;
+
+        }
+        else {
+
+          for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+            cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
+              i : cell_ids[i];
+
+            double  abs_perm_cell = cs_property_get_cell_value(c_id,
+                                                               time_step->t_cur,
+                                                               abs_perm);
+            permeability[c_id] *= abs_perm_cell;
+
+          } /* Loop on selected cells */
+
+        } /* abs_perm is uniform ? */
+
+      } /* type of approximation */
 
     } /* post_dim */
 
@@ -4124,28 +4180,20 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
   if (post_flag & CS_GWF_POST_GAS_MASS_DENSITY) {
 
-    const cs_adjacency_t  *c2v = connect->c2v;
-    const cs_real_t  *pg = tpf->g_pressure->val;
+    cs_real_t  *gas_mass_density = NULL;
+    BFT_MALLOC(gas_mass_density, n_cells, cs_real_t);
+
+    cs_reco_scalar_v2c(n_cells, cell_ids,
+                       connect->c2v, cdoq,
+                       tpf->g_pressure->val, /* at vertices */
+                       true, /* dense output */
+                       gas_mass_density);
 
     const double  mh_ov_rt =
       tpf->h_molar_mass / (tpf->ref_temperature * cs_physical_constants_r);
 
-    cs_real_t  *gas_mass_density = NULL;
-    BFT_MALLOC(gas_mass_density, n_cells, cs_real_t);
-
-    for (cs_lnum_t c = 0; c < n_cells; c++) {
-
-      cs_lnum_t  c_id =
-        (cell_ids == NULL || n_cells == cdoq->n_cells) ? c : cell_ids[c];
-
-      double  pg_cell = 0;
-      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        pg_cell = cdoq->pvol_vc[j] * pg[c2v->ids[j]];
-      pg_cell /= cdoq->cell_vol[c_id];
-
-      gas_mass_density[c_id] = mh_ov_rt * pg_cell;
-
-    } /* Loop on selected cells */
+    for (cs_lnum_t c = 0; c < n_cells; c++)
+      gas_mass_density[c] *= mh_ov_rt;
 
     cs_post_write_var(mesh_id,
                       CS_POST_WRITER_DEFAULT,
