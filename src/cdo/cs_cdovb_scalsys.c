@@ -579,7 +579,7 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
                                                            cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALSYS_DBG > 1
-          if (cs_dbg_cw_test(eqp, cm, csys)) {
+          if (csys->c_id == 0) {
             cs_log_printf(CS_LOG_DEFAULT, "%s: %s\n", __func__, eqp->name);
             cs_cell_sys_dump("\n>> Cell system (Block system)", csys);
           }
