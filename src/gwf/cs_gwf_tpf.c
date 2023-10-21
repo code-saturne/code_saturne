@@ -2909,10 +2909,12 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   tpf->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
   tpf->nl_relax_factor = 1.0;
-  tpf->nl_cvg_param.n_max_iter = 50;
-  tpf->nl_cvg_param.rtol = 1e-5;
-  tpf->nl_cvg_param.atol = 1e-10;
-  tpf->nl_cvg_param.dtol = 1e3;
+  tpf->nl_cvg_param.n_max_iter = 100;
+  tpf->nl_cvg_param.rtol = 1e-6;
+  tpf->nl_cvg_param.atol = 1e-12;
+  tpf->nl_cvg_param.dtol = 1e8; /* Problems with big capillarity steps may
+                                   induce locally increment(s) with a strong
+                                   variation */
 
   tpf->anderson_param.n_max_dir = 5;
   tpf->anderson_param.starting_iter = 3;
