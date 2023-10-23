@@ -117,14 +117,6 @@ cs_f_field_gradient_scalar(int                    f_id,
                            cs_real_3_t  *restrict grad);
 
 void
-cs_f_field_gradient_potential(int                    f_id,
-                              int                    use_previous_t,
-                              int                    inc,
-                              int                    hyd_p_flag,
-                              cs_real_3_t            f_ext[],
-                              cs_real_3_t  *restrict grad);
-
-void
 cs_f_field_gradient_vector(int                     f_id,
                            int                     use_previous_t,
                            int                     inc,
@@ -381,40 +373,6 @@ cs_f_field_gradient_scalar(int                    f_id,
                            _use_previous_t,
                            inc,
                            grad);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field or component of vector or
- * tensor field.
- *
- * parameters:
- *   f_id           <-- field id
- *   use_previous_t <-- should we use values from the previous time step ?
- *   halo_type      <-- halo type
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   hyd_p_flag     <-- flag for hydrostatic pressure
- *   f_ext          <-- exterior force generating the hydrostatic pressure
- *   grad           --> gradient
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_gradient_potential(int                    f_id,
-                              int                    use_previous_t,
-                              int                    inc,
-                              int                    hyd_p_flag,
-                              cs_real_3_t            f_ext[],
-                              cs_real_3_t  *restrict grad)
-{
-  bool _use_previous_t = use_previous_t ? true : false;
-
-  const cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_field_gradient_potential(f,
-                              _use_previous_t,
-                              inc,
-                              hyd_p_flag,
-                              f_ext,
-                              grad);
 }
 
 /*----------------------------------------------------------------------------
