@@ -401,7 +401,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       cflags_default_dbg="-g -Mbounds"
       cflags_default_opt="-O2"
       cflags_default_hot="-fast"
-      cflags_default_omp="-mp"
+      cflags_default_omp="-mp=gpu"
 
     fi
   fi
@@ -800,7 +800,7 @@ else
       cxxflags_default_dbg="-g -Mbounds"
       cxxflags_default_opt="-O2"
       cxxflags_default_hot="-fast"
-      cxxflags_default_omp="-mp"
+      cxxflags_default_omp="-mp=gpu"
       cxxflags_default_std=""
 
     fi
@@ -1125,7 +1125,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       fcflags_default_dbg="-g -Mbounds"
       fcflags_default_opt="-O2"
       fcflags_default_hot="-fast"
-      fcflags_default_omp="-mp"
+      fcflags_default_omp="-mp=gpu"
 
     fi
   fi
