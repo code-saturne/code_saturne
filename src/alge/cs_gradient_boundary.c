@@ -93,6 +93,9 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
+/* reconstruction threshold, squared */
+const cs_real_t _eps_r_2 = 1e-3 * 1e-3;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -184,18 +187,18 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
-                                     const cs_mesh_quantities_t    *fvq,
-                                     cs_lnum_t                      n_faces,
-                                     const cs_lnum_t               *face_ids,
-                                     cs_halo_type_t                 halo_type,
-                                     cs_lnum_t                      var_dim,
-                                     double                         clip_coeff,
-                                     const cs_real_t               *bc_coeff_a,
-                                     const cs_real_t               *bc_coeff_b,
-                                     const cs_real_t                c_weight[],
-                                     const cs_real_t                var[],
-                                     cs_real_t            *restrict var_iprime)
+_rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
+                                   const cs_mesh_quantities_t    *fvq,
+                                   cs_lnum_t                      n_faces,
+                                   const cs_lnum_t               *face_ids,
+                                   cs_halo_type_t                 halo_type,
+                                   cs_lnum_t                      var_dim,
+                                   double                         clip_coeff,
+                                   const cs_real_t               *bc_coeff_a,
+                                   const cs_real_t               *bc_coeff_b,
+                                   const cs_real_t                c_weight[],
+                                   const cs_real_t                var[],
+                                   cs_real_t            *restrict var_iprime)
 {
   /* Initialization */
 
@@ -226,6 +229,8 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_t *restrict b_dist
+    = (const cs_real_t *restrict)fvq->b_dist;
 
   assert(var_dim <= 9);  /* Local arrays with hard-coded dimensions follow. */
 
@@ -236,6 +241,18 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
 
     cs_lnum_t f_id = (face_ids != NULL) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = m->b_face_cells[f_id];
+
+    /* No reconstruction needed if I and I' are coincident' */
+
+    if (  cs_math_3_square_norm(diipb[f_id])
+        < cs_math_pow2(b_dist[f_id]) * _eps_r_2) {
+
+      for (cs_lnum_t ii = 0; ii < var_dim; ii++)
+        var_iprime[f_idx*var_dim + ii] = var[c_id*var_dim + ii];
+
+      continue;
+
+    }
 
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
@@ -476,7 +493,7 @@ _gradient_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
       var_ip[ll] = var_i[ll] + cs_math_3_dot_product(grad[ll], diipb[f_id]);
     }
 
-    /* Refine boundary value estimation iteratively to account for bc_coeffs */
+   /* Refine boundary value estimation iteratively to account for bc_coeffs */
 
     if (n_coeff_b_contrib > 0) {
 
@@ -860,6 +877,14 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
     cs_lnum_t f_id = (face_ids != NULL) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = b_face_cells[f_id];
 
+    /* No reconstruction needed if I and I' are coincident' */
+
+    if (  cs_math_3_square_norm(diipb[f_id])
+        < cs_math_pow2(b_dist[f_id]) * _eps_r_2) {
+      var_iprime[f_idx] = var[c_id];
+      continue;
+    }
+
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
     cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
@@ -1142,6 +1167,14 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
     cs_lnum_t f_id = (face_ids != NULL) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = b_face_cells[f_id];
 
+    /* No reconstruction needed if I and I' are coincident' */
+
+    if (  cs_math_3_square_norm(diipb[f_id])
+        < cs_math_pow2(b_dist[f_id]) * _eps_r_2) {
+      var_iprime[f_idx] = var[c_id];
+      continue;
+    }
+
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
     cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
@@ -1355,18 +1388,18 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t     *m,
                                   const cs_real_t      var[][3],
                                   cs_real_t            var_iprime[restrict][3])
 {
-  _gradient_b_faces_iprime_strided_lsq(m,
-                                       fvq,
-                                       n_faces,
-                                       face_ids,
-                                       halo_type,
-                                       3, /* var_dim */
-                                       clip_coeff,
-                                       (const cs_real_t *)bc_coeff_a,
-                                       (const cs_real_t *)bc_coeff_b,
-                                       c_weight,
-                                       (const cs_real_t *)var,
-                                       (cs_real_t *restrict) var_iprime);
+  _rc_var_b_faces_iprime_strided_lsq(m,
+                                     fvq,
+                                     n_faces,
+                                     face_ids,
+                                     halo_type,
+                                     3, /* var_dim */
+                                     clip_coeff,
+                                     (const cs_real_t *)bc_coeff_a,
+                                     (const cs_real_t *)bc_coeff_b,
+                                     c_weight,
+                                     (const cs_real_t *)var,
+                                     (cs_real_t *restrict) var_iprime);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1422,18 +1455,18 @@ cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t     *m,
                                   const cs_real_t      var[][6],
                                   cs_real_t            var_iprime[restrict][6])
 {
-  _gradient_b_faces_iprime_strided_lsq(m,
-                                       fvq,
-                                       n_faces,
-                                       face_ids,
-                                       halo_type,
-                                       6, /* var_dim */
-                                       clip_coeff,
-                                       (const cs_real_t *)bc_coeff_a,
-                                       (const cs_real_t *)bc_coeff_b,
-                                       c_weight,
-                                       (const cs_real_t *)var,
-                                       (cs_real_t *restrict) var_iprime);
+  _rc_var_b_faces_iprime_strided_lsq(m,
+                                     fvq,
+                                     n_faces,
+                                     face_ids,
+                                     halo_type,
+                                     6, /* var_dim */
+                                     clip_coeff,
+                                     (const cs_real_t *)bc_coeff_a,
+                                     (const cs_real_t *)bc_coeff_b,
+                                     c_weight,
+                                     (const cs_real_t *)var,
+                                     (cs_real_t *restrict) var_iprime);
 }
 
 /*----------------------------------------------------------------------------*/
