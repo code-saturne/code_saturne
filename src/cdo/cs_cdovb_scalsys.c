@@ -275,9 +275,9 @@ _set_dof_vals(int                                 n_eqs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Fill the dof_val array with values collected from field values
- *         If the array is not allocated then one allocates the array (one
- *         takes into account the size needed for parallel synchronizations)
+ * \brief Fill the dof_val array with values collected from field values
+ *        If the array is not allocated then one allocates the array (one
+ *        takes into account the size needed for parallel synchronizations)
  *
  * \param[in]      n_eqs     number of equations constituting the system
  * \param[in]      dof_vals  pointer to the array with values to copy
@@ -286,9 +286,9 @@ _set_dof_vals(int                                 n_eqs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_field_vals(int                                n_eqs,
-                const cs_real_t                   *dof_vals,
-                cs_field_t                       **fields)
+_set_field_vals(int                        n_eqs,
+                const cs_real_t           *dof_vals,
+                cs_field_t               **fields)
 {
   if (n_eqs < 1)
     return;

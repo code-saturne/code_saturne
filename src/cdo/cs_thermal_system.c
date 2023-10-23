@@ -472,10 +472,10 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
                          CS_EQUATION_TYPE_THERMAL,
                          1,
                          CS_PARAM_BC_HMG_NEUMANN);
-    eqp = cs_equation_get_param(eq);
 
     /* Always add a diffusion term */
 
+    eqp = cs_equation_get_param(eq);
     cs_equation_add_diffusion(eqp, thm->lambda);
 
     if (has_time) {

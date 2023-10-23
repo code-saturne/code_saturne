@@ -169,7 +169,7 @@ _define_bcs(cs_real_t           time,
 void
 cs_user_model(void)
 {
-  /* Activate CDO/HHO module so that main additional structure are built */
+  /* Activate CDO/HHO module so that the main additional structures are built */
 
   /*! [param_cdo_activation] */
   {
@@ -345,7 +345,7 @@ cs_user_parameters(cs_domain_t   *domain)
        1. cs_domain_def_time_step_by_value(domain, dt_val);
        2. cs_domain_def_time_step_by_func(domain, dt_func);
 
-       The second way enables complex definitions of the time step.
+       The second way enables more complex definitions of the time step.
     */
 
     cs_domain_def_time_step_by_value(domain, 1.0);
