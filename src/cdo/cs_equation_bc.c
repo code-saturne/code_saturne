@@ -1017,7 +1017,7 @@ cs_equation_bc_dirichlet_at_vertices(cs_real_t                   t_eval,
         _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
                                     _face_vtx_values,
                                     false, /* is constant for all vertices ? */
-                                    _face_vtx_values,
+                                    bcvals,
                                     counter);
       }
       break; /* By array */
