@@ -3397,7 +3397,7 @@ module cs_c_bindings
     subroutine cs_f_gradient_hn_s(f_id, imrgra, inc, n_r_sweeps,               &
                                   iwarnp, imligp, epsrgp, climgp,              &
                                   pvar, grad)                                  &
-      bind(C, name='cs_f_gradient_s')
+      bind(C, name='cs_f_gradient_hn_s')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, n_r_sweeps
