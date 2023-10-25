@@ -511,10 +511,8 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
       fctb[j] = dc[j] * pfac;
       // rhs[c_id1][i][j] += _weight2 * fctb[j];
       // rhs[c_id2][i][j] += _weight1 * fctb[j];
-      _weight2 += _weight2 * fctb[j];
-      _weight1 += _weight1 * fctb[j];
-      atomicAdd(&rhs[f_id][i][j], _weight2);
-      atomicAdd(&rhs[c_id2][i][j], _weight2);
+      atomicAdd(&rhs[c_id1][i][j], _weight2 * fctb[j]);
+      atomicAdd(&rhs[c_id2][i][j], _weight1 * fctb[j]);
     }
   }
 }
@@ -605,7 +603,7 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
 
   for (cs_lnum_t i = 0; i < 3; i++) {
     pfac =   coefav[f_id][i]*inc
-          + (  coefbv[f_id][0][i] * pvar[c_id1][0]
+          + ( coefbv[f_id][0][i] * pvar[c_id1][0]
             + coefbv[f_id][1][i] * pvar[c_id1][1]
             + coefbv[f_id][2][i] * pvar[c_id1][2]
             - pvar[c_id1][i]);
@@ -614,13 +612,9 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
     // rhs[c_id1][i][1] += n_d_dist[1] * pfac;
     // rhs[c_id1][i][2] += n_d_dist[2] * pfac;
 
-    n_d_dist[0] *= pfac;
-    n_d_dist[1] *= pfac;
-    n_d_dist[2] *= pfac;
-
-    atomicAdd(&rhs[c_id1][i][0], n_d_dist[0]);
-    atomicAdd(&rhs[c_id1][i][1], n_d_dist[1]);
-    atomicAdd(&rhs[c_id1][i][2], n_d_dist[2]);
+    atomicAdd(&rhs[c_id1][i][0], n_d_dist[0] * pfac);
+    atomicAdd(&rhs[c_id1][i][1], n_d_dist[1] * pfac);
+    atomicAdd(&rhs[c_id1][i][2], n_d_dist[2] * pfac);
   }
 }
 
@@ -1227,6 +1221,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   unsigned int blocksize = 256;
   unsigned int gridsize_b
     = (unsigned int)ceil((double)m->n_b_cells / blocksize);
+  unsigned int gridsize_if
+    = (unsigned int)ceil((double)m->n_i_faces / blocksize);
   unsigned int gridsize_bf
     = (unsigned int)ceil((double)m->n_b_faces / blocksize);
   unsigned int gridsize = (unsigned int)ceil((double)m->n_cells / blocksize);
@@ -1308,7 +1304,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   error = cudaEventRecord(start, NULL);
   error = cudaEventSynchronize(start);
   
-  _compute_rhs_lsq_v_i_face<<<gridsize, blocksize, 0, stream1>>>
+  _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream1>>>
       (n_i_faces, i_group_index, i_face_cells, cell_f_cen, rhs_d, pvar_d, weight, c_weight);
 
   error = cudaEventRecord(stop, NULL);
@@ -1339,7 +1335,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   error = cudaEventRecord(start, NULL);
   error = cudaEventSynchronize(start);
 
-  _compute_rhs_lsq_v_b_face<<<gridsize, blocksize, 0, stream1>>>
+  _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream1>>>
       (m->n_b_faces, b_group_index, b_face_cells, cell_f_cen, b_face_normal, rhs_d, pvar_d, b_dist, coefb_d, coefa_d, inc);
 
   error = cudaEventRecord(stop, NULL);
