@@ -2758,22 +2758,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Binding to cs_ic_field_set_exchcoeff
-
-    !> \param[in]   field_id   field id
-    !> \param[in]   hbnd       boundary exchange coefficients passed by face id
-
-    subroutine cs_ic_field_set_exchcoeff(field_id, &
-                                         hbnd)     &
-      bind(C, name='cs_ic_field_set_exchcoeff')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), value :: field_id
-      real(kind=c_double), dimension(*), intent(in) :: hbnd
-    end subroutine cs_ic_field_set_exchcoeff
-
-    !---------------------------------------------------------------------------
-
     !> \brief Binding to cs_f_ic_field_coupled_faces
 
     subroutine cs_f_ic_field_coupled_faces(f_id, c_p)  &

@@ -57,6 +57,7 @@
 #include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_conditions_set_coeffs_symmetry.h"
+#include "cs_boundary_conditions_set_coeffs_turb.h"
 #include "cs_boundary_conditions_type.h"
 #include "cs_coupling.h"
 #include "cs_field.h"
@@ -132,22 +133,6 @@ cs_f_pptycl(bool        init,
             int        *itypfb,
             const int  *izfppp,
             cs_real_t   dt[]);
-
-void
-cs_f_clptur(cs_lnum_t  *isvhb,
-            cs_real_t   velipb[][3],
-            cs_real_t   rijipb[][6],
-            cs_real_t   visvdr[],
-            cs_real_t   hbord[],
-            cs_real_t   theipb[]);
-
-void
-cs_f_clptrg(cs_lnum_t  *isvhb,
-            cs_real_t   velipb[][3],
-            cs_real_t   rijipb[][6],
-            cs_real_t   visvdr[],
-            cs_real_t   hbord[],
-            cs_real_t   theipb[]);
 
 void
 cs_f_cscloc(void);
@@ -809,7 +794,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   /* Pointers to specific fields */
 
-  if (cs_glob_rad_transfer_params->type >= 1) { //iirayo def dans radiat.f90
+  if (cs_glob_rad_transfer_params->type >= 1) {
     bfconv = cs_field_by_name("rad_convective_flux")->val;
     bhconv = cs_field_by_name("rad_exchange_coefficient")->val;
   }
@@ -1176,23 +1161,14 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       visvdr[c_id] = -999.0;
   }
 
-  if (ipatur != 0)
-    /* smooth wall laws */
-    cs_f_clptur(&isvhb,
-                velipb,
-                rijipb,
-                visvdr,
-                hbord,
-                theipb);
-
-  if (ipatrg != 0)
-    /* rough wall laws */
-    cs_f_clptrg(&isvhb,
-                velipb,
-                rijipb,
-                visvdr,
-                hbord,
-                theipb);
+  if (ipatur != 0 || ipatrg != 0)
+    /* Smooth and rough wall laws */
+    cs_boundary_conditions_set_coeffs_turb(isvhb,
+                                           velipb,
+                                           rijipb,
+                                           visvdr,
+                                           hbord,
+                                           theipb);
 
   /*--------------------------------------------------------------------------
    * 6) Symmetry for vectors and tensors
@@ -1468,7 +1444,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     cs_equation_param_t *eqp_p = cs_field_get_equation_param(p);
     cs_real_t *crom = NULL;
 
-    if (cs_glob_vof_parameters->vof_model > 0) // ou icrom_scal > 0 ???
+    if (cs_glob_vof_parameters->vof_model > 0)
       crom = CS_F_(rho)->val; // FIXME consistency with correction step
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -1544,8 +1520,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       }
 
       /* We must modify the Dirichlet pressure value again so as to obtain P*
-         Because in typecl.f90 we have used the total pressure provided by the
-         user: ptotal= p*+ rho.g.r.
+         Because in cs_boundary_conditions_type we have used the total pressure
+         provided by the user: ptotal= p*+ rho.g.r.
          In the compressible case, we leave rcodcl as such. */
 
       /* Dirichlet boundary condition
@@ -2703,7 +2679,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
          scalaire associe n'est pas resolu, on suppose alors qu'il
          doit etre traite comme un scalaire passif (defaut IHCP = 0)*/
       cs_lnum_t ihcp = 0;
-      const int kscavr = cs_field_key_id("first_moment_id"); // a voir
+      const int kscavr = cs_field_key_id("first_moment_id");
       const int iscavr = cs_field_get_key_int(f_scal, kscavr);
 
       /* Reference diffusivity */

@@ -1073,7 +1073,8 @@ end subroutine finalize_meteo
 !> \param[out] dlmo          Inverse Monin Obukhov length
 !> \param[out] ustar         friction velocity
 
-subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
+subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar) &
+  bind(C, name='cs_f_mo_compute_from_thermal_flux')
 
   use cstphy
   use cstnum
@@ -1082,7 +1083,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   implicit none
 
   ! Arguments
-  double precision z,z0,du,tm,gredu,dlmo,ustar,flux
+  real(c_double) :: z,z0,du,tm,gredu,dlmo,ustar,flux
 
   ! Local variables
   double precision tstar
@@ -1160,7 +1161,8 @@ end subroutine mo_compute_from_thermal_flux
 !> \param[out] dlmo          Inverse Monin Obukhov length
 !> \param[out] ustar         friction velocity
 
-subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
+subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar) &
+  bind(C, name='cs_f_mo_compute_from_thermal_diff')
 
   use cstphy
   use cstnum
@@ -1169,7 +1171,7 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   implicit none
 
   ! Arguments
-  double precision z,z0,du,dt,tm,gredu,dlmo,ustar
+  real(c_double) :: z,z0,du,dt,tm,gredu,dlmo,ustar
 
   ! Local variables
   double precision tstar

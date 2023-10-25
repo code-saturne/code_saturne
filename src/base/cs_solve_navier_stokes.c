@@ -729,8 +729,8 @@ _ext_forces(const cs_mesh_t                *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_real_t *cell_f_vol = mq->cell_f_vol;
   /* External forces at previous time step:
-   * frcxt was initialised to 0
-   * NB: frcxt was used in typecl, and will be updated
+   * frcxt was initialized to 0
+   * NB: frcxt was used in cs_boundary_conditions_type, and will be updated
    *     at the end of cs_solve_navier_stokes.
    *
    * External force variation between time step n and n+1

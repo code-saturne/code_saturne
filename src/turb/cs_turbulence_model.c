@@ -261,6 +261,11 @@ BEGIN_C_DECLS
         partial implicitation of wall BCs of \f$ \tens{R} \f$
         - 1: true
         - 0: false (default)
+  \var  cs_turb_rans_model_t::ikwcln
+        Wall boundary condition on omega in k-omega SST
+        0: Deprecated Neumann boundary condition
+        1: Dirichlet boundary condition consistent with Menter's
+        original model: w_wall = 60*nu/(beta*d**2)
   \var  cs_turb_ref_values_t::almax
         characteristic macroscopic length of the domain, used for the
         initialization of the turbulence and the potential clipping (with
@@ -396,6 +401,7 @@ _turb_rans_model =
   .idifre     =    1,
   .iclsyr     =    1,
   .iclptr     =    0,
+  .ikwcln     =    1,
   .xlomlg     = -1e13
 };
 
@@ -1824,7 +1830,9 @@ cs_turb_model_log_setup(void)
                     "    irijrb:      %14d (Reconstruct at boundaries)\n"
                     "    igrari:      %14d (Account for gravity)\n"
                     "    iclsyr:      %14d (Symmetry implicitation)\n"
-                    "    iclptr:      %14d (Wall implicitation)\n"),
+                    "    iclptr:      %14d (Wall implicitation)\n"
+                    "    ikwcln:      %14d (Wall boundary condition"
+                                           "on omega in k-omega SST)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->reinit_turb,
                   cs_glob_turb_rans_model->irijco,
@@ -1832,7 +1840,8 @@ cs_turb_model_log_setup(void)
                   cs_glob_turb_rans_model->irijrb,
                   cs_glob_turb_rans_model->igrari,
                   cs_glob_turb_rans_model->iclsyr,
-                  cs_glob_turb_rans_model->iclptr);
+                  cs_glob_turb_rans_model->iclptr,
+                  cs_glob_turb_rans_model->ikwcln);
 
     int idirsm = cs_glob_turb_rans_model->idirsm;
     if (idirsm < 0 || idirsm > 1)

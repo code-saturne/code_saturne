@@ -103,6 +103,7 @@ cs_boundary.h \
 cs_boundary_conditions.h \
 cs_boundary_conditions_set_coeffs.h \
 cs_boundary_conditions_set_coeffs_symmetry.h \
+cs_boundary_conditions_set_coeffs_turb.h \
 cs_boundary_conditions_type.h \
 cs_boundary_zone.h \
 cs_calcium.h \
@@ -275,8 +276,6 @@ libcsbase_a_SOURCES = \
 addfld.f90 \
 caltri.f90 \
 cs_mass_source_terms.c \
-clptrg.f90 \
-clptur.f90 \
 condli.f90 \
 cou1di.f90 \
 cou1do.f90 \
@@ -293,6 +292,7 @@ cs_boundary.c \
 cs_boundary_conditions.c \
 cs_boundary_conditions_set_coeffs.c \
 cs_boundary_conditions_set_coeffs_symmetry.c \
+cs_boundary_conditions_set_coeffs_turb.c \
 cs_boundary_conditions_type.c \
 cs_boundary_zone.c \
 cs_calcium.c \

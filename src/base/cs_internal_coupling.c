@@ -2846,17 +2846,15 @@ cs_internal_coupling_add_entity(int        f_id)
  * \brief  Update internal coupling coefficients of the field of the
  * given id using given boundary exchange coefficients passed by face id.
  *
- * \param[in] field_id  field id
- * \param[in] hbnd      boundary exchange coefficients passed by face id
+ * \param[in] f     pointer to field
+ * \param[in] hbnd  boundary exchange coefficients passed by face id
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ic_field_set_exchcoeff(const int         field_id,
+cs_ic_field_set_exchcoeff(const cs_field_t *f,
                           const cs_real_t  *hbnd)
 {
-  const cs_field_t *f = cs_field_by_id(field_id);
-
   const int coupling_key_id = cs_field_key_id("coupling_entity");
   int coupling_id = cs_field_get_key_int(f,
                                          coupling_key_id);
