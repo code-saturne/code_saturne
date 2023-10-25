@@ -474,9 +474,9 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight)
 {
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(c_id >= size){
+  if(f_id >= size){
     return;
   }
   cs_lnum_t s_id = i_group_index.x;
@@ -484,35 +484,37 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
   cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
   cs_lnum_t c_id1, c_id2;
 
-  for(cs_lnum_t index = s_id; index < e_id; index++){
-    c_id1 = i_face_cells[index][0];
-    c_id2 = i_face_cells[index][1];
+  c_id1 = i_face_cells[f_id][0];
+  c_id2 = i_face_cells[f_id][1];
 
-    dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
-    dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
-    dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
+  dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
+  dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
+  dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
 
-    ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-    
-    if (c_weight == NULL){
-      _weight1 = 1.;
-      _weight2 = 1.;
-    }
-    else{
-      _pond = weight[index];
-      _denom = 1. / (  _pond       *c_weight[c_id1]
-                                  + (1. - _pond)*c_weight[c_id2]);
-      _weight1 = c_weight[c_id1] * _denom;
-      _weight2 = c_weight[c_id2] * _denom;
-    }
-    
-    for(cs_lnum_t i = 0; i < 3; i++){
-      pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-      for(cs_lnum_t j = 0; j < 3; j++){
-        fctb[j] = dc[j] * pfac;
-        rhs[c_id1][i][j] += _weight2 * fctb[j];
-        rhs[c_id2][i][j] += _weight1 * fctb[j];
-      }
+  ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+  
+  if (c_weight == NULL){
+    _weight1 = 1.;
+    _weight2 = 1.;
+  }
+  else{
+    _pond = weight[f_id];
+    _denom = 1. / (  _pond       *c_weight[c_id1]
+                                + (1. - _pond)*c_weight[c_id2]);
+    _weight1 = c_weight[c_id1] * _denom;
+    _weight2 = c_weight[c_id2] * _denom;
+  }
+  
+  for(cs_lnum_t i = 0; i < 3; i++){
+    pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+    for(cs_lnum_t j = 0; j < 3; j++){
+      fctb[j] = dc[j] * pfac;
+      // rhs[c_id1][i][j] += _weight2 * fctb[j];
+      // rhs[c_id2][i][j] += _weight1 * fctb[j];
+      _weight2 += _weight2 * fctb[j];
+      _weight1 += _weight1 * fctb[j];
+      atomicAdd(&rhs[f_id][i][j], _weight2);
+      atomicAdd(&rhs[c_id2][i][j], _weight2);
     }
   }
 }
@@ -571,9 +573,9 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
                                 const cs_real_3_t    *coefav,
                                 const int            inc)
 {
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(c_id >= size){
+  if(f_id >= size){
     return;
   }
   cs_lnum_t s_id = b_group_index.x;
@@ -581,38 +583,44 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
   cs_lnum_t c_id1;
   cs_real_t n_d_dist[3], d_b_dist, pfac, norm, inverse_norm;
 
-  for(cs_lnum_t index = s_id; index < e_id; index++){
-    c_id1 = b_face_cells[index];
+  c_id1 = b_face_cells[f_id];
 
-    /* Normal is vector 0 if the b_face_normal norm is too small */
-    norm = sqrt(b_face_normal[index][0]*b_face_normal[index][0] 
-            + b_face_normal[index][1]*b_face_normal[index][1]
-            + b_face_normal[index][2]*b_face_normal[index][2]);
+  /* Normal is vector 0 if the b_face_normal norm is too small */
+  norm = sqrt(b_face_normal[f_id][0]*b_face_normal[f_id][0] 
+          + b_face_normal[f_id][1]*b_face_normal[f_id][1]
+          + b_face_normal[f_id][2]*b_face_normal[f_id][2]);
 
-    inverse_norm = 1. / norm;
+  inverse_norm = 1. / norm;
 
-    n_d_dist[0] = inverse_norm * b_face_normal[index][0];
-    n_d_dist[1] = inverse_norm * b_face_normal[index][1];
-    n_d_dist[2] = inverse_norm * b_face_normal[index][2];
+  n_d_dist[0] = inverse_norm * b_face_normal[f_id][0];
+  n_d_dist[1] = inverse_norm * b_face_normal[f_id][1];
+  n_d_dist[2] = inverse_norm * b_face_normal[f_id][2];
 
-    d_b_dist = 1. / b_dist[index];
+  d_b_dist = 1. / b_dist[f_id];
 
-    /* Normal divided by b_dist */
-    n_d_dist[0] *= d_b_dist;
-    n_d_dist[1] *= d_b_dist;
-    n_d_dist[2] *= d_b_dist;
+  /* Normal divided by b_dist */
+  n_d_dist[0] *= d_b_dist;
+  n_d_dist[1] *= d_b_dist;
+  n_d_dist[2] *= d_b_dist;
 
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      pfac =   coefav[index][i]*inc
-            + (  coefbv[index][0][i] * pvar[c_id1][0]
-              + coefbv[index][1][i] * pvar[c_id1][1]
-              + coefbv[index][2][i] * pvar[c_id1][2]
-              - pvar[c_id1][i]);
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    pfac =   coefav[f_id][i]*inc
+          + (  coefbv[f_id][0][i] * pvar[c_id1][0]
+            + coefbv[f_id][1][i] * pvar[c_id1][1]
+            + coefbv[f_id][2][i] * pvar[c_id1][2]
+            - pvar[c_id1][i]);
 
-      rhs[c_id1][i][0] += n_d_dist[0] * pfac;
-      rhs[c_id1][i][1] += n_d_dist[1] * pfac;
-      rhs[c_id1][i][2] += n_d_dist[2] * pfac;
-    }
+    // rhs[c_id1][i][0] += n_d_dist[0] * pfac;
+    // rhs[c_id1][i][1] += n_d_dist[1] * pfac;
+    // rhs[c_id1][i][2] += n_d_dist[2] * pfac;
+
+    n_d_dist[0] *= pfac;
+    n_d_dist[1] *= pfac;
+    n_d_dist[2] *= pfac;
+
+    atomicAdd(&rhs[c_id1][i][0], n_d_dist[0]);
+    atomicAdd(&rhs[c_id1][i][1], n_d_dist[1]);
+    atomicAdd(&rhs[c_id1][i][2], n_d_dist[2]);
   }
 }
 
@@ -1193,6 +1201,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces   = m->n_b_faces;
+  const cs_lnum_t n_i_faces   = m->n_i_faces;
 
   int device_id;
   cudaGetDevice(&device_id);
@@ -1291,33 +1300,6 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   bool status = false;
   cs_lnum_t count_nan = 0, count_inf = 0;
-  // isnan_cuda<<<gridsize_ext, blocksize, 0, stream1>>>
-  //   (n_cells_ext, rhs_d, status);
-
-  // if(status)
-  //   printf("Nan found in rhs after init kernel");
-
-  // printf("Init execution time %f\n", msecTotal);
-  // printf("n_group: %d n_thread: %d n_group[0]: %d n_group[1]: %d\n", m->b_face_numbering->n_groups, m->b_face_numbering->n_threads, m->b_face_numbering->group_index[0], m->b_face_numbering->group_index[1]);
-
-  // for(cs_lnum_t id = 0; id < n_cells_ext; id++){
-  //   for(cs_lnum_t i = 0; i < 3; i++){
-  //     for(cs_lnum_t j = 0; j < 3; j++){
-  //       if(isnan(rhs[id][i][j])){
-  //         status = true;
-  //         count_nan++;
-  //       }
-  //       if(isinf(rhs[id][i][j])){
-  //         status = true;
-  //         count_inf++;
-  //       }
-  //     }
-  //   }
-  // }
-  // if(status){
-  //   printf("%d Nans found in rhs before interieur face kernel\n", count_nan);
-  //   printf("%d Infs found in rhs before interieur face kernel\n", count_inf);
-  // }
 
   error = cudaEventCreate(&start);
   error = cudaEventCreate(&stop);
@@ -1327,35 +1309,12 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   error = cudaEventSynchronize(start);
   
   _compute_rhs_lsq_v_i_face<<<gridsize, blocksize, 0, stream1>>>
-      (n_cells, i_group_index, i_face_cells, cell_f_cen, rhs_d, pvar_d, weight, c_weight);
+      (n_i_faces, i_group_index, i_face_cells, cell_f_cen, rhs_d, pvar_d, weight, c_weight);
 
   error = cudaEventRecord(stop, NULL);
 	error = cudaEventSynchronize(stop);
 	msecTotal = 0.0f;
 	error = cudaEventElapsedTime(&msecTotal, start, stop);
-
-  // isnan_cuda<<<gridsize_ext, blocksize, 0, stream1>>>
-  //   (n_cells_ext, rhs_d, status);
-
-  // count_nan = 0; count_inf = 0;
-  // for(cs_lnum_t id = 0; id < n_cells_ext; id++){
-  //   for(cs_lnum_t i = 0; i < 3; i++){
-  //     for(cs_lnum_t j = 0; j < 3; j++){
-  //       if(isnan(rhs[id][i][j])){
-  //         status = true;
-  //         count_nan++;
-  //       }
-  //       if(isinf(rhs[id][i][j])){
-  //         status = true;
-  //         count_inf++;
-  //       }
-  //     }
-  //   }
-  // }
-  // if(status){
-  //   printf("%d Nans found in rhs after interieur face kernel\n", count_nan);
-  //   printf("%d Infs found in rhs after interieur face kernel\n", count_inf);
-  // }
 
   if(halo_type == CS_HALO_EXTENDED && cell_cells_idx != NULL){
     error = cudaEventCreate(&start);
@@ -1381,7 +1340,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   error = cudaEventSynchronize(start);
 
   _compute_rhs_lsq_v_b_face<<<gridsize, blocksize, 0, stream1>>>
-      (n_cells, b_group_index, b_face_cells, cell_f_cen, b_face_normal, rhs_d, pvar_d, b_dist, coefb_d, coefa_d, inc);
+      (m->n_b_faces, b_group_index, b_face_cells, cell_f_cen, b_face_normal, rhs_d, pvar_d, b_dist, coefb_d, coefa_d, inc);
 
   error = cudaEventRecord(stop, NULL);
   error = cudaEventSynchronize(stop);
@@ -1403,19 +1362,10 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   cs_real_33_t *grad_d = NULL;
   CS_CUDA_CHECK(cudaMalloc(&grad_d, n_cells * sizeof(cs_real_33_t)));
 
-  // if (cs_check_device_ptr(gradv) == CS_ALLOC_HOST) {
-  //   size_t size = n_cells * sizeof(cs_real_t) * 3 * 3;
-  //   CS_CUDA_CHECK(cudaMalloc(&_grad_d, size));
-  //   grad_d = (cs_real_33_t *)_grad_d;
-  // }
-  // else {
-  //   grad_d = (cs_real_33_t *)cs_get_device_ptr((void *)gradv);
-  // }
-
   error = cudaEventCreate(&start);
   error = cudaEventCreate(&stop);
 
-  // Record the start event
+  // // Record the start event
   error = cudaEventRecord(start, NULL);
   error = cudaEventSynchronize(start);
 
@@ -1430,9 +1380,9 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   cudaStreamSynchronize(stream1);
   cudaStreamDestroy(stream1);
 
-  /* Sync to host */
+  // /* Sync to host */
   if (grad_d != NULL) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
+    size_t size = n_cells * sizeof(cs_real_t) * 3 * 3;
     cs_cuda_copy_d2h(gradv, grad_d, size);
   }
   else

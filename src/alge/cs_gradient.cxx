@@ -6980,7 +6980,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
-
+#endif
   /* Contribution from extended neighborhood */
 
   if (halo_type == CS_HALO_EXTENDED) {
@@ -7068,7 +7068,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
                           + rhs[c_id][i][2] * cocg[c_id][2];
     }
   }
-#endif 
+// #endif 
 
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
