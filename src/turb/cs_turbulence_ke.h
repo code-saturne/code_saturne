@@ -48,6 +48,7 @@ BEGIN_C_DECLS
  * Solve the \f$ k - \varepsilon \f$  for incompressible flows
  * or slightly compressible flows for one time step.
  *
+ * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
@@ -62,7 +63,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke(cs_lnum_t        ncesmp,
+cs_turbulence_ke(int              phase_id,
+                 cs_lnum_t        ncesmp,
                  cs_lnum_t        icetsm[],
                  int              itypsm[],
                  const cs_real_t *dt,
@@ -73,6 +75,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 /*!
  * \brief Clipping of the turbulent kinetic energy and turbulent dissipation.
  *
+ * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
  * \param[in]     n_cells  number of cells
  * \param[in]     iclip    indicator = 0 if viscl0 is used
  *                         otherwise viscl is used.
@@ -80,7 +83,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_clip(cs_lnum_t  n_cells,
+cs_turbulence_ke_clip(int        phase_id,
+                      cs_lnum_t  n_cells,
                       int        iclip);
 
 /*----------------------------------------------------------------------------*/
@@ -88,23 +92,28 @@ cs_turbulence_ke_clip(cs_lnum_t  n_cells,
  * \brief Calculation of turbulent viscosity for
  *        the non-linear quadratic K-epsilon from
  *        Baglietto et al. (2005)
+ *
+ * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_q_mu_t(void);
+cs_turbulence_ke_q_mu_t(int phase_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of non linear terms of the quadratic k-epsilon model
  *        (Baglietto et al.)
  *
- * \param[out]  rij  non linear terms of quadratic Boussinesq approximation
+ * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[out]  rij        non linear terms of quadratic Boussinesq approximation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_q(cs_real_6_t  rij[]);
+cs_turbulence_ke_q(int phase_id,
+                   cs_real_6_t  rij[]);
 
 /*----------------------------------------------------------------------------*/
 

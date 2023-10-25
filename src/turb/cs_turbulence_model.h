@@ -445,10 +445,13 @@ cs_get_glob_turb_model(void);
 /*----------------------------------------------------------------------------
  * Compute turbulence model constants,
  * some of which may depend on the model choice.
+ *
+ * \param[in]       phase_id  turbulent phase id (-1 for single phase flow)
+ *
  *----------------------------------------------------------------------------*/
 
 void
-cs_turb_compute_constants(void);
+cs_turb_compute_constants(int phase_id);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_glob_turb_ref_values

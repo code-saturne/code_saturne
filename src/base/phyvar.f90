@@ -164,10 +164,11 @@ interface
     implicit none
   end subroutine cs_les_mu_t_wale
 
-  subroutine cs_turbulence_ke_q_mu_t() &
+  subroutine cs_turbulence_ke_q_mu_t(phase_id) &
     bind(C, name='cs_turbulence_ke_q_mu_t')
     use, intrinsic :: iso_c_binding
     implicit none
+    integer(c_int), value :: phase_id
   end subroutine cs_turbulence_ke_q_mu_t
 
   subroutine cs_turbulence_kw_mu_t() &
@@ -383,7 +384,7 @@ elseif (itytur.eq.2) then
     ! Non-linear quadratic Baglietto
     ! ------------------------------
 
-    call cs_turbulence_ke_q_mu_t
+    call cs_turbulence_ke_q_mu_t(-1)
 
   else
 

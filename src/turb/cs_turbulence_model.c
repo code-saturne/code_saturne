@@ -1534,11 +1534,14 @@ cs_set_glob_turb_model(void)
 /*!
  * \brief Compute turbulence model constants,
  *        some of which may depend on the model choice.
+ *
+ * \param[in]       phase_id  turbulent phase id (-1 for single phase flow)
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turb_compute_constants(void)
+cs_turb_compute_constants(int phase_id)
 {
   cs_turb_dpow   = 1./(1.+cs_turb_bpow);
 
@@ -1553,23 +1556,33 @@ cs_turb_compute_constants(void)
 
   cs_field_pointer_ensure_init();
 
-  if (CS_F_(k) != NULL)
-    cs_field_set_key_double(CS_F_(k), k_turb_schmidt, 1.);
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_phi = CS_F_(phi);
+  cs_field_t *f_eps = CS_F_(eps);
 
-  if (CS_F_(phi) != NULL)
-    cs_field_set_key_double(CS_F_(phi), k_turb_schmidt, 1.);
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_phi = CS_FI_(phi, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+  }
+
+  if (f_k != NULL)
+    cs_field_set_key_double(f_k, k_turb_schmidt, 1.);
+
+  if (f_phi != NULL)
+    cs_field_set_key_double(f_phi, k_turb_schmidt, 1.);
 
   if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.22);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.22);
   else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.15);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.15);
     cs_turb_crij3 = 0.6;
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.5);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.5);
   else
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.30);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.30);
 
   if (cs_glob_turb_rans_model->idirsm == 0)
     cs_turb_csrij = 0.11;

@@ -3568,10 +3568,11 @@ module cs_c_bindings
 
     ! Interface to C function solving the quadratic k-epsilon model.
 
-    subroutine cs_turbulence_ke_q(rij) &
+    subroutine cs_turbulence_ke_q(phase_id, rij) &
       bind(C, name='cs_turbulence_ke_q')
       use, intrinsic :: iso_c_binding
       implicit none
+      integer(c_int), value :: phase_id
       real(kind=c_double), dimension(6,*), intent(out) :: rij
     end subroutine cs_turbulence_ke_q
 

@@ -217,11 +217,11 @@ interface
   end subroutine cs_syr_coupling_send_boundary
 
   subroutine cs_turbulence_ke &
-       (ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
+       (phase_id, ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
     bind(C, name='cs_turbulence_ke')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: ncesmp
+    integer(c_int), value :: phase_id, ncesmp
     integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
     real(kind=c_double), dimension(*) :: dt, smacel
     real(kind=c_double), dimension(*), intent(in) :: prdv2f
@@ -1153,7 +1153,7 @@ if (iccvfg.eq.0) then
       allocate(prdv2f(ncelet))
     endif
 
-    call cs_turbulence_ke(ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
+    call cs_turbulence_ke(-1, ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
 
     if (itytur.eq.5)  then
 

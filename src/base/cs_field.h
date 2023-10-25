@@ -156,6 +156,10 @@ typedef struct {
                                            to matching previous values array
                                            (if n_time_vals == 2) */
 
+  cs_real_t              *grad;         /* For each active location, pointer
+                                           to matching gradient array for
+                                           variable type fields */
+
   cs_field_bc_coeffs_t   *bc_coeffs;    /* Boundary condition coefficients,
                                            for variable type fields */
 
@@ -344,6 +348,16 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
 void
 cs_field_init_bc_coeffs(cs_field_t  *f);
+
+/*----------------------------------------------------------------------------
+ * Allocate arrays for field gradient.
+ *
+ * parameters:
+ *   f <-- pointer to field structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_allocate_gradient(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------
  * Set current field values to the given constant.

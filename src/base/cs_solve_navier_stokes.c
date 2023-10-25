@@ -474,7 +474,7 @@ _div_rij(const cs_mesh_t     *m,
     eqp = cs_field_get_equation_param_const(CS_F_(k));
 
     /* Compute the non linear part of Rij */
-    cs_turbulence_ke_q(rij);
+    cs_turbulence_ke_q(-1, rij);
 
     /* Boundary conditions: homogeneous Neumann */
 

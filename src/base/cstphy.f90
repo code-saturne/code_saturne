@@ -598,9 +598,11 @@ module cstphy
     ! Interface to C function completing the constants of the
     ! turbulence model
 
-    subroutine cs_f_turb_complete_constants() &
+    subroutine cs_f_turb_complete_constants(phase_id) &
       bind(C, name='cs_turb_compute_constants')
       use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: phase_id
     end subroutine cs_f_turb_complete_constants
 
     !---------------------------------------------------------------------------

@@ -461,7 +461,7 @@ call cs_gui_turb_ref_values
 
 ! Set turbulence constants according to model choices.
 ! This can be overwritten by the user in cs_user_parameters()
-call cs_f_turb_complete_constants
+call cs_f_turb_complete_constants(-1)
 
 ! Scamin, scamax, turbulent flux model, diffusivities
 call cs_gui_scalar_model_settings()

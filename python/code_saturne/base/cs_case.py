@@ -392,7 +392,7 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
                 if info['compute_time']:
                     if os.path.isfile(os.path.join(run_dir, 'run_status.exec_dir')):
                         state = case_state.COMPUTED
-                    # Note that the following test is incomplete, 
+                    # Note that the following test is incomplete,
                     elif os.path.isfile(os.path.join(run_dir, 'run_solver')):
                         state = case_state.COMPUTED
                     else:
