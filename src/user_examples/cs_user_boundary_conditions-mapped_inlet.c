@@ -150,7 +150,6 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
 
     const cs_lnum_t face_id = zn->elt_ids[e_idx];
-    const cs_lnum_t c_id = b_face_cells[face_id];
 
     bc_type[face_id] = CS_INLET;
 

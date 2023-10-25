@@ -497,7 +497,7 @@ _rhogl_h_cell_upw(cs_lnum_t                    c_id,
 
   /* Compute the upwind mean value in a cell */
 
-  double  pg_cen = 0., pg_g_upw = 0, pg_l_upw = 0;
+  double  pg_cen = 0., pg_g_upw = 0;
   for (cs_lnum_t j = c2e->idx[c_id] + 1; j < c2e->idx[c_id+1]; j++) {
 
     const cs_lnum_t  e_id = c2e->ids[j];

@@ -92,10 +92,6 @@ cs_user_postprocess_writers(void)
 void
 cs_user_postprocess_probes(void)
 {
-  /* Alias global pointers to mesh and mesh quantities structures */
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
   /* A probe will be located at each boundary face center */
 
   /* Create probes set of name foil_profile from criterion FOIL_WALL */
@@ -170,7 +166,6 @@ cs_user_postprocess_values(const char            *mesh_name,
     /* check that current probes set is foil_profile */
     if (strncmp(name, "foil_profile", strlen("foil_profile")) == 0) {
       /*! [variables_def] */
-      const cs_mesh_t *m = cs_glob_mesh;
       const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
       const cs_real_3_t *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
       /*! [variables_def] */

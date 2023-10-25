@@ -136,8 +136,6 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
       const cs_real_t zent = b_face_cog[face_id][2];
 
       const cs_real_t ustar = cs_turb_xkappa*xuref/log((zref+rugd)/rugd);
-      const cs_real_t xuent = ustar/cs_turb_xkappa*log((zent+rugd)/rugd);
-      const cs_real_t xvent = 0.0;
       const cs_real_t xkent = cs_math_pow2(ustar)/sqrt(cs_turb_cmu);
       const cs_real_t xeent = cs_math_pow3(ustar)/cs_turb_xkappa/(zent+rugd);
 

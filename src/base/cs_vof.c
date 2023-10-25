@@ -971,7 +971,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
 
-  cs_real_t *curv, *coefa, *coefb, *pvar, *pvar_tp;
+  cs_real_t *curv, *coefa, *coefb, *pvar;
   cs_real_3_t *coefa_vec;
   cs_real_33_t *coefb_vec;
 

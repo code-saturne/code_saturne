@@ -173,7 +173,6 @@ cs_user_wall_condensation(int  nvar,
   CS_UNUSED(nscal);
 
   cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
-  cs_lnum_t  nfabor = cs_glob_mesh->n_b_faces;
 
   cs_wall_condensation_t     *wall_cond    = cs_get_glob_wall_condensation();
   cs_wall_cond_1d_thermal_t  *wall_thermal = cs_get_glob_wall_cond_1d_thermal();
