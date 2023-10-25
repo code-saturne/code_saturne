@@ -521,10 +521,11 @@ cs_reco_scalar_v2c(cs_lnum_t                    n_cells,
 {
   if (array == NULL)
     return;
+  if (n_cells < 1)
+    return;
 
   if (cell_ids == NULL) { /* No indirection to apply */
 
-    assert(c2v != NULL && cdoq != NULL);
     assert(n_cells == cdoq->n_cells);
 
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
