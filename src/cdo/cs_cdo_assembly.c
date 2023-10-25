@@ -369,6 +369,60 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function pointer for adding values to a MSR matrix.
+ *
+ *  Specific case:
+ *        CDO schemes with openMP scalar-valued quantities for coupled systems
+ *
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
+ *
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given column
+ *         id.
+ *
+ * \param[in]      row       pointer to a cs_cdo_assembly_row_t type
+ * \param[in, out] matrix    pointer to a matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_add_scal_values_sys_extra_block(const cs_cdo_assembly_row_t    *row,
+                                 cs_matrix_t                    *matrix)
+{
+  assert(row->l_id > -1);
+
+  cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
+
+  /* Only extra-diagonal values in this case */
+
+  cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
+
+  /* OpenMP with critical or atomic section according to the settings */
+
+#if CS_CDO_OMP_SYNC_MODE > 0
+
+# pragma omp critical
+  {
+    for (int j = 0; j < row->n_cols; j++)
+      xvals[row->col_idx[j]] += row->val[j];
+  }
+
+#else  /* Atomic sync. */
+
+  for (int j = 0; j < row->n_cols; j++) {
+#   pragma omp atomic
+    xvals[row->col_idx[j]] += row->val[j];
+  }
+
+#endif  /* critical or atomic section */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the column index for each entry of a row
  *        Case where the row belong to the local rank and all its colums too.
  *
@@ -381,7 +435,7 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+static void
 _set_col_idx_scal_loc(const cs_matrix_assembler_t     *ma,
                       cs_cdo_assembly_row_t           *row)
 {
@@ -426,7 +480,7 @@ _set_col_idx_scal_loc(const cs_matrix_assembler_t     *ma,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+static void
 _set_col_idx_scal_locdist(const cs_matrix_assembler_t    *ma,
                           cs_cdo_assembly_row_t          *row)
 {
@@ -487,6 +541,58 @@ _set_col_idx_scal_locdist(const cs_matrix_assembler_t    *ma,
                                                     ma->d_g_c_id + d_start);
 
     }
+
+  } /* Loop on columns of the row */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the column index for each entry of a row
+ *        Case where the row belong to the local rank but a part of the columns
+ *        belong to a distant rank. Hence the naming *_locdist
+ *        Case of a coupled system and the block is not diagonal. This leads
+ *        to entries which are all extra-diagonal
+ *
+ * See \ref cs_matrix_assembler_values_add_g which performs the same operations
+ * In the specific case of CDO system, one assumes predefined choices in order
+ * to get a more optimized version of this function
+ *
+ * \param[in, out]  ma     pointer to matrix assembler values structure
+ * \param[in, out]  row    pointer to a cs_cdo_assembly_row_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_col_idx_scal_locdist_sys_extra_block(const cs_matrix_assembler_t   *ma,
+                                          cs_cdo_assembly_row_t         *row)
+{
+  assert(ma->d_r_idx != NULL); /* local-id-based function, need to adapt */
+
+  const cs_lnum_t  *d_r_idx = ma->d_r_idx + row->l_id;
+  const cs_lnum_t  *r_idx = ma->r_idx + row->l_id;
+  const int  n_d_cols = d_r_idx[1] - d_r_idx[0];
+  const int  n_l_cols = r_idx[1] - r_idx[0] - n_d_cols;
+
+  /* Loop on columns to fill col_idx for extra-diag entries */
+
+  for (int j = 0; j < row->n_cols; j++) {
+
+    const cs_gnum_t  g_c_id = row->col_g_id[j];
+    const cs_lnum_t  l_c_id = g_c_id - ma->l_range[0];
+
+    if (l_c_id > -1 && g_c_id < ma->l_range[1]) { /* Local part */
+
+      row->col_idx[j] = _l_binary_search(0, n_l_cols, l_c_id,
+                                         ma->c_id + r_idx[0]);
+      assert(row->col_idx[j] > -1);
+
+    }
+    else /* Distant part: column ids start and end of local row, so add
+            n_l_cols */
+
+      row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
+                                                    g_c_id,
+                                                    ma->d_g_c_id + d_r_idx[0]);
 
   } /* Loop on columns of the row */
 }
@@ -1927,27 +2033,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
         assert(row->col_idx[j] > -1);
       }
 
-      cs_matrix_t  *matrix = mav->matrix;
-      cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
-
-      const cs_matrix_struct_dist_t  *ms = matrix->structure;
-
-      cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
-
-      /* OpenMP with critical or atomic section according to the settings */
-
-#if CS_CDO_OMP_SYNC_MODE > 0
-#     pragma omp critical
-      {
-        for (int j = 0; j < row->n_cols; j++)
-          xvals[row->col_idx[j]] += row->val[j];
-      }
-#else
-      for (int j = 0; j < row->n_cols; j++) {
-#       pragma omp atomic
-        xvals[row->col_idx[j]] += row->val[j];
-      }
-#endif
+      _add_scal_values_sys_extra_block(row, mav->matrix);
 
     } /* Loop on rows */
 
@@ -2051,37 +2137,7 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
       }
       else {
 
-        /* local-id-based function, need to adapt */
-        assert(ma->d_r_idx != NULL);
-
-        const cs_lnum_t  *d_r_idx = ma->d_r_idx + row->l_id;
-        const cs_lnum_t  *r_idx = ma->r_idx + row->l_id;
-        const int  n_d_cols = d_r_idx[1] - d_r_idx[0];
-        const int  n_l_cols = r_idx[1] - r_idx[0] - n_d_cols;
-
-        /* Loop on columns to fill col_idx for extra-diag entries */
-
-        for (int j = 0; j < row->n_cols; j++) {
-
-          const cs_gnum_t g_c_id = row->col_g_id[j];
-
-          if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) { /* Local part */
-
-            row->col_idx[j] = _l_binary_search(0,
-                                               n_l_cols,
-                                               g_c_id - ma->l_range[0], /* l_c_id */
-                                               ma->c_id + r_idx[0]);
-            assert(row->col_idx[j] > -1);
-
-          }
-          else /* Distant part: column ids start and end of local row, so add
-                  n_l_cols */
-
-            row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
-                                                          g_c_id,
-                                                          ma->d_g_c_id + d_r_idx[0]);
-
-        } /* Loop on columns of the row */
+        _set_col_idx_scal_locdist_sys_extra_block(ma, row);
 
         cs_matrix_t  *matrix = mav->matrix;
         cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
@@ -2202,60 +2258,8 @@ cs_cdo_assembly_matrix_sys_mpit(const cs_sdm_t                   *m,
       }
       else {
 
-        /* local-id-based function, need to adapt */
-        assert(ma->d_r_idx != NULL);
-
-        const cs_lnum_t  *d_r_idx = ma->d_r_idx + row->l_id;
-        const cs_lnum_t  *r_idx = ma->r_idx + row->l_id;
-        const int  n_d_cols = d_r_idx[1] - d_r_idx[0];
-        const int  n_l_cols = r_idx[1] - r_idx[0] - n_d_cols;
-
-        /* Loop on columns to fill col_idx for extra-diag entries */
-
-        for (int j = 0; j < row->n_cols; j++) {
-
-          const cs_gnum_t  g_c_id = row->col_g_id[j];
-
-          if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) {
-            /* Local part */
-
-            row->col_idx[j] = _l_binary_search(0,
-                                               n_l_cols,
-                                               g_c_id - ma->l_range[0], /* l_c_id */
-                                               ma->c_id + r_idx[0]);
-            assert(row->col_idx[j] > -1);
-
-          }
-          else /* Distant part: column ids start and end of local row, so add
-                  n_l_cols */
-
-            row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
-                                                          g_c_id,
-                                                          ma->d_g_c_id + d_r_idx[0]);
-
-        } /* Loop on columns of the row */
-
-        cs_matrix_t  *matrix = mav->matrix;
-        cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
-
-        const cs_matrix_struct_dist_t  *ms = matrix->structure;
-
-        cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
-
-      /* OpenMP with critical or atomic section according to the settings */
-
-#if CS_CDO_OMP_SYNC_MODE > 0
-#       pragma omp critical
-        {
-          for (int j = 0; j < row->n_cols; j++)
-            xvals[row->col_idx[j]] += row->val[j];
-        }
-#else
-        for (int j = 0; j < row->n_cols; j++) {
-#         pragma omp atomic
-          xvals[row->col_idx[j]] += row->val[j];
-        }
-#endif
+        _set_col_idx_scal_locdist_sys_extra_block(ma, row);
+        _add_scal_values_sys_extra_block(row, mav->matrix);
 
       } /* Not a distant row */
 
