@@ -368,7 +368,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assemble a cellwise matrix into the global matrix.
+ * \brief Assemble a cellwise matrix into the global coupled matrix.
  *        Scalar-valued case. Parallel without openMP threading.
  *
  * \param[in]      m        cellwise view of the algebraic system
@@ -381,6 +381,26 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
 
 void
 cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
+                                const cs_lnum_t                  *dof_ids,
+                                const cs_range_set_t             *rset,
+                                cs_cdo_assembly_t                *asb,
+                                cs_matrix_assembler_values_t     *mav);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assemble a cellwise matrix into the global coupled matrix.
+ *        Scalar-valued case. Parallel with openMP threading.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_matrix_sys_mpit(const cs_sdm_t                   *m,
                                 const cs_lnum_t                  *dof_ids,
                                 const cs_range_set_t             *rset,
                                 cs_cdo_assembly_t                *asb,
