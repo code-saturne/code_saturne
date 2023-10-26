@@ -70,6 +70,7 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include <chrono>
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -6891,6 +6892,11 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   cs_cocg_6_t  *restrict cocgb_s = NULL;
   cs_cocg_6_t *restrict cocg = NULL;
 
+  /* Timing the computation */
+
+  std::chrono::high_resolution_clock::time_point start, stop;
+  std::chrono::microseconds elapsed, elapsed_cuda;
+
 #if defined(HAVE_CUDA)
   bool accel = (cs_get_device_id() > -1) ? true : false;
 #else
@@ -6908,6 +6914,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   /* Compute Right-Hand Side */
   /*-------------------------*/
 //#if defined(HAVE_CUDA)
+  start = std::chrono::high_resolution_clock::now();
   cs_lsq_vector_gradient_cuda(
     m,
     madj,
@@ -6921,7 +6928,11 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     cocg,
     gradv_cuda,
     rhs_cuda);
+  stop = std::chrono::high_resolution_clock::now();
+  elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  
 //#else
+  start = std::chrono::high_resolution_clock::now();
   # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
@@ -7080,6 +7091,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     }
   }
 // #endif 
+stop = std::chrono::high_resolution_clock::now();
+elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+printf("Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
 
   /* Compute gradient on boundary cells */
   /*------------------------------------*/

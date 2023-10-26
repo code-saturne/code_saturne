@@ -37,6 +37,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <chrono>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -94,21 +95,18 @@
  * Private function definitions
  *============================================================================*/
 
-__global__ void isnan_cuda(cs_lnum_t         size,
-                            cs_real_33_t      *restrict rhs,
-                            bool status)
+__device__ void cs_math_3_normalise_cuda(const cs_real_t in[3],
+                                         cs_real_t out[3])
 {
-  cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_real_t norm = sqrt(in[0]*in[0] 
+          + in[1]*in[1]
+          + in[2]*in[2]);
 
-  if (id >= size)
-    return;
+  cs_real_t inverse_norm =  1. / norm;
 
-  for (cs_lnum_t i = 0; i < 3; i++)
-      for (cs_lnum_t j = 0; j < 3; j++){
-        if(isnan(rhs[id][i][j])){
-            status = true;
-        }
-      }
+  out[0] = inverse_norm * in[0];
+  out[1] = inverse_norm * in[1];
+  out[2] = inverse_norm * in[2];
 }
 
 /*----------------------------------------------------------------------------
@@ -466,7 +464,6 @@ _init_rhs(cs_lnum_t         size,
 
 __global__ static void
 _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
-                          int2      i_group_index,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *cell_f_cen,
                           cs_real_33_t         *rhs,
@@ -479,8 +476,6 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
   if(f_id >= size){
     return;
   }
-  cs_lnum_t s_id = i_group_index.x;
-  cs_lnum_t e_id = i_group_index.y;
   cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
   cs_lnum_t c_id1, c_id2;
 
@@ -509,8 +504,54 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
     pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
     for(cs_lnum_t j = 0; j < 3; j++){
       fctb[j] = dc[j] * pfac;
-      // rhs[c_id1][i][j] += _weight2 * fctb[j];
-      // rhs[c_id2][i][j] += _weight1 * fctb[j];
+      atomicAdd(&rhs[c_id1][i][j], _weight2 * fctb[j]);
+      atomicAdd(&rhs[c_id2][i][j], _weight1 * fctb[j]);
+    }
+  }
+}
+
+__global__ static void
+_compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
+                          const cs_lnum_2_t      *i_face_cells,
+                          const cs_real_3_t    *cell_f_cen,
+                          cs_real_33_t         *rhs,
+                          const cs_real_3_t    *pvar,
+                          const cs_real_t         *weight,
+                          const cs_real_t      *c_weight)
+{
+  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if(f_id >= size){
+    return;
+  }
+  cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
+  cs_lnum_t c_id1, c_id2;
+
+  c_id1 = i_face_cells[f_id][0];
+  c_id2 = i_face_cells[f_id][1];
+
+  dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
+  dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
+  dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
+
+  ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+  
+  if (c_weight == NULL){
+    _weight1 = 1.;
+    _weight2 = 1.;
+  }
+  else{
+    _pond = weight[f_id];
+    _denom = 1. / (  _pond       *c_weight[c_id1]
+                                + (1. - _pond)*c_weight[c_id2]);
+    _weight1 = c_weight[c_id1] * _denom;
+    _weight2 = c_weight[c_id2] * _denom;
+  }
+  
+  for(cs_lnum_t i = 0; i < 3; i++){
+    pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+    for(cs_lnum_t j = 0; j < 3; j++){
+      fctb[j] = dc[j] * pfac;
       atomicAdd(&rhs[c_id1][i][j], _weight2 * fctb[j]);
       atomicAdd(&rhs[c_id2][i][j], _weight1 * fctb[j]);
     }
@@ -560,7 +601,6 @@ _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
 
 __global__ static void
 _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
-                                int2      b_group_index,
                                 const cs_lnum_t      *b_face_cells,
                                 const cs_real_3_t    *cell_f_cen,
                                 const cs_real_3_t    *b_face_normal,
@@ -576,23 +616,13 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
   if(f_id >= size){
     return;
   }
-  cs_lnum_t s_id = b_group_index.x;
-  cs_lnum_t e_id = b_group_index.y;
+
   cs_lnum_t c_id1;
   cs_real_t n_d_dist[3], d_b_dist, pfac, norm, inverse_norm;
 
   c_id1 = b_face_cells[f_id];
 
-  /* Normal is vector 0 if the b_face_normal norm is too small */
-  norm = sqrt(b_face_normal[f_id][0]*b_face_normal[f_id][0] 
-          + b_face_normal[f_id][1]*b_face_normal[f_id][1]
-          + b_face_normal[f_id][2]*b_face_normal[f_id][2]);
-
-  inverse_norm = 1. / norm;
-
-  n_d_dist[0] = inverse_norm * b_face_normal[f_id][0];
-  n_d_dist[1] = inverse_norm * b_face_normal[f_id][1];
-  n_d_dist[2] = inverse_norm * b_face_normal[f_id][2];
+  cs_math_3_normalise_cuda(b_face_normal[f_id], n_d_dist);
 
   d_b_dist = 1. / b_dist[f_id];
 
@@ -607,10 +637,6 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
             + coefbv[f_id][1][i] * pvar[c_id1][1]
             + coefbv[f_id][2][i] * pvar[c_id1][2]
             - pvar[c_id1][i]);
-
-    // rhs[c_id1][i][0] += n_d_dist[0] * pfac;
-    // rhs[c_id1][i][1] += n_d_dist[1] * pfac;
-    // rhs[c_id1][i][2] += n_d_dist[2] * pfac;
 
     atomicAdd(&rhs[c_id1][i][0], n_d_dist[0] * pfac);
     atomicAdd(&rhs[c_id1][i][1], n_d_dist[1] * pfac);
@@ -1197,6 +1223,9 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_lnum_t n_b_faces   = m->n_b_faces;
   const cs_lnum_t n_i_faces   = m->n_i_faces;
 
+  std::chrono::high_resolution_clock::time_point begin, end;
+  std::chrono::microseconds elapsed;
+
   int device_id;
   cudaGetDevice(&device_id);
 
@@ -1228,6 +1257,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   unsigned int gridsize = (unsigned int)ceil((double)m->n_cells / blocksize);
   unsigned int gridsize_ext
     = (unsigned int)ceil((double)n_cells_ext / blocksize);
+
+  begin = std::chrono::high_resolution_clock::now();
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
@@ -1279,69 +1310,87 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   cudaError_t error;
   cudaEvent_t start,stop;
-  float msecTotal = 0.0f;
+  float msec = 0.0f, msecTotal = 0.0f;
   error = cudaEventCreate(&start);
   error = cudaEventCreate(&stop);
 
   // Record the start event
-  error = cudaEventRecord(start, NULL);
-  error = cudaEventSynchronize(start);
+  error = cudaEventRecord(start, stream1);
 
   _init_rhs<<<gridsize_ext, blocksize, 0, stream1>>>
-    (n_cells_ext, rhs_d);
+    (n_cells_ext,
+     rhs_d);
 
-  error = cudaEventRecord(stop, NULL);
+  error = cudaEventRecord(stop, stream1);
 	error = cudaEventSynchronize(stop);
-	error = cudaEventElapsedTime(&msecTotal, start, stop);
+	error = cudaEventElapsedTime(&msec, start, stop);
+  msecTotal += msec;
+  printf("Kernels execution time in us: \t");
+  printf("Init = %f\t", msec*1000.f);
 
   bool status = false;
   cs_lnum_t count_nan = 0, count_inf = 0;
 
-  error = cudaEventCreate(&start);
-  error = cudaEventCreate(&stop);
-
   // Record the start event
-  error = cudaEventRecord(start, NULL);
-  error = cudaEventSynchronize(start);
+  error = cudaEventRecord(start, stream1);
   
   _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream1>>>
-      (n_i_faces, i_group_index, i_face_cells, cell_f_cen, rhs_d, pvar_d, weight, c_weight);
+      (n_i_faces,
+       i_face_cells, 
+       cell_f_cen, 
+       rhs_d, 
+       pvar_d, 
+       weight, 
+       c_weight);
 
-  error = cudaEventRecord(stop, NULL);
+  error = cudaEventRecord(stop, stream1);
 	error = cudaEventSynchronize(stop);
-	msecTotal = 0.0f;
-	error = cudaEventElapsedTime(&msecTotal, start, stop);
+	msec = 0.0f;
+	error = cudaEventElapsedTime(&msec, start, stop);
+  msecTotal += msec;
+  printf("I_faces = %f\t", msec*1000.f);
 
   if(halo_type == CS_HALO_EXTENDED && cell_cells_idx != NULL){
-    error = cudaEventCreate(&start);
-    error = cudaEventCreate(&stop);
 
     // Record the start event
-    error = cudaEventRecord(start, NULL);
-    error = cudaEventSynchronize(start);
+    error = cudaEventRecord(start, stream1);
     _compute_rhs_lsq_v_b_neighbor<<<gridsize, blocksize, 0, stream1>>>
-      (n_cells, cell_cells_idx, cell_cells_lst, cell_f_cen, rhs_d, pvar_d);
+      (n_cells, 
+       cell_cells_idx, 
+       cell_cells_lst, 
+       cell_f_cen, 
+       rhs_d, 
+       pvar_d);
   
-    error = cudaEventRecord(stop, NULL);
+    error = cudaEventRecord(stop, stream1);
     error = cudaEventSynchronize(stop);
-    msecTotal = 0.0f;
-    error = cudaEventElapsedTime(&msecTotal, start, stop);
+    msec = 0.0f;
+    error = cudaEventElapsedTime(&msec, start, stop);
+    msecTotal += msec;
+    printf("Ex_Neighbor = %f\t", msec*1000.f);
   }
 
-  error = cudaEventCreate(&start);
-  error = cudaEventCreate(&stop);
-
   // Record the start event
-  error = cudaEventRecord(start, NULL);
-  error = cudaEventSynchronize(start);
+  error = cudaEventRecord(start, stream1);
 
   _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream1>>>
-      (m->n_b_faces, b_group_index, b_face_cells, cell_f_cen, b_face_normal, rhs_d, pvar_d, b_dist, coefb_d, coefa_d, inc);
+      (m->n_b_faces,
+       b_face_cells, 
+       cell_f_cen, 
+       b_face_normal, 
+       rhs_d, 
+       pvar_d, 
+       b_dist, 
+       coefb_d, 
+       coefa_d, 
+       inc);
 
-  error = cudaEventRecord(stop, NULL);
+  error = cudaEventRecord(stop, stream1);
   error = cudaEventSynchronize(stop);
-  msecTotal = 0.0f;
-  error = cudaEventElapsedTime(&msecTotal, start, stop);
+  msec = 0.0f;
+  error = cudaEventElapsedTime(&msec, start, stop);
+  msecTotal += msec;
+  printf("B_faces = %f\t", msec*1000.f);
 
     
   if (rhs_d != NULL) {
@@ -1358,20 +1407,23 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   cs_real_33_t *grad_d = NULL;
   CS_CUDA_CHECK(cudaMalloc(&grad_d, n_cells * sizeof(cs_real_33_t)));
 
-  error = cudaEventCreate(&start);
-  error = cudaEventCreate(&stop);
-
   // // Record the start event
-  error = cudaEventRecord(start, NULL);
-  error = cudaEventSynchronize(start);
+  error = cudaEventRecord(start, stream1);
 
   _compute_gradient_lsq_v<<<gridsize, blocksize, 0, stream1>>>
-    (n_cells, grad_d, rhs_d, cocg_d);
+    (n_cells,
+     grad_d, 
+     rhs_d, 
+     cocg_d);
 
-  error = cudaEventRecord(stop, NULL);
+  error = cudaEventRecord(stop, stream1);
   error = cudaEventSynchronize(stop);
-  msecTotal = 0.0f;
-  error = cudaEventElapsedTime(&msecTotal, start, stop);
+  msec = 0.0f;
+  error = cudaEventElapsedTime(&msec, start, stop);
+  msecTotal += msec;
+  printf("Gradient = %f\t", msec*1000.f);
+
+  printf("Total kernel = %f\t", msecTotal*1000.f);
 
   cudaStreamSynchronize(stream1);
   cudaStreamDestroy(stream1);
@@ -1383,6 +1435,10 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   }
   else
     cs_sync_d2h(gradv);
+
+  end = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+  printf("CPU+GPU= %ld\t", elapsed.count());
 
   // count_nan = 0; count_inf = 0;
   // for(cs_lnum_t id = 0; id < n_cells; id++){
@@ -1403,6 +1459,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //   printf("%d Nans found in gradv after boundary face kernel\n", count_nan);
   //   printf("%d Infs found in gradv after boundary face kernel\n", count_inf);
   // }
+  printf("\n");
 
   if (_pvar_d != NULL)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
