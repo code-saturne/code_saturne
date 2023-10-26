@@ -615,6 +615,9 @@ typedef struct {
    * \var nl_algo_type
    *      Type of algorithm to solve the non-linearities
    *
+   * \var nl_algo_verbosity
+   *      Level of verbosity for the algorithm solving the non-linearities
+   *
    * \var nl_relax_factor
    *      Value of the relaxation factor in the non-linear algorithm. A
    *      classical choice is between 0.70 and 0.95
@@ -639,6 +642,7 @@ typedef struct {
   bool                           use_diffusion_view_for_darcy;
 
   cs_param_nl_algo_t             nl_algo_type;
+  int                            nl_algo_verbosity;
   cs_real_t                      nl_relax_factor;
   cs_param_sles_cvg_t            nl_cvg_param;
   cs_iter_algo_param_aac_t       anderson_param;

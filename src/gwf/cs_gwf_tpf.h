@@ -96,14 +96,12 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf);
  *        Case of a two-phase flows model in porous media
  *
  * \param[in, out] tpf         pointer to the model context structure
- * \param[in]      verbosity   verbosity level
  * \param[in, out] perm_type   type of permeability to handle
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
-                int                      verbosity,
                 cs_property_type_t       perm_type);
 
 /*----------------------------------------------------------------------------*/

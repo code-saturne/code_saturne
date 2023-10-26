@@ -2010,7 +2010,18 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   cs_iter_algo_t  *algo = tpf->nl_algo;
   assert(algo != NULL);
 
-  cs_iter_algo_reset(algo);
+  _init_non_linear_algo(pa, pb, tpf);
+
+  /* First resolution */
+
+  cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
+
+  /* Update the variables related to the groundwater flow system */
+
+  cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
+                    CS_FLAG_CURRENT_TO_PREVIOUS,
+                    option_flag,
+                    tpf);
 
   /* A first resolution has been done followed by an update */
 
@@ -2023,23 +2034,13 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   cs_array_real_copy(cdoq->n_vertices, pa->val_pre, pa_k);
   cs_array_real_copy(cdoq->n_vertices, pb->val_pre, pb_k);
 
-  /* One needs only one array gathering the liquid and gas pressures */
+  /* One needs only one array gathering the two main pressures */
 
   BFT_MALLOC(pa_kp1, 2*cdoq->n_vertices, cs_real_t);
   pb_kp1 = pa_kp1 + cdoq->n_vertices;
 
   cs_array_real_copy(cdoq->n_vertices, pa->val, pa_kp1);
   cs_array_real_copy(cdoq->n_vertices, pb->val, pb_kp1);
-
-  /* Set the normalization factor */
-
-  double  normalization = cs_cdo_blas_square_norm_pvsp(pa_k);
-  normalization += cs_cdo_blas_square_norm_pvsp(pb_k);
-  normalization = sqrt(normalization);
-  if (normalization < cs_math_zero_threshold)
-    normalization = 1.0;
-
-  cs_iter_algo_set_normalization(algo, normalization);
 
   /* Main non-linear loop */
 
@@ -3112,14 +3113,12 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf)
  *        Case of a two-phase flows model in porous media
  *
  * \param[in, out] tpf         pointer to the model context structure
- * \param[in]      verbosity   verbosity level
  * \param[in, out] perm_type   type of permeability to handle
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
-                int                      verbosity,
                 cs_property_type_t       perm_type)
 {
   if (tpf == NULL)
@@ -3204,15 +3203,6 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
     h_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
   }
-
-  if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
-    tpf->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
-                                                    verbosity,
-                                                    tpf->nl_cvg_param);
-  else if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-    tpf->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
-                                                    verbosity,
-                                                    tpf->nl_cvg_param);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3349,6 +3339,8 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
     break;
 
   }
+
+  /* Handle automatic post-processings */
 
   if (post_flag & CS_GWF_POST_SOIL_MINMAX) {
 
@@ -3565,7 +3557,7 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
 
   }
 
-  /* Initialize the non-linear algorithm if needed */
+  /* Define and initialize the non-linear solver */
 
   if (tpf->use_incremental_solver) {
 
@@ -3585,20 +3577,28 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
     assert(tpf->h_eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB);
     assert(tpf->w_eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB);
 
-    cs_lnum_t  size = cdoq->n_vertices;
-    if (tpf->use_coupled_solver)
-      size *= 2;
+    if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
+      tpf->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
+                                                       tpf->nl_algo_verbosity,
+                                                       tpf->nl_cvg_param);
 
-    /* Apply the convergence settings */
+    else if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-    cs_iter_algo_set_cvg_param(tpf->nl_algo, tpf->nl_cvg_param);
+      tpf->nl_algo = cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
+                                                       tpf->nl_algo_verbosity,
+                                                       tpf->nl_cvg_param);
 
-    if (tpf->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+      cs_lnum_t  size = cdoq->n_vertices;
+      if (tpf->use_coupled_solver)
+        size *= 2;
+
       cs_iter_algo_set_anderson_param(tpf->nl_algo,
                                       tpf->anderson_param,
                                       size);
 
-  }
+    } /* Anderson acc. */
+
+  } /* non-linear algo. ? */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3659,17 +3659,8 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
         break;
 
       case CS_PARAM_NL_ALGO_ANDERSON:
-        {
-          cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
-
-          /* Update the variables related to the groundwater flow system */
-
-          cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
-                            CS_FLAG_CURRENT_TO_PREVIOUS,
-                            option_flag,
-                            tpf);
-
-          _compute_coupled_anderson(mesh, connect, cdoq, time_step,
+      {
+        _compute_coupled_anderson(mesh, connect, cdoq, time_step,
                                     option_flag,
                                     pa, pb,
                                     tpf);
