@@ -56,6 +56,7 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_set_coeffs_symmetry.h"
 #include "cs_boundary_conditions_type.h"
 #include "cs_coupling.h"
 #include "cs_field.h"
@@ -147,10 +148,6 @@ cs_f_clptrg(cs_lnum_t  *isvhb,
             cs_real_t   visvdr[],
             cs_real_t   hbord[],
             cs_real_t   theipb[]);
-
-void
-cs_f_clsyvt(cs_real_t  velipb[][3],
-            cs_real_t  rijipb[][6]);
 
 void
 cs_f_cscloc(void);
@@ -1259,7 +1256,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     isympa[i] = 1;
 
   if (iclsym != 0)
-    cs_f_clsyvt(velipb, rijipb);
+    cs_boundary_conditions_set_coeffs_symmetry(velipb, rijipb);
 
   BFT_FREE(rijipb);
 
