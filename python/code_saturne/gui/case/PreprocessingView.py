@@ -47,7 +47,7 @@ from code_saturne.gui.base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.Common import GuiParam
+from code_saturne.model.Common import GuiParam, GuiLabelManager
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, RegExpValidator, IntValidator
 from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.PreprocessingForm import Ui_PreprocessingForm
@@ -77,8 +77,23 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
+
+        # Autocompletion
+        GuiLM = GuiLabelManager()
+        comp_list = GuiLM.getCompleter("mesh_selection")
+        comp_list += GuiLM.getCompleter("mesh_normal")
+        _m = QStringListModel()
+        _m.setStringList(comp_list)
+
+        completer = QCompleter()
+        completer.setModel(_m)
+
+        editor.setCompleter(completer)
+
+        # Validator
         validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
         editor.setValidator(validator)
+
         return editor
 
 
