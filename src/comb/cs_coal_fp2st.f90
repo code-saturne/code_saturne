@@ -96,7 +96,7 @@ double precision gdev1 , gdev2
 double precision fsd   , fdev  , diamdv , gdev
 double precision turb_schmidt, rvarfl
 
-integer           iok1,iok2
+integer           iok1
 double precision, dimension(:) ,allocatable :: x1,f1f2
 double precision, dimension(:) ,allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
@@ -320,7 +320,7 @@ endif
 ! Free memory
 deallocate(x1,f1f2,grad,stat=iok1)
 
-if ( iok1 > 0 .or. iok2 > 0) then
+if ( iok1 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '     cs_coal_fp2st                 '
   call csexit(1)
