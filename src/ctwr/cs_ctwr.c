@@ -3062,7 +3062,6 @@ cs_ctwr_source_term(int              f_id,
         else if (f_id == (CS_F_(t)->id)) {
           // FIXME source term for theta_l instead...
           /* Because the writing is in a non-conservative form */
-          cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
           cs_real_t l_imp_st = vol_mass_source * cp_h;
           cs_real_t xlew = _lewis_factor(evap_model, molmassrat,
                                          x[cell_id], x_s_tl);
@@ -3097,7 +3096,6 @@ cs_ctwr_source_term(int              f_id,
           cs_real_t t_l_k = t_l[cell_id]
                             + cs_physical_constants_celsius_to_kelvin;
           /* Implicit term */
-          cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
           cs_real_t l_imp_st = vol_mass_source;
           cs_real_t xlew = _lewis_factor(evap_model,
                                          molmassrat,
