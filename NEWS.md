@@ -3,6 +3,8 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- ALE: fix memory leak when defining fixed mesh displacement with GUI.
+
 - Fix possible crash with PyQt5 and python 3.10 due to splash screen calls
 
 - Fix code_saturne / code_saturne coupling when some selected elements
