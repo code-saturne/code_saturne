@@ -195,7 +195,7 @@ cs_coupling_discover_mpi_apps(const char  *app_name,
     int i, n_apps, app_id;
 
     /* App_type contains a string such as
-       "Code_Saturne 2.1.0" or "NEPTUNE_CFD 1.2.1" */
+       "code_saturne 8.0.1" or "neptune_cfd 8.0.1" */
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
 

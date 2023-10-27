@@ -675,7 +675,7 @@ _compute_face_surface(cs_lnum_t        n_faces,
  * volumes consistent with that obtained using a splitting of the face
  * into triangles using face edges and an approxmate center.
  *
- * This adjustment was done by default from Code_Saturne 1.1 to 5.2.
+ * This adjustment was done by default from code_saturne 1.1 to 5.2.
  * To handle warped faces, a correction of the cell center is used so
  * that the contribution to the cell volume using Green's theorem is
  * consistent with the volume computed for sub-faces.

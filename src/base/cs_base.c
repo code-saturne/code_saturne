@@ -1185,7 +1185,7 @@ cs_base_logfile_head(int    argc,
   bft_printf("\n************************************"
              "***************************\n\n");
   bft_printf("                                  (R)\n"
-             "                      Code_Saturne\n\n"
+             "                      code_saturne\n\n"
              "                      Version %s\n\n",
              CS_APP_VERSION);
 
@@ -1202,13 +1202,13 @@ cs_base_logfile_head(int    argc,
 #endif
 
   bft_printf("\n");
-  bft_printf("  The Code_Saturne CFD tool  is free software;\n"
+  bft_printf("  The code_saturne CFD tool  is free software;\n"
              "  you can redistribute it and/or modify it under the terms\n"
              "  of the GNU General Public License as published by the\n"
              "  Free Software Foundation; either version 2 of the License,\n"
              "  or (at your option) any later version.\n\n");
 
-  bft_printf("  The Code_Saturne CFD tool is distributed in the hope that\n"
+  bft_printf("  The code_saturne CFD tool is distributed in the hope that\n"
              "  it will be useful, but WITHOUT ANY WARRANTY; without even\n"
              "  the implied warranty of MERCHANTABILITY or FITNESS FOR A\n"
              "  PARTICULAR PURPOSE.  See the GNU General Public License\n"
@@ -2193,7 +2193,7 @@ void
 cs_base_warn(const char  *file_name,
              int          line_num)
 {
-  bft_printf(_("\n\nCode_Saturne: %s:%d: Warning\n"),
+  bft_printf(_("\n\ncode_saturne: %s:%d: Warning\n"),
              file_name, line_num);
 }
 

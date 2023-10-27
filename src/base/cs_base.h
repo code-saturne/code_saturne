@@ -45,7 +45,7 @@
 
 /* Application type name */
 
-#define CS_APP_NAME     "Code_Saturne"
+#define CS_APP_NAME     "code_saturne"
 #define CS_APP_VERSION  PACKAGE_VERSION  /* PACKAGE_VERSION from autoconf */
 
 /* System type name */

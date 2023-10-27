@@ -76,7 +76,7 @@ typedef enum {
  * Read field metadata from checkpoint.
  *
  * Old ids associated to each field are determined for future use.
- * Note that when reading legacy files (Code_Saturne version 3.3 and below),
+ * Note that when reading legacy files (code_saturne version 3.3 and below),
  * the old id will actually be the old scalar id (-1 for others).
  *
  * parameters:
@@ -136,7 +136,7 @@ cs_restart_write_variables(cs_restart_t  *r,
  * Read fields depending on others from checkpoint.
  *
  * Old ids associate to each field are determined for future use.
- * Note that when reading legacy files (Code_Saturne version 3.3 and below),
+ * Note that when reading legacy files (code_saturne version 3.3 and below),
  * the old id will actually be the old scalar id (-1 for others).
  *
  * parameters:
