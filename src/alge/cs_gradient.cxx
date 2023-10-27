@@ -6913,7 +6913,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
-//#if defined(HAVE_CUDA)
+#ifdef NDEBUG
+#if defined(HAVE_CUDA)
+#endif
   start = std::chrono::high_resolution_clock::now();
   cs_lsq_vector_gradient_cuda(
     m,
@@ -6930,8 +6932,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     rhs_cuda);
   stop = std::chrono::high_resolution_clock::now();
   elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  
-//#else
+#ifdef NDEBUG  
+#else
+#endif
   start = std::chrono::high_resolution_clock::now();
   # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
@@ -6993,7 +6996,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
-//#endif
+
   /* Contribution from extended neighborhood */
 
   if (halo_type == CS_HALO_EXTENDED) {
@@ -7090,7 +7093,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
       }
     }
   }
-// #endif 
+#ifdef NDEBUG
+#endif 
+#endif
 stop = std::chrono::high_resolution_clock::now();
 elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 printf("Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
@@ -7163,6 +7168,8 @@ printf("Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_c
   }
 
   BFT_FREE(rhs);
+  BFT_FREE(rhs_cuda);
+  BFT_FREE(gradv_cuda);
 }
 
 /*----------------------------------------------------------------------------
