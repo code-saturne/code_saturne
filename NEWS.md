@@ -3,6 +3,8 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- ALE: fix memory leak when defining fixed mesh displacement with GUI.
+
 - Fix cooling towers thermal exchange source terms in the packing zone.
 
 
