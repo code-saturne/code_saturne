@@ -215,6 +215,8 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
 
     }
   }
+
+  BFT_FREE(bc_vals);
 }
 
 /*-----------------------------------------------------------------------------
