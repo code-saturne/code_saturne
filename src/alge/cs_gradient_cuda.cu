@@ -463,6 +463,80 @@ _init_rhs(cs_lnum_t         size,
 }
 
 __global__ static void
+_init_rhs_v2(cs_lnum_t         size,
+           cs_real_t      *restrict rhs)
+{
+  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id < size)
+    return;
+
+  rhs[c_id] = 0.0;
+}
+
+__global__ static void
+_init_rhs_v3(cs_lnum_t         size,
+           double3      *restrict rhs)
+{
+  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id < size)
+    return;
+
+  rhs[c_id] = make_double3(0.0, 0.0, 0.0);
+}
+
+__global__ static void
+_compute_rhs_lsq_v_i_face_v0(cs_lnum_t            size,
+                          const cs_lnum_2_t      *i_face_cells,
+                          const cs_real_3_t    *cell_f_cen,
+                          cs_real_33_t         *rhs,
+                          const cs_real_3_t    *pvar,
+                          const cs_real_t         *weight,
+                          const cs_real_t      *c_weight)
+{
+  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if(f_id >= size){
+    return;
+  }
+  cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
+  cs_lnum_t c_id1, c_id2;
+
+  c_id1 = i_face_cells[f_id][0];
+  c_id2 = i_face_cells[f_id][1];
+
+  dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
+  dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
+  dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
+
+  ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+  
+  if (c_weight != NULL){
+    _pond = weight[f_id];
+    _denom = 1. / (  _pond       *c_weight[c_id1]
+                                + (1. - _pond)*c_weight[c_id2]);
+                            
+    for(cs_lnum_t i = 0; i < 3; i++){
+      pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+      for(cs_lnum_t j = 0; j < 3; j++){
+        fctb[j] = dc[j] * pfac;
+        atomicAdd(&rhs[c_id1][i][j], c_weight[c_id2] * _denom * fctb[j]);
+        atomicAdd(&rhs[c_id2][i][j], c_weight[c_id1] * _denom * fctb[j]);
+      }
+    }
+  }
+  else{
+    for(cs_lnum_t i = 0; i < 3; i++){
+      pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+      for(cs_lnum_t j = 0; j < 3; j++){
+        fctb[j] = dc[j] * pfac;
+        atomicAdd(&rhs[c_id1][i][j], fctb[j]);
+        atomicAdd(&rhs[c_id2][i][j], fctb[j]);
+      }
+    }
+  }
+}
+
+__global__ static void
 _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *cell_f_cen,
@@ -512,10 +586,10 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
 
 __global__ static void
 _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
-                          const cs_lnum_2_t      *i_face_cells,
-                          const cs_real_3_t    *cell_f_cen,
-                          cs_real_33_t         *rhs,
-                          const cs_real_3_t    *pvar,
+                          const cs_lnum_t      *i_face_cells,
+                          const cs_real_t    *cell_f_cen,
+                          cs_real_t         *rhs,
+                          const cs_real_t    *pvar,
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight)
 {
@@ -527,12 +601,12 @@ _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
   cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
   cs_lnum_t c_id1, c_id2;
 
-  c_id1 = i_face_cells[f_id][0];
-  c_id2 = i_face_cells[f_id][1];
+  c_id1 = i_face_cells[f_id];
+  c_id2 = i_face_cells[f_id + 1];
 
-  dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
-  dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
-  dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
+  dc[0] = cell_f_cen[c_id2*3] - cell_f_cen[c_id1*3];
+  dc[1] = cell_f_cen[c_id2*3 + 1] - cell_f_cen[c_id1*3 + 1];
+  dc[2] = cell_f_cen[c_id2*3 + 2] - cell_f_cen[c_id1*3 + 2];
 
   ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
   
@@ -549,14 +623,15 @@ _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
   }
   
   for(cs_lnum_t i = 0; i < 3; i++){
-    pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+    pfac = (pvar[c_id2 + i] - pvar[c_id1 + i]) * ddc;
     for(cs_lnum_t j = 0; j < 3; j++){
       fctb[j] = dc[j] * pfac;
-      atomicAdd(&rhs[c_id1][i][j], _weight2 * fctb[j]);
-      atomicAdd(&rhs[c_id2][i][j], _weight1 * fctb[j]);
+      atomicAdd(&rhs[c_id1*3*3 + i*3 + j], _weight2 * fctb[j]);
+      atomicAdd(&rhs[c_id2*3*3 + i*3 + j], _weight1 * fctb[j]);
     }
   }
 }
+
 
 __global__ static void
 _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
@@ -640,7 +715,52 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
 
     atomicAdd(&rhs[c_id1][i][0], n_d_dist[0] * pfac);
     atomicAdd(&rhs[c_id1][i][1], n_d_dist[1] * pfac);
-    atomicAdd(&rhs[c_id1][i][2], n_d_dist[2] * pfac);
+    atomicAdd(&rhs[c_id1][i][2], n_d_dist[2] * pfac); 
+  }
+}
+
+__global__ static void
+_compute_rhs_lsq_v_b_face_v2(cs_lnum_t           size,
+                                const cs_lnum_t      *b_face_cells,
+                                const cs_real_3_t    *cell_f_cen,
+                                const cs_real_3_t    *b_face_normal,
+                                cs_real_t         *rhs,
+                                const cs_real_3_t    *pvar,
+                                const cs_real_t      *b_dist,
+                                const cs_real_33_t   *coefbv,
+                                const cs_real_3_t    *coefav,
+                                const int            inc)
+{
+  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if(f_id >= size){
+    return;
+  }
+
+  cs_lnum_t c_id1;
+  cs_real_t n_d_dist[3], d_b_dist, pfac, norm, inverse_norm;
+
+  c_id1 = b_face_cells[f_id];
+
+  cs_math_3_normalise_cuda(b_face_normal[f_id], n_d_dist);
+
+  d_b_dist = 1. / b_dist[f_id];
+
+  /* Normal divided by b_dist */
+  n_d_dist[0] *= d_b_dist;
+  n_d_dist[1] *= d_b_dist;
+  n_d_dist[2] *= d_b_dist;
+
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    pfac =   coefav[f_id][i]*inc
+          + ( coefbv[f_id][0][i] * pvar[c_id1][0]
+            + coefbv[f_id][1][i] * pvar[c_id1][1]
+            + coefbv[f_id][2][i] * pvar[c_id1][2]
+            - pvar[c_id1][i]);
+
+    atomicAdd(&rhs[c_id1*3*3 + i*3], n_d_dist[0] * pfac);
+    atomicAdd(&rhs[c_id1*3*3 + i*3 + 1], n_d_dist[1] * pfac);
+    atomicAdd(&rhs[c_id1*3*3 + i*3 + 2], n_d_dist[2] * pfac); 
   }
 }
 
@@ -666,6 +786,31 @@ _compute_gradient_lsq_v(cs_lnum_t           size,
     gradv[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
                         + rhs[c_id][i][1] * cocg[c_id][4]
                         + rhs[c_id][i][2] * cocg[c_id][2];
+  }
+}
+
+__global__ static void
+_compute_gradient_lsq_v_v2(cs_lnum_t           size,
+                        cs_real_t        *gradv,
+                        cs_real_t        *rhs,
+                        cs_cocg_6_t         *cocg)
+{
+  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id >= size) 
+    return;
+
+  for(cs_lnum_t i = 0; i < 3; i++){
+    gradv[c_id*3*3 + i*3] =   rhs[c_id + i*3] * cocg[c_id][0]
+                          + rhs[c_id + i*3 + 1] * cocg[c_id][3]
+                          + rhs[c_id + i*3 + 2] * cocg[c_id][5];
+
+    gradv[c_id*3*3 + i*3 + 1] =   rhs[c_id + i*3] * cocg[c_id][3]
+                        + rhs[c_id + i*3 + 1] * cocg[c_id][1]
+                        + rhs[c_id + i*3 + 2] * cocg[c_id][4];
+
+    gradv[c_id*3*3 + i*3 + 2] =   rhs[c_id + i*3] * cocg[c_id][5]
+                        + rhs[c_id + i*3 + 1] * cocg[c_id][4]
+                        + rhs[c_id + i*3 + 2] * cocg[c_id][2];
   }
 }
 
@@ -737,7 +882,7 @@ _compute_gradient_lsq_b_v(cs_lnum_t         size,
 }
 
 /*----------------------------------------------------------------------------
- * Synchronize of copy a cs_real_t type array from the host to a device.
+ * Synchronize of copy a T type array from the host to a device.
  *
  * parameters:
  *   val_h          <-- pointer to host data
@@ -749,150 +894,28 @@ _compute_gradient_lsq_b_v(cs_lnum_t         size,
  *                      after use if non-NULL)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
-_sync_or_copy_real_h2d(const  cs_real_t   *val_h,
+_sync_or_copy_real_h2d(const  T   *val_h,
                        cs_lnum_t           n_vals,
                        int                 device_id,
                        cudaStream_t        stream,
-                       const cs_real_t   **val_d,
+                       const T   **val_d,
                        void              **buf_d)
 {
-  const cs_real_t  *_val_d = NULL;
+  const T  *_val_d = NULL;
   void             *_buf_d = NULL;
 
   cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
-  size_t size = n_vals * sizeof(cs_real_t);
+  size_t size = n_vals * sizeof(T);
 
   if (alloc_mode == CS_ALLOC_HOST) {
     CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
     cs_cuda_copy_h2d(_buf_d, val_h, size);
-    _val_d = (const cs_real_t *)_buf_d;
+    _val_d = (const T *)_buf_d;
   }
   else {
-    _val_d = (const cs_real_t *)cs_get_device_ptr((void *)val_h);
-
-    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cudaMemPrefetchAsync(val_h, size, device_id, stream);
-    else
-      cs_sync_h2d(val_h);
-  }
-
-  *val_d = _val_d;
-  *buf_d = _buf_d;
-}
-
-
-/*----------------------------------------------------------------------------
- * Synchronize of copy a cs_real_3_t type array from the host to a device.
- *
- * parameters:
- *   val_h          <-- pointer to host data
- *   n_vals         <-- number of data values
- *   device_id      <-- associated device id
- *   stream         <-- associated stream (for async prefetch only)
- *   val_d          --> matching pointer on device
- *   buf_d          --> matching allocation pointer on device (should be freed
- *                      after use if non-NULL)
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_or_copy_real_3_h2d(const  cs_real_3_t   *val_h,
-                       cs_lnum_t           n_vals,
-                       int                 device_id,
-                       cudaStream_t        stream,
-                       const cs_real_3_t   **val_d,
-                       void              **buf_d)
-{
-  const cs_real_3_t  *_val_d = NULL;
-  void             *_buf_d = NULL;
-
-  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
-  size_t size = n_vals * sizeof(cs_real_3_t);
-
-  if (alloc_mode == CS_ALLOC_HOST) {
-    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
-    cs_cuda_copy_h2d(_buf_d, val_h, size);
-    _val_d = (const cs_real_3_t *)_buf_d;
-  }
-  else {
-    _val_d = (const cs_real_3_t *)cs_get_device_ptr((void *)val_h);
-
-    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cudaMemPrefetchAsync(val_h, size, device_id, stream);
-    else
-      cs_sync_h2d(val_h);
-  }
-
-  *val_d = _val_d;
-  *buf_d = _buf_d;
-}
-
-/*----------------------------------------------------------------------------
- * Synchronize of copy a cs_real_33_t type array from the host to a device.
- *
- * parameters:
- *   val_h          <-- pointer to host data
- *   n_vals         <-- number of data values
- *   device_id      <-- associated device id
- *   stream         <-- associated stream (for async prefetch only)
- *   val_d          --> matching pointer on device
- *   buf_d          --> matching allocation pointer on device (should be freed
- *                      after use if non-NULL)
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_or_copy_real_33_h2d(const  cs_real_33_t   *val_h,
-                       cs_lnum_t           n_vals,
-                       int                 device_id,
-                       cudaStream_t        stream,
-                       const cs_real_33_t   **val_d,
-                       void              **buf_d)
-{
-  const cs_real_33_t  *_val_d = NULL;
-  void             *_buf_d = NULL;
-
-  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
-  size_t size = n_vals * sizeof(cs_real_33_t);
-
-  if (alloc_mode == CS_ALLOC_HOST) {
-    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
-    cs_cuda_copy_h2d(_buf_d, val_h, size);
-    _val_d = (const cs_real_33_t *)_buf_d;
-  }
-  else {
-    _val_d = (const cs_real_33_t *)cs_get_device_ptr((void *)val_h);
-
-    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cudaMemPrefetchAsync(val_h, size, device_id, stream);
-    else
-      cs_sync_h2d(val_h);
-  }
-
-  *val_d = _val_d;
-  *buf_d = _buf_d;
-}
-
-static void
-_sync_or_copy_lnum_h2d(const  cs_lnum_t   *val_h,
-                       cs_lnum_t           n_vals,
-                       int                 device_id,
-                       cudaStream_t        stream,
-                       const cs_lnum_t   **val_d,
-                       void              **buf_d)
-{
-  const cs_lnum_t  *_val_d = NULL;
-  void             *_buf_d = NULL;
-
-  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
-  size_t size = n_vals * sizeof(cs_lnum_t);
-
-  if (alloc_mode == CS_ALLOC_HOST) {
-    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
-    cs_cuda_copy_h2d(_buf_d, val_h, size);
-    _val_d = (const cs_lnum_t *)_buf_d;
-  }
-  else {
-    _val_d = (const cs_lnum_t *)cs_get_device_ptr((void *)val_h);
+    _val_d = (const T *)cs_get_device_ptr((void *)val_h);
 
     if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
       cudaMemPrefetchAsync(val_h, size, device_id, stream);
@@ -1245,6 +1268,13 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   cs_real_33_t *rhs_d;
   CS_CUDA_CHECK(cudaMalloc(&rhs_d, n_cells_ext * sizeof(cs_real_33_t)));
+  cs_real_33_t *rhs_d_v0;
+  CS_CUDA_CHECK(cudaMalloc(&rhs_d_v0, n_cells_ext * sizeof(cs_real_33_t)));
+  cs_real_t *rhs_test_d;
+  CS_CUDA_CHECK(cudaMalloc(&rhs_test_d, n_cells_ext * sizeof(cs_real_33_t)));
+
+  cs_real_t *gradv_test_d;
+  CS_CUDA_CHECK(cudaMalloc(&gradv_test_d, n_cells_ext * sizeof(cs_real_33_t)));
 
   cs_cocg_6_t *cocg_d;
   CS_CUDA_CHECK(cudaMalloc(&cocg_d, n_cells_ext * sizeof(cs_cocg_6_t)));
@@ -1260,6 +1290,9 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_real_33_t *coefb_d = NULL;
   const cs_lnum_t *cell_cells_idx_d = NULL;
 
+  const cs_real_t *pvar_d_1d = NULL;
+  CS_CUDA_CHECK(cudaMalloc(&pvar_d_1d, n_cells * sizeof(cs_real_33_t)));
+
   unsigned int blocksize = 256;
   unsigned int gridsize_b
     = (unsigned int)ceil((double)m->n_b_cells / blocksize);
@@ -1270,6 +1303,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   unsigned int gridsize = (unsigned int)ceil((double)m->n_cells / blocksize);
   unsigned int gridsize_ext
     = (unsigned int)ceil((double)n_cells_ext / blocksize);
+  unsigned int gridsize_ext_1d
+    = (unsigned int)ceil((double)(n_cells_ext*3*3) / blocksize);
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
@@ -1297,32 +1332,63 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->b_face_normal);
 
+  const cs_real_t *restrict cell_f_cen_1d
+    = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_f_cen);
+  const cs_lnum_t *restrict i_face_cells_1d
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
 
-  _sync_or_copy_real_3_h2d(pvar, n_cells_ext, device_id, stream,
+
+  _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream,
                          &pvar_d, &_pvar_d);
 
-  _sync_or_copy_real_3_h2d(coefav, n_b_faces, device_id, stream,
+  _sync_or_copy_real_h2d(coefav, n_b_faces, device_id, stream,
                          &coefa_d, &_coefa_d);
-  _sync_or_copy_real_33_h2d(coefbv, n_b_faces, device_id, stream,
+  _sync_or_copy_real_h2d(coefbv, n_b_faces, device_id, stream,
                          &coefb_d, &_coefb_d);
 
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
 
-  _init_rhs<<<gridsize_ext, blocksize, 0, stream>>>
-    (n_cells_ext,
-     rhs_d);
+  // _init_rhs<<<gridsize_ext, blocksize, 0, stream>>>
+  //   (n_cells_ext,
+  //    rhs_d);
+
+  _init_rhs_v2<<<gridsize_ext_1d, blocksize, 0, stream>>>
+    (n_cells_ext*3*3,
+     rhs_test_d);
+
+  // _init_rhs_v3<<<gridsize_ext, blocksize, 0, stream>>>
+  //   (n_cells_ext*3,
+  //    rhs_test_d);
 
   CS_CUDA_CHECK(cudaEventRecord(init, stream));
 	
   bool status = false;
   cs_lnum_t count_nan = 0, count_inf = 0;
   
-  _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
+  // _compute_rhs_lsq_v_i_face_v0<<<gridsize_if, blocksize, 0, stream>>>
+  //     (n_i_faces,
+  //      i_face_cells, 
+  //      cell_f_cen, 
+  //      rhs_d_v0, 
+  //      pvar_d, 
+  //      weight, 
+  //      c_weight);
+
+  // _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
+  //     (n_i_faces,
+  //      i_face_cells, 
+  //      cell_f_cen, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      weight, 
+  //      c_weight);
+
+  _compute_rhs_lsq_v_i_face_v2<<<gridsize_if, blocksize, 0, stream>>>
       (n_i_faces,
-       i_face_cells, 
-       cell_f_cen, 
-       rhs_d, 
-       pvar_d, 
+       i_face_cells_1d, 
+       cell_f_cen_1d, 
+       rhs_test_d, 
+       pvar_d_1d, 
        weight, 
        c_weight);
 
@@ -1340,12 +1406,24 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   }
   CS_CUDA_CHECK(cudaEventRecord(halo, stream));
 
-  _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
+  // _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
+  //     (m->n_b_faces,
+  //      b_face_cells, 
+  //      cell_f_cen, 
+  //      b_face_normal, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      b_dist, 
+  //      coefb_d, 
+  //      coefa_d, 
+  //      inc);
+
+  _compute_rhs_lsq_v_b_face_v2<<<gridsize_bf, blocksize, 0, stream>>>
       (m->n_b_faces,
        b_face_cells, 
        cell_f_cen, 
        b_face_normal, 
-       rhs_d, 
+       rhs_test_d, 
        pvar_d, 
        b_dist, 
        coefb_d, 
@@ -1355,20 +1433,26 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   CS_CUDA_CHECK(cudaEventRecord(b_faces, stream));
 
     
-  // if (rhs_d != NULL) {
-  //   size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
-  //   cs_cuda_copy_d2h(rhs, rhs_d, size);
-  // }
-  // else
-  //   cs_sync_d2h(rhs);
+  if (rhs_d != NULL) {
+    size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
+    cs_cuda_copy_d2h(rhs, rhs_test_d, size);
+  }
+  else
+    cs_sync_d2h(rhs);
 
   // /* Compute gradient */
   // /*------------------*/
 
-  _compute_gradient_lsq_v<<<gridsize, blocksize, 0, stream>>>
+  // _compute_gradient_lsq_v<<<gridsize, blocksize, 0, stream>>>
+  //   (n_cells,
+  //    grad_d, 
+  //    rhs_d, 
+  //    cocg_d);
+
+  _compute_gradient_lsq_v_v2<<<gridsize, blocksize, 0, stream>>>
     (n_cells,
-     grad_d, 
-     rhs_d, 
+     gradv_test_d, 
+     rhs_test_d, 
      cocg_d);
 
   CS_CUDA_CHECK(cudaEventRecord(gradient, stream));
@@ -1376,7 +1460,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   // /* Sync to host */
   if (grad_d != NULL) {
     size_t size = n_cells * sizeof(cs_real_t) * 3 * 3;
-    cs_cuda_copy_d2h(gradv, grad_d, size);
+    cs_cuda_copy_d2h(gradv, gradv_test_d, size);
   }
   else
     cs_sync_d2h(gradv);
@@ -1426,6 +1510,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
     CS_CUDA_CHECK(cudaFree(_coefb_d));
 
   CS_CUDA_CHECK(cudaFree(rhs_d));
+  CS_CUDA_CHECK(cudaFree(rhs_d_v0));
+  CS_CUDA_CHECK(cudaFree(rhs_test_d));
   CS_CUDA_CHECK(cudaFree(cocg_d));
   CS_CUDA_CHECK(cudaFree(grad_d));
   
