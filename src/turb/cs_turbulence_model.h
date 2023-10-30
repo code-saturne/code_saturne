@@ -187,9 +187,9 @@ typedef struct {
                                       irccor=1 and iturb=60 or 70) */
   int           idirsm;       /* turbulent diffusion model for second moment
                                  closure
-                                 - 0: scalar diffusivity (Shir model)
+                                 - 0: scalar diffusivity (Shir model, default)
                                  - 1: tensorial diffusivity (Daly and Harlow
-                                      model, default model) */
+                                      model) */
   int           iclkep;       /* clipping of k and epsilon
                                  - 0: absolute value clipping
                                  - 1: coupled clipping based on physical
