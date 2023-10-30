@@ -467,7 +467,7 @@ _init_rhs_v2(cs_lnum_t         size,
            cs_real_t      *restrict rhs)
 {
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id < size)
+  if (c_id >= size)
     return;
 
   rhs[c_id] = 0.0;
@@ -478,7 +478,7 @@ _init_rhs_v3(cs_lnum_t         size,
            double3      *restrict rhs)
 {
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id < size)
+  if (c_id >= size)
     return;
 
   rhs[c_id] = make_double3(0.0, 0.0, 0.0);
@@ -601,8 +601,8 @@ _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
   cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
   cs_lnum_t c_id1, c_id2;
 
-  c_id1 = i_face_cells[f_id];
-  c_id2 = i_face_cells[f_id + 1];
+  c_id1 = i_face_cells[f_id*2];
+  c_id2 = i_face_cells[f_id*2 + 1];
 
   dc[0] = cell_f_cen[c_id2*3] - cell_f_cen[c_id1*3];
   dc[1] = cell_f_cen[c_id2*3 + 1] - cell_f_cen[c_id1*3 + 1];
@@ -623,7 +623,7 @@ _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
   }
   
   for(cs_lnum_t i = 0; i < 3; i++){
-    pfac = (pvar[c_id2 + i] - pvar[c_id1 + i]) * ddc;
+    pfac = (pvar[c_id2*3 + i] - pvar[c_id1*3 + i]) * ddc;
     for(cs_lnum_t j = 0; j < 3; j++){
       fctb[j] = dc[j] * pfac;
       atomicAdd(&rhs[c_id1*3*3 + i*3 + j], _weight2 * fctb[j]);
@@ -1290,8 +1290,9 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_real_33_t *coefb_d = NULL;
   const cs_lnum_t *cell_cells_idx_d = NULL;
 
-  const cs_real_t *pvar_d_1d = NULL;
-  CS_CUDA_CHECK(cudaMalloc(&pvar_d_1d, n_cells * sizeof(cs_real_33_t)));
+  cs_real_t *pvar_d_1d;
+  CS_CUDA_CHECK(cudaMalloc(&pvar_d_1d, n_cells * sizeof(cs_real_3_t)));
+  cs_cuda_copy_h2d(pvar_d_1d, pvar, n_cells * sizeof(cs_real_3_t));
 
   unsigned int blocksize = 256;
   unsigned int gridsize_b
@@ -1433,7 +1434,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   CS_CUDA_CHECK(cudaEventRecord(b_faces, stream));
 
     
-  if (rhs_d != NULL) {
+  if (rhs_test_d != NULL) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
     cs_cuda_copy_d2h(rhs, rhs_test_d, size);
   }
@@ -1458,7 +1459,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   CS_CUDA_CHECK(cudaEventRecord(gradient, stream));
 
   // /* Sync to host */
-  if (grad_d != NULL) {
+  if (gradv_test_d != NULL) {
     size_t size = n_cells * sizeof(cs_real_t) * 3 * 3;
     cs_cuda_copy_d2h(gradv, gradv_test_d, size);
   }
