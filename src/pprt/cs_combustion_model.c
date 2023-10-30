@@ -111,6 +111,7 @@ cs_combustion_model_t
                        .ieqnox = 0,
                        .isoot = -1,
                        .ckabs0 = 0,
+                       .diftl0 = 0,
                        .xco2 = -1,
                        .xh2o = -1,
                        .hinoxy = 0};
@@ -139,6 +140,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **iic,
                          double  **wmole,
                          double  **wmolg,
+                         double  **diftl0,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
@@ -226,6 +228,7 @@ cs_f_combustion_model_get_pointers(int  **isoot)
  *   iic    --> pointer to rank of C in gas composition
  *   wmole  --> pointer to molar mass of elementary gas components
  *   wmolg  --> pointer to molar mass of global species
+ *   diftl0 --> pointer to molecular diffusivity for the enthalpy.
  *   xco2   --> pointer to molar coefficient of co2
  *   xh2o   --> pointer to molar coefficient of h2o
  *   ckabs1 --> pointer to absorption coefficient of gas mixture
@@ -240,6 +243,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **iic,
                          double  **wmole,
                          double  **wmolg,
+                         double  **diftl0,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
@@ -253,6 +257,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
   *iic    = &(cs_glob_combustion_model->gas->iic);
   *wmole  = cs_glob_combustion_model->wmole;
   *wmolg  = cs_glob_combustion_model->gas->wmolg;
+  *diftl0 = &(cs_glob_combustion_model->diftl0);
   *xco2   = &(cs_glob_combustion_model->xco2);
   *xh2o   = &(cs_glob_combustion_model->xh2o);
   *ckabs1 = &(cs_glob_combustion_model->ckabs0);
