@@ -1962,6 +1962,7 @@ class Studies(object):
         c_prev = ""
 
         detailed_file_name = "state_detailed"
+        add_header_and_footer = True
 
         colors = {case_state.UNKNOWN: "rgb(227,218,201)",
                   case_state.STAGING: "rgb(255,191,0)",
@@ -1987,9 +1988,10 @@ class Studies(object):
 
         fd = open(detailed_file_name, 'w')
 
-        fd.write("<html>\n")
-        fd.write("<head></head>\n")
-        fd.write("<body>\n")
+        if add_header_and_footer:
+            fd.write("<html>\n")
+            fd.write("<head></head>\n")
+            fd.write("<body>\n")
 
         fd.write("<br><i><u>Destination folder:</u></i> "+ self.__dest + "</br> </br>")
         fd.write("Case states:\n\n")
@@ -2062,10 +2064,11 @@ class Studies(object):
             c_prev = c
 
         t = "</table>\n</br>\n"
-
-        t += "</body>\n"
-        t += "</html>\n"
         fd.write(t)
+
+        if add_header_and_footer:
+            fd.write("</body>\n")
+            fd.write("</html>\n")
 
         fd.close()
 
