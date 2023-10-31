@@ -3,6 +3,10 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Preprocessor: fix enless loop in case of polyhedra composed of
+  disjoint sub-cells.
+  * These cases are now reported with incorrectly oriented cells.
+
 - ALE: fix memory leak when defining fixed mesh displacement with GUI.
 
 - Fix cooling towers thermal exchange source terms in the packing zone.
@@ -15,7 +19,7 @@ Release 8.0.2 (2023-10-10)
 - Fix turbomachinery combobox behaviour in GUI main page when switching from
   code_saturne to neptune_cfd.
 
-- Fix reading of JANAF file for relacatable builds.
+- Fix reading of JANAF file for relocatable builds.
 
 - Fix user setting of cs_glob_turb_ref_values->almax, which was
   overwritten in almost all cases (whenever less than 999).

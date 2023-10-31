@@ -1304,6 +1304,8 @@ _orient_polyhedron(const ecs_coord_t   coord[],
 
   while (n_unmarked_faces > 0) {
 
+    size_t n_unmarked_faces_prev = n_unmarked_faces;
+
     for (edge_id = 0; edge_id < n_edges; edge_id++) {
 
       ecs_int_t face_num_2 = edges->val[edge_id*4 + 3];
@@ -1328,6 +1330,12 @@ _orient_polyhedron(const ecs_coord_t   coord[],
         n_unmarked_faces -= 1;
       }
     }
+
+    /* If a polyhedron contains disjoint face sets, the algorithm
+       might not make any more progress */
+
+    if (n_unmarked_faces == n_unmarked_faces_prev)
+      return -2;
 
   }
 
@@ -2783,7 +2791,7 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
   }
   if (cpt_poly_open > 0) {
     ecs_warn();
-    printf(_("%d elements of type %s are not closed.\n"),
+    printf(_("%d elements of type %s are not closed or are disjoint.\n"),
            (int)cpt_poly_open,
            _(ecs_fic_elt_typ_liste_c[ECS_ELT_TYP_CEL_POLY].nom));
   }
