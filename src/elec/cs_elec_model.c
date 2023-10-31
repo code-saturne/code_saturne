@@ -167,6 +167,10 @@ BEGIN_C_DECLS
         coefficient for scaling
   \var  cs_elec_option_t::elcou
         current in scaling plane
+  \var  cs_elec_option_t::srrom
+        Sub-relaxation coefficient for the density, following the formula:
+        \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
+        Hence, with a zero value, there is no sub-relaxation.
 */
 
 /*! \struct cs_data_joule_effect_t
@@ -676,9 +680,9 @@ _pot_arg_f(int               location_id,
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (elini1, ELINI1) (cs_real_t *diftl0)
+CS_PROCF (elini1, ELINI1) (void)
 {
-  cs_electrical_model_specific_initialization(diftl0);
+  cs_electrical_model_specific_initialization();
 }
 
 void
@@ -840,7 +844,7 @@ cs_electrical_model_finalize(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_specific_initialization(cs_real_t  *diftl0)
+cs_electrical_model_specific_initialization(void)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -921,9 +925,8 @@ cs_electrical_model_specific_initialization(cs_real_t  *diftl0)
     }
   }
 
-  CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
   cs_gui_elec_model();
-  _elec_option.pot_diff = 1000.;//FIXME
+  _elec_option.pot_diff = 1000.; //FIXME
 
   _cs_electrical_model_verify();
 }

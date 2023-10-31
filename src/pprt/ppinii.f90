@@ -286,8 +286,6 @@ enddo
 
 ckabs1 = zero
 
-diftl0 = zero
-
 do ige = 1, ngazem
   do it = 1, npot
     ehgaze(ige,it) = zero
@@ -301,7 +299,6 @@ enddo
 
 xco2 = zero
 xh2o = zero
-
 
 !===============================================================================
 ! 3. REMPLISSAGE INCLUDE coincl.h
@@ -346,23 +343,23 @@ nzvar   = -1
 nlibvar = -1
 ngazfl  = -1
 
-FLAMELET_ZM    = -1
-FLAMELET_ZVAR  = -1
-FLAMELET_KI    = -1
-FLAMELET_XR    = -1
-FLAMELET_TEMP  = -1
-FLAMELET_RHO   = -1
-FLAMELET_VIS   = -1
-FLAMELET_DT    = -1
-FLAMELET_TEMP2 = -1
-FLAMELET_HRR   = -1
+flamelet_zm    = -1
+flamelet_zvar  = -1
+flamelet_ki    = -1
+flamelet_xr    = -1
+flamelet_temp  = -1
+flamelet_rho   = -1
+flamelet_vis   = -1
+flamelet_dt    = -1
+flamelet_temp2 = -1
+flamelet_hrr   = -1
 
-FLAMELET_SPECIES(:)  = -1
-FLAMELET_SPECIES_NAME(:)  = ' '
+flamelet_species(:)  = -1
+flamelet_species_name(:)  = ' '
 
 
-FLAMELET_C     = -1
-FLAMELET_OMG_C = -1
+flamelet_c     = -1
+flamelet_omg_c = -1
 
 ! ---> Modele de flamme de premelange (modele EBU et LWC)
 !      On prend 300K pour temperature des gaz frais.

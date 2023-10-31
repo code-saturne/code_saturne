@@ -669,19 +669,16 @@ module ppincl
   integer, save :: ihm
 
   !> \anchor srrom
-  !> with gas combustion, pulverised coal or the electric module, \ref srrom
+  !> with gas combustion, or pulverised coal, \ref srrom
   !> is the sub-relaxation coefficient for the density, following the formula:
   !> \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
   !> hence, with a zero value, there is no sub-relaxation.
-  !> With combustion and pulverized coal, \ref srrom is initialized to
-  !> \ref cstnum::grand "-grand" and the user must specify a proper value through
-  !> the Interface or the initialization subroutine (\ref cs_user_combustion).
-  !> With gas combustion, pulverised coal or electric arcs, \ref srrom is
-  !> automatically used after the second time-step. With Joule effect,
-  !> the user decides whether or not it will be used in \ref cs_user_physical_properties
-  !> from the coding law giving the density.
+  !> \ref srrom is initialized to \ref cstnum::grand "-grand" and the user must
+  !> specify a proper value through the GUI or the initialization subroutine
+  !> (\ref cs_user_combustion).
+  !> It is automatically used after the second time-step.
   !>
-  !> Always useful with gas combustion, pulverized coal or the electric module.
+  !> Always useful with gas combustion or pulverized coal.
   double precision, save :: srrom
 
   !> \}

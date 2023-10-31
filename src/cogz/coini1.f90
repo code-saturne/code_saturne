@@ -207,10 +207,10 @@ irovar = 1
 
 ! GUI
 if (ippmod(icoebu).ge.0) then
-  call uicpi1(srrom, diftl0)
+  call uicpi1(srrom)
   cebu   = 2.5d0
 else if (ippmod(icod3p).ge.0) then
-  call uicpi1(srrom, diftl0)
+  call uicpi1(srrom)
   call uicpi2(tinoxy, tinfue)
 ! else if (ippmod(icolwc).ge.0) then
   !TODO no GUI yet

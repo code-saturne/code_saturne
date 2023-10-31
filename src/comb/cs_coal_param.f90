@@ -173,7 +173,7 @@ ivivar = 0
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-call uicpi1(srrom, diftl0)
+call uicpi1(srrom)
 
 diftl0 = 4.25d-5
 
