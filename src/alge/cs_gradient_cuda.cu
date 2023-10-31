@@ -463,6 +463,21 @@ _init_rhs(cs_lnum_t         size,
 }
 
 __global__ static void
+_test(cs_lnum_t         size,
+           const cs_real_3_t      *restrict pvar,
+           cs_real_t      *restrict pvar_1d)
+{
+  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id < size) {
+    for (cs_lnum_t i = 0; i < 3; i++){
+        if(pvar[c_id][i] != pvar_1d[c_id*3 + i]){
+          printf("\tNot equal");
+        }
+    }
+  }
+}
+
+__global__ static void
 _init_rhs_v2(cs_lnum_t         size,
            cs_real_t      *restrict rhs)
 {
@@ -538,12 +553,12 @@ _compute_rhs_lsq_v_i_face_v0(cs_lnum_t            size,
 
 __global__ static void
 _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
-                          const cs_lnum_2_t      *i_face_cells,
-                          const cs_real_3_t    *cell_f_cen,
-                          cs_real_33_t         *rhs,
-                          const cs_real_3_t    *pvar,
-                          const cs_real_t         *weight,
-                          const cs_real_t      *c_weight)
+                          const cs_lnum_2_t      *restrict i_face_cells,
+                          const cs_real_3_t    *restrict cell_f_cen,
+                          cs_real_33_t         *restrict rhs,
+                          const cs_real_3_t    *restrict pvar,
+                          const cs_real_t         *restrict weight,
+                          const cs_real_t      *restrict c_weight)
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -586,12 +601,12 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
 
 __global__ static void
 _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
-                          const cs_lnum_t      *i_face_cells,
-                          const cs_real_t    *cell_f_cen,
-                          cs_real_t         *rhs,
-                          const cs_real_t    *pvar,
-                          const cs_real_t         *weight,
-                          const cs_real_t      *c_weight)
+                          const cs_lnum_t      *restrict i_face_cells,
+                          const cs_real_t    *restrict cell_f_cen,
+                          cs_real_t         *restrict rhs,
+                          const cs_real_3_t    *restrict pvar,
+                          const cs_real_t         *restrict weight,
+                          const cs_real_t      *restrict c_weight)
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -623,7 +638,7 @@ _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
   }
   
   for(cs_lnum_t i = 0; i < 3; i++){
-    pfac = (pvar[c_id2*3 + i] - pvar[c_id1*3 + i]) * ddc;
+    pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
     for(cs_lnum_t j = 0; j < 3; j++){
       fctb[j] = dc[j] * pfac;
       atomicAdd(&rhs[c_id1*3*3 + i*3 + j], _weight2 * fctb[j]);
@@ -635,11 +650,11 @@ _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
 
 __global__ static void
 _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
-                                const cs_lnum_t      *cell_cells_idx,
-                                const cs_lnum_t      *cell_cells_lst,
-                                const cs_real_3_t    *cell_f_cen,
-                                cs_real_33_t         *rhs,
-                                const cs_real_3_t    *pvar)
+                                const cs_lnum_t      *restrict cell_cells_idx,
+                                const cs_lnum_t      *restrict cell_cells_lst,
+                                const cs_real_3_t    *restrict cell_f_cen,
+                                cs_real_33_t         *restrict rhs,
+                                const cs_real_3_t    *restrict pvar)
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -676,15 +691,15 @@ _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
 
 __global__ static void
 _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
-                                const cs_lnum_t      *b_face_cells,
-                                const cs_real_3_t    *cell_f_cen,
-                                const cs_real_3_t    *b_face_normal,
-                                cs_real_33_t         *rhs,
-                                const cs_real_3_t    *pvar,
-                                const cs_real_t      *b_dist,
-                                const cs_real_33_t   *coefbv,
-                                const cs_real_3_t    *coefav,
-                                const int            inc)
+                          const cs_lnum_t      *restrict b_face_cells,
+                          const cs_real_3_t    *restrict cell_f_cen,
+                          const cs_real_3_t    *restrict b_face_normal,
+                          cs_real_33_t         *restrict rhs,
+                          const cs_real_3_t    *restrict pvar,
+                          const cs_real_t      *restrict b_dist,
+                          const cs_real_33_t   *restrict coefbv,
+                          const cs_real_3_t    *restrict coefav,
+                          const int            inc)
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -721,15 +736,15 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
 
 __global__ static void
 _compute_rhs_lsq_v_b_face_v2(cs_lnum_t           size,
-                                const cs_lnum_t      *b_face_cells,
-                                const cs_real_3_t    *cell_f_cen,
-                                const cs_real_3_t    *b_face_normal,
-                                cs_real_t         *rhs,
-                                const cs_real_3_t    *pvar,
-                                const cs_real_t      *b_dist,
-                                const cs_real_33_t   *coefbv,
-                                const cs_real_3_t    *coefav,
-                                const int            inc)
+                            const cs_lnum_t      *restrict b_face_cells,
+                            const cs_real_3_t    *restrict cell_f_cen,
+                            const cs_real_3_t    *restrict b_face_normal,
+                            cs_real_t            *restrict rhs,
+                            const cs_real_3_t    *restrict pvar,
+                            const cs_real_t      *restrict b_dist,
+                            const cs_real_33_t   *restrict coefbv,
+                            const cs_real_3_t    *restrict coefav,
+                            const int            inc)
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -766,9 +781,9 @@ _compute_rhs_lsq_v_b_face_v2(cs_lnum_t           size,
 
 __global__ static void
 _compute_gradient_lsq_v(cs_lnum_t           size,
-                        cs_real_33_t        *gradv,
-                        cs_real_33_t        *rhs,
-                        cs_cocg_6_t         *cocg)
+                        cs_real_33_t        *restrict gradv,
+                        cs_real_33_t        *restrict rhs,
+                        cs_cocg_6_t         *restrict cocg)
 {
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (c_id >= size) 
@@ -791,39 +806,174 @@ _compute_gradient_lsq_v(cs_lnum_t           size,
 
 __global__ static void
 _compute_gradient_lsq_v_v2(cs_lnum_t           size,
-                        cs_real_t        *gradv,
-                        cs_real_t        *rhs,
-                        cs_cocg_6_t         *cocg)
+                        cs_real_t        *restrict gradv,
+                        cs_real_t        *restrict rhs,
+                        cs_cocg_6_t         *restrict cocg)
 {
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (c_id >= size) 
     return;
 
   for(cs_lnum_t i = 0; i < 3; i++){
-    gradv[c_id*3*3 + i*3] =   rhs[c_id + i*3] * cocg[c_id][0]
-                          + rhs[c_id + i*3 + 1] * cocg[c_id][3]
-                          + rhs[c_id + i*3 + 2] * cocg[c_id][5];
+    gradv[c_id*3*3 + i*3] =   rhs[c_id*3*3 + i*3] * cocg[c_id][0]
+                          + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][3]
+                          + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][5];
 
-    gradv[c_id*3*3 + i*3 + 1] =   rhs[c_id + i*3] * cocg[c_id][3]
-                        + rhs[c_id + i*3 + 1] * cocg[c_id][1]
-                        + rhs[c_id + i*3 + 2] * cocg[c_id][4];
+    gradv[c_id*3*3 + i*3 + 1] =   rhs[c_id*3*3 + i*3] * cocg[c_id][3]
+                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][1]
+                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][4];
 
-    gradv[c_id*3*3 + i*3 + 2] =   rhs[c_id + i*3] * cocg[c_id][5]
-                        + rhs[c_id + i*3 + 1] * cocg[c_id][4]
-                        + rhs[c_id + i*3 + 2] * cocg[c_id][2];
+    gradv[c_id*3*3 + i*3 + 2] =   rhs[c_id*3*3 + i*3] * cocg[c_id][5]
+                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][4]
+                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][2];
   }
+}
+
+__global__ static void
+_compute_gradient_lsq_v_v3(cs_lnum_t           size,
+                        cs_real_33_t        *restrict gradv,
+                        cs_real_33_t        *restrict rhs,
+                        cs_cocg_6_t         *restrict cocg)
+{
+  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id >= size) 
+    return;
+  auto& gradc = gradv[c_id];
+  auto& rhsc = rhs[c_id];
+  auto cocgc = cocg[c_id];
+  for(cs_lnum_t i = 0; i < 3; i++){
+    auto& gradci = gradc[i];
+    auto rhsci = rhsc[i];
+    gradci[0] =   rhsci[0] * cocgc[0]
+                          + rhsci[1] * cocgc[3]
+                          + rhsci[2] * cocgc[5];
+
+    gradci[1] =   rhsci[0] * cocgc[3]
+                        + rhsci[1] * cocgc[1]
+                        + rhsci[2] * cocgc[4];
+
+    gradci[2] =   rhsci[0] * cocgc[5]
+                        + rhsci[1] * cocgc[4]
+                        + rhsci[2] * cocgc[2];
+  }
+}
+
+__global__ static void
+_compute_gradient_lsq_v_v4(cs_lnum_t           size,
+                        cs_real_33_t        *restrict gradv_m,
+                        cs_real_33_t        *restrict rhs_m,
+                        cs_cocg_6_t         *restrict cocg)
+{
+  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id >= size) 
+    return;
+
+  cs_real_t *rhs = (cs_real_t *) rhs_m;
+  cs_real_t *gradv = (cs_real_t *) gradv_m;
+
+  for(cs_lnum_t i = 0; i < 3; i++){
+    gradv[c_id*3*3 + i*3] =   rhs[c_id*3*3 + i*3] * cocg[c_id][0]
+                          + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][3]
+                          + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][5];
+
+    gradv[c_id*3*3 + i*3 + 1] =   rhs[c_id*3*3 + i*3] * cocg[c_id][3]
+                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][1]
+                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][4];
+
+    gradv[c_id*3*3 + i*3 + 2] =   rhs[c_id*3*3 + i*3] * cocg[c_id][5]
+                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][4]
+                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][2];
+  }
+}
+
+__global__ static void
+_compute_gradient_lsq_v_v5(cs_lnum_t           size,
+                        cs_real_t        *restrict gradv,
+                        cs_real_t        *restrict rhs,
+                        cs_cocg_6_t         *restrict cocg)
+{
+  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id >= size) 
+    return;
+
+  size_t c_id1 = c_id / (3*3);
+  size_t i = (c_id / 3) % 3;
+  size_t j = c_id % 3;
+
+  auto cocg_temp = cocg[c_id1];
+  cs_real_t _cocg[3];
+
+  _cocg[0] = cocg_temp[5];
+  _cocg[1] = cocg_temp[4];
+  _cocg[2] = cocg_temp[2];
+
+  if(j == 0){
+    _cocg[0] = cocg_temp[0];
+    _cocg[1] = cocg_temp[3];
+    _cocg[2] = cocg_temp[5];
+  }
+
+  if(j == 1){
+    _cocg[0] = cocg_temp[3];
+    _cocg[1] = cocg_temp[1];
+    _cocg[2] = cocg_temp[4];
+  }
+  
+  gradv[c_id] =   rhs[c_id1*3*3 + i*3] * _cocg[0]
+                        + rhs[c_id1*3*3 + i*3 + 1] * _cocg[1]
+                        + rhs[c_id1*3*3 + i*3 + 2] * _cocg[2];
+
+}
+
+__global__ static void
+_compute_gradient_lsq_v_v6(cs_lnum_t           size,
+                        cs_real_33_t        *restrict gradv,
+                        cs_real_33_t        *restrict rhs,
+                        cs_cocg_6_t         *restrict cocg)
+{
+  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_id >= size) 
+    return;
+
+  size_t c_id1 = c_id / (3*3);
+  size_t i = (c_id / 3) % 3;
+  size_t j = c_id % 3;
+
+  auto cocg_temp = cocg[c_id1];
+  cs_real_t _cocg[3];
+
+  _cocg[0] = cocg_temp[5];
+  _cocg[1] = cocg_temp[4];
+  _cocg[2] = cocg_temp[2];
+
+  if(j == 0){
+    _cocg[0] = cocg_temp[0];
+    _cocg[1] = cocg_temp[3];
+    _cocg[2] = cocg_temp[5];
+  }
+
+  if(j == 1){
+    _cocg[0] = cocg_temp[3];
+    _cocg[1] = cocg_temp[1];
+    _cocg[2] = cocg_temp[4];
+  }
+
+  gradv[c_id1][i][j] =   rhs[c_id1][i][0] * _cocg[0]
+                        + rhs[c_id1][i][1] * _cocg[1]
+                        + rhs[c_id1][i][2] * _cocg[2];
+
 }
 
 __global__ static void
 _compute_gradient_lsq_b_v(cs_lnum_t         size,
                           cs_lnum_t         n_b_cells,
-                          cs_lnum_t         *b_cells,
-                          cs_real_33_t        *gradv,
-                          cs_real_33_t        *rhs,
-                          cs_cocg_6_t         *cocg,
-                          cs_real_3_t *b_face_normal,
-                          cs_lnum_t *cell_b_faces,
-                          cs_lnum_t *cell_b_faces_idx)
+                          cs_lnum_t         *restrict b_cells,
+                          cs_real_33_t        *restrict gradv,
+                          cs_real_33_t        *restrict rhs,
+                          cs_cocg_6_t         *restrict cocg,
+                          cs_real_3_t *restrict b_face_normal,
+                          cs_lnum_t *restrict cell_b_faces,
+                          cs_lnum_t *restrict cell_b_faces_idx)
 {
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -1246,6 +1396,11 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_lnum_t n_b_faces   = m->n_b_faces;
   const cs_lnum_t n_i_faces   = m->n_i_faces;
 
+  cs_real_t *pvar_copy;
+  pvar_copy = (cs_real_t *) malloc(n_cells * sizeof(cs_real_3_t));
+  
+  memcpy(pvar_copy, pvar, n_cells*sizeof(cs_real_3_t));
+
   int device_id;
   cudaGetDevice(&device_id);
 
@@ -1292,7 +1447,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   cs_real_t *pvar_d_1d;
   CS_CUDA_CHECK(cudaMalloc(&pvar_d_1d, n_cells * sizeof(cs_real_3_t)));
-  cs_cuda_copy_h2d(pvar_d_1d, pvar, n_cells * sizeof(cs_real_3_t));
+  cs_cuda_copy_h2d(pvar_d_1d, pvar_copy, n_cells * sizeof(cs_real_3_t));
 
   unsigned int blocksize = 256;
   unsigned int gridsize_b
@@ -1349,9 +1504,9 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
 
-  // _init_rhs<<<gridsize_ext, blocksize, 0, stream>>>
-  //   (n_cells_ext,
-  //    rhs_d);
+  _init_rhs<<<gridsize_ext, blocksize, 0, stream>>>
+    (n_cells_ext,
+     rhs_d);
 
   _init_rhs_v2<<<gridsize_ext_1d, blocksize, 0, stream>>>
     (n_cells_ext*3*3,
@@ -1375,21 +1530,21 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      weight, 
   //      c_weight);
 
-  // _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
-  //     (n_i_faces,
-  //      i_face_cells, 
-  //      cell_f_cen, 
-  //      rhs_d, 
-  //      pvar_d, 
-  //      weight, 
-  //      c_weight);
+  _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
+      (n_i_faces,
+       i_face_cells, 
+       cell_f_cen, 
+       rhs_d, 
+       pvar_d, 
+       weight, 
+       c_weight);
 
   _compute_rhs_lsq_v_i_face_v2<<<gridsize_if, blocksize, 0, stream>>>
       (n_i_faces,
        i_face_cells_1d, 
        cell_f_cen_1d, 
        rhs_test_d, 
-       pvar_d_1d, 
+       pvar_d, 
        weight, 
        c_weight);
 
@@ -1407,17 +1562,17 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   }
   CS_CUDA_CHECK(cudaEventRecord(halo, stream));
 
-  // _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
-  //     (m->n_b_faces,
-  //      b_face_cells, 
-  //      cell_f_cen, 
-  //      b_face_normal, 
-  //      rhs_d, 
-  //      pvar_d, 
-  //      b_dist, 
-  //      coefb_d, 
-  //      coefa_d, 
-  //      inc);
+  _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
+      (m->n_b_faces,
+       b_face_cells, 
+       cell_f_cen, 
+       b_face_normal, 
+       rhs_d, 
+       pvar_d, 
+       b_dist, 
+       coefb_d, 
+       coefa_d, 
+       inc);
 
   _compute_rhs_lsq_v_b_face_v2<<<gridsize_bf, blocksize, 0, stream>>>
       (m->n_b_faces,
@@ -1434,12 +1589,12 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   CS_CUDA_CHECK(cudaEventRecord(b_faces, stream));
 
     
-  if (rhs_test_d != NULL) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
-    cs_cuda_copy_d2h(rhs, rhs_test_d, size);
-  }
-  else
-    cs_sync_d2h(rhs);
+  // if (rhs_test_d != NULL) {
+  //   size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
+  //   cs_cuda_copy_d2h(rhs, rhs_test_d, size);
+  // }
+  // else
+  //   cs_sync_d2h(rhs);
 
   // /* Compute gradient */
   // /*------------------*/
@@ -1450,10 +1605,23 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //    rhs_d, 
   //    cocg_d);
 
-  _compute_gradient_lsq_v_v2<<<gridsize, blocksize, 0, stream>>>
-    (n_cells,
+  // _compute_gradient_lsq_v_v4<<<gridsize, blocksize, 0, stream>>>
+  //   (n_cells,
+  //    grad_d, 
+  //    rhs_d, 
+  //    cocg_d);
+
+
+  _compute_gradient_lsq_v_v5<<<gridsize_ext_1d, blocksize, 0, stream>>>
+    (n_cells*3*3,
      gradv_test_d, 
      rhs_test_d, 
+     cocg_d);
+
+  _compute_gradient_lsq_v_v6<<<gridsize_ext_1d, blocksize, 0, stream>>>
+    (n_cells*3*3,
+     grad_d, 
+     rhs_d, 
      cocg_d);
 
   CS_CUDA_CHECK(cudaEventRecord(gradient, stream));
@@ -1515,7 +1683,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   CS_CUDA_CHECK(cudaFree(rhs_test_d));
   CS_CUDA_CHECK(cudaFree(cocg_d));
   CS_CUDA_CHECK(cudaFree(grad_d));
+  CS_CUDA_CHECK(cudaFree(gradv_test_d));
+  CS_CUDA_CHECK(cudaFree(pvar_d_1d));
   
 }
-
-// cs_real_t results_precision(cs_real_t *cpu_result, cs_real_t *gpu_result, )
