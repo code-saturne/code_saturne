@@ -918,9 +918,6 @@ typedef struct {
   /* icp */
   int icp;
 
-  /* diftl0 */
-  cs_real_t diftl0;
-
   /* cmu */
   cs_real_t cmu;
 

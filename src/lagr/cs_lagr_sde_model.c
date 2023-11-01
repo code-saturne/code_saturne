@@ -413,6 +413,7 @@ _lagtmp(cs_lnum_t        npt,
  *
  * parameters:
  *   npt         <--  particle id
+ *   diftl0      <--  reference diffusivity for Enthalpy
  *   layer_vol   <--  volume occuppied by one layer
  *   tempct      <--  characteristic thermal time
  *   radius      <--  radius of each layer
@@ -424,6 +425,7 @@ _lagtmp(cs_lnum_t        npt,
 
 static void
 _lagsec(cs_lnum_t         npt,
+        cs_real_t         diftl0,
         cs_real_t         layer_vol,
         cs_real_t         mwat_max,
         cs_real_t         sherw,
@@ -525,7 +527,7 @@ _lagsec(cs_lnum_t         npt,
     /* Compute diffused water source term */
 
     aux3      = CS_MAX(1.0 - aux2, precis);
-    fwattot   =   cs_math_pi * prev_p_diam * extra->diftl0 * sherw
+    fwattot   =   cs_math_pi * prev_p_diam * diftl0 * sherw
                 * log((1.0 - extra->x_eau->val[cell_id]) / aux3);
 
   }
@@ -1105,6 +1107,10 @@ _lagich(const cs_real_t   tempct[],
               _("Lagrangian coal/shrinking diameter model is incompatible\n"
                 "with second-order model."));
 
+  cs_real_t diftl0 = -1;
+  diftl0 = cs_field_get_key_double(cs_field_by_name("enthalpy"),
+                                   cs_field_key_id("diffusivity_ref"));
+
   /* Main loop on particles
    * ====================== */
 
@@ -1169,7 +1175,7 @@ _lagich(const cs_real_t   tempct[],
     cs_real_t xrkl;
     if (   cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 0
         || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
-      xrkl = extra->diftl0 / rom;
+      xrkl = diftl0 / rom;
     else if (extra->cpro_viscls != NULL )
       xrkl = extra->cpro_viscls->val[cell_id] / rom;
     else
@@ -1214,12 +1220,12 @@ _lagich(const cs_real_t   tempct[],
                      + part_coke_mass[l_id];
 
     /* Compute avaporating water mass; we assume for the computation
-       of active coal denisty that drying occurs at constant volume */
+       of active coal density that drying occurs at constant volume */
 
     /* Vapor flux for particle */
 
     cs_real_t fwat[nlayer];
-    _lagsec(ip, layer_vol, mwat_max, sherw, radius, tempct,
+    _lagsec(ip, diftl0, layer_vol, mwat_max, sherw, radius, tempct,
             mlayer, mwater, fwat);
 
     /* Compute velocity constants SPK1 of SPK2 of the mass transfer by

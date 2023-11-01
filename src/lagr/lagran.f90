@@ -184,12 +184,11 @@ module lagran
 
     ! Interface to C function passing specific physics options
 
-    subroutine  cs_f_lagr_specific_physics(iirayo, ncharb, ncharm, diftl0)     &
+    subroutine  cs_f_lagr_specific_physics(iirayo, ncharb, ncharm)             &
       bind(C, name='cs_f_lagr_specific_physics')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int) :: iirayo, ncharb, ncharm
-      real(c_double) :: diftl0
     end subroutine cs_f_lagr_specific_physics
 
     !---------------------------------------------------------------------------
@@ -390,8 +389,7 @@ contains
                       a2ch, e1ch, e2ch, io2, ih2o, ico,                        &
                       ahetch, ehetch, thcdch, y1ch, y2ch, h02ch
     use ppppar, only: ncharm
-    use ppthch, only: diftl0, ngazem, wmole, wmolat, trefth, prefth, iatc,     &
-                      natom, wmolat
+    use ppthch, only: ngazem, wmole, wmolat, trefth, prefth, iatc, natom, wmolat
     use radiat, only: iirayo
 
     call init_lagr_dim_pointers
@@ -400,8 +398,7 @@ contains
 
     call cs_f_lagr_specific_physics(iirayo,         &
                                     ncharb,         &
-                                    ncharm,         &
-                                    diftl0)
+                                    ncharm)
 
     call cs_f_lagr_coal_comb(ih2o,   &
                              io2,    &

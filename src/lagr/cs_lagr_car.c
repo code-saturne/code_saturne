@@ -69,7 +69,6 @@
 #include "cs_turbulence_model.h"
 
 #include "cs_field.h"
-#include "cs_field_pointer.h"
 
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
@@ -171,6 +170,12 @@ cs_lagr_car(int              iprev,
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
+  cs_real_t diftl0 = -1;
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
+    diftl0 = cs_field_get_key_double(cs_field_by_name("enthalpy"),
+                                     cs_field_key_id("diffusivity_ref"));
+
   /* Compute Tp and Tc in case of thermal model
      -------------------------------------------*/
 
@@ -240,9 +245,8 @@ cs_lagr_car(int              iprev,
       /* a priori in gas or pulverized coal combustion,
          diffusivity is always constant */
       cs_real_t xrkl;
-      if (   cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 0
-          || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
-        xrkl = extra->diftl0 / rom;
+      if (diftl0 >= 0)
+        xrkl = diftl0 / rom;
       else if (extra->cpro_viscls != NULL)
         xrkl = extra->cpro_viscls->val[cell_id] / (rom * xcp);
       else

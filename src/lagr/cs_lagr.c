@@ -344,7 +344,6 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .ncharm = 0,
      .radiative_model = 0,
      .icp = -1,
-     .diftl0 = 0,
      .cmu = 0,
      .visls0 = 0,
      .ustar = NULL,
@@ -469,8 +468,7 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
 void
 cs_f_lagr_specific_physics(int        *iirayo,
                            int        *ncharb,
-                           int        *ncharm,
-                           cs_real_t  *diftl0);
+                           int        *ncharm);
 
 void
 cs_f_lagr_coal_comb(int        *ih2o,
@@ -610,8 +608,7 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
 void
 cs_f_lagr_specific_physics(int        *iirayo,
                            int        *ncharb,
-                           int        *ncharm,
-                           cs_real_t  *diftl0)
+                           int        *ncharm)
 {
   cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
@@ -628,7 +625,6 @@ cs_f_lagr_specific_physics(int        *iirayo,
   _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
 
   _lagr_extra_module.radiative_model = *iirayo;
-  _lagr_extra_module.diftl0 = *diftl0;
   _lagr_extra_module.cmu    = cs_turb_cmu;
 }
 
