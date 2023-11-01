@@ -140,10 +140,15 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if (iscavr(jj).le.0) then
+  if (jj .eq. iscalt) then
+    if (diftl0.ge.0d0) then
+      call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
+    endif
 
-! ---- En combustion on considere que la viscosite turbulente domine
-!      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
+  else if (iscavr(jj).le.0) then
+
+    ! ---- En combustion on considere que la viscosite turbulente domine
+    !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
     call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
 
@@ -183,10 +188,6 @@ vref  =-grand
 lref  =-grand
 ta    =-grand
 tstar =-grand
-
-! --> Viscosite laminaire associee au scalaire enthalpie
-!       DIFTL0 (diffusivite dynamique en kg/(m s))
-diftl0      =-grand
 
 ! --> Reference temperature for fuel and oxydant (K)
 tinfue = -grand

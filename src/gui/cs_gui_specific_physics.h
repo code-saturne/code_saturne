@@ -199,6 +199,13 @@ cs_gui_gwf_model(int  *permeability,
                  int  *unsteady,
                  int  *unsaturated);
 
+/*----------------------------------------------------------------------------
+ * Combustion model: read reference values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_combustion_ref_values(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

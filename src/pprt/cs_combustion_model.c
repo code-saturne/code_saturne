@@ -111,7 +111,7 @@ cs_combustion_model_t
                        .ieqnox = 0,
                        .isoot = -1,
                        .ckabs0 = 0,
-                       .diftl0 = 0,
+                       .diftl0 = -1,
                        .xco2 = -1,
                        .xh2o = -1,
                        .hinoxy = 0};
