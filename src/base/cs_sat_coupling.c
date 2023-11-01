@@ -418,14 +418,13 @@ _init_all_mpi_sat(void)
 
   n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
 
-  const size_t cs_app_name_l = strlen(CS_APP_NAME);
-
   /* First pass to count available code_saturne couplings */
 
   for (i = 0; i < n_apps; i++) {
     const ple_coupling_mpi_set_info_t
       ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
-    if (strncmp(ai.app_type, CS_APP_NAME, cs_app_name_l) == 0)
+    if (   strncmp(ai.app_type, "code_saturne", 12) == 0
+        || strncmp(ai.app_type, "Code_Saturne", 12) == 0)
       n_sat_apps += 1;
   }
 
@@ -438,7 +437,8 @@ _init_all_mpi_sat(void)
     for (i = 0; i < n_apps; i++) {
       const ple_coupling_mpi_set_info_t
         ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
-      if (   strncmp(ai.app_type, CS_APP_NAME, cs_app_name_l) == 0
+      if (   (   strncmp(ai.app_type, "code_saturne", 12) == 0
+              || strncmp(ai.app_type, "Code_Saturne", 12) == 0)
           && i != local_app_id) {
         _sat_coupling_builder->match_id = i;
       }
@@ -464,7 +464,8 @@ _init_all_mpi_sat(void)
 
     for (i = 0; i < n_apps; i++) {
       ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
-      if (strncmp(ai.app_type, CS_APP_NAME, cs_app_name_l) == 0) {
+      if (   strncmp(ai.app_type, "code_saturne", 12) == 0
+          || strncmp(ai.app_type, "Code_Saturne", 12) == 0) {
         sat_appinfo[n_sat_apps*2] = 0;
         sat_appinfo[n_sat_apps*2 + 1] = i;
         n_sat_apps += 1;
@@ -521,7 +522,8 @@ _init_all_mpi_sat(void)
       const ple_coupling_mpi_set_info_t
         ai = ple_coupling_mpi_set_get_info(mpi_apps, scb->match_id);
 
-      if (strncmp(ai.app_type, CS_APP_NAME, cs_app_name_l) == 0)
+      if (   strncmp(ai.app_type, "code_saturne", 12) == 0
+          || strncmp(ai.app_type, "Code_Saturne", 12) == 0)
         _sat_add_mpi(i, ai.root_rank, ai.n_ranks);
     }
 
