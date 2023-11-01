@@ -771,7 +771,9 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");
     _lagr_extra_module.x_m         = cs_field_by_name_try("xm");
 
-    _lagr_extra_module.ustar  = cs_field_by_name_try("ustar");
+    _lagr_extra_module.ustar  = cs_field_by_name_try("boundary_ustar");
+    if (_lagr_extra_module.ustar == NULL)
+      _lagr_extra_module.ustar  = cs_field_by_name_try("ustar");
   }
 }
 
