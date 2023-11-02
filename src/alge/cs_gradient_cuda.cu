@@ -23,61 +23,12 @@
 */
 
 /*----------------------------------------------------------------------------*/
+#include "cs_gradient_cuda.cuh"
 
-#include "cs_defs.h"
-
-/*----------------------------------------------------------------------------
- * Standard C library headers
- *----------------------------------------------------------------------------*/
-
-#include <assert.h>
-#include <errno.h>
-#include <float.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <chrono>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
-#include <cuda_runtime_api.h>
-
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
-
-#include "bft_error.h"
-#include "bft_mem.h"
-
-#include "cs_base_accel.h"
-#include "cs_base_cuda.h"
-#include "cs_blas.h"
-#include "cs_cell_to_vertex.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_porous_model.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_gradient.h"
-#include "cs_gradient_priv.h"
+#include "cs_gradient_lsq_vector.cuh"
+#include "cs_gradient_lsq_vector_v2.cuh"
+#include "cs_gradient_lsq_vector_v3.cuh"
+#include "cs_gradient_lsq_vector_gather.cuh"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -94,20 +45,6 @@
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-__device__ void cs_math_3_normalise_cuda(const cs_real_t in[3],
-                                         cs_real_t out[3])
-{
-  cs_real_t norm = sqrt(in[0]*in[0] 
-          + in[1]*in[1]
-          + in[2]*in[2]);
-
-  cs_real_t inverse_norm =  1. / norm;
-
-  out[0] = inverse_norm * in[0];
-  out[1] = inverse_norm * in[1];
-  out[2] = inverse_norm * in[2];
-}
 
 /*----------------------------------------------------------------------------
  * Recompute cocg at boundaries, using saved cocgb
@@ -445,49 +382,6 @@ _init_rhsv(cs_lnum_t         size,
   }
 }
 
-
-/*----------------------------------------------------------------------------
- * Initialize RHS with null values
- *----------------------------------------------------------------------------*/
-
-__global__ static void
-_init_rhs(cs_lnum_t         size,
-           cs_real_33_t      *restrict rhs)
-{
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id < size) {
-    for (cs_lnum_t i = 0; i < 3; i++)
-      for (cs_lnum_t j = 0; j < 3; j++)
-        rhs[c_id][i][j] = 0.0;
-  }
-}
-
-__global__ static void
-_test(cs_lnum_t         size,
-           const cs_real_3_t      *restrict pvar,
-           cs_real_t      *restrict pvar_1d)
-{
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id < size) {
-    for (cs_lnum_t i = 0; i < 3; i++){
-        if(pvar[c_id][i] != pvar_1d[c_id*3 + i]){
-          printf("\tNot equal");
-        }
-    }
-  }
-}
-
-__global__ static void
-_init_rhs_v2(cs_lnum_t         size,
-           cs_real_t      *restrict rhs)
-{
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size)
-    return;
-
-  rhs[c_id] = 0.0;
-}
-
 __global__ static void
 _init_rhs_v3(cs_lnum_t         size,
            double3      *restrict rhs)
@@ -497,336 +391,6 @@ _init_rhs_v3(cs_lnum_t         size,
     return;
 
   rhs[c_id] = make_double3(0.0, 0.0, 0.0);
-}
-
-__global__ static void
-_compute_rhs_lsq_v_i_face_v0(cs_lnum_t            size,
-                          const cs_lnum_2_t      *i_face_cells,
-                          const cs_real_3_t    *cell_f_cen,
-                          cs_real_33_t         *rhs,
-                          const cs_real_3_t    *pvar,
-                          const cs_real_t         *weight,
-                          const cs_real_t      *c_weight)
-{
-  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(f_id >= size){
-    return;
-  }
-  cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
-  cs_lnum_t c_id1, c_id2;
-
-  c_id1 = i_face_cells[f_id][0];
-  c_id2 = i_face_cells[f_id][1];
-
-  dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
-  dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
-  dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
-
-  ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-  
-  if (c_weight != NULL){
-    _pond = weight[f_id];
-    _denom = 1. / (  _pond       *c_weight[c_id1]
-                                + (1. - _pond)*c_weight[c_id2]);
-                            
-    for(cs_lnum_t i = 0; i < 3; i++){
-      pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-      for(cs_lnum_t j = 0; j < 3; j++){
-        fctb[j] = dc[j] * pfac;
-        atomicAdd(&rhs[c_id1][i][j], c_weight[c_id2] * _denom * fctb[j]);
-        atomicAdd(&rhs[c_id2][i][j], c_weight[c_id1] * _denom * fctb[j]);
-      }
-    }
-  }
-  else{
-    for(cs_lnum_t i = 0; i < 3; i++){
-      pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-      for(cs_lnum_t j = 0; j < 3; j++){
-        fctb[j] = dc[j] * pfac;
-        atomicAdd(&rhs[c_id1][i][j], fctb[j]);
-        atomicAdd(&rhs[c_id2][i][j], fctb[j]);
-      }
-    }
-  }
-}
-
-__global__ static void
-_compute_rhs_lsq_v_i_face(cs_lnum_t            size,
-                          const cs_lnum_2_t      *restrict i_face_cells,
-                          const cs_real_3_t    *restrict cell_f_cen,
-                          cs_real_33_t         *restrict rhs,
-                          const cs_real_3_t    *restrict pvar,
-                          const cs_real_t         *restrict weight,
-                          const cs_real_t      *restrict c_weight)
-{
-  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(f_id >= size){
-    return;
-  }
-  cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
-  cs_lnum_t c_id1, c_id2;
-
-  c_id1 = i_face_cells[f_id][0];
-  c_id2 = i_face_cells[f_id][1];
-
-  dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
-  dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
-  dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
-
-  ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-  
-  if (c_weight == NULL){
-    _weight1 = 1.;
-    _weight2 = 1.;
-  }
-  else{
-    _pond = weight[f_id];
-    _denom = 1. / (  _pond       *c_weight[c_id1]
-                                + (1. - _pond)*c_weight[c_id2]);
-    _weight1 = c_weight[c_id1] * _denom;
-    _weight2 = c_weight[c_id2] * _denom;
-  }
-  
-  for(cs_lnum_t i = 0; i < 3; i++){
-    pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-    for(cs_lnum_t j = 0; j < 3; j++){
-      fctb[j] = dc[j] * pfac;
-      atomicAdd(&rhs[c_id1][i][j], _weight2 * fctb[j]);
-      atomicAdd(&rhs[c_id2][i][j], _weight1 * fctb[j]);
-    }
-  }
-}
-
-__global__ static void
-_compute_rhs_lsq_v_i_face_v2(cs_lnum_t            size,
-                          const cs_lnum_t      *restrict i_face_cells,
-                          const cs_real_t    *restrict cell_f_cen,
-                          cs_real_t         *restrict rhs,
-                          const cs_real_3_t    *restrict pvar,
-                          const cs_real_t         *restrict weight,
-                          const cs_real_t      *restrict c_weight)
-{
-  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(f_id >= size){
-    return;
-  }
-  cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
-  cs_lnum_t c_id1, c_id2;
-
-  c_id1 = i_face_cells[f_id*2];
-  c_id2 = i_face_cells[f_id*2 + 1];
-
-  dc[0] = cell_f_cen[c_id2*3] - cell_f_cen[c_id1*3];
-  dc[1] = cell_f_cen[c_id2*3 + 1] - cell_f_cen[c_id1*3 + 1];
-  dc[2] = cell_f_cen[c_id2*3 + 2] - cell_f_cen[c_id1*3 + 2];
-
-  ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-  
-  if (c_weight == NULL){
-    _weight1 = 1.;
-    _weight2 = 1.;
-  }
-  else{
-    _pond = weight[f_id];
-    _denom = 1. / (  _pond       *c_weight[c_id1]
-                                + (1. - _pond)*c_weight[c_id2]);
-    _weight1 = c_weight[c_id1] * _denom;
-    _weight2 = c_weight[c_id2] * _denom;
-  }
-  
-  for(cs_lnum_t i = 0; i < 3; i++){
-    pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-    for(cs_lnum_t j = 0; j < 3; j++){
-      fctb[j] = dc[j] * pfac;
-      atomicAdd(&rhs[c_id1*3*3 + i*3 + j], _weight2 * fctb[j]);
-      atomicAdd(&rhs[c_id2*3*3 + i*3 + j], _weight1 * fctb[j]);
-    }
-  }
-}
-
-
-__global__ static void
-_compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
-                                const cs_lnum_t      *restrict cell_cells_idx,
-                                const cs_lnum_t      *restrict cell_cells_lst,
-                                const cs_real_3_t    *restrict cell_f_cen,
-                                cs_real_33_t         *restrict rhs,
-                                const cs_real_3_t    *restrict pvar)
-{
-  cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(c_id1 >= size){
-    return;
-  }
-
-  cs_lnum_t s_id = cell_cells_idx[c_id1];
-  cs_lnum_t e_id = cell_cells_idx[c_id1 + 1];
-
-  cs_real_t dc[3], ddc, pfac;
-
-  for(cs_lnum_t index = s_id; index < e_id; index++){
-
-    cs_lnum_t c_id2 = cell_cells_idx[index];
-
-    dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
-    dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
-    dc[2] = cell_f_cen[c_id2][2] - cell_f_cen[c_id1][2];
-
-    ddc = 1./(dc[0] * dc[0] + dc[1] * dc[1] + dc[2] * dc[2]);
-
-    for (cs_lnum_t i = 0; i < 3; i++) {
-
-      pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        rhs[c_id1][i][j] += dc[j] * pfac;
-      }
-    }
-  }
-
-}
-
-__global__ static void
-_compute_rhs_lsq_v_b_face(cs_lnum_t           size,
-                          const cs_lnum_t      *restrict b_face_cells,
-                          const cs_real_3_t    *restrict cell_f_cen,
-                          const cs_real_3_t    *restrict b_face_normal,
-                          cs_real_33_t         *restrict rhs,
-                          const cs_real_3_t    *restrict pvar,
-                          const cs_real_t      *restrict b_dist,
-                          const cs_real_33_t   *restrict coefbv,
-                          const cs_real_3_t    *restrict coefav,
-                          const int            inc)
-{
-  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(f_id >= size){
-    return;
-  }
-
-  cs_lnum_t c_id1;
-  cs_real_t n_d_dist[3], d_b_dist, pfac, norm, inverse_norm;
-
-  c_id1 = b_face_cells[f_id];
-
-  cs_math_3_normalise_cuda(b_face_normal[f_id], n_d_dist);
-
-  d_b_dist = 1. / b_dist[f_id];
-
-  /* Normal divided by b_dist */
-  n_d_dist[0] *= d_b_dist;
-  n_d_dist[1] *= d_b_dist;
-  n_d_dist[2] *= d_b_dist;
-
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    pfac =   coefav[f_id][i]*inc
-          + ( coefbv[f_id][0][i] * pvar[c_id1][0]
-            + coefbv[f_id][1][i] * pvar[c_id1][1]
-            + coefbv[f_id][2][i] * pvar[c_id1][2]
-            - pvar[c_id1][i]);
-
-    atomicAdd(&rhs[c_id1][i][0], n_d_dist[0] * pfac);
-    atomicAdd(&rhs[c_id1][i][1], n_d_dist[1] * pfac);
-    atomicAdd(&rhs[c_id1][i][2], n_d_dist[2] * pfac); 
-  }
-}
-
-__global__ static void
-_compute_rhs_lsq_v_b_face_v2(cs_lnum_t           size,
-                            const cs_lnum_t      *restrict b_face_cells,
-                            const cs_real_3_t    *restrict cell_f_cen,
-                            const cs_real_3_t    *restrict b_face_normal,
-                            cs_real_t            *restrict rhs,
-                            const cs_real_3_t    *restrict pvar,
-                            const cs_real_t      *restrict b_dist,
-                            const cs_real_33_t   *restrict coefbv,
-                            const cs_real_3_t    *restrict coefav,
-                            const int            inc)
-{
-  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(f_id >= size){
-    return;
-  }
-
-  cs_lnum_t c_id1;
-  cs_real_t n_d_dist[3], d_b_dist, pfac, norm, inverse_norm;
-
-  c_id1 = b_face_cells[f_id];
-
-  cs_math_3_normalise_cuda(b_face_normal[f_id], n_d_dist);
-
-  d_b_dist = 1. / b_dist[f_id];
-
-  /* Normal divided by b_dist */
-  n_d_dist[0] *= d_b_dist;
-  n_d_dist[1] *= d_b_dist;
-  n_d_dist[2] *= d_b_dist;
-
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    pfac =   coefav[f_id][i]*inc
-          + ( coefbv[f_id][0][i] * pvar[c_id1][0]
-            + coefbv[f_id][1][i] * pvar[c_id1][1]
-            + coefbv[f_id][2][i] * pvar[c_id1][2]
-            - pvar[c_id1][i]);
-
-    atomicAdd(&rhs[c_id1*3*3 + i*3], n_d_dist[0] * pfac);
-    atomicAdd(&rhs[c_id1*3*3 + i*3 + 1], n_d_dist[1] * pfac);
-    atomicAdd(&rhs[c_id1*3*3 + i*3 + 2], n_d_dist[2] * pfac); 
-  }
-}
-
-__global__ static void
-_compute_gradient_lsq_v(cs_lnum_t           size,
-                        cs_real_33_t        *restrict gradv,
-                        cs_real_33_t        *restrict rhs,
-                        cs_cocg_6_t         *restrict cocg)
-{
-  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
-    return;
-
-  for(cs_lnum_t i = 0; i < 3; i++){
-    gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
-                          + rhs[c_id][i][1] * cocg[c_id][3]
-                          + rhs[c_id][i][2] * cocg[c_id][5];
-
-    gradv[c_id][i][1] =   rhs[c_id][i][0] * cocg[c_id][3]
-                        + rhs[c_id][i][1] * cocg[c_id][1]
-                        + rhs[c_id][i][2] * cocg[c_id][4];
-
-    gradv[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
-                        + rhs[c_id][i][1] * cocg[c_id][4]
-                        + rhs[c_id][i][2] * cocg[c_id][2];
-  }
-}
-
-__global__ static void
-_compute_gradient_lsq_v_v2(cs_lnum_t           size,
-                        cs_real_t        *restrict gradv,
-                        cs_real_t        *restrict rhs,
-                        cs_cocg_6_t         *restrict cocg)
-{
-  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
-    return;
-
-  for(cs_lnum_t i = 0; i < 3; i++){
-    gradv[c_id*3*3 + i*3] =   rhs[c_id*3*3 + i*3] * cocg[c_id][0]
-                          + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][3]
-                          + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][5];
-
-    gradv[c_id*3*3 + i*3 + 1] =   rhs[c_id*3*3 + i*3] * cocg[c_id][3]
-                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][1]
-                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][4];
-
-    gradv[c_id*3*3 + i*3 + 2] =   rhs[c_id*3*3 + i*3] * cocg[c_id][5]
-                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][4]
-                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][2];
-  }
 }
 
 __global__ static void
@@ -856,112 +420,6 @@ _compute_gradient_lsq_v_v3(cs_lnum_t           size,
                         + rhsci[1] * cocgc[4]
                         + rhsci[2] * cocgc[2];
   }
-}
-
-__global__ static void
-_compute_gradient_lsq_v_v4(cs_lnum_t           size,
-                        cs_real_33_t        *restrict gradv_m,
-                        cs_real_33_t        *restrict rhs_m,
-                        cs_cocg_6_t         *restrict cocg)
-{
-  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
-    return;
-
-  cs_real_t *rhs = (cs_real_t *) rhs_m;
-  cs_real_t *gradv = (cs_real_t *) gradv_m;
-
-  for(cs_lnum_t i = 0; i < 3; i++){
-    gradv[c_id*3*3 + i*3] =   rhs[c_id*3*3 + i*3] * cocg[c_id][0]
-                          + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][3]
-                          + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][5];
-
-    gradv[c_id*3*3 + i*3 + 1] =   rhs[c_id*3*3 + i*3] * cocg[c_id][3]
-                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][1]
-                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][4];
-
-    gradv[c_id*3*3 + i*3 + 2] =   rhs[c_id*3*3 + i*3] * cocg[c_id][5]
-                        + rhs[c_id*3*3 + i*3 + 1] * cocg[c_id][4]
-                        + rhs[c_id*3*3 + i*3 + 2] * cocg[c_id][2];
-  }
-}
-
-__global__ static void
-_compute_gradient_lsq_v_v5(cs_lnum_t           size,
-                        cs_real_t        *restrict gradv,
-                        cs_real_t        *restrict rhs,
-                        cs_cocg_6_t         *restrict cocg)
-{
-  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
-    return;
-
-  size_t c_id1 = c_id / (3*3);
-  size_t i = (c_id / 3) % 3;
-  size_t j = c_id % 3;
-
-  auto cocg_temp = cocg[c_id1];
-  cs_real_t _cocg[3];
-
-  _cocg[0] = cocg_temp[5];
-  _cocg[1] = cocg_temp[4];
-  _cocg[2] = cocg_temp[2];
-
-  if(j == 0){
-    _cocg[0] = cocg_temp[0];
-    _cocg[1] = cocg_temp[3];
-    _cocg[2] = cocg_temp[5];
-  }
-
-  if(j == 1){
-    _cocg[0] = cocg_temp[3];
-    _cocg[1] = cocg_temp[1];
-    _cocg[2] = cocg_temp[4];
-  }
-  
-  gradv[c_id] =   rhs[c_id1*3*3 + i*3] * _cocg[0]
-                        + rhs[c_id1*3*3 + i*3 + 1] * _cocg[1]
-                        + rhs[c_id1*3*3 + i*3 + 2] * _cocg[2];
-
-}
-
-__global__ static void
-_compute_gradient_lsq_v_v6(cs_lnum_t           size,
-                        cs_real_33_t        *restrict gradv,
-                        cs_real_33_t        *restrict rhs,
-                        cs_cocg_6_t         *restrict cocg)
-{
-  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
-    return;
-
-  size_t c_id1 = c_id / (3*3);
-  size_t i = (c_id / 3) % 3;
-  size_t j = c_id % 3;
-
-  auto cocg_temp = cocg[c_id1];
-  cs_real_t _cocg[3];
-
-  _cocg[0] = cocg_temp[5];
-  _cocg[1] = cocg_temp[4];
-  _cocg[2] = cocg_temp[2];
-
-  if(j == 0){
-    _cocg[0] = cocg_temp[0];
-    _cocg[1] = cocg_temp[3];
-    _cocg[2] = cocg_temp[5];
-  }
-
-  if(j == 1){
-    _cocg[0] = cocg_temp[3];
-    _cocg[1] = cocg_temp[1];
-    _cocg[2] = cocg_temp[4];
-  }
-
-  gradv[c_id1][i][j] =   rhs[c_id1][i][0] * _cocg[0]
-                        + rhs[c_id1][i][1] * _cocg[1]
-                        + rhs[c_id1][i][2] * _cocg[2];
-
 }
 
 __global__ static void
@@ -1454,6 +912,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
     = (unsigned int)ceil((double)m->n_b_cells / blocksize);
   unsigned int gridsize_if
     = (unsigned int)ceil((double)m->n_i_faces / blocksize);
+  unsigned int gridsize_if_bis
+    = (unsigned int)ceil((double)(m->n_i_faces*3*3) / blocksize);
   unsigned int gridsize_bf
     = (unsigned int)ceil((double)m->n_b_faces / blocksize);
   unsigned int gridsize = (unsigned int)ceil((double)m->n_cells / blocksize);
@@ -1493,6 +953,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_lnum_t *restrict i_face_cells_1d
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
 
+  // printf("n_i_thread:%d\tn_i_groups:%d\tn_cells%d\n", n_i_threads, n_i_groups, n_cells);
 
   _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream,
                          &pvar_d, &_pvar_d);
@@ -1508,9 +969,9 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
     (n_cells_ext,
      rhs_d);
 
-  _init_rhs_v2<<<gridsize_ext_1d, blocksize, 0, stream>>>
-    (n_cells_ext*3*3,
-     rhs_test_d);
+  // _init_rhs_v2<<<gridsize_ext_1d, blocksize, 0, stream>>>
+  //   (n_cells_ext*3*3,
+  //    rhs_test_d);
 
   // _init_rhs_v3<<<gridsize_ext, blocksize, 0, stream>>>
   //   (n_cells_ext*3,
@@ -1530,20 +991,39 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      weight, 
   //      c_weight);
 
-  _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
-      (n_i_faces,
-       i_face_cells, 
-       cell_f_cen, 
-       rhs_d, 
-       pvar_d, 
-       weight, 
-       c_weight);
+  // _compute_rhs_lsq_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
+  //     (n_i_faces,
+  //      i_face_cells, 
+  //      cell_f_cen, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      weight, 
+  //      c_weight);
 
   _compute_rhs_lsq_v_i_face_v2<<<gridsize_if, blocksize, 0, stream>>>
       (n_i_faces,
        i_face_cells_1d, 
        cell_f_cen_1d, 
        rhs_test_d, 
+       pvar_d, 
+       weight, 
+       c_weight);
+
+  // _compute_rhs_lsq_v_i_face_v3<<<gridsize_if_bis, blocksize, 0, stream>>>
+  //     (n_i_faces*3*3,
+  //      i_face_cells, 
+  //      cell_f_cen, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      weight, 
+  //      c_weight);
+
+  _compute_rhs_lsq_v_i_face_gather<<<gridsize, blocksize, 0, stream>>>
+      (n_cells,
+       cell_cells_idx,
+       cell_cells_lst,
+       cell_f_cen, 
+       rhs_d, 
        pvar_d, 
        weight, 
        c_weight);
@@ -1627,9 +1107,9 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   CS_CUDA_CHECK(cudaEventRecord(gradient, stream));
 
   // /* Sync to host */
-  if (gradv_test_d != NULL) {
+  if (grad_d != NULL) {
     size_t size = n_cells * sizeof(cs_real_t) * 3 * 3;
-    cs_cuda_copy_d2h(gradv, gradv_test_d, size);
+    cs_cuda_copy_d2h(gradv, grad_d, size);
   }
   else
     cs_sync_d2h(gradv);
