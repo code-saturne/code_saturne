@@ -5686,156 +5686,175 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     coupled_faces = (const bool *)cpl->coupled_faces;
   }
 
-  /* Initialize gradient */
-  /*---------------------*/
 
-  /* Initialization */
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
-        grad[c_id][i][j] = 0.0;
+
+#if defined(HAVE_CUDA)
+  cs_reconstruct_vector_gradient_cuda(m,
+                                      fvq, 
+                                      cpl, 
+                                      halo_type, 
+                                      inc,
+                                      coefav,
+                                      coefbv,
+                                      pvar,
+                                      c_weight,
+                                      r_grad,
+                                      grad,
+                                      coupled_faces,
+                                      cpl_stride);
+#else
+    /* Initialize gradient */
+    /*---------------------*/
+
+    /* Initialization */
+
+  # pragma omp parallel for
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          grad[c_id][i][j] = 0.0;
+      }
     }
-  }
 
-  /* Interior faces contribution */
+    /* Interior faces contribution */
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+  #   pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           f_id++) {
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+            f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+            f_id++) {
 
-        cs_lnum_t c_id1 = i_face_cells[f_id][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id][1];
+          cs_lnum_t c_id1 = i_face_cells[f_id][0];
+          cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-        cs_real_t pond = weight[f_id];
+          cs_real_t pond = weight[f_id];
 
-        cs_real_t ktpond = (c_weight == NULL) ?
-          pond :                    // no cell weighting
-          pond * c_weight[c_id1] // cell weighting active
-            / (      pond * c_weight[c_id1]
-              + (1.0-pond)* c_weight[c_id2]);
+          cs_real_t ktpond = (c_weight == NULL) ?
+            pond :                    // no cell weighting
+            pond * c_weight[c_id1] // cell weighting active
+              / (      pond * c_weight[c_id1]
+                + (1.0-pond)* c_weight[c_id2]);
+
+          /*
+            Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                      + (1-\alpha_\ij) \varia_\cellj\f$
+                    but for the cell \f$ \celli \f$ we remove
+                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                    and for the cell \f$ \cellj \f$ we remove
+                    \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+
+            cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
+            cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
+
+            /* Reconstruction part */
+            cs_real_t rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
+                                                      + r_grad[c_id2][i][0])
+                                    + dofij[f_id][1]*(  r_grad[c_id1][i][1]
+                                                      + r_grad[c_id2][i][1])
+                                    + dofij[f_id][2]*(  r_grad[c_id1][i][2]
+                                                      + r_grad[c_id2][i][2]));
+
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              grad[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
+              grad[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
+            }
+
+          }
+
+        } /* End of loop on faces */
+
+      } /* End of loop on threads */
+
+    } /* End of loop on thread groups */
+
+    /* Contribution from coupled faces */
+    if (cpl != NULL) {
+      cs_internal_coupling_initialize_vector_gradient(cpl, c_weight, pvar, grad);
+      cs_internal_coupling_reconstruct_vector_gradient(cpl, r_grad, grad);
+    }
+
+    /* Boundary face treatment */
+
+  # pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+
+      for (cs_lnum_t f_id = b_group_index[t_id*2];
+          f_id < b_group_index[t_id*2 + 1];
+          f_id++) {
+
+        if (coupled_faces[f_id * cpl_stride])
+          continue;
+
+        cs_lnum_t c_id = b_face_cells[f_id];
 
         /*
-           Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
-                                    + (1-\alpha_\ij) \varia_\cellj\f$
-                   but for the cell \f$ \celli \f$ we remove
-                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                   and for the cell \f$ \cellj \f$ we remove
-                   \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+          Remark: for the cell \f$ \celli \f$ we remove
+                  \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
         */
 
         for (cs_lnum_t i = 0; i < 3; i++) {
 
-          cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
-          cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
+          cs_real_t pfac = inc*coefav[f_id][i];
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            pfac += coefbv[f_id][i][k] * pvar[c_id][k];
+
+          pfac -= pvar[c_id][i];
 
           /* Reconstruction part */
-          cs_real_t rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
-                                                    + r_grad[c_id2][i][0])
-                                  + dofij[f_id][1]*(  r_grad[c_id1][i][1]
-                                                    + r_grad[c_id2][i][1])
-                                  + dofij[f_id][2]*(  r_grad[c_id1][i][2]
-                                                    + r_grad[c_id2][i][2]));
-
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            grad[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
-            grad[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
+          cs_real_t rfac = 0.;
+          for (cs_lnum_t k = 0; k < 3; k++) {
+            cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
+                              + r_grad[c_id][k][1] * diipb[f_id][1]
+                              + r_grad[c_id][k][2] * diipb[f_id][2];
+            rfac += coefbv[f_id][i][k] * vecfac;
           }
 
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
+
         }
 
-      } /* End of loop on faces */
+      } /* loop on faces */
 
-    } /* End of loop on threads */
+    } /* loop on threads */
 
-  } /* End of loop on thread groups */
-
-  /* Contribution from coupled faces */
-  if (cpl != NULL) {
-    cs_internal_coupling_initialize_vector_gradient(cpl, c_weight, pvar, grad);
-    cs_internal_coupling_reconstruct_vector_gradient(cpl, r_grad, grad);
-  }
-
-  /* Boundary face treatment */
-
-# pragma omp parallel for
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-    for (cs_lnum_t f_id = b_group_index[t_id*2];
-         f_id < b_group_index[t_id*2 + 1];
-         f_id++) {
-
-      if (coupled_faces[f_id * cpl_stride])
-        continue;
-
-      cs_lnum_t c_id = b_face_cells[f_id];
-
-      /*
-        Remark: for the cell \f$ \celli \f$ we remove
-                \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-      */
+  # pragma omp parallel for
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t dvol;
+      /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+      if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+        dvol = 1. / cell_f_vol[c_id];
+      else
+        dvol = 0.;
 
       for (cs_lnum_t i = 0; i < 3; i++) {
-
-        cs_real_t pfac = inc*coefav[f_id][i];
-
-        for (cs_lnum_t k = 0; k < 3; k++)
-          pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-
-        pfac -= pvar[c_id][i];
-
-        /* Reconstruction part */
-        cs_real_t rfac = 0.;
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
-                             + r_grad[c_id][k][1] * diipb[f_id][1]
-                             + r_grad[c_id][k][2] * diipb[f_id][2];
-          rfac += coefbv[f_id][i][k] * vecfac;
-        }
-
         for (cs_lnum_t j = 0; j < 3; j++)
-          grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
-
+          grad[c_id][i][j] *= dvol;
       }
 
-    } /* loop on faces */
+      if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
+        cs_real_t gradpa[3];
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            gradpa[j] = grad[c_id][i][j];
+            grad[c_id][i][j] = 0.;
+          }
 
-  } /* loop on threads */
-
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t dvol;
-    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
-    if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-      dvol = 1. / cell_f_vol[c_id];
-    else
-      dvol = 0.;
-
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
-        grad[c_id][i][j] *= dvol;
-    }
-
-    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
-      cs_real_t gradpa[3];
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          gradpa[j] = grad[c_id][i][j];
-          grad[c_id][i][j] = 0.;
+          for (cs_lnum_t j = 0; j < 3; j++)
+            for (cs_lnum_t k = 0; k < 3; k++)
+              grad[c_id][i][j] += corr_grad_lin[c_id][j][k] * gradpa[k];
         }
-
-        for (cs_lnum_t j = 0; j < 3; j++)
-          for (cs_lnum_t k = 0; k < 3; k++)
-            grad[c_id][i][j] += corr_grad_lin[c_id][j][k] * gradpa[k];
       }
     }
-  }
+#endif
 
   /* Periodicity and parallelism treatment */
 
