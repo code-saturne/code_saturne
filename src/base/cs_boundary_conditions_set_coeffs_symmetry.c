@@ -77,13 +77,12 @@ BEGIN_C_DECLS
 /*!
  * \brief Boundary conditions for symmetry (icodcl = 4) for a scalar.
  *
- * \param[in]     f_sc          scalar field
+ * \param[in]  f_sc  scalar field
  */
 /*---------------------------------------------------------------------------*/
 
 static void
-_boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t *f_sc)
-
+_boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -91,7 +90,8 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t *f_sc)
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_3_t *b_face_normal  = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_3_t *b_face_u_normal
+    = (const cs_real_3_t *)fvq->b_face_u_normal;
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   const cs_real_t cp0 = fluid_props->cp0;
@@ -158,7 +158,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t *f_sc)
 
       /* Geometric quantities */
       const cs_lnum_t c_id = b_face_cells[f_id];
-      const cs_real_t *n = b_face_normal[f_id];
+      const cs_real_t *nn = b_face_u_normal[f_id];
       const cs_real_t distbf = b_dist[f_id];
 
       /* Physical Properties */
@@ -169,9 +169,6 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t *f_sc)
         cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
       else if (iscacp == 2)
         cpp = cpro_cv[c_id];
-
-      cs_real_t rnxyz[3];
-      cs_math_3_normalize(n, rnxyz);
 
       const cs_real_t rkl = (ifcvsl < 0) ? visls_0/cpp : viscls[c_id]/cpp;
 
@@ -192,16 +189,16 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t *f_sc)
       coefa_tf[f_id][1] = 0.0;
       coefa_tf[f_id][2] = 0.0;
 
-      coefb_tf[f_id][0][0] = 1.0 - rnxyz[0]*rnxyz[0];
-      coefb_tf[f_id][1][1] = 1.0 - rnxyz[1]*rnxyz[1];
-      coefb_tf[f_id][2][2] = 1.0 - rnxyz[2]*rnxyz[2];
+      coefb_tf[f_id][0][0] = 1.0 - nn[0]*nn[0];
+      coefb_tf[f_id][1][1] = 1.0 - nn[1]*nn[1];
+      coefb_tf[f_id][2][2] = 1.0 - nn[2]*nn[2];
 
-      coefb_tf[f_id][0][1] = - rnxyz[0] * rnxyz[1];
-      coefb_tf[f_id][0][2] = - rnxyz[0] * rnxyz[2];
-      coefb_tf[f_id][1][0] = - rnxyz[1] * rnxyz[0];
-      coefb_tf[f_id][1][2] = - rnxyz[1] * rnxyz[2];
-      coefb_tf[f_id][2][0] = - rnxyz[2] * rnxyz[0];
-      coefb_tf[f_id][2][1] = - rnxyz[2] * rnxyz[1];
+      coefb_tf[f_id][0][1] = - nn[0] * nn[1];
+      coefb_tf[f_id][0][2] = - nn[0] * nn[2];
+      coefb_tf[f_id][1][0] = - nn[1] * nn[0];
+      coefb_tf[f_id][1][2] = - nn[1] * nn[2];
+      coefb_tf[f_id][2][0] = - nn[2] * nn[0];
+      coefb_tf[f_id][2][1] = - nn[2] * nn[1];
 
       /* Flux BCs */
       cofaf_tf[f_id][0] = 0.0;
@@ -210,43 +207,43 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t *f_sc)
 
       /* Diagonal */
 
-      cofbf_tf[f_id][0][0] =   hintt[0]*rnxyz[0]*rnxyz[0]
-                             + hintt[3]*rnxyz[0]*rnxyz[1]
-                             + hintt[5]*rnxyz[0]*rnxyz[2];
+      cofbf_tf[f_id][0][0] =   hintt[0]*nn[0]*nn[0]
+                             + hintt[3]*nn[0]*nn[1]
+                             + hintt[5]*nn[0]*nn[2];
 
-      cofbf_tf[f_id][1][1] =   hintt[3]*rnxyz[0]*rnxyz[1]
-                             + hintt[1]*rnxyz[1]*rnxyz[1]
-                             + hintt[4]*rnxyz[1]*rnxyz[2];
+      cofbf_tf[f_id][1][1] =   hintt[3]*nn[0]*nn[1]
+                             + hintt[1]*nn[1]*nn[1]
+                             + hintt[4]*nn[1]*nn[2];
 
-      cofbf_tf[f_id][2][2] =   hintt[5]*rnxyz[0]*rnxyz[2]
-                             + hintt[4]*rnxyz[1]*rnxyz[2]
-                             + hintt[2]*rnxyz[2]*rnxyz[2];
+      cofbf_tf[f_id][2][2] =   hintt[5]*nn[0]*nn[2]
+                             + hintt[4]*nn[1]*nn[2]
+                             + hintt[2]*nn[2]*nn[2];
 
       /* Extra diagonal */
 
-      cofbf_tf[f_id][1][0] =   hintt[0]*rnxyz[0]*rnxyz[1]
-                             + hintt[3]*rnxyz[1]*rnxyz[1]
-                             + hintt[5]*rnxyz[1]*rnxyz[2];
+      cofbf_tf[f_id][1][0] =   hintt[0]*nn[0]*nn[1]
+                             + hintt[3]*nn[1]*nn[1]
+                             + hintt[5]*nn[1]*nn[2];
 
-      cofbf_tf[f_id][0][1] =   hintt[3]*rnxyz[0]*rnxyz[0]
-                             + hintt[1]*rnxyz[1]*rnxyz[0]
-                             + hintt[4]*rnxyz[0]*rnxyz[2];
+      cofbf_tf[f_id][0][1] =   hintt[3]*nn[0]*nn[0]
+                             + hintt[1]*nn[1]*nn[0]
+                             + hintt[4]*nn[0]*nn[2];
 
-      cofbf_tf[f_id][2][0] =   hintt[0]*rnxyz[0]*rnxyz[2]
-                             + hintt[3]*rnxyz[1]*rnxyz[2]
-                             + hintt[5]*rnxyz[2]*rnxyz[2];
+      cofbf_tf[f_id][2][0] =   hintt[0]*nn[0]*nn[2]
+                             + hintt[3]*nn[1]*nn[2]
+                             + hintt[5]*nn[2]*nn[2];
 
-      cofbf_tf[f_id][0][2] =   hintt[5]*rnxyz[0]*rnxyz[0]
-                             + hintt[4]*rnxyz[1]*rnxyz[0]
-                             + hintt[2]*rnxyz[2]*rnxyz[0];
+      cofbf_tf[f_id][0][2] =   hintt[5]*nn[0]*nn[0]
+                             + hintt[4]*nn[1]*nn[0]
+                             + hintt[2]*nn[2]*nn[0];
 
-      cofbf_tf[f_id][2][1] =   hintt[3]*rnxyz[0]*rnxyz[2]
-                             + hintt[1]*rnxyz[1]*rnxyz[2]
-                             + hintt[4]*rnxyz[2]*rnxyz[2];
+      cofbf_tf[f_id][2][1] =   hintt[3]*nn[0]*nn[2]
+                             + hintt[1]*nn[1]*nn[2]
+                             + hintt[4]*nn[2]*nn[2];
 
-      cofbf_tf[f_id][1][2] =   hintt[5]*rnxyz[0]*rnxyz[1]
-                             + hintt[4]*rnxyz[1]*rnxyz[1]
-                             + hintt[2]*rnxyz[2]*rnxyz[1];
+      cofbf_tf[f_id][1][2] =   hintt[5]*nn[0]*nn[1]
+                             + hintt[4]*nn[1]*nn[1]
+                             + hintt[2]*nn[2]*nn[1];
 
       /* Boundary conditions for thermal transport equation */
       for (int isou = 0; isou < 3; isou++) {
@@ -284,21 +281,18 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t *f_sc)
     } /* Test on velocity symmetry condition: end */
 
   } /* End loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Boundary conditions for symmetry (icodcl = 4) for a vector.
  *
- * \param[in]     f_v         vector field
+ * \param[in]  f_v  vector field
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_boundary_conditions_set_coeffs_symmetry_vector(cs_field_t *f_v)
-
+_boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 {
-
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_turb_model_type_t iturb = cs_glob_turb_model->iturb;
@@ -306,7 +300,8 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t *f_v)
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_3_t *b_face_u_normal
+    = (const cs_real_3_t *)fvq->b_face_u_normal;
 
   const int kivisl  = cs_field_key_id("diffusivity_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
@@ -357,18 +352,15 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t *f_v)
 
       /* Geometric quantities */
       const cs_lnum_t c_id = b_face_cells[f_id];
-      const cs_real_t *n = b_face_normal[f_id];
+      const cs_real_t *nn = b_face_u_normal[f_id];
       const cs_real_t distbf = b_dist[f_id];
-
-      cs_real_t rnxyz[3];
-      cs_math_3_normalize(n, rnxyz);
 
       const cs_real_t rkl = (ifcvsl < 0) ? visls_0 : viscls[c_id];
 
       /* Isotropic diffusivity */
 
       cs_real_t hintt[6] = {0., 0., 0., 0., 0., 0.};
-        
+
       if (eqp_v->idften & CS_ISOTROPIC_DIFFUSION) { // a voir (zero)
         hintt[0] =   (eqp_v->idifft * cs_math_fmax(visct[c_id], 0)
                    / turb_schmidt + rkl) / distbf;
@@ -379,9 +371,9 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t *f_v)
         hintt[4] = 0.0;
         hintt[5] = 0.0;
       }
+
       /* Symmetric tensor diffusivity */
       else if (eqp_v->idften & CS_ANISOTROPIC_DIFFUSION) {
-
         const cs_real_t temp = eqp_v->idifft * ctheta / cs_turb_csrij;
 
         hintt[0] = (temp * visten[c_id][0] + rkl) / distbf;
@@ -397,16 +389,16 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t *f_v)
       coefa_v[f_id][1] = 0.0;
       coefa_v[f_id][2] = 0.0;
 
-      coefb_v[f_id][0][0] = 1.0 - rnxyz[0] * rnxyz[0];
-      coefb_v[f_id][1][1] = 1.0 - rnxyz[1] * rnxyz[1];
-      coefb_v[f_id][2][2] = 1.0 - rnxyz[2] * rnxyz[2];
+      coefb_v[f_id][0][0] = 1.0 - nn[0] * nn[0];
+      coefb_v[f_id][1][1] = 1.0 - nn[1] * nn[1];
+      coefb_v[f_id][2][2] = 1.0 - nn[2] * nn[2];
 
-      coefb_v[f_id][0][1] = - rnxyz[0] * rnxyz[1];
-      coefb_v[f_id][0][2] = - rnxyz[0] * rnxyz[2];
-      coefb_v[f_id][1][0] = - rnxyz[1] * rnxyz[0];
-      coefb_v[f_id][1][2] = - rnxyz[1] * rnxyz[2];
-      coefb_v[f_id][2][0] = - rnxyz[2] * rnxyz[0];
-      coefb_v[f_id][2][1] = - rnxyz[2] * rnxyz[1];
+      coefb_v[f_id][0][1] = - nn[0] * nn[1];
+      coefb_v[f_id][0][2] = - nn[0] * nn[2];
+      coefb_v[f_id][1][0] = - nn[1] * nn[0];
+      coefb_v[f_id][1][2] = - nn[1] * nn[2];
+      coefb_v[f_id][2][0] = - nn[2] * nn[0];
+      coefb_v[f_id][2][1] = - nn[2] * nn[1];
 
       /* Flux BCs */
       cofaf_v[f_id][0] = 0.0;
@@ -415,48 +407,47 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t *f_v)
 
       /* Diagonal */
 
-    cofbf_v[f_id][0][0] =   hintt[0]*rnxyz[0]*rnxyz[0]
-                          + hintt[3]*rnxyz[0]*rnxyz[1]
-                          + hintt[5]*rnxyz[0]*rnxyz[2];
+      cofbf_v[f_id][0][0] =   hintt[0]*nn[0]*nn[0]
+                            + hintt[3]*nn[0]*nn[1]
+                            + hintt[5]*nn[0]*nn[2];
 
-    cofbf_v[f_id][1][1] =   hintt[3]*rnxyz[0]*rnxyz[1]
-                          + hintt[1]*rnxyz[1]*rnxyz[1]
-                          + hintt[4]*rnxyz[1]*rnxyz[2];
+      cofbf_v[f_id][1][1] =   hintt[3]*nn[0]*nn[1]
+                            + hintt[1]*nn[1]*nn[1]
+                            + hintt[4]*nn[1]*nn[2];
 
-    cofbf_v[f_id][2][2] =   hintt[5]*rnxyz[0]*rnxyz[2]
-                          + hintt[4]*rnxyz[1]*rnxyz[2]
-                          + hintt[2]*rnxyz[2]*rnxyz[2];
+      cofbf_v[f_id][2][2] =   hintt[5]*nn[0]*nn[2]
+                            + hintt[4]*nn[1]*nn[2]
+                            + hintt[2]*nn[2]*nn[2];
 
-    /* Extra diagonal */
+      /* Extra diagonal */
 
-    cofbf_v[f_id][1][0] =   hintt[0]*rnxyz[0]*rnxyz[1]
-                          + hintt[3]*rnxyz[1]*rnxyz[1]
-                          + hintt[5]*rnxyz[1]*rnxyz[2];
+      cofbf_v[f_id][1][0] =   hintt[0]*nn[0]*nn[1]
+                            + hintt[3]*nn[1]*nn[1]
+                            + hintt[5]*nn[1]*nn[2];
 
-    cofbf_v[f_id][0][1] =   hintt[0]*rnxyz[0]*rnxyz[1]
-                          + hintt[3]*rnxyz[1]*rnxyz[1]
-                          + hintt[5]*rnxyz[1]*rnxyz[2];
+      cofbf_v[f_id][0][1] =   hintt[0]*nn[0]*nn[1]
+                            + hintt[3]*nn[1]*nn[1]
+                            + hintt[5]*nn[1]*nn[2];
 
-    cofbf_v[f_id][2][0] =   hintt[0]*rnxyz[0]*rnxyz[2]
-                          + hintt[3]*rnxyz[1]*rnxyz[2]
-                          + hintt[5]*rnxyz[2]*rnxyz[2];
+      cofbf_v[f_id][2][0] =   hintt[0]*nn[0]*nn[2]
+                            + hintt[3]*nn[1]*nn[2]
+                            + hintt[5]*nn[2]*nn[2];
 
-    cofbf_v[f_id][0][2] =   hintt[0]*rnxyz[0]*rnxyz[2]
-                          + hintt[3]*rnxyz[1]*rnxyz[2]
-                          + hintt[5]*rnxyz[2]*rnxyz[2];
+      cofbf_v[f_id][0][2] =   hintt[0]*nn[0]*nn[2]
+                            + hintt[3]*nn[1]*nn[2]
+                            + hintt[5]*nn[2]*nn[2];
 
-    cofbf_v[f_id][2][1] =   hintt[3]*rnxyz[0]*rnxyz[2]
-                          + hintt[1]*rnxyz[1]*rnxyz[2]
-                          + hintt[4]*rnxyz[2]*rnxyz[2];
+      cofbf_v[f_id][2][1] =   hintt[3]*nn[0]*nn[2]
+                            + hintt[1]*nn[1]*nn[2]
+                            + hintt[4]*nn[2]*nn[2];
 
-    cofbf_v[f_id][1][2] =   hintt[3]*rnxyz[0]*rnxyz[2]
-                          + hintt[1]*rnxyz[1]*rnxyz[2]
-                          + hintt[4]*rnxyz[2]*rnxyz[2];
+      cofbf_v[f_id][1][2] =   hintt[3]*nn[0]*nn[2]
+                            + hintt[1]*nn[1]*nn[2]
+                            + hintt[4]*nn[2]*nn[2];
 
     } /* Test on velocity symmetry condition: end */
 
   } /* End loop on boundary faces */
-
 }
 
 /*============================================================================
@@ -467,23 +458,22 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t *f_v)
 /*!
  * \brief Symmetry boundary conditions for vectors and tensors.
  *
- * Correspond to the code icodcl(ivar) = 4.
+ * Corresponds to the code icodcl(ivar) = 4.
  *
  * Please refer to the
  * <a href="../../theory.pdf#clsyvt"><b>clsyvt</b></a> section of the
  * theory guide for more informations.
  *
- * \param[in]     velipb        value of the velocity at \f$ \centip \f$
- *                               of boundary cells
- * \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
- *                               of boundary cells
+ * \param[in]  velipb  value of the velocity at \f$ \centip \f$
+ *                     of boundary cells
+ * \param[in]  rijipb  value of \f$ R_{ij} \f$ at \f$ \centip \f$
+ *                     of boundary cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
                                            cs_real_t  rijipb[][6])
-
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -491,8 +481,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)mesh->b_face_cells;
-  const cs_real_3_t *b_face_normal  = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_t   *b_face_surf    = fvq->b_face_surf;
+  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
   const cs_real_t   *b_dist         = fvq->b_dist;
   int               *isympa         = fvq->b_sym_flag;
 
@@ -526,282 +515,278 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const int *icodcl_vel = vel->bc_coeffs->icodcl;
   cs_real_t *rcodcl1_vel = vel->bc_coeffs->rcodcl1;
 
-  /* --- Begin the loop over boundary faces */
+  /* Loop over boundary faces */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    /* --- Test sur la presence d'une condition de symetrie vitesse : debut */
-    if (icodcl_vel[f_id] == 4) {
+    /* Test for symmetry on velocity */
+    if (icodcl_vel[f_id] != 4)
+      continue;
 
-      /* --- To cancel the mass flux */
-      isympa[f_id] = 0;
+    /* To cancel the mass flux */
+    isympa[f_id] = 0;
 
-      /* Geometric quantities */
-      const cs_real_t *n = b_face_normal[f_id];
+    /* Geometric quantities */
+    const cs_real_t *nn = b_face_u_normal[f_id];
 
-      /* Local framework
-         =============== */
+    /* Local reference frame
+       --------------------- */
 
-      /* Unit normal */
+    /* En ALE, we may have a displacement velocity of the face for which only
+       the normal component counts (we continue to determine TX based on the
+       absolute tangential velocity because the orientation of TX et T2X is
+       not important for symmetry). */
 
-      cs_real_t rnxyz[3];
-      cs_math_3_normalize(n, rnxyz);
+    cs_real_t rcodcn = 0.0;
+    if (cs_glob_ale > CS_ALE_NONE) {
 
-      /* En ALE, on a eventuellement une vitesse de deplacement de la face
-         donc seule la composante normale importe (on continue a determiner
-         TX a partir de la vitesse tangentielle absolue car l'orientation
-         de TX et T2X est sans importance pour les symetries) */
+      const cs_real_t rcodclxyz[3] = {rcodcl1_vel[n_b_faces*0 + f_id],
+                                      rcodcl1_vel[n_b_faces*1 + f_id],
+                                      rcodcl1_vel[n_b_faces*2 + f_id]};
 
-      cs_real_t rcodcn = 0.0;
-      if (cs_glob_ale > CS_ALE_NONE) {
+      rcodcn = cs_math_3_dot_product(rcodclxyz, nn);
 
-        const cs_real_t rcodclxyz[3] = {rcodcl1_vel[n_b_faces*0 + f_id],
-                                        rcodcl1_vel[n_b_faces*1 + f_id],
-                                        rcodcl1_vel[n_b_faces*2 + f_id]};
-        
-        rcodcn = cs_math_3_dot_product(rcodclxyz, rnxyz);
-        
+    }
+
+    const cs_real_t upxyz[3] = {velipb[f_id][0],
+                                velipb[f_id][1],
+                                velipb[f_id][2]};
+
+    cs_real_t eloglo[3][3], alpha[6][6];
+
+    if (itytur == 3) {
+
+      /* Relative tangential velocity */
+
+      const cs_real_t usn = cs_math_3_dot_product(upxyz, nn);
+
+      cs_real_t txyz[3] = {upxyz[0] - usn * nn[0],
+                           upxyz[1] - usn * nn[1],
+                           upxyz[2] - usn * nn[2]};
+
+      /* Unit tangent
+         If the velocity is zero,
+         Tx, Ty, Tz is not used (we cancel the velocity), so we assign any
+         value (zero for example) */
+      cs_math_3_normalize(txyz, txyz);
+
+      /* --> T2 = RN X T (where X is the cross product) */
+
+      const cs_real_t t2xyz[3] = {nn[1]*txyz[2] - nn[2]*txyz[1],
+                                  nn[2]*txyz[0] - nn[0]*txyz[2],
+                                  nn[0]*txyz[1] - nn[1]*txyz[0]};
+
+      /* Orthogonal matrix for change of reference frame ELOGLOij
+         (from local to global reference frame)
+
+                    |TX  -RNX  T2X|
+           ELOGLO = |TY  -RNY  T2Y|
+                    |TZ  -RNZ  T2Z|
+
+         Its transpose ELOGLOt is its inverse. */
+
+      eloglo[0][0] =  txyz[0];
+      eloglo[0][1] = -nn[0];
+      eloglo[0][2] =  t2xyz[0];
+
+      eloglo[1][0] =  txyz[1];
+      eloglo[1][1] = -nn[1];
+      eloglo[1][2] =  t2xyz[1];
+
+      eloglo[2][0] =  txyz[2];
+      eloglo[2][1] = -nn[2];
+      eloglo[2][2] =  t2xyz[2];
+
+      /* Compute Reynolds stress transformation matrix */
+
+      int clsyme = 1;
+      cs_turbulence_bc_rij_transform(clsyme, eloglo, alpha);
+
+    }
+
+    /* Boundary conditions on the velocity
+       (totaly implicit)
+       The condition is a zero (except in ALE) Dirichlet on the normal component
+       a homogenous Neumann on the other components
+       ------------------------------------------------------------------------- */
+
+    /* Coupled solving of the velocity components */
+
+    const cs_lnum_t c_id = b_face_cells[f_id];
+
+    /* Physical properties */
+    const cs_real_t visclc = viscl[c_id];
+    const cs_real_t visctc = visct[c_id];
+
+    /* Geometrical quantity */
+    const cs_real_t distbf = b_dist[f_id];
+
+    const cs_real_t hint = (itytur == 3) ? visclc / distbf
+                                         : (visclc + visctc) / distbf;
+
+    /* Gradient BCs */
+    coefa_vel[f_id][0] = rcodcn * nn[0];
+    coefa_vel[f_id][1] = rcodcn * nn[1];
+    coefa_vel[f_id][2] = rcodcn * nn[2];
+
+    coefb_vel[f_id][0][0] = 1.0 - nn[0] * nn[0];
+    coefb_vel[f_id][1][1] = 1.0 - nn[1] * nn[1];
+    coefb_vel[f_id][2][2] = 1.0 - nn[2] * nn[2];
+
+    coefb_vel[f_id][0][1] = - nn[0] * nn[1];
+    coefb_vel[f_id][0][2] = - nn[0] * nn[2];
+    coefb_vel[f_id][1][0] = - nn[1] * nn[0];
+    coefb_vel[f_id][1][2] = - nn[1] * nn[2];
+    coefb_vel[f_id][2][0] = - nn[2] * nn[0];;
+    coefb_vel[f_id][2][1] = - nn[2] * nn[1];
+
+    /* Flux BCs */
+    cofaf_vel[f_id][0] = - hint * rcodcn * nn[0];
+    cofaf_vel[f_id][1] = - hint * rcodcn * nn[1];
+    cofaf_vel[f_id][2] = - hint * rcodcn * nn[2];
+
+    cofbf_vel[f_id][0][0] = hint * nn[0] * nn[0];
+    cofbf_vel[f_id][1][1] = hint * nn[1] * nn[1];
+    cofbf_vel[f_id][2][2] = hint * nn[2] * nn[2];
+
+    cofbf_vel[f_id][0][1] = hint * nn[0] * nn[1];
+    cofbf_vel[f_id][0][2] = hint * nn[0] * nn[2];
+    cofbf_vel[f_id][1][0] = hint * nn[1] * nn[0];
+    cofbf_vel[f_id][1][2] = hint * nn[1] * nn[2];
+    cofbf_vel[f_id][2][0] = hint * nn[2] * nn[0];
+    cofbf_vel[f_id][2][1] = hint * nn[2] * nn[1];
+
+    /* Boundary conditions on Rij (partially implicited)
+       ================================================= */
+
+    if (itytur == 3) {
+
+      cs_field_t *rij = CS_F_(rij);
+      cs_equation_param_t *eqp_rij = cs_field_get_equation_param(rij);
+
+      cs_real_6_t  *coefa_rij = (cs_real_6_t  *)rij->bc_coeffs->a;
+      cs_real_66_t *coefb_rij = (cs_real_66_t *)rij->bc_coeffs->b;
+      cs_real_6_t  *cofaf_rij = (cs_real_6_t  *)rij->bc_coeffs->af;
+      cs_real_66_t *cofbf_rij = (cs_real_66_t *)rij->bc_coeffs->bf;
+      cs_real_6_t  *cofad_rij = (cs_real_6_t  *)rij->bc_coeffs->ad;
+      cs_real_66_t *cofbd_rij = (cs_real_66_t *)rij->bc_coeffs->bd;
+
+      cs_real_t visci[3][3], dist[3] = {0., 0., 0.}, hint_rij = 0.0;
+
+      /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
+      if (eqp_rij->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
+
+        visci[0][0] = visclc + visten[c_id][0];
+        visci[1][1] = visclc + visten[c_id][1];
+        visci[2][2] = visclc + visten[c_id][2];
+        visci[0][1] =          visten[c_id][3];
+        visci[1][0] =          visten[c_id][3];
+        visci[1][2] =          visten[c_id][4];
+        visci[2][1] =          visten[c_id][4];
+        visci[0][2] =          visten[c_id][5];
+        visci[2][0] =          visten[c_id][5];
+
+        /* ||Ki.S||^2 */
+        const cs_real_t viscis =   cs_math_pow2(  visci[0][0]*nn[0]
+                                                + visci[1][0]*nn[1]
+                                                + visci[2][0]*nn[2])
+                                 + cs_math_pow2(  visci[0][1]*nn[0]
+                                                + visci[1][1]*nn[1]
+                                                + visci[2][1]*nn[2])
+                                 + cs_math_pow2(  visci[0][2]*nn[0]
+                                                + visci[1][2]*nn[1]
+                                                + visci[2][2]*nn[2]);
+
+        /* IF.Ki.S */
+        cs_real_t fikis
+          = (  cs_math_3_dot_product(dist, visci[0]) * nn[0]
+             + cs_math_3_dot_product(dist, visci[1]) * nn[1]
+             + cs_math_3_dot_product(dist, visci[2]) * nn[2]);
+
+        /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+           NB: eps =1.d-1 must be consistent with
+           cs_face_anisotropic_viscosity_scalar */
+        fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
+
+        hint_rij = viscis / fikis;
       }
 
-      const cs_real_t upxyz[3] = {velipb[f_id][0],
-                                  velipb[f_id][1],
-                                  velipb[f_id][2]};
+      /* Scalar diffusivity */
+      else
+        hint_rij = (visclc + visctc * cs_turb_csrij / cs_turb_cmu) / distbf;
 
-      cs_real_t eloglo[3][3], alpha[6][6];
+      /* Tensor Rij (Partially or totally implicited) */
 
-      if (itytur == 3) {
-
-        /* Relative tangential velocity */
-
-        const cs_real_t usn = cs_math_3_dot_product(upxyz, rnxyz);
-
-        cs_real_t txyz[3] = {upxyz[0] - usn * rnxyz[0],
-                             upxyz[1] - usn * rnxyz[1],
-                             upxyz[2] - usn * rnxyz[2]};
-
-        /* Unit tangent
-           If the velocity is zero,
-           Tx, Ty, Tz is not used (we cancel the velocity), so we assign any
-           value (zero for example) */
-        cs_math_3_normalize(txyz, txyz);
-
-        /* --> T2 = RN X T (where X is the cross product) */
-
-        const cs_real_t t2xyz[3] = {rnxyz[1]*txyz[2] - rnxyz[2]*txyz[1],
-                                    rnxyz[2]*txyz[0] - rnxyz[0]*txyz[2],
-                                    rnxyz[0]*txyz[1] - rnxyz[1]*txyz[0]};
-
-        /* --> Orthogonal matrix for change of reference frame ELOGLOij
-           (from local to global reference frame)
-
-                                  |TX  -RNX  T2X|
-                         ELOGLO = |TY  -RNY  T2Y|
-                                  |TZ  -RNZ  T2Z|
-
-                    Its transpose ELOGLOt is its inverse */
-
-        eloglo[0][0] =  txyz[0];
-        eloglo[0][1] = -rnxyz[0];
-        eloglo[0][2] =  t2xyz[0];
-        
-        eloglo[1][0] =  txyz[1];
-        eloglo[1][1] = -rnxyz[1];
-        eloglo[1][2] =  t2xyz[1];
-        
-        eloglo[2][0] =  txyz[2];
-        eloglo[2][1] = -rnxyz[2];
-        eloglo[2][2] =  t2xyz[2];
-
-        /* Compute Reynolds stress transformation matrix */
-
-        int clsyme = 1;
-        cs_turbulence_bc_rij_transform(clsyme, eloglo, alpha);
-
+      cs_real_t fcoefa[6], fcoefb[6], fcofad[6], fcofbd[6],  fcofaf[6], fcofbf[6];
+      for (int isou = 0; isou < 6; isou++) {
+        fcoefa[isou] = 0.;
+        fcoefb[isou] = 0.;
+        fcofad[isou] = 0.;
+        fcofbd[isou] = 0.;
       }
 
-      /* Boundary conditions on the velocity
-         (totaly implicit)
-         The condition is a zero (except in ALE) Dirichlet on the normal component
-         a homogenous Neumann on the other components
-         =======================================================================*/
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
 
-      /* Coupled solving of the velocity components */
+        /* Partial (or total if coupled) implicitation */
 
-      const cs_lnum_t c_id = b_face_cells[f_id];
+        if (cs_glob_turb_rans_model->irijco == 1) {
+          coefa_rij[f_id][isou] = 0.0;
+          cofaf_rij[f_id][isou] = 0.0;
+          cofad_rij[f_id][isou] = 0.0;
 
-      /* Physical properties */
-      const cs_real_t visclc = viscl[c_id];
-      const cs_real_t visctc = visct[c_id];
+          for (int ii = 0; ii < 6; ii++) {
+            coefb_rij[f_id][ii][isou] = alpha[ii][isou];
 
-      /* Geometrical quantity */
-      const cs_real_t distbf = b_dist[f_id];
-      const cs_real_t surf = b_face_surf[f_id];
+            if (ii == isou)
+              cofbf_rij[f_id][ii][isou] = hint_rij * (1.0 - coefb_rij[f_id][ii][isou]);
+            else
+              cofbf_rij[f_id][ii][isou] = - hint_rij * coefb_rij[f_id][ii][isou];
 
-      const cs_real_t hint = (itytur == 3) ?
-                             visclc / distbf:
-                             (visclc + visctc) / distbf;
-
-      /* Gradient BCs */
-      coefa_vel[f_id][0] = rcodcn * rnxyz[0];
-      coefa_vel[f_id][1] = rcodcn * rnxyz[1];
-      coefa_vel[f_id][2] = rcodcn * rnxyz[2];
-
-      coefb_vel[f_id][0][0] = 1.0 - rnxyz[0] * rnxyz[0];
-      coefb_vel[f_id][1][1] = 1.0 - rnxyz[1] * rnxyz[1];
-      coefb_vel[f_id][2][2] = 1.0 - rnxyz[2] * rnxyz[2];
-
-      coefb_vel[f_id][0][1] = - rnxyz[0] * rnxyz[1];
-      coefb_vel[f_id][0][2] = - rnxyz[0] * rnxyz[2];
-      coefb_vel[f_id][1][0] = - rnxyz[1] * rnxyz[0];
-      coefb_vel[f_id][1][2] = - rnxyz[1] * rnxyz[2];
-      coefb_vel[f_id][2][0] = - rnxyz[2] * rnxyz[0];;
-      coefb_vel[f_id][2][1] = - rnxyz[2] * rnxyz[1];
-
-      /* Flux BCs */
-      cofaf_vel[f_id][0] = - hint * rcodcn * rnxyz[0];
-      cofaf_vel[f_id][1] = - hint * rcodcn * rnxyz[1];
-      cofaf_vel[f_id][2] = - hint * rcodcn * rnxyz[2];
-
-      cofbf_vel[f_id][0][0] = hint * rnxyz[0] * rnxyz[0];
-      cofbf_vel[f_id][1][1] = hint * rnxyz[1] * rnxyz[1];
-      cofbf_vel[f_id][2][2] = hint * rnxyz[2] * rnxyz[2];
-
-      cofbf_vel[f_id][0][1] = hint * rnxyz[0] * rnxyz[1];
-      cofbf_vel[f_id][0][2] = hint * rnxyz[0] * rnxyz[2];
-      cofbf_vel[f_id][1][0] = hint * rnxyz[1] * rnxyz[0];
-      cofbf_vel[f_id][1][2] = hint * rnxyz[1] * rnxyz[2];
-      cofbf_vel[f_id][2][0] = hint * rnxyz[2] * rnxyz[0];
-      cofbf_vel[f_id][2][1] = hint * rnxyz[2] * rnxyz[1];
-
-      /* Boundary conditions on Rij (partially implicited)
-         ================================================= */
-
-      if (itytur == 3) {
-
-        cs_field_t *rij = CS_F_(rij);
-        cs_equation_param_t *eqp_rij = cs_field_get_equation_param(rij);
-
-        cs_real_6_t  *coefa_rij = (cs_real_6_t  *)rij->bc_coeffs->a;
-        cs_real_66_t *coefb_rij = (cs_real_66_t *)rij->bc_coeffs->b;
-        cs_real_6_t  *cofaf_rij = (cs_real_6_t  *)rij->bc_coeffs->af;
-        cs_real_66_t *cofbf_rij = (cs_real_66_t *)rij->bc_coeffs->bf;
-        cs_real_6_t  *cofad_rij = (cs_real_6_t  *)rij->bc_coeffs->ad;
-        cs_real_66_t *cofbd_rij = (cs_real_66_t *)rij->bc_coeffs->bd;
-
-        cs_real_t visci[3][3], dist[3] = {0., 0., 0.}, hint_rij = 0.0;
-
-        /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
-        if (eqp_rij->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
-
-          visci[0][0] = visclc + visten[c_id][0];
-          visci[1][1] = visclc + visten[c_id][1];
-          visci[2][2] = visclc + visten[c_id][2];
-          visci[0][1] =          visten[c_id][3];
-          visci[1][0] =          visten[c_id][3];
-          visci[1][2] =          visten[c_id][4];
-          visci[2][1] =          visten[c_id][4];
-          visci[0][2] =          visten[c_id][5];
-          visci[2][0] =          visten[c_id][5];
-
-          /* ||Ki.S||^2 */
-          const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
-                                                + visci[1][0]*n[1]
-                                                + visci[2][0]*n[2])
-                                 + cs_math_pow2(  visci[0][1]*n[0]
-                                                + visci[1][1]*n[1]
-                                                + visci[2][1]*n[2])
-                                 + cs_math_pow2(  visci[0][2]*n[0]
-                                                + visci[1][2]*n[1]
-                                                + visci[2][2]*n[2]);
-
-          /* IF.Ki.S */
-          cs_real_t fikis
-            = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
-               + cs_math_3_dot_product(dist, visci[1]) * n[1]
-               + cs_math_3_dot_product(dist, visci[2]) * n[2]);
-
-          /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-             NB: eps =1.d-1 must be consistent with vitens.f90 */
-          fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
-
-          hint_rij = viscis / surf / fikis;
-        }
-        /* Scalar diffusivity */
-        else
-          hint_rij = (visclc + visctc * cs_turb_csrij / cs_turb_cmu) / distbf;
-
-        /* ---> Tensor Rij (Partially or totally implicited) */
-
-        cs_real_t fcoefa[6], fcoefb[6], fcofad[6], fcofbd[6],  fcofaf[6], fcofbf[6];
-        for (int isou = 0; isou < 6; isou++) {
-          fcoefa[isou] = 0.;
-          fcoefb[isou] = 0.;
-          fcofad[isou] = 0.;
-          fcofbd[isou] = 0.;
-        }
-
-        for (int isou = 0; isou < 6; isou++) {
-
-          /* Partial (or total if coupled) implicitation */
-          if (cs_glob_turb_rans_model->irijco == 1) {
-            coefa_rij[f_id][isou] = 0.0;
-            cofaf_rij[f_id][isou] = 0.0;
-            cofad_rij[f_id][isou] = 0.0;
-
-            for (int ii = 0; ii < 6; ii++) {
-              coefb_rij[f_id][ii][isou] = alpha[ii][isou];
-
-              if (ii == isou)
-                cofbf_rij[f_id][ii][isou] = hint_rij * (1.0 - coefb_rij[f_id][ii][isou]);
-              else
-                cofbf_rij[f_id][ii][isou] = - hint_rij * coefb_rij[f_id][ii][isou];
-
-              cofbd_rij[f_id][ii][isou] = coefb_rij[f_id][ii][isou];
-            }
+            cofbd_rij[f_id][ii][isou] = coefb_rij[f_id][ii][isou];
           }
-          else if (cs_glob_turb_rans_model->iclsyr == 1) {
-            for (int ii = 0; ii < 6; ii++) {
-              if (ii != isou)
-                fcoefa[isou] = fcoefa[isou] + alpha[isou][ii] * rijipb[f_id][ii];
-            }
-            fcoefb[isou] = alpha[isou][isou];
-
-          }
-          else {
-            for (int ii = 0; ii < 6; ii++)
+        }
+        else if (cs_glob_turb_rans_model->iclsyr == 1) {
+          for (int ii = 0; ii < 6; ii++) {
+            if (ii != isou)
               fcoefa[isou] = fcoefa[isou] + alpha[isou][ii] * rijipb[f_id][ii];
-
-            fcoefb[isou] = 0.0;
           }
-
-          /* Boundary conditions for the momentum equation */
-          fcofad[isou] = fcoefa[isou];
-          fcofbd[isou] = fcoefb[isou];
-
-          /* Translate into Diffusive flux BCs */
-          fcofaf[isou] = -hint_rij * fcoefa[isou];
-          fcofbf[isou] =  hint_rij * (1.0 - fcoefb[isou]);
+          fcoefb[isou] = alpha[isou][isou];
 
         }
+        else {
+          for (int ii = 0; ii < 6; ii++)
+            fcoefa[isou] = fcoefa[isou] + alpha[isou][ii] * rijipb[f_id][ii];
 
-        if (cs_glob_turb_rans_model->irijco != 1) {
-          for (int isou = 0; isou < 6; isou++) {
-            coefa_rij[f_id][isou] = fcoefa[isou];
-            cofaf_rij[f_id][isou] = fcofaf[isou];
-            cofad_rij[f_id][isou] = fcofad[isou];
-
-            for (int ii = 0; ii < 6; ii++) {
-              coefb_rij[f_id][ii][isou] = 0;
-              cofbf_rij[f_id][ii][isou] = 0;
-              cofbd_rij[f_id][ii][isou] = 0;
-            }
-            coefb_rij[f_id][isou][isou] = fcoefb[isou];
-            cofbf_rij[f_id][isou][isou] = fcofbf[isou];
-            cofbd_rij[f_id][isou][isou] = fcofbd[isou];
-          }
+          fcoefb[isou] = 0.0;
         }
+
+        /* Boundary conditions for the momentum equation */
+        fcofad[isou] = fcoefa[isou];
+        fcofbd[isou] = fcoefb[isou];
+
+        /* Translate into Diffusive flux BCs */
+        fcofaf[isou] = -hint_rij * fcoefa[isou];
+        fcofbf[isou] =  hint_rij * (1.0 - fcoefb[isou]);
 
       }
-    } /* End symmetry test icodcl == 4 */
+
+      if (cs_glob_turb_rans_model->irijco != 1) {
+        for (int isou = 0; isou < 6; isou++) {
+          coefa_rij[f_id][isou] = fcoefa[isou];
+          cofaf_rij[f_id][isou] = fcofaf[isou];
+          cofad_rij[f_id][isou] = fcofad[isou];
+
+          for (int ii = 0; ii < 6; ii++) {
+            coefb_rij[f_id][ii][isou] = 0;
+            cofbf_rij[f_id][ii][isou] = 0;
+            cofbd_rij[f_id][ii][isou] = 0;
+          }
+          coefb_rij[f_id][isou][isou] = fcoefb[isou];
+          cofbf_rij[f_id][isou][isou] = fcofbf[isou];
+          cofbd_rij[f_id][isou][isou] = fcofbd[isou];
+        }
+      }
+
+    } /* if (itytur == 3) */
 
   } /* End loop on boundary faces */
 
@@ -855,89 +840,84 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
       cpro_visma_v = (const cs_real_6_t *)CS_F_(vism)->val;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (icodcl_displ[f_id] == 4) {
 
-        const cs_lnum_t c_id = b_face_cells[f_id];
+      if (icodcl_displ[f_id] != 4)
+        continue;
 
-        /* For a sliding boundary, the normal velocity is enforced to zero
-           whereas the other components have an Homogenous Neumann
-           NB: no recontruction in I' here
+      const cs_lnum_t c_id = b_face_cells[f_id];
 
-           /* Geometrical quantity */
-        const cs_real_t distbf = b_dist[f_id];
-        const cs_real_t *n = b_face_normal[f_id];
+      /* For a sliding boundary, the normal velocity is enforced to zero
+         whereas the other components have an Homogenous Neumann
+         NB: no recontruction in I' here */
 
-        /* Physical properties */
-        cs_real_6_t hintv = {0., 0., 0., 0., 0., 0.};
+      /* Geometrical quantities */
+      const cs_real_t distbf = b_dist[f_id];
+      const cs_real_t *nn = b_face_u_normal[f_id];
 
-        if (eqp_displ->idften & CS_ISOTROPIC_DIFFUSION) {
+      /* Physical properties */
+      cs_real_6_t hintv = {0., 0., 0., 0., 0., 0.};
 
-          hintv[0] = cpro_visma_s[c_id]/distbf;
-          hintv[1] = cpro_visma_s[c_id]/distbf;
-          hintv[2] = cpro_visma_s[c_id]/distbf;
-          hintv[3] = 0.0;
-          hintv[4] = 0.0;
-          hintv[5] = 0.0;
+      if (eqp_displ->idften & CS_ISOTROPIC_DIFFUSION) {
 
-        }
-        else if (eqp_displ->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-          for (int ii = 0; ii < 6; ii++)
-            hintv[ii] = cpro_visma_v[c_id][ii] / distbf;
-        }
+        hintv[0] = cpro_visma_s[c_id]/distbf;
+        hintv[1] = cpro_visma_s[c_id]/distbf;
+        hintv[2] = cpro_visma_s[c_id]/distbf;
+        hintv[3] = 0.0;
+        hintv[4] = 0.0;
+        hintv[5] = 0.0;
 
-        /* Unit normal */
-        cs_real_t rnxyz[3];
-        cs_math_3_normalize(n, rnxyz);
+      }
+      else if (eqp_displ->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+        for (int ii = 0; ii < 6; ii++)
+          hintv[ii] = cpro_visma_v[c_id][ii] / distbf;
+      }
 
-        /* Coupled solving of the velocity components */
+      /* Coupled solving of the velocity components */
 
-        /* Gradient BCs */
-        claale[f_id][0] = 0.0;
-        claale[f_id][1] = 0.0;
-        claale[f_id][2] = 0.0;
+      /* Gradient BCs */
+      claale[f_id][0] = 0.0;
+      claale[f_id][1] = 0.0;
+      claale[f_id][2] = 0.0;
 
-        clbale[f_id][0][0] = 1.0 - rnxyz[0] * rnxyz[0];
-        clbale[f_id][1][1] = 1.0 - rnxyz[1] * rnxyz[1];
-        clbale[f_id][2][2] = 1.0 - rnxyz[2] * rnxyz[2];
+      clbale[f_id][0][0] = 1.0 - nn[0] * nn[0];
+      clbale[f_id][1][1] = 1.0 - nn[1] * nn[1];
+      clbale[f_id][2][2] = 1.0 - nn[2] * nn[2];
 
-        clbale[f_id][0][1] = - rnxyz[0] * rnxyz[1];
-        clbale[f_id][1][0] = - rnxyz[1] * rnxyz[0];
-        clbale[f_id][0][2] = - rnxyz[0] * rnxyz[2];
-        clbale[f_id][2][0] = - rnxyz[2] * rnxyz[0];
-        clbale[f_id][1][2] = - rnxyz[1] * rnxyz[2];
-        clbale[f_id][2][1] = - rnxyz[2] * rnxyz[1];
+      clbale[f_id][0][1] = - nn[0] * nn[1];
+      clbale[f_id][1][0] = - nn[1] * nn[0];
+      clbale[f_id][0][2] = - nn[0] * nn[2];
+      clbale[f_id][2][0] = - nn[2] * nn[0];
+      clbale[f_id][1][2] = - nn[1] * nn[2];
+      clbale[f_id][2][1] = - nn[2] * nn[1];
 
-        /* Flux BCs */
-        cfaale[f_id][0] = 0.0;
-        cfaale[f_id][1] = 0.0;
-        cfaale[f_id][2] = 0.0;
+      /* Flux BCs */
+      cfaale[f_id][0] = 0.0;
+      cfaale[f_id][1] = 0.0;
+      cfaale[f_id][2] = 0.0;
 
-        cs_real_t rnn[6];
-        rnn[0] = rnxyz[0] * rnxyz[0];
-        rnn[1] = rnxyz[1] * rnxyz[1];
-        rnn[2] = rnxyz[2] * rnxyz[2];
-        rnn[3] = rnxyz[0] * rnxyz[1];
-        rnn[4] = rnxyz[1] * rnxyz[2];
-        rnn[5] = rnxyz[0] * rnxyz[2];
+      cs_real_t rnn[6];
+      rnn[0] = nn[0] * nn[0];
+      rnn[1] = nn[1] * nn[1];
+      rnn[2] = nn[2] * nn[2];
+      rnn[3] = nn[0] * nn[1];
+      rnn[4] = nn[1] * nn[2];
+      rnn[5] = nn[0] * nn[2];
 
-        cs_real_t htnn[6];
-        cs_math_sym_33_product(hintv, rnn, htnn);
-        cfbale[f_id][0][0] = htnn[0];
-        cfbale[f_id][1][1] = htnn[1];
-        cfbale[f_id][2][2] = htnn[2];
-        cfbale[f_id][0][1] = htnn[3];
-        cfbale[f_id][1][0] = htnn[3];
-        cfbale[f_id][0][2] = htnn[5];
-        cfbale[f_id][2][0] = htnn[5];
-        cfbale[f_id][1][2] = htnn[4];
-        cfbale[f_id][2][1] = htnn[4];
-
-      } /* End test on symmetry icodcl == 4 */
+      cs_real_t htnn[6];
+      cs_math_sym_33_product(hintv, rnn, htnn);
+      cfbale[f_id][0][0] = htnn[0];
+      cfbale[f_id][1][1] = htnn[1];
+      cfbale[f_id][2][2] = htnn[2];
+      cfbale[f_id][0][1] = htnn[3];
+      cfbale[f_id][1][0] = htnn[3];
+      cfbale[f_id][0][2] = htnn[5];
+      cfbale[f_id][2][0] = htnn[5];
+      cfbale[f_id][1][2] = htnn[4];
+      cfbale[f_id][2][1] = htnn[4];
 
     } /* End loop on boundary faces */
 
-  } /* End ALE process */
-
+  } /* End for ALE */
 }
 
 /*---------------------------------------------------------------------------- */

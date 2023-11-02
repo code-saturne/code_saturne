@@ -52,16 +52,16 @@ BEGIN_C_DECLS
 /*
  * \brief Symmetry boundary conditions for vectors and tensors.
  *
- * Correspond to the code icodcl(ivar) = 4.
+ * Corresponds to the code icodcl(ivar) = 4.
  *
  * Please refer to the
  * <a href="../../theory.pdf#clsyvt"><b>clsyvt</b></a> section of the
  * theory guide for more informations.
  *
- * \param[in]     velipb        value of the velocity at \f$ \centip \f$
- *                               of boundary cells
- * \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
- *                               of boundary cells
+ * \param[in]  velipb  value of the velocity at \f$ \centip \f$
+ *                     of boundary cells
+ * \param[in]  rijipb  value of \f$ R_{ij} \f$ at \f$ \centip \f$
+ *                     of boundary cells
  */
 /*----------------------------------------------------------------------------*/
 
@@ -69,6 +69,7 @@ void
 cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
                                            cs_real_t  rijipb[][6]);
 
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
