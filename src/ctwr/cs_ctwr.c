@@ -3240,7 +3240,8 @@ cs_ctwr_source_term(int              f_id,
           //       --> implication on 'c' variables different from 'h'
           if (f_id == (CS_F_(p)->id)) {
             /* Warning: not multiplied by Cell volume! no addition neither */
-            exp_st[cell_id] = +mass_source;
+            // FIXME : Addition needed to avoid deleting packing mass source term ?
+            exp_st[cell_id] += mass_source;
 
             /* Saving evaporation rate for post-processing */
             evap_rate_rain->val[cell_id] = mass_source;
