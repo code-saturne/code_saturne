@@ -27,7 +27,7 @@
 __global__ static void
 _compute_rhs_lsq_v_i_face_gather(cs_lnum_t            size,
                           const cs_lnum_t      *restrict cell_cells_idx,
-                          const cs_lnum_t      *restrict cell_cells_lst,
+                          const cs_lnum_t      *restrict cell_cells,
                           const cs_real_3_t    *restrict cell_f_cen,
                           cs_real_33_t         *restrict rhs,
                           const cs_real_3_t    *restrict pvar,
@@ -46,7 +46,7 @@ _compute_rhs_lsq_v_i_face_gather(cs_lnum_t            size,
   cs_lnum_t e_id = cell_cells_idx[c_id + 1];
 
   for(cs_lnum_t index = s_id; index < e_id; index++){
-    c_id2 = cell_cells_lst[index];
+    c_id2 = cell_cells[index];
 
     dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id][0];
     dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id][1];
@@ -73,6 +73,58 @@ _compute_rhs_lsq_v_i_face_gather(cs_lnum_t            size,
         rhs[c_id][i][j] += _weight2 * fctb[j];
         rhs[c_id2][i][j] += _weight1 * fctb[j];
       }
+    }
+  }
+}
+
+__global__ static void
+_compute_rhs_lsq_v_b_face_gather(cs_lnum_t           size,
+                          const cs_lnum_t      *restrict cell_b_faces_idx,
+                          const cs_lnum_t      *restrict cell_b_faces,
+                          const cs_real_3_t    *restrict cell_f_cen,
+                          const cs_real_3_t    *restrict b_face_normal,
+                          cs_real_33_t         *restrict rhs,
+                          const cs_real_3_t    *restrict pvar,
+                          const cs_real_t      *restrict b_dist,
+                          const cs_real_33_t   *restrict coefbv,
+                          const cs_real_3_t    *restrict coefav,
+                          const int            inc)
+{
+  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if(c_id >= size){
+    return;
+  }
+
+  cs_lnum_t f_id;
+  cs_real_t n_d_dist[3], d_b_dist, pfac, norm, inverse_norm;
+
+  cs_lnum_t s_id = cell_b_faces_idx[c_id];
+  cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
+
+  for(cs_lnum_t index = s_id; index < e_id; index++){
+
+    f_id = cell_b_faces[index];
+
+    cs_math_3_normalise_cuda(b_face_normal[index], n_d_dist);
+
+    d_b_dist = 1. / b_dist[f_id];
+
+    /* Normal divided by b_dist */
+    n_d_dist[0] *= d_b_dist;
+    n_d_dist[1] *= d_b_dist;
+    n_d_dist[2] *= d_b_dist;
+
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      pfac =   coefav[f_id][i]*inc
+            + ( coefbv[f_id][0][i] * pvar[c_id][0]
+              + coefbv[f_id][1][i] * pvar[c_id][1]
+              + coefbv[f_id][2][i] * pvar[c_id][2]
+              - pvar[c_id][i]);
+
+      rhs[c_id][i][0] += n_d_dist[0] * pfac;
+      rhs[c_id][i][1] += n_d_dist[1] * pfac;
+      rhs[c_id][i][2] += n_d_dist[2] * pfac; 
     }
   }
 }

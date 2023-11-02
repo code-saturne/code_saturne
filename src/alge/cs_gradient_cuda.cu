@@ -927,7 +927,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->b_face_cells);
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->cell_cells_idx);
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_cells_idx);
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->cell_cells_lst);
   const int n_i_groups = m->i_face_numbering->n_groups;
@@ -1000,14 +1000,14 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      weight, 
   //      c_weight);
 
-  _compute_rhs_lsq_v_i_face_v2<<<gridsize_if, blocksize, 0, stream>>>
-      (n_i_faces,
-       i_face_cells_1d, 
-       cell_f_cen_1d, 
-       rhs_test_d, 
-       pvar_d, 
-       weight, 
-       c_weight);
+  // _compute_rhs_lsq_v_i_face_v2<<<gridsize_if, blocksize, 0, stream>>>
+  //     (n_i_faces,
+  //      i_face_cells_1d, 
+  //      cell_f_cen_1d, 
+  //      rhs_test_d, 
+  //      pvar_d, 
+  //      weight, 
+  //      c_weight);
 
   // _compute_rhs_lsq_v_i_face_v3<<<gridsize_if_bis, blocksize, 0, stream>>>
   //     (n_i_faces*3*3,
@@ -1018,10 +1018,16 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      weight, 
   //      c_weight);
 
+  assert(cell_cells_idx);
+  assert(cell_cells);
+  assert(cell_f_cen);
+  assert(rhs_d);
+  assert(pvar_d);
+  assert(weight);
   _compute_rhs_lsq_v_i_face_gather<<<gridsize, blocksize, 0, stream>>>
       (n_cells,
        cell_cells_idx,
-       cell_cells_lst,
+       cell_cells,
        cell_f_cen, 
        rhs_d, 
        pvar_d, 
@@ -1035,7 +1041,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
     _compute_rhs_lsq_v_b_neighbor<<<gridsize, blocksize, 0, stream>>>
       (n_cells, 
        cell_cells_idx, 
-       cell_cells_lst, 
+       cell_cells, 
        cell_f_cen, 
        rhs_d, 
        pvar_d);
@@ -1054,17 +1060,17 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
        coefa_d, 
        inc);
 
-  _compute_rhs_lsq_v_b_face_v2<<<gridsize_bf, blocksize, 0, stream>>>
-      (m->n_b_faces,
-       b_face_cells, 
-       cell_f_cen, 
-       b_face_normal, 
-       rhs_test_d, 
-       pvar_d, 
-       b_dist, 
-       coefb_d, 
-       coefa_d, 
-       inc);
+  // _compute_rhs_lsq_v_b_face_v2<<<gridsize_bf, blocksize, 0, stream>>>
+  //     (m->n_b_faces,
+  //      b_face_cells, 
+  //      cell_f_cen, 
+  //      b_face_normal, 
+  //      rhs_test_d, 
+  //      pvar_d, 
+  //      b_dist, 
+  //      coefb_d, 
+  //      coefa_d, 
+  //      inc);
 
   CS_CUDA_CHECK(cudaEventRecord(b_faces, stream));
 
@@ -1092,11 +1098,11 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //    cocg_d);
 
 
-  _compute_gradient_lsq_v_v5<<<gridsize_ext_1d, blocksize, 0, stream>>>
-    (n_cells*3*3,
-     gradv_test_d, 
-     rhs_test_d, 
-     cocg_d);
+  // _compute_gradient_lsq_v_v5<<<gridsize_ext_1d, blocksize, 0, stream>>>
+  //   (n_cells*3*3,
+  //    gradv_test_d, 
+  //    rhs_test_d, 
+  //    cocg_d);
 
   _compute_gradient_lsq_v_v6<<<gridsize_ext_1d, blocksize, 0, stream>>>
     (n_cells*3*3,
