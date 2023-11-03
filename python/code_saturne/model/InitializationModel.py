@@ -397,6 +397,9 @@ omega = k^0.5/almax;"""
         Return the formula for the void fraction.
         """
         self.__verifyZone(zone)
+        if not self.node_hgn:
+            return None
+
         node = self.node_hgn.xmlInitNode('initialization')
 
         formula = node.xmlGetString('formula', zone_id=zone)
