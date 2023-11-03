@@ -27,15 +27,17 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
+
+#include <algorithm>
+#include <cmath>
 
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <math.h>
 #include <float.h>
 
 #if defined(HAVE_MPI)
@@ -782,19 +784,19 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             dist[ll] = cell_f_cen[ii][ll] - cell_f_cen[jj][ll];
 
-          cs_real_t dist1 = CS_ABS(  dist[0]*grad[ii][0]
-                                   + dist[1]*grad[ii][1]
-                                   + dist[2]*grad[ii][2]);
-          cs_real_t dist2 = CS_ABS(  dist[0]*grad[jj][0]
-                                   + dist[1]*grad[jj][1]
-                                   + dist[2]*grad[jj][2]);
+          cs_real_t dist1 = abs(  dist[0]*grad[ii][0]
+                                + dist[1]*grad[ii][1]
+                                + dist[2]*grad[ii][2]);
+          cs_real_t dist2 = abs(  dist[0]*grad[jj][0]
+                                + dist[1]*grad[jj][1]
+                                + dist[2]*grad[jj][2]);
 
-          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dvar = abs(var[ii] - var[jj]);
 
-          denum[ii] = CS_MAX(denum[ii], dist1);
-          denum[jj] = CS_MAX(denum[jj], dist2);
-          denom[ii] = CS_MAX(denom[ii], dvar);
-          denom[jj] = CS_MAX(denom[jj], dvar);
+          denum[ii] = std::max(denum[ii], dist1);
+          denum[jj] = std::max(denum[jj], dist2);
+          denom[ii] = std::max(denom[ii], dvar);
+          denom[jj] = std::max(denom[jj], dvar);
 
         } /* End of loop on faces */
 
@@ -818,13 +820,13 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             dist[ll] = cell_f_cen[ii][ll] - cell_f_cen[jj][ll];
 
-          cs_real_t dist1 = CS_ABS(  dist[0]*grad[ii][0]
-                                   + dist[1]*grad[ii][1]
-                                   + dist[2]*grad[ii][2]);
-          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dist1 = abs(  dist[0]*grad[ii][0]
+                                + dist[1]*grad[ii][1]
+                                + dist[2]*grad[ii][2]);
+          cs_real_t dvar = abs(var[ii] - var[jj]);
 
-          denum[ii] = CS_MAX(denum[ii], dist1);
-          denom[ii] = CS_MAX(denom[ii], dvar);
+          denum[ii] = std::max(denum[ii], dist1);
+          denom[ii] = std::max(denom[ii], dvar);
 
         }
       }
@@ -852,15 +854,15 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           cs_real_t dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
           cs_real_t dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
 
-          cs_real_t dist1 = CS_ABS(  dist[0]*dpdxf
-                                   + dist[1]*dpdyf
-                                   + dist[2]*dpdzf);
-          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dist1 = abs(  dist[0]*dpdxf
+                                + dist[1]*dpdyf
+                                + dist[2]*dpdzf);
+          cs_real_t dvar = abs(var[ii] - var[jj]);
 
-          denum[ii] = CS_MAX(denum[ii], dist1);
-          denum[jj] = CS_MAX(denum[jj], dist1);
-          denom[ii] = CS_MAX(denom[ii], dvar);
-          denom[jj] = CS_MAX(denom[jj], dvar);
+          denum[ii] = std::max(denum[ii], dist1);
+          denum[jj] = std::max(denum[jj], dist1);
+          denom[ii] = std::max(denom[ii], dvar);
+          denom[jj] = std::max(denom[jj], dvar);
 
         } /* End of loop on faces */
 
@@ -888,13 +890,13 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           cs_real_t dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
           cs_real_t dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
 
-          cs_real_t dist1 = CS_ABS(  dist[0]*dpdxf
-                                   + dist[1]*dpdyf
-                                   + dist[2]*dpdzf);
-          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dist1 = abs(  dist[0]*dpdxf
+                                + dist[1]*dpdyf
+                                + dist[2]*dpdzf);
+          cs_real_t dvar = abs(var[ii] - var[jj]);
 
-          denum[ii] = CS_MAX(denum[ii], dist1);
-          denom[ii] = CS_MAX(denom[ii], dvar);
+          denum[ii] = std::max(denum[ii], dist1);
+          denom[ii] = std::max(denom[ii], dvar);
 
         }
       }
@@ -923,8 +925,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           grad[ii][1] *= factor1;
           grad[ii][2] *= factor1;
 
-          t_min_factor = CS_MIN(factor1, t_min_factor);
-          t_max_factor = CS_MAX(factor1, t_max_factor);
+          t_min_factor = std::min(factor1, t_min_factor);
+          t_max_factor = std::max(factor1, t_max_factor);
           t_n_clip++;
 
         } /* If clipping */
@@ -933,8 +935,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
 #     pragma omp critical
       {
-        min_factor = CS_MIN(min_factor, t_min_factor);
-        max_factor = CS_MAX(max_factor, t_max_factor);
+        min_factor = std::min(min_factor, t_min_factor);
+        max_factor = std::max(max_factor, t_max_factor);
         n_clip += t_n_clip;
       }
     } /* End of omp parallel construct */
@@ -973,10 +975,10 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           if (denum[jj] > climgp * denom[jj])
             factor2 = climgp * denom[jj]/denum[jj];
 
-          cs_real_t l_min_factor = CS_MIN(factor1, factor2);
+          cs_real_t l_min_factor = std::min(factor1, factor2);
 
-          clip_factor[ii] = CS_MIN(clip_factor[ii], l_min_factor);
-          clip_factor[jj] = CS_MIN(clip_factor[jj], l_min_factor);
+          clip_factor[ii] = std::min(clip_factor[ii], l_min_factor);
+          clip_factor[jj] = std::min(clip_factor[jj], l_min_factor);
 
         } /* End of loop on faces */
 
@@ -1004,11 +1006,11 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           if (denum[jj] > climgp * denom[jj])
             factor2 = climgp * denom[jj]/denum[jj];
 
-          factor1 = CS_MIN(factor1, factor2);
+          factor1 = std::min(factor1, factor2);
 
         }
 
-        clip_factor[ii] = CS_MIN(clip_factor[ii], factor1);
+        clip_factor[ii] = std::min(clip_factor[ii], factor1);
 
       } /* End of loop on cells */
 
@@ -1026,8 +1028,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           grad[ii][ll] *= clip_factor[ii];
 
         if (clip_factor[ii] < 0.99) {
-          t_max_factor = CS_MAX(t_max_factor, clip_factor[ii]);
-          t_min_factor = CS_MIN(t_min_factor, clip_factor[ii]);
+          t_max_factor = std::max(t_max_factor, clip_factor[ii]);
+          t_min_factor = std::min(t_min_factor, clip_factor[ii]);
           t_n_clip++;
         }
 
@@ -1035,8 +1037,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
 #     pragma omp critical
       {
-        min_factor = CS_MIN(min_factor, t_min_factor);
-        max_factor = CS_MAX(max_factor, t_max_factor);
+        min_factor = std::min(min_factor, t_min_factor);
+        max_factor = std::max(max_factor, t_max_factor);
         n_clip += t_n_clip;
       }
     } /* End of omp parallel construct */
@@ -5078,10 +5080,10 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                     +   (pvar[c_id1][2]-pvar[c_id2][2])
                       * (pvar[c_id1][2]-pvar[c_id2][2]);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denum[c_id2] = CS_MAX(denum[c_id2], dist_sq2);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
-          denom[c_id2] = CS_MAX(denom[c_id2], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denum[c_id2] = std::max(denum[c_id2], dist_sq2);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
+          denom[c_id2] = std::max(denom[c_id2], dvar_sq);
 
         } /* End of loop on faces */
 
@@ -5125,8 +5127,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                     +   (pvar[c_id1][2]-pvar[c_id2][2])
                       * (pvar[c_id1][2]-pvar[c_id2][2]);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
 
         }
       }
@@ -5176,10 +5178,10 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                     +   (pvar[c_id1][2]-pvar[c_id2][2])
                       * (pvar[c_id1][2]-pvar[c_id2][2]);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denum[c_id2] = CS_MAX(denum[c_id2], dist_sq1);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
-          denom[c_id2] = CS_MAX(denom[c_id2], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denum[c_id2] = std::max(denum[c_id2], dist_sq1);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
+          denom[c_id2] = std::max(denom[c_id2], dvar_sq);
 
         } /* End of loop on threads */
 
@@ -5223,8 +5225,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                     +   (pvar[c_id1][2]-pvar[c_id2][2])
                       * (pvar[c_id1][2]-pvar[c_id2][2]);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
 
         }
       }
@@ -5264,8 +5266,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
               gradv[c_id][i][j] *= factor1;
           }
 
-          t_min_factor = CS_MIN(factor1, t_min_factor);
-          t_max_factor = CS_MAX(factor1, t_max_factor);
+          t_min_factor = std::min(factor1, t_min_factor);
+          t_max_factor = std::max(factor1, t_max_factor);
           t_n_clip++;
 
         } /* If clipping */
@@ -5274,8 +5276,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
 #     pragma omp critical
       {
-        min_factor = CS_MIN(min_factor, t_min_factor);
-        max_factor = CS_MAX(max_factor, t_max_factor);
+        min_factor = std::min(min_factor, t_min_factor);
+        max_factor = std::max(max_factor, t_max_factor);
         n_clip += t_n_clip;
       }
     } /* End of omp parallel construct */
@@ -5307,10 +5309,10 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
           if (denum[c_id2] > clipp_coef_sq * denom[c_id2])
             factor2 = sqrt(clipp_coef_sq * denom[c_id2]/denum[c_id2]);
 
-          cs_real_t l_min_factor = CS_MIN(factor1, factor2);
+          cs_real_t l_min_factor = std::min(factor1, factor2);
 
-          clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], l_min_factor);
-          clip_factor[c_id2] = CS_MIN(clip_factor[c_id2], l_min_factor);
+          clip_factor[c_id1] = std::min(clip_factor[c_id1], l_min_factor);
+          clip_factor[c_id2] = std::min(clip_factor[c_id2], l_min_factor);
 
         } /* End of loop on faces */
 
@@ -5337,11 +5339,11 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
           if (denum[c_id2] > clipp_coef_sq * denom[c_id2])
             factor2 = sqrt(clipp_coef_sq * denom[c_id2]/denum[c_id2]);
 
-          l_min_factor = CS_MIN(l_min_factor, factor2);
+          l_min_factor = std::min(l_min_factor, factor2);
 
         }
 
-        clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], l_min_factor);
+        clip_factor[c_id1] = std::min(clip_factor[c_id1], l_min_factor);
 
       } /* End of loop on cells */
 
@@ -5361,8 +5363,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
         }
 
         if (clip_factor[c_id] < 0.99) {
-          t_max_factor = CS_MAX(t_max_factor, clip_factor[c_id]);
-          t_min_factor = CS_MIN(t_min_factor, clip_factor[c_id]);
+          t_max_factor = std::max(t_max_factor, clip_factor[c_id]);
+          t_min_factor = std::min(t_min_factor, clip_factor[c_id]);
           t_n_clip++;
         }
 
@@ -5370,8 +5372,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
 #     pragma omp critical
       {
-        min_factor = CS_MIN(min_factor, t_min_factor);
-        max_factor = CS_MAX(max_factor, t_max_factor);
+        min_factor = std::min(min_factor, t_min_factor);
+        max_factor = std::max(max_factor, t_max_factor);
         n_clip += t_n_clip;
       }
     } /* End of omp parallel construct */
@@ -8681,10 +8683,10 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
 
           cs_real_t dvar_sq = _tensor_norm_2(var_dist);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denum[c_id2] = CS_MAX(denum[c_id2], dist_sq2);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
-          denom[c_id2] = CS_MAX(denom[c_id2], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denum[c_id2] = std::max(denum[c_id2], dist_sq2);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
+          denom[c_id2] = std::max(denom[c_id2], dvar_sq);
 
         } /* End of loop on faces */
 
@@ -8724,8 +8726,8 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
 
           cs_real_t dvar_sq = _tensor_norm_2(var_dist);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
 
         }
       }
@@ -8768,10 +8770,10 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
           cs_real_t dist_sq1 = _tensor_norm_2(grad_dist1);
           cs_real_t dvar_sq = _tensor_norm_2(var_dist);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denum[c_id2] = CS_MAX(denum[c_id2], dist_sq1);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
-          denom[c_id2] = CS_MAX(denom[c_id2], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denum[c_id2] = std::max(denum[c_id2], dist_sq1);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
+          denom[c_id2] = std::max(denom[c_id2], dvar_sq);
 
         } /* End of loop on threads */
 
@@ -8808,8 +8810,8 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
           cs_real_t dist_sq1 = _tensor_norm_2(grad_dist1);
           cs_real_t dvar_sq = _tensor_norm_2(var_dist);
 
-          denum[c_id1] = CS_MAX(denum[c_id1], dist_sq1);
-          denom[c_id1] = CS_MAX(denom[c_id1], dvar_sq);
+          denum[c_id1] = std::max(denum[c_id1], dist_sq1);
+          denom[c_id1] = std::max(denom[c_id1], dvar_sq);
 
         }
       }
@@ -8849,8 +8851,8 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
               gradt[c_id][i][j] *= factor1;
           }
 
-          t_min_factor = CS_MIN(factor1, t_min_factor);
-          t_max_factor = CS_MAX(factor1, t_max_factor);
+          t_min_factor = std::min(factor1, t_min_factor);
+          t_max_factor = std::max(factor1, t_max_factor);
           t_n_clip++;
 
         } /* If clipping */
@@ -8859,8 +8861,8 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
 
 #     pragma omp critical
       {
-        min_factor = CS_MIN(min_factor, t_min_factor);
-        max_factor = CS_MAX(max_factor, t_max_factor);
+        min_factor = std::min(min_factor, t_min_factor);
+        max_factor = std::max(max_factor, t_max_factor);
         n_clip += t_n_clip;
       }
     } /* End of omp parallel construct */
@@ -8892,10 +8894,10 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
           if (denum[c_id2] > clipp_coef_sq * denom[c_id2])
             factor2 = sqrt(clipp_coef_sq * denom[c_id2]/denum[c_id2]);
 
-          cs_real_t t_min_factor = CS_MIN(factor1, factor2);
+          cs_real_t t_min_factor = std::min(factor1, factor2);
 
-          clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], t_min_factor);
-          clip_factor[c_id2] = CS_MIN(clip_factor[c_id2], t_min_factor);
+          clip_factor[c_id1] = std::min(clip_factor[c_id1], t_min_factor);
+          clip_factor[c_id2] = std::min(clip_factor[c_id2], t_min_factor);
 
         } /* End of loop on faces */
 
@@ -8922,11 +8924,11 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
           if (denum[c_id2] > clipp_coef_sq * denom[c_id2])
             factor2 = sqrt(clipp_coef_sq * denom[c_id2]/denum[c_id2]);
 
-          t_min_factor = CS_MIN(min_factor, factor2);
+          t_min_factor = std::min(min_factor, factor2);
 
         }
 
-        clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], t_min_factor);
+        clip_factor[c_id1] = std::min(clip_factor[c_id1], t_min_factor);
 
       } /* End of loop on cells */
 
@@ -8946,8 +8948,8 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
         }
 
         if (clip_factor[c_id] < 0.99) {
-          t_max_factor = CS_MAX(t_max_factor, clip_factor[c_id]);
-          t_min_factor = CS_MIN(t_min_factor, clip_factor[c_id]);
+          t_max_factor = std::max(t_max_factor, clip_factor[c_id]);
+          t_min_factor = std::min(t_min_factor, clip_factor[c_id]);
           t_n_clip++;
         }
 
@@ -8955,8 +8957,8 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
 
 #     pragma omp critical
       {
-        min_factor = CS_MIN(min_factor, t_min_factor);
-        max_factor = CS_MAX(max_factor, t_max_factor);
+        min_factor = std::min(min_factor, t_min_factor);
+        max_factor = std::max(max_factor, t_max_factor);
         n_clip += t_n_clip;
       }
     } /* End of omp parallel construct */
@@ -11118,8 +11120,8 @@ cs_gradient_porosity_balance(int inc)
              Not the case if coupled */
           if (   has_dc * c_disable_flag[has_dc * ii] == 0
               && has_dc * c_disable_flag[has_dc * jj] == 0)
-            d_f_surf = 1. / CS_MAX(i_f_face_surf[f_id],
-                                   cs_math_epzero * i_face_surf[f_id]);
+            d_f_surf = 1. / std::max(i_f_face_surf[f_id],
+                                     cs_math_epzero * i_face_surf[f_id]);
 
           i_poro_duq_0[f_id] = veli_dot_n * i_massflux[f_id] * d_f_surf;
           i_poro_duq_1[f_id] = velj_dot_n * i_massflux[f_id] * d_f_surf;
@@ -11159,8 +11161,8 @@ cs_gradient_porosity_balance(int inc)
         /* Is the cell disabled (for solid or porous)?
            Not the case if coupled */
         if (has_dc * c_disable_flag[has_dc * ii] == 0)
-          d_f_surf = 1. / CS_MAX(b_f_face_surf[f_id],
-                                 cs_math_epzero * b_face_surf[f_id]);
+          d_f_surf = 1. / std::max(b_f_face_surf[f_id],
+                                   cs_math_epzero * b_face_surf[f_id]);
 
         b_poro_duq[f_id] = veli_dot_n * b_massflux[f_id] * d_f_surf;
 
