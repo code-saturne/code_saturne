@@ -930,6 +930,10 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_cells_idx);
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->cell_cells_lst);
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_b_faces_idx);
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_b_faces);
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
@@ -979,8 +983,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   CS_CUDA_CHECK(cudaEventRecord(init, stream));
 	
-  bool status = false;
-  cs_lnum_t count_nan = 0, count_inf = 0;
+  // bool status = false;
+  // cs_lnum_t count_nan = 0, count_inf = 0;
   
   // _compute_rhs_lsq_v_i_face_v0<<<gridsize_if, blocksize, 0, stream>>>
   //     (n_i_faces,
@@ -1048,9 +1052,22 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   }
   CS_CUDA_CHECK(cudaEventRecord(halo, stream));
 
-  _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
-      (m->n_b_faces,
-       b_face_cells, 
+  // _compute_rhs_lsq_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
+  //     (m->n_b_faces,
+  //      b_face_cells, 
+  //      cell_f_cen, 
+  //      b_face_normal, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      b_dist, 
+  //      coefb_d, 
+  //      coefa_d, 
+  //      inc);
+
+  _compute_rhs_lsq_v_b_face_gather<<<gridsize_b, blocksize, 0, stream>>>
+      (m->n_b_cells,
+       cell_b_faces_idx,
+       cell_b_faces,
        cell_f_cen, 
        b_face_normal, 
        rhs_d, 

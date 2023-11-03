@@ -7088,7 +7088,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
         auto cuda = gradv_cuda[c_id][i][j];
 
         if (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-6) > 1e-12) {
-          // printf("DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda);
+          printf("DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda);
         }
       }
     }
