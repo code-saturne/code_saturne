@@ -136,7 +136,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                                     cs_real_33_t        *restrict r_grad,
                                     cs_real_33_t        *restrict grad,
                                     const bool                   *coupled_faces,
-                                    cs_lnum_t                     cpl_stride
+                                    cs_lnum_t                     cpl_stride,
+                                    bool                          test_bool
                                     );
 #endif /* defined(HAVE_CUDA) */
 
