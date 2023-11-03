@@ -4145,9 +4145,45 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
             double  abs_perm_cell = cs_property_get_cell_value(c_id,
                                                                time_step->t_cur,
                                                                abs_perm);
-            permeability[c_id] *= abs_perm_cell;
+            permeability[i] *= abs_perm_cell;
 
           } /* Loop on selected cells */
+
+        } /* abs_perm is uniform ? */
+
+      }
+      else {
+
+        const cs_real_t  *krl_values = cs_property_get_array(tpf->krl_pty);
+
+        if (cs_property_is_uniform(abs_perm)) {
+
+          const double  abs_perm_value =
+            cs_property_get_cell_value(0, time_step->t_cur, abs_perm);
+
+          for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+            cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
+              i : cell_ids[i];
+
+            permeability[i] = abs_perm_value * krl_values[c_id];
+
+          }
+
+        }
+        else {
+
+          for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+            cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
+              i : cell_ids[i];
+
+            double  abs_perm_cell = cs_property_get_cell_value(c_id,
+                                                               time_step->t_cur,
+                                                               abs_perm);
+            permeability[i] = abs_perm_cell * krl_values[c_id];
+
+          }
 
         } /* abs_perm is uniform ? */
 
