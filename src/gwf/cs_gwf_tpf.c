@@ -1090,9 +1090,20 @@ _update_pressures(const cs_cdo_connect_t      *connect,
 
       /* Compute the new values of the gas pressure at vertices */
 
+      const double  pg_star = 2e-6; /* 2 times pg_sharp. Rescaling for
+                                       positiveness */
+
 #     pragma omp parallel for if (n_vertices > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_vertices; i++)
-        g_pr[i] = l_pr[i] + c_pr[i];
+      for (cs_lnum_t i = 0; i < n_vertices; i++) {
+
+        const double  pg_tilde = l_pr[i] + c_pr[i];
+
+        if (pg_tilde < pg_star)
+          g_pr[i] = pg_star / (1 + (pg_star - pg_tilde)/pg_star);
+        else
+          g_pr[i] = pg_tilde;
+
+      }
 
       /* Avoid to add an unsteady contribution at the first iteration  */
 
