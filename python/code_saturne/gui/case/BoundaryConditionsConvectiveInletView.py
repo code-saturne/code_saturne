@@ -89,7 +89,7 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
         self.case.undoStopGlobal()
 
         # Connections
-        self.groupBoxConvectiveInlet.clicked[bool].connect(self.__slotConvectiveInlet)
+        self.checkBoxConvectiveInlet.clicked[bool].connect(self.__slotConvectiveInlet)
 
         # Validators
 
@@ -115,9 +115,9 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
             checked = True
 
         if checked:
-            self.groupBoxConvectiveInlet.setChecked(True)
+            self.checkBoxConvectiveInlet.setChecked(True)
         else:
-            self.groupBoxConvectiveInlet.setChecked(False)
+            self.checkBoxConvectiveInlet.setChecked(False)
         self.__slotConvectiveInlet(checked)
 
         if hide:
@@ -141,9 +141,7 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
         Activates convective inlet boundary condition.
 
         @type checked: C{True} or C{False}
-        @param checked: if C{True}, shows the QGroupBox convective inlet parameters.
         """
-        self.groupBoxConvectiveInlet.setFlat(not checked)
 
         if checked:
             self.__boundary.setConvectiveInletStatus("on")
