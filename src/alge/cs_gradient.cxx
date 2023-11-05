@@ -1545,7 +1545,7 @@ _renormalize_scalar_gradient(const cs_mesh_t               *m,
   /* Contribution from interior faces */
 
   for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
+#   pragma omp parallel for
     for (int t_id = 0; t_id < n_i_threads; t_id++) {
       for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -7760,7 +7760,9 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradt, 18);
     if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradt);
+      cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                           halo_type,
+                                           (cs_real_t *)gradt);
   }
 
   BFT_FREE(rhs);
