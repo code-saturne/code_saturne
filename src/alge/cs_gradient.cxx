@@ -180,6 +180,10 @@ static cs_gradient_quantities_t  *_gradient_quantities = NULL;
 
 const cs_e2n_sum_t _e2n_sum_type = CS_E2N_SUM_STORE_THEN_GATHER;
 
+/* Strided LSQ gradient variant */
+
+static int _use_legacy_strided_lsq_gradient = true;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -7120,6 +7124,419 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute cell gradient of a vector using least-squares reconstruction for
+ * non-orthogonal meshes (n_r_sweeps > 1).
+ *
+ * template parameters:
+ *   stride         3 for vectors, 6 for symmetric tensors
+ *   val_t          cs_real_3_t for vectors, cs_real_6_t for tensors
+ *   grad_t         cs_real_33_t for vectors, cs_real_63_t for tensors
+ *   coefb_t        cs_real_33_t for vectors, cs_real_66_t for tensors
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   madj           <-- pointer to mesh adjacencies structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   n_c_iter_max   <-- maximum number of iterations for boundary correction
+ *   c_eps          <-- relative tolerance for boundary correction
+ *   coefav         <-- B.C. coefficients for boundary face normals
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable, or NULL
+ *   b_iter_count   --> iteration count for each face, or NULL (postprocessing)
+ *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride, typename val_t, typename grad_t, typename coefb_t>
+static void
+_lsq_strided_gradient(const cs_mesh_t               *m,
+                      const cs_mesh_adjacencies_t   *madj,
+                      const cs_mesh_quantities_t    *fvq,
+                      cs_halo_type_t                 halo_type,
+                      int                            inc,
+                      int                            n_c_iter_max,
+                      cs_real_t                      c_eps,
+                      const val_t          *restrict coefav,
+                      const coefb_t        *restrict coefbv,
+                      const val_t          *restrict pvar,
+                      const cs_real_t      *restrict c_weight,
+                      cs_real_t            *restrict b_iter_count,
+                      grad_t               *restrict gradv)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_cells = m->n_b_cells;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+  const cs_lnum_t *restrict cell_cells_e_idx
+    = (const cs_lnum_t *restrict) madj->cell_cells_e_idx;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) madj->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_cells_e
+    = (const cs_lnum_t *restrict) madj->cell_cells_e;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) madj->cell_b_faces;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+  const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  grad_t *rhs;
+  BFT_MALLOC(rhs, n_cells_ext, grad_t);
+
+  cs_cocg_6_t  *restrict cocgb = NULL;
+  cs_cocg_6_t *restrict cocg = NULL;
+
+  _get_cell_cocg_lsq(m, halo_type, false, fvq, &cocg, &cocgb);
+
+  /* Compute Right-Hand Side */
+  /*-------------------------*/
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+    for (cs_lnum_t i = 0; i < stride; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
+        rhs[c_id][i][j] = 0.0;
+  }
+
+  /* Contribution from interior faces */
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           f_id++) {
+
+        cs_lnum_t c_id1 = i_face_cells[f_id][0];
+        cs_lnum_t c_id2 = i_face_cells[f_id][1];
+
+        cs_real_t  dc[3], fctb[3];
+
+        for (cs_lnum_t i = 0; i < 3; i++)
+          dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
+
+        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        if (c_weight != NULL) {
+          cs_real_t pond = weight[f_id];
+          cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
+                                  + (1. - pond)*c_weight[c_id2]);
+
+          for (cs_lnum_t i = 0; i < stride; i++) {
+            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              fctb[j] = dc[j] * pfac;
+              rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
+              rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
+            }
+          }
+        }
+        else {
+          for (cs_lnum_t i = 0; i < stride; i++) {
+            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              fctb[j] = dc[j] * pfac;
+              rhs[c_id1][i][j] += fctb[j];
+              rhs[c_id2][i][j] += fctb[j];
+            }
+          }
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
+
+  /* Contribution from extended neighborhood */
+
+  if (halo_type == CS_HALO_EXTENDED) {
+
+#   pragma omp parallel for
+    for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
+      for (cs_lnum_t cidx = cell_cells_e_idx[c_id1];
+           cidx < cell_cells_e_idx[c_id1+1];
+           cidx++) {
+
+        cs_lnum_t c_id2 = cell_cells_e[cidx];
+
+        cs_real_t dc[3];
+
+        for (cs_lnum_t i = 0; i < 3; i++)
+          dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
+
+        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (cs_lnum_t i = 0; i < stride; i++) {
+
+          cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            rhs[c_id1][i][j] += dc[j] * pfac;
+          }
+        }
+      }
+    }
+
+  } /* End for extended neighborhood */
+
+  /* Contribution from boundary faces */
+
+  const cs_real_t  eps_dvg = 1e-2;
+
+# pragma omp parallel for  if (n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_b_cells; ii++) {
+
+    cs_lnum_t c_id = m->b_cells[ii];
+
+    for (cs_lnum_t ll = 0; ll < 6; ll++)
+      cocg[c_id][ll] = cocgb[ii][ll];
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) { /* loop on boundary faces */
+
+      cs_lnum_t f_id = cell_b_faces[i];
+
+      cs_real_t dif[3];
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
+
+      cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+
+      cocg[c_id][0] += dif[0]*dif[0]*ddif;
+      cocg[c_id][1] += dif[1]*dif[1]*ddif;
+      cocg[c_id][2] += dif[2]*dif[2]*ddif;
+      cocg[c_id][3] += dif[0]*dif[1]*ddif;
+      cocg[c_id][4] += dif[1]*dif[2]*ddif;
+      cocg[c_id][5] += dif[0]*dif[2]*ddif;
+
+      cs_real_t var_f[stride];
+
+      for (cs_lnum_t kk = 0; kk < stride; kk++) {
+        var_f[kk] = coefav[f_id][kk]*inc;
+        for (cs_lnum_t ll = 0; ll < stride; ll++) {
+          var_f[kk] += coefbv[f_id][ll][kk] * pvar[c_id][ll];
+        }
+
+        cs_real_t pfac = (var_f[kk] - pvar[c_id][kk]) * ddif;
+
+        for (cs_lnum_t ll = 0; ll < stride; ll++)
+          rhs[c_id][kk][ll] += dif[ll] * pfac;
+      }
+
+    } /* loop on faces */
+
+    _math_6_inv_cramer_sym_in_place(cocg[c_id]);
+
+  } /* loop on boundary cells */
+
+  /* Compute gradient */
+  /*------------------*/
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
+                          + rhs[c_id][i][1] * cocg[c_id][3]
+                          + rhs[c_id][i][2] * cocg[c_id][5];
+
+      gradv[c_id][i][1] =   rhs[c_id][i][0] * cocg[c_id][3]
+                          + rhs[c_id][i][1] * cocg[c_id][1]
+                          + rhs[c_id][i][2] * cocg[c_id][4];
+
+      gradv[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
+                          + rhs[c_id][i][1] * cocg[c_id][4]
+                          + rhs[c_id][i][2] * cocg[c_id][2];
+    }
+  }
+
+  /* Correct gradient on boundary cells */
+  /*------------------------------------*/
+
+  #pragma omp parallel for schedule(dynamic, CS_THR_MIN)
+  for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
+
+    cs_lnum_t c_id = m->b_cells[c_idx];
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+    cs_real_3_t *c_grad = gradv[c_id];
+
+    cs_real_t grad_0[stride][3], grad_i[stride][3];
+
+    memcpy(grad_0, c_grad, sizeof(cs_real_t)*stride*3);
+    memcpy(grad_i, c_grad, sizeof(cs_real_t)*stride*3);
+
+    /* Compute norm for convergence testing. */
+
+    cs_real_t ref_norm = 0;
+    for (cs_lnum_t kk = 0; kk < stride; kk++) {
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+    }
+
+    /* Iterate over boundary condition contributions. */
+
+    cs_real_t c_norm = 0;
+
+    int n_c_it;
+    for (n_c_it = 0; n_c_it < n_c_iter_max; n_c_it++) {
+
+      cs_real_t rhs_c[9][3];
+
+      for (cs_lnum_t ll = 0; ll < stride; ll++) {
+        rhs_c[ll][0] = 0;
+        rhs_c[ll][1] = 0;
+        rhs_c[ll][2] = 0;
+      }
+
+      /* Loop on boundary faces */
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        /* Remark: we could avoid recomputing dif and ddif in most cases by
+           saving at least a few values from the previous step, in
+           fixed-size buffers indexed by i_rel = i - s_id. */
+
+        cs_real_t dif[3];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dif[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+
+        /* Note that the contribution to the right-hand side from
+           bc_coeff_a[c_f_id] + (bc_coeff_b -1).var[c_id] has already been
+           counted, so it does not appear in the following terms.
+           We should perhaps check whether the numerical sensitivity
+           is lower when proceeding thus or when computing the full
+           face value at each step. */
+
+        cs_real_t var_ip_f[stride];
+
+        for (cs_lnum_t ll = 0; ll < stride; ll++) {
+          var_ip_f[ll] = cs_math_3_dot_product(c_grad[ll], diipb[f_id]);
+        }
+
+        const cs_real_t *b =   ((const cs_real_t *)coefbv)
+                             + (f_id*stride*stride);
+
+        for (cs_lnum_t kk = 0; kk < stride; kk++) {
+          cs_real_t pfac = 0;
+          for (cs_lnum_t ll = 0; ll < stride; ll++) {
+            pfac += b[kk*stride + ll] * var_ip_f[ll] * ddif;
+          }
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs_c[kk][ll] += dif[ll] * pfac;
+        }
+
+      } /* End of loop on boundary faces */
+
+      /* Compute gradient correction */
+
+      cs_real_t grad_c[9][3];
+
+      for (cs_lnum_t ii = 0; ii < stride; ii++) {
+
+        grad_c[ii][0] = (  cocg[c_id][0] * rhs_c[ii][0]
+                         + cocg[c_id][3] * rhs_c[ii][1]
+                         + cocg[c_id][5] * rhs_c[ii][2]);
+        grad_c[ii][1] = (  cocg[c_id][3] * rhs_c[ii][0]
+                         + cocg[c_id][1] * rhs_c[ii][1]
+                         + cocg[c_id][4] * rhs_c[ii][2]);
+        grad_c[ii][2] = (  cocg[c_id][5] * rhs_c[ii][0]
+                         + cocg[c_id][4] * rhs_c[ii][1]
+                         + cocg[c_id][2] * rhs_c[ii][2]);
+
+      }
+
+      /* Update gradient values */
+
+      c_norm = 0;
+      for (cs_lnum_t ii = 0; ii < stride; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++) {
+          c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
+          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          grad_i[ii][jj] = c_grad[ii][jj];
+        }
+      }
+
+#if 0
+      printf("grads %d: it %d, ref_norm %g, it_norm %g\n",
+             c_id, n_c_it, ref_norm, c_norm);
+#endif
+
+      /* Use of Frobenius norm is not rotation-independent,
+         but is cheaper to compute and assumed "good enough". */
+      if (c_norm < ref_norm * c_eps)
+        break;
+
+    } /* End of loop on iterations */
+
+    /* If the last correction was too large, we suspect
+         the the algorithm did not converge at all/diverged,
+         so we simply restore the non-reconstructed value
+         (additional precaution, not encountered in testing). */
+
+    if (c_norm > eps_dvg * ref_norm) {
+      memcpy(c_grad, grad_0, sizeof(cs_real_t)*stride*3);
+#if 0
+      printf("%s: non-convergence for boundary cell %ld/%ld\n"
+             "  use non-recontruced value\n", __func__,
+             (long)c_idx, (long)c_id);
+#endif
+      n_c_it *= -1;
+    }
+
+    /* Optional postprocessing */
+
+    if (b_iter_count != NULL) {
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        cs_lnum_t f_id = cell_b_faces[i];
+        b_iter_count[f_id] = n_c_it;
+      }
+    }
+
+  } /* End of correction for BC coeffs */
+
+  /* Periodicity and parallelism treatment */
+
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, stride*3);
+    if (cs_glob_mesh->have_rotation_perio) {
+      if (stride == 3)
+        cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
+      else if (stride ==6)
+        cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                             halo_type,
+                                             (cs_real_t *)gradv);
+    }
+  }
+
+  BFT_FREE(rhs);
+}
+
+/*----------------------------------------------------------------------------
  * Compute boundary face vector values using least-squares reconstruction
  * for non-orthogonal meshes.
  *
@@ -8448,16 +8865,43 @@ _gradient_vector(const char                     *var_name,
 
   case CS_GRADIENT_LSQ:
 
-    _lsq_vector_gradient(mesh,
-                         cs_glob_mesh_adjacencies,
-                         fvq,
-                         halo_type,
-                         inc,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         (const cs_real_3_t *)var,
-                         c_weight,
-                         grad);
+    if (_use_legacy_strided_lsq_gradient) {
+      _lsq_vector_gradient(mesh,
+                           cs_glob_mesh_adjacencies,
+                           fvq,
+                           halo_type,
+                           inc,
+                           bc_coeff_a,
+                           bc_coeff_b,
+                           (const cs_real_3_t *)var,
+                           c_weight,
+                           grad);
+    }
+    else {
+      cs_real_t *c_iter = NULL;
+      if (var_name != NULL) {
+        cs_field_t *f_c_iter
+          = cs_field_by_composite_name_try("cs_algo:grad_b_iter",
+                                           var_name);
+        if (f_c_iter != NULL)
+          c_iter = f_c_iter->val;
+      }
+
+      _lsq_strided_gradient<3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+        (mesh,
+         cs_glob_mesh_adjacencies,
+         fvq,
+         halo_type,
+         inc,
+         n_r_sweeps,
+         epsilon,
+         bc_coeff_a,
+         bc_coeff_b,
+         (const cs_real_3_t *)var,
+         c_weight,
+         c_iter,
+         grad);
+    }
 
     _vector_gradient_clipping(mesh,
                               fvq,
@@ -8477,16 +8921,43 @@ _gradient_vector(const char                     *var_name,
       cs_real_33_t  *restrict r_gradv;
       BFT_MALLOC(r_gradv, n_cells_ext, cs_real_33_t);
 
-      _lsq_vector_gradient(mesh,
-                           cs_glob_mesh_adjacencies,
-                           fvq,
-                           halo_type,
-                           inc,
-                           bc_coeff_a,
-                           bc_coeff_b,
-                           (const cs_real_3_t *)var,
-                           c_weight,
-                           r_gradv);
+      if (_use_legacy_strided_lsq_gradient) {
+        _lsq_vector_gradient(mesh,
+                             cs_glob_mesh_adjacencies,
+                             fvq,
+                             halo_type,
+                             inc,
+                             bc_coeff_a,
+                             bc_coeff_b,
+                             (const cs_real_3_t *)var,
+                             c_weight,
+                             r_gradv);
+      }
+      else {
+        cs_real_t *c_iter = NULL;
+        if (var_name != NULL) {
+          cs_field_t *f_c_iter
+            = cs_field_by_composite_name_try("cs_algo:grad_b_iter",
+                                             var_name);
+          if (f_c_iter != NULL)
+            c_iter = f_c_iter->val;
+        }
+
+        _lsq_strided_gradient<3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_3_t *)var,
+           c_weight,
+           c_iter,
+           grad);
+      }
 
       _vector_gradient_clipping(mesh,
                                 fvq,
@@ -9404,6 +9875,14 @@ void
 cs_gradient_initialize(void)
 {
   assert(cs_glob_mesh != NULL);
+
+  const char *s = getenv("CS_GRADIENT_LSQ_BOUNDARY");
+  if (s != NULL) {
+    if (strcmp(s, "legacy") == 0)
+      _use_legacy_strided_lsq_gradient = true;
+    else if (strcmp(s, "fixed_point") == 0)
+      _use_legacy_strided_lsq_gradient = false;
+  }
 
   CS_TIMER_COUNTER_INIT(_gradient_t_tot);
 
