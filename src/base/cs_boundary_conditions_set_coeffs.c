@@ -63,7 +63,7 @@
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
-#include "cs_gradient.h"
+#include "cs_gradient_boundary.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_gui_util.h"
@@ -886,11 +886,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    * This could be done outside the loop.
    *--------------------------------------------------------------------------*/
 
-  /* allocate a temporary array for the gradient reconstruction */
   {
-    cs_real_3_t *grad = NULL;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-
     /* For the Syrthes coupling or 1d thermal module
        ---------------------------------------------
        Here we do an extraneous loop (we od something only foricpsyr = 1).
@@ -957,27 +953,15 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       if (f_scal->dim == 1) {
 
         if (cs_glob_space_disc->itbrrb == 1 && eqp_scal->ircflu == 1) {
-          const cs_real_t *cvar_s = f_scal->val;
+          cs_real_t *var_iprime = theipb;
+          if (f_scal_b != NULL)
+            var_iprime = bvar_s;
 
-          const int  inc   = 1;
-          const bool iprev = true;
-
-          cs_field_gradient_scalar(f_scal, iprev, inc, grad);
-
-          if (f_scal_b != NULL) {
-            for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-              cs_lnum_t c_id = b_face_cells[f_id];
-              bvar_s[f_id] =   cvar_s[c_id]
-                             + cs_math_3_dot_product(grad[c_id], diipb[f_id]);
-            }
-          }
-          else {
-            for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-              cs_lnum_t c_id = b_face_cells[f_id];
-              theipb[f_id] =   cvar_s[c_id]
-                             + cs_math_3_dot_product(grad[c_id], diipb[f_id]);
-            }
-          }
+          cs_field_gradient_boundary_iprime_scalar(f_scal,
+                                                   true, /* use_previous_t */
+                                                   n_b_faces,
+                                                   NULL,
+                                                   var_iprime);
         }
         else { /* itbrrb, ircflu */
           const cs_real_t *cvara_s = f_scal->val_pre;
@@ -1060,7 +1044,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
               cs_lnum_t c_id = b_face_cells[f_id];
-              for (int isou = 0; isou < 3; isou++) {
+              for (int isou = 0; isou < 6; isou++) {
                 bvar_t[f_id][isou] =   cvar_t[c_id][isou]
                                      + cs_math_3_dot_product(gradt[c_id][isou],
                                                              diipb[f_id]);
@@ -1088,9 +1072,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       }
 
     } /* end of loop on scalar fields */
-
-    /* Free memory */
-    BFT_FREE(grad);
   }
 
   /*--------------------------------------------------------------------------
@@ -1126,36 +1107,22 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   if (iclsym != 0 || ipatur != 0 || ipatrg != 0 || f_forbr != NULL) {
 
     if (nt_cur > 1 && eqp_vel->ircflu == 1) {
-
-      cs_real_33_t *gradv = NULL;
-      BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-
-      cs_field_gradient_vector(vel, true, 1, gradv);
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        cs_lnum_t c_id = b_face_cells[f_id];
-        for (int isou = 0; isou < 3; isou++) {
-          velipb[f_id][isou] =   var_vela[c_id][isou]
-                               + cs_math_3_dot_product(gradv[c_id][isou],
-                                                       diipb[f_id]);
-        }
-      }
-
-      BFT_FREE(gradv);
-
+      cs_field_gradient_boundary_iprime_vector(vel,
+                                               true, /* use_previous_t */
+                                               n_b_faces,
+                                               NULL,
+                                               velipb);
     }
 
     /* nb: at the first time step, coefa and coefb are unknown, so the walue
            in i is stored instead of the value in i' */
     else {
-
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
         cs_lnum_t c_id = b_face_cells[f_id];
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
           velipb[f_id][isou] = var_vela[c_id][isou];
         }
       }
-
     }
   }
 
@@ -1170,33 +1137,16 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(CS_F_(rij));
 
     if (nt_cur > 1 && irijrb == 1 && eqp_rij->ircflu == 1) {
-
-      const cs_real_6_t *cvar_ts = (const cs_real_6_t *)CS_F_(rij)->val;
-
-      const int  inc   = 1;
-      const bool iprev = true;
-
-      /* allocate a temporary array */
-      cs_real_63_t *gradts = NULL;
-      BFT_MALLOC(gradts, n_cells_ext, cs_real_63_t);
-
-      cs_field_gradient_tensor(CS_F_(rij), iprev, inc, gradts);
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        cs_lnum_t c_id = b_face_cells[f_id];
-        for (int isou = 0; isou < 6; isou++) {
-          rijipb[f_id][isou] = cvar_ts[c_id][isou]
-                             + cs_math_3_dot_product(gradts[c_id][isou],
-                                                     diipb[f_id]);
-        }
-      }
-      BFT_FREE(gradts);
+      cs_field_gradient_boundary_iprime_tensor(vel,
+                                               true, /* use_previous_t */
+                                               n_b_faces,
+                                               NULL,
+                                               rijipb);
     }
 
     /* nb: at the first time step, coefa and coefb are unknown, so the value
            in i is stored instead of the value in i' */
     else {
-
       const cs_real_6_t *cvara_ts = (const cs_real_6_t *)CS_F_(rij)->val_pre;
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -1204,7 +1154,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         for (int isou = 0; isou < 6; isou++) {
           rijipb[f_id][isou] = cvara_ts[c_id][isou];
         }
-
       }
     }
   }

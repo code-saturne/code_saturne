@@ -445,6 +445,10 @@ typedef struct {
    * (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without coupling) with
    * the unsteady algorithm. Always used with the steady algorithm.
    *
+   * \var b_gradient_r
+   * Type of boundary gradient reconstruction
+   * Same codes as for \ref imrgra
+   * (default is 2: least-squares, using extended neighborhood if available)
   */
 
   int iconv;
@@ -474,6 +478,8 @@ typedef struct {
   double epsrgr;
   double climgr;
   double relaxv;
+
+  int  b_gradient_r;
 
   /*!
    * @}

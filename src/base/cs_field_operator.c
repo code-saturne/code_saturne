@@ -818,6 +818,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
   const cs_real_33_t *bc_coeff_b = NULL;
 
   if (f->bc_coeffs != NULL) {
+    /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
@@ -951,7 +952,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
-  int imrgra = cs_glob_space_disc->imrgra;
+  int b_gradient_r = cs_glob_space_disc->imrgra;
   cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
 
   /* Get the calculation option from the field */
@@ -959,11 +960,11 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     *eqp = cs_field_get_equation_param_const(parent_f);
 
   if (eqp != NULL)
-    imrgra = eqp->imrgra;
+    b_gradient_r = eqp->b_gradient_r;
   else
     eqp = &eqp_default;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(b_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -1013,12 +1014,14 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
 
   if (gradient_type == CS_GRADIENT_LSQ) {
 
+    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
+
     cs_gradient_boundary_iprime_lsq_s(m,
                                       fvq,
                                       n_faces,
                                       face_ids,
                                       halo_type,
-                                      eqp->climgr,
+                                      climgr,
                                       bc_coeff_a,
                                       bc_coeff_b,
                                       c_weight,
@@ -1076,6 +1079,312 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
         var_iprime[i] = var[j] + (  grad[j][0]*diipb[i][0]
                                   + grad[j][1]*diipb[i][1]
                                   + grad[j][2]*diipb[i][2]);
+      }
+    }
+
+    CS_FREE_HD(grad);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of a vector field at boundary face I' positions.
+ *
+ * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
+                                         bool               use_previous_t,
+                                         cs_lnum_t          n_faces,
+                                         const cs_lnum_t   *face_ids,
+                                         cs_real_3_t        var_iprime[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  /* Does the field have a parent (variable) ?
+     Field is its own parent if not parent is specified */
+
+  const cs_field_t *parent_f = f;
+
+  const int f_parent_id
+    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+  if (f_parent_id > -1)
+    parent_f = cs_field_by_id(f_parent_id);
+
+  int b_gradient_r = cs_glob_space_disc->imrgra;
+  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+
+  /* Get the calculation option from the field */
+  const cs_equation_param_t
+    *eqp = cs_field_get_equation_param_const(parent_f);
+
+  if (eqp != NULL)
+    b_gradient_r = eqp->b_gradient_r;
+  else
+    eqp = &eqp_default;
+
+  cs_gradient_type_by_imrgra(b_gradient_r,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_real_t *c_weight = NULL;
+  cs_internal_coupling_t  *cpl = NULL;
+
+  if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
+
+    /* Internal coupling structure */
+    int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+
+  }
+
+  if (f->n_time_vals < 2 && use_previous_t)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field %s does not maintain previous time step values\n"
+                "so \"use_previous_t\" can not be handled."),
+              __func__, f->name);
+
+  const cs_real_3_t *bc_coeff_a = NULL;
+  const cs_real_33_t *bc_coeff_b = NULL;
+
+  if (f->bc_coeffs != NULL) {
+    /* coupled components */
+    int coupled_key_id = cs_field_key_id_try("coupled");
+    if (coupled_key_id > 1) {
+      if (cs_field_get_key_int(f, coupled_key_id) > 0) {
+        bc_coeff_a = (const cs_real_3_t *)f->bc_coeffs->a;
+        bc_coeff_b = (const cs_real_33_t *)f->bc_coeffs->b;
+      }
+    }
+  }
+
+  /* With least-squares gradient, we can use a cheaper, boundary-only
+     reconstruction */
+
+  if (gradient_type == CS_GRADIENT_LSQ) {
+
+    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
+
+    const cs_real_3_t *var = (use_previous_t) ?
+                               (const cs_real_3_t *)f->val_pre
+                             : (const cs_real_3_t *)f->val;
+
+    cs_gradient_boundary_iprime_lsq_v(m,
+                                      fvq,
+                                      n_faces,
+                                      face_ids,
+                                      halo_type,
+                                      climgr,
+                                      bc_coeff_a,
+                                      bc_coeff_b,
+                                      c_weight,
+                                      var,
+                                      var_iprime);
+
+  }
+  else {
+
+    cs_real_3_t *var = (use_previous_t) ?
+                         (cs_real_3_t *)f->val_pre
+                       : (cs_real_3_t *)f->val;
+
+    const cs_real_3_t *restrict diipb
+      = (const cs_real_3_t *restrict)fvq->diipb;
+
+    cs_real_33_t *grad;
+    CS_MALLOC_HD(grad,
+                 cs_glob_mesh->n_cells_with_ghosts,
+                 cs_real_33_t,
+                 cs_alloc_mode);
+
+    cs_gradient_vector(f->name,
+                       gradient_type,
+                       halo_type,
+                       1, /* inc */
+                       eqp->nswrgr,
+                       eqp->verbosity,
+                       eqp->imligr,
+                       eqp->epsrgr,
+                       eqp->climgr,
+                       bc_coeff_a,
+                       bc_coeff_b,
+                       var,
+                       c_weight,
+                       cpl, /* internal coupling */
+                       grad);
+
+    /* Finally, reconstruct value at I' */
+
+    const cs_lnum_t *restrict b_face_cells
+      = (const cs_lnum_t *restrict)m->b_face_cells;
+
+    for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
+      cs_lnum_t i = (face_ids != NULL) ? face_ids[idx] : idx;
+      cs_lnum_t j = b_face_cells[i];
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        var_iprime[idx][k] =   var[j][k]
+                             + cs_math_3_dot_product(grad[j][k],
+                                                     diipb[i]);
+      }
+    }
+
+    CS_FREE_HD(grad);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of a symmetric tensor field at
+ *        boundary face I' positions.
+ *
+ * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
+                                         bool               use_previous_t,
+                                         cs_lnum_t          n_faces,
+                                         const cs_lnum_t   *face_ids,
+                                         cs_real_6_t        var_iprime[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  /* Does the field have a parent (variable) ?
+     Field is its own parent if not parent is specified */
+
+  const cs_field_t *parent_f = f;
+
+  const int f_parent_id
+    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+  if (f_parent_id > -1)
+    parent_f = cs_field_by_id(f_parent_id);
+
+  int b_gradient_r = cs_glob_space_disc->imrgra;
+  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+
+  /* Get the calculation option from the field */
+  const cs_equation_param_t
+    *eqp = cs_field_get_equation_param_const(parent_f);
+
+  if (eqp != NULL)
+    b_gradient_r = eqp->b_gradient_r;
+  else
+    eqp = &eqp_default;
+
+  cs_gradient_type_by_imrgra(b_gradient_r,
+                             &gradient_type,
+                             &halo_type);
+
+  if (f->n_time_vals < 2 && use_previous_t)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field %s does not maintain previous time step values\n"
+                "so \"use_previous_t\" can not be handled."),
+              __func__, f->name);
+
+  const cs_real_6_t *bc_coeff_a = NULL;
+  const cs_real_66_t *bc_coeff_b = NULL;
+
+  if (f->bc_coeffs != NULL) {
+    /* coupled components */
+    int coupled_key_id = cs_field_key_id_try("coupled");
+    if (coupled_key_id > 1) {
+      if (cs_field_get_key_int(f, coupled_key_id) > 0) {
+        bc_coeff_a = (const cs_real_6_t *)f->bc_coeffs->a;
+        bc_coeff_b = (const cs_real_66_t *)f->bc_coeffs->b;
+      }
+    }
+  }
+
+  /* With least-squares gradient, we can use a cheaper, boundary-only
+     reconstruction */
+
+  if (gradient_type == CS_GRADIENT_LSQ) {
+
+    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
+
+    const cs_real_6_t *var = (use_previous_t) ?
+                               (const cs_real_6_t *)f->val_pre
+                             : (const cs_real_6_t *)f->val;
+
+    cs_gradient_boundary_iprime_lsq_t(m,
+                                      fvq,
+                                      n_faces,
+                                      face_ids,
+                                      halo_type,
+                                      climgr,
+                                      bc_coeff_a,
+                                      bc_coeff_b,
+                                      NULL,
+                                      var,
+                                      var_iprime);
+
+  }
+  else {
+
+    cs_real_6_t *var = (use_previous_t) ?
+                         (cs_real_6_t *)f->val_pre
+                       : (cs_real_6_t *)f->val;
+
+    const cs_real_3_t *restrict diipb
+      = (const cs_real_3_t *restrict)fvq->diipb;
+
+    cs_real_63_t *grad;
+    CS_MALLOC_HD(grad,
+                 cs_glob_mesh->n_cells_with_ghosts,
+                 cs_real_63_t,
+                 cs_alloc_mode);
+
+    cs_gradient_tensor(f->name,
+                       gradient_type,
+                       halo_type,
+                       1, /* inc */
+                       eqp->nswrgr,
+                       eqp->verbosity,
+                       eqp->imligr,
+                       eqp->epsrgr,
+                       eqp->climgr,
+                       bc_coeff_a,
+                       bc_coeff_b,
+                       var,
+                       grad);
+
+    /* Finally, reconstruct value at I' */
+
+    const cs_lnum_t *restrict b_face_cells
+      = (const cs_lnum_t *restrict)m->b_face_cells;
+
+    for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
+      cs_lnum_t i = (face_ids != NULL) ? face_ids[idx] : idx;
+      cs_lnum_t j = b_face_cells[i];
+      for (cs_lnum_t k = 0; k < 6; k++) {
+        var_iprime[idx][k] =   var[j][k]
+                             + cs_math_3_dot_product(grad[j][k],
+                                                     diipb[i]);
       }
     }
 
