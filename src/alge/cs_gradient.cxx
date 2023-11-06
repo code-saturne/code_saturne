@@ -7123,6 +7123,35 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   BFT_FREE(rhs);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return pointer to iteration count field values if present
+ *
+ * The field, if present, is expected to be called
+ * "cs_algo:grad_b_iter_<variable_name>".
+ *
+ * \param[in]  var_name  variable name
+ *
+ * \return  point to iteration count values, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t *
+_get_c_iter_try(const char  *var_name)
+{
+  cs_real_t *c_iter = NULL;
+
+  if (var_name != NULL) {
+    cs_field_t *f_c_iter
+      = cs_field_by_composite_name_try("cs_algo:grad_b_iter",
+                                       var_name);
+    if (f_c_iter != NULL)
+      c_iter = f_c_iter->val;
+  }
+
+  return c_iter;
+}
+
 /*----------------------------------------------------------------------------
  * Compute cell gradient of a vector using least-squares reconstruction for
  * non-orthogonal meshes (n_r_sweeps > 1).
@@ -7266,7 +7295,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
 
   /* Contribution from extended neighborhood */
 
-  if (halo_type == CS_HALO_EXTENDED) {
+  if (cell_cells_e_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
 #   pragma omp parallel for
     for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
@@ -7338,7 +7367,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
 
         cs_real_t pfac = (var_f[kk] - pvar[c_id][kk]) * ddif;
 
-        for (cs_lnum_t ll = 0; ll < stride; ll++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
           rhs[c_id][kk][ll] += dif[ll] * pfac;
       }
 
@@ -8878,15 +8907,6 @@ _gradient_vector(const char                     *var_name,
                            grad);
     }
     else {
-      cs_real_t *c_iter = NULL;
-      if (var_name != NULL) {
-        cs_field_t *f_c_iter
-          = cs_field_by_composite_name_try("cs_algo:grad_b_iter",
-                                           var_name);
-        if (f_c_iter != NULL)
-          c_iter = f_c_iter->val;
-      }
-
       _lsq_strided_gradient<3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
         (mesh,
          cs_glob_mesh_adjacencies,
@@ -8899,7 +8919,7 @@ _gradient_vector(const char                     *var_name,
          bc_coeff_b,
          (const cs_real_3_t *)var,
          c_weight,
-         c_iter,
+         _get_c_iter_try(var_name),
          grad);
     }
 
@@ -8934,15 +8954,6 @@ _gradient_vector(const char                     *var_name,
                              r_gradv);
       }
       else {
-        cs_real_t *c_iter = NULL;
-        if (var_name != NULL) {
-          cs_field_t *f_c_iter
-            = cs_field_by_composite_name_try("cs_algo:grad_b_iter",
-                                             var_name);
-          if (f_c_iter != NULL)
-            c_iter = f_c_iter->val;
-        }
-
         _lsq_strided_gradient<3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
           (mesh,
            cs_glob_mesh_adjacencies,
@@ -8955,7 +8966,7 @@ _gradient_vector(const char                     *var_name,
            bc_coeff_b,
            (const cs_real_3_t *)var,
            c_weight,
-           c_iter,
+           _get_c_iter_try(var_name),
            grad);
       }
 
@@ -9595,16 +9606,34 @@ _gradient_tensor(const char                *var_name,
 
   case CS_GRADIENT_LSQ:
 
-    _lsq_tensor_gradient(mesh,
-                         cs_glob_mesh_adjacencies,
-                         fvq,
-                         halo_type,
-                         inc,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         (const cs_real_6_t *)var,
-                         NULL, /* c_weight */
-                         grad);
+    if (_use_legacy_strided_lsq_gradient) {
+      _lsq_tensor_gradient(mesh,
+                           cs_glob_mesh_adjacencies,
+                           fvq,
+                           halo_type,
+                           inc,
+                           bc_coeff_a,
+                           bc_coeff_b,
+                           (const cs_real_6_t *)var,
+                           NULL, /* c_weight */
+                           grad);
+    }
+    else {
+      _lsq_strided_gradient<6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
+        (mesh,
+         cs_glob_mesh_adjacencies,
+         fvq,
+         halo_type,
+         inc,
+         n_r_sweeps,
+         epsilon,
+         bc_coeff_a,
+         bc_coeff_b,
+         (const cs_real_6_t *)var,
+         NULL, /* c_weight */
+         _get_c_iter_try(var_name),
+         grad);
+    }
 
     _tensor_gradient_clipping(mesh,
                               fvq,
