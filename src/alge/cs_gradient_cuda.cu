@@ -80,6 +80,8 @@
 
 #include "cs_gradient.h"
 #include "cs_gradient_priv.h"
+#include "cs_reconstruct_vector_gradient_v2.cuh"
+
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -458,11 +460,12 @@ _init_rhsv(cs_lnum_t         size,
             cs_real_33_t      *restrict array)
  {
    cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+   cs_real_t *array1d = (cs_real_t *) array;
 
    if (c_id < size) {
-     for (cs_lnum_t i = 0; i < 3; i++)
-       for (cs_lnum_t j = 0; j < 3; j++)
-         array[c_id][i][j] = 0.0;
+    //  for (cs_lnum_t i = 0; i < 3; i++)
+    //    for (cs_lnum_t j = 0; j < 3; j++)
+         array1d[c_id] = 0.0;
    }
  }
 
@@ -1273,6 +1276,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   unsigned int gridsize_bf
     = (unsigned int)ceil((double)m->n_b_faces / blocksize);
   unsigned int gridsize = (unsigned int)ceil((double)m->n_cells / blocksize);
+  unsigned int gridsize_init
+      = (unsigned int)ceil((double)m->n_cells*3*3 / blocksize);
   unsigned int gridsize_ext
     = (unsigned int)ceil((double)n_cells_ext / blocksize);
 
@@ -1313,8 +1318,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
 
-  _init_real_33_array<<<gridsize_ext, blocksize, 0, stream>>>
-    (n_cells_ext,
+  _init_real_33_array<<<gridsize_init, blocksize, 0, stream>>>
+    (n_cells_ext*3*3,
      rhs_d);
 
   CS_CUDA_CHECK(cudaEventRecord(init, stream));
@@ -1456,65 +1461,42 @@ _compute_reconstruct_v_i_face(cs_lnum_t            size,
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  // for(int f_id = blockIdx.x * blockDim.x + threadIdx.x; f_id < size; f_id += blockDim.x * gridDim.x){
-
-
-
   if(f_id >= size){
     return;
   }
   cs_lnum_t c_id1, c_id2;
   cs_real_t pond, ktpond, pfaci, pfacj, rfac;
 
-    c_id1 = i_face_cells[f_id][0];
-    c_id2 = i_face_cells[f_id][1];
+  c_id1 = i_face_cells[f_id][0];
+  c_id2 = i_face_cells[f_id][1];
 
-    pond = weight[f_id];
-    ktpond = (c_weight == NULL) ?
-          pond :                    // no cell weighting
-          pond * c_weight[c_id1] // cell weighting active
-            / (      pond * c_weight[c_id1]
-              + (1.0-pond)* c_weight[c_id2]);
+  pond = weight[f_id];
+  ktpond = (c_weight == NULL) ?
+        pond :                    // no cell weighting
+        pond * c_weight[c_id1] // cell weighting active
+          / (      pond * c_weight[c_id1]
+            + (1.0-pond)* c_weight[c_id2]);
 
 
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
-      pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
+    pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
 
-      /* Reconstruction part */
-      rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
-                                                + r_grad[c_id2][i][0])
-                              + dofij[f_id][1]*(  r_grad[c_id1][i][1]
-                                                + r_grad[c_id2][i][1])
-                              + dofij[f_id][2]*(  r_grad[c_id1][i][2]
-                                                + r_grad[c_id2][i][2]));
+    /* Reconstruction part */
+    rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
+                                              + r_grad[c_id2][i][0])
+                            + dofij[f_id][1]*(  r_grad[c_id1][i][1]
+                                              + r_grad[c_id2][i][1])
+                            + dofij[f_id][2]*(  r_grad[c_id1][i][2]
+                                              + r_grad[c_id2][i][2]));
 
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        // grad[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
-        // grad[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      atomicAdd(&grad[c_id1][i][j],(pfaci + rfac) * i_f_face_normal[f_id][j]);
+      atomicAdd(&grad[c_id2][i][j], - ((pfacj + rfac) * i_f_face_normal[f_id][j]));
 
-        atomicAdd(&grad[c_id1][i][j],(pfaci + rfac) * i_f_face_normal[f_id][j]);
-        atomicAdd(&grad[c_id2][i][j], - ((pfacj + rfac) * i_f_face_normal[f_id][j]));
-
-        // if(c_id1 == 604 && c_id2 == 605){
-        //   printf("Variables GPU loop :\n");
-        //   printf("pfaci GPU = %.17lg: :\n", pfaci);
-        //   printf("rfac GPU = %.17lg:\n", rfac);
-        //   printf("j = %d -  i_f_face_normal[f_id][j] GPU = %.17lg:\n", j, i_f_face_normal[f_id][j]);
-        //   printf("i = %d - j = %d - grad[c_id1][i][j] GPU = %.17lg:\n",i, j, grad[c_id1][i][j]);
-        // }
-      }
     }
-    // if(c_id1 == 604 && c_id2 == 605){
-    //   printf("GPU :\n");
-    //   printf("f_id GPU = %d :\n", f_id);
-    //   printf("c_d1 GPU = %d - c_id2 GPU = %d :\n", c_id1, c_id2);
-    //   printf("weight[f_id] GPU = %.17lg:\n", weight[f_id]);
-    //   printf("ktpond GPU = %.17lg:\n", ktpond);
-    //   printf("\n");
-    //   printf("\n");
-    
-  // }
+  }
+
 }
 
 
@@ -1702,6 +1684,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
     = (unsigned int)ceil((double)m->n_b_faces / blocksize);
   unsigned int gridsize
       = (unsigned int)ceil((double)m->n_cells / blocksize);
+  unsigned int gridsize_init
+      = (unsigned int)ceil((double)m->n_cells*3*3 / blocksize);
   unsigned int gridsize_ext
     = (unsigned int)ceil((double)n_cells_ext / blocksize);
 
@@ -1796,15 +1780,29 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
 
   /* Initialization */
-  _init_real_33_array<<<gridsize, blocksize, 0, stream>>>
-                    (n_cells, grad_d);
+  _init_real_33_array<<<gridsize_init, blocksize, 0, stream>>>
+                    (n_cells*3*3, grad_d);
+
+  // cudaMemset(grad_d, 0, n_cells * sizeof(cs_real_33_t));
 
   CS_CUDA_CHECK(cudaEventRecord(init, stream));
   
   
   /* Interior faces contribution */
-  _compute_reconstruct_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
-                                (n_i_faces,
+  // _compute_reconstruct_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
+  //                               (n_i_faces,
+  //                               i_group_index,
+  //                               i_face_cells,
+  //                               pvar_d,
+  //                               weight,
+  //                               c_weight,
+  //                               r_grad_d,
+  //                               grad_d,
+  //                               dofij,
+  //                               i_f_face_normal);
+
+  _compute_reconstruct_v_i_face_v2<<<gridsize_if * 3, blocksize, 0, stream>>>
+                                (n_i_faces * 3,
                                 i_group_index,
                                 i_face_cells,
                                 pvar_d,
@@ -1845,8 +1843,24 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   CS_CUDA_CHECK(cudaEventRecord(b_faces_1, stream));
   
   // ----------------------------Begin of Kernels part 2-------------------------------------------
-  _compute_reconstruct_v_b_face1<<<gridsize_bf, blocksize, 0, stream>>>
-                              ( n_b_faces,
+  // _compute_reconstruct_v_b_face1<<<gridsize_bf, blocksize, 0, stream>>>
+  //                             ( n_b_faces,
+  //                               b_group_index,
+  //                               coupled_faces_d,
+  //                               cpl_stride,
+  //                               coefb_d,
+  //                               coefa_d,
+  //                               pvar_d,
+  //                               inc,
+  //                               diipb,
+  //                               r_grad_d,
+  //                               grad_d,
+  //                               b_f_face_normal,
+  //                               b_face_cells);
+
+
+  _compute_reconstruct_v_b_face1_v2<<<gridsize_bf * 3, blocksize, 0, stream>>>
+                              ( n_b_faces * 3,
                                 b_group_index,
                                 coupled_faces_d,
                                 cpl_stride,
@@ -1862,8 +1876,18 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   
   CS_CUDA_CHECK(cudaEventRecord(b_faces_2, stream));
   
-  _compute_reconstruct_v_b_face2<<<gridsize, blocksize, 0, stream>>>
-                              ( n_cells,
+  // _compute_reconstruct_v_b_face2<<<gridsize, blocksize, 0, stream>>>
+  //                             ( n_cells,
+  //                               has_dc,
+  //                               c_disable_flag,
+  //                               cell_f_vol,
+  //                               grad_d,
+  //                               corr_grad_lin,
+  //                               test_bool
+  //                             );
+
+  _compute_reconstruct_v_b_face2_v2<<<gridsize * 3, blocksize, 0, stream>>>
+                              ( n_cells * 3,
                                 has_dc,
                                 c_disable_flag,
                                 cell_f_vol,
@@ -1890,49 +1914,49 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   cudaStreamSynchronize(stream);
   cudaStreamDestroy(stream);
 
-  // printf("rec Kernels times:\n");
+  printf("rec Kernels times:\n");
 
-  // msec = 0.0f;
-	// CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, init));
-  // printf("Kernels execution time in us: \t");
-  // printf("Init = %f\t", msec*1000.f);
+  msec = 0.0f;
+	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, init));
+  printf("Kernels execution time in us: \t");
+  printf("Init = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-	// CS_CUDA_CHECK(cudaEventElapsedTime(&msec, init, i_faces));
-  // printf("I_faces = %f\t", msec*1000.f);
+  msec = 0.0f;
+	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, init, i_faces));
+  printf("I_faces = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-	// CS_CUDA_CHECK(cudaEventElapsedTime(&msec, i_faces, b_faces_1));
-  // printf("CPU part = %f\t", msec*1000.f);
+  msec = 0.0f;
+	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, i_faces, b_faces_1));
+  printf("CPU part = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_2));
-  // printf("B_faces_1 = %f\t", msec*1000.f);
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_2));
+  printf("B_faces_1 = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_2, b_faces_3));
-  // printf("B_faces_2 = %f\t", msec*1000.f);
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_2, b_faces_3));
+  printf("B_faces_2 = %f\t", msec*1000.f);
 
-  // printf("\n");
+  printf("\n");
 
-  // msec_tot = 0.0f;
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, i_faces));
-  // printf("Total kernel part 1= %f\t", msec*1000.f);
-  // msec_tot = msec;
+  msec_tot = 0.0f;
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, i_faces));
+  printf("Total kernel part 1= %f\t", msec*1000.f);
+  msec_tot = msec;
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_3));
-  // printf("Total kernel part 2= %f\t", msec*1000.f);
-  // msec_tot += msec;
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_3));
+  printf("Total kernel part 2= %f\t", msec*1000.f);
+  msec_tot += msec;
 
-  // printf("Total kernel 1 and 2= %f\t", msec_tot*1000.f);
+  printf("Total kernel 1 and 2= %f\t", msec_tot*1000.f);
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, start, stop));
-  // printf("Total = %f\t", msec*1000.f);
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, start, stop));
+  printf("Total = %f\t", msec*1000.f);
 
-  // printf("\n");
+  printf("\n");
 
 
   if (_pvar_d != NULL)

@@ -5692,15 +5692,47 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   std::chrono::high_resolution_clock::time_point start, stop;
   std::chrono::microseconds elapsed, elapsed_cuda;
 
-  bool COMPUTE_CPU = true;
-  bool COMPUTE_CUDA = true;
-  bool RES_CPU = false;
 
   cs_real_33_t *grad_cpu;
   
+  
+
+  bool COMPUTE_CUDA;
+  bool COMPUTE_CPU;
+  bool RES_CPU;
+
+#if defined(HAVE_CUDA)
+  COMPUTE_CUDA = (cs_get_device_id() > -1) ? true : false;
+  RES_CPU = !COMPUTE_CUDA;
+#else
+  COMPUTE_CUDA = false;
+#endif
+
+#if defined(NDEBUG) && !defined(COMPUTE_CUDA)
+  COMPUTE_CPU = true;
+  RES_CPU     = true;
+#elif defined(DEBUG)
+  COMPUTE_CPU = true;
+#else
+  COMPUTE_CPU = true;
+#endif
+
+
+  // Pour l'instant ces lignes sont pour moi
+  // Elles seront à enlever
+  COMPUTE_CUDA  = true;
+  COMPUTE_CPU   = true;
+  RES_CPU       = false;
+
+  // A ne pas garder dans la version finale
+  bool PERF     = true;
+  bool ACCURACY = true;
+
   if(COMPUTE_CUDA){
     printf("Compute with CUDA\n");
-    start = std::chrono::high_resolution_clock::now();
+    if(PERF){
+      start = std::chrono::high_resolution_clock::now();
+    }
     cs_reconstruct_vector_gradient_cuda(m,
                                         fvq, 
                                         cpl, 
@@ -5715,14 +5747,19 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
                                         coupled_faces,
                                         cpl_stride,
                                         cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION);
-    stop = std::chrono::high_resolution_clock::now();
-    elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    if(PERF){
+      stop = std::chrono::high_resolution_clock::now();
+      elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    }
   }
 
   if(COMPUTE_CPU){
     printf("Compute with CPU\n");
     BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
 
+    if(PERF){
+      start = std::chrono::high_resolution_clock::now();
+    }
       /* Initialization */
     start = std::chrono::high_resolution_clock::now();
     # pragma omp parallel for
@@ -5755,14 +5792,6 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
                 / (      pond * c_weight[c_id1]
                   + (1.0-pond)* c_weight[c_id2]);
 
-            // if(c_id1 == 604 && c_id2 == 605){
-            //   printf("CPU :\n");
-            //   printf("f_id = %d :\n", f_id);
-            //   printf("c_d1 = %d - c_id2 = %d :\n", c_id1, c_id2);
-            //   printf("weight[f_id] = %.17lg:\n", weight[f_id]);
-            //   printf("ktpond = %.17lg:\n", ktpond);
-            // }
-
             /*
               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                         + (1-\alpha_\ij) \varia_\cellj\f$
@@ -5788,18 +5817,6 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
               for (cs_lnum_t j = 0; j < 3; j++) {
                 grad_cpu[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
                 grad_cpu[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
-
-                // if(c_id1 == 604 && c_id2 == 605){
-                //   printf("Variables loop :\n");
-                //   printf("pfaci = %.17lg: :\n", pfaci);
-                //   printf("rfac = %.17lg:\n", rfac);
-                //   printf("j = %d -  i_f_face_normal[f_id][j] = %.17lg:\n", j, i_f_face_normal[f_id][j]);
-                //   printf("i = %d - j = %d - grad_cpu[c_id1][i][j] = %.17lg:\n",i, j, grad_cpu[c_id1][i][j]);
-                //   if(i == 2 && j == 2){
-                //     printf("\n");
-                //     printf("\n");
-                //   }
-                // }
               }
             }
 
@@ -5808,24 +5825,6 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
         } /* End of loop on threads */
 
       } /* End of loop on thread groups */
-
-    /* Test grad */ 
-    // for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    //   for (cs_lnum_t i = 0; i < 3; i++) {
-    //     for (int j  =0; j < 3; ++j) {
-    //       auto cpu = grad_cpu[c_id][i][j];
-    //       auto cuda = grad[c_id][i][j];
-    //       double err = (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-30));
-    //       if (err > 1e-12) {
-    //         printf("rec inte DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda, err);
-    //       }
-    //     }
-    //   }
-    // }
-
-    // stop = std::chrono::high_resolution_clock::now();
-    // elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    // printf("rec Compute after i_face time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
 
       /* Contribution from coupled faces */
       // if (cpl != NULL) {
@@ -5879,21 +5878,6 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 
       } /* loop on threads */
 
-
-    /* Test grad */
-    // for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    //   for (cs_lnum_t i = 0; i < 3; i++) {
-    //     for (int j  =0; j < 3; ++j) {
-    //       auto cpu = grad_cpu[c_id][i][j];
-    //       auto cuda = grad[c_id][i][j];
-    //       double err = (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-30));
-    //       if (err> 1e-14) {
-    //         printf("rec bf1 DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda, err);
-    //       }
-    //     }
-    //   }
-    // }
-
     # pragma omp parallel for
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t dvol;
@@ -5922,28 +5906,36 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
           }
         }
       }
-      
-    stop = std::chrono::high_resolution_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    
+    if(PERF){
+      stop = std::chrono::high_resolution_clock::now();
+      elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    }
 
     
-    /* Performances */
-    // printf("rec Compute after b_face2 time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
 
-    /* Test grad */
-    // for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    //   for (cs_lnum_t i = 0; i < 3; i++) {
-    //     for (int j  =0; j < 3; ++j) {
-    //       auto cpu = grad_cpu[c_id][i][j];
-    //       auto cuda = grad[c_id][i][j];
-    //       double err = (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-30));
-    //       if (err> 1e-12) {
-    //         printf("rec bf2 DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda, err);
-    //       }
-    //     }
-    //   }
-    // }
 
+  }
+
+  /* Performances */
+  if(PERF){
+    printf("rec Compute after b_face2 time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
+  }
+
+  /* Test grad */
+  if(ACCURACY){
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (int j  =0; j < 3; ++j) {
+          auto cpu = grad_cpu[c_id][i][j];
+          auto cuda = grad[c_id][i][j];
+          double err = (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-6));
+          if (err> 1e-6) {
+            printf("rec DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda, err);
+          }
+        }
+      }
+    }
   }
   
   if(RES_CPU){
@@ -5951,12 +5943,12 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     grad = grad_cpu;
   }else{
     printf("RESULTS CUDA\n");
+    // Free memory
+    if(COMPUTE_CPU){
+      BFT_FREE(grad_cpu);
+    }
   }
 
-  // Free memory
-  if(COMPUTE_CPU && !RES_CPU){
-    BFT_FREE(grad_cpu);
-  }
 
     /* Periodicity and parallelism treatment */
 
