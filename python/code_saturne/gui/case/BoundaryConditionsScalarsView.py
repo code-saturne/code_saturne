@@ -261,13 +261,14 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         else:
             self.groupBoxSpecies.hide()
 
-        if self.hgn != 'off' and self.nature != 'wall':
+        if self.hgn.getHgnModel() != 'off' and self.nature != 'wall':
             self.groupBoxVoidFraction.show()
             self.modelVoidFraction = ComboModel(self.comboBoxVoidFraction,1,1)
-            self.hgn =  self.hgn.getHgnName()
-            self.hgn_type = self.__boundary.getScalarChoice(self.hgn)
-            self.modelVoidFraction.addItem(self.tr(self.hgn), self.hgn)
-            self.modelVoidFraction.setItem(str_model = self.hgn)
+            _hgn_name =  self.hgn.getHgnName()
+
+            self.hgn_type = self.__boundary.getScalarChoice(_hgn_name)
+            self.modelVoidFraction.addItem(self.tr(_hgn_name), _hgn_name)
+            self.modelVoidFraction.setItem(str_model = _hgn_name)
         else:
             self.groupBoxVoidFraction.hide()
 
@@ -445,10 +446,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.pushButtonVoidFraction.setEnabled(False)
         self.pushButtonVoidFraction.setStyleSheet("background-color: None")
 
-        if self.hgn != 'off' and self.nature != 'wall':
+        if self.hgn.getHgnModel() != 'off' and self.nature != 'wall':
             self.modelTypeVoidFraction.setItem(str_model=self.hgn_type)
             self.labelValueVoidFraction.setText('Value')
             self.groupBoxVoidFraction.setTitle('Void fraction')
+            _hgn_name = self.hgn.getHgnName()
 
             if self.hgn_type in ('dirichlet', 'exchange_coefficient', 'neumann'):
                 self.labelValueVoidFraction.show()
@@ -457,12 +459,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 if self.hgn_type == 'exchange_coefficient':
                     self.lineEditExVoidFraction.show()
                     self.labelExVoidFraction.show()
-                    v = self.__boundary.getScalarValue(self.hgn, 'dirichlet')
-                    w = self.__boundary.getScalarValue(self.hgn, 'exchange_coefficient')
+                    v = self.__boundary.getScalarValue(_hgn_name, 'dirichlet')
+                    w = self.__boundary.getScalarValue(_hgn_name, 'exchange_coefficient')
                     self.lineEditValueVoidFraction.setText(str(v))
                     self.lineEditExVoidFraction.setText(str(w))
                 else:
-                    v = self.__boundary.getScalarValue(self.hgn, self.hgn_type)
+                    v = self.__boundary.getScalarValue(_hgn_name, self.hgn_type)
                     self.lineEditValueVoidFraction.setText(str(v))
 
                 if self.hgn_type == 'neumann':
@@ -473,7 +475,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             elif self.hgn_type in ('exchange_coefficient_formula', 'dirichlet_formula',
                               'neumann_formula'):
                 self.pushButtonVoidFraction.setEnabled(True)
-                exp = self.__boundary.getScalarFormula(self.hgn, self.hgn_type)
+                exp = self.__boundary.getScalarFormula(_hgn_name, self.hgn_type)
                 if exp:
                     self.pushButtonVoidFraction.setStyleSheet("background-color: green")
                     self.pushButtonVoidFraction.setToolTip(exp)
@@ -600,7 +602,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         INPUT label for choice of zone
         """
-        self.hgn = self.modelVoidFraction.dicoV2M[str(text)]
+        raise Exception("This function cannot be called")
+        #FIXME: What to do with this name ?
+        _name = self.modelVoidFraction.dicoV2M[str(text)]
         self.initializeVariables()
 
 
@@ -610,7 +614,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         INPUT label for choice of zone
         """
         self.hgn_type = self.modelTypeVoidFraction.dicoV2M[str(text)]
-        self.__boundary.setScalarChoice(self.hgn, self.hgn_type)
+        self.__boundary.setScalarChoice(self.hgn.getHgnName(), self.hgn_type)
         self.initializeVariables()
 
 
@@ -736,9 +740,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotVoidFractionFormula(self):
         """
         """
-        name = self.hgn
+        name = self.hgn.getHgnName()
 
-        exp = self.__boundary.getScalarFormula(self.hgn, self.hgn_type)
+        exp = self.__boundary.getScalarFormula(name, self.hgn_type)
         exa = """#example: """
         if self.hgn_type == 'dirichlet_formula':
             req = [(name, str(name))]
@@ -776,7 +780,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotVoidFractionFormula -> %s" % str(result))
-            self.__boundary.setScalarFormula(self.hgn, self.hgn_type, str(result))
+            self.__boundary.setScalarFormula(name, self.hgn_type, str(result))
             self.pushButtonVoidFraction.setStyleSheet("background-color: green")
             self.pushButtonVoidFraction.setToolTip(exp)
 
@@ -859,10 +863,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         if self.lineEditValueVoidFraction.validator().state == QValidator.Acceptable:
             value = from_qvariant(var, float)
             hgn_type = self.hgn_type.split(':')[0]
+            _hgn_name = self.hgn.getHgnName()
             if hgn_type in ('dirichlet', 'neumann'):
-                self.__boundary.setScalarValue(self.hgn, hgn_type, value)
+                self.__boundary.setScalarValue(_hgn_name, hgn_type, value)
             elif hgn_type == 'exchange_coefficient':
-                self.__boundary.setScalarValue(self.hgn, 'dirichlet', value)
+                self.__boundary.setScalarValue(_hgn_name, 'dirichlet', value)
 
 
     @pyqtSlot(str)
@@ -901,7 +906,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         if self.lineEditExVoidFraction.validator().state == QValidator.Acceptable:
             value = from_qvariant(var, float)
-            self.__boundary.setScalarValue(self.hgn, 'exchange_coefficient', value)
+            self.__boundary.setScalarValue(self.hgn.getHgnName(),
+                                           'exchange_coefficient',
+                                           value)
 
 
     @pyqtSlot(str)
