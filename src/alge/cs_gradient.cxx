@@ -6905,17 +6905,18 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   _get_cell_cocg_lsq(m, halo_type, false, fvq, &cocg, &cocgb_s);
 
-  cs_real_33_t *rhs, *rhs_cuda, *gradv_cuda;
+  cs_real_33_t *rhs, *rhs_cuda, *gradv_cuda, *gradv_cpu;
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
   BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
   BFT_MALLOC(gradv_cuda, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(gradv_cpu, n_cells_ext, cs_real_33_t);
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
-#ifdef NDEBUG
-#if defined(HAVE_CUDA)
-#endif
+// #ifdef NDEBUG
+// #if defined(HAVE_CUDA)
+// #endif
   start = std::chrono::high_resolution_clock::now();
   cs_lsq_vector_gradient_cuda(
     m,
@@ -6928,13 +6929,13 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     pvar,
     c_weight,
     cocg,
-    gradv_cuda,
+    gradv,
     rhs_cuda);
   stop = std::chrono::high_resolution_clock::now();
   elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-#ifdef NDEBUG  
-#else
-#endif
+// #ifdef NDEBUG  
+// #else
+// #endif
   start = std::chrono::high_resolution_clock::now();
   # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
@@ -7071,21 +7072,21 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   #pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
-      gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
+      gradv_cpu[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
                           + rhs[c_id][i][1] * cocg[c_id][3]
                           + rhs[c_id][i][2] * cocg[c_id][5];
 
-      gradv[c_id][i][1] =   rhs[c_id][i][0] * cocg[c_id][3]
+      gradv_cpu[c_id][i][1] =   rhs[c_id][i][0] * cocg[c_id][3]
                           + rhs[c_id][i][1] * cocg[c_id][1]
                           + rhs[c_id][i][2] * cocg[c_id][4];
 
-      gradv[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
+      gradv_cpu[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
                           + rhs[c_id][i][1] * cocg[c_id][4]
                           + rhs[c_id][i][2] * cocg[c_id][2];
 
       for (int j  =0; j < 3; ++j) {
-        auto cpu = rhs[c_id][i][j];
-        auto cuda = rhs_cuda[c_id][i][j];
+        auto cpu = gradv_cpu[c_id][i][j];
+        auto cuda = gradv[c_id][i][j];
 
         if (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-6) > 1e-12) {
           printf("DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda);
@@ -7093,9 +7094,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
       }
     }
   }
-#ifdef NDEBUG
-#endif 
-#endif
+// #ifdef NDEBUG
+// #endif 
+// #endif
 stop = std::chrono::high_resolution_clock::now();
 elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 printf("Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());

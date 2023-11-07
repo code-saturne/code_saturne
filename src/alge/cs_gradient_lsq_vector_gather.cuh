@@ -86,6 +86,7 @@ __global__ static void
 _compute_rhs_lsq_v_b_face_gather(cs_lnum_t           size,
                           const cs_lnum_t      *restrict cell_b_faces_idx,
                           const cs_lnum_t      *restrict cell_b_faces,
+                          const cs_lnum_t      *restrict b_cells,
                           const cs_real_3_t    *restrict b_face_normal,
                           cs_real_33_t         *restrict rhs,
                           const cs_real_3_t    *restrict pvar,
@@ -94,11 +95,13 @@ _compute_rhs_lsq_v_b_face_gather(cs_lnum_t           size,
                           const cs_real_3_t    *restrict coefav,
                           const int            inc)
 {
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(c_id >= size){
+  if(c_idx >= size){
     return;
   }
+
+  cs_lnum_t c_id = b_cells[c_idx];
 
   cs_lnum_t f_id;
   cs_real_t n_d_dist[3], d_b_dist, pfac, norm, inverse_norm;
