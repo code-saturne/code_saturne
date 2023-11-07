@@ -166,6 +166,7 @@ static cs_atmo_option_t  _atmo_option = {
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
+  .theo_interp = 0,
   .sedimentation_model = 0,
   .deposition_model = 0,
   .nucleation_model = 0,
@@ -303,6 +304,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
+                       int                    **theo_interp,
                        int                    **sedimentation_model,
                        int                    **deposition_model,
                        int                    **nucleation_model,
@@ -1554,6 +1556,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
+                       int                    **theo_interp,
                        int                    **sedimentation_model,
                        int                    **deposition_model,
                        int                    **nucleation_model,
@@ -1594,6 +1597,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *y_l93 = &(_atmo_option.y_l93);
   *compute_z_ground = &(_atmo_option.compute_z_ground);
   *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
+  *theo_interp = &(_atmo_option.theo_interp);
   *sedimentation_model = &(_atmo_option.sedimentation_model);
   *deposition_model = &(_atmo_option.deposition_model);
   *nucleation_model = &(_atmo_option.nucleation_model);

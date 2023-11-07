@@ -609,6 +609,7 @@ imbrication_verbose = .false.
 ! ------------------------------------------------------------------------------
 ! flags for activating the cressman interpolation for the boundary conditions
 ! ------------------------------------------------------------------------------
+
 cressman_u = .false.
 cressman_v = .false.
 cressman_tke = .false.
@@ -632,14 +633,6 @@ call field_get_key_id("opt_interp_id", kopint)
 ! NB : should eventually be set by interface and by zone (as BCs)
 
 initmeteo = 1
-
-theo_interp = 0
-
-!--> Initialisation for the meteo profile
-
-!do izone = 1, nozppm
-!  iprofm(izone) = 0
-!enddo
 
 ! --> Initialisation for the chemistry models:
 

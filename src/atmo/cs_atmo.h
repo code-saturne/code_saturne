@@ -236,6 +236,7 @@ typedef struct {
   bool compute_z_ground;
 
   int open_bcs_treatment;
+  int theo_interp;
 
   /* Model options */
   /*! Sedimentation flag */
