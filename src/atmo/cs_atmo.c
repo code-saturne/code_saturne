@@ -3331,7 +3331,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   BFT_MALLOC(f_ext, m->n_cells_with_ghosts, cs_real_3_t);
   BFT_MALLOC(dfext, m->n_cells_with_ghosts, cs_real_3_t);
 
-  /* dfext is actually a dummy used to copy calhyd */
+  /* dfext is actually a dummy used to copy _hydrostatic_pressure_compute */
   /* f_ext is initialized with an initial density */
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
