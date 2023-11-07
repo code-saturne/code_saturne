@@ -7555,7 +7555,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
     if (cs_glob_mesh->have_rotation_perio) {
       if (stride == 3)
         cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
-      else if (stride ==6)
+      else if (stride == 6)
         cs_halo_perio_sync_var_sym_tens_grad(m->halo,
                                              halo_type,
                                              (cs_real_t *)gradv);
@@ -8967,7 +8967,7 @@ _gradient_vector(const char                     *var_name,
            (const cs_real_3_t *)var,
            c_weight,
            _get_c_iter_try(var_name),
-           grad);
+           r_gradv);
       }
 
       _vector_gradient_clipping(mesh,
