@@ -238,11 +238,11 @@ interface
   end subroutine cs_turbulence_kw
 
   subroutine cs_turbulence_rij &
-        (ncesmp, icetsm, itypsm, smacel) &
+        (phase_id, ncesmp, icetsm, itypsm, smacel) &
     bind(C, name='cs_turbulence_rij')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: ncesmp
+    integer(c_int), value :: phase_id, ncesmp
     integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
     real(kind=c_double), dimension(*) :: smacel
   end subroutine cs_turbulence_rij
@@ -1191,11 +1191,11 @@ if (iccvfg.eq.0) then
     ! Compute Alpha for EBRSM
     if (iturb.eq.32) then
 
-      call cs_turbulence_rij_solve_alpha(ivarfl(ial), xcl)
+      call cs_turbulence_rij_solve_alpha(ivarfl(ial), -1, xcl)
 
     endif
 
-    call cs_turbulence_rij(ncetsm, icetsm, itypsm, smacel)
+    call cs_turbulence_rij(-1, ncetsm, icetsm, itypsm, smacel)
 
   else if (iturb.eq.60) then
 
