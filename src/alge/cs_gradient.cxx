@@ -52,6 +52,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_bad_cells_regularisation.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
@@ -7157,10 +7158,11 @@ _get_c_iter_try(const char  *var_name)
  * non-orthogonal meshes (n_r_sweeps > 1).
  *
  * template parameters:
- *   stride         3 for vectors, 6 for symmetric tensors
- *   val_t          cs_real_3_t for vectors, cs_real_6_t for tensors
- *   grad_t         cs_real_33_t for vectors, cs_real_63_t for tensors
- *   coefb_t        cs_real_33_t for vectors, cs_real_66_t for tensors
+ *   e2n           type of assembly algorithm used
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *   val_t         cs_real_3_t for vectors, cs_real_6_t for tensors
+ *   grad_t        cs_real_33_t for vectors, cs_real_63_t for tensors
+ *   coefb_t       cs_real_33_t for vectors, cs_real_66_t for tensors
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
@@ -7178,7 +7180,8 @@ _get_c_iter_try(const char  *var_name)
  *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride, typename val_t, typename grad_t, typename coefb_t>
+template <const cs_e2n_sum_t e2n,
+          cs_lnum_t stride, typename val_t, typename grad_t, typename coefb_t>
 static void
 _lsq_strided_gradient(const cs_mesh_t               *m,
                       const cs_mesh_adjacencies_t   *madj,
@@ -7197,9 +7200,6 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_cells = m->n_b_cells;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -7221,77 +7221,267 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
+  /* Initialize RHS
+     (note this could be done locally in the gather variants */
+
   grad_t *rhs;
   BFT_MALLOC(rhs, n_cells_ext, grad_t);
+  cs_array_real_fill_zero(n_cells_ext*stride*3, (cs_real_t *)rhs);
 
-  cs_cocg_6_t  *restrict cocgb = NULL;
+  cs_cocg_6_t *restrict cocgb = NULL;
   cs_cocg_6_t *restrict cocg = NULL;
 
   _get_cell_cocg_lsq(m, halo_type, false, fvq, &cocg, &cocgb);
 
-  /* Compute Right-Hand Side */
-  /*-------------------------*/
+  /* Contribution from interior faces
+     -------------------------------- */
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (cs_lnum_t i = 0; i < stride; i++)
-      for (cs_lnum_t j = 0; j < 3; j++)
-        rhs[c_id][i][j] = 0.0;
-  }
+  if (e2n != CS_E2N_SUM_GATHER) {
 
-  /* Contribution from interior faces */
+    grad_t *f_ctb = NULL;
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+    if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+      BFT_MALLOC(f_ctb, m->n_i_faces, grad_t);
+    }
 
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+    cs_lnum_t n_i_groups, n_i_threads;
+    cs_mesh_i_faces_thread_block_count(m, e2n, 0, &n_i_groups, &n_i_threads);
 
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           f_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-        cs_lnum_t c_id1 = i_face_cells[f_id][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id][1];
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-        cs_real_t  dc[3], fctb[3];
+        cs_lnum_t s_id, e_id;
+        cs_mesh_i_faces_thread_block_range(m, e2n, g_id, t_id, n_i_threads, 0,
+                                           &s_id, &e_id);
 
-        for (cs_lnum_t i = 0; i < 3; i++)
-          dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
+        for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
 
-        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+          cs_lnum_t c_id1 = i_face_cells[f_id][0];
+          cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-        if (c_weight != NULL) {
-          cs_real_t pond = weight[f_id];
-          cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
-                                  + (1. - pond)*c_weight[c_id2]);
+          cs_real_t  dc[3];
+          for (cs_lnum_t i = 0; i < 3; i++)
+            dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
 
-          for (cs_lnum_t i = 0; i < stride; i++) {
-            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+          cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              fctb[j] = dc[j] * pfac;
-              rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
-              rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
+          if (c_weight != NULL) {
+            cs_real_t pond = weight[f_id];
+            cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
+                                    + (1. - pond)*c_weight[c_id2]);
+
+            for (cs_lnum_t i = 0; i < stride; i++) {
+              cs_real_t pfac = denom * (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+
+              if (e2n == CS_E2N_SUM_SCATTER) {
+                cs_real_t fctb[3];
+                for (cs_lnum_t j = 0; j < 3; j++) {
+                  fctb[j] = dc[j] * pfac;
+                  rhs[c_id1][i][j] += c_weight[c_id2] * fctb[j];
+                  rhs[c_id2][i][j] += c_weight[c_id1] * fctb[j];
+                }
+              }
+              else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
+                cs_real_t fctb[3];
+                for (cs_lnum_t j = 0; j < 3; j++) {
+                  fctb[j] = dc[j] * pfac;
+                  #pragma omp atomic
+                  rhs[c_id1][i][j] += c_weight[c_id2] * fctb[j];
+                  #pragma omp atomic
+                  rhs[c_id2][i][j] += c_weight[c_id1] * fctb[j];
+                }
+              }
+              else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+                for (cs_lnum_t j = 0; j < 3; j++) {
+                  f_ctb[f_id][i][j] = dc[j] * pfac;
+                }
+              }
+
+            }
+          }
+
+          else { /* if (c_weight == NULL) */
+            for (cs_lnum_t i = 0; i < stride; i++) {
+              cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+
+              if (e2n == CS_E2N_SUM_SCATTER) {
+                cs_real_t fctb[3];
+                for (cs_lnum_t j = 0; j < 3; j++) {
+                  fctb[j] = dc[j] * pfac;
+                  rhs[c_id1][i][j] += fctb[j];
+                  rhs[c_id2][i][j] += fctb[j];
+                }
+              }
+              else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
+                cs_real_t fctb[3];
+                for (cs_lnum_t j = 0; j < 3; j++) {
+                  fctb[j] = dc[j] * pfac;
+                  #pragma omp atomic
+                  rhs[c_id1][i][j] += fctb[j];
+                  #pragma omp atomic
+                  rhs[c_id2][i][j] += fctb[j];
+                }
+              }
+              else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+                for (cs_lnum_t j = 0; j < 3; j++) {
+                  f_ctb[f_id][i][j] = dc[j] * pfac;
+                }
+              }
+            }
+          } /* c_weight */
+
+        } /* loop on faces */
+
+      } /* loop on threads */
+
+    } /* loop on thread groups */
+
+    /* Assembly for 2-stage algorithm */
+
+    if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+
+      const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+      const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+      const cs_lnum_t *c2c = ma->cell_cells;
+      const cs_lnum_t *c2f = ma->cell_i_faces;
+      if (c2f == NULL) {
+        cs_mesh_adjacencies_update_cell_i_faces();
+        c2f = ma->cell_i_faces;
+      }
+
+      if (c_weight != NULL) {
+#       pragma omp parallel for
+        for (cs_lnum_t c_id_0 = 0; c_id_0 < n_cells; c_id_0++) {
+
+          const cs_lnum_t s_id = c2c_idx[c_id_0];
+          const cs_lnum_t e_id = c2c_idx[c_id_0+1];
+
+          for (cs_lnum_t i = s_id; i < e_id; i++) {
+            const cs_lnum_t f_id = c2f[i];
+            const cs_real_t w = c_weight[c2c[i]];
+
+            for (cs_lnum_t kk = 0; kk < stride; kk++) {
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhs[c_id_0][kk][ll] += (w * f_ctb[f_id][kk][ll]);
+            }
+          }
+
+        }
+      }
+      else {
+#       pragma omp parallel for
+        for (cs_lnum_t c_id_0 = 0; c_id_0 < n_cells; c_id_0++) {
+
+          const cs_lnum_t s_id = c2c_idx[c_id_0];
+          const cs_lnum_t e_id = c2c_idx[c_id_0+1];
+
+          for (cs_lnum_t i = s_id; i < e_id; i++) {
+            const cs_lnum_t f_id = c2f[i];
+
+            for (cs_lnum_t ll = 0; ll < stride; ll++) {
+              for (cs_lnum_t kk = 0; kk < 3; kk++) {
+                rhs[c_id_0][ll][kk] += f_ctb[f_id][ll][kk];
+              }
+            }
+          }
+
+        }
+
+      }
+
+      BFT_FREE(f_ctb);
+
+    }  /* End of assembly for 2-stage algorithm */
+
+  } /* Test on e2n (template argument for algorithm type) */
+
+  else if (e2n == CS_E2N_SUM_GATHER) {
+
+    const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+    const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+    const cs_lnum_t *c2c = ma->cell_cells;
+    const cs_lnum_t *c2f = ma->cell_i_faces;
+    short int *c2f_sgn = ma->cell_i_faces_sgn;
+    if (c2f == NULL) {
+      cs_mesh_adjacencies_update_cell_i_faces();
+      c2f = ma->cell_i_faces;
+      c2f_sgn = ma->cell_i_faces_sgn;
+    }
+
+    if (c_weight != NULL) {  /* With cell weighting */
+
+#     pragma omp parallel for
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+
+        const cs_lnum_t s_id = c2c_idx[ii];
+        const cs_lnum_t e_id = c2c_idx[ii+1];
+
+        const cs_real_t w_ii = c_weight[ii];
+
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+          const cs_lnum_t jj = c2c[i];
+          const cs_lnum_t f_id = c2f[i];
+          const cs_real_t w_jj = c_weight[jj];
+
+          cs_real_t  dc[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+
+          cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+          cs_real_t pond = (c2f_sgn[i] > 0) ? weight[f_id] : 1. - weight[f_id];
+
+          cs_real_t denom = 1. / (  pond       *w_ii
+                                  + (1. - pond)*w_jj);
+
+          for (cs_lnum_t k = 0; k < stride; k++) {
+            cs_real_t pfac = denom * (pvar[jj][k] - pvar[ii][k]) * ddc;
+
+            cs_real_t fctb[3];
+            for (cs_lnum_t l = 0; l < 3; l++) {
+              fctb[l] = dc[l] * pfac;
+              rhs[ii][k][l] += c_weight[jj] * fctb[l];
             }
           }
         }
-        else {
-          for (cs_lnum_t i = 0; i < stride; i++) {
-            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              fctb[j] = dc[j] * pfac;
-              rhs[c_id1][i][j] += fctb[j];
-              rhs[c_id2][i][j] += fctb[j];
+      }  /* loop on cells */
+
+    }
+
+    else { /* if (c_weight == NULL) */
+
+#     pragma omp parallel for
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+
+        const cs_lnum_t s_id = c2c_idx[ii];
+        const cs_lnum_t e_id = c2c_idx[ii+1];
+
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+          const cs_lnum_t jj = c2c[i];
+
+          cs_real_t  dc[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+
+          cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+          for (cs_lnum_t k = 0; k < stride; k++) {
+            cs_real_t pfac = (pvar[jj][k] - pvar[ii][k]) * ddc;
+
+            for (cs_lnum_t l = 0; l < 3; l++) {
+              rhs[ii][k][l] += dc[l] * pfac;
             }
           }
         }
 
-      } /* loop on faces */
+      }  /* loop on cells */
 
-    } /* loop on threads */
+    }
 
-  } /* loop on thread groups */
+  } /* (e2n == CS_E2N_SUM_GATHER) */
 
   /* Contribution from extended neighborhood */
 
@@ -7370,7 +7560,6 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           rhs[c_id][kk][ll] += dif[ll] * pfac;
       }
-
     } /* loop on faces */
 
     _math_6_inv_cramer_sym_in_place(cocg[c_id]);
@@ -7393,6 +7582,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
       gradv[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
                           + rhs[c_id][i][1] * cocg[c_id][4]
                           + rhs[c_id][i][2] * cocg[c_id][2];
+
     }
   }
 
@@ -8907,20 +9097,70 @@ _gradient_vector(const char                     *var_name,
                            grad);
     }
     else {
-      _lsq_strided_gradient<3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-        (mesh,
-         cs_glob_mesh_adjacencies,
-         fvq,
-         halo_type,
-         inc,
-         n_r_sweeps,
-         epsilon,
-         bc_coeff_a,
-         bc_coeff_b,
-         (const cs_real_3_t *)var,
-         c_weight,
-         _get_c_iter_try(var_name),
-         grad);
+      if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
+        _lsq_strided_gradient<CS_E2N_SUM_SCATTER,
+                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_3_t *)var,
+           c_weight,
+           _get_c_iter_try(var_name),
+           grad);
+      else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
+        _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC,
+                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_3_t *)var,
+           c_weight,
+           _get_c_iter_try(var_name),
+           grad);
+      else if (cs_glob_e2n_sum_type == CS_E2N_SUM_STORE_THEN_GATHER)
+        _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER,
+                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_3_t *)var,
+           c_weight,
+           _get_c_iter_try(var_name),
+           grad);
+      else
+        _lsq_strided_gradient<CS_E2N_SUM_GATHER,
+                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_3_t *)var,
+           c_weight,
+           _get_c_iter_try(var_name),
+           grad);
     }
 
     _vector_gradient_clipping(mesh,
@@ -8954,20 +9194,70 @@ _gradient_vector(const char                     *var_name,
                              r_gradv);
       }
       else {
-        _lsq_strided_gradient<3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_3_t *)var,
-           c_weight,
-           _get_c_iter_try(var_name),
-           r_gradv);
+        if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
+          _lsq_strided_gradient<CS_E2N_SUM_SCATTER,
+                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+            (mesh,
+             cs_glob_mesh_adjacencies,
+             fvq,
+             halo_type,
+             inc,
+             n_r_sweeps,
+             epsilon,
+             bc_coeff_a,
+             bc_coeff_b,
+             (const cs_real_3_t *)var,
+             c_weight,
+             _get_c_iter_try(var_name),
+             r_gradv);
+        else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
+          _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC,
+                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+            (mesh,
+             cs_glob_mesh_adjacencies,
+             fvq,
+             halo_type,
+             inc,
+             n_r_sweeps,
+             epsilon,
+             bc_coeff_a,
+             bc_coeff_b,
+             (const cs_real_3_t *)var,
+             c_weight,
+             _get_c_iter_try(var_name),
+             r_gradv);
+       else if (cs_glob_e2n_sum_type == CS_E2N_SUM_STORE_THEN_GATHER)
+          _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER,
+                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+            (mesh,
+             cs_glob_mesh_adjacencies,
+             fvq,
+             halo_type,
+             inc,
+             n_r_sweeps,
+             epsilon,
+             bc_coeff_a,
+             bc_coeff_b,
+             (const cs_real_3_t *)var,
+             c_weight,
+             _get_c_iter_try(var_name),
+             r_gradv);
+        else
+          _lsq_strided_gradient<CS_E2N_SUM_GATHER,
+                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
+            (mesh,
+             cs_glob_mesh_adjacencies,
+             fvq,
+             halo_type,
+             inc,
+             n_r_sweeps,
+             epsilon,
+             bc_coeff_a,
+             bc_coeff_b,
+             (const cs_real_3_t *)var,
+             c_weight,
+             _get_c_iter_try(var_name),
+             r_gradv);
       }
 
       _vector_gradient_clipping(mesh,
@@ -9619,20 +9909,70 @@ _gradient_tensor(const char                *var_name,
                            grad);
     }
     else {
-      _lsq_strided_gradient<6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
-        (mesh,
-         cs_glob_mesh_adjacencies,
-         fvq,
-         halo_type,
-         inc,
-         n_r_sweeps,
-         epsilon,
-         bc_coeff_a,
-         bc_coeff_b,
-         (const cs_real_6_t *)var,
-         NULL, /* c_weight */
-         _get_c_iter_try(var_name),
-         grad);
+      if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
+        _lsq_strided_gradient<CS_E2N_SUM_SCATTER,
+                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_6_t *)var,
+           NULL, /* c_weight */
+           _get_c_iter_try(var_name),
+           grad);
+      else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
+        _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC,
+                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_6_t *)var,
+           NULL, /* c_weight */
+           _get_c_iter_try(var_name),
+           grad);
+      else if (cs_glob_e2n_sum_type == CS_E2N_SUM_STORE_THEN_GATHER)
+        _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER,
+                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_6_t *)var,
+           NULL, /* c_weight */
+           _get_c_iter_try(var_name),
+           grad);
+      else
+        _lsq_strided_gradient<CS_E2N_SUM_GATHER,
+                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
+          (mesh,
+           cs_glob_mesh_adjacencies,
+           fvq,
+           halo_type,
+           inc,
+           n_r_sweeps,
+           epsilon,
+           bc_coeff_a,
+           bc_coeff_b,
+           (const cs_real_6_t *)var,
+           NULL, /* c_weight */
+           _get_c_iter_try(var_name),
+           grad);
     }
 
     _tensor_gradient_clipping(mesh,
