@@ -22,7 +22,6 @@
 
 subroutine majgeo &
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
-   ncelg2 , nfacg2 , nfbrg2 , nsomg2 ,                            &
    iface2 , ifabo2 , isymp2 , isoli2 ,                            &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
@@ -50,10 +49,6 @@ subroutine majgeo &
 ! nfabo2           ! i  ! <-- ! nombre de faces de bord                        !
 ! nsom2            ! i  ! <-- ! nombre de sommets                              !
 ! ncelb2           ! i  ! <-- ! number of boundary cells
-! ncelg2           ! i  ! <-- ! nombre global de cellules                      !
-! nfacg2           ! i  ! <-- ! nombre global de faces internes                !
-! nfbrg2           ! i  ! <-- ! nombre global de faces de bord                 !
-! nsomg2           ! i  ! <-- ! nombre global de sommets                       !
 ! iface2           ! ia ! <-- ! interior face->cells connectivity              !
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
 ! ifmfb2           ! ia ! <-- ! boundary face family number                    !
@@ -108,7 +103,6 @@ implicit none
 ! Arguments
 
 integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
-integer(kind=8), intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
 
 integer(c_int), dimension(2,nfac2), target :: iface2
 integer(c_int), dimension(nfabo2), target :: ifabo2
@@ -168,16 +162,7 @@ endif
 nnod = nsom2
 
 !===============================================================================
-! 2. Global sizes
-!===============================================================================
-
-ncelgb = ncelg2
-nfacgb = nfacg2
-nfbrgb = nfbrg2
-nsomgb = nsomg2
-
-!===============================================================================
-! 3. Define pointers on mesh structure
+! 2. Define pointers on mesh structure
 !===============================================================================
 
 ifacel_0 => iface2(1:2,1:nfac)
@@ -186,7 +171,7 @@ ifabor_0 => ifabo2(1:nfabor)
 xyzcen => xyzce2(1:3,1:ncelet)
 
 !===============================================================================
-! 4. Define pointers on mesh quantities
+! 3. Define pointers on mesh quantities
 !===============================================================================
 
 call cs_f_porous_model_get_pointers(c_iporos)
@@ -226,7 +211,7 @@ diipb => diipb2(1:3,1:nfabor)
 dofij => dofij2(1:3,1:nfac)
 
 !===============================================================================
-! 5. Define cstphy variables
+! 4. Define cstphy variables
 !===============================================================================
 
 volmin = volmn2

@@ -84,7 +84,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer           iel    , ifac   , f_id0
+integer           iel    , f_id0
 integer           icla   , icha
 integer           inc    , imrgrp , nswrgp , imligp , iwarnp
 integer           iold   , krvarfl
@@ -98,7 +98,6 @@ double precision turb_schmidt, rvarfl
 
 integer           iok1
 double precision, dimension(:) ,allocatable :: x1,f1f2
-double precision, dimension(:) ,allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: visct
