@@ -29,6 +29,7 @@
 #include "cs_gradient_lsq_vector_v2.cuh"
 #include "cs_gradient_lsq_vector_v3.cuh"
 #include "cs_gradient_lsq_vector_gather.cuh"
+#include "cs_gradient_lsq_vector_gather_v2.cuh"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -535,6 +536,14 @@ _sync_or_copy_real_h2d(const  T   *val_h,
   *buf_d = _buf_d;
 }
 
+/* Compute gridsize*/
+
+unsigned int get_gridsize(unsigned int size, unsigned int blocksize){
+  unsigned int gridsize = (unsigned int)ceil((double)size / blocksize);
+
+  return gridsize;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -1035,7 +1044,19 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   assert(rhs_d);
   assert(pvar_d);
   assert(weight);
-  _compute_rhs_lsq_v_i_face_gather<<<gridsize, blocksize, 0, stream>>>
+  // _compute_rhs_lsq_v_i_face_gather<<<gridsize, blocksize, 0, stream>>>
+  //     (n_cells,
+  //      cell_cells_idx,
+  //      cell_cells,
+  //      cell_i_faces,
+  //      cell_i_faces_sgn,
+  //      cell_f_cen, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      weight, 
+  //      c_weight);
+
+  _compute_rhs_lsq_v_i_face_gather_v2<<<gridsize, blocksize, 0, stream>>>
       (n_cells,
        cell_cells_idx,
        cell_cells,
@@ -1073,7 +1094,20 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      coefa_d, 
   //      inc);
 
-  _compute_rhs_lsq_v_b_face_gather<<<gridsize_b, blocksize, 0, stream>>>
+  // _compute_rhs_lsq_v_b_face_gather<<<gridsize_b, blocksize, 0, stream>>>
+  //     (m->n_b_cells,
+  //      cell_b_faces_idx,
+  //      cell_b_faces,
+  //      b_cells,
+  //      b_face_normal, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      b_dist, 
+  //      coefb_d, 
+  //      coefa_d, 
+  //      inc);
+    
+  _compute_rhs_lsq_v_b_face_gather_v2<<<gridsize_b, blocksize, 0, stream>>>
       (m->n_b_cells,
        cell_b_faces_idx,
        cell_b_faces,
