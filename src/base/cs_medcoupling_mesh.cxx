@@ -102,6 +102,8 @@ static cs_medcoupling_mesh_t **_sub_meshes = NULL;
  * Private function definitions
  *============================================================================*/
 
+#if defined(HAVE_MEDCOUPLING)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get permutation array for a face given its number of vertices.
@@ -134,8 +136,6 @@ _get_face_vertices_permutation(cs_lnum_t  n_face_vertices)
 
   return perm;
 }
-
-#if defined(HAVE_MEDCOUPLING)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -595,6 +595,31 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
   BFT_FREE(vtx_id);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Assign an empty mesh
+ *
+ * \param[in, out] pmmesh   pointer to associated cs_medcoupling_mesh_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_assign_empty_mesh(cs_medcoupling_mesh_t *pmmesh)
+{
+
+  MEDCouplingUMesh  *med_mesh = pmmesh->med_mesh;
+
+  //  Vertices
+  DataArrayDouble *med_coords = DataArrayDouble::New();
+  med_coords->alloc(0, 3);
+  med_mesh->setCoords(med_coords);
+  med_coords->decrRef();
+
+  // Elements
+  med_mesh->allocateCells(0);
+  med_mesh->finishInsertingCells();
+}
+
 #endif /* HAVE_MEDCOUPLING - BEGINNING OF PRIVATE FUNCTIONS */
 
 /*----------------------------------------------------------------------------*/
@@ -609,7 +634,7 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_mesh_t *
+static cs_medcoupling_mesh_t *
 _get_mesh_from_criteria(const char  *selection_criteria,
                         int          elt_dim)
 {
@@ -639,7 +664,7 @@ _get_mesh_from_criteria(const char  *selection_criteria,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_mesh_t *
+static cs_medcoupling_mesh_t *
 _get_mesh_from_name(const char  *name,
                     int          elt_dim)
 {
@@ -682,7 +707,7 @@ _get_mesh_from_name(const char  *name,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_mesh_t *
+static cs_medcoupling_mesh_t *
 _add_medcoupling_mesh(const char  *name,
                       int          elt_dim)
 {
@@ -735,7 +760,7 @@ _add_medcoupling_mesh(const char  *name,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _select_from_criteria(cs_mesh_t              *csmesh,
                       cs_medcoupling_mesh_t  *pmmesh)
 {
@@ -776,7 +801,7 @@ _select_from_criteria(cs_mesh_t              *csmesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _copy_mesh_from_base(cs_mesh_t              *csmesh,
                      cs_medcoupling_mesh_t  *pmmesh,
                      int                     use_bbox)
@@ -791,45 +816,45 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
               "MEDCoupling support\n"));
 #else
   // Assign mesh only if non empty list of elements
-  if (pmmesh->n_elts == 0)
+  if (pmmesh->n_elts == 0) {
+    _assign_empty_mesh(pmmesh);
     return;
+  }
+  else {
+    if (pmmesh->elt_dim == 3) {
+      /* Creation of a new nodal mesh from selected cells */
+      BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
-  if (pmmesh->elt_dim == 3) {
+      _assign_cell_mesh(csmesh, pmmesh);
 
-    /* Creation of a new nodal mesh from selected cells */
-
-    BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
-
-    _assign_cell_mesh(csmesh, pmmesh);
-
-    // BBOX
-    if (use_bbox) {
-      if (pmmesh->bbox == NULL) {
-        BFT_MALLOC(pmmesh->bbox, 6, cs_real_t);
+      // BBOX
+      if (use_bbox) {
+        if (pmmesh->bbox == NULL) {
+          BFT_MALLOC(pmmesh->bbox, 6, cs_real_t);
+        }
+        pmmesh->med_mesh->getBoundingBox(pmmesh->bbox);
       }
-      pmmesh->med_mesh->getBoundingBox(pmmesh->bbox);
     }
+      else if (pmmesh->elt_dim == 2) {
 
-  }
-  else if (pmmesh->elt_dim == 2) {
+      /* Creation of a new nodal mesh from selected border faces */
 
-    /* Creation of a new nodal mesh from selected border faces */
+      if (pmmesh->sel_criteria != NULL) {
+        BFT_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
 
-    if (pmmesh->sel_criteria != NULL) {
-      BFT_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
+        cs_selector_get_b_face_list(pmmesh->sel_criteria,
+                                    &(pmmesh->n_elts),
+                                    pmmesh->elt_list);
 
-      cs_selector_get_b_face_list(pmmesh->sel_criteria,
-                                  &(pmmesh->n_elts),
-                                  pmmesh->elt_list);
+        BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+      }
 
-      BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+      BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
+
+      _assign_face_mesh(csmesh, pmmesh);
+
     }
-
-    BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
-
-    _assign_face_mesh(csmesh, pmmesh);
-
-  }
+  } /* if n_etls == 0 */
 #endif
 }
 

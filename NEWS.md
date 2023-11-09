@@ -3,6 +3,10 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- medcoupling mesh wrapper:
+  * Fix some compiler warnings with OneAPI
+  * Fix potential crash with ParaMESH when some ranks are not coupled
+
 - Preprocessor: fix enless loop in case of polyhedra composed of
   disjoint sub-cells.
   * These cases are now reported with incorrectly oriented cells.
