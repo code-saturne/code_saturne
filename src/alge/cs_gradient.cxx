@@ -37,6 +37,13 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <iomanip>
+#include <limits>
+#include <type_traits>
+#include <iostream>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -676,6 +683,31 @@ _sync_scalar_gradient_halo(const cs_mesh_t  *m,
         (m->halo, halo_type, (cs_real_t *)grad, 3);
   }
 }
+
+/* Compute the unit in the last place (ULP) */
+template <class T>
+typename std::enable_if<!std::numeric_limits<T>::is_integer, T>::type
+cs_diff_ulp(T x, T y)
+{
+    // Since `epsilon()` is the gap size (ULP, unit in the last place)
+    // of floating-point numbers in interval [1, 2), we can scale it to
+    // the gap size in interval [2^e, 2^{e+1}), where `e` is the exponent
+    // of `x` and `y`.
+ 
+    // If `x` and `y` have different gap sizes (which means they have
+    // different exponents), we take the smaller one. Taking the bigger
+    // one is also reasonable, I guess.
+    const T m = std::min(std::fabs(x), std::fabs(y));
+ 
+    // Subnormal numbers have fixed exponent, which is `min_exponent - 1`.
+    const int exp = m < std::numeric_limits<T>::min()
+                  ? std::numeric_limits<T>::min_exponent - 1
+                  : std::ilogb(m);
+ 
+    // We divide the absolute difference by the epsilon times the exponent (1 ulp)
+    return std::fabs(x - y) / std::ldexp(std::numeric_limits<T>::epsilon(), exp);
+}
+
 
 /*----------------------------------------------------------------------------
  * Clip the gradient of a scalar if necessary. This function deals with
@@ -7088,8 +7120,8 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
         auto cpu = gradv_cpu[c_id][i][j];
         auto cuda = gradv[c_id][i][j];
 
-        if (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-6) > 1e-12) {
-          printf("DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda);
+        if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
+          printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
         }
       }
     }
