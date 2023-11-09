@@ -48,6 +48,7 @@ BEGIN_C_DECLS
  * Solve the \f$ k - \omega \f$ SST for incompressible flows
  * or slightly compressible flows for one time step.
  *
+ * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
@@ -61,7 +62,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_kw(cs_lnum_t        ncesmp,
+cs_turbulence_kw(int              phase_id,
+                 cs_lnum_t        ncesmp,
                  cs_lnum_t        icetsm[],
                  int              itypsm[],
                  const cs_real_t  dt[],
@@ -83,11 +85,13 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
  *
  * \f$ \divs{\vect{u}} \f$ is calculated at the same time than \f$ S \f$
  * for use in cs_turbulence_kw.
- !*/
+ *
+ * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_kw_mu_t(void);
+cs_turbulence_kw_mu_t(int phase_id);
 
 /*----------------------------------------------------------------------------*/
 

@@ -171,10 +171,11 @@ interface
     integer(c_int), value :: phase_id
   end subroutine cs_turbulence_ke_q_mu_t
 
-  subroutine cs_turbulence_kw_mu_t() &
+  subroutine cs_turbulence_kw_mu_t(phase_id) &
     bind(C, name='cs_turbulence_kw_mu_t')
     use, intrinsic :: iso_c_binding
     implicit none
+    integer(c_int), value :: phase_id
   end subroutine cs_turbulence_kw_mu_t
 
   subroutine cs_turbulence_ml_mu_t() &
@@ -501,7 +502,7 @@ elseif (iturb.eq.60) then
 ! k-omega SST
 ! ===========
 
-  call cs_turbulence_kw_mu_t
+  call cs_turbulence_kw_mu_t(-1)
 
 elseif (iturb.eq.70) then
 
