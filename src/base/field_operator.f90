@@ -86,7 +86,7 @@ module field_operator
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value                 :: f_id, use_previous_t, inc
-      real(kind=c_double), dimension(6,3,*) :: grad
+      real(kind=c_double), dimension(3,6,*) :: grad
     end subroutine field_gradient_tensor
 
     !---------------------------------------------------------------------------
