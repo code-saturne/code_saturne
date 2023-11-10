@@ -59,7 +59,6 @@
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_gradient.h"
-#include "cs_gui_util.h"
 #include "cs_lagr.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
@@ -287,21 +286,14 @@ cs_turbulence_kw(int              phase_id,
   cs_field_t *f_divukw = cs_field_by_name_try("vel_gradient_trace");
 
   if (phase_id >= 0) {
-    int nchar = cs_gui_characters_number(phase_id + 1);
+    char f_name[64]; /* should be much larger than needed */
 
-    const char *f_rad_s2 = "s2";
-    char *f_name_s2;
-    BFT_MALLOC(f_name_s2, strlen(f_rad_s2) + 2 + nchar, char);
-    sprintf(f_name_s2, "%s_%d", f_rad_s2, phase_id + 1);
-    f_s2kw = cs_field_by_name(f_name_s2);
-    BFT_FREE(f_name_s2);
+    snprintf(f_name, 63, "s2_%d", phase_id + 1);
+    f_name[63] = '\0';
+    f_s2kw = cs_field_by_name(f_name);
 
-    const char *f_rad_divu = "vel_gradient_trace";
-    char *f_name_divu;
-    BFT_MALLOC(f_name_divu, strlen(f_rad_divu) + 2 + nchar, char);
-    sprintf(f_name_divu, "%s_%d", f_rad_divu, phase_id + 1);
-    f_divukw = cs_field_by_name(f_name_divu);
-    BFT_FREE(f_name_divu);
+    snprintf(f_name, 63, "vel_gradient_trace_%d", phase_id + 1);
+    f_divukw = cs_field_by_name(f_name);
   }
 
   const cs_real_t *cpro_s2kw = f_s2kw->val;
@@ -1817,21 +1809,14 @@ cs_turbulence_kw_mu_t(int phase_id)
   cs_field_t *f_divukw = cs_field_by_name_try("vel_gradient_trace");
 
   if (phase_id >= 0) {
-    int nchar = cs_gui_characters_number(phase_id + 1);
+    char f_name[64]; /* should be much larger than needed */
 
-    const char *f_rad_s2 = "s2";
-    char *f_name_s2;
-    BFT_MALLOC(f_name_s2, strlen(f_rad_s2) + 2 + nchar, char);
-    sprintf(f_name_s2, "%s_%d", f_rad_s2, phase_id + 1);
-    f_s2kw = cs_field_by_name(f_name_s2);
-    BFT_FREE(f_name_s2);
+    snprintf(f_name, 63, "s2_%d", phase_id + 1);
+    f_name[63] = '\0';
+    f_s2kw = cs_field_by_name(f_name);
 
-    const char *f_rad_divu = "vel_gradient_trace";
-    char *f_name_divu;
-    BFT_MALLOC(f_name_divu, strlen(f_rad_divu) + 2 + nchar, char);
-    sprintf(f_name_divu, "%s_%d", f_rad_divu, phase_id + 1);
-    f_divukw = cs_field_by_name(f_name_divu);
-    BFT_FREE(f_name_divu);
+    snprintf(f_name, 63, "vel_gradient_trace_%d", phase_id + 1);
+    f_divukw = cs_field_by_name(f_name);
   }
 
   cs_real_t *cpro_s2kw = f_s2kw->val;
