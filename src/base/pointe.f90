@@ -59,11 +59,6 @@ module pointe
     double precision, dimension(:,:),  pointer :: p !< rank 2 array pointer
   end type pmapper_double_r2
 
-  !> container for rank 3 double precision array pointer.
-  type pmapper_double_r3
-    double precision, dimension(:,:,:),  pointer :: p !< rank 3 array pointer
-  end type pmapper_double_r3
-
   !> \}
 
   !=============================================================================
@@ -78,7 +73,6 @@ module pointe
 
   double precision, dimension(1),     target :: rvoid1
   double precision, dimension(1,1),   target :: rvoid2
-  double precision, dimension(1,1,1), target :: rvoid3
 
   !> \}
 
@@ -122,6 +116,7 @@ module pointe
   integer(c_int), pointer, save :: nfpt1t
 
   !> \}
+
   !=============================================================================
 
   !> \defgroup porosity_ibm Porosity from immersed boundaries parameters
@@ -145,7 +140,6 @@ module pointe
   logical(c_bool), pointer, save :: compute_porosity_from_scan
 
   !> \}
-
 
   !=============================================================================
 
@@ -203,21 +197,6 @@ module pointe
   !> reference point for wall condensation,
   !> used in forced and mixed convection regimes
   double precision, allocatable, dimension(:,:) :: xref_cond
-
-  !> \}
-
-  !=============================================================================
-
-  !> \addtogroup lagran
-  !> \{
-  !> \defgroup lag_arrays Lagrangian arrays
-
-  !> \addtogroup lag_arrays
-  !> \{
-
-  !> \anchor tslagr
-  double precision, pointer, dimension(:,:), save :: tslagr
-  !> \}
 
   !> \}
 

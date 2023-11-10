@@ -1086,18 +1086,11 @@ _get_n_deleted(cs_lagr_particle_set_t  *p_set,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return pointers to lagrangian arrays
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   dim_bound_stat   --> dimensions for bound_stat pointer
- *   p_bound_stat     --> bound_stat pointer
+ * Initialize lagrangian arrays
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
-                      cs_real_t  **p_cs_glob_lagr_source_terms)
+cs_lagr_init_arrays(void)
 {
   cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
   int   n_boundary_stats = cs_glob_lagr_dim->n_boundary_stats;
@@ -1115,16 +1108,10 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
                    + i*cs_glob_mesh->n_cells_with_ghosts;
     cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, st);
   }
-
-  *p_cs_glob_lagr_source_terms     = cs_glob_lagr_source_terms->st_val;
-  dim_cs_glob_lagr_source_terms[0] = cs_glob_mesh->n_cells_with_ghosts;
-  dim_cs_glob_lagr_source_terms[1] = cs_glob_lagr_dim->ntersl;
 }
 
 /*----------------------------------------------------------------------------
  * Free lagrangian arrays
- *
- * This function is intended for use by Fortran wrappers.
  *----------------------------------------------------------------------------*/
 
 void

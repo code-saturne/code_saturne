@@ -448,7 +448,7 @@ endif
 
 ! Map arrays from Lagrangian module
 if (iilagr.gt.0) then
-  call init_lagr_arrays(tslagr)
+  call cs_lagr_init_arrays
 endif
 
 if (i_les_balance.gt.0) then

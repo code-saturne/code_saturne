@@ -264,24 +264,18 @@ module lagran
 
     !---------------------------------------------------------------------------
 
-    !> \brief Allocate bound_stat and return fortran compatible pointer
+    !> \brief Allocate source term arrays
 
-    subroutine cs_lagr_init_c_arrays(dim_tslagr, p_tslagr)         &
-      bind(C, name='cs_lagr_init_c_arrays')
+    subroutine cs_lagr_init_arrays()  &
+      bind(C, name='cs_lagr_init_arrays')
       use, intrinsic ::  iso_c_binding
-
-      implicit none
-      integer(c_int), dimension(2) :: dim_tslagr
-      type(c_ptr), intent(out)     :: p_tslagr
-    end subroutine cs_lagr_init_c_arrays
+    end subroutine cs_lagr_init_arrays
 
     !---------------------------------------------------------------------------
 
-    subroutine cs_lagr_init_par ()&
+    subroutine cs_lagr_init_par ()  &
       bind(C, name='cs_lagr_init_par')
-
       use, intrinsic :: iso_c_binding
-
     end subroutine cs_lagr_init_par
 
     !---------------------------------------------------------------------------
@@ -359,26 +353,6 @@ contains
     return
 
   end subroutine init_lagr_dim_pointers
-
-  !=============================================================================
-
-  ! Initialize auxiliary arrays
-
-  subroutine init_lagr_arrays(tslagr)
-
-    implicit none
-
-    double precision, dimension(:,:), pointer  :: tslagr
-    integer(c_int),   dimension(2)             :: dim_tslagr
-    type(c_ptr)                                :: p_tslagr
-
-    call cs_lagr_init_c_arrays(dim_tslagr, p_tslagr)
-
-    call c_f_pointer(p_tslagr, tslagr, [dim_tslagr])
-
-    return
-
-  end subroutine init_lagr_arrays
 
   !=============================================================================
 

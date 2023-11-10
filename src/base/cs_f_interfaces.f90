@@ -147,24 +147,6 @@ module cs_f_interfaces
 
     !---------------------------------------------------------------------------
 
-    subroutine turrij &
-      (nvar, nscal, ncepdp, ncesmp, icepdc, icetsm, itypsm,                    &
-      dt, tslagr,                                                              &
-      ckupdc, smacel)
-      use lagran, only: ntersl
-      use mesh
-      integer :: nvar, nscal, ncepdp, ncesmp
-      integer, dimension(ncepdp) :: icepdc
-      integer, dimension(ncesmp) :: icetsm
-      integer, dimension(ncesmp,nvar), target :: itypsm
-      double precision, dimension(ncelet) :: dt
-      double precision, dimension(ncelet,ntersl), target :: tslagr
-      double precision, dimension(ncepdp,6) :: ckupdc
-      double precision, dimension(ncesmp,nvar), target ::  smacel
-    end subroutine turrij
-
-    !---------------------------------------------------------------------------
-
     subroutine vitens &
      (w1, iwarnp, weighf, weighb, viscf, viscb)
       use mesh
