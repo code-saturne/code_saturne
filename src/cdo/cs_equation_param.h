@@ -353,10 +353,7 @@ typedef struct {
    * Type of gradient limiter
    * - -1 (CS_GRADIENT_LIMIT_NONE): no limitation
    * - 0 (CS_GRADIENT_LIMIT_CELL): based on the neighbors
-   * - 1 (CS_GRADIENT_LIMIT_FACE): superior order\n
-   * \ref imligr is applied only to least-squares gradients.
-   * In the case of the Green-Gauss gradient with least-squares
-   * based face gradients, applied to the least-squares step.
+   * - 1 (CS_GRADIENT_LIMIT_FACE): superior order
    *
    * \var ircflu
    * Indicate whether the convective and diffusive fluxes at the faces should be

@@ -688,12 +688,12 @@ _sync_scalar_gradient_halo(const cs_mesh_t  *m,
  * the standard or extended neighborhood.
  *
  * parameters:
- *   halo_type      <-- halo type (extended or not)
- *   clip_mode      <-- type of clipping for the computation of the gradient
- *   iwarnp         <-- output level
- *   climgp         <-- clipping coefficient for the computation of the gradient
- *   var            <-- variable
- *   grad           --> components of the pressure gradient
+ *   halo_type  <-- halo type (extended or not)
+ *   clip_mode  <-- type of clipping for the computation of the gradient
+ *   iwarnp     <-- output level
+ *   climgp     <-- clipping coefficient for the computation of the gradient
+ *   var        <-- variable
+ *   grad       --> components of the pressure gradient
  *----------------------------------------------------------------------------*/
 
 static void
@@ -8864,13 +8864,6 @@ _gradient_scalar(const char                    *var_name,
                              c_weight,
                              r_grad);
 
-      _scalar_gradient_clipping(halo_type,
-                                clip_mode,
-                                verbosity,
-                                clip_coeff,
-                                var_name,
-                                var, r_grad);
-
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
         _reconstruct_scalar_gradient(mesh,
                                      fvq,
@@ -8907,11 +8900,18 @@ _gradient_scalar(const char                    *var_name,
 
   }
 
-  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
-    cs_bad_cells_regularisation_vector(grad, 0);
-
   BFT_FREE(_bc_coeff_a);
   BFT_FREE(_bc_coeff_b);
+
+  _scalar_gradient_clipping(halo_type,
+                            clip_mode,
+                            verbosity,
+                            clip_coeff,
+                            var_name,
+                            var, grad);
+
+  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
+    cs_bad_cells_regularisation_vector(grad, 0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -9163,16 +9163,6 @@ _gradient_vector(const char                     *var_name,
            grad);
     }
 
-    _vector_gradient_clipping(mesh,
-                              fvq,
-                              halo_type,
-                              clip_mode,
-                              verbosity,
-                              clip_coeff,
-                              var_name,
-                              (const cs_real_3_t *)var,
-                              grad);
-
     break;
 
   case CS_GRADIENT_GREEN_LSQ:
@@ -9260,16 +9250,6 @@ _gradient_vector(const char                     *var_name,
              r_gradv);
       }
 
-      _vector_gradient_clipping(mesh,
-                                fvq,
-                                halo_type,
-                                clip_mode,
-                                verbosity,
-                                clip_coeff,
-                                var_name,
-                                (const cs_real_3_t *)var,
-                                r_gradv);
-
       _reconstruct_vector_gradient(mesh,
                                    fvq,
                                    cpl,
@@ -9305,11 +9285,21 @@ _gradient_vector(const char                     *var_name,
 
   }
 
-  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
-    cs_bad_cells_regularisation_tensor((cs_real_9_t *)grad, 0);
-
   BFT_FREE(_bc_coeff_a);
   BFT_FREE(_bc_coeff_b);
+
+  _vector_gradient_clipping(mesh,
+                            fvq,
+                            halo_type,
+                            clip_mode,
+                            verbosity,
+                            clip_coeff,
+                            var_name,
+                            (const cs_real_3_t *)var,
+                            grad);
+
+  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
+    cs_bad_cells_regularisation_tensor((cs_real_9_t *)grad, 0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -9975,16 +9965,6 @@ _gradient_tensor(const char                *var_name,
            grad);
     }
 
-    _tensor_gradient_clipping(mesh,
-                              fvq,
-                              halo_type,
-                              clip_mode,
-                              verbosity,
-                              clip_coeff,
-                              var_name,
-                              (const cs_real_6_t *)var,
-                              grad);
-
     break;
 
   default:
@@ -9995,6 +9975,16 @@ _gradient_tensor(const char                *var_name,
 
   BFT_FREE(_bc_coeff_a);
   BFT_FREE(_bc_coeff_b);
+
+  _tensor_gradient_clipping(mesh,
+                            fvq,
+                            halo_type,
+                            clip_mode,
+                            verbosity,
+                            clip_coeff,
+                            var_name,
+                            (const cs_real_6_t *)var,
+                            grad);
 }
 
 BEGIN_C_DECLS

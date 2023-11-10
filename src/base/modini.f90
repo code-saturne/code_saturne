@@ -61,7 +61,7 @@ integer          f_id, f_id_d
 integer          ii, jj, iok, ikw
 integer          nbccou
 integer          nscacp, iscal
-integer          imrgrp, iclvfl, kclvfl
+integer          iclvfl, kclvfl
 integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
@@ -429,41 +429,7 @@ do f_id = 0, nfld - 1
   endif
 enddo
 
-! ---> IMLIGR
-!        Si l'utilisateur n'a rien specifie pour la limitation des
-!          gradients (=-999),
-!        On impose -1 avec gradrc (pas de limitation)
-!               et  1 avec gradmc (limitation)
-imrgrp = abs(imrgra)
-if (imrgrp.ge.10) imrgrp = imrgrp - 10
-
-if (imrgrp.eq.0.or.imrgrp.ge.4) then
-  do f_id = 0, nfld - 1
-    call field_get_type(f_id, f_type)
-    ! Is the field of type FIELD_VARIABLE?
-    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-      call field_get_key_struct_var_cal_opt(f_id, vcopt)
-      if (vcopt%imligr.eq.-999) then
-        vcopt%imligr = -1
-        call field_set_key_struct_var_cal_opt(f_id, vcopt)
-      endif
-    endif
-  enddo
-else
-  do f_id = 0, nfld - 1
-    call field_get_type(f_id, f_type)
-    ! Is the field of type FIELD_VARIABLE?
-    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-      call field_get_key_struct_var_cal_opt(f_id, vcopt)
-      if (vcopt%imligr.eq.-999) then
-        vcopt%imligr = 1
-        call field_set_key_struct_var_cal_opt(f_id, vcopt)
-      endif
-    endif
-  enddo
-endif
-
-! ---> DTMIN DTMAX CDTVAR
+! ---> dtmin dtmax cdtvar
 
 if (dtmin.le.-grand) then
   dtmin = 0.1d0*dtref

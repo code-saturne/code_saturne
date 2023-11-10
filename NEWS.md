@@ -48,6 +48,11 @@ Master (not on release branches yet)
   on interior faces or interior face centers.
   * The "per cell" and "per vertex" maxima are removed.
 
+### Numerics:
+
+- Do not activate gradient clipping by default even for least-squares
+  gradients; allow its use (as an option) for all gradient types.
+
 ### Architectural changes:
 
 - Remove support for freesteam (IAPWS-IF97 steam tables) library,

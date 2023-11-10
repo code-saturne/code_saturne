@@ -1103,7 +1103,6 @@ call field_get_key_struct_var_cal_opt(id, vcopt)
 ! Undefined values, may be modified by modini
 vcopt%isstpc = -999
 vcopt%nswrsm = -1
-vcopt%imligr = -999
 vcopt%thetav = -1.d0
 vcopt%blencv = -1.d0
 vcopt%epsilo = -1.d0

@@ -414,7 +414,7 @@ static cs_equation_param_t _equation_param_default
    .nswrsm = 1,
    .imvisf = 0,
    .imrgra = -1,
-   .imligr = -1,
+   .imligr = CS_GRADIENT_LIMIT_NONE,
    .ircflu = 1,
    .iwgrec = 0,
    .icoupl = -1,
