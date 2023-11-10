@@ -606,7 +606,6 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
 static void
 _assign_empty_mesh(cs_medcoupling_mesh_t *pmmesh)
 {
-
   MEDCouplingUMesh  *med_mesh = pmmesh->med_mesh;
 
   //  Vertices

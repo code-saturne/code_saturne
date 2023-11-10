@@ -1800,8 +1800,9 @@ cs_sles_solve(cs_sles_t           *sles,
     _residual(n_vals, a, rhs, vx, resr);
     cs_real_t rsd = sqrt(cs_gdot(n_vals, resr, resr));
 
-    bft_printf("# residue[%s] = %g (%g * required, precision %g, normalization %g)\n",
-               sles_name, rsd, rsd/(precision*r_norm), precision, r_norm);
+    bft_printf
+      ("# residue[%s] = %g (%g * required, precision %g, normalization %g)\n",
+       sles_name, rsd, rsd/(precision*r_norm), precision, r_norm);
 
     BFT_FREE(resr);
   }
