@@ -183,7 +183,7 @@ const cs_e2n_sum_t _e2n_sum_type = CS_E2N_SUM_STORE_THEN_GATHER;
 
 /* Strided LSQ gradient variant */
 
-static int _use_legacy_strided_lsq_gradient = true;
+static int _use_legacy_strided_lsq_gradient = false;
 
 /*============================================================================
  * Private function definitions
@@ -7706,8 +7706,11 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
 #endif
 
       /* Use of Frobenius norm is not rotation-independent,
-         but is cheaper to compute and assumed "good enough". */
-      if (c_norm < ref_norm * c_eps)
+         but is cheaper to compute and assumed "good enough".
+         Note that the comparison to cs_math_epzero is done for
+         the gradient correction itself, so is already
+         independent of the cell size. */
+      if (c_norm < ref_norm * c_eps || c_norm < cs_math_epzero)
         break;
 
     } /* End of loop on iterations */

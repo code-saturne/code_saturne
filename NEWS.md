@@ -50,6 +50,14 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+- Use local fixed-point algorithm for vector and tensor least-squares
+  gradient reconstruction at boundary.
+  * Improves the performance of this operator, without changing
+    the formulation.
+  * To revert to the previous algorithm, set the following
+     environment variable:
+    `CS_GRADIENT_LSQ_BOUNDARY=legacy`.
+
 - Do not activate gradient clipping by default even for least-squares
   gradients; allow its use (as an option) for all gradient types.
 
