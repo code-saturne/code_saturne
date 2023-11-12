@@ -9953,6 +9953,426 @@ _gradient_tensor(const char                *var_name,
                             grad);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the gradient of a strided field at a given cell
+ *         using least-squares reconstruction.
+ *
+ * This assumes ghost cell values which might be used are already
+ * synchronized.
+ *
+ * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
+ * arrays must be given. If boundary values are known, bc_coeff_a
+ * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * If bc_coeff_a is NULL, bc_coeff_b is ignored.
+ *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
+ * \param[in]   m               pointer to associated mesh structure
+ * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   c_id            cell id
+ * \param[in]   halo_type       halo type
+ * \param[in]   bc_coeff_a      boundary condition term a, or NULL
+ * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   var             gradient's base variable
+ * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[out]  c_grad          cell gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+_gradient_strided_cell(const cs_mesh_t             *m,
+                       const cs_mesh_quantities_t  *fvq,
+                       cs_lnum_t                    c_id,
+                       cs_halo_type_t               halo_type,
+                       const cs_real_t              bc_coeff_a[][stride],
+                       const cs_real_t              bc_coeff_b[][stride][stride],
+                       const cs_real_t              var[restrict][stride],
+                       const cs_real_t              c_weight[],
+                       cs_real_t                    c_grad[stride][3])
+{
+  CS_UNUSED(m);
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells_e_idx
+    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_cells
+    = (const cs_lnum_t *restrict) ma->cell_cells;
+  const cs_lnum_t *restrict cell_cells_e
+    = (const cs_lnum_t *restrict) ma->cell_cells_e;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  /* Compute covariance matrix and Right-Hand Side */
+
+  cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+  cs_real_t rhs[stride][3];
+
+  for (int i = 0; i < stride; i++) {
+    for (int j = 0; j < 3; j++)
+      rhs[i][j] = 0;
+  }
+
+  /* Contribution from interior and extended cells */
+
+  int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+
+  for (int adj_id = 0; adj_id < n_adj; adj_id++) {
+
+    const cs_lnum_t *restrict cell_cells_p;
+    cs_lnum_t s_id, e_id;
+
+    if (adj_id == 0){
+      s_id = cell_cells_idx[c_id];
+      e_id = cell_cells_idx[c_id+1];
+      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+    }
+    else if (cell_cells_e_idx != NULL){
+      s_id = cell_cells_e_idx[c_id];
+      e_id = cell_cells_e_idx[c_id+1];
+      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+    }
+    else
+      break;
+
+    if (c_weight == NULL) {
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        cs_real_t dc[3];
+        cs_lnum_t c_id1 = cell_cells_p[i];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        cocg[0] += dc[0]*dc[0]*ddc;
+        cocg[1] += dc[1]*dc[1]*ddc;
+        cocg[2] += dc[2]*dc[2]*ddc;
+        cocg[3] += dc[0]*dc[1]*ddc;
+        cocg[4] += dc[1]*dc[2]*ddc;
+        cocg[5] += dc[0]*dc[2]*ddc;
+
+        for (cs_lnum_t kk = 0; kk < stride; kk++) {
+          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs[kk][ll] += dc[ll] * pfac;
+        }
+
+      }
+
+    }
+    else {
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        cs_real_t dc[3];
+        cs_lnum_t c_id1 = cell_cells_p[i];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        cs_real_t _weight =   2. * c_weight[c_id1]
+                            / (c_weight[c_id] + c_weight[c_id1]);
+
+        cocg[0] += dc[0]*dc[0]*ddc;
+        cocg[1] += dc[1]*dc[1]*ddc;
+        cocg[2] += dc[2]*dc[2]*ddc;
+        cocg[3] += dc[0]*dc[1]*ddc;
+        cocg[4] += dc[1]*dc[2]*ddc;
+        cocg[5] += dc[0]*dc[2]*ddc;
+
+        for (cs_lnum_t kk = 0; kk < stride; kk++) {
+          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs[kk][ll] += dc[ll] * pfac * _weight;
+        }
+
+      }
+    }
+
+  } /* end of contribution from interior and extended cells */
+
+  /* Contribution from hidden boundary faces, if present */
+
+  if (ma->cell_hb_faces_idx != NULL) {
+    cs_lnum_t s_id = ma->cell_hb_faces_idx[c_id];
+    cs_lnum_t e_id = ma->cell_hb_faces_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t f_id = ma->cell_hb_faces[i];
+
+      const cs_nreal_t *dddij = fvq->b_face_u_normal[f_id];
+
+      cocg[0] += dddij[0]*dddij[0];
+      cocg[1] += dddij[1]*dddij[1];
+      cocg[2] += dddij[2]*dddij[2];
+      cocg[3] += dddij[0]*dddij[1];
+      cocg[4] += dddij[1]*dddij[2];
+      cocg[5] += dddij[0]*dddij[2];
+
+    }
+  }
+
+  /* Contribution from boundary conditions */
+
+  cs_lnum_t s_id = cell_b_faces_idx[c_id];
+  cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+  if (e_id > s_id) {
+
+    /* Case with known BC's */
+
+    if (bc_coeff_a != NULL) {
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        cs_real_t dif[3];
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
+
+        cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+
+        cocg[0] += dif[0]*dif[0]*ddif;
+        cocg[1] += dif[1]*dif[1]*ddif;
+        cocg[2] += dif[2]*dif[2]*ddif;
+        cocg[3] += dif[0]*dif[1]*ddif;
+        cocg[4] += dif[1]*dif[2]*ddif;
+        cocg[5] += dif[0]*dif[2]*ddif;
+
+        cs_real_t var_f[stride];
+        for (cs_lnum_t kk = 0; kk < stride; kk++) {
+          var_f[kk] = bc_coeff_a[f_id][kk];
+        }
+
+        /* Initial prediction using non-reconstructed value for Neumann */
+        if (bc_coeff_b != NULL) {
+          for (cs_lnum_t kk = 0; kk < stride; kk++) {
+            for (cs_lnum_t ll = 0; ll < 3; ll++) {
+              var_f[kk] += bc_coeff_b[f_id][ll][kk] * var[c_id][ll];
+            }
+          }
+        }
+
+        for (cs_lnum_t kk = 0; kk < stride; kk++) {
+          cs_real_t pfac = (var_f[kk] - var[c_id][kk]) * ddif;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs[kk][ll] += dif[ll] * pfac;
+        }
+
+      }
+
+    }
+
+    /* Case with no boundary conditions or known face values */
+
+    else {
+
+      /* Use homogeneous Neumann BC; as above, but
+         pfac and RHS contribution become zero */
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        cs_real_t dif[3];
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
+
+        cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+
+        cocg[0] += dif[0]*dif[0]*ddif;
+        cocg[1] += dif[1]*dif[1]*ddif;
+        cocg[2] += dif[2]*dif[2]*ddif;
+        cocg[3] += dif[0]*dif[1]*ddif;
+        cocg[4] += dif[1]*dif[2]*ddif;
+        cocg[5] += dif[0]*dif[2]*ddif;
+
+      }
+
+    }
+
+  }
+
+  /* Invert */
+
+  _math_6_inv_cramer_sym_in_place(cocg);
+
+  for (cs_lnum_t i = 0; i < stride; i++) {
+    c_grad[i][0] =   rhs[i][0] * cocg[0]
+                   + rhs[i][1] * cocg[3]
+                   + rhs[i][2] * cocg[5];
+
+    c_grad[i][1] =   rhs[i][0] * cocg[3]
+                   + rhs[i][1] * cocg[1]
+                   + rhs[i][2] * cocg[4];
+
+    c_grad[i][2] =   rhs[i][0] * cocg[5]
+                   + rhs[i][1] * cocg[4]
+                   + rhs[i][2] * cocg[2];
+  }
+
+  /* Correct gradient in case of Neumann BC's */
+
+  if (e_id > s_id && bc_coeff_b != NULL) {
+
+    cs_real_t grad_0[stride][3], grad_i[stride][3];
+
+    memcpy(grad_0, c_grad, sizeof(cs_real_t)*stride*3);
+    memcpy(grad_i, c_grad, sizeof(cs_real_t)*stride*3);
+
+    /* Compute norm for convergence testing. */
+
+    cs_real_t ref_norm = 0;
+    for (cs_lnum_t kk = 0; kk < stride; kk++) {
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+    }
+
+    /* Iterate over boundary condition contributions. */
+
+    const int n_c_iter_max = 30;
+    const cs_real_t c_eps = 1e-4, eps_dvg = 1e-2;
+
+    cs_real_t c_norm = 0;
+
+    int n_c_it;
+    for (n_c_it = 0; n_c_it < n_c_iter_max; n_c_it++) {
+
+      cs_real_t rhs_c[stride][3];
+
+      for (cs_lnum_t ll = 0; ll < stride; ll++) {
+        rhs_c[ll][0] = 0;
+        rhs_c[ll][1] = 0;
+        rhs_c[ll][2] = 0;
+      }
+
+      /* Loop on boundary faces */
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        /* Remark: we could avoid recomputing dif and ddif in most cases by
+           saving at least a few values from the previous step, in
+           fixed-size buffers indexed by i_rel = i - s_id. */
+
+        cs_real_t dif[3];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dif[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+
+        /* Note that the contribution to the right-hand side from
+           bc_coeff_a[c_f_id] + (bc_coeff_b -1).var[c_id] has already been
+           counted, so it does not appear in the following terms.
+           We should perhaps check whether the numerical sensitivity
+           is lower when proceeding thus or when computing the full
+           face value at each step. */
+
+        cs_real_t var_ip_f[stride];
+
+        for (cs_lnum_t ll = 0; ll < stride; ll++) {
+          var_ip_f[ll] = cs_math_3_dot_product(c_grad[ll], diipb[f_id]);
+        }
+
+        const cs_real_t *b =   ((const cs_real_t *)bc_coeff_b)
+                             + (f_id*stride*stride);
+
+        for (cs_lnum_t kk = 0; kk < stride; kk++) {
+          cs_real_t pfac = 0;
+          for (cs_lnum_t ll = 0; ll < stride; ll++) {
+            pfac += b[kk*stride + ll] * var_ip_f[ll] * ddif;
+          }
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs_c[kk][ll] += dif[ll] * pfac;
+        }
+
+      } /* End of loop on boundary faces */
+
+      /* Compute gradient correction */
+
+      cs_real_t grad_c[stride][3];
+
+      for (cs_lnum_t ii = 0; ii < stride; ii++) {
+
+        grad_c[ii][0] = (  cocg[0] * rhs_c[ii][0]
+                         + cocg[3] * rhs_c[ii][1]
+                         + cocg[5] * rhs_c[ii][2]);
+        grad_c[ii][1] = (  cocg[3] * rhs_c[ii][0]
+                         + cocg[1] * rhs_c[ii][1]
+                         + cocg[4] * rhs_c[ii][2]);
+        grad_c[ii][2] = (  cocg[5] * rhs_c[ii][0]
+                         + cocg[4] * rhs_c[ii][1]
+                         + cocg[2] * rhs_c[ii][2]);
+
+      }
+
+      /* Update gradient values */
+
+      c_norm = 0;
+      for (cs_lnum_t ii = 0; ii < stride; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++) {
+          c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
+          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          grad_i[ii][jj] = c_grad[ii][jj];
+        }
+      }
+
+#if 0
+      printf("grads %d: it %d, ref_norm %g, it_norm %g\n",
+             c_id, n_c_it, ref_norm, c_norm);
+#endif
+
+      /* Use of Frobenius norm is not rotation-independent,
+         but is cheaper to compute and assumed "good enough".
+         Note that the comparison to cs_math_epzero is done for
+         the gradient correction itself, so is already
+         independent of the cell size. */
+      if (c_norm < ref_norm * c_eps || c_norm < cs_math_epzero)
+        break;
+
+    } /* End of loop on iterations */
+
+    /* If the last correction was too large, we suspect
+         the the algorithm did not converge at all/diverged,
+         so we simply restore the non-reconstructed value
+         (additional precaution, not encountered in testing). */
+
+    if (c_norm > eps_dvg * ref_norm) {
+      memcpy(c_grad, grad_0, sizeof(cs_real_t)*stride*3);
+#if 0
+      printf("%s: non-convergence for boundary cell %ld/%ld\n"
+             "  use non-recontruced value\n", __func__,
+             (long)c_idx, (long)c_id);
+#endif
+      n_c_it *= -1;
+    }
+
+  }  /* End of correction in case of Neumann BC's */
+}
+
 BEGIN_C_DECLS
 
 /*============================================================================
@@ -11165,293 +11585,15 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[3][3])
 {
-  CS_UNUSED(m);
-
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
-  const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
-  const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
-  const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
-  const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
-  const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
-
-  const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
-
-  /* Compute covariance matrix and Right-Hand Side */
-
-  cs_real_t cocg[3][3] = {{0., 0., 0.},
-                          {0., 0., 0.},
-                          {0., 0., 0.}};
-  cs_real_t rhs[3][3] = {{0., 0., 0.},
-                         {0., 0., 0.},
-                         {0., 0., 0.}};
-
-  /* Contribution from interior and extended cells */
-
-  int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
-
-  for (int adj_id = 0; adj_id < n_adj; adj_id++) {
-
-    const cs_lnum_t *restrict cell_cells_p;
-    cs_lnum_t s_id, e_id;
-
-    if (adj_id == 0){
-      s_id = cell_cells_idx[c_id];
-      e_id = cell_cells_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
-    }
-    else if (cell_cells_e_idx != NULL){
-      s_id = cell_cells_e_idx[c_id];
-      e_id = cell_cells_e_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
-    }
-    else
-      break;
-
-    if (c_weight == NULL) {
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        cs_real_t dc[3];
-        cs_lnum_t c_id1 = cell_cells_p[i];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = cell_f_cen[c_id1][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-
-          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++) {
-            rhs[kk][ll] += dc[ll] * pfac;
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-          }
-
-        }
-
-      }
-
-    }
-    else {
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        cs_real_t dc[3];
-        cs_lnum_t c_id1 = cell_cells_p[i];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = cell_f_cen[c_id1][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        cs_real_t _weight =   2. * c_weight[c_id1]
-                            / (c_weight[c_id] + c_weight[c_id1]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-
-          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++) {
-            rhs[kk][ll] += dc[ll] * pfac * _weight;
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-          }
-
-        }
-
-      }
-    }
-
-  } /* end of contribution from interior and extended cells */
-
-  /* Contribution from hidden boundary faces, if present */
-
-  if (ma->cell_hb_faces_idx != NULL) {
-    cs_lnum_t s_id = ma->cell_hb_faces_idx[c_id];
-    cs_lnum_t e_id = ma->cell_hb_faces_idx[c_id+1];
-
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-      cs_lnum_t f_id = ma->cell_hb_faces[i];
-
-      cs_real_t udbfs = 1. / fvq->b_face_surf[f_id];
-
-      cs_real_t dddij[3];
-      for (cs_lnum_t ll = 0; ll < 3; ll++)
-        dddij[ll] = udbfs * fvq->b_face_normal[f_id*3 + ll];
-
-      for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        for (cs_lnum_t ll = 0; ll < 3; ll++) {
-          cocg[kk][ll] += dddij[kk] * dddij[ll];
-        }
-      }
-
-    }
-  }
-
-  /* Contribution from boundary conditions */
-
-  cs_lnum_t s_id = cell_b_faces_idx[c_id];
-  cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
-
-  if (e_id > s_id && bc_coeff_a != NULL && bc_coeff_b != NULL) {
-
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-      const cs_real_3_t *restrict b_face_normal
-        = (const cs_real_3_t *restrict)fvq->b_face_normal;
-      const cs_real_t *restrict b_dist
-        = (const cs_real_t *restrict)fvq->b_dist;
-
-      cs_lnum_t f_id = cell_b_faces[i];
-
-      cs_real_t  n_d_dist[3];
-      /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
-
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t jj = 0; jj < 3; jj++)
-          cocg[ii][jj] += n_d_dist[ii] * n_d_dist[jj];
-      }
-
-      cs_real_t d_b_dist = 1. / b_dist[f_id];
-
-      /* Normal divided by b_dist */
-      for (cs_lnum_t j = 0; j < 3; j++)
-        n_d_dist[j] *= d_b_dist;
-
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        cs_real_t pfac =      bc_coeff_a[f_id][j]
-                         + (  bc_coeff_b[f_id][0][j] * var[c_id][0]
-                            + bc_coeff_b[f_id][1][j] * var[c_id][1]
-                            + bc_coeff_b[f_id][2][j] * var[c_id][2]
-                            -                          var[c_id][j]);
-
-        for (cs_lnum_t k = 0; k < 3; k++)
-          rhs[j][k] += n_d_dist[k] * pfac;
-      }
-
-    }
-
-    /* Build indices bijection between [1-9] and [1-3]*[1-3] */
-    cs_lnum_t _33_9_idx[9][2];
-    int nn = 0;
-    for (int ll = 0; ll < 3; ll++) {
-      for (int mm = 0; mm < 3; mm++) {
-        _33_9_idx[nn][0] = ll;
-        _33_9_idx[nn][1] = mm;
-        nn++;
-      }
-    }
-
-    cs_real_t cocgb_v[45], rhsb_v[9], x[9];
-
-    _compute_cocgb_rhsb_lsq_v(c_id,
-                              1,
-                              ma,
-                              fvq,
-                              _33_9_idx,
-                              (const cs_real_3_t *)var,
-                              (const cs_real_3_t *)bc_coeff_a,
-                              (const cs_real_33_t *)bc_coeff_b,
-                              (const cs_real_3_t *)cocg,
-                              (const cs_real_3_t *)rhs,
-                              cocgb_v,
-                              rhsb_v);
-
-    _fw_and_bw_ldtl_pp(cocgb_v,
-                       9,
-                       x,
-                       rhsb_v);
-
-    for (int kk = 0; kk < 9; kk++) {
-      int ii = _33_9_idx[kk][0];
-      int jj = _33_9_idx[kk][1];
-      grad[ii][jj] = x[kk];
-    }
-  }
-
-  /* Case with no boundary conditions or known face values */
-
-  else {
-
-    if (bc_coeff_a != NULL) {
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        const cs_real_3_t *restrict b_f_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
-
-        cs_lnum_t f_id = cell_b_faces[i];
-
-        cs_real_t dc[3];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-
-          cs_real_t pfac = (bc_coeff_a[f_id][kk] - var[c_id][kk]) * ddc;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++) {
-            rhs[kk][ll] += dc[ll] * pfac;
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-          }
-
-        }
-
-      }
-
-    }
-
-    else { /* if bc_coeff_a == NUL
-              use homogeneous Neumann BC; as above, but
-              pfac and RHS contribution become zero */
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        const cs_real_3_t *restrict b_f_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
-
-        cs_lnum_t f_id = cell_b_faces[i];
-
-        cs_real_t dc[3];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-        }
-
-      }
-
-    }
-
-    /* Invert */
-
-    cs_math_33_inv_cramer_in_place(cocg);
-
-    for (cs_lnum_t jj = 0; jj < 3; jj++) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        grad[ii][jj] = 0.0;
-        for (cs_lnum_t k = 0; k < 3; k++)
-          grad[ii][jj] += rhs[ii][k] * cocg[k][jj];
-
-      }
-    }
-  }
-
+  _gradient_strided_cell<3>(m,
+                            fvq,
+                            c_id,
+                            halo_type,
+                            bc_coeff_a,
+                            bc_coeff_b,
+                            var,
+                            c_weight,
+                            grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -11490,291 +11632,15 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[6][3])
 {
-  CS_UNUSED(m);
-
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
-  const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
-  const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
-  const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
-  const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
-  const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
-
-  const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
-
-  /* Compute covariance matrix and Right-Hand Side */
-
-  cs_real_t cocg[3][3] = {{0., 0., 0.},
-                          {0., 0., 0.},
-                          {0., 0., 0.}};
-  cs_real_t rhs[6][3] = {{0., 0., 0.}, {0., 0., 0.},
-                         {0., 0., 0.}, {0., 0., 0.},
-                         {0., 0., 0.}, {0., 0., 0.}};
-
-  /* Contribution from interior and extended cells */
-
-  int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
-
-  for (int adj_id = 0; adj_id < n_adj; adj_id++) {
-
-    const cs_lnum_t *restrict cell_cells_p;
-    cs_lnum_t s_id, e_id;
-
-    if (adj_id == 0){
-      s_id = cell_cells_idx[c_id];
-      e_id = cell_cells_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
-    }
-    else if (cell_cells_e_idx != NULL){
-      s_id = cell_cells_e_idx[c_id];
-      e_id = cell_cells_e_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
-    }
-    else
-      break;
-
-    if (c_weight == NULL) {
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        cs_real_t dc[3];
-        cs_lnum_t c_id1 = cell_cells_p[i];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = cell_f_cen[c_id1][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-        }
-
-        for (cs_lnum_t kk = 0; kk < 6; kk++) {
-          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[kk][ll] += dc[ll] * pfac;
-        }
-
-      }
-
-    }
-    else {
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        cs_real_t dc[3];
-        cs_lnum_t c_id1 = cell_cells_p[i];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = cell_f_cen[c_id1][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        cs_real_t _weight =   2. * c_weight[c_id1]
-                            / (c_weight[c_id] + c_weight[c_id1]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-        }
-
-        for (cs_lnum_t kk = 0; kk < 6; kk++) {
-          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[kk][ll] += dc[ll] * pfac * _weight;
-        }
-
-      }
-    }
-
-  } /* end of contribution from interior and extended cells */
-
-  /* Contribution from hidden boundary faces, if present */
-
-  if (ma->cell_hb_faces_idx != NULL) {
-    cs_lnum_t s_id = ma->cell_hb_faces_idx[c_id];
-    cs_lnum_t e_id = ma->cell_hb_faces_idx[c_id+1];
-
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-      cs_lnum_t f_id = ma->cell_hb_faces[i];
-
-      cs_real_t udbfs = 1. / fvq->b_face_surf[f_id];
-
-      cs_real_t dddij[3];
-      for (cs_lnum_t ll = 0; ll < 3; ll++)
-        dddij[ll] = udbfs * fvq->b_face_normal[f_id*3 + ll];
-
-      for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        for (cs_lnum_t ll = 0; ll < 3; ll++) {
-          cocg[kk][ll] += dddij[kk] * dddij[ll];
-        }
-      }
-
-    }
-  }
-
-  /* Contribution from boundary conditions */
-
-  cs_lnum_t s_id = cell_b_faces_idx[c_id];
-  cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
-
-  if (e_id > s_id && bc_coeff_a != NULL && bc_coeff_b != NULL) {
-
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-      const cs_real_3_t *restrict b_face_normal
-        = (const cs_real_3_t *restrict)fvq->b_face_normal;
-      const cs_real_t *restrict b_dist
-        = (const cs_real_t *restrict)fvq->b_dist;
-
-      cs_lnum_t f_id = cell_b_faces[i];
-
-      cs_real_t  n_d_dist[3];
-      /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
-
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t jj = 0; jj < 3; jj++)
-          cocg[ii][jj] += n_d_dist[ii] * n_d_dist[jj];
-      }
-
-      cs_real_t d_b_dist = 1. / b_dist[f_id];
-
-      /* Normal divided by b_dist */
-      for (cs_lnum_t j = 0; j < 3; j++)
-        n_d_dist[j] *= d_b_dist;
-
-      for (cs_lnum_t k = 0; k < 6; k++) {
-        cs_real_t pfac = bc_coeff_a[f_id][k] - var[c_id][k];
-        for (cs_lnum_t j = 0; j < 6; j++)
-          pfac += bc_coeff_b[f_id][j][k] * var[c_id][j];
-
-        for (cs_lnum_t j = 0; j < 3; j++)
-          rhs[k][j] += pfac * n_d_dist[j];
-      }
-
-    }
-
-    /* Build indices bijection between [1-18] and [1-6]*[1-3] */
-    cs_lnum_t _63_18_idx[18][2];
-    cs_lnum_t nn = 0;
-    for (cs_lnum_t ll = 0; ll < 6; ll++) {
-      for (cs_lnum_t mm = 0; mm < 3; mm++) {
-        _63_18_idx[nn][0] = ll;
-        _63_18_idx[nn][1] = mm;
-        nn++;
-      }
-    }
-
-    cs_real_t cocgb_t[171], rhsb_t[18], x[18];
-
-    _compute_cocgb_rhsb_lsq_t(c_id,
-                              1,
-                              ma,
-                              fvq,
-                              _63_18_idx,
-                              (const cs_real_6_t *)var,
-                              (const cs_real_6_t *)bc_coeff_a,
-                              (const cs_real_66_t *)bc_coeff_b,
-                              (const cs_real_3_t *)cocg,
-                              (const cs_real_3_t *)rhs,
-                              cocgb_t,
-                              rhsb_t);
-
-    _fw_and_bw_ldtl_pp(cocgb_t,
-                       18,
-                       x,
-                       rhsb_t);
-
-    for (int kk = 0; kk < 18; kk++) {
-      int ii = _63_18_idx[kk][0];
-      int jj = _63_18_idx[kk][1];
-      grad[ii][jj] = x[kk];
-    }
-
-  }
-
-  /* Case with no boundary conditions or known face values */
-
-  else {
-
-    if (bc_coeff_a != NULL) {
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        const cs_real_3_t *restrict b_f_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
-
-        cs_lnum_t f_id = cell_b_faces[i];
-
-        cs_real_t dc[3];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-        }
-
-        for (cs_lnum_t kk = 0; kk < 6; kk++) {
-          cs_real_t pfac = (bc_coeff_a[f_id][kk] - var[c_id][kk]) * ddc;
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[kk][ll] += dc[ll] * pfac;
-        }
-
-      }
-
-    }
-
-    else { /* Use homogeneous Neumann;
-              pfac and RHS contribution cancel out */
-
-      for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-        const cs_real_3_t *restrict b_f_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
-
-        cs_lnum_t f_id = cell_b_faces[i];
-
-        cs_real_t dc[3];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-        }
-
-      }
-
-    }
-
-    /* Invert */
-
-    cs_math_33_inv_cramer_in_place(cocg);
-
-    for (cs_lnum_t jj = 0; jj < 3; jj++) {
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
-        grad[ii][jj] = 0.0;
-        for (cs_lnum_t k = 0; k < 3; k++)
-          grad[ii][jj] += rhs[ii][k] * cocg[k][jj];
-
-      }
-    }
-  }
-
+  _gradient_strided_cell<6>(m,
+                            fvq,
+                            c_id,
+                            halo_type,
+                            bc_coeff_a,
+                            bc_coeff_b,
+                            var,
+                            c_weight,
+                            grad);
 }
 
 /*----------------------------------------------------------------------------
