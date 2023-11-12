@@ -60,6 +60,7 @@
 #include "cs_ext_neighborhood.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_gradient_boundary.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_internal_coupling.h"
@@ -1086,8 +1087,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   /* Output warning if necessary */
 
   if (verbosity > 1)
-    bft_printf(_(" Variable: %s; Gradient limitation in %llu cells\n"
-                 "   minimum factor = %14.5e; maximum factor = %14.5e\n"),
+    bft_printf(_(" Variable: %s; gradient limitation in %llu cells\n"
+                 "   minimum factor = %14.5f; maximum factor = %14.f\n"),
                var_name, (unsigned long long)n_clip, min_factor, max_factor);
 
   /* Synchronize grad */
@@ -4213,7 +4214,7 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
-  cs_real_t  *_bc_coeff_a = NULL;
+  cs_real_t *_bc_coeff_a = NULL;
 
   if (inc < 1) {
     BFT_MALLOC(_bc_coeff_a, m->n_b_faces, cs_real_t);
@@ -7779,9 +7780,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
 
 static void
 _lsq_vector_b_face_val(const cs_mesh_t               *m,
-                       const cs_mesh_adjacencies_t   *ma,
                        const cs_mesh_quantities_t    *fvq,
-                       const cs_internal_coupling_t  *cpl,
                        const cs_halo_type_t           halo_type,
                        const int                      inc,
                        const cs_real_t                bc_coeff_a[][3],
@@ -7790,23 +7789,7 @@ _lsq_vector_b_face_val(const cs_mesh_t               *m,
                        const cs_real_t                c_weight[],
                        cs_real_t                      b_f_var[restrict][3])
 {
-  const cs_lnum_t n_b_cells = m->n_b_cells;
-
-  const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
-  const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
-
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
-
-  cs_lnum_t   cpl_stride = 0;
-  const bool _coupled_faces[1] = {false};
-  const bool  *coupled_faces = _coupled_faces;
-  if (cpl != NULL) {
-    cpl_stride = 1;
-    coupled_faces = (const bool *)cpl->coupled_faces;
-  }
+  const cs_lnum_t n_b_faces = m->n_b_faces;
 
   cs_real_3_t  *_bc_coeff_a = NULL;
 
@@ -7821,47 +7804,30 @@ _lsq_vector_b_face_val(const cs_mesh_t               *m,
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
-# pragma omp parallel for if (n_b_cells > CS_THR_MIN)
-  for (cs_lnum_t ci = 0; ci < n_b_cells; ci++) {
+  cs_gradient_boundary_iprime_lsq_v(m,
+                                    fvq,
+                                    n_b_faces,
+                                    NULL,
+                                    halo_type,
+                                    -1,
+                                    bc_coeff_a,
+                                    bc_coeff_b,
+                                    c_weight,
+                                    c_var,
+                                    b_f_var);
 
-    cs_real_t gradc[3][3];
-    cs_lnum_t c_id = m->b_cells[ci];
+  #pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    cs_gradient_vector_cell(m,
-                            fvq,
-                            c_id,
-                            halo_type,
-                            bc_coeff_a,
-                            bc_coeff_b,
-                            c_var,
-                            c_weight,
-                            gradc);
-
-    /* Compute boundary face values */
-
-    cs_lnum_t s_id = cell_b_faces_idx[c_id];
-    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
-
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-      cs_lnum_t f_id = cell_b_faces[i];
-
-      if (coupled_faces[f_id * cpl_stride])
-        continue;
-
-      const cs_real_t *_c_var = c_var[c_id];
-      cs_real_t pip[3];
-      for (cs_lnum_t k = 0; k < 3; k++) {
-        pip[k] =   _c_var[k]
-                 + cs_math_3_dot_product(diipb[f_id], gradc[k]);
-      }
-      for (cs_lnum_t k = 0; k < 3; k++) {
-        b_f_var[f_id][k] =   inc * bc_coeff_a[f_id][k]
-                           + (  bc_coeff_b[f_id][0][k] * pip[0]
-                              + bc_coeff_b[f_id][1][k] * pip[1]
-                              + bc_coeff_b[f_id][2][k] * pip[2]);
-      }
-
+    cs_real_t pip[3];
+    for (cs_lnum_t k = 0; k < 3; k++) {
+      pip[k] = b_f_var[f_id][k];
+    }
+    for (cs_lnum_t k = 0; k < 3; k++) {
+      b_f_var[f_id][k] =   inc * bc_coeff_a[f_id][k]
+                         + (  bc_coeff_b[f_id][0][k] * pip[0]
+                            + bc_coeff_b[f_id][1][k] * pip[1]
+                            + bc_coeff_b[f_id][2][k] * pip[2]);
     }
 
   }
@@ -7905,8 +7871,6 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
@@ -7948,9 +7912,7 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
   BFT_MALLOC(b_f_var, m->n_b_faces, cs_real_3_t);
 
   _lsq_vector_b_face_val(m,
-                         ma,
                          fvq,
-                         cpl,
                          CS_HALO_STANDARD,
                          inc,
                          bc_coeff_a,
