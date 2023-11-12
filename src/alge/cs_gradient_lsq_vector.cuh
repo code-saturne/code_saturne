@@ -143,7 +143,7 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
 __global__ static void
 _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
                                 const cs_lnum_t      *restrict cell_cells_idx,
-                                const cs_lnum_t      *restrict cell_cells_lst,
+                                const cs_lnum_t      *restrict cell_cells,
                                 const cs_real_3_t    *restrict cell_f_cen,
                                 cs_real_33_t         *restrict rhs,
                                 const cs_real_3_t    *restrict pvar)
@@ -161,7 +161,7 @@ _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
 
   for(cs_lnum_t index = s_id; index < e_id; index++){
 
-    cs_lnum_t c_id2 = cell_cells_idx[index];
+    cs_lnum_t c_id2 = cell_cells[index];
 
     dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
     dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];

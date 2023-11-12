@@ -30,6 +30,7 @@
 #include "cs_gradient_lsq_vector_v3.cuh"
 #include "cs_gradient_lsq_vector_gather.cuh"
 #include "cs_gradient_lsq_vector_gather_v2.cuh"
+#include "cs_gradient_lsq_vector_gather_v3.cuh"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -1056,7 +1057,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      weight, 
   //      c_weight);
 
-  _compute_rhs_lsq_v_i_face_gather_v2<<<gridsize, blocksize, 0, stream>>>
+  _compute_rhs_lsq_v_i_face_gather_v3<<<gridsize, blocksize, 0, stream>>>
       (n_cells,
        cell_cells_idx,
        cell_cells,
@@ -1107,7 +1108,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      coefa_d, 
   //      inc);
     
-  _compute_rhs_lsq_v_b_face_gather_v2<<<gridsize_b, blocksize, 0, stream>>>
+  _compute_rhs_lsq_v_b_face_gather_v3<<<gridsize_b, blocksize, 0, stream>>>
       (m->n_b_cells,
        cell_b_faces_idx,
        cell_b_faces,
