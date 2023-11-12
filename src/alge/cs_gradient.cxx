@@ -7570,6 +7570,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
   /* Compute gradient */
   /*------------------*/
 
+  #pragma omp parallel for if(n_cells >= CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < stride; i++) {
       gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
@@ -7620,7 +7621,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
     int n_c_it;
     for (n_c_it = 0; n_c_it < n_c_iter_max; n_c_it++) {
 
-      cs_real_t rhs_c[9][3];
+      cs_real_t rhs_c[stride][3];
 
       for (cs_lnum_t ll = 0; ll < stride; ll++) {
         rhs_c[ll][0] = 0;
@@ -7674,7 +7675,7 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
 
       /* Compute gradient correction */
 
-      cs_real_t grad_c[9][3];
+      cs_real_t grad_c[stride][3];
 
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
 
