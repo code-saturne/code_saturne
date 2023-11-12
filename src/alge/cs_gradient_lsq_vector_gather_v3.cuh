@@ -25,7 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 __global__ static void
-_compute_rhs_lsq_v_i_face_gather_v3(cs_lnum_t            size,
+_compute_rhs_lsq_v_i_face_gather_v3(cs_lnum_t            n_cells,
                           const cs_lnum_t      *restrict cell_cells_idx,
                           const cs_lnum_t      *restrict cell_cells,
                           const cs_lnum_t      *restrict cell_i_faces,
@@ -39,7 +39,7 @@ _compute_rhs_lsq_v_i_face_gather_v3(cs_lnum_t            size,
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
   cs_lnum_t lindex = threadIdx.x;
 
-  if(c_id1 >= size){
+  if(c_id1 >= n_cells){
     return;
   }
   cs_real_t dc[3], fctb[3], ddc, _denom, _weight, _pond, pfac;
@@ -106,7 +106,7 @@ _compute_rhs_lsq_v_i_face_gather_v3(cs_lnum_t            size,
 }
 
 __global__ static void
-_compute_rhs_lsq_v_b_face_gather_v3(cs_lnum_t           size,
+_compute_rhs_lsq_v_b_face_gather_v3(cs_lnum_t           n_b_cells,
                           const cs_lnum_t      *restrict cell_b_faces_idx,
                           const cs_lnum_t      *restrict cell_b_faces,
                           const cs_lnum_t      *restrict b_cells,
@@ -121,7 +121,7 @@ _compute_rhs_lsq_v_b_face_gather_v3(cs_lnum_t           size,
   cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
   cs_lnum_t lindex = threadIdx.x;
 
-  if(c_idx >= size){
+  if(c_idx >= n_b_cells){
     return;
   }
   
