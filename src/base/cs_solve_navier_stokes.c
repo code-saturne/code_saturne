@@ -55,6 +55,7 @@
 #include "cs_boundary_conditions.h"
 #include "cs_bw_time_diff.h"
 #include "cs_cf_model.h"
+#include "cs_ctwr.h"
 #include "cs_divergence.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
@@ -1780,6 +1781,14 @@ _velocity_prediction(const cs_mesh_t             *m,
                            crom,
                            brom);
     cs_fan_compute_force(mq, tsexp);
+  }
+
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
+    if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0){
+      cs_ctwr_source_term(CS_F_(vel)->id,
+                          (cs_real_t *)tsexp,
+                          (cs_real_t *)tsimp);
+    }
   }
 
   /* Skip first time step after restart if previous values have not been read. */
