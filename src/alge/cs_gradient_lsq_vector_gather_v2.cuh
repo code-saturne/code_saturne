@@ -124,7 +124,7 @@ _compute_rhs_lsq_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
 
-  __shared__ cs_real_t _rhs[3][3];
+  cs_real_t _rhs[3][3];
 
   auto temp_rhs = rhs[c_id];
   _rhs[0][0]= temp_rhs[0][0]; _rhs[0][1]= temp_rhs[0][1]; _rhs[0][2]= temp_rhs[0][2];
