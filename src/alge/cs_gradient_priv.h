@@ -125,6 +125,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t        *m,
 
 void
 cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
+                                    const cs_mesh_adjacencies_t  *madj,
                                     const cs_mesh_quantities_t   *fvq,
                                     const cs_internal_coupling_t *cpl,
                                     cs_halo_type_t                halo_type,
@@ -137,7 +138,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                                     cs_real_33_t        *restrict grad,
                                     const bool                   *coupled_faces,
                                     cs_lnum_t                     cpl_stride,
-                                    bool                          test_bool
+                                    bool                          test_bool,
+                                    bool                          PERF
                                     );
 #endif /* defined(HAVE_CUDA) */
 

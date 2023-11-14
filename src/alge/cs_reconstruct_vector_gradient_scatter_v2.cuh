@@ -77,7 +77,7 @@ _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
     atomicAdd(&grad[c_id1][i][j],(pfaci + rfac) * i_f_face_normal[f_idt][j]);
     atomicAdd(&grad[c_id2][i][j], - ((pfacj + rfac) * i_f_face_normal[f_idt][j]));
 
-    }
+  }
     
 }
 
@@ -116,8 +116,9 @@ _compute_reconstruct_v_b_face1_v2(cs_lnum_t            n_b_faces,
 
   pfac = inc*coefav[f_idt][i];
 
-  for (cs_lnum_t k = 0; k < 3; k++)
+  for (cs_lnum_t k = 0; k < 3; k++){
     pfac += coefbv[f_idt][i][k] * pvar[c_id][k];
+  }
 
   pfac -= pvar[c_id][i];
 
@@ -130,15 +131,16 @@ _compute_reconstruct_v_b_face1_v2(cs_lnum_t            n_b_faces,
     rfac += coefbv[f_idt][i][k] * vecfac;
   }
 
-  for (cs_lnum_t j = 0; j < 3; j++)
-  atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_f_face_normal[f_idt][j]);
+  for (cs_lnum_t j = 0; j < 3; j++){
+    atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_f_face_normal[f_idt][j]);
+  }
 
 }
 
 
 
 __global__ static void
-_compute_reconstruct_v_b_face2_v2(  cs_lnum_t                       n_cells,
+_compute_reconstruct_correction_v2(  cs_lnum_t                       n_cells,
                                     cs_lnum_t                       has_dc,
                                     const int *restrict             c_disable_flag,
                                     const cs_real_t *restrict       cell_f_vol,

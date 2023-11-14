@@ -80,7 +80,8 @@
 
 #include "cs_gradient.h"
 #include "cs_gradient_priv.h"
-#include "cs_reconstruct_vector_gradient_v2.cuh"
+#include "cs_reconstruct_vector_gradient_scatter_v2.cuh"
+#include "cs_reconstruct_vector_gradient_gather.cuh"
 
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1555,7 +1556,7 @@ _compute_reconstruct_v_b_face1(cs_lnum_t            size,
 
 
 __global__ static void
-_compute_reconstruct_v_b_face2(cs_lnum_t            size,
+_compute_reconstruct_correction(cs_lnum_t            size,
                                cs_lnum_t            has_dc,
                                const int *restrict c_disable_flag,
                                const cs_real_t *restrict cell_f_vol,
@@ -1620,6 +1621,7 @@ _compute_reconstruct_v_b_face2(cs_lnum_t            size,
  *----------------------------------------------------------------------------*/
 extern "C" void
 cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
+                                    const cs_mesh_adjacencies_t  *madj,
                                     const cs_mesh_quantities_t   *fvq,
                                     const cs_internal_coupling_t *cpl,
                                     cs_halo_type_t                halo_type,
@@ -1628,11 +1630,12 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                                     const cs_real_33_t  *restrict coefbv,
                                     const cs_real_3_t   *restrict pvar,
                                     const cs_real_t     *restrict c_weight,
-                                    const cs_real_33_t        *restrict r_grad,
+                                    const cs_real_33_t  *restrict r_grad,
                                     cs_real_33_t        *restrict grad,
                                     const bool                   *coupled_faces,
                                     cs_lnum_t                     cpl_stride,
-                                    bool                          test_bool
+                                    bool                          test_bool,
+                                    bool                          PERF
                                     )
 {
   const cs_lnum_t n_cells = m->n_cells;
@@ -1693,8 +1696,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
     = (const cs_lnum_2_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->b_face_cells);
-  const cs_lnum_t *restrict cell_cells_idx;
-    // = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->cell_cells_idx);
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_b_faces_idx);
   const cs_lnum_t *restrict cell_cells_lst;
     // = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->cell_cells_lst);
   const int n_i_groups
@@ -1715,8 +1718,32 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   cs_lnum_t *restrict b_group_index;
   CS_CUDA_CHECK(cudaMalloc(&b_group_index, sizeof(int)*n_i_groups * n_i_threads * 2));
   cs_cuda_copy_h2d(b_group_index, (void *)m->b_face_numbering->group_index, sizeof(int)*n_b_groups * n_b_threads * 2);
+  // printf("Avant allocation\n");
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_cells_idx);
+  const cs_lnum_t *restrict cell_cells
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_cells);
   
-    // = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->b_face_numbering->group_index);
+  
+  
+  // if (madj->cell_i_faces == NULL) {
+  cs_mesh_adjacencies_update_cell_i_faces();
+  // }
+  assert(madj->cell_i_faces);
+  const cs_lnum_t n_cells_i_face = (madj->cell_cells_idx[n_cells]);
+  cs_lnum_t *restrict cell_i_faces;
+    // = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(madj->cell_i_faces);
+  CS_CUDA_CHECK(cudaMalloc(&cell_i_faces, sizeof(cs_lnum_t)*n_cells_i_face));
+  cs_cuda_copy_h2d(cell_i_faces, madj->cell_i_faces, sizeof(cs_lnum_t)*n_cells_i_face);
+  assert(cell_i_faces);
+
+
+
+  short int *restrict cell_i_faces_sgn;
+  CS_CUDA_CHECK(cudaMalloc(&cell_i_faces_sgn, sizeof(short int)*n_cells_i_face));
+  cs_cuda_copy_h2d(cell_i_faces_sgn, madj->cell_i_faces_sgn, sizeof(short int)*n_cells_i_face);
+    // = (const short int *restrict)cs_get_device_ptr_const_pf(madj->cell_i_faces_sgn);
+  // printf("Après allocation\n");
 
   const cs_real_3_t *restrict cell_cen;
     // = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_cen);
@@ -1728,8 +1755,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
     // = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_f_vol);
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
-  const cs_lnum_3_t *restrict cell_f_cen;
-    // = (const cs_lnum_3_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_f_cen);
+  const cs_real_3_t *restrict cell_f_cen
+    = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_f_cen);
   const cs_real_t *restrict weight
     = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->weight);
   const cs_real_t *restrict b_dist;
@@ -1781,7 +1808,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   /* Initialization */
   _init_real_33_array<<<gridsize_init, blocksize, 0, stream>>>
-                    (n_cells*3*3, grad_d);
+                    (n_cells_ext*3*3, grad_d);
 
   // cudaMemset(grad_d, 0, n_cells * sizeof(cs_real_33_t));
 
@@ -1801,18 +1828,48 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               dofij,
   //                               i_f_face_normal);
 
-  _compute_reconstruct_v_i_face_v2<<<gridsize_if * 3, blocksize, 0, stream>>>
-                                (n_i_faces * 3,
-                                i_group_index,
-                                i_face_cells,
-                                pvar_d,
-                                weight,
-                                c_weight,
-                                r_grad_d,
-                                grad_d,
-                                dofij,
-                                i_f_face_normal);
-                                
+  // _compute_reconstruct_v_i_face_v2<<<gridsize_if * 3, blocksize, 0, stream>>>
+  //                               (n_i_faces * 3,
+  //                               i_group_index,
+  //                               i_face_cells,
+  //                               pvar_d,
+  //                               weight,
+  //                               c_weight,
+  //                               r_grad_d,
+  //                               grad_d,
+  //                               dofij,
+  //                               i_f_face_normal);
+  
+  // printf("Avant les assert dans gradient_cuda.cu\n");
+  assert(cell_cells_idx);
+  assert(cell_cells);
+  assert(weight);
+  // assert(cell_i_faces);
+  // assert(cell_i_faces_sgn);
+  // printf("n_i_faces = %d\n", n_i_faces);
+  // printf("n_cells = %d\n", n_cells);
+  for(int i = 0; i< n_i_faces; i++){
+  //   printf("i = %d && weight = %f \n", i, fvq->weight[i]);
+  //   printf("i = %d && c_id2 = %d \n", i, madj->cell_cells[i]);
+  //   printf("i = %d && s_id = %d \n", i, madj->cell_cells_idx[i]);
+    // printf("i = %d && f_id = %d \n", i, madj->cell_i_faces_sgn[i]);
+  }
+  // printf("Après les assert dans gradient_cuda.cu\n");
+  _compute_reconstruct_v_i_face_gather<<<gridsize, blocksize, 0, stream>>>
+                                      ( n_cells,
+                                        i_face_cells,
+                                        pvar_d,
+                                        weight,
+                                        c_weight,
+                                        r_grad_d,
+                                        grad_d,
+                                        dofij,
+                                        i_f_face_normal,
+                                        cell_cells_idx,
+                                        cell_cells,
+                                        cell_i_faces,
+                                        cell_i_faces_sgn,
+                                        n_i_faces);
 
   CS_CUDA_CHECK(cudaEventRecord(i_faces, stream));
   
@@ -1876,7 +1933,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   
   CS_CUDA_CHECK(cudaEventRecord(b_faces_2, stream));
   
-  // _compute_reconstruct_v_b_face2<<<gridsize, blocksize, 0, stream>>>
+  // _compute_reconstruct_correction<<<gridsize, blocksize, 0, stream>>>
   //                             ( n_cells,
   //                               has_dc,
   //                               c_disable_flag,
@@ -1886,7 +1943,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               test_bool
   //                             );
 
-  _compute_reconstruct_v_b_face2_v2<<<gridsize * 3, blocksize, 0, stream>>>
+  _compute_reconstruct_correction_v2<<<gridsize * 3, blocksize, 0, stream>>>
                               ( n_cells * 3,
                                 has_dc,
                                 c_disable_flag,
@@ -1914,50 +1971,51 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   cudaStreamSynchronize(stream);
   cudaStreamDestroy(stream);
 
-  printf("rec Kernels times:\n");
+  if(PERF){
+    printf("rec Kernels times:\n");
 
-  msec = 0.0f;
-	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, init));
-  printf("Kernels execution time in us: \t");
-  printf("Init = %f\t", msec*1000.f);
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, init));
+    printf("Kernels execution time in us: \t");
+    printf("Init = %f\t", msec*1000.f);
 
-  msec = 0.0f;
-	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, init, i_faces));
-  printf("I_faces = %f\t", msec*1000.f);
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, init, i_faces));
+    printf("I_faces = %f\t", msec*1000.f);
 
-  msec = 0.0f;
-	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, i_faces, b_faces_1));
-  printf("CPU part = %f\t", msec*1000.f);
+    // msec = 0.0f;
+    // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, i_faces, b_faces_1));
+    // printf("CPU part = %f\t", msec*1000.f);
 
-  msec = 0.0f;
-  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_2));
-  printf("B_faces_1 = %f\t", msec*1000.f);
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_2));
+    printf("B_faces_1 = %f\t", msec*1000.f);
 
-  msec = 0.0f;
-  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_2, b_faces_3));
-  printf("B_faces_2 = %f\t", msec*1000.f);
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_2, b_faces_3));
+    printf("Correction = %f\t", msec*1000.f);
 
-  printf("\n");
+    printf("\n");
 
-  msec_tot = 0.0f;
-  msec = 0.0f;
-  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, i_faces));
-  printf("Total kernel part 1= %f\t", msec*1000.f);
-  msec_tot = msec;
+    msec_tot = 0.0f;
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, i_faces));
+    printf("Total kernel part 1= %f\t", msec*1000.f);
+    msec_tot = msec;
 
-  msec = 0.0f;
-  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_3));
-  printf("Total kernel part 2= %f\t", msec*1000.f);
-  msec_tot += msec;
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces_1, b_faces_3));
+    printf("Total kernel part 2= %f\t", msec*1000.f);
+    msec_tot += msec;
 
-  printf("Total kernel 1 and 2= %f\t", msec_tot*1000.f);
+    printf("Total kernel 1 and 2= %f\t", msec_tot*1000.f);
 
-  msec = 0.0f;
-  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, start, stop));
-  printf("Total = %f\t", msec*1000.f);
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, start, stop));
+    printf("Total = %f\t", msec*1000.f);
 
-  printf("\n");
-
+    printf("\n");
+  }
 
   if (_pvar_d != NULL)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
@@ -1967,6 +2025,9 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
     CS_CUDA_CHECK(cudaFree(_coefb_d));
   if (_r_grad_d != NULL)
     CS_CUDA_CHECK(cudaFree(_r_grad_d));
+
+  CS_CUDA_CHECK(cudaFree(cell_i_faces));
+  CS_CUDA_CHECK(cudaFree(cell_i_faces_sgn));
 
   CS_CUDA_CHECK(cudaFree(coupled_faces_d));
   CS_CUDA_CHECK(cudaFree(i_group_index));

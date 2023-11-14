@@ -5635,6 +5635,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
 static void
 _reconstruct_vector_gradient(const cs_mesh_t              *m,
+                             const cs_mesh_adjacencies_t  *madj,
                              const cs_mesh_quantities_t   *fvq,
                              const cs_internal_coupling_t *cpl,
                              cs_halo_type_t                halo_type,
@@ -5700,6 +5701,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   bool COMPUTE_CUDA;
   bool COMPUTE_CPU;
   bool RES_CPU;
+  bool PERF;
+  bool ACCURACY;
 
 #if defined(HAVE_CUDA)
   COMPUTE_CUDA = (cs_get_device_id() > -1) ? true : false;
@@ -5708,13 +5711,19 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   COMPUTE_CUDA = false;
 #endif
 
-#if defined(NDEBUG) && !defined(COMPUTE_CUDA)
+#if defined(DEBUG)
+  COMPUTE_CPU = true;
+  PERF        = true;
+  ACCURACY    = true;
+#elif defined(NDEBUG) && !COMPUTE_CUDA
   COMPUTE_CPU = true;
   RES_CPU     = true;
-#elif defined(DEBUG)
-  COMPUTE_CPU = true;
+  PERF        = false;
+  ACCURACY    = false;
 #else
-  COMPUTE_CPU = true;
+  COMPUTE_CPU = false;
+  PERF        = false;
+  ACCURACY    = false;
 #endif
 
 
@@ -5725,15 +5734,18 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   RES_CPU       = false;
 
   // A ne pas garder dans la version finale
-  bool PERF     = true;
-  bool ACCURACY = true;
+  PERF        = true;
+  ACCURACY    = true;
+
 
   if(COMPUTE_CUDA){
     printf("Compute with CUDA\n");
     if(PERF){
       start = std::chrono::high_resolution_clock::now();
     }
+
     cs_reconstruct_vector_gradient_cuda(m,
+                                        madj,
                                         fvq, 
                                         cpl, 
                                         halo_type, 
@@ -5746,7 +5758,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
                                         grad,
                                         coupled_faces,
                                         cpl_stride,
-                                        cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION);
+                                        cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
+                                        PERF);
     if(PERF){
       stop = std::chrono::high_resolution_clock::now();
       elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -5761,7 +5774,6 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
       start = std::chrono::high_resolution_clock::now();
     }
       /* Initialization */
-    start = std::chrono::high_resolution_clock::now();
     # pragma omp parallel for
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
         for (cs_lnum_t i = 0; i < 3; i++) {
@@ -5912,17 +5924,14 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
       elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     }
 
-    
-
-
   }
 
   /* Performances */
   if(PERF){
-    printf("rec Compute after b_face2 time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
+    printf("reconstruct Compute and tranferts time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
   }
 
-  /* Test grad */
+  /* Accuracy grad_cpu and grad_gpu */
   if(ACCURACY){
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
@@ -5938,15 +5947,17 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     }
   }
   
+  //Copy grad
   if(RES_CPU){
     printf("RESULTS CPU\n");
-    grad = grad_cpu;
+    memcpy(grad, grad_cpu, sizeof(cs_real_33_t) * n_cells_ext);
   }else{
-    printf("RESULTS CUDA\n");
-    // Free memory
-    if(COMPUTE_CPU){
-      BFT_FREE(grad_cpu);
-    }
+    printf("RESULTS GPU\n");
+  }
+
+  // Free memory
+  if(COMPUTE_CPU){
+    BFT_FREE(grad_cpu);
   }
 
 
@@ -8664,6 +8675,7 @@ _gradient_vector(const char                     *var_name,
                                 r_gradv);
 
       _reconstruct_vector_gradient(mesh,
+                                   cs_glob_mesh_adjacencies,
                                    fvq,
                                    cpl,
                                    halo_type,
