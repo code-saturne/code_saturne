@@ -42,7 +42,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Solve the \f$ \tilde{\nu} \f$ equations.
  *
  * Solve the equation of \f$ \tilde{\nu} \f$, which is the scalar
@@ -68,6 +68,16 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
                  const cs_real_t  dt[],
                  cs_real_t        smacel[],
                  const int        b_face_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of turbulent viscosity for
+ *        the Spalart-Allmaras model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_sa_mu_t(void);
 
 /*----------------------------------------------------------------------------*/
 

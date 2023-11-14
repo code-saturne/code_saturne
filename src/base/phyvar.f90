@@ -178,6 +178,12 @@ interface
     integer(c_int), value :: phase_id
   end subroutine cs_turbulence_kw_mu_t
 
+  subroutine cs_turbulence_sa_mu_t() &
+    bind(C, name='cs_turbulence_sa_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_sa_mu_t
+
   subroutine cs_turbulence_ml_mu_t() &
     bind(C, name='cs_turbulence_ml_mu_t')
     use, intrinsic :: iso_c_binding
@@ -509,20 +515,7 @@ elseif (iturb.eq.70) then
 ! Spalart-Allmaras
 ! ================
 
-  cv13 = csav1**3
-
-  call field_get_val_s(ivarfl(inusa), cvar_nusa)
-  call field_get_val_s(ivisct, visct)
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(iviscl, viscl)
-
-  do iel = 1, ncel
-    xrom = crom(iel)
-    nusa = cvar_nusa(iel)
-    xi3  = (xrom*nusa/viscl(iel))**3
-    fv1  = xi3/(xi3+cv13)
-    visct(iel) = xrom*nusa*fv1
-  enddo
+  call cs_turbulence_sa_mu_t
 
 endif
 

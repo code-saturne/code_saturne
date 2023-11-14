@@ -69,14 +69,6 @@ module mesh
   ! pointer to C array used by ifabor (0 to n-1 numbering)
   integer, dimension(:), pointer :: ifabor_0
 
-  !> \anchor isympa
-  !> integer to mark out the "symmetry" (itypfb=isymet) boundary faces
-  !> where the mass flow has to be canceled when the ALE module is switched
-  !> off (these faces are impermeable).
-  !> For instance, if the face ifac is symmetry face,
-  !> isympa(ifac)=0, otherwise isympa(ifac)=1.
-  integer, dimension(:), pointer :: isympa
-
   !> \anchor xyzcen
   !> coordinate of the cell centers
   double precision, dimension(:,:), pointer :: xyzcen

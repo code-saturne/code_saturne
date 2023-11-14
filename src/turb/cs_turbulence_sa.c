@@ -705,5 +705,44 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for
+ *        the Spalart-Allmaras model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_sa_mu_t(void)
+{
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t n_cells = mesh->n_cells;
+
+  const cs_real_t cv13 = cs_math_pow3(cs_turb_csav1);
+
+  cs_field_t *f_nusa = CS_F_(nusa);
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_field_t *f_mu = CS_F_(mu);
+  cs_field_t *f_mut = CS_F_(mu_t);
+  cs_field_t *f_rho = CS_F_(rho);
+
+  cs_real_t *visct = f_mut->val;
+
+  const cs_real_t *viscl = f_mu->val;
+  const cs_real_t *crom  = f_rho->val;
+  const cs_real_t *cvar_nusa  = (const cs_real_t *)f_nusa->val;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+    cs_real_t xrom = crom[c_id];
+    cs_real_t nusa = cvar_nusa[c_id];
+    cs_real_t xi3 = cs_math_pow3(xrom * nusa / viscl[c_id]);
+    cs_real_t fv1 = xi3 / (xi3 + cv13);
+
+    visct[c_id] = xrom * nusa * fv1;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

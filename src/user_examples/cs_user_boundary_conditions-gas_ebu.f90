@@ -89,7 +89,7 @@ double precision dt(ncelet)
 ! Local variables
 
 !< [loc_var_dec]
-integer          ifac, izone, ii
+integer          ifac, izone
 integer          ilelt, nlelt
 
 double precision uref2, xkent, xeent, d2s3

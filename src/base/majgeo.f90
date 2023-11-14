@@ -22,7 +22,7 @@
 
 subroutine majgeo &
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
-   iface2 , ifabo2 , isymp2 , isoli2 ,                            &
+   iface2 , ifabo2 , isoli2 ,                                     &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
    cdgfa2 , cdgfb2 , xyzno2 ,                                     &
@@ -53,7 +53,6 @@ subroutine majgeo &
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
 ! ifmfb2           ! ia ! <-- ! boundary face family number                    !
 ! ifmce2           ! ia ! <-- ! cell family number                             !
-! isymp2           ! ia ! <-- ! boundary face symmetry flag                    !
 ! isoli2           ! ia ! <-- ! solid cell flag                                !
 ! volmn2           ! r  ! <-- ! Minimum control volume                         !
 ! volmx2           ! r  ! <-- ! Maximum control volume                         !
@@ -106,7 +105,6 @@ integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
 
 integer(c_int), dimension(2,nfac2), target :: iface2
 integer(c_int), dimension(nfabo2), target :: ifabo2
-integer(c_int), dimension(nfabo2), target :: isymp2
 integer(c_int), dimension(*), target :: isoli2
 
 real(c_double) :: volmn2, volmx2, voltt2
@@ -177,7 +175,6 @@ xyzcen => xyzce2(1:3,1:ncelet)
 call cs_f_porous_model_get_pointers(c_iporos)
 call c_f_pointer(c_iporos, iporo2)
 
-isympa => isymp2(1:nfabor)
 if (iporo2.eq.0) then
   isolid_0 => isoli2(1:1)
 else

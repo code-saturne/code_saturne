@@ -1822,6 +1822,7 @@ cs_turbulence_kw_mu_t(int phase_id)
   cs_real_t *cpro_s2kw = f_s2kw->val;
   cs_real_t *cpro_divukw = f_divukw->val;
 
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
    cpro_s2kw[c_id] = 2.0 *(  cs_math_pow2(  d2s3*gradv[c_id][0][0]
                                           - d1s3*gradv[c_id][1][1]
@@ -1832,9 +1833,9 @@ cs_turbulence_kw_mu_t(int phase_id)
                            + cs_math_pow2(- d1s3*gradv[c_id][0][0]
                                           - d1s3*gradv[c_id][1][1]
                                           + d2s3*gradv[c_id][2][2]))
-                     + cs_math_pow2(  gradv[c_id][0][1] + gradv[c_id][1][0])
-                     + cs_math_pow2(  gradv[c_id][0][2] + gradv[c_id][2][0])
-                     + cs_math_pow2(  gradv[c_id][1][2] + gradv[c_id][2][1]);
+                     + cs_math_pow2(gradv[c_id][0][1] + gradv[c_id][1][0])
+                     + cs_math_pow2(gradv[c_id][0][2] + gradv[c_id][2][0])
+                     + cs_math_pow2(gradv[c_id][1][2] + gradv[c_id][2][1]);
 
    cpro_divukw[c_id] =   gradv[c_id][0][0]
                        + gradv[c_id][1][1]
@@ -1854,6 +1855,7 @@ cs_turbulence_kw_mu_t(int phase_id)
     blend = cs_field_by_name("hybrid_blend")->val;
   }
 
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
     const cs_real_t xk = cvar_k[c_id];
     cs_real_t xw = cvar_omg[c_id];

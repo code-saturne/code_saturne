@@ -225,7 +225,8 @@ module cstphy
   !> so that \ref optcal::iscalt "iscalt" = n and \ref optcal::itherm "itherm" = 1
   !> (there is a "temperature" scalar),
   !> unless the user specifies the specific heat in the user subroutine
-  !> \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the compressible module or
+  !> \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the
+  !> compressible module or
   !>  coal combustion, \ref cp0 is also needed even when there is no user scalar.
   !> \note None of the scalars from the specific physics is a temperature.
   !> \note When using the Graphical Interface, \ref cp0 is also used to
@@ -301,15 +302,6 @@ module cstphy
   !> LES, v2f or \f$k-\omega\f$)
   double precision, save :: xkappa = 0.42d0
 
-  !> constant of logarithmic law function:
-  !> \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
-  !>  (\f$ cstlog = 5.2 \f$)
-  !> constant of the logarithmic wall function.
-  !> Useful if and only if \ref iturb >= 10
-  !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
-  !> LES, v2f or \f$k-\omega\f$)
-  double precision, save :: cstlog = 5.2d0
-
   !> limit value of \f$y^+\f$ for the viscous sublayer.
   !> \ref ypluli depends on the chosen wall function: it is
   !> initialized to 10.88 for the scalable wall function
@@ -320,43 +312,15 @@ module cstphy
   !> Always useful
   real(c_double), pointer, save :: ypluli
 
-  !> Werner and Wengle coefficient
-  double precision, pointer, save :: apow
-
-  !> Werner and Wengle coefficient
-  double precision, pointer, save :: bpow
-
   !> constant \f$C_\mu\f$ for all the RANS turbulence models
   !> Warning, different values for the v2f model
   !> Useful if and only if \ref iturb = 20, 21, 30, 31, 50, 51 or 60
   !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$)
   real(c_double), pointer, save :: cmu
 
-  !> \f$ C_\mu^\frac{1}{4} \f$
-  real(c_double), pointer, save :: cmu025
-
   !> Coefficient of interfacial coefficient in k-eps,
   !> used in Lagrange treatment
   !>
-
-  !> constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
-  !> Useful if and only if \ref iturb = 30
-  !> (\f$R_{ij}-\varepsilon\f$ LRR)
-  real(c_double), pointer, save :: crij1
-
-  !> constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
-  !> Useful if and only if \ref iturb = 30
-  !> (\f$R_{ij}-\varepsilon\f$ LRR)
-  real(c_double), pointer, save :: crij2
-
-  !> constant \f$C_3\f$ for the buoyant production term \f$R_{ij}-\varepsilon\f$
-  !>  models.
-  real(c_double), pointer, save :: crij3
-
-  !> constant \f$C_0\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
-  !> Useful if and only if \ref iturb = 30
-  !> (\f$R_{ij}-\varepsilon\f$ LRR)
-  real(c_double), pointer, save :: crijc0
 
   !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ models.
   real(c_double), pointer, save :: csrij
@@ -369,54 +333,6 @@ module cstphy
 
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: xct = 6.d0
-
-  !> constant of the Rij-epsilon EBRSM
-  double precision, save :: xceta = 80.d0
-
-  !> constant \f$\sigma_{k1}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60
-  double precision, save :: ckwsk1 = 1.d0/0.85d0
-
-  !> constant \f$\sigma_{k2}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60
-  double precision, save :: ckwsk2 = 1.d0
-
-  !> constant \f$\sigma_{\omega 1}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwsw1 = 2.d0
-
-  !> constant \f$\sigma_{\omega 2}\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwsw2 = 1.d0/0.856d0
-
-  !> constant \f$\beta_1\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwbt1 = 0.075d0
-
-  !> constant \f$\beta_2\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwbt2 = 0.0828d0
-
-  !> specific constant of k-omega SST
-  !> constant \f$a_1\f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
-  double precision, save :: ckwa1 = 0.31d0
-
-  !> constant \f$ c_1 \f$ for the \f$k-\omega\f$ SST model.
-  !> Useful if and only if \ref iturb = 60 (\f$k-\omega\f$ SST)
-  !> specific constant of k-omega SST
-  double precision, save :: ckwc1 = 10.d0
-
-  !> specific constant of Spalart-Allmaras
-  double precision, save :: csab1 = 0.1355d0
-  !> specific constant of Spalart-Allmaras
-  double precision, save :: csab2 = 0.622d0
-
-  !> specific constant of Spalart-Allmaras
-  double precision, save :: csasig = 2.d0/3.d0
-
-  !> specific constant of Spalart-Allmaras
-  double precision, save :: csav1 = 7.1d0
 
   !> is a characteristic macroscopic
   !> length of the domain, used for the initialization of the turbulence and
@@ -435,11 +351,6 @@ module cstphy
   !> and the turbulence is not initialized somewhere
   !> else (restart file or subroutine \ref cs\_user\_initialization)
   real(c_double), pointer, save :: uref
-
-  !> mixing length for the mixing length model
-  !>
-  !> Useful if and only if \ref iturb = 10 (mixing length)
-  real(c_double), pointer, save :: xlomlg
 
   !> constant used in the definition of LES filtering diameter:
   !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}}\f$
@@ -576,11 +487,11 @@ module cstphy
     ! Interface to C function retrieving pointers to members of the
     ! RANS turbulence model structure
 
-    subroutine cs_f_turb_reference_values(almax, uref, xlomlg) &
+    subroutine cs_f_turb_reference_values(almax, uref) &
       bind(C, name='cs_f_turb_reference_values')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: almax , uref  , xlomlg
+      type(c_ptr), intent(out) :: almax , uref
     end subroutine cs_f_turb_reference_values
 
     ! Interface to C function retrieving pointers to members of the
@@ -610,15 +521,13 @@ module cstphy
     ! Interface to C function retrieving pointers to constants of the
     ! turbulence model
 
-    subroutine cs_f_turb_model_constants_get_pointers(apow, bpow, cmu, cmu025, &
-        crij1, crij2, crij3, crijc0, csmago, xlesfd, xlesfl,                   &
-        ales, bles, cdries, csrij, xclt) &
+    subroutine cs_f_turb_model_constants_get_pointers(cmu, csmago,             &
+         xlesfd, xlesfl, ales, bles, cdries, csrij, xclt) &
+
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: apow, bpow, cmu  , cmu025
-      type(c_ptr), intent(out) :: crij1 , crij2, crij3, crijc0
-      type(c_ptr), intent(out) :: csmago
+      type(c_ptr), intent(out) :: cmu, csmago
       type(c_ptr), intent(out) :: xlesfd, xlesfl, cdries
       type(c_ptr), intent(out) :: ales, bles, csrij, xclt
     end subroutine cs_f_turb_model_constants_get_pointers
@@ -733,13 +642,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_almax , c_uref  , c_xlomlg
+    type(c_ptr) :: c_almax , c_uref
 
-    call cs_f_turb_reference_values(c_almax, c_uref, c_xlomlg)
+    call cs_f_turb_reference_values(c_almax, c_uref)
 
-    call c_f_pointer(c_almax , almax )
-    call c_f_pointer(c_uref  , uref  )
-    call c_f_pointer(c_xlomlg, xlomlg)
+    call c_f_pointer(c_almax, almax)
+    call c_f_pointer(c_uref, uref)
 
   end subroutine turb_reference_values_init
 
@@ -753,27 +661,15 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_apow, c_bpow, c_cmu, c_cmu025, c_crij1, c_crij2, c_crij3
-    type(c_ptr) :: c_crijc0
-    type(c_ptr) :: c_csmago
+    type(c_ptr) :: c_cmu, c_csmago
     type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles, c_cdries, c_csrij, c_xclt
 
-    call cs_f_turb_model_constants_get_pointers(c_apow, c_bpow,                &
-                                                c_cmu, c_cmu025,               &
-                                                c_crij1, c_crij2, c_crij3,     &
-                                                c_crijc0,                      &
-                                                c_csmago, c_xlesfd, c_xlesfl,  &
+    call cs_f_turb_model_constants_get_pointers(c_cmu, c_csmago,               &
+                                                c_xlesfd, c_xlesfl,            &
                                                 c_ales, c_bles,                &
                                                 c_cdries, c_csrij, c_xclt)
 
-    call c_f_pointer(c_apow, apow)
-    call c_f_pointer(c_bpow, bpow)
-    call c_f_pointer(c_cmu    , cmu)
-    call c_f_pointer(c_cmu025 , cmu025)
-    call c_f_pointer(c_crij1 , crij1)
-    call c_f_pointer(c_crij2 , crij2)
-    call c_f_pointer(c_crij3 , crij3)
-    call c_f_pointer(c_crijc0, crijc0)
+    call c_f_pointer(c_cmu   , cmu)
     call c_f_pointer(c_csmago, csmago)
     call c_f_pointer(c_xlesfd, xlesfd)
     call c_f_pointer(c_xlesfl, xlesfl)
@@ -781,7 +677,7 @@ contains
     call c_f_pointer(c_bles  , bles  )
     call c_f_pointer(c_cdries, cdries)
     call c_f_pointer(c_csrij , csrij )
-    call c_f_pointer(c_xclt, xclt)
+    call c_f_pointer(c_xclt,   xclt)
 
   end subroutine turb_model_constants_init
 

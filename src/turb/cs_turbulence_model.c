@@ -1084,18 +1084,10 @@ cs_f_turb_hybrid_model_get_pointers(int  **iicc,
 
 void
 cs_f_turb_reference_values(double  **almax,
-                           double  **uref,
-                           double  **xlomlg);
+                           double  **uref);
 
 void
-cs_f_turb_model_constants_get_pointers(double  **apow,
-                                       double  **bpow,
-                                       double  **cmu,
-                                       double  **cmu025,
-                                       double  **crij1,
-                                       double  **crij2,
-                                       double  **crij3,
-                                       double  **crijc0,
+cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
@@ -1246,12 +1238,10 @@ cs_f_turb_hybrid_model_get_pointers(int  **iicc,
 
 void
 cs_f_turb_reference_values(double  **almax,
-                           double  **uref,
-                           double  **xlomlg)
+                           double  **uref)
 {
   *almax  = &(_turb_ref_values.almax);
   *uref   = &(_turb_ref_values.uref);
-  *xlomlg = &(_turb_rans_model.xlomlg);
 }
 
 /*----------------------------------------------------------------------------
@@ -1262,14 +1252,7 @@ cs_f_turb_reference_values(double  **almax,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_turb_model_constants_get_pointers(double  **apow,
-                                       double  **bpow,
-                                       double  **cmu,
-                                       double  **cmu025,
-                                       double  **crij1,
-                                       double  **crij2,
-                                       double  **crij3,
-                                       double  **crijc0,
+cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
@@ -1279,14 +1262,7 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **csrij,
                                        double  **xclt)
 {
-  *apow   = &cs_turb_apow;
-  *bpow   = &cs_turb_bpow;
   *cmu    = &cs_turb_cmu;
-  *cmu025 = &cs_turb_cmu025;
-  *crij1 = &cs_turb_crij1;
-  *crij2 = &cs_turb_crij2;
-  *crij3 = &cs_turb_crij3;
-  *crijc0 = &cs_turb_crij_c0;
   *csmago= &cs_turb_csmago;
   *csmago= &cs_turb_csmago;
   *xlesfd= &cs_turb_xlesfd;
