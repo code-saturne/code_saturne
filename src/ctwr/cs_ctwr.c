@@ -2648,9 +2648,10 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
     cp_h[cell_id] = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
 
-    //FIXME - What is the formula below - Inconsistent with taking into
-    //account the saturated phase in the enthalpy in 'cs_air_h_humidair'
-    h_h[cell_id] += (t_h[cell_id] - t_h_a[cell_id]) * cp_h[cell_id];
+    h_h[cell_id] = cs_air_h_humidair(cp_h[cell_id],
+                                      x[cell_id],
+                                      x_s[cell_id],
+                                      t_h[cell_id]);
 
     // Update the humid air enthalpy diffusivity lambda_h if solve for T_h?
     // Need to update since a_0 is variable as a function of T and humidity
