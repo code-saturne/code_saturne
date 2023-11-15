@@ -918,9 +918,6 @@ typedef struct {
   /* icp */
   int icp;
 
-  /* diftl0 */
-  cs_real_t diftl0;
-
   /* cmu */
   cs_real_t cmu;
 
@@ -955,8 +952,8 @@ typedef struct {
   /* Fluid specific heat capacity */
   cs_field_t *cpro_cp;
 
-  /* Radiat.       */
-  cs_field_t *luminance;
+  /* Radiative energy */
+  cs_field_t *rad_energy;
 
   /* Combustion    */
   cs_field_t *x_oxyd;
@@ -1332,23 +1329,14 @@ void
 cs_lagr_solve_initialize(const cs_real_t  *dt);
 
 /*----------------------------------------------------------------------------
- * Return pointers to lagrangian arrays
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   dim_bound_stat   --> dimensions for bound_stat pointer
- *   p_bound_stat     --> bound_stat pointer
+ * Initialize lagrangian arrays
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
-                      cs_real_t  **p_cs_glob_lagr_source_terms);
+cs_lagr_init_arrays(void);
 
 /*----------------------------------------------------------------------------
  * Free lagrangian arrays
- *
- * This function is intended for use by Fortran wrappers.
  *----------------------------------------------------------------------------*/
 
 void

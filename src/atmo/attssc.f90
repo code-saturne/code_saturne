@@ -334,7 +334,6 @@ contains
     double precision climgp, epsrgp, depo
 
     integer    ii, iifld, imligp, inc, iwarnp, imrgrp, nswrgp, ifac, iel
-    double precision, dimension(:), allocatable :: local_coefa, local_coefb
     double precision, dimension(:), allocatable :: local_field, sed_vel
     double precision, dimension(:), allocatable :: pres
 
@@ -418,16 +417,6 @@ contains
     iwarnp = vcopt%iwarni
     climgp = vcopt%climgr
 
-    ! homogeneous Neumann BCs for gradient computation
-    allocate(local_coefa(nfabor))
-    do ifac = 1, nfabor
-      local_coefa(ifac) = 0.d0
-    enddo
-    allocate(local_coefb(nfabor))
-    do ifac = 1, nfabor
-      local_coefb(ifac) = 1.d0
-    enddo
-
     allocate(local_field(ncelet))
 
     ! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc^2)
@@ -440,11 +429,10 @@ contains
                                             ! law of the droplet spectrum
     enddo
 
-    call gradient_s                                                 &
+    call gradient_hn_s                                              &
    ( iifld  , imrgrp , inc    , nswrgp , imligp,                    &
      iwarnp , epsrgp , climgp ,                                     &
-     local_field     , local_coefa , local_coefb ,                  &
-     grad1   )
+     local_field     , grad1   )
 
     ! Computation of the gradient of Nc*V(r3)*exp(-sc^2)
 
@@ -456,16 +444,13 @@ contains
                                             ! law of the droplet spectrum
     enddo
 
-    call gradient_s                                                 &
+    call gradient_hn_s                                              &
    ( iifld  , imrgrp , inc    , nswrgp , imligp,                    &
      iwarnp , epsrgp , climgp ,                                     &
-     local_field     , local_coefa , local_coefb ,                  &
-     grad2   )
+     local_field     , grad2   )
 
     deallocate(sed_vel)
 
-    deallocate(local_coefa)
-    deallocate(local_coefb)
     deallocate(local_field)
 
   end subroutine grad_sed

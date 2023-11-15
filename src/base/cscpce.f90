@@ -87,7 +87,7 @@ integer          ipt    , iel    , isou   , jsou, iprev
 integer          inc
 
 double precision dx     , dy     , dz
-double precision xtau   , rovtau
+double precision xtau
 
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:,:), allocatable :: grads

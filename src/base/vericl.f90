@@ -33,13 +33,14 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role                                           !
+!  mode            name         role                                           !
 !______________________________________________________________________________!
-!> \param[in,out] itypfb        face boundary condition type
+!> \param[in,out]  itypfb       face boundary condition type
+!> \param[in,out]  ialtyb       ALE BC type
 !_______________________________________________________________________________
 
 subroutine vericl             &
- ( itypfb )                   &
+ ( itypfb, ialtyb )           &
  bind(C, name='cs_f_vericl')
 
 !===============================================================================
@@ -72,7 +73,7 @@ implicit none
 
 ! Arguments
 
-integer(c_int) :: itypfb(nfabor)
+integer(c_int) :: itypfb(nfabor), ialtyb(nfabor)
 
 ! Local variables
 

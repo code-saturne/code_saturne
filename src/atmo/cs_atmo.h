@@ -236,6 +236,7 @@ typedef struct {
   bool compute_z_ground;
 
   int open_bcs_treatment;
+  int theo_interp;
 
   /* Model options */
   /*! Sedimentation flag */
@@ -317,14 +318,16 @@ typedef struct {
 
   /*! Meteo reference mass fraction at 2m */
   cs_real_t meteo_qw0;
+  /*! Meteo reference ground friction mass fraction */
+  cs_real_t meteo_qwstar;
   /*! Meteo reference mass fraction 1 */
   cs_real_t meteo_qw1;
   /*! Meteo reference mass fraction 2 */
   cs_real_t meteo_qw2;
+  /*! Meteo reference mass fraction at 2m */
+  cs_real_t meteo_ql0;
   /*! Meteo reference evaporation  */
   cs_real_t meteo_evapor;
-  /*! Meteo reference ground friction mass fraction */
-  cs_real_t meteo_qwstar;
   /*! Meteo reference sensible heat */
   cs_real_t meteo_sensi;
   /*! Universal function Phi_m for stable condition */

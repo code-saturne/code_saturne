@@ -121,7 +121,7 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
   }
 
   /* Boundary conditions for advection */
-  eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ;
+  eqb->bdy_flag |= CS_FLAG_COMP_PFQ;
 
   /* Set the function pointer for advection_scheme */
   switch (eqp->adv_formulation) {

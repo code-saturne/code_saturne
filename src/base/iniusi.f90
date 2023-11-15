@@ -123,6 +123,12 @@ interface
     implicit none
   end subroutine cs_combustion_initialize
 
+  subroutine cs_gui_combustion_ref_values()  &
+       bind(C, name='cs_gui_combustion_ref_values')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_combustion_ref_values
+
   subroutine cs_gui_mobile_mesh_structures_add()  &
        bind(C, name='cs_gui_mobile_mesh_structures_add')
     use, intrinsic :: iso_c_binding
@@ -295,6 +301,7 @@ call cs_user_model
 ! Initialize some model structures if needed
 
 call cs_combustion_initialize
+call cs_gui_combustion_ref_values
 
 ! Set type and order of the turbulence model
 call cs_set_type_order_turbulence_model()
@@ -461,7 +468,7 @@ call cs_gui_turb_ref_values
 
 ! Set turbulence constants according to model choices.
 ! This can be overwritten by the user in cs_user_parameters()
-call cs_f_turb_complete_constants
+call cs_f_turb_complete_constants(-1)
 
 ! Scamin, scamax, turbulent flux model, diffusivities
 call cs_gui_scalar_model_settings()

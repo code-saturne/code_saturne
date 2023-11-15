@@ -288,25 +288,6 @@ cs_get_cavitation_dgdp_st(void);
 cs_real_t *
 cs_get_cavitation_gam(void);
 
-/*----------------------------------------------------------------------------
- * Poisson equation resolution for hydrostatic pressure.
- *----------------------------------------------------------------------------*/
-
-void
-cs_hydrostatic_pressure_compute(int        *indhyd,
-                                int         iterns,
-                                cs_real_t   fext[][3],
-                                cs_real_t   dfext[][3],
-                                cs_real_t   phydr[],
-                                cs_real_t   flumas[],
-                                cs_real_t   flumab[],
-                                cs_real_t   viscf[],
-                                cs_real_t   viscb[],
-                                cs_real_t   dam[],
-                                cs_real_t   xam[],
-                                cs_real_t   dpvar[],
-                                cs_real_t   rhs[]);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes a hydrostatic pressure \f$ P_{hydro} \f$ solving an

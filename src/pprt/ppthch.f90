@@ -159,7 +159,7 @@ module ppthch
   !> representing the enthalpy).
   !>
   !> Always useful for gas or coal combustion.
-  double precision, save ::  diftl0
+  real(c_double), pointer, save ::  diftl0
 
   !> Molar coefficient of CO2
   real(c_double), pointer, save ::  xco2
@@ -183,15 +183,15 @@ module ppthch
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,  &
-                                        p_iic, p_wmole, p_wmolg,            &
-                                        p_xco2, p_xh2o, p_ckabs1, p_fs)     &
+    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,   &
+                                        p_iic, p_wmole, p_wmolg,  p_diftl0,  &
+                                        p_xco2, p_xh2o, p_ckabs1, p_fs)      &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,    &
-                                  p_wmolg, p_wmole, p_xco2, p_xh2o, p_ckabs1,  &
-                                  p_fs
+                                  p_wmolg, p_wmole, p_diftl0, p_xco2, p_xh2o,  &
+                                  p_ckabs1,  p_fs
     end subroutine cs_f_ppthch_get_pointers
 
     !---------------------------------------------------------------------------
@@ -220,10 +220,10 @@ contains
 
     type(c_ptr) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic
     type(c_ptr) :: p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
-    type(c_ptr) :: p_fs
+    type(c_ptr) :: p_fs, p_diftl0
 
     call cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,  &
-                                  p_wmole, p_wmolg,                          &
+                                  p_wmole, p_wmolg, p_diftl0,                &
                                   p_xco2, p_xh2o, p_ckabs1, p_fs)
 
     call c_f_pointer(p_ngaze, ngaze)
@@ -234,6 +234,7 @@ contains
     call c_f_pointer(p_wmole, wmole, [ngazem])
     call c_f_pointer(p_wmolg, wmolg, [ngazgm])
     call c_f_pointer(p_xco2, xco2)
+    call c_f_pointer(p_diftl0, diftl0)
     call c_f_pointer(p_xh2o, xh2o)
     call c_f_pointer(p_ckabs1, ckabs1)
     call c_f_pointer(p_fs, fs, [nrgazm])

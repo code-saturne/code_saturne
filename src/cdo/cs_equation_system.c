@@ -267,6 +267,45 @@ cs_equation_system_get_n_systems(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the pointer to the equation system related to the given id
+ *
+ * \param[in] sys_id         id the system of equations
+ *
+ * \return a pointer to a cs_equation_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_system_t *
+cs_equation_system_by_id(int         sys_id)
+{
+  if (sys_id > _n_equation_systems - 1 || sys_id < 0)
+    return NULL;
+
+  return _equation_systems[sys_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the pointer to the set of parameters of a system of
+ *        equations related to the given id
+ *
+ * \param[in] sys_id         id the system of equations
+ *
+ * \return a pointer to a cs_equation_system_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_system_param_t *
+cs_equation_system_param_by_id(int         sys_id)
+{
+  if (sys_id > _n_equation_systems - 1 || sys_id < 0)
+    return NULL;
+
+  return _equation_systems[sys_id]->param;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add a new structure to handle system of coupled equations
  *
  * \param[in] sysname         name of the system of equations

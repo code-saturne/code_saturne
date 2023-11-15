@@ -353,10 +353,7 @@ typedef struct {
    * Type of gradient limiter
    * - -1 (CS_GRADIENT_LIMIT_NONE): no limitation
    * - 0 (CS_GRADIENT_LIMIT_CELL): based on the neighbors
-   * - 1 (CS_GRADIENT_LIMIT_FACE): superior order\n
-   * \ref imligr is applied only to least-squares gradients.
-   * In the case of the Green-Gauss gradient with least-squares
-   * based face gradients, applied to the least-squares step.
+   * - 1 (CS_GRADIENT_LIMIT_FACE): superior order
    *
    * \var ircflu
    * Indicate whether the convective and diffusive fluxes at the faces should be
@@ -448,6 +445,10 @@ typedef struct {
    * (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without coupling) with
    * the unsteady algorithm. Always used with the steady algorithm.
    *
+   * \var b_gradient_r
+   * Type of boundary gradient reconstruction
+   * Same codes as for \ref imrgra
+   * (default is 2: least-squares, using extended neighborhood if available)
   */
 
   int iconv;
@@ -477,6 +478,8 @@ typedef struct {
   double epsrgr;
   double climgr;
   double relaxv;
+
+  int  b_gradient_r;
 
   /*!
    * @}
@@ -786,7 +789,7 @@ typedef struct {
   cs_param_nl_algo_t          incremental_algo_type;
   cs_param_sles_cvg_t         incremental_algo_cvg;
   cs_real_t                   incremental_relax_factor;
-  cs_iter_algo_param_aac_t     incremental_anderson_param;
+  cs_iter_algo_param_aac_t    incremental_anderson_param;
 
   /*! @} */
 
@@ -1993,6 +1996,31 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                const char                 *z_name,
                                cs_analytic_func_t         *analytic,
                                void                       *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define and initialize a new structure to set a boundary condition
+ *        related to the given equation param structure
+ *        ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *        Definition relying on a \ref cs_time_func_t function pointer
+ *
+ * \param[in, out] eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type  type of boundary condition to add
+ * \param[in]      z_name   name of the associated zone (if NULL or "" if
+ *                          all cells are considered)
+ * \param[in]      t_func   pointer to an analytic function defining the value
+ * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
+                                const cs_param_bc_type_t    bc_type,
+                                const char                 *z_name,
+                                cs_time_func_t             *t_func,
+                                void                       *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

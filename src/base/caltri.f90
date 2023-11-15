@@ -448,7 +448,7 @@ endif
 
 ! Map arrays from Lagrangian module
 if (iilagr.gt.0) then
-  call init_lagr_arrays(tslagr)
+  call cs_lagr_init_arrays
 endif
 
 if (i_les_balance.gt.0) then
@@ -464,11 +464,6 @@ call fldtri
 call field_allocate_or_map_all
 
 call field_get_val_s_by_name('dt', dt)
-
-! BC mappings for ALE array (impale and ialtyb)
-if (iale.ge.1) then
-  call ale_models_bc_maps
-endif
 
 call iniva0(nscal)
 

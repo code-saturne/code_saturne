@@ -450,7 +450,7 @@ cs_lagr_coupling(const cs_real_t  taup[],
                                                           CS_LAGR_STAT_WEIGHT);
 
           cs_real_t aux1 = cs_math_pi * p_diam * p_diam * p_eps
-                          * (extra->luminance->val[iel]
+                          * (extra->rad_energy->val[iel]
                              - 4.0 * _c_stephan * cs_math_pow4(p_tmp));
 
           tslag[iel + (lag_st->itste-1) * ncelet] += aux1 * p_stat_w;

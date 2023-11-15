@@ -1004,14 +1004,14 @@ cs_range_set_gather(const cs_range_set_t  *rs,
 
   if (src_val == dest_val) {
 
-    if (rs->ifs != NULL) {  /* otherwise we have a no-op */
+    if (rs->ifs != NULL) { /* otherwise we have a no-op */
 
       const size_t lb = rs->n_elts[2];
 
       for (size_t i = lb; i < n_elts; i++) {
         if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
           size_t j = g_id[i] - l_range[0];
-          if (i >= j) {/* additional check in case of same-rank periodicity */
+          if (i >= j) { /* additional check in case of same-rank periodicity */
             memcpy(dest + j*d_size, src + i*d_size, d_size);
           }
         }

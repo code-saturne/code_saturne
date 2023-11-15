@@ -414,7 +414,7 @@ static cs_equation_param_t _equation_param_default
    .nswrsm = 1,
    .imvisf = 0,
    .imrgra = -1,
-   .imligr = -1,
+   .imligr = CS_GRADIENT_LIMIT_NONE,
    .ircflu = 1,
    .iwgrec = 0,
    .icoupl = -1,
@@ -611,6 +611,8 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv);
+
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "b_gradient_r", _t->b_gradient_r);
 }
 
 /* Log default values of the structure */

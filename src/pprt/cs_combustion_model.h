@@ -131,7 +131,10 @@ typedef struct {
   int     ih2o;                      /*!< index of h2o in wmole */
 
   double  ckabs0;                    /*!< absorption coefficient of gas mix */
-
+  double  diftl0;                    /*!< molecular diffusivity for the enthalpy
+                                       for gas or coal combustion
+                                       (\ref diffusivity_ref is automatically set
+                                       to \ref diftl0 for the enthalpy). */
   double  xco2;                      /*!< molar coefficient of CO2 */
   double  xh2o;                      /*!< molar coefficient of H2O */
   double  hinoxy;                    /*!< input mass enthalpy for the oxidant */

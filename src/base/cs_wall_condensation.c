@@ -410,7 +410,7 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
   case CS_WALL_COND_MODEL_SCHLICHTING:
     {
       cs_real_3_t *cdgfbo = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-      const cs_real_3_t *surfbo
+      const cs_real_3_t *b_face_normal
         = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
       const cs_real_t *  surfbn = cs_glob_mesh_quantities->b_face_surf;
       const cs_real_3_t *velocity
@@ -422,7 +422,7 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
       const cs_real_t lcar
         = _compute_characteristic_length(cdgfbo[ifac], x_ref[iz], n_ref_norm);
       const cs_real_t u_ref
-        = _compute_tangential_velocity(velocity[iel], surfbo[ifac],
+        = _compute_tangential_velocity(velocity[iel], b_face_normal[ifac],
                                        1. / surfbn[ifac]);
       // Reynolds number
       const cs_real_t re    = rho * u_ref * lcar / dyn_visc;

@@ -166,6 +166,7 @@ static cs_atmo_option_t  _atmo_option = {
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
+  .theo_interp = 0,
   .sedimentation_model = 0,
   .deposition_model = 0,
   .nucleation_model = 0,
@@ -191,10 +192,11 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_t1 = 0.,
   .meteo_t2 = 0.,
   .meteo_tstar = 0.,
-  .meteo_qw0 = DBL_MAX,
+  .meteo_qw0 = 0.,
   .meteo_qwstar = DBL_MAX,
   .meteo_qw1 = DBL_MAX,
   .meteo_qw2 = DBL_MAX,
+  .meteo_ql0 = 0.,
   .meteo_evapor = DBL_MAX,
   .meteo_sensi = DBL_MAX,
   .meteo_psea = 101325.,
@@ -302,6 +304,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
+                       int                    **theo_interp,
                        int                    **sedimentation_model,
                        int                    **deposition_model,
                        int                    **nucleation_model,
@@ -1553,6 +1556,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
+                       int                    **theo_interp,
                        int                    **sedimentation_model,
                        int                    **deposition_model,
                        int                    **nucleation_model,
@@ -1593,6 +1597,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *y_l93 = &(_atmo_option.y_l93);
   *compute_z_ground = &(_atmo_option.compute_z_ground);
   *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
+  *theo_interp = &(_atmo_option.theo_interp);
   *sedimentation_model = &(_atmo_option.sedimentation_model);
   *deposition_model = &(_atmo_option.deposition_model);
   *nucleation_model = &(_atmo_option.nucleation_model);
@@ -2487,12 +2492,22 @@ cs_atmo_init_meteo_profiles(void)
     bft_error(__FILE__,__LINE__, 0,
               _("Atmo meteo profiles: gravity must not be 0.\n"));
 
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
-
   /* Reference fluid properties set from meteo values */
   phys_pro->p0 = aopt->meteo_psea;
   phys_pro->t0 = aopt->meteo_t0; /* ref temp T0 */
-  phys_pro->ro0 = phys_pro->p0/(rair * aopt->meteo_t0); /* ref density T0 */
+
+  /* Compute reference q_l, theta_liq and rho */
+  cs_real_t t_c = aopt->meteo_t0 - cs_physical_constants_celsius_to_kelvin;
+  cs_real_t q_sat = cs_air_yw_sat(t_c, aopt->meteo_psea);
+  aopt->meteo_ql0 = CS_MAX(aopt->meteo_qw0 - q_sat, 0.);
+  cs_real_t rvsra = phys_pro->rvsra;
+  cs_real_t rhum = rair*(1. + (rvsra - 1.)*(aopt->meteo_qw0 - aopt->meteo_ql0)
+                        - aopt->meteo_ql0);
+  phys_pro->ro0 = phys_pro->p0/(rhum * aopt->meteo_t0); /* ref density T0 */
+  cs_real_t clatev = phys_pro->clatev;
+  cs_real_t theta0 = (aopt->meteo_t0 - clatev/cp0 * aopt->meteo_ql0)
+                   * pow(pref/ aopt->meteo_psea, rscp);
+
 
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
@@ -2682,7 +2697,7 @@ cs_atmo_init_meteo_profiles(void)
     aopt->meteo_qw0    = qw1
       - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
     aopt->meteo_t0     = t1
-      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
+      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;//FIXME conversion theta->T
 
   }
 
@@ -2719,7 +2734,7 @@ cs_atmo_init_meteo_profiles(void)
   /* Force the computation of z_ground */
   aopt->compute_z_ground = true;
 
-  if (is_humid && aopt->meteo_qw0 <= 0. && aopt->meteo_qw1 < 0
+  if (is_humid && aopt->meteo_qw0 < 0. && aopt->meteo_qw1 < 0
       && aopt->meteo_qw2 < 0)
     bft_error(__FILE__,
               __LINE__,
@@ -2730,13 +2745,14 @@ cs_atmo_init_meteo_profiles(void)
 
   bft_printf("\n Meteo preprocessing values for computation:\n"
              "  dlmo=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n qwstar=%17.9e\n"
-             " t0=%17.9e\n qw0=%17.9e\n",
+             " t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n",
              aopt->meteo_dlmo,
              aopt->meteo_ustar0,
              aopt->meteo_tstar,
              aopt->meteo_qwstar,
              aopt->meteo_t0,
-             aopt->meteo_qw0);
+             aopt->meteo_qw0,
+             aopt->meteo_ql0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3315,7 +3331,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   BFT_MALLOC(f_ext, m->n_cells_with_ghosts, cs_real_3_t);
   BFT_MALLOC(dfext, m->n_cells_with_ghosts, cs_real_3_t);
 
-  /* dfext is actually a dummy used to copy calhyd */
+  /* dfext is actually a dummy used to copy _hydrostatic_pressure_compute */
   /* f_ext is initialized with an initial density */
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {

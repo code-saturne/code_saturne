@@ -53,6 +53,7 @@ BEGIN_C_DECLS
  * Public function pointer prototypes
  *============================================================================*/
 
+typedef struct _gwf_soil_vgm_tpf_param_t  cs_gwf_soil_vgm_tpf_param_t;
 typedef struct _gwf_soil_t cs_gwf_soil_t;
 
 /*----------------------------------------------------------------------------*/
@@ -89,6 +90,27 @@ typedef void
 
 typedef void
 (cs_gwf_soil_free_param_t)(void         **p_param);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of the different properties related to a soil in
+ *        the case of a Van Genuchten-Mualem model and a two-phase flow model.
+ *
+ * \param[in]  sp        set of modelling parameters
+ * \param[out] sl        liquid saturation
+ * \param[out] dsldpc    liquid capacity
+ * \param[out] krl       relative permeability for the liquid phase
+ * \param[out] krg       relative permeability for the gas phase
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_gwf_soil_tpf_eval_t)(const cs_gwf_soil_vgm_tpf_param_t    *sp,
+                         const double                          pc,
+                         double                               *sl,
+                         double                               *dsldpc,
+                         double                               *krl,
+                         double                               *krg);
 
 /*============================================================================
  * Type definitions
@@ -196,7 +218,7 @@ typedef struct {
  *        and gas phases).
  */
 
-typedef struct {
+struct _gwf_soil_vgm_tpf_param_t {
 
   /*!
    * \var n
@@ -250,6 +272,10 @@ typedef struct {
    *      (for instance sle_thres = 0.999 is the default value). If the value
    *      is greater or equal than 1.0, there is no polynomial joining.
    *
+   * \var eval_properties
+   *      function performing the evaluation of the soil laws with/without a
+   *      joining
+   *
    * \var pc_star
    *      capillarity pressure related to the value of sle_thres
    *
@@ -292,6 +318,10 @@ typedef struct {
   cs_gwf_soil_join_type_t    kr_jtype;
   double                     sle_thres;
 
+  /* Function pointer */
+
+  cs_gwf_soil_tpf_eval_t    *eval_properties;
+
   /* Derived quantities */
 
   double                     pc_star;
@@ -307,7 +337,9 @@ typedef struct {
   double                     dkrldsl_star;
   double                     krl_alpha;
 
-} cs_gwf_soil_vgm_tpf_param_t;
+};
+
+typedef struct _gwf_soil_vgm_tpf_param_t cs_gwf_soil_vgm_tpf_param_t;
 
 /*! \struct _gwf_soil_t
  *

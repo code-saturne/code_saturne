@@ -483,7 +483,8 @@ do ifac = 1, nfabor
       if (iautom(ifac).ge.1) then
 
         ! Dirichlet on the pressure: expressed in solved pressure directly
-        ! (not in total pressure), that is why -1 is used (transformed as 1 in typecl.f90).
+        ! (not in total pressure), that is why -1 is used
+        ! (transformed as 1 in cs_boundary_conditions_type).
         icodcl(ifac,ipr) = -1
         rcodcl(ifac,ipr,1) = coefap(ifac)
 

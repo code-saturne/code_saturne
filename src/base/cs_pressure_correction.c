@@ -40,6 +40,7 @@
 
 #include "bft_mem.h"
 #include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_air_props.h"
 #include "cs_cdo_headers.h"
@@ -128,6 +129,285 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = NULL;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *  \brief Poisson equation resolution for hydrostatic pressure:
+ *         \f$ \divs ( \grad P ) = \divs ( f ) \f$
+ *
+ * \param[in]      m                pointer to glob mesh
+ * \param[in]      mq               pointer to glob mesh quantiites
+ * \param[out]     indhyd           indicateur de mise a jour de cvar_hydro_pres
+ * \param[in]      iterns           Navier-Stokes iteration number
+ * \param[in]      frcxt            external force generating hydrostatic pressure
+ * \param[in]      dfrcxt           external force increment
+ *                                  generating hydrostatic pressure
+ * \param[out]     cvar_hydro_pres  hydrostatic pressure increment
+ * \param[in]      iflux            work array
+ * \param[in]      bflux            work array
+ * \param[in,out]  i_visc           work array
+ * \param[in,out]  b_visc           work array
+ * \param[in,out]  dam              work array
+ * \param[in,out]  xam              work array
+ * \param[in,out]  dphi             work array
+ * \param[in,out]  rhs              work array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_hydrostatic_pressure_compute(const cs_mesh_t       *m,
+                              cs_mesh_quantities_t  *mq,
+                              int                   *indhyd,
+                              int                    iterns,
+                              const cs_real_t        frcxt[][3],
+                              const cs_real_t        dfrcxt[][3],
+                              cs_real_t              cvar_hydro_pres[],
+                              cs_real_t              iflux[],
+                              cs_real_t              bflux[],
+                              cs_real_t              i_visc[],
+                              cs_real_t              b_visc[],
+                              cs_real_t              dam[],
+                              cs_real_t              xam[],
+                              cs_real_t              dphi[],
+                              cs_real_t              rhs[])
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *distb = mq->b_dist;
+
+  const int ksinfo = cs_field_key_id("solving_info");
+  cs_field_t *f = cs_field_by_name_try("hydrostatic_pressure");
+  cs_solving_info_t *sinfo = cs_field_get_key_struct_ptr(f, ksinfo);
+  const cs_equation_param_t *eqp_pr = cs_field_get_equation_param_const(f);
+
+  if (iterns < 2)
+    sinfo->n_it = 0;
+
+  cs_real_t *coefap = f->bc_coeffs->a;
+  cs_real_t *coefbp = f->bc_coeffs->b;
+  cs_real_t *cofafp = f->bc_coeffs->af;
+  cs_real_t *cofbfp = f->bc_coeffs->bf;
+
+  /* Check for variation of the hydrostatic pressure at outlet
+   *
+   * We check if the source term has changed. We exit directly
+   * if we do not have standard outlets.
+   * The precisiton for tests if more or less arbitrary. */
+
+  int ical = 0;
+  const cs_real_t precab = 1e2*cs_math_epzero;
+  const cs_real_t precre = sqrt(cs_math_epzero);
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t rnrmf = cs_math_3_square_norm(frcxt[c_id]);
+    const cs_real_t rnrmdf = cs_math_3_square_norm(dfrcxt[c_id]);
+    if ((rnrmdf >= precre*rnrmf) && (rnrmdf >= precab))
+      ical = 1;
+  }
+
+  cs_parall_sum(1, CS_INT_TYPE, &ical);
+  if ((ical == 0) && (cs_glob_atmo_option->open_bcs_treatment == 0)) {
+    *indhyd = 0;
+    return;
+  }
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+  if (ts->nt_cur%cs_glob_log_frequency == 0 || eqp_pr->verbosity > 0)
+    bft_printf("  Hydrostatic pressure computation:\n"
+               "    updating the Dirichlets at the end"
+               " (_hydrostatic_pressure_compute)\n");
+
+  *indhyd = 1;
+
+  cs_real_3_t *next_fext = NULL;
+  BFT_MALLOC(next_fext, n_cells_ext, cs_real_3_t);
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
+    for (cs_lnum_t ii = 0; ii < 3; ii++)
+      next_fext[c_id][ii] = frcxt[c_id][ii]*c_act + dfrcxt[c_id][ii];
+  }
+
+  cs_mesh_sync_var_vect((cs_real_t*)next_fext);
+
+  /* Prepare matrix and boundary conditions
+     -------------------------------------- */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    const cs_real_t qimp = 0;
+    const cs_real_t hint = 1.0/distb[face_id];
+    cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
+                                              &cofafp[face_id],
+                                              &coefbp[face_id],
+                                              &cofbfp[face_id],
+                                              qimp,
+                                              hint);
+  }
+
+  cs_real_t *rovsdt = NULL, *viscce = NULL;
+
+  BFT_MALLOC(viscce, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+
+  cs_array_real_fill_zero(n_cells, rovsdt);
+  cs_array_set_value_real(n_cells, 1, 1, viscce);
+
+  cs_face_viscosity(m,
+                    mq,
+                    eqp_pr->imvisf,
+                    viscce,
+                    i_visc,
+                    b_visc);
+
+  cs_matrix_wrapper_scalar(eqp_pr->iconv,
+                           eqp_pr->idiff,
+                           0,
+                           1,
+                           eqp_pr->thetav,
+                           0,
+                           coefbp,
+                           cofbfp,
+                           rovsdt,
+                           iflux,
+                           bflux,
+                           i_visc,
+                           b_visc,
+                           NULL,
+                           dam,
+                           xam);
+
+  /* Compute right hand side
+     ----------------------- */
+
+  /* Compute div(f_ext^n+1) */
+  cs_ext_force_flux(m,
+                    mq,
+                    1,
+                    eqp_pr->nswrgr,
+                    next_fext,
+                    cofbfp,
+                    iflux,
+                    bflux,
+                    i_visc,
+                    b_visc,
+                    viscce,
+                    viscce,
+                    viscce);
+
+  cs_real_t *div_fext = NULL;
+  BFT_MALLOC(div_fext, n_cells_ext, cs_real_t);
+
+  cs_divergence(m, 1, iflux, bflux, div_fext);
+
+  cs_real_t residual = 0;
+  const cs_real_t rnorm = sqrt(cs_gdot(n_cells, div_fext, div_fext));
+
+  /* Loops on non-orthogonalities (resolution)
+     ----------------------------------------- */
+
+  cs_array_real_fill_zero(n_cells, dphi);
+
+  /* Reconstruction loop */
+
+  for (int isweep = 1; isweep <= eqp_pr->nswrsm; isweep++) {
+
+    /* Update the right hand side and update the residual
+     *  rhs^{k+1} = - div(fext^n+1) - D(1, p_h^{k+1})
+     *--------------------------------------------------- */
+
+    cs_diffusion_potential(-1,              /* f_id */
+                           m,
+                           mq,
+                           1,               /* init */
+                           1,               /* inc  */
+                           eqp_pr->imrgra,
+                           eqp_pr->nswrgr,
+                           eqp_pr->imligr,
+                           1,               /* iphydp */
+                           eqp_pr->iwgrec,
+                           eqp_pr->verbosity,
+                           eqp_pr->epsrgr,
+                           eqp_pr->climgr,
+                           next_fext,
+                           cvar_hydro_pres,
+                           coefap,
+                           coefbp,
+                           cofafp,
+                           cofbfp,
+                           i_visc,
+                           b_visc,
+                           viscce,
+                           rhs);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      rhs[c_id] = -div_fext[c_id] - rhs[c_id];
+
+    /* Convergence test */
+
+    residual = sqrt(cs_gdot(n_cells, rhs, rhs));
+
+    if (eqp_pr->verbosity > 1)
+      bft_printf(_("hydrostatic_p: sweep = %d RHS residual = %10.14le"
+                   " norm = %10.14le\n"),
+                 isweep, residual, rnorm);
+
+    if (isweep == 1)
+      sinfo->rhs_norm = residual;
+
+    if (residual <= eqp_pr->epsrsm*rnorm)
+      break;
+
+    /* Solving on the increment */
+
+    int n_iter;
+    cs_real_t ressol = residual;
+    cs_array_real_fill_zero(n_cells, dphi);
+
+    cs_sles_solve_native(f->id,
+                         NULL,
+                         true,  /* symmetric */
+                         1,     /* diag_block_size */
+                         1,     /* extra_diag_block_size */
+                         dam,
+                         xam,
+                         eqp_pr->epsilo,
+                         rnorm,
+                         &n_iter,
+                         &ressol,
+                         rhs,
+                         dphi);
+
+    sinfo->n_it += n_iter;
+
+    cs_axpy(n_cells, 1.0, dphi, cvar_hydro_pres);
+
+  }
+
+  if (eqp_pr->verbosity > 1)
+    bft_printf("@\n"
+               "@ @@ Warning: hydrostatic_p (hydrostatic pressure step)\n"
+               "@    ========\n"
+               "@  Maximum number of iterations %d reached\n"
+               "@\n", eqp_pr->nswrsm);
+
+  /* For logging */
+
+  sinfo->res_norm = 0;
+  if (fabs(rnorm) > 0)
+    sinfo->res_norm = residual/rnorm;
+
+  /* Free Memory and solver setup */
+
+  cs_sles_free_native(f->id, NULL);
+
+  BFT_FREE(viscce);
+  BFT_FREE(rovsdt);
+  BFT_FREE(div_fext);
+  BFT_FREE(next_fext);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -535,12 +815,12 @@ _pressure_correction_fv(int        iterns,
     /* This computation is needed only if there are outlet faces */
 
     if (ifcsor > -1 || open_bcs_flag != 0)
-      cs_hydrostatic_pressure_compute(&indhyd, iterns,
-                                      frcxt, dfrcxt, cvar_hydro_pres,
-                                      iflux, bflux, i_visc, b_visc,
-                                      dam, xam,
-                                      dphi, rhs); /* FIXME remove work arrays. */
-
+      _hydrostatic_pressure_compute(m, fvq,
+                                    &indhyd, iterns,
+                                    frcxt, dfrcxt, cvar_hydro_pres,
+                                    iflux, bflux, i_visc, b_visc,
+                                    dam, xam,
+                                    dphi, rhs);
   }
 
   /* Compute the BCs for the pressure increment

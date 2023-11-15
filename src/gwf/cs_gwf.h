@@ -108,28 +108,29 @@ cs_gwf_get_two_phase_model(void);
 /*!
  * \brief Set the numerical options related to the two phase flow models
  *
- * \param[in] solver                             type of solver
- * \param[in] use_incremental_solver             true/false
- * \param[in] use_diffusion_view_for_darcy       true/false
+ * \param[in] approx                          type of coefficient approximation
+ * \param[in] solver                          type of solver
+ * \param[in] use_incremental_solver          true/false
+ * \param[in] use_diffusion_view_for_darcy    true/false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_solver_type_t    solver,
+cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t   approx,
+                                       cs_gwf_tpf_solver_type_t   solver,
                                        bool       use_incremental_solver,
                                        bool       use_diffusion_view_for_darcy);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the parameters defining the two-phase flow model.
- *        Use SI unit if not prescribed otherwise.
+ * \brief Set the parameters defining the two-phase flow model in the miscible
+ *        case. Use SI unit if not prescribed otherwise.
  *
  * \param[in] l_mass_density   mass density of the main liquid component
  * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
  * \param[in] g_viscosity      viscosity in the gas phase (Pa.s)
  * \param[in] l_diffusivity_h  diffusivity of the main gas component in the
  *                             liquid phase
- * \param[in] w_molar_mass     molar mass of the main liquid component
  * \param[in] h_molar_mass     molar mass of the main gas component
  * \param[in] ref_temperature  reference temperature in Kelvin
  * \param[in] henry_constant   constant in the Henry law
@@ -141,7 +142,6 @@ cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
                                     cs_real_t       l_viscosity,
                                     cs_real_t       g_viscosity,
                                     cs_real_t       l_diffusivity_h,
-                                    cs_real_t       w_molar_mass,
                                     cs_real_t       h_molar_mass,
                                     cs_real_t       ref_temperature,
                                     cs_real_t       henry_constant);

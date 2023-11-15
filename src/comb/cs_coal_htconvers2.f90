@@ -63,7 +63,7 @@ implicit none
 
 integer(c_int), value :: class_id
 
-real(c_double) :: xsolid(nsolim)
+real(c_double) :: xsolid(*)
 real(c_double), value :: temper
 real(c_double) :: enthal
 

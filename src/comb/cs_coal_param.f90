@@ -100,10 +100,15 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if ( iscavr(jj).le.0 ) then
+  if (jj .eq. iscalt) then
+    if (diftl0.ge.0d0) then
+      call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
+    endif
 
-!        En combustion on considere que la viscosite turbulente domine
-!        ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
+  else if (iscavr(jj).le.0) then
+
+    ! En combustion on considere que la viscosite turbulente domine
+    ! ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
     call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
 
@@ -157,14 +162,6 @@ do icha = 1, ncharb
   rhock(icha) = rho0ch(icha)
 enddo
 
-! ---> Viscosite laminaire associee au scalaire enthalpie
-!       DIFTL0 (diffusivite dynamique en kg/(m s))
-!     C'est cette valeur par defaut qui est TOUJOURS utilisee dans les
-!       calculs charbon (un peu etonnant de ne pas prendre en
-!       compte les variations de ce parametre physique si on
-!       recherche des informations sur les flux thermiques aux parois)
-
-diftl0 =-grand
 ! ---> Masse volumique variable et viscosite constante (pour les suites)
 irovar = 1
 ivivar = 0
@@ -173,9 +170,12 @@ ivivar = 0
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-call uicpi1(srrom, diftl0)
+! TODO: call cs_gui_combustion_ref_values to read diftl0 from GUI,
+!       but first initialize it to the value below in GUI.
 
 diftl0 = 4.25d-5
+
+call uicpi1(srrom)
 
 call cs_user_combustion
 

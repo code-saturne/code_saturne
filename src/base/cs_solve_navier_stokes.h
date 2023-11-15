@@ -66,10 +66,8 @@ BEGIN_C_DECLS
  * \param[in]     iterns        index of the iteration on Navier-Stokes
  * \param[in]     icvrge        convergence indicator
  * \param[in]     itrale        number of the current ALE iteration
- * \param[in]     impale        indicator of imposed displacement
  * \param[in]     isostd        indicator of standard outlet
  *                              + index of the reference face
- * \param[in]     ale_bc_type   Type of boundary for ALE
  */
 /*----------------------------------------------------------------------------*/
 
@@ -77,9 +75,7 @@ void
 cs_solve_navier_stokes(const int   iterns,
                        int        *icvrge,
                        const int   itrale,
-                       const int  *impale,
-                       const int   isostd[],
-                       int         ale_bc_type[]);
+                       const int   isostd[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

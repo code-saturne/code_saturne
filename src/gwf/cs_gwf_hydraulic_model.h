@@ -265,6 +265,25 @@ typedef enum {
 
 } cs_gwf_tpf_solver_type_t;
 
+/*!
+ * \enum cs_gwf_tpf_approx_type_t
+ * \brief Type of approximation used for the computation of unsteady or
+ *        diffusion properties
+ *
+ */
+
+typedef enum {
+
+  CS_GWF_TPF_APPROX_PC_CELL_AVERAGE,
+  CS_GWF_TPF_APPROX_PC_CELL_VERTEX_AVERAGE,
+  CS_GWF_TPF_APPROX_PC_EDGE_AVERAGE,
+  CS_GWF_TPF_APPROX_PC_VERTEX_AVERAGE,
+
+  CS_GWF_TPF_APPROX_VERTEX_SUBCELL,
+
+  CS_GWF_TPF_N_APPROX
+
+} cs_gwf_tpf_approx_type_t;
 
 /*! \struct cs_gwf_tpf_t
  *
@@ -523,10 +542,6 @@ typedef struct {
    * \var l_diffusivity_h
    *      Molecular diffusivity of the hydrogen in the liquid phase in m^2.s^-1
    *
-   * \var w_molar_mass
-   *      Molar mass of the main component in the liquid phase (e.g. water) in
-   *      kg.mol^-1
-   *
    * \var h_molar_mass
    *      Molar mass of the main component in the gas phase (e.g. hydrogen) in
    *      kg.mol^-1
@@ -548,7 +563,6 @@ typedef struct {
   cs_real_t                     l_viscosity;
   cs_real_t                     g_viscosity;
   cs_real_t                     l_diffusivity_h;
-  cs_real_t                     w_molar_mass;
   cs_real_t                     h_molar_mass;
   cs_real_t                     ref_temperature;
   cs_real_t                     henry_constant;
@@ -557,6 +571,22 @@ typedef struct {
    * @}
    * @name Numerical parameters
    * @{
+   *
+   * \var approx_type
+   * \brief type of approximation used for the computation of diffusion,
+   *        unsteady coefficients
+   *
+   * \var cell_weight
+   * \brief weight associated to the cell value w.r.t. to the values at
+   *        vertices when a \ref CS_GWF_TPF_APPROX_PC_CELL_VERTEX_AVERAGE
+   *        choice is set for 'approx_type'. If the value is < 0 or > 1, then
+   *        the default settings is kept.
+   *
+   * \var upwind_weight
+   * \brief weight associated to the upwind value w.r.t. to the centered value
+   *        There is no effect when \ref CS_GWF_TPF_APPROX_VERTEX_SUBCELL is
+   *        chosen to approximate coefficients. If the value is < 0 or > 1,
+   *        then the default settings is kept.
    *
    * \var solver_type
    * \brief Type of solver considered to solve the system of equations (choice
@@ -585,9 +615,12 @@ typedef struct {
    * \var nl_algo_type
    *      Type of algorithm to solve the non-linearities
    *
+   * \var nl_algo_verbosity
+   *      Level of verbosity for the algorithm solving the non-linearities
+   *
    * \var nl_relax_factor
-   *      Value of the relaxation factor in the non-linear algorithm. A classical
-   *      choice is between 0.70 and 0.95
+   *      Value of the relaxation factor in the non-linear algorithm. A
+   *      classical choice is between 0.70 and 0.95
    *
    * \var nl_cvg_param
    *      Set of parameters to drive the convergence of the non-linear solver
@@ -600,12 +633,16 @@ typedef struct {
    *      Structure used to manage the non-linearities
    */
 
+  cs_gwf_tpf_approx_type_t       approx_type;
+  double                         cell_weight;
+  double                         upwind_weight;
   cs_gwf_tpf_solver_type_t       solver_type;
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;
   bool                           use_diffusion_view_for_darcy;
 
   cs_param_nl_algo_t             nl_algo_type;
+  int                            nl_algo_verbosity;
   cs_real_t                      nl_relax_factor;
   cs_param_sles_cvg_t            nl_cvg_param;
   cs_iter_algo_param_aac_t       anderson_param;

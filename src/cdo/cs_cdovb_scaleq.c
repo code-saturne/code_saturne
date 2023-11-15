@@ -63,6 +63,7 @@
 #include "cs_post.h"
 #include "cs_quadrature.h"
 #include "cs_reco.h"
+#include "cs_reco_cw.h"
 #include "cs_scheme_geometry.h"
 #include "cs_search.h"
 #include "cs_sles.h"
@@ -1387,7 +1388,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
 
-  eqb->bd_msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+  eqb->bdy_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
     CS_FLAG_COMP_FEQ | CS_FLAG_COMP_FV;
 
   bool  need_eigen =
@@ -1413,7 +1414,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
       else
@@ -1422,7 +1423,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_BUBBLE:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_iso_stiffness;
       else
@@ -1431,7 +1432,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
       break;
 
@@ -1471,7 +1472,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_HODGE_ALGO_COST:
     case CS_HODGE_ALGO_BUBBLE:
     case CS_HODGE_ALGO_VORONOI:
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
@@ -1498,7 +1499,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
     switch (eqp->diffusion_hodgep.algo) {
 
     case CS_HODGE_ALGO_COST:
@@ -1519,7 +1520,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
     switch (eqp->diffusion_hodgep.algo) {
 
     case CS_HODGE_ALGO_COST:
@@ -1654,7 +1655,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     /* Boundary conditions for advection */
 
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PEQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_PEQ;
     eqc->add_advection_bc = cs_cdo_advection_vb_bc;
 
   }
@@ -2051,15 +2052,12 @@ cs_cdovb_scaleq_setup(cs_real_t                      t_eval,
 
   BFT_MALLOC(eqb->dir_values, quant->n_vertices, cs_real_t);
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _svb_cell_builder[0], /* static variable */
-                                   vtx_bc_flag,
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       vtx_bc_flag,
+                                       eqb->dir_values);
 
   /* Internal enforcement of DoFs */
 
@@ -2277,6 +2275,23 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
     cs_cell_sys_dump("\n>> Cell system after time", csys);
 #endif
 
+  /* Apply the Neumann BCs on the diagonal block. The diagonal should have the
+     value for the row (i.e. neumann induced from the extra-diagonal blocks) */
+
+  if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE && diag_block) {
+
+    /* Neumann boundary conditions:
+     * The common practice is to define Phi_neu = - lambda * grad(u) . n_fc
+     * An outward flux is a positive flux whereas an inward flux is negative
+     * The minus just above implies the minus just below */
+
+    if (csys->has_nhmg_neumann) {
+      for (short int v  = 0; v < cm->n_vc; v++)
+        csys->rhs[v] -= csys->neu_values[v];
+    }
+
+  }
+
   /* Compute a norm of the RHS for the normalization of the residual of the
      linear system to solve. This is done before applying BCs to not take into
      account it. */
@@ -2420,15 +2435,12 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _svb_cell_builder[0], /* static variable */
-                                   eqc->vtx_bc_flag,
-                                   v_vals);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       eqc->vtx_bc_flag,
+                                       v_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3789,7 +3801,7 @@ cs_cdovb_scaleq_get_cell_values(void      *context,
   /* Compute the values at cell centers from an interpolation of the field
      values defined at vertices */
 
-  cs_reco_pv_at_cell_centers(connect->c2v, quant, vtx_values, eqc->cell_values);
+  cs_reco_scalar_v2c_full(connect->c2v, quant, vtx_values, eqc->cell_values);
 
   return eqc->cell_values;
 }
@@ -4482,12 +4494,12 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           /* Robin BC expression: -K du/dn = alpha*(u - u0) + beta */
 
-          cs_equation_compute_robin(cb->t_bc_eval,
-                                    face_bc->def_ids[bf_id],
-                                    f,
-                                    eqp,
-                                    cm,
-                                    robin_values);
+          cs_equation_bc_cw_robin(cb->t_bc_eval,
+                                  face_bc->def_ids[bf_id],
+                                  f,
+                                  eqp,
+                                  cm,
+                                  robin_values);
 
           const cs_real_t  alpha = robin_values[0];
           const cs_real_t  u0 = robin_values[1];
@@ -4529,7 +4541,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
             /* Interpolate also the value of the potential at the cell center */
 
-            pot[cm->n_vc] = cs_reco_cw_scalar_pv_at_cell_center(cm, pot);
+            pot[cm->n_vc] = cs_reco_cw_scalar_v2c_loc(cm, pot);
 
             cs_cdo_diffusion_wbs_vbyf_flux(f, cm, pot, hodge, cb, flux);
 
@@ -4649,7 +4661,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
         /* Compute the local advective flux */
 
         cs_advection_field_get_cell_vector(c_id, eqp->adv_field, &adv_c);
-        cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
+        cs_reco_scalar_v2f(1, &f_id, connect, quant, pdi, true, &pf);
 
         /* Update the convective flux */
 
@@ -4682,6 +4694,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
           const double  coef = 0.5 * sgn * f.meas; /* mean value at the face */
 
           /* Compute the local diffusive flux */
+
           cs_reco_grad_cell_from_pv(c_id, connect, quant, pdi, gc);
           cs_property_get_cell_tensor(c_id, t_cur,
                                       eqp->diffusion_property,
@@ -4698,7 +4711,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
           /* Compute the local advective flux */
 
-          cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
+          cs_reco_scalar_v2f(1, &f_id, connect, quant, pdi, true, &pf);
 
           /* Evaluate the advection field at the face */
 

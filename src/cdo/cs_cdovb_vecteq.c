@@ -196,15 +196,12 @@ _vvb_setup(cs_real_t                      t_eval,
 
   BFT_MALLOC(eqb->dir_values, 3*quant->n_vertices, cs_real_t);
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _vvb_cell_builder[0], /* static variable */
-                                   vtx_bc_flag,
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       vtx_bc_flag,
+                                       eqb->dir_values);
 
   /* Internal enforcement of DoFs */
 
@@ -871,7 +868,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
 
-  eqb->bd_msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+  eqb->bdy_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
     CS_FLAG_COMP_FEQ;
 
   bool  need_eigen =
@@ -899,7 +896,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
       else
@@ -908,7 +905,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_BUBBLE:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_iso_stiffness;
       else
@@ -917,7 +914,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqb->bdy_flag |= CS_FLAG_COMP_DEQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
       break;
 
@@ -958,7 +955,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vvb_ocs_weak_dirichlet;
     break;
 
@@ -975,7 +972,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* There is at least one face with a sliding condition to handle */
 
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vvb_ocs_sliding;
 
   }
@@ -1314,15 +1311,12 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _vvb_cell_builder[0], /* static variable */
-                                   eqc->vtx_bc_flag,
-                                   v_vals);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, quant, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       eqc->vtx_bc_flag,
+                                       v_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1671,8 +1665,7 @@ cs_cdovb_vecteq_get_cell_values(void      *context,
   /* Compute the values at cell centers from an interpolation of the field
      values defined at vertices */
 
-  cs_reco_vect_pv_at_cell_centers(connect->c2v, quant, vtx_values,
-                                  eqc->cell_values);
+  cs_reco_vector_v2c_full(connect->c2v, quant, vtx_values, eqc->cell_values);
 
   return eqc->cell_values;
 }

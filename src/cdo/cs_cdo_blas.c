@@ -599,10 +599,10 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the dot product of two arrays using the classical Euclidean
- *         dot product (without weight).
- *         Case of a scalar-valued arrays defined at primal vertices.
- *         The computed quantity is synchronized in parallel.
+ * \brief Compute the dot product of two arrays using the classical Euclidean
+ *        dot product (without weight).
+ *        Case of a scalar-valued arrays defined at primal vertices.
+ *        The computed quantity is synchronized in parallel.
  *
  * \param[in]  a   first array to analyze
  * \param[in]  b   second array to analyze
@@ -620,11 +620,11 @@ cs_cdo_blas_dotprod_vertex(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array using an Euclidean 2-norm.
- *         Case of a scalar-valued array defined at primal vertices.
- *         The computed quantities are synchronized in parallel.
+ * \brief Compute the square norm of an array using an Euclidean 2-norm.
+ *        Case of a scalar-valued array defined at primal vertices.
+ *        The computed quantities are synchronized in parallel.
  *
- * \param[in]  array   array to analyze
+ * \param[in] array    array to analyze
  *
  * \return the square weighted L2-norm
  */
@@ -642,15 +642,15 @@ cs_cdo_blas_square_norm_vertex(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the dot product of two arrays using a weighted Euclidean dot
- *         product relying on CDO quantities.
- *         Case of a scalar-valued arrays defined as a potential at primal
- *         vertices. Thus, the weigth is the portion of dual cell (associated
- *         to a primal vertex) inside a primal cell.  The computed quantity is
- *         synchronized in parallel.
+ * \brief Compute the dot product of two arrays using a weighted Euclidean dot
+ *        product relying on CDO quantities.
+ *        Case of a scalar-valued arrays defined as a potential at primal
+ *        vertices. Thus, the weigth is the portion of dual cell (associated
+ *        to a primal vertex) inside a primal cell.  The computed quantity is
+ *        synchronized in parallel.
  *
- * \param[in]  a   first array to analyze
- * \param[in]  b   second array to analyze
+ * \param[in] a   first array to analyze
+ * \param[in] b   second array to analyze
  *
  * \return the value of the dot product
  */
@@ -733,12 +733,12 @@ cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array
- *         Case of a scalar-valued array defined as a potential at primal
- *         vertices. Thus, the weigth is the portion of dual cell inside each
- *         (primal cell). The computed quantities are synchronized in parallel.
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as a potential at primal
+ *        vertices. Thus, the weigth is the portion of dual cell inside each
+ *        (primal cell). The computed quantities are synchronized in parallel.
  *
- * \param[in]  array   array to analyze
+ * \param[in] array   array to analyze
  *
  * \return the square weighted L2-norm
  */
@@ -758,13 +758,13 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the norm ||b - a||**2
- *         Case of two scalar-valued arrays a and b defined as a potential at
- *         primal vertices. Thus, the weigth is the portion of dual cell in a
- *         primal cell. The computed quantities are synchronized in parallel.
+ * \brief Compute the norm ||b - a||**2
+ *        Case of two scalar-valued arrays a and b defined as a potential at
+ *        primal vertices. Thus, the weigth is the portion of dual cell in a
+ *        primal cell. The computed quantities are synchronized in parallel.
  *
- * \param[in]  a   first array
- * \param[in]  b   second array
+ * \param[in] a   first array
+ * \param[in] b   second array
  *
  * \return the value  of ||b - a||**2
  */
@@ -848,13 +848,13 @@ cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array
- *         Case of a non-interlaced scalar-valued array of stride = 2 defined as
- *         a potential at primal vertices. Thus, the weigth is the portion of
- *         dual cell (associated to a primal vertex) inside a primal cell. The
- *         computed quantity is synchronized in parallel.
+ * \brief Compute the square norm of an array
+ *        Case of a non-interlaced scalar-valued array of stride = 2 defined as
+ *        a potential at primal vertices. Thus, the weigth is the portion of
+ *        dual cell (associated to a primal vertex) inside a primal cell. The
+ *        computed quantity is synchronized in parallel.
  *
- * \param[in]  array   array to analyze
+ * \param[in] array   array to analyze
  *
  * \return the square weighted L2-norm
  */
@@ -885,15 +885,15 @@ cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the dot product of two arrays using a weighted Euclidean dot
- *         product relying on CDO quantities.
- *         Case of non-interlaced scalar-valued arrays of stride = 2 defined as
- *         a potential at primal vertices. Thus, the weigth is the portion of
- *         dual cell (associated to a primal vertex) inside a primal cell. The
- *         computed quantity is synchronized in parallel.
+ * \brief Compute the dot product of two arrays using a weighted Euclidean dot
+ *        product relying on CDO quantities.
+ *        Case of non-interlaced scalar-valued arrays of stride = 2 defined as
+ *        a potential at primal vertices. Thus, the weigth is the portion of
+ *        dual cell (associated to a primal vertex) inside a primal cell. The
+ *        computed quantity is synchronized in parallel.
  *
- * \param[in]  a   first array to analyze
- * \param[in]  b   second array to analyze
+ * \param[in] a   first array to analyze
+ * \param[in] b   second array to analyze
  *
  * \return the value of the dot product
  */
@@ -980,13 +980,13 @@ cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the dot product of two arrays using the classical Euclidean
- *         dot product (without weight).
- *         Case of a scalar-valued arrays defined at primal faces.
- *         The computed quantity is synchronized in parallel.
+ * \brief Compute the dot product of two arrays using the classical Euclidean
+ *        dot product (without weight).
+ *        Case of a scalar-valued arrays defined at primal faces.
+ *        The computed quantity is synchronized in parallel.
  *
- * \param[in]  a   first array to analyze
- * \param[in]  b   second array to analyze
+ * \param[in] a   first array to analyze
+ * \param[in] b   second array to analyze
  *
  * \return the value of the dot product
  */
@@ -1001,11 +1001,11 @@ cs_cdo_blas_dotprod_face(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array using an Euclidean 2-norm.
- *         Case of a scalar-valued array defined at primal faces.
- *         The computed quantities are synchronized in parallel.
+ * \brief Compute the square norm of an array using an Euclidean 2-norm.
+ *        Case of a scalar-valued array defined at primal faces.
+ *        The computed quantities are synchronized in parallel.
  *
- * \param[in]  array   array to analyze
+ * \param[in] array   array to analyze
  *
  * \return the square weighted L2-norm
  */
@@ -1023,13 +1023,13 @@ cs_cdo_blas_square_norm_face(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array
- *         Case of a scalar-valued array defined as a potential at primal
- *         faces. Thus, the weigth is the pyramid of apex the cell center and
- *         of basis the face. The computed quantities are synchronized in
- *         parallel.
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as a potential at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and
+ *        of basis the face. The computed quantities are synchronized in
+ *        parallel.
  *
- * \param[in]  array   array to analyze
+ * \param[in] array   array to analyze
  *
  * \return the square weighted L2-norm
  */
@@ -1049,13 +1049,12 @@ cs_cdo_blas_square_norm_pfsp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array
- *         Case of a vector-valued array defined as a potential at primal
- *         faces. Thus, the weigth is the pyramid of apex the cell center and
- *         of basis the face. The computed quantities are synchronized in
- *         parallel.
+ * \brief Compute the square norm of an array
+ *        Case of a vector-valued array defined as a potential at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. The computed quantities are synchronized in parallel.
  *
- * \param[in]  array   array to analyze (vector-valued)
+ * \param[in] array   array to analyze (vector-valued)
  *
  * \return the square weighted L2-norm
  */
@@ -1075,12 +1074,12 @@ cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the dot product of two arrays using a weighted Euclidean
- *         dot product relying on CDO quantities.
- *         Case of a scalar-valued arrays defined as a flux at primal
- *         faces. Thus, the weigth is the pyramid of apex the cell center and
- *         of basis the face. Each face quantity is normalized by the face
- *         surface. The computed quantity is synchronized in parallel.
+ * \brief Compute the dot product of two arrays using a weighted Euclidean
+ *        dot product relying on CDO quantities.
+ *        Case of a scalar-valued arrays defined as a flux at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. Each face quantity is normalized by the face
+ *        surface. The computed quantity is synchronized in parallel.
  *
  * \param[in]  a   first array to analyze
  * \param[in]  b   second array to analyze
@@ -1171,13 +1170,13 @@ cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array
- *         Case of a scalar-valued array defined as a flux at primal
- *         faces. Thus, the weigth is the pyramid of apex the cell center and
- *         of basis the face. Each face quantity is normalized by the face
- *         surface. The computed quantities are synchronized in parallel.
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as a flux at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. Each face quantity is normalized by the face
+ *        surface. The computed quantities are synchronized in parallel.
  *
- * \param[in]  array   array to analyze
+ * \param[in] array   array to analyze
  *
  * \return the square weighted L2-norm
  */
@@ -1264,14 +1263,14 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the norm ||b - a||**2
- *         Case of a scalar-valued array defined as a flux at primal
- *         faces. Thus, the weigth is the pyramid of apex the cell center and
- *         of basis the face. Each face quantity is normalized by the face
- *         surface. The computed quantities are synchronized in parallel.
+ * \brief Compute the norm ||b - a||**2
+ *        Case of a scalar-valued array defined as a flux at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. Each face quantity is normalized by the face
+ *        surface. The computed quantities are synchronized in parallel.
  *
- * \param[in]  a   first array
- * \param[in]  b   second array
+ * \param[in] a   first array
+ * \param[in] b   second array
  *
  * \return the value of ||b - a||**2
  */

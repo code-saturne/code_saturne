@@ -635,7 +635,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
       strncpy(sec_name, "rayexp_ce", 155);
     else if (strcmp(f->name, "rad_st_implicit") == 0)
       strncpy(sec_name, "rayimp_ce", 155);
-    else if (f == CS_F_(rad_lumin))
+    else if (f == CS_F_(rad_energy))
       strncpy(sec_name, "luminance", 155);
 
     else if (strcmp(f->name, "joule_power") == 0)

@@ -365,6 +365,12 @@ typedef struct {
 
 typedef struct {
 
+  /*! \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   */
+
+  int                    z_id;
+
   /*! \var func
    * pointer to a \ref cs_time_func_t to call
    */
@@ -426,7 +432,7 @@ cs_xdef_get_scalar_value(cs_xdef_t     *def)
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t *
-cs_xdef_array_get_values(cs_xdef_t     *def)
+cs_xdef_array_get_values(const cs_xdef_t     *def)
 {
   if (def == NULL)
     return NULL;
@@ -466,15 +472,15 @@ cs_xdef_field_get(cs_xdef_t     *def)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a new cs_xdef_t structure based on volumic
- *         elements
+ * \brief Allocate and initialize a new cs_xdef_t structure based on volumic
+ *        elements
  *
- * \param[in]  type        type of definition
- * \param[in]  dim         dimension of the values to define
- * \param[in]  z_id        volume zone id
- * \param[in]  state       flag to know if this uniform, cellwise, steady...
- * \param[in]  meta        metadata associated to this description
- * \param[in]  context     pointer to a structure
+ * \param[in] type        type of definition
+ * \param[in] dim         dimension of the values to define
+ * \param[in] z_id        volume zone id
+ * \param[in] state       flag to know if this uniform, cellwise, steady...
+ * \param[in] meta        metadata associated to this description
+ * \param[in] context     pointer to a structure
  *
  * \return a pointer to the new cs_xdef_t structure
  */
@@ -490,15 +496,15 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a new cs_xdef_t structure based on boundary
- *         elements
+ * \brief Allocate and initialize a new cs_xdef_t structure based on boundary
+ *        elements
  *
- * \param[in]  type       type of definition
- * \param[in]  dim        dimension of the values to define
- * \param[in]  z_id       volume zone id
- * \param[in]  state      flag to know if this uniform, cellwise, steady...
- * \param[in]  meta       metadata associated to this description
- * \param[in]  context    pointer to a structure
+ * \param[in] type       type of definition
+ * \param[in] dim        dimension of the values to define
+ * \param[in] z_id       volume zone id
+ * \param[in] state      flag to know if this uniform, cellwise, steady...
+ * \param[in] meta       metadata associated to this description
+ * \param[in] context    pointer to a structure
  *
  * \return a pointer to the new cs_xdef_t structure
  */
@@ -514,14 +520,14 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a new cs_xdef_t structure for setting the
- *         time step
+ * \brief Allocate and initialize a new cs_xdef_t structure for setting the
+ *        time step
  *
- * \param[in]  type       type of definition
- * \param[in]  state      flag to know if this uniform, cellwise, steady...
- * \param[in]  meta       metadata associated to this description
- * \param[in]  context    pointer to a structure storing the parameters (cast
- *                        on-the-fly according to the type of definition)
+ * \param[in] type       type of definition
+ * \param[in] state      flag to know if this uniform, cellwise, steady...
+ * \param[in] meta       metadata associated to this description
+ * \param[in] context    pointer to a structure storing the parameters (cast
+ *                       on-the-fly according to the type of definition)
  *
  * \return a pointer to the new cs_xdef_t structure
  */

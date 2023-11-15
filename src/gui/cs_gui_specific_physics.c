@@ -643,37 +643,21 @@ _gui_atmo_get_set_meteo_profile(void)
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICPI1 (SRROM, DIFTL0)
+ * subroutine uicpi1 (srrom)
  * *****************
- * DOUBLE PRECISION SRROM   <--   density relaxation
- * DOUBLE PRECISION DIFTL0  <--   dynamic diffusion
+ * double precision srrom   <--   density relaxation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
-                                double *const diftl0)
+void CS_PROCF(uicpi1, UICPI1) (double *const srrom)
 {
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "numerical_parameters/density_relaxation");
 
   cs_gui_node_get_real(tn, srrom); // inactive line if tn does not exist
 
-  bool gas_combustion = false;
-  for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
-       m_type <= CS_COMBUSTION_COAL;
-       m_type++) {
-    if (cs_glob_physical_model_flag[m_type] > -1)
-      gas_combustion = true;
-  }
-
-  if (gas_combustion)
-    cs_gui_properties_value("dynamic_diffusion", diftl0);
-
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--srrom  = %f\n", *srrom);
-  if (gas_combustion) {
-    bft_printf("--diftl0  = %f\n", *diftl0);
-  }
 #endif
 }
 
@@ -1438,12 +1422,20 @@ cs_gui_physical_model_select(void)
 void
 cs_gui_elec_model(void)
 {
+  cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
+
+  /* Numerical parameters */
+
   cs_tree_node_t *tn0
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/joule_effect");
+    = cs_tree_get_node(cs_glob_tree, "numerical_parameters/density_relaxation");
+
+  cs_gui_node_get_real(tn0, &(elec_opt->srrom));
+
+  /* Model parameters */
+
+  tn0 = cs_tree_get_node(cs_glob_tree, "thermophysical_models/joule_effect");
   if (tn0 == NULL)
     return;
-
-  cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
 
   cs_gui_node_get_child_status_int(tn0, "variable_scaling",
                                    &(elec_opt->ielcor));
@@ -1500,6 +1492,7 @@ cs_gui_elec_model(void)
   bft_printf("--puisim  = %f\n", cs_glob_elec_option->puisim);
   bft_printf("--couimp  = %f\n", cs_glob_elec_option->couimp);
   bft_printf("--modrec  = %d\n", cs_glob_elec_option->modrec);
+  bft_printf("--srrom   = %d\n", cs_glob_elec_option->srrom);
 #endif
 }
 
@@ -1647,6 +1640,40 @@ cs_gui_gwf_model(int  *permeability,
   bft_printf("--groundwater_anisotropic_permeability  = %d\n", *permeability);
   bft_printf("--groundwater_unsteady                  = %d\n", *unsteady);
   bft_printf("--groundwater_unsaturated               = %d\n", *unsaturated);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Combustion model: read reference values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_combustion_ref_values(void)
+{
+  bool combustion = false;
+  for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+       m_type <= CS_COMBUSTION_COAL;
+       m_type++) {
+    if (cs_glob_physical_model_flag[m_type] > -1)
+      combustion = true;
+  }
+
+  if (combustion) {
+    cs_combustion_model_t *cm = cs_glob_combustion_model;
+    cs_gui_properties_value("dynamic_diffusion", &(cm->diftl0));
+
+    cs_field_t *tf = cs_field_by_name_try("enthalpy");
+    if (tf != NULL) {
+      const int kvisls0 = cs_field_key_id("diffusivity_ref");
+      cs_field_set_key_double(tf, kvisls0, cm->diftl0);
+    }
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  if (combustion) {
+    bft_printf("--diftl0  = %f\n", cs_glob_combustion_model->diftl0);
+  }
 #endif
 }
 

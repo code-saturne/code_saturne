@@ -1445,13 +1445,12 @@ cs_iter_algo_log_cvg(cs_iter_algo_t      *algo,
 
       if (c->n_algo_iter == 1)
         cs_log_printf(CS_LOG_DEFAULT,
-                      "##%s.It    | %10s  %10s  %10s  %10s\n", label,
-                      "Algo.res", "Inner.iter", "Cumul.iter", "Tolerance");
+                      "##%s.It    | %10s  %10s\n",
+                      label, "Algo.res", "Tolerance");
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    "##%s.It%03d | %10.4e  %10d  %10d  %10.4e\n", label,
-                    c->n_algo_iter, c->res, c->last_inner_iter, c->n_inner_iter,
-                    c->tol);
+                    "##%s.It%03d | %10.4e  %10.4e\n",
+                    label, c->n_algo_iter, c->res, c->tol);
     }
 
   }

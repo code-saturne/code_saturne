@@ -89,7 +89,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_real_3_t *b_face_cog
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-  const cs_real_3_t *surfbo
+  const cs_real_3_t *b_face_normal
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
   const cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_surf;
 
@@ -172,9 +172,9 @@ cs_user_extra_operations(cs_domain_t  *domain)
 
       /* Compute the friction coefficient */
       srfbn = surfbn[f_id];
-      srfnor[0] = surfbo[f_id][0] / srfbn;
-      srfnor[1] = surfbo[f_id][1] / srfbn;
-      srfnor[2] = surfbo[f_id][2] / srfbn;
+      srfnor[0] = b_face_normal[f_id][0] / srfbn;
+      srfnor[1] = b_face_normal[f_id][1] / srfbn;
+      srfnor[2] = b_face_normal[f_id][2] / srfbn;
       fornor = forbr[f_id][0]*srfnor[0]
              + forbr[f_id][1]*srfnor[1]
              + forbr[f_id][2]*srfnor[2];

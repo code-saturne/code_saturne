@@ -167,6 +167,10 @@ BEGIN_C_DECLS
         coefficient for scaling
   \var  cs_elec_option_t::elcou
         current in scaling plane
+  \var  cs_elec_option_t::srrom
+        Sub-relaxation coefficient for the density, following the formula:
+        \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
+        Hence, with a zero value, there is no sub-relaxation.
 */
 
 /*! \struct cs_data_joule_effect_t
@@ -277,17 +281,10 @@ const cs_real_t cs_elec_epszer = 8.854e-12;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 void
-cs_f_elec_model_get_pointers(int     **ngazge,
-                             int     **ielcor,
+cs_f_elec_model_get_pointers(int     **ielcor,
                              double  **pot_diff,
                              double  **coejou,
-                             double  **elcou,
-                             double  **couimp,
-                             int     **irestrike,
-                             int     **ntdcla,
-                             double  **restrike_point_x,
-                             double  **restrike_point_y,
-                             double  **restrike_point_z);
+                             double  **elcou);
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global electric model structure.
@@ -296,40 +293,22 @@ cs_f_elec_model_get_pointers(int     **ngazge,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   ngazge         --> pointer to cs_glob_elec_properties->ngaz
  *   ielcor         --> pointer to cs_glob_elec_option->ielcor
  *   pot_diff       --> pointer to cs_glob_elec_option->pot_diff
  *   coejou         --> pointer to cs_glob_elec_option->coejou
  *   elcou          --> pointer to cs_glob_elec_option->elcou
- *   irestrike      --> pointer to cs_glob_elec_option->irestrike
- *   ntdcla         --> pointer to cs_glob_elec_option->ntdcla
- *   restrike_point --> pointer to cs_glob_elec_option->restrike_point
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_elec_model_get_pointers(int     **ngazge,
-                             int     **ielcor,
+cs_f_elec_model_get_pointers(int     **ielcor,
                              double  **pot_diff,
                              double  **coejou,
-                             double  **elcou,
-                             double  **couimp,
-                             int     **irestrike,
-                             int     **ntdcla,
-                             double  **restrike_point_x,
-                             double  **restrike_point_y,
-                             double  **restrike_point_z)
+                             double  **elcou)
 {
-  *ngazge           = &(_elec_properties.ngaz);
   *ielcor           = &(_elec_option.ielcor);
   *pot_diff         = &(_elec_option.pot_diff);
   *coejou           = &(_elec_option.coejou);
   *elcou            = &(_elec_option.elcou);
-  *couimp           = &(_elec_option.couimp);
-  *irestrike        = &(_elec_option.irestrike);
-  *ntdcla           = &(_elec_option.ntdcla);
-  *restrike_point_x = &(_elec_option.restrike_point[0]);
-  *restrike_point_y = &(_elec_option.restrike_point[1]);
-  *restrike_point_z = &(_elec_option.restrike_point[2]);
 }
 
 /*============================================================================
@@ -701,9 +680,9 @@ _pot_arg_f(int               location_id,
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (elini1, ELINI1) (cs_real_t *diftl0)
+CS_PROCF (elini1, ELINI1) (void)
 {
-  cs_electrical_model_specific_initialization(diftl0);
+  cs_electrical_model_specific_initialization();
 }
 
 void
@@ -865,7 +844,7 @@ cs_electrical_model_finalize(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_specific_initialization(cs_real_t  *diftl0)
+cs_electrical_model_specific_initialization(void)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -946,9 +925,8 @@ cs_electrical_model_specific_initialization(cs_real_t  *diftl0)
     }
   }
 
-  CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
   cs_gui_elec_model();
-  _elec_option.pot_diff = 1000.;//FIXME
+  _elec_option.pot_diff = 1000.; //FIXME
 
   _cs_electrical_model_verify();
 }

@@ -450,26 +450,11 @@ if (vcopt_e%idiff.ge. 1) then
   epsrgp = vcopt_u%epsrgr
   climgp = vcopt_u%climgr
 
-! Allocate temporary arrays
-  allocate(coefap(nfabor))
-  allocate(coefbp(nfabor))
-
-  do ifac = 1, nfabor
-    coefap(ifac) = zero
-    coefbp(ifac) = 1.d0
-  enddo
-
-!  f_id0 = -1 (indicates, for the rotation periodicity,
-!              that the variable is not Rij)
   f_id0 = -1
-  call gradient_s                                                   &
+  call gradient_hn_s                                                &
    ( f_id0  , imrgrp , inc    , nswrgp , imligp ,                   &
-     iwarnp , epsrgp , climgp ,                                     &
-     w7     , coefap , coefbp ,                                     &
+     iwarnp , epsrgp , climgp , w7     ,                            &
      grad   )
-
-! Free memory
-  deallocate(coefap, coefbp)
 
 ! Internal faces
 

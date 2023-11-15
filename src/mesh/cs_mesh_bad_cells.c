@@ -640,8 +640,8 @@ _to_regularize(const cs_mesh_t             *mesh,
 
   const cs_real_3_t *cdgfac = (const cs_real_3_t *) mq->i_face_cog;
   const cs_real_3_t *cdgfbo = (const cs_real_3_t *) mq->b_face_cog;
-  const cs_real_3_t *surfac = (const cs_real_3_t *) mq->i_face_normal;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
+  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) mq->i_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
 
   static cs_gnum_t nb_bad_cells = 0;
 
@@ -657,19 +657,19 @@ _to_regularize(const cs_mesh_t             *mesh,
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
-    vol[cell_id1][0] += cdgfac[face_id][0] * surfac[face_id][0];
-    vol[cell_id1][1] += cdgfac[face_id][1] * surfac[face_id][1];
-    vol[cell_id1][2] += cdgfac[face_id][2] * surfac[face_id][2];
-    vol[cell_id2][0] -= cdgfac[face_id][0] * surfac[face_id][0];
-    vol[cell_id2][1] -= cdgfac[face_id][1] * surfac[face_id][1];
-    vol[cell_id2][2] -= cdgfac[face_id][2] * surfac[face_id][2];
+    vol[cell_id1][0] += cdgfac[face_id][0] * i_face_normal[face_id][0];
+    vol[cell_id1][1] += cdgfac[face_id][1] * i_face_normal[face_id][1];
+    vol[cell_id1][2] += cdgfac[face_id][2] * i_face_normal[face_id][2];
+    vol[cell_id2][0] -= cdgfac[face_id][0] * i_face_normal[face_id][0];
+    vol[cell_id2][1] -= cdgfac[face_id][1] * i_face_normal[face_id][1];
+    vol[cell_id2][2] -= cdgfac[face_id][2] * i_face_normal[face_id][2];
   }
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     cs_lnum_t cell_id = b_face_cells[face_id];
-    vol[cell_id][0] += cdgfbo[face_id][0] * surfbo[face_id][0];
-    vol[cell_id][1] += cdgfbo[face_id][1] * surfbo[face_id][1];
-    vol[cell_id][2] += cdgfbo[face_id][2] * surfbo[face_id][2];
+    vol[cell_id][0] += cdgfbo[face_id][0] * b_face_normal[face_id][0];
+    vol[cell_id][1] += cdgfbo[face_id][1] * b_face_normal[face_id][1];
+    vol[cell_id][2] += cdgfbo[face_id][2] * b_face_normal[face_id][2];
   }
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {

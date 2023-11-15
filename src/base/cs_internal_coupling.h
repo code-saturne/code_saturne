@@ -40,6 +40,7 @@
 #include "cs_defs.h"
 
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_matrix_assembler.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -657,13 +658,13 @@ cs_internal_coupling_initialize_tensor_gradient(
  * \brief  Update internal coupling coefficients of the field of the
  * given id using given boundary exchange coefficients passed by face id.
  *
- * \param[in] field_id  field id
- * \param[in] hbnd      boundary exchange coefficients passed by face id
+ * \param[in] f     pointer to field
+ * \param[in] hbnd  boundary exchange coefficients passed by face id
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ic_field_set_exchcoeff(const int         field_id,
+cs_ic_field_set_exchcoeff(const cs_field_t *f,
                           const cs_real_t  *hbnd);
 
 /*----------------------------------------------------------------------------*/

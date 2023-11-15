@@ -218,12 +218,12 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
-  const cs_real_t *surfbn = mq->b_face_surf;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
   double *dist = mq->i_dist;
   double *distbr = mq->b_dist;
   double *volume  = mq->cell_vol;
 
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
 
   cs_real_33_t *dam;
   cs_real_3_t *rhs;
@@ -308,11 +308,11 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
           cs_glob_bc_type[face_id] == CS_SYMMETRY     ) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         if (mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE) {
-          double ssd = surfbn[face_id] / distbr[face_id];
+          double ssd = b_face_surf[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-              double nn =   surfbo[face_id][i]/surfbn[face_id]
-                          * surfbo[face_id][j]/surfbn[face_id];
+              double nn =   b_face_normal[face_id][i]/b_face_surf[face_id]
+                          * b_face_normal[face_id][j]/b_face_surf[face_id];
               dam[cell_id][i][j] += ssd * nn;
             }
           }
@@ -484,8 +484,8 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
   if (boundary_projection == 1) {
     cs_lnum_t n_b_faces = mesh->n_b_faces;
     const cs_lnum_t *b_face_cells = mesh->b_face_cells;
-    const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-    const cs_real_t *surfbn = mq->b_face_surf;
+    const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
+    const cs_real_t *b_face_surf = mq->b_face_surf;
     double *distbr = mq->b_dist;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -494,11 +494,11 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
           cs_glob_bc_type[face_id] == CS_SYMMETRY     ) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         if (mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE) {
-          double ssd = surfbn[face_id] / distbr[face_id];
+          double ssd = b_face_surf[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-              double nn =   surfbo[face_id][i]/surfbn[face_id]
-                          * surfbo[face_id][j]/surfbn[face_id];
+              double nn =   b_face_normal[face_id][i]/b_face_surf[face_id]
+                          * b_face_normal[face_id][j]/b_face_surf[face_id];
               //TODO ???    dam[cell_id][i][j] += ssd * nn;
             }
           }
@@ -660,12 +660,12 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   }
 
 #if 0
-  /* Boudanry projection... should be consistent with BCs... */
+  /* Boundary projection... should be consistent with BCs... */
   if (boundary_projection == 1) {
     const cs_lnum_t n_b_faces = mesh->n_b_faces;
     const cs_real_t *distbr = mq->b_dist;
-    const cs_real_t *surfbn = mq->b_face_surf;
-    const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
+    const cs_real_t *b_face_surf = mq->b_face_surf;
+    const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
     const cs_lnum_t *b_face_cells = mesh->b_face_cells;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (cs_glob_bc_type[face_id] == CS_SMOOTHWALL ||
@@ -673,11 +673,11 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
           cs_glob_bc_type[face_id] == CS_SYMMETRY     ) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         if (mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE) {
-          double ssd = surfbn[face_id] / distbr[face_id];
+          double ssd = b_face_surf[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-              double nn =   surfbo[face_id][i]/surfbn[face_id]
-                          * surfbo[face_id][j]/surfbn[face_id];
+              double nn =   b_face_normal[face_id][i]/b_face_surf[face_id]
+                          * b_face_normal[face_id][j]/b_face_surf[face_id];
 //TODO ???              dam[cell_id][i][j] += ssd * nn;
             }
           }

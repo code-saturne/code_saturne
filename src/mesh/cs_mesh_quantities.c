@@ -675,7 +675,7 @@ _compute_face_surface(cs_lnum_t        n_faces,
  * volumes consistent with that obtained using a splitting of the face
  * into triangles using face edges and an approxmate center.
  *
- * This adjustment was done by default from Code_Saturne 1.1 to 5.2.
+ * This adjustment was done by default from code_saturne 1.1 to 5.2.
  * To handle warped faces, a correction of the cell center is used so
  * that the contribution to the cell volume using Green's theorem is
  * consistent with the volume computed for sub-faces.
@@ -1264,7 +1264,7 @@ _compute_cell_quantities(const cs_mesh_t    *mesh,
     /* For each cell sharing a border face, we update the numerator
      * of cell_cen and cell_area */
 
-    cs_lnum_t c_id1 = b_face_cells[f_id];
+    const cs_lnum_t c_id1 = b_face_cells[f_id];
 
     /* Computation of the area of the face
        (note that c_id1 == -1 may happen for isolated faces,
@@ -1384,9 +1384,9 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     /* Contribution from interior faces */
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-      cs_lnum_t cell_id1 = i_face_cells[face_id][0];
-      cs_lnum_t cell_id2 = i_face_cells[face_id][1];
-      double surfn = cs_math_3_norm(i_face_normal[face_id]);
+      const cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+      const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+      const double surfn = cs_math_3_norm(i_face_normal[face_id]);
 
       /* If the surface of the face is < 1.e-20 computation is not done,
        * to avoid dividing by 0 and unnecessary operations.
@@ -1520,8 +1520,8 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-      cs_lnum_t cell_id1 = i_face_cells[face_id][0];
-      cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+      const cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+      const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
       /* IF . S */
       double psi1 = cs_math_3_distance_dot_product(cdgbis[cell_id1],
@@ -1614,8 +1614,8 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
 
   for (cs_lnum_t fac_id = 0; fac_id < mesh->n_i_faces; fac_id++) {
 
-    cs_lnum_t cell_id1 = mesh->i_face_cells[fac_id][0];
-    cs_lnum_t cell_id2 = mesh->i_face_cells[fac_id][1];
+    const cs_lnum_t cell_id1 = mesh->i_face_cells[fac_id][0];
+    const cs_lnum_t cell_id2 = mesh->i_face_cells[fac_id][1];
 
     cell_vol[cell_id1] += cs_math_3_distance_dot_product(cell_cen[cell_id1],
                                                          i_face_cog[fac_id],
@@ -1630,7 +1630,7 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
 
   for (cs_lnum_t fac_id = 0; fac_id < n_b_faces; fac_id++) {
 
-    cs_lnum_t cell_id1 = mesh->b_face_cells[fac_id];
+    const cs_lnum_t cell_id1 = mesh->b_face_cells[fac_id];
 
     cell_vol[cell_id1] += cs_math_3_distance_dot_product(cell_cen[cell_id1],
                                                          b_face_cog[fac_id],
@@ -1668,10 +1668,10 @@ _cell_bad_volume_correction(const cs_mesh_t   *mesh,
 
     for (cs_lnum_t fac_id = 0; fac_id < mesh->n_i_faces; fac_id++) {
 
-      cs_lnum_t cell_id1 = mesh->i_face_cells[fac_id][0];
-      cs_lnum_t cell_id2 = mesh->i_face_cells[fac_id][1];
-      double vol1 = cell_vol[cell_id1];
-      double vol2 = cell_vol[cell_id2];
+      const cs_lnum_t cell_id1 = mesh->i_face_cells[fac_id][0];
+      const cs_lnum_t cell_id2 = mesh->i_face_cells[fac_id][1];
+      const cs_real_t vol1 = cell_vol[cell_id1];
+      const cs_real_t vol2 = cell_vol[cell_id2];
 
       if (vol2 > 0.)
         vol_neib_max[cell_id1] = CS_MAX(vol_neib_max[cell_id1], vol2);
@@ -1682,7 +1682,7 @@ _cell_bad_volume_correction(const cs_mesh_t   *mesh,
 
     /* Previous value of 0.2 sometimes leads to computation divergence */
     /* 0.01 seems better and safer for the moment */
-    double critmin = 0.01;
+    const cs_real_t critmin = 0.01;
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
       cell_vol[cell_id] = CS_MAX(cell_vol[cell_id],
@@ -1768,8 +1768,8 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
     cs_real_t normal[3];
     cs_math_3_normalize(face_nomal, normal);
 
-    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
-    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+    const cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
     /* Distance between the neighbor cell centers
      * and dot-product with the normal */
@@ -1802,17 +1802,16 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
       /* If CS_FACE_NULL_SURFACE is used, only update distmax value
        * if the face surface is not 0.
        */
-      if(!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
-          face_normal_norm > 1.e-20)
-        distmax
-        = cs_math_fmin(cs_math_3_distance(cell_cen[cell_id1],
-                                          cell_cen[cell_id2]),
-                       (  (cell_vol[cell_id1] + cell_vol[cell_id2])
-                        / face_normal_norm));
+      if (   !(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE)
+          || face_normal_norm > 1.e-20)
+        distmax = cs_math_fmin(cs_math_3_distance(cell_cen[cell_id1],
+                                                  cell_cen[cell_id2]),
+                               (  (cell_vol[cell_id1] + cell_vol[cell_id2])
+                                / face_normal_norm));
 
       /* Previous value of 0.2 sometimes leads to computation divergence */
       /* 0.01 seems better and safer for the moment */
-      double critmin = 0.01;
+      const cs_real_t critmin = 0.01;
       if (i_dist[face_id] < critmin * distmax) {
         w_count[0] += 1;
         i_dist[face_id] = cs_math_fmax(i_dist[face_id], critmin * distmax);
@@ -1820,14 +1819,14 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Clippings due to null surface */
       if (cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) {
-        if(face_normal_norm <= 1.e-20)
+        if (face_normal_norm <= 1.e-20)
           i_dist[face_id] = cs_math_3_distance(cell_cen[cell_id1],
                                                cell_cen[cell_id2]);
 
         /* i_dist is arbirary clipped to 1. in this case.
          * FIXME: This value could be improved in future releases
          */
-        if(i_dist[face_id] < 1.e-20)
+        if (i_dist[face_id] < 1.e-20)
           i_dist[face_id] = 1.;
       }
 
@@ -1845,7 +1844,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
     cs_real_t normal[3];
     cs_math_3_normalize(face_nomal, normal);
 
-    cs_lnum_t cell_id = b_face_cells[face_id];
+    const cs_lnum_t cell_id = b_face_cells[face_id];
 
     /* Distance between the face center of gravity
        and the neighbor cell center */
@@ -1857,17 +1856,18 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Min value between IF and
        * (Omega_i)/S which is exactly the distance for tetrahedra */
-      cs_real_t face_normal_norm = cs_math_3_norm(face_nomal);
+      const cs_real_t face_normal_norm = cs_math_3_norm(face_nomal);
       cs_real_t distmax = -1;
 
       /* If CS_FACE_NULL_SURFACE is used, only update distmax value
        * if the face surface is not 0.
        */
-      if(!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
-          face_normal_norm > 1.e-20)
+      if (   !(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE)
+          || face_normal_norm > 1.e-20) {
         distmax = fmin(cs_math_3_distance(cell_cen[cell_id],
                                           b_face_cog[face_id]),
-                            cell_vol[cell_id]/face_normal_norm);
+                       cell_vol[cell_id]/face_normal_norm);
+      }
 
       double critmin = 0.01;
       if (b_dist[face_id] < critmin * distmax) {
@@ -1877,14 +1877,14 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
       /* Clippings due to null surface */
       if (cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) {
-        if(face_normal_norm <= 1.e-20)
+        if (face_normal_norm <= 1.e-20)
           b_dist[face_id] = cs_math_3_distance(cell_cen[cell_id],
                                                b_face_cog[face_id]);
 
         /* b_dist is arbirary clipped to 1. in this case.
          * FIXME: This value could be improved in future releases
          */
-        if(b_dist[face_id] < 1.e-20)
+        if (b_dist[face_id] < 1.e-20)
           b_dist[face_id] = 1.;
       }
 
@@ -1970,13 +1970,10 @@ _compute_face_vectors(int              dim,
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
-    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+    const cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
-    cs_real_t dipjp, pond;
-    cs_real_t vecijx, vecijy, vecijz;
-
-    cs_real_t surfn[3];
+    cs_real_t surfn[3] = {0., 0. ,0.};
 
     /* Normalized normal */
     /* If CS_FACE_NULL_SURFACE is used, ensure that face surface is not 0 */
@@ -1993,19 +1990,22 @@ _compute_face_vectors(int              dim,
     }
 
     /* ---> IJ */
-    vecijx = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
-    vecijy = cell_cen[cell_id2*dim + 1] - cell_cen[cell_id1*dim + 1];
-    vecijz = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
+    const cs_real_t vecijx
+      = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
+    const cs_real_t vecijy
+      = cell_cen[cell_id2*dim + 1] - cell_cen[cell_id1*dim + 1];
+    const cs_real_t vecijz
+      = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
 
     /* ---> DIJPP = IJ.NIJ */
-    dipjp = vecijx*surfn[0] + vecijy*surfn[1] + vecijz*surfn[2];
+    const cs_real_t dipjp = vecijx*surfn[0] + vecijy*surfn[1] + vecijz*surfn[2];
 
     /* ---> DIJPF = (IJ.NIJ).NIJ */
     dijpf[face_id*dim]     = dipjp*surfn[0];
     dijpf[face_id*dim + 1] = dipjp*surfn[1];
     dijpf[face_id*dim + 2] = dipjp*surfn[2];
 
-    pond = weight[face_id];
+    const cs_real_t pond = weight[face_id];
 
     /* ---> DOFIJ = OF */
     dofij[face_id*dim]     = i_face_cog[face_id*dim]
@@ -2125,8 +2125,8 @@ _compute_face_sup_vectors(cs_lnum_t          n_cells,
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
-    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+    const cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
     /* Normalized normal */
     cs_real_t normal[3];
@@ -2294,10 +2294,10 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t   *m,
 {
   /* Mesh connectivity */
 
-  const  cs_lnum_t  n_b_faces = m->n_b_faces;
-  const  cs_lnum_t  n_cells = m->n_cells;
-  const  cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
-  const  cs_lnum_t  *b_face_cells
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t *b_face_cells
     = (const cs_lnum_t *)(m->b_face_cells);
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -2305,7 +2305,7 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t   *m,
 
   /* Initialization */
 
-  cs_real_t  *cell_area = NULL;
+  cs_real_t *cell_area;
   BFT_MALLOC(cell_area, n_cells_ext, cs_real_t);
   cs_array_real_fill_zero(n_cells_ext, cell_area);
 
@@ -2325,7 +2325,7 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t   *m,
        * cell_cen and cell_area */
 
       /* Computation of face area  */
-      cs_real_t area = cs_math_3_norm(i_f_face_cell_normal[cidx]);
+      const cs_real_t area = cs_math_3_norm(i_f_face_cell_normal[cidx]);
       cell_area[c_id] += area;
 
       for (cs_lnum_t i = 0; i < 3; i++)
@@ -2365,12 +2365,12 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t   *m,
   /* Loop on cells: optional immersed boundary contribution */
   if (c_w_face_normal != NULL) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_real_t area = cs_math_3_norm(c_w_face_normal[c_id]);
+      const cs_real_t area = cs_math_3_norm(c_w_face_normal[c_id]);
 
       cell_area[c_id] += area;
 
       for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[c_id][i] +=  c_w_face_cog[c_id][i] * area;
+        cell_cen[c_id][i] += c_w_face_cog[c_id][i] * area;
     }
   }
 
@@ -2427,22 +2427,22 @@ _mesh_quantities_cell_faces_cog_solid(const cs_mesh_t   *m,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
-                                     const cs_real_t      i_f_face_cell_normal[][3],
-                                     const cs_real_t      i_f_face_cog[][3],
-                                     const cs_real_3_t    b_f_face_normal[],
-                                     const cs_real_3_t    b_f_face_cog[],
-                                     const cs_real_3_t    c_w_face_normal[],
-                                     const cs_real_3_t    c_w_face_cog[],
-                                     cs_real_3_t          cell_f_cen[restrict],
-                                     cs_real_t            cell_f_vol[restrict])
+_compute_fluid_solid_cell_quantities(const cs_mesh_t  *m,
+                                     const cs_real_t   i_f_face_cell_normal[][3],
+                                     const cs_real_t   i_f_face_cog[][3],
+                                     const cs_real_t   b_f_face_normal[][3],
+                                     const cs_real_t   b_f_face_cog[][3],
+                                     const cs_real_t   c_w_face_normal[][3],
+                                     const cs_real_t   c_w_face_cog[][3],
+                                     cs_real_t         cell_f_cen[restrict][3],
+                                     cs_real_t         cell_f_vol[restrict])
 {
   /* Mesh connectivity */
 
-  const  cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
-  const  cs_lnum_t  n_cells = m->n_cells;
-  const  cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
-  const  cs_lnum_t  *b_face_cells = m->b_face_cells;
+  const cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t  *b_face_cells = m->b_face_cells;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const short int *cell_i_faces_sgn = ma->cell_i_faces_sgn;
@@ -2452,17 +2452,19 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
   assert(cell_f_cen != NULL);
   assert(cell_f_vol != NULL);
 
-  cs_real_t *_cell_f_vol = NULL;
+  cs_real_t *_cell_f_vol;
   BFT_MALLOC(_cell_f_vol, n_cells_ext, cs_real_t);
 
-  cs_real_3_t *_cell_f_cen = NULL;
+  cs_real_3_t *_cell_f_cen;
   BFT_MALLOC(_cell_f_cen, n_cells_ext, cs_real_3_t);
 
   /* Compute approximate cell center using face centers */
 
-  cs_real_3_t *a_cell_cen = NULL;
+  cs_real_3_t *a_cell_cen;
   BFT_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
-  memset(a_cell_cen, 0., n_cells_ext * sizeof(cs_real_3_t));
+  cs_array_real_set_scalar(3*n_cells_ext,
+                           0,
+                           (cs_real_t *)a_cell_cen);
 
   // TODO merge with cs_mesh_quantities_cell_faces_cog
   _mesh_quantities_cell_faces_cog_solid(m,
@@ -2506,6 +2508,7 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
         _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*i_f_face_cog[cidx][i]
                                              + 0.25*a_cell_cen[c_id][i]);
       _cell_f_vol[c_id] += pyra_vol_3;
+
     } /* End of loop on interior faces */
 
   } /* End of loop on cells */
@@ -2534,7 +2537,9 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
         _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*b_f_face_cog[f_id][i]
                                              + 0.25*a_cell_cen[c_id][i]);
       _cell_f_vol[c_id] += pyra_vol_3;
+
     }
+
   } /* End of loop on boundary faces */
 
   /* Add pyramid formed with the solid face */
@@ -2553,13 +2558,14 @@ _compute_fluid_solid_cell_quantities(const cs_mesh_t     *m,
       _cell_f_vol[c_id] += pyra_vol_3;
 
     }
+
   }
 
   /* Loop on cells to finalize the computation
      ----------------------------------------- */
 
   // TODO loop only over selected cells
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     if (_cell_f_vol[c_id] > 0.) {
 
@@ -2647,7 +2653,6 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
                const cs_lnum_t      face_vertex_idx[],
                const cs_real_t      w_vtx[][3])
 {
-
   cs_lnum_t *face_vertex_ids;
   BFT_MALLOC(face_vertex_ids, n_glob_vtx, cs_lnum_t);
   for (cs_lnum_t i = 0; i < n_glob_vtx; i++)
@@ -2776,21 +2781,28 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
   fvm_nodal_set_shared_vertices(ib_mesh,
                                 (const cs_coord_t *)edge);
 
-  /* Order faces by increasing global number */
+  /* Parallel numbering */
 
-  fvm_io_num_t *face_io_num;
-  face_io_num = fvm_io_num_create_from_scan(n_ib_cells);
-  const cs_gnum_t *face_gnum = fvm_io_num_get_global_num(face_io_num);
-  fvm_nodal_order_faces(ib_mesh, face_gnum);
-  fvm_nodal_init_io_num(ib_mesh, face_gnum, 2);
+  fvm_io_num_t *face_io_num = NULL;
+  fvm_io_num_t *vtx_io_num = NULL;
 
-  /* Order vertices by increasing global number */
+  if (cs_glob_n_ranks > 1) {
 
-  fvm_io_num_t *vtx_io_num;
-  vtx_io_num = fvm_io_num_create_from_scan(n_glob_vtx);
-  const cs_gnum_t *vertex_gnum = fvm_io_num_get_global_num(vtx_io_num);
-  fvm_nodal_order_vertices(ib_mesh, vertex_gnum);
-  fvm_nodal_init_io_num(ib_mesh, vertex_gnum, 0);
+    /* Order faces by increasing global number */
+
+    face_io_num = fvm_io_num_create_from_scan(n_ib_cells);
+    const cs_gnum_t *face_gnum = fvm_io_num_get_global_num(face_io_num);
+    fvm_nodal_order_faces(ib_mesh, face_gnum);
+    fvm_nodal_init_io_num(ib_mesh, face_gnum, 2);
+
+    /* Order vertices by increasing global number */
+
+    vtx_io_num = fvm_io_num_create_from_scan(n_glob_vtx);
+    const cs_gnum_t *vertex_gnum = fvm_io_num_get_global_num(vtx_io_num);
+    fvm_nodal_order_vertices(ib_mesh, vertex_gnum);
+    fvm_nodal_init_io_num(ib_mesh, vertex_gnum, 0);
+
+  }
 
   /* Print ib_mesh info in listing */
 
@@ -2813,6 +2825,7 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
 
   fvm_writer_finalize(writer);
   ib_mesh = fvm_nodal_destroy(ib_mesh);
+
   if (cs_glob_n_ranks > 1) {
     fvm_io_num_destroy(vtx_io_num);
     fvm_io_num_destroy(face_io_num);
@@ -2820,7 +2833,6 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
 
   BFT_FREE(face_vertex_ids);
   BFT_FREE(edge);
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3310,10 +3322,9 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     = (cs_real_3_t *restrict)mq->c_w_face_cog;
 
   const cs_lnum_t n_cells = m->n_cells;
-
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   cs_mesh_adjacencies_update_cell_i_faces();
-  cs_mesh_adjacencies_update_mesh();
+
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
   const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
@@ -3351,13 +3362,22 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   cs_real_3_t *i_f_face_cog;
   CS_MALLOC_HD(i_f_face_cog, 2*m->n_i_faces, cs_real_3_t, cs_alloc_mode);
+  cs_array_real_fill_zero(3*2*m->n_i_faces, (cs_real_t *)i_f_face_cog);
 
   cs_real_3_t *i_f_face_cell_normal;
   BFT_MALLOC(i_f_face_cell_normal, 2*m->n_i_faces, cs_real_3_t);
 
-  memset(i_f_face_cell_normal, 0., 2*m->n_i_faces * sizeof(cs_real_3_t));
-  memset(c_w_face_cog, 0. , m->n_cells_with_ghosts * sizeof(cs_real_3_t));
-  memset(c_w_face_surf, 0. , m->n_cells_with_ghosts * sizeof(cs_real_t));
+  cs_array_real_set_scalar(3*2*m->n_i_faces,
+                           0.,
+                           (cs_real_t *)i_f_face_cell_normal);
+
+  cs_array_real_set_scalar(3*m->n_cells_with_ghosts,
+                           0.,
+                           (cs_real_t *)c_w_face_cog);
+
+  cs_array_real_set_scalar(m->n_cells_with_ghosts,
+                           0.,
+                           (cs_real_t *)c_w_face_surf);
 
   /* ib face vertex number */
   cs_lnum_t *w_vtx_idx;
@@ -3378,7 +3398,9 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   cs_real_3_t *v_w_ref;
   BFT_MALLOC(v_w_ref, m->n_cells_with_ghosts, cs_real_3_t);
-  memset(v_w_ref, 0., m->n_cells_with_ghosts * sizeof(cs_real_3_t));
+  cs_array_real_set_scalar(3*m->n_cells_with_ghosts,
+                           0.,
+                           (cs_real_t *)v_w_ref);
 
   cs_lnum_t *flag_id;
   BFT_MALLOC(flag_id, m->n_cells_with_ghosts, cs_lnum_t);
@@ -3397,8 +3419,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   /* ib cell number */
   cs_lnum_t n_ib_cells = 0;
 
-  /* Loop on cells */
-  //# pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     cs_lnum_t n_w_vtx = 0;
@@ -3411,7 +3431,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
       const cs_lnum_t face_id = cell_i_faces[cidx];
 
-      /* Initialization*/
+      /* Initialization */
       const cs_lnum_t s_id = i_face_vtx_idx[face_id];
       const cs_lnum_t e_id = i_face_vtx_idx[face_id + 1];
       const cs_lnum_t n_face_vertices = e_id - s_id;
@@ -3421,19 +3441,29 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       cs_lnum_t n_s_face_vertices = 0;
       cs_lnum_t f_vtx_id = 0;
 
-      cs_real_3_t *vc;
-      BFT_MALLOC(vc, n_face_vertices, cs_real_3_t);
-      memset(vc, -1., n_face_vertices * sizeof(cs_real_3_t));
+      cs_real_t *_vc[10][3];
+      cs_real_3_t *vc = (cs_real_3_t *)_vc;
+      if (n_face_vertices > 10)
+        BFT_MALLOC(vc, n_face_vertices, cs_real_3_t);
+
+      cs_array_real_set_scalar(3*n_face_vertices,
+                               -1.,
+                               (cs_real_t *)vc);
 
       const cs_lnum_t max_n_f_face_vertices = 2*n_face_vertices;
 
       /* Build fluid vertices coordinates array */
-      cs_real_3_t *f_vtx_coord;
-      BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
-      memset(f_vtx_coord, -1., max_n_f_face_vertices * sizeof(cs_real_3_t));
+      cs_real_t *_f_vtx_coord[20][3];
+      cs_real_3_t *f_vtx_coord = (cs_real_3_t *)_f_vtx_coord;
+      if (max_n_f_face_vertices > 20)
+        BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
+
+      cs_array_real_set_scalar(3*max_n_f_face_vertices,
+                               -1.,
+                               (cs_real_t *)f_vtx_coord);
 
       /* Loop over vertices of the face */
-      for (cs_lnum_t j = 0; j < n_face_vertices; j++)  {
+      for (cs_lnum_t j = 0; j < n_face_vertices; j++) {
 
         for (cs_lnum_t i = 0; i < 3; i++)
           vc[j][i] = vtx_coord[vertex_ids[j]][i] - cen_points[c_id][i];
@@ -3477,9 +3507,9 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_lnum_t s_vtx_id = -1;
 
         /* Store the (two) vertices at the interface */
-        cs_real_3_t *v_w_inteface;
-        BFT_MALLOC(v_w_inteface, 2, cs_real_3_t);
-        cs_array_real_fill_zero(3 * 2, (cs_real_t *) v_w_inteface);
+        cs_real_t *_v_w_inteface[2][3];
+        cs_real_3_t *v_w_inteface = (cs_real_3_t *)_v_w_inteface;
+        cs_array_real_fill_zero(3 * 2, (cs_real_t *)v_w_inteface);
 
         /* 3 consecutive vertices */
         cs_lnum_3_t loc_id = {n_face_vertices - 1, 0, 1};
@@ -3632,7 +3662,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                     + v_w_inteface[1][i])
                                     * cs_math_3_norm(vn);
 
-        BFT_FREE(v_w_inteface);
+        if (v_w_inteface != (cs_real_3_t *)_v_w_inteface)
+          BFT_FREE(v_w_inteface);
       }
 
       cs_lnum_t n_f_face_vertices = f_vtx_id;
@@ -3640,8 +3671,10 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       /* Computing quantities of face intersected by different planes */
       if (n_f_face_vertices > 2) {
 
-        cs_lnum_t *f_face_pos;
-        BFT_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
+        cs_lnum_t *_f_face_pos[8];
+        cs_lnum_t *f_face_pos = (cs_lnum_t *)_f_face_pos;
+        if (n_f_face_vertices > 8)
+          BFT_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
 
         for (cs_lnum_t i = 0; i < n_f_face_vertices; i++)
           f_face_pos[i] = i;
@@ -3649,22 +3682,26 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_lnum_t f_vtx_idx[2] = {0, n_f_face_vertices};
         cs_real_t _i_f_face_cog[1][3]  = { {0., 0., 0.} };
         cs_real_t _i_f_face_normal[1][3] = { {0., 0., 0.} };
-        cs_real_3_t *_f_vtx_coord;
 
-        BFT_MALLOC(_f_vtx_coord, n_f_face_vertices, cs_real_3_t);
+        cs_real_t *_f_vtx_coord_l[10][3];
+        cs_real_3_t *f_vtx_coord_l = (cs_real_3_t *)_f_vtx_coord_l;
+        if (n_f_face_vertices > 10)
+          BFT_MALLOC(f_vtx_coord_l, n_f_face_vertices, cs_real_3_t);
+
         for (cs_lnum_t ffv = 0; ffv < n_f_face_vertices; ffv++) {
           for (cs_lnum_t i = 0; i < 3; i++)
-            _f_vtx_coord[ffv][i] = f_vtx_coord[ffv][i];
+            f_vtx_coord_l[ffv][i] = f_vtx_coord[ffv][i];
         }
 
         _compute_face_quantities(1,
-                                 _f_vtx_coord,
+                                 f_vtx_coord_l,
                                  f_vtx_idx,
                                  f_face_pos,
                                  _i_f_face_cog,
                                  _i_f_face_normal);
 
-        BFT_FREE(_f_vtx_coord);
+        if (f_vtx_coord_l != (cs_real_3_t *)_f_vtx_coord_l)
+          BFT_FREE(f_vtx_coord_l);
 
         /* Storing fluid face COG associated to each cell */
         for (cs_lnum_t i = 0; i < 3; i++) {
@@ -3672,10 +3709,15 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
           i_f_face_cell_normal[cidx][i] = _i_f_face_normal[0][i];
         }
 
-        BFT_FREE(f_face_pos);
+        if (f_face_pos != (cs_lnum_t *)_f_face_pos)
+          BFT_FREE(f_face_pos);
       }
-      BFT_FREE(vc);
-      BFT_FREE(f_vtx_coord);
+
+      if (vc != (cs_real_3_t *)_vc)
+        BFT_FREE(vc);
+
+      if (f_vtx_coord != (cs_real_3_t *)_f_vtx_coord)
+        BFT_FREE(f_vtx_coord);
 
       /* Adjusting face porosity and COG
        * we take the smaller surface side and its COG */
@@ -3708,14 +3750,26 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       cs_lnum_t n_s_face_vertices = 0;
       cs_lnum_t f_vtx_count = 0;
 
-      cs_real_3_t *vc;
-      BFT_MALLOC(vc, n_face_vertices, cs_real_3_t);
-      memset(vc, -1., n_face_vertices * sizeof(cs_real_3_t));
+      cs_real_t *_vc[10][3];
+      cs_real_3_t *vc = (cs_real_3_t *)_vc;
+      if (n_face_vertices > 10)
+        BFT_MALLOC(vc, n_face_vertices, cs_real_3_t);
 
-      cs_lnum_t max_n_f_face_vertices = 2*n_face_vertices;
-      cs_real_3_t *f_vtx_coord;
-      BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
-      memset(f_vtx_coord, -1., max_n_f_face_vertices * sizeof(cs_real_3_t));
+      cs_array_real_set_scalar(3*n_face_vertices,
+                               -1.,
+                               (cs_real_t *)vc);
+
+      const cs_lnum_t max_n_f_face_vertices = 2*n_face_vertices;
+
+      /* Build fluid vertices coordinates array */
+      cs_real_t *_f_vtx_coord[20][3];
+      cs_real_3_t *f_vtx_coord = (cs_real_3_t *)_f_vtx_coord;
+      if (max_n_f_face_vertices > 20)
+        BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
+
+      cs_array_real_set_scalar(3*max_n_f_face_vertices,
+                               -1.,
+                               (cs_real_t *)f_vtx_coord);
 
       /* Loop over vertices of the boundary face */
       for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++)  {
@@ -3766,9 +3820,9 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_lnum_t s_vtx_count = -1;
 
         /* Store the (two) vertices at the interface */
-        cs_real_3_t *v_w_inteface;
-        BFT_MALLOC(v_w_inteface, 2, cs_real_3_t);
-        cs_array_real_fill_zero(3 * 2, (cs_real_t *) v_w_inteface);
+        cs_real_t *_v_w_inteface[2][3];
+        cs_real_3_t *v_w_inteface = (cs_real_3_t *)_v_w_inteface;
+        cs_array_real_fill_zero(3 * 2, (cs_real_t *)v_w_inteface);
 
         /* 3 consecutive vertices */
         cs_lnum_t loc_id[3] = {n_face_vertices - 1, 0, 1};
@@ -3912,7 +3966,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                     + v_w_inteface[1][i])
                                  * cs_math_3_norm(vn);
 
-        BFT_FREE(v_w_inteface);
+        if (v_w_inteface != (cs_real_3_t *)_v_w_inteface)
+          BFT_FREE(v_w_inteface);
       }
 
       cs_lnum_t n_f_face_vertices = f_vtx_count;
@@ -3920,8 +3975,10 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       /* Computing quantities of fluid part of interface faces */
       if (n_f_face_vertices > 2) {
 
-        cs_lnum_t *f_face_pos;
-        BFT_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
+        cs_lnum_t *_f_face_pos[8];
+        cs_lnum_t *f_face_pos = (cs_lnum_t *)_f_face_pos;
+        if (n_f_face_vertices > 8)
+          BFT_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
 
         for (cs_lnum_t i = 0; i < n_f_face_vertices; i++) {
           f_face_pos[i] = i;
@@ -3930,20 +3987,26 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_lnum_2_t f_vtx_idx = {0, n_f_face_vertices};
         cs_real_t face_cog[1][3]  = {{0., 0., 0.}};
         cs_real_t face_normal[1][3] = {{0., 0., 0.}};
-        cs_real_3_t f_vtx_coor[n_f_face_vertices];  /* FIXME: not in standard
-                                                     (not allowed in C99,
-                                                     need to check for C11) */
+
+        cs_real_t *_f_vtx_coord_l[8][3];
+        cs_real_3_t *f_vtx_coord_l = (cs_real_3_t *)_f_vtx_coord_l;
+        if (n_f_face_vertices > 8)
+          BFT_MALLOC(f_vtx_coord_l, n_f_face_vertices, cs_real_3_t);
+
         for (cs_lnum_t ffv = 0; ffv < n_f_face_vertices; ffv++) {
           for (cs_lnum_t i = 0; i < 3; i++)
-            f_vtx_coor[ffv][i] = f_vtx_coord[ffv][i];
+            f_vtx_coord_l[ffv][i] = f_vtx_coord[ffv][i];
         }
 
         _compute_face_quantities(1,
-                                 f_vtx_coor,
+                                 f_vtx_coord_l,
                                  f_vtx_idx,
                                  f_face_pos,
                                  face_cog,
                                  face_normal);
+
+        if (f_vtx_coord_l != (cs_real_3_t *)_f_vtx_coord_l)
+          BFT_FREE(f_vtx_coord_l);
 
         /* Adjust porosity and COG */
 
@@ -3953,11 +4016,15 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         }
         mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
 
-        BFT_FREE(f_face_pos);
+        if (f_face_pos != (cs_lnum_t *)_f_face_pos)
+          BFT_FREE(f_face_pos);
       }
 
-      BFT_FREE(vc);
-      BFT_FREE(f_vtx_coord);
+      if (vc != (cs_real_3_t *)_vc)
+        BFT_FREE(vc);
+
+      if (f_vtx_coord != (cs_real_3_t *)_f_vtx_coord)
+        BFT_FREE(f_vtx_coord);
 
     } /* Loop on boundary faces */
 
@@ -4037,7 +4104,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   _compute_face_distances(m->n_i_faces,
                           m->n_b_faces,
                           (const cs_lnum_2_t *)(m->i_face_cells),
-                          m->b_face_cells,
+                          (const cs_lnum_t   *)(m->b_face_cells),
                           (const cs_real_3_t *)(mq->i_face_normal),
                           (const cs_real_3_t *)(mq->b_face_normal),
                           (const cs_real_3_t *)(mq->i_face_cog),
@@ -4080,10 +4147,14 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   cs_real_33_t *xpsn;
   BFT_MALLOC(xpsn, m->n_cells_with_ghosts, cs_real_33_t);
-  memset(xpsn, 0., m->n_cells_with_ghosts * sizeof(cs_real_33_t));
+  cs_array_real_set_scalar(9*m->n_cells_with_ghosts,
+                           0.,
+                           (cs_real_t *)xpsn);
 
   /* Reinitializing the wall normal before correcting */
-  memset(c_w_face_normal, 0., m->n_cells_with_ghosts * sizeof(cs_real_3_t));
+  cs_array_real_set_scalar(3*m->n_cells_with_ghosts,
+                           0.,
+                           (cs_real_t *)c_w_face_normal);
 
   /* Interior faces */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

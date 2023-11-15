@@ -55,30 +55,6 @@ module field_operator
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Compute cell gradient of potential field
-
-    !> \param[in]   f_id             field id
-    !> \param[in]   use_previous_t   1 if values at previous time step should
-    !>                               be used, 0 otherwise
-    !> \param[in]   inc              0: increment; 1: do not increment
-    !> \param[in]   hyd_p_flag       flag for hydrostatic pressure
-    !> \param[in]   f_ext            exterior force generating
-    !>                               the hydrostatic pressure
-    !> \param[out]  grad             gradient
-
-    subroutine field_gradient_potential(f_id, use_previous_t, inc, hyd_p_flag, &
-                                        f_ext, grad)                           &
-      bind(C, name='cs_f_field_gradient_potential')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value                :: f_id, use_previous_t, inc
-      integer(c_int), value                :: hyd_p_flag
-      real(kind=c_double), dimension(3, *) :: f_ext
-      real(kind=c_double), dimension(*)    :: grad
-    end subroutine field_gradient_potential
-
-    !---------------------------------------------------------------------------
-
     !> \brief  Compute cell gradient of vector field.
 
     !> \param[in]   f_id             field id
@@ -110,7 +86,7 @@ module field_operator
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value                 :: f_id, use_previous_t, inc
-      real(kind=c_double), dimension(6,3,*) :: grad
+      real(kind=c_double), dimension(3,6,*) :: grad
     end subroutine field_gradient_tensor
 
     !---------------------------------------------------------------------------

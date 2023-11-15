@@ -135,7 +135,7 @@ extern const cs_real_t cs_elec_epszer;
  *============================================================================*/
 
 void
-CS_PROCF (elini1, ELINI1) (cs_real_t  *diftl0);
+CS_PROCF (elini1, ELINI1) (void);
 
 void
 CS_PROCF (elflux, ELFLUX) (int      *iappel);
@@ -199,7 +199,7 @@ cs_electrical_model_finalize(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_specific_initialization(cs_real_t  *diftl0);
+cs_electrical_model_specific_initialization(void);
 
 /*----------------------------------------------------------------------------
  * Read properties file

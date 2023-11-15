@@ -123,7 +123,11 @@ class Plot(object):
         yplus = float(parser.getAttribute(node, "yplus", 0))
         yscale = float(parser.getAttribute(node, "yscale", 1))
 
-        self.uploadData(xcol, ycol, xplus, xscale, yplus, yscale)
+        error = self.uploadData(xcol, ycol, xplus, xscale, yplus, yscale)
+
+        if error:
+            print("    /!\ ERROR while reading file : \n"
+                  + "    " + os.path.realpath(file) + "\n" + error)
 
         try:
             xerr = [int(s) for s in parser.getAttribute(node, "xerr").split()]
@@ -184,6 +188,7 @@ class Plot(object):
         Upload and parse data
         """
         j = 0
+        error = ""
 
         for line in self.f.readlines():
             line = line.lstrip()
@@ -202,11 +207,19 @@ class Plot(object):
                         continue
 
                 if xcol:
-                    self.xspan.append(float(line.split()[xcol-1])*xscale + xplus)
+                    try:
+                        self.xspan.append(float(line.split()[xcol-1])*xscale + xplus)
+                    except:
+                        error = "    Please verify data, number of columns and lines"
                 else:
                     self.xspan.append(j)
 
-                self.yspan.append(float(line.split()[ycol-1])*yscale + yplus)
+                try:
+                    self.yspan.append(float(line.split()[ycol-1])*yscale + yplus)
+                except:
+                    error = "    Please verify data, number of columns and lines"
+
+        return error
 
     #---------------------------------------------------------------------------
 
@@ -825,7 +838,15 @@ class Plotter(object):
             ax = plt.subplot(nbrow, nbcol, idx + 1)
             subplots[idx] = ax
             for curve in p.curves:
-                self.__draw_curve(ax, curve, p)
+                try:
+                    self.__draw_curve(ax, curve, p)
+                except:
+                    name_fig = "figure : "
+                    if figure.title:
+                        name_fig += figure.title + "-"
+                    if p.title:
+                        name_fig += p.title
+                    print("    /!\ ERROR while drawing " + name_fig)
 
         # title of subplot, axis and legend
         bool = len(figure.subplots) > 1

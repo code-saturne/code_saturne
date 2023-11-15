@@ -7,28 +7,36 @@
     <x>0</x>
     <y>0</y>
     <width>313</width>
-    <height>59</height>
+    <height>37</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>10</number>
+   </property>
+   <property name="topMargin">
+    <number>6</number>
+   </property>
+   <property name="bottomMargin">
+    <number>6</number>
+   </property>
    <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBoxConvectiveInlet">
+    <widget class="QCheckBox" name="checkBoxConvectiveInlet">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply feedback from values computed downstream from the inlet by mapping inlet faces to cells defined by a chosen translation:&lt;br/&gt;- the feedback is applied after the first iteration&lt;br/&gt;- velocity and transported variables are rescaled to maintain mass conservativity&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cancel diffusion for this inlet.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-     <property name="title">
+     <property name="text">
       <string>Convective Inlet</string>
      </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_7"/>
     </widget>
    </item>
   </layout>

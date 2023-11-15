@@ -184,12 +184,11 @@ module lagran
 
     ! Interface to C function passing specific physics options
 
-    subroutine  cs_f_lagr_specific_physics(iirayo, ncharb, ncharm, diftl0)     &
+    subroutine  cs_f_lagr_specific_physics(iirayo, ncharb, ncharm)             &
       bind(C, name='cs_f_lagr_specific_physics')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int) :: iirayo, ncharb, ncharm
-      real(c_double) :: diftl0
     end subroutine cs_f_lagr_specific_physics
 
     !---------------------------------------------------------------------------
@@ -265,24 +264,18 @@ module lagran
 
     !---------------------------------------------------------------------------
 
-    !> \brief Allocate bound_stat and return fortran compatible pointer
+    !> \brief Allocate source term arrays
 
-    subroutine cs_lagr_init_c_arrays(dim_tslagr, p_tslagr)         &
-      bind(C, name='cs_lagr_init_c_arrays')
+    subroutine cs_lagr_init_arrays()  &
+      bind(C, name='cs_lagr_init_arrays')
       use, intrinsic ::  iso_c_binding
-
-      implicit none
-      integer(c_int), dimension(2) :: dim_tslagr
-      type(c_ptr), intent(out)     :: p_tslagr
-    end subroutine cs_lagr_init_c_arrays
+    end subroutine cs_lagr_init_arrays
 
     !---------------------------------------------------------------------------
 
-    subroutine cs_lagr_init_par ()&
+    subroutine cs_lagr_init_par ()  &
       bind(C, name='cs_lagr_init_par')
-
       use, intrinsic :: iso_c_binding
-
     end subroutine cs_lagr_init_par
 
     !---------------------------------------------------------------------------
@@ -363,26 +356,6 @@ contains
 
   !=============================================================================
 
-  ! Initialize auxiliary arrays
-
-  subroutine init_lagr_arrays(tslagr)
-
-    implicit none
-
-    double precision, dimension(:,:), pointer  :: tslagr
-    integer(c_int),   dimension(2)             :: dim_tslagr
-    type(c_ptr)                                :: p_tslagr
-
-    call cs_lagr_init_c_arrays(dim_tslagr, p_tslagr)
-
-    call c_f_pointer(p_tslagr, tslagr, [dim_tslagr])
-
-    return
-
-  end subroutine init_lagr_arrays
-
-  !=============================================================================
-
   subroutine lagran_init_map
 
     use ppincl, only: iccoal, ieljou, ielarc, icoebu, icod3p, iym1, icompf
@@ -390,8 +363,7 @@ contains
                       a2ch, e1ch, e2ch, io2, ih2o, ico,                        &
                       ahetch, ehetch, thcdch, y1ch, y2ch, h02ch
     use ppppar, only: ncharm
-    use ppthch, only: diftl0, ngazem, wmole, wmolat, trefth, prefth, iatc,     &
-                      natom, wmolat
+    use ppthch, only: ngazem, wmole, wmolat, trefth, prefth, iatc, natom, wmolat
     use radiat, only: iirayo
 
     call init_lagr_dim_pointers
@@ -400,8 +372,7 @@ contains
 
     call cs_f_lagr_specific_physics(iirayo,         &
                                     ncharb,         &
-                                    ncharm,         &
-                                    diftl0)
+                                    ncharm)
 
     call cs_f_lagr_coal_comb(ih2o,   &
                              io2,    &

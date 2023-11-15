@@ -42,6 +42,7 @@ from collections import OrderedDict
 
 from code_saturne.base.cs_compile import files_to_compile, compile_and_link
 from code_saturne.base import cs_create, cs_batch, cs_xml_reader
+from code_saturne.base.cs_case import case_state, get_case_state
 from code_saturne.base.cs_create import set_executable, create_local_launcher
 from code_saturne.base import cs_exec_environment, cs_run_conf
 
@@ -456,7 +457,7 @@ class Case(object):
             retval, t = run_studymanager_command(cmd, log_run)
 
         if retval == 0:
-            log_lines += ['      * prepare run folder: ' + self.title]
+            log_lines += ['      * prepare run folder: {0} --> OK ({1} s)'.format(self.title, str(t))]
 
             # move log file tog run_dir
             new_log_path = os.path.join(self.run_dir, "run_case.log")
@@ -473,7 +474,7 @@ class Case(object):
                     fail_info = 'SKIPPED (already prepared)'
                 else:
                     fail_info = 'SKIPPED (already present)'
-            log_lines += ['      * prepare run folder: {0} --> {1}'.format(self.title, fail_info)]
+            log_lines += ['      * prepare run folder: {0} --> {1} ({2} s)'.format(self.title, fail_info, str(t))]
             if not have_status_prepared:
                 log_lines += ['        - see ' + log_path]
 
@@ -877,6 +878,21 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
+    def get_state(self, run_timeout=3600):
+        """
+        Get state based on RESU/run_id subdirectory.
+        """
+
+        is_coupling = self.subdomains != None
+
+        state, info = get_case_state(self.run_dir,
+                                     coupling=is_coupling,
+                                     run_timeout=run_timeout)
+
+        return state, info
+
+    #---------------------------------------------------------------------------
+
     def check_dirs(self, node, repo, dest, reference=None):
         """
         Check coherency between xml file of parameters and repository and destination.
@@ -1197,8 +1213,14 @@ class Studies(object):
         # call smgr xml backward compatibility
 
         if not smgr:
-            smgr = XMLengine.Case(package=self.__pkg, file_name=filename,
-                                  studymanager=True)
+            try:
+                smgr = XMLengine.Case(package=self.__pkg, file_name=filename,
+                                      studymanager=True)
+            except Exception as error:
+                print("\n  /!\ ERROR while reading studymanager file :\n"
+                      + str(error))
+                sys.exit()
+
             smgr['xmlfile'] = filename
 
             # minimal modification of xml for now
@@ -1385,8 +1407,9 @@ class Studies(object):
             sys.stdout.flush()
 
         if report:
-            self.__log_file.write(msg + '\n')
-            self.__log_file.flush()
+            if self.__log_file is not None:
+                self.__log_file.write(msg + '\n')
+                self.__log_file.flush()
 
         if exit:
             sys.exit(msg)
@@ -1890,7 +1913,7 @@ class Studies(object):
                     # submit batch
                     if level < 1:
                         output = subprocess.check_output(['sbatch',
-                                 slurm_batch_name])
+                                                          slurm_batch_name])
                     else:
                         # list of dependency id should be in the
                         # :id1:id2:id3 format
@@ -1919,6 +1942,135 @@ class Studies(object):
                     slurm_batch_file.close()
 
             job_id_list = cur_job_id_list
+
+        self.reporting('')
+
+    #---------------------------------------------------------------------------
+
+    def report_state(self):
+        """
+        Report state of all cases.
+        Warning, if the markup of the case is repeated in the xml file of parameters,
+        the run of the case is also repeated.
+        """
+
+        self.reporting("  o Check state for all cases")
+
+        run_timeout = 3600
+
+        s_prev = ""
+        c_prev = ""
+
+        detailed_file_name = "state_detailed"
+        add_header_and_footer = True
+
+        colors = {case_state.UNKNOWN: "rgb(227,218,201)",
+                  case_state.STAGING: "rgb(255,191,0)",
+                  case_state.STAGED: "rgb(176,196,222)",
+                  case_state.PREPROCESSED: "rgb(216,191,216)",
+                  case_state.COMPUTED: "rgb(120,213,124)",
+                  case_state.FINALIZING: "rgb(127,255,0)",
+                  case_state.FINALIZED: "rgb(120,213,124)",
+                  case_state.RUNNING: "rgb(65,105,225)",
+                  case_state.EXCEEDED_TIME_LIMIT: "rgb(0,255,255)",
+                  case_state.FAILED: "rgb(250,128,114)"}
+
+        messages = {case_state.UNKNOWN: "Unknown",
+                    case_state.STAGING: "Staging",
+                    case_state.STAGED: "Staged",
+                    case_state.PREPROCESSED: "Preprocesses",
+                    case_state.COMPUTED: "OK",
+                    case_state.FINALIZING: "Finalizing",
+                    case_state.FINALIZED: "OK",
+                    case_state.RUNNING: "Running",
+                    case_state.EXCEEDED_TIME_LIMIT: "Time limit",
+                    case_state.FAILED: "FAILED"}
+
+        fd = open(detailed_file_name, 'w')
+
+        if add_header_and_footer:
+            fd.write("<html>\n")
+            fd.write("<head></head>\n")
+            fd.write("<body>\n")
+
+        fd.write("<br><i><u>Destination folder:</u></i> "+ self.__dest + "</br> </br>")
+        fd.write("Case states:\n\n")
+        t = "<table width=100% cellspacing=\"2\">\n"
+        t += "<tr class=\"top\">"
+
+        t += "<td width=18%>Study</td>"
+        t += "<td width=12%>Case</td>"
+        t += "<td width=11%>Run id</td>"
+        t += "<td width=12%>State</td>"
+        t += "<td width=8% align=\"right\">Time (s)</td>"
+        t += "<td width=9% align=\"right\">CPU (s)</td>"
+        t += "<td width=8% align=\"right\">Prepro (s)</td>"
+        t += "<td width=10% align=\"right\">Mem max (Mb)</td>"
+        t += "<td width=6% align=\"right\">N ranks</td>"
+        t += "<td width=6% align=\"right\">N threads</td>"
+        t += "</tr>\n"
+
+        fd.write(t)
+
+        for case in self.graph.graph_dict:
+
+            state, info = case.get_state(run_timeout=run_timeout)
+
+            for k in info.keys():
+                if info[k] is None:
+                    info[k] = ''
+
+            self.reporting(case.title, str(state), str(info))
+
+            s = case.study
+            c = case.label
+
+            m = info['message']
+            if not m:
+                m = messages[state]
+
+            mem_max = -1
+            mem_s = ''
+            try:
+                for k in ('compute_mem', 'preproces_mem'):
+                    sk = info[k]
+                    if sk:
+                        mem_max = max(float(sk)/1024., mem_max)
+                        mem_s = str(round(mem_max))
+            except Exception:
+                pass
+
+            t = ""
+            if s != s_prev:
+                t += "<tr class=\"top\"><td>" + s + "</td>"
+            else:
+                t += "<tr><td> </td>\n"
+            if c != c_prev:
+                t += "<td>" + c + "</td>"
+            else:
+                t += "<td> </td>\n"
+            t += "<td>" + case.run_id + "</td>"
+            t += "<td style=\"background-color:" + colors[state] + "\">" + m + "</td>"
+            t += "<td align=\"right\">" + str(info['compute_time']) + "</td>"
+            t += "<td align=\"right\">" + str(info['compute_time_usage']) + "</td>"
+            t += "<td align=\"right\">" + str(info['preprocess_time']) + "</td>"
+            t += "<td align=\"right\">" + mem_s + "</td>"
+            t += "<td align=\"right\">" + str(info['mpi_ranks']) + "</td>"
+            t += "<td align=\"right\">" + str(info['omp_threads']) + "</td>"
+            t += "</tr>\n"
+            fd.write(t)
+
+            s_prev = s
+            c_prev = c
+
+        t = "</table>\n</br>\n"
+        fd.write(t)
+
+        if add_header_and_footer:
+            fd.write("</body>\n")
+            fd.write("</html>\n")
+
+        fd.close()
 
         self.reporting('')
 

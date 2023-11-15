@@ -472,12 +472,6 @@ enddo
 !===============================================================================
 
 if (iale.ge.1) then
-  do ii = 1, nnod
-    impale(ii) = 0
-  enddo
-endif
-
-if (iale.ge.1) then
   call field_get_val_v_by_name("vtx_coord0", xyzno0)
   do ii = 1, nnod
     do idim = 1, 3

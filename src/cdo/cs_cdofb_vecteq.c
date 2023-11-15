@@ -299,12 +299,10 @@ cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
   BFT_MALLOC(eqb->dir_values, 3*quant->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(3*quant->n_b_faces, eqb->dir_values);
 
-  cs_cell_builder_t  *cb = cs_cdofb_cell_bld[0]; /* Always allocated */
-
-  cs_equation_compute_dirichlet_fb(mesh, quant, connect, eqp, eqb->face_bc,
-                                   t_eval,
-                                   cb,
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_faces(mesh, quant, connect,
+                                    eqp, eqb->face_bc,
+                                    t_eval,
+                                    eqb->dir_values);
 
   /* Internal enforcement of DoFs  */
 
@@ -1631,7 +1629,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
 
-  eqb->bd_msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
+  eqb->bdy_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
     CS_FLAG_COMP_FEQ;
 
   BFT_MALLOC(eqc->face_values, 3*n_faces, cs_real_t);
@@ -1723,12 +1721,12 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_wsym_dirichlet;
     break;
 
@@ -1744,7 +1742,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* There is at least one face with a sliding condition to handle */
 
-    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
+    eqb->bdy_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
 
   }
@@ -2036,20 +2034,21 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
     } /* Loop on definitions */
 
     /* Free */
+
     BFT_FREE(def2f_idx);
 
   } /* Initial values to set */
 
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
-  cs_equation_compute_dirichlet_fb(mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   t_eval,
-                                   cs_cdofb_cell_bld[0],
-                                   f_vals + 3*quant->n_i_faces);
+
+  cs_equation_bc_dirichlet_at_faces(mesh,
+                                    quant,
+                                    connect,
+                                    eqp,
+                                    eqb->face_bc,
+                                    t_eval,
+                                    f_vals + 3*quant->n_i_faces);
 }
 
 /*----------------------------------------------------------------------------*/

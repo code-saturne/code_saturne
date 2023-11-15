@@ -1968,6 +1968,12 @@ class meg_to_c_interpreter:
                         self.init_block('ini', zone_name, 'velocity',
                                         exp, req, sym, [])
 
+                    # Void fraction
+                    if im.getVoidFractionFormula(z_id):
+                        exp, req, sym = im.getVoidFractionFormulaComponents(z_id)
+                        self.init_block('ini', zone_name, 'void_fraction',
+                                        exp, req, sym, [])
+
                     # Turbulence
                     tin = im.node_turb.xmlGetNode('initialization', zone_id=z_id)
                     if tin:

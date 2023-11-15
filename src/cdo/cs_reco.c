@@ -62,6 +62,174 @@ BEGIN_C_DECLS
 #define _dp3  cs_math_3_dot_product
 
 /*============================================================================
+ * Private function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (e, c) --> array which can be scanned by the c2e
+ *        adjacency).
+ *        Case of scalar-valued array.
+ *
+ * \param[in] c_id       cell id
+ * \param[in] c2e        cell -> edges connectivity
+ * \param[in] cdoq       pointer to the additional quantities struct.
+ * \param[in] array      pointer to the array of values at (e,c)
+ *
+ * \return the reconstructed values at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline double
+_scalar_ebyc2c(cs_lnum_t                    c_id,
+               const cs_adjacency_t        *c2e,
+               const cs_cdo_quantities_t   *cdoq,
+               const double                *array)
+{
+  double reco_sum = 0;
+  for (cs_lnum_t je = c2e->idx[c_id]; je < c2e->idx[c_id+1]; je++)
+    reco_sum += cdoq->pvol_ec[je] * array[je];
+
+  return reco_sum/cdoq->cell_vol[c_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (v, c) --> array which can be scanned by the c2v
+ *        adjacency).
+ *        Case of scalar-valued array.
+ *
+ * \param[in] c_id       cell id
+ * \param[in] c2v        cell -> vertices connectivity
+ * \param[in] cdoq       pointer to the additional quantities struct.
+ * \param[in] array      pointer to the array of values at (v,c)
+ *
+ * \return the reconstructed values at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline double
+_scalar_vbyc2c(cs_lnum_t                    c_id,
+               const cs_adjacency_t        *c2v,
+               const cs_cdo_quantities_t   *cdoq,
+               const double                *array)
+{
+  double reco_sum = 0;
+  for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++)
+    reco_sum += cdoq->pvol_vc[jv] * array[jv];
+
+  return reco_sum/cdoq->cell_vol[c_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at a cell center from an array of values
+ *        defined on primal vertices.
+ *        Case of scalar-valued arrays.
+ *
+ * \param[in] c_id       cell id
+ * \param[in] c2v        cell -> vertices connectivity
+ * \param[in] cdoq       pointer to the additional quantities struct.
+ * \param[in] array      pointer to the array of values at vertices
+ *
+ * \return the reconstructed values at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline double
+_scalar_v2c(cs_lnum_t                    c_id,
+            const cs_adjacency_t        *c2v,
+            const cs_cdo_quantities_t   *cdoq,
+            const double                *array)
+{
+  double reco_sum = 0;
+  for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++)
+    reco_sum += cdoq->pvol_vc[jv] * array[c2v->ids[jv]];
+
+  return reco_sum/cdoq->cell_vol[c_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at a face center from an array of values
+ *        defined on primal vertices.
+ *        Case of scalar-valued arrays.
+ *
+ * \param[in]      c_id       cell id
+ * \param[in]      f2e        face -> edges connectivity
+ * \param[in]      e2v        edge -> vertices connectivity
+ * \param[in]      cdoq       pointer to the additional quantities struct.
+ * \param[in]      array      pointer to the array of values at vertices
+ *
+ * \return the reconstructed values at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_scalar_v2f(cs_lnum_t                    f_id,
+            const cs_adjacency_t        *f2e,
+            const cs_adjacency_t        *e2v,
+            const cs_cdo_quantities_t   *cdoq,
+            const double                *array)
+{
+  const cs_real_t  *xf = cs_quant_get_face_center(f_id, cdoq);
+
+  double reco_sum = 0;
+  for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
+
+    const cs_lnum_t  *v_id = e2v->ids + 2*f2e->ids[i]; /* + 2*e_id */
+    const cs_real_t  tef = cs_math_surftri(cdoq->vtx_coord + 3*v_id[0],
+                                           cdoq->vtx_coord + 3*v_id[1],
+                                           xf);
+
+    reco_sum += (array[v_id[0]] + array[v_id[1]]) * tef;
+
+  } /* Loop on face edges */
+
+  return 0.5*reco_sum/cs_quant_get_face_surf(f_id, cdoq);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at a cell center from an array of values
+ *        defined on primal vertices.
+ *        Case of vector-valued arrays.
+ *
+ * \param[in]      c_id       cell id
+ * \param[in]      c2v        cell -> vertices connectivity
+ * \param[in]      cdoq       pointer to the additional quantities struct.
+ * \param[in]      array      pointer to the array of values at vertices
+ * \param[in, out] reco       reconstructed values at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vector_v2c(cs_lnum_t                    c_id,
+            const cs_adjacency_t        *c2v,
+            const cs_cdo_quantities_t   *cdoq,
+            const double                *array,
+            cs_real_t                    reco[3])
+{
+  reco[0] = 0, reco[1] = 0, reco[2] = 0;
+  for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
+
+    const double  *_array = array + 3*c2v->ids[jv];
+    const cs_real_t  vc_vol = cdoq->pvol_vc[jv];
+
+    reco[0] += vc_vol * _array[0];
+    reco[1] += vc_vol * _array[1];
+    reco[2] += vc_vol * _array[2];
+
+  } /* Loop on cell vertices */
+
+  const double  invvol = 1/cdoq->cell_vol[c_id];
+  for (int k = 0; k < 3; k++)
+    reco[k] *= invvol;
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -154,188 +322,6 @@ cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t       *connect,
 
   if (build_dual_vol != NULL)
     BFT_FREE(build_dual_vol);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct at cell centers and face centers a vertex-based field
- *         Linear interpolation. If p_crec and/or p_frec are not allocated, this
- *         done in this subroutine.
- *
- *  \param[in]      connect  pointer to additional connectivities for CDO
- *  \param[in]      quant    pointer to additional quantities for CDO
- *  \param[in]      dof      pointer to the field of vtx-based DoFs
- *  \param[in, out] p_crec   reconstructed values at cell centers
- *  \param[in, out] p_frec   reconstructed values at face centers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
-                      const cs_cdo_quantities_t  *quant,
-                      const double               *dof,
-                      double                     *p_crec[],
-                      double                     *p_frec[])
-{
-  double  *crec = *p_crec, *frec = *p_frec;
-
-  const cs_adjacency_t  *c2v = connect->c2v;
-  const double  *dcv = quant->pvol_vc;
-  const cs_adjacency_t  *f2e = connect->f2e;
-  const cs_adjacency_t  *e2v = connect->e2v;
-
-  if (dof == NULL)
-    return;
-
-  /* Allocate reconstruction arrays if necessary */
-
-  if (crec == NULL)
-    BFT_MALLOC(crec, quant->n_cells, double);
-  if (frec == NULL)
-    BFT_MALLOC(frec, quant->n_faces, double);
-
-  /* Reconstruction at cell centers */
-
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    crec[c_id] = 0;
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      crec[c_id] += dcv[j]*dof[c2v->ids[j]];
-    crec[c_id] /= quant->cell_vol[c_id];
-
-  }
-
-  /* Reconstruction at face centers */
-
-  for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
-
-    const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
-
-    frec[f_id] = 0;
-    double  f_surf = 0.;
-    for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
-
-      const cs_lnum_t  e_id = f2e->ids[j];
-      const cs_lnum_t  v1_id = e2v->ids[2*e_id];
-      const cs_lnum_t  v2_id = e2v->ids[2*e_id+1];
-      const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
-      const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
-
-      cs_real_3_t  xe;
-      for (int k = 0; k < 3; k++)
-        xe[k] = 0.5 * (xv1[k] + xv2[k]);
-
-      double  lef, lve;
-      cs_real_3_t  uef, uve, cp;
-      cs_math_3_length_unitv(xe, xf, &lef, uef);
-      cs_math_3_length_unitv(xv1, xv2, &lve, uve);
-      cs_math_3_cross_product(uve, uef, cp);
-
-      const double  tef = 0.5 * lve * lef * cs_math_3_norm(cp);
-
-      f_surf += tef;
-      frec[f_id] += 0.5 * tef * (dof[v1_id] + dof[v2_id]);
-
-    } /* End of loop on face edges */
-
-    frec[f_id] /= f_surf;
-
-  } /* End of loop on faces */
-
-  /* Return pointers */
-  *p_crec = crec;
-  *p_frec = frec;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value at all cell centers from an array of values
- *         defined on primal vertices.
- *
- *  \param[in]      c2v      cell -> vertices connectivity
- *  \param[in]      quant    pointer to the additional quantities struct.
- *  \param[in]      array    pointer to the array of values
- *  \param[in, out] val_xc   values of the reconstruction at the cell center
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
-                           const cs_cdo_quantities_t   *quant,
-                           const double                *array,
-                           cs_real_t                   *val_xc)
-{
-  if (array == NULL)
-    return;
-
-  assert(c2v != NULL && quant != NULL);
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    const double  invvol = 1/quant->cell_vol[c_id];
-    const cs_real_t  *dcvol = quant->pvol_vc;
-
-    cs_real_t  reco_val = 0;
-    for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
-
-      const cs_lnum_t  v_id = c2v->ids[jv];
-
-      reco_val += dcvol[jv] * array[v_id];
-
-    } /* Loop on cell vertices; */
-
-    val_xc[c_id] = invvol * reco_val;
-
-  } /* Loop on cells */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value at all cell centers from an array of values
- *         defined on primal vertices.
- *         Case of vector-valued fields.
- *
- *  \param[in]      c2v      cell -> vertices connectivity
- *  \param[in]      quant    pointer to the additional quantities struct.
- *  \param[in]      array    pointer to the array of values
- *  \param[in, out] val_xc   values of the reconstruction at the cell center
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
-                                const cs_cdo_quantities_t   *quant,
-                                const double                *array,
-                                cs_real_t                   *val_xc)
-{
-  if (array == NULL)
-    return;
-
-  assert(c2v != NULL && quant != NULL);
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    const double  invvol = 1/quant->cell_vol[c_id];
-    const cs_real_t  *dcvol = quant->pvol_vc;
-
-    cs_real_t  reco_val[3] = {0, 0, 0};
-    for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
-
-      const cs_real_t  *_array = array + 3*c2v->ids[jv];
-      const cs_real_t  vc_vol = dcvol[jv];
-
-      reco_val[0] += vc_vol * _array[0];
-      reco_val[1] += vc_vol * _array[1];
-      reco_val[2] += vc_vol * _array[2];
-
-    } /* Loop on cell vertices */
-
-    for (int k = 0; k < 3; k++)
-      val_xc[3*c_id+k] = invvol * reco_val[k];
-
-  } /* Loop on cells */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -510,45 +496,373 @@ cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value at the cell center from an array of values
- *         defined on primal vertices.
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        at primal vertices.
+ *        Case of scalar-valued array.
  *
- *  \param[in]      c_id     cell id
- *  \param[in]      c2v      cell -> vertices connectivity
- *  \param[in]      quant    pointer to the additional quantities struct.
- *  \param[in]      array    pointer to the array of values
- *  \param[in, out] val_xc   value of the reconstruction at the cell center
+ * \param[in]      n_cells       number of selected cells
+ * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      c2v           cell -> vertices connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at vertices
+ * \param[in]      dense_ouput   apply cell_ids on the reco array
+ * \param[in, out] reco          reconstructed values at the cell centers
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
-                          const cs_adjacency_t        *c2v,
-                          const cs_cdo_quantities_t   *quant,
-                          const double                *array,
-                          cs_real_t                   *val_xc)
+cs_reco_scalar_v2c(cs_lnum_t                    n_cells,
+                   const cs_lnum_t             *cell_ids,
+                   const cs_adjacency_t        *c2v,
+                   const cs_cdo_quantities_t   *cdoq,
+                   const double                *array,
+                   bool                         dense_ouput,
+                   cs_real_t                   *reco)
 {
-  cs_real_t  reco_val = 0;
-
-  if (array == NULL) {
-    *val_xc = reco_val;
+  if (array == NULL)
     return;
+  if (n_cells < 1)
+    return;
+
+  if (cell_ids == NULL) { /* No indirection to apply */
+
+    assert(n_cells == cdoq->n_cells);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      reco[c_id] = _scalar_v2c(c_id, c2v, cdoq, array);
+
   }
+  else { /* There is a list of selected cells */
 
-  assert(c2v != NULL && quant != NULL && c_id > -1);
+    if (dense_ouput) {
 
-  const double  invvol = 1/quant->cell_vol[c_id];
-  const cs_real_t  *dcvol = quant->pvol_vc;
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        reco[i] = _scalar_v2c(cell_ids[i], c2v, cdoq, array);
 
-  for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
+    }
+    else {
 
-    const cs_lnum_t  v_id = c2v->ids[jv];
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-    reco_val += dcvol[jv] * array[v_id];
+        const cs_lnum_t  c_id = cell_ids[i];
+        reco[c_id] = _scalar_v2c(c_id, c2v, cdoq, array);
 
-  } /* Loop on cell vertices; */
+      }
 
-  *val_xc = invvol * reco_val;
+    } /* dense_ouput ? */
+
+  } /* cell_ids != NULL ? */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (v, c) --> array which can be scanned by the c2v
+ *        adjacency).
+ *        Case of scalar-valued array.
+ *
+ * \param[in]      n_cells       number of selected cells
+ * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      c2v           cell -> vertices connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at (v,c)
+ * \param[in]      dense_ouput   apply cell_ids on the reco array
+ * \param[in, out] reco          reconstructed values at the cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_vbyc2c(cs_lnum_t                    n_cells,
+                      const cs_lnum_t             *cell_ids,
+                      const cs_adjacency_t        *c2v,
+                      const cs_cdo_quantities_t   *cdoq,
+                      const double                *array,
+                      bool                         dense_ouput,
+                      cs_real_t                   *reco)
+{
+  if (array == NULL)
+    return;
+
+  if (cell_ids == NULL) { /* No indirection to apply */
+
+    assert(c2v != NULL && cdoq != NULL);
+    assert(n_cells == cdoq->n_cells);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      reco[c_id] = _scalar_vbyc2c(c_id, c2v, cdoq, array);
+
+  }
+  else { /* There is a list of selected cells */
+
+    if (dense_ouput) {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        reco[i] = _scalar_vbyc2c(cell_ids[i], c2v, cdoq, array);
+
+    }
+    else {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+        const cs_lnum_t  c_id = cell_ids[i];
+        reco[c_id] = _scalar_vbyc2c(c_id, c2v, cdoq, array);
+
+      }
+
+    } /* dense_ouput ? */
+
+  } /* cell_ids != NULL ? */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at cell center from an array of values defined
+ *        for each couple (e, c) --> array which can be scanned by the c2e
+ *        adjacency).
+ *        Case of scalar-valued array.
+ *
+ * \param[in]      n_cells       number of selected cells
+ * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      c2e           cell -> edges connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at (e,c)
+ * \param[in]      dense_ouput   apply cell_ids on the reco array
+ * \param[in, out] reco          reconstructed values at the cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_ebyc2c(cs_lnum_t                    n_cells,
+                      const cs_lnum_t             *cell_ids,
+                      const cs_adjacency_t        *c2e,
+                      const cs_cdo_quantities_t   *cdoq,
+                      const double                *array,
+                      bool                         dense_ouput,
+                      cs_real_t                   *reco)
+{
+  if (array == NULL)
+    return;
+
+  assert(cdoq->pvol_ec != NULL);
+
+  if (cell_ids == NULL) { /* No indirection to apply */
+
+    assert(c2e != NULL && cdoq != NULL);
+    assert(n_cells == cdoq->n_cells);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      reco[c_id] = _scalar_ebyc2c(c_id, c2e, cdoq, array);
+
+  }
+  else { /* There is a list of selected cells */
+
+    if (dense_ouput) {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        reco[i] = _scalar_ebyc2c(cell_ids[i], c2e, cdoq, array);
+
+    }
+    else {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+        const cs_lnum_t  c_id = cell_ids[i];
+        reco[c_id] = _scalar_ebyc2c(c_id, c2e, cdoq, array);
+
+      }
+
+    } /* dense_ouput ? */
+
+  } /* cell_ids != NULL ? */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at all cell centers from an array of values
+ *        defined on primal vertices.
+ *        Case of vector-valued fields.
+ *
+ * \param[in]      n_cells       number of selected cells
+ * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      c2v           cell -> vertices connectivity
+ * \param[in]      cdoq          pointer to the additional quantities struct.
+ * \param[in]      array         pointer to the array of values at vertices
+ * \param[in]      dense_ouput   apply cell_ids on the reco array
+ * \param[in, out] reco          reconstructed values at the cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_vector_v2c(cs_lnum_t                    n_cells,
+                   const cs_lnum_t             *cell_ids,
+                   const cs_adjacency_t        *c2v,
+                   const cs_cdo_quantities_t   *cdoq,
+                   const double                *array,
+                   bool                         dense_ouput,
+                   cs_real_t                   *reco)
+{
+  if (array == NULL)
+    return;
+
+  assert(c2v != NULL && cdoq != NULL);
+
+  if (cell_ids == NULL) { /* No indirection to apply */
+
+    assert(c2v != NULL && cdoq != NULL);
+    assert(n_cells == cdoq->n_cells);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      _vector_v2c(c_id, c2v, cdoq, array, reco + 3*c_id);
+
+  }
+  else { /* There is a list of selected cells */
+
+    if (dense_ouput) {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        _vector_v2c(cell_ids[i], c2v, cdoq, array, reco + 3*i);
+
+    }
+    else {
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+        const cs_lnum_t  c_id = cell_ids[i];
+        _vector_v2c(c_id, c2v, cdoq, array, reco + 3*c_id);
+
+      } /* Loop on selected cells */
+
+    } /* dense_ouput ? */
+
+  } /* cell_ids != NULL ? */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the value at the face center from an array of values
+ *        defined on primal vertices.
+ *        Case of scalar-valued arrays.
+ *
+ * \param[in]      n_faces      number of faces
+ * \param[in]      face_ids     list of face ids (interior/border faces) or NULL
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq         pointer to the additional quantities struct.
+ * \param[in]      array        pointer to the array of values at vertices
+ * \param[in]      dense_ouput  apply cell_ids on the reco array
+ * \param[in, out] reco         value of the reconstruction at face centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_v2f(cs_lnum_t                     n_faces,
+                   const cs_lnum_t              *face_ids,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *cdoq,
+                   const double                 *array,
+                   bool                          dense_ouput,
+                   cs_real_t                    *reco)
+{
+  if (array == NULL)
+    return;
+
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
+
+  if (face_ids == NULL) { /* No indirection to apply */
+
+#   pragma omp parallel for if (n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
+      reco[f_id] = _scalar_v2f(f_id, f2e, e2v, cdoq, array);
+
+  }
+  else {
+
+    if (dense_ouput) {
+
+#     pragma omp parallel for if (n_faces > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_faces; i++)
+        reco[i] = _scalar_v2f(face_ids[i], f2e, e2v, cdoq, array);
+
+    }
+    else {
+
+#     pragma omp parallel for if (n_faces > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+        const cs_lnum_t  f_id = face_ids[i];
+        reco[f_id] = _scalar_v2f(f_id, f2e, e2v, cdoq, array);
+
+      } /* Loop on selected faces */
+
+    } /* dense_ouput ? */
+
+  } /* face_ids != NULL ? */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct at cell centers and face centers a vertex-based field
+ *        Linear interpolation. If p_reco_c and/or p_reco_f are not allocated,
+ *        this is done in this subroutine.
+ *        Case of scalar-valued arrays.
+ *
+ *  \param[in]      connect   pointer to additional connectivities for CDO
+ *  \param[in]      cdoq      pointer to additional quantities for CDO
+ *  \param[in]      dof       pointer to the field of vtx-based DoFs
+ *  \param[in, out] p_reco_c  reconstructed values at cell centers
+ *  \param[in, out] p_reco_f  reconstructed values at face centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_v2c_v2f(const cs_cdo_connect_t     *connect,
+                       const cs_cdo_quantities_t  *cdoq,
+                       const double               *dof,
+                       double                     *p_reco_c[],
+                       double                     *p_reco_f[])
+{
+  if (dof == NULL)
+    return;
+
+  double  *crec = *p_reco_c, *frec = *p_reco_f;
+
+  /* Allocate arrays if necessary */
+
+  if (crec == NULL)
+    BFT_MALLOC(crec, cdoq->n_cells, double);
+  if (frec == NULL)
+    BFT_MALLOC(frec, cdoq->n_faces, double);
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
+
+  /* Reconstruction at cell centers */
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
+    crec[c_id] = _scalar_v2c(c_id, c2v, cdoq, dof);
+
+  /* Reconstruction at face centers */
+
+  for (cs_lnum_t f_id = 0; f_id < cdoq->n_faces; f_id++)
+    frec[f_id] = _scalar_v2f(f_id, f2e, e2v, cdoq, dof);
+
+  /* Return pointers */
+
+  *p_reco_c = crec;
+  *p_reco_f = frec;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -630,56 +944,6 @@ cs_reco_vect_pv_from_pc(const cs_cdo_connect_t      *connect,
   } /* Loop on cells */
 
   cs_reco_dual_vol_weight_reduction(connect, quant, 3, true, vtx_val);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value at the face center from an array of values
- *         defined on primal vertices.
- *
- *  \param[in]      f_id     face id (interior and border faces)
- *  \param[in]      connect  pointer to a cs_cdo_connect_t structure
- *  \param[in]      quant    pointer to the additional quantities struct.
- *  \param[in]      pdi      pointer to the array of values
- *  \param[in, out] pdi_f    value of the reconstruction at the face center
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_pf_from_pv(cs_lnum_t                     f_id,
-                   const cs_cdo_connect_t       *connect,
-                   const cs_cdo_quantities_t    *quant,
-                   const double                 *pdi,
-                   cs_real_t                    *pdi_f)
-{
-  *pdi_f = 0.;
-
-  if (pdi == NULL)
-    return;
-
-  const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
-  const cs_real_t  *xyz = quant->vtx_coord;
-  const cs_adjacency_t  *e2v = connect->e2v;
-  const cs_adjacency_t  *f2e = connect->f2e;
-
-  double f_surf = 0.;
-  for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
-
-    const cs_lnum_t  e_id = f2e->ids[i];
-    const cs_lnum_t  shift_e = 2*e_id;
-    const cs_lnum_t  v1_id = e2v->ids[shift_e];
-    const cs_lnum_t  v2_id = e2v->ids[shift_e+1];
-    const double  pdi_e = 0.5*(pdi[v1_id] + pdi[v2_id]);
-    const cs_real_t  *xv1 = xyz + 3*v1_id;
-    const cs_real_t  *xv2 = xyz + 3*v2_id;
-    const cs_real_t  tef = cs_math_surftri(xv1, xv2, xf);
-
-    f_surf += tef;
-    *pdi_f += pdi_e * tef;
-
-  } /* Loop on face edges */
-
-  *pdi_f /= f_surf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1069,14 +1333,14 @@ cs_reco_grad_33_cell_from_fb_dofs(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value at the cell center of the gradient of a field
- *         defined on primal vertices.
+ * \brief Reconstruct the constant gradient vector in a cell (the mean value)
+ *        from the value at mesh vertices.
  *
  * \param[in]      c_id     cell id
  * \param[in]      connect  pointer to a cs_cdo_connect_t structure
  * \param[in]      quant    pointer to the additional quantities struct.
  * \param[in]      pdi      pointer to the array of values
- * \param[in, out] val_xc   value of the reconstructed gradient at cell center
+ * \param[in, out] grdc     value of the reconstructed gradient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1085,9 +1349,9 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
                           const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *pdi,
-                          cs_real_t                    val_xc[])
+                          cs_real_t                    grdc[])
 {
-  val_xc[0] = val_xc[1] = val_xc[2] = 0.;
+  grdc[0] = grdc[1] = grdc[2] = 0.;
 
   if (pdi == NULL)
     return;
@@ -1101,21 +1365,82 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
   for (cs_lnum_t i = 0; i < c2e_idx[1] - c2e_idx[0]; i++) {
 
     const cs_lnum_t  shift_e = 2*c2e_ids[i];
-    const short int  sgn_v1 = e2v->sgn[shift_e];
-    const cs_real_t  pv1 = pdi[e2v->ids[shift_e]];
-    const cs_real_t  pv2 = pdi[e2v->ids[shift_e+1]];
-    const cs_real_t  gdi_e = sgn_v1*(pv1 - pv2);
+    const short int  sgn_va = e2v->sgn[shift_e];
+    const cs_lnum_t  va = e2v->ids[shift_e], vb = e2v->ids[shift_e+1];
+
+    const cs_real_t  gdi_e = sgn_va*(pdi[va] - pdi[vb]);
 
     for (int k = 0; k < 3; k++)
-      val_xc[k] += gdi_e * dface[3*i+k];
+      grdc[k] += gdi_e * dface[3*i+k];
 
   } /* Loop on cell edges */
 
-  /* Divide by cell volume */
+  /* Divide by the cell volume */
 
   const double  invvol = 1/quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
-    val_xc[k] *= invvol;
+    grdc[k] *= invvol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the constant gradient vector in a cell (the mean value)
+ *        from the value at mesh vertices. Case of two scalar fields.
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      p1di     pointer to the array of values
+ * \param[in]      p2di     pointer to the array of values
+ * \param[in, out] grd1c    value of the reconstructed gradient for p1
+ * \param[in, out] grd2c    value of the reconstructed gradient for p2
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_2grad_cell_from_pv(cs_lnum_t                    c_id,
+                           const cs_cdo_connect_t      *connect,
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_real_t             *p1di,
+                           const cs_real_t             *p2di,
+                           cs_real_t                    grd1c[],
+                           cs_real_t                    grd2c[])
+{
+  grd1c[0] = grd1c[1] = grd1c[2] = 0.;
+  grd2c[0] = grd2c[1] = grd2c[2] = 0.;
+
+  if (p1di == NULL || p2di == NULL)
+    return;
+
+  const cs_adjacency_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_lnum_t  *c2e_idx = c2e->idx + c_id;
+  const cs_lnum_t  *c2e_ids = c2e->ids + c2e_idx[0];
+  const cs_real_t  *dface = quant->dface_normal + 3*c2e_idx[0];
+
+  for (cs_lnum_t i = 0; i < c2e_idx[1] - c2e_idx[0]; i++) {
+
+    const cs_lnum_t  shift_e = 2*c2e_ids[i];
+    const short int  sgn_va = e2v->sgn[shift_e];
+    const cs_lnum_t  va = e2v->ids[shift_e], vb = e2v->ids[shift_e+1];
+
+    const cs_real_t  g1di_e = sgn_va*(p1di[va] - p1di[vb]);
+    const cs_real_t  g2di_e = sgn_va*(p2di[va] - p2di[vb]);
+
+    for (int k = 0; k < 3; k++) {
+      grd1c[k] += g1di_e * dface[3*i+k];
+      grd2c[k] += g2di_e * dface[3*i+k];
+    }
+
+  } /* Loop on cell edges */
+
+  /* Divide by the cell volume */
+
+  const double  invvol = 1/quant->cell_vol[c_id];
+  for (int k = 0; k < 3; k++) {
+    grd1c[k] *= invvol;
+    grd2c[k] *= invvol;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1310,11 +1635,11 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the weighted (by volume) gradient inside a given primal
- *          cell for the related vertices.
- *          Use the WBS algo. for approximating the gradient.
- *          The computation takes into account a subdivision into tetrahedra of
- *          the current cell based on p_{ef,c}
+ * \brief Compute the weighted (by volume) gradient inside a given primal
+ *        cell for the related vertices.
+ *        Use the WBS algo. for approximating the gradient.
+ *        The computation takes into account a subdivision into tetrahedra of
+ *        the current cell based on p_{ef,c}
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices + cell

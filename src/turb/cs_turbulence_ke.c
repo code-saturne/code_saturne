@@ -122,12 +122,14 @@ BEGIN_C_DECLS
  * \brief Calculation of the E term of the \f$ \varepsilon\f$ equation
  *       (BL-V2/K model)
  *
+ *  \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
  *  \param[in,out] w1            work array to store the E-term
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_tsepls(cs_real_t w1[])
+_tsepls(int       phase_id,
+        cs_real_t w1[])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -140,14 +142,13 @@ _tsepls(cs_real_t w1[])
   const cs_lnum_t   *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_real_t   *restrict weight = fvq->weight;
-  const cs_real_3_t *surfac = (const cs_real_3_t *) fvq->i_face_normal;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) fvq->b_face_normal;
+  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) fvq->i_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) fvq->b_face_normal;
 
   /* Initialization
    * ============== */
 
-  cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  cs_array_real_fill_zero(n_cells, w1);
 
   cs_real_33_t *w7;
   BFT_MALLOC(w7, n_cells_ext, cs_real_33_t);
@@ -155,12 +156,24 @@ _tsepls(cs_real_t w1[])
   /* Calculation of the term d2Ui/dxkdxj*d2Ui/dxkdxj
    * ================================================ */
 
-  cs_array_real_fill_zero(n_cells, w1);
+  cs_field_t *f_vel = CS_F_(vel);
 
-  cs_field_gradient_vector(CS_F_(vel),
-                           true, // use_previous_t
-                           1,    // inc
-                           gradv);
+  if (phase_id >= 0)
+    f_vel = CS_FI_(vel, phase_id);
+
+  cs_real_33_t *gradv = NULL;
+
+  if (f_vel->grad == NULL) {
+    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+    /* Computation of the velocity gradient */
+
+    cs_field_gradient_vector(f_vel,
+                             true,  /* use_previous_t */
+                             1,     /* inc */
+                             gradv);
+  } else
+    gradv = (cs_real_33_t *)f_vel->grad;
 
   /* Loop over u, v, w components:
      TODO interleave */
@@ -181,9 +194,9 @@ _tsepls(cs_real_t w1[])
       duidxk[0] = pnd * gradv[ii][isou][0] + (1. - pnd) * gradv[jj][isou][0];
       duidxk[1] = pnd * gradv[ii][isou][1] + (1. - pnd) * gradv[jj][isou][1];
       duidxk[2] = pnd * gradv[ii][isou][2] + (1. - pnd) * gradv[jj][isou][2];
-      njsj[0]   = surfac[face_id][0];
-      njsj[1]   = surfac[face_id][1];
-      njsj[2]   = surfac[face_id][2];
+      njsj[0]   = i_face_normal[face_id][0];
+      njsj[1]   = i_face_normal[face_id][1];
+      njsj[2]   = i_face_normal[face_id][2];
       for (cs_lnum_t k = 0; k < 3; k++){
         for (cs_lnum_t j = 0; j < 3; j++){
           w7[ii][j][k] += duidxk[k]*njsj[j];
@@ -203,9 +216,9 @@ _tsepls(cs_real_t w1[])
       duidxk[0] = gradv[ii][isou][0];
       duidxk[1] = gradv[ii][isou][1];
       duidxk[2] = gradv[ii][isou][2];
-      njsj[0]   = surfbo[face_id][0];
-      njsj[1]   = surfbo[face_id][1];
-      njsj[2]   = surfbo[face_id][2];
+      njsj[0]   = b_face_normal[face_id][0];
+      njsj[1]   = b_face_normal[face_id][1];
+      njsj[2]   = b_face_normal[face_id][2];
       for (cs_lnum_t k = 0; k < 3; k++){
         for (cs_lnum_t j = 0; j < 3; j++){
           w7[ii][j][k] += duidxk[k]*njsj[j];
@@ -228,7 +241,9 @@ _tsepls(cs_real_t w1[])
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
+  if (f_vel->grad == NULL)
+    BFT_FREE(gradv);
+
   BFT_FREE(w7);
 }
 
@@ -245,6 +260,7 @@ _tsepls(cs_real_t w1[])
  * Solve the \f$ k - \varepsilon \f$  for incompressible flows
  * or slightly compressible flows for one time step.
  *
+ * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
@@ -259,7 +275,8 @@ _tsepls(cs_real_t w1[])
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke(cs_lnum_t        ncesmp,
+cs_turbulence_ke(int              phase_id,
+                 cs_lnum_t        ncesmp,
                  cs_lnum_t        icetsm[],
                  int              itypsm[],
                  const cs_real_t  dt[],
@@ -291,8 +308,17 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
   const int var_key_id = cs_field_key_id("variable_id");
 
-  cs_field_t  *f_k = CS_F_(k);
-  cs_field_t  *f_eps = CS_F_(eps);
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_eps = CS_F_(eps);
+  cs_field_t *f_phi = CS_F_(phi);
+  cs_field_t *f_alpbl = CS_F_(alp_bl);
+
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_phi = CS_FI_(phi, phase_id);
+    f_alpbl = CS_FI_(alp_bl, phase_id);
+  }
 
   cs_real_t sigmak = cs_field_get_key_double(f_k,
                                              cs_field_key_id("turbulent_schmidt"));
@@ -390,14 +416,23 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   }
 
   /* Map field arrays */
+  cs_field_t *f_mut = CS_F_(mu_t);
+  cs_field_t *f_mu = CS_F_(mu);
+  cs_field_t *f_vel = CS_F_(vel);
 
-  const cs_real_t *cvisct =  (const cs_real_t *)CS_F_(mu_t)->val;
-  const cs_real_t *viscl  =  (const cs_real_t *)CS_F_(mu)->val;
+  if (phase_id >= 0) {
+    f_mut = CS_FI_(mu_t, phase_id);
+    f_mu = CS_FI_(mu, phase_id);
+    f_vel = CS_FI_(vel, phase_id);
+  }
+
+  const cs_real_t *cvisct = (const cs_real_t *)f_mut->val;
+  const cs_real_t *viscl = (const cs_real_t *)f_mu->val;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas =  cs_field_get_key_int(f_k, kimasf);
-  int iflmab =  cs_field_get_key_int(f_k, kbmasf);
+  int iflmas =  cs_field_get_key_int(f_vel, kimasf);
+  int iflmab =  cs_field_get_key_int(f_vel, kbmasf);
 
   const cs_real_t *imasfl =  cs_field_by_id(iflmas)->val;
   const cs_real_t *bmasfl =  cs_field_by_id(iflmab)->val;
@@ -409,11 +444,11 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   cs_real_t *cvara_phi = NULL;
   if (   cs_glob_turb_model->iturb == CS_TURB_V2F_PHI
       || cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K){
-    cvara_phi = CS_F_(phi)->val_pre;
+    cvara_phi = f_phi->val_pre;
   }
   cs_real_t *cvara_al = NULL;
   if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
-    cvara_al = CS_F_(alp_bl)->val_pre;
+    cvara_al = f_alpbl->val_pre;
   }
   const cs_real_t *w_dist = NULL;
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
@@ -434,29 +469,37 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       istprv = 1;
   }
 
-  cs_real_t *crom  = CS_F_(rho)->val;
-  cs_real_t *cromo = CS_F_(rho)->val;
-  cs_real_t *bromo = CS_F_(rho_b)->val;
+  cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_rhob = CS_F_(rho_b);
 
-  cs_real_t *cpro_pcvto = CS_F_(mu_t)->val;
-  cs_real_t *cpro_pcvlo = CS_F_(mu)->val;
+  if (phase_id >= 0) {
+    f_rho = CS_FI_(rho, phase_id);
+    f_rhob = CS_FI_(rho_b, phase_id);
+  }
+
+  cs_real_t *crom  = f_rho->val;
+  cs_real_t *cromo = f_rho->val;
+  cs_real_t *bromo = f_rhob->val;
+
+  cs_real_t *cpro_pcvto = f_mut->val;
+  cs_real_t *cpro_pcvlo = f_mu->val;
 
   /* Time extrapolation? */
 
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
 
   if (istprv >= 0) {
-    int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+    int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
     if (iroext > 0) {
-      cromo = CS_F_(rho)->val_pre;
-      bromo = CS_F_(rho_b)->val_pre;
+      cromo = f_rho->val_pre;
+      bromo = f_rhob->val_pre;
     }
-    int iviext =  cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
+    int iviext =  cs_field_get_key_int(f_mu, key_t_ext_id);
     if (iviext > 0)
-      cpro_pcvlo = CS_F_(mu)->val_pre;
-    iviext = cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id);
+      cpro_pcvlo = f_mu->val_pre;
+    iviext = cs_field_get_key_int(f_mut, key_t_ext_id);
     if (iviext > 0) {
-      cpro_pcvto = CS_F_(mu_t)->val_pre;
+      cpro_pcvto = f_mut->val_pre;
     }
   }
 
@@ -519,7 +562,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       && cs_glob_turb_rans_model->reinit_turb == 1
       && cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
 
-    cs_real_t *cvar_al = (cs_real_t *)CS_F_(alp_bl)->val;
+    cs_real_t *cvar_al = (cs_real_t *)f_alpbl->val;
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -529,20 +572,24 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                            0.);
     }
 
-    cs_field_current_to_previous(CS_F_(alp_bl));
+    cs_field_current_to_previous(f_alpbl);
 
-    cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    cs_real_3_t *grad = NULL;
+
+    if (f_alpbl->grad == NULL) {
+      BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute the gradient of Alpha */
 
-    cs_field_gradient_scalar(CS_F_(alp_bl),
+    cs_field_gradient_scalar(f_alpbl,
                              false,  /* use_previous_t */
                              1,      /* inc */
                              grad);
+    } else
+      grad = (cs_real_3_t *)f_alpbl->grad;
 
     cvar_ep = f_eps->val;
-    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+    cs_real_3_t *vel = (cs_real_3_t *)f_vel->val;
 
     cs_real_t utaurf = 0.05*uref;
     cs_real_t nu0 = viscl0 / ro0;
@@ -583,11 +630,12 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        * cs_math_pow2(1.-exp(-ypa/25.));
     }
 
-    cs_field_current_to_previous(CS_F_(vel));
+    cs_field_current_to_previous(f_vel);
     cs_field_current_to_previous(f_k);
     cs_field_current_to_previous(f_eps); /*TODO phi ? */
 
-    BFT_FREE(grad);
+    if (f_alpbl->grad == NULL)
+      BFT_FREE(grad);
   }
 
   /* Compute the scalar strain rate squared S2 =2SijSij and the trace of
@@ -597,15 +645,19 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
      ======================================================================= */
 
   /* Allocate temporary arrays for gradients calculation */
-  cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  cs_real_33_t *gradv = NULL;
 
-  /* Computation of the velocity gradient */
+  if (f_vel->grad == NULL) {
+    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
-  cs_field_gradient_vector(CS_F_(vel),
-                           true,  /* use_previous_t */
-                           1,     /* inc */
-                           gradv);
+    /* Computation of the velocity gradient */
+
+    cs_field_gradient_vector(f_vel,
+                             true,  /* use_previous_t */
+                             1,     /* inc */
+                             gradv);
+  } else
+    gradv = (cs_real_33_t *)f_vel->grad;
 
   /* strain_sq = Stain rate of the deviatoric part of the strain tensor
      = 2 (Sij^D).(Sij^D)
@@ -892,6 +944,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     cs_real_t prdtur = 1;
 
     cs_field_t *f_thm = cs_thermal_model_field();
+    if (phase_id >= 0)
+      f_thm = CS_FI_(h_tot, phase_id);
+
     if (f_thm != NULL) {
       prdtur = cs_field_get_key_double(f_thm,
                                        cs_field_key_id("turbulent_schmidt"));
@@ -1094,7 +1149,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     /* Allocate a work array */
     BFT_MALLOC(w12, n_cells_ext, cs_real_t);
 
-    _tsepls(w12);
+    _tsepls(phase_id,
+            w12);
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1726,7 +1782,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     }
 
-    cs_equation_param_t eqp_eps_loc = *eqp_eps;;
+    cs_equation_param_t eqp_eps_loc = *eqp_eps;
     eqp_eps_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
@@ -1858,7 +1914,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w1[c_id] = viscl[c_id]/2.;
+        w1[c_id] = viscl[c_id]*0.5;
     }
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1941,7 +1997,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   if (eqp_eps->idiff >= 1) {
     if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w1[c_id] = viscl[c_id]/2.;
+        w1[c_id] = viscl[c_id]*0.5;
     } else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         w1[c_id] = viscl[c_id];
@@ -2012,10 +2068,13 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   /* Clip values
      ============ */
 
-  cs_turbulence_ke_clip(n_cells, 1);
+  cs_turbulence_ke_clip(phase_id,
+                        n_cells,
+                        1);
 
   /* Free memory */
-  BFT_FREE(gradv);
+  if (f_vel->grad == NULL)
+    BFT_FREE(gradv);
   BFT_FREE(viscf);
   BFT_FREE(viscb);
   BFT_FREE(usimpk);
@@ -2061,14 +2120,16 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 /*!
  * \brief Clipping of the turbulent kinetic energy and turbulent dissipation.
  *
- * \param[in]     n_cells  number of cells
- * \param[in]     iclip    indicator = 0 if viscl0 is used
- *                         otherwise viscl is used.
+ * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
+ * \param[in]     n_cells    number of cells
+ * \param[in]     iclip      indicator = 0 if viscl0 is used
+ *                           otherwise viscl is used.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_clip(cs_lnum_t  n_cells,
+cs_turbulence_ke_clip(int        phase_id,
+                      cs_lnum_t  n_cells,
                       int        iclip)
 {
   cs_turb_ref_values_t *turb_ref_values = cs_get_glob_turb_ref_values();
@@ -2079,13 +2140,25 @@ cs_turbulence_ke_clip(cs_lnum_t  n_cells,
   cs_real_t viscl0 = phys_pro->viscl0; /* reference pressure */
   cs_real_t ro0    = phys_pro->ro0; /* reference density */
 
-  cs_real_t *crom    = (cs_real_t *)CS_F_(rho)->val;
-  cs_real_t *cvar_k  = (cs_real_t *)CS_F_(k)->val;
-  cs_real_t *cvar_ep = (cs_real_t *)CS_F_(eps)->val;
-  cs_real_t *viscl   =  (cs_real_t *)CS_F_(mu)->val;
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_eps = CS_F_(eps);
+  cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_mu = CS_F_(mu);
+
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_rho = CS_FI_(rho, phase_id);
+    f_mu = CS_FI_(mu, phase_id);
+  }
+
+  cs_real_t *crom    = (cs_real_t *)f_rho->val;
+  cs_real_t *cvar_k  = (cs_real_t *)f_k->val;
+  cs_real_t *cvar_ep = (cs_real_t *)f_eps->val;
+  cs_real_t *viscl   =  (cs_real_t *)f_mu->val;
 
   const cs_equation_param_t *eqp
-    = cs_field_get_equation_param_const(CS_F_(k));
+    = cs_field_get_equation_param_const(f_k);
 
   int iwarnk = eqp->verbosity;
 
@@ -2097,13 +2170,13 @@ cs_turbulence_ke_clip(cs_lnum_t  n_cells,
 
   int key_clipping_id = cs_field_key_id("clipping_id");
 
-  int clip_k_id = cs_field_get_key_int(CS_F_(k), key_clipping_id);
+  int clip_k_id = cs_field_get_key_int(f_k, key_clipping_id);
   cs_real_t *cpro_k_clipped = NULL;
   if (clip_k_id >= 0) {
     cpro_k_clipped = cs_field_by_id(clip_k_id)->val;
   }
 
-  int clip_e_id = cs_field_get_key_int(CS_F_(eps), key_clipping_id);
+  int clip_e_id = cs_field_get_key_int(f_eps, key_clipping_id);
   cs_real_t *cpro_e_clipped = NULL;
   if (clip_e_id >= 0) {
     cpro_e_clipped = cs_field_by_id(clip_e_id)->val;
@@ -2270,9 +2343,9 @@ cs_turbulence_ke_clip(cs_lnum_t  n_cells,
 
   for (int ii = 0; ii < 2; ii++ ) {
     if (ii == 0)
-      id = CS_F_(k)->id;
+      id = f_k->id;
     else if (ii == 1)
-      id = CS_F_(eps)->id;
+      id = f_eps->id;
 
     cs_log_iteration_clipping_field(id,
                                     iclpmn[ii],
@@ -2289,26 +2362,44 @@ cs_turbulence_ke_clip(cs_lnum_t  n_cells,
  * \brief Calculation of turbulent viscosity for
  *        the non-linear quadratic K-epsilon from
  *        Baglietto et al. (2005)
+ *
+ * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_q_mu_t(void)
+cs_turbulence_ke_q_mu_t(int phase_id)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-  cs_real_t *visct =  CS_F_(mu_t)->val;
 
   /* Initialization
    * ============== */
 
   /* Map field arrays */
 
-  const cs_real_t *viscl =  CS_F_(mu)->val;
-  const cs_real_t *crom = CS_F_(rho)->val;
-  const cs_real_t *cvar_k = CS_F_(k)->val;
-  const cs_real_t *cvar_ep = CS_F_(eps)->val;
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_eps = CS_F_(eps);
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_mu = CS_F_(mu);
+  cs_field_t *f_mut = CS_F_(mu_t);
+
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_vel = CS_FI_(vel, phase_id);
+    f_rho = CS_FI_(rho, phase_id);
+    f_mu = CS_FI_(mu, phase_id);
+    f_mut = CS_FI_(mu_t, phase_id);
+  }
+
+  cs_real_t *visct = f_mut->val;
+  const cs_real_t *viscl =  f_mu->val;
+  const cs_real_t *crom = f_rho->val;
+  const cs_real_t *cvar_k = f_k->val;
+  const cs_real_t *cvar_ep = f_eps->val;
 
   const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
 
@@ -2319,13 +2410,19 @@ cs_turbulence_ke_q_mu_t(void)
    *   S2 = S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
    * ==================================================== */
 
-  cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  cs_real_33_t *gradv = NULL;
 
-  cs_field_gradient_vector(CS_F_(vel),
-                           false,     // no use_previous_t
-                           1,         // inc
-                           gradv);
+  if (f_vel->grad == NULL) {
+    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+    /* Computation of the velocity gradient */
+
+    cs_field_gradient_vector(f_vel,
+                             false,     // no use_previous_t
+                             1,         // inc
+                             gradv);
+  } else
+    gradv = (cs_real_33_t *)f_vel->grad;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -2345,7 +2442,8 @@ cs_turbulence_ke_q_mu_t(void)
                + 0.5*cs_math_pow2(dvdz+dwdy);
   }
 
-  BFT_FREE(gradv);
+  if (f_vel->grad == NULL)
+    BFT_FREE(gradv);
 
   /* Compute turbulent viscosity
    * =========================== */
@@ -2377,29 +2475,49 @@ cs_turbulence_ke_q_mu_t(void)
  * \brief Calculation of non linear terms of the quadratic k-epsilon model
  *        (Baglietto et al.)
  *
- * \param[out]  rij  non linear terms of quadratic Boussinesq approximation
+ * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[out]  rij       non linear terms of quadratic Boussinesq approximation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_q(cs_real_6_t  rij[])
+cs_turbulence_ke_q(int          phase_id,
+                   cs_real_6_t  rij[])
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  const cs_real_t *visct =  CS_F_(mu_t)->val;
-  const cs_real_t *cvar_k = CS_F_(k)->val;
-  const cs_real_t *cvar_ep = CS_F_(eps)->val;
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_eps = CS_F_(eps);
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_field_t *f_mut = CS_F_(mu_t);
+
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_vel = CS_FI_(vel, phase_id);
+    f_mut = CS_FI_(mu_t, phase_id);
+  }
+
+  const cs_real_t *visct   = f_mut->val;
+  const cs_real_t *cvar_k  = f_k->val;
+  const cs_real_t *cvar_ep = f_eps->val;
 
   /* Initialization
    * ============== */
 
-  cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  cs_real_33_t *gradv = NULL;
 
-  cs_field_gradient_vector(CS_F_(vel),
-                           true, // use_previous_t
-                           1,    // inc
-                           gradv);
+  if (f_vel->grad == NULL) {
+    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+    /* Computation of the velocity gradient */
+
+    cs_field_gradient_vector(f_vel,
+                             true, // use_previous_t
+                             1,    // inc
+                             gradv);
+  } else
+    gradv = (cs_real_33_t *)f_vel->grad;
 
   const cs_real_t d1s2 = 0.5, d2s3 = 2./3;
 
@@ -2485,7 +2603,8 @@ cs_turbulence_ke_q(cs_real_6_t  rij[])
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
+  if (f_vel->grad == NULL)
+    BFT_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/

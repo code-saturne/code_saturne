@@ -83,7 +83,7 @@ integer elt_ids(n_elts)
 ! Local variables
 integer          isou   , jsou
 integer          ipt    , iel
-double precision xdis   , xloc   , xtau   , rovtau
+double precision xdis   , xtau   , rovtau
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cvara_s
 double precision, dimension(:,:), pointer :: cvara_v

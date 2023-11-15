@@ -80,53 +80,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the Dirichlet BC values to the face vertices.
- *          Case of vertex-based schemes
- *
- * \param[in]      dim          number of values to assign to each vertex
- * \param[in]      n_vf         number of vertices in a face
- * \param[in]      lst          list of vertex numbering
- * \param[in]      eval         result of the evaluation to set
- * \param[in]      is_constant  same value for all vertices ?
- * \param[in, out] vvals        vertex values to update
- * \param[in, out] counter      counter to update
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_assign_vb_dirichlet_values(int                dim,
-                            int                n_vf,
-                            const cs_lnum_t   *lst,
-                            const cs_real_t   *eval,
-                            bool               is_constant,
-                            cs_real_t         *vvals,
-                            int                counter[])
-{
-  if (dim == 1) {
-
-    for (short int v = 0; v < n_vf; v++) {
-      const cs_lnum_t  v_id = lst[v];
-      const short int  _v = is_constant ? 0 : v;
-      counter[v_id] += 1;
-      vvals[v_id] += eval[_v];
-    }
-
-  }
-  else { /* Not a scalar-valued quantity */
-
-    for (short int v = 0; v < n_vf; v++) {
-      const cs_lnum_t  v_id = lst[v];
-      const short int  _v = is_constant ? 0 : v;
-      counter[v_id] += 1;
-      for (int k = 0; k < dim; k++)
-        vvals[dim*v_id + k] += eval[dim*_v + k];
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set members of the cs_cell_sys_t structure related to the boundary
  *         conditions. Only the generic part is done here. The remaining part
  *         is performed specifically for each scheme
@@ -161,14 +114,88 @@ _init_cell_sys_bc(const cs_cdo_bc_face_t     *face_bc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Synchronize the boundary definitions related to the enforcement of
- *         a circulation along a boundary edge
+ * \brief Set the Dirichlet BC values to the face vertices.
+ *        Case of vertex-based schemes
  *
- * \param[in]       connect     pointer to a cs_cdo_connect_t structure
- * \param[in]       n_defs      number of definitions
- * \param[in]       defs        number of times the values has been updated
- * \param[in, out]  def2e_idx   index array  to define
- * \param[in, out]  def2e_ids   array of ids to define
+ * \param[in]      dim          number of values to assign to each vertex
+ * \param[in]      n_vf         number of vertices in a face
+ * \param[in]      lst          list of vertex numbering
+ * \param[in]      eval         result of the evaluation to set
+ * \param[in]      is_constant  same value for all vertices ?
+ * \param[in, out] vvals        vertex values to update
+ * \param[in, out] counter      counter to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_assign_vb_dirichlet_values(int                dim,
+                            int                n_vf,
+                            const cs_lnum_t   *lst,
+                            const cs_real_t   *eval,
+                            bool               is_constant,
+                            cs_real_t         *vvals,
+                            int                counter[])
+{
+  if (dim == 1) {
+
+    if (is_constant) {
+
+      const double  val = eval[0];
+      for (short int v = 0; v < n_vf; v++) {
+        const cs_lnum_t  v_id = lst[v];
+        counter[v_id] += 1;
+        vvals[v_id] += val;
+      }
+
+    }
+    else {
+
+      for (short int v = 0; v < n_vf; v++) {
+        const cs_lnum_t  v_id = lst[v];
+        counter[v_id] += 1;
+        vvals[v_id] += eval[v];
+      }
+
+    } /* is constant ? */
+
+  }
+  else { /* Not a scalar-valued quantity */
+
+    if (is_constant) {
+
+      const double  *val = eval;
+      for (short int v = 0; v < n_vf; v++) {
+        const cs_lnum_t  v_id = lst[v];
+        counter[v_id] += 1;
+        for (int k = 0; k < dim; k++)
+          vvals[dim*v_id + k] += val[k];
+      }
+
+    }
+    else {
+
+      for (short int v = 0; v < n_vf; v++) {
+        const cs_lnum_t  v_id = lst[v];
+        counter[v_id] += 1;
+        for (int k = 0; k < dim; k++)
+          vvals[dim*v_id + k] += eval[dim*v + k];
+      }
+
+    }
+
+  } /* scalar-valued ? */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize the boundary definitions related to the enforcement of
+ *        a circulation along a boundary edge
+ *
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      n_defs      number of definitions
+ * \param[in]      defs        number of times the values has been updated
+ * \param[in, out] def2e_idx   index array  to define
+ * \param[in, out] def2e_ids   array of ids to define
  */
 /*----------------------------------------------------------------------------*/
 
@@ -269,22 +296,22 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the values for the normal boundary flux stemming from the
- *         Neumann boundary conditions (zero is left where a Dirichlet is
- *         set. This can be updated later on)
+ * \brief Set the values for the normal boundary flux stemming from the Neumann
+ *        boundary conditions (zero is left where a Dirichlet is set. This can
+ *        be updated later on)
  *
- * \param[in]       t_eval   time at which one performs the evaluation
- * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
- * \param[in]       eqp      pointer to a cs_equation_param_t structure
- * \param[in, out]  values   pointer to the array of values to set
+ * \param[in]      t_eval   time at which one performs the evaluation
+ * \param[in]      cdoq     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] values   pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
-                                       const cs_cdo_quantities_t   *cdoq,
-                                       const cs_equation_param_t   *eqp,
-                                       cs_real_t                   *values)
+cs_equation_bc_init_boundary_flux(cs_real_t                     t_eval,
+                                  const cs_cdo_quantities_t    *cdoq,
+                                  const cs_equation_param_t    *eqp,
+                                  cs_real_t                    *values)
 {
   /* We assume a homogeneous Neumann boundary condition as a default */
 
@@ -349,8 +376,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 
     } /* Neumann boundary conditions */
 
-  } /* Loop on boundary conditions applied to the Richards equation */
-
+  } /* Loop on boundary conditions */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -448,12 +474,12 @@ cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
            face. This is different from Neumann and Dirichlet where the values
            are defined at each vertices. Be aware of that when computing */
 
-        cs_equation_compute_robin(t_eval,
-                                  face_bc->def_ids[bf_id],
-                                  f,
-                                  eqp,
-                                  cm,
-                                  csys->rob_values);
+        cs_equation_bc_cw_robin(t_eval,
+                                face_bc->def_ids[bf_id],
+                                f,
+                                eqp,
+                                cm,
+                                csys->rob_values);
         break;
 
       case CS_CDO_BC_SLIDING:
@@ -645,12 +671,12 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
         for (int k = 0; k < d; k++)
           csys->dof_flag[d*f + k] |= CS_CDO_BC_ROBIN;
 
-        cs_equation_compute_robin(cb->t_bc_eval,
-                                  face_bc->def_ids[bf_id],
-                                  f,
-                                  eqp,
-                                  cm,
-                                  csys->rob_values);
+        cs_equation_bc_cw_robin(cb->t_bc_eval,
+                                face_bc->def_ids[bf_id],
+                                f,
+                                eqp,
+                                cm,
+                                csys->rob_values);
         break;
 
       case CS_CDO_BC_SLIDING:
@@ -725,12 +751,14 @@ cs_equation_bc_set_cw_cb(const cs_cell_mesh_t         *cm,
           csys->dof_flag[d*f + k] |= CS_CDO_BC_NEUMANN;
 
         if (d == 1)
-          cs_equation_compute_neumann_cb(cb->t_bc_eval,
-                                         face_bc->def_ids[bf_id],
-                                         f,
-                                         eqp,
-                                         cm,
-                                         csys->neu_values);
+          /* cell-based and face-based have the same treatment on primal faces
+             so one calls the function used in face-based schemes */
+          cs_equation_compute_neumann_sfb(cb->t_bc_eval,
+                                          face_bc->def_ids[bf_id],
+                                          f,
+                                          eqp,
+                                          cm,
+                                          csys->neu_values);
 
         else
           bft_error(__FILE__, __LINE__, 0,
@@ -742,12 +770,12 @@ cs_equation_bc_set_cw_cb(const cs_cell_mesh_t         *cm,
         for (int k = 0; k < d; k++)
           csys->dof_flag[d*f + k] |= CS_CDO_BC_ROBIN;
 
-        cs_equation_compute_robin(cb->t_bc_eval,
-                                  face_bc->def_ids[bf_id],
-                                  f,
-                                  eqp,
-                                  cm,
-                                  csys->rob_values);
+        cs_equation_bc_cw_robin(cb->t_bc_eval,
+                                face_bc->def_ids[bf_id],
+                                f,
+                                eqp,
+                                cm,
+                                csys->rob_values);
         break;
 
       case CS_CDO_BC_SLIDING:
@@ -886,8 +914,8 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
- *          vertices
+ * \brief Compute the values of the Dirichlet BCs at mesh vertices. This is
+ *        done for CDO vertex-based and CDO vertex+cell-based schemes.
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      mesh        pointer to a cs_mesh_t structure
@@ -895,22 +923,20 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] bcflag      pointer to an array storing type of BC
  * \param[in, out] values      pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
-                                 const cs_mesh_t            *mesh,
-                                 const cs_cdo_quantities_t  *quant,
-                                 const cs_cdo_connect_t     *connect,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_face_t     *face_bc,
-                                 cs_cell_builder_t          *cb,
-                                 cs_flag_t                  *bcflag,
-                                 cs_real_t                  *values)
+cs_equation_bc_dirichlet_at_vertices(cs_real_t                   t_eval,
+                                     const cs_mesh_t            *mesh,
+                                     const cs_cdo_quantities_t  *quant,
+                                     const cs_cdo_connect_t     *connect,
+                                     const cs_equation_param_t  *eqp,
+                                     const cs_cdo_bc_face_t     *face_bc,
+                                     cs_flag_t                  *bcflag,
+                                     cs_real_t                  *values)
 {
   assert(face_bc != NULL && bcflag != NULL && values != NULL);
 
@@ -922,6 +948,9 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
   cs_real_t  *bcvals = cs_cdo_toolbox_get_tmpbuf();
 
   cs_array_real_fill_zero(eqp->dim*quant->n_vertices, bcvals);
+
+  cs_real_t  *_face_vtx_values = NULL;
+  BFT_MALLOC(_face_vtx_values, eqp->dim*connect->n_max_vbyf, cs_real_t);
 
   /* Number of faces with a Dir. related to a vertex */
 
@@ -953,10 +982,26 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                   counter);
       break;
 
+    case CS_XDEF_BY_TIME_FUNCTION:
+      {
+        cs_xdef_time_func_context_t  *tfc = def->context;
+        assert(tfc != NULL);
+
+        /* Get the Dirichlet value */
+
+        cs_real_t  bc_val;
+        tfc->func(t_eval, tfc->input, &bc_val);
+
+        _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
+                                    &bc_val,
+                                    true, /* is constant for all vertices ? */
+                                    bcvals,
+                                    counter);
+    }
+    break;
+
     case CS_XDEF_BY_ARRAY:
       {
-        cs_real_t  *eval = cb->values;
-
         /* Evaluate the boundary condition at each boundary vertex */
 
         cs_xdef_eval_at_vertices_by_array(n_vf,
@@ -967,10 +1012,10 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                           quant,
                                           t_eval,
                                           def->context,
-                                          eval);
+                                          _face_vtx_values);
 
         _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
-                                    eval,
+                                    _face_vtx_values,
                                     false, /* is constant for all vertices ? */
                                     bcvals,
                                     counter);
@@ -979,8 +1024,6 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
       {
-        cs_real_t  *eval = cb->values;
-
         /* Evaluate the boundary condition at each boundary vertex */
 
         cs_xdef_eval_at_vertices_by_analytic(n_vf,
@@ -991,10 +1034,10 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                              quant,
                                              t_eval,
                                              def->context,
-                                             eval);
+                                             _face_vtx_values);
 
         _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
-                                    eval,
+                                    _face_vtx_values,
                                     false, /* is constant for all vertices ? */
                                     bcvals,
                                     counter);
@@ -1061,6 +1104,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
   /* Free temporary buffers */
 
+  BFT_FREE(_face_vtx_values);
   BFT_FREE(counter);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
@@ -1071,8 +1115,9 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the values of the Dirichlet BCs when DoFs are attached to CDO
- *        face-based schemes
+ * \brief Compute the values of the Dirichlet BCs at boundary faces.
+ *        This can be applied to CDO face-based schemes (DoFs are attached to
+ *        primal faces), to CDO cell-based schemes or even to FV schemes.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
@@ -1080,24 +1125,20 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
  * \param[in]      eqp        pointer to a cs_equation_param_t
  * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] values     pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
-                                 const cs_cdo_quantities_t  *quant,
-                                 const cs_cdo_connect_t     *connect,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_face_t     *face_bc,
-                                 cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb,
-                                 cs_real_t                  *values)
+cs_equation_bc_dirichlet_at_faces(const cs_mesh_t            *mesh,
+                                  const cs_cdo_quantities_t  *quant,
+                                  const cs_cdo_connect_t     *connect,
+                                  const cs_equation_param_t  *eqp,
+                                  const cs_cdo_bc_face_t     *face_bc,
+                                  cs_real_t                   t_eval,
+                                  cs_real_t                  *values)
 {
   assert(face_bc != NULL);
-
-  CS_UNUSED(cb);
 
   /* Define the array storing the Dirichlet values */
 
@@ -1133,6 +1174,48 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         }
         break;
 
+      case CS_XDEF_BY_TIME_FUNCTION:
+        {
+          cs_xdef_time_func_context_t  *tfc = def->context;
+          assert(tfc != NULL);
+
+          if (def->dim == 1) {
+
+            cs_real_t  bc_val;
+            tfc->func(t_eval, tfc->input, &bc_val);
+
+            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
+                                               bc_val,
+                                               values);
+
+          }
+          else if (def->dim == 3) {
+
+            cs_real_t  bc_val[3];
+            tfc->func(t_eval, tfc->input, bc_val);
+
+            cs_array_real_set_vector_on_subset(bz->n_elts, elt_ids,
+                                               bc_val,
+                                               values);
+
+          }
+          else {
+
+            cs_real_t  *bc_val = NULL;
+            BFT_MALLOC(bc_val, def->dim, cs_real_t);
+
+            tfc->func(t_eval, tfc->input, bc_val);
+
+            cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
+                                              bc_val,
+                                              values);
+
+            BFT_FREE(bc_val);
+
+          }
+        }
+        break;
+
       case CS_XDEF_BY_ARRAY:
         {
           cs_xdef_array_context_t  *ac = def->context;
@@ -1145,7 +1228,9 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
             if (ac->z_id == 0) { /* Array is defined on the full location */
 
+              assert(ac->full_length);
               assert(bz->n_elts == quant->n_b_faces);
+              assert(eqp->n_bc_defs == 1); /* Only one definition */
               cs_array_real_copy(bz->n_elts*eqp->dim, ac->values, values);
 
             }
@@ -1264,283 +1349,6 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
- *          CDO cell-based schemes
- *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
- * \param[in]      t_eval     time at which one evaluates the boundary cond.
- * \param[in, out] values     pointer to the array of values to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_compute_dirichlet_cb(const cs_mesh_t            *mesh,
-                                 const cs_cdo_quantities_t  *quant,
-                                 const cs_cdo_connect_t     *connect,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_face_t     *face_bc,
-                                 cs_real_t                   t_eval,
-                                 cs_real_t                  *values)
-{
-  assert(face_bc != NULL);
-
-  /* Define the array storing the Dirichlet values */
-
-  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
-
-    const cs_xdef_t  *def = eqp->bc_defs[def_id];
-
-    if (def->meta & CS_CDO_BC_DIRICHLET) {
-
-      assert(eqp->dim == def->dim);
-      assert(def->dim == 1);
-
-      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
-      const cs_lnum_t  *elt_ids = (def->z_id == 0) ? NULL : bz->elt_ids;
-
-      switch(def->type) {
-
-      case CS_XDEF_BY_VALUE:
-        {
-          const cs_real_t  *constant_val = (cs_real_t *)def->context;
-
-          if (def->dim == 1)
-            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
-                                               constant_val[0],
-                                               values);
-          else if (def->dim == 3)
-            cs_array_real_set_vector_on_subset(bz->n_elts, elt_ids,
-                                               constant_val,
-                                               values);
-          else
-            cs_array_real_set_value_on_subset(bz->n_elts, def->dim, elt_ids,
-                                              constant_val,
-                                              values);
-        }
-        break;
-
-      case CS_XDEF_BY_ARRAY:
-        {
-          cs_xdef_array_context_t  *ac = def->context;
-
-          assert(ac->stride == eqp->dim);
-          assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
-                 cs_flag_test(ac->value_location, cs_flag_boundary_face));
-
-          if (def->z_id == ac->z_id) {
-
-            if (ac->z_id == 0) {  /* Array is defined on the full location */
-
-              assert(ac->full_length);
-              assert(bz->n_elts == mesh->n_b_faces);
-              assert(eqp->n_bc_defs == 1); /* Only one definition */
-              cs_array_real_copy(bz->n_elts*ac->stride, ac->values, values);
-
-            }
-            else { /* Zone is only a part of the location */
-
-              if (ac->full_length)
-                cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
-                                          CS_ARRAY_SUBSET_INOUT,
-                                          ac->values,
-                                          values);
-              else
-                cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
-                                          CS_ARRAY_SUBSET_OUT,
-                                          ac->values,
-                                          values);
-
-            }
-
-          }
-          else { /* bz->id != ac->z_id */
-
-            if (ac->z_id == 0 || ac->full_length) {  /* Array is defined on the
-                                                        full location */
-
-              assert(elt_ids != NULL);
-              cs_array_real_copy_subset(bz->n_elts, def->dim, elt_ids,
-                                        CS_ARRAY_SUBSET_INOUT,
-                                        ac->values,
-                                        values);
-
-            }
-            else
-              bft_error(__FILE__, __LINE__, 0,
-                        "%s: Inconsistent zone id.\n"
-                        "%s: array zone_id: %d and definition zone_id: %d\n",
-                        __func__, __func__, ac->z_id, bz->id);
-
-          }
-        }
-        break;
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        /* Evaluate the boundary condition at each boundary face */
-        switch(eqp->dof_reduction) {
-
-        case CS_PARAM_REDUCTION_DERHAM:
-          cs_xdef_eval_at_b_faces_by_analytic(bz->n_elts,
-                                              bz->elt_ids,
-                                              false, /* dense output */
-                                              mesh,
-                                              connect,
-                                              quant,
-                                              t_eval,
-                                              def->context,
-                                              values);
-          break;
-
-        case CS_PARAM_REDUCTION_AVERAGE:
-          cs_xdef_eval_avg_at_b_faces_by_analytic(bz->n_elts,
-                                                  bz->elt_ids,
-                                                  false, /* dense output */
-                                                  mesh,
-                                                  connect,
-                                                  quant,
-                                                  t_eval,
-                                                  def->context,
-                                                  def->qtype,
-                                                  def->dim,
-                                                  values);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    _(" %s: Invalid type of reduction.\n"
-                      " Stop computing the Dirichlet value.\n"), __func__);
-
-        } /* switch on reduction */
-        break;
-
-      case CS_XDEF_BY_DOF_FUNCTION:
-        cs_xdef_eval_at_b_faces_by_dof_func(bz->n_elts,
-                                            bz->elt_ids,
-                                            false, /* dense output */
-                                            mesh,
-                                            connect,
-                                            quant,
-                                            t_eval,
-                                            def->context,
-                                            values);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Invalid type of definition.\n"
-                    " Stop computing the Dirichlet value.\n"), __func__);
-
-      } /* switch on def_type */
-
-    } /* Definition based on Dirichlet BC */
-  } /* Loop on definitions */
-
-  /* Set the values to zero for all faces attached to a homogeneous
-     Diriclet BC */
-
-# pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
-  for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++)
-    if (face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET)
-      for (int k = 0; k < eqp->dim; k++)
-        values[eqp->dim*bf_id + k] = 0;
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
-  cs_dbg_darray_to_listing("DIRICHLET_VALUES",
-                           eqp->dim*quant->n_b_faces, values, 9);
-#endif
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
- *         and attached to a cell-based schemes
- *         Case of the Neumann BCs i.e. Neumann is defined by a scalar
- *
- * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in]      def_id      id of the definition for setting the Neumann BC
- * \param[in]      f           local face number in the cs_cell_mesh_t
- * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in, out] neu_values  array storing the Neumann values for all DoFs
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_compute_neumann_cb(cs_real_t                   t_eval,
-                               short int                   def_id,
-                               short int                   f,
-                               const cs_equation_param_t  *eqp,
-                               const cs_cell_mesh_t       *cm,
-                               double                     *neu_values)
-{
-  assert(neu_values != NULL && cm != NULL && eqp != NULL);
-  assert(def_id > -1);
-  assert(eqp->dim == 1);
-
-  const cs_xdef_t  *def = eqp->bc_defs[def_id];
-
-  assert(def->meta & CS_CDO_BC_NEUMANN);
-
-  /* Flux in this case is a scalar for each face */
-
-  switch(def->type) {
-
-  case CS_XDEF_BY_VALUE:
-    {
-      double  *input = def->context;
-
-      neu_values[f] = cm->face[f].meas * input[0];
-    }
-    break;
-
-  case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_xdef_cw_eval_flux_by_scalar_analytic(cm, f, t_eval,
-                                            def->context,
-                                            def->qtype,
-                                            neu_values);
-    break;
-
-  case CS_XDEF_BY_ARRAY:
-    {
-      cs_xdef_array_context_t  *ac = def->context;
-
-      assert(ac->stride == 1);
-      assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
-             cs_flag_test(ac->value_location, cs_flag_boundary_face));
-
-      cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
-      assert(bf_id > -1);
-
-      if (ac->full_length)
-        neu_values[f] = cm->face[f].meas * ac->values[bf_id];
-
-      else {
-
-        assert(ac->full2subset != NULL);
-        cs_lnum_t  id = ac->full2subset[bf_id];
-        assert(id > -1);
-
-        neu_values[f] = cm->face[f].meas * ac->values[id];
-
-      }
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Invalid type of definition.\n"
-                " Stop computing the Neumann value.\n"), __func__);
-
-  } /* switch def_type */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
  *         and attached to a vertex-based schemes (Vb or VCb)
  *         Case of the Neumann BCs i.e. Neumann is defined by a scalar
@@ -1579,6 +1387,20 @@ cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
   case CS_XDEF_BY_VALUE:
     cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval, def->context,
                                          neu_values);
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux;
+      tfc->func(t_eval, tfc->input, &flux);
+
+      cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval, &flux, neu_values);
+    }
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1678,6 +1500,20 @@ cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
   case CS_XDEF_BY_VALUE:
     cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval, def->context,
                                          neu_values);
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux[3];
+      tfc->func(t_eval, tfc->input, flux);
+
+      cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval, flux, neu_values);
+    }
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1780,6 +1616,20 @@ cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
     }
     break;
 
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux;
+      tfc->func(t_eval, tfc->input, &flux);
+
+      neu_values[f] = cm->face[f].meas * flux;
+    }
+    break;
+
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_cw_eval_flux_by_scalar_analytic(cm, f, t_eval,
                                             def->context,
@@ -1860,6 +1710,21 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
   case CS_XDEF_BY_VALUE:
     cs_xdef_cw_eval_flux_by_vector_val(cm, f, t_eval, def->context,
                                        neu_values);
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux[3];
+      tfc->func(t_eval, tfc->input, flux);
+
+      neu_values[f] = cm->face[f].meas
+        * cs_math_3_dot_product(cm->face[f].unitv, flux);
+    }
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1951,6 +1816,21 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
     }
     break;
 
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t  *tfc = def->context;
+      assert(tfc != NULL);
+
+      /* Evaluate the flux */
+
+      cs_real_t  flux[3];
+      tfc->func(t_eval, tfc->input, flux);
+
+      for (int k = 0; k < 3; k++)
+        neu_values[3*f+k] = cm->face[f].meas * flux[k];
+    }
+    break;
+
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_cw_eval_vector_flux_by_analytic(cm, f, t_eval,
                                             def->context,
@@ -1998,7 +1878,8 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Robin BCs
+ * \brief Compute the values of the Robin BCs for a face (cell-wise compute
+ *        relying on the cs_cell_mesh_t structure)
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
@@ -2010,12 +1891,12 @@ cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_robin(cs_real_t                    t_eval,
-                          short int                    def_id,
-                          short int                    f,
-                          const cs_equation_param_t   *eqp,
-                          const cs_cell_mesh_t        *cm,
-                          double                      *rob_values)
+cs_equation_bc_cw_robin(cs_real_t                    t_eval,
+                        short int                    def_id,
+                        short int                    f,
+                        const cs_equation_param_t   *eqp,
+                        const cs_cell_mesh_t        *cm,
+                        double                      *rob_values)
 {
   assert(rob_values != NULL && cm != NULL && eqp != NULL);
   assert(def_id > -1);
@@ -2099,9 +1980,10 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the tangential component lying on the domain
- *          boundary. Kind of BCs used when DoFs are attached to CDO (primal)
- *          edge-based schemes. One sets the values of the circulation.
+ * \brief Compute the values of the circulation along primal edges lying on the
+ *        domain boundary (the integral of the tangential component of
+ *        vector-valued field). This is used for CDO edge-based schemes where
+ *        DoFs are attached to (primal) edge-based schemes.
  *
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
  * \param[in]      mesh       pointer to a cs_mesh_t structure
@@ -2113,12 +1995,12 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
-                                   const cs_mesh_t             *mesh,
-                                   const cs_cdo_quantities_t   *quant,
-                                   const cs_cdo_connect_t      *connect,
-                                   const cs_equation_param_t   *eqp,
-                                   cs_real_t                   *values)
+cs_equation_bc_circulation_at_edges(cs_real_t                    t_eval,
+                                    const cs_mesh_t             *mesh,
+                                    const cs_cdo_quantities_t   *quant,
+                                    const cs_cdo_connect_t      *connect,
+                                    const cs_equation_param_t   *eqp,
+                                    cs_real_t                   *values)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(quant);

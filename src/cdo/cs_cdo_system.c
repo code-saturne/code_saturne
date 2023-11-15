@@ -133,8 +133,10 @@ _set_scalar_slave_assembly_func(void)
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {  /* Parallel */
 
-    return cs_cdo_assembly_matrix_sys_mpis;
-    /* TODO: Threaded version */
+    if (cs_glob_n_threads < 2) /* Without OpenMP */
+      return cs_cdo_assembly_matrix_sys_mpis;
+    else
+      return cs_cdo_assembly_matrix_sys_mpit;
 
   }
 #endif /* defined(HAVE_MPI) */

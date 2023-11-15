@@ -1124,7 +1124,7 @@ The functional to be minimized is defined by
 \end{equation}
 
 To minimize $\mathcal{F}_{\celli}$, derivatives with respect to the components of the
-vector $\variat  $ are computed, the resulting system is solved and $\gradt_\celli \variav$ is defined
+vector $\variat$ are computed, the resulting system is solved and $\gradt_\celli \variav$ is defined
 as $\variat_{\min}$ such that $\mathcal{F}_{\celli} \left( \variat_{\min}\right)$ is minimum.
 
 In order to obtain a simple system, the same choice as in \eqref{eq:spadis:gradmc_scalar_d_choice} is made on $\vect{d}_{\bij}$.
@@ -1191,6 +1191,20 @@ with
 \end{array}\right.
 \end{equation}
 %
+
+To handle Neumann BC components, we use a fixed-point scheme to compute face values
+based on formula \eqref{eq:bndcnd:coef_g_def}:
+\begin{itemize}
+\item Initialize the value at $\variav_{\fib}$ using the value
+      at $\variav_{\celli}$ in place of $\variav_{\centip}$.
+\item Compute a first estimate of $\gradt_{\celli} \variav$based on
+      these boundary values.
+\item Update $\variav_{\cellip}$ based on this first gradient estimate
+      and recompute $\variav_{\fib}$.
+\item Compute a new estimate of $\gradt_{\celli} \varia $ based on
+      these updated boundary values.
+\item Iterate until convergence is reached.
+\end{itemize}
 
 \begin{remark}
 Note that the $3\times3$ $\tens{C}_{\celli}$ tensor is  slightly different from \eqref{eq:spadis:gradmc_matrix} and does not depend

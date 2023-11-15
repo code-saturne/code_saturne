@@ -498,6 +498,8 @@ _field_create(const char   *name,
   f->val = NULL;
   f->val_pre = NULL;
 
+  f->grad = NULL;
+
   f->bc_coeffs = NULL;
 
   f->is_owner = true;
@@ -2128,6 +2130,29 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate arrays for field gradient.
+ *
+ * \param[in, out]  f  pointer to field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_allocate_gradient(cs_field_t  *f)
+{
+  assert(f != NULL);
+
+  if (f->is_owner) {
+
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+
+    /* Initialization */
+
+    f->grad = _add_val(n_elts[2], 3*f->dim, f->grad);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set current field values to the given constant.
  *
  * \param[in, out]  f  pointer to field structure
@@ -2225,12 +2250,18 @@ cs_field_destroy_all(void)
 {
   for (int i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
-    if (f->is_owner && f->vals != NULL) {
-      int ii;
-      for (ii = 0; ii < f->n_time_vals; ii++)
-        BFT_FREE(f->vals[ii]);
+    if (f->is_owner) {
+      if (f->vals != NULL) {
+        int ii;
+        for (ii = 0; ii < f->n_time_vals; ii++)
+          BFT_FREE(f->vals[ii]);
+      }
     }
     BFT_FREE(f->vals);
+
+    if (f->grad != NULL)
+      BFT_FREE(f->grad);
+
     if (f->bc_coeffs != NULL) {
       BFT_FREE(f->bc_coeffs->a);
       BFT_FREE(f->bc_coeffs->b);

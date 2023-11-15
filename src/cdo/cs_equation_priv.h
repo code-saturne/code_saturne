@@ -53,8 +53,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a scheme data structure used during the building of the
- *         algebraic system
+ * \brief Initialize a scheme data structure used during the building of the
+ *        algebraic system
  *
  * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
  * \param[in]      var_id      id of the variable field
@@ -73,7 +73,7 @@ typedef void *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a scheme data structure
+ * \brief Destroy a scheme data structure
  *
  * \param[in, out] scheme_context    pointer to a structure cast on-the-fly
  *
@@ -86,7 +86,7 @@ typedef void *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the variable field values related to an equation
+ * \brief Initialize the variable field values related to an equation
  *
  * \param[in]      t_eval     time at which one performs the evaluation
  * \param[in]      field_id   id related to the variable field of this equation
@@ -107,7 +107,7 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build and solve a linear system within the CDO framework
+ * \brief Build and solve a linear system within the CDO framework
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
@@ -128,7 +128,7 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the Dirichlet boundary stemming from the settings.
+ * \brief Set the Dirichlet boundary stemming from the settings.
  *
  * \param[in]      t_eval      time at which one evaluates BCs
  * \param[in]      mesh        pointer to a cs_mesh_t structure
@@ -149,7 +149,7 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a linear system within the CDO framework
+ * \brief Build a linear system within the CDO framework
  *
  * \param[in]      m          pointer to a \ref cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
@@ -168,9 +168,9 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Carry out operations for allocating and/or initializing the solution
- *         array and the right hand side of the linear system to solve.
- *         Handle parallelism thanks to cs_range_set_t structure.
+ * \brief Carry out operations for allocating and/or initializing the solution
+ *        array and the right hand side of the linear system to solve.
+ *        Handle parallelism thanks to cs_range_set_t structure.
  *
  * \param[in, out] eq_cast    pointer to generic builder structure
  * \param[in, out] p_x        pointer of pointer to the solution array
@@ -183,8 +183,8 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Store solution(s) of the linear system into a field structure
- *         Update extra-field values if required (for hybrid discretization)
+ * \brief Store solution(s) of the linear system into a field structure
+ *        Update extra-field values if required (for hybrid discretization)
  *
  * \param[in]      solu       solution array
  * \param[in]      rhs        rhs associated to this solution array
@@ -205,8 +205,8 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the balance for an equation over the full computational
- *         domain between time t_cur and t_cur + dt_cur
+ * \brief Compute the balance for an equation over the full computational
+ *        domain between time t_cur and t_cur + dt_cur
  *
  * \param[in]      eqp             pointer to a \ref cs_equation_param_t
  * \param[in, out] eqb             pointer to a \ref cs_equation_builder_t
@@ -223,9 +223,9 @@ typedef cs_cdo_balance_t *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the cellwise stiffness matrix associated to the property
- *         given as a parameter and apply it to the pot array to define
- *         the resulting array associated to entities defined at loc_res
+ * \brief Compute the cellwise stiffness matrix associated to the property
+ *        given as a parameter and apply it to the pot array to define
+ *        the resulting array associated to entities defined at loc_res
  *
  * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
@@ -248,11 +248,11 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic prototype for extra-operations related to an equation
+ * \brief Generic prototype for extra-operations related to an equation
  *
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  context    pointer to a generic data structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to a generic data structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -263,11 +263,11 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve cellwise structure including work buffers used to build
- *         a CDO system cellwise. Generic prototype for all CDO schemes.
+ * \brief Retrieve cellwise structure including work buffers used to build
+ *        a CDO system cellwise. Generic prototype for all CDO schemes.
  *
- * \param[out]  csys   pointer to a pointer on a cs_cell_sys_t structure
- * \param[out]  cb     pointer to a pointer on a cs_cell_builder_t structure
+ * \param[out] csys   pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out] cb     pointer to a pointer on a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -277,13 +277,13 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute or retrieve an array of values at a given mesh location
- *         Currently, vertices, cells or faces are possible locations
- *         The lifecycle of this array is managed by the code. So one does not
- *         have to free the return pointer.
+ * \brief Compute or retrieve an array of values at a given mesh location
+ *        Currently, vertices, cells or faces are possible locations
+ *        The lifecycle of this array is managed by the code. So one does not
+ *        have to free the return pointer.
  *
- * \param[in, out]  scheme_context  pointer to a data structure cast on-the-fly
- * \param[in]       previous        retrieve the previous state (true/false)
+ * \param[in, out] scheme_context  pointer to a data structure cast on-the-fly
+ * \param[in]      previous        retrieve the previous state (true/false)
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
@@ -295,12 +295,12 @@ typedef cs_real_t *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic prototype dedicated to read or write additional arrays (not
- *         defined as fields) useful for the checkpoint/restart process
+ * \brief Generic prototype dedicated to read or write additional arrays (not
+ *        defined as fields) useful for the checkpoint/restart process
  *
- * \param[in, out]  restart         pointer to \ref cs_restart_t structure
- * \param[in]       eqname          name of the related equation
- * \param[in, out]  scheme_context  pointer to a data structure cast on-the-fly
+ * \param[in, out] restart         pointer to \ref cs_restart_t structure
+ * \param[in]      eqname          name of the related equation
+ * \param[in, out] scheme_context  pointer to a data structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 

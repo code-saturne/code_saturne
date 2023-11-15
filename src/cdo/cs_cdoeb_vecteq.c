@@ -639,7 +639,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
 
-  eqb->bd_msh_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
+  eqb->bdy_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
 
   /* Values at each edge (interior and border) i.e. BCs are included */
 
@@ -909,12 +909,10 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
   /* Set the boundary values as initial values: Compute the values of the
      circulation where it is known thanks to the BCs */
 
-  cs_equation_compute_circulation_eb(t_eval,
-                                     mesh,
-                                     quant,
-                                     connect,
-                                     eqp,
-                                     eqc->edge_values);
+  cs_equation_bc_circulation_at_edges(t_eval,
+                                      mesh, quant, connect,
+                                      eqp,
+                                      eqc->edge_values);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -961,12 +959,10 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   BFT_MALLOC(eqb->dir_values, n_edges, cs_real_t);
   cs_array_real_fill_zero(n_edges, eqb->dir_values);
 
-  cs_equation_compute_circulation_eb(time_eval,
-                                     mesh,
-                                     quant,
-                                     connect,
-                                     eqp,
-                                     eqb->dir_values);
+  cs_equation_bc_circulation_at_edges(time_eval,
+                                      mesh, quant, connect,
+                                      eqp,
+                                      eqb->dir_values);
 
   if (cs_equation_param_has_internal_enforcement(eqp))
     eqb->enforced_values =
@@ -985,7 +981,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+#  pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */

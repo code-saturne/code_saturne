@@ -63,6 +63,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_therm  = self.node_models.xmlGetNode('thermal_scalar')
+        self.node_hgn    = self.node_models.xmlInitNode('hgn_model')
         self.node_source = self.node_models.xmlGetNode('source_terms')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
         self.node_ana    = self.case.xmlInitNode('analysis_control')
@@ -267,6 +268,16 @@ class DefineUserScalarsModel(Variables, Model):
         Return the thermal scalar name"""
         lst = []
         for node in self.node_therm.xmlGetNodeList('variable'):
+            lst.append(node['name'])
+        return lst
+
+
+    @Variables.noUndo
+    def getHgnName(self):
+        """Public method.
+        Return the void fraction name"""
+        lst = []
+        for node in self.node_hgn.xmlGetNodeList('variable'):
             lst.append(node['name'])
         return lst
 
@@ -806,12 +817,14 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalarName, self.getScalarNameList() + self.getThermalScalarName())
-        if scalarName not in self.getScalarNameList():
+        self.isInList(scalarName, self.getScalarNameList() + self.getThermalScalarName() + self.getHgnName())
+        if scalarName in self.getScalarNameList():
+            node = self.scalar_node.xmlGetNode('variable', 'type', name = scalarName)
+        elif scalarName in self.getThermalScalarName():
             node = self.node_therm.xmlGetNode('variable', name = scalarName)
         else:
-            node = self.scalar_node.xmlGetNode('variable', 'type', name = scalarName)
-        Model().isInList(node['type'], ('user', 'thermal'))
+            node = self.node_hgn.xmlGetNode('variable', name = scalarName)
+        Model().isInList(node['type'], ('user', 'thermal', 'model'))
         return node['type']
 
 

@@ -50,17 +50,19 @@ BEGIN_C_DECLS
  * section of the theory guide for more informations, as well as the
  * <a href="../../theory.pdf#turrij"><b>turrij</b></a> section.
  *
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- * \param[in]     smacel        values of the variables associated to the
- *                               mass source
- *                               (for ivar=ipr, smacel is the mass flux)
+ * \param[in]     phase_id     turbulent phase id (-1 for single phase flow)
+ * \param[in]     ncesmp       number of cells with mass source term
+ * \param[in]     icetsm       index of cells with mass source term
+ * \param[in]     itypsm       mass source type for the variables
+ * \param[in]     smacel       values of the variables associated to the
+ *                             mass source
+ *                             (for ivar=ipr, smacel is the mass flux)
  !*/
 /*-----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij(cs_lnum_t    ncesmp,
+cs_turbulence_rij(int          phase_id,
+                  cs_lnum_t    ncesmp,
                   cs_lnum_t    icetsm[],
                   int          itypsm[],
                   cs_real_t    smacel[]);
@@ -71,12 +73,14 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
  * Also called for alpha of scalars for EB-DFM.
  *
  * \param[in]  f_id          field id of alpha variable
+ * \param[in]  phase_id      turbulent phase id (-1 for single phase flow)
  * \param[in]  c_durbin_l    constant for the Durbin length
  !*/
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_rij_solve_alpha(int        f_id,
+                              int        phase_id,
                               cs_real_t  c_durbin_l);
 
 /*----------------------------------------------------------------------------*/
@@ -100,12 +104,14 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
  * \brief Clip the turbulent Reynods stress tensor and the turbulent
  *        dissipation (coupled components version).
  *
- * \param[in]  n_cells  number of cells
+ * \param[in]  phase_id   turbulent phase id (-1 for single phase flow)
+ * \param[in]  n_cells    number of cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij_clip(cs_lnum_t  n_cells);
+cs_turbulence_rij_clip(int        phase_id,
+                       cs_lnum_t  n_cells);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Compute Rusanov equivalent diffusivity of the model

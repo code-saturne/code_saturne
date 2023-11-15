@@ -174,6 +174,45 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                                          const cs_lnum_t   *face_ids,
                                          cs_real_t          var_iprime[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of a vector field at boundary face I' positions.
+ *
+ * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
+                                         bool               use_previous_t,
+                                         cs_lnum_t          n_faces,
+                                         const cs_lnum_t   *face_ids,
+                                         cs_real_3_t        var_iprime[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of a symmetric tensor field at
+ *        boundary face I' positions.
+ *
+ * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
+                                         bool               use_previous_t,
+                                         cs_lnum_t          n_faces,
+                                         const cs_lnum_t   *face_ids,
+                                         cs_real_6_t        var_iprime[]);
+
 /*----------------------------------------------------------------------------
  * Interpolate field values at a given set of points.
  *

@@ -157,9 +157,7 @@ cs_equation_system_sles_init(int                            n_eqs,
   CS_UNUSED(n_eqs);
   assert(sysp != NULL);
 
-#if defined(HAVE_MUMPS)
   const cs_param_sles_t  *sys_slesp = sysp->sles_param;
-#endif
 
   switch (sysp->sles_strategy) {
 
@@ -219,6 +217,18 @@ cs_equation_system_sles_init(int                            n_eqs,
               __func__, sysp->name);
 
   } /* switch on the SLES strategy */
+
+  /* Define the level of verbosity for SLES structure */
+
+  if (sys_slesp->verbosity > 1) {
+
+    cs_sles_t  *sles = cs_sles_find_or_add(-1, sysp->name);
+
+    /* Set verbosity */
+
+    cs_sles_set_verbosity(sles, sys_slesp->verbosity);
+
+  }
 
   sysp->sles_param->setup_done = true;
 }

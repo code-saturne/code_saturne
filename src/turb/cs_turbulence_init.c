@@ -151,7 +151,7 @@ cs_turbulence_init_by_ref_quantities(void)
     cs_array_real_set_scalar(n_cells_ext, ep_ini, cvar_ep);
 
     if (uref >= 0.)
-      cs_turbulence_ke_clip(n_cells, 1);
+      cs_turbulence_ke_clip(-1, n_cells, 1);
 
     if (turb_model->iturb == CS_TURB_V2F_PHI) {
       cs_real_t *cvar_phi = CS_F_(phi)->val;
@@ -248,7 +248,7 @@ cs_turbulence_init_clip_and_verify(void)
     cs_real_t xekmin = f_min[0], xepmin = f_min[1];
 
     if (xekmin >= 0. && xepmin >= 0.)
-      cs_turbulence_ke_clip(n_cells, 1);
+      cs_turbulence_ke_clip(-1, n_cells, 1);
     else {
       n_errors += 1;
       bft_printf(_("Error in variables initialization\n"
@@ -354,7 +354,7 @@ cs_turbulence_init_clip_and_verify(void)
     if (   v_min[0] >= 0 && v_min[1] >= 0
         && v_min[2] >= 0 && v_min[3] >= 0) {
       if (cs_glob_turb_rans_model->irijco == 0)
-        cs_turbulence_rij_clip(n_cells);
+        cs_turbulence_rij_clip(-1, n_cells);
     }
     else {
       n_errors += 1;

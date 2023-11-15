@@ -62,6 +62,7 @@
 #include "cs_post.h"
 #include "cs_quadrature.h"
 #include "cs_reco.h"
+#include "cs_reco_cw.h"
 #include "cs_scheme_geometry.h"
 #include "cs_sles.h"
 #include "cs_source_term.h"
@@ -259,15 +260,12 @@ _setup_vcb(cs_real_t                     t_eval,
 
   BFT_MALLOC(eqb->dir_values, cdoq->n_vertices, cs_real_t);
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   cdoq,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _vcbs_cell_builder[0], /* static variable */
-                                   vtx_bc_flag,
-                                   eqb->dir_values);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, cdoq, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       vtx_bc_flag,
+                                       eqb->dir_values);
 
   /* Internal enforcement of DoFs */
 
@@ -1043,7 +1041,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV  |
     CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC |
     CS_FLAG_COMP_HFQ;
-  eqb->bd_msh_flag = 0;
+  eqb->bdy_flag = 0;
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -1100,7 +1098,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Non-homogeneous Neumann BCs */
 
   if (eqb->face_bc->n_nhmg_neu_faces > 0)
-    eqb->bd_msh_flag = CS_FLAG_COMP_FV;
+    eqb->bdy_flag = CS_FLAG_COMP_FV;
 
   /* Advection term */
 
@@ -1471,15 +1469,12 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
  /* Set the boundary values as initial values: Compute the values of the
     Dirichlet BC */
 
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   cdoq,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _vcbs_cell_builder[0], /* static variable */
-                                   eqc->vtx_bc_flag,
-                                   v_vals);
+  cs_equation_bc_dirichlet_at_vertices(t_eval,
+                                       mesh, cdoq, connect,
+                                       eqp,
+                                       eqb->face_bc,
+                                       eqc->vtx_bc_flag,
+                                       v_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2892,12 +2887,12 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           /* Robin BC expression: -K dp/dn = alpha*(p - p0) + beta */
 
-          cs_equation_compute_robin(t_eval,
-                                    face_bc->def_ids[bf_id],
-                                    f,
-                                    eqp,
-                                    cm,
-                                    robin_values);
+          cs_equation_bc_cw_robin(t_eval,
+                                  face_bc->def_ids[bf_id],
+                                  f,
+                                  eqp,
+                                  cm,
+                                  robin_values);
 
           const cs_real_t  alpha = robin_values[0];
           const cs_real_t  p0 = robin_values[1];
@@ -3054,7 +3049,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
       /* Interpolate a value at the face center */
 
-      p_f = cs_reco_fw_scalar_pv_at_face_center(fm, p_v);
+      p_f = cs_reco_cw_scalar_v2f_fw(fm, p_v);
 
       /* Compute the local diffusive flux */
 
@@ -3108,7 +3103,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
         for (short int v = 0; v < fm->n_vf; v++)
           p_v[v] = pdi[fm->v_ids[v]];
 
-        p_f = cs_reco_fw_scalar_pv_at_face_center(fm, p_v);
+        p_f = cs_reco_cw_scalar_v2f_fw(fm, p_v);
 
         /* Compute the diffusive flux seen from cell c1 */
 

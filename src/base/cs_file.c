@@ -2650,9 +2650,11 @@ cs_file_free(cs_file_t  *f)
   if (_f->sh != NULL)
     _file_close(_f);
 
+#if defined(HAVE_MPI)
 #if defined(HAVE_MPI_IO)
   else if (_f->fh != MPI_FILE_NULL)
     _mpi_file_close(_f);
+#endif
   BFT_FREE(f->block_size);
 #endif
 

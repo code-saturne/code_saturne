@@ -84,7 +84,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer           iel    , ifac   , f_id0
+integer           iel    , f_id0
 integer           icla   , icha
 integer           inc    , imrgrp , nswrgp , imligp , iwarnp
 integer           iold   , krvarfl
@@ -96,9 +96,8 @@ double precision gdev1 , gdev2
 double precision fsd   , fdev  , diamdv , gdev
 double precision turb_schmidt, rvarfl
 
-integer           iok1,iok2
+integer           iok1
 double precision, dimension(:) ,allocatable :: x1,f1f2
-double precision, dimension(:) ,allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: visct
@@ -122,9 +121,9 @@ call field_get_key_double(ivarfl(isca(iscal)), krvarfl, rvarfl)
 !===============================================================================
 ! Allocation dynamic arrays
 !----
-allocate(x1(1:ncelet) , f1f2(1:ncelet),                STAT=iok1)
+allocate(x1(1:ncelet), f1f2(1:ncelet), stat=iok1)
 allocate(grad(3,ncelet), stat=iok1)
-if ( iok1 > 0 ) then
+if (iok1 > 0) then
   write(nfecra,*) ' Memory allocation error inside: '
   write(nfecra,*) '     cs_coal_fp2st               '
   call csexit(1)
@@ -205,28 +204,10 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
 ! --> Calcul du gradient de f1f2
 
-  ! Allocate temporary arrays
-  allocate(coefap(nfabor), coefbp(nfabor), STAT=iok1)
-
-  if (iok1 > 0) then
-    write(nfecra,*) ' Memory allocation error inside : '
-    write(nfecra,*) '     cs_coal_fp2st                '
-    call csexit(1)
-  endif
-
-  do ifac = 1, nfabor
-    ! Homogenous Neumann on the gradient
-    coefap(ifac) = zero
-    coefbp(ifac) = 1.d0
-  enddo
-
-!  f_id0 = -1 (indique pour la periodicite de rotation que la variable
-!              n'est pas Rij)
   f_id0  = -1
-  call gradient_s                                                 &
+  call gradient_hn_s                                              &
  ( f_id0  , imrgrp , inc    , nswrgp , imligp ,                   &
-   iwarnp , epsrgp , climgp ,                                     &
-   f1f2   , coefap , coefbp ,                                     &
+   iwarnp , epsrgp , climgp , f1f2   ,                            &
    grad   )
 
   call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
@@ -337,9 +318,8 @@ endif
 
 ! Free memory
 deallocate(x1,f1f2,grad,stat=iok1)
-deallocate(coefap, coefbp, stat=iok2)
 
-if ( iok1 > 0 .or. iok2 > 0) then
+if ( iok1 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '     cs_coal_fp2st                 '
   call csexit(1)

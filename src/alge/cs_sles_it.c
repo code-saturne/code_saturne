@@ -238,11 +238,14 @@ _convergence_test(cs_sles_it_t              *c,
 
   /* If not converged */
   else if (n_iter >= convergence->n_iterations_max) {
+    bool final_iteration = (c->fallback_cvg <= CS_SLES_MAX_ITERATION);
     if (verbosity > -1) {
-      if (verbosity <= 1) /* Already output if verbosity > 1 */
-        bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
-                   convergence->name);
-      else {
+      if (verbosity <= 1) { /* Already output if verbosity > 1 */
+        if (final_iteration)
+          bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
+                     convergence->name);
+      }
+      if (verbosity > 1 || final_iteration) {
         if (convergence->r_norm > 0.)
           bft_printf(_(final_fmt),
                      n_iter, residue, residue/convergence->r_norm,
@@ -251,8 +254,7 @@ _convergence_test(cs_sles_it_t              *c,
           bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
                      n_iter, residue);
       }
-      if (   convergence->precision > 0.
-          && c->fallback_cvg <= CS_SLES_MAX_ITERATION)
+      if (convergence->precision > 0. && final_iteration)
         bft_printf(_(" @@ Warning: non convergence\n"));
     }
     return CS_SLES_MAX_ITERATION;

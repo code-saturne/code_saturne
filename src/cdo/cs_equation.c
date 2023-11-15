@@ -133,6 +133,50 @@ solve_cdo_equation(bool         cur2prev,
 /*!
  * \brief Set the initial values for the variable related to an equation
  *
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id      id of the variable field
+ * \param[in]      bflux_id    id of the boundary flux field
+ * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
+ *
+ * \return a pointer to a new allocated scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void *
+_init_context_do_nothing(const cs_equation_param_t  *eqp,
+                         int                         var_id,
+                         int                         bflux_id,
+                         cs_equation_builder_t      *eqb)
+{
+  CS_NO_WARN_IF_UNUSED(eqp);
+  CS_NO_WARN_IF_UNUSED(var_id);
+  CS_NO_WARN_IF_UNUSED(bflux_id);
+  CS_NO_WARN_IF_UNUSED(eqb);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a scheme data structure
+ *
+ * \param[in, out] scheme_context    pointer to a structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void *
+_free_context_minimum(void  *scheme_context)
+{
+  BFT_FREE(scheme_context);
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the initial values for the variable related to an equation
+ *
  * \param[in]      eq       pointer to a cs_equation_t structure
  * \param[in]      ts       pointer to cs_time_step_t structure
  * \param[in]      tag      tag to add to the equation name to build the label
@@ -1500,8 +1544,8 @@ cs_equation_add(const char            *eqname,
 
   /* Pointers of function */
 
-  eq->init_context = NULL;
-  eq->free_context = NULL;
+  eq->init_context = _init_context_do_nothing;
+  eq->free_context = _free_context_minimum;
 
   /* Extra-operations */
 
@@ -2698,6 +2742,11 @@ cs_equation_define_context_structures(void)
                                             eq->field_id,
                                             eq->boundary_flux_id,
                                             eq->builder);
+
+    /* The following step should be done after the setup stage so that the
+       modelling options have set the default flags if needed */
+
+    cs_equation_builder_apply_default_flags(eq->builder);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

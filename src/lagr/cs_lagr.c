@@ -344,7 +344,6 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .ncharm = 0,
      .radiative_model = 0,
      .icp = -1,
-     .diftl0 = 0,
      .cmu = 0,
      .visls0 = 0,
      .ustar = NULL,
@@ -356,7 +355,7 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .viscl = NULL,
      .cpro_viscls = NULL,
      .cpro_cp = NULL,
-     .luminance = NULL,
+     .rad_energy = NULL,
      .x_oxyd = NULL,
      .x_eau = NULL,
      .x_m = NULL,
@@ -469,8 +468,7 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
 void
 cs_f_lagr_specific_physics(int        *iirayo,
                            int        *ncharb,
-                           int        *ncharm,
-                           cs_real_t  *diftl0);
+                           int        *ncharm);
 
 void
 cs_f_lagr_coal_comb(int        *ih2o,
@@ -610,8 +608,7 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
 void
 cs_f_lagr_specific_physics(int        *iirayo,
                            int        *ncharb,
-                           int        *ncharm,
-                           cs_real_t  *diftl0)
+                           int        *ncharm)
 {
   cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
@@ -628,7 +625,6 @@ cs_f_lagr_specific_physics(int        *iirayo,
   _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
 
   _lagr_extra_module.radiative_model = *iirayo;
-  _lagr_extra_module.diftl0 = *diftl0;
   _lagr_extra_module.cmu    = cs_turb_cmu;
 }
 
@@ -708,7 +704,7 @@ _lagr_map_fields_default(void)
 
   _lagr_extra_module.pressure  = cs_field_by_name_try("pressure");
 
-  _lagr_extra_module.luminance = cs_field_by_name_try("luminance");
+  _lagr_extra_module.rad_energy = cs_field_by_name_try("rad_energy");
 
   _lagr_extra_module.lagr_time = cs_field_by_name_try("lagr_time");
 
@@ -771,7 +767,9 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");
     _lagr_extra_module.x_m         = cs_field_by_name_try("xm");
 
-    _lagr_extra_module.ustar  = cs_field_by_name_try("ustar");
+    _lagr_extra_module.ustar  = cs_field_by_name_try("boundary_ustar");
+    if (_lagr_extra_module.ustar == NULL)
+      _lagr_extra_module.ustar  = cs_field_by_name_try("ustar");
   }
 }
 
@@ -1088,18 +1086,11 @@ _get_n_deleted(cs_lagr_particle_set_t  *p_set,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return pointers to lagrangian arrays
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   dim_bound_stat   --> dimensions for bound_stat pointer
- *   p_bound_stat     --> bound_stat pointer
+ * Initialize lagrangian arrays
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
-                      cs_real_t  **p_cs_glob_lagr_source_terms)
+cs_lagr_init_arrays(void)
 {
   cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
   int   n_boundary_stats = cs_glob_lagr_dim->n_boundary_stats;
@@ -1117,16 +1108,10 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
                    + i*cs_glob_mesh->n_cells_with_ghosts;
     cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, st);
   }
-
-  *p_cs_glob_lagr_source_terms     = cs_glob_lagr_source_terms->st_val;
-  dim_cs_glob_lagr_source_terms[0] = cs_glob_mesh->n_cells_with_ghosts;
-  dim_cs_glob_lagr_source_terms[1] = cs_glob_lagr_dim->ntersl;
 }
 
 /*----------------------------------------------------------------------------
  * Free lagrangian arrays
- *
- * This function is intended for use by Fortran wrappers.
  *----------------------------------------------------------------------------*/
 
 void
@@ -1834,8 +1819,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   cs_lnum_t n_b_faces = mesh->n_b_faces;
 
   cs_lnum_t *ifabor = mesh->b_face_cells;
-  cs_real_t *surfbo = cs_glob_mesh_quantities->b_face_surf;
-  cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_normal;
+  cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   /* Allocate arrays depending on user options */
 
@@ -1896,7 +1880,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           cs_real_t _ustar = CS_MAX(extra->ustar->val[ifac], 1e-15);
 
-          cs_real_t surfb = surfbo[ifac];
+          cs_real_t surfb = b_face_surf[ifac];
           ustarmoy     = ustarmoy + surfb * _ustar;
           surftot      = surftot + surfb;
           vislen[ifac] = visccf / _ustar; // nu /u*
@@ -2663,7 +2647,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
               += cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
             bound_stat[lag_bdi->iclogh * n_b_faces + face_id]
               +=  cs_lagr_particles_get_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT)
-                  * cs_math_pi * cs_math_sq(p_diam) * 0.25 / surfbn[face_id];
+                  * cs_math_pi * cs_math_sq(p_diam) * 0.25 / b_face_surf[face_id];
 
           }
 

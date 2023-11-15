@@ -1828,12 +1828,33 @@ cs_turbomachinery_resize_cell_fields(void)
       }
 
       f->val = f->vals[0];
-      if (f->n_time_vals > 1) f->val_pre = f->vals[1];
+      if (f->n_time_vals > 1)
+        f->val_pre = f->vals[1];
 
+      if (f->grad != NULL) {
+
+        BFT_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
+
+        if (halo != NULL) {
+
+          cs_halo_sync_var_strided(halo,
+                                   CS_HALO_EXTENDED,
+                                   f->grad,
+                                   3*f->dim);
+
+          if (f->dim == 1)
+            cs_halo_perio_sync_var_vect(halo,
+                                        CS_HALO_EXTENDED,
+                                        f->grad,
+                                        3);
+          else
+            cs_halo_perio_sync_var_tens(halo,
+                                        CS_HALO_EXTENDED,
+                                        f->grad);
+        }
+      }
     }
-
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

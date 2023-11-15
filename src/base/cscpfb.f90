@@ -503,7 +503,7 @@ elseif (itytur.eq.3) then
   call field_get_val_v(ivarfl(irij), cvar_rij)
 
   ! allocate a temporary array
-  allocate(gradts(6,3,ncelet))
+  allocate(gradts(3,6,ncelet))
 
   call field_gradient_tensor(ivarfl(irij), iprev, inc, gradts)
 
@@ -516,28 +516,28 @@ elseif (itytur.eq.3) then
     zjjp = djppts(3,ipt)
 
     trav1(ipt) = cvar_var(iel) + xjjp*gradts(1,1,iel)  &
-                               + yjjp*gradts(1,2,iel)  &
-                               + zjjp*gradts(1,3,iel)
+                               + yjjp*gradts(2,1,iel)  &
+                               + zjjp*gradts(3,1,iel)
 
-    trav2(ipt) = cvar_var(iel) + xjjp*gradts(2,1,iel)  &
+    trav2(ipt) = cvar_var(iel) + xjjp*gradts(1,2,iel)  &
                                + yjjp*gradts(2,2,iel)  &
-                               + zjjp*gradts(2,3,iel)
+                               + zjjp*gradts(3,2,iel)
 
-    trav3(ipt) = cvar_var(iel) + xjjp*gradts(3,1,iel)  &
-                               + yjjp*gradts(3,2,iel)  &
+    trav3(ipt) = cvar_var(iel) + xjjp*gradts(1,3,iel)  &
+                               + yjjp*gradts(2,3,iel)  &
                                + zjjp*gradts(3,3,iel)
 
-    trav4(ipt) = cvar_var(iel) + xjjp*gradts(4,1,iel)  &
-                               + yjjp*gradts(4,2,iel)  &
-                               + zjjp*gradts(4,3,iel)
+    trav4(ipt) = cvar_var(iel) + xjjp*gradts(1,4,iel)  &
+                               + yjjp*gradts(2,4,iel)  &
+                               + zjjp*gradts(3,4,iel)
 
-    trav5(ipt) = cvar_var(iel) + xjjp*gradts(5,1,iel)  &
-                               + yjjp*gradts(5,2,iel)  &
-                               + zjjp*gradts(5,3,iel)
+    trav5(ipt) = cvar_var(iel) + xjjp*gradts(1,5,iel)  &
+                               + yjjp*gradts(2,5,iel)  &
+                               + zjjp*gradts(3,5,iel)
 
-    trav6(ipt) = cvar_var(iel) + xjjp*gradts(6,1,iel)  &
-                               + yjjp*gradts(6,2,iel)  &
-                               + zjjp*gradts(6,3,iel)
+    trav6(ipt) = cvar_var(iel) + xjjp*gradts(1,6,iel)  &
+                               + yjjp*gradts(2,6,iel)  &
+                               + zjjp*gradts(3,6,iel)
 
   enddo
 

@@ -110,8 +110,6 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
   const cs_lnum_t n_cells_ext = domain->mesh->n_cells_with_ghosts;
 
-  const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
-
   const int n_fields = cs_field_n_fields();
 
   const int nt_cur = domain->time_step->nt_cur;
@@ -150,7 +148,6 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
 
     const cs_lnum_t face_id = zn->elt_ids[e_idx];
-    const cs_lnum_t c_id = b_face_cells[face_id];
 
     bc_type[face_id] = CS_INLET;
 

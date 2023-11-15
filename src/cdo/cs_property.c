@@ -2102,7 +2102,8 @@ cs_property_def_by_time_func(cs_property_t      *pty,
   int  z_id = cs_volume_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_time_func_context_t  tfc = { .func = func,
+  cs_xdef_time_func_context_t  tfc = { .z_id = z_id,
+                                       .func = func,
                                        .input = input,
                                        .free_input = NULL };
 
@@ -2181,7 +2182,8 @@ cs_property_boundary_def_by_time_func(cs_property_t      *pty,
   int  z_id = cs_boundary_zone_id_by_name(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_time_func_context_t  tfc = { .func = func,
+  cs_xdef_time_func_context_t  tfc = { .z_id = z_id,
+                                       .func = func,
                                        .input = input,
                                        .free_input = NULL };
 
@@ -2434,10 +2436,11 @@ cs_property_def_by_array(cs_property_t      *pty,
     pty->get_eval_at_cell[id] = cs_xdef_eval_nd_at_cells_by_array;
   pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_array;
 
-  if (cs_flag_test(val_location, cs_flag_primal_cell)   == false &&
-      cs_flag_test(val_location, cs_flag_primal_vtx)    == false &&
-      cs_flag_test(val_location, cs_flag_dual_face_byc) == false &&
-      cs_flag_test(val_location, cs_flag_dual_cell_byc) == false)
+  if (cs_flag_test(val_location, cs_flag_primal_cell)     == false &&
+      cs_flag_test(val_location, cs_flag_primal_vtx)      == false &&
+      cs_flag_test(val_location, cs_flag_primal_edge_byc) == false &&
+      cs_flag_test(val_location, cs_flag_dual_face_byc)   == false &&
+      cs_flag_test(val_location, cs_flag_dual_cell_byc)   == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Property \"%s\". Case not available.\n",
               __func__, pty->name);
@@ -2700,8 +2703,7 @@ cs_property_evaluate_def(const cs_property_t    *pty,
               "%s: Invalid type of definition. Property \"%s\"; Zone \"%s\".\n",
               __func__, pty->name, z->name);
 
-  if (def->z_id != 0) { /* Not the full support */
-
+  if (def->z_id != 0) /* Not the full support */
     pty->get_eval_at_cell[def_id](z->n_elts,
                                   z->elt_ids,
                                   dense_output,
@@ -2712,21 +2714,7 @@ cs_property_evaluate_def(const cs_property_t    *pty,
                                   def->context,
                                   eval);
 
-    if (pty->type & CS_PROPERTY_SCALED) {
-      int pty_dim = cs_property_get_dim(pty);
-      if (dense_output) /* No indirection to apply */
-        cs_array_real_scale(z->n_elts, pty_dim, NULL,
-                            pty->scaling_factor,
-                            eval);
-      else
-        cs_array_real_scale(z->n_elts, pty_dim, z->elt_ids,
-                            pty->scaling_factor,
-                            eval);
-    }
-
-  }
-  else { /* All elements are selected: elt_ids = NULL */
-
+  else /* All elements are selected: elt_ids = NULL */
     pty->get_eval_at_cell[def_id](z->n_elts,
                                   NULL,
                                   dense_output,
@@ -2736,13 +2724,6 @@ cs_property_evaluate_def(const cs_property_t    *pty,
                                   t_eval,
                                   def->context,
                                   eval);
-
-    if (pty->type & CS_PROPERTY_SCALED)
-      cs_array_real_scale(z->n_elts, cs_property_get_dim(pty), NULL,
-                          pty->scaling_factor,
-                          eval);
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/

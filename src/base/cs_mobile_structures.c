@@ -169,13 +169,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-/*============================================================================
- * Global variables
- *============================================================================*/
-
 static cs_mobile_structures_t  *_mobile_structures = NULL;
-
-extern int cs_glob_ast_coupling_n_couplings;         /* n_ast_structs */
 
 /* Arrays allowing return to initial state at end of ALE iteration.
  * - Mass flux: save at the first call of schtmp.
@@ -188,6 +182,12 @@ static _cs_real_11_t *_bc_coeffs_save = NULL;
 static cs_real_t *_pr_save = NULL;
 
 static int _post_out_stat_id = -1;
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+extern int cs_glob_ast_coupling_n_couplings;         /* n_ast_structs */
 
 /*============================================================================
  * Private function definitions

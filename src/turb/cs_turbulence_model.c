@@ -261,6 +261,11 @@ BEGIN_C_DECLS
         partial implicitation of wall BCs of \f$ \tens{R} \f$
         - 1: true
         - 0: false (default)
+  \var  cs_turb_rans_model_t::ikwcln
+        Wall boundary condition on omega in k-omega SST
+        0: Deprecated Neumann boundary condition
+        1: Dirichlet boundary condition consistent with Menter's
+        original model: w_wall = 60*nu/(beta*d**2)
   \var  cs_turb_ref_values_t::almax
         characteristic macroscopic length of the domain, used for the
         initialization of the turbulence and the potential clipping (with
@@ -396,6 +401,7 @@ _turb_rans_model =
   .idifre     =    1,
   .iclsyr     =    1,
   .iclptr     =    0,
+  .ikwcln     =    1,
   .xlomlg     = -1e13
 };
 
@@ -1078,18 +1084,10 @@ cs_f_turb_hybrid_model_get_pointers(int  **iicc,
 
 void
 cs_f_turb_reference_values(double  **almax,
-                           double  **uref,
-                           double  **xlomlg);
+                           double  **uref);
 
 void
-cs_f_turb_model_constants_get_pointers(double  **apow,
-                                       double  **bpow,
-                                       double  **cmu,
-                                       double  **cmu025,
-                                       double  **crij1,
-                                       double  **crij2,
-                                       double  **crij3,
-                                       double  **crijc0,
+cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
@@ -1240,12 +1238,10 @@ cs_f_turb_hybrid_model_get_pointers(int  **iicc,
 
 void
 cs_f_turb_reference_values(double  **almax,
-                           double  **uref,
-                           double  **xlomlg)
+                           double  **uref)
 {
   *almax  = &(_turb_ref_values.almax);
   *uref   = &(_turb_ref_values.uref);
-  *xlomlg = &(_turb_rans_model.xlomlg);
 }
 
 /*----------------------------------------------------------------------------
@@ -1256,14 +1252,7 @@ cs_f_turb_reference_values(double  **almax,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_turb_model_constants_get_pointers(double  **apow,
-                                       double  **bpow,
-                                       double  **cmu,
-                                       double  **cmu025,
-                                       double  **crij1,
-                                       double  **crij2,
-                                       double  **crij3,
-                                       double  **crijc0,
+cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
@@ -1273,14 +1262,7 @@ cs_f_turb_model_constants_get_pointers(double  **apow,
                                        double  **csrij,
                                        double  **xclt)
 {
-  *apow   = &cs_turb_apow;
-  *bpow   = &cs_turb_bpow;
   *cmu    = &cs_turb_cmu;
-  *cmu025 = &cs_turb_cmu025;
-  *crij1 = &cs_turb_crij1;
-  *crij2 = &cs_turb_crij2;
-  *crij3 = &cs_turb_crij3;
-  *crijc0 = &cs_turb_crij_c0;
   *csmago= &cs_turb_csmago;
   *csmago= &cs_turb_csmago;
   *xlesfd= &cs_turb_xlesfd;
@@ -1534,11 +1516,14 @@ cs_set_glob_turb_model(void)
 /*!
  * \brief Compute turbulence model constants,
  *        some of which may depend on the model choice.
+ *
+ * \param[in]       phase_id  turbulent phase id (-1 for single phase flow)
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turb_compute_constants(void)
+cs_turb_compute_constants(int phase_id)
 {
   cs_turb_dpow   = 1./(1.+cs_turb_bpow);
 
@@ -1553,23 +1538,33 @@ cs_turb_compute_constants(void)
 
   cs_field_pointer_ensure_init();
 
-  if (CS_F_(k) != NULL)
-    cs_field_set_key_double(CS_F_(k), k_turb_schmidt, 1.);
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_phi = CS_F_(phi);
+  cs_field_t *f_eps = CS_F_(eps);
 
-  if (CS_F_(phi) != NULL)
-    cs_field_set_key_double(CS_F_(phi), k_turb_schmidt, 1.);
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_phi = CS_FI_(phi, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+  }
+
+  if (f_k != NULL)
+    cs_field_set_key_double(f_k, k_turb_schmidt, 1.);
+
+  if (f_phi != NULL)
+    cs_field_set_key_double(f_phi, k_turb_schmidt, 1.);
 
   if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.22);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.22);
   else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.15);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.15);
     cs_turb_crij3 = 0.6;
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.5);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.5);
   else
-    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.30);
+    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.30);
 
   if (cs_glob_turb_rans_model->idirsm == 0)
     cs_turb_csrij = 0.11;
@@ -1811,7 +1806,9 @@ cs_turb_model_log_setup(void)
                     "    irijrb:      %14d (Reconstruct at boundaries)\n"
                     "    igrari:      %14d (Account for gravity)\n"
                     "    iclsyr:      %14d (Symmetry implicitation)\n"
-                    "    iclptr:      %14d (Wall implicitation)\n"),
+                    "    iclptr:      %14d (Wall implicitation)\n"
+                    "    ikwcln:      %14d (Wall boundary condition"
+                                           "on omega in k-omega SST)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->reinit_turb,
                   cs_glob_turb_rans_model->irijco,
@@ -1819,7 +1816,8 @@ cs_turb_model_log_setup(void)
                   cs_glob_turb_rans_model->irijrb,
                   cs_glob_turb_rans_model->igrari,
                   cs_glob_turb_rans_model->iclsyr,
-                  cs_glob_turb_rans_model->iclptr);
+                  cs_glob_turb_rans_model->iclptr,
+                  cs_glob_turb_rans_model->ikwcln);
 
     int idirsm = cs_glob_turb_rans_model->idirsm;
     if (idirsm < 0 || idirsm > 1)

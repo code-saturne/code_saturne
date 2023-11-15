@@ -57,6 +57,7 @@ from code_saturne.model.InitializationModel import InitializationModel
 from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.HgnModel import HgnModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.GasCombustionModel import GasCombustionModel
 
@@ -95,6 +96,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                      self.pushButtonHydraulicHead]
         self.velocity_group = [self.labelVelocity, self.checkBoxVelocity,
                                self.pushButtonVelocity]
+        self.void_fraction_group = [self.labelVoidFraction, self.checkBoxVoidFraction,
+                               self.pushButtonVoidFraction]
         self.turb_group = [self.labelTurbulence, self.pushButtonTurbulence,
                            self.comboBoxTurbulence]
         self.thermal_group = [self.labelThermal, self.comboBoxThermal,
@@ -126,6 +129,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.init = InitializationModel(self.case)
         self.turb = TurbulenceModel(self.case)
         self.therm = ThermalScalarModel(self.case)
+        self.hgn = HgnModel(self.case)
         self.notebook = NotebookModel(self.case)
 
         # Identify selected zone_id
@@ -164,6 +168,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
             for item in self.hydraulic_head_group:
                 item.hide()
             self.updateViewVelocity(zone_id)
+
+        # Void fraction
+        self.initViewVoidFraction(zone_id)
 
         # Thermal
         self.initViewThermal(zone_id)
@@ -250,6 +257,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.checkBoxHydraulicHead.clicked.connect(self.slotHydraulicHeadCheck)
         self.pushButtonVelocity.clicked.connect(self.slotVelocityFormula)
         self.checkBoxVelocity.clicked.connect(self.slotVelocityChoice)
+        self.pushButtonVoidFraction.clicked.connect(self.slotVoidFractionFormula)
+        self.checkBoxVoidFraction.clicked.connect(self.slotVoidFractionChoice)
         self.pushButtonThermal.clicked.connect(self.slotThermalFormula)
         self.pushButtonTurbulence.clicked.connect(self.slotTurbulenceFormula)
         self.pushButtonSpecies.clicked.connect(self.slotSpeciesFormula)
@@ -290,6 +299,28 @@ class InitializationView(QWidget, Ui_InitializationForm):
         else:
             self.checkBoxVelocity.setChecked(False)
             self.pushButtonVelocity.hide()
+
+
+    def initViewVoidFraction(self, zone_id):
+        """
+        Update void fraction view
+        """
+        model = self.hgn.getHgnModel()
+
+        if model == "off":
+            for item in self.void_fraction_group:
+                item.hide()
+            return
+
+        exp = self.init.getVoidFractionFormula(zone_id)
+        if exp:
+            self.checkBoxVoidFraction.setChecked(True)
+            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
+            self.pushButtonVoidFraction.show()
+            self.pushButtonVoidFraction.setToolTip(exp)
+        else:
+            self.checkBoxVoidFraction.setChecked(False)
+            self.pushButtonVoidFraction.hide()
 
 
     def initViewTurbulence(self, zone_id):
@@ -518,6 +549,47 @@ class InitializationView(QWidget, Ui_InitializationForm):
         else:
             self.pushButtonVelocity.hide()
             self.init.setVelocityFormula(zone_id, None)
+
+
+    @pyqtSlot()
+    def slotVoidFractionFormula(self):
+        """
+        INPUT choice of method of initialization
+        """
+        exa = """#example: \n""" + self.init.getDefaultVoidFractionFormula()
+
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getVoidFractionFormulaComponents(zone_id)
+
+        dialog = QMegEditorView(parent=self,
+                                function_type="ini",
+                                zone_name=self.zone.getLabel(),
+                                variable_name="void_fraction",
+                                expression=exp,
+                                required=req,
+                                symbols=sym,
+                                examples=exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaVoidFraction -> %s" % str(result))
+            self.init.setVoidFractionFormula(zone_id, str(result))
+            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
+            self.pushButtonVoidFraction.setToolTip(result)
+
+
+    @pyqtSlot()
+    def slotVoidFractionChoice(self):
+        zone_id = str(self.zone.getCodeNumber())
+        exp = self.init.getVoidFractionFormula(zone_id)
+        if self.checkBoxVoidFraction.isChecked():
+            self.pushButtonVoidFraction.show()
+            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
+            self.pushButtonVoidFraction.setToolTip(exp)
+            self.init.setVoidFractionFormula(zone_id, exp)
+        else:
+            self.pushButtonVoidFraction.hide()
+            self.init.setVoidFractionFormula(zone_id, None)
 
 
     @pyqtSlot()

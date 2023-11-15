@@ -253,7 +253,7 @@ _set_dof_vals(int                                 n_eqs,
 
   assert(n_vertices * n_eqs <= n_cols);
 
-  /* Initialize the solution array */
+  /* Initialize the solution array (scatter viewpoint) */
 
   cs_real_t  *dof_vals = *p_dof_vals;
 
@@ -275,9 +275,9 @@ _set_dof_vals(int                                 n_eqs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Fill the dof_val array with values collected from field values
- *         If the array is not allocated then one allocates the array (one
- *         takes into account the size needed for parallel synchronizations)
+ * \brief Fill the dof_val array with values collected from field values
+ *        If the array is not allocated then one allocates the array (one
+ *        takes into account the size needed for parallel synchronizations)
  *
  * \param[in]      n_eqs     number of equations constituting the system
  * \param[in]      dof_vals  pointer to the array with values to copy
@@ -286,9 +286,9 @@ _set_dof_vals(int                                 n_eqs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_field_vals(int                                n_eqs,
-                const cs_real_t                   *dof_vals,
-                cs_field_t                       **fields)
+_set_field_vals(int                        n_eqs,
+                const cs_real_t           *dof_vals,
+                cs_field_t               **fields)
 {
   if (n_eqs < 1)
     return;
@@ -358,8 +358,8 @@ _svb_one_dblock_assemble(const cs_cell_sys_t          *csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from CDO schemes with scalar-valued
- *         degrees of freedom
+ * \brief Solve a linear system arising from CDO schemes with scalar-valued
+ *        degrees of freedom
  *
  * \param[in]      n_eqs     number of equations constituting the system
  * \param[in]      n_dofs    local number of DoFs (may be != n_gather_elts)
@@ -372,11 +372,11 @@ _svb_one_dblock_assemble(const cs_cell_sys_t          *csys,
 /*----------------------------------------------------------------------------*/
 
 static int
-_solve_mumps(int                                 n_eqs,
-             cs_lnum_t                           n_dofs,
-             const cs_equation_system_param_t   *sysp,
-             cs_cdo_system_helper_t             *sh,
-             cs_field_t                        **fields)
+_solve_mumps(int                                   n_eqs,
+             cs_lnum_t                             n_dofs,
+             const cs_equation_system_param_t     *sysp,
+             cs_cdo_system_helper_t               *sh,
+             cs_field_t                          **fields)
 {
   assert(sh != NULL);
   assert(sh->n_blocks == 1);
@@ -514,8 +514,8 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
 
     for (int j_eq = 0; j_eq < n_equations; j_eq++) {
 
-      int  ij = i_eq*n_equations + j_eq;
-      bool  diag_block = (i_eq == j_eq) ? true : false;
+      const int  ij = i_eq*n_equations + j_eq;
+      const bool  diag_block = (i_eq == j_eq) ? true : false;
 
       cs_equation_core_t  *block_ij = blocks[ij];
 
@@ -579,7 +579,7 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
                                                            cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALSYS_DBG > 1
-          if (cs_dbg_cw_test(eqp, cm, csys)) {
+          if (csys->c_id == 0) {
             cs_log_printf(CS_LOG_DEFAULT, "%s: %s\n", __func__, eqp->name);
             cs_cell_sys_dump("\n>> Cell system (Block system)", csys);
           }
@@ -760,18 +760,6 @@ cs_cdovb_scalsys_define(int                                 n_eqs,
     break;
 
   } /* Switch on the SLES strategy */
-
-#if 0
-  cs_lnum_t  *col_block_sizes = NULL;
-  BFT_MALLOC(col_block_sizes, n_eqs, cs_lnum_t);
-  for (int i = 0; i < n_eqs; i++)
-    col_block_sizes[i] = n_vertices;
-
-  sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_COUPLED,
-                                   n_eqs,            /* n_col_blocks */
-                                   &col_block_sizes,
-                                   n_eqs*n_eqs);     /* n_blocks */
-#endif
 
   /* Initialize the builder and the context structure for each extra-diagonal
      block */

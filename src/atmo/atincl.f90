@@ -172,7 +172,7 @@ integer(c_int), pointer, save :: iatmst
 !> by declaring the 'meteo_velocity' field
 !> Useful for iatmst = 1
 !> Note: deprecated, imeteo=2 can be used instead.
-integer, save :: theo_interp
+integer(c_int), pointer, save :: theo_interp
 
 ! 2.1 Constant specific to the physics (defined in atini1.f90)
 !-------------------------------------------------------------------------------
@@ -419,7 +419,7 @@ double precision, save:: zaero
         syear, squant, shour, smin, ssec,                               &
         longitude, latitude,                                            &
         x_l93, y_l93,                                                   &
-        compute_z_ground, iatmst,                                       &
+        compute_z_ground, iatmst, theo_interp,                          &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
         ichemistry, isepchemistry, nespg, nrg, chem_with_photo,         &
@@ -432,7 +432,7 @@ double precision, save:: zaero
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ps
-      type(c_ptr), intent(out) :: compute_z_ground, iatmst
+      type(c_ptr), intent(out) :: compute_z_ground, iatmst, theo_interp
       type(c_ptr), intent(out) :: ichemistry, isepchemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
       type(c_ptr), intent(out) :: nucleation_model
@@ -806,23 +806,23 @@ contains
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
     type(c_ptr) :: c_meteo_zi
     type(c_ptr) :: c_iatsoil, c_isepchemistry
-    type(c_ptr) :: c_nvert, c_kvert, c_kmx
+    type(c_ptr) :: c_nvert, c_kvert, c_kmx, c_theo_interp
 
-    call cs_f_atmo_get_pointers(c_ps,             &
-      c_syear, c_squant, c_shour, c_smin, c_ssec, &
-      c_longitude, c_latitude,                    &
-      c_xl93, c_yl93,                             &
-      c_compute_z_ground, c_iatmst,               &
-      c_sedimentation_model, c_deposition_model,  &
-      c_nucleation_model, c_subgrid_model,        &
-      c_distribution_model,                       &
-      c_model, c_isepchemistry, c_nespg, c_nrg,   &
-      c_chem_with_photo,  c_modelaero,            &
-      c_frozen_gas_chem, c_init_gas_with_lib,     &
-      c_init_aero_with_lib, c_nlayer,             &
-      c_nsize, c_imeteo,                          &
+    call cs_f_atmo_get_pointers(c_ps,               &
+      c_syear, c_squant, c_shour, c_smin, c_ssec,   &
+      c_longitude, c_latitude,                      &
+      c_xl93, c_yl93,                               &
+      c_compute_z_ground, c_iatmst, c_theo_interp,  &
+      c_sedimentation_model, c_deposition_model,    &
+      c_nucleation_model, c_subgrid_model,          &
+      c_distribution_model,                         &
+      c_model, c_isepchemistry, c_nespg, c_nrg,     &
+      c_chem_with_photo,  c_modelaero,              &
+      c_frozen_gas_chem, c_init_gas_with_lib,       &
+      c_init_aero_with_lib, c_nlayer,               &
+      c_nsize, c_imeteo,                            &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt, &
-      c_meteo_zi, c_iatsoil,                      &
+      c_meteo_zi, c_iatsoil,                        &
       c_nvert, c_kvert, c_kmx )
 
     call c_f_pointer(c_ps, ps)
@@ -839,6 +839,7 @@ contains
 
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
     call c_f_pointer(c_iatmst, iatmst)
+    call c_f_pointer(c_theo_interp, theo_interp)
 
     call c_f_pointer(c_sedimentation_model, modsedi)
     call c_f_pointer(c_deposition_model, moddep)
@@ -1072,7 +1073,8 @@ end subroutine finalize_meteo
 !> \param[out] dlmo          Inverse Monin Obukhov length
 !> \param[out] ustar         friction velocity
 
-subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
+subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar) &
+  bind(C, name='cs_f_mo_compute_from_thermal_flux')
 
   use cstphy
   use cstnum
@@ -1081,7 +1083,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   implicit none
 
   ! Arguments
-  double precision z,z0,du,tm,gredu,dlmo,ustar,flux
+  real(c_double) :: z,z0,du,tm,gredu,dlmo,ustar,flux
 
   ! Local variables
   double precision tstar
@@ -1159,7 +1161,8 @@ end subroutine mo_compute_from_thermal_flux
 !> \param[out] dlmo          Inverse Monin Obukhov length
 !> \param[out] ustar         friction velocity
 
-subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
+subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar) &
+  bind(C, name='cs_f_mo_compute_from_thermal_diff')
 
   use cstphy
   use cstnum
@@ -1168,7 +1171,7 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   implicit none
 
   ! Arguments
-  double precision z,z0,du,dt,tm,gredu,dlmo,ustar
+  real(c_double) :: z,z0,du,dt,tm,gredu,dlmo,ustar
 
   ! Local variables
   double precision tstar

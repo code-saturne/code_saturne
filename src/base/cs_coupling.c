@@ -195,9 +195,11 @@ cs_coupling_discover_mpi_apps(const char  *app_name,
     int i, n_apps, app_id;
 
     /* App_type contains a string such as
-       "Code_Saturne 2.1.0" or "NEPTUNE_CFD 1.2.1" */
+       "code_saturne 8.0.1" or "neptune_cfd 8.0.1";
+       currently, keep "Code_Saturne" name for compatibility
+       with some external tools, pending updates on their side. */
 
-    const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
+    const char app_type[] = "Code_Saturne " CS_APP_VERSION;
 
     const char *sync_name[2] = {N_("point-to-point or not synchronized"),
                                 N_("group synchronized")};

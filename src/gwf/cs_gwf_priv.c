@@ -722,8 +722,8 @@ cs_gwf_update_head(const cs_cdo_connect_t      *connect,
       /* Update head_in_law */
 
       if (head_in_law != NULL)
-        cs_reco_pv_at_cell_centers(connect->c2v, cdoq, pressure_head->val,
-                                   head_in_law);
+        cs_reco_scalar_v2c_full(connect->c2v, cdoq, pressure_head->val,
+                                head_in_law);
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
@@ -784,10 +784,8 @@ cs_gwf_update_head(const cs_cdo_connect_t      *connect,
     switch(r_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-      cs_reco_pv_at_cell_centers(connect->c2v,
-                                 cdoq,
-                                 hydraulic_head->val,
-                                 head_in_law);
+      cs_reco_scalar_v2c_full(connect->c2v, cdoq, hydraulic_head->val,
+                              head_in_law);
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:

@@ -220,7 +220,6 @@ cs_porous_model_init_disable_flag(void)
 void
 cs_porous_model_set_has_disable_flag(int  flag)
 {
-  cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   mq->has_disable_flag = flag;

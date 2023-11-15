@@ -143,11 +143,9 @@ cs_f_navier_stokes_total_pressure(void);
 
 void
 cs_f_solve_navier_stokes(const int      iterns,
-                         int            *icvrge,
+                         int           *icvrge,
                          const int      itrale,
-                         int            impale[],
-                         int            isostd[],
-                         int            ale_bc_type[]);
+                         int            isostd[]);
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -208,7 +206,6 @@ _st_exp_head_loss(cs_lnum_t          ncepdc,
  * \param[in]      mq      pointer to associated mesh quantities structure
  * \param[in]      crom    density at cells
  * \param[in]      brom    density at boundary faces
- * \param[in]      impale  indicator of imposed displacement
  * \param[in, out] imasfl  interior face mass flux
  * \param[in, out] bmasfl  boundary face mass flux
  */
@@ -230,9 +227,9 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_real_3_t  *restrict surfbo
+  const cs_real_3_t  *restrict b_face_normal
     = (const cs_real_3_t  *restrict) mq->b_face_normal;
-  const cs_real_3_t *restrict surfac
+  const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict) mq->i_face_normal;
 
   const cs_real_3_t *restrict b_face_cog
@@ -255,9 +252,9 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
       cs_rotation_velocity(r_num1, i_face_cog[face_id], vr1);
       cs_rotation_velocity(r_num2, i_face_cog[face_id], vr2);
 
-      imasfl[face_id] -= 0.5*rhofac*(  surfac[face_id][0]*(vr1[0] + vr2[0])
-                                     + surfac[face_id][1]*(vr1[1] + vr2[1])
-                                     + surfac[face_id][2]*(vr1[2] + vr2[2]));
+      imasfl[face_id] -= 0.5*rhofac*(  i_face_normal[face_id][0]*(vr1[0] + vr2[0])
+                                     + i_face_normal[face_id][1]*(vr1[1] + vr2[1])
+                                     + i_face_normal[face_id][2]*(vr1[2] + vr2[2]));
     }
   }
 
@@ -270,9 +267,9 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
       const cs_rotation_t *r_num = cs_glob_rotation + irotce[c_id];
       cs_rotation_velocity(r_num, b_face_cog[face_id], vr);
 
-      bmasfl[face_id] -= rhofac*(  surfbo[face_id][0]*vr[0]
-                                 + surfbo[face_id][1]*vr[1]
-                                 + surfbo[face_id][2]*vr[2]);
+      bmasfl[face_id] -= rhofac*(  b_face_normal[face_id][0]*vr[0]
+                                 + b_face_normal[face_id][1]*vr[1]
+                                 + b_face_normal[face_id][2]*vr[2]);
     }
   }
 }
@@ -477,7 +474,7 @@ _div_rij(const cs_mesh_t     *m,
     eqp = cs_field_get_equation_param_const(CS_F_(k));
 
     /* Compute the non linear part of Rij */
-    cs_turbulence_ke_q(rij);
+    cs_turbulence_ke_q(-1, rij);
 
     /* Boundary conditions: homogeneous Neumann */
 
@@ -549,7 +546,6 @@ _div_rij(const cs_mesh_t     *m,
  * \param[in]      dt      time step at cells
  * \param[in]      crom    density at cells
  * \param[in]      brom    density at boundary faces
- * \param[in]      impale  indicator of imposed displacement
  * \param[in, out] imasfl  interior face mass flux
  * \param[in, out] bmasfl  boundary face mass flux
  */
@@ -578,8 +574,8 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t *b_face_vtx_lst = m->b_face_vtx_lst;
 
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)(m->vtx_coord);
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-  const cs_real_3_t *surfac = (const cs_real_3_t *) mq->i_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
+  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) mq->i_face_normal;
 
   const cs_real_3_t *mshvel = (const cs_real_3_t *)CS_F_(mesh_u)->val;
 
@@ -650,9 +646,9 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
                           - (vtx_coord[inod][jj] - xyzno0[inod][jj]);
       }
       const cs_lnum_t c_id = b_face_cells[face_id];
-      bmasfl[face_id] -= brom[face_id] * (  disp_fac[0]*surfbo[face_id][0]
-                                          + disp_fac[1]*surfbo[face_id][1]
-                                          + disp_fac[2]*surfbo[face_id][2])
+      bmasfl[face_id] -= brom[face_id] * (  disp_fac[0]*b_face_normal[face_id][0]
+                                          + disp_fac[1]*b_face_normal[face_id][1]
+                                          + disp_fac[2]*b_face_normal[face_id][2])
                          / dt[c_id]/icpt;
     }
 
@@ -675,9 +671,9 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
       const cs_lnum_t c_id2 = i_face_cells[face_id][1];
       const cs_real_t dtfac = 0.5*(dt[c_id1] + dt[c_id2]);
       const cs_real_t rhofac = 0.5*(crom[c_id1] + crom[c_id2]);
-      imasfl[face_id] -= rhofac * (  disp_fac[0]*surfac[face_id][0]
-                                   + disp_fac[1]*surfac[face_id][1]
-                                   + disp_fac[2]*surfac[face_id][2])
+      imasfl[face_id] -= rhofac * (  disp_fac[0]*i_face_normal[face_id][0]
+                                   + disp_fac[1]*i_face_normal[face_id][1]
+                                   + disp_fac[2]*i_face_normal[face_id][2])
                          / dtfac / icpt;
     }
 
@@ -733,8 +729,8 @@ _ext_forces(const cs_mesh_t                *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_real_t *cell_f_vol = mq->cell_f_vol;
   /* External forces at previous time step:
-   * frcxt was initialised to 0
-   * NB: frcxt was used in typecl, and will be updated
+   * frcxt was initialized to 0
+   * NB: frcxt was used in cs_boundary_conditions_type, and will be updated
    *     at the end of cs_solve_navier_stokes.
    *
    * External force variation between time step n and n+1
@@ -1573,7 +1569,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   const cs_real_t *cell_f_vol = mq->cell_f_vol;
   const cs_real_3_t *restrict diipb = (const cs_real_3_t *restrict)mq->diipb;
 
-  const cs_real_3_t  *restrict surfbo
+  const cs_real_3_t  *restrict b_face_normal
     = (const cs_real_3_t  *restrict) mq->b_face_normal;
 
   const cs_time_step_t *ts = cs_glob_time_step;
@@ -1929,7 +1925,7 @@ _velocity_prediction(const cs_mesh_t             *m,
               - fp->pred0;
 
       for (cs_lnum_t isou = 0; isou < 3; isou++)
-        forbr[f_id][isou] += pfac*surfbo[f_id][isou];
+        forbr[f_id][isou] += pfac*b_face_normal[f_id][isou];
     }
   }
 
@@ -2141,7 +2137,7 @@ _velocity_prediction(const cs_mesh_t             *m,
         xkb = coefa_k[f_id] + coefb_k[f_id]*xkb;
         xkb = d2s3 * crom[c_id] * xkb;
         for (cs_lnum_t isou = 0; isou < 3; isou++)
-          forbr[f_id][isou] += xkb*surfbo[f_id][isou];
+          forbr[f_id][isou] += xkb*b_face_normal[f_id][isou];
       }
     }
 
@@ -2928,16 +2924,12 @@ void
 cs_f_solve_navier_stokes(const int   iterns,
                          int        *icvrge,
                          const int   itrale,
-                         int         impale[],
-                         int         isostd[],
-                         int         ale_bc_type[])
+                         int         isostd[])
 {
   cs_solve_navier_stokes(iterns,
                          icvrge,
                          itrale,
-                         impale,
-                         isostd,
-                         ale_bc_type);
+                         isostd);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3045,10 +3037,8 @@ cs_solve_navier_stokes_update_total_pressure(const cs_mesh_t              *m,
  * \param[in]     iterns        index of the iteration on Navier-Stokes
  * \param[in]     icvrge        convergence indicator
  * \param[in]     itrale        number of the current ALE iteration
- * \param[in]     impale        indicator of imposed displacement
  * \param[in]     isostd        indicator of standard outlet
  *                              + index of the reference face
- * \param[in]     ale_bc_type   Type of boundary for ALE
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3056,9 +3046,7 @@ void
 cs_solve_navier_stokes(const int   iterns,
                        int        *icvrge,
                        const int   itrale,
-                       const int  *impale,
-                       const int   isostd[],
-                       int         ale_bc_type[])
+                       const int   isostd[])
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -3769,7 +3757,7 @@ cs_solve_navier_stokes(const int   iterns,
 
   if (cs_glob_ale > CS_ALE_NONE) {
     if (itrale > cs_glob_ale_n_ini_f)
-      cs_ale_solve_mesh_velocity(iterns, impale, ale_bc_type);
+      cs_ale_solve_mesh_velocity(iterns);
   }
 
   /* Update of the fluid velocity field

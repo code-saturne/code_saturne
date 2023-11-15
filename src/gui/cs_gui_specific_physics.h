@@ -50,14 +50,12 @@ BEGIN_C_DECLS
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICPI1 (SRROM)
+ * subroutine uicpi1 (srrom)
  * *****************
- * DOUBLE PRECISION SRROM   <--   density relaxation
- * DOUBLE PRECISION DIFTL0  <--   dynamic diffusion
+ * double precision srrom   <--   density relaxation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
-                                double *const diftl0);
+void CS_PROCF (uicpi1, UICPI1) (double *const srrom);
 
 /*----------------------------------------------------------------------------
  * Temperature for D3P Gas Combustion
@@ -200,6 +198,13 @@ void
 cs_gui_gwf_model(int  *permeability,
                  int  *unsteady,
                  int  *unsaturated);
+
+/*----------------------------------------------------------------------------
+ * Combustion model: read reference values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_combustion_ref_values(void);
 
 /*----------------------------------------------------------------------------*/
 
