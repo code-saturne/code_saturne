@@ -1205,37 +1205,37 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   cudaStreamSynchronize(stream);
   cudaStreamDestroy(stream);
 
-  // printf("lsq Kernels :");
-  // msec = 0.0f;
-	// CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, init));
-  // printf("Kernels execution time in us: \t");
-  // printf("Init = %f\t", msec*1000.f);
+  printf("lsq Kernels :");
+  msec = 0.0f;
+	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, init));
+  printf("Kernels execution time in us: \t");
+  printf("Init = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-	// CS_CUDA_CHECK(cudaEventElapsedTime(&msec, init, i_faces));
-  // printf("I_faces = %f\t", msec*1000.f);
+  msec = 0.0f;
+	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, init, i_faces));
+  printf("I_faces = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-	// CS_CUDA_CHECK(cudaEventElapsedTime(&msec, i_faces, halo));
-  // printf("Halo = %f\t", msec*1000.f);
+  msec = 0.0f;
+	CS_CUDA_CHECK(cudaEventElapsedTime(&msec, i_faces, halo));
+  printf("Halo = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, halo, b_faces));
-  // printf("B_faces = %f\t", msec*1000.f);
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, halo, b_faces));
+  printf("B_faces = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces, gradient));
-  // printf("Gradient = %f\t", msec*1000.f);
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, b_faces, gradient));
+  printf("Gradient = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, gradient));
-  // printf("Total kernel = %f\t", msec*1000.f);
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, gradient));
+  printf("Total kernel = %f\t", msec*1000.f);
 
-  // msec = 0.0f;
-  // CS_CUDA_CHECK(cudaEventElapsedTime(&msec, start, stop));
-  // printf("Total = %f\t", msec*1000.f);
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, start, stop));
+  printf("Total = %f\t", msec*1000.f);
 
-  // printf("\n");
+  printf("\n");
 
   free(pvar_copy);
 
@@ -1611,15 +1611,15 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
     // = (const int *restrict)cs_get_device_ptr_const_pf(fvq->c_disable_flag);
 
 
-  _sync_or_copy_real_3_h2d(pvar, n_cells_ext, device_id, stream,
+  _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream,
     &pvar_d, &_pvar_d);
 
-  _sync_or_copy_real_33_h2d(r_grad, n_cells_ext, device_id, stream,
+  _sync_or_copy_real_h2d(r_grad, n_cells_ext, device_id, stream,
     &r_grad_d, &_r_grad_d);
 
-  _sync_or_copy_real_3_h2d(coefav, n_b_faces, device_id, stream,
+  _sync_or_copy_real_h2d(coefav, n_b_faces, device_id, stream,
         &coefa_d, &_coefa_d);
-  _sync_or_copy_real_33_h2d(coefbv, n_b_faces, device_id, stream,
+  _sync_or_copy_real_h2d(coefbv, n_b_faces, device_id, stream,
         &coefb_d, &_coefb_d);
       
 
@@ -1628,10 +1628,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
 
   /* Initialization */
-  _init_real_33_array<<<gridsize_init, blocksize, 0, stream>>>
-                    (n_cells_ext*3*3, grad_d);
 
-  // cudaMemset(grad_d, 0, n_cells * sizeof(cs_real_33_t));
+  cudaMemset(grad_d, 0, n_cells * sizeof(cs_real_33_t));
 
   CS_CUDA_CHECK(cudaEventRecord(init, stream));
   
@@ -1678,7 +1676,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   // printf("Après les assert dans gradient_cuda.cu\n");
   // _compute_reconstruct_v_i_face_gather<<<gridsize, blocksize, 0, stream>>>
   //                                     ( n_cells,
-  //                                       i_face_cells,
   //                                       pvar_d,
   //                                       weight,
   //                                       c_weight,
@@ -1689,8 +1686,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                                       cell_cells_idx,
   //                                       cell_cells,
   //                                       cell_i_faces,
-  //                                       cell_i_faces_sgn,
-  //                                       n_i_faces);
+  //                                       cell_i_faces_sgn);
 
 
   _compute_reconstruct_v_i_face_gather_v2<<<gridsize * 3 * 3, blocksize, 0, stream>>>
@@ -1732,7 +1728,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   
   // cs_cuda_copy_h2d(grad_d, grad, n_cells_ext * sizeof(cs_real_33_t));
 
-  // _sync_or_copy_real_33_h2d(r_grad, n_cells_ext, device_id, stream,
+  // _sync_or_copy_real_h2d(r_grad, n_cells_ext, device_id, stream,
   //   &r_grad_d, &_r_grad_d);
 
   CS_CUDA_CHECK(cudaEventRecord(b_faces_1, stream));

@@ -198,7 +198,7 @@ const cs_e2n_sum_t _e2n_sum_type = CS_E2N_SUM_STORE_THEN_GATHER;
 
 /* Strided LSQ gradient variant */
 
-static int _use_legacy_strided_lsq_gradient = false;
+static int _use_legacy_strided_lsq_gradient = true;
 
 /*============================================================================
  * Private function definitions
@@ -6937,7 +6937,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
                      const cs_real_t      *restrict c_weight,
                      cs_real_33_t         *restrict gradv)
 {
-  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells                 = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
@@ -7155,9 +7155,18 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
       gradv_cpu[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
                           + rhs[c_id][i][1] * cocg[c_id][4]
                           + rhs[c_id][i][2] * cocg[c_id][2];
-
-      for (int j  =0; j < 3; ++j) {
-        auto cpu = gradv_cpu[c_id][i][j];
+    }
+  }
+  // #ifdef NDEBUG
+  // #endif 
+  // #endif
+  stop = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  #pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; ++j) {
+        auto cpu  = gradv_cpu[c_id][i][j];
         auto cuda = gradv[c_id][i][j];
 
         if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
@@ -7166,12 +7175,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
       }
     }
   }
-// #ifdef NDEBUG
-// #endif 
-// #endif
-stop = std::chrono::high_resolution_clock::now();
-elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-// printf("lsq Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
+  printf("lsq Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
 
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
