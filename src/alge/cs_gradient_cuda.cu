@@ -1956,8 +1956,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               b_face_cells);
   
 
-  _compute_reconstruct_v_b_face_gather<<<gridsize_b * 3, blocksize, 0, stream>>>
-                              ( m->n_b_cells * 3,
+  _compute_reconstruct_v_b_face_gather<<<gridsize_b, blocksize, 0, stream>>>
+                              ( m->n_b_cells,
                                 coupled_faces_d,
                                 cpl_stride,
                                 coefb_d,
