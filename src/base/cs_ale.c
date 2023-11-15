@@ -1636,7 +1636,7 @@ cs_ale_init_setup(cs_domain_t   *domain)
       type = CS_PROPERTY_ANISO;
     else
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid dimension (=%d) for the mesh viscosity.\n",
+                "%s: Invalid dimension (=%d) for the mesh viscosity.",
                 __func__, dim);
 
     /* Add and define this property */

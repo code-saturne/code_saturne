@@ -76,7 +76,7 @@ integer          nscal
 
 integer          iscal
 integer          iel   , ifac
-integer          ii    , jj
+integer          ii
 integer          ifcvsl
 integer          idftnp
 integer          keyvar
@@ -138,10 +138,6 @@ if (f_id .ge. 0) then
     field_s_v(iel) = -grand
   enddo
 endif
-
-! Initialize variables to avoid compiler warnings
-
-jj = 0
 
 !===============================================================================
 ! 2. PAS DE TEMPS
