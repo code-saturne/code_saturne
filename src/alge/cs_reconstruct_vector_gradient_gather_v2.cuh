@@ -26,7 +26,7 @@
 
 
 __global__ static void
-_compute_reconstruct_v_i_face_gather(cs_lnum_t            n_cells,
+_compute_reconstruct_v_i_face_gather_v2(cs_lnum_t            n_cells,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *pvar,
                           const cs_real_t         *weight,
@@ -47,11 +47,16 @@ _compute_reconstruct_v_i_face_gather(cs_lnum_t            n_cells,
     return;
   }
 
+
   cs_lnum_t c_id2, f_id;
   cs_real_t pond, ktpond, pfaci, pfacj, rfac;
 
-  cs_lnum_t s_id = cell_cells_idx[c_id1];
-  cs_lnum_t e_id = cell_cells_idx[c_id1 + 1];
+  size_t c_idx = c_id1 / (3*3);
+  size_t i = (c_id1 / 3) % 3;
+  size_t j = c_id1 % 3;
+
+  cs_lnum_t s_id = cell_cells_idx[c_idx];
+  cs_lnum_t e_id = cell_cells_idx[c_idx + 1];
 
 
   for(cs_lnum_t index = s_id; index < e_id; index++){
@@ -61,33 +66,29 @@ _compute_reconstruct_v_i_face_gather(cs_lnum_t            n_cells,
     pond = (cell_i_faces_sgn[index] > 0) ? weight[f_id] : 1. - weight[f_id];
     ktpond = (c_weight == NULL) ?
             pond :                    // no cell weighting
-            pond * c_weight[c_id1] // cell weighting active
-            / (      pond * c_weight[c_id1]
+            pond * c_weight[c_idx] // cell weighting active
+            / (      pond * c_weight[c_idx]
                 + (1.0-pond)* c_weight[c_id2]);
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
+    pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_idx][i]);
 
-        /* Reconstruction part */
-        rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
-                                        + r_grad[c_id2][i][0])
-                      + dofij[f_id][1]*(  r_grad[c_id1][i][1]
-                                        + r_grad[c_id2][i][1])
-                      + dofij[f_id][2]*(  r_grad[c_id1][i][2]
-                                        + r_grad[c_id2][i][2]));
+    /* Reconstruction part */
+    rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_idx][i][0]
+                                    + r_grad[c_id2][i][0])
+                    + dofij[f_id][1]*(  r_grad[c_idx][i][1]
+                                    + r_grad[c_id2][i][1])
+                    + dofij[f_id][2]*(  r_grad[c_idx][i][2]
+                                    + r_grad[c_id2][i][2]));
 
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          grad[c_id1][i][j] += cell_i_faces_sgn[index] * (pfaci + rfac) * i_f_face_normal[f_id][j];
-        }
-      }
-    }
+    grad[c_idx][i][j] += cell_i_faces_sgn[index] * (pfaci + rfac) * i_f_face_normal[f_id][j];
+  }
 }
 
 
 
 
 __global__ static void
-_compute_reconstruct_v_b_face_gather(cs_lnum_t           n_b_cells,
+_compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
                               const bool                *coupled_faces,
                               cs_lnum_t                 cpl_stride,
                               const cs_real_33_t  *restrict coefbv,

@@ -83,8 +83,7 @@ _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
 
 
 __global__ static void
-_compute_reconstruct_v_b_face1_v2(cs_lnum_t            n_b_faces,
-                              const cs_lnum_t *restrict b_group_index,
+_compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
                               const bool                *coupled_faces,
                               cs_lnum_t                 cpl_stride,
                               const cs_real_33_t  *restrict coefbv,
