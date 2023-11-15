@@ -29,11 +29,11 @@
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_init_rhs(cs_lnum_t         size,
+_init_rhs(cs_lnum_t         n_cells_ext,
            cs_real_33_t      *restrict rhs)
 {
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id < size) {
+  if (c_id < n_cells_ext) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
         rhs[c_id][i][j] = 0.0;
@@ -41,7 +41,7 @@ _init_rhs(cs_lnum_t         size,
 }
 
 __global__ static void
-_compute_rhs_lsq_v_i_face_v0(cs_lnum_t            size,
+_compute_rhs_lsq_v_i_face_v0(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *cell_f_cen,
                           cs_real_33_t         *rhs,
@@ -51,7 +51,7 @@ _compute_rhs_lsq_v_i_face_v0(cs_lnum_t            size,
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(f_id >= size){
+  if(f_id >= n_i_faces){
     return;
   }
   cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
@@ -93,7 +93,7 @@ _compute_rhs_lsq_v_i_face_v0(cs_lnum_t            size,
 }
 
 __global__ static void
-_compute_rhs_lsq_v_i_face(cs_lnum_t            size,
+_compute_rhs_lsq_v_i_face(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *restrict i_face_cells,
                           const cs_real_3_t    *restrict cell_f_cen,
                           cs_real_33_t         *restrict rhs,
@@ -103,7 +103,7 @@ _compute_rhs_lsq_v_i_face(cs_lnum_t            size,
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(f_id >= size){
+  if(f_id >= n_i_faces){
     return;
   }
   cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
@@ -202,16 +202,16 @@ _compute_rhs_lsq_v_i_face_cf(cs_lnum_t            size,
 }
 
 __global__ static void
-_compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
+_compute_rhs_lsq_v_b_neighbor(cs_lnum_t            n_cells,
                                 const cs_lnum_t      *restrict cell_cells_idx,
-                                const cs_lnum_t      *restrict cell_cells_lst,
+                                const cs_lnum_t      *restrict cell_cells,
                                 const cs_real_3_t    *restrict cell_f_cen,
                                 cs_real_33_t         *restrict rhs,
                                 const cs_real_3_t    *restrict pvar)
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(c_id1 >= size){
+  if(c_id1 >= n_cells){
     return;
   }
 
@@ -222,7 +222,7 @@ _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
 
   for(cs_lnum_t index = s_id; index < e_id; index++){
 
-    cs_lnum_t c_id2 = cell_cells_idx[index];
+    cs_lnum_t c_id2 = cell_cells[index];
 
     dc[0] = cell_f_cen[c_id2][0] - cell_f_cen[c_id1][0];
     dc[1] = cell_f_cen[c_id2][1] - cell_f_cen[c_id1][1];
@@ -243,7 +243,7 @@ _compute_rhs_lsq_v_b_neighbor(cs_lnum_t            size,
 }
 
 __global__ static void
-_compute_rhs_lsq_v_b_face(cs_lnum_t           size,
+_compute_rhs_lsq_v_b_face(cs_lnum_t           n_b_faces,
                           const cs_lnum_t      *restrict b_face_cells,
                           const cs_real_3_t    *restrict cell_f_cen,
                           const cs_real_3_t    *restrict b_face_normal,
@@ -256,7 +256,7 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(f_id >= size){
+  if(f_id >= n_b_faces){
     return;
   }
 
@@ -288,13 +288,13 @@ _compute_rhs_lsq_v_b_face(cs_lnum_t           size,
 }
 
 __global__ static void
-_compute_gradient_lsq_v(cs_lnum_t           size,
+_compute_gradient_lsq_v(cs_lnum_t           n_cells,
                         cs_real_33_t        *restrict gradv,
                         cs_real_33_t        *restrict rhs,
                         cs_cocg_6_t         *restrict cocg)
 {
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
+  if (c_id >= n_cells) 
     return;
 
   for(cs_lnum_t i = 0; i < 3; i++){

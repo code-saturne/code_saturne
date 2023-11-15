@@ -30,6 +30,7 @@
 #include "cs_gradient_lsq_vector_v3.cuh"
 #include "cs_gradient_lsq_vector_gather.cuh"
 #include "cs_gradient_lsq_vector_gather_v2.cuh"
+#include "cs_gradient_lsq_vector_gather_v3.cuh"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -987,7 +988,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   // _init_rhs<<<gridsize_ext, blocksize, 0, stream>>>
   //   (n_cells_ext,
   //    rhs_d);
-  cudaMemset(rhs_d, 0, n_cells_ext*sizeof(cs_real_33_t));
+  // cudaMemset(rhs_d, 0, n_cells_ext*sizeof(cs_real_33_t));
 
   // _init_rhs_v2<<<gridsize_ext_1d, blocksize, 0, stream>>>
   //   (n_cells_ext*3*3,
@@ -1029,15 +1030,14 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //     weight, 
   //     c_weight);
 
-  // _compute_rhs_lsq_v_i_face_v3cf<<<gridsize_if_bis, blocksize, 0, stream>>>
-  //    (n_i_faces*3*3,
-  //     i_face_cells, 
-  //     cell_f_cen, 
-  //     rhs_d, 
-  //     pvar_d, 
-  //     weight, 
-  //     c_weight);
-
+  // _compute_rhs_lsq_v_i_face_v3<<<gridsize_if_bis, blocksize, 0, stream>>>
+  //     (n_i_faces*3*3,
+  //      i_face_cells, 
+  //      cell_f_cen, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      weight, 
+  //      c_weight);
   assert(cell_cells_idx);
   assert(cell_cells);
   assert(cell_f_cen);
@@ -1067,6 +1067,18 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //     pvar_d, 
   //     weight, 
   //     c_weight);
+  
+  _compute_rhs_lsq_v_i_face_gather_v4<<<gridsize, blocksize, 0, stream>>>
+      (n_cells,
+       cell_cells_idx,
+       cell_cells,
+       cell_i_faces,
+       cell_i_faces_sgn,
+       cell_f_cen, 
+       rhs_d, 
+       pvar_d, 
+       weight, 
+       c_weight);
 
   CS_CUDA_CHECK(cudaEventRecord(i_faces, stream));
 
@@ -1216,6 +1228,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   printf("Total = %f\t", msec*1000.f);
 
   printf("\n");
+
+  free(pvar_copy);
 
   if (_pvar_d != NULL)
     CS_CUDA_CHECK(cudaFree(_pvar_d));

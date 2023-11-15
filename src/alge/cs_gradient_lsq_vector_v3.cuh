@@ -26,7 +26,7 @@
 
 
 __global__ static void
-_compute_rhs_lsq_v_i_face_v3(cs_lnum_t            size,
+_compute_rhs_lsq_v_i_face_v3(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *restrict i_face_cells,
                           const cs_real_3_t    *restrict cell_f_cen,
                           cs_real_33_t         *restrict rhs,
@@ -36,7 +36,7 @@ _compute_rhs_lsq_v_i_face_v3(cs_lnum_t            size,
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(f_id >= size){
+  if(f_id >= n_i_faces){
     return;
   }
   cs_real_t dc[3], fctb[3], ddc, _weight1, _weight2, _denom, _pond, pfac;
@@ -134,13 +134,13 @@ _compute_rhs_lsq_v_i_face_v3cf(cs_lnum_t            size,
 }
 
 __global__ static void
-_compute_gradient_lsq_v_v5(cs_lnum_t           size,
+_compute_gradient_lsq_v_v5(cs_lnum_t           n_cells,
                         cs_real_t        *restrict gradv,
                         cs_real_t        *restrict rhs,
                         cs_cocg_6_t         *restrict cocg)
 {
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
+  if (c_id >= n_cells) 
     return;
 
   size_t c_id1 = c_id / (3*3);
@@ -173,13 +173,13 @@ _compute_gradient_lsq_v_v5(cs_lnum_t           size,
 }
 
 __global__ static void
-_compute_gradient_lsq_v_v6(cs_lnum_t           size,
+_compute_gradient_lsq_v_v6(cs_lnum_t           n_cells,
                         cs_real_33_t        *restrict gradv,
                         cs_real_33_t        *restrict rhs,
                         cs_cocg_6_t         *restrict cocg)
 {
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id >= size) 
+  if (c_id >= n_cells) 
     return;
 
   size_t c_id1 = c_id / (3*3);
