@@ -5667,6 +5667,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
 static void
 _reconstruct_vector_gradient(const cs_mesh_t              *m,
+                             const cs_mesh_adjacencies_t  *madj,
                              const cs_mesh_quantities_t   *fvq,
                              const cs_internal_coupling_t *cpl,
                              cs_halo_type_t                halo_type,
@@ -5718,164 +5719,288 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     coupled_faces = (const bool *)cpl->coupled_faces;
   }
 
-  /* Initialize gradient */
-  /*---------------------*/
 
-  /* Initialization */
+  /* Timing the computation */
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
-        grad[c_id][i][j] = 0.0;
+  std::chrono::high_resolution_clock::time_point start, stop;
+  std::chrono::microseconds elapsed, elapsed_cuda;
+
+
+  cs_real_33_t *grad_cpu;
+  
+  
+
+  bool COMPUTE_CUDA;
+  bool COMPUTE_CPU;
+  bool RES_CPU;
+  bool PERF;
+  bool ACCURACY;
+
+#if defined(HAVE_CUDA)
+  COMPUTE_CUDA = (cs_get_device_id() > -1) ? true : false;
+  RES_CPU = !COMPUTE_CUDA;
+#else
+  COMPUTE_CUDA = false;
+#endif
+
+#if defined(DEBUG)
+  COMPUTE_CPU = true;
+  PERF        = true;
+  ACCURACY    = true;
+#elif defined(NDEBUG) && !COMPUTE_CUDA
+  COMPUTE_CPU = true;
+  RES_CPU     = true;
+  PERF        = false;
+  ACCURACY    = false;
+#else
+  COMPUTE_CPU = false;
+  PERF        = false;
+  ACCURACY    = false;
+#endif
+
+
+  // Pour l'instant ces lignes sont pour moi
+  // Elles seront à enlever
+  COMPUTE_CUDA  = true;
+  COMPUTE_CPU   = true;
+  RES_CPU       = false;
+
+  // A ne pas garder dans la version finale
+  PERF        = true;
+  ACCURACY    = true;
+
+
+  if(COMPUTE_CUDA){
+    printf("Compute with CUDA\n");
+    if(PERF){
+      start = std::chrono::high_resolution_clock::now();
+    }
+
+    cs_reconstruct_vector_gradient_cuda(m,
+                                        madj,
+                                        fvq, 
+                                        cpl, 
+                                        halo_type, 
+                                        inc,
+                                        coefav,
+                                        coefbv,
+                                        pvar,
+                                        c_weight,
+                                        r_grad,
+                                        grad,
+                                        coupled_faces,
+                                        cpl_stride,
+                                        cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
+                                        PERF);
+    if(PERF){
+      stop = std::chrono::high_resolution_clock::now();
+      elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     }
   }
 
-  /* Interior faces contribution */
+  if(COMPUTE_CPU){
+    printf("Compute with CPU\n");
+    BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           f_id++) {
-
-        cs_lnum_t c_id1 = i_face_cells[f_id][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id][1];
-
-        cs_real_t pond = weight[f_id];
-
-        cs_real_t ktpond = (c_weight == NULL) ?
-          pond :                    // no cell weighting
-          pond * c_weight[c_id1] // cell weighting active
-            / (      pond * c_weight[c_id1]
-              + (1.0-pond)* c_weight[c_id2]);
-
-        /*
-           Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
-                                    + (1-\alpha_\ij) \varia_\cellj\f$
-                   but for the cell \f$ \celli \f$ we remove
-                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                   and for the cell \f$ \cellj \f$ we remove
-                   \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
-        */
-
+    if(PERF){
+      start = std::chrono::high_resolution_clock::now();
+    }
+      /* Initialization */
+    # pragma omp parallel for
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
         for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad_cpu[c_id][i][j] = 0.0;
+        }
+      }
 
-          cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
-          cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
+      /* Interior faces contribution */
 
-          /* Reconstruction part */
-          cs_real_t rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
-                                                    + r_grad[c_id2][i][0])
-                                  + dofij[f_id][1]*(  r_grad[c_id1][i][1]
-                                                    + r_grad[c_id2][i][1])
-                                  + dofij[f_id][2]*(  r_grad[c_id1][i][2]
-                                                    + r_grad[c_id2][i][2]));
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            grad[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
-            grad[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
+    #   pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+              f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+              f_id++) {
+
+            cs_lnum_t c_id1 = i_face_cells[f_id][0];
+            cs_lnum_t c_id2 = i_face_cells[f_id][1];
+
+            cs_real_t pond = weight[f_id];
+
+            cs_real_t ktpond = (c_weight == NULL) ?
+              pond :                    // no cell weighting
+              pond * c_weight[c_id1] // cell weighting active
+                / (      pond * c_weight[c_id1]
+                  + (1.0-pond)* c_weight[c_id2]);
+
+            /*
+              Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                        + (1-\alpha_\ij) \varia_\cellj\f$
+                      but for the cell \f$ \celli \f$ we remove
+                      \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                      and for the cell \f$ \cellj \f$ we remove
+                      \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
+
+            for (cs_lnum_t i = 0; i < 3; i++) {
+
+              cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
+              cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
+
+              /* Reconstruction part */
+              cs_real_t rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
+                                                        + r_grad[c_id2][i][0])
+                                      + dofij[f_id][1]*(  r_grad[c_id1][i][1]
+                                                        + r_grad[c_id2][i][1])
+                                      + dofij[f_id][2]*(  r_grad[c_id1][i][2]
+                                                        + r_grad[c_id2][i][2]));
+
+              for (cs_lnum_t j = 0; j < 3; j++) {
+                grad_cpu[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
+                grad_cpu[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
+              }
+            }
+
+          } /* End of loop on faces */
+
+        } /* End of loop on threads */
+
+      } /* End of loop on thread groups */
+
+      /* Contribution from coupled faces */
+      // if (cpl != NULL) {
+      //   cs_internal_coupling_initialize_vector_gradient(cpl, c_weight, pvar, grad);
+      //   cs_internal_coupling_reconstruct_vector_gradient(cpl, r_grad, grad);
+      // }
+
+      /* Boundary face treatment */
+
+    # pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+
+        for (cs_lnum_t f_id = b_group_index[t_id*2];
+            f_id < b_group_index[t_id*2 + 1];
+            f_id++) {
+
+          if (coupled_faces[f_id * cpl_stride])
+            continue;
+
+          cs_lnum_t c_id = b_face_cells[f_id];
+
+          /*
+            Remark: for the cell \f$ \celli \f$ we remove
+                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+
+            cs_real_t pfac = inc*coefav[f_id][i];
+
+            for (cs_lnum_t k = 0; k < 3; k++)
+              pfac += coefbv[f_id][i][k] * pvar[c_id][k];
+
+            pfac -= pvar[c_id][i];
+
+            /* Reconstruction part */
+            cs_real_t rfac = 0.;
+            for (cs_lnum_t k = 0; k < 3; k++) {
+              cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
+                                + r_grad[c_id][k][1] * diipb[f_id][1]
+                                + r_grad[c_id][k][2] * diipb[f_id][2];
+              rfac += coefbv[f_id][i][k] * vecfac;
+            }
+
+            for (cs_lnum_t j = 0; j < 3; j++)
+              grad_cpu[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
+
           }
 
+        } /* loop on faces */
+
+      } /* loop on threads */
+
+    # pragma omp parallel for
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t dvol;
+        /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+          dvol = 1. / cell_f_vol[c_id];
+        else
+          dvol = 0.;
+
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad_cpu[c_id][i][j] *= dvol;
         }
 
-      } /* End of loop on faces */
+        if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
+          cs_real_t gradpa[3];
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              gradpa[j] = grad_cpu[c_id][i][j];
+              grad_cpu[c_id][i][j] = 0.;
+            }
 
-    } /* End of loop on threads */
-
-  } /* End of loop on thread groups */
-
-  /* Contribution from coupled faces */
-  if (cpl != NULL) {
-    cs_internal_coupling_initialize_vector_gradient(cpl, c_weight, pvar, grad);
-    cs_internal_coupling_reconstruct_vector_gradient(cpl, r_grad, grad);
-  }
-
-  /* Boundary face treatment */
-
-# pragma omp parallel for
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-    for (cs_lnum_t f_id = b_group_index[t_id*2];
-         f_id < b_group_index[t_id*2 + 1];
-         f_id++) {
-
-      if (coupled_faces[f_id * cpl_stride])
-        continue;
-
-      cs_lnum_t c_id = b_face_cells[f_id];
-
-      /*
-        Remark: for the cell \f$ \celli \f$ we remove
-                \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-      */
-
-      for (cs_lnum_t i = 0; i < 3; i++) {
-
-        cs_real_t pfac = inc*coefav[f_id][i];
-
-        for (cs_lnum_t k = 0; k < 3; k++)
-          pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-
-        pfac -= pvar[c_id][i];
-
-        /* Reconstruction part */
-        cs_real_t rfac = 0.;
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
-                             + r_grad[c_id][k][1] * diipb[f_id][1]
-                             + r_grad[c_id][k][2] * diipb[f_id][2];
-          rfac += coefbv[f_id][i][k] * vecfac;
+            for (cs_lnum_t j = 0; j < 3; j++)
+              for (cs_lnum_t k = 0; k < 3; k++)
+                grad_cpu[c_id][i][j] += corr_grad_lin[c_id][j][k] * gradpa[k];
+          }
         }
-
-        for (cs_lnum_t j = 0; j < 3; j++)
-          grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
-
       }
-
-    } /* loop on faces */
-
-  } /* loop on threads */
-
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t dvol;
-    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
-    if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-      dvol = 1. / cell_f_vol[c_id];
-    else
-      dvol = 0.;
-
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
-        grad[c_id][i][j] *= dvol;
+    
+    if(PERF){
+      stop = std::chrono::high_resolution_clock::now();
+      elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     }
 
-    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
-      cs_real_t gradpa[3];
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          gradpa[j] = grad[c_id][i][j];
-          grad[c_id][i][j] = 0.;
-        }
+  }
 
-        for (cs_lnum_t j = 0; j < 3; j++)
-          for (cs_lnum_t k = 0; k < 3; k++)
-            grad[c_id][i][j] += corr_grad_lin[c_id][j][k] * gradpa[k];
+  /* Performances */
+  if(PERF){
+    printf("reconstruct Compute and tranferts time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
+  }
+
+  /* Accuracy grad_cpu and grad_gpu */
+  if(ACCURACY){
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (int j  =0; j < 3; ++j) {
+          auto cpu = grad_cpu[c_id][i][j];
+          auto cuda = grad[c_id][i][j];
+          double err = (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-6));
+          if (err> 1e-6) {
+            printf("rec DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda, err);
+          }
+        }
       }
     }
   }
+  
+  //Copy grad
+  if(RES_CPU){
+    printf("RESULTS CPU\n");
+    memcpy(grad, grad_cpu, sizeof(cs_real_33_t) * n_cells_ext);
+  }else{
+    printf("RESULTS GPU\n");
+  }
 
-  /* Periodicity and parallelism treatment */
+  // Free memory
+  if(COMPUTE_CPU){
+    BFT_FREE(grad_cpu);
+  }
+
+
+    /* Periodicity and parallelism treatment */
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 9);
     if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
   }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -7131,7 +7256,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 // #endif
 stop = std::chrono::high_resolution_clock::now();
 elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-printf("Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
+// printf("lsq Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
 
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
@@ -8583,6 +8708,7 @@ _gradient_vector(const char                     *var_name,
                                 r_gradv);
 
       _reconstruct_vector_gradient(mesh,
+                                   cs_glob_mesh_adjacencies,
                                    fvq,
                                    cpl,
                                    halo_type,

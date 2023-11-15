@@ -325,11 +325,13 @@ cs_cuda_copy_h2d_async(void        *dst,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_copy_d2h(void        *dst,
+_cs_cuda_copy_d2h(void        *dst,
                  const void  *src,
-                 size_t       size)
+                 size_t       size,
+                 const char* filename,
+                 long line)
 {
-  CS_CUDA_CHECK(cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost));
+  CS_CUDA_CHECK_CALL(cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost), filename, line);
 }
 
 /*----------------------------------------------------------------------------*/
