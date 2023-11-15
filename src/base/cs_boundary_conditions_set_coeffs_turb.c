@@ -277,11 +277,11 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   /* pointers to T+ and T* if saved */
 
   cs_real_t *tplusp = NULL, *tstarp = NULL;
-  cs_field_t *itplus = cs_field_by_name_try("tplus");
-  cs_field_t *itstar = cs_field_by_name_try("tstar");
-
   cs_real_t *dist_theipb = NULL;
+
   if (f_sc == f_th) {
+    cs_field_t *itplus = cs_field_by_name_try("tplus");
+    cs_field_t *itstar = cs_field_by_name_try("tstar");
 
     if (itplus != NULL)
       tplusp = itplus->val;
@@ -933,10 +933,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       if (b_f_id >= 0)
         bvar_s[f_id] -= tplus * tet;
 
-      if (itplus != NULL)
+      if (tplusp != NULL)
         tplusp[f_id] = tplus;
 
-      if (itstar != NULL)
+      if (tstarp != NULL)
         tstarp[f_id] = tet;
 
       if (f_sc == f_th) {
