@@ -131,6 +131,7 @@ cs_halo_perio.h \
 cs_head_losses.h \
 cs_ht_convert.h \
 cs_ibm.h \
+cs_initialize_fields.h \
 cs_interface.h \
 cs_interpolate.h \
 cs_internal_coupling.h \
@@ -328,6 +329,7 @@ cs_halo.c \
 cs_halo_perio.c \
 cs_head_losses.c \
 cs_ibm.c \
+cs_initialize_fields.c \
 cs_internal_coupling.c \
 cs_interpolate.c \
 cs_log_iteration.c \

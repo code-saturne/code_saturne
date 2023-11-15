@@ -293,11 +293,11 @@ if (iale.ge.1) then
   location_id = 4 ! variables defined on vertices
 
   call field_create(f_name, type_flag, location_id, idim3, &
-                    has_previous, fdiale)
-  call field_set_key_int(fdiale, keyvis, post_flag)
-  call field_set_key_int(fdiale, keylog, 1)
+                    has_previous, iflid)
+  call field_set_key_int(iflid, keyvis, post_flag)
+  call field_set_key_int(iflid, keylog, 1)
 
-  call field_set_key_str(fdiale, keylbl, trim(f_label))
+  call field_set_key_str(iflid, keylbl, trim(f_label))
 
   has_previous = .false.
   idim3 = 3

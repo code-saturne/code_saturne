@@ -141,7 +141,7 @@ if (ippmod(islfm).ge.2) then
   call field_get_val_s(ivarfl(isca(ipvm)), cvar_progvar)
   call field_get_val_s(iomgc, cpro_omegac)
 
-  ! Clip the progress variable here, Not in clpsca
+  ! Clip the progress variable here, Not in cs_scalar_clipping
   do iel = 1, ncel
     call max_mid_min_progvar(cvar_fm(iel), cmax, cmid, cmin)
     cvar_progvar(iel) = min(cvar_progvar(iel), cmax)

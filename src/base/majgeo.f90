@@ -21,11 +21,11 @@
 !-------------------------------------------------------------------------------
 
 subroutine majgeo &
- ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
+ ( ncel2  , ncele2 , nfac2  , nfabo2 ,                            &
    iface2 , ifabo2 , isoli2 ,                                     &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
-   cdgfa2 , cdgfb2 , xyzno2 ,                                     &
+   cdgfa2 , cdgfb2 ,                                              &
    volum2 , volf2  , srfan2 , srfbn2 , sffan2 , sffbn2 ,          &
    dist2  , distb2 , pond2  ,                                     &
    dijpf2 , diipb2 , dofij2 )                                     &
@@ -47,7 +47,6 @@ subroutine majgeo &
 ! ncele2           ! i  ! <-- ! nombre d'elements halo compris                 !
 ! nfac2            ! i  ! <-- ! nombre de faces internes                       !
 ! nfabo2           ! i  ! <-- ! nombre de faces de bord                        !
-! nsom2            ! i  ! <-- ! nombre de sommets                              !
 ! ncelb2           ! i  ! <-- ! number of boundary cells
 ! iface2           ! ia ! <-- ! interior face->cells connectivity              !
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
@@ -64,7 +63,6 @@ subroutine majgeo &
 ! suffb2           ! ra ! <-- ! boundary fluid face normals                    !
 ! cdgfa2           ! ra ! <-- ! interior face centers                          !
 ! cdgfb2           ! ra ! <-- ! boundary face centers                          !
-! xyzno2           ! ra ! <-- ! vertex coordinates                             !
 ! volum2           ! ra ! <-- ! cell volumes                                   !
 ! srfan2           ! ra ! <-- ! interior face surfaces                         !
 ! srfbn2           ! ra ! <-- ! boundary face surfaces                         !
@@ -101,7 +99,7 @@ implicit none
 
 ! Arguments
 
-integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
+integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2
 
 integer(c_int), dimension(2,nfac2), target :: iface2
 integer(c_int), dimension(nfabo2), target :: ifabo2
@@ -114,7 +112,6 @@ real(c_double), dimension(3,nfac2), target :: surfa2, cdgfa2, dijpf2, dofij2
 real(c_double), dimension(3,nfac2), target :: suffa2
 real(c_double), dimension(3,nfabo2), target :: surfb2, cdgfb2, diipb2
 real(c_double), dimension(3,nfabo2), target :: suffb2
-real(c_double), dimension(3,nsom2), target :: xyzno2
 real(c_double), dimension(ncele2), target :: volum2
 real(c_double), dimension(ncele2), target :: volf2
 real(c_double), dimension(nfac2), target :: srfan2, sffan2, dist2, pond2
@@ -157,8 +154,6 @@ else
   ndimfb = nfabor
 endif
 
-nnod = nsom2
-
 !===============================================================================
 ! 2. Define pointers on mesh structure
 !===============================================================================
@@ -187,8 +182,6 @@ suffac => suffa2(1:3,1:nfac)
 suffbo => suffb2(1:3,1:nfabor)
 cdgfac => cdgfa2(1:3,1:nfac)
 cdgfbo => cdgfb2(1:3,1:nfabor)
-
-xyznod => xyzno2(1:3,1:nnod)
 
 volume => volum2(1:ncelet)
 cell_f_vol => volf2(1:ncelet)

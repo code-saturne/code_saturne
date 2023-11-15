@@ -56,9 +56,6 @@ module albase
   bind(C, name='cs_glob_mobile_structures_i_eps') :: epalim
   bind(C, name='cs_glob_ale_n_ini_f') :: nalinf
   bind(C, name='cs_glob_ale_need_init') :: italin
-
-  !> Pointer to field over vertices: mesh displacement
-  integer, save :: fdiale
   !> \}
 
 contains

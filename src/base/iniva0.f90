@@ -74,34 +74,28 @@ integer          nscal
 
 ! Local variables
 
-integer          iis   , iscal
+integer          iscal
 integer          iel   , ifac
-integer          ii    , jj    , idim, f_dim
-integer          ifcvsl, iclvfl, kclvfl
-integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
-integer          kscmin
-integer          f_type, idftnp
+integer          ii    , jj
+integer          ifcvsl
+integer          idftnp
 integer          keyvar
-integer          f_id, kdflim
+integer          f_id
 
 logical          have_previous
 
-double precision clvfmn, visls_0, gravn2
+double precision visls_0, gravn2
 
 double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: brom, crom, cpro_beta
-double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
 double precision, dimension(:), pointer :: field_s_v
-double precision, dimension(:), pointer :: cpro_diff_lim
-double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
 double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:), pointer :: mix_mol_mas
 double precision, dimension(:,:), pointer :: cpro_visma_v
-double precision, dimension(:,:), pointer :: xyzno0
 
 type(var_cal_opt) :: vcopt_uma
 
@@ -145,8 +139,6 @@ if (f_id .ge. 0) then
   enddo
 endif
 
-call field_get_key_id("variance_clipping", kclvfl)
-
 ! Initialize variables to avoid compiler warnings
 
 jj = 0
@@ -164,8 +156,6 @@ enddo
 !===============================================================================
 ! 3.  INITIALISATION DES PROPRIETES PHYSIQUES
 !===============================================================================
-
-call field_get_val_s(ivarfl(ipr), cvar_pr)
 
 !     Masse volumique
 call field_get_val_s(icrom, crom)
@@ -346,185 +336,6 @@ if (iporos.ge.1) then
     enddo
   endif
 endif
-
-!===============================================================================
-! 4. INITIALISATION STANDARD DES VARIABLES DE CALCUL
-!     On complete ensuite pour les variables turbulentes et les scalaires
-!===============================================================================
-
-!     On met la pression P* a PRED0
-do iel = 1, ncelet
-  cvar_pr(iel) = pred0
-enddo
-
-! initialize void fraction to minimum clipping value
-if (ivofmt.gt.0) then
-
-  call field_get_key_id("min_scalar_clipping", kscmin)
-  call field_get_key_double(ivarfl(ivolf2), kscmin, clvfmn)
-
-  call field_get_val_s(ivarfl(ivolf2), field_s_v)
-  do iel = 1, ncelet
-    field_s_v(iel) = clvfmn
-  enddo
-
-endif
-
-call cs_turbulence_init_by_ref_quantities
-
-!===============================================================================
-! 5.  CLIPPING DES GRANDEURS SCALAIRES (SF K-EPS VOIR CI DESSUS)
-!===============================================================================
-
-if (nscal.gt.0) then
-
-!    Clipping des scalaires non variance
-  do iis = 1, nscal
-    call field_get_dim(ivarfl(isca(iis)), f_dim)
-    if(iscavr(iis).eq.0.and.f_dim.eq.1) then
-      iscal = iis
-      call clpsca(iscal)
-    endif
-  enddo
-
-!     Clipping des variances qui sont clippees sans recours au scalaire
-!        associe
-  do iis = 1, nscal
-    if (iscavr(iis).ne.0) then
-      call field_get_key_int(ivarfl(isca(iis)), kclvfl, iclvfl)
-      if (iclvfl.ne.1) then
-        iscal = iis
-        call clpsca(iscal)
-      endif
-    endif
-  enddo
-
-!     Clipping des variances qui sont clippees avec recours au scalaire
-!        associe s'il est connu
-  do iis = 1, nscal
-    if (iscavr(iis).le.nscal.and.iscavr(iis).ge.1) then
-      call field_get_key_int(ivarfl(isca(iis)), kclvfl, iclvfl)
-      if (iclvfl.ne.1) then
-        iscal = iis
-        call clpsca(iscal)
-      endif
-    endif
-  enddo
-
-endif
-
-!===============================================================================
-! 6.  INITIALISATION DE CONDITIONS AUX LIMITES ET FLUX DE MASSE
-!      NOTER QUE LES CONDITIONS AUX LIMITES PEUVENT ETRE UTILISEES DANS
-!      PHYVAR, PRECLI
-!===============================================================================
-
-! Conditions aux limites
-
-if (ienerg.gt.0) then
-  call field_get_coefbc_s(ivarfl(isca(ienerg)), cofbcp)
-  do ifac = 1, nfabor
-    cofbcp(ifac) = 0.d0
-  enddo
-endif
-
-! Boundary conditions
-
-do ifac = 1, nfabor
-  itrifb(ifac) = 0
-enddo
-
-! Old mass flux. We try not to do the same operation multiple times
-! (for shared mass fluxes), without doing too complex tests.
-
-call field_get_n_fields(nfld)
-
-ifmaip = -1
-bfmaip = -1
-
-do iflid = 0, nfld - 1
-  call field_get_type(iflid, f_type)
-  ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    ! Is this field not managed by CDO ? Not useful with CDO
-    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
-
-      call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
-      call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
-
-      if (iflmas.ge.0 .and. iflmas.ne.ifmaip) then
-        call field_current_to_previous(iflid)
-        ifmaip = iflmas
-      endif
-
-      if (iflmab.ge.0 .and. iflmab.ne.bfmaip) then
-        call field_current_to_previous(iflid)
-        bfmaip = iflmab
-      endif
-
-    endif ! CDO ?
-  endif ! VARIABLE ?
-
-enddo
-
-!===============================================================================
-! 7.  INITIALISATIONS EN ALE
-!===============================================================================
-
-if (iale.ge.1) then
-  call field_get_val_v_by_name("vtx_coord0", xyzno0)
-  do ii = 1, nnod
-    do idim = 1, 3
-      xyzno0(idim,ii) = xyznod(idim,ii)
-    enddo
-  enddo
-endif
-
-!===============================================================================
-! 8 Current to previous for variables
-!===============================================================================
-
-do iflid = 0, nfld - 1
-  call field_get_type(iflid, f_type)
-  ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    ! Is this field not managed by CDO ? Perfomed elsewhere with CDO
-    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
-
-      call field_current_to_previous(iflid)
-
-    endif ! CDO ?
-  endif ! VARIABLE ?
-enddo
-
-
-! Diffusion limiter initialization
-call field_get_key_id("diffusion_limiter_id", kdflim)
-
-do f_id = 0, nfld - 1
-
-  call field_get_type(f_id, f_type)
-
-  ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    ! Is this field not managed by CDO ?
-    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
-
-      call field_get_key_int(f_id, kdflim, iflid)
-
-      if (iflid.ne.-1) then
-
-        call field_get_val_s(iflid, cpro_diff_lim)
-
-        do iel = 1, ncelet
-          cpro_diff_lim(iel) = 1.d0
-        enddo
-
-      endif
-
-    endif ! CDO ?
-  endif ! VARIABLE ?
-enddo
 
 !----
 ! End

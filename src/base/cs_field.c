@@ -1976,18 +1976,19 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
           f->bc_coeffs->bf[ifac] = 0.;
         }
 
-      if (f->bc_coeffs->ad != NULL)
+      if (f->bc_coeffs->ad != NULL) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ad[ifac] = 0.;
           f->bc_coeffs->bd[ifac] = 1.;
         }
+      }
 
-      if (f->bc_coeffs->ac != NULL)
+      if (f->bc_coeffs->ac != NULL) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ac[ifac] = 0.;
           f->bc_coeffs->bc[ifac] = 0.;
         }
-
+      }
 
     }
 
