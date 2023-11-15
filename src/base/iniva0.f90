@@ -172,13 +172,6 @@ do ifac = 1, nfabor
   brom(ifac) = ro0
 enddo
 
-! Note: for VOF or dilatable algorithms, density at twice previous time step is
-! also stored and written here with "current to previous" function
-call field_current_to_previous(icrom)
-call field_current_to_previous(icrom)
-call field_current_to_previous(ibrom)
-call field_current_to_previous(ibrom)
-
 ! Boussinesq
 if (ibeta.ge.0) then
   call field_get_val_s(ibeta, cpro_beta)
@@ -191,19 +184,17 @@ endif
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
 
-! Molecular viscosity at cells (and eventual previous value)
+! Molecular viscosity at cells
 do iel = 1, ncelet
   viscl(iel) = viscl0
 enddo
-call field_current_to_previous(iviscl)
 
-! Specific heat at cells (and eventual previous value)
+! Specific heat at cells
 if(icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
   do iel = 1, ncelet
     cpro_cp(iel) = cp0
   enddo
-  call field_current_to_previous(icp)
 endif
 
 ! La pression totale sera initialisee a P0 + rho.g.r dans INIVAR
