@@ -1047,6 +1047,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   cs_real_t *hint;
   BFT_MALLOC(hint, n_b_faces, cs_real_t);
 
+  const int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
   const int *icodcl_v = f_v->bc_coeffs->icodcl;
   const cs_real_t *rcodcl1_v = f_v->bc_coeffs->rcodcl1;
   const cs_real_t *rcodcl2_v = f_v->bc_coeffs->rcodcl2;
@@ -1057,7 +1058,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     /* Test on the presence of a smooth wall condition (start) */
-    if (icodcl_v[f_id] != 5)
+    if (icodcl_vel[f_id] != 5)
       continue;
 
     /* Geometric quantities */
@@ -1142,138 +1143,137 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     /* Test on the presence of a smooth wall condition (start) */
-    if (icodcl_v[f_id] == 5) {
+    if (icodcl_vel[f_id] != 5)
+      continue;
 
-      const cs_real_t yplus = byplus[f_id];
-      const cs_real_t dplus = bdplus[f_id];
+    const cs_real_t yplus = byplus[f_id];
+    const cs_real_t dplus = bdplus[f_id];
 
-      /* Geometric quantities */
-      const cs_lnum_t c_id = b_face_cells[f_id];
-      const cs_real_t *rnxyz = b_face_u_normal[f_id];
+    /* Geometric quantities */
+    const cs_lnum_t c_id = b_face_cells[f_id];
+    const cs_real_t *rnxyz = b_face_u_normal[f_id];
 
-      /* Physical quantities */
-      const cs_real_t visclc = viscl[c_id];
-      const cs_real_t visctc = visct[c_id];
-      const cs_real_t hext = rcodcl2_v[f_id];
-      const cs_real_t hflui = hbnd[f_id];
+    /* Physical quantities */
+    const cs_real_t visclc = viscl[c_id];
+    const cs_real_t visctc = visct[c_id];
+    const cs_real_t hext = rcodcl2_v[f_id];
+    const cs_real_t hflui = hbnd[f_id];
 
-      /* Local framework
-         --------------- */
+    /* Local framework
+       --------------- */
 
-      /* Handle Dirichlet vector values */
+    /* Handle Dirichlet vector values */
 
-      cs_real_t rcodcxyz[3] = {rcodcl1_v[n_b_faces*0 + f_id],
-                               rcodcl1_v[n_b_faces*1 + f_id],
-                               rcodcl1_v[n_b_faces*2 + f_id]};
+    cs_real_t rcodcxyz[3] = {rcodcl1_v[n_b_faces*0 + f_id],
+                             rcodcl1_v[n_b_faces*1 + f_id],
+                             rcodcl1_v[n_b_faces*2 + f_id]};
 
-      /* Keep tangential part */
+    /* Keep tangential part */
 
-      cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
-      rcodcxyz[0] = rcodcxyz[0] - rcodcn * rnxyz[0];
-      rcodcxyz[1] = rcodcxyz[1] - rcodcn * rnxyz[1];
-      rcodcxyz[2] = rcodcxyz[2] - rcodcn * rnxyz[2];
+    cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
+    rcodcxyz[0] = rcodcxyz[0] - rcodcn * rnxyz[0];
+    rcodcxyz[1] = rcodcxyz[1] - rcodcn * rnxyz[1];
+    rcodcxyz[2] = rcodcxyz[2] - rcodcn * rnxyz[2];
 
-      rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
+    rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
 
-      cs_real_t heq = 0.0;
-      if (cs_math_fabs(hext) > 0.5*cs_math_infinite_r || icodcl_v[f_id] == 15)
-        heq = hflui;
-      else
-        heq = hflui * hext / (hflui + hext);
+    cs_real_t heq = 0.0;
+    if (cs_math_fabs(hext) > 0.5*cs_math_infinite_r || icodcl_v[f_id] == 15)
+      heq = hflui;
+    else
+      heq = hflui * hext / (hflui + hext);
 
-      /* ---> Dirichlet Boundary condition with a wall function correction
-         with or without an additional exchange coefficient hext */
+    /* Dirichlet Boundary condition with a wall function correction
+       with or without an additional exchange coefficient hext */
 
-      cs_real_t cofimp = 0.0;
-      if (icodcl_v[f_id] == 5 || icodcl_v[f_id] == 15) {
-        /* DFM: the gradient BCs are so that the production term
-           of u'T' is correcty computed */
+    cs_real_t cofimp = 0.0;
+    if (icodcl_v[f_id] == 5 || icodcl_v[f_id] == 15) {
+      /* DFM: the gradient BCs are so that the production term
+         of u'T' is correcty computed */
 
-        if (turb_flux_model_type >= 1) {
-          /* In the log layer */
-          if (yplus >= ypth && iturb != CS_TURB_NONE) {
-            const cs_real_t xmutlm = cs_turb_xkappa * visclc * (yplus + dplus);
-            const cs_real_t rcprod
-              = cs_math_fmin(cs_turb_xkappa,
-                               cs_math_fmax(1.0, sqrt(xmutlm/visctc))
-                             / (yplus+dplus));
+      if (turb_flux_model_type >= 1) {
+        /* In the log layer */
+        if (yplus >= ypth && iturb != CS_TURB_NONE) {
+          const cs_real_t xmutlm = cs_turb_xkappa * visclc * (yplus + dplus);
+          const cs_real_t rcprod
+            = cs_math_fmin(cs_turb_xkappa,
+                             cs_math_fmax(1.0, sqrt(xmutlm/visctc))
+                           / (yplus+dplus));
 
-            cofimp = 1.0 - yptp * turb_schmidt / cs_turb_xkappa
-              * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
-          }
-          /* In the viscous sub-layer */
-          else
-            cofimp = 0.0;
+          cofimp =   1.0 - yptp * turb_schmidt / cs_turb_xkappa
+                   * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
         }
+        /* In the viscous sub-layer */
         else
-          cofimp = 1.0 - heq / hint[f_id];
+          cofimp = 0.0;
+      }
+      else
+        cofimp = 1.0 - heq / hint[f_id];
 
-        /* To be coherent with a wall function, clip it to 0 */
-        cofimp = cs_math_fmax(cofimp, 0.0);
+      /* To be coherent with a wall function, clip it to 0 */
+      cofimp = cs_math_fmax(cofimp, 0.0);
 
-        /* Coupled solving of the velocity components */
+      /* Coupled solving of the velocity components */
 
-        /* Gradient boundary conditions
-           ---------------------------- */
+      /* Gradient boundary conditions
+         ---------------------------- */
 
-        coefa_v[f_id][0] =   (1.0 - cofimp) * (rcodcxyz[0] - rcodcn*rnxyz[0])
-                           + rcodcn*rnxyz[0];
+      coefa_v[f_id][0] =   (1.0 - cofimp) * (rcodcxyz[0] - rcodcn*rnxyz[0])
+                         + rcodcn*rnxyz[0];
 
-        coefa_v[f_id][1] =   (1.0 - cofimp) * (rcodcxyz[1] - rcodcn*rnxyz[1])
-                           + rcodcn*rnxyz[1];
+      coefa_v[f_id][1] =   (1.0 - cofimp) * (rcodcxyz[1] - rcodcn*rnxyz[1])
+                         + rcodcn*rnxyz[1];
 
-        coefa_v[f_id][2] =   (1.0 - cofimp) * (rcodcxyz[2] - rcodcn*rnxyz[2])
-                           + rcodcn*rnxyz[2];
+      coefa_v[f_id][2] =   (1.0 - cofimp) * (rcodcxyz[2] - rcodcn*rnxyz[2])
+                         + rcodcn*rnxyz[2];
 
-        /* Projection in order to have the vector parallel to the wall
-           B = cofimp * ( IDENTITY - n x n ) */
+      /* Projection in order to have the vector parallel to the wall
+         B = cofimp * ( IDENTITY - n x n ) */
 
-        coefb_v[f_id][0][0] =   cofimp * (1.0 - rnxyz[0] * rnxyz[0]);
-        coefb_v[f_id][1][1] =   cofimp * (1.0 - rnxyz[1] * rnxyz[1]);
-        coefb_v[f_id][2][2] =   cofimp * (1.0 - rnxyz[2] * rnxyz[2]);
-        coefb_v[f_id][0][1] = - cofimp * rnxyz[0] * rnxyz[1];
-        coefb_v[f_id][0][2] = - cofimp * rnxyz[0] * rnxyz[2];
-        coefb_v[f_id][1][2] = - cofimp * rnxyz[1] * rnxyz[2];
-        coefb_v[f_id][1][0] =   coefb_v[f_id][0][1];
-        coefb_v[f_id][2][1] =   coefb_v[f_id][1][2];
-        coefb_v[f_id][2][0] =   coefb_v[f_id][0][2];
+      coefb_v[f_id][0][0] =   cofimp * (1.0 - rnxyz[0] * rnxyz[0]);
+      coefb_v[f_id][1][1] =   cofimp * (1.0 - rnxyz[1] * rnxyz[1]);
+      coefb_v[f_id][2][2] =   cofimp * (1.0 - rnxyz[2] * rnxyz[2]);
+      coefb_v[f_id][0][1] = - cofimp * rnxyz[0] * rnxyz[1];
+      coefb_v[f_id][0][2] = - cofimp * rnxyz[0] * rnxyz[2];
+      coefb_v[f_id][1][2] = - cofimp * rnxyz[1] * rnxyz[2];
+      coefb_v[f_id][1][0] =   coefb_v[f_id][0][1];
+      coefb_v[f_id][2][1] =   coefb_v[f_id][1][2];
+      coefb_v[f_id][2][0] =   coefb_v[f_id][0][2];
 
-        /* Flux boundary conditions
-           ------------------------ */
+      /* Flux boundary conditions
+         ------------------------ */
 
-        cofaf_v[f_id][0] = - heq * (rcodcxyz[0] - rcodcn * rnxyz[0])
-                           - hint[f_id] * rcodcn * rnxyz[0];
+      cofaf_v[f_id][0] = - heq * (rcodcxyz[0] - rcodcn * rnxyz[0])
+                         - hint[f_id] * rcodcn * rnxyz[0];
 
-        cofaf_v[f_id][1] = - heq * (rcodcxyz[1] - rcodcn * rnxyz[1])
-                           - hint[f_id] * rcodcn * rnxyz[1];
+      cofaf_v[f_id][1] = - heq * (rcodcxyz[1] - rcodcn * rnxyz[1])
+                         - hint[f_id] * rcodcn * rnxyz[1];
 
-        cofaf_v[f_id][2] = - heq * (rcodcxyz[2] - rcodcn * rnxyz[2])
-                           - hint[f_id] * rcodcn * rnxyz[2];
+      cofaf_v[f_id][2] = - heq * (rcodcxyz[2] - rcodcn * rnxyz[2])
+                         - hint[f_id] * rcodcn * rnxyz[2];
 
-        /* Projection
-           B = heq*( IDENTITY - n x n ) */
+      /* Projection
+         B = heq*( IDENTITY - n x n ) */
 
-        cofbf_v[f_id][0][0] =   heq*(1.-rnxyz[0]*rnxyz[0])
-                              + hint[f_id]*rnxyz[0]*rnxyz[0];
+      cofbf_v[f_id][0][0] =   heq*(1.-rnxyz[0]*rnxyz[0])
+                            + hint[f_id]*rnxyz[0]*rnxyz[0];
 
-        cofbf_v[f_id][1][1] =   heq*(1.-rnxyz[1]*rnxyz[1])
-                              + hint[f_id]*rnxyz[1]*rnxyz[1];
+      cofbf_v[f_id][1][1] =   heq*(1.-rnxyz[1]*rnxyz[1])
+                            + hint[f_id]*rnxyz[1]*rnxyz[1];
 
-        cofbf_v[f_id][2][2] =   heq*(1.-rnxyz[2]*rnxyz[2])
-                              + hint[f_id]*rnxyz[2]*rnxyz[2];
+      cofbf_v[f_id][2][2] =   heq*(1.-rnxyz[2]*rnxyz[2])
+                            + hint[f_id]*rnxyz[2]*rnxyz[2];
 
-        cofbf_v[f_id][0][1] = (hint[f_id] - heq) * rnxyz[0] * rnxyz[1];
-        cofbf_v[f_id][0][2] = (hint[f_id] - heq) * rnxyz[0] * rnxyz[2];
-        cofbf_v[f_id][1][0] = (hint[f_id] - heq) * rnxyz[1] * rnxyz[0];
-        cofbf_v[f_id][1][2] = (hint[f_id] - heq) * rnxyz[1] * rnxyz[2];
-        cofbf_v[f_id][2][0] = (hint[f_id] - heq) * rnxyz[2] * rnxyz[0];
-        cofbf_v[f_id][2][1] = (hint[f_id] - heq) * rnxyz[2] * rnxyz[1];
+      cofbf_v[f_id][0][1] = (hint[f_id] - heq) * rnxyz[0] * rnxyz[1];
+      cofbf_v[f_id][0][2] = (hint[f_id] - heq) * rnxyz[0] * rnxyz[2];
+      cofbf_v[f_id][1][0] = (hint[f_id] - heq) * rnxyz[1] * rnxyz[0];
+      cofbf_v[f_id][1][2] = (hint[f_id] - heq) * rnxyz[1] * rnxyz[2];
+      cofbf_v[f_id][2][0] = (hint[f_id] - heq) * rnxyz[2] * rnxyz[0];
+      cofbf_v[f_id][2][1] = (hint[f_id] - heq) * rnxyz[2] * rnxyz[1];
 
-      } /* End if icodcl == 5 or 15 */
+      /* TODO: postprocessing at the boundary */
 
-      /* TODO : postprocessing at the boundary */
-
-    } /* smooth wall condition */
+    } /* End if icodcl 5 or 15 */
 
   } /* End loop on boudary faces */
 
