@@ -121,7 +121,6 @@ typedef enum {
   CS_ENUMF_(energy_f),     /*!< homogeneous model energy fraction */
 
   CS_ENUMF_(pot_t),        /*!< potential temperature */
-  CS_ENUMF_(totwt),        /*!< total water content */
   CS_ENUMF_(ntdrp),        /*!< total number of droplets */
   CS_ENUMF_(chemistry),    /*!< chemistry species (indexed) */
 

@@ -2081,7 +2081,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     cvar_t = f_th->val;
 
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2) {
-      cvar_totwt = CS_F_(totwt)->val;
+      cvar_totwt = CS_F_(ym_w)->val;
       cpro_liqwt = cs_field_by_name("liquid_water")->val;
     }
 
