@@ -7088,24 +7088,27 @@ _get_c_iter_try(const char  *var_name)
  *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <const cs_e2n_sum_t e2n,
-          cs_lnum_t stride, typename val_t, typename grad_t, typename coefb_t>
+template <const cs_e2n_sum_t e2n, cs_lnum_t stride>
 static void
-_lsq_strided_gradient(const cs_mesh_t               *m,
-                      const cs_mesh_adjacencies_t   *madj,
-                      const cs_mesh_quantities_t    *fvq,
-                      cs_halo_type_t                 halo_type,
-                      int                            inc,
-                      int                            n_c_iter_max,
-                      cs_real_t                      c_eps,
-                      const val_t          *restrict coefav,
-                      const coefb_t        *restrict coefbv,
-                      const val_t          *restrict pvar,
-                      const cs_real_t      *restrict c_weight,
-                      cs_real_t            *restrict b_iter_count,
-                      grad_t               *restrict gradv)
+_lsq_strided_gradient(const cs_mesh_t             *m,
+                      const cs_mesh_adjacencies_t *madj,
+                      const cs_mesh_quantities_t  *fvq,
+                      cs_halo_type_t               halo_type,
+                      int                          inc,
+                      int                          n_c_iter_max,
+                      cs_real_t                    c_eps,
+                      const cs_real_t (*restrict coefav)[stride],
+                      const cs_real_t (*restrict coefbv)[stride][stride],
+                      const cs_real_t (*restrict pvar)[stride],
+                      const cs_real_t *restrict c_weight,
+                      cs_real_t *restrict b_iter_count,
+                      cs_real_t (*restrict gradv)[stride][3])
 {
-  const cs_lnum_t n_cells = m->n_cells;
+  //using val_t   = cs_real_t[stride];
+  using grad_t  = cs_real_t[stride][3];
+  //using coefb_t = cs_real_t[stride][stride];
+
+  const cs_lnum_t n_cells     = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_cells = m->n_b_cells;
 
@@ -7666,6 +7669,78 @@ _lsq_strided_gradient(const cs_mesh_t               *m,
 
   BFT_FREE(rhs);
 }
+
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of a scalar using least-squares reconstruction for
+ * non-orthogonal meshes (n_r_sweeps > 1).
+ * Calls the strided version with the correct types.
+ *
+ * template parameters:
+ *   e2n           type of assembly algorithm used
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   madj           <-- pointer to mesh adjacencies structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   n_c_iter_max   <-- maximum number of iterations for boundary correction
+ *   c_eps          <-- relative tolerance for boundary correction
+ *   coefav         <-- B.C. coefficients for boundary face normals
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable, or NULL
+ *   b_iter_count   --> iteration count for each face, or NULL (postprocessing)
+ *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][j])
+ *----------------------------------------------------------------------------*/
+template <const cs_e2n_sum_t e2n>
+static void
+_lsq_strided_gradient(const cs_mesh_t             *m,
+                      const cs_mesh_adjacencies_t *madj,
+                      const cs_mesh_quantities_t  *fvq,
+                      cs_halo_type_t               halo_type,
+                      int                          inc,
+                      int                          n_c_iter_max,
+                      cs_real_t                    c_eps,
+                      const cs_real_t *restrict coefav,
+                      const cs_real_t *restrict coefbv,
+                      const cs_real_t *restrict pvar,
+                      const cs_real_t *restrict c_weight,
+                      cs_real_t   *restrict b_iter_count,
+                      cs_real_3_t *restrict gradv)
+{
+  _lsq_strided_gradient<e2n>(
+    m,
+    madj,
+    fvq,
+    halo_type,
+    inc,
+    n_c_iter_max,
+    c_eps,
+    reinterpret_cast<const cs_real_t(*restrict)[1]>(coefav),
+    reinterpret_cast<const cs_real_t(*restrict)[1][1]>(coefbv),
+    reinterpret_cast<const cs_real_t(*restrict)[1]>(pvar),
+    c_weight,
+    b_iter_count,
+    reinterpret_cast<const cs_real_t(*restrict)[1][3]>(gradv)
+  );
+}
+
+template <size_t stride>
+using lsq_strided_gradient_t = void(const cs_mesh_t *,
+                                    const cs_mesh_adjacencies_t *,
+                                    const cs_mesh_quantities_t *,
+                                    cs_halo_type_t,
+                                    int,
+                                    int,
+                                    cs_real_t,
+                                    const cs_real_t (*restrict)[stride],
+                                    const cs_real_t (*restrict)[stride][stride],
+                                    const cs_real_t (*restrict)[stride],
+                                    const cs_real_t *restrict,
+                                    cs_real_t *restrict,
+                                    cs_real_t (*restrict)[stride][3]);
 
 /*----------------------------------------------------------------------------
  * Compute boundary face vector values using least-squares reconstruction
@@ -8953,7 +9028,7 @@ _gradient_vector(const char                     *var_name,
                                  epsilon,
                                  bc_coeff_a,
                                  bc_coeff_b,
-                                 (const cs_real_3_t *)var,
+                                 var,
                                  c_weight,
                                  grad);
 
@@ -8969,75 +9044,33 @@ _gradient_vector(const char                     *var_name,
                            inc,
                            bc_coeff_a,
                            bc_coeff_b,
-                           (const cs_real_3_t *)var,
+                           var,
                            c_weight,
                            grad);
     }
     else {
+      lsq_strided_gradient_t<3> *gradient_f;
       if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
-        _lsq_strided_gradient<CS_E2N_SUM_SCATTER,
-                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_3_t *)var,
-           c_weight,
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER>;
       else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
-        _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC,
-                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_3_t *)var,
-           c_weight,
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC>;
       else if (cs_glob_e2n_sum_type == CS_E2N_SUM_STORE_THEN_GATHER)
-        _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER,
-                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_3_t *)var,
-           c_weight,
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER>;
       else
-        _lsq_strided_gradient<CS_E2N_SUM_GATHER,
-                              3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_3_t *)var,
-           c_weight,
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
+      gradient_f(mesh,
+                 cs_glob_mesh_adjacencies,
+                 fvq,
+                 halo_type,
+                 inc,
+                 n_r_sweeps,
+                 epsilon,
+                 bc_coeff_a,
+                 bc_coeff_b,
+                 var,
+                 c_weight,
+                 _get_c_iter_try(var_name),
+                 grad);
     }
 
     break;
@@ -9045,7 +9078,7 @@ _gradient_vector(const char                     *var_name,
   case CS_GRADIENT_GREEN_LSQ:
 
     {
-      cs_real_33_t  *restrict r_gradv;
+      cs_real_33_t *restrict r_gradv;
       BFT_MALLOC(r_gradv, n_cells_ext, cs_real_33_t);
 
       if (_use_legacy_strided_lsq_gradient) {
@@ -9056,75 +9089,33 @@ _gradient_vector(const char                     *var_name,
                              inc,
                              bc_coeff_a,
                              bc_coeff_b,
-                             (const cs_real_3_t *)var,
+                             var,
                              c_weight,
                              r_gradv);
       }
       else {
+        lsq_strided_gradient_t<3> *gradient_f;
         if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
-          _lsq_strided_gradient<CS_E2N_SUM_SCATTER,
-                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-            (mesh,
-             cs_glob_mesh_adjacencies,
-             fvq,
-             halo_type,
-             inc,
-             n_r_sweeps,
-             epsilon,
-             bc_coeff_a,
-             bc_coeff_b,
-             (const cs_real_3_t *)var,
-             c_weight,
-             _get_c_iter_try(var_name),
-             r_gradv);
+          gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER>;
         else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
-          _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC,
-                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-            (mesh,
-             cs_glob_mesh_adjacencies,
-             fvq,
-             halo_type,
-             inc,
-             n_r_sweeps,
-             epsilon,
-             bc_coeff_a,
-             bc_coeff_b,
-             (const cs_real_3_t *)var,
-             c_weight,
-             _get_c_iter_try(var_name),
-             r_gradv);
-       else if (cs_glob_e2n_sum_type == CS_E2N_SUM_STORE_THEN_GATHER)
-          _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER,
-                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-            (mesh,
-             cs_glob_mesh_adjacencies,
-             fvq,
-             halo_type,
-             inc,
-             n_r_sweeps,
-             epsilon,
-             bc_coeff_a,
-             bc_coeff_b,
-             (const cs_real_3_t *)var,
-             c_weight,
-             _get_c_iter_try(var_name),
-             r_gradv);
+          gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC>;
+        else if (cs_glob_e2n_sum_type == CS_E2N_SUM_STORE_THEN_GATHER)
+          gradient_f = _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER>;
         else
-          _lsq_strided_gradient<CS_E2N_SUM_GATHER,
-                                3, cs_real_3_t, cs_real_33_t, cs_real_33_t>
-            (mesh,
-             cs_glob_mesh_adjacencies,
-             fvq,
-             halo_type,
-             inc,
-             n_r_sweeps,
-             epsilon,
-             bc_coeff_a,
-             bc_coeff_b,
-             (const cs_real_3_t *)var,
-             c_weight,
-             _get_c_iter_try(var_name),
-             r_gradv);
+          gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
+        gradient_f(mesh,
+                   cs_glob_mesh_adjacencies,
+                   fvq,
+                   halo_type,
+                   inc,
+                   n_r_sweeps,
+                   epsilon,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   var,
+                   c_weight,
+                   _get_c_iter_try(var_name),
+                   r_gradv);
       }
 
       _reconstruct_vector_gradient(mesh,
@@ -9134,7 +9125,7 @@ _gradient_vector(const char                     *var_name,
                                    inc,
                                    bc_coeff_a,
                                    bc_coeff_b,
-                                   (const cs_real_3_t *)var,
+                                   var,
                                    c_weight,
                                    r_gradv,
                                    grad);
@@ -9277,7 +9268,7 @@ _gradient_tensor(const char                *var_name,
                                  epsilon,
                                  bc_coeff_a,
                                  bc_coeff_b,
-                                 (const cs_real_6_t *)var,
+                                 var,
                                  grad);
 
     break;
@@ -9292,75 +9283,33 @@ _gradient_tensor(const char                *var_name,
                            inc,
                            bc_coeff_a,
                            bc_coeff_b,
-                           (const cs_real_6_t *)var,
+                           var,
                            NULL, /* c_weight */
                            grad);
     }
     else {
+      lsq_strided_gradient_t<6> *gradient_f;
       if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
-        _lsq_strided_gradient<CS_E2N_SUM_SCATTER,
-                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_6_t *)var,
-           NULL, /* c_weight */
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER>;
       else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
-        _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC,
-                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_6_t *)var,
-           NULL, /* c_weight */
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC>;
       else if (cs_glob_e2n_sum_type == CS_E2N_SUM_STORE_THEN_GATHER)
-        _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER,
-                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_6_t *)var,
-           NULL, /* c_weight */
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_STORE_THEN_GATHER>;
       else
-        _lsq_strided_gradient<CS_E2N_SUM_GATHER,
-                              6, cs_real_6_t, cs_real_63_t, cs_real_66_t>
-          (mesh,
-           cs_glob_mesh_adjacencies,
-           fvq,
-           halo_type,
-           inc,
-           n_r_sweeps,
-           epsilon,
-           bc_coeff_a,
-           bc_coeff_b,
-           (const cs_real_6_t *)var,
-           NULL, /* c_weight */
-           _get_c_iter_try(var_name),
-           grad);
+        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
+      gradient_f(mesh,
+                 cs_glob_mesh_adjacencies,
+                 fvq,
+                 halo_type,
+                 inc,
+                 n_r_sweeps,
+                 epsilon,
+                 bc_coeff_a,
+                 bc_coeff_b,
+                 var,
+                 NULL, /* c_weight */
+                 _get_c_iter_try(var_name),
+                 grad);
     }
 
     break;
