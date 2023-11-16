@@ -174,13 +174,12 @@ _compute_reconstruct_correction_v2(  cs_lnum_t                       n_cells,
     cs_real_t gradpa[3];
     for (cs_lnum_t j = 0; j < 3; j++) {
       gradpa[j] = grad[c_idt][i][j];
-      grad[c_idt][i][j] = 0.;
     }
 
     for (cs_lnum_t j = 0; j < 3; j++) {
-      atomicAdd(&grad[c_idt][i][j], corr_grad_lin[c_idt][j][0] * gradpa[0]);
-      atomicAdd(&grad[c_idt][i][j], corr_grad_lin[c_idt][j][1] * gradpa[1]);
-      atomicAdd(&grad[c_idt][i][j], corr_grad_lin[c_idt][j][2] * gradpa[2]);
+      grad[c_idt][i][j] = corr_grad_lin[c_idt][j][0] * gradpa[0]
+                         + corr_grad_lin[c_idt][j][1] * gradpa[1]
+                         + corr_grad_lin[c_idt][j][2] * gradpa[2];
     }
   }
 

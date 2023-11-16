@@ -5603,7 +5603,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 
 
   if(COMPUTE_CUDA){
-    printf("Compute with CUDA\n");
+    printf("reconstruct Compute with CUDA\n");
     if(PERF){
       start = std::chrono::high_resolution_clock::now();
     }
@@ -5631,7 +5631,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   }
 
   if(COMPUTE_CPU){
-    printf("Compute with CPU\n");
+    printf("reconstruct Compute with CPU\n");
     BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
 
     if(PERF){
@@ -5802,9 +5802,9 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
         for (int j  =0; j < 3; ++j) {
           auto cpu = grad_cpu[c_id][i][j];
           auto cuda = grad[c_id][i][j];
-          double err = (fabsl(cpu - cuda) / fmaxl(fabsl(cpu), 1e-6));
+          double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
           if (err> 1e-6) {
-            printf("rec DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\n", c_id, i, j, cpu, cuda, cpu - cuda, err);
+            printf("reconstruct DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\tulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
           }
         }
       }
@@ -5813,10 +5813,10 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   
   //Copy grad
   if(RES_CPU){
-    printf("RESULTS CPU\n");
+    printf("reconstruct RESULTS CPU\n");
     memcpy(grad, grad_cpu, sizeof(cs_real_33_t) * n_cells_ext);
   }else{
-    printf("RESULTS GPU\n");
+    printf("reconstruct RESULTS GPU\n");
   }
 
   // Free memory

@@ -103,12 +103,15 @@ _compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
                               const cs_lnum_t      *restrict cell_b_faces,
                               const cs_lnum_t      *restrict cell_b_faces_idx)
 {
-  cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 
-  if(c_id1 >= n_b_cells){
+  if(c_idx >= n_b_cells){
     return;
   }
+
+  size_t c_id1 = c_idx / 3;
+  size_t i = c_idx % 3;
 
   cs_lnum_t c_id = b_cells[c_id1];
   
@@ -124,29 +127,26 @@ _compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
   for(cs_lnum_t index = s_id; index < e_id; index++){
     f_id = cell_b_faces[index];
 
-    for (cs_lnum_t i = 0; i < 3; i++) {
+    pfac = inc*coefav[f_id][i];
 
-      pfac = inc*coefav[f_id][i];
+    pfac += coefbv[f_id][i][0] * pvar[c_id][0]
+          + coefbv[f_id][i][1] * pvar[c_id][1]
+          + coefbv[f_id][i][2] * pvar[c_id][2];
 
-      for (cs_lnum_t k = 0; k < 3; k++){
-        pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-      }
+    pfac -= pvar[c_id][i];
 
-      pfac -= pvar[c_id][i];
-
-    //   /* Reconstruction part */
-      rfac = 0.;
-      for (cs_lnum_t k = 0; k < 3; k++) {
-        vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
-                            + r_grad[c_id][k][1] * diipb[f_id][1]
-                            + r_grad[c_id][k][2] * diipb[f_id][2];
-        rfac += coefbv[f_id][i][k] * vecfac;
-      }
-
-      for (cs_lnum_t j = 0; j < 3; j++){
-        grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
-      }
-
+  //   /* Reconstruction part */
+    rfac = 0.;
+    for (cs_lnum_t k = 0; k < 3; k++) {
+      vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
+                          + r_grad[c_id][k][1] * diipb[f_id][1]
+                          + r_grad[c_id][k][2] * diipb[f_id][2];
+      rfac += coefbv[f_id][i][k] * vecfac;
     }
+
+    grad[c_id][i][0] += (pfac + rfac) * b_f_face_normal[f_id][0];
+    grad[c_id][i][1] += (pfac + rfac) * b_f_face_normal[f_id][1];
+    grad[c_id][i][2] += (pfac + rfac) * b_f_face_normal[f_id][2];
+
   }
 }
