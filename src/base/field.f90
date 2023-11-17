@@ -279,18 +279,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function returning a given field's ownership info
-
-    subroutine cs_f_field_get_ownership(f_id, f_is_owner)  &
-      bind(C, name='cs_f_field_get_ownership')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      logical(c_bool), intent(out) :: f_is_owner
-    end subroutine cs_f_field_get_ownership
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function returning a given field's type info
 
     subroutine cs_f_field_get_type(f_id, f_type)  &
@@ -932,38 +920,6 @@ contains
     return
 
   end subroutine field_get_dim
-
-  !=============================================================================
-
-  !> \brief Return the field ownership flag.
-
-  !> \param[in]   f_id         field id
-  !> \param[out]  f_is_owner  true if field is owner, false otherwise
-
-  subroutine field_get_ownership(f_id, f_is_owner)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)  :: f_id
-    logical, intent(out) :: f_is_owner
-
-    ! Local variables
-
-    integer(c_int) :: c_f_id
-    logical(c_bool) :: c_is_owner
-
-    c_f_id = f_id
-
-    call cs_f_field_get_ownership(c_f_id, c_is_owner)
-
-    f_is_owner = c_is_owner
-
-    return
-
-  end subroutine field_get_ownership
 
   !=============================================================================
 
@@ -2092,68 +2048,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefad array of a given scalar field
-  !>        (used in the divergence operator such as div(Rij))
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefad_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 5
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefad_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefa array of a given vector field
-  !>        (used in the divergence operator such as div(u'T'))
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefad_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 5
-    p_rank = 2
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_coefad_v
-
-  !=============================================================================
-
   !> \brief Return pointer to the coefac array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be a vector)
@@ -2214,96 +2108,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefbc array of a given scalar field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to scalar field BC coefbc values
-
-  subroutine field_get_coefbc_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 8
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefbc_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefb array of a given uncoupled vector field
-
-  !> \param[in]     field_id  id of given field (which must be a vector)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefb_uv(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 2
-    p_rank = 2
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_coefb_uv
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefbc array of a given uncoupled vector field
-
-  !> \param[in]     field_id  id of given field (which must be a vector)
-  !> \param[out]    p         pointer to vector field BC coefbc values
-
-  subroutine field_get_coefbc_uv(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 8
-    p_rank = 2
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_coefbc_uv
-
-  !=============================================================================
-
   !> \brief Return pointer to the coefb array of a given coupled vector field
 
   !> \param[in]     field_id  id of given field (which must be a vector)
@@ -2331,36 +2135,6 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
 
   end subroutine field_get_coefb_v
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefbc array of a given coupled vector field
-
-  !> \param[in]     field_id  id of given field (which must be a vector)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefbc_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                        :: field_id
-    double precision, dimension(:,:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 8
-    p_rank = 3
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
-
-  end subroutine field_get_coefbc_v
 
   !=============================================================================
 
@@ -2484,36 +2258,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefbf array of a given uncoupled vector field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to vector field BC coefb values
-
-  subroutine field_get_coefbf_uv(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 4
-    p_rank = 2
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_coefbf_uv
-
-  !=============================================================================
-
   !> \brief Return pointer to the coefbf array of a given coupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
@@ -2541,68 +2285,6 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
 
   end subroutine field_get_coefbf_v
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefbd array of a given scalar field
-  !>        (used in the divergence operator such as div(Rij))
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to vector field BC coefb values
-
-  subroutine field_get_coefbd_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 6
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefbd_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefbd array of a given coupled vector field
-  !>        (used in the divergence operator such as div(u'T'))
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefbd_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                        :: field_id
-    double precision, dimension(:,:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 6
-    p_rank = 3
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
-
-  end subroutine field_get_coefbd_v
 
   !=============================================================================
 

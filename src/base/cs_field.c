@@ -293,10 +293,6 @@ cs_f_field_get_dimension(int           id,
                          int           dim[1]);
 
 void
-cs_f_field_get_ownership(int           id,
-                         bool         *is_owner);
-
-void
 cs_f_field_get_type(int           id,
                     int          *type);
 
@@ -893,24 +889,6 @@ cs_f_field_get_n_previous(int  id,
   const cs_field_t *f = cs_field_by_id(id);
 
   n_previous[0] = f->n_time_vals - 1;
-}
-
-/*----------------------------------------------------------------------------
- * Return the field ownership flag.
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   id       <-- field id
- *   is_owner <-- field ownership flag
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_get_ownership(int   id,
-                         bool *is_owner)
-{
-  const cs_field_t *f = cs_field_by_id(id);
-
-  *is_owner = f->is_owner;
 }
 
 /*----------------------------------------------------------------------------
