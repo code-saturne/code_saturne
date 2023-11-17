@@ -15,6 +15,10 @@ Release 8.0.3 (unreleased)
 
 - Fix cooling towers thermal exchange source terms in the packing zone.
 
+### Architectural changes:
+
+- Update build for current Melissa library versions.
+
 Release 8.0.2 (2023-10-10)
 --------------------------
 
