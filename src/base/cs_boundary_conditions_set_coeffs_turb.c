@@ -1655,15 +1655,17 @@ _atmo_cls(const cs_lnum_t  f_id,
   const int *icodcl_th = f_th->bc_coeffs->icodcl;
 
   cs_field_t *ym_water = cs_field_by_name_try("ym_water");
-  cs_real_t *rcodcl1_ymw = ym_water->bc_coeffs->rcodcl1;
+  cs_real_t *rcodcl1_ymw = (ym_water != NULL) ?
+    ym_water->bc_coeffs->rcodcl1 : NULL;
 
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_real_t distbf = b_dist[f_id];
 
   const cs_real_t rvsra = cs_glob_fluid_properties->rvsra;
 
-  /* Initialisations
+  /* Initializations
      --------------- */
+
   const cs_real_t b = 5.0;
   const cs_real_t c = b;
   const cs_real_t d = b;
