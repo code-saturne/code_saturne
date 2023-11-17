@@ -35,7 +35,10 @@
 #include "cs_gradient_priv.h"
 #include "cs_reconstruct_vector_gradient_gather.cuh"
 #include "cs_reconstruct_vector_gradient_gather_v2.cuh"
+#include "cs_reconstruct_vector_gradient_scatter.cuh"
+#include "cs_reconstruct_vector_gradient_scatter_cf.cuh"
 #include "cs_reconstruct_vector_gradient_scatter_v2.cuh"
+#include "cs_reconstruct_vector_gradient_scatter_v2_cf.cuh"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -1233,160 +1236,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 }
 
 
-__global__ static void
-_compute_reconstruct_v_i_face(cs_lnum_t            size,
-                          const cs_lnum_t      *i_group_index,
-                          const cs_lnum_2_t      *i_face_cells,
-                          const cs_real_3_t    *pvar,
-                          const cs_real_t         *weight,
-                          const cs_real_t      *c_weight,
-                          const cs_real_33_t        *restrict r_grad,
-                          cs_real_33_t        *restrict grad,
-                          const cs_real_3_t *restrict dofij,
-                          const cs_real_3_t *restrict i_f_face_normal)
-{
-  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(f_id >= size){
-    return;
-  }
-  cs_lnum_t c_id1, c_id2;
-  cs_real_t pond, ktpond, pfaci, pfacj, rfac;
-
-  c_id1 = i_face_cells[f_id][0];
-  c_id2 = i_face_cells[f_id][1];
-
-  pond = weight[f_id];
-  ktpond = (c_weight == NULL) ?
-        pond :                    // no cell weighting
-        pond * c_weight[c_id1] // cell weighting active
-          / (      pond * c_weight[c_id1]
-            + (1.0-pond)* c_weight[c_id2]);
 
 
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
-    pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
-
-    /* Reconstruction part */
-    rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
-                                              + r_grad[c_id2][i][0])
-                            + dofij[f_id][1]*(  r_grad[c_id1][i][1]
-                                              + r_grad[c_id2][i][1])
-                            + dofij[f_id][2]*(  r_grad[c_id1][i][2]
-                                              + r_grad[c_id2][i][2]));
-
-    for (cs_lnum_t j = 0; j < 3; j++) {
-      atomicAdd(&grad[c_id1][i][j],(pfaci + rfac) * i_f_face_normal[f_id][j]);
-      atomicAdd(&grad[c_id2][i][j], - ((pfacj + rfac) * i_f_face_normal[f_id][j]));
-
-    }
-  }
-
-}
-
-
-__global__ static void
-_compute_reconstruct_v_b_face(cs_lnum_t            size,
-                              const bool                *coupled_faces,
-                              cs_lnum_t                 cpl_stride,
-                              const cs_real_33_t  *restrict coefbv,
-                              const cs_real_3_t   *restrict coefav,
-                              const cs_real_3_t   *restrict pvar,
-                              int                           inc,
-                              const cs_real_3_t *restrict diipb,
-                              const cs_real_33_t        *restrict r_grad,
-                              cs_real_33_t        *restrict grad,
-                              const cs_real_3_t *restrict b_f_face_normal,
-                              const cs_lnum_t *restrict b_face_cells)
-{
-  cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(f_id >= size){
-    return;
-  }
-  cs_lnum_t c_id;
-  cs_real_t pfac, rfac, vecfac;
-
-  // if (coupled_faces[f_id * cpl_stride])
-  //   return;
-
-  c_id = b_face_cells[f_id];
-
-  for (cs_lnum_t i = 0; i < 3; i++) {
-
-    pfac = inc*coefav[f_id][i];
-
-    for (cs_lnum_t k = 0; k < 3; k++){
-      pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-    }
-
-    pfac -= pvar[c_id][i];
-
-  //   /* Reconstruction part */
-    rfac = 0.;
-    for (cs_lnum_t k = 0; k < 3; k++) {
-      vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
-                          + r_grad[c_id][k][1] * diipb[f_id][1]
-                          + r_grad[c_id][k][2] * diipb[f_id][2];
-      rfac += coefbv[f_id][i][k] * vecfac;
-    }
-
-    for (cs_lnum_t j = 0; j < 3; j++)
-    atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_f_face_normal[f_id][j]);
-
-  }
-}
-
-
-
-__global__ static void
-_compute_reconstruct_correction(cs_lnum_t            size,
-                               cs_lnum_t            has_dc,
-                               const int *restrict c_disable_flag,
-                               const cs_real_t *restrict cell_f_vol,
-                               cs_real_33_t        *restrict grad,
-                               const cs_real_33_t *restrict corr_grad_lin,
-                               bool                         test_bool
-                              )
-{
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(c_id >= size){
-    return;
-  }
-  cs_real_t dvol;
-  /* Is the cell disabled (for solid or porous)? Not the case if coupled */
-  if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-    dvol = 1. / cell_f_vol[c_id];
-  else
-    dvol = 0.;
-
-
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    for (cs_lnum_t j = 0; j < 3; j++)
-      grad[c_id][i][j] *= dvol;
-  }
-
-
-  if (test_bool) {
-    cs_real_t gradpa[3];
-    // printf("dvol = %.17lg\n", dvol);
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        gradpa[j] = grad[c_id][i][j];
-        grad[c_id][i][j] = 0.;
-      }
-
-      for (cs_lnum_t j = 0; j < 3; j++){
-        for (cs_lnum_t k = 0; k < 3; k++){
-          grad[c_id][i][j] += corr_grad_lin[c_id][j][k] * gradpa[k];
-        }
-      }
-    }
-  }
-
-}
 
 /*----------------------------------------------------------------------------
  * Reconstruct the gradient of a vector using a given gradient of
@@ -1631,8 +1482,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               dofij,
   //                               i_f_face_normal);
 
-  _compute_reconstruct_v_i_face_v2cf<<<gridsize_if * 3, blocksize, 0, stream>>>
-                                (n_i_faces * 3,
+  _compute_reconstruct_v_i_face_cf<<<gridsize_if, blocksize, 0, stream>>>
+                                (n_i_faces,
                                 i_group_index,
                                 i_face_cells,
                                 pvar_d,
@@ -1642,6 +1493,18 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                                 grad_d,
                                 dofij,
                                 i_f_face_normal);
+
+  // _compute_reconstruct_v_i_face_v2_cf<<<gridsize_if * 3, blocksize, 0, stream>>>
+  //                               (n_i_faces * 3,
+  //                               i_group_index,
+  //                               i_face_cells,
+  //                               pvar_d,
+  //                               weight,
+  //                               c_weight,
+  //                               r_grad_d,
+  //                               grad_d,
+  //                               dofij,
+  //                               i_f_face_normal);
   
   // printf("Avant les assert dans gradient_cuda.cu\n");
   // assert(cell_cells_idx);
@@ -1747,9 +1610,8 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               b_f_face_normal,
   //                               b_face_cells);
   
-
-  _compute_reconstruct_v_b_face_v2cf<<<gridsize_bf * 3, blocksize, 0, stream>>>
-                              ( n_b_faces * 3,
+  _compute_reconstruct_v_b_face_cf<<<gridsize_bf, blocksize, 0, stream>>>
+                              ( n_b_faces,
                                 coupled_faces_d,
                                 cpl_stride,
                                 coefb_d,
@@ -1761,6 +1623,20 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                                 grad_d,
                                 b_f_face_normal,
                                 b_face_cells);
+
+  // _compute_reconstruct_v_b_face_v2_cf<<<gridsize_bf * 3, blocksize, 0, stream>>>
+  //                             ( n_b_faces * 3,
+  //                               coupled_faces_d,
+  //                               cpl_stride,
+  //                               coefb_d,
+  //                               coefa_d,
+  //                               pvar_d,
+  //                               inc,
+  //                               diipb,
+  //                               r_grad_d,
+  //                               grad_d,
+  //                               b_f_face_normal,
+  //                               b_face_cells);
 
   // _compute_reconstruct_v_b_face_gather<<<gridsize_b, blocksize, 0, stream>>>
   //                             ( m->n_b_cells,
