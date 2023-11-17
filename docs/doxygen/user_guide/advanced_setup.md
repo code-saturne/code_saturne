@@ -83,6 +83,28 @@ to complete `bc_type[face_id]` and parts of `rcodcl*` arrays, as `icodcl`
 and most of `rcodcl*` are filled automatically based on the boundary condition type.
 For non-standard boundary conditions, those arrays must be fully completed.
 
+| icodcl  | Description                                                  |
+|---------|--------------------------------------------------------------|
+| 1       | Prescribed value (Dirichlet condition)                       |
+| 2       | Convective boundary condition                                |
+| 3       | Flux condition                                               |
+| 4       | Symmetry condition                                           |
+| 5       | Wall law (friction for velocity, wall value for scalars)     |
+| 6       | Rough wall law (deprecated))                                 |
+| 9       | Free outlet condition (for velocity)                         |
+| 11      | Neumann on the normal component, Dirichlet on tangential components. |
+| 12      | Imposed value for convection proportional to boundary cell value, imposed flux for diffusion (Robin condition) |
+| 13      | Imposed value for convection, imposed flux for diffusion     |
+| 14      | Generalized symmetry condition for vectors (Marangoni effect for velocity for example) |
+| 15      | User-defined wall law for scalars; for pressure, Neumann for advection and homogeneous Neumann for diffusion (walls with hydro. pressure for compressible module) |
+
+Note that in some cases, a negative value may be used, implying an
+automatic conversion:
+
+- For pressure, Dirichelt definition relative to the solved pressure (P*),
+  (by default, definition relative to the hydrostatic pressure).
+- For enthalpy, conversion from given temperature
+
 Coding of standard boundary conditions {#sec_prg_bc_standard}
 --------------------------------------
 
