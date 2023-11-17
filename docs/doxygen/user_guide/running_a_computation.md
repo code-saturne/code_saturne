@@ -319,8 +319,8 @@ way whenever needed.
 The `control_file` may also contain a few other commands, allowing the user to
 force checkpointing or post-processing at a given time step or physical time, or
 to force an update of log files.
-The following commands are available (using the common notations "`< >`" to
-indicate a required argument, "`[ ]`" to indicate an optional argument).
+The following commands are available (using the common notations `< >` to
+indicate a required argument, `[ ]` to indicate an optional argument).
 
 <table>
 <caption id="control_file_commands">control_file syntax</caption>
@@ -341,7 +341,7 @@ indicate a required argument, "`[ ]`" to indicate an optional argument).
 <tr><td>                                  <td>
 <tr><td> flush                            <td> [time_step_number]
 <tr><td>                                  <td>
-<tr><td> notebook_set                     <td> <parameter_name> <value>
+<tr><td> notebook_set                     <td> <parameter_name\> \<value>
 <tr><td>                                  <td>
 <tr><td> postprocess_time_step            <td> <time_step_number> [writer_id]
 <tr><td> postprocess_time_value           <td> <time_step_value> [writer_id]
