@@ -129,12 +129,17 @@ _compute_reconstruct_v_i_face_v2cf(cs_lnum_t            n_i_faces,
                           + dofij[f_idt][2]*(  r_grad[c_id1][i][2]
                                             + r_grad[c_id2][i][2]));
 
-  using Cell = AtomicCell<cs_real_t>;
+  using Cell = AtomicCell<cs_real_t,3>;
+  Cell grad_cf1, grad_cf2;
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    Cell::ref(grad[c_id1][i][j]).conflict_free_add(-1u, Cell::ref((pfaci + rfac) * i_f_face_normal[f_idt][j]));
-    Cell::ref(grad[c_id2][i][j]).conflict_free_add(-1u, Cell::ref(- ((pfacj + rfac) * i_f_face_normal[f_idt][j])));
+    grad_cf1[j].get() = (pfaci + rfac) * i_f_face_normal[f_idt][j];
+    grad_cf2[j].get() = - ((pfacj + rfac) * i_f_face_normal[f_idt][j]);
+    // Cell::ref(grad_cf1[c_id1][i][j]).conflict_free_add(-1u, Cell::ref((pfaci + rfac) * i_f_face_normal[f_idt][j]));
+    // Cell::ref(grad_cf2[c_id2][i][j]).conflict_free_add(-1u, Cell::ref(- ((pfacj + rfac) * i_f_face_normal[f_idt][j])));
   }
+  Cell::ref(grad[c_id1][i]).conflict_free_add(-1u, grad_cf1);
+  Cell::ref(grad[c_id2][i]).conflict_free_add(-1u, grad_cf2);
     
 }
 
@@ -243,11 +248,14 @@ _compute_reconstruct_v_b_face_v2cf(cs_lnum_t            n_b_faces,
     rfac += coefbv[f_idt][i][k] * vecfac;
   }
 
-  using Cell = AtomicCell<cs_real_t>;
-  
+  using Cell = AtomicCell<cs_real_t,3>;
+  Cell grad_cf;
+
   for (cs_lnum_t j = 0; j < 3; j++){
-    Cell::ref(grad[c_id][i][j]).conflict_free_add(-1u, Cell::ref((pfac + rfac) * b_f_face_normal[f_idt][j]));
+    grad_cf[j].get() = (pfac + rfac) * b_f_face_normal[f_idt][j];
+    // grad[c_id][i][j].get() += (pfac + rfac) * b_f_face_normal[f_idt][j];
   }
+  Cell::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
 
 }
 
