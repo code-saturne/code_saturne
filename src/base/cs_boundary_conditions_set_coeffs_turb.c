@@ -1954,18 +1954,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   cs_real_t *df_limiter_k = NULL;
   cs_real_t *df_limiter_rij = NULL;
 
-  int df_limiter_id = cs_field_get_key_int(CS_F_(eps), kdflim);
-  if (df_limiter_id > -1)
-    df_limiter_eps = cs_field_by_id(df_limiter_id)->val;
-
-  df_limiter_id = cs_field_get_key_int(CS_F_(k), kdflim);
-  if (df_limiter_id > -1)
-    df_limiter_k = cs_field_by_id(df_limiter_id)->val;
-
-  df_limiter_id = cs_field_get_key_int(CS_F_(rij), kdflim);
-  if (df_limiter_id > -1)
-    df_limiter_rij = cs_field_by_id(df_limiter_id)->val;
-
   /* Gradient and flux boundary conditions */
   cs_field_t *vel = CS_F_(vel);
   cs_real_3_t  *coefa_vel = (cs_real_3_t  *)vel->bc_coeffs->a;
@@ -1986,15 +1974,75 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   if (icp >= 0)
     cpro_cp = (const cs_real_t *)CS_F_(cp)->val;
 
-  cs_field_t *f_k = cs_field_by_name_try("k");
-  const cs_real_t *cvar_k = NULL;
-  //if (itytur == 2 || itytur == 5 || iturb == CS_TURB_K_OMEGA)
-  if (f_k != NULL)
-    cvar_k = (const cs_real_t *)f_k->val;
+  cs_field_t *f_k = NULL, *f_eps = NULL, *f_rij = NULL, *f_alpha = NULL;
+  cs_field_t *f_phi = NULL, *f_f_bar = NULL, *f_omg = NULL, *f_nusa = NULL;
+  cs_equation_param_t *eqp_rij = NULL, *eqp_eps = NULL, *eqp_nusa = NULL;
 
-  cs_real_6_t *cvar_rij = (CS_F_(rij) != NULL) ?
-                          (cs_real_6_t *)CS_F_(rij)->val :
-                          NULL;
+  /* Turbulence variables */
+
+  if (itytur == 2 || itytur == 5) {
+    f_eps = CS_F_(eps);
+    f_k = CS_F_(k);
+    if (iturb == CS_TURB_V2F_PHI) {
+      f_phi = CS_F_(phi);
+      f_f_bar = CS_F_(f_bar);
+    }
+    else if (iturb == CS_TURB_V2F_BL_V2K) {
+      f_phi = CS_F_(phi);
+      f_alpha = CS_F_(alp_bl);
+    }
+  }
+  else if (itytur == 3) {
+    f_eps = CS_F_(eps);
+    f_rij = CS_F_(rij);
+    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+      f_alpha = CS_F_(alp_bl);
+    eqp_eps = cs_field_get_equation_param(f_eps);
+    eqp_rij = cs_field_get_equation_param(f_rij);
+  }
+  else if (iturb == CS_TURB_K_OMEGA) {
+    f_k = CS_F_(k);
+    f_omg = CS_F_(omg);
+  }
+  else if (iturb == CS_TURB_SPALART_ALLMARAS) {
+    f_nusa = CS_F_(nusa);
+    eqp_nusa = cs_field_get_equation_param(f_nusa);
+  }
+
+  const cs_real_t sigmak = (f_k != NULL) ?
+    cs_field_get_key_double(f_k, ksigmas) : 0;
+  const cs_real_t sigmae = (f_eps != NULL) ?
+    cs_field_get_key_double(f_eps, ksigmas) : 0;
+
+  if (f_eps != NULL) {
+    if (    (f_eps->type & CS_FIELD_VARIABLE)
+        && !(f_eps->type & CS_FIELD_CDO)) {
+      int df_limiter_id = cs_field_get_key_int(f_eps, kdflim);
+      if (df_limiter_id > -1)
+        df_limiter_k = cs_field_by_id(df_limiter_id)->val;
+    }
+  }
+
+  cs_real_t *cvar_k = (f_k != NULL) ? f_k->val : NULL;
+  if (f_k != NULL) {
+    if (    (f_k->type & CS_FIELD_VARIABLE)
+        && !(f_k->type & CS_FIELD_CDO)) {
+      int df_limiter_id = cs_field_get_key_int(f_k, kdflim);
+      if (df_limiter_id > -1)
+        df_limiter_k = cs_field_by_id(df_limiter_id)->val;
+    }
+  }
+
+  cs_real_6_t *cvar_rij = (f_rij != NULL) ? (cs_real_6_t *)f_rij->val : NULL;
+
+  if (f_rij != NULL) {
+    if (    (f_rij->type & CS_FIELD_VARIABLE)
+        && !(f_rij->type & CS_FIELD_CDO)) {
+      int df_limiter_id = cs_field_get_key_int(f_rij, kdflim);
+      if (df_limiter_id > -1)
+        df_limiter_rij = cs_field_by_id(df_limiter_id)->val;
+    }
+  }
 
   /* min. and max. of wall tangential velocity */
   cs_real_t uiptmx = -cs_math_big_r;
@@ -2215,7 +2263,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     const cs_real_t xnuit  = visctc / romc;
 
     cs_real_t rttb;
-    if (f_k != NULL) {
+    if (cvar_k != NULL) {
       ek = cvar_k[c_id];
       /* TODO: we could add 2*nu_T dv/dy to rnnb */
       if (icodcl_vel[f_id] == 5)
@@ -2693,20 +2741,15 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       if (iturb == CS_TURB_K_EPSILON_LS && icodcl_vel[f_id] == 5) {
 
-        cs_field_t *eps = cs_field_by_name("epsilon");
-        cs_real_t *coefa_ep = eps->bc_coeffs->a;
-        cs_real_t *coefb_ep = eps->bc_coeffs->b;
-        cs_real_t *cofaf_ep = eps->bc_coeffs->af;
-        cs_real_t *cofbf_ep = eps->bc_coeffs->bf;
+        cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+        cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
+        cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+        cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
 
-        cs_field_t *fk = cs_field_by_name("k");
-        cs_real_t *coefa_k = fk->bc_coeffs->a;
-        cs_real_t *coefb_k = fk->bc_coeffs->b;
-        cs_real_t *cofaf_k = fk->bc_coeffs->af;
-        cs_real_t *cofbf_k = fk->bc_coeffs->bf;
-
-        const cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
-        const cs_real_t sigmak = cs_field_get_key_double(f_k, ksigmas);
+        cs_real_t *coefa_k = f_k->bc_coeffs->a;
+        cs_real_t *coefb_k = f_k->bc_coeffs->b;
+        cs_real_t *cofaf_k = f_k->bc_coeffs->af;
+        cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
         /* Dirichlet Boundary Condition on k
            --------------------------------- */
@@ -2808,19 +2851,15 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       else if (iturb == CS_TURB_K_EPSILON_QUAD && icodcl_vel[f_id] == 5) {
 
-        cs_field_t *eps = cs_field_by_name("epsilon");
-        cs_real_t *coefa_ep = eps->bc_coeffs->a;
-        cs_real_t *coefb_ep = eps->bc_coeffs->b;
-        cs_real_t *cofaf_ep = eps->bc_coeffs->af;
-        cs_real_t *cofbf_ep = eps->bc_coeffs->bf;
+        cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+        cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
+        cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+        cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
 
-        cs_field_t *fk = cs_field_by_name("k");
-        cs_real_t *coefa_k = fk->bc_coeffs->a;
-        cs_real_t *coefb_k = fk->bc_coeffs->b;
-        cs_real_t *cofaf_k = fk->bc_coeffs->af;
-        cs_real_t *cofbf_k = fk->bc_coeffs->bf;
-
-        const cs_real_t sigmak = cs_field_get_key_double(f_k, ksigmas);
+        cs_real_t *coefa_k = f_k->bc_coeffs->a;
+        cs_real_t *coefb_k = f_k->bc_coeffs->b;
+        cs_real_t *cofaf_k = f_k->bc_coeffs->af;
+        cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
         /* Dirichlet Boundary Condition on k
            ---------------------------------- */
@@ -2917,20 +2956,15 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Dirichlet Boundary Condition on k
            --------------------------------- */
 
-        cs_field_t *eps = cs_field_by_name("epsilon");
-        cs_real_t *coefa_ep = eps->bc_coeffs->a;
-        cs_real_t *coefb_ep = eps->bc_coeffs->b;
-        cs_real_t *cofaf_ep = eps->bc_coeffs->af;
-        cs_real_t *cofbf_ep = eps->bc_coeffs->bf;
+        cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+        cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
+        cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+        cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
 
-        cs_field_t *fk = cs_field_by_name("k");
-        cs_real_t *coefa_k = fk->bc_coeffs->a;
-        cs_real_t *coefb_k = fk->bc_coeffs->b;
-        cs_real_t *cofaf_k = fk->bc_coeffs->af;
-        cs_real_t *cofbf_k = fk->bc_coeffs->bf;
-
-        const cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
-        const cs_real_t sigmak = cs_field_get_key_double(f_k, ksigmas);
+        cs_real_t *coefa_k = f_k->bc_coeffs->a;
+        cs_real_t *coefb_k = f_k->bc_coeffs->b;
+        cs_real_t *cofaf_k = f_k->bc_coeffs->af;
+        cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
         cs_real_t qimp = 0.0;
         cs_real_t pimp = (iuntur == 1 || icodcl_vel[f_id] == 6) ?
@@ -3034,24 +3068,17 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       cs_real_t visci[3][3], dist[3], hint = 0.0;
 
-      cs_field_t *eps = cs_field_by_name("epsilon");
-      cs_real_t *coefa_ep = eps->bc_coeffs->a;
-      cs_real_t *coefb_ep = eps->bc_coeffs->b;
-      cs_real_t *cofaf_ep = eps->bc_coeffs->af;
-      cs_real_t *cofbf_ep = eps->bc_coeffs->bf;
+      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+      cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
+      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+      cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
 
-      cs_field_t *rij = CS_F_(rij);
-      cs_real_6_t  *coefa_rij = (cs_real_6_t  *)rij->bc_coeffs->a;
-      cs_real_66_t *coefb_rij = (cs_real_66_t *)rij->bc_coeffs->b;
-      cs_real_6_t  *cofaf_rij = (cs_real_6_t  *)rij->bc_coeffs->af;
-      cs_real_66_t *cofbf_rij = (cs_real_66_t *)rij->bc_coeffs->bf;
-      cs_real_6_t  *cofad_rij = (cs_real_6_t  *)rij->bc_coeffs->ad;
-      cs_real_66_t *cofbd_rij = (cs_real_66_t *)rij->bc_coeffs->bd;
-
-      cs_equation_param_t *eqp_rij = cs_field_get_equation_param(rij);
-      cs_equation_param_t *eqp_ep = cs_field_get_equation_param(eps);
-
-      const cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
+      cs_real_6_t  *coefa_rij = (cs_real_6_t  *)f_rij->bc_coeffs->a;
+      cs_real_66_t *coefb_rij = (cs_real_66_t *)f_rij->bc_coeffs->b;
+      cs_real_6_t  *cofaf_rij = (cs_real_6_t  *)f_rij->bc_coeffs->af;
+      cs_real_66_t *cofbf_rij = (cs_real_66_t *)f_rij->bc_coeffs->bf;
+      cs_real_6_t  *cofad_rij = (cs_real_6_t  *)f_rij->bc_coeffs->ad;
+      cs_real_66_t *cofbd_rij = (cs_real_66_t *)f_rij->bc_coeffs->bd;
 
       /* Exchange coefficient */
 
@@ -3243,7 +3270,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
          NB: no reconstruction, possibility of partial implicitation */
 
       /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
-      if (eqp_ep->idften & CS_ANISOTROPIC_DIFFUSION) {
+      if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
 
         visci[0][0] = visclc + visten[c_id][0] / sigmae;
         visci[1][1] = visclc + visten[c_id][1] / sigmae;
@@ -3328,7 +3355,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         else { /* Only for smooth wall */
 
-          const cs_real_t *cvar_ep = (const cs_real_t *)eps->val;
+          const cs_real_t *cvar_ep = (const cs_real_t *)f_eps->val;
 
           pimp = pimp + cvar_ep[c_id];
           pimp = pimp * cfnne;
@@ -3473,7 +3500,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         /* Alpha */
 
-        cs_field_t *f_alpha = cs_field_by_name("alpha");
         cs_real_t *coefa_al = f_alpha->bc_coeffs->a;
         cs_real_t *coefb_al = f_alpha->bc_coeffs->b;
         cs_real_t *cofaf_al = f_alpha->bc_coeffs->af;
@@ -3527,32 +3553,25 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     else if (iturb == CS_TURB_V2F_PHI) {
 
-      cs_field_t *eps = cs_field_by_name("epsilon");
-      cs_real_t *coefa_ep = eps->bc_coeffs->a;
-      cs_real_t *coefb_ep = eps->bc_coeffs->b;
-      cs_real_t *cofaf_ep = eps->bc_coeffs->af;
-      cs_real_t *cofbf_ep = eps->bc_coeffs->bf;
+      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+      cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
+      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+      cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
 
-      cs_field_t *phi = cs_field_by_name("phi");
-      cs_real_t *coefa_phi = phi->bc_coeffs->a;
-      cs_real_t *coefb_phi = phi->bc_coeffs->b;
-      cs_real_t *cofaf_phi = phi->bc_coeffs->af;
-      cs_real_t *cofbf_phi = phi->bc_coeffs->bf;
+      cs_real_t *coefa_phi = f_phi->bc_coeffs->a;
+      cs_real_t *coefb_phi = f_phi->bc_coeffs->b;
+      cs_real_t *cofaf_phi = f_phi->bc_coeffs->af;
+      cs_real_t *cofbf_phi = f_phi->bc_coeffs->bf;
 
-      cs_field_t *f_bar = cs_field_by_name("f_bar");
-      cs_real_t *coefa_fb = f_bar->bc_coeffs->a;
-      cs_real_t *coefb_fb = f_bar->bc_coeffs->b;
-      cs_real_t *cofaf_fb = f_bar->bc_coeffs->af;
-      cs_real_t *cofbf_fb = f_bar->bc_coeffs->bf;
+      cs_real_t *coefa_fb = f_f_bar->bc_coeffs->a;
+      cs_real_t *coefb_fb = f_f_bar->bc_coeffs->b;
+      cs_real_t *cofaf_fb = f_f_bar->bc_coeffs->af;
+      cs_real_t *cofbf_fb = f_f_bar->bc_coeffs->bf;
 
-      cs_field_t *fk = cs_field_by_name("k");
-      cs_real_t *coefa_k = fk->bc_coeffs->a;
-      cs_real_t *coefb_k = fk->bc_coeffs->b;
-      cs_real_t *cofaf_k = fk->bc_coeffs->af;
-      cs_real_t *cofbf_k = fk->bc_coeffs->bf;
-
-      const cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
-      const cs_real_t sigmak = cs_field_get_key_double(f_k, ksigmas);
+      cs_real_t *coefa_k = f_k->bc_coeffs->a;
+      cs_real_t *coefb_k = f_k->bc_coeffs->b;
+      cs_real_t *cofaf_k = f_k->bc_coeffs->af;
+      cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
@@ -3639,32 +3658,25 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     else if (iturb == CS_TURB_V2F_BL_V2K) {
 
-      cs_field_t *eps = cs_field_by_name("epsilon");
-      cs_real_t *coefa_ep = eps->bc_coeffs->a;
-      cs_real_t *coefb_ep = eps->bc_coeffs->b;
-      cs_real_t *cofaf_ep = eps->bc_coeffs->af;
-      cs_real_t *cofbf_ep = eps->bc_coeffs->bf;
+      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+      cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
+      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+      cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
 
-      cs_field_t *phi = cs_field_by_name("phi");
-      cs_real_t *coefa_phi = phi->bc_coeffs->a;
-      cs_real_t *coefb_phi = phi->bc_coeffs->b;
-      cs_real_t *cofaf_phi = phi->bc_coeffs->af;
-      cs_real_t *cofbf_phi = phi->bc_coeffs->bf;
+      cs_real_t *coefa_phi = f_phi->bc_coeffs->a;
+      cs_real_t *coefb_phi = f_phi->bc_coeffs->b;
+      cs_real_t *cofaf_phi = f_phi->bc_coeffs->af;
+      cs_real_t *cofbf_phi = f_phi->bc_coeffs->bf;
 
-      cs_field_t *f_alpha = cs_field_by_name("alpha");
       cs_real_t *coefa_al = f_alpha->bc_coeffs->a;
       cs_real_t *coefb_al = f_alpha->bc_coeffs->b;
       cs_real_t *cofaf_al = f_alpha->bc_coeffs->af;
       cs_real_t *cofbf_al = f_alpha->bc_coeffs->bf;
 
-      cs_field_t *fk = cs_field_by_name("k");
-      cs_real_t *coefa_k = fk->bc_coeffs->a;
-      cs_real_t *coefb_k = fk->bc_coeffs->b;
-      cs_real_t *cofaf_k = fk->bc_coeffs->af;
-      cs_real_t *cofbf_k = fk->bc_coeffs->bf;
-
-      const cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
-      const cs_real_t sigmak = cs_field_get_key_double(f_k, ksigmas);
+      cs_real_t *coefa_k = f_k->bc_coeffs->a;
+      cs_real_t *coefb_k = f_k->bc_coeffs->b;
+      cs_real_t *cofaf_k = f_k->bc_coeffs->af;
+      cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
@@ -3752,17 +3764,15 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     else if (iturb == CS_TURB_K_OMEGA) {
 
-      cs_field_t *omega = cs_field_by_name("omega");
-      cs_real_t *coefa_omg = omega->bc_coeffs->a;
-      cs_real_t *coefb_omg = omega->bc_coeffs->b;
-      cs_real_t *cofaf_omg = omega->bc_coeffs->af;
-      cs_real_t *cofbf_omg = omega->bc_coeffs->bf;
+      cs_real_t *coefa_omg = f_omg->bc_coeffs->a;
+      cs_real_t *coefb_omg = f_omg->bc_coeffs->b;
+      cs_real_t *cofaf_omg = f_omg->bc_coeffs->af;
+      cs_real_t *cofbf_omg = f_omg->bc_coeffs->bf;
 
-      cs_field_t *fk = cs_field_by_name("k");
-      cs_real_t *coefa_k = fk->bc_coeffs->a;
-      cs_real_t *coefb_k = fk->bc_coeffs->b;
-      cs_real_t *cofaf_k = fk->bc_coeffs->af;
-      cs_real_t *cofbf_k = fk->bc_coeffs->bf;
+      cs_real_t *coefa_k = f_k->bc_coeffs->a;
+      cs_real_t *coefb_k = f_k->bc_coeffs->b;
+      cs_real_t *cofaf_k = f_k->bc_coeffs->af;
+      cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
@@ -3912,11 +3922,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Dirichlet Boundary Condition on nusa
          ------------------------------------ */
 
-      cs_field_t *nusa = cs_field_by_name("nu_tilda");
-      cs_real_t *coefa_nusa = nusa->bc_coeffs->a;
-      cs_real_t *coefb_nusa = nusa->bc_coeffs->b;
-      cs_real_t *cofaf_nusa = nusa->bc_coeffs->af;
-      cs_real_t *cofbf_nusa = nusa->bc_coeffs->bf;
+      cs_real_t *coefa_nusa = f_nusa->bc_coeffs->a;
+      cs_real_t *coefb_nusa = f_nusa->bc_coeffs->b;
+      cs_real_t *cofaf_nusa = f_nusa->bc_coeffs->af;
+      cs_real_t *cofbf_nusa = f_nusa->bc_coeffs->bf;
 
       if (icodcl_vel[f_id] == 5) {
         cs_real_t pimp = 0.;
@@ -3933,9 +3942,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       }
       else if (icodcl_vel[f_id] == 6) {
 
-        cs_equation_param_t *eqp_nusa = cs_field_get_equation_param(nusa);
-
-        const cs_real_t *cvara_nusa = nusa->val_pre;
+        const cs_real_t *cvara_nusa = f_nusa->val_pre;
 
         /* FIXME is it the sand grain roughness or the length scale as here? */
         const cs_real_t dsa0 = rough_d;

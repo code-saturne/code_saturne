@@ -314,6 +314,10 @@ cs_boundary_conditions_check(int  bc_type[],
 
     /* Map pointers for later access */
     if (f_turb != NULL) {
+      if (!(f_turb->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f_turb->type & CS_FIELD_CDO)
+        continue;
       f_turb_fields[cpt_turb] = f_turb_list[ii];
       turb_icodcl[cpt_turb] = f_turb->bc_coeffs->icodcl;
       cpt_turb += 1;
@@ -573,42 +577,48 @@ cs_boundary_conditions_check(int  bc_type[],
 
     if (CS_F_(rij) != NULL) {
 
-      int *icodcl_rij = CS_F_(rij)->bc_coeffs->icodcl;
+      cs_field_t *f_rij = CS_F_(rij);
+      if (    (f_rij->type & CS_FIELD_VARIABLE)
+          && !(f_rij->type & CS_FIELD_CDO)) {
 
-      if (icodcl_vel[f_id] == 4 || icodcl_rij[f_id] == 4) {
+        int *icodcl_rij = CS_F_(rij)->bc_coeffs->icodcl;
 
-        bool icod_turb_outlet = true;
+        if (icodcl_vel[f_id] == 4 || icodcl_rij[f_id] == 4) {
 
-        for (int ii = 0; ii < cpt_turb; ii++) {
+          bool icod_turb_outlet = true;
 
-          cs_field_t *f_turb = f_turb_fields[ii];
-          if (f_turb == CS_F_(rij))
-            continue;
-          int *icodcl = turb_icodcl[ii];
+          for (int ii = 0; ii < cpt_turb; ii++) {
 
-          if (icodcl[f_id] != 3) {
-            icod_turb_outlet = false;
-            id_turb_consis = ii;
-            icodcl_consis_turb[0] = icodcl[f_id];
+            cs_field_t *f_turb = f_turb_fields[ii];
+            if (f_turb == CS_F_(rij))
+              continue;
+            int *icodcl = turb_icodcl[ii];
+
+            if (icodcl[f_id] != 3) {
+              icod_turb_outlet = false;
+              id_turb_consis = ii;
+              icodcl_consis_turb[0] = icodcl[f_id];
+            }
+
           }
 
-        }
+          if (   icodcl_vel[f_id] != 4
+              || icodcl_rij[f_id] != 4
+              || icod_turb_outlet == false) {
 
-        if (   icodcl_vel[f_id] != 4
-            || icodcl_rij[f_id] != 4
-            || icod_turb_outlet == false) {
+            if (bc_type[f_id] > 0) {
+              bc_type[f_id] = - bc_type[f_id];
+            }
 
-          if (bc_type[f_id] > 0) {
-            bc_type[f_id] = - bc_type[f_id];
+            if (icodcl_rij[f_id] != 4)
+              icodcl_consis_turb[0] = icodcl_rij[f_id];
+
+            icodcl_consis_turb[1] = icodcl_vel[f_id];
+            n_turb_consis_error += 1;
           }
-
-          if (icodcl_rij[f_id] != 4)
-            icodcl_consis_turb[0] = icodcl_rij[f_id];
-
-          icodcl_consis_turb[1] = icodcl_vel[f_id];
-          n_turb_consis_error += 1;
         }
       }
+
     }
 
   } /* End loop on boundary faces */
