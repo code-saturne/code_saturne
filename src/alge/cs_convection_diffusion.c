@@ -2495,7 +2495,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_slope_test(&upwind_switch,
                                       iconvp,
@@ -4633,7 +4634,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
-              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
+              bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                    0.);
 
             cs_i_cd_steady_upwind_vector(bldfrp,
                                          relaxp,
@@ -4654,7 +4656,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                          pipr,
                                          pjpr);
 
-
             cs_i_conv_flux_vector(iconvp,
                                   1.,
                                   1,
@@ -4668,7 +4669,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
-
             cs_i_diff_flux_vector(idiffp,
                                   1.,
                                   pip,
@@ -4679,10 +4679,10 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
-           for (int isou = 0; isou < 3; isou++) {
+            for (int isou = 0; isou < 3; isou++) {
               rhs[ii][isou] -= fluxi[isou];
               rhs[jj][isou] += fluxj[isou];
-           }
+            }
 
           }
         }
@@ -5132,7 +5132,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   i_massflux[face_id],
                                   fluxi,
                                   fluxj);
-
 
             cs_i_diff_flux_vector(idiffp,
                                   1.,

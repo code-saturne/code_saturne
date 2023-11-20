@@ -2430,7 +2430,6 @@ cs_i_cd_unsteady(const cs_real_t    bldfrp,
 
   }
 
-
   /* Blending
      --------*/
 
@@ -3146,6 +3145,7 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
 
     /* Blending
        --------*/
+
     cs_blend_f_val_vector(blencp,
                           pi,
                           pifrj);
@@ -3160,16 +3160,17 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
                           pjfrj);
 
   /* If iconv=0 p*fr* are useless */
-  } else {
+  }
+  else {
     for (isou = 0; isou < 3; isou++) {
-        cs_upwind_f_val(pi[isou],
-                        &pifrj[isou]);
-        cs_upwind_f_val(pir[isou],
-                        &pifri[isou]);
-        cs_upwind_f_val(pj[isou],
-                        &pjfri[isou]);
-        cs_upwind_f_val(pjr[isou],
-                        &pjfrj[isou]);
+      cs_upwind_f_val(pi[isou],
+                      &pifrj[isou]);
+      cs_upwind_f_val(pir[isou],
+                      &pifri[isou]);
+      cs_upwind_f_val(pj[isou],
+                      &pjfri[isou]);
+      cs_upwind_f_val(pjr[isou],
+                      &pjfrj[isou]);
     }
   }
 
@@ -3892,7 +3893,8 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                           pjf);
 
   /* If iconv=0 p*f are useless */
-  } else {
+  }
+  else {
 
     for (int isou = 0; isou < 3; isou++) {
       cs_upwind_f_val(pi[isou],
