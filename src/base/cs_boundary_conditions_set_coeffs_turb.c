@@ -4095,26 +4095,26 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       cs_log_separator(CS_LOG_DEFAULT);
       cs_log_printf
         (CS_LOG_DEFAULT,
-         _("   Rel velocity at the wall uiptn : %e12.5 %e12.5\n"
-           "   Friction velocity        uet   : %e12.5 %e12.5\n"
-           "   Friction velocity        uk    : %e12.5 %e12.5\n"
-           "   Dimensionless distance   yplus : %e12.5 %e12.5\n"),
+         _("   Rel velocity at the wall uiptn : %12.5e %12.5e\n"
+           "   Friction velocity        uet   : %12.5e %12.5e\n"
+           "   Friction velocity        uk    : %12.5e %12.5e\n"
+           "   Dimensionless distance   yplus : %12.5e %12.5e\n"),
          uiptmn, uiptmx, uetmin, uetmax, ukmin, ukmax, yplumn, yplumx);
 
       if (f_th != NULL) {
         cs_log_printf
           (CS_LOG_DEFAULT,
-           _("Friction thermal sca.    tstar : %e12.5 %e12.5\n"
-             "Dim-less thermal sca.    tplus : %e12.5 %e12.5\n"
-             "Inverse Monin-Ob. length dlmo  : %e12.5 %e12.5\n"),
+           _("   Friction thermal sca.    tstar : %12.5e %12.5e\n"
+             "   Dim-less thermal sca.    tplus : %12.5e %12.5e\n"
+             "   Inverse Monin-Ob. length dlmo  : %12.5e %12.5e\n"),
            tetmin, tetmax, tplumn, tplumx, dlmomin, dlmomax);
       }
 
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("   ------------------------------------------------------\n"
-           "   N. reversals of the velocity at the wall   : %llu\n"
-           "   N. faces within the viscous sub-layer      : %llu\n"
+           "   Nb of reversals of the velocity at the wall: %llu\n"
+           "   Nb of faces within the viscous sub-layer   : %llu\n"
            "   Total number of wall faces                 : %llu\n"
            "------------------------------------------------------------\n"),
          (unsigned long long)n_per_layer[2],
