@@ -141,7 +141,6 @@ _compute_reconstruct_v_b_face_v2_cf(cs_lnum_t            n_b_faces,
 
   for (cs_lnum_t j = 0; j < 3; j++){
     grad_cf[j].get() = (pfac + rfac) * b_f_face_normal[f_idt][j];
-    // grad[c_id][i][j].get() += (pfac + rfac) * b_f_face_normal[f_idt][j];
   }
   Cell::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
 

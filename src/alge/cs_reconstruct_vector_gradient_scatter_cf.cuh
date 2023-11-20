@@ -74,9 +74,6 @@ _compute_reconstruct_v_i_face_cf(cs_lnum_t            size,
     for (cs_lnum_t j = 0; j < 3; j++) {
       grad_cf1[i][j].get() = (pfaci + rfac) * i_f_face_normal[f_id][j];
       grad_cf2[i][j].get() = - ((pfacj + rfac) * i_f_face_normal[f_id][j]);
-      // atomicAdd(&grad[c_id1][i][j],(pfaci + rfac) * i_f_face_normal[f_id][j]);
-      // atomicAdd(&grad[c_id2][i][j], - ((pfacj + rfac) * i_f_face_normal[f_id][j]));
-
     }
   }
   Cell::ref(grad[c_id1]).conflict_free_add(-1u, grad_cf1);
@@ -136,7 +133,6 @@ _compute_reconstruct_v_b_face_cf(cs_lnum_t            size,
 
     for (cs_lnum_t j = 0; j < 3; j++){
     grad_cf[i][j].get() = (pfac + rfac) * b_f_face_normal[f_id][j];
-    // atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_f_face_normal[f_id][j]);
     }
   }
   Cell::ref(grad[c_id]).conflict_free_add(-1u, grad_cf);
