@@ -2575,16 +2575,16 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     if (boundary_ustar != NULL && icodcl_vel[f_id] == 5)
       bpro_ustar[f_id] = uet;
 
+    /* Rough wall: one velocity scale: set uk to uet */
+    if (cs_glob_wall_functions->iwallf <= 2 && icodcl_vel[f_id] == 6)
+      uk = uet;
+
     if(boundary_uk != NULL && icodcl_vel[f_id] == 5)
       bpro_uk[f_id] = uk;
 
     /* Save yplus if post-processed or condensation modelling */
     if (f_yplus != NULL)
       yplbr[f_id] = yplus;
-
-    /* Rough wall : one velocity scale: set uk to uet */
-    if (cs_glob_wall_functions->iwallf < 2 && icodcl_vel[f_id] == 6)
-      uk = uet;
 
     uetmax  = cs_math_fmax(uet, uetmax);
     uetmin  = cs_math_fmin(uet, uetmin);
@@ -4093,8 +4093,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("\n"
-           "   ** Boundary conditions for smooth walls\n"
-           "      ------------------------------------\n\n"));
+           "   ** Boundary conditions for walls\n"
+           "      -----------------------------\n\n"));
       cs_log_separator(CS_LOG_DEFAULT);
       cs_log_printf
         (CS_LOG_DEFAULT,
