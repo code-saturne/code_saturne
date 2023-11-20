@@ -861,13 +861,13 @@ if (f_id.ge.0.and.is_active) then
       zent = xyzcen(3, iel)
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckdown, zent, iz1, iz2, var )
 
       cpro_ck_down(c_id, iel) = var * 3.d0 / 5.d0
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckup, zent, iz1, iz2, var )
 
       cpro_ck_up(c_id, iel) = var * 3.d0 / 5.d0
