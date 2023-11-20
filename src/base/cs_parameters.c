@@ -426,6 +426,7 @@ static cs_equation_param_t _equation_param_default
    .epsrgr = 1.e-4,
    .climgr = 1.5,
    .relaxv = 1.,
+   .b_gradient_r = 2,
 
    .default_bc = CS_PARAM_BC_HMG_NEUMANN,
    .n_bc_defs = 0,
