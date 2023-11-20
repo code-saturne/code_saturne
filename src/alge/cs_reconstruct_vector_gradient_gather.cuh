@@ -27,7 +27,6 @@
 
 __global__ static void
 _compute_reconstruct_v_i_face_gather(cs_lnum_t            n_cells,
-                          const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *pvar,
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight,
@@ -38,8 +37,7 @@ _compute_reconstruct_v_i_face_gather(cs_lnum_t            n_cells,
                           const cs_lnum_t *restrict cell_cells_idx,
                           const cs_lnum_t *restrict cell_cells,
                           const cs_lnum_t *restrict cell_i_faces,
-                          const short int *restrict cell_i_faces_sgn,
-                          const cs_lnum_t n_i_faces)
+                          const short int *restrict cell_i_faces_sgn)
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
 
