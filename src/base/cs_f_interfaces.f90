@@ -87,29 +87,6 @@ module cs_f_interfaces
 
     !---------------------------------------------------------------------------
 
-    subroutine itrgrv &
-      (f_id, init, inc, imrgra, nswrgp, imligp, ircflp,                        &
-      iphydp, iwgrp, iwarnp,                                                   &
-      epsrgp, climgp, extrap, frcxt,                                           &
-      pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,              &
-      weighf, weighb, diverg)
-      use mesh
-      integer :: f_id, init, inc, imrgra, nswrgp, imligp, ircflp
-      integer :: iwgrp, iwarnp , iphydp
-      double precision :: epsrgp, climgp, extrap
-      double precision, dimension(ncelet) :: pvar
-      double precision, dimension(nfabor) :: coefap, coefbp, cofafp, cofbfp
-      double precision, dimension(nfac) :: viscf
-      double precision, dimension(nfabor) :: viscb
-      double precision, dimension(6,ncelet), target :: viscel
-      double precision, dimension(2,nfac) :: weighf
-      double precision, dimension(nfabor) :: weighb
-      double precision, dimension(ncelet) :: diverg
-      double precision, dimension(3,ncelet) :: frcxt
-    end subroutine itrgrv
-
-    !---------------------------------------------------------------------------
-
     subroutine matrix &
       (iconvp, idiffp, ndircp, isym, thetap, imucpp, coefbp, cofbfp,           &
       rovsdt, i_massflux, b_massflux, i_visc, b_visc, xcpp, da, xa)

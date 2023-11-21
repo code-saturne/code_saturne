@@ -53,8 +53,10 @@
 #include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_bw_time_diff.h"
 #include "cs_cf_model.h"
+#include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
 #include "cs_divergence.h"
 #include "cs_equation_iterative_solve.h"
@@ -72,6 +74,7 @@
 #include "cs_lagr_head_losses.h"
 #include "cs_mass_source_terms.h"
 #include "cs_math.h"
+#include "cs_matrix_building.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -83,6 +86,7 @@
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sat_coupling.h"
+#include "cs_sles_default.h"
 #include "cs_thermal_model.h"
 #include "cs_turbulence_ke.h"
 //#include "cs_time_step.h"
@@ -156,6 +160,382 @@ cs_f_solve_navier_stokes(const int      iterns,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the convective mass flux before the Navier Stokes equations
+ *        (prediction and correction steps) for vp_param->iphydr == 2.
+ *
+ * This function computes a potential \f$ \varia \f$ solving the equation:
+ * \f[
+ * D \left( \Delta t, \varia \right) = \divs \left( \rho \vect{u}^n\right)
+ *                                   - \Gamma^n
+ *                                   + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
+ * \f]
+ * This potential is then used to update the mass flux as follows:
+ * \f[
+ *  \dot{m}^{n+\frac{1}{2}}_\ij = \dot{m}^{n}_\ij
+ *                               - \Delta t \grad_\fij \varia \cdot \vect{S}_\ij
+ * \f]
+ *
+ * \param[in]  m   pointer to associated mesh structure
+ * \param[in]  mq  pointer to associated mesh quantities structure
+ * \param[in]  dt  time step (per cell)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cs_mass_flux_prediction(const cs_mesh_t       *m,
+                         cs_mesh_quantities_t  *mq,
+                         cs_real_t              dt[])
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *volume = mq->cell_f_vol;
+
+  int idtvar = cs_glob_time_step_options->idtvar;
+
+  const char name[] = "potential";
+
+  /* Physical quantities */
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *croma = CS_F_(rho)->val_pre;
+
+  cs_real_t *clapot, *clbpot, *cfapot, *cfbpot;
+  BFT_MALLOC(clapot, n_b_faces, cs_real_t);
+  BFT_MALLOC(clbpot, n_b_faces, cs_real_t);
+  BFT_MALLOC(cfapot, n_b_faces, cs_real_t);
+  BFT_MALLOC(cfbpot, n_b_faces, cs_real_t);
+
+  /* Mass fluxes */
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  cs_real_t *imasfl
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+  cs_real_t *bmasfl
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+
+  /* Boundary conditions on the potential (homogenous Neumann) */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_boundary_conditions_set_neumann_scalar_hmg(&clapot[face_id],
+                                                  &cfapot[face_id],
+                                                  &clbpot[face_id],
+                                                  &cfbpot[face_id]);
+  }
+
+  cs_real_t *divu;
+  BFT_MALLOC(divu, n_cells_ext, cs_real_t);
+
+  /* Right Hand side
+     --------------- */
+
+  /* Initial mass divergence */
+  cs_divergence(m, 1, imasfl, bmasfl, divu);
+
+  /* Mass source terms */
+
+  cs_lnum_t  ncesmp;
+  cs_lnum_t  *icetsm;
+  int  *itpsmp;
+  cs_real_t *smacel_p, *gamma;
+
+  cs_volume_mass_injection_get_arrays(CS_F_(p),
+                                      &ncesmp,
+                                      &icetsm,
+                                      &itpsmp,
+                                      &smacel_p,
+                                      &gamma);
+
+  if (ncesmp > 0) {
+    for (cs_lnum_t cidx = 0; cidx < ncesmp; cidx++) {
+      const cs_lnum_t cell_id = icetsm[cidx] - 1;
+      /* FIXME It should be scmacel at time n-1 */
+      divu[cell_id] -= volume[cell_id] * smacel_p[cidx];
+    }
+  }
+
+  /* Source term associated to the mass aggregation */
+
+  cs_real_t *rhs;
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t drom = crom[cell_id] - croma[cell_id];
+    divu[cell_id] += + drom * volume[cell_id] / dt[cell_id];
+    /* The initial Right Hand Side is - div(u) */
+    rhs[cell_id] = - divu[cell_id];
+  }
+
+  /* Residual of the system if needed */
+
+  const cs_real_t rnorm = sqrt(cs_gdot(n_cells, rhs, rhs));
+
+  /* Build the linear system to solve
+     -------------------------------- */
+
+  /* Unsteady term */
+
+  cs_real_t *pot;
+  BFT_MALLOC(pot, n_cells_ext, cs_real_t);
+  cs_array_real_fill_zero(n_cells, pot);
+
+  /* Face diffusibility scalar */
+
+  cs_real_t *i_visc, *b_visc;
+  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(CS_F_(p));
+
+  if (eqp->idiff > 0) {
+    cs_face_viscosity(m,
+                      mq,
+                      eqp->imvisf,
+                      dt,
+                      i_visc,
+                      b_visc);
+  }
+  else {
+    cs_array_real_fill_zero(n_i_faces, i_visc);
+    cs_array_real_fill_zero(n_b_faces, b_visc);
+  }
+
+  cs_real_t *dam, *xam;
+  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xam, n_i_faces, cs_real_t);
+
+  cs_matrix_wrapper_scalar(eqp->iconv,
+                           eqp->idiff,
+                           0,   /* strengthen diagonal */
+                           1,   /* isym */
+                           1.,  /* thetap */
+                           0.,  /* imucpp */
+                           clbpot,
+                           cfbpot,
+                           pot,
+                           imasfl,
+                           bmasfl,
+                           i_visc,
+                           b_visc,
+                           NULL,
+                           dam,
+                           xam);
+
+  /* Solving (Loop over the non-orthogonalities)
+     ------------------------------------------- */
+
+  cs_real_t *pota, *dpot;
+  BFT_MALLOC(pota, n_cells_ext, cs_real_t);
+  BFT_MALLOC(dpot, n_cells_ext, cs_real_t);
+
+  /* pot     is the potential
+   * dpot    is the increment of the potential between sweeps
+   * divu    is the inital divergence of the mass flux */
+
+  cs_array_real_fill_zero(n_cells, pot);
+  cs_array_real_fill_zero(n_cells, pota);
+  cs_array_real_fill_zero(n_cells, dpot);
+
+  /* (Test to modify if needed: must be sctricly greater than
+   * the test in the conjugate gradient) */
+
+  cs_real_t tcrite = 10.0 * eqp->epsrsm * rnorm;
+
+  /* Reconstruction loop (beginning)
+     ------------------------------- */
+
+  int isweep = 1;
+  cs_real_t residual = rnorm;
+
+  /* logging */
+  if (eqp->verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s: sweep = %d, RHS norm = %14.6e, relaxp = %f\n",
+                  name, isweep, residual, eqp->relaxv);
+
+  while (isweep <= eqp->nswrsm && residual > tcrite) {
+
+    /* Solving on the increment dpot */
+
+    cs_array_real_fill_zero(n_cells, dpot);
+
+    int n_iter = 0;
+
+    cs_sles_solve_native(-1, name,
+                         true, /* symmetric */
+                         1, 1, /* blocks sizes */
+                         dam, xam,
+                         eqp->epsilo,
+                         rnorm,
+                         &n_iter, &residual,
+                         rhs, dpot);
+
+    /* Update the increment of potential */
+
+    cs_real_t a;
+    if (idtvar >= 0 && isweep <= eqp->nswrsm && residual > tcrite)
+      a = eqp->relaxv;
+    else
+      a = 1.; /* total increment fo last time step */
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      pota[cell_id] = pot[cell_id];
+      pot[cell_id]  = pota[cell_id] + a*dpot[cell_id];
+    }
+
+    isweep += 1;
+
+    /* Update the right hand side if needed:
+     * rhs^{k+1} = - div(rho u^n) - D(dt, pot^{k+1}) */
+
+    if (isweep <= eqp->nswrsm) {
+
+      cs_diffusion_potential(-1,
+                             m,
+                             mq,
+                             1,  /* init */
+                             0,  /* inc */
+                             eqp->imrgra,
+                             eqp->nswrgr,
+                             eqp->imligr,
+                             0,  /* iphydp */
+                             eqp->iwgrec,
+                             eqp->verbosity,
+                             eqp->epsrgr,
+                             eqp->climgr,
+                             NULL,
+                             pot,
+                             clapot, clbpot,
+                             cfapot, cfbpot,
+                             i_visc, b_visc,
+                             dt,
+                             rhs);
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        rhs[cell_id] = - divu[cell_id] - rhs[cell_id];
+      }
+
+      /* Convergence test */
+      residual = sqrt(cs_gdot(n_cells, rhs, rhs));
+
+      if (eqp->verbosity > 1) {
+        double r = (rnorm >= cs_math_epzero) ? residual/rnorm : residual;
+        cs_log_printf(CS_LOG_DEFAULT,
+                      " %s: sweep = %d, RHS norm = %14.6e, relaxp = %f\n",
+                      name, isweep, r, eqp->relaxv);
+      }
+
+    }
+
+  } /* End of reconstruction loop */
+
+  if (  isweep > eqp->nswrsm
+      && eqp->verbosity > 1) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("@\n"
+                    "@ @@ Warning: %s (mass flux prediction step)\n"
+                    "     =======\n"
+                    "  Maximum number of iterations (%d) reached\n"),
+                  name, eqp->nswrsm);
+  }
+
+  /* Update the mass flux
+     -------------------- */
+
+  cs_face_diffusion_potential(-1,
+                              m,
+                              mq,
+                              0,  /* init */
+                              0,  /* inc */
+                              eqp->imrgra,
+                              eqp->nswrgr,
+                              eqp->imligr,
+                              0,  /* iphydp */
+                              0,  /* iwgrp */
+                              eqp->verbosity,
+                              eqp->epsrgr,
+                              eqp->climgr,
+                              NULL,
+                              pota,
+                              clapot, clbpot,
+                              cfapot, cfbpot,
+                              i_visc,
+                              b_visc,
+                              dt,
+                              imasfl,
+                              bmasfl);
+
+  /* The last increment is not reconstructed to fullfill exactly
+     the continuity equation (see theory guide) */
+
+  cs_face_diffusion_potential(-1,
+                              m,
+                              mq,
+                              0,  /* init */
+                              0,  /* inc */
+                              eqp->imrgra,
+                              0,  /* nswrgp */
+                              eqp->imligr,
+                              0,  /* iphydp */
+                              0,  /* iwgrp */
+                              eqp->verbosity,
+                              eqp->epsrgr,
+                              eqp->climgr,
+                              NULL,
+                              pota,
+                              clapot, clbpot,
+                              cfapot, cfbpot,
+                              i_visc,
+                              b_visc,
+                              dt,
+                              imasfl,
+                              bmasfl);
+
+  /* Update density (which is coherent with the mass) */
+
+  const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+
+  if (fp->irovar == 1) {
+    const cs_real_t *crom_eos = CS_F_(rho)->val;
+    const cs_real_t *brom_eos = CS_F_(rho_b)->val;
+
+    cs_real_t *cpro_rho_mass
+      = cs_field_by_name("density_mass")->val;
+    cs_real_t *bpro_rho_mass
+      = cs_field_by_name("boundary_density_mass")->val;
+
+    cs_array_real_copy(n_cells_ext, crom_eos, cpro_rho_mass);
+    cs_array_real_copy(n_b_faces, brom_eos, bpro_rho_mass);
+  }
+
+  /* Free solver setup
+     ----------------- */
+
+  cs_sles_free_native(-1, name);
+
+  BFT_FREE(dam);
+  BFT_FREE(xam);
+
+  BFT_FREE(divu);
+  BFT_FREE(rhs);
+
+  BFT_FREE(pot);
+  BFT_FREE(pota);
+  BFT_FREE(dpot);
+
+  BFT_FREE(clapot);
+  BFT_FREE(clbpot);
+  BFT_FREE(cfapot);
+  BFT_FREE(cfbpot);
+
+  BFT_FREE(i_visc);
+  BFT_FREE(b_visc);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3211,7 +3591,7 @@ cs_solve_navier_stokes(const int   iterns,
   if (   (vp_model->idilat == 2 || vp_model->idilat == 3)
       && ts->nt_cur > 1
       && vp_param->ipredfl != 0)
-    cs_mass_flux_prediction(dt);
+    _cs_mass_flux_prediction(m, mq, dt);
 
   /* Hydrostatic pressure prediction in case of Low Mach compressible algorithm
      ---------------------------------------------------------------------------*/

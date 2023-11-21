@@ -421,7 +421,6 @@ majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \
 phyvar.f90 \
-predfl.f90 \
 prehyd.f90 \
 pthrbm.f90 \
 resvoi.f90 \
