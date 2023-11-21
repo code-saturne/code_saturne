@@ -95,6 +95,29 @@ __device__ void cs_math_3_normalise_cuda(const cs_real_t in[3],
   out[2] = inverse_norm * in[2];
 }
 
+__device__ cs_real_t cs_math_3_square_norm_cuda(const cs_real_t in[3]){
+  cs_real_t norm = in[0]*in[0] + in[1]*in[1] + in[2]*in[2];
+  return norm;
+}
+
+__device__ void _math_6_inv_cramer_sym_in_place_cuda(cs_cocg_t in[6]){
+  cs_real_t in00 = in[1]*in[2] - in[4]*in[4];
+  cs_real_t in01 = in[4]*in[5] - in[3]*in[2];
+  cs_real_t in02 = in[3]*in[4] - in[1]*in[5];
+  cs_real_t in11 = in[0]*in[2] - in[5]*in[5];
+  cs_real_t in12 = in[3]*in[5] - in[0]*in[4];
+  cs_real_t in22 = in[0]*in[1] - in[3]*in[3];
+
+  cs_real_t det_inv = 1. / (in[0]*in00 + in[3]*in01 + in[5]*in02);
+
+  in[0] = in00 * det_inv;
+  in[1] = in11 * det_inv;
+  in[2] = in22 * det_inv;
+  in[3] = in01 * det_inv;
+  in[4] = in12 * det_inv;
+  in[5] = in02 * det_inv;
+}
+
 
 template <class V>
 __device__ uint32_t _conflict_mask(uint32_t mask, V v) noexcept {

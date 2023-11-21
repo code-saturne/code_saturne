@@ -214,15 +214,15 @@ _compute_rhs_lsq_v_b_face_gather_v3(cs_lnum_t           n_b_cells,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
 
-  __shared__ cs_real_t _rhs[256*3*3];
+  __shared__ cs_real_t _rhs[256][3][3];
 
   for(cs_lnum_t i = 0; i < 3; i++){
     for(cs_lnum_t j = 0; j < 3; j++){
-      _rhs[lindex + (i*3+j)*256] = rhs[c_id][i][j];
+      _rhs[lindex][i][j] = rhs[c_id][i][j];
     }
   }
 
-  __syncthreads();
+  // __syncthreads();
   
   auto _pvar1 = pvar[c_id];
 
@@ -249,16 +249,16 @@ _compute_rhs_lsq_v_b_face_gather_v3(cs_lnum_t           n_b_cells,
               + _coefbv[2][i] * _pvar1[2]
               - _pvar1[i]);
 
-      _rhs[lindex + (i*3)*256] += n_d_dist[0] * pfac;
-      _rhs[lindex + (i*3+1)*256] += n_d_dist[1] * pfac;
-      _rhs[lindex + (i*3+2)*256] += n_d_dist[2] * pfac; 
+      _rhs[lindex][i][0] += n_d_dist[0] * pfac;
+      _rhs[lindex][i][1]+= n_d_dist[1] * pfac;
+      _rhs[lindex][i][2] += n_d_dist[2] * pfac; 
     }
 
   }
-  __syncthreads();
+  // __syncthreads();
   for(cs_lnum_t i = 0; i < 3; i++){
     for(cs_lnum_t j = 0; j < 3; j++){
-      rhs[c_id][i][j] = _rhs[lindex + (i*3+j)*256];
+      rhs[c_id][i][j] = _rhs[lindex][i][j];
     }
   }
 }
