@@ -86,8 +86,6 @@ _compute_reconstruct_v_i_face_gather(cs_lnum_t            n_cells,
 
 __global__ static void
 _compute_reconstruct_v_b_face_gather(cs_lnum_t           n_b_cells,
-                              const bool                *coupled_faces,
-                              cs_lnum_t                 cpl_stride,
                               const cs_real_33_t  *restrict coefbv,
                               const cs_real_3_t   *restrict coefav,
                               const cs_real_3_t   *restrict pvar,
@@ -113,10 +111,6 @@ _compute_reconstruct_v_b_face_gather(cs_lnum_t           n_b_cells,
   cs_lnum_t f_id;
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
-
-
-  // if (coupled_faces[f_id * cpl_stride])
-  //   return;
 
   for(cs_lnum_t index = s_id; index < e_id; index++){
     f_id = cell_b_faces[index];

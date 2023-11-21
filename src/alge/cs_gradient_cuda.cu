@@ -1430,7 +1430,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //Kernels Scatter
   // _compute_reconstruct_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
   //                               (n_i_faces,
-  //                               i_group_index,
   //                               i_face_cells,
   //                               pvar_d,
   //                               weight,
@@ -1442,7 +1441,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   // _compute_reconstruct_v_i_face_v2<<<gridsize_if * 3, blocksize, 0, stream>>>
   //                               (n_i_faces * 3,
-  //                               i_group_index,
   //                               i_face_cells,
   //                               pvar_d,
   //                               weight,
@@ -1455,7 +1453,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //Kernels Scatter conflict free
   // _compute_reconstruct_v_i_face_cf<<<gridsize_if, blocksize, 0, stream>>>
   //                               (n_i_faces,
-  //                               i_group_index,
   //                               i_face_cells,
   //                               pvar_d,
   //                               weight,
@@ -1467,7 +1464,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   _compute_reconstruct_v_i_face_v2_cf<<<gridsize_if * 3, blocksize, 0, stream>>>
                                 (n_i_faces * 3,
-                                i_group_index,
                                 i_face_cells,
                                 pvar_d,
                                 weight,
@@ -1495,7 +1491,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   // _compute_reconstruct_v_i_face_gather_v2<<<gridsize * 3 * 3, blocksize, 0, stream>>>
   //                                     ( n_cells * 3 * 3,
-  //                                       i_face_cells,
   //                                       pvar_d,
   //                                       weight,
   //                                       c_weight,
@@ -1506,8 +1501,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                                       cell_cells_idx,
   //                                       cell_cells,
   //                                       cell_i_faces,
-  //                                       cell_i_faces_sgn,
-  //                                       n_i_faces);
+  //                                       cell_i_faces_sgn);
 
   CS_CUDA_CHECK(cudaEventRecord(i_faces, stream));
   
@@ -1540,8 +1534,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   // ----------------------------Begin of Kernels part 2-------------------------------------------
   // _compute_reconstruct_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
   //                             ( n_b_faces,
-  //                               coupled_faces_d,
-  //                               cpl_stride,
   //                               coefb_d,
   //                               coefa_d,
   //                               pvar_d,
@@ -1555,8 +1547,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   // _compute_reconstruct_v_b_face_v2<<<gridsize_bf * 3, blocksize, 0, stream>>>
   //                             ( n_b_faces * 3,
-  //                               coupled_faces_d,
-  //                               cpl_stride,
   //                               coefb_d,
   //                               coefa_d,
   //                               pvar_d,
@@ -1569,8 +1559,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   
   // _compute_reconstruct_v_b_face_cf<<<gridsize_bf, blocksize, 0, stream>>>
   //                             ( n_b_faces,
-  //                               coupled_faces_d,
-  //                               cpl_stride,
   //                               coefb_d,
   //                               coefa_d,
   //                               pvar_d,
@@ -1583,8 +1571,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   _compute_reconstruct_v_b_face_v2_cf<<<gridsize_bf * 3, blocksize, 0, stream>>>
                               ( n_b_faces * 3,
-                                coupled_faces_d,
-                                cpl_stride,
                                 coefb_d,
                                 coefa_d,
                                 pvar_d,
@@ -1597,8 +1583,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   // _compute_reconstruct_v_b_face_gather<<<gridsize_b, blocksize, 0, stream>>>
   //                             ( m->n_b_cells,
-  //                               coupled_faces_d,
-  //                               cpl_stride,
   //                               coefb_d,
   //                               coefa_d,
   //                               pvar_d,
@@ -1614,8 +1598,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   // _compute_reconstruct_v_b_face_gather_v2<<<gridsize_b * 3, blocksize, 0, stream>>>
   //                             ( m->n_b_cells * 3,
-  //                               coupled_faces_d,
-  //                               cpl_stride,
   //                               coefb_d,
   //                               coefa_d,
   //                               pvar_d,
@@ -1669,7 +1651,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   cudaStreamDestroy(stream);
 
   if(PERF){
-    printf("recconstruct Kernels times:\t");
+    printf("reconstruct Kernels times:\t");
 
     msec = 0.0f;
     CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, init));

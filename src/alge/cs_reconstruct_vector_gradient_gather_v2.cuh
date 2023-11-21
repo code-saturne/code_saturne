@@ -27,7 +27,6 @@
 
 __global__ static void
 _compute_reconstruct_v_i_face_gather_v2(cs_lnum_t            n_cells,
-                          const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *pvar,
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight,
@@ -38,8 +37,7 @@ _compute_reconstruct_v_i_face_gather_v2(cs_lnum_t            n_cells,
                           const cs_lnum_t *restrict cell_cells_idx,
                           const cs_lnum_t *restrict cell_cells,
                           const cs_lnum_t *restrict cell_i_faces,
-                          const short int *restrict cell_i_faces_sgn,
-                          const cs_lnum_t n_i_faces)
+                          const short int *restrict cell_i_faces_sgn)
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -89,8 +87,6 @@ _compute_reconstruct_v_i_face_gather_v2(cs_lnum_t            n_cells,
 
 __global__ static void
 _compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
-                              const bool                *coupled_faces,
-                              cs_lnum_t                 cpl_stride,
                               const cs_real_33_t  *restrict coefbv,
                               const cs_real_3_t   *restrict coefav,
                               const cs_real_3_t   *restrict pvar,
@@ -119,10 +115,6 @@ _compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
   cs_lnum_t f_id;
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
-
-
-  // if (coupled_faces[f_id * cpl_stride])
-  //   return;
 
   for(cs_lnum_t index = s_id; index < e_id; index++){
     f_id = cell_b_faces[index];

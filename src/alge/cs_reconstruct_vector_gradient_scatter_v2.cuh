@@ -29,7 +29,6 @@
 
 __global__ static void
 _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
-                          const cs_lnum_t      *i_group_index,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *pvar,
                           const cs_real_t         *weight,
