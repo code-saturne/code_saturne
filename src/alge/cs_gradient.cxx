@@ -5804,7 +5804,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
           auto cuda = grad[c_id][i][j];
           double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
           if (err> 1e-6) {
-            printf("reconstruct DIFFERENCE @%d-%d-%d: CPU = %.17lg\tCUDA = %.17lg\tdiff = %.17lg\tdiff relative = %.17lg\tulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+            printf("reconstruct DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
           }
         }
       }

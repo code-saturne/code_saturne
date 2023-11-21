@@ -81,7 +81,6 @@ _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
 }
 
 
-
 __global__ static void
 _compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
                               const bool                *coupled_faces,
@@ -135,7 +134,6 @@ _compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
   }
 
 }
-
 
 
 

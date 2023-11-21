@@ -28,7 +28,6 @@
 
 __global__ static void
 _compute_reconstruct_v_i_face_v2_cf(cs_lnum_t            n_i_faces,
-                          const cs_lnum_t      *i_group_index,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *pvar,
                           const cs_real_t         *weight,
@@ -90,8 +89,6 @@ _compute_reconstruct_v_i_face_v2_cf(cs_lnum_t            n_i_faces,
 
 __global__ static void
 _compute_reconstruct_v_b_face_v2_cf(cs_lnum_t            n_b_faces,
-                              const bool                *coupled_faces,
-                              cs_lnum_t                 cpl_stride,
                               const cs_real_33_t  *restrict coefbv,
                               const cs_real_3_t   *restrict coefav,
                               const cs_real_3_t   *restrict pvar,
@@ -113,9 +110,6 @@ _compute_reconstruct_v_b_face_v2_cf(cs_lnum_t            n_b_faces,
 
   cs_lnum_t c_id;
   cs_real_t pond, ktpond, pfac, rfac, vecfac;
-
-  // if (coupled_faces[f_idt * cpl_stride])
-  //   return;
 
   c_id = b_face_cells[f_idt];
 

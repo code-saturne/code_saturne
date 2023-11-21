@@ -25,8 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 __global__ static void
-_compute_reconstruct_v_i_face(cs_lnum_t            size,
-                          const cs_lnum_t      *i_group_index,
+_compute_reconstruct_v_i_face(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *pvar,
                           const cs_real_t         *weight,
@@ -38,7 +37,7 @@ _compute_reconstruct_v_i_face(cs_lnum_t            size,
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(f_id >= size){
+  if(f_id >= n_i_faces){
     return;
   }
   cs_lnum_t c_id1, c_id2;
@@ -78,9 +77,7 @@ _compute_reconstruct_v_i_face(cs_lnum_t            size,
 
 
 __global__ static void
-_compute_reconstruct_v_b_face(cs_lnum_t            size,
-                              const bool                *coupled_faces,
-                              cs_lnum_t                 cpl_stride,
+_compute_reconstruct_v_b_face(cs_lnum_t            n_b_faces,
                               const cs_real_33_t  *restrict coefbv,
                               const cs_real_3_t   *restrict coefav,
                               const cs_real_3_t   *restrict pvar,
@@ -93,14 +90,11 @@ _compute_reconstruct_v_b_face(cs_lnum_t            size,
 {
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(f_id >= size){
+  if(f_id >= n_b_faces){
     return;
   }
   cs_lnum_t c_id;
   cs_real_t pfac, rfac, vecfac;
-
-  // if (coupled_faces[f_id * cpl_stride])
-  //   return;
 
   c_id = b_face_cells[f_id];
 
@@ -130,7 +124,7 @@ _compute_reconstruct_v_b_face(cs_lnum_t            size,
 }
 
 __global__ static void
-_compute_reconstruct_correction(cs_lnum_t            size,
+_compute_reconstruct_correction(cs_lnum_t            n_cells,
                                cs_lnum_t            has_dc,
                                const int *restrict c_disable_flag,
                                const cs_real_t *restrict cell_f_vol,
@@ -141,7 +135,7 @@ _compute_reconstruct_correction(cs_lnum_t            size,
 {
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if(c_id >= size){
+  if(c_id >= n_cells){
     return;
   }
   cs_real_t dvol;
