@@ -769,9 +769,9 @@ do while (iterns.le.nterup)
   c_hbord  = C_NULL_PTR
   c_theipb = C_NULL_PTR
 
-  if (associated(visvdr)) c_visvdr = c_loc(visvdr)
-  if (associated(hbord)) c_hbord = c_loc(hbord)
-  if (associated(theipb)) c_theipb = c_loc(theipb)
+  if (associated(visvdr)) c_visvdr = c_loc(visvdr(1))
+  if (associated(hbord) .and. nfabor.gt.0) c_hbord = c_loc(hbord(1))
+  if (associated(theipb) .and. nfabor.gt.0) c_theipb = c_loc(theipb(1))
 
   ! Calls user BCs and computes BC coefficients
   call cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale, italim,  &
