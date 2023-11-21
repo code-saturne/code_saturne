@@ -859,7 +859,7 @@ _pressure_correction_fv(int        iterns,
 
     if (indhyd == 1 || vp_param->iifren == 1) {
 
-      const int *auto_flag = cs_atmo_get_auto_flag();
+      const int *auto_flag = cs_glob_bc_pm_info->iautom;
       const cs_real_t *b_head_loss
         = cs_boundary_conditions_get_b_head_loss(false);
 

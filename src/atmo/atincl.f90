@@ -726,57 +726,43 @@ contains
 
   end subroutine atmo_get_soil_zone
 
-    !=============================================================================
+  !=============================================================================
 
-    !> \brief Return meteo file name
+  !> \brief Return meteo file name
 
-    !> \param[out]  name   meteo file name
+  !> \param[out]  name   meteo file name
 
-    subroutine atmo_get_meteo_file_name(name)
+  subroutine atmo_get_meteo_file_name(name)
 
-      use, intrinsic :: iso_c_binding
-      implicit none
+    use, intrinsic :: iso_c_binding
+    implicit none
 
-      ! Arguments
+    ! Arguments
 
-      character(len=*), intent(out) :: name
+    character(len=*), intent(out) :: name
 
-      ! Local variables
+    ! Local variables
 
-      integer :: i
-      integer(c_int) :: name_max, c_name_len
-      type(c_ptr) :: c_name_p
-      character(kind=c_char, len=1), dimension(:), pointer :: c_name
+    integer :: i
+    integer(c_int) :: name_max, c_name_len
+    type(c_ptr) :: c_name_p
+    character(kind=c_char, len=1), dimension(:), pointer :: c_name
 
-      name_max = len(name)
+    name_max = len(name)
 
-      call cs_f_atmo_get_meteo_file_name(name_max, c_name_p, c_name_len)
-      call c_f_pointer(c_name_p, c_name, [c_name_len])
+    call cs_f_atmo_get_meteo_file_name(name_max, c_name_p, c_name_len)
+    call c_f_pointer(c_name_p, c_name, [c_name_len])
 
-      do i = 1, c_name_len
-        name(i:i) = c_name(i)
-      enddo
-      do i = c_name_len + 1, name_max
-        name(i:i) = ' '
-      enddo
+    do i = 1, c_name_len
+      name(i:i) = c_name(i)
+    enddo
+    do i = c_name_len + 1, name_max
+      name(i:i) = ' '
+    enddo
 
-      return
+    return
 
-    end subroutine atmo_get_meteo_file_name
-
-    !=============================================================================
-
-    !> \brief Return pointer to automatic face bc flag array
-
-    !> \return  auto_flag  pointer to automatic boundary condition array
-
-    function cs_atmo_get_auto_flag() result(auto_flag) &
-      bind(C, name='cs_atmo_get_auto_flag')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr) :: auto_flag
-      auto_flag = c_loc(iautom)
-    end function cs_atmo_get_auto_flag
+  end subroutine atmo_get_meteo_file_name
 
   !=============================================================================
 

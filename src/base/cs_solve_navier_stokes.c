@@ -1410,7 +1410,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
       const int *iautom = NULL;
       if (   cs_glob_atmo_option->open_bcs_treatment > 0
           && cs_glob_atmo_option->meteo_profile > 0) {
-        iautom = cs_atmo_get_auto_flag();
+        iautom = cs_glob_bc_pm_info->iautom;
       }
 
       cs_real_t *coefa_p = CS_F_(p)->bc_coeffs->a;

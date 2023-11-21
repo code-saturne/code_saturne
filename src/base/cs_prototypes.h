@@ -136,17 +136,6 @@ cs_add_model_field_indexes(int  f_id);
 void
 cs_add_model_thermal_field_indexes(int  f_id);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to automatic face bc flag array.
- *
- * \return  auto_flag  pointer to automatic boundary condition array
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_atmo_get_auto_flag(void);
-
 /*----------------------------------------------------------------------------
  * Computes the explicit chemical source term for atmospheric chemistry in
  * case of a semi-coupled resolution

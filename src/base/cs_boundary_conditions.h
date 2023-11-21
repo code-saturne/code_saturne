@@ -153,7 +153,7 @@ typedef struct {
 
   /*! atmo */
   /* atmospheric flows: auto inlet/outlet flag */
-  cs_lnum_t *iautom;
+  int *iautom;
 
   /* atmospheric flows: on/off for profile from data */
   int iprofm[CS_MAX_BC_PM_ZONE_NUM+1];
