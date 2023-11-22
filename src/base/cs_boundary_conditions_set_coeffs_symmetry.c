@@ -578,22 +578,22 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
       /* Orthogonal matrix for change of reference frame ELOGLOij
          (from local to global reference frame)
 
-                    |TX  -RNX  T2X|
-           ELOGLO = |TY  -RNY  T2Y|
-                    |TZ  -RNZ  T2Z|
+                  | TX    TY    TZ |
+         ELOGLO = |-RNX  -RNY  -RNZ|
+                  | T2X   T2Y   T2Z|
 
          Its transpose ELOGLOt is its inverse. */
 
       eloglo[0][0] =  txyz[0];
-      eloglo[0][1] = -nn[0];
-      eloglo[0][2] =  t2xyz[0];
+      eloglo[1][0] = -nn[0];
+      eloglo[2][0] =  t2xyz[0];
 
-      eloglo[1][0] =  txyz[1];
+      eloglo[0][1] =  txyz[1];
       eloglo[1][1] = -nn[1];
-      eloglo[1][2] =  t2xyz[1];
+      eloglo[2][1] =  t2xyz[1];
 
-      eloglo[2][0] =  txyz[2];
-      eloglo[2][1] = -nn[2];
+      eloglo[0][2] =  txyz[2];
+      eloglo[1][2] = -nn[2];
       eloglo[2][2] =  t2xyz[2];
 
       /* Compute Reynolds stress transformation matrix */
@@ -734,27 +734,30 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
           cofad_rij[f_id][isou] = 0.0;
 
           for (int ii = 0; ii < 6; ii++) {
-            coefb_rij[f_id][ii][isou] = alpha[ii][isou];
+            coefb_rij[f_id][isou][ii] = alpha[ii][isou];
 
             if (ii == isou)
-              cofbf_rij[f_id][ii][isou] = hint_rij * (1.0 - coefb_rij[f_id][ii][isou]);
+              cofbf_rij[f_id][isou][ii]
+                = hint_rij * (1.0 - coefb_rij[f_id][isou][ii]);
             else
-              cofbf_rij[f_id][ii][isou] = - hint_rij * coefb_rij[f_id][ii][isou];
+              cofbf_rij[f_id][isou][ii] = - hint_rij*coefb_rij[f_id][isou][ii];
 
-            cofbd_rij[f_id][ii][isou] = coefb_rij[f_id][ii][isou];
+            cofbd_rij[f_id][isou][ii] = coefb_rij[f_id][isou][ii];
           }
         }
         else if (cs_glob_turb_rans_model->iclsyr == 1) {
+
           for (int ii = 0; ii < 6; ii++) {
             if (ii != isou)
-              fcoefa[isou] = fcoefa[isou] + alpha[isou][ii] * rijipb[f_id][ii];
+              fcoefa[isou] = fcoefa[isou] + alpha[ii][isou] * rijipb[f_id][ii];
           }
           fcoefb[isou] = alpha[isou][isou];
 
         }
         else {
+
           for (int ii = 0; ii < 6; ii++)
-            fcoefa[isou] = fcoefa[isou] + alpha[isou][ii] * rijipb[f_id][ii];
+            fcoefa[isou] = fcoefa[isou] + alpha[ii][isou] * rijipb[f_id][ii];
 
           fcoefb[isou] = 0.0;
         }
@@ -776,9 +779,9 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
           cofad_rij[f_id][isou] = fcofad[isou];
 
           for (int ii = 0; ii < 6; ii++) {
-            coefb_rij[f_id][ii][isou] = 0;
-            cofbf_rij[f_id][ii][isou] = 0;
-            cofbd_rij[f_id][ii][isou] = 0;
+            coefb_rij[f_id][isou][ii] = 0;
+            cofbf_rij[f_id][isou][ii] = 0;
+            cofbd_rij[f_id][isou][ii] = 0;
           }
           coefb_rij[f_id][isou][isou] = fcoefb[isou];
           cofbf_rij[f_id][isou][isou] = fcofbf[isou];
