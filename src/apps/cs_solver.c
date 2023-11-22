@@ -720,7 +720,7 @@ main(int    argc,
   }
 
   if (cs_glob_n_threads > 1)
-    cs_glob_e2n_sum_type = CS_E2N_SUM_STORE_THEN_GATHER;
+    cs_glob_e2n_sum_type = CS_E2N_SUM_SCATTER;
 #endif
 
   /* Default initialization */

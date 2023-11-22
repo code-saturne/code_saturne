@@ -810,6 +810,12 @@ cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode)
   ma->cell_cells_e_idx = m->cell_cells_idx;
   ma->cell_cells_e = m->cell_cells_lst;
 
+  /* With accelerator, force presence of arrays needed for
+     "gather" algorithms. */
+
+  if (alloc_mode > CS_ALLOC_HOST)
+    cs_mesh_adjacencies_update_cell_i_faces();
+
   if (ma->cell_cells_idx != NULL) {
     CS_REALLOC_HD(ma->cell_cells_idx, n_cells+1, cs_lnum_t, alloc_mode);
     CS_REALLOC_HD(ma->cell_cells, ma->cell_cells_idx[n_cells], cs_lnum_t,

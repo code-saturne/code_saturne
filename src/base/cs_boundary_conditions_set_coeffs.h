@@ -178,6 +178,32 @@ cs_boundary_conditions_set_neumann_scalar(cs_real_t  *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set homogeneous Neumann BC for a scalar for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_neumann_scalar_hmg(cs_real_t  *a,
+                                              cs_real_t  *af,
+                                              cs_real_t  *b,
+                                              cs_real_t  *bf)
+{
+  /* Gradient BCs */
+  *a = 0.;
+  *b = 1.;
+
+  /* Flux BCs */
+  *af = 0.;
+  *bf = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set Neumann BC for a scalar for a given face.
  *
  * \param[out]  a      explicit BC coefficient for gradients

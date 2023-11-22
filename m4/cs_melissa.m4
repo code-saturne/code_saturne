@@ -29,7 +29,7 @@ AC_DEFUN([CS_AC_TEST_MELISSA], [
 
 cs_have_melissa=no
 cs_have_melissa_mpi=no
-cs_have_melissa_mpi_05=no
+cs_have_melissa_mpi_07=no
 cs_have_melissa_no_mpi=no
 cs_have_plugin_melissa=yes
 
@@ -130,30 +130,42 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
 
     AC_MSG_CHECKING([for Melissa library (with MPI)])
 
-    MELISSA_LIBS="-lmelissa -lzmq"
-    CPPFLAGS="${CPPFLAGS} ${MELISSA_CPPFLAGS} ${MPI_CPPFLAGS}"
-    LDFLAGS="${LDFLAGS} ${MELISSA_LDFLAGS} ${MPI_LDFLAGS}"
-    LIBS="${MELISSA_LIBS} ${MPI_LIBS} ${saved_LIBS}"
+    cs_melissa_l0="-lmelissa_messages -lzmq"
+    cs_melissa_l1="-lzmq"
 
-    AC_LINK_IFELSE([AC_LANG_PROGRAM(
+    for melissa_ladd in "$cs_melissa_l0" "$cs_melissa_l1"
+    do
+      if test "x$cs_have_melissa_mpi" = "xno"; then
+
+        MELISSA_LIBS="-lmelissa_api ${melissa_ladd}"
+        CPPFLAGS="${CPPFLAGS} ${MELISSA_CPPFLAGS} ${MPI_CPPFLAGS}"
+        LDFLAGS="${LDFLAGS} ${MELISSA_LDFLAGS} ${MPI_LDFLAGS}"
+        LIBS="${MELISSA_LIBS} ${MPI_LIBS} ${saved_LIBS}"
+
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <mpi.h>
-#include <melissa/api.h>]],
+#include <melissa_api.h>]],
 [[(void)melissa_init("name", 1, MPI_COMM_SELF); ]])],
                    [cs_have_melissa_mpi=yes],
                    [cs_have_melissa_mpi=no])
 
-    # Test for version 0.5 or older, if not found
+      fi
+    done
+
+    # Test for version 0.7, if not found
     if test "x$cs_have_melissa_mpi" = "xno"; then
 
-      MELISSA_LIBS="-lmelissa_api -lzmq"
+      MELISSA_LIBS="-lmelissa -lzmq"
+      CPPFLAGS="${CPPFLAGS} ${MELISSA_CPPFLAGS} ${MPI_CPPFLAGS}"
+      LDFLAGS="${LDFLAGS} ${MELISSA_LDFLAGS} ${MPI_LDFLAGS}"
       LIBS="${MELISSA_LIBS} ${MPI_LIBS} ${saved_LIBS}"
 
       AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <mpi.h>
-#include <melissa_api.h>]],
+#include <melissa/api.h>]],
 [[(void)melissa_init("name", 1, MPI_COMM_SELF); ]])],
-                   [cs_have_melissa_mpi_05=yes],
-                   [cs_have_melissa_mpi_05=no])
+                   [cs_have_melissa_mpi_07=yes],
+                   [cs_have_melissa_mpi_07=no])
 
     fi
 
@@ -161,9 +173,10 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
 
   if test "x$cs_have_melissa_mpi" = "xyes"; then
     cs_have_melissa=yes
-  elif test "x$cs_have_melissa_mpi_05" = "xyes"; then
-    cs_have_melissa=yes
     cs_have_melissa_no_mpi=yes
+  elif test "x$cs_have_melissa_mpi_07" = "xyes"; then
+    cs_have_melissa=yes
+    cs_have_melissa_mpi=yes
   fi
 
   if test "x$cs_have_melissa_no_mpi" = "xno"; then
@@ -198,8 +211,8 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
     if test "x$cs_have_melissa_mpi" = "xyes" ; then
       AC_DEFINE([HAVE_MELISSA_MPI], 1, [Melissa co-processing support with MPI])
     fi
-    if test "x$cs_have_melissa_mpi_05" = "xyes" ; then
-      AC_DEFINE([HAVE_MELISSA_MPI_05], 1, [Melissa 0.5 or older co-processing support with MPI])
+    if test "x$cs_have_melissa_mpi_07" = "xyes" ; then
+      AC_DEFINE([HAVE_MELISSA_MPI_07], 1, [Melissa 0.7 co-processing support with MPI])
     fi
     if test "x$cs_have_melissa_no_mpi" = "xyes" ; then
       AC_DEFINE([HAVE_MELISSA_NO_MPI], 1, [Melissa co-processing support without MPI])
@@ -238,7 +251,6 @@ if test x$cs_have_melissa = xno ; then
 fi
 
 AM_CONDITIONAL(HAVE_MELISSA, test x$cs_have_melissa = xyes)
-AM_CONDITIONAL(HAVE_MELISSA_LEGACY, test x$cs_have_melissa_05 = xyes)
 AM_CONDITIONAL(HAVE_PLUGIN_MELISSA, test x$cs_have_plugin_melissa = xyes)
 
 cs_py_have_plugin_melissa=False

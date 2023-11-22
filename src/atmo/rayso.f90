@@ -862,7 +862,7 @@ if (muzero.gt.epzero) then
     ! the upward flux transmitted by cloud or aerosol layers
     ! if there is no cloud and no aerosol (itop=k1) this term have not to be add
     do i = itop, kmray
-      zq = zqq(i+1)
+      zq = zqq(i)
       zbas = zray(itop-1)
       xstar = mbar*(rayuoz(zbas) - rayuoz(zq))
       ufso3(i) = ufso3(itop-1)*(1.d0 -raysoz(xstar))
@@ -1284,7 +1284,7 @@ if (f_id.ge.0.and.is_active) then
       zent = xyzcen(3, iel)
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckdown_sir_r, zent, iz1, iz2, var )
 
       cpro_ck_down(c_id, iel) = var
@@ -1326,7 +1326,7 @@ if (f_id.ge.0.and.is_active) then
       zent = xyzcen(3, iel)
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckdown_suv_r, zent, iz1, iz2, var )
 
       cpro_ck_down(c_id, iel) = var
@@ -1365,7 +1365,7 @@ if (f_id.ge.0.and.is_active) then
       zent = xyzcen(3, iel)
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckdown_suv_r, zent, iz1, iz2, var )
 
       cpro_ck_down(c_id, iel) = cpro_ck_down(c_id, iel) + var
@@ -1403,13 +1403,13 @@ if (f_id.ge.0.and.is_active) then
 
       ! Note: it is zero
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckdown_sir_f, zent, iz1, iz2, var )
 
       cpro_ck_down(c_id, iel) = var
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckup_sir_f, zent, iz1, iz2, var )
 
       cpro_ck_up(c_id, iel) = var
@@ -1417,7 +1417,7 @@ if (f_id.ge.0.and.is_active) then
       ! Simple diffusion albedo w0
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         w0_sir, zent, iz1, iz2, var )
 
       cpro_w0(c_id, iel) = var
@@ -1425,7 +1425,7 @@ if (f_id.ge.0.and.is_active) then
       ! Asymmetry factor
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         g_apc_sir, zent, iz1, iz2, var )
 
       cpro_gapc(c_id, iel) = var
@@ -1462,13 +1462,13 @@ if (f_id.ge.0.and.is_active) then
       zent = xyzcen(3, iel)
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckdown_suv_f, zent, iz1, iz2, var )
 
       cpro_ck_down(c_id, iel) = var
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckup_suv_f, zent, iz1, iz2, var )
 
       cpro_ck_up(c_id, iel) = var
@@ -1476,7 +1476,7 @@ if (f_id.ge.0.and.is_active) then
       ! Simple diffusion albedo w0
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         w0_suv, zent, iz1, iz2, var )
 
       cpro_w0(c_id, iel) = var
@@ -1484,7 +1484,7 @@ if (f_id.ge.0.and.is_active) then
       ! Asymmetry factor
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         g_apc_suv, zent, iz1, iz2, var )
 
       cpro_gapc(c_id, iel) = var
@@ -1518,13 +1518,13 @@ if (f_id.ge.0.and.is_active) then
       zent = xyzcen(3, iel)
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckdown_suv_f, zent, iz1, iz2, var )
 
       cpro_ck_down(c_id, iel) = cpro_ck_down(c_id, iel) + var
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         ckup_suv_f, zent, iz1, iz2, var )
 
       cpro_ck_up(c_id, iel) = cpro_ck_up(c_id, iel) + var
@@ -1532,7 +1532,7 @@ if (f_id.ge.0.and.is_active) then
       ! Simple diffusion albedo w0
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         w0_suv, zent, iz1, iz2, var )
 
       cpro_w0(c_id, iel) = cpro_w0(c_id, iel) + var
@@ -1540,7 +1540,7 @@ if (f_id.ge.0.and.is_active) then
       ! Asymmetry factor
 
       call intprz &
-        (kmray, zqq,                                               &
+        (kmray, zray,                                               &
         g_apc_suv, zent, iz1, iz2, var )
 
       cpro_gapc(c_id, iel) = cpro_gapc(c_id, iel) + var

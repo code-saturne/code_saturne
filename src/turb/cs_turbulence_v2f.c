@@ -479,7 +479,7 @@ _solve_eq_fbr_al(const int         istprv,
 
   /* Explicit term, stores ke temporarily in w5
      w2 is already multiplied by the volume which already contains
-     a mark "-" (coming from itrgrp) */
+     a mark "-" (coming from cs_diffusion_potential) */
 
   const cs_real_t *cvara_k = CS_F_(k)->val_pre;
   const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;

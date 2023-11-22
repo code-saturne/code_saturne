@@ -1424,6 +1424,20 @@ cs_user_parameters(cs_domain_t *domain)
                              6,
                              CS_MESH_LOCATION_CELLS);
 
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add field to post-process subgrid TKE and epsilon
+   * (for LES models only)
+   */
+
+  cs_parameters_add_property("k_sgs",
+                             1,
+                             CS_MESH_LOCATION_CELLS);
+
+  cs_parameters_add_property("epsilon_sgs",
+                             1,
+                             CS_MESH_LOCATION_CELLS);
+
   /* Example: force presence of boundary temperature field */
   /*-------------------------------------------------------*/
 

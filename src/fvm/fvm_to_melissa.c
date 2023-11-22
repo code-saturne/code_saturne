@@ -41,11 +41,11 @@
  * Statistics library header
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MELISSA_MPI_05)
+#if defined(HAVE_MELISSA_MPI_07)
+  #include "melissa/api.h"
+#elif defined(HAVE_MELISSA_MPI)
   #include "melissa_api.h"
   #define HAVE_MELISSA_MPI 1
-#elif defined(HAVE_MELISSA_MPI)
-  #include "melissa/api.h"
 #endif
 
 #if defined(HAVE_MELISSA_NO_MPI)

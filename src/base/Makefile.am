@@ -101,6 +101,7 @@ cs_block_dist.h \
 cs_block_to_part.h \
 cs_boundary.h \
 cs_boundary_conditions.h \
+cs_boundary_conditions_check.h \
 cs_boundary_conditions_set_coeffs.h \
 cs_boundary_conditions_set_coeffs_symmetry.h \
 cs_boundary_conditions_set_coeffs_turb.h \
@@ -131,6 +132,7 @@ cs_halo_perio.h \
 cs_head_losses.h \
 cs_ht_convert.h \
 cs_ibm.h \
+cs_initialize_fields.h \
 cs_interface.h \
 cs_interpolate.h \
 cs_internal_coupling.h \
@@ -290,6 +292,7 @@ cs_ast_coupling.c \
 cs_base_fortran.c \
 cs_boundary.c \
 cs_boundary_conditions.c \
+cs_boundary_conditions_check.c \
 cs_boundary_conditions_set_coeffs.c \
 cs_boundary_conditions_set_coeffs_symmetry.c \
 cs_boundary_conditions_set_coeffs_turb.c \
@@ -328,6 +331,7 @@ cs_halo.c \
 cs_halo_perio.c \
 cs_head_losses.c \
 cs_ibm.c \
+cs_initialize_fields.c \
 cs_internal_coupling.c \
 cs_interpolate.c \
 cs_log_iteration.c \
@@ -417,7 +421,6 @@ majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \
 phyvar.f90 \
-predfl.f90 \
 prehyd.f90 \
 pthrbm.f90 \
 resvoi.f90 \
@@ -426,7 +429,6 @@ schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \
 varpos.f90 \
-vericl.f90 \
 verini.f90 \
 visecv.f90
 

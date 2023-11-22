@@ -496,7 +496,7 @@ _cs_rad_transfer_sol(int                        gg_id,
       vect_s[2] = - muzero_cor; /*  cos(za) */
 
       if (verbosity > 0)
-        bft_printf("     Solar direction [%f, %f, %f] \n",
+        bft_printf("     Solar direction [%f, %f, %f]\n",
                    vect_s[0], vect_s[1], vect_s[2]);
     }
   }

@@ -59,10 +59,6 @@ module mesh
   !> number of boundary faces (see \ref note_2)
   integer, save :: nfabor = 0
 
-  !> \anchor nnod
-  !> number of vertices in the mesh
-  integer, save :: nnod = 0
-
   ! pointer to C array used by ifacel (0 to n-1 numbering)
   integer, dimension(:,:), pointer :: ifacel_0
 
@@ -106,10 +102,6 @@ module mesh
   !> \anchor cdgfbo
   !> coordinates of the centers of the boundary faces
   double precision, dimension(:,:), pointer :: cdgfbo
-
-  !> \anchor xyznod
-  !> coordinates of the mesh vertices
-  double precision, dimension(:,:), pointer :: xyznod
 
   !> \anchor volume
   !> volume of each cell

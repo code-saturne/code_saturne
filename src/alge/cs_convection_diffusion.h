@@ -2430,7 +2430,6 @@ cs_i_cd_unsteady(const cs_real_t    bldfrp,
 
   }
 
-
   /* Blending
      --------*/
 
@@ -3146,6 +3145,7 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
 
     /* Blending
        --------*/
+
     cs_blend_f_val_vector(blencp,
                           pi,
                           pifrj);
@@ -3160,16 +3160,17 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
                           pjfrj);
 
   /* If iconv=0 p*fr* are useless */
-  } else {
+  }
+  else {
     for (isou = 0; isou < 3; isou++) {
-        cs_upwind_f_val(pi[isou],
-                        &pifrj[isou]);
-        cs_upwind_f_val(pir[isou],
-                        &pifri[isou]);
-        cs_upwind_f_val(pj[isou],
-                        &pjfri[isou]);
-        cs_upwind_f_val(pjr[isou],
-                        &pjfrj[isou]);
+      cs_upwind_f_val(pi[isou],
+                      &pifrj[isou]);
+      cs_upwind_f_val(pir[isou],
+                      &pifri[isou]);
+      cs_upwind_f_val(pj[isou],
+                      &pjfri[isou]);
+      cs_upwind_f_val(pjr[isou],
+                      &pjfrj[isou]);
     }
   }
 
@@ -3892,7 +3893,8 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                           pjf);
 
   /* If iconv=0 p*f are useless */
-  } else {
+  }
+  else {
 
     for (int isou = 0; isou < 3; isou++) {
       cs_upwind_f_val(pi[isou],
@@ -4971,69 +4973,6 @@ void CS_PROCF (itrmav, ITRMAV)
  const cs_real_t          weighb[],
  cs_real_t                i_massflux[],
  cs_real_t                b_massflux[]
-);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_diffusion_potential
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (itrgrp, ITRGRP)
-(
- const int       *const   f_id,
- const int       *const   init,
- const int       *const   inc,
- const int       *const   imrgra,
- const int       *const   nswrgp,
- const int       *const   imligp,
- const int       *const   iphydp,
- const int       *const   iwgrp,
- const int       *const   iwarnp,
- const cs_real_t *const   epsrgp,
- const cs_real_t *const   climgp,
- const cs_real_t *const   extrap,
- cs_real_3_t              frcxt[],
- cs_real_t                pvar[],
- const cs_real_t          coefap[],
- const cs_real_t          coefbp[],
- const cs_real_t          cofafp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_t                visel[],
- cs_real_t                diverg[]
-);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_anisotropic_diffusion_potential
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (itrgrv, ITRGRV)
-(
- const int       *const   f_id,
- const int       *const   init,
- const int       *const   inc,
- const int       *const   imrgra,
- const int       *const   nswrgp,
- const int       *const   imligp,
- const int       *const   ircflp,
- const int       *const   iphydp,
- const int       *const   iwgrp,
- const int       *const   iwarnp,
- const cs_real_t *const   epsrgp,
- const cs_real_t *const   climgp,
- const cs_real_t *const   extrap,
- cs_real_3_t              frcxt[],
- cs_real_t                pvar[],
- const cs_real_t          coefap[],
- const cs_real_t          coefbp[],
- const cs_real_t          cofafp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_6_t              viscel[],
- const cs_real_2_t        weighf[],
- const cs_real_t          weighb[],
- cs_real_t                diverg[]
 );
 
 /*=============================================================================

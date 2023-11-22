@@ -110,6 +110,13 @@ type(var_cal_opt) :: vcopt
 
 interface
 
+  subroutine cs_ale_restart_write(r)  &
+    bind(C, name='cs_ale_restart_write')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: r
+  end subroutine cs_ale_restart_write
+
   subroutine cs_mobile_structures_restart_write(r)  &
     bind(C, name='cs_mobile_structures_restart_write')
     use, intrinsic :: iso_c_binding
@@ -570,9 +577,7 @@ if (iecaux.eq.1) then
 
   if (iale.ge.1) then
 
-    call restart_write_field_vals(rp, fdiale, 0)
-    call restart_write_field_vals(rp, fdiale, 1)
-
+    call cs_ale_restart_write(rp)
     call cs_mobile_structures_restart_write(rp)
 
     car54=' End writing the ALE data              '

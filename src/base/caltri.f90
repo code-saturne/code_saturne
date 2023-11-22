@@ -85,9 +85,8 @@ logical(kind=c_bool) :: mesh_modified, log_active, post_active
 integer(c_int) :: ierr
 
 integer          iappel, iisuit
-integer          iel
-integer          inod   , idim, ifac
-integer          itrale , ntmsav
+integer          iel, ifac
+integer          itrale, ntmsav
 integer          iterns
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
@@ -97,10 +96,8 @@ integer          ivoid(1)
 
 double precision, save :: ttchis
 
-double precision, pointer, dimension(:)   :: dt => null()
-double precision, pointer, dimension(:)   :: porosi => null()
-double precision, pointer, dimension(:,:) :: disale => null()
-double precision, dimension(:,:), pointer :: xyzno0 => null()
+double precision, pointer, dimension(:) :: dt => null()
+double precision, pointer, dimension(:) :: porosi => null()
 
 !===============================================================================
 ! Interfaces
@@ -119,6 +116,14 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_boundary_conditions_set_coeffs_init
+
+  !=============================================================================
+
+  subroutine cs_initialize_fields_stage_0()  &
+    bind(C, name='cs_initialize_fields_stage_0')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_initialize_fields_stage_0
 
   !=============================================================================
 
@@ -466,6 +471,7 @@ call field_allocate_or_map_all
 call field_get_val_s_by_name('dt', dt)
 
 call iniva0(nscal)
+call cs_initialize_fields_stage_0
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then
@@ -591,25 +597,6 @@ if (isuite.eq.1) then
   call cs_restart_map_build
 
   call lecamo
-
-  ! Using ALE, geometric parameters must be recalculated
-  if (iale.ge.1) then
-
-    call field_get_val_v(fdiale, disale)
-    call field_get_val_v_by_name("vtx_coord0", xyzno0)
-
-    do inod = 1, nnod
-      do idim = 1, ndim
-        xyznod(idim,inod) = xyzno0(idim,inod) + disale(idim,inod)
-      enddo
-    enddo
-
-    call cs_ale_update_mesh_quantities(volmin, volmax, voltot)
-
-    ! Abort at the end of the current time-step if there is a negative volume
-    if (volmin.le.0.d0) ntmabs = ntcabs
-
-  endif
 
   ! Radiative module restart */
   if (iirayo.gt.0) then

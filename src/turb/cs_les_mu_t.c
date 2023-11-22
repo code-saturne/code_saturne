@@ -422,8 +422,8 @@ cs_les_mu_t_smago_dyn(void)
   }
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
-  cs_field_t *f_k = cs_field_by_name_try("lagr_k");
-  cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
+  cs_field_t *f_k = cs_field_by_name_try("k_sgs");
+  cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
   if (f_k != NULL && f_eps != NULL) {
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
@@ -722,8 +722,8 @@ cs_les_mu_t_smago_const(void)
   }
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
-  cs_field_t *f_k = cs_field_by_name_try("lagr_k");
-  cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
+  cs_field_t *f_k = cs_field_by_name_try("k_sgs");
+  cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
   if (f_k != NULL && f_eps != NULL) {
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
@@ -803,8 +803,8 @@ cs_les_mu_t_wale(void)
   }
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
-  cs_field_t *f_k = cs_field_by_name_try("lagr_k");
-  cs_field_t *f_eps = cs_field_by_name_try("lagr_epsilon");
+  cs_field_t *f_k = cs_field_by_name_try("k_sgs");
+  cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
   cs_real_t *s_eq = NULL;
   /* Store inverse of the time scale if needed */
   if (f_k != NULL && f_eps != NULL)

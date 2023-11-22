@@ -55,14 +55,8 @@ typedef enum {
                                   (serial / single thread mode). */
   CS_E2N_SUM_SCATTER_ATOMIC,    /*!< Iterate on edges and scatter values to
                                   nodes, using atomic sums. */
-  CS_E2N_SUM_GATHER,            /*!< Iterate on nodes and gather (indexed)
+  CS_E2N_SUM_GATHER             /*!< Iterate on nodes and gather (indexed)
                                   edge values */
-  CS_E2N_SUM_STORE_THEN_GATHER  /*!< 2-step algorithm:
-                                  - Iterate on edges for most compute-intensive
-                                    operations, and store on temporary array.
-                                    the results in a matching array, then
-                                  - Iterate on nodes to gather (indexed)
-                                    intermediate edge values. */
 
 } cs_e2n_sum_t;
 

@@ -120,7 +120,6 @@ type(c_ptr) :: rp
 
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:), pointer :: voidfl
-double precision, dimension(:,:), pointer :: disale
 
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
@@ -130,6 +129,13 @@ double precision, allocatable, dimension(:) :: tparbf
 !===============================================================================
 
 interface
+
+  subroutine cs_ale_restart_read(r)  &
+    bind(C, name='cs_ale_restart_read')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: r
+  end subroutine cs_ale_restart_read
 
   subroutine cs_mobile_structures_restart_read(r)  &
     bind(C, name='cs_mobile_structures_restart_read')
@@ -791,37 +797,8 @@ endif
 !===============================================================================
 
 if (iale.ge.1 .and. jale.ge.1) then
-  nberro = 0
 
-  itysup = 4
-
-  call field_get_val_v(fdiale, disale)
-
-  call restart_read_field_vals(rp, fdiale, 0, ierror)
-  if (ierror .ne. 0) then
-    call restart_read_real_3_t_compat                        &
-           (rp, 'vertex_displacement',                       &
-            'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
-            itysup, disale, ierror)
-  endif
-
-  if (ierror.eq.0) then
-    call restart_read_field_vals(rp, fdiale, 1, ierror)
-    if (ierror.ne.0) then
-      call field_current_to_previous(fdiale)
-      ierror = 0
-    endif
-  endif
-
-  nberro=nberro+ierror
-
-! Si JALE=1, on doit avoir le deplacement dans le fichier suite, sinon
-!   les resultats relus n'ont pas de sens -> on s'arrete si pb
-  if (nberro.ne.0) then
-    write(nfecra,9320)
-    call csexit(1)
-  endif
-
+  call cs_ale_restart_read(rp)
   call cs_mobile_structures_restart_read(rp)
 
   car54 =' Finished reading ALE information.                    '
@@ -1577,22 +1554,6 @@ return
 '@      VOF model data.                                       ',/,&
 '@                                                            ',/,&
 '@    Verify that the restart file used has not been damaged. ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9320 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: STOP WHILE READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      ERROR WHILE READING MESH VERTICES MOVEMENT DATA       ',/,&
-'@        (ALE METHOD)                                        ',/,&
-'@                                                            ',/,&
-'@    The run can not be executed.                            ',/,&
-'@                                                            ',/,&
-'@    Verify that the restart file used has not been damaged  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

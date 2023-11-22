@@ -37,6 +37,7 @@
 
 #include "cs_base.h"
 #include "cs_domain.h"
+#include "cs_restart.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -244,6 +245,28 @@ cs_ale_finalize_setup(cs_domain_t   *domain);
 
 void
 cs_ale_destroy_all(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read ALE data from restart file.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_restart_read(cs_restart_t  *r);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write ALE data from restart file.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_restart_write(cs_restart_t  *r);
 
 /*----------------------------------------------------------------------------*/
 

@@ -616,7 +616,7 @@ class Setup:
                     package="med",
                     version="4.1.1",
                     archive="med-4.1.1.tar.gz",
-                    url="https://files.salome-platform.org/Salome/other/%s")
+                    url="https://www.code-saturne.org/releases/external/%s")
 
         p = self.packages['med']
         p.config_opts = "--with-med_int=long --disable-fortran --disable-python"

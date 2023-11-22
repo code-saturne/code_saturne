@@ -53,6 +53,7 @@
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_gui_mobile_mesh.h"
@@ -64,6 +65,8 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 #include "cs_parall.h"
+#include "cs_restart.h"
+#include "cs_restart_default.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
@@ -1612,8 +1615,6 @@ cs_ale_is_activated(void)
 void
 cs_ale_init_setup(cs_domain_t   *domain)
 {
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   /* Mesh viscosity (iso or ortho)
    * TODO declare it before: add in activate, def here...  */
 
@@ -1635,7 +1636,7 @@ cs_ale_init_setup(cs_domain_t   *domain)
       type = CS_PROPERTY_ANISO;
     else
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid dimension (=%d) for the mesh viscosity.\n",
+                "%s: Invalid dimension (=%d) for the mesh viscosity.",
                 __func__, dim);
 
     /* Add and define this property */
@@ -1645,17 +1646,17 @@ cs_ale_init_setup(cs_domain_t   *domain)
 
   }
 
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
+  cs_equation_param_t *eqp
+    = cs_field_get_equation_param(CS_F_(mesh_u));
 
   //FIXME should be done elsewhere
   cs_domain_set_output_param(domain,
                              -1, /* restart frequency: Only at the end */
                              cs_glob_log_frequency,
-                             var_cal_opt.verbosity);
+                             eqp->verbosity);
 
   cs_equation_t  *eq = cs_equation_by_name("mesh_velocity");
-  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+  eqp = cs_equation_get_param(eq);
 
   assert(mesh_visc != NULL);
   cs_equation_add_diffusion(eqp, mesh_visc);
@@ -1817,7 +1818,87 @@ cs_ale_destroy_all(void)
 
     BFT_FREE(_cdo_bc);
   }
-  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read ALE data from restart file.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_restart_read(cs_restart_t  *r)
+{
+  if (cs_glob_ale < 1)
+    return;
+
+  cs_field_t *f_displ = cs_field_by_name("mesh_displacement");
+
+  int retcode = cs_restart_read_field_vals(r, f_displ->id, 0);
+
+  if (retcode != CS_RESTART_SUCCESS) {
+    cs_real_3_t *displ = (cs_real_3_t *)f_displ->val;
+    retcode = cs_restart_read_real_3_t_compat(r,
+                                              "vertex_displacement",
+                                              "deplact_x_no",
+                                              "deplact_y_no",
+                                              "deplact_z_no",
+                                              CS_MESH_LOCATION_VERTICES,
+                                              displ);
+  }
+
+  if (retcode == CS_RESTART_SUCCESS)
+    retcode = cs_restart_read_field_vals(r, f_displ->id, 1);
+  else
+    bft_error
+      (__FILE__, __LINE__, 0,
+       "%s: reading mesh vertices displacement in %s.",
+       __func__, cs_restart_get_name(r));
+
+  if (retcode != CS_RESTART_SUCCESS)
+    cs_field_current_to_previous(f_displ);
+
+  /* Geometric parameters must be recalculated */
+
+  const cs_lnum_t n_vtx_3 = cs_glob_mesh->n_vertices;
+
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_real_t *displp = f_displ->val;
+  cs_real_t *coordp = cs_glob_mesh->vtx_coord;
+  cs_real_t *coord0 = cs_field_by_name("vtx_coord0")->val;
+
+  #pragma omp parallel for if (n_vtx_3 > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_vtx_3; i++) {
+    coordp[i] = coord0[i] + displp[i];
+  }
+
+  cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
+
+  /* Abort at the end of the current time-step if there is a negative volume */
+  if (mq->min_vol <= 0)
+    cs_time_step_define_nt_max(cs_glob_time_step->nt_cur);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write ALE data from restart file.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_restart_write(cs_restart_t  *r)
+{
+  if (cs_glob_ale < 1)
+    return;
+
+  cs_field_t *f_displ = cs_field_by_name("mesh_displacement");
+
+  cs_restart_write_field_vals(r, f_displ->id, 0);
+  cs_restart_write_field_vals(r, f_displ->id, 1);
 }
 
 /*----------------------------------------------------------------------------*/

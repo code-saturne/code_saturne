@@ -709,10 +709,16 @@ _lagr_map_fields_default(void)
   _lagr_extra_module.lagr_time = cs_field_by_name_try("lagr_time");
 
   _lagr_extra_module.cvar_k = cs_field_by_name_try("k");
+  /* using LES */
+  if (_lagr_extra_module.cvar_k == NULL)
+    _lagr_extra_module.cvar_k = cs_field_by_name_try("k_sgs");
   if (_lagr_extra_module.cvar_k == NULL)
     _lagr_extra_module.cvar_k = cs_field_by_name_try("lagr_k");
 
   _lagr_extra_module.cvar_ep = cs_field_by_name_try("epsilon");
+  /* using LES */
+  if (_lagr_extra_module.cvar_ep == NULL)
+    _lagr_extra_module.cvar_ep = cs_field_by_name_try("epsilon_sgs");
   if (_lagr_extra_module.cvar_ep == NULL)
     _lagr_extra_module.cvar_ep = cs_field_by_name_try("lagr_epsilon");
 
@@ -1214,9 +1220,11 @@ cs_lagr_add_fields(void)
   if (extra->itytur == 3 || extra->itytur == 4) {
     f = cs_field_by_name_try("k");
     if (f == NULL)
+      f = cs_field_by_name_try("k_sgs");
+    if (f == NULL)
       f = cs_field_by_name_try("lagr_k");
     if (f == NULL) {
-      f = cs_field_find_or_create("lagr_k",
+      f = cs_field_find_or_create("k_sgs",
                                   CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                                   CS_MESH_LOCATION_CELLS,
                                   1,
@@ -1229,9 +1237,11 @@ cs_lagr_add_fields(void)
 
   f = cs_field_by_name_try("epsilon");
   if (f == NULL)
+    f = cs_field_by_name_try("epsilon_sgs");
+  if (f == NULL)
     f = cs_field_by_name_try("lagr_epsilon");
   if (f == NULL) {
-    f = cs_field_find_or_create("lagr_epsilon",
+    f = cs_field_find_or_create("epsilon_sgs",
                                 CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                                 CS_MESH_LOCATION_CELLS,
                                 1,

@@ -2185,6 +2185,9 @@ cs_turbomachinery_restart_write(cs_restart_t  *r)
   if (tbm == NULL)
     return;
 
+  if (tbm->model == CS_TURBOMACHINERY_NONE)
+    return;
+
   cs_real_t *t_angle;
   BFT_MALLOC(t_angle, tbm->n_rotors+2, cs_real_t);
 

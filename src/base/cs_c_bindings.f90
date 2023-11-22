@@ -79,7 +79,7 @@ module cs_c_bindings
   procedure() :: csexit, dmtmps
   procedure() :: cslogname, csdatadir
 
-  procedure() :: divmas, itrgrp, matrix, viscfa
+  procedure() :: divmas, matrix, viscfa
 
   !-----------------------------------------------------------------------------
 
@@ -1842,31 +1842,6 @@ module cs_c_bindings
       integer(c_int), value :: f_id
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
     end subroutine cs_sles_free_native
-
-    !---------------------------------------------------------------------------
-
-    ! Temporarily replace field id with name for matching calls
-    ! to cs_sles_solve_native.
-
-    subroutine cs_sles_push(f_id, name)                                       &
-      bind(C, name='cs_sles_push')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      character(kind=c_char, len=1), dimension(*), intent(in) :: name
-    end subroutine cs_sles_push
-
-    !---------------------------------------------------------------------------
-
-    ! Revert to normal behavior of field id for matching calls
-    ! to cs_sles_solve_native.
-
-    subroutine cs_sles_pop(f_id)                                             &
-      bind(C, name='cs_sles_pop')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-    end subroutine cs_sles_pop
 
     !---------------------------------------------------------------------------
 
@@ -5085,58 +5060,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Temporarily replace field id with name for matching calls
-  !>        to \ref sles_solve_native
-
-  !> param[in]       f_id     associated field id, or < 0
-  !> param[in]       name     associated name if f_id < 0, or ignored
-
-  subroutine sles_push(f_id, name)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in)      :: name
-    integer, intent(in)               :: f_id
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-
-    c_name = trim(name)//c_null_char
-
-    call cs_sles_push(f_id, c_name)
-
-    return
-
-  end subroutine sles_push
-
-  !=============================================================================
-
-  !> \brief Revert to normal behavior of field id for matching calls
-  !>        to \ref sles_solve_native
-
-  !> param[in]  f_id   associated field id, or < 0
-
-  subroutine sles_pop(f_id)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: f_id
-
-    ! Local variables
-
-    call cs_sles_pop(f_id)
-
-    return
-
-  end subroutine sles_pop
-
-  !=============================================================================
-
   !> \brief Create a timer statistics structure.
 
   !> If no timer with the given name exists, -1 is returned.
@@ -5414,35 +5337,6 @@ contains
     enddo
 
   end subroutine volume_zone_select_type_cells
-
-  !=============================================================================
-
-  !> \brief Return pointer to coupling face indicator for a field
-
-  !> \param[in]     f_id      id of given field
-  !> \param[out]    cpl_faces pointer to coupling face indicator
-
-  subroutine field_get_coupled_faces(f_id, cpl_faces)
-
-    use, intrinsic :: iso_c_binding
-    use mesh, only:nfabor
-
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: f_id
-    logical(kind=c_bool), dimension(:), pointer, intent(inout) :: cpl_faces
-
-    ! Local variables
-    type(c_ptr) :: c_p
-
-    call cs_f_ic_field_coupled_faces(f_id, c_p)
-    call c_f_pointer(c_p, cpl_faces, [nfabor])
-
-    return
-
-  end subroutine field_get_coupled_faces
 
   !=============================================================================
 
