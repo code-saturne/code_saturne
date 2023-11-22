@@ -30,8 +30,9 @@
 
 __global__ static void
 _init_rhs_v2(cs_lnum_t         n_cells_g,
-           cs_real_t      *restrict rhs)
+           cs_real_33_t      *restrict _rhs)
 {
+  cs_real_t *rhs = (cs_real_t *) _rhs;
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (c_id >= n_cells_g)
     return;
@@ -43,11 +44,12 @@ __global__ static void
 _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            n_i_faces,
                           const cs_lnum_t      *restrict i_face_cells,
                           const cs_real_t    *restrict cell_f_cen,
-                          cs_real_t         *restrict rhs,
+                          cs_real_33_t         *restrict _rhs,
                           const cs_real_3_t    *restrict pvar,
                           const cs_real_t         *restrict weight,
                           const cs_real_t      *restrict c_weight)
 {
+  cs_real_t *rhs = (cs_real_t *) _rhs;
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
   if(f_id >= n_i_faces){
@@ -89,13 +91,16 @@ _compute_rhs_lsq_v_i_face_v2(cs_lnum_t            n_i_faces,
 
 __global__ static void
 _compute_rhs_lsq_v_i_face_v2cf(cs_lnum_t            size,
-                          const cs_lnum_t      *restrict i_face_cells,
-                          const cs_real_t    *restrict cell_f_cen,
-                          cs_real_t         *restrict rhs,
+                          const cs_lnum_2_t      *restrict _i_face_cells,
+                          const cs_real_3_t    *restrict _cell_f_cen,
+                          cs_real_33_t         *restrict _rhs,
                           const cs_real_3_t    *restrict pvar,
                           const cs_real_t         *restrict weight,
                           const cs_real_t      *restrict c_weight)
 {
+  cs_real_t *rhs = (cs_real_t *) _rhs;
+  cs_lnum_t *i_face_cells = (cs_lnum_t *) _i_face_cells;
+  cs_real_t *cell_f_cen = (cs_real_t *) _cell_f_cen;
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
   if(f_id >= size){
@@ -147,13 +152,14 @@ _compute_rhs_lsq_v_b_face_v2(cs_lnum_t           n_b_faces,
                             const cs_lnum_t      *restrict b_face_cells,
                             const cs_real_3_t    *restrict cell_f_cen,
                             const cs_real_3_t    *restrict b_face_normal,
-                            cs_real_t            *restrict rhs,
+                            cs_real_33_t            *restrict _rhs,
                             const cs_real_3_t    *restrict pvar,
                             const cs_real_t      *restrict b_dist,
                             const cs_real_33_t   *restrict coefbv,
                             const cs_real_3_t    *restrict coefav,
                             const int            inc)
 {
+  cs_real_t *rhs = (cs_real_t *) _rhs;
   cs_lnum_t f_id = blockIdx.x * blockDim.x + threadIdx.x;
 
   if(f_id >= n_b_faces){
@@ -189,10 +195,12 @@ _compute_rhs_lsq_v_b_face_v2(cs_lnum_t           n_b_faces,
 
 __global__ static void
 _compute_gradient_lsq_v_v2(cs_lnum_t           n_cells_g,
-                        cs_real_t        *restrict gradv,
-                        cs_real_t        *restrict rhs,
+                        cs_real_33_t        *restrict _gradv,
+                        cs_real_33_t        *restrict _rhs,
                         cs_cocg_6_t         *restrict cocg)
 {
+  cs_real_t *rhs = (cs_real_t *) _rhs;
+  cs_real_t *gradv = (cs_real_t *) _gradv;
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (c_id >= n_cells_g) 
     return;

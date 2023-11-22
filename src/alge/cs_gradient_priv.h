@@ -120,6 +120,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t        *m,
                      const cs_real_3_t    *restrict pvar,
                      const cs_real_t      *restrict c_weight,
                      cs_cocg_6_t          *restrict cocg,
+                     cs_cocg_6_t          *restrict cocgb,
                      cs_real_33_t         *restrict gradv,
                      cs_real_33_t         *restrict rhs);
 
@@ -148,5 +149,4 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
 #endif /* __CS_GRADIENT_CUDA_H__ */

@@ -46,6 +46,7 @@
 #include <limits>
 #include <type_traits>
 #include <iostream>
+#include <chrono>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -82,7 +83,6 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
-#include <chrono>
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -6892,9 +6892,28 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   bool accel = false;
 #endif
 
-  _get_cell_cocg_lsq(m, halo_type, false, fvq, &cocg, &cocgb_s);
+  _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb_s);
 
   cs_real_33_t *rhs, *rhs_cuda, *gradv_cuda, *gradv_cpu;
+  bool COMPUTE_CUDA, COMPUTE_CPU, RES_CPU, PERF, ACCURACY;
+
+  COMPUTE_CUDA = accel;
+  RES_CPU = !accel;
+
+#if defined(DEBUG)
+  COMPUTE_CPU = true;
+  PERF        = true;
+  ACCURACY    = true;
+#elif defined(NDEBUG)
+  COMPUTE_CPU = true;
+  RES_CPU     = true;
+  PERF        = false;
+  ACCURACY    = false;
+#else
+  COMPUTE_CPU = false;
+  PERF        = false;
+  ACCURACY    = false;
+#endif
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
   BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
@@ -6903,9 +6922,8 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
-// #ifdef NDEBUG
-// #if defined(HAVE_CUDA)
-// #endif
+#if defined(HAVE_CUDA)
+if(COMPUTE_CUDA){
   start = std::chrono::high_resolution_clock::now();
   cs_lsq_vector_gradient_cuda(
     m,
@@ -6918,13 +6936,14 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
     pvar,
     c_weight,
     cocg,
+    cocgb_s,
     gradv,
     rhs_cuda);
   stop = std::chrono::high_resolution_clock::now();
   elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-// #ifdef NDEBUG  
-// #else
-// #endif
+} // end if COMPUTE_CUDA
+#endif
+if(COMPUTE_CPU){
   start = std::chrono::high_resolution_clock::now();
   # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
@@ -7074,9 +7093,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
                           + rhs[c_id][i][2] * cocg[c_id][2];
     }
   }
-  // #ifdef NDEBUG
-  // #endif 
-  // #endif
+} // end if COMPUTE_CPU 
+
+if(ACCURACY){
   stop = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
   #pragma omp parallel for
@@ -7092,8 +7111,14 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
       }
     }
   }
+}
+
+if(PERF)
   printf("lsq Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
 
+if(RES_CPU){
+  memcpy(gradv, gradv_cpu, sizeof(cs_real_33_t) * n_cells_ext);
+}
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
 
@@ -7273,10 +7298,16 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   BFT_MALLOC(rhs, n_cells_ext, grad_t);
   cs_array_real_fill_zero(n_cells_ext*stride*3, (cs_real_t *)rhs);
 
+#if defined(HAVE_CUDA)
+  bool accel = (cs_get_device_id() > -1) ? true : false;
+#else
+  bool accel = false;
+#endif
+
   cs_cocg_6_t *restrict cocgb = NULL;
   cs_cocg_6_t *restrict cocg = NULL;
 
-  _get_cell_cocg_lsq(m, halo_type, false, fvq, &cocg, &cocgb);
+  _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb);
 
   /* Contribution from interior faces
      -------------------------------- */
@@ -7539,7 +7570,6 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     _math_6_inv_cramer_sym_in_place(cocg[c_id]);
 
   } /* loop on boundary cells */
-
   /* Compute gradient */
   /*------------------*/
 

@@ -135,10 +135,12 @@ _compute_rhs_lsq_v_i_face_v3cf(cs_lnum_t            size,
 
 __global__ static void
 _compute_gradient_lsq_v_v5(cs_lnum_t           n_cells,
-                        cs_real_t        *restrict gradv,
-                        cs_real_t        *restrict rhs,
+                        cs_real_t        *restrict _gradv,
+                        cs_real_t        *restrict _rhs,
                         cs_cocg_6_t         *restrict cocg)
 {
+  cs_real_t *rhs = (cs_real_t *) _rhs;
+  cs_real_t *gradv = (cs_real_t *) _gradv;
   size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (c_id >= n_cells) 
     return;

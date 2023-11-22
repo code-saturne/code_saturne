@@ -135,3 +135,67 @@ _compute_rhs_lsq_v_b_face_gather(cs_lnum_t           n_b_cells,
     }
   }
 }
+
+template <cs_lnum_t stride, typename val_t, typename coefb_t>
+__global__ static void
+_compute_rhs_lsq_v_b_face_gather_stride(cs_lnum_t           n_b_cells,
+                          const cs_lnum_t      *restrict cell_b_faces_idx,
+                          const cs_lnum_t      *restrict cell_b_faces,
+                          const cs_lnum_t      *restrict b_cells,
+                          const cs_real_3_t    *restrict b_face_cog,
+                          const cs_real_3_t    *restrict cell_cen,
+                          cs_real_33_t         *restrict rhs,
+                          const val_t    *restrict pvar,
+                          const coefb_t   *restrict coefbv,
+                          const cs_real_3_t    *restrict coefav,
+                          cs_cocg_6_t         *restrict cocg,
+                          const cs_cocg_6_t         *restrict cocgb,
+                          const int            inc)
+{
+  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if(c_idx >= n_b_cells){
+    return;
+  }
+
+  cs_lnum_t c_id = b_cells[c_idx];
+
+  cs_lnum_t f_id;
+  cs_real_t dif[stride], ddif, pfac, norm, var_f[stride];
+
+  cs_lnum_t s_id = cell_b_faces_idx[c_id];
+  cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
+
+  for(cs_lnum_t ll = 0; ll < 6; ll++)
+    cocg[c_id][ll] = cocgb[c_idx][ll];
+
+  for(cs_lnum_t index = s_id; index < e_id; index++){
+
+    f_id = cell_b_faces[index];
+
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
+
+    ddif = 1. / cs_math_3_square_norm_cuda(dif);
+
+    cocg[c_id][0] += dif[0]*dif[0]*ddif;
+    cocg[c_id][1] += dif[1]*dif[1]*ddif;
+    cocg[c_id][2] += dif[2]*dif[2]*ddif;
+    cocg[c_id][3] += dif[0]*dif[1]*ddif;
+    cocg[c_id][4] += dif[1]*dif[2]*ddif;
+    cocg[c_id][5] += dif[0]*dif[2]*ddif;
+
+    for (cs_lnum_t kk = 0; kk < stride; kk++) {
+      var_f[kk] = coefav[f_id][kk]*inc;
+      for (cs_lnum_t ll = 0; ll < stride; ll++) {
+        var_f[kk] += coefbv[f_id][ll][kk] * pvar[c_id][ll];
+      }
+
+      pfac = (var_f[kk] - pvar[c_id][kk]) * ddif;
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        rhs[c_id][kk][ll] += dif[ll] * pfac;
+    }
+  }
+  _math_6_inv_cramer_sym_in_place_cuda(cocg[c_id]);
+}
