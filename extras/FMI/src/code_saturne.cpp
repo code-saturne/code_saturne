@@ -50,11 +50,84 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <map>
+#include <functional>
+#include <iostream>
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "code_saturne.h"
+#include <src/callbacks.h>
+
+typedef enum {
+    exact,
+    approx,
+    calculated
+} fmi_initial_t;
+
+typedef enum {
+    constant,
+    fixed,
+    tunable,
+    discrete,
+    continuous
+} fmi_variability_t;
+
+typedef enum {
+    parameter,
+    calculatedParamater,
+    local,
+    independent,
+    input,
+    output
+} fmi_causality_t;
+
+typedef enum {
+    Real,
+    Integer,
+    Boolean,
+    String
+} fmi_type_t;
+
+typedef struct {
+  int                variable_index;  // Index in global variables list
+  int                value_reference;
+  fmi_causality_t    causality;
+  fmi_variability_t  variability;
+  fmi_initial_t      initial;
+  double             start;
+} cs_real_var_t;
+
+typedef struct {
+  int                variable_index;  // Index in global variables list
+  int                value_reference;
+  fmi_causality_t    causality;
+  fmi_variability_t  variability;
+  fmi_initial_t      initial;
+  int                start;
+} cs_integer_var_t;
+
+typedef struct {
+  int                variable_index;  // Index in global variables list
+  int                value_reference;
+  fmi_causality_t    causality;
+  fmi_variability_t  variability;
+  fmi_initial_t      initial;
+  bool               start;
+} cs_bool_var_t;
+
+
+typedef struct {
+  int                variable_index;  // Index in global variables list
+  int                value_reference;
+  fmi_causality_t    causality;
+  fmi_variability_t  variability;
+  fmi_initial_t      initial;
+  const char *       start;
+} cs_string_var_t;
+
+#include "code_saturne_fmu_variables.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -64,6 +137,15 @@ using namespace std;
                        // connection to code_saturne.
 
 #define CS_TIMING 0    // Log some timings.
+
+/*----------------------------------------------------------------------------
+ * Macro used to silence "unused argument" warnings.
+ *
+ * This is useful when a function must match a given function pointer
+ * type, but does not use all possible arguments.
+ *----------------------------------------------------------------------------*/
+
+#define CS_UNUSED(x) (void)(x)
 
 /*============================================================================
  * Type definitions
@@ -135,13 +217,24 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
+static std::map<int, int> _real_variable_reference_map;
+static std::map<int, int> _integer_variable_reference_map;
+static std::map<int, int> _bool_variable_reference_map;
+static std::map<int, int> _string_variable_reference_map;
+
+static double *_real_variable_values = NULL;
+static int *_integer_variable_values = NULL;
+static bool *_bool_variable_values = NULL;
+static char **_string_variable_values = NULL;
+
 static int _n_iter = 0;
 static int _master_socket = -1;
 static int _cs_socket = -1;
 static int _cs_swap_endian = 0;
 
 static fmi2ComponentEnvironment  _component_environment = nullptr;
-static fmi2String                _instance_name = "[unnamed]";
+static fmi2Char                  _instance_name_init[] = "[unnamed]";
+static fmi2Char *                _instance_name = _instance_name_init;
 
 static FILE *tracefile = NULL;
 
@@ -184,6 +277,10 @@ cs_control_queue_t *_cs_glob_control_queue = NULL;
 /* Structure for grouped notebook value settings */
 
 cs_variables_t *_cs_variables = NULL;
+
+/* Variables from generated template */
+
+fmi2Component *_component = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -612,11 +709,11 @@ _recv_sock_with_queue(int                  socket,
     }
 
 #if CS_DRY_RUN == 1
-    queue->buf[start_id] =$ '\0';
-    return;
+    queue->buf[start_id] = '\0';
+    return queue->buf;
 #endif
 
-    ssize_t ret = (socket != NULL) ?
+    ssize_t ret = (socket != 0) ?
       read(socket, queue->buf + start_id, n_loc_max) : 0;
 
     if (ret < 1) {
@@ -880,6 +977,44 @@ static void
   system(cmd.c_str());
 
   pthread_exit(nullptr);
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize a variables grouping structure
+ *
+ * returns:
+ *   pointer to initialized control queue
+ *----------------------------------------------------------------------------*/
+
+static void
+_map_initialize(void)
+{
+  _real_variable_values = (double *)malloc(_n_real_vars*sizeof(double));
+  for (int i = 0; i < _n_real_vars; i++) {
+    int j = _real_vars[i].value_reference;
+    _real_variable_reference_map[j] = i;
+    _real_variable_values[i] = _real_vars[i].start;
+  }
+  _integer_variable_values = (int *)malloc(_n_integer_vars*sizeof(int));
+  for (int i = 0; i < _n_integer_vars; i++) {
+    int j = _integer_vars[i].value_reference;
+    _integer_variable_reference_map[j] = i;
+    _integer_variable_values[i] = _integer_vars[i].start;
+  }
+  _bool_variable_values = (bool *)malloc(_n_bool_vars*sizeof(bool));
+  for (int i = 0; i < _n_bool_vars; i++) {
+    int j = _bool_vars[i].value_reference;
+    _bool_variable_reference_map[j] = i;
+    _bool_variable_values[i] = _bool_vars[i].start;
+  }
+  _string_variable_values = (char **)malloc(_n_string_vars*sizeof(char *));
+  for (int i = 0; i < _n_string_vars; i++) {
+    int j = _string_vars[i].value_reference;
+    _string_variable_reference_map[j] = i;
+    size_t l = strlen(_string_vars[i].start);
+    _string_variable_values[i] = (char *)malloc(l + 1);
+    strncpy(_string_variable_values[i], _string_vars[i].start, l);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1245,43 +1380,40 @@ exec_popen(const char* cmd)
   return result;
 }
 
-/*----------------------------------------------------------------------------*/
+/*============================================================================
+ * code_saturne FMU method definitions
+ *============================================================================*/
 
-void code_saturne::setResourceLocation(const char* fmiResourceLocation)
+void
+setResourceLocation(const char* fmiResourceLocation)
 {
   string s0(__func__);
   string s_rl(fmiResourceLocation);
-
-  /* As the generated code provides no other entry under
-     fmi2Instantiate than this function, also set some other global
-     pointers here (not the cleanest solution we would dream of, but
-     a workaround the current limited scope of user-generated and
-     auto-generated code boundaries). */
-
-  _instance_name = (fmi2String)malloc(sizeof(id) + 1);
-  strcpy(_instance_name, id);
-
-  /* Also set id to saved string, as it seems the string to which
-     id was assigned may have a temporary lifetime
-     work around FMU generator bug */
-
-  id = _instance_name;
 
   _cs_log(fmi2OK, CS_LOG_TRACE, s0 + s_rl);
 }
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status code_saturne::init()
+fmi2Status
+fmi2EnterInitializationMode(fmi2Component  component)
 {
   /* As the code generator used provides no other earlier entry point,
      global pointer to component environment (for logging) here. */
 
   _component_environment = component;
 
-  string s_casename(casename);
-  string s_run_id(run_id);
-  string s_code_saturne(code_saturne);
+  string s_casename, s_run_id, s_code_saturne;
+
+  for (int i = 0; i < _n_string_vars; i++) {
+    if (strcmp(_string_names[i], "code_saturne") == 0)
+      s_code_saturne = _string_vars[i].start;
+    else if (strcmp(_string_names[i], "casename") == 0)
+      s_casename = _string_vars[i].start;
+    else if (strcmp(_string_names[i], "run_id") == 0)
+      s_run_id = _string_vars[i].start;
+  }
+
   string resu = s_casename + "/RESU/" + s_run_id;
   string cmd;
   int addrlen;
@@ -1316,6 +1448,7 @@ fmi2Status code_saturne::init()
 
   _cs_log(fmi2OK, CS_LOG_LAUNCH, cmd);
   _cs_socket = 444444;
+  _cs_glob_control_queue = _queue_initialize();
 
 #else
 
@@ -1326,7 +1459,8 @@ fmi2Status code_saturne::init()
   /* Accept the incoming connection */
   addrlen = sizeof(address);
 
-  _cs_log(component, id, fmi2OK, CS_LOG_ALL, "Waiting for connection...",
+  _cs_log(component, _instance_name, fmi2OK, CS_LOG_ALL,
+          "Waiting for connection...",
           nullptr);
 
   struct thread_data data;
@@ -1353,17 +1487,20 @@ fmi2Status code_saturne::init()
     _cs_variables = _variables_initialize();
 
   for (int i = 0; i < _cs_variables->input_max; i++) {
-    if (_cs_variables->input_ids[i] > -1)
+    if (_cs_variables->input_ids[i] > -1) {
+      int var_index = _real_variable_reference_map[i];
       _set_notebook_variable(_cs_socket,
-                             realVariables[i].name,
-                             realVariables[i].getter(this));
+                             _real_names[var_index],
+                             _real_variable_values[var_index]);
+    }
   }
   for (int i = 0; i < _cs_variables->output_max; i++) {
     if (_cs_variables->output_ids[i] > -1) {
+      int var_index = _real_variable_reference_map[i];
       double value
         = _get_notebook_variable(_cs_socket,
-                                 realVariables[i].name);
-      realVariables[i].setter(this, value);
+                                 _real_names[var_index]);
+      _real_variable_values[var_index] = value;
     }
   }
 
@@ -1391,9 +1528,17 @@ fmi2Status code_saturne::init()
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status code_saturne::doStep(double step)
+fmi2Status
+fmi2DoStep(fmi2Component  _component,
+           fmi2Real       currentComunicationTime,
+           fmi2Real       stepSize,
+           fmi2Boolean    noSetFmuFmuStatePriorToCurrentPoint)
 {
-  string s = "----- " + string(__func__) + "(" + to_string(step) + ")";
+  CS_UNUSED(_component);
+  CS_UNUSED(currentComunicationTime);
+  CS_UNUSED(noSetFmuFmuStatePriorToCurrentPoint);
+
+  string s = "----- " + string(__func__) + "(" + to_string(stepSize) + ")";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
   cs_variables_t *v = _cs_variables;
@@ -1404,8 +1549,8 @@ fmi2Status code_saturne::doStep(double step)
     int id = v->input_ids[i];
     if (id < 0)
       continue;
-    double val = realVariables[i].getter(this);
-    v->input_vals[id] = val;
+    int var_index = _real_variable_reference_map[i];
+    v->input_vals[id] = _real_variable_values[var_index];
   }
 
   /* Advance 1 iteration */
@@ -1417,8 +1562,8 @@ fmi2Status code_saturne::doStep(double step)
     int id = v->output_ids[i];
     if (id < 0)
       continue;
-    double val = v->output_vals[id];
-    realVariables[i].setter(this, val);
+    int var_index = _real_variable_reference_map[i];
+    _real_variable_values[var_index] = v->output_vals[id];
   }
 
   _n_iter++;
@@ -1428,10 +1573,19 @@ fmi2Status code_saturne::doStep(double step)
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status code_saturne::terminate()
+fmi2Status fmi2Terminate(fmi2Component  _component)
 {
-  string s_casename(casename);
-  string s_run_id(run_id);
+  CS_UNUSED(_component);
+
+  string s_casename, s_run_id;
+
+  for (int i = 0; i < _n_string_vars; i++) {
+    if (strcmp(_string_names[i], "casename") == 0)
+      s_casename = _string_vars[i].start;
+    else if (strcmp(_string_names[i], "run_id") == 0)
+      s_run_id = _string_vars[i].start;
+  }
+
   string resu = s_casename + "/RESU/" + s_run_id;
 
   _send_sock_str(_cs_socket, "max_time_step 0");
@@ -1477,54 +1631,63 @@ fmi2Status code_saturne::terminate()
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status code_saturne::reset()
+fmi2Status
+fmi2Reset(fmi2Component  _component)
 {
+  CS_UNUSED(_component);
+
   return fmi2OK;
 }
 
 /*----------------------------------------------------------------------------*/
 
-double code_saturne::getReal(int fmi2ValueReference)
+fmi2Real
+fmi2GetReal(fmi2ValueReference  reference)
 {
   if (_cs_variables == NULL)
     _cs_variables = _variables_initialize();
 
-  string s = string(__func__) + "(" + to_string(fmi2ValueReference) + ")";
+  string s = string(__func__) + "(" + to_string(reference) + ")";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
-  if (realVariables[fmi2ValueReference].causality() != input) {
-    int first = _variables_add_output(_cs_variables, fmi2ValueReference);
+  int var_index = _real_variable_reference_map[reference];
+
+  if (_real_vars[var_index].causality != input) {
+    int first = _variables_add_output(_cs_variables, reference);
     if (first && _cs_socket >= 0) {
-      double value
-        = _get_notebook_variable(_cs_socket,
-                                 realVariables[fmi2ValueReference].name);
-      realVariables[fmi2ValueReference].setter(this, value);
+      double value = _get_notebook_variable(_cs_socket,
+                                            _real_names[var_index]);
+      _real_variable_values[var_index] = value;
     }
   }
 
-  return realVariables[fmi2ValueReference].getter(this);
+  return _real_variable_values[var_index];
 }
 
 /*----------------------------------------------------------------------------*/
 
-void code_saturne::setReal(int fmi2ValueReference, double value)
+void
+fmi2SetReal(fmi2ValueReference  reference,
+            fmi2Real            value)
 {
   if (_cs_variables == NULL)
     _cs_variables = _variables_initialize();
 
-  string s = string(__func__) + "(" + to_string(fmi2ValueReference)
+  string s = string(__func__) + "(" + to_string(reference)
     + ", " + to_string(value) + ")";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
-  if (realVariables[fmi2ValueReference].causality() == input) {
-    realVariables[fmi2ValueReference].setter(this, value);
+  int var_index = _real_variable_reference_map[reference];
+
+  if (_real_vars[var_index].causality == input) {
+    _real_variable_values[var_index] = value;
 
     int first = _variables_add_input(_cs_variables,
-                                     fmi2ValueReference,
+                                     reference,
                                      value);
     if (first && _cs_socket >= 0) {
       _set_notebook_variable(_cs_socket,
-                             realVariables[fmi2ValueReference].name,
+                             _real_names[var_index],
                              value);
     }
   }
@@ -1532,44 +1695,62 @@ void code_saturne::setReal(int fmi2ValueReference, double value)
 
 /*----------------------------------------------------------------------------*/
 
-int code_saturne::getInteger(int fmi2ValueReference)
+fmi2Integer
+fmi2GetInteger(fmi2ValueReference  reference)
 {
-  return integerVariables[fmi2ValueReference].getter(this);
+  int var_index = _integer_variable_reference_map[reference];
+
+  return _integer_variable_values[var_index];
 }
 
 /*----------------------------------------------------------------------------*/
 
-void code_saturne::setInteger(int fmi2ValueReference, int value)
+void
+fmi2SetInteger(fmi2ValueReference  reference,
+               fmi2Integer         value)
 {
-  integerVariables[fmi2ValueReference].setter(this, value);
+  int var_index = _integer_variable_reference_map[reference];
+
+  _integer_variable_values[var_index] = value;
 }
 
 /*----------------------------------------------------------------------------*/
 
-bool code_saturne::getBoolean(int fmi2ValueReference)
+fmi2Integer
+fmi2GetBoolean(fmi2ValueReference  reference)
 {
-  return booleanVariables[fmi2ValueReference].getter(this);
+  int var_index = _bool_variable_reference_map[reference];
+
+  return _bool_variable_values[var_index];
 }
 
 /*----------------------------------------------------------------------------*/
 
-void code_saturne::setBoolean(int fmi2ValueReference, bool value)
+void
+fmi2SetBoolean(fmi2ValueReference  reference,
+               fmi2Boolean         value)
 {
-  booleanVariables[fmi2ValueReference].setter(this, value);
+  int var_index = _bool_variable_reference_map[reference];
+
+  _bool_variable_values[var_index] = value;
 }
 
 /*----------------------------------------------------------------------------*/
 
-const char* code_saturne::getString(int fmi2ValueReference)
+fmi2String
+fmi2GetString(fmi2ValueReference  reference)
 {
-  return stringVariables[fmi2ValueReference].getter(this);
+  int var_index = _string_variable_reference_map[reference];
+
+  return _string_variable_values[var_index];
 }
 
 /*----------------------------------------------------------------------------*/
 
-void code_saturne::setString(int fmi2ValueReference, const char* value)
+void fmi2SetString(fmi2ValueReference  reference,
+                   const char*         value)
 {
-  string s = string(__func__) + "(" + to_string(fmi2ValueReference)
+  string s = string(__func__) + "(" + to_string(reference)
     + ", " + string(value) + ")";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
@@ -1585,20 +1766,432 @@ void code_saturne::setString(int fmi2ValueReference, const char* value)
      in the model) memory leak when setting them, to avoid needlessly
      complex code. */
 
-  char *p_var = NULL;
+  int var_index = _string_variable_reference_map[reference];
 
-#if 0
-  p_var = stringVariables[fmi2ValueReference].getter(this);
+  char *p_var = _string_variable_values[var_index];
   if (p_var != NULL)
     free(p_var);
-#endif
 
   size_t l = strlen(value);
   p_var = (char *)(malloc(l+1));
   strncpy(p_var, value, l);
   p_var[l] = '\0';
 
-  stringVariables[fmi2ValueReference].setter(this, p_var);
+  _string_variable_values[var_index] = p_var;
+}
+
+/*============================================================================
+ * General FMI function definitions
+ *============================================================================*/
+
+const char*
+fmi2GetTypesPlatform()
+{
+  return "default";
+}
+
+const char*
+fmi2GetVersion()
+{
+  return "2.0";
+}
+
+fmi2Status
+fmi2SetDebugLogging(fmi2Component     _component,
+                    fmi2Boolean       loggingOn,
+                    size_t            numberOfCategories,
+                    const fmi2String  categories[])
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(loggingOn);
+  CS_UNUSED(numberOfCategories);
+  CS_UNUSED(categories);
+
+  // TODO complete this.
+
+  return fmi2OK;
+}
+
+fmi2Component
+fmi2Instantiate(fmi2String   instanceName,
+                fmi2Type     fmuType,
+                fmi2String   fmuGUID,
+                fmi2String   fmuResourceLocation,
+                const fmi2CallbackFunctions*  callbacks,
+                fmi2Boolean  visible,
+                fmi2Boolean  loggingOn)
+{
+  CS_UNUSED(fmuType);
+  CS_UNUSED(fmuGUID);
+  CS_UNUSED(visible);
+  CS_UNUSED(loggingOn);
+
+  setFunctions(callbacks);
+
+  _map_initialize();
+
+  _instance_name = (fmi2Char *)malloc(sizeof(instanceName) + 1);
+  strcpy(_instance_name, instanceName);
+
+  setResourceLocation(fmuResourceLocation);
+  _component = (fmi2Component*) fmiAlloc(sizeof(fmi2Component));
+  return _component;
+}
+
+fmi2Status
+fmi2SetupExperiment(fmi2Component  _component,
+                    fmi2Boolean    toleranceDefined,
+                    fmi2Real       tolerance,
+                    fmi2Real       startTime,
+                    fmi2Boolean    stopTimeDefined,
+                    fmi2Real       stopTime)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(toleranceDefined);
+  CS_UNUSED(tolerance);
+  CS_UNUSED(startTime);
+  CS_UNUSED(stopTimeDefined);
+  CS_UNUSED(stopTime);
+
+  return fmi2OK;
+}
+
+fmi2Status
+fmi2ExitInitializationMode(fmi2Component  _component)
+{
+  CS_UNUSED(_component);
+
+  return fmi2OK;
+}
+
+void
+fmi2FreeInstance(fmi2Component  _component)
+{
+  CS_UNUSED(_component);
+
+  fmiFree(_component);
+}
+
+fmi2Status
+fmi2GetReal(fmi2Component             _component,
+            const fmi2ValueReference  valueReference[],
+            size_t                    numberOfValues,
+            fmi2Real                  values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      values[i] = fmi2GetReal(valueReference[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status
+fmi2GetInteger(fmi2Component             _component,
+               const fmi2ValueReference  valueReference[],
+               size_t                    numberOfValues,
+               fmi2Integer               values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      values[i] = fmi2GetInteger(valueReference[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status
+fmi2GetBoolean(fmi2Component             _component,
+               const fmi2ValueReference  valueReference[],
+               size_t                    numberOfValues,
+               fmi2Boolean               values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      values[i] = fmi2GetBoolean(valueReference[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status
+fmi2GetString(fmi2Component             _component,
+              const fmi2ValueReference  valueReference[],
+              size_t                    numberOfValues,
+              fmi2String                values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      values[i] = fmi2GetString(valueReference[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status
+fmi2SetReal(fmi2Component             _component,
+            const fmi2ValueReference  valueReference[],
+            size_t                    numberOfValues,
+            const fmi2Real            values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      fmi2SetReal(valueReference[i], values[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status
+fmi2SetInteger(fmi2Component             _component,
+               const fmi2ValueReference  valueReference[],
+               size_t                    numberOfValues,
+               const fmi2Integer         values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      fmi2SetInteger(valueReference[i], values[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status
+fmi2SetBoolean(fmi2Component             _component,
+               const fmi2ValueReference  valueReference[],
+               size_t                    numberOfValues,
+               const fmi2Boolean         values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      fmi2SetBoolean(valueReference[i], values[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status
+fmi2SetString(fmi2Component             _component,
+              const fmi2ValueReference  valueReference[],
+              size_t                    numberOfValues,
+              const fmi2String          values[])
+{
+  CS_UNUSED(_component);
+
+  try {
+    for (size_t i = 0; i < numberOfValues; i++)
+      fmi2SetString(valueReference[i], values[i]);
+    return fmi2OK;
+  } catch (...) {
+    return fmi2Fatal;
+  }
+}
+
+fmi2Status fmi2GetFMUstate(fmi2Component  _component,
+                           fmi2FMUstate*  state)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(state);
+
+  return fmi2Error;
+}
+
+fmi2Status fmi2SetFMUstate(fmi2Component  _component,
+                           fmi2FMUstate   state)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(state);
+
+  return fmi2Error;
+}
+
+fmi2Status fmi2FreeFMUstate(fmi2Component  _component,
+                            fmi2FMUstate*  state)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(state);
+
+  return fmi2Error;
+}
+
+fmi2Status fmi2SerializedFMUstateSize(fmi2Component  _component,
+                                      fmi2FMUstate   state,
+                                      size_t*        stateSize)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(state);
+  CS_UNUSED(stateSize);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2SerializeFMUstate(fmi2Component  _component,
+                      fmi2FMUstate   state,
+                      fmi2Byte       serializedState[],
+                      size_t         serializedStateSize)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(state);
+  CS_UNUSED(serializedState);
+  CS_UNUSED(serializedStateSize);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2DeSerializeFMUstate(fmi2Component   _component,
+                        const fmi2Byte  serializedState,
+                        size_t          size,
+                        fmi2FMUstate*   state)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(serializedState);
+  CS_UNUSED(size);
+  CS_UNUSED(state);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2GetDirectionalDerivative(fmi2Component             _component,
+                             const fmi2ValueReference  unknownValueReferences[],
+                             size_t                    numberOfUnknowns,
+                             const fmi2ValueReference  knownValueReferences[],
+                             fmi2Integer               numberOfKnowns,
+                             fmi2Real                  knownDifferential[],
+                             fmi2Real                  unknownDifferential[])
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(unknownValueReferences);
+  CS_UNUSED(numberOfUnknowns);
+  CS_UNUSED(knownValueReferences);
+  CS_UNUSED(numberOfKnowns);
+  CS_UNUSED(knownDifferential);
+  CS_UNUSED(unknownDifferential);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2SetRealInputDerivatives(fmi2Component             _component,
+                            const fmi2ValueReference  valueReferences[],
+                            size_t                    numberOfValueReferences,
+                            fmi2Integer               orders[],
+                            const fmi2Real            values[])
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(valueReferences);
+  CS_UNUSED(numberOfValueReferences);
+  CS_UNUSED(orders);
+  CS_UNUSED(values);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2GetRealOutputDerivatives(fmi2Component             _component,
+                             const fmi2ValueReference  valueReference[],
+                             size_t                    numberOfValues,
+                             const fmi2Integer         order[],
+                             fmi2Real                  values[])
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(valueReference);
+  CS_UNUSED(numberOfValues);
+  CS_UNUSED(order);
+  CS_UNUSED(values);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2CancelStep(fmi2Component  _component)
+{
+  CS_UNUSED(_component);
+
+  return fmi2Warning;
+}
+
+fmi2Status
+fmi2GetStatus(fmi2Component         _component,
+              const fmi2StatusKind  kind,
+              fmi2Status*           status)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(kind);
+  CS_UNUSED(status);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2GetRealStatus(fmi2Component         _component,
+                  const fmi2StatusKind  kind,
+                  fmi2Real*             value)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(kind);
+  CS_UNUSED(value);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2GetIntegerStatus(fmi2Component         _component,
+                     const fmi2StatusKind  kind,
+                     fmi2Integer*          value)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(kind);
+  CS_UNUSED(value);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2GetBooleanStatus(fmi2Component         _component,
+                     const fmi2StatusKind  kind,
+                     fmi2Boolean*          value)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(kind);
+  CS_UNUSED(value);
+
+  return fmi2Error;
+}
+
+fmi2Status
+fmi2GetStringStatus(fmi2Component         _component,
+                    const fmi2StatusKind  kind,
+                    fmi2String*           value)
+{
+  CS_UNUSED(_component);
+  CS_UNUSED(kind);
+  CS_UNUSED(value);
+
+  return fmi2Error;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription fmiVersion="2.0" modelName="code_saturne" guid="b8c7f4831f1a1d12ada1adc1b01114c6" generationTool="FMU C++ Builder" generationDateAndTime="2022-07-14T02:59:06.514155Z"
+                     variableNamingConvention="structured" numberOfEventIndicators="0">
+    <CoSimulation modelIdentifier="code_saturne" needsExecutionTool="false" canHandleVariableCommunicationStepSize="true" canInterpolateInputs="true" maxOutputDerivativeOrder="0"
+                  canRunAsynchronuously="false" canBeInstantiatedOnlyOncePerProcess="true" canNotUseMemoryManagementFunctions="false" canSerializeFMUstate="false"
+                  providesDirectionalDerivative="true"/>
+    <ModelVariables>
+		<ScalarVariable name="run_id" valueReference="3000000" causality="parameter" variability="fixed" initial="exact">
+			<String start="run"/>
+		</ScalarVariable>
+		<ScalarVariable name="code_saturne" valueReference="3000001" causality="parameter" variability="fixed" initial="exact">
+			<String start="/home/D43345/Code_Saturne/arch/dbg/bin/code_saturne"/>
+		</ScalarVariable>
+		<ScalarVariable name="casename" valueReference="3000002" causality="parameter" variability="fixed" initial="exact">
+			<String start="path/16_SUPERNIMBUS/CASE1"/>
+		</ScalarVariable>
+		<ScalarVariable name="cold_velocity" valueReference="0" causality="input" variability="discrete" >
+			<Real start="0.03183"/>
+		</ScalarVariable>
+		<ScalarVariable name="hot_velocity" valueReference="1" causality="input" variability="discrete" >
+			<Real start="0.05"/>
+		</ScalarVariable>
+		<ScalarVariable name="temp1" valueReference="2" causality="output" variability="continuous" initial="exact">
+			<Real start="38"/>
+		</ScalarVariable>
+		<ScalarVariable name="temp2" valueReference="3" causality="output" variability="continuous" initial="exact">
+			<Real start="18"/>
+		</ScalarVariable>
+    </ModelVariables>
+    <ModelStructure/>
+</fmiModelDescription>
