@@ -26,9 +26,8 @@
 
 
 
-
 __global__ static void
-_compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
+_compute_reconstruct_v_i_face_v2_cf(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *i_face_cells,
                           const cs_real_3_t    *pvar,
                           const cs_real_t         *weight,
@@ -72,18 +71,24 @@ _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
                           + dofij[f_idt][2]*(  r_grad[c_id1][i][2]
                                             + r_grad[c_id2][i][2]));
 
+  using Cell = AtomicCell<cs_real_t,3>;
+  Cell grad_cf1, grad_cf2;
+
   for (cs_lnum_t j = 0; j < 3; j++) {
-    atomicAdd(&grad[c_id1][i][j],(pfaci + rfac) * i_f_face_normal[f_idt][j]);
-    atomicAdd(&grad[c_id2][i][j], - ((pfacj + rfac) * i_f_face_normal[f_idt][j]));
+    grad_cf1[j].get() = (pfaci + rfac) * i_f_face_normal[f_idt][j];
+    grad_cf2[j].get() = - ((pfacj + rfac) * i_f_face_normal[f_idt][j]);
   }
+  Cell::ref(grad[c_id1][i]).conflict_free_add(-1u, grad_cf1);
+  Cell::ref(grad[c_id2][i]).conflict_free_add(-1u, grad_cf2);
     
 }
 
 
+
+
+
 __global__ static void
-_compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
-                              const bool                *coupled_faces,
-                              cs_lnum_t                 cpl_stride,
+_compute_reconstruct_v_b_face_v2_cf(cs_lnum_t            n_b_faces,
                               const cs_real_33_t  *restrict coefbv,
                               const cs_real_3_t   *restrict coefav,
                               const cs_real_3_t   *restrict pvar,
@@ -106,9 +111,6 @@ _compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
   cs_lnum_t c_id;
   cs_real_t pond, ktpond, pfac, rfac, vecfac;
 
-  // if (coupled_faces[f_idt * cpl_stride])
-  //   return;
-
   c_id = b_face_cells[f_idt];
 
   pfac = inc*coefav[f_idt][i];
@@ -128,57 +130,12 @@ _compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
     rfac += coefbv[f_idt][i][k] * vecfac;
   }
 
-  for (cs_lnum_t j = 0; j < 3; j++){
-    atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_f_face_normal[f_idt][j]);
-  }
-
-}
-
-
-
-__global__ static void
-_compute_reconstruct_correction_v2(  cs_lnum_t                       n_cells,
-                                    cs_lnum_t                       has_dc,
-                                    const int *restrict             c_disable_flag,
-                                    const cs_real_t *restrict       cell_f_vol,
-                                    cs_real_33_t        *restrict   grad,
-                                    const cs_real_33_t *restrict    corr_grad_lin,
-                                    bool                            test_bool
-                                  )
-{
-  cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  
-
-  if(c_id >= n_cells){
-    return;
-  }
-  
-  size_t c_idt = c_id / 3;
-  size_t i = c_id % 3;
-
-  cs_real_t dvol;
-  /* Is the cell disabled (for solid or porous)? Not the case if coupled */
-  if (has_dc * c_disable_flag[has_dc * c_idt] == 0)
-    dvol = 1. / cell_f_vol[c_idt];
-  else
-    dvol = 0.;
+  using Cell = AtomicCell<cs_real_t,3>;
+  Cell grad_cf;
 
   for (cs_lnum_t j = 0; j < 3; j++){
-    grad[c_idt][i][j] *= dvol;
+    grad_cf[j].get() = (pfac + rfac) * b_f_face_normal[f_idt][j];
   }
-
-
-  if (test_bool) {
-    cs_real_t gradpa[3];
-    for (cs_lnum_t j = 0; j < 3; j++) {
-      gradpa[j] = grad[c_idt][i][j];
-    }
-
-    for (cs_lnum_t j = 0; j < 3; j++) {
-      grad[c_idt][i][j] = corr_grad_lin[c_idt][j][0] * gradpa[0]
-                         + corr_grad_lin[c_idt][j][1] * gradpa[1]
-                         + corr_grad_lin[c_idt][j][2] * gradpa[2];
-    }
-  }
+  Cell::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
 
 }
