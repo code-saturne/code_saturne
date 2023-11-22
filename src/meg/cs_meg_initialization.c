@@ -60,23 +60,23 @@ BEGIN_C_DECLS
  *
  * The caller is responsible for freeing the associated array.
  *
- * \param[in] zone_name    name of a volume zone
- * \param[in] n_elts       number of elements related to the zone
- * \param[in] elt_ids      list of element ids related to the zone
- * \param[in] xyz          list of coordinates related to the zone
- * \param[in] field_name   associated variable field name
- *
- * \return a pointer to allocated initialization values.
+ * \param[in]  zone_name    name of a volume zone
+ * \param[in]  n_elts       number of elements related to the zone
+ * \param[in]  elt_ids      list of element ids related to the zone
+ * \param[in]  xyz          list of coordinates related to the zone
+ * \param[in]  field_name   associated variable field name
+ * \param[out] retvals      array of computed values
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_meg_initialization
-cs_real_t *
+void
 cs_meg_initialization(const char       *zone_name,
                       const cs_lnum_t   n_elts,
                       const cs_lnum_t  *elt_ids,
                       const cs_real_t   xyz[][3],
-                      const char       *field_name)
+                      const char       *field_name,
+                      cs_real_t        *retvals)
 {
   CS_NO_WARN_IF_UNUSED(zone_name);
   CS_NO_WARN_IF_UNUSED(elt_ids);

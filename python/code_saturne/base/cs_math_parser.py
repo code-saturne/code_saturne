@@ -781,16 +781,16 @@ class cs_math_parser:
                 elif func_type == 'bnd':
                     ir = req.index(tk)
                     if need_for_loop:
-                        new_v = 'new_vals[%d * n_elts + e_id]' % (ir)
+                        new_v = 'retvals[%d * n_elts + e_id]' % (ir)
                     else:
-                        new_v = 'new_vals[%d]' % (ir)
+                        new_v = 'retvals[%d]' % (ir)
 
                 elif func_type in ['src', 'ini']:
                     if nreq > 1:
                         ir = req.index(tk)
-                        new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
+                        new_v = 'retvals[%d * e_id + %d]' % (nreq, ir)
                     else:
-                        new_v = 'new_vals[e_id]'
+                        new_v = 'retvals[e_id]'
 
                 elif func_type == 'ibm':
                     new_v = '*ipenal'

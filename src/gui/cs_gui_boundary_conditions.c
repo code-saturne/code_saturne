@@ -395,17 +395,14 @@ _meg_flow_rate(int               location_id,
   else if (c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE)
     formula_type = q_meg_formula_type[1];
 
-  cs_real_t *v_loc
-    = cs_meg_boundary_function(c->zone->name,
-                               n_elts,
-                               elt_ids,
-                               face_cen,
-                               "velocity",
-                               formula_type);
+  cs_meg_boundary_function(c->zone->name,
+                           n_elts,
+                           elt_ids,
+                           face_cen,
+                           "velocity",
+                           formula_type,
+                           vals);
 
-  vals[0] = v_loc[0];
-
-  BFT_FREE(v_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -527,13 +524,15 @@ _vel_profile_by_meg_norm(int               location_id,
 
   /* Local velocity norm */
 
-  cs_real_t *v_loc
-    = cs_meg_boundary_function(c->zone->name,
-                               n_elts,
-                               elt_ids,
-                               face_cen,
-                               "velocity",
-                               "norm_formula");
+  cs_real_t *v_loc = NULL;
+  BFT_MALLOC(v_loc, n_elts, cs_real_t);
+  cs_meg_boundary_function(c->zone->name,
+                           n_elts,
+                           elt_ids,
+                           face_cen,
+                           "velocity",
+                           "norm_formula",
+                           v_loc);
 
   switch(dir_type) {
   case 0:
@@ -557,12 +556,15 @@ _vel_profile_by_meg_norm(int               location_id,
     break;
   case 2:
     {
-      cs_real_t *v_dir = cs_meg_boundary_function(c->zone->name,
-                                                  n_elts,
-                                                  elt_ids,
-                                                  face_cen,
-                                                  "direction",
-                                                  "formula");
+      cs_real_t *v_dir = NULL;
+      BFT_MALLOC(v_dir, 3*n_elts, cs_real_t);
+      cs_meg_boundary_function(c->zone->name,
+                               n_elts,
+                               elt_ids,
+                               face_cen,
+                               "direction",
+                               "formula",
+                               v_dir);
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         /* Note: cs_meg_boundary_function output is not interleaved */
         for (cs_lnum_t k = 0; k < 3; k++)
@@ -616,12 +618,15 @@ _vel_profile_by_meg_dir(int               location_id,
 
   cs_real_t  *vals = (cs_real_t *)vals_p;
 
-  cs_real_t *v_dir = cs_meg_boundary_function(c->zone->name,
-                                              n_elts,
-                                              elt_ids,
-                                              face_cen,
-                                              "direction",
-                                              "formula");
+  cs_real_t *v_dir = NULL;
+  BFT_MALLOC(v_dir, 3 * n_elts, cs_real_t);
+  cs_meg_boundary_function(c->zone->name,
+                           n_elts,
+                           elt_ids,
+                           face_cen,
+                           "direction",
+                           "formula",
+                           v_dir);
 
   cs_real_t v = c->vel_values[3];
 
@@ -954,12 +959,16 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
   assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
 
   const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-  cs_real_t *t_loc = cs_meg_boundary_function(c->zone->name,
-                                              n_elts,
-                                              elt_ids,
-                                              face_cen,
-                                              "temperature",
-                                              c->condition);
+
+  cs_real_t *t_loc = NULL;
+  BFT_MALLOC(t_loc, n_elts, cs_real_t);
+  cs_meg_boundary_function(c->zone->name,
+                           n_elts,
+                           elt_ids,
+                           face_cen,
+                           "temperature",
+                           c->condition,
+                           t_loc);
 
   if (dense_output)
     cs_ht_convert_t_to_h_faces_z(c->zone, t_loc, retval);
@@ -1071,12 +1080,15 @@ _dof_meg_elec_rescaled(cs_lnum_t         n_elts,
   const cs_real_3_t *face_cen
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
-  cs_real_t *v_loc = cs_meg_boundary_function(c->zone->name,
-                                              n_elts,
-                                              elt_ids,
-                                              face_cen,
-                                              c->name,
-                                              c->condition);
+  cs_real_t *v_loc = NULL;
+  BFT_MALLOC(v_loc, n_elts, cs_real_t);
+  cs_meg_boundary_function(c->zone->name,
+                           n_elts,
+                           elt_ids,
+                           face_cen,
+                           c->name,
+                           c->condition,
+                           v_loc);
 
   if (dense_output || elt_ids == NULL) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -1318,12 +1330,19 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
                 "for exchange coefficient boundary coefficients."),
                 __func__, c->name);
 
-  cs_real_t *v_loc = cs_meg_boundary_function(c->zone->name,
-                                              n_elts,
-                                              elt_ids,
-                                              face_cen,
-                                              c->name,
-                                              c->condition);
+  cs_real_t *v_loc = NULL;
+  if (dim == 1)
+    BFT_MALLOC(v_loc, 2 * n_elts, cs_real_t);
+  else
+    BFT_MALLOC(v_loc, dim * n_elts, cs_real_t);
+
+  cs_meg_boundary_function(c->zone->name,
+                           n_elts,
+                           elt_ids,
+                           face_cen,
+                           c->name,
+                           c->condition,
+                           v_loc);
 
   /* Exchange coefficient first, Dirichlet values second */
 
@@ -2686,15 +2705,43 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
               continue;
           }
 
+          int n_bnd_vals = 1;
+          if (   cs_gui_strcmp(model, "k-epsilon")
+              || cs_gui_strcmp(model, "k-epsilon-PL")
+              || cs_gui_strcmp(model, "k-omega-SST")) {
+            n_bnd_vals = 2;
+          }
+          else if (   cs_gui_strcmp(model, "Rij-epsilon")
+                   || cs_gui_strcmp(model, "Rij-SSG")) {
+            n_bnd_vals = 7;
+          }
+          else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
+            n_bnd_vals = 8;
+          }
+          else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
+            n_bnd_vals = 4;
+          }
+          else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
+            n_bnd_vals = 1;
+          }
+          else
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Invalid turbulence model: %s.\n"), model);
+
+
+          cs_real_t *bnd_vals = NULL;
+          BFT_MALLOC(bnd_vals, n_bnd_vals * bz->n_elts, cs_real_t);
+
           if (   cs_gui_strcmp(model, "k-epsilon")
               || cs_gui_strcmp(model, "k-epsilon-PL")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
-                                                           bz->n_elts,
-                                                           bz->elt_ids,
-                                                           face_cen,
-                                                           "turbulence_ke",
-                                                           "formula");
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_ke",
+                                     "formula",
+                                     bnd_vals);
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2705,22 +2752,22 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
               for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
                 cs_lnum_t face_id = bz->elt_ids[elt_id];
-                rcodcl1_k[face_id] = new_vals[0 * bz->n_elts + elt_id];
-                rcodcl1_eps[face_id] = new_vals[1 * bz->n_elts + elt_id];
+                rcodcl1_k[face_id]   = bnd_vals[0 * bz->n_elts + elt_id];
+                rcodcl1_eps[face_id] = bnd_vals[1 * bz->n_elts + elt_id];
               }
             }
 
-            BFT_FREE(new_vals);
           }
           else if (   cs_gui_strcmp(model, "Rij-epsilon")
                    || cs_gui_strcmp(model, "Rij-SSG")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
-                                                           bz->n_elts,
-                                                           bz->elt_ids,
-                                                           face_cen,
-                                                           "turbulence_rije",
-                                                           "formula");
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_rije",
+                                     "formula",
+                                     bnd_vals);
 
             cs_field_t *c_rij = cs_field_by_name("rij");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2735,22 +2782,22 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
                 /* Values are stored for rij components then epsilon */
                 for (cs_lnum_t ii = 0; ii < 6; ii++)
                   rcodcl1_rij[ii*n_b_faces + face_id]
-                    = new_vals[bz->n_elts*ii + elt_id];
+                    = bnd_vals[bz->n_elts*ii + elt_id];
 
-                rcodcl1_eps[face_id] = new_vals[bz->n_elts*6 + elt_id];
+                rcodcl1_eps[face_id] = bnd_vals[bz->n_elts*6 + elt_id];
               }
             }
 
-            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
-                                                           bz->n_elts,
-                                                           bz->elt_ids,
-                                                           face_cen,
-                                                           "turbulence_rij_ebrsm",
-                                                           "formula");
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_rij_ebrsm",
+                                     "formula",
+                                     bnd_vals);
 
             cs_field_t *c_rij = cs_field_by_name("rij");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2769,23 +2816,23 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
                 /* Values are stored for rij components then epsilon and alpha*/
                 for (cs_lnum_t ii = 0; ii < 6; ii++)
                   rcodcl1_rij[ii*n_b_faces + face_id]
-                    = new_vals[bz->n_elts*ii + elt_id];
+                    = bnd_vals[bz->n_elts*ii + elt_id];
 
-                rcodcl1_eps[face_id] = new_vals[bz->n_elts*6 + elt_id];
+                rcodcl1_eps[face_id] = bnd_vals[bz->n_elts*6 + elt_id];
 
-                rcodcl1_a[face_id] = new_vals[bz->n_elts * 7 + elt_id];
+                rcodcl1_a[face_id] = bnd_vals[bz->n_elts * 7 + elt_id];
               }
             }
 
-            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
-                                                           bz->n_elts,
-                                                           bz->elt_ids,
-                                                           face_cen,
-                                                           "turbulence_v2f",
-                                                           "formula");
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_v2f",
+                                     "formula",
+                                     bnd_vals);
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2801,22 +2848,22 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
               for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
                 cs_lnum_t face_id = bz->elt_ids[elt_id];
-                rcodcl1_k[face_id]   = new_vals[0 * bz->n_elts + elt_id];
-                rcodcl1_eps[face_id] = new_vals[1 * bz->n_elts + elt_id];
-                rcodcl1_phi[face_id] = new_vals[2 * bz->n_elts + elt_id];
-                rcodcl1_a[face_id]   = new_vals[3 * bz->n_elts + elt_id];
+                rcodcl1_k[face_id]   = bnd_vals[0 * bz->n_elts + elt_id];
+                rcodcl1_eps[face_id] = bnd_vals[1 * bz->n_elts + elt_id];
+                rcodcl1_phi[face_id] = bnd_vals[2 * bz->n_elts + elt_id];
+                rcodcl1_a[face_id]   = bnd_vals[3 * bz->n_elts + elt_id];
               }
             }
 
-            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "k-omega-SST")) {
-            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
-                                                           bz->n_elts,
-                                                           bz->elt_ids,
-                                                           face_cen,
-                                                           "turbulence_kw",
-                                                           "formula");
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_kw",
+                                     "formula",
+                                     bnd_vals);
 
             cs_field_t *c_k = cs_field_by_name("k");
             cs_field_t *c_o = cs_field_by_name("omega");
@@ -2827,20 +2874,20 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
               for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
                 cs_lnum_t face_id = bz->elt_ids[elt_id];
-                rcodcl1_k[face_id] = new_vals[0 * bz->n_elts + elt_id];
-                rcodcl1_o[face_id] = new_vals[1 * bz->n_elts + elt_id];
+                rcodcl1_k[face_id] = bnd_vals[0 * bz->n_elts + elt_id];
+                rcodcl1_o[face_id] = bnd_vals[1 * bz->n_elts + elt_id];
               }
             }
 
-            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-            cs_real_t *new_vals = cs_meg_boundary_function(bz->name,
-                                                           bz->n_elts,
-                                                           bz->elt_ids,
-                                                           face_cen,
-                                                           "turbulence_spalart",
-                                                           "formula");
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_spalart",
+                                     "formula",
+                                     bnd_vals);
 
             cs_field_t *c_nu = cs_field_by_name("nu_tilda");
 
@@ -2849,15 +2896,16 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
               for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
                 cs_lnum_t face_id = bz->elt_ids[elt_id];
-                rcodcl1_nu[face_id] = new_vals[elt_id];
+                rcodcl1_nu[face_id] = bnd_vals[elt_id];
               }
             }
 
-            BFT_FREE(new_vals);
           }
           else
             bft_error(__FILE__, __LINE__, 0,
                       _("Invalid turbulence model: %s.\n"), model);
+
+          BFT_FREE(bnd_vals);
         }
       }
 
@@ -2973,13 +3021,15 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
       }
 
       if (boundaries->head_loss_e[izone]) {
-        cs_real_t *new_vals =
-          cs_meg_boundary_function(bz->name,
-                                   bz->n_elts,
-                                   bz->elt_ids,
-                                   face_cen,
-                                   "head_loss",
-                                   "formula");
+        cs_real_t *bnd_vals = NULL;
+        BFT_MALLOC(bnd_vals, bz->n_elts, cs_real_t);
+        cs_meg_boundary_function(bz->name,
+                                 bz->n_elts,
+                                 bz->elt_ids,
+                                 face_cen,
+                                 "head_loss",
+                                 "formula",
+                                 bnd_vals);
 
         const cs_field_t  *fp = cs_field_by_name("pressure");
         if (fp->bc_coeffs != NULL) {
@@ -2987,10 +3037,10 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];
-            rcodcl2_p[face_id] = new_vals[elt_id];
+            rcodcl2_p[face_id] = bnd_vals[elt_id];
           }
         }
-        BFT_FREE(new_vals);
+        BFT_FREE(bnd_vals);
       }
     }
 
@@ -3457,14 +3507,18 @@ cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
 
   const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
-  cs_real_t *v_loc = cs_meg_boundary_function(c->zone->name,
-                                              n_elts,
-                                              elt_ids,
-                                              face_cen,
-                                              c->name,
-                                              c->condition);
-
   const cs_lnum_t dim = c->dim;
+
+  cs_real_t *v_loc = NULL;
+  BFT_MALLOC(v_loc, dim * n_elts, cs_real_t);
+
+  cs_meg_boundary_function(c->zone->name,
+                           n_elts,
+                           elt_ids,
+                           face_cen,
+                           c->name,
+                           c->condition,
+                           v_loc);
 
   if (dense_output) {  /* common/expected case */
 

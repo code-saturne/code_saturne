@@ -2796,19 +2796,24 @@ void cs_gui_initial_conditions(void)
         cs_field_t *c_vel = cs_field_by_name("velocity");
 
         if (formula_uvw != NULL) {
-          cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                      n_cells,
-                                                      cell_ids,
-                                                      cell_cen,
-                                                      "velocity");
-          if (ini_vals != NULL) {
-            for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-              cs_lnum_t c_id = cell_ids[e_id];
-              for (int d = 0; d < 3; d++)
-                c_vel->val[3 * c_id + d] = ini_vals[3 * e_id + d];
-            }
-            BFT_FREE(ini_vals);
-          }
+          cs_real_t *ini_vals = NULL;
+          BFT_MALLOC(ini_vals, c_vel->dim * n_cells, cs_real_t);
+
+          cs_meg_initialization(z->name,
+                                n_cells,
+                                cell_ids,
+                                cell_cen,
+                                "velocity",
+                                ini_vals);
+
+          cs_array_real_copy_subset(n_cells,
+                                    c_vel->dim,
+                                    cell_ids,
+                                    CS_ARRAY_SUBSET_OUT,
+                                    ini_vals,
+                                    c_vel->val);
+
+          BFT_FREE(ini_vals);
         }
 
         /* Void fraction initialization for VoF approach */
@@ -2825,18 +2830,23 @@ void cs_gui_initial_conditions(void)
           cs_field_t *c = cs_field_by_name_try("void_fraction");
 
           if (c == NULL && formula != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                        n_cells,
-                                                        cell_ids,
-                                                        cell_cen,
-                                                        "void_fraction");
-            if (ini_vals != NULL) {
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                c->val[c_id] = ini_vals[e_id];
-              }
-              BFT_FREE(ini_vals);
-            }
+            cs_real_t *ini_vals = NULL;
+            BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+
+            cs_meg_initialization(z->name,
+                                  n_cells,
+                                  cell_ids,
+                                  cell_cen,
+                                  "void_fraction",
+                                  ini_vals);
+
+            cs_array_real_copy_subset(n_cells,
+                                      c->dim,
+                                      cell_ids,
+                                      CS_ARRAY_SUBSET_OUT,
+                                      ini_vals,
+                                      c->val);
+            BFT_FREE(ini_vals);
           }
 
         }
@@ -2853,18 +2863,22 @@ void cs_gui_initial_conditions(void)
           cs_field_t *c = cs_field_by_name_try("hydraulic_head");
 
           if (formula != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                        n_cells,
-                                                        cell_ids,
-                                                        cell_cen,
-                                                        "hydraulic_head");
-            if (ini_vals != NULL) {
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                c->val[c_id] = ini_vals[e_id];
-              }
-              BFT_FREE(ini_vals);
-            }
+            cs_real_t *ini_vals = NULL;
+            BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+            cs_meg_initialization(z->name,
+                                  n_cells,
+                                  cell_ids,
+                                  cell_cen,
+                                  "hydraulic_head",
+                                  ini_vals);
+
+            cs_array_real_copy_subset(n_cells,
+                                      c->dim,
+                                      cell_ids,
+                                      CS_ARRAY_SUBSET_OUT,
+                                      ini_vals,
+                                      c->val);
+            BFT_FREE(ini_vals);
           }
 
         }
@@ -2890,98 +2904,137 @@ void cs_gui_initial_conditions(void)
             if (cs_gui_strcmp(model, "off"))
               break;
 
-            cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                        n_cells,
-                                                        cell_ids,
-                                                        cell_cen,
-                                                        "turbulence");
-
-            if (ini_vals != NULL) {
-
-              if (   cs_gui_strcmp(model, "k-epsilon")
-                  || cs_gui_strcmp(model, "k-epsilon-PL")) {
-
-                cs_field_t *c_k   = cs_field_by_name("k");
-                cs_field_t *c_eps = cs_field_by_name("epsilon");
-
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  c_k->val[c_id]   = ini_vals[2 * e_id];
-                  c_eps->val[c_id] = ini_vals[2 * e_id + 1];
-                }
-              }
-              else if (   cs_gui_strcmp(model, "Rij-epsilon")
-                       || cs_gui_strcmp(model, "Rij-SSG")) {
-
-                cs_field_t *c_rij = cs_field_by_name_try("rij");
-                cs_field_t *c_eps = cs_field_by_name("epsilon");
-
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  for (int drij = 0; drij < 6; drij++) {
-                    c_rij->val[6*c_id + drij] = ini_vals[7*e_id + drij];
-                    c_eps->val[c_id] = ini_vals[7 * e_id + 6];
-                  }
-                }
-              }
-              else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-                cs_field_t *c_rij = cs_field_by_name_try("rij");
-                cs_field_t *c_eps = cs_field_by_name("epsilon");
-                cs_field_t *c_alp = cs_field_by_name("alpha");
-
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  for (int drij = 0; drij < 6; drij++) {
-                    c_rij->val[6*c_id + drij] = ini_vals[8*e_id + drij];
-                    c_eps->val[c_id] = ini_vals[8 * e_id + 6];
-                    c_alp->val[c_id] = ini_vals[8 * e_id + 7];
-                  }
-                }
-              }
-              else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-
-                cs_field_t *c_k   = cs_field_by_name("k");
-                cs_field_t *c_eps = cs_field_by_name("epsilon");
-                cs_field_t *c_phi = cs_field_by_name("phi");
-                cs_field_t *c_alp = cs_field_by_name("alpha");
-
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-
-                  c_k->val[c_id]   = ini_vals[4 * e_id];
-                  c_eps->val[c_id] = ini_vals[4 * e_id + 1];
-                  c_phi->val[c_id] = ini_vals[4 * e_id + 2];
-                  c_alp->val[c_id] = ini_vals[4 * e_id + 3];
-                }
-              }
-              else if (cs_gui_strcmp(model, "k-omega-SST")) {
-
-                cs_field_t *c_k   = cs_field_by_name("k");
-                cs_field_t *c_ome = cs_field_by_name("omega");
-
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-
-                  c_k->val[c_id]   = ini_vals[2 * e_id];
-                  c_ome->val[c_id] = ini_vals[2 * e_id + 1];
-                }
-              }
-              else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-                cs_field_t *c_nu = cs_field_by_name("nu_tilda");
-
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  c_nu->val[c_id] = ini_vals[e_id];
-                }
-              }
-
-              else
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Invalid turbulence model: %s.\n"), model);
-
-              BFT_FREE(ini_vals);
-
+            /* Set number of values to compute */
+            int n_ini_vals = 0;
+            if (   cs_gui_strcmp(model, "k-epsilon")
+                || cs_gui_strcmp(model, "k-epsilon-PL")
+                || cs_gui_strcmp(model, "k-omega-SST")) {
+              n_ini_vals = 2;
             }
+            else if (   cs_gui_strcmp(model, "Rij-epsilon")
+                     || cs_gui_strcmp(model, "Rij-SSG")) {
+              n_ini_vals = 7;
+            }
+            else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
+              n_ini_vals = 8;
+            }
+            else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
+              n_ini_vals = 4;
+            }
+            else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
+              n_ini_vals = 1;
+            }
+            else
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Invalid turbulence model: %s.\n"), model);
+
+
+            cs_real_t *ini_vals = NULL;
+            BFT_MALLOC(ini_vals, n_ini_vals*n_cells, cs_real_t);
+            cs_meg_initialization(z->name,
+                                  n_cells,
+                                  cell_ids,
+                                  cell_cen,
+                                  "turbulence",
+                                  ini_vals);
+
+
+            if (   cs_gui_strcmp(model, "k-epsilon")
+                || cs_gui_strcmp(model, "k-epsilon-PL")) {
+
+              cs_field_t *c_k   = cs_field_by_name("k");
+              cs_field_t *c_eps = cs_field_by_name("epsilon");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_real_t *_vals = ini_vals + n_ini_vals * e_id;
+
+                cs_lnum_t c_id = cell_ids[e_id];
+                c_k->val[c_id]   = _vals[0];
+                c_eps->val[c_id] = _vals[1];
+              }
+            }
+            else if (   cs_gui_strcmp(model, "Rij-epsilon")
+                     || cs_gui_strcmp(model, "Rij-SSG")) {
+
+              cs_field_t *c_rij = cs_field_by_name_try("rij");
+              cs_field_t *c_eps = cs_field_by_name("epsilon");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_real_t *_vals = ini_vals + n_ini_vals * e_id;
+
+                cs_lnum_t c_id = cell_ids[e_id];
+                cs_real_t *_rij = c_rij->val + 6*c_id;
+                for (int drij = 0; drij < 6; drij++)
+                  _rij[drij] = _vals[drij];
+
+                c_eps->val[c_id] = _vals[6];
+              }
+            }
+            else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
+              cs_field_t *c_rij = cs_field_by_name_try("rij");
+              cs_field_t *c_eps = cs_field_by_name("epsilon");
+              cs_field_t *c_alp = cs_field_by_name("alpha");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_real_t *_vals = ini_vals + n_ini_vals * e_id;
+
+                cs_lnum_t c_id = cell_ids[e_id];
+
+                cs_real_t *_rij = c_rij->val + 6*c_id;
+                for (int drij = 0; drij < 6; drij++)
+                  _rij[drij] = _vals[drij];
+
+                c_eps->val[c_id] = _vals[6];
+                c_alp->val[c_id] = _vals[7];
+              }
+            }
+            else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
+
+              cs_field_t *c_k   = cs_field_by_name("k");
+              cs_field_t *c_eps = cs_field_by_name("epsilon");
+              cs_field_t *c_phi = cs_field_by_name("phi");
+              cs_field_t *c_alp = cs_field_by_name("alpha");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_real_t *_vals = ini_vals + n_ini_vals * e_id;
+
+                cs_lnum_t c_id = cell_ids[e_id];
+
+                c_k->val[c_id]   = _vals[0];
+                c_eps->val[c_id] = _vals[1];
+                c_phi->val[c_id] = _vals[2];
+                c_alp->val[c_id] = _vals[3];
+              }
+            }
+            else if (cs_gui_strcmp(model, "k-omega-SST")) {
+
+              cs_field_t *c_k   = cs_field_by_name("k");
+              cs_field_t *c_ome = cs_field_by_name("omega");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_real_t *_vals = ini_vals + n_ini_vals * e_id;
+
+                cs_lnum_t c_id = cell_ids[e_id];
+
+                c_k->val[c_id]   = _vals[0];
+                c_ome->val[c_id] = _vals[1];
+              }
+            }
+            else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
+              cs_field_t *c_nu = cs_field_by_name("nu_tilda");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                c_nu->val[c_id] = ini_vals[e_id];
+              }
+            }
+
+            else
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Invalid turbulence model: %s.\n"), model);
+
+            BFT_FREE(ini_vals);
+
           }
         }
 
@@ -3005,18 +3058,22 @@ void cs_gui_initial_conditions(void)
           assert(c != NULL);
 
           if (formula_sca != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                        n_cells,
-                                                        cell_ids,
-                                                        cell_cen,
-                                                        "thermal");
-            if (ini_vals != NULL) {
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                c->val[c_id]   = ini_vals[e_id];
-              }
-              BFT_FREE(ini_vals);
-            }
+            cs_real_t *ini_vals = NULL;
+            BFT_MALLOC(ini_vals, n_cells, cs_real_t);
+            cs_meg_initialization(z->name,
+                                  n_cells,
+                                  cell_ids,
+                                  cell_cen,
+                                  "thermal",
+                                  ini_vals);
+
+            cs_array_real_copy_subset(n_cells,
+                                      c->dim,
+                                      cell_ids,
+                                      CS_ARRAY_SUBSET_OUT,
+                                      ini_vals,
+                                      c->val);
+            BFT_FREE(ini_vals);
           }
           /* If no formula was provided, the previous field values are
              kept (allowing mode-specific automatic initialization). */
@@ -3043,18 +3100,22 @@ void cs_gui_initial_conditions(void)
             formula_sca = cs_tree_node_get_value_str(tn_sca);
 
             if (formula_sca != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                          n_cells,
-                                                          cell_ids,
-                                                          cell_cen,
-                                                          f->name);
-              if (ini_vals != NULL) {
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  f->val[c_id] = ini_vals[e_id];
-                }
-                BFT_FREE(ini_vals);
-              }
+              cs_real_t *ini_vals = NULL;
+              BFT_MALLOC(ini_vals, n_cells*f->dim, cs_real_t);
+              cs_meg_initialization(z->name,
+                                    n_cells,
+                                    cell_ids,
+                                    cell_cen,
+                                    f->name,
+                                    ini_vals);
+
+              cs_array_real_copy_subset(n_cells,
+                                        f->dim,
+                                        cell_ids,
+                                        CS_ARRAY_SUBSET_OUT,
+                                        ini_vals,
+                                        f->val);
+              BFT_FREE(ini_vals);
             }
           }
         }
@@ -3096,18 +3157,22 @@ void cs_gui_initial_conditions(void)
             formula_meteo = cs_tree_node_get_value_str(tn_meteo2);
 
             if (formula_meteo != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                          n_cells,
-                                                          cell_ids,
-                                                          cell_cen,
-                                                          c->name);
-              if (ini_vals != NULL) {
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  c->val[c_id] = ini_vals[e_id];
-                }
-                BFT_FREE(ini_vals);
-              }
+              cs_real_t *ini_vals = NULL;
+              BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+              cs_meg_initialization(z->name,
+                                    n_cells,
+                                    cell_ids,
+                                    cell_cen,
+                                    c->name,
+                                    ini_vals);
+
+              cs_array_real_copy_subset(n_cells,
+                                        c->dim,
+                                        cell_ids,
+                                        CS_ARRAY_SUBSET_OUT,
+                                        ini_vals,
+                                        c->val);
+              BFT_FREE(ini_vals);
             }
 
             /* else:
@@ -3151,18 +3216,22 @@ void cs_gui_initial_conditions(void)
             formula_comb = cs_tree_node_get_value_str(tn_combustion2);
 
             if (formula_comb != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                          n_cells,
-                                                          cell_ids,
-                                                          cell_cen,
-                                                          c_comb->name);
-              if (ini_vals != NULL) {
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  c_comb->val[c_id] = ini_vals[e_id];
-                }
-                BFT_FREE(ini_vals);
-              }
+              cs_real_t *ini_vals = NULL;
+              BFT_MALLOC(ini_vals, c_comb->dim*n_cells, cs_real_t);
+              cs_meg_initialization(z->name,
+                                    n_cells,
+                                    cell_ids,
+                                    cell_cen,
+                                    c_comb->name,
+                                    ini_vals);
+
+            cs_array_real_copy_subset(n_cells,
+                                      c_comb->dim,
+                                      cell_ids,
+                                      CS_ARRAY_SUBSET_OUT,
+                                      ini_vals,
+                                      c_comb->val);
+            BFT_FREE(ini_vals);
             }
           }
 
@@ -3218,19 +3287,24 @@ void cs_gui_initial_conditions(void)
 
               formula = cs_tree_node_get_value_str(tn);
 
-              if (formula != NULL) {
-                cs_real_t *ini_vals = cs_meg_initialization(z->name,
-                                                            n_cells,
-                                                            cell_ids,
-                                                            cell_cen,
-                                                            c->name);
-                if (ini_vals != NULL) {
-                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                    cs_lnum_t c_id = cell_ids[e_id];
-                    c->val[c_id] = ini_vals[e_id];
-                  }
-                  BFT_FREE(ini_vals);
-                }
+              if (formula != NULL && c != NULL) {
+                cs_real_t *ini_vals = NULL;
+                BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+
+                cs_meg_initialization(z->name,
+                                      n_cells,
+                                      cell_ids,
+                                      cell_cen,
+                                      c->name,
+                                      ini_vals);
+
+                cs_array_real_copy_subset(n_cells,
+                                          c->dim,
+                                          cell_ids,
+                                          CS_ARRAY_SUBSET_OUT,
+                                          ini_vals,
+                                          c->val);
+                BFT_FREE(ini_vals);
               }
             }
 
@@ -3456,15 +3530,19 @@ cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
       const char *formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
+        cs_real_t *st_vals = NULL;
+        BFT_MALLOC(st_vals, 12*n_cells, cs_real_t);
 
         const cs_real_3_t *restrict cell_cen =
           (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
-        cs_real_t *st_vals = cs_meg_source_terms(z->name,
-                                                 z->n_elts,
-                                                 z->elt_ids,
-                                                 cell_cen,
-                                                 "momentum",
-                                                 "momentum_source_term");
+
+        cs_meg_source_terms(z->name,
+                            z->n_elts,
+                            z->elt_ids,
+                            cell_cen,
+                            "momentum",
+                            "momentum_source_term",
+                            st_vals);
 
         for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
           cs_lnum_t c_id = cell_ids[e_id];
@@ -3516,8 +3594,8 @@ cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
           tsimp[c_id][2][2] = cell_f_vol[c_id]*dSwdw;
 
         }
-        if (st_vals != NULL)
-          BFT_FREE(st_vals);
+
+        BFT_FREE(st_vals);
       }
     }
   }
@@ -5254,12 +5332,16 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
       formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
-        cs_real_t *st_vals = cs_meg_source_terms(z->name,
-                                                 n_cells,
-                                                 cell_ids,
-                                                 cell_cen,
-                                                 f->name,
-                                                 "scalar_source_term");
+        cs_real_t *st_vals = NULL;
+        BFT_MALLOC(st_vals, 2*n_cells, cs_real_t);
+
+        cs_meg_source_terms(z->name,
+                            n_cells,
+                            cell_ids,
+                            cell_cen,
+                            f->name,
+                            "scalar_source_term",
+                            st_vals);
 
         cs_real_t sign = 1.0;
         cs_real_t non_linear = 1.0;
@@ -5277,8 +5359,8 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
           tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
                         - non_linear * tsimp[c_id] * pvar[c_id];
         }
-        if (st_vals != NULL)
-          BFT_FREE(st_vals);
+
+        BFT_FREE(st_vals);
       }
     }
   }
@@ -5337,13 +5419,16 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
       formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
+        cs_real_t *st_vals = NULL;
+        BFT_MALLOC(st_vals, 2*n_cells, cs_real_t);
 
-        cs_real_t *st_vals = cs_meg_source_terms(z->name,
-                                                 n_cells,
-                                                 cell_ids,
-                                                 cell_cen,
-                                                 f->name,
-                                                 "thermal_source_term");
+        cs_meg_source_terms(z->name,
+                            n_cells,
+                            cell_ids,
+                            cell_cen,
+                            f->name,
+                            "thermal_source_term",
+                            st_vals);
 
         for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
           cs_lnum_t c_id = cell_ids[e_id];
@@ -5352,8 +5437,8 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
           tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
                       - tsimp[c_id] * pvar[c_id];
         }
-        if (st_vals != NULL)
-          BFT_FREE(st_vals);
+
+        BFT_FREE(st_vals);
       }
     }
   }

@@ -187,12 +187,15 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
               cs_gui_node_get_tag(tn_w, "label"));
 
   /* Evaluate formula using meg */
-  cs_real_t *bc_vals = cs_meg_boundary_function(z->name,
-                                                z->n_elts,
-                                                z->elt_ids,
-                                                face_cen,
-                                                "mesh_velocity",
-                                                "fixed_displacement");
+  cs_real_t *bc_vals = NULL;
+  BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
+  cs_meg_boundary_function(z->name,
+                           z->n_elts,
+                           z->elt_ids,
+                           face_cen,
+                           "mesh_velocity",
+                           "fixed_displacement",
+                           bc_vals);
 
   /* Loop over boundary faces */
   for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
@@ -244,12 +247,15 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
               cs_gui_node_get_tag(tn_w, "label"));
 
   /* Evaluate formula using meg */
-  cs_real_t *bc_vals = cs_meg_boundary_function(z->name,
-                                                z->n_elts,
-                                                z->elt_ids,
-                                                face_cen,
-                                                "mesh_velocity",
-                                                "fixed_velocity");
+  cs_real_t *bc_vals = NULL;
+  BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
+  cs_meg_boundary_function(z->name,
+                           z->n_elts,
+                           z->elt_ids,
+                           face_cen,
+                           "mesh_velocity",
+                           "fixed_velocity",
+                           bc_vals);
 
   /* mesh_velocity rcodcl values handled through dof_function */
 
@@ -768,12 +774,16 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
       const cs_zone_t *bz = cs_boundary_zone_by_name(label);
 
       /* Evaluate formula using meg */
-      return cs_meg_boundary_function(bz->name,
-                                      bz->n_elts,
-                                      bz->elt_ids,
-                                      face_cen,
-                                      "mesh_velocity",
-                                      "fixed_velocity");
+      cs_real_t *retvals = NULL;
+      BFT_MALLOC(retvals, 3 * bz->n_elts, cs_real_t);
+      cs_meg_boundary_function(bz->name,
+                               bz->n_elts,
+                               bz->elt_ids,
+                               face_cen,
+                               "mesh_velocity",
+                               "fixed_velocity",
+                               retvals);
+      return retvals;
 
     }
   }

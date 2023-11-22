@@ -98,37 +98,34 @@ cs_meg_volume_function(const char      *zone_name,
                        cs_field_t       *f[])
 {
 """,
-'bnd':"""cs_real_t *
+'bnd':"""void
 cs_meg_boundary_function(const char       *zone_name,
                          const cs_lnum_t   n_elts,
                          const cs_lnum_t  *elt_ids,
                          const cs_real_t   xyz[][3],
                          const char       *field_name,
-                         const char       *condition)
+                         const char       *condition,
+                         cs_real_t        *retvals)
 {
-  cs_real_t *new_vals = NULL;
-
 """,
-'src':"""cs_real_t *
+'src':"""void
 cs_meg_source_terms(const char       *zone_name,
                     const cs_lnum_t   n_elts,
                     const cs_lnum_t  *elt_ids,
                     const cs_real_t   xyz[][3],
                     const char       *name,
-                    const char       *source_type)
+                    const char       *source_type,
+                    cs_real_t        *retvals)
 {
-  cs_real_t *new_vals = NULL;
-
 """,
-'ini':"""cs_real_t *
+'ini':"""void
 cs_meg_initialization(const char      *zone_name,
                       const cs_lnum_t  n_elts,
                       const cs_lnum_t *elt_ids,
                       const cs_real_t  xyz[][3],
-                      const char      *field_name)
+                      const char      *field_name,
+                      cs_real_t       *retvals)
 {
-  cs_real_t *new_vals = NULL;
-
 """,
 'ibm':"""void
 cs_meg_immersed_boundaries_inout(int         *ipenal,
@@ -594,40 +591,6 @@ class meg_to_c_interpreter:
         coords = ['x', 'y', 'z']
         need_coords = False
 
-        # allocate the new array
-
-#        ids_str    = 'zone->elt_ids'
-#        elt_id_str = 'f_id'
-#        if element_type == 'vertex':
-#           ids_str    = 'vtx_ids'
-#            elt_id_str = 'v_id'
-
-        if need_for_loop:
-            # If values are stored for vertices, change selectors.
-#            if element_type == 'vertex':
-#
-#                usr_defs += ntabs*tab + 'cs_lnum_t  %s;\n' % (val_str)
-#                usr_defs += ntabs*tab + 'cs_lnum_t *%s;\n' % (ids_str)
-#                usr_defs += ntabs*tab
-#                usr_defs += 'BFT_MALLOC(%s, cs_glob_mesh->n_vertices, cs_lnum_t);\n\n' % (ids_str)
-
-#                # Vertices selector function
-#                b_f_vtx_sel_fct = 'cs_selector_get_b_face_vertices_list_by_ids'
-#                b_f_vtx_sel_tab = ' '*(len(b_f_vtx_sel_fct)+1)
-#
-#                usr_defs += ntabs*tab + '%s(zone->n_elts,\n' % (b_f_vtx_sel_fct)
-#                usr_defs += ntabs*tab + '%szone->elt_ids,\n' % (b_f_vtx_sel_tab)
-#                usr_defs += ntabs*tab + '%s&%s,\n' % (b_f_vtx_sel_tab, val_str)
-#                usr_defs += ntabs*tab + '%s%s);\n' % (b_f_vtx_sel_tab, ids_str)
-#
-            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = n_elts * %d;\n' \
-                    % (len(required))
-        else:
-            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = %d;\n' % (len(required))
-
-        usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
-        usr_defs += '\n'
-
         # ------------------------
 
         # Deal with tokens which require a definition
@@ -734,10 +697,6 @@ class meg_to_c_interpreter:
 
         tab   = '  '
         ntabs = 2
-
-        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = n_elts * %d;\n' % (len(required))
-        usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
-        usr_defs += '\n'
 
         known_symbols = []
         coords = ['x', 'y', 'z']
@@ -850,10 +809,6 @@ class meg_to_c_interpreter:
 
         tab   = '  '
         ntabs = 2
-
-        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = n_elts * %d;\n' % (len(required))
-        usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
-        usr_defs += '\n'
 
         known_symbols = []
         coords = ['x', 'y', 'z']
@@ -2427,9 +2382,6 @@ class meg_to_c_interpreter:
                 code_to_write += w_block
 
                 k_count += 1
-
-            if func_type in ['bnd', 'src', 'ini']:
-                code_to_write += '  return new_vals;\n'
 
             code_to_write += _file_footer
 
