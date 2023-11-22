@@ -56,7 +56,7 @@
 
 subroutine resvoi &
  ( dt     , iterns ) &
- bind(C, name='cs_solve_void_fraction')
+ bind(C, name='cs_vof_solve_void_fraction')
 
 !===============================================================================
 

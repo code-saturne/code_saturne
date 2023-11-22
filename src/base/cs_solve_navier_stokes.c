@@ -4206,7 +4206,7 @@ cs_solve_navier_stokes(const int   iterns,
   if (vof_param->vof_model > 0) {
 
     /* Void fraction solving */
-    cs_solve_void_fraction(dt, iterns);
+    cs_vof_solve_void_fraction(dt, iterns);
 
     /* Halo synchronization */
     cs_real_t *cvar_voidf = cs_field_by_name("void_fraction")->val;

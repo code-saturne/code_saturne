@@ -331,6 +331,31 @@ cs_cavitation_parameters_t *
 cs_get_glob_cavitation_parameters(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve the void fraction \f$ \alpha \f$ for the Volume of Fluid
+ *        method (and hence for cavitating flows).
+ *
+ * This function solves:
+ * \f[
+ * \dfrac{\alpha^n - \alpha^{n-1}}{\Delta t}
+ *     + \divs \left( \alpha^n \vect{u}^n \right)
+ *     + \divs \left( \left[ \alpha^n
+ *                           \left( 1 - \alpha^{n} \right)
+ *                    \right] \vect{u^r}^n \right)
+ *     = \dfrac{\Gamma_V \left( \alpha^{n-1}, p^n \right)}{\rho_v}
+ * \f]
+ * with \f$ \Gamma_V \f$ the eventual vaporization source term (Merkle model) in
+ * case the cavitation model is enabled, \f$ \rho_v \f$ the reference gas
+ * density and \f$ \vect{u^r} \f$ the drift velocity for the compressed
+ * interface.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_solve_void_fraction(cs_real_t   dt[],
+                           int         iterns);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

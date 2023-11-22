@@ -93,59 +93,6 @@ module vof
 
      !---------------------------------------------------------------------------
 
-     ! Interface to C function updating mixture physical properties in VOF model
-
-     subroutine vof_compute_linear_rho_mu() &
-       bind(C, name='cs_f_vof_compute_linear_rho_mu')
-       use, intrinsic :: iso_c_binding
-       implicit none
-     end subroutine vof_compute_linear_rho_mu
-
-     !---------------------------------------------------------------------------
-
-     ! Interface to C function updating mixture physical properties and mass
-     ! fluxes in VOF model
-
-     subroutine vof_update_phys_prop() &
-       bind(C, name='cs_f_vof_update_phys_prop')
-       use, intrinsic :: iso_c_binding
-       implicit none
-     end subroutine vof_update_phys_prop
-
-     !---------------------------------------------------------------------------
-
-     ! Interface to C function computing the surface tension momentum source
-     ! term in VOF model
-
-     subroutine vof_surface_tension(stf) &
-       bind(C, name='cs_f_vof_surface_tension')
-       use, intrinsic :: iso_c_binding
-       implicit none
-       real(kind=c_double), dimension(*), intent(inout) :: stf
-     end subroutine vof_surface_tension
-
-     !---------------------------------------------------------------------------
-
-     ! Interface to C function logging mass budget in VOF model
-
-     subroutine vof_log_mass_budget() &
-       bind(C, name='cs_f_vof_log_mass_budget')
-       use, intrinsic :: iso_c_binding
-       implicit none
-     end subroutine vof_log_mass_budget
-
-     !---------------------------------------------------------------------------
-
-     ! Interface to C function computing drift flux in VOF model
-
-     subroutine vof_update_drift_flux() &
-       bind(C, name='cs_f_vof_update_drift_flux')
-       use, intrinsic :: iso_c_binding
-       implicit none
-     end subroutine vof_update_drift_flux
-
-     !---------------------------------------------------------------------------
-
      ! Interface to C function cs_vof_source_term
 
      subroutine vof_drift_term(imrgra, nswrgp, imligp, iwarnp, epsrgp,    &

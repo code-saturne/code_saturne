@@ -269,19 +269,7 @@ void
 cs_f_vof_compute_linear_rho_mu(void);
 
 void
-cs_f_vof_update_phys_prop(void);
-
-void
-cs_f_vof_surface_tension(cs_real_3_t stf[]);
-
-void
-cs_f_vof_log_mass_budget(void);
-
-void
 cs_f_vof_deshpande_drift_flux(void);
-
-void
-cs_f_vof_update_drift_flux(void);
 
 void
 cs_f_cavitation_get_pointers(double **presat,
@@ -345,24 +333,6 @@ void
 cs_f_vof_compute_linear_rho_mu(void)
 {
   cs_vof_compute_linear_rho_mu(cs_glob_mesh);
-}
-
-void
-cs_f_vof_update_phys_prop(void)
-{
-  cs_vof_update_phys_prop(cs_glob_mesh);
-}
-
-void
-cs_f_vof_surface_tension(cs_real_3_t stf[])
-{
-  cs_vof_surface_tension(cs_glob_mesh, cs_glob_mesh_quantities, stf);
-}
-
-void
-cs_f_vof_log_mass_budget(void)
-{
-  cs_vof_log_mass_budget(cs_glob_mesh, cs_glob_mesh_quantities);
 }
 
 void
