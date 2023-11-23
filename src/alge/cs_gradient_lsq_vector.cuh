@@ -311,3 +311,125 @@ _compute_gradient_lsq_v(cs_lnum_t           n_cells,
                         + rhs[c_id][i][2] * cocg[c_id][2];
   }
 }
+
+template <cs_lnum_t stride>
+__global__ static void
+_compute_gradient_b_face_lsq_v(const cs_lnum_t           n_b_cells,
+                        const cs_lnum_t      *restrict b_cells,
+                        const cs_lnum_t      *restrict cell_b_faces_idx,
+                        const cs_lnum_t      *restrict cell_b_faces,
+                        const cs_real_3_t          *restrict b_face_cog,
+                        const cs_real_3_t          *restrict cell_cen,
+                        const cs_real_3_t          *restrict diipb,
+                        cs_real_t (*restrict gradv)[stride][3],
+                        const cs_real_t (*restrict coefbv)[stride][stride],
+                        cs_cocg_6_t         *restrict cocg,
+                        cs_lnum_t           n_c_iter_max,
+                        cs_real_t           c_eps)
+{
+  size_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (c_idx >= n_b_cells) 
+    return;
+
+  cs_lnum_t c_id = b_cells[c_idx];
+
+  cs_lnum_t s_id = cell_b_faces_idx[c_id];
+  cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+  auto c_grad = gradv[c_id];
+  cs_real_t grad_0[3][3], grad_i[3][3], rhs_c[3][3], dif[3],  grad_c[3][3], 
+            var_ip_f[3];
+
+  cs_real_t ref_norm = 0.0, ddif, c_norm = 0;
+  cs_lnum_t n_c_it, f_id;
+  cs_real_t  eps_dvg = 1e-2;
+  cs_real_t cs_math_epzero = 1e-12;
+
+  for(cs_lnum_t i = 0; i < stride; i++){
+    for(cs_lnum_t j = 0; j < 3; j++){
+      grad_0[i][j] = c_grad[i][j];
+      grad_i[i][j] = c_grad[i][j];
+    }
+  }
+
+  for (cs_lnum_t kk = 0; kk < stride; kk++) {
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      ref_norm += cs_math_fabs_cuda(c_grad[kk][ll]);
+  }
+
+  for (n_c_it = 0; n_c_it < n_c_iter_max; n_c_it++) {
+    for (cs_lnum_t ll = 0; ll < stride; ll++) {
+      rhs_c[ll][0] = 0;
+      rhs_c[ll][1] = 0;
+      rhs_c[ll][2] = 0;
+    }
+    
+    for(cs_lnum_t index = s_id; index < e_id; index++){
+      f_id = cell_b_faces[index];
+
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dif[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+      ddif = 1. / cs_math_3_square_norm_cuda(dif);
+
+      for (cs_lnum_t ll = 0; ll < stride; ll++) {
+        var_ip_f[ll] = cs_math_3_dot_product_cuda(c_grad[ll], diipb[f_id]);
+      }        
+
+      const cs_real_t *b =   ((const cs_real_t *)coefbv)
+                              + (f_id*stride*stride);
+
+      for (cs_lnum_t kk = 0; kk < stride; kk++) {
+        cs_real_t pfac = 0;
+        for (cs_lnum_t ll = 0; ll < stride; ll++) {
+          pfac += b[kk*3 + ll] * var_ip_f[ll] * ddif;
+        }
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs_c[kk][ll] += dif[ll] * pfac;
+      }
+
+    }
+
+    for(cs_lnum_t i = 0; i < stride; i++){
+      grad_c[i][0] =   rhs_c[i][0] * cocg[c_id][0]
+                            + rhs_c[i][1] * cocg[c_id][3]
+                            + rhs_c[i][2] * cocg[c_id][5];
+
+      grad_c[i][1] =   rhs_c[i][0] * cocg[c_id][3]
+                          + rhs_c[i][1] * cocg[c_id][1]
+                          + rhs_c[i][2] * cocg[c_id][4];
+
+      grad_c[i][2] =   rhs_c[i][0] * cocg[c_id][5]
+                          + rhs_c[i][1] * cocg[c_id][4]
+                          + rhs_c[i][2] * cocg[c_id][2];
+    }
+
+    for (cs_lnum_t ii = 0; ii < stride; ii++) {
+      for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
+        c_norm += cs_math_fabs_cuda(c_grad[ii][jj] - grad_i[ii][jj]);
+        grad_i[ii][jj] = c_grad[ii][jj];
+      }
+    }
+
+    if (c_norm < ref_norm * c_eps || c_norm < cs_math_epzero)
+        break;
+  }
+  
+  for (cs_lnum_t ii = 0; ii < stride; ii++) {
+    for (cs_lnum_t jj = 0; jj < 3; jj++) {
+      gradv[c_id][ii][jj] = c_grad[ii][jj];
+    }
+  }
+
+  if (c_norm > eps_dvg * ref_norm) {
+    for (cs_lnum_t ii = 0; ii < stride; ii++) {
+      for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        c_grad[ii][jj] = grad_0[ii][jj];
+      }
+    }
+
+    n_c_it *= -1;
+  }
+}

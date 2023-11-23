@@ -199,3 +199,96 @@ _compute_rhs_lsq_v_b_face_gather_stride(cs_lnum_t           n_b_cells,
   }
   _math_6_inv_cramer_sym_in_place_cuda(cocg[c_id]);
 }
+
+
+template <cs_lnum_t stride, typename val_t, typename coefb_t>
+__global__ static void
+_compute_rhs_lsq_v_b_face_gather_stride_v2(cs_lnum_t           n_b_cells,
+                          const cs_lnum_t      *restrict cell_b_faces_idx,
+                          const cs_lnum_t      *restrict cell_b_faces,
+                          const cs_lnum_t      *restrict b_cells,
+                          const cs_real_3_t    *restrict b_face_cog,
+                          const cs_real_3_t    *restrict cell_cen,
+                          cs_real_33_t         *restrict rhs,
+                          const val_t    *restrict pvar,
+                          const coefb_t   *restrict coefbv,
+                          const cs_real_3_t    *restrict coefav,
+                          cs_cocg_6_t         *restrict cocg,
+                          const cs_cocg_6_t         *restrict cocgb,
+                          const int            inc)
+{
+  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t lindex = threadIdx.x;
+
+  if(c_idx >= n_b_cells){
+    return;
+  }
+
+  cs_lnum_t c_id = b_cells[c_idx];
+
+  cs_lnum_t f_id;
+  cs_real_t dif[stride], ddif, pfac, norm, var_f[stride];
+
+  cs_lnum_t s_id = cell_b_faces_idx[c_id];
+  cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
+
+  for(cs_lnum_t ll = 0; ll < 6; ll++)
+    cocg[c_id][ll] = cocgb[c_idx][ll];
+
+  __shared__ cs_real_t _rhs[256][3][3];
+
+  for(cs_lnum_t i = 0; i < 3; i++){
+    for(cs_lnum_t j = 0; j < 3; j++){
+      _rhs[lindex][i][j] = rhs[c_id][i][j];
+    }
+  }
+
+  auto _pvar = pvar[c_id];
+  auto _cocg = cocg[c_id];
+
+  for(cs_lnum_t index = s_id; index < e_id; index++){
+
+    f_id = cell_b_faces[index];
+    auto _coefbv = coefbv[f_id];
+    auto _coefav = coefav[f_id];
+
+
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
+
+    ddif = 1. / cs_math_3_square_norm_cuda(dif);
+
+    _cocg[0] += dif[0]*dif[0]*ddif;
+    _cocg[1] += dif[1]*dif[1]*ddif;
+    _cocg[2] += dif[2]*dif[2]*ddif;
+    _cocg[3] += dif[0]*dif[1]*ddif;
+    _cocg[4] += dif[1]*dif[2]*ddif;
+    _cocg[5] += dif[0]*dif[2]*ddif;
+
+    for (cs_lnum_t kk = 0; kk < stride; kk++) {
+      var_f[kk] = _coefav[kk]*inc;
+      for (cs_lnum_t ll = 0; ll < stride; ll++) {
+        var_f[kk] += _coefbv[ll][kk] * _pvar[ll];
+      }
+
+      pfac = (var_f[kk] - _pvar[kk]) * ddif;
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        _rhs[lindex][kk][ll] += dif[ll] * pfac;
+    }
+  }
+
+  cocg[c_id][0] += _cocg[0];
+  cocg[c_id][1] += _cocg[1];
+  cocg[c_id][2] += _cocg[2];
+  cocg[c_id][3] += _cocg[3];
+  cocg[c_id][4] += _cocg[4];
+  cocg[c_id][5] += _cocg[5];
+
+  for(cs_lnum_t i = 0; i < stride; i++){
+    for(cs_lnum_t j = 0; j < 3; j++){
+      rhs[c_id][i][j] = _rhs[lindex][i][j];
+    }
+  }
+  // _math_6_inv_cramer_sym_in_place_cuda(cocg[c_id]);
+}

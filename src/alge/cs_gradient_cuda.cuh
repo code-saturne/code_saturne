@@ -79,6 +79,22 @@
 #include "cs_gradient.h"
 #include "cs_gradient_priv.h"
 
+__device__ cs_real_t
+cs_math_fabs_cuda(cs_real_t  x)
+{
+  cs_real_t ret = (x <  0) ? -x : x;
+
+  return ret;
+}
+
+__device__ cs_real_t
+cs_math_3_dot_product_cuda(const cs_real_t  u[3],
+                      const cs_real_t  v[3])
+{
+  cs_real_t prod = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+
+  return prod;
+}
 
 
 __device__ void cs_math_3_normalise_cuda(const cs_real_t in[3],
