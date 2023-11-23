@@ -4689,12 +4689,13 @@ void cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities)
       const char *formula = cs_tree_node_get_child_value_str(tn_zp, "formula");
 
       if (formula != NULL) {
-        cs_field_t *fmeg[1] = {CS_F_(poro)};
+        cs_field_t *f = CS_F_(poro);
         cs_meg_volume_function(z->name,
                                z->n_elts,
                                z->elt_ids,
                                cell_cen,
-                               fmeg);
+                               f->name,
+                               &(f->val));
       }
     }
   }

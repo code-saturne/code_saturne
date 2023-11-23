@@ -435,7 +435,6 @@ _physical_property_th_diffusivity(cs_field_t          *c_prop,
        so as to be handled by the MEG volume function. */
       cs_field_t _c_prop = *c_prop;
       _c_prop.name = prop_name;
-      cs_field_t *fmeg[1] = {&_c_prop};
 
       const cs_real_3_t *restrict cell_cen =
         (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -444,7 +443,8 @@ _physical_property_th_diffusivity(cs_field_t          *c_prop,
                              n_cells,
                              cell_ids,
                              cell_cen,
-                             fmeg);
+                             _c_prop.name,
+                             &(_c_prop.val));
     }
 
   }
@@ -533,12 +533,12 @@ _physical_property(cs_field_t          *c_prop,
     if (law != NULL) {
       const cs_real_3_t *restrict cell_cen =
         (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
-      cs_field_t *fmeg[1] = {c_prop};
       cs_meg_volume_function(z->name,
                              z->n_elts,
                              z->elt_ids,
                              cell_cen,
-                             fmeg);
+                             c_prop->name,
+                             &(c_prop->val));
     }
 
   }
@@ -1926,20 +1926,24 @@ void CS_PROCF(uiporo, UIPORO)(void)
           (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
         if (cs_gui_strcmp(mdl, "anisotropic")) {
-          cs_field_t *fmeg[2] = {fporo, ftporo};
+          char _name_string[512];
+          snprintf(_name_string, 511, "%s+%s", fporo->name, ftporo->name);
+          _name_string[512] = '\0';
+          cs_field_t *fvals[2] = {fporo->val, ftporo->val};
           cs_meg_volume_function(z->name,
                                  z->n_elts,
                                  z->elt_ids,
                                  cell_cen,
-                                 fmeg);
+                                 _name_string,
+                                 fvals);
 
         } else {
-          cs_field_t *fmeg[1] = {fporo};
           cs_meg_volume_function(z->name,
                                  z->n_elts,
                                  z->elt_ids,
                                  cell_cen,
-                                 fmeg);
+                                 fporo->name,
+                                 &(fporo->val));
         }
 
       }
@@ -2314,12 +2318,19 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
           = cs_tree_node_get_child_value_str(tn_zl, "formula");
 
         if (formula != NULL) {
-          cs_field_t *fmeg[3] = {fcapacity, fsaturation, fpermeability};
+          char _name_string[512];
+          snprintf(_name_string, 511, "%s+%s+%s",
+                   fcapacity->name, fsaturation->name, fpermeability->name);
+          _name_string[512] = '\0';
+          cs_real_t *fvals[3] = {fcapacity->val,
+                                 fsaturation->val,
+                                 fpermeability->val};
           cs_meg_volume_function(z->name,
                                  n_cells,
                                  cell_ids,
                                  cell_cen,
-                                 fmeg);
+                                 _name_string,
+                                 fvals);
         }
       }
 

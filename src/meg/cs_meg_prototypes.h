@@ -92,7 +92,8 @@ cs_meg_volume_function(const char        *zone_name,
                        const cs_lnum_t    n_elts,
                        const cs_lnum_t   *elt_ids,
                        const cs_real_t    xyz[][3],
-                       cs_field_t        *f[]);
+                       const char        *fields_names,
+                       cs_real_t         *fvals[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

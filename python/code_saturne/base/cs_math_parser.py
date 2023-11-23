@@ -774,9 +774,9 @@ class cs_math_parser:
                         raise Exception("Uknown field: %s" %(tk))
 
                     if fcomp < 0:
-                        new_v = new_v = 'f[%d]->val[c_id]' % (fid)
+                        new_v = new_v = 'fvals[%d][c_id]' % (fid)
                     else:
-                        new_v = 'f[%d]->val[c_id*%d + %d]' % (fid, fdim, fcomp)
+                        new_v = 'fvals[%d][c_id*%d + %d]' % (fid, fdim, fcomp)
 
                 elif func_type == 'bnd':
                     ir = req.index(tk)

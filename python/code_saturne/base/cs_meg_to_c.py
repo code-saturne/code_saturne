@@ -95,7 +95,8 @@ cs_meg_volume_function(const char      *zone_name,
                        const cs_lnum_t  n_elts,
                        const cs_lnum_t *elt_ids,
                        const cs_real_t  xyz[][3],
-                       cs_field_t       *f[])
+                       const char      *fields_names,
+                       cs_real_t       *fvals[])
 {
 """,
 'bnd':"""void
@@ -529,10 +530,7 @@ class meg_to_c_interpreter:
 
         # Write the block
         nsplit = name.split('+')
-        usr_blck = tab + 'if (strcmp(f[0]->name, "%s") == 0 &&\n' % (nsplit[0])
-        for i in range(1,len(nsplit)):
-            usr_blck += tab + '    strcmp(f[%d]->name, "%s") == 0 &&\n' % (i, nsplit[i])
-
+        usr_blck = tab + 'if (strcmp(fields_names, "%s") == 0 &&\n' % (name)
         usr_blck += tab + '    strcmp(zone_name, "%s") == 0) {\n' % (zone)
 
         usr_blck += usr_defs

@@ -640,12 +640,13 @@ cs_gui_mesh_viscosity(void)
   const cs_real_3_t *cell_cen =
     (const cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
   const cs_zone_t *z_all = cs_volume_zone_by_name("all_cells");
-  cs_field_t *fmeg[1] = {CS_F_(vism)};
+  cs_field_t *f = CS_F_(vism);
   cs_meg_volume_function(z_all->name,
                          z_all->n_elts,
                          z_all->elt_ids,
                          cell_cen,
-                         fmeg);
+                         f->name,
+                         &(f->val));
 }
 
 /*----------------------------------------------------------------------------*/

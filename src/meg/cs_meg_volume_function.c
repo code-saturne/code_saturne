@@ -73,13 +73,15 @@ cs_meg_volume_function(const char        *zone_name,
                        const cs_lnum_t    n_elts,
                        const cs_lnum_t   *elt_ids,
                        const cs_real_t    xyz[][3],
-                       cs_field_t        *f[])
+                       const char        *fields_names,
+                       cs_real_t         *fvals[])
 {
   CS_NO_WARN_IF_UNUSED(zone_name);
   CS_NO_WARN_IF_UNUSED(n_elts);
   CS_NO_WARN_IF_UNUSED(elt_ids);
   CS_NO_WARN_IF_UNUSED(xyz);
-  CS_NO_WARN_IF_UNUSED(f);
+  CS_NO_WARN_IF_UNUSED(fields_names);
+  CS_NO_WARN_IF_UNUSED(fvals);
 }
 
 /*----------------------------------------------------------------------------*/
