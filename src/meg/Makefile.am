@@ -66,6 +66,7 @@ EXTRA_DIST =
 
 pkginclude_HEADERS = \
 cs_meg_prototypes.h \
+cs_meg_xdef_wrapper.h \
 cs_meg_headers.h
 
 # Library source files
@@ -78,7 +79,8 @@ cs_meg_initialization.c \
 cs_meg_post_output.c \
 cs_meg_post_profile.c \
 cs_meg_source_terms.c \
-cs_meg_volume_function.c
+cs_meg_volume_function.c \
+cs_meg_xdef_wrapper.c
 
 noinst_LIBRARIES = libcsmeg.a
 libcsmeg_a_SOURCES = $(megfiles)
