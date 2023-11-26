@@ -218,7 +218,7 @@ cs_map_test_SOURCES  = cs_map_test.c
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_matrix_test$(EXEEXT):
+cs_matrix_test$(EXEEXT): $(top_srcdir)/tests/cs_matrix_test.c
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_matrix_test $(top_srcdir)/tests/cs_matrix_test.c

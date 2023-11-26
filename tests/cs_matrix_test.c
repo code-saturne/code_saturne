@@ -130,7 +130,7 @@ _mpi_init(void)
 
 static int
 _base_data_4(int        rank_id,
-             cs_lnum_t  cell_vtx[10][4])
+             cs_lnum_t  cell_vtx[][4])
 {
   cs_lnum_t n_cells = 0;
 
@@ -168,96 +168,180 @@ _base_data_4(int        rank_id,
     _g_vtx_id[1] = 1;
     _g_vtx_id[2] = 2;
     _g_vtx_id[3] = 3;
-    _g_vtx_id[4] = 11;
-    _g_vtx_id[5] = 4;
+    _g_vtx_id[4] = 4;
+    _g_vtx_id[5] = 11;
     cell_vtx[0][0] = 0;
     cell_vtx[0][1] = 1;
     cell_vtx[0][2] = 3;
     cell_vtx[0][3] = 2;
     cell_vtx[1][0] = 2;
     cell_vtx[1][1] = 3;
-    cell_vtx[1][2] = 5;
-    cell_vtx[1][3] = 4;
+    cell_vtx[1][2] = 4;
+    cell_vtx[1][3] = 5;
   }
   else if (rank_id == 1) {
-    _g_vtx_id[0] = 10;
-    _g_vtx_id[1] = 5;
-    _g_vtx_id[2] = 6;
-    _g_vtx_id[3] = 7;
-    _g_vtx_id[4] = 8;
-    _g_vtx_id[5] = 9;
-    cell_vtx[0][0] = 0;
-    cell_vtx[0][1] = 1;
-    cell_vtx[0][2] = 3;
-    cell_vtx[0][3] = 2;
-    cell_vtx[1][0] = 2;
-    cell_vtx[1][1] = 3;
-    cell_vtx[1][2] = 5;
-    cell_vtx[1][3] = 4;
+    _g_vtx_id[0] = 5;
+    _g_vtx_id[1] = 6;
+    _g_vtx_id[2] = 7;
+    _g_vtx_id[3] = 8;
+    _g_vtx_id[4] = 9;
+    _g_vtx_id[5] = 10;
+    cell_vtx[0][0] = 5;
+    cell_vtx[0][1] = 0;
+    cell_vtx[0][2] = 2;
+    cell_vtx[0][3] = 1;
+    cell_vtx[1][0] = 1;
+    cell_vtx[1][1] = 2;
+    cell_vtx[1][2] = 4;
+    cell_vtx[1][3] = 3;
   }
   else if (rank_id == 2) {
-    _g_vtx_id[0] = 1;
-    _g_vtx_id[1] = 10;
-    _g_vtx_id[2] = 3;
-    _g_vtx_id[3] = 6;
-    _g_vtx_id[4] = 11;
-    _g_vtx_id[5] = 4;
-    _g_vtx_id[6] = 8;
-    _g_vtx_id[7] = 9;
-    _g_vtx_id[8] = 14;
-    _g_vtx_id[9] = 12;
-    _g_vtx_id[10] = 15;
-    _g_vtx_id[11] = 13;
-    cell_vtx[0][0] = 0;
-    cell_vtx[0][1] = 1;
-    cell_vtx[0][2] = 3;
-    cell_vtx[0][3] = 2;
-    cell_vtx[1][0] = 2;
-    cell_vtx[1][1] = 3;
-    cell_vtx[1][2] = 6;
-    cell_vtx[1][3] = 5;
-    cell_vtx[2][0] = 4;
-    cell_vtx[2][1] = 5;
-    cell_vtx[2][2] = 9;
-    cell_vtx[2][3] = 8;
-    cell_vtx[3][0] = 5;
-    cell_vtx[3][1] = 6;
-    cell_vtx[3][2] = 10;
-    cell_vtx[3][3] = 9;
-    cell_vtx[4][0] = 6;
-    cell_vtx[4][1] = 7;
-    cell_vtx[4][2] = 11;
-    cell_vtx[4][3] = 10;
+    _g_vtx_id[0] = 10;
+    _g_vtx_id[1] = 11;
+    _g_vtx_id[2] = 12;
+    _g_vtx_id[3] = 13;
+    _g_vtx_id[4] = 1;
+    _g_vtx_id[5] = 3;
+    _g_vtx_id[6] = 4;
+    _g_vtx_id[7] = 6;
+    _g_vtx_id[8] = 8;
+    _g_vtx_id[9] = 9;
+    _g_vtx_id[10] = 14;
+    _g_vtx_id[11] = 15;
+    cell_vtx[0][0] = 4;
+    cell_vtx[0][1] = 0;
+    cell_vtx[0][2] = 7;
+    cell_vtx[0][3] = 5;
+    cell_vtx[1][0] = 5;
+    cell_vtx[1][1] = 7;
+    cell_vtx[1][2] = 8;
+    cell_vtx[1][3] = 6;
+    cell_vtx[2][0] = 1;
+    cell_vtx[2][1] = 6;
+    cell_vtx[2][2] = 2;
+    cell_vtx[2][3] = 10;
+    cell_vtx[3][0] = 6;
+    cell_vtx[3][1] = 8;
+    cell_vtx[3][2] = 11;
+    cell_vtx[3][3] = 2;
+    cell_vtx[4][0] = 8;
+    cell_vtx[4][1] = 9;
+    cell_vtx[4][2] = 3;
+    cell_vtx[4][3] = 11;
   }
   else if (rank_id == 3) {
     _g_vtx_id[0] = 14;
-    _g_vtx_id[1] = 12;
-    _g_vtx_id[2] = 15;
-    _g_vtx_id[3] = 13;
-    _g_vtx_id[4] = 16;
-    _g_vtx_id[5] = 17;
-    _g_vtx_id[6] = 18;
-    _g_vtx_id[7] = 19;
+    _g_vtx_id[1] = 15;
+    _g_vtx_id[2] = 16;
+    _g_vtx_id[3] = 17;
+    _g_vtx_id[4] = 18;
+    _g_vtx_id[5] = 19;
+    _g_vtx_id[6] = 12;
+    _g_vtx_id[7] = 13;
     cell_vtx[0][0] = 0;
-    cell_vtx[0][1] = 1;
-    cell_vtx[0][2] = 5;
-    cell_vtx[0][3] = 4;
-    cell_vtx[1][0] = 1;
-    cell_vtx[1][1] = 2;
-    cell_vtx[1][2] = 6;
-    cell_vtx[1][3] = 5;
-    cell_vtx[2][0] = 2;
-    cell_vtx[2][1] = 3;
-    cell_vtx[2][2] = 7;
-    cell_vtx[2][3] = 6;
+    cell_vtx[0][1] = 6;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
+    cell_vtx[1][0] = 6;
+    cell_vtx[1][1] = 1;
+    cell_vtx[1][2] = 4;
+    cell_vtx[1][3] = 3;
+    cell_vtx[2][0] = 1;
+    cell_vtx[2][1] = 7;
+    cell_vtx[2][2] = 5;
+    cell_vtx[2][3] = 4;
   }
 
   return n_cells;
 }
 
+#if defined(REF_4)
+
+static int
+_base_data_4_ref(cs_lnum_t  cell_vtx[][4])
+{
+  cs_lnum_t n_cells = 12;
+
+  _n_g_vtx = 20;
+
+  _n_vtx = 20;
+  n_cells = 12;
+  _vtx_range[0] = 0;
+  _vtx_range[1] = 20;
+
+  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+
+  for (int i = 0; i < _n_vtx; i++)
+    _g_vtx_id[i] = i;
+
+  cell_vtx[0][0] = 0;
+  cell_vtx[0][1] = 1;
+  cell_vtx[0][2] = 3;
+  cell_vtx[0][3] = 2;
+
+  cell_vtx[1][0] = 2;
+  cell_vtx[1][1] = 3;
+  cell_vtx[1][2] = 4;
+  cell_vtx[1][3] = 11;
+
+  cell_vtx[2][0] = 10;
+  cell_vtx[2][1] = 5;
+  cell_vtx[2][2] = 7;
+  cell_vtx[2][3] = 6;
+
+  cell_vtx[3][0] = 6;
+  cell_vtx[3][1] = 7;
+  cell_vtx[3][2] = 9;
+  cell_vtx[3][3] = 8;
+
+  cell_vtx[4][0] = 1;
+  cell_vtx[4][1] = 10;
+  cell_vtx[4][2] = 6;
+  cell_vtx[4][3] = 3;
+
+  cell_vtx[5][0] = 3;
+  cell_vtx[5][1] = 6;
+  cell_vtx[5][2] = 8;
+  cell_vtx[5][3] = 4;
+
+  cell_vtx[6][0] = 11;
+  cell_vtx[6][1] = 4;
+  cell_vtx[6][2] = 12;
+  cell_vtx[6][3] = 14;
+
+  cell_vtx[7][0] = 4;
+  cell_vtx[7][1] = 8;
+  cell_vtx[7][2] = 15;
+  cell_vtx[7][3] = 12;
+
+  cell_vtx[8][0] = 8;
+  cell_vtx[8][1] = 9;
+  cell_vtx[8][2] = 13;
+  cell_vtx[8][3] = 15;
+
+  cell_vtx[9][0] = 14;
+  cell_vtx[9][1] = 12;
+  cell_vtx[9][2] = 17;
+  cell_vtx[9][3] = 16;
+
+  cell_vtx[10][0] = 12;
+  cell_vtx[10][1] = 15;
+  cell_vtx[10][2] = 18;
+  cell_vtx[10][3] = 17;
+
+  cell_vtx[11][0] = 15;
+  cell_vtx[11][1] = 13;
+  cell_vtx[11][2] = 19;
+  cell_vtx[11][3] = 18;
+
+  return n_cells;
+}
+
+#endif /* defined(REF_4) */
+
 static int
 _base_data_3(int        rank_id,
-             cs_lnum_t  cell_vtx[10][4])
+             cs_lnum_t  cell_vtx[][4])
 {
   cs_lnum_t n_cells = 0;
 
@@ -289,74 +373,141 @@ _base_data_3(int        rank_id,
     _g_vtx_id[1] = 1;
     _g_vtx_id[2] = 2;
     _g_vtx_id[3] = 3;
-    _g_vtx_id[4] = 11;
-    _g_vtx_id[5] = 4;
+    _g_vtx_id[4] = 4;
+    _g_vtx_id[5] = 11;
     cell_vtx[0][0] = 0;
     cell_vtx[0][1] = 1;
     cell_vtx[0][2] = 3;
     cell_vtx[0][3] = 2;
     cell_vtx[1][0] = 2;
     cell_vtx[1][1] = 3;
-    cell_vtx[1][2] = 5;
-    cell_vtx[1][3] = 4;
+    cell_vtx[1][2] = 4;
+    cell_vtx[1][3] = 5;
   }
   else if (rank_id == 1) {
-    _g_vtx_id[0] = 10;
-    _g_vtx_id[1] = 5;
-    _g_vtx_id[2] = 6;
-    _g_vtx_id[3] = 7;
-    _g_vtx_id[4] = 8;
-    _g_vtx_id[5] = 9;
-    cell_vtx[0][0] = 0;
-    cell_vtx[0][1] = 1;
-    cell_vtx[0][2] = 3;
-    cell_vtx[0][3] = 2;
-    cell_vtx[1][0] = 2;
-    cell_vtx[1][1] = 3;
-    cell_vtx[1][2] = 5;
-    cell_vtx[1][3] = 4;
+    _g_vtx_id[0] = 5;
+    _g_vtx_id[1] = 6;
+    _g_vtx_id[2] = 7;
+    _g_vtx_id[3] = 8;
+    _g_vtx_id[4] = 9;
+    _g_vtx_id[5] = 10;
+    cell_vtx[0][0] = 5;
+    cell_vtx[0][1] = 0;
+    cell_vtx[0][2] = 2;
+    cell_vtx[0][3] = 1;
+    cell_vtx[1][0] = 1;
+    cell_vtx[1][1] = 2;
+    cell_vtx[1][2] = 4;
+    cell_vtx[1][3] = 3;
   }
   else if (rank_id == 2) {
-    _g_vtx_id[0] = 1;
-    _g_vtx_id[1] = 10;
-    _g_vtx_id[2] = 3;
-    _g_vtx_id[3] = 6;
-    _g_vtx_id[4] = 11;
-    _g_vtx_id[5] = 4;
-    _g_vtx_id[6] = 8;
-    _g_vtx_id[7] = 9;
-    _g_vtx_id[8] = 12;
-    _g_vtx_id[9] = 13;
-    _g_vtx_id[10] = 14;
-    _g_vtx_id[11] = 15;
-    cell_vtx[0][0] = 0;
-    cell_vtx[0][1] = 1;
-    cell_vtx[0][2] = 3;
-    cell_vtx[0][3] = 2;
-    cell_vtx[1][0] = 2;
-    cell_vtx[1][1] = 3;
-    cell_vtx[1][2] = 6;
-    cell_vtx[1][3] = 5;
-    cell_vtx[2][0] = 4;
-    cell_vtx[2][1] = 5;
-    cell_vtx[2][2] = 9;
-    cell_vtx[2][3] = 8;
-    cell_vtx[3][0] = 5;
-    cell_vtx[3][1] = 6;
-    cell_vtx[3][2] = 10;
-    cell_vtx[3][3] = 9;
-    cell_vtx[4][0] = 6;
-    cell_vtx[4][1] = 7;
-    cell_vtx[4][2] = 11;
-    cell_vtx[4][3] = 10;
+    _g_vtx_id[0] = 10;
+    _g_vtx_id[1] = 11;
+    _g_vtx_id[2] = 12;
+    _g_vtx_id[3] = 13;
+    _g_vtx_id[4] = 14;
+    _g_vtx_id[5] = 15;
+    _g_vtx_id[6] = 1;
+    _g_vtx_id[7] = 3;
+    _g_vtx_id[8] = 4;
+    _g_vtx_id[9] = 6;
+    _g_vtx_id[10] = 8;
+    _g_vtx_id[11] = 9;
+    cell_vtx[0][0] = 6;
+    cell_vtx[0][1] = 0;
+    cell_vtx[0][2] = 9;
+    cell_vtx[0][3] = 7;
+    cell_vtx[1][0] = 7;
+    cell_vtx[1][1] = 9;
+    cell_vtx[1][2] = 10;
+    cell_vtx[1][3] = 8;
+    cell_vtx[2][0] = 1;
+    cell_vtx[2][1] = 8;
+    cell_vtx[2][2] = 3;
+    cell_vtx[2][3] = 2;
+    cell_vtx[3][0] = 8;
+    cell_vtx[3][1] = 10;
+    cell_vtx[3][2] = 4;
+    cell_vtx[3][3] = 3;
+    cell_vtx[4][0] = 10;
+    cell_vtx[4][1] = 11;
+    cell_vtx[4][2] = 5;
+    cell_vtx[4][3] = 4;
   }
 
   return n_cells;
 }
 
+#if defined(REF_3)
+
+static int
+_base_data_3_ref(cs_lnum_t  cell_vtx[][4])
+{
+  int n_cells = 9;
+
+  _n_g_vtx = 16;
+  _n_vtx = _n_g_vtx;
+  _vtx_range[0] = 0;
+  _vtx_range[1] = 16;
+
+  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+
+  for (int i = 0; i < _n_vtx; i++)
+    _g_vtx_id[i] = i;
+
+  cell_vtx[0][0] = 0;
+  cell_vtx[0][1] = 1;
+  cell_vtx[0][2] = 3;
+  cell_vtx[0][3] = 2;
+
+  cell_vtx[1][0] = 2;
+  cell_vtx[1][1] = 3;
+  cell_vtx[1][2] = 4;
+  cell_vtx[1][3] = 11;
+
+  cell_vtx[2][0] = 10;
+  cell_vtx[2][1] = 5;
+  cell_vtx[2][2] = 7;
+  cell_vtx[2][3] = 6;
+
+  cell_vtx[3][0] = 6;
+  cell_vtx[3][1] = 7;
+  cell_vtx[3][2] = 9;
+  cell_vtx[3][3] = 8;
+
+  cell_vtx[4][0] = 1;
+  cell_vtx[4][1] = 10;
+  cell_vtx[4][2] = 6;
+  cell_vtx[4][3] = 3;
+
+  cell_vtx[5][0] = 3;
+  cell_vtx[5][1] = 6;
+  cell_vtx[5][2] = 8;
+  cell_vtx[5][3] = 4;
+
+  cell_vtx[6][0] = 11;
+  cell_vtx[6][1] = 4;
+  cell_vtx[6][2] = 13;
+  cell_vtx[6][3] = 12;
+
+  cell_vtx[7][0] = 4;
+  cell_vtx[7][1] = 8;
+  cell_vtx[7][2] = 14;
+  cell_vtx[7][3] = 13;
+
+  cell_vtx[8][0] = 8;
+  cell_vtx[8][1] = 9;
+  cell_vtx[8][2] = 15;
+  cell_vtx[8][3] = 14;
+
+  return n_cells;
+}
+
+#endif /* defined(REF_3) */
+
 static int
 _base_data_2(int        rank_id,
-             cs_lnum_t  cell_vtx[10][4])
+             cs_lnum_t  cell_vtx[][4])
 {
   cs_lnum_t n_cells = 0;
 
@@ -380,44 +531,44 @@ _base_data_2(int        rank_id,
   if (rank_id == 0) {
     _g_vtx_id[0] = 0;
     _g_vtx_id[1] = 1;
-    _g_vtx_id[2] = 6;
-    _g_vtx_id[3] = 2;
-    _g_vtx_id[4] = 3;
-    _g_vtx_id[5] = 8;
-    _g_vtx_id[6] = 4;
-    _g_vtx_id[7] = 5;
+    _g_vtx_id[2] = 2;
+    _g_vtx_id[3] = 3;
+    _g_vtx_id[4] = 4;
+    _g_vtx_id[5] = 5;
+    _g_vtx_id[6] = 6;
+    _g_vtx_id[7] = 8;
     cell_vtx[0][0] = 0;
     cell_vtx[0][1] = 1;
-    cell_vtx[0][2] = 4;
-    cell_vtx[0][3] = 3;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
     cell_vtx[1][0] = 1;
-    cell_vtx[1][1] = 2;
-    cell_vtx[1][2] = 5;
-    cell_vtx[1][3] = 4;
-    cell_vtx[2][0] = 3;
-    cell_vtx[2][1] = 4;
-    cell_vtx[2][2] = 7;
-    cell_vtx[2][3] = 6;
+    cell_vtx[1][1] = 6;
+    cell_vtx[1][2] = 7;
+    cell_vtx[1][3] = 3;
+    cell_vtx[2][0] = 2;
+    cell_vtx[2][1] = 3;
+    cell_vtx[2][2] = 5;
+    cell_vtx[2][3] = 4;
   }
   else if (rank_id == 1) {
-    _g_vtx_id[0] = 6;
-    _g_vtx_id[1] = 7;
-    _g_vtx_id[2] = 3;
-    _g_vtx_id[3] = 8;
-    _g_vtx_id[4] = 9;
-    _g_vtx_id[5] = 5;
+    _g_vtx_id[0] = 3;
+    _g_vtx_id[1] = 5;
+    _g_vtx_id[2] = 6;
+    _g_vtx_id[3] = 7;
+    _g_vtx_id[4] = 8;
+    _g_vtx_id[5] = 9;
     _g_vtx_id[6] = 10;
     _g_vtx_id[7] = 11;
     cell_vtx[0][0] = 0;
-    cell_vtx[0][1] = 1;
-    cell_vtx[0][2] = 4;
-    cell_vtx[0][3] = 3;
+    cell_vtx[0][1] = 4;
+    cell_vtx[0][2] = 6;
+    cell_vtx[0][3] = 1;
     cell_vtx[1][0] = 2;
     cell_vtx[1][1] = 3;
-    cell_vtx[1][2] = 6;
-    cell_vtx[1][3] = 5;
-    cell_vtx[2][0] = 3;
-    cell_vtx[2][1] = 4;
+    cell_vtx[1][2] = 5;
+    cell_vtx[1][3] = 4;
+    cell_vtx[2][0] = 4;
+    cell_vtx[2][1] = 5;
     cell_vtx[2][2] = 7;
     cell_vtx[2][3] = 6;
   }
@@ -425,8 +576,60 @@ _base_data_2(int        rank_id,
   return n_cells;
 }
 
+#if defined(REF_2)
+
 static int
-_base_data_1(cs_lnum_t  cell_vtx[10][4])
+_base_data_2_ref(cs_lnum_t  cell_vtx[][4])
+{
+  cs_lnum_t n_cells = 6;
+
+  _n_g_vtx = 12;
+  _n_vtx = _n_g_vtx;
+  _vtx_range[0] = 0;
+  _vtx_range[1] = 12;
+
+  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+
+  for (int i = 0; i < _n_vtx; i++)
+    _g_vtx_id[i] = i;
+
+  cell_vtx[0][0] = 0;
+  cell_vtx[0][1] = 1;
+  cell_vtx[0][2] = 3;
+  cell_vtx[0][3] = 2;
+
+  cell_vtx[1][0] = 1;
+  cell_vtx[1][1] = 6;
+  cell_vtx[1][2] = 8;
+  cell_vtx[1][3] = 3;
+
+  cell_vtx[2][0] = 2;
+  cell_vtx[2][1] = 3;
+  cell_vtx[2][2] = 5;
+  cell_vtx[2][3] = 4;
+
+  cell_vtx[3][0] = 3;
+  cell_vtx[3][1] = 8;
+  cell_vtx[3][2] = 10;
+  cell_vtx[3][3] = 5;
+
+  cell_vtx[4][0] = 6;
+  cell_vtx[4][1] = 7;
+  cell_vtx[4][2] = 9;
+  cell_vtx[4][3] = 8;
+
+  cell_vtx[5][0] = 8;
+  cell_vtx[5][1] = 9;
+  cell_vtx[5][2] = 11;
+  cell_vtx[5][3] = 10;
+
+  return n_cells;
+}
+
+#endif /* defined(REF_2) */
+
+static int
+_base_data_1(cs_lnum_t  cell_vtx[][4])
 {
   cs_lnum_t n_cells = 3;
 
@@ -469,7 +672,7 @@ _base_data(int rank_id,
            int n_ranks)
 {
   cs_lnum_t n_cells = 0;
-  cs_lnum_t cell_vtx[10][4];
+  cs_lnum_t cell_vtx[20][4];
 
   if (n_ranks >= 4)
     n_cells = _base_data_4(rank_id, cell_vtx);
@@ -477,8 +680,17 @@ _base_data(int rank_id,
     n_cells = _base_data_3(rank_id, cell_vtx);
   else if (n_ranks == 2)
     n_cells = _base_data_2(rank_id, cell_vtx);
-  else if (n_ranks == 1)
+  else if (n_ranks == 1) {
+    #if defined(REF_4)
+    n_cells = _base_data_4_ref(cell_vtx);
+    #elif defined(REF_3)
+    n_cells = _base_data_3_ref(cell_vtx);
+    #elif defined(REF_2)
+    n_cells = _base_data_2_ref(cell_vtx);
+    #else
     n_cells = _base_data_1(cell_vtx);
+    #endif
+  }
 
   /* Compute number of local graph edges */
 
@@ -564,6 +776,29 @@ main(int argc, char *argv[])
 
   _base_data(cs_glob_rank_id, cs_glob_n_ranks);
 
+  cs_gnum_t *g_vtx_num;
+  BFT_MALLOC(g_vtx_num, _n_vtx, cs_gnum_t);
+  for (cs_lnum_t i = 0; i < _n_vtx; i++)
+    g_vtx_num[i] = _g_vtx_id[i] + 1;
+  cs_interface_set_t *vtx_ifs
+    = cs_interface_set_create(_n_vtx,
+                              NULL,
+                              g_vtx_num,
+                              NULL,
+                              0,
+                              NULL,
+                              NULL,
+                              NULL);
+
+  BFT_FREE(g_vtx_num);
+
+  cs_range_set_t *rs
+    = cs_range_set_create_from_shared(vtx_ifs,
+                                      NULL,
+                                      _n_vtx,
+                                      _vtx_range,
+                                      _g_vtx_id);
+
   /* Loop on assembler external/internal diagonal */
 
   for (int id_ie = 0; id_ie < 2; id_ie++) {
@@ -580,14 +815,12 @@ main(int argc, char *argv[])
     /* Define connectivities */
 
     {
-      cs_gnum_t g_row_id[3], g_col_id[3];
+      cs_gnum_t g_row_id[20], g_col_id[20];
 
-      /* Diagonal (1 of every 2 ids to make things harder) */
+      /* Diagonal */
 
       cs_lnum_t j = 0;
       for (cs_lnum_t i = 0; i < _n_vtx; i++) {
-        if (_g_vtx_id[i] % 2)
-          continue;
         g_row_id[j] = _g_vtx_id[i];
         g_col_id[j] = _g_vtx_id[i];
         j++;
@@ -650,7 +883,7 @@ main(int argc, char *argv[])
          so loop in a similar manner for safety, but with different
          loop size here (6 instead of 3) */
 
-      cs_gnum_t g_row_id[6], g_col_id[6];
+      cs_gnum_t g_row_id[20], g_col_id[20];
       cs_real_t val[6];
       cs_lnum_t j = 0;
 
@@ -660,10 +893,10 @@ main(int argc, char *argv[])
         /* Diagonal */
 
         for (cs_lnum_t i = 0; i < _n_vtx; i++) {
-          if (_g_vtx_id[i] % 2)
-            continue;
           g_row_id[j] = _g_vtx_id[i];
           g_col_id[j] = _g_vtx_id[i];
+          if (g_row_id[j] < _vtx_range[0] || g_row_id[j] >= _vtx_range[1])
+            continue;
           val[j] = cos(g_row_id[j] + 0.1) + sin(g_col_id[j] + 0.1);
           j++;
           if (j == 6) {
@@ -706,15 +939,42 @@ main(int argc, char *argv[])
     BFT_MALLOC(x, n_cols, cs_real_t);
     BFT_MALLOC(y_0, n_cols, cs_real_t);
     BFT_MALLOC(y_1, n_cols, cs_real_t);
-    for (cs_lnum_t i = 0; i < n_rows; i++)
-      x[i] = (i+1)*0.5;
+    for (cs_lnum_t i = 0; i < _n_vtx; i++)
+      x[i] = (_g_vtx_id[i]+1)*0.5;
+
+    cs_range_set_zero_out_of_range(rs,
+                                   CS_REAL_TYPE,
+                                   1,
+                                   x);
+
+    cs_range_set_gather(rs,
+                        CS_REAL_TYPE,
+                        1,
+                        x,
+                        x);
 
     cs_matrix_vector_multiply(m_0, x, y_0);
     cs_matrix_vector_multiply(m_1, x, y_1);
 
-    bft_printf("\nSpMV pass %d\n", id_ie);
+    bft_printf("\nSpMV pass %d (on range set)\n", id_ie);
     for (cs_lnum_t i = 0; i < n_rows; i++)
       bft_printf("%d: %f %f\n", i, y_0[i], y_1[i]);
+
+    cs_range_set_scatter(rs,
+                         CS_REAL_TYPE,
+                         1,
+                         y_0,
+                         y_0);
+
+    cs_range_set_scatter(rs,
+                         CS_REAL_TYPE,
+                         1,
+                         y_1,
+                         y_1);
+
+    bft_printf("\nSpMV pass %d (scattered)\n", id_ie);
+    for (cs_lnum_t i = 0; i < _n_vtx; i++)
+      bft_printf("%d (%d): %f %f\n", i, _g_vtx_id[i], y_0[i], y_1[i]);
 
     BFT_FREE(x);
     BFT_FREE(y_0);
@@ -735,25 +995,6 @@ main(int argc, char *argv[])
   bft_printf("\n");
 
   /* Test partition ids on vertices */
-
-  cs_gnum_t *g_vtx_num;
-  BFT_MALLOC(g_vtx_num, _n_vtx, cs_gnum_t);
-  for (cs_lnum_t i = 0; i < _n_vtx; i++)
-    g_vtx_num[i] = _g_vtx_id[i] + 1;
-  cs_interface_set_t *vtx_ifs
-    = cs_interface_set_create(_n_vtx,
-                              NULL,
-                              g_vtx_num,
-                              NULL,
-                              0,
-                              NULL,
-                              NULL,
-                              NULL);
-
-  BFT_FREE(g_vtx_num);
-
-  cs_range_set_t *rs = cs_range_set_create(vtx_ifs, NULL,
-                                           _n_vtx, true, 0, 0);
 
   cs_real_t *v0, *v1, *v2;
   BFT_MALLOC(v0, _n_vtx, cs_real_t);

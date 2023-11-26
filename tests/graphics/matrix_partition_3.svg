@@ -1,231 +1,918 @@
-<?xml version="1.0" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Creator: fig2dev Version 3.2.7 -->
+
 <!-- CreationDate: 2020-04-28 04:51:09 -->
+
 <!-- Magnification: 1.05 -->
-<svg	xmlns="http://www.w3.org/2000/svg"
-	xmlns:xlink="http://www.w3.org/1999/xlink"
-	width="386pt" height="368pt"
-	viewBox="-786 -2586 6117 5841">
-<g fill="none">
-<!-- Line -->
-<polyline points=" 4500,-675 4500,-2475"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 2835,-675 2835,-2475"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 1125,-675 2925,-675"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 1125,-675 1125,-2475"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" -675,-675 1125,-675"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" -675,-675 -675,-2475"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 4500,1125 4500,-675"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 2835,1125 4635,1125"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 2835,1125 2835,-675"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 1125,1125 2925,1125"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 1125,1125 1125,-675"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 4500,2925 4500,1125"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 2835,2925 4635,2925"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 2835,2925 2835,1125"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 1125,2925 2925,2925"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 1125,2925 1125,1125"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" -675,2925 1125,2925"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 2835,-2475 4635,-2475"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 1125,-2475 2925,-2475"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" -675,-2475 1125,-2475"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" -675,1125 1125,1125"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" -675,2925 -675,1125"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" -675,1125 -675,-675"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<polyline points=" 2835,-675 4635,-675"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Line -->
-<rect x="0" y="1800" width="450" height="450" fill="#ff0000"/>
-<!-- Line -->
-<rect x="0" y="0" width="450" height="450" fill="#ff0000"/>
-<!-- Line -->
-<rect x="3465" y="1800" width="450" height="450" fill="#ff00ff"/>
-<!-- Line -->
-<rect x="3465" y="0" width="450" height="450" fill="#ff00ff"/>
-<!-- Line -->
-<rect x="1800" y="1800" width="450" height="450" fill="#00ff00"/>
-<!-- Line -->
-<rect x="1800" y="0" width="450" height="450" fill="#00ff00"/>
-<!-- Line -->
-<rect x="1800" y="-1755" width="450" height="450" fill="#00ff00"/>
-<!-- Line -->
-<rect x="3465" y="-1755" width="450" height="450" fill="#00ff00"/>
-<!-- Line -->
-<rect x="0" y="-1755" width="450" height="450" fill="#00ff00"/>
-<!-- Text -->
-<text xml:space="preserve" x="4635" y="-405" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">9</text>
-<!-- Text -->
-<text xml:space="preserve" x="2970" y="-405" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">8</text>
-<!-- Text -->
-<text xml:space="preserve" x="1260" y="-405" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">4</text>
-<!-- Text -->
-<text xml:space="preserve" x="-540" y="-405" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">11</text>
-<!-- Text -->
-<text xml:space="preserve" x="1260" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">3</text>
-<!-- Text -->
-<text xml:space="preserve" x="-540" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">2</text>
-<!-- Text -->
-<text xml:space="preserve" x="1260" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">1</text>
-<!-- Text -->
-<text xml:space="preserve" x="-540" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">0</text>
-<!-- Text -->
-<text xml:space="preserve" x="4635" y="-2205" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">15</text>
-<!-- Text -->
-<text xml:space="preserve" x="2970" y="-2205" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">14</text>
-<!-- Text -->
-<text xml:space="preserve" x="1260" y="-2205" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">13</text>
-<!-- Text -->
-<text xml:space="preserve" x="-540" y="-2205" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">12</text>
-<!-- Text -->
-<text xml:space="preserve" x="4635" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">5</text>
-<!-- Text -->
-<text xml:space="preserve" x="2970" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">10</text>
-<!-- Text -->
-<text xml:space="preserve" x="2970" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">6</text>
-<!-- Text -->
-<text xml:space="preserve" x="4635" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">7</text>
-<!-- Text -->
-<text xml:space="preserve" x="-270" y="3240" fill="#ff0000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">0</text>
-<!-- Text -->
-<text xml:space="preserve" x="1530" y="3240" fill="#ff0000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">1</text>
-<!-- Text -->
-<text xml:space="preserve" x="1800" y="3240" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">0</text>
-<!-- Text -->
-<text xml:space="preserve" x="4860" y="3240" fill="#ff00ff" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">1</text>
-<!-- Text -->
-<text xml:space="preserve" x="1530" y="1440" fill="#ff0000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">3</text>
-<!-- Text -->
-<text xml:space="preserve" x="-270" y="1440" fill="#ff0000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">2</text>
-<!-- Text -->
-<text xml:space="preserve" x="-180" y="-360" fill="#ff0000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">4</text>
-<!-- Text -->
-<text xml:space="preserve" x="1530" y="-360" fill="#ff0000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">5</text>
-<!-- Text -->
-<text xml:space="preserve" x="1800" y="1440" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">2</text>
-<!-- Text -->
-<text xml:space="preserve" x="1800" y="-360" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">5</text>
-<!-- Text -->
-<text xml:space="preserve" x="-180" y="-2160" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">8</text>
-<!-- Text -->
-<text xml:space="preserve" x="3330" y="-2160" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">10</text>
-<!-- Text -->
-<text xml:space="preserve" x="5040" y="-2160" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">11</text>
-<!-- Text -->
-<text xml:space="preserve" x="3330" y="3240" fill="#ff00ff" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">0</text>
-<!-- Text -->
-<text xml:space="preserve" x="3600" y="3240" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">1</text>
-<!-- Text -->
-<text xml:space="preserve" x="3510" y="1440" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">3</text>
-<!-- Text -->
-<text xml:space="preserve" x="3240" y="1440" fill="#ff00ff" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">2</text>
-<!-- Text -->
-<text xml:space="preserve" x="4860" y="1440" fill="#ff00ff" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">3</text>
-<!-- Text -->
-<text xml:space="preserve" x="3240" y="-360" fill="#ff00ff" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">4</text>
-<!-- Text -->
-<text xml:space="preserve" x="3510" y="-360" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">6</text>
-<!-- Text -->
-<text xml:space="preserve" x="4860" y="-360" fill="#ff00ff" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">5</text>
-<!-- Text -->
-<text xml:space="preserve" x="90" y="-360" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">4</text>
-<!-- Text -->
-<text xml:space="preserve" x="1620" y="-2160" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">9</text>
-<!-- Text -->
-<text xml:space="preserve" x="5130" y="-360" fill="#00ff00" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">7</text>
-<!-- Text -->
-<text xml:space="preserve" x="-270" y="3240" fill="#ff0000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="180" text-anchor="start">0</text>
-<!-- Circle -->
-<circle cx="4506" cy="-675" r="103" fill="#ff00ff"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="2841" cy="-675" r="103" fill="#ff00ff"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="1131" cy="-675" r="103" fill="#ff0000"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="-669" cy="-675" r="103" fill="#00ff00"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="4506" cy="1125" r="103" fill="#ff00ff"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="1131" cy="1125" r="103" fill="#ff0000"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="2841" cy="2925" r="103" fill="#00ff00"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="1131" cy="2925" r="103" fill="#ff0000"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="-669" cy="2925" r="103" fill="#ff0000"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="4506" cy="-2475" r="103" fill="#00ff00"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="2841" cy="-2475" r="103" fill="#00ff00"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="1131" cy="-2475" r="103" fill="#00ff00"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="-669" cy="-2475" r="103" fill="#00ff00"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="2841" cy="1125" r="103" fill="#ff00ff"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="-675" cy="1125" r="103" fill="#ff0000"
-	stroke="#000000" stroke-width="8px"/>
-<!-- Circle -->
-<circle cx="4506" cy="2925" r="103" fill="#ff00ff"
-	stroke="#000000" stroke-width="8px"/>
-</g>
+
+<svg
+   width="386pt"
+   height="368pt"
+   viewBox="-786 -2586 6117 5841"
+   version="1.1"
+   id="svg87"
+   sodipodi:docname="matrix_partition_3.svg"
+   inkscape:version="1.3.1 (91b66b0783, 2023-11-16, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs87" />
+  <sodipodi:namedview
+     id="namedview87"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="pt"
+     showgrid="true"
+     inkscape:zoom="1.6548913"
+     inkscape:cx="257.41872"
+     inkscape:cy="206.6601"
+     inkscape:window-width="1584"
+     inkscape:window-height="1080"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g87">
+    <inkscape:grid
+       id="grid87"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="11.885362"
+       spacingy="11.904212"
+       empcolor="#3f3fff"
+       empopacity="0.25098039"
+       color="#3f3fff"
+       opacity="0.1254902"
+       empspacing="5"
+       dotted="false"
+       gridanglex="30"
+       gridanglez="30"
+       visible="true" />
+  </sodipodi:namedview>
+  <g
+     fill="none"
+     id="g87">
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <!-- Circle -->
+    <g
+       id="g88">
+      <polyline
+         points=" 4500,-675 4500,-2475"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline1" />
+      <polyline
+         points=" 2835,-675 2835,-2475"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline2" />
+      <polyline
+         points=" 1125,-675 2925,-675"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline3" />
+      <polyline
+         points=" 1125,-675 1125,-2475"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline4" />
+      <polyline
+         points=" -675,-675 1125,-675"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline5" />
+      <polyline
+         points=" -675,-675 -675,-2475"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline6" />
+      <polyline
+         points=" 4500,1125 4500,-675"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline7" />
+      <polyline
+         points=" 2835,1125 4635,1125"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline8" />
+      <polyline
+         points=" 2835,1125 2835,-675"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline9" />
+      <polyline
+         points=" 1125,1125 2925,1125"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline10" />
+      <polyline
+         points=" 1125,1125 1125,-675"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline11" />
+      <polyline
+         points=" 4500,2925 4500,1125"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline12" />
+      <polyline
+         points=" 2835,2925 4635,2925"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline13" />
+      <polyline
+         points=" 2835,2925 2835,1125"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline14" />
+      <polyline
+         points=" 1125,2925 2925,2925"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline15" />
+      <polyline
+         points=" 1125,2925 1125,1125"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline16" />
+      <polyline
+         points=" -675,2925 1125,2925"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline17" />
+      <polyline
+         points=" 2835,-2475 4635,-2475"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline18" />
+      <polyline
+         points=" 1125,-2475 2925,-2475"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline19" />
+      <polyline
+         points=" -675,-2475 1125,-2475"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline20" />
+      <polyline
+         points=" -675,1125 1125,1125"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline21" />
+      <polyline
+         points=" -675,2925 -675,1125"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline22" />
+      <polyline
+         points=" -675,1125 -675,-675"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline23" />
+      <polyline
+         points=" 2835,-675 4635,-675"
+         stroke="#000000"
+         stroke-width="8px"
+         id="polyline24" />
+      <rect
+         x="0"
+         y="1800"
+         width="450"
+         height="450"
+         fill="#ff0000"
+         id="rect24" />
+      <rect
+         x="0"
+         y="0"
+         width="450"
+         height="450"
+         fill="#ff0000"
+         id="rect25" />
+      <rect
+         x="3465"
+         y="1800"
+         width="450"
+         height="450"
+         fill="#ff00ff"
+         id="rect26" />
+      <rect
+         x="3465"
+         y="0"
+         width="450"
+         height="450"
+         fill="#ff00ff"
+         id="rect27" />
+      <rect
+         x="1800"
+         y="1800"
+         width="450"
+         height="450"
+         fill="#00ff00"
+         id="rect28" />
+      <rect
+         x="1800"
+         y="0"
+         width="450"
+         height="450"
+         fill="#00ff00"
+         id="rect29" />
+      <rect
+         x="1800"
+         y="-1755"
+         width="450"
+         height="450"
+         fill="#00ff00"
+         id="rect30" />
+      <rect
+         x="3465"
+         y="-1755"
+         width="450"
+         height="450"
+         fill="#00ff00"
+         id="rect31" />
+      <rect
+         x="0"
+         y="-1755"
+         width="450"
+         height="450"
+         fill="#00ff00"
+         id="rect32" />
+      <text
+         xml:space="preserve"
+         x="4635"
+         y="-405"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text32">9</text>
+      <text
+         xml:space="preserve"
+         x="2970"
+         y="-405"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text33">8</text>
+      <text
+         xml:space="preserve"
+         x="1260"
+         y="-405"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text34">4</text>
+      <text
+         xml:space="preserve"
+         x="-540"
+         y="-405"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text35">11</text>
+      <text
+         xml:space="preserve"
+         x="1260"
+         y="1395"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text36">3</text>
+      <text
+         xml:space="preserve"
+         x="-540"
+         y="1395"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text37">2</text>
+      <text
+         xml:space="preserve"
+         x="1260"
+         y="3195"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text38">1</text>
+      <text
+         xml:space="preserve"
+         x="-540"
+         y="3195"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text39">0</text>
+      <text
+         xml:space="preserve"
+         x="4635"
+         y="-2205"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text40">15</text>
+      <text
+         xml:space="preserve"
+         x="2970"
+         y="-2205"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text41">14</text>
+      <text
+         xml:space="preserve"
+         x="1260"
+         y="-2205"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text42">13</text>
+      <text
+         xml:space="preserve"
+         x="-540"
+         y="-2205"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text43">12</text>
+      <text
+         xml:space="preserve"
+         x="4635"
+         y="3195"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text44">5</text>
+      <text
+         xml:space="preserve"
+         x="2970"
+         y="3195"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text45">10</text>
+      <text
+         xml:space="preserve"
+         x="2970"
+         y="1395"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text46">6</text>
+      <text
+         xml:space="preserve"
+         x="4635"
+         y="1395"
+         fill="#000000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="192"
+         text-anchor="start"
+         id="text47">7</text>
+      <text
+         xml:space="preserve"
+         x="-270"
+         y="3240"
+         fill="#ff0000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180"
+         text-anchor="start"
+         id="text48">0</text>
+      <text
+         xml:space="preserve"
+         x="1530"
+         y="3240"
+         fill="#ff0000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180"
+         text-anchor="start"
+         id="text49">1</text>
+      <text
+         xml:space="preserve"
+         x="3583.9507"
+         y="3225.6133"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text50">0</text>
+      <text
+         xml:space="preserve"
+         x="3241.4963"
+         y="1441.6624"
+         fill="#ff00ff"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text51">1</text>
+      <text
+         xml:space="preserve"
+         x="1530"
+         y="1440"
+         fill="#ff0000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180"
+         text-anchor="start"
+         id="text52">3</text>
+      <text
+         xml:space="preserve"
+         x="-270"
+         y="1440"
+         fill="#ff0000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180"
+         text-anchor="start"
+         id="text53">2</text>
+      <text
+         xml:space="preserve"
+         x="1524.824"
+         y="-360"
+         fill="#ff0000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text54">4</text>
+      <text
+         xml:space="preserve"
+         x="-167.63057"
+         y="-360"
+         fill="#ff0000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text55">5</text>
+      <text
+         xml:space="preserve"
+         x="-192.55792"
+         y="-2127.9016"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text56">2</text>
+      <text
+         xml:space="preserve"
+         x="4936.3008"
+         y="-2136.7573"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text57">5</text>
+      <text
+         xml:space="preserve"
+         x="1769.3978"
+         y="-354.46924"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text58">8</text>
+      <text
+         xml:space="preserve"
+         x="3488.2537"
+         y="-354.46915"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text59">10</text>
+      <text
+         xml:space="preserve"
+         x="5083.1602"
+         y="-361.66254"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text60">11</text>
+      <text
+         xml:space="preserve"
+         x="4840.6035"
+         y="3232.8066"
+         fill="#ff00ff"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text61">0</text>
+      <text
+         xml:space="preserve"
+         x="161.5788"
+         y="-349.48166"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text62">1</text>
+      <text
+         xml:space="preserve"
+         x="1639.729"
+         y="-2142.2883"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text63">3</text>
+      <text
+         xml:space="preserve"
+         x="4836.9238"
+         y="1440"
+         fill="#ff00ff"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text64">2</text>
+      <text
+         xml:space="preserve"
+         x="3248.6897"
+         y="-358.33746"
+         fill="#ff00ff"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text65">3</text>
+      <text
+         xml:space="preserve"
+         x="4872.8906"
+         y="-352.80664"
+         fill="#ff00ff"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text66">4</text>
+      <text
+         xml:space="preserve"
+         x="1797.9827"
+         y="3236.675"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text67">6</text>
+      <text
+         xml:space="preserve"
+         x="3313.4297"
+         y="3229.4817"
+         fill="#ff00ff"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text68">5</text>
+      <text
+         xml:space="preserve"
+         x="3319.8142"
+         y="-2158.3374"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text69">4</text>
+      <text
+         xml:space="preserve"
+         x="3490.271"
+         y="1443.8683"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text70">9</text>
+      <text
+         xml:space="preserve"
+         x="1799.479"
+         y="1445.5308"
+         fill="#00ff00"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180px"
+         text-anchor="start"
+         id="text71">7</text>
+      <text
+         xml:space="preserve"
+         x="-270"
+         y="3240"
+         fill="#ff0000"
+         font-family="Helvetica"
+         font-style="normal"
+         font-weight="bold"
+         font-size="180"
+         text-anchor="start"
+         id="text72">0</text>
+      <circle
+         cx="4506"
+         cy="-675"
+         r="103"
+         fill="#ff00ff"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle72" />
+      <circle
+         cx="2841"
+         cy="-675"
+         r="103"
+         fill="#ff00ff"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle73" />
+      <circle
+         cx="1131"
+         cy="-675"
+         r="103"
+         fill="#ff0000"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle74" />
+      <circle
+         cx="-669"
+         cy="-675"
+         r="103"
+         fill="#00ff00"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle75" />
+      <circle
+         cx="4506"
+         cy="1125"
+         r="103"
+         fill="#ff00ff"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle76" />
+      <circle
+         cx="1131"
+         cy="1125"
+         r="103"
+         fill="#ff0000"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle77" />
+      <circle
+         cx="2841"
+         cy="2925"
+         r="103"
+         fill="#00ff00"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle78" />
+      <circle
+         cx="1131"
+         cy="2925"
+         r="103"
+         fill="#ff0000"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle79" />
+      <circle
+         cx="-669"
+         cy="2925"
+         r="103"
+         fill="#ff0000"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle80" />
+      <circle
+         cx="4506"
+         cy="-2475"
+         r="103"
+         fill="#00ff00"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle81" />
+      <circle
+         cx="2841"
+         cy="-2475"
+         r="103"
+         fill="#00ff00"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle82" />
+      <circle
+         cx="1131"
+         cy="-2475"
+         r="103"
+         fill="#00ff00"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle83" />
+      <circle
+         cx="-669"
+         cy="-2475"
+         r="103"
+         fill="#00ff00"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle84" />
+      <circle
+         cx="2841"
+         cy="1125"
+         r="103"
+         fill="#ff00ff"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle85" />
+      <circle
+         cx="-675"
+         cy="1125"
+         r="103"
+         fill="#ff0000"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle86" />
+      <circle
+         cx="4506"
+         cy="2925"
+         r="103"
+         fill="#ff00ff"
+         stroke="#000000"
+         stroke-width="8px"
+         id="circle87" />
+    </g>
+  </g>
 </svg>
