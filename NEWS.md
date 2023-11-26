@@ -3,6 +3,9 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Lagrangian module: fix flags for boundary u* field.
+  Ths fixes GitHub issue #103.
+
 - medcoupling mesh wrapper:
   * Fix some compiler warnings with OneAPI
   * Fix potential crash with ParaMESH when some ranks are not coupled
