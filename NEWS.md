@@ -3,6 +3,9 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Lagrangian module: fix flags for boundary u* field.
+  Ths fixes GitHub issue #103.
+
 - ALE: fix memory leak when defining fixed mesh displacement with GUI.
 
 - Fix possible crash with PyQt5 and python 3.10 due to splash screen calls

@@ -1008,7 +1008,7 @@ cs_lagr_options_definition(int         isuite,
 
   if (lagr_model->deposition > 0)
     cs_field_find_or_create("ustar",
-                            CS_FIELD_PROPERTY | CS_FIELD_PROPERTY,
+                            CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                             CS_MESH_LOCATION_BOUNDARY_FACES,
                             1,
                             false); /* has previous */
