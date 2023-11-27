@@ -27,19 +27,112 @@
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+#include "bft_error.h"
 
 #include "cs_array.h"
 #include "cs_base.h"
 #include "cs_meg_prototypes.h"
+
+/*----------------------------------------------------------------------------
+ *  Header for the current file
+ *----------------------------------------------------------------------------*/
+
 #include "cs_meg_xdef_wrapper.h"
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Local variables
+ *============================================================================*/
+
+static int _n_meg_defs;
+static cs_meg_xdef_input_t **_meg_defs;
 
 /*============================================================================
  * Public functions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialze MEG xdef wrapper arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_xdef_wrapper_initialize(void)
+{
+  _n_meg_defs = 0;
+  _meg_defs   = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy MEG xdef wrapper arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_xdef_wrapper_finalize(void)
+{
+  for (int i = 0; i < _n_meg_defs; i++)
+    BFT_FREE(_meg_defs[i]);
+
+  BFT_FREE(_meg_defs);
+  _n_meg_defs = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a MEG function xdef wrapper input data. Allocated memory is
+ *  deleted by cs_meg_xdef_wrapper_finalize
+ *
+ * \param[in] type              type of meg function linked to this input
+ * \param[in] z_id              id of zone on which this function is defined
+ * \param[in] stride            stride of data
+ * \param[in] name              name related to function
+ * \param[in] additional_data   additional data (char *) provided to function,
+ *                              such as condition or source type
+ *
+ * \returns pointer to newly allocated input data structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_meg_xdef_input_t *
+cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t type,
+                              const int                    z_id,
+                              const int                    stride,
+                              const char                  *name,
+                              const char                  *additional_data)
+{
+  int new_id = _n_meg_defs;
+  _n_meg_defs += 1;
+
+  BFT_REALLOC(_meg_defs, _n_meg_defs, cs_meg_xdef_input_t *);
+
+  cs_meg_xdef_input_t *d = NULL;
+  BFT_MALLOC(d, 1, cs_meg_xdef_input_t);
+
+  d->type = type;
+  d->z_id = z_id;
+  d->stride = stride;
+
+  if (name == NULL || (name != NULL && strlen(name) == 0))
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Empty name provided.\n"));
+  snprintf(d->name, 511, "%s", name);
+  d->name[511] = '\0';
+
+  if (additional_data != NULL) {
+    snprintf(d->additional_data, 511, "%s", additional_data);
+    d->additional_data[511] = '\0';
+  }
+  else
+    d->additional_data[0] = '\0';
+
+  _meg_defs[new_id] = d;
+
+  return d;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Wrapper function allowing to call MEG functions by xdef structres.
@@ -95,7 +188,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                                n_elts,
                                elt_ids,
                                _coords,
-                               _input->input_name,
+                               _input->name,
                                _input->additional_data,
                                meg_vals);
 
@@ -118,7 +211,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                              n_elts,
                              elt_ids,
                              _coords,
-                             _input->input_name,
+                             _input->name,
                              &(meg_vals));
     }
     break;
@@ -129,7 +222,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                             n_elts,
                             elt_ids,
                             _coords,
-                            _input->input_name,
+                            _input->name,
                             meg_vals);
 
       /* Copy values to retval, knowing that "meg_vals" is dense! */
@@ -151,7 +244,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                           n_elts,
                           elt_ids,
                           _coords,
-                          _input->input_name,
+                          _input->name,
                           _input->additional_data,
                           meg_vals);
 

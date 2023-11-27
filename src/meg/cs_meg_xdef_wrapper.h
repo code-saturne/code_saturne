@@ -66,7 +66,7 @@ typedef struct {
   int stride;
 
   /* Input name used for function */
-  char input_name[512];
+  char name[512];
 
   /* boundary or source term data*/
   char additional_data[512];
@@ -76,6 +76,47 @@ typedef struct {
 /*============================================================================
  * Public functions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialze MEG xdef wrapper arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_xdef_wrapper_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy MEG xdef wrapper arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_xdef_wrapper_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a MEG function xdef wrapper input data. Allocated memory is
+ *  deleted by cs_meg_xdef_wrapper_finalize
+ *
+ * \param[in] type              type of meg function linked to this input
+ * \param[in] z_id              id of zone on which this function is defined
+ * \param[in] stride            stride of data
+ * \param[in] name              name related to function
+ * \param[in] additional_data   additional data (char *) provided to function,
+ *                              such as condition or source type
+ *
+ * \returns pointer to newly allocated input data structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_meg_xdef_input_t *
+cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t type,
+                              const int                    z_id,
+                              const int                    stride,
+                              const char                  *name,
+                              const char                  *additional_data);
 
 /*----------------------------------------------------------------------------*/
 /*!
