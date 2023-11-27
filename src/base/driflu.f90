@@ -598,7 +598,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
 
 !===============================================================================
-! 7. Deduce the convective flux of the gas "class" by removing the flux
+! 7. Deduce the convective flux of the continuous "class" by removing the flux
 !     of the current particle "class":
 !  (rho x1 V1)_ij = (rho Vs)_ij - sum_classes (rho x2 V2)_ij
 !===============================================================================
