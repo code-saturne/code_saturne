@@ -112,12 +112,12 @@ typedef void
  * for which this type of function does not need to be defined.
  *
  * The preconditioner is considered to have converged when
- * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
  * parameters:
  *   context       <-> pointer to preconditioner context
  *   precision     <-- preconditioner precision
- *   r_norm        <-- residue normalization
+ *   r_norm        <-- residual normalization
  *----------------------------------------------------------------------------*/
 
 typedef void
@@ -385,11 +385,11 @@ cs_sles_pc_get_apply_func(const cs_sles_pc_t *pc);
  * default options will be used.
  *
  * The system is considered to have converged when
- * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
  * \param[in, out]  pc             pointer to preconditioner object
  * \param[in]       precision      preconditioner precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  */
 /*----------------------------------------------------------------------------*/
 

@@ -170,7 +170,7 @@ _fact_lu(cs_lnum_t         n_blocks,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize or reset convergence info structure.
- *        At this stage, the initial residue is set to HUGE_VAL, as it is
+ *        At this stage, the initial residual is set to HUGE_VAL, as it is
  *        unknown.
  *
  * \param[in, out] convergence   convergence info structure
@@ -178,8 +178,8 @@ _fact_lu(cs_lnum_t         n_blocks,
  * \param[in]      verbosity     verbosity level
  * \param[in]      n_iter_max    maximum number of iterations
  * \param[in]      precision     precision limit
- * \param[in]      r_norm        residue normalization
- * \param[in, out] residue       initial residue
+ * \param[in]      r_norm        residual normalization
+ * \param[in, out] residual      initial residual
  */
 /*----------------------------------------------------------------------------*/
 
@@ -190,9 +190,9 @@ cs_sles_it_convergence_init(cs_sles_it_convergence_t  *convergence,
                             unsigned                   n_iter_max,
                             double                     precision,
                             double                     r_norm,
-                            double                    *residue)
+                            double                    *residual)
 {
-  *residue = HUGE_VAL;  /* Unknown at this stage */
+  *residual = HUGE_VAL;  /* Unknown at this stage */
 
   convergence->name = solver_name;
   convergence->verbosity = verbosity;
@@ -202,7 +202,7 @@ cs_sles_it_convergence_init(cs_sles_it_convergence_t  *convergence,
 
   convergence->precision = precision;
   convergence->r_norm = r_norm;
-  convergence->residue = *residue;
+  convergence->residual = *residual;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -244,7 +244,7 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
   sd->n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
 
-  sd->initial_residue = -1;
+  sd->initial_residual = -1;
 
   const cs_sles_it_t  *s = c->shared;
 

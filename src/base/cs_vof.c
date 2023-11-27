@@ -558,17 +558,17 @@ _smoothe(const cs_mesh_t              *m,
   /* Linear system resolution options */
   cs_real_t precision = 1.e-5; /* Solver precision */
   int n_equiv_iter = 0;     /* Number of equivalent iterative solver iterations */
-  cs_real_t residue;        /* Residue */
+  cs_real_t residual;       /* Residual */
 
   /* Linear system resolution */
-  /* Get the residue normalization */
+  /* Get the residual normalization */
   cs_real_t rnorm = cs_dot(n_cells, smbdp, smbdp);
 
   cs_parall_sum(1, CS_DOUBLE, &rnorm);
-  rnorm = sqrt(rnorm); /* Residue normalization */
+  rnorm = sqrt(rnorm); /* Residual normalization */
 
   /* Triple line model (WARNING: model terms are added after
-     residue normalization ?) */
+     residual normalization ?) */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     cs_lnum_t ii = b_face_cells[f_id];
 
@@ -592,7 +592,7 @@ _smoothe(const cs_mesh_t              *m,
                        precision,
                        rnorm,
                        &n_equiv_iter,
-                       &residue,
+                       &residual,
                        smbdp,
                        rtpdp);
 

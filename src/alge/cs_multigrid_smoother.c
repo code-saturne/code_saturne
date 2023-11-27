@@ -66,7 +66,7 @@ BEGIN_C_DECLS
         Iterative linear solvers used as multigrid smoothers only.
 
   These smoothers are based on iterative solvers, but are simplified so
-  as to avoid the cost of some residue computation and convergence testing
+  as to avoid the cost of some residual computation and convergence testing
   operations.
 */
 
@@ -170,7 +170,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -333,7 +333,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -391,7 +391,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, gk, sk);  /* sk = A.gk */
 
-    /* compute residue and prepare descent parameter */
+    /* compute residual and prepare descent parameter */
 
     _dot_products_xy_yz(c, rk, gk, sk, &rk_gk, &gk_sk);
 
@@ -496,7 +496,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -654,7 +654,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -817,7 +817,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue */
+  /* Residual */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -1531,7 +1531,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     if (halo != NULL)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue: backward step */
+    /* Compute Vx <- Vx - (A-diag).Rk and residual: backward step */
 
     if (diag_block_size == 1) {
 
@@ -1597,7 +1597,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
  * Solution of A.vx = Rhs using Truncated forward Gauss-Seidel.
  *
  * This variant is intended for smoothing with a fixed number of
- * iterations, so does not compute a residue or run a convergence test.
+ * iterations, so does not compute a residual or run a convergence test.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -1717,7 +1717,7 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
  * Solution of A.vx = Rhs using Truncated backward Gauss-Seidel.
  *
  * This variant is intended for smoothing with a fixed number of
- * iterations, so does not compute a residue or run a convergence test.
+ * iterations, so does not compute a residual or run a convergence test.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -2164,9 +2164,9 @@ cs_multigrid_smoother_setup(void               *context,
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
@@ -2185,7 +2185,7 @@ cs_multigrid_smoother_solve(void                *context,
                             double               precision,
                             double               r_norm,
                             int                 *n_iter,
-                            double              *residue,
+                            double              *residual,
                             const cs_real_t     *rhs,
                             cs_real_t           *vx,
                             size_t               aux_size,
@@ -2199,11 +2199,11 @@ cs_multigrid_smoother_solve(void                *context,
 
   const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
 
-  /* Initialize number of iterations and residue,
+  /* Initialize number of iterations and residual,
      and smooth linear system */
 
   *n_iter = 0;
-  *residue = -1.0; /* Don't use this quantity when dealing with smoothers */
+  *residual = -1.0; /* Don't use this quantity when dealing with smoothers */
 
   /* Setup if not already done */
 
@@ -2221,9 +2221,9 @@ cs_multigrid_smoother_solve(void                *context,
                               c->n_max_iter,
                               precision,
                               r_norm,
-                              residue);
+                              residual);
 
-  c->setup_data->initial_residue = -1;
+  c->setup_data->initial_residual = -1;
 
   if (verbosity > 1)
     cs_log_printf(CS_LOG_DEFAULT,
@@ -2247,7 +2247,7 @@ cs_multigrid_smoother_solve(void                *context,
   /* Update return values */
 
   *n_iter = convergence.n_iterations;
-  *residue = convergence.residue;
+  *residual = convergence.residual;
 
   return cvg;
 }

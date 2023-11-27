@@ -130,7 +130,7 @@ typedef struct _cs_sles_petsc_setup_t {
   bool           share_a;                /* true if provided matrix already
                                             of PETSc type, false otherwise */
 
-  double         r_norm;                 /* residue normalization */
+  double         r_norm;                 /* residual normalization */
   void          *cctx;                   /* convergence context */
 
 } cs_sles_petsc_setup_t;
@@ -441,15 +441,15 @@ _shell_mat_destroy(Mat                  a,
 }
 
 /*----------------------------------------------------------------------------
- * Convergence test using residue normalization.
+ * Convergence test using residual normalization.
  *
- * This test overloads KSPConvergedDefault, by changing the residue
+ * This test overloads KSPConvergedDefault, by changing the residual
  * normalization at the first time step.
  *
  * parameters:
  *   ksp    <-> KSP context
  *   n      <-- iteration id
- *   rnorm  <-- residue norm
+ *   rnorm  <-- residual norm
  *   reason <-- convergence status
  *   ctx    <-> associated context
  *----------------------------------------------------------------------------*/
@@ -1118,9 +1118,9 @@ cs_sles_petsc_setup(void               *context,
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
@@ -1139,7 +1139,7 @@ cs_sles_petsc_solve(void                *context,
                     double               precision,
                     double               r_norm,
                     int                 *n_iter,
-                    double              *residue,
+                    double              *residual,
                     const cs_real_t     *rhs,
                     cs_real_t           *vx,
                     size_t               aux_size,
@@ -1175,7 +1175,7 @@ cs_sles_petsc_solve(void                *context,
   PetscLogStagePush(_log_stage[1]);
 
   PetscInt       its;
-  PetscScalar    _residue;
+  PetscScalar    _residual;
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
@@ -1290,7 +1290,7 @@ cs_sles_petsc_solve(void                *context,
   if (verbosity > 0)
     KSPView(sd->ksp, PETSC_VIEWER_STDOUT_WORLD);
 
-  KSPGetResidualNorm(sd->ksp, &_residue);
+  KSPGetResidualNorm(sd->ksp, &_residual);
   KSPGetIterationNumber(sd->ksp, &its);
 
   KSPConvergedReason reason;
@@ -1308,7 +1308,7 @@ cs_sles_petsc_solve(void                *context,
       cvg = CS_SLES_DIVERGED;
   }
 
-  *residue = _residue;
+  *residual = _residual;
   *n_iter = its;
 
   /* Update return values */

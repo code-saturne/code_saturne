@@ -188,7 +188,7 @@ _setup_category(cs_sles_it_type_t  solver_type)
  * parameters:
  *   c           <-- pointer to solver context info
  *   n_iter      <-- Number of iterations done
- *   residue     <-- Non normalized residue
+ *   residual    <-- Non normalized residual
  *   convergence <-> Convergence information structure
  *
  * returns:
@@ -198,7 +198,7 @@ _setup_category(cs_sles_it_type_t  solver_type)
 static cs_sles_convergence_state_t
 _convergence_test(cs_sles_it_t              *c,
                   unsigned                   n_iter,
-                  double                     residue,
+                  double                     residual,
                   cs_sles_it_convergence_t  *convergence)
 {
   const int verbosity = convergence->verbosity;
@@ -211,12 +211,12 @@ _convergence_test(cs_sles_it_t              *c,
   /* Update conversion info structure */
 
   convergence->n_iterations = n_iter;
-  convergence->residue = residue;
+  convergence->residual = residual;
 
   /* Plot convergence if requested */
 
   if (c->plot != NULL) {
-    double vals = residue;
+    double vals = residual;
     double wall_time = cs_timer_wtime();
     c->plot_time_stamp += 1;
     cs_time_plot_vals_write(c->plot,             /* time plot structure */
@@ -229,10 +229,10 @@ _convergence_test(cs_sles_it_t              *c,
 
   /* If converged */
 
-  if (residue < convergence->precision * convergence->r_norm) {
+  if (residual < convergence->precision * convergence->r_norm) {
     if (verbosity > 1)
-      bft_printf(_(final_fmt), n_iter, residue, residue/convergence->r_norm,
-                 convergence->r_norm, s->initial_residue);
+      bft_printf(_(final_fmt), n_iter, residual, residual/convergence->r_norm,
+                 convergence->r_norm, s->initial_residual);
     return CS_SLES_CONVERGED;
   }
 
@@ -248,11 +248,11 @@ _convergence_test(cs_sles_it_t              *c,
       if (verbosity > 1 || final_iteration) {
         if (convergence->r_norm > 0.)
           bft_printf(_(final_fmt),
-                     n_iter, residue, residue/convergence->r_norm,
-                     convergence->r_norm, s->initial_residue);
+                     n_iter, residual, residual/convergence->r_norm,
+                     convergence->r_norm, s->initial_residual);
         else
           bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
-                     n_iter, residue);
+                     n_iter, residual);
       }
       if (convergence->precision > 0. && final_iteration)
         bft_printf(_(" @@ Warning: non convergence\n"));
@@ -263,10 +263,10 @@ _convergence_test(cs_sles_it_t              *c,
   /* If diverged */
   else {
     int diverges = 0;
-    if (residue > s->initial_residue * 10000.0 && residue > 100.)
+    if (residual > s->initial_residual * 10000.0 && residual > 100.)
       diverges = 1;
 #if (__STDC_VERSION__ >= 199901L)
-    else if (isnan(residue) || isinf(residue)) {
+    else if (isnan(residual) || isinf(residual)) {
       diverges = 1;
     }
 #endif
@@ -276,7 +276,7 @@ _convergence_test(cs_sles_it_t              *c,
                    "  initial residual: %11.4e; current residual: %11.4e\n"),
                  cs_sles_it_type_name[c->type], convergence->name,
                  convergence->n_iterations,
-                 s->initial_residue, convergence->residue);
+                 s->initial_residual, convergence->residual);
       return CS_SLES_DIVERGED;
     }
   }
@@ -366,7 +366,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
                     void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta, residue;
+  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta, residual;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk;
   cs_real_t *restrict zk;
@@ -399,7 +399,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -428,13 +428,13 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
 #endif
 
-  _dot_products_xx_xy(c, rk, gk, &residue, &rk_gkm1);
-  residue = sqrt(residue);
+  _dot_products_xx_xy(c, rk, gk, &residual, &rk_gkm1);
+  residual = sqrt(residual);
 
   /* If no solving required, finish here */
 
-  c->setup_data->initial_residue = residue;
-  cvg = _convergence_test(c, n_iter, residue, convergence);
+  c->setup_data->initial_residual = residual;
+  cvg = _convergence_test(c, n_iter, residual, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
 
@@ -462,8 +462,8 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residue = sqrt(_dot_product_xx(c, rk));
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    residual = sqrt(_dot_product_xx(c, rk));
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
     /* Current Iteration */
     /*-------------------*/
@@ -476,16 +476,16 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
-    /* Compute residue and prepare descent parameter */
+    /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy(c, rk, gk, &residue, &rk_gk);
+    _dot_products_xx_xy(c, rk, gk, &residual, &rk_gk);
 
-    residue = sqrt(residue);
+    residual = sqrt(residual);
 
     /* Convergence test for end of previous iteration */
 
     if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     if (cvg != CS_SLES_ITERATING)
       break;
@@ -595,7 +595,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -620,21 +620,21 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, vk, wk);
 
-    /* Compute residue and prepare descent parameter */
+    /* Compute residual and prepare descent parameter */
 
-    double alpha_k, beta_k, gamma_k, residue;
+    double alpha_k, beta_k, gamma_k, residual;
 
     _dot_products_vr_vw_vq_rr(c, vk, rk, wk, qk,
-                              &alpha_k, &beta_k, &gamma_k, &residue);
+                              &alpha_k, &beta_k, &gamma_k, &residual);
 
-    residue = sqrt(residue);
+    residual = sqrt(residual);
 
     /* Convergence test for end of previous iteration */
 
     if (n_iter > 0)
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
     else
-      c->setup_data->initial_residue = residue;
+      c->setup_data->initial_residual = residual;
 
     if (cvg != CS_SLES_ITERATING)
       break;
@@ -731,7 +731,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
                        void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_gk_m1, rkm1_gk, rk_gk, beta, residue;
+  double  ro_0, ro_1, alpha, rk_gk_m1, rkm1_gk, rk_gk, beta, residual;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict rk, *restrict rkm1, *restrict dk, *restrict gk;
   cs_real_t  *restrict zk;
@@ -765,7 +765,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -792,13 +792,13 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
 #endif
 
-  _dot_products_xx_xy(c, rk, gk, &residue, &rk_gk_m1);
-  residue = sqrt(residue);
+  _dot_products_xx_xy(c, rk, gk, &residual, &rk_gk_m1);
+  residual = sqrt(residual);
 
   /* If no solving required, finish here */
 
-  c->setup_data->initial_residue = residue;
-  cvg = _convergence_test(c, n_iter, residue, convergence);
+  c->setup_data->initial_residual = residual;
+  cvg = _convergence_test(c, n_iter, residual, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
 
@@ -828,8 +828,8 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residue = sqrt(_dot_product_xx(c, rk));
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    residual = sqrt(_dot_product_xx(c, rk));
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
     /* Current Iteration */
     /*-------------------*/
@@ -842,16 +842,16 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
-    /* Compute residue and prepare descent parameter */
+    /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy_yz(c, rk, gk, rkm1, &residue, &rk_gk, &rkm1_gk);
+    _dot_products_xx_xy_yz(c, rk, gk, rkm1, &residual, &rk_gk, &rkm1_gk);
 
-    residue = sqrt(residue);
+    residual = sqrt(residual);
 
     /* Convergence test for end of previous iteration */
 
     if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     if (cvg != CS_SLES_ITERATING)
       break;
@@ -929,7 +929,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                        void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, gk_sk, beta, residue;
+  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, gk_sk, beta, residual;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk, *restrict sk;
   cs_real_t *restrict zk;
@@ -963,7 +963,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -994,14 +994,14 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   /* Descent parameter */
 
-  _dot_products_xx_xy_yz(c, rk, dk, zk, &residue, &ro_0, &ro_1);
-  residue = sqrt(residue);
+  _dot_products_xx_xy_yz(c, rk, dk, zk, &residual, &ro_0, &ro_1);
+  residual = sqrt(residual);
 
-  c->setup_data->initial_residue = residue;
+  c->setup_data->initial_residual = residual;
 
   /* If no solving required, finish here */
 
-  cvg = _convergence_test(c, n_iter, residue, convergence);
+  cvg = _convergence_test(c, n_iter, residual, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
 
@@ -1025,9 +1025,9 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residue = sqrt(_dot_product_xx(c, rk));
+    residual = sqrt(_dot_product_xx(c, rk));
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
   }
 
@@ -1042,16 +1042,16 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, gk, sk);  /* sk = A.gk */
 
-    /* Compute residue and prepare descent parameter */
+    /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy_yz(c, rk, gk, sk, &residue, &rk_gk, &gk_sk);
+    _dot_products_xx_xy_yz(c, rk, gk, sk, &residual, &rk_gk, &gk_sk);
 
-    residue = sqrt(residue);
+    residual = sqrt(residual);
 
     /* Convergence test for end of previous iteration */
 
     if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     if (cvg != CS_SLES_ITERATING)
       break;
@@ -1121,7 +1121,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
                         void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, beta, residue;
+  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, beta, residual;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict zk;
 
@@ -1152,7 +1152,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -1176,12 +1176,12 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 #endif
 
   rk_rkm1 = _dot_product_xx(c, rk);
-  residue = sqrt(rk_rkm1);
+  residual = sqrt(rk_rkm1);
 
   /* If no solving required, finish here */
 
-  c->setup_data->initial_residue = residue;
-  cvg = _convergence_test(c, n_iter, residue, convergence);
+  c->setup_data->initial_residual = residual;
+  cvg = _convergence_test(c, n_iter, residual, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
 
@@ -1209,9 +1209,9 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residue = sqrt(_dot_product(c, rk, rk));
+    residual = sqrt(_dot_product(c, rk, rk));
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
   }
 
@@ -1220,16 +1220,16 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    /* Compute residue and prepare descent parameter */
+    /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy(c, rk, rk, &residue, &rk_rk);
+    _dot_products_xx_xy(c, rk, rk, &residual, &rk_rk);
 
-    residue = sqrt(residue);
+    residual = sqrt(residual);
 
     /* Convergence test for end of previous iteration */
 
     if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     if (cvg != CS_SLES_ITERATING)
       break;
@@ -1305,7 +1305,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, rk_sk, beta, residue;
+  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, rk_sk, beta, residual;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict sk;
   cs_real_t *restrict zk;
@@ -1338,7 +1338,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue and descent direction */
+  /* Residual and descent direction */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -1365,14 +1365,14 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   /* Descent parameter */
 
-  _dot_products_xx_xy_yz(c, rk, dk, zk, &residue, &ro_0, &ro_1);
-  residue = sqrt(residue);
+  _dot_products_xx_xy_yz(c, rk, dk, zk, &residual, &ro_0, &ro_1);
+  residual = sqrt(residual);
 
   /* If no solving required, finish here */
 
-  c->setup_data->initial_residue = residue;
+  c->setup_data->initial_residual = residual;
 
-  cvg = _convergence_test(c, n_iter, residue, convergence);
+  cvg = _convergence_test(c, n_iter, residual, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
 
@@ -1396,9 +1396,9 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residue = sqrt(_dot_product_xx(c, rk));
+    residual = sqrt(_dot_product_xx(c, rk));
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
   }
 
@@ -1409,18 +1409,18 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, rk, sk);  /* sk = A.zk */
 
-    /* Compute residue and prepare descent parameter */
+    /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy(c, rk, sk, &residue, &rk_sk);
+    _dot_products_xx_xy(c, rk, sk, &residual, &rk_sk);
 
-    rk_rk = residue;
+    rk_rk = residual;
 
-    residue = sqrt(residue);
+    residual = sqrt(residual);
 
     /* Convergence test for end of previous iteration */
 
     if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     if (cvg != CS_SLES_ITERATING)
       break;
@@ -1491,7 +1491,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 {
   cs_sles_convergence_state_t cvg;
   cs_lnum_t  ii;
-  double  residue;
+  double  residual;
   double  ak, bk, ck, dk, ek, denom, alpha, tau;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict vxm1;
@@ -1535,7 +1535,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  /* Residue */
+  /* Residual */
 
   cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
@@ -1543,13 +1543,13 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
-  residue = _dot_product(c, rk, rk);
-  residue = sqrt(residue);
+  residual = _dot_product(c, rk, rk);
+  residual = sqrt(residual);
 
   /* If no solving required, finish here */
 
-  c->setup_data->initial_residue = residue;
-  cvg = _convergence_test(c, n_iter, residue, convergence);
+  c->setup_data->initial_residual = residual;
+  cvg = _convergence_test(c, n_iter, residual, convergence);
 
   /* Current Iteration */
   /*-------------------*/
@@ -1605,14 +1605,14 @@ _conjugate_residual_3(cs_sles_it_t              *c,
       }
     }
 
-    /* Compute residue */
+    /* Compute residual */
 
-    residue = sqrt(_dot_product(c, rk, rk));
+    residual = sqrt(_dot_product(c, rk, rk));
 
     /* Convergence test for end of previous iteration */
 
     if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     if (cvg != CS_SLES_ITERATING)
       break;
@@ -1660,7 +1660,7 @@ _jacobi(cs_sles_it_t              *c,
   cs_real_t *_aux_vectors;
   cs_real_t *restrict rk;
 
-  double residue = -1;
+  double residual = -1;
   unsigned n_iter = 0;
 
   /* Allocate or map work arrays */
@@ -1701,7 +1701,7 @@ _jacobi(cs_sles_it_t              *c,
 
     n_iter += 1;
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
     cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vx);
 
@@ -1727,7 +1727,7 @@ _jacobi(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-      residue = sqrt(res2); /* Actually, residue of previous iteration */
+      residual = sqrt(res2); /* Actually, residual of previous iteration */
 
     }
     else {
@@ -1743,9 +1743,9 @@ _jacobi(cs_sles_it_t              *c,
     /* Convergence test */
 
     if (n_iter == 1)
-      c->setup_data->initial_residue = residue;
+      c->setup_data->initial_residual = residual;
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
   }
 
@@ -1789,7 +1789,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
   assert(diag_block_size == 3);
 
   cs_sles_convergence_state_t cvg;
-  double  res2, residue;
+  double  res2, residual;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict vxx;
 
@@ -1831,13 +1831,13 @@ _block_3_jacobi(cs_sles_it_t              *c,
     n_iter += 1;
     memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
 
-    /* Compute vxx <- vx - (a-diag).rk and residue. */
+    /* Compute vxx <- vx - (a-diag).rk and residual. */
 
     cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
 
     res2 = 0.0;
 
-    /* Compute vx <- diag^-1 . (vxx - rhs) and residue. */
+    /* Compute vx <- diag^-1 . (vxx - rhs) and residual. */
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
       _fw_and_bw_lu33(ad_inv + 9*ii,
@@ -1863,14 +1863,14 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-    residue = sqrt(res2); /* Actually, residue of previous iteration */
+    residual = sqrt(res2); /* Actually, residual of previous iteration */
 
     if (n_iter == 1)
-      c->setup_data->initial_residue = residue;
+      c->setup_data->initial_residual = residual;
 
     /* Convergence test */
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
   }
 
@@ -1909,7 +1909,7 @@ _block_jacobi(cs_sles_it_t              *c,
               void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  res2, residue;
+  double  res2, residual;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict vxx;
 
@@ -1953,7 +1953,7 @@ _block_jacobi(cs_sles_it_t              *c,
     n_iter += 1;
     memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
     cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
 
@@ -1985,14 +1985,14 @@ _block_jacobi(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-    residue = sqrt(res2); /* Actually, residue of previous iteration */
+    residual = sqrt(res2); /* Actually, residual of previous iteration */
 
     if (n_iter == 1)
-      c->setup_data->initial_residue = residue;
+      c->setup_data->initial_residual = residual;
 
     /* Convergence test */
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
   }
 
@@ -2025,7 +2025,7 @@ _breakdown(cs_sles_it_t                 *c,
            const char                   *coeff_name,
            double                        coeff,
            double                        epsilon,
-           double                        residue,
+           double                        residual,
            int                           n_iter,
            cs_sles_convergence_state_t  *cvg)
 {
@@ -2043,7 +2043,7 @@ _breakdown(cs_sles_it_t                 *c,
          "    The resolution does not progress anymore."),
        cs_sles_it_type_name[c->type], convergence->name, coeff_name, epsilon);
     bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
-               n_iter, residue, residue/convergence->r_norm);
+               n_iter, residual, residual/convergence->r_norm);
 
     *cvg = CS_SLES_BREAKDOWN;
     retval = true;
@@ -2087,7 +2087,7 @@ _bi_cgstab(cs_sles_it_t              *c,
 {
   cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, beta, betam1, gamma, omega, ukres0;
-  double  residue;
+  double  residual;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict res0, *restrict rk, *restrict pk, *restrict zk;
   cs_real_t  *restrict uk, *restrict vk;
@@ -2149,31 +2149,31 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     /* Compute beta and omega;
        group dot products for new iteration's beta
-       and previous iteration's residue to reduce total latency */
+       and previous iteration's residual to reduce total latency */
 
     if (n_iter == 0) {
       beta = _dot_product_xx(c, rk); /* rk == res0 here */
-      residue = sqrt(beta);
-      c->setup_data->initial_residue = residue;
+      residual = sqrt(beta);
+      c->setup_data->initial_residual = residual;
     }
     else {
-      _dot_products_xx_xy(c, rk, res0, &residue, &beta);
-      residue = sqrt(residue);
+      _dot_products_xx_xy(c, rk, res0, &residual, &beta);
+      residual = sqrt(residual);
     }
 
     /* Convergence test */
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
     if (cvg != CS_SLES_ITERATING)
       break;
 
     n_iter += 1;
 
     if (_breakdown(c, convergence, "beta", beta, _epzero,
-                   residue, n_iter, &cvg))
+                   residual, n_iter, &cvg))
       break;
 
     if (_breakdown(c, convergence, "alpha", alpha, _epzero,
-                   residue, n_iter, &cvg))
+                   residual, n_iter, &cvg))
       break;
 
     omega = beta*gamma / (alpha*betam1);
@@ -2223,7 +2223,7 @@ _bi_cgstab(cs_sles_it_t              *c,
     _dot_products_xx_xy(c, vk, rk, &ro_1, &ro_0);
 
     if (_breakdown(c, convergence, "rho1", ro_1, _epzero,
-                   residue, n_iter, &cvg))
+                   residual, n_iter, &cvg))
       break;
 
     cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
@@ -2289,7 +2289,7 @@ _bicgstab2(cs_sles_it_t              *c,
   cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, beta, gamma;
   double  omega_1, omega_2, mu, nu, tau;
-  double  residue;
+  double  residual;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict res0, *restrict qk, *restrict rk, *restrict sk;
   cs_real_t  *restrict tk, *restrict uk, *restrict vk, *restrict wk;
@@ -2357,19 +2357,19 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* Compute beta and omega;
        group dot products for new iteration's beta
-       and previous iteration's residue to reduce total latency */
+       and previous iteration's residual to reduce total latency */
 
     double mprec = 1.0e-60;
 
     if (n_iter == 0) {
-      residue = sqrt(_dot_product_xx(c, rk)); /* rk == res0 here */
-      c->setup_data->initial_residue = residue;
+      residual = sqrt(_dot_product_xx(c, rk)); /* rk == res0 here */
+      c->setup_data->initial_residual = residual;
     }
     else
-      residue = sqrt(_dot_product_xx(c, rk));
+      residual = sqrt(_dot_product_xx(c, rk));
 
     /* Convergence test */
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
     if (cvg != CS_SLES_ITERATING)
         break;
 
@@ -2379,11 +2379,11 @@ _bicgstab2(cs_sles_it_t              *c,
     ro_1 = _dot_product(c, qk, rk);
 
     if (_breakdown(c, convergence, "rho0", ro_0, 1.e-60,
-                   residue, n_iter, &cvg))
+                   residual, n_iter, &cvg))
       break;
 
     if (_breakdown(c, convergence, "rho1", ro_1, _epzero,
-                   residue, n_iter, &cvg))
+                   residual, n_iter, &cvg))
       break;
 
     beta = alpha*ro_1/ro_0;
@@ -2406,7 +2406,7 @@ _bicgstab2(cs_sles_it_t              *c,
     gamma = _dot_product(c, qk, vk);
 
     if (_breakdown(c, convergence, "gamma", gamma, 1.e-60,
-                   residue, n_iter, &cvg))
+                   residual, n_iter, &cvg))
       break;
 
     alpha = ro_0/gamma;
@@ -2702,10 +2702,10 @@ _gcr(cs_sles_it_t              *c,
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       rk[ii] -= rhs[ii];
 
-    double residue = sqrt(_dot_product_xx(c, rk));
+    double residual = sqrt(_dot_product_xx(c, rk));
 
     if (n_restart == 0)
-      c->setup_data->initial_residue = residue;
+      c->setup_data->initial_residual = residual;
 
     /* Current Iteration on k */
     /* ---------------------- */
@@ -2751,16 +2751,16 @@ _gcr(cs_sles_it_t              *c,
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += - alpha[n_c_iter] * ck_n[ii];
 
-      /* Compute residue */
+      /* Compute residual */
 
-      residue = sqrt(_dot_product_xx(c, rk));
+      residual = sqrt(_dot_product_xx(c, rk));
 
       n_c_iter += 1;
 
       /* Convergence test of current iteration */
 
       cvg = _convergence_test(c, (n_restart * n_k_per_restart) + n_c_iter,
-                              residue, convergence);
+                              residual, convergence);
 
       if (cvg != CS_SLES_ITERATING)
         break;
@@ -2856,7 +2856,7 @@ _gmres(cs_sles_it_t              *c,
 {
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
   int l_iter, l_old_iter;
-  double    beta, dot_prod, residue;
+  double    beta, dot_prod, residual;
   cs_real_t  *_aux_vectors;
   cs_real_t *restrict _krylov_vectors, *restrict _h_matrix;
   cs_real_t *restrict _givens_coeff, *restrict _beta;
@@ -2941,9 +2941,9 @@ _gmres(cs_sles_it_t              *c,
       dk[ii] = rhs[ii] - dk[ii];
 
     if (n_iter == 0) {
-      residue = sqrt(_dot_product_xx(c, dk));
-      c->setup_data->initial_residue = residue;
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      residual = sqrt(_dot_product_xx(c, dk));
+      c->setup_data->initial_residual = residual;
+      cvg = _convergence_test(c, n_iter, residual, convergence);
       if (cvg != CS_SLES_ITERATING)
         break;
     }
@@ -3034,15 +3034,15 @@ _gmres(cs_sles_it_t              *c,
 
         cs_matrix_vector_multiply(a, fk, bk);
 
-        /* Compute residue = | Ax - b |_1 */
+        /* Compute residual = | Ax - b |_1 */
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t jj = 0; jj < n_rows; jj++)
           bk[jj] -= rhs[jj];
 
-        residue = sqrt(_dot_product_xx(c, bk));
+        residual = sqrt(_dot_product_xx(c, bk));
 
-        cvg = _convergence_test(c, n_iter, residue, convergence);
+        cvg = _convergence_test(c, n_iter, residual, convergence);
 
       }
 
@@ -3093,7 +3093,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                             cs_real_t                 *restrict vx)
 {
   cs_sles_convergence_state_t cvg;
-  double  res2, residue;
+  double  res2, residual;
 
   unsigned n_iter = 0;
 
@@ -3129,7 +3129,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
     if (halo != NULL)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
     res2 = 0.0;
 
@@ -3212,14 +3212,14 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-    residue = sqrt(res2); /* Actually, residue of previous iteration */
+    residual = sqrt(res2); /* Actually, residual of previous iteration */
 
     /* Convergence test */
 
     if (n_iter == 1)
-      c->setup_data->initial_residue = residue;
+      c->setup_data->initial_residual = residual;
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+    cvg = _convergence_test(c, n_iter, residual, convergence);
 
   }
 
@@ -3254,7 +3254,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
                     cs_real_t                 *restrict vx)
 {
   cs_sles_convergence_state_t cvg;
-  double  res2, residue;
+  double  res2, residual;
 
   unsigned n_iter = 0;
 
@@ -3288,7 +3288,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
     if (halo != NULL)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
     res2 = 0.0;
 
@@ -3368,14 +3368,14 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-      residue = sqrt(res2); /* Actually, residue of previous iteration */
+      residual = sqrt(res2); /* Actually, residual of previous iteration */
 
       /* Convergence test */
 
       if (n_iter == 1)
-        c->setup_data->initial_residue = residue;
+        c->setup_data->initial_residual = residual;
 
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     }
     else if (n_iter >= convergence->n_iterations_max) {
@@ -3421,7 +3421,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   CS_UNUSED(aux_vectors);
 
   cs_sles_convergence_state_t cvg;
-  double  res2, residue;
+  double  res2, residual;
 
   /* Check matrix storage type */
 
@@ -3464,7 +3464,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     if (halo != NULL)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue: forward step */
+    /* Compute Vx <- Vx - (A-diag).Rk and residual: forward step */
 
     if (diag_block_size == 1) {
 
@@ -3521,7 +3521,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     if (halo != NULL)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue: backward step */
+    /* Compute Vx <- Vx - (A-diag).Rk and residual: backward step */
 
     res2 = 0.0;
 
@@ -3601,14 +3601,14 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-      residue = sqrt(res2); /* Actually, residue of previous iteration */
+      residual = sqrt(res2); /* Actually, residual of previous iteration */
 
       /* Convergence test */
 
       if (n_iter == 1)
-        c->setup_data->initial_residue = residue;
+        c->setup_data->initial_residual = residual;
 
-      cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residual, convergence);
 
     }
     else if (n_iter >= convergence->n_iterations_max) {
@@ -3723,7 +3723,7 @@ _fallback(cs_sles_it_t                    *c,
           cs_sles_convergence_state_t      prev_state,
           const cs_sles_it_convergence_t  *convergence,
           int                             *n_iter,
-          double                          *residue,
+          double                          *residual,
           const cs_real_t                 *rhs,
           cs_real_t                       *restrict vx,
           size_t                           aux_size,
@@ -3771,7 +3771,7 @@ _fallback(cs_sles_it_t                    *c,
                          convergence->precision,
                          convergence->r_norm,
                          n_iter,
-                         residue,
+                         residual,
                          rhs,
                          vx,
                          aux_size,
@@ -4396,9 +4396,9 @@ cs_sles_it_setup(void               *context,
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
@@ -4417,7 +4417,7 @@ cs_sles_it_solve(void                *context,
                  double               precision,
                  double               r_norm,
                  int                 *n_iter,
-                 double              *residue,
+                 double              *residual,
                  const cs_real_t     *rhs,
                  cs_real_t           *vx,
                  size_t               aux_size,
@@ -4437,7 +4437,7 @@ cs_sles_it_solve(void                *context,
 
   const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
 
-  /* Initialize number of iterations and residue,
+  /* Initialize number of iterations and residual,
      check for immediate return,
      and solve sparse linear system */
 
@@ -4470,9 +4470,9 @@ cs_sles_it_solve(void                *context,
                               c->n_max_iter,
                               precision,
                               r_norm,
-                              residue);
+                              residual);
 
-  c->setup_data->initial_residue = -1;
+  c->setup_data->initial_residual = -1;
 
   if (verbosity > 1)
     cs_log_printf(CS_LOG_DEFAULT,
@@ -4564,7 +4564,7 @@ cs_sles_it_solve(void                *context,
     /* cvg is signed, so shift (with some margin) before copy to unsigned. */
     unsigned buf[2] = {(unsigned)cvg+10, convergence.n_iterations};
     MPI_Bcast(buf, 2, MPI_UNSIGNED, 0, c->caller_comm);
-    MPI_Bcast(&convergence.residue, 1, MPI_DOUBLE, 0, c->caller_comm);
+    MPI_Bcast(&convergence.residual, 1, MPI_DOUBLE, 0, c->caller_comm);
     cvg = (cs_sles_convergence_state_t)(buf[0] - 10);
     convergence.n_iterations = buf[1];
   }
@@ -4575,7 +4575,7 @@ cs_sles_it_solve(void                *context,
   _n_iter = convergence.n_iterations;
 
   *n_iter = convergence.n_iterations;
-  *residue = convergence.residue;
+  *residual = convergence.residual;
 
   cs_sles_it_type_t fallback_type = CS_SLES_N_IT_TYPES;
   if (cvg < c->fallback_cvg)
@@ -4608,7 +4608,7 @@ cs_sles_it_solve(void                *context,
                     cvg,
                     &convergence,
                     n_iter,
-                    residue,
+                    residual,
                     rhs,
                     vx,
                     aux_size,
@@ -4674,7 +4674,7 @@ cs_sles_it_get_type(const cs_sles_it_t  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the initial residue for the previous solve operation
+ * \brief Return the initial residual for the previous solve operation
  *        with a solver.
  *
  * This is useful for convergence tests when this solver is used as
@@ -4686,17 +4686,17 @@ cs_sles_it_get_type(const cs_sles_it_t  *context)
  *
  * \param[in]  context  pointer to iterative solver info and context
  *
- * \return initial residue from last call to \ref cs_sles_solve with this
+ * \return initial residual from last call to \ref cs_sles_solve with this
  *         solver
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context)
+cs_sles_it_get_last_initial_residual(const cs_sles_it_t  *context)
 {
   double retval = 1;
   if (context->setup_data != NULL)
-    retval = context->setup_data->initial_residue;
+    retval = context->setup_data->initial_residual;
 
   return retval;
 }
@@ -5169,7 +5169,7 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
       cs_file_mkdir_default("monitoring");
       const char *probe_names[] = {base_name};
       context->_plot = cs_time_plot_init_probe(base_name,
-                                               "monitoring/residue_",
+                                               "monitoring/residual_",
                                                CS_TIME_PLOT_CSV,
                                                use_iteration,
                                                -1.0,  /* force flush */
@@ -5190,7 +5190,7 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
  * parameters:
  *   c           <-- pointer to solver context info
  *   n_iter      <-- Number of iterations done
- *   residue     <-- Non normalized residue
+ *   residual    <-- Non normalized residual
  *   convergence <-> Convergence information structure
  *
  * returns:
@@ -5200,10 +5200,10 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
 cs_sles_convergence_state_t
 cs_sles_it_convergence_test(cs_sles_it_t              *c,
                             unsigned                   n_iter,
-                            double                     residue,
+                            double                     residual,
                             cs_sles_it_convergence_t  *convergence)
 {
-  return _convergence_test(c, n_iter, residue, convergence);
+  return _convergence_test(c, n_iter, residual, convergence);
 }
 
 /*----------------------------------------------------------------------------*/

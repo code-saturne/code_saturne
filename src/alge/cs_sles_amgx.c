@@ -104,7 +104,7 @@ typedef struct _cs_sles_amgx_setup_t {
   AMGX_solver_handle   solver;           /* Linear solver context */
   AMGX_matrix_handle   matrix;           /* Linear system matrix */
 
-  double               r_norm;           /* residue normalization */
+  double               r_norm;           /* residual normalization */
   void                 *cctx;            /* convergence context */
 
 } cs_sles_amgx_setup_t;
@@ -1365,9 +1365,9 @@ cs_sles_amgx_setup(void               *context,
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
@@ -1386,7 +1386,7 @@ cs_sles_amgx_solve(void                *context,
                    double               precision,
                    double               r_norm,
                    int                 *n_iter,
-                   double              *residue,
+                   double              *residual,
                    const cs_real_t     *rhs,
                    cs_real_t           *vx,
                    size_t               aux_size,
@@ -1419,7 +1419,7 @@ cs_sles_amgx_solve(void                *context,
   sd->r_norm = r_norm;
 
   int       its = -1;
-  double    _residue = -1;
+  double    _residual = -1;
   const int n_rows = cs_matrix_get_n_rows(a);
   const int db_size = cs_matrix_get_diag_block_size(a);
 
@@ -1507,7 +1507,7 @@ cs_sles_amgx_solve(void                *context,
   AMGX_vector_destroy(b);
 
   AMGX_solver_get_iterations_number(sd->solver, &its);
-  AMGX_solver_get_iteration_residual(sd->solver, its-1, 0, &_residue);
+  AMGX_solver_get_iteration_residual(sd->solver, its-1, 0, &_residual);
 
   if (amode_vx < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)vx);
@@ -1533,7 +1533,7 @@ cs_sles_amgx_solve(void                *context,
 
   cs_fp_exception_restore_trap();
 
-  *residue = _residue;
+  *residual = _residual;
   *n_iter = its;
 
   /* Update return values */

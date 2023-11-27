@@ -264,9 +264,9 @@ cs_sles_mumps_setup(void               *context,
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
@@ -285,7 +285,7 @@ cs_sles_mumps_solve(void                *context,
                     double               precision,
                     double               r_norm,
                     int                 *n_iter,
-                    double              *residue,
+                    double              *residual,
                     const cs_real_t     *rhs,
                     cs_real_t           *vx,
                     size_t               aux_size,

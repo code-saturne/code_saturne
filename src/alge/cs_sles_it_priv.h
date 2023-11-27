@@ -124,7 +124,7 @@ typedef cs_sles_convergence_state_t
 
 typedef struct _cs_sles_it_setup_t {
 
-  double               initial_residue;  /* last initial residue value */
+  double               initial_residual; /* last initial residual value */
 
   cs_lnum_t            n_rows;           /* number of associated rows */
 
@@ -242,8 +242,8 @@ struct _cs_sles_it_convergence_t {
   unsigned             n_iterations_max;   /* Maximum number of iterations */
 
   double               precision;          /* Precision limit */
-  double               r_norm;             /* Residue normalization */
-  double               residue;            /* Current residue */
+  double               r_norm;             /* Residual normalization */
+  double               residual;           /* Current residual */
 
 };
 
@@ -591,16 +591,16 @@ _fw_and_bw_lu_gs(const cs_real_t  mat[],
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize or reset convergence info structure.
- *        At this stage, the initial residue is set to HUGE_VAL, as it is
+ *        At this stage, the initial residual is set to HUGE_VAL, as it is
  *        unknown.
  *
- * \param[in, out] convergence   convergence info structure
- * \param[in]      solver_name   solver name
- * \param[in]      verbosity     verbosity level
- * \param[in]      n_iter_max    maximum number of iterations
- * \param[in]      precision     precision limit
- * \param[in]      r_norm        residue normalization
- * \param[in, out] residue       initial residue
+ * \param[in, out]  convergence   convergence info structure
+ * \param[in]       solver_name   solver name
+ * \param[in]       verbosity     verbosity level
+ * \param[in]       n_iter_max    maximum number of iterations
+ * \param[in]       precision     precision limit
+ * \param[in]       r_norm        residual normalization
+ * \param[in, out]  residual      initial residual
  */
 /*----------------------------------------------------------------------------*/
 
@@ -611,7 +611,7 @@ cs_sles_it_convergence_init(cs_sles_it_convergence_t  *convergence,
                             unsigned                   n_iter_max,
                             double                     precision,
                             double                     r_norm,
-                            double                    *residue);
+                            double                    *residual);
 
 /*----------------------------------------------------------------------------
  * Setup context for iterative linear solver.

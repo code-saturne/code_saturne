@@ -724,9 +724,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \param[in]       da                     diagonal values (NULL if zero)
  * \param[in]       xa                     extradiagonal values (NULL if zero)
  * \param[in]       precision              solver precision
- * \param[in]       r_norm                 residue normalization
+ * \param[in]       r_norm                 residual normalization
  * \param[out]      n_iter                 number of "equivalent" iterations
- * \param[out]      residue                residue
+ * \param[out]      residual               residual
  * \param[in]       rhs                    right hand side
  * \param[in, out]  vx                     system solution
  *
@@ -745,7 +745,7 @@ cs_sles_solve_native(int                  f_id,
                      double               precision,
                      double               r_norm,
                      int                 *n_iter,
-                     double              *residue,
+                     double              *residual,
                      const cs_real_t     *rhs,
                      cs_real_t           *vx)
 {
@@ -854,7 +854,7 @@ cs_sles_solve_native(int                  f_id,
                       precision,
                       r_norm,
                       n_iter,
-                      residue,
+                      residual,
                       rhs_p,
                       _vx,
                       0,

@@ -243,9 +243,9 @@ cs_sles_it_setup(void               *context,
  *   a             <-- matrix
  *   verbosity     <-- verbosity level
  *   precision     <-- solver precision
- *   r_norm        <-- residue normalization
+ *   r_norm        <-- residual normalization
  *   n_iter        --> number of iterations
- *   residue       --> residue
+ *   residual      --> residual
  *   rhs           <-- right hand side
  *   vx            <-> system solution
  *   aux_size      <-- number of elements in aux_vectors (in bytes)
@@ -263,7 +263,7 @@ cs_sles_it_solve(void                *context,
                  double               precision,
                  double               r_norm,
                  int                 *n_iter,
-                 double              *residue,
+                 double              *residual,
                  const cs_real_t     *rhs,
                  cs_real_t           *vx,
                  size_t               aux_size,
@@ -311,7 +311,7 @@ cs_sles_it_type_t
 cs_sles_it_get_type(const cs_sles_it_t  *context);
 
 /*----------------------------------------------------------------------------
- * Return the initial residue for the previous solve operation with a solver.
+ * Return the initial residual for the previous solve operation with a solver.
  *
  * This is useful for convergence tests when this solver is used as
  * a preconditioning smoother.
@@ -324,11 +324,11 @@ cs_sles_it_get_type(const cs_sles_it_t  *context);
  *   context <-- pointer to iterative solver info and context
  *
  * returns:
- *   initial residue from last call to \ref cs_sles_solve with this solver
+ *   initial residual from last call to \ref cs_sles_solve with this solver
  *----------------------------------------------------------------------------*/
 
 double
-cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context);
+cs_sles_it_get_last_initial_residual(const cs_sles_it_t  *context);
 
 /*----------------------------------------------------------------------------
  * Return a preconditioner context for an iterative sparse linear
@@ -619,7 +619,7 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
  * parameters:
  *   c           <-- pointer to solver context info
  *   n_iter      <-- Number of iterations done
- *   residue     <-- Non normalized residue
+ *   residual    <-- Non normalized residual
  *   convergence <-> Convergence information structure
  *
  * returns:
@@ -629,7 +629,7 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
 cs_sles_convergence_state_t
 cs_sles_it_convergence_test(cs_sles_it_t              *c,
                             unsigned                   n_iter,
-                            double                     residue,
+                            double                     residual,
                             cs_sles_it_convergence_t  *convergence);
 
 /*----------------------------------------------------------------------------*/

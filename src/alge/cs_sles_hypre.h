@@ -233,9 +233,9 @@ cs_sles_hypre_setup(void               *context,
  *   a             <-- matrix
  *   verbosity     <-- verbosity level
  *   precision     <-- solver precision
- *   r_norm        <-- residue normalization
+ *   r_norm        <-- residual normalization
  *   n_iter        --> number of iterations
- *   residue       --> residue
+ *   residual      --> residual
  *   rhs           <-- right hand side
  *   vx            <-> system solution
  *   aux_size      <-- number of elements in aux_vectors (in bytes)
@@ -253,7 +253,7 @@ cs_sles_hypre_solve(void                *context,
                     double               precision,
                     double               r_norm,
                     int                 *n_iter,
-                    double              *residue,
+                    double              *residual,
                     const cs_real_t     *rhs,
                     cs_real_t           *vx,
                     size_t               aux_size,

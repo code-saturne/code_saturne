@@ -106,7 +106,7 @@ typedef void
  * solves.
  *
  * The system is considered to have converged when
- * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
  * parameters:
  *   context       <-> pointer to solver context
@@ -114,9 +114,9 @@ typedef void
  *   a             <-- matrix
  *   verbosity     <-- associated verbosity
  *   precision     <-- solver precision
- *   r_norm        <-- residue normalization
+ *   r_norm        <-- residual normalization
  *   n_iter        --> number of "equivalent" iterations
- *   residue       --> residue
+ *   residual      --> residual
  *   rhs           <-- right hand side
  *   vx            <-- system solution
  *   aux_size      <-- number of elements in aux_vectors
@@ -134,7 +134,7 @@ typedef cs_sles_convergence_state_t
                    double               precision,
                    double               r_norm,
                    int                 *n_iter,
-                   double              *residue,
+                   double              *residual,
                    const cs_real_t     *rhs,
                    cs_real_t           *vx,
                    size_t               aux_size,
@@ -667,14 +667,14 @@ cs_sles_setup(cs_sles_t          *sles,
  * over multiple solutions.
  *
  * The system is considered to have converged when
- * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       a              matrix
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       size of aux_vectors (in bytes)
@@ -691,7 +691,7 @@ cs_sles_solve(cs_sles_t           *sles,
               double               precision,
               double               r_norm,
               int                 *n_iter,
-              double              *residue,
+              double              *residual,
               const cs_real_t     *rhs,
               cs_real_t           *vx,
               size_t               aux_size,
