@@ -53,6 +53,7 @@
 #undef PACKAGE_URL
 #undef PACKAGE_VERSION
 
+#include <HYPRE_config.h>
 #include <HYPRE_krylov.h>
 #include <HYPRE_parcsr_ls.h>
 #include <HYPRE_utilities.h>
@@ -359,8 +360,12 @@ cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
 
   if (_n_hypre_systems == 0) {
     _ensure_mpi_init();
-    HYPRE_Init();  /* Note: ideally, HYPRE should provide a function to
-                      check if it is already initialized or not */
+#if HYPRE_RELEASE_NUMBER < 22900
+    HYPRE_Init();
+#else
+    if (HYPRE_Initialized() == 0)
+      HYPRE_Initialize();
+#endif
   }
   _n_hypre_systems += 1;
 
