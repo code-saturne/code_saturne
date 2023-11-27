@@ -2605,6 +2605,16 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
                                           meta_flag,
                                           (void *)values);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
+
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
@@ -2708,7 +2718,17 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   if (!full_length)
     cs_xdef_array_build_full2subset(d);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
   int  new_id = eqp->n_bc_defs;
+
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
@@ -2779,6 +2799,16 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
                                           state_flag,
                                           meta_flag,
                                           field);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -2870,6 +2900,16 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                           meta_flag,
                                           &ac);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
+
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
@@ -2960,6 +3000,16 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
                                           0, /* state */
                                           meta_flag,
                                           &tfc);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -3053,6 +3103,16 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
                                           0, /* state */
                                           meta_flag,
                                           &cx);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
