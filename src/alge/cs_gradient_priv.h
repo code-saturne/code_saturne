@@ -140,9 +140,16 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                                     const bool                   *coupled_faces,
                                     cs_lnum_t                     cpl_stride,
                                     bool                          test_bool,
-                                    bool                          PERF
-                                    );
-#endif /* defined(HAVE_CUDA) */
+                                    bool                          perf);
+#endif
+
+void
+_gradient_vector_cuda(const cs_mesh_t   *mesh,
+                      cs_real_3_t       *_bc_coeff_a,
+                      cs_real_33_t      *_bc_coeff_b,
+                      bool              perf);
+
+/* defined(HAVE_CUDA) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

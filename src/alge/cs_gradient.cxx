@@ -5557,54 +5557,56 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   std::chrono::high_resolution_clock::time_point start, stop;
   std::chrono::microseconds elapsed, elapsed_cuda;
 
-
-  cs_real_33_t *grad_cpu;
+  cs_real_33_t *grad_cpu, *grad_gpu;
   
-  
-
-  bool COMPUTE_CUDA;
-  bool COMPUTE_CPU;
-  bool RES_CPU;
-  bool PERF;
-  bool ACCURACY;
+  bool compute_cuda;
+  bool compute_cpu;
+  bool res_cpu;
+  bool perf;
+  bool accuracy;
 
 #if defined(HAVE_CUDA)
-  COMPUTE_CUDA = (cs_get_device_id() > -1) ? true : false;
-  RES_CPU = !COMPUTE_CUDA;
+  compute_cuda = (cs_get_device_id() > -1) ? true : false;
 #else
-  COMPUTE_CUDA = false;
+  compute_cuda = false;
 #endif
 
+res_cpu = !compute_cuda;
+
 #if defined(DEBUG)
-  COMPUTE_CPU = true;
-  PERF        = true;
-  ACCURACY    = true;
-#elif defined(NDEBUG) && !COMPUTE_CUDA
-  COMPUTE_CPU = true;
-  RES_CPU     = true;
-  PERF        = false;
-  ACCURACY    = false;
+  compute_cpu = true;
+  perf        = true;
+  accuracy    = true;
+#elif defined(NDEBUG)
+  compute_cpu = true;
+  perf        = false;
+  accuracy    = false;
 #else
-  COMPUTE_CPU = false;
-  PERF        = false;
-  ACCURACY    = false;
+  compute_cpu = false;
+  perf        = false;
+  accuracy    = false;
 #endif
 
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
-  COMPUTE_CUDA  = true;
-  COMPUTE_CPU   = true;
-  RES_CPU       = false;
+  compute_cuda  = true;
+  compute_cpu   = true;
+  res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  PERF        = true;
-  ACCURACY    = true;
+  perf        = false;
+  accuracy    = false;
 
 
-  if(COMPUTE_CUDA){
-    printf("reconstruct Compute with CUDA\n");
-    if(PERF){
+#if defined(HAVE_CUDA)
+  if(compute_cuda){
+    if(!res_cpu){
+      grad_gpu = grad;
+    } else {
+      BFT_MALLOC(grad_gpu, n_cells_ext, cs_real_33_t);
+    }
+    if(perf){
       start = std::chrono::high_resolution_clock::now();
     }
 
@@ -5619,22 +5621,26 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
                                         pvar,
                                         c_weight,
                                         r_grad,
-                                        grad,
+                                        grad_gpu,
                                         coupled_faces,
                                         cpl_stride,
                                         cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
-                                        PERF);
-    if(PERF){
+                                        perf);
+    if(perf){
       stop = std::chrono::high_resolution_clock::now();
       elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     }
   }
+#endif
 
-  if(COMPUTE_CPU){
-    printf("reconstruct Compute with CPU\n");
-    BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
+  if(compute_cpu){
+    if(res_cpu){
+      grad_cpu = grad;
+    } else {
+      BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
+    }
 
-    if(PERF){
+    if(perf){
       start = std::chrono::high_resolution_clock::now();
     }
       /* Initialization */
@@ -5783,47 +5789,62 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
         }
       }
     
-    if(PERF){
+    if(perf){
       stop = std::chrono::high_resolution_clock::now();
       elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     }
-
   }
 
   /* Performances */
-  if(PERF){
-    printf("reconstruct Compute and tranferts time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
+  if(perf){
+    #if defined(HAVE_CUDA)
+      if(compute_cuda){
+        printf("reconstruct Compute and tranferts time in us: CUDA = %ld\n", elapsed_cuda.count());
+      }
+    #endif
+
+    if(compute_cpu){
+      printf("reconstruct Compute and tranferts time in us: CPU = %ld\n", elapsed.count());
+    }
   }
 
   /* Accuracy grad_cpu and grad_gpu */
-  if(ACCURACY){
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        for (int j  =0; j < 3; ++j) {
-          auto cpu = grad_cpu[c_id][i][j];
-          auto cuda = grad[c_id][i][j];
-          double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
-          if (err> 1e-6) {
-            printf("reconstruct DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+  if(accuracy){
+    #if defined(HAVE_CUDA)
+      if(compute_cuda){
+        if(compute_cpu){
+          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+            for (cs_lnum_t i = 0; i < 3; i++) {
+              for (int j  =0; j < 3; ++j) {
+                auto cpu = grad_cpu[c_id][i][j];
+                auto cuda = grad_gpu[c_id][i][j];
+                double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
+                if (err> 1e-6) {
+                  printf("reconstruct DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+                }
+              }
+            }
           }
         }
       }
+    #endif
+  }
+
+// Free memory 
+#if defined(HAVE_CUDA)
+  if(compute_cuda){
+    if(res_cpu){
+      BFT_FREE(grad_gpu);
     }
   }
-  
-  //Copy grad
-  if(RES_CPU){
-    printf("reconstruct RESULTS CPU\n");
-    memcpy(grad, grad_cpu, sizeof(cs_real_33_t) * n_cells_ext);
-  }else{
-    printf("reconstruct RESULTS GPU\n");
-  }
+#endif
 
-  // Free memory
-  if(COMPUTE_CPU){
-    BFT_FREE(grad_cpu);
+// Free memory
+  if(compute_cpu){
+    if(!res_cpu){
+      BFT_FREE(grad_cpu);
+    }
   }
-
 
     /* Periodicity and parallelism treatment */
 
@@ -6895,25 +6916,36 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb_s);
 
   cs_real_33_t *rhs, *rhs_cuda, *gradv_cuda, *gradv_cpu;
-  bool COMPUTE_CUDA, COMPUTE_CPU, RES_CPU, PERF, ACCURACY;
+  bool compute_cuda, compute_cpu, res_cpu, perf, accuracy;
 
-  COMPUTE_CUDA = accel;
-  RES_CPU = !accel;
+  compute_cuda = accel;
+  res_cpu = !accel;
 
 #if defined(DEBUG)
-  COMPUTE_CPU = true;
-  PERF        = true;
-  ACCURACY    = true;
+  compute_cpu = true;
+  perf        = true;
+  accuracy    = true;
 #elif defined(NDEBUG)
-  COMPUTE_CPU = true;
-  RES_CPU     = true;
-  PERF        = false;
-  ACCURACY    = false;
+  compute_cpu = true;
+  res_cpu     = true;
+  perf        = false;
+  accuracy    = false;
 #else
-  COMPUTE_CPU = false;
-  PERF        = false;
-  ACCURACY    = false;
+  compute_cpu = false;
+  perf        = false;
+  accuracy    = false;
 #endif
+
+
+  // Pour l'instant ces lignes sont pour moi
+  // Elles seront à enlever
+  compute_cuda  = false;
+  compute_cpu   = true;
+  res_cpu       = true;
+
+  // A ne pas garder dans la version finale
+  perf        = true;
+  accuracy    = false;
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
   BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
@@ -6923,28 +6955,36 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   /* Compute Right-Hand Side */
   /*-------------------------*/
 #if defined(HAVE_CUDA)
-if(COMPUTE_CUDA){
-  start = std::chrono::high_resolution_clock::now();
-  cs_lsq_vector_gradient_cuda(
-    m,
-    madj,
-    fvq,
-    halo_type,
-    inc,
-    coefav,
-    coefbv,
-    pvar,
-    c_weight,
-    cocg,
-    cocgb_s,
-    gradv,
-    rhs_cuda);
-  stop = std::chrono::high_resolution_clock::now();
-  elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-} // end if COMPUTE_CUDA
+  if(compute_cuda){
+    if(perf){
+      start = std::chrono::high_resolution_clock::now();
+    }
+    cs_lsq_vector_gradient_cuda(
+      m,
+      madj,
+      fvq,
+      halo_type,
+      inc,
+      coefav,
+      coefbv,
+      pvar,
+      c_weight,
+      cocg,
+      cocgb_s,
+      gradv,
+      rhs_cuda);
+    
+    if(perf){
+      stop = std::chrono::high_resolution_clock::now();
+      elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    }
+  } // end if compute_cuda
 #endif
-if(COMPUTE_CPU){
-  start = std::chrono::high_resolution_clock::now();
+
+if(compute_cpu){
+  if(perf){
+    start = std::chrono::high_resolution_clock::now();
+  }
   # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
@@ -7093,11 +7133,14 @@ if(COMPUTE_CPU){
                           + rhs[c_id][i][2] * cocg[c_id][2];
     }
   }
-} // end if COMPUTE_CPU 
 
-if(ACCURACY){
-  stop = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  if(perf){
+    stop = std::chrono::high_resolution_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  }
+} // end if compute_cpu 
+
+if(accuracy){
   #pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
@@ -7113,10 +7156,10 @@ if(ACCURACY){
   }
 }
 
-if(PERF)
+if(perf)
   printf("lsq Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
 
-if(RES_CPU){
+if(res_cpu){
   memcpy(gradv, gradv_cpu, sizeof(cs_real_33_t) * n_cells_ext);
 }
   /* Compute gradient on boundary cells */
@@ -9026,27 +9069,179 @@ _gradient_vector(const char                     *var_name,
 
   /* Use Neumann BC's as default if not provided */
 
+
   cs_real_3_t *_bc_coeff_a = NULL;
   cs_real_33_t *_bc_coeff_b = NULL;
 
-  if (bc_coeff_a == NULL) {
-    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_3_t);
-    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
-        _bc_coeff_a[i][j] = 0;
+  /* Timing the computation */
+
+  std::chrono::high_resolution_clock::time_point start, stop;
+  std::chrono::microseconds elapsed, elapsed_cuda;
+
+  cs_real_3_t *_bc_coeff_a_gpu = NULL;
+  cs_real_3_t *_bc_coeff_a_cpu = NULL;
+  cs_real_33_t *_bc_coeff_b_gpu = NULL;
+  cs_real_33_t *_bc_coeff_b_cpu = NULL;
+
+  bool compute_cuda;
+  bool compute_cpu;
+  bool res_cpu;
+  bool perf;
+  bool accuracy;
+  
+#if defined(HAVE_CUDA)
+  compute_cuda = (cs_get_device_id() > -1) ? true : false;
+#else
+  compute_cuda = false;
+#endif
+
+
+res_cpu = !compute_cuda;
+
+#if defined(DEBUG)
+  compute_cpu = true;
+  perf        = true;
+  accuracy    = true;
+#elif defined(NDEBUG)
+  compute_cpu = true;
+  perf        = false;
+  accuracy    = false;
+#else
+  compute_cpu = false;
+  perf        = false;
+  accuracy    = false;
+#endif
+
+  // Pour l'instant ces lignes sont pour moi
+  // Elles seront à enlever
+  compute_cuda  = true;
+  compute_cpu   = true;
+  res_cpu       = false;
+
+  // A ne pas garder dans la version finale
+  perf        = false;
+  accuracy    = false;
+
+// Compute on GPU
+#if defined(HAVE_CUDA)
+  if(compute_cuda){
+    BFT_MALLOC(_bc_coeff_a_gpu, n_b_faces, cs_real_3_t);
+    BFT_MALLOC(_bc_coeff_b_gpu, n_b_faces, cs_real_33_t);
+    if(perf){
+      start = std::chrono::high_resolution_clock::now();
     }
-    bc_coeff_a = (const cs_real_3_t *)_bc_coeff_a;
+    _gradient_vector_cuda(mesh, _bc_coeff_a_gpu, _bc_coeff_b_gpu, perf);
+    if(perf){
+      stop = std::chrono::high_resolution_clock::now();
+      elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    }
   }
-  if (bc_coeff_b == NULL) {
-    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_33_t);
-    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        for (cs_lnum_t k = 0; k < 3; k++)
-          _bc_coeff_b[i][j][k] = 0;
-        _bc_coeff_b[i][j][j] = 1;
+#endif
+
+// Compute on CPU
+  if(compute_cpu){
+    BFT_MALLOC(_bc_coeff_a_cpu, n_b_faces, cs_real_3_t);
+    BFT_MALLOC(_bc_coeff_b_cpu, n_b_faces, cs_real_33_t);
+
+    if(perf){
+      start = std::chrono::high_resolution_clock::now();
+    }
+
+    if (bc_coeff_a == NULL) {
+      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          _bc_coeff_a_cpu[i][j] = 0;
       }
     }
-    bc_coeff_b = (const cs_real_33_t *)_bc_coeff_b;
+    if (bc_coeff_b == NULL) {
+      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          for (cs_lnum_t k = 0; k < 3; k++)
+            _bc_coeff_b_cpu[i][j][k] = 0;
+          _bc_coeff_b_cpu[i][j][j] = 1;
+        }
+      }
+    }
+
+    if(perf){
+      stop = std::chrono::high_resolution_clock::now();
+      elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    }
+  }
+
+// selected the result of the computation on CPU or GPU
+  if (bc_coeff_a == NULL) {
+    if(res_cpu){
+      bc_coeff_a = (const cs_real_3_t *)_bc_coeff_a_cpu;
+    } else {
+      bc_coeff_a = (const cs_real_3_t *)_bc_coeff_a_gpu;
+    }
+  }
+  if (bc_coeff_b == NULL) {
+    if(res_cpu){
+      bc_coeff_b = (const cs_real_33_t *)_bc_coeff_b_cpu;
+    } else {
+      bc_coeff_b = (const cs_real_33_t *)_bc_coeff_b_gpu;
+    }
+  }
+
+  /* Performances */
+  if(perf){
+    #if defined(HAVE_CUDA)
+      if(compute_cuda){
+        printf("_gradient_vector Compute and tranferts time in us: CUDA = %ld\n", elapsed_cuda.count());
+      }
+    #endif
+
+    if(compute_cpu){
+      printf("_gradient_vector Compute and tranferts time in us: CPU = %ld\n", elapsed.count());
+    }
+  }
+
+  /* Accuracy grad_cpu and grad_gpu */
+  if(accuracy){
+    #if defined(HAVE_CUDA)
+      if(compute_cuda){
+        if(compute_cpu){
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            for (cs_lnum_t i = 0; i < 3; i++) {
+              auto cpu = _bc_coeff_a_cpu[f_id][i];
+              auto cuda = _bc_coeff_a_gpu[f_id][i];
+              double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
+              if (err> 1e-12) {
+                printf("_gradient_vector_a DIFFERENCE @%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", f_id, i, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+              }
+              for (int j  =0; j < 3; ++j) {
+                auto cpu = _bc_coeff_b_cpu[f_id][i][j];
+                auto cuda = _bc_coeff_b_gpu[f_id][i][j];
+                double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
+                if (err> 1e-12) {
+                  printf("_gradient_vector_b DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", f_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+                }
+              }
+            }
+          }
+        }
+      }
+    #endif
+  }
+
+// Free memory 
+#if defined(HAVE_CUDA)
+  if(compute_cuda){
+    if(res_cpu){
+      BFT_FREE(_bc_coeff_a_gpu);
+      BFT_FREE(_bc_coeff_b_gpu);
+    }
+  }
+#endif
+
+// Free memory
+  if(compute_cpu){
+    if(!res_cpu){
+      BFT_FREE(_bc_coeff_a_cpu);
+      BFT_FREE(_bc_coeff_b_cpu);
+    }
   }
 
   /* Update of local BC. coefficients for internal coupling */
