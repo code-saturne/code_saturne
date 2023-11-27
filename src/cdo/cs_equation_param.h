@@ -2085,6 +2085,24 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Remove initial condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_ic(cs_equation_param_t   *eqp,
+                      const char            *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define and initialize a new structure to set a sliding boundary
  *         condition related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_zone_t

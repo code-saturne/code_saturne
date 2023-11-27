@@ -2356,6 +2356,16 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
                                         meta_flag,
                                         val);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
+
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
   BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
@@ -2404,6 +2414,16 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
                                         0, /* state flag */
                                         meta_flag,
                                         &quantity);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -2458,6 +2478,16 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
                                         0, /* state flag */
                                         meta_flag,
                                         &ac);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -2516,6 +2546,16 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
                                         0, /* state flag */
                                         meta_flag,
                                         &context);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -3205,6 +3245,55 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
     }
     eqp->n_bc_defs -= 1;
     BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove initial condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_ic(cs_equation_param_t   *eqp,
+                      const char            *z_name)
+{
+  if (eqp == NULL)
+    return;
+
+  int z_id = -2;
+
+  const cs_zone_t  *z = cs_volume_zone_by_name_try(z_name);
+  if (z != NULL)
+    z_id = z->id;
+
+  /* Search for given BC */
+
+  int j = -1;
+  for (int i = 0; i < eqp->n_ic_defs; i++) {
+    if (eqp->ic_defs[i]->z_id == z_id) {
+      j = i;
+      break;
+    }
+  }
+
+  /* Remove it if found */
+
+  if (j > -1) {
+    eqp->ic_defs[j] = cs_xdef_free(eqp->ic_defs[j]);
+    for (int i = j+1; i < eqp->n_ic_defs; i++) {
+      eqp->ic_defs[i-1] = eqp->ic_defs[i];
+    }
+    eqp->n_ic_defs -= 1;
+    BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   }
 }
 
