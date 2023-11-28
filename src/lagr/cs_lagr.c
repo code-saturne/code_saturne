@@ -1176,7 +1176,6 @@ cs_lagr_finalize(void)
 
   if (extra->grad_lagr_time != NULL)
     BFT_FREE(extra->grad_lagr_time);
-
 }
 
 /*----------------------------------------------------------------------------*/

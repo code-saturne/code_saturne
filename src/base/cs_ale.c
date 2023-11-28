@@ -1127,6 +1127,19 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   BFT_FREE(gradm);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free ALE boundary condition mappings.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ale_free(void)
+{
+  BFT_FREE(cs_glob_ale_data->impale);
+  BFT_FREE(cs_glob_ale_data->bc_type);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1142,27 +1155,17 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 void
 cs_ale_allocate(void)
 {
-  if (cs_glob_ale > CS_ALE_NONE) {
-    BFT_MALLOC(cs_glob_ale_data->impale, cs_glob_mesh->n_vertices, int);
-    BFT_MALLOC(cs_glob_ale_data->bc_type, cs_glob_mesh->n_b_faces, int);
-    for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_b_faces; ii++)
-      cs_glob_ale_data->bc_type[ii] = 0;
-    for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_vertices; ii++)
-      cs_glob_ale_data->impale[ii] = 0;
-  }
-}
+  if (cs_glob_ale <= CS_ALE_NONE)
+    return;
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free ALE boundary condition mappings.
- */
-/*----------------------------------------------------------------------------*/
+  BFT_MALLOC(cs_glob_ale_data->impale, cs_glob_mesh->n_vertices, int);
+  BFT_MALLOC(cs_glob_ale_data->bc_type, cs_glob_mesh->n_b_faces, int);
+  for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_b_faces; ii++)
+    cs_glob_ale_data->bc_type[ii] = 0;
+  for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_vertices; ii++)
+    cs_glob_ale_data->impale[ii] = 0;
 
-void
-cs_ale_free(void)
-{
-  BFT_FREE(cs_glob_ale_data->impale);
-  BFT_FREE(cs_glob_ale_data->bc_type);
+  cs_base_at_finalize(_ale_free);
 }
 
 /*----------------------------------------------------------------------------*/

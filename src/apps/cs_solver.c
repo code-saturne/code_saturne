@@ -80,13 +80,11 @@
 #include "cs_io.h"
 #include "cs_ibm.h"
 #include "cs_join.h"
-#include "cs_lagr.h"
 #include "cs_les_inflow.h"
 #include "cs_log.h"
 #include "cs_log_setup.h"
 #include "cs_log_iteration.h"
 #include "cs_matrix_default.h"
-#include "cs_meg_xdef_wrapper.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_mesh_coherency.h"
@@ -266,8 +264,6 @@ _run(void)
 
   cs_sles_initialize();
   cs_sles_set_default_verbosity(cs_sles_default_get_verbosity);
-
-  cs_meg_xdef_wrapper_initialize();
 
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder,
@@ -503,9 +499,6 @@ _run(void)
 
           CS_PROCF(caltri, CALTRI)();
 
-           /* Free ale structure (to integrate in caltri.c in the future) */
-          cs_ale_free();
-
         }
 
       }
@@ -625,10 +618,6 @@ _run(void)
 
   cs_function_destroy_all();
 
-  /* Free memory related to MEG xdef wrappers */
-
-  cs_meg_xdef_wrapper_finalize();
-
   /* Free moments info */
 
   cs_time_moment_destroy_all();
@@ -652,8 +641,6 @@ _run(void)
      should be more "generic". */
 
   cs_base_finalize_sequence();
-
-  cs_lagr_finalize();
 
   /* Free main mesh after printing some statistics */
 

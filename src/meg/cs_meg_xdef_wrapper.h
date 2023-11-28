@@ -41,7 +41,8 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Enum for MEG function type */
+/*! Enum for MEG function type */
+
 typedef enum {
   CS_MEG_BOUNDARY_FUNC,
   CS_MEG_VOLUME_FUNC,
@@ -68,32 +69,14 @@ typedef struct {
   /* Input name used for function */
   char name[512];
 
-  /* boundary or source term data*/
+  /* boundary or source term data */
   char additional_data[512];
 
 } cs_meg_xdef_input_t;
 
 /*============================================================================
- * Public functions
+ * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialze MEG xdef wrapper arrays
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_meg_xdef_wrapper_initialize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Destroy MEG xdef wrapper arrays
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_meg_xdef_wrapper_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

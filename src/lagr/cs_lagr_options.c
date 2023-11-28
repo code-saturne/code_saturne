@@ -749,7 +749,8 @@ cs_lagr_options_definition(int         isuite,
        _("in Lagrangian module"),
        _("The Lagrangian module is not implemented for the selected\n"
          "turbulence model (%d).\n\n"
-         "Only laminar, LES, k-epsilon, Rij-epsilon, v2f, and k-omega are supported."),
+         "Only laminar, LES, k-epsilon, Rij-epsilon, v2f, and "
+         "k-omega are supported."),
        extra->iturb);
 
   }
@@ -965,6 +966,8 @@ cs_lagr_options_definition(int         isuite,
 #endif
 
   cs_lagr_stat_initialize();
+
+  cs_base_at_finalize(cs_lagr_finalize);
 }
 
 /*----------------------------------------------------------------------------*/

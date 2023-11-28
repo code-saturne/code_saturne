@@ -100,14 +100,6 @@ void cs_ale_allocate(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free ALE boundary condition mappings.
- */
-/*----------------------------------------------------------------------------*/
-
-void cs_ale_free(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute cell and face centers of gravity, cell volumes
  *         and update bad cells.
  *
