@@ -106,6 +106,13 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+typedef enum {
+
+  CS_CONTROL_COMM_TYPE_SOCKET,    /* Communicate through sockets */
+  CS_CONTROL_COMM_TYPE_NULL       /* Null communicator */
+
+} cs_control_comm_type_t;
+
 /* Communication handler structure */
 
 typedef struct {
@@ -512,6 +519,8 @@ _comm_write_sock(cs_control_comm_t  *comm,
   if (comm->socket < 0)
     return;
 
+  cs_timer_t t0 = cs_timer_time();
+
   /* Determine associated size */
 
   size_t n_bytes = size * count;
@@ -578,6 +587,9 @@ _comm_write_sock(cs_control_comm_t  *comm,
 
   if (_rec_swap != NULL)
     BFT_FREE(_rec_swap);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_control_send_t_tot, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1063,6 +1075,78 @@ _comm_finalize(cs_control_comm_t  **comm)
 
     BFT_FREE(*comm);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Establish a connection to a client.
+ *
+ * \param[in]  port_name  name of server port (host:port for IP sockets)
+ * \param[in]  key        key for authentification
+ * \param[in]  type       communication type
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_control_comm_initialize(const char              *port_name,
+                         const char              *key,
+                         cs_control_comm_type_t   type)
+{
+  _cs_glob_control_comm = _comm_initialize(port_name, key, type);
+
+  _control_advance_steps = 1;
+
+  if (_cs_glob_control_queue == NULL)
+    _cs_glob_control_queue = _queue_initialize();
+
+  /* Call controller again right away */
+  cs_control_check_file();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read data from a client into a command queue
+ *
+ * The function updates a pointer (view) to the data.
+ *
+ * \return number of useable elements read
+ *         (i.e. text elements before next read is required)
+ */
+/*----------------------------------------------------------------------------*/
+
+static size_t
+_control_comm_read_to_queue(void)
+{
+  size_t retval = 0;
+  cs_control_queue_t *queue = _cs_glob_control_queue;
+  cs_control_comm_t *comm = _cs_glob_control_comm;
+
+  cs_timer_t t0 = cs_timer_time();
+
+  /* If no communicator, simply update queue for possible
+     remaining operations */
+
+  if (comm == NULL) {
+    return retval;
+  }
+  else if (queue != NULL) {
+    size_t n_prv = _comm_read_sock_to_queue_prepare(queue, comm);
+
+#if defined(HAVE_SOCKET)
+    if (comm->socket > -1)
+      _comm_read_sock_to_queue(queue, comm);
+#endif
+
+    retval = _comm_read_sock_to_queue_sync(n_prv, queue, comm);
+    if (comm->connected == false)
+      _comm_finalize(&comm);
+    _cs_glob_control_comm = comm;
+  }
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_control_recv_t_tot, &t0, &t1);
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -1635,12 +1719,12 @@ _parse_control_buffer(const char          *name,
       char *port_name, *key;
       _read_next_string(true, &s, &port_name);
       _read_next_string(false, &s, &key);
-      cs_control_comm_initialize(port_name, key,
-                                 CS_CONTROL_COMM_TYPE_SOCKET);
+      _control_comm_initialize(port_name, key,
+                               CS_CONTROL_COMM_TYPE_SOCKET);
     }
 
     else if (strncmp(s, "disconnect ", 11) == 0) {
-      cs_control_comm_finalize();
+      _comm_finalize(&_cs_glob_control_comm);
       break;
     }
 
@@ -1751,12 +1835,6 @@ _parse_control_buffer(const char          *name,
   return retval;
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Finalize controller structures.
@@ -1813,6 +1891,12 @@ cs_control_finalize(void)
                     _control_read_t_sum.nsec/_n_reads*1e-9);
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1928,7 +2012,7 @@ cs_control_check_file(void)
       if (   _cs_glob_control_queue->buf_idx[0]
           >= _cs_glob_control_queue->buf_idx[1]) {
 
-        size_t n = cs_control_comm_read_to_queue();
+        size_t n = _control_comm_read_to_queue();
 
         if (n == 0 && _cs_glob_control_comm == NULL) {
           _queue_finalize(&_cs_glob_control_queue);
@@ -1972,122 +2056,6 @@ cs_control_check_file(void)
 
   if (time_comm)
     cs_timer_counter_add_diff(&_control_comm_t_tot, &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Establish a connection to a client.
- *
- * \param[in]  port_name  name of server port (host:port for IP sockets)
- * \param[in]  key        key for authentification
- * \param[in]  type       communication type
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_initialize(const char              *port_name,
-                           const char              *key,
-                           cs_control_comm_type_t   type)
-{
-  _cs_glob_control_comm = _comm_initialize(port_name, key, type);
-
-  _control_advance_steps = 1;
-
-  if (_cs_glob_control_queue == NULL)
-    _cs_glob_control_queue = _queue_initialize();
-
-  /* Call controller again right away */
-  cs_control_check_file();
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Finalize a connection to a client.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_finalize(void)
-{
-  _comm_finalize(&_cs_glob_control_comm);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Write a record to a client.
- *
- * \param[in]  rec    pointer to data to write
- * \param[in]  size   size of each data element, in bytes
- * \param[in]  count  number of data elements
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_write(const void  *rec,
-                      size_t       size,
-                      size_t       count)
-{
-  cs_control_comm_t *comm = _cs_glob_control_comm;
-
-  cs_timer_t t0 = cs_timer_time();
-
-  if (cs_glob_rank_id <= 0) {
-    assert(comm != NULL);
-
-#if defined(HAVE_SOCKET)
-    if (comm->socket > -1)
-      _comm_write_sock(comm, rec, size, count);
-#endif
-  }
-
-  cs_timer_t t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&_control_send_t_tot, &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Read data from a client into a command queue
- *
- * The function updates a pointer (view) to the data.
- *
- * \return number of useable elements read
- *         (i.e. text elements before next read is required)
- */
-/*----------------------------------------------------------------------------*/
-
-size_t
-cs_control_comm_read_to_queue(void)
-{
-  size_t retval = 0;
-  cs_control_queue_t *queue = _cs_glob_control_queue;
-  cs_control_comm_t *comm = _cs_glob_control_comm;
-
-  cs_timer_t t0 = cs_timer_time();
-
-  /* If no communicator, simply update queue for possible
-     remaining operations */
-
-  if (comm == NULL) {
-    return retval;
-  }
-  else if (queue != NULL) {
-    size_t n_prv = _comm_read_sock_to_queue_prepare(queue, comm);
-
-#if defined(HAVE_SOCKET)
-    if (comm->socket > -1)
-      _comm_read_sock_to_queue(queue, comm);
-#endif
-
-    retval = _comm_read_sock_to_queue_sync(n_prv, queue, comm);
-    if (comm->connected == false)
-      _comm_finalize(&comm);
-    _cs_glob_control_comm = comm;
-  }
-
-  cs_timer_t t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&_control_recv_t_tot, &t0, &t1);
-
-  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

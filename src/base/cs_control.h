@@ -42,13 +42,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-typedef enum {
-
-  CS_CONTROL_COMM_TYPE_SOCKET,    /* Communicate through sockets */
-  CS_CONTROL_COMM_TYPE_NULL       /* Null communicator */
-
-} cs_control_comm_type_t;
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -73,59 +66,6 @@ cs_control_finalize(void);
 
 void
 cs_control_check_file(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Establish a connection to a client.
- *
- * \param[in]  port_name  name of server port (host:port for IP sockets)
- * \param[in]  key        key for authentification
- * \param[in]  type       communication type
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_initialize(const char              *port_name,
-                           const char              *key,
-                           cs_control_comm_type_t   type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Finalize a connection to a client.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Write a record to a client.
- *
- * \param[in]  rec    pointer to data to write
- * \param[in]  size   size of each data element, in bytes
- * \param[in]  count  number of data elements
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_write(const void  *rec,
-                      size_t       size,
-                      size_t       count);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Read data from a client into a command queue
- *
- * The function updates a pointer (view) to the data.
- *
- * \return number of useable elements read
- *         (i.e. elements before the last separator)
- */
-/*----------------------------------------------------------------------------*/
-
-size_t
-cs_control_comm_read_to_queue(void);
 
 /*----------------------------------------------------------------------------*/
 
