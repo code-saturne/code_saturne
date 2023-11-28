@@ -89,8 +89,6 @@ cs_meg_source_terms(const char       *zone_name,
   CS_NO_WARN_IF_UNUSED(xyz);
   CS_NO_WARN_IF_UNUSED(field_name);
   CS_NO_WARN_IF_UNUSED(source_type);
-
-  return NULL; /* avoid a compiler warning */
 }
 
 /*----------------------------------------------------------------------------*/

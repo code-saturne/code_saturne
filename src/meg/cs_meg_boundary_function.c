@@ -85,8 +85,6 @@ cs_meg_boundary_function(const char       *zone_name,
   CS_NO_WARN_IF_UNUSED(xyz);
   CS_NO_WARN_IF_UNUSED(field_name);
   CS_NO_WARN_IF_UNUSED(condition);
-
-  return NULL; /* avoid a compiler warning */
 }
 
 /*----------------------------------------------------------------------------*/

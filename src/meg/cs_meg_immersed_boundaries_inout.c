@@ -76,8 +76,6 @@ cs_meg_immersed_boundaries_inout(int         *ipenal,
   CS_NO_WARN_IF_UNUSED(object_name);
   CS_NO_WARN_IF_UNUSED(xyz);
   CS_NO_WARN_IF_UNUSED(t);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
