@@ -660,9 +660,10 @@ if test "x$cs_gxx" = "xg++"; then
 
   case "$cs_cxx_vendor-$cs_cxx_version" in
     g++-4.[012345678]*)
+      cxxflags_default="$cxxflags_default -std=c++1y"
       ;;
     *)
-      cxxflags_default="$cxxflags_default -std=c++11"
+      cxxflags_default="$cxxflags_default -std=c++14"
       ;;
   esac
 
@@ -712,7 +713,7 @@ elif test "x$cs_gxx" = "xicpc"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-std=c++11 -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default="-std=c++14 -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
@@ -849,7 +850,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-h std=c++11"
+    cxxflags_default="-h std=c++14"
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
@@ -875,7 +876,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-x c++11 -fPIC"
+    cxxflags_default="-x c++14 -fPIC"
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-O3"  # Bug observed when -O3 is used
     cxxflags_default_dbg="-g"
@@ -899,7 +900,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-std=c++11 -fPIC"
+    cxxflags_default="-std=c++14 -fPIC"
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
