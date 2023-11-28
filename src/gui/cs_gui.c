@@ -1929,7 +1929,7 @@ void CS_PROCF(uiporo, UIPORO)(void)
           char _name_string[512];
           snprintf(_name_string, 511, "%s+%s", fporo->name, ftporo->name);
           _name_string[512] = '\0';
-          cs_field_t *fvals[2] = {fporo->val, ftporo->val};
+          cs_real_t *fvals[2] = {fporo->val, ftporo->val};
           cs_meg_volume_function(z->name,
                                  z->n_elts,
                                  z->elt_ids,
