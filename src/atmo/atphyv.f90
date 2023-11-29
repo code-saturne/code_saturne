@@ -256,8 +256,10 @@ double precision alpha,al
 double precision sig_flu ! standard deviation of qw'-alpha*theta'
 double precision var_q_tl
 double precision q1,qsup, rvap, rscp
+double precision ek, ep
 
-double precision, dimension(:), pointer :: cvar_k, cvar_ep
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_nusa, cvar_omg
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: nn, nebdia
 
 rvap = rair*rvsra
@@ -274,8 +276,23 @@ call field_gradient_scalar(ivarfl(isca(iscalt)), 1, inc, dtlsd)
 ! computation of grad(qw)
 call field_gradient_scalar(ivarfl(isca(iymw)), 1, inc, dqsd)
 
-call field_get_val_s(ivarfl(ik), cvar_k)
-call field_get_val_s(ivarfl(iep), cvar_ep)
+if (itytur.eq.2) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (itytur.eq.3) then
+  call field_get_val_v(ivarfl(irij), cvar_rij)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (iturb.eq.50) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (iturb.eq.60) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iomg), cvar_omg)
+elseif (iturb.eq.70) then
+  call field_get_val_s(ivarfl(inusa), cvar_nusa)
+endif
+
+
 call field_get_val_s_by_name("nebulosity_frac", nn)
 call field_get_val_s_by_name("nebulosity_diag", nebdia)
 
@@ -288,8 +305,25 @@ lrhum = rhum
 
 a_const = 2.d0*cmu/2.3d0
 do iel = 1, ncel
-
-  a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
+  if (itytur.eq.2) then
+    a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
+  elseif (itytur.eq.3) then
+    ek = 0.5d0*(cvar_rij(1,iel) + cvar_rij(2,iel) + cvar_rij(3,iel))
+    a_coeff = a_const*ek**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+  elseif (iturb.eq.50) then
+    a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
+  elseif (iturb.eq.60) then
+    ep = cvar_omg(iel)*cvar_k(iel)*cmu
+    a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
+  elseif (iturb.eq.70) then
+    ! using cvar_nusa(iel) = cmu*xkent**2/xeent
+    ! FIXME: There is no good way to calculate tke and eps from nusa.
+    ! For the moment we use tke**4/eps**2 instead of tke**3/eps**2
+    ! Need to return WARNING that in case of Spalart-Allmaras we use bad assumpltion
+    ! or RETURN error for this case.
+    a_coeff = a_const*cvar_nusa(iel)**2/cmu**2 ! 2 cmu/c2 * k**3 / eps**2
+  endif
 
   zent = xyzcen(3,iel)
 
