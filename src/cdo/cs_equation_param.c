@@ -3184,9 +3184,11 @@ cs_equation_find_bc(cs_equation_param_t   *eqp,
 
   int z_id = -2;
 
-  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
-  if (z != NULL)
-    z_id = z->id;
+  if (z_name != NULL) {
+    const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+    if (z != NULL)
+      z_id = z->id;
+  }
 
   /* Search for given BC */
 
@@ -3222,9 +3224,11 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
 
   int z_id = -2;
 
-  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
-  if (z != NULL)
-    z_id = z->id;
+  if (z_name != NULL) {
+    const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+    if (z != NULL)
+      z_id = z->id;
+  }
 
   /* Search for given BC */
 
@@ -3271,9 +3275,11 @@ cs_equation_remove_ic(cs_equation_param_t   *eqp,
 
   int z_id = -2;
 
-  const cs_zone_t  *z = cs_volume_zone_by_name_try(z_name);
-  if (z != NULL)
-    z_id = z->id;
+  if (z_name != NULL) {
+    const cs_zone_t  *z = cs_volume_zone_by_name_try(z_name);
+    if (z != NULL)
+      z_id = z->id;
+  }
 
   /* Search for given BC */
 
