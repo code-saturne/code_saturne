@@ -7367,7 +7367,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     cs_real_t ref_norm = 0;
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+        ref_norm += abs(c_grad[kk][ll]);
     }
 
     /* Iterate over boundary condition contributions. */
@@ -7453,7 +7453,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
           c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
-          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          c_norm += abs(c_grad[ii][jj] - grad_i[ii][jj]);
           grad_i[ii][jj] = c_grad[ii][jj];
         }
       }
@@ -9469,7 +9469,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     cs_real_t ref_norm = 0;
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+        ref_norm += abs(c_grad[kk][ll]);
     }
 
     /* Iterate over boundary condition contributions. */
@@ -9558,7 +9558,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
           c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
-          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          c_norm += abs(c_grad[ii][jj] - grad_i[ii][jj]);
           grad_i[ii][jj] = c_grad[ii][jj];
         }
       }
