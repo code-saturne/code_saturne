@@ -140,7 +140,7 @@ _compute_rhs_lsq_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
     auto _coefav = coefav[f_id];
     auto _coefbv = coefbv[f_id];
 
-    cs_math_3_normalise_cuda(b_face_normal[f_id], n_d_dist);
+    cs_math_3_normalize_cuda(b_face_normal[f_id], n_d_dist);
 
     d_b_dist = 1. / b_dist[f_id];
 

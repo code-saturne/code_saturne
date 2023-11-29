@@ -6936,21 +6936,10 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   accuracy    = false;
 #endif
 
-
-  // Pour l'instant ces lignes sont pour moi
-  // Elles seront à enlever
-  compute_cuda  = false;
-  compute_cpu   = true;
-  res_cpu       = true;
-
-  // A ne pas garder dans la version finale
-  perf        = true;
-  accuracy    = false;
-
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(gradv_cuda, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(gradv_cpu, n_cells_ext, cs_real_33_t);
+BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
+BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
+BFT_MALLOC(gradv_cuda, n_cells_ext, cs_real_33_t);
+BFT_MALLOC(gradv_cpu, n_cells_ext, cs_real_33_t);
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
@@ -7143,35 +7132,6 @@ if(compute_cpu){
                           + rhs[c_id][i][2] * cocg[c_id][2];
     }
   }
-
-  if(perf){
-    stop = std::chrono::high_resolution_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  }
-} // end if compute_cpu 
-
-if(accuracy){
-  #pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; ++j) {
-        auto cpu  = gradv_cpu[c_id][i][j];
-        auto cuda = gradv[c_id][i][j];
-
-        if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
-          printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
-        }
-      }
-    }
-  }
-}
-
-if(perf)
-  printf("lsq Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
-
-if(res_cpu){
-  memcpy(gradv, gradv_cpu, sizeof(cs_real_33_t) * n_cells_ext);
-}
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
 
@@ -7224,12 +7184,38 @@ if(res_cpu){
       for (int kk = 0; kk < 9; kk++) {
         int ii = _33_9_idx[kk][0];
         int jj = _33_9_idx[kk][1];
-        gradv[c_id][ii][jj] = x[kk];
+        gradv_cpu[c_id][ii][jj] = x[kk];
       }
 
     }
 
   }
+  stop = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+} // end if COMPUTE_CPU 
+
+if(accuracy){
+  #pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; ++j) {
+        auto cpu  = gradv_cpu[c_id][i][j];
+        auto cuda = gradv[c_id][i][j];
+
+        if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
+          printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
+        }
+      }
+    }
+  }
+}
+
+if(perf)
+  printf("lsq Compute time in us: CPU = %ld\tCUDA = %ld\n", elapsed.count(), elapsed_cuda.count());
+
+if(res_cpu){
+  memcpy(gradv, gradv_cpu, sizeof(cs_real_33_t) * n_cells_ext);
+}
 
   /* Periodicity and parallelism treatment */
 
@@ -7649,6 +7635,14 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     }
   }
   memcpy(gradv, gradv_cpu, sizeof(cs_real_t) * n_cells_ext * stride * 3);
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      for (int j = 0; j < 3; ++j) {
+        if(fabs(gradv[c_id][i][j]-gradv_cpu[c_id][i][j]) != 0.0)
+          printf("grad = %f\t", gradv[c_id][i][j]);
+      }
+    }
+  }
 
   /* Correct gradient on boundary cells */
   /*------------------------------------*/
@@ -7815,20 +7809,6 @@ cs_real_t c_norm, ref_norm;
     }
 // #endif
 
-#pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; ++j) {
-        auto cpu  = gradv_cpu[c_id][i][j];
-        auto cuda = gradv[c_id][i][j];
-
-        if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
-          printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
-        }
-      }
-    }
-  }
-
     /* Optional postprocessing */
 
     if (b_iter_count != NULL) {
@@ -7839,6 +7819,20 @@ cs_real_t c_norm, ref_norm;
     }
 
   } /* End of correction for BC coeffs */
+  #pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; ++j) {
+        auto cpu  = gradv_cpu[c_id][i][j];
+        auto cuda = gradv[c_id][i][j];
+
+        if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
+          // printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
+        }
+      }
+    }
+  }
+
 
   /* Periodicity and parallelism treatment */
 

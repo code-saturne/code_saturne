@@ -900,7 +900,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  cudaEvent_t start, mem_h2d, init, i_faces, halo, b_faces, gradient, stop;
+  cudaEvent_t start, mem_h2d, init, i_faces, halo, b_faces, gradient, gradient_b, stop;
   float msec = 0.0f, msecTotal = 0.0f;
   CS_CUDA_CHECK(cudaEventCreate(&start));
   CS_CUDA_CHECK(cudaEventCreate(&mem_h2d));
@@ -909,6 +909,7 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   CS_CUDA_CHECK(cudaEventCreate(&halo));
   CS_CUDA_CHECK(cudaEventCreate(&b_faces));
   CS_CUDA_CHECK(cudaEventCreate(&gradient));
+  CS_CUDA_CHECK(cudaEventCreate(&gradient_b));
   CS_CUDA_CHECK(cudaEventCreate(&stop));
 
   // Record the start event
@@ -971,8 +972,8 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   const cs_real_t *restrict cell_f_cen_1d
     = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_f_cen);
-  const cs_lnum_t *restrict i_face_cells_1d
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->diipb);
 
   cs_lnum_t stride = 3;
 
@@ -1115,33 +1116,33 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   //      coefa_d,
   //      inc);
 
-  _compute_rhs_lsq_v_b_face_gather_stride_v2<3, cs_real_3_t, cs_real_33_t><<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
-      (m->n_b_cells,
-       cell_b_faces_idx,
-       cell_b_faces,
-       b_cells,
-       b_face_cog,
-       cell_cen, 
-       rhs_d, 
-       pvar_d, 
-       coefb_d, 
-       coefa_d,
-       cocg,
-       cocgb, 
-       inc);
+  // _compute_rhs_lsq_v_b_face_gather_stride_v2<3, cs_real_3_t, cs_real_33_t><<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
+  //     (m->n_b_cells,
+  //      cell_b_faces_idx,
+  //      cell_b_faces,
+  //      b_cells,
+  //      b_face_cog,
+  //      cell_cen, 
+  //      rhs_d, 
+  //      pvar_d, 
+  //      coefb_d, 
+  //      coefa_d,
+  //      cocg,
+  //      cocgb, 
+  //      inc);
     
-  // _compute_rhs_lsq_v_b_face_gather_v3<<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
-  //    (m->n_b_cells,
-  //     cell_b_faces_idx,
-  //     cell_b_faces,
-  //     b_cells,
-  //     b_face_normal, 
-  //     rhs_d, 
-  //     pvar_d, 
-  //     b_dist, 
-  //     coefb_d, 
-  //     coefa_d, 
-  //     inc);
+  _compute_rhs_lsq_v_b_face_gather_v3<<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
+     (m->n_b_cells,
+      cell_b_faces_idx,
+      cell_b_faces,
+      b_cells,
+      b_face_normal, 
+      rhs_d, 
+      pvar_d, 
+      b_dist, 
+      coefb_d, 
+      coefa_d, 
+      inc);
 
   // _compute_rhs_lsq_v_b_face_v2<<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
   //     (m->n_b_faces,
@@ -1195,6 +1196,24 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
 
   CS_CUDA_CHECK(cudaEventRecord(gradient, stream));
 
+  _compute_gradient_lsq_b_v<<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
+    (m->n_b_cells,
+     b_cells,
+     cell_b_faces_idx,
+     cell_b_faces,
+     b_face_normal,
+     diipb,
+     pvar_d,
+     b_dist,
+     coefb_d,
+     coefa_d,
+     grad_d, 
+     rhs_d, 
+     cocgb,
+     inc);
+
+  CS_CUDA_CHECK(cudaEventRecord(gradient_b, stream));
+
   // /* Sync to host */
   if (grad_d != NULL) {
     size_t size = n_cells * sizeof(cs_real_t) * 3 * 3;
@@ -1232,7 +1251,11 @@ cs_lsq_vector_gradient_cuda(const cs_mesh_t               *m,
   printf("Gradient = %f\t", msec*1000.f);
 
   msec = 0.0f;
-  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, gradient));
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, gradient, gradient_b));
+  printf("Gradient_b = %f\t", msec*1000.f);
+
+  msec = 0.0f;
+  CS_CUDA_CHECK(cudaEventElapsedTime(&msec, mem_h2d, gradient_b));
   printf("Total kernel = %f\t", msec*1000.f);
 
   msec = 0.0f;
@@ -1380,9 +1403,6 @@ cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->diipb);
 
-  const cs_lnum_t *restrict i_face_cells_1d
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
-
   _sync_or_copy_real_h2d(pvar, n_cells_ext*stride, device_id, stream,
                          &pvar_d, &_pvar_d);
 
@@ -1391,7 +1411,7 @@ cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
   _sync_or_copy_real_h2d(coefbv, n_b_faces*stride*stride, device_id, stream,
                          &coefb_d, &_coefb_d);
 
-  cs_cuda_copy_h2d(grad_d, gradv, sizeof(cs_real_t) * stride * 3);
+  cs_cuda_copy_h2d(grad_d, gradv, sizeof(cs_real_t) * n_cells * stride * 3);
 
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
 
@@ -1401,7 +1421,26 @@ cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
 
   CS_CUDA_CHECK(cudaEventRecord(halo, stream));
 
-  _compute_gradient_b_face_lsq_v<stride><<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
+  // assert(b_cells);
+  // assert(cell_b_faces_idx);
+  // assert(cell_b_faces);
+  // assert(b_face_cog);
+  // assert(cell_cen);
+  // assert(diipb);
+  // assert(grad_d);
+  // assert(coefb_d);
+  // assert(cocg);
+
+  // for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  //   for (cs_lnum_t i = 0; i < stride; i++) {
+  //     for (int j = 0; j < 3; ++j) {
+  //       // if(fabs(gradv[c_id][i][j]) != 0.0)
+  //         // printf("grad = %f\t", gradv[c_id][i][j]);
+  //     }
+  //   }
+  // }
+
+  _compute_gradient_lsq_b_strided_v<stride><<<get_gridsize(m->n_b_cells, blocksize), blocksize, 0, stream>>>
       (m->n_b_cells,
        b_cells,
        cell_b_faces_idx,
