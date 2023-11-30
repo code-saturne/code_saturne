@@ -720,7 +720,6 @@ cs_turbulence_sa_mu_t(void)
   const cs_real_t cv13 = cs_math_pow3(cs_turb_csav1);
 
   cs_field_t *f_nusa = CS_F_(nusa);
-  cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_mu = CS_F_(mu);
   cs_field_t *f_mut = CS_F_(mu_t);
   cs_field_t *f_rho = CS_F_(rho);

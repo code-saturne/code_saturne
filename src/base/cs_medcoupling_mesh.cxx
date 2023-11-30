@@ -91,9 +91,13 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+#if defined(HAVE_MEDCOUPLING)
+
 static const cs_lnum_t _perm_tri[3]  = {0, 2, 1};
 static const cs_lnum_t _perm_quad[4] = {0, 3, 2, 1};
 static const cs_lnum_t _perm_pent[5] = {0, 4, 3, 2, 1};
+
+#endif
 
 static int                     _n_sub_meshes = 0;
 static cs_medcoupling_mesh_t **_sub_meshes = NULL;
@@ -641,8 +645,8 @@ _get_mesh_from_criteria(const char  *selection_criteria,
 
   for (int i = 0; i < _n_sub_meshes; i++) {
     cs_medcoupling_mesh_t *mt = _sub_meshes[i];
-    if (elt_dim == mt->elt_dim &&
-        strcmp(mt->sel_criteria, selection_criteria) == 0) {
+    if (   elt_dim == mt->elt_dim
+        && strcmp(mt->sel_criteria, selection_criteria) == 0) {
       m = mt;
       break;
     }
@@ -650,6 +654,8 @@ _get_mesh_from_criteria(const char  *selection_criteria,
 
   return m;
 }
+
+#if defined(HAVE_MEDCOUPLING)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -856,6 +862,8 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
   } /* if n_etls == 0 */
 #endif
 }
+
+#endif /* defined(HAVE_MEDCOUPLING) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

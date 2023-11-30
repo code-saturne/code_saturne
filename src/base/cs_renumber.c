@@ -4277,8 +4277,6 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
   if (mesh->n_cells < 1)
     return;
 
-  cs_lnum_t n_i_cells = 0;
-
   cs_lnum_t *keys, *order;
   int *cell_class;
 
@@ -4301,9 +4299,7 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
 
     int cell_class_max = 2;
     for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
-      if (cell_class[i] == 0)
-        n_i_cells++;
-      else if (cell_class[i] > cell_class_max)
+      if (cell_class[i] > cell_class_max)
         cell_class_max = cell_class[i];
     }
     cell_class_max += 1;

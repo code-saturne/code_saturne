@@ -1928,7 +1928,7 @@ void CS_PROCF(uiporo, UIPORO)(void)
         if (cs_gui_strcmp(mdl, "anisotropic")) {
           char _name_string[512];
           snprintf(_name_string, 511, "%s+%s", fporo->name, ftporo->name);
-          _name_string[512] = '\0';
+          _name_string[511] = '\0';
           cs_real_t *fvals[2] = {fporo->val, ftporo->val};
           cs_meg_volume_function(z->name,
                                  z->n_elts,
@@ -1937,7 +1937,8 @@ void CS_PROCF(uiporo, UIPORO)(void)
                                  _name_string,
                                  fvals);
 
-        } else {
+        }
+        else {
           cs_meg_volume_function(z->name,
                                  z->n_elts,
                                  z->elt_ids,
@@ -2321,7 +2322,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
           char _name_string[512];
           snprintf(_name_string, 511, "%s+%s+%s",
                    fcapacity->name, fsaturation->name, fpermeability->name);
-          _name_string[512] = '\0';
+          _name_string[511] = '\0';
           cs_real_t *fvals[3] = {fcapacity->val,
                                  fsaturation->val,
                                  fpermeability->val};

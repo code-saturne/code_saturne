@@ -254,7 +254,7 @@ implicit none
 
 ! Arguments
 
-integer :: nvar2, nscal2
+integer(c_int) :: nvar2, nscal2
 
 ! Local variables
 

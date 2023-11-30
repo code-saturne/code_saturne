@@ -610,7 +610,7 @@ cs_lagr_event_set_destroy(cs_lagr_event_set_t  **events)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get data extents for a given particle event attribute.
+ * \brief Get data extents for a given event attribute.
  *
  * For attributes not currently present, the displacement and data
  * size should be -1 and 0 respectively.
@@ -629,13 +629,13 @@ cs_lagr_event_set_destroy(cs_lagr_event_set_t  **events)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_event_get_attr_info(const cs_lagr_event_set_t   *events,
-                            cs_lagr_event_attribute_t    attr,
-                            size_t                      *extents,
-                            size_t                      *size,
-                            ptrdiff_t                   *displ,
-                            cs_datatype_t               *datatype,
-                            int                         *count)
+cs_lagr_event_get_attr_info(const cs_lagr_event_set_t  *events,
+                            cs_lagr_event_attribute_t   attr,
+                            size_t                     *extents,
+                            size_t                     *size,
+                            ptrdiff_t                  *displ,
+                            cs_datatype_t              *datatype,
+                            int                        *count)
 {
   if (extents)
     *extents = events->e_am->extents;

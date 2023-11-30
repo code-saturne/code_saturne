@@ -105,14 +105,13 @@ integer          kturt, turb_flux_model, turb_flux_model_type
 double precision xk, xe, xrom, vismax(nscamx), vismin(nscamx)
 double precision xrij(3,3), xnal(3), xnoral
 double precision xfmu, xmu, xmut
-double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), ttke, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision alpha3, xrnn
 double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_nusa
+double precision, dimension(:), pointer :: cvar_k, cvar_ep
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval

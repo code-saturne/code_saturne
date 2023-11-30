@@ -717,16 +717,6 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     xrotac[2][1] = -xrotac[1][2];
     xrotac[2][2] = 0;
 
-    /* aii = aijaij */
-    cs_real_t aii = 0, aklskl = 0;
-
-    for (cs_lnum_t jj = 0; jj < 3; jj++) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        aii += cs_math_pow2(xaniso[jj][ii]);         /* aij.aij */
-        aklskl += xaniso[jj][ii] * xstrai[jj][ii];   /* aij.Sij */
-      }
-    }
-
     /* Computation of implicit components */
     cs_real_t sym_strain[6] = {xstrai[0][0],
                                xstrai[1][1],
@@ -793,19 +783,6 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
       cs_lnum_t i = _iv2t[ij];
       cs_lnum_t j = _jv2t[ij];
-
-      cs_real_t aiksjk = 0, aikrjk = 0, aikakj = 0;
-
-      for (cs_lnum_t k = 0; k < 3; k++) {
-        /* aiksjk = aik.Sjk+ajk.Sik */
-        aiksjk +=   xaniso[i][k] * xstrai[j][k]
-                  + xaniso[j][k] * xstrai[i][k];
-        /* aikrjk = aik.Omega_jk + ajk.omega_ik */
-        aikrjk +=   xaniso[i][k] * xrotac[j][k]
-                  + xaniso[j][k] * xrotac[i][k];
-        /* aikakj = aik*akj */
-        aikakj += xaniso[i][k] * xaniso[k][j];
-      }
 
       /* Explicit terms */
       cs_real_t pij = (1.-crij2) * produc[c_id][_t2v[j][i]];

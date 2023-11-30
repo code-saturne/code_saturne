@@ -291,44 +291,6 @@ _sort_and_compact_local(cs_matrix_assembler_t  *ma)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Binary search for a given global id in a given array of
- *        ordered global ids, when the id might not be present
- *
- * We assume the id is present in the array.
- *
- * \param[in]  g_id_array size  array_size
- * \param[in]  g_id             global id to search for
- * \param[in]  g_id_array       ordered unique global ids array
- *
- * \return  index of g_id in g_id_array, or -1 if not found
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_lnum_t
-_g_id_binary_search(cs_lnum_t        g_id_array_size,
-                    cs_gnum_t        g_id,
-                    const cs_gnum_t  g_id_array[])
-{
-  cs_lnum_t start_id = 0;
-  cs_lnum_t end_id = g_id_array_size - 1;
-  cs_lnum_t mid_id = (end_id -start_id) / 2;
-  while (start_id < end_id) {
-    if (g_id_array[mid_id] < g_id)
-      start_id = mid_id + 1;
-    else if (g_id_array[mid_id] > g_id)
-      end_id = mid_id - 1;
-    else
-      break;
-    mid_id = start_id + ((end_id -start_id) / 2);
-  }
-  if (g_id_array[mid_id] != g_id)
-    mid_id = -1;
-
-  return mid_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Use binary search to determine to which range a global id belongs
  *
  * \param[in]   n_ranges  number of distant ranges

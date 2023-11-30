@@ -1882,9 +1882,9 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
                          cs_glob_physical_constants->gravity[1],
                          cs_glob_physical_constants->gravity[2]};
 
-  /* Integers to count clippings for rain / humidity variables */
-  int nclip_yw_min = 0;
-  int nclip_yw_max = 0;
+  /* Count clippings for rain / humidity variables */
+  cs_gnum_t nclip_yw_min = 0;
+  cs_gnum_t nclip_yw_max = 0;
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
@@ -2546,8 +2546,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   /* Fields based on maps */
   cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* Humid air temperature */
-  cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre; /* Humid air temperature
-                                                        at previous time step */
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* Humid air enthalpy */
   cs_real_t *therm_diff_h = cs_field_by_name("thermal_conductivity")->val;
   cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;

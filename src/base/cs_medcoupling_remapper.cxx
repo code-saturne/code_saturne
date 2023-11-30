@@ -84,6 +84,7 @@
 #include <MEDLoader.hxx>
 
 using namespace MEDCoupling;
+
 #endif
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -131,7 +132,12 @@ struct _cs_medcoupling_remapper_t {
  *============================================================================*/
 
 static int                          _n_remappers = 0;
+
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+
 static cs_medcoupling_remapper_t  **_remapper = NULL;
+
+#endif
 
 /*============================================================================
  * Private function definitions

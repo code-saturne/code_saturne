@@ -153,7 +153,7 @@ subroutine rayso  &
  (ivertc, k1, kmray, heuray, imer1, albe,        &
   qqv, qqqv, qqvinf, zqq,                        &
   zray, qvray, qlray, fneray,                    &
-  romray, preray, temray, aeroso, fos, rayst, ncray)
+  romray, preray, temray, fos, rayst, ncray)
 
 !===============================================================================
 ! Module files
@@ -194,7 +194,6 @@ double precision albe, heuray, fos
 double precision qqv(kmx+1), qqqv(kmx+1), qqvinf, zqq(kmx+1)
 double precision qlray(kmx), fneray(kmx), zray(kmx)
 double precision qvray(kmx), preray(kmx)
-double precision aeroso(kmx)!TODO remove, optical width directly given.
 double precision rayst(kmx), romray(kmx)
 double precision temray(kmx)
 double precision ncray(kmx)
