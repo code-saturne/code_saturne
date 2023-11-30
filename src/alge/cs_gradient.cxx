@@ -7635,14 +7635,6 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     }
   }
   memcpy(gradv, gradv_cpu, sizeof(cs_real_t) * n_cells_ext * stride * 3);
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t i = 0; i < stride; i++) {
-      for (int j = 0; j < 3; ++j) {
-        if(fabs(gradv[c_id][i][j]-gradv_cpu[c_id][i][j]) != 0.0)
-          printf("grad = %f\t", gradv[c_id][i][j]);
-      }
-    }
-  }
 
   /* Correct gradient on boundary cells */
   /*------------------------------------*/
@@ -7826,8 +7818,8 @@ cs_real_t c_norm, ref_norm;
         auto cpu  = gradv_cpu[c_id][i][j];
         auto cuda = gradv[c_id][i][j];
 
-        if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
-          // printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
+        if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-6) {
+          printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
         }
       }
     }

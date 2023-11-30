@@ -490,6 +490,9 @@ _compute_gradient_lsq_b_strided_v(const cs_lnum_t           n_b_cells,
   cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
   auto c_grad = gradv[c_id];
+  auto _cocg = cocg[c_id];
+  auto _cell_cen = cell_cen[c_id];
+
   cs_real_t grad_0[stride][3], grad_i[stride][3], rhs_c[stride][3], dif[3],  grad_c[stride][3], 
             var_ip_f[stride];
 
@@ -525,7 +528,7 @@ _compute_gradient_lsq_b_strided_v(const cs_lnum_t           n_b_cells,
       f_id = cell_b_faces[index];
 
       for (cs_lnum_t ii = 0; ii < 3; ii++)
-        dif[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+        dif[ii] = b_face_cog[f_id][ii] - _cell_cen[ii];
 
       ddif = 1. / cs_math_3_square_norm_cuda(dif);
 
@@ -548,17 +551,17 @@ _compute_gradient_lsq_b_strided_v(const cs_lnum_t           n_b_cells,
     }
 
     for(cs_lnum_t i = 0; i < stride; i++){
-      grad_c[i][0] =  rhs_c[i][0] * cocg[c_id][0]
-                    + rhs_c[i][1] * cocg[c_id][3]
-                    + rhs_c[i][2] * cocg[c_id][5];
+      grad_c[i][0] =  rhs_c[i][0] * _cocg[0]
+                    + rhs_c[i][1] * _cocg[3]
+                    + rhs_c[i][2] * _cocg[5];
 
-      grad_c[i][1] =  rhs_c[i][0] * cocg[c_id][3]
-                    + rhs_c[i][1] * cocg[c_id][1]
-                    + rhs_c[i][2] * cocg[c_id][4];
+      grad_c[i][1] =  rhs_c[i][0] * _cocg[3]
+                    + rhs_c[i][1] * _cocg[1]
+                    + rhs_c[i][2] * _cocg[4];
 
-      grad_c[i][2] =  rhs_c[i][0] * cocg[c_id][5]
-                    + rhs_c[i][1] * cocg[c_id][4]
-                    + rhs_c[i][2] * cocg[c_id][2];
+      grad_c[i][2] =  rhs_c[i][0] * _cocg[5]
+                    + rhs_c[i][1] * _cocg[4]
+                    + rhs_c[i][2] * _cocg[2];
     }
 
     c_norm = 0.0;
