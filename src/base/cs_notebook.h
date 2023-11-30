@@ -188,6 +188,73 @@ cs_notebook_log(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Number of notebook variables
+ *
+ * \returns number of notebook variables (int)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_notebook_nb_var(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if the notebook parameter is editable
+ *
+ * Returns a boolean to indicate wheter this parameter is editable
+ *
+ * \param[in]   ind   Id of the notebook parameter
+ *
+ * \returns true is variable can be edited, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_notebook_var_is_editable(const int ind);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if the notebook parameter is read at restart
+ *
+ * Returns a boolean to indicate wheter this parameter is read at restart
+ *
+ * \param[in]   ind   Id of the notebook parameter
+ *
+ * \returns true if variable should be read from checkpoint file, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_notebook_var_is_read_from_checkpoint(const int ind);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Change the editable property of the notebook parameter
+ *
+ * \param[in]   ind   Id of the notebook parameter
+ * \param[in]   val   flag (bool) indicating if the value is set to editable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_var_change_editable(const int ind, const bool val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get name of a notebook parameter based on its id
+ *
+ * \param[in]   ind   Id of the notebook parameter
+ * \param[out]  name  Name of the notebook parameter
+ *
+ * \returns name of variable (char *)
+ */
+/*----------------------------------------------------------------------------*/
+
+char *
+cs_notebook_name_by_id(const int ind);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Write uncertain values to output file.
  *
  * If input and output uncertain variables are provided, output values

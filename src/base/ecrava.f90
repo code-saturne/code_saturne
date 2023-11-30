@@ -124,6 +124,15 @@ interface
     type(c_ptr), value :: r
   end subroutine cs_mobile_structures_restart_write
 
+  ! Interface to C function writing notebook variables
+
+  subroutine cs_restart_write_notebook_variables(r)  &
+    bind(C, name='cs_restart_write_notebook_variables')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: r
+  end subroutine cs_restart_write_notebook_variables
+
 end interface
 
 !===============================================================================
@@ -288,6 +297,11 @@ do ivar = 1, nvar
 enddo
 
 call restart_write_fields(rp, RESTART_MAIN)
+
+! 3.3 Notebook variables
+!================================
+
+call cs_restart_write_notebook_variables(rp)
 
 !===============================================================================
 ! 4. FERMETURE FICHIER SUITE DE BASE

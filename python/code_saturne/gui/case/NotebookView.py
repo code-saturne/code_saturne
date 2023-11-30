@@ -73,12 +73,13 @@ class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, idx, name, value, oturns_var, editable, description):
+    def __init__(self, idx, name, value, oturns_var, editable, restart, description):
         self.index  = idx
         self.name   = name
         self.value  = value
         self.oturns = oturns_var
         self.edit   = editable
+        self.read   = restart
         self.descr  = description
 
     def __repr__(self):
@@ -113,7 +114,7 @@ class TreeItem(object):
 
 
     def columnCount(self):
-        return 5
+        return 6
 
 
     def data(self, column, role):
@@ -132,6 +133,8 @@ class TreeItem(object):
             elif column == 3 and role == Qt.DisplayRole:
                 return self.item.edit
             elif column == 4 and role == Qt.DisplayRole:
+                return self.item.read
+            elif column == 5 and role == Qt.DisplayRole:
                 return self.item.descr
         return None
 
@@ -172,7 +175,7 @@ class VariableStandardItemModel(QAbstractItemModel):
         if parent and parent.isValid():
             return parent.internalPointer().columnCount()
         else:
-            return 5
+            return 6
 
 
     def data(self, index, role):
@@ -196,6 +199,8 @@ class VariableStandardItemModel(QAbstractItemModel):
             elif index.column() == 3:
                 return self.tr("Editable")
             elif index.column() == 4:
+                return self.tr("Read at restart")
+            elif index.column() == 5:
                 return self.tr("Description")
 
         # Display
@@ -234,6 +239,8 @@ class VariableStandardItemModel(QAbstractItemModel):
             elif section == 3:
                 return self.tr("Editable")
             elif section == 4:
+                return self.tr("Read at restart")
+            elif section == 5:
                 return self.tr("Description")
         return None
 
@@ -291,8 +298,9 @@ class VariableStandardItemModel(QAbstractItemModel):
             value  = self.mdl.getVariableValue(idx)
             oturns = self.mdl.getVariableOt(idx)
             edit   = self.mdl.getVariableEditable(idx)
+            read   = self.mdl.getVariableRestart(idx)
             descr  = self.mdl.getVariableDescription(idx)
-            item = item_class(idx, cname, value, oturns, edit, descr)
+            item = item_class(idx, cname, value, oturns, edit, read, descr)
             new_item = TreeItem(item, cname, parentItem)
             parentItem.appendChild(new_item)
 
@@ -321,6 +329,11 @@ class VariableStandardItemModel(QAbstractItemModel):
             self.mdl.setVariableEditable(item.item.index, item.item.edit)
 
         elif index.column() == 4:
+            restart = from_qvariant(value, to_text_string)
+            item.item.read = restart
+            self.mdl.setVariableRestart(item.item.index, item.item.read)
+
+        elif index.column() == 5:
             description = from_qvariant(value, to_text_string)
             item.item.descr = description
             self.mdl.setVariableDescription(item.item.index, item.item.descr)
@@ -380,12 +393,17 @@ class NotebookView(QWidget, Ui_NotebookForm):
                                          opts_list=EditableOptions)
         self.treeViewNotebook.setItemDelegateForColumn(3, editableDelegate)
 
+        RestartOptions = ["Yes","No"]
+        restartDelegate = ComboDelegate(self.treeViewNotebook,
+                                         opts_list=RestartOptions)
+        self.treeViewNotebook.setItemDelegateForColumn(4, restartDelegate)
+
         descriptionDelegate = LabelDelegate(self.treeViewNotebook)
-        self.treeViewNotebook.setItemDelegateForColumn(4, descriptionDelegate)
+        self.treeViewNotebook.setItemDelegateForColumn(5, descriptionDelegate)
 
         self.treeViewNotebook.resizeColumnToContents(0)
         self.treeViewNotebook.resizeColumnToContents(2)
-        self.treeViewNotebook.resizeColumnToContents(4)
+        self.treeViewNotebook.resizeColumnToContents(5)
 
         # Connections
         self.toolButtonAdd.clicked.connect(self.slotAddVariable)

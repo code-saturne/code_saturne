@@ -95,6 +95,21 @@ type(c_ptr) :: rp
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  ! Interface to C function reading notebook variables
+
+  subroutine cs_restart_read_notebook_variables(r)                        &
+    bind(C, name='cs_restart_read_notebook_variables')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: r
+  end subroutine cs_restart_read_notebook_variables
+
+end interface
 
 !===============================================================================
 ! 0. INITIALISATIONS
@@ -310,8 +325,10 @@ do ivar = 1, nvar
   endif
 enddo
 
-
 call restart_read_fields(rp, RESTART_MAIN)
+
+! Read notebook variables
+call cs_restart_read_notebook_variables(rp)
 
 !===============================================================================
 ! 6. LECTURE D'INFORMATIONS COMPLEMENTAIRES LEGERES

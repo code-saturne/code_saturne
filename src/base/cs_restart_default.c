@@ -60,6 +60,7 @@
 #include "cs_map.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
 #include "cs_random.h"
@@ -110,6 +111,8 @@ const char *_coeff_name[] = {"bc_coeffs::a", "bc_coeffs::b",
                              "bc_coeffs::af", "bc_coeffs::bf",
                              "bc_coeffs::ad", "bc_coeffs::bd",
                              "bc_coeffs::ac", "bc_coeffs::bc"};
+
+const char _ntb_prefix[] = "notebook::";
 
 /*============================================================================
  * Private function definitions
@@ -2205,6 +2208,116 @@ cs_restart_write_variables(cs_restart_t  *r,
     BFT_FREE(_write_flag);
 
   bft_printf(_("  Wrote main variables to checkpoint: %s\n"),
+             cs_restart_get_name(r));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read notebook parameters from main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_notebook_variables(cs_restart_t  *r)
+{
+  /* Get total number of notebook variables */
+  const cs_lnum_t nb_var = cs_notebook_nb_var();
+
+  /* Loop on notebook variables */
+  for (int i = 0; i < nb_var; i++) {
+
+    if (cs_notebook_var_is_read_from_checkpoint(i)) {
+
+      const char *name = cs_notebook_name_by_id(i);
+
+      size_t l = strlen(name) + strlen(_ntb_prefix) + 1;
+      char _buf[64];
+      char *buf = _buf;
+
+      if (l > 64)
+        BFT_MALLOC(buf, l, char);
+
+      snprintf(buf, l, "%s%s", _ntb_prefix, name);
+
+      /* Initialisation to the actual value */
+      cs_real_t val_notebook_var = cs_notebook_parameter_value_by_name(name);
+
+      int retcode = cs_restart_read_section(r,
+                                            buf,
+                                            CS_MESH_LOCATION_NONE,
+                                            1,
+                                            CS_TYPE_cs_real_t,
+                                            &val_notebook_var);
+
+      /* If read operation is a success then the notebook variable value is
+       * updated. If update is needed, the variable editable status is
+       * temporarily set to true then reset to its original value.
+       */
+
+      if (retcode == CS_RESTART_SUCCESS) {
+        bool _is_editable = cs_notebook_var_is_editable(i);
+        cs_notebook_var_change_editable(i, true);
+        cs_notebook_parameter_set_value(name, val_notebook_var);
+        cs_notebook_var_change_editable(i, _is_editable);
+      }
+
+      if (buf != _buf)
+        BFT_FREE(buf);
+
+    }
+
+  }
+
+  bft_printf(_("  Read notebook variables from checkpoint: %s\n"),
+             cs_restart_get_name(r));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write notebook parameters to main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_notebook_variables(cs_restart_t  *r)
+{
+  /* Get total number of notebook variables */
+  const cs_lnum_t nb_var = cs_notebook_nb_var();
+
+  /* Loop on notebook variables */
+  for (int i = 0; i < nb_var; i++) {
+
+    const char *name = cs_notebook_name_by_id(i);
+
+    size_t l = strlen(name) + strlen(_ntb_prefix) + 1;
+    char _buf[64];
+    char *buf = _buf;
+
+    if (l > 64)
+      BFT_MALLOC(buf, l, char);
+
+    snprintf(buf, l, "%s%s", _ntb_prefix, name);
+
+    const cs_real_t val_notebook_var
+      = cs_notebook_parameter_value_by_name(name);
+
+    cs_restart_write_section(r,
+                             buf,
+                             CS_MESH_LOCATION_NONE,
+                             1,
+                             CS_TYPE_cs_real_t,
+                             &val_notebook_var);
+
+    if (buf != _buf)
+      BFT_FREE(buf);
+
+  }
+
+  bft_printf(_("  Wrote notebook variables to checkpoint: %s\n"),
              cs_restart_get_name(r));
 }
 

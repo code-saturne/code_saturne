@@ -132,6 +132,28 @@ cs_restart_write_variables(cs_restart_t  *r,
                            int            t_id_flag,
                            int            write_flag[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read notebook parameters from main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_notebook_variables(cs_restart_t  *r);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write notebook parameters to main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_notebook_variables(cs_restart_t  *r);
+
 /*----------------------------------------------------------------------------
  * Read fields depending on others from checkpoint.
  *

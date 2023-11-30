@@ -284,6 +284,14 @@ interface
 
   !=============================================================================
 
+  subroutine cs_notebook_log()  &
+    bind(C, name='cs_notebook_log')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_notebook_log
+
+  !=============================================================================
+
 end interface
 
 !===============================================================================
@@ -756,8 +764,9 @@ if (icdo.eq.1) then
    call cs_f_cdo_solve_steady_state_domain
 endif
 
-! Logging of initial values
+! Logging of notebook and initial values
 
+call cs_notebook_log
 call log_iteration
 
 !===============================================================================
