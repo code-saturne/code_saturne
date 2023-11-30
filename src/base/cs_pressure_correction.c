@@ -2972,6 +2972,9 @@ _pressure_correction_fv(int        iterns,
         cflp[c_id] = 0.;
       }
 
+      /* Parallelism and periodicity */
+      cs_mesh_sync_var_vect((cs_real_t *)wrk2);
+
       /* Call the function to compute the cfl condition related to the pressure
        * equation */
       cs_thermal_model_cflp(croma,
