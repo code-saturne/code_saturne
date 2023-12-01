@@ -156,4 +156,26 @@ _gradient_vector_cuda(const cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+#ifdef __cplusplus
+/**
+ * This template will be instantited with stride = 1, 3, 6, 9
+*/
+template <cs_lnum_t stride>
+void
+cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
+                     const cs_mesh_adjacencies_t   *madj,
+                     const cs_mesh_quantities_t    *fvq,
+                     const cs_halo_type_t           halo_type,
+                     const int                      inc,
+                     const cs_real_t (*restrict coefav)[stride],
+                     const cs_real_t (*restrict coefbv)[stride][stride],
+                     const cs_real_t (*restrict pvar)[stride],
+                     const cs_real_t      *restrict c_weight,
+                     cs_cocg_6_t          *restrict cocg,
+                     cs_cocg_6_t          *restrict cocgb,
+                     cs_real_t (*restrict gradv)[stride][3],
+                     cs_real_t (*restrict rhs)[stride][3],
+                     cs_lnum_t n_c_iter_max,
+                     cs_real_t c_eps);
+#endif
 #endif /* __CS_GRADIENT_CUDA_H__ */

@@ -79,9 +79,25 @@
 #include "cs_gradient.h"
 #include "cs_gradient_priv.h"
 
+__device__ cs_real_t
+cs_math_fabs_cuda(cs_real_t  x)
+{
+  cs_real_t ret = (x <  0) ? -x : x;
+
+  return ret;
+}
+
+__device__ cs_real_t
+cs_math_3_dot_product_cuda(const cs_real_t  u[3],
+                      const cs_real_t  v[3])
+{
+  cs_real_t prod = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+
+  return prod;
+}
 
 
-__device__ void cs_math_3_normalise_cuda(const cs_real_t in[3],
+__device__ void cs_math_3_normalize_cuda(const cs_real_t in[3],
                                          cs_real_t out[3])
 {
   cs_real_t norm = sqrt(in[0]*in[0] 
@@ -118,6 +134,54 @@ __device__ void _math_6_inv_cramer_sym_in_place_cuda(cs_cocg_t in[6]){
   in[5] = in02 * det_inv;
 }
 
+template <int d_size>
+__device__ void
+_fact_crout_pp_cuda(cs_real_t  *ad)
+{
+  cs_real_t aux[d_size];
+  for (int kk = 0; kk < d_size - 1; kk++) {
+    int kk_d_size = kk*(kk + 1)/2;
+    for (int ii = kk + 1; ii < d_size; ii++) {
+      int ii_d_size = ii*(ii + 1)/2;
+      aux[ii] = ad[ii_d_size + kk];
+      ad[ii_d_size + kk] =   ad[ii_d_size + kk]
+                           / ad[kk_d_size + kk];
+      for (int jj = kk + 1; jj < ii + 1; jj++) {
+        ad[ii_d_size + jj] = ad[ii_d_size + jj] - ad[ii_d_size + kk]*aux[jj];
+      }
+    }
+  }
+}
+
+template <int d_size>
+__device__ void
+_fw_and_bw_ldtl_pp_cuda(const cs_real_t mat[],
+                         cs_real_t x[],
+                   const cs_real_t b[])
+{
+  cs_real_t  aux[d_size];
+
+  for (int ii = 0; ii < d_size; ii++) {
+    int ii_d_size = ii*(ii + 1)/2;
+    aux[ii] = b[ii];
+    for (int jj = 0; jj < ii; jj++) {
+      aux[ii] -= aux[jj]*mat[ii_d_size + jj];
+    }
+  }
+
+  for (int ii = 0; ii < d_size; ii++) {
+    int ii_d_size = ii*(ii + 1)/2;
+    aux[ii] /= mat[ii_d_size + ii];
+  }
+
+  for (int ii = d_size - 1; ii >= 0; ii--) {
+    x[ii] = aux[ii];
+    for (int jj = d_size - 1; jj > ii; jj--) {
+      int jj_d_size = jj*(jj + 1)/2;
+      x[ii] -= x[jj]*mat[jj_d_size + ii];
+    }
+  }
+}
 
 template <class V>
 __device__ uint32_t _conflict_mask(uint32_t mask, V v) noexcept {
