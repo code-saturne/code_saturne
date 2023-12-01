@@ -103,49 +103,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fortran wrapper to cs_matrix_scalar (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrix, MATRIX)
-(
- const int        *iconvp,
- const int        *idiffp,
- const int        *ndircp,
- const int        *isym,
- const cs_real_t  *thetap,
- const int        *imucpp,
- const cs_real_t   coefbp[],
- const cs_real_t   cofbfp[],
- const cs_real_t   rovsdt[],
- const cs_real_t   i_massflux[],
- const cs_real_t   b_massflux[],
- const cs_real_t   i_visc[],
- const cs_real_t   b_visc[],
- const cs_real_t   xcpp[],
- cs_real_t         da[],
- cs_real_t         xa[]
-)
-{
-  cs_matrix_wrapper_scalar(*iconvp,
-                           *idiffp,
-                           *ndircp,
-                           *isym,
-                           *thetap,
-                           *imucpp,
-                           coefbp,
-                           cofbfp,
-                           rovsdt,
-                           i_massflux,
-                           b_massflux,
-                           i_visc,
-                           b_visc,
-                           xcpp,
-                           da,
-                           xa);
-}
-
-/*----------------------------------------------------------------------------
  * Fortran wrapper to cs_matrix_time_step
  *----------------------------------------------------------------------------*/
 
