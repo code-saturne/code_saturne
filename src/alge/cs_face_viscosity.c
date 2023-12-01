@@ -56,15 +56,19 @@
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -83,7 +87,6 @@ BEGIN_C_DECLS
 /*! \file  cs_face_viscosity.c
  *
  *  \brief Face viscosity.
- *
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -178,6 +181,193 @@ void CS_PROCF (vitens, VITENS)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes the secondary viscosity contribution \f$\kappa
+ * -\dfrac{2}{3} \mu\f$ in order to compute:
+ * \f[
+ * \grad\left( (\kappa -\dfrac{2}{3} \mu) \trace( \gradt(\vect{u})) \right)
+ * \f]
+ * with:
+ *   - \f$ \mu = \mu_{laminar} + \mu_{turbulent} \f$
+ *   - \f$ \kappa \f$ is the volume viscosity (generally zero)
+ *
+ * \remark
+ * In LES, the tensor
+ * \f$\overline{\left(\vect{u}-\overline{\vect{u}}\right)\otimes\left(\vect{u}
+ *-\overline{\vect{u}}\right)}\f$
+ * is modeled by \f$\mu_t \overline{\tens{S}}\f$
+ * and not by
+ * \f$\mu_t\overline{\tens{S}}-\dfrac{2}{3}\mu_t
+ * \trace\left(\overline{\tens{S}}\right)\tens{1}+\dfrac{2}{3}k\tens{1}\f$
+ * so that no term
+ * \f$\mu_t \dive \left(\overline{\vect{u}}\right)\f$ is needed.
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#visecv"><b>visecv</b></a> section
+ * of the theory guide for more informations.
+ *
+ * \param[in,out] secvif        lambda*surface at interior faces
+ * \param[in,out] secvib        lambda*surface at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_viscosity_secondary(cs_real_t  secvif[],
+                            cs_real_t  secvib[])
+{
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+
+  const cs_lnum_2_t *i_face_cells
+    = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+  const cs_real_t *weight = fvq->weight;
+
+  const int itytur = cs_glob_turb_model->itytur;
+
+  /* Initialization
+     -------------- */
+
+  /* Allocate temporary arrays */
+  cs_real_t *secvis;
+  BFT_MALLOC(secvis, n_cells_ext, cs_real_t);
+
+  cs_field_t *vel = CS_F_(vel);
+  cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
+  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *visct = CS_F_(mu_t)->val;
+
+  cs_real_t *cpro_viscv = NULL;
+  cs_field_t *f_viscv = cs_field_by_name_try("volume_viscosity");
+
+  if (f_viscv != NULL)
+    cpro_viscv = cs_field_by_name_try("volume_viscosity")->val;
+
+  /* Time extrapolation ? */
+  int key_t_ext_id = cs_field_key_id("time_extrapolated");
+
+  /* Computation of the second viscosity: lambda = K -2/3 mu
+     ------------------------------------------------------- */
+
+  /* For order 2 in time, everything should be taken in n...*/
+
+  const cs_real_t d2s3m = -2.0/3.0;
+
+  const int iviext = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
+  const int iviext_t = cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id);
+
+# pragma omp parallel
+  {
+    cs_lnum_t t_s_id, t_e_id;
+    cs_parall_thread_range(mesh->n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+
+    /* Laminar viscosity */
+
+    if (cs_glob_time_scheme->isno2t > 0 && iviext > 0) {
+      cs_real_t *cpro_viscl_pre = CS_F_(mu)->val_pre;
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+        secvis[c_id] = d2s3m * cpro_viscl_pre[c_id];
+    }
+    else {
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+        secvis[c_id] = d2s3m * viscl[c_id];
+    }
+
+    /* Volume viscosity if present */
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+      if (f_viscv != NULL) {
+        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+          secvis[c_id] += + cpro_viscv[c_id];
+      }
+      else {
+        const cs_real_t viscv0 = cs_glob_fluid_properties->viscv0;
+        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+          secvis[c_id] += viscv0;
+      }
+    }
+
+    /* Turbulent viscosity (if not in Rij or LES) */
+
+    if (itytur != 3 && itytur != 4) {
+
+      if (cs_glob_time_scheme->isno2t > 0 && iviext_t > 0) {
+        cs_real_t *cpro_visct_pre = CS_F_(mu_t)->val_pre;
+        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+          secvis[c_id] += d2s3m * cpro_visct_pre[c_id];
+      }
+      else {
+        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+          secvis[c_id] += d2s3m * visct[c_id];
+      }
+
+    }
+
+    /* With porosity */
+    if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
+      cs_real_t *porosity = CS_F_(poro)->val;
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+        secvis[c_id] *= porosity[c_id];
+    }
+
+  }
+
+  /* Parallelism and periodicity process */
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, secvis);
+
+  /* Interior faces
+     TODO we should (re)test the weight walue for imvisf=0 */
+
+  if (eqp_vel->imvisf == 0) {
+#   pragma omp parallel for if (n_i_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+      const cs_lnum_t c_id1 = i_face_cells[f_id][0];
+      const cs_lnum_t c_id2 = i_face_cells[f_id][1];
+
+      const cs_real_t secvsi = secvis[c_id1];
+      const cs_real_t secvsj = secvis[c_id2];
+
+      secvif[f_id] = 0.5 * (secvsi + secvsj);
+    }
+  }
+  else {
+#   pragma omp parallel for if (n_i_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+      const cs_lnum_t c_id1 = i_face_cells[f_id][0];
+      const cs_lnum_t c_id2 = i_face_cells[f_id][1];
+
+      const cs_real_t secvsi = secvis[c_id1];
+      const cs_real_t secvsj = secvis[c_id2];
+      const cs_real_t pnd = weight[f_id];
+
+      secvif[f_id] = secvsi * secvsj / (pnd * secvsi + (1.0 - pnd) * secvsj);
+    }
+  }
+
+  /* Boundary faces
+     TODO shall we extrapolate this value? */
+
+#  pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    const cs_lnum_t c_id = b_face_cells[f_id];
+    secvib[f_id] = secvis[c_id];
+  }
+
+  /* TODO stresses at the wall? */
+
+  /* Free memory */
+  BFT_FREE(secvis);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

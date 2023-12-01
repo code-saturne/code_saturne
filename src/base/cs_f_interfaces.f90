@@ -87,18 +87,6 @@ module cs_f_interfaces
 
     !---------------------------------------------------------------------------
 
-    subroutine matrdt &
-      (iconvp, idiffp, isym, coefbp, cofbfp,                                   &
-      i_massflux, b_massflux, i_visc, b_visc, da)
-      use mesh
-      integer :: iconvp, idiffp, isym
-      double precision, dimension(ncelet) :: da
-      double precision, dimension(nfabor) :: coefbp, cofbfp, b_massflux, b_visc
-      double precision, dimension(nfac) :: i_massflux, i_visc
-    end subroutine matrdt
-
-    !---------------------------------------------------------------------------
-
     subroutine post_stress &
       (nfbrps, lstfbr, stress)
       use dimens

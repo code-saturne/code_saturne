@@ -197,7 +197,7 @@ void CS_PROCF (divmas, DIVMAS)
  *
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     f_id          field id (or -1)
+ * \param[in]     f             pointer to field
  * \param[in]     itypfl        indicator (take rho into account or not)
  *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$

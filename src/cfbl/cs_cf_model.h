@@ -99,6 +99,17 @@ cs_cf_model_t *
 cs_get_glob_cf_model(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to boundary face indicator array of convection flux
+ *        - 0 upwind scheme
+ *        - 1 imposed flux
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_get_icvfli(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -1258,10 +1258,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       }
     }
 
-    if (nt_cur%cs_glob_log_frequency == 0 || eqp_vel->iwarni >= 0) {
+    if (nt_cur%cs_glob_log_frequency == 0 || eqp_vel->verbosity >= 0) {
       cs_gnum_t isocpt[2] = {isoent, isorti};
       cs_parall_sum(2, CS_GNUM_TYPE, isocpt);
-      if (isocpt[1] > 0 && (eqp_vel->iwarni >= 2 || isocpt[0] > 0))
+      if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("Incoming flow detained for %llu out of %llu outlet faces\n"),

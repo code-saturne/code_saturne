@@ -56,6 +56,7 @@
 #include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_bw_time_diff.h"
 #include "cs_cf_model.h"
+#include "cs_cf_compute.h"
 #include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
 #include "cs_divergence.h"
@@ -132,7 +133,7 @@ extern cs_real_t *cs_glob_ckupdc;
  * Prototypes for Fortran functions and variables.
  *============================================================================*/
 
-extern int *icvfli;
+//extern int *icvfli;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -2543,7 +2544,7 @@ _velocity_prediction(const cs_mesh_t             *m,
    * We only compute here the secondary viscosity. */
 
   if (vp_model->ivisse == 1)
-    cs_secondary_viscosity(secvif, secvib);
+    cs_face_viscosity_secondary(secvif, secvib);
 
   /* Head losses
    * -----------
@@ -3049,6 +3050,8 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* Warning: in case of convergence estimators, eswork gives the estimator
        of the predicted velocity */
 
+    int *icvfli = cs_get_icvfli();
+
     cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                        iterns,
                                        CS_F_(vel)->id,
@@ -3211,6 +3214,8 @@ _velocity_prediction(const cs_mesh_t             *m,
     eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
     eqp_loc.epsilo = -1;
     eqp_loc.epsrsm = -1;
+
+    int *icvfli = cs_get_icvfli();
 
     cs_balance_vector(idtva0,
                       CS_F_(vel)->id,
@@ -3620,7 +3625,7 @@ cs_solve_navier_stokes(const int   iterns,
     if (eqp_p->verbosity >= 1)
       bft_printf("** SOLVING MASS BALANCE EQUATION\n");
 
-    cs_compressible_convective_mass_flux(iterns, dt, vela);
+    cs_cf_convective_mass_flux(iterns);
   }
 
   /* VoF: compute liquid-vapor mass transfer term (cavitating flows)

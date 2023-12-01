@@ -103,37 +103,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fortran wrapper to cs_matrix_time_step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrdt, MATRDT)
-(
- const int       *const   iconvp,
- const int       *const   idiffp,
- const int       *const   isym,
- const cs_real_t          coefbp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_t                da[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-
-  cs_matrix_time_step(m,
-                      *iconvp,
-                      *idiffp,
-                      *isym,
-                      coefbp,
-                      cofbfp,
-                      i_massflux,
-                      b_massflux,
-                      i_visc,
-                      b_visc,
-                      da);
-}
 
 /*============================================================================
  * Public function definitions
@@ -146,21 +115,21 @@ void CS_PROCF (matrdt, MATRDT)
 
 void
 cs_matrix_wrapper_scalar(int               iconvp,
-                         int               idiffp,
-                         int               ndircp,
-                         int               isym,
-                         double            thetap,
-                         int               imucpp,
-                         const cs_real_t   coefbp[],
-                         const cs_real_t   cofbfp[],
-                         const cs_real_t   rovsdt[],
-                         const cs_real_t   i_massflux[],
-                         const cs_real_t   b_massflux[],
-                         const cs_real_t   i_visc[],
-                         const cs_real_t   b_visc[],
-                         const cs_real_t   xcpp[],
-                         cs_real_t         da[],
-                         cs_real_t         xa[])
+			 int               idiffp,
+			 int               ndircp,
+			 int               isym,
+			 double            thetap,
+			 int               imucpp,
+			 const cs_real_t   coefbp[],
+			 const cs_real_t   cofbfp[],
+			 const cs_real_t   rovsdt[],
+			 const cs_real_t   i_massflux[],
+			 const cs_real_t   b_massflux[],
+			 const cs_real_t   i_visc[],
+			 const cs_real_t   b_visc[],
+			 const cs_real_t   xcpp[],
+			 cs_real_t         da[],
+			 cs_real_t         xa[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -168,39 +137,39 @@ cs_matrix_wrapper_scalar(int               iconvp,
 
   if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
+	      _("invalid value of isym"));
   }
 
   /* Symmetric matrix */
   if (isym == 1) {
     cs_sym_matrix_scalar(m,
-                         idiffp,
-                         thetap,
-                         cofbfp,
-                         rovsdt,
-                         i_visc,
-                         b_visc,
-                         da,
-                         xa);
+			 idiffp,
+			 thetap,
+			 cofbfp,
+			 rovsdt,
+			 i_visc,
+			 b_visc,
+			 da,
+			 xa);
   }
 
   /* Non-symmetric matrix */
   else {
     cs_matrix_scalar(m,
-                     iconvp,
-                     idiffp,
-                     thetap,
-                     imucpp,
-                     coefbp,
-                     cofbfp,
-                     rovsdt,
-                     i_massflux,
-                     b_massflux,
-                     i_visc,
-                     b_visc,
-                     xcpp,
-                     da,
-                     (cs_real_2_t*) xa);
+		     iconvp,
+		     idiffp,
+		     thetap,
+		     imucpp,
+		     coefbp,
+		     cofbfp,
+		     rovsdt,
+		     i_massflux,
+		     b_massflux,
+		     i_visc,
+		     b_visc,
+		     xcpp,
+		     da,
+		     (cs_real_2_t*) xa);
   }
 
   /* Penalization if non invertible matrix */
@@ -235,21 +204,21 @@ cs_matrix_wrapper_scalar(int               iconvp,
 
 void
 cs_matrix_wrapper_vector(int                  iconvp,
-                         int                  idiffp,
-                         int                  tensorial_diffusion,
-                         int                  ndircp,
-                         int                  isym,
-                         cs_lnum_t            eb_size,
-                         double               thetap,
-                         const cs_real_33_t   coefbp[],
-                         const cs_real_33_t   cofbfp[],
-                         const cs_real_33_t   fimp[],
-                         const cs_real_t      i_massflux[],
-                         const cs_real_t      b_massflux[],
-                         const cs_real_t      i_visc[],
-                         const cs_real_t      b_visc[],
-                         cs_real_33_t         da[],
-                         cs_real_t            xa[])
+			 int                  idiffp,
+			 int                  tensorial_diffusion,
+			 int                  ndircp,
+			 int                  isym,
+			 cs_lnum_t            eb_size,
+			 double               thetap,
+			 const cs_real_33_t   coefbp[],
+			 const cs_real_33_t   cofbfp[],
+			 const cs_real_33_t   fimp[],
+			 const cs_real_t      i_massflux[],
+			 const cs_real_t      b_massflux[],
+			 const cs_real_t      i_visc[],
+			 const cs_real_t      b_visc[],
+			 cs_real_33_t         da[],
+			 cs_real_t            xa[])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -257,7 +226,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
 
   if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
+	      _("invalid value of isym"));
   }
 
   /* scalar diffusion or right anisotropic diffusion */
@@ -266,33 +235,33 @@ cs_matrix_wrapper_vector(int                  iconvp,
     if (isym == 1) {
       assert(eb_size == 1);
       cs_sym_matrix_vector(m,
-                           idiffp,
-                           thetap,
-                           cofbfp,
-                           fimp,
-                           i_visc,
-                           b_visc,
-                           da,
-                           xa);
+			   idiffp,
+			   thetap,
+			   cofbfp,
+			   fimp,
+			   i_visc,
+			   b_visc,
+			   da,
+			   xa);
 
     /* Non-symmetric matrix */
     }
     else {
       cs_matrix_vector(m,
-                       mq,
-                       iconvp,
-                       idiffp,
-                       eb_size,
-                       thetap,
-                       coefbp,
-                       cofbfp,
-                       fimp,
-                       i_massflux,
-                       b_massflux,
-                       i_visc,
-                       b_visc,
-                       da,
-                       (cs_real_2_t*) xa);
+		       mq,
+		       iconvp,
+		       idiffp,
+		       eb_size,
+		       thetap,
+		       coefbp,
+		       cofbfp,
+		       fimp,
+		       i_massflux,
+		       b_massflux,
+		       i_visc,
+		       b_visc,
+		       da,
+		       (cs_real_2_t*) xa);
     }
   }
   /* left tensor diffusion */
@@ -301,31 +270,31 @@ cs_matrix_wrapper_vector(int                  iconvp,
     /* Symmetric matrix */
     if (isym == 1) {
       cs_sym_matrix_anisotropic_diffusion(m,
-                                          idiffp,
-                                          thetap,
-                                          cofbfp,
-                                          fimp,
-                                          (const cs_real_33_t *)i_visc,
-                                          b_visc,
-                                          da,
-                                          (cs_real_33_t *) xa);
+					  idiffp,
+					  thetap,
+					  cofbfp,
+					  fimp,
+					  (const cs_real_33_t *)i_visc,
+					  b_visc,
+					  da,
+					  (cs_real_33_t *) xa);
 
     /* Non-symmetric matrix */
     } else {
       cs_matrix_anisotropic_diffusion(m,
-                                      mq,
-                                      iconvp,
-                                      idiffp,
-                                      thetap,
-                                      coefbp,
-                                      cofbfp,
-                                      fimp,
-                                      i_massflux,
-                                      b_massflux,
-                                      (const cs_real_33_t *)i_visc,
-                                      b_visc,
-                                      da,
-                                      (cs_real_332_t *) xa);
+				      mq,
+				      iconvp,
+				      idiffp,
+				      thetap,
+				      coefbp,
+				      cofbfp,
+				      fimp,
+				      i_massflux,
+				      b_massflux,
+				      (const cs_real_33_t *)i_visc,
+				      b_visc,
+				      da,
+				      (cs_real_332_t *) xa);
     }
 
   }
@@ -339,7 +308,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
     const double epsi = 1.e-7;
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+	da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
       }
     }
   }
@@ -349,8 +318,8 @@ cs_matrix_wrapper_vector(int                  iconvp,
 # pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 3; isou++)
-        da[cell_id][isou][isou]
-          += (cs_real_t)(mq->c_disable_flag[cell_id]);
+	da[cell_id][isou][isou]
+	  += (cs_real_t)(mq->c_disable_flag[cell_id]);
     }
   }
 
@@ -363,20 +332,20 @@ cs_matrix_wrapper_vector(int                  iconvp,
 
 void
 cs_matrix_wrapper_tensor(int                  iconvp,
-                         int                  idiffp,
-                         int                  tensorial_diffusion,
-                         int                  ndircp,
-                         int                  isym,
-                         double               thetap,
-                         const cs_real_66_t   coefbts[],
-                         const cs_real_66_t   cofbfts[],
-                         const cs_real_66_t   fimp[],
-                         const cs_real_t      i_massflux[],
-                         const cs_real_t      b_massflux[],
-                         const cs_real_t      i_visc[],
-                         const cs_real_t      b_visc[],
-                         cs_real_66_t         da[],
-                         cs_real_t            xa[])
+			 int                  idiffp,
+			 int                  tensorial_diffusion,
+			 int                  ndircp,
+			 int                  isym,
+			 double               thetap,
+			 const cs_real_66_t   coefbts[],
+			 const cs_real_66_t   cofbfts[],
+			 const cs_real_66_t   fimp[],
+			 const cs_real_t      i_massflux[],
+			 const cs_real_t      b_massflux[],
+			 const cs_real_t      i_visc[],
+			 const cs_real_t      b_visc[],
+			 cs_real_66_t         da[],
+			 cs_real_t            xa[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -384,7 +353,7 @@ cs_matrix_wrapper_tensor(int                  iconvp,
 
   if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
+	      _("invalid value of isym"));
   }
 
   /* scalar diffusion or right anisotropic diffusion */
@@ -392,30 +361,30 @@ cs_matrix_wrapper_tensor(int                  iconvp,
     /* Symmetric matrix */
     if (isym == 1) {
       cs_sym_matrix_tensor(m,
-                           idiffp,
-                           thetap,
-                           cofbfts,
-                           fimp,
-                           i_visc,
-                           b_visc,
-                           da,
-                           xa);
+			   idiffp,
+			   thetap,
+			   cofbfts,
+			   fimp,
+			   i_visc,
+			   b_visc,
+			   da,
+			   xa);
 
     /* Non-symmetric matrix */
     } else {
       cs_matrix_tensor(m,
-                       iconvp,
-                       idiffp,
-                       thetap,
-                       coefbts,
-                       cofbfts,
-                       fimp,
-                       i_massflux,
-                       b_massflux,
-                       i_visc,
-                       b_visc,
-                       da,
-                       (cs_real_2_t*) xa);
+		       iconvp,
+		       idiffp,
+		       thetap,
+		       coefbts,
+		       cofbfts,
+		       fimp,
+		       i_massflux,
+		       b_massflux,
+		       i_visc,
+		       b_visc,
+		       da,
+		       (cs_real_2_t*) xa);
     }
   }
   /* left tensor diffusion */
@@ -423,31 +392,31 @@ cs_matrix_wrapper_tensor(int                  iconvp,
     /* Symmetric matrix */
     if (isym == 1) {
       cs_sym_matrix_anisotropic_diffusion_tensor(m,
-                                                 idiffp,
-                                                 thetap,
-                                                 cofbfts,
-                                                 fimp,
-                                                 (const cs_real_66_t *)i_visc,
-                                                 b_visc,
-                                                 da,
-                                                 (cs_real_66_t *)xa);
+						 idiffp,
+						 thetap,
+						 cofbfts,
+						 fimp,
+						 (const cs_real_66_t *)i_visc,
+						 b_visc,
+						 da,
+						 (cs_real_66_t *)xa);
 
     /* Non-symmetric matrix */
     }
     else {
       cs_matrix_anisotropic_diffusion_tensor(m,
-                                             iconvp,
-                                             idiffp,
-                                             thetap,
-                                             coefbts,
-                                             cofbfts,
-                                             fimp,
-                                             i_massflux,
-                                             b_massflux,
-                                             (cs_real_66_t *)i_visc,
-                                             b_visc,
-                                             da,
-                                             (cs_real_662_t *)xa);
+					     iconvp,
+					     idiffp,
+					     thetap,
+					     coefbts,
+					     cofbfts,
+					     fimp,
+					     i_massflux,
+					     b_massflux,
+					     (cs_real_66_t *)i_visc,
+					     b_visc,
+					     da,
+					     (cs_real_662_t *)xa);
     }
   }
 
@@ -462,7 +431,7 @@ cs_matrix_wrapper_tensor(int                  iconvp,
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+	da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
       }
     }
   }
@@ -471,7 +440,7 @@ cs_matrix_wrapper_tensor(int                  iconvp,
   if (mq->has_disable_flag == 1) {
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] += mq->c_disable_flag[cell_id];
+	da[cell_id][isou][isou] += mq->c_disable_flag[cell_id];
       }
     }
   }
@@ -512,14 +481,14 @@ cs_matrix_wrapper_tensor(int                  iconvp,
 
 void
 cs_sym_matrix_scalar(const cs_mesh_t          *m,
-                     int                       idiffp,
-                     double                    thetap,
-                     const cs_real_t           cofbfp[],
-                     const cs_real_t           rovsdt[],
-                     const cs_real_t           i_visc[],
-                     const cs_real_t           b_visc[],
-                     cs_real_t       *restrict da,
-                     cs_real_t       *restrict xa)
+		     int                       idiffp,
+		     double                    thetap,
+		     const cs_real_t           cofbfp[],
+		     const cs_real_t           rovsdt[],
+		     const cs_real_t           i_visc[],
+		     const cs_real_t           b_visc[],
+		     cs_real_t       *restrict da,
+		     cs_real_t       *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -555,20 +524,20 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for firstprivate(thetap)
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+	for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+	     face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+	     face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+	  cs_lnum_t ii = i_face_cells[face_id][0];
+	  cs_lnum_t jj = i_face_cells[face_id][1];
 
-          cs_real_t aij = -thetap*i_visc[face_id];
+	  cs_real_t aij = -thetap*i_visc[face_id];
 
-          xa[face_id] = aij;
-          da[ii] -= aij;
-          da[jj] -= aij;
+	  xa[face_id] = aij;
+	  da[ii] -= aij;
+	  da[jj] -= aij;
 
-        }
+	}
       }
     }
 
@@ -588,15 +557,15 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
   if (idiffp) {
 
 #   pragma omp parallel for firstprivate(thetap, idiffp)        \
-                        if (m->n_b_faces > CS_THR_MIN)
+			if (m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+	   face_id < b_group_index[t_id*2 + 1];
+	   face_id++) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
+	cs_lnum_t ii = b_face_cells[face_id];
 
-        da[ii] += thetap*b_visc[face_id]*cofbfp[face_id];
+	da[ii] += thetap*b_visc[face_id]*cofbfp[face_id];
 
       }
     }
@@ -650,20 +619,20 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
 
 void
 cs_matrix_scalar(const cs_mesh_t          *m,
-                 int                       iconvp,
-                 int                       idiffp,
-                 double                    thetap,
-                 int                       imucpp,
-                 const cs_real_t           coefbp[],
-                 const cs_real_t           cofbfp[],
-                 const cs_real_t           rovsdt[],
-                 const cs_real_t           i_massflux[],
-                 const cs_real_t           b_massflux[],
-                 const cs_real_t           i_visc[],
-                 const cs_real_t           b_visc[],
-                 const cs_real_t           xcpp[],
-                 cs_real_t       *restrict da,
-                 cs_real_2_t     *restrict xa)
+		 int                       iconvp,
+		 int                       idiffp,
+		 double                    thetap,
+		 int                       imucpp,
+		 const cs_real_t           coefbp[],
+		 const cs_real_t           cofbfp[],
+		 const cs_real_t           rovsdt[],
+		 const cs_real_t           i_massflux[],
+		 const cs_real_t           b_massflux[],
+		 const cs_real_t           i_visc[],
+		 const cs_real_t           b_visc[],
+		 const cs_real_t           xcpp[],
+		 cs_real_t       *restrict da,
+		 cs_real_2_t     *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -719,45 +688,45 @@ cs_matrix_scalar(const cs_mesh_t          *m,
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-            face_id++) {
+	for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+	    face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+	    face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+	  cs_lnum_t ii = i_face_cells[face_id][0];
+	  cs_lnum_t jj = i_face_cells[face_id][1];
 
-          /* D_ii =  theta (m_ij)^+ - m_ij
-           *      = -X_ij - (1-theta)*m_ij
-           * D_jj = -theta (m_ij)^- + m_ij
-           *      = -X_ji + (1-theta)*m_ij
-           */
-          da[ii] -= xa[face_id][0] + iconvp*(1. - thetap)*i_massflux[face_id];
-          da[jj] -= xa[face_id][1] - iconvp*(1. - thetap)*i_massflux[face_id];
+	  /* D_ii =  theta (m_ij)^+ - m_ij
+	   *      = -X_ij - (1-theta)*m_ij
+	   * D_jj = -theta (m_ij)^- + m_ij
+	   *      = -X_ji + (1-theta)*m_ij
+	   */
+	  da[ii] -= xa[face_id][0] + iconvp*(1. - thetap)*i_massflux[face_id];
+	  da[jj] -= xa[face_id][1] - iconvp*(1. - thetap)*i_massflux[face_id];
 
-        }
+	}
       }
     }
 
     /* 4. Contribution of border faces to the diagonal */
 
 #   pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                        if (m->n_b_faces > CS_THR_MIN)
+			if (m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+	   face_id < b_group_index[t_id*2 + 1];
+	   face_id++) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
+	cs_lnum_t ii = b_face_cells[face_id];
 
-        double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
+	double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
 
-        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
-         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-         */
-        da[ii] += iconvp*(flui*thetap*(coefbp[face_id]-1.)
-                         -(1.-thetap)*b_massflux[face_id])
-                + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
+	/* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+	 *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+	 *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+	 */
+	da[ii] += iconvp*(flui*thetap*(coefbp[face_id]-1.)
+			 -(1.-thetap)*b_massflux[face_id])
+		+ idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
       }
     }
 
@@ -776,9 +745,9 @@ cs_matrix_scalar(const cs_mesh_t          *m,
       cs_lnum_t jj = i_face_cells[face_id][1];
 
       xa[face_id][0] = thetap*( iconvp*xcpp[ii]*flui
-                               -idiffp*i_visc[face_id]);
+			       -idiffp*i_visc[face_id]);
       xa[face_id][1] = thetap*( iconvp*xcpp[jj]*fluj
-                               -idiffp*i_visc[face_id]);
+			       -idiffp*i_visc[face_id]);
 
     }
 
@@ -787,47 +756,47 @@ cs_matrix_scalar(const cs_mesh_t          *m,
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-            face_id++) {
+	for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+	    face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+	    face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+	  cs_lnum_t ii = i_face_cells[face_id][0];
+	  cs_lnum_t jj = i_face_cells[face_id][1];
 
-          /* D_ii =  theta (m_ij)^+ - m_ij
-           *      = -X_ij - (1-theta)*m_ij
-           * D_jj = -theta (m_ij)^- + m_ij
-           *      = -X_ji + (1-theta)*m_ij
-           */
-          da[ii] -= xa[face_id][0]
-            + iconvp*(1. - thetap)*xcpp[ii]*i_massflux[face_id];
-          da[jj] -= xa[face_id][1]
-            - iconvp*(1. - thetap)*xcpp[jj]*i_massflux[face_id];
+	  /* D_ii =  theta (m_ij)^+ - m_ij
+	   *      = -X_ij - (1-theta)*m_ij
+	   * D_jj = -theta (m_ij)^- + m_ij
+	   *      = -X_ji + (1-theta)*m_ij
+	   */
+	  da[ii] -= xa[face_id][0]
+	    + iconvp*(1. - thetap)*xcpp[ii]*i_massflux[face_id];
+	  da[jj] -= xa[face_id][1]
+	    - iconvp*(1. - thetap)*xcpp[jj]*i_massflux[face_id];
 
-        }
+	}
       }
     }
 
     /* 4. Contribution of boundary faces to the diagonal */
 
 #   pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                        if (m->n_b_faces > CS_THR_MIN)
+			if (m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+	   face_id < b_group_index[t_id*2 + 1];
+	   face_id++) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
+	cs_lnum_t ii = b_face_cells[face_id];
 
-        double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
+	double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
 
-        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
-         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-         */
-        da[ii] += iconvp*xcpp[ii]*(flui*thetap*(coefbp[face_id]-1.)
-                                  -(1.-thetap)*b_massflux[face_id])
-                + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
+	/* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+	 *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+	 *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+	 */
+	da[ii] += iconvp*xcpp[ii]*(flui*thetap*(coefbp[face_id]-1.)
+				  -(1.-thetap)*b_massflux[face_id])
+		+ idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
       }
     }
 
@@ -869,14 +838,14 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_vector(const cs_mesh_t          *m,
-                     int                       idiffp,
-                     double                    thetap,
-                     const cs_real_33_t        cofbfp[],
-                     const cs_real_33_t        fimp[],
-                     const cs_real_t           i_visc[],
-                     const cs_real_t           b_visc[],
-                     cs_real_33_t    *restrict da,
-                     cs_real_t       *restrict xa)
+		     int                       idiffp,
+		     double                    thetap,
+		     const cs_real_33_t        cofbfp[],
+		     const cs_real_33_t        fimp[],
+		     const cs_real_t           i_visc[],
+		     const cs_real_t           b_visc[],
+		     cs_real_33_t    *restrict da,
+		     cs_real_t       *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -894,7 +863,7 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
+	da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
       }
     }
 
@@ -904,9 +873,9 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
 
       for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++) {
-          da[cell_id][jsou][isou] = 0.;
-        }
+	for (int jsou = 0; jsou < 3; jsou++) {
+	  da[cell_id][jsou][isou] = 0.;
+	}
       }
 
     }
@@ -946,8 +915,8 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
-                                    *cofbfp[face_id][jsou][isou];
+	da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
+				    *cofbfp[face_id][jsou][isou];
       }
     }
 
@@ -988,14 +957,14 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_tensor(const cs_mesh_t          *m,
-                     int                       idiffp,
-                     double                    thetap,
-                     const cs_real_66_t        cofbfts[],
-                     const cs_real_66_t        fimp[],
-                     const cs_real_t           i_visc[],
-                     const cs_real_t           b_visc[],
-                     cs_real_66_t              *restrict da,
-                     cs_real_t                 *restrict xa)
+		     int                       idiffp,
+		     double                    thetap,
+		     const cs_real_66_t        cofbfts[],
+		     const cs_real_66_t        fimp[],
+		     const cs_real_t           i_visc[],
+		     const cs_real_t           b_visc[],
+		     cs_real_66_t              *restrict da,
+		     cs_real_t                 *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1013,7 +982,7 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
+	da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
       }
     }
 
@@ -1023,9 +992,9 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
 
       for (int isou = 0; isou < 6; isou++) {
-        for (int jsou = 0; jsou < 6; jsou++) {
-          da[cell_id][jsou][isou] = 0.;
-        }
+	for (int jsou = 0; jsou < 6; jsou++) {
+	  da[cell_id][jsou][isou] = 0.;
+	}
       }
 
     }
@@ -1065,8 +1034,8 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
-                                    *cofbfts[face_id][jsou][isou];
+	da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
+				    *cofbfts[face_id][jsou][isou];
       }
     }
 
@@ -1118,20 +1087,20 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
 
 void
 cs_matrix_vector(const cs_mesh_t            *m,
-                 const cs_mesh_quantities_t *mq,
-                 int                         iconvp,
-                 int                         idiffp,
-                 cs_lnum_t                   eb_size,
-                 double                      thetap,
-                 const cs_real_33_t          coefbp[],
-                 const cs_real_33_t          cofbfp[],
-                 const cs_real_33_t          fimp[],
-                 const cs_real_t             i_massflux[],
-                 const cs_real_t             b_massflux[],
-                 const cs_real_t             i_visc[],
-                 const cs_real_t             b_visc[],
-                 cs_real_33_t      *restrict da,
-                 cs_real_2_t       *restrict xa)
+		 const cs_mesh_quantities_t *mq,
+		 int                         iconvp,
+		 int                         idiffp,
+		 cs_lnum_t                   eb_size,
+		 double                      thetap,
+		 const cs_real_33_t          coefbp[],
+		 const cs_real_33_t          cofbfp[],
+		 const cs_real_33_t          fimp[],
+		 const cs_real_t             i_massflux[],
+		 const cs_real_t             b_massflux[],
+		 const cs_real_t             i_visc[],
+		 const cs_real_t             b_visc[],
+		 cs_real_33_t      *restrict da,
+		 cs_real_2_t       *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1175,7 +1144,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
+	da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
       }
     }
 
@@ -1185,9 +1154,9 @@ cs_matrix_vector(const cs_mesh_t            *m,
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
 
       for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++) {
-          da[cell_id][jsou][isou] = 0.;
-        }
+	for (int jsou = 0; jsou < 3; jsou++) {
+	  da[cell_id][jsou][isou] = 0.;
+	}
       }
 
     }
@@ -1201,10 +1170,10 @@ cs_matrix_vector(const cs_mesh_t            *m,
   } else {
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
       for (cs_lnum_t i = 0; i < eb_size; i++) {
-        for (cs_lnum_t j = 0; j < eb_size; j++) {
-          _xa[face_id][0][i][j] = 0.;
-          _xa[face_id][1][i][j] = 0.;
-        }
+	for (cs_lnum_t j = 0; j < eb_size; j++) {
+	  _xa[face_id][0][i][j] = 0.;
+	  _xa[face_id][1][i][j] = 0.;
+	}
       }
     }
   }
@@ -1219,14 +1188,14 @@ cs_matrix_vector(const cs_mesh_t            *m,
        * X_ji = - theta f_i (m_ij)^+
        */
       cs_real_2_t flu = {
-        0.5 * iconvp * (i_massflux[face_id] - fabs(i_massflux[face_id])),
-        -0.5 * iconvp * (i_massflux[face_id] + fabs(i_massflux[face_id]))
+	0.5 * iconvp * (i_massflux[face_id] - fabs(i_massflux[face_id])),
+	-0.5 * iconvp * (i_massflux[face_id] + fabs(i_massflux[face_id]))
       };
 
       xa[face_id][0] = thetap*(flu[0] -idiffp*i_visc[face_id])
-        * i_f_face_factor[is_p*face_id][1];//FIXME also diffusion? MF thinks so
+	* i_f_face_factor[is_p*face_id][1];//FIXME also diffusion? MF thinks so
       xa[face_id][1] = thetap*(flu[1] -idiffp*i_visc[face_id])
-        * i_f_face_factor[is_p*face_id][0];
+	* i_f_face_factor[is_p*face_id][0];
 
     }
   }
@@ -1238,10 +1207,10 @@ cs_matrix_vector(const cs_mesh_t            *m,
        * X_ji = - theta f_i (m_ij)^+
        */
       cs_real_2_t flu = {
-        0.5 * iconvp * (i_massflux[face_id] - fabs(i_massflux[face_id]))
-          - idiffp*i_visc[face_id],
-        -0.5 * iconvp * (i_massflux[face_id] + fabs(i_massflux[face_id]))
-          - idiffp*i_visc[face_id]
+	0.5 * iconvp * (i_massflux[face_id] - fabs(i_massflux[face_id]))
+	  - idiffp*i_visc[face_id],
+	-0.5 * iconvp * (i_massflux[face_id] + fabs(i_massflux[face_id]))
+	  - idiffp*i_visc[face_id]
       };
 
       cs_real_3_t normal;
@@ -1251,17 +1220,17 @@ cs_matrix_vector(const cs_mesh_t            *m,
        * XA_ij <= XA_ik n_k n_j (factor - 1) + XA_ij
        * XA_ij used to be diagonal: XA_ik n_k n_j = XA_ii n_i n_j*/
       for (cs_lnum_t i = 0; i < eb_size; i++) {
-        _xa[face_id][0][i][i] = flu[0];
-        _xa[face_id][1][i][i] = flu[1];
-        for (cs_lnum_t j = 0; j < eb_size; j++) {
-          _xa[face_id][0][i][j] = thetap*(_xa[face_id][0][i][j]
-              + flu[0]
-              * (i_f_face_factor[is_p*face_id][1] - 1.) * normal[i] * normal[j]);
-          //FIXME also diffusion? MF thinks so
-          _xa[face_id][1][i][j] = thetap*(_xa[face_id][1][i][j]
-              + flu[1]
-              * (i_f_face_factor[is_p*face_id][0] - 1.) * normal[i] * normal[j]);
-        }
+	_xa[face_id][0][i][i] = flu[0];
+	_xa[face_id][1][i][i] = flu[1];
+	for (cs_lnum_t j = 0; j < eb_size; j++) {
+	  _xa[face_id][0][i][j] = thetap*(_xa[face_id][0][i][j]
+	      + flu[0]
+	      * (i_f_face_factor[is_p*face_id][1] - 1.) * normal[i] * normal[j]);
+	  //FIXME also diffusion? MF thinks so
+	  _xa[face_id][1][i][j] = thetap*(_xa[face_id][1][i][j]
+	      + flu[1]
+	      * (i_f_face_factor[is_p*face_id][0] - 1.) * normal[i] * normal[j]);
+	}
       }
 
     }
@@ -1283,10 +1252,10 @@ cs_matrix_vector(const cs_mesh_t            *m,
        *      = -X_ij + m_ij
        */
       for (int i = 0; i < 3; i++) {
-        da[ii][i][i] -= xa[face_id][1]
-                      + iconvp*i_massflux[face_id];
-        da[jj][i][i] -= xa[face_id][0]
-                      - iconvp*i_massflux[face_id];
+	da[ii][i][i] -= xa[face_id][1]
+		      + iconvp*i_massflux[face_id];
+	da[jj][i][i] -= xa[face_id][0]
+		      - iconvp*i_massflux[face_id];
       }
     }
   }
@@ -1304,13 +1273,13 @@ cs_matrix_vector(const cs_mesh_t            *m,
        *      = -X_ij + m_ij
        */
       for (cs_lnum_t i = 0; i < eb_size; i++) {
-        da[ii][i][i] -= iconvp * i_massflux[face_id];
-        da[jj][i][i] += iconvp * i_massflux[face_id];
+	da[ii][i][i] -= iconvp * i_massflux[face_id];
+	da[jj][i][i] += iconvp * i_massflux[face_id];
 
-        for (cs_lnum_t j = 0; j < eb_size; j++) {
-          da[ii][i][j] -= _xa[face_id][1][i][j];
-          da[jj][i][j] -= _xa[face_id][0][i][j];
-        }
+	for (cs_lnum_t j = 0; j < eb_size; j++) {
+	  da[ii][i][j] -= _xa[face_id][1][i][j];
+	  da[jj][i][j] -= _xa[face_id][0][i][j];
+	}
       }
 
     }
@@ -1338,21 +1307,21 @@ cs_matrix_vector(const cs_mesh_t            *m,
 
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        cs_real_t d_ij = ((i == j) ? 1. : 0.);
-        /* D = theta (m_f)^+.1 + theta B (m_f)^- - m_f.1
-         * NB: stop here because the first two terms maybe scaled
-         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-         */
-          da[ii][i][j] +=
-            thetap * (
-                d_ij * flu[0]
-                + flu[1] * coefbp[face_id][i][j]
-                + idiffp * b_visc[face_id] * cofbfp[face_id][i][j]
-                + (flu[0] + flu[1] * n_b_n + idiffp * b_visc[face_id] * n_bf_n)
-                * (b_f_face_factor[is_p*face_id] - 1.) * normal[i] * normal[j]
-                )
-            - iconvp * d_ij * b_massflux[face_id];
+	cs_real_t d_ij = ((i == j) ? 1. : 0.);
+	/* D = theta (m_f)^+.1 + theta B (m_f)^- - m_f.1
+	 * NB: stop here because the first two terms maybe scaled
+	 *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+	 *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+	 */
+	  da[ii][i][j] +=
+	    thetap * (
+		d_ij * flu[0]
+		+ flu[1] * coefbp[face_id][i][j]
+		+ idiffp * b_visc[face_id] * cofbfp[face_id][i][j]
+		+ (flu[0] + flu[1] * n_b_n + idiffp * b_visc[face_id] * n_bf_n)
+		* (b_f_face_factor[is_p*face_id] - 1.) * normal[i] * normal[j]
+		)
+	    - iconvp * d_ij * b_massflux[face_id];
       }
     }
 
@@ -1400,18 +1369,18 @@ cs_matrix_vector(const cs_mesh_t            *m,
 
 void
 cs_matrix_tensor(const cs_mesh_t          *m,
-                 int                       iconvp,
-                 int                       idiffp,
-                 double                    thetap,
-                 const cs_real_66_t        coefbts[],
-                 const cs_real_66_t        cofbfts[],
-                 const cs_real_66_t        fimp[],
-                 const cs_real_t           i_massflux[],
-                 const cs_real_t           b_massflux[],
-                 const cs_real_t           i_visc[],
-                 const cs_real_t           b_visc[],
-                 cs_real_66_t              *restrict da,
-                 cs_real_2_t               *restrict xa)
+		 int                       iconvp,
+		 int                       idiffp,
+		 double                    thetap,
+		 const cs_real_66_t        coefbts[],
+		 const cs_real_66_t        cofbfts[],
+		 const cs_real_66_t        fimp[],
+		 const cs_real_t           i_massflux[],
+		 const cs_real_t           b_massflux[],
+		 const cs_real_t           i_visc[],
+		 const cs_real_t           b_visc[],
+		 cs_real_66_t              *restrict da,
+		 cs_real_2_t               *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1429,7 +1398,7 @@ cs_matrix_tensor(const cs_mesh_t          *m,
 
     for (int i = 0; i < 6; i++) {
       for (int j = 0; j < 6; j++) {
-        da[cell_id][i][j] = fimp[cell_id][i][j];
+	da[cell_id][i][j] = fimp[cell_id][i][j];
       }
     }
 
@@ -1439,9 +1408,9 @@ cs_matrix_tensor(const cs_mesh_t          *m,
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
 
       for (int i = 0; i < 6; i++) {
-        for (int j = 0; j < 6; j++) {
-          da[cell_id][i][j] = 0.;
-        }
+	for (int j = 0; j < 6; j++) {
+	  da[cell_id][i][j] = 0.;
+	}
       }
 
     }
@@ -1478,9 +1447,9 @@ cs_matrix_tensor(const cs_mesh_t          *m,
      */
     for (int isou = 0; isou < 6; isou++) {
       da[ii][isou][isou] -= xa[face_id][0]
-                          + iconvp*(1. - thetap)*i_massflux[face_id];
+			  + iconvp*(1. - thetap)*i_massflux[face_id];
       da[jj][isou][isou] -= xa[face_id][1]
-                          - iconvp*(1. - thetap)*i_massflux[face_id];
+			  - iconvp*(1. - thetap)*i_massflux[face_id];
     }
 
   }
@@ -1494,21 +1463,21 @@ cs_matrix_tensor(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
-         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-         */
-        if (isou == jsou) {
-          da[ii][jsou][isou] += iconvp*( thetap*flui
-                                        *(coefbts[face_id][jsou][isou]-1.)
-                                       - (1. - thetap)*b_massflux[face_id])
-                              + idiffp*thetap*b_visc[face_id]
-                                      *cofbfts[face_id][jsou][isou];
-        } else {
-          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbts[face_id][jsou][isou]
-                                        +idiffp*b_visc[face_id]
-                                         *cofbfts[face_id][jsou][isou] );
-        }
+	/* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+	 *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+	 *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+	 */
+	if (isou == jsou) {
+	  da[ii][jsou][isou] += iconvp*( thetap*flui
+					*(coefbts[face_id][jsou][isou]-1.)
+				       - (1. - thetap)*b_massflux[face_id])
+			      + idiffp*thetap*b_visc[face_id]
+				      *cofbfts[face_id][jsou][isou];
+	} else {
+	  da[ii][jsou][isou] += thetap*( iconvp*flui*coefbts[face_id][jsou][isou]
+					+idiffp*b_visc[face_id]
+					 *cofbfts[face_id][jsou][isou] );
+	}
       }
     }
 
@@ -1546,16 +1515,16 @@ cs_matrix_tensor(const cs_mesh_t          *m,
 
 void
 cs_matrix_time_step(const cs_mesh_t          *m,
-                    int                       iconvp,
-                    int                       idiffp,
-                    int                       isym,
-                    const cs_real_t           coefbp[],
-                    const cs_real_t           cofbfp[],
-                    const cs_real_t           i_massflux[],
-                    const cs_real_t           b_massflux[],
-                    const cs_real_t           i_visc[],
-                    const cs_real_t           b_visc[],
-                    cs_real_t       *restrict da)
+		    int                       iconvp,
+		    int                       idiffp,
+		    int                       isym,
+		    const cs_real_t           coefbp[],
+		    const cs_real_t           cofbfp[],
+		    const cs_real_t           i_massflux[],
+		    const cs_real_t           b_massflux[],
+		    const cs_real_t           i_visc[],
+		    const cs_real_t           b_visc[],
+		    cs_real_t       *restrict da)
 {
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -1574,7 +1543,7 @@ cs_matrix_time_step(const cs_mesh_t          *m,
 
   if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
+	      _("invalid value of isym"));
   }
 
 # pragma omp parallel for
@@ -1597,22 +1566,22 @@ cs_matrix_time_step(const cs_mesh_t          *m,
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+	for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+	     face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+	     face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+	  cs_lnum_t ii = i_face_cells[face_id][0];
+	  cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double fluj =-0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
-          double flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
+	  double fluj =-0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
+	  double flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
 
-          double xaifa2 = iconvp*fluj -idiffp*i_visc[face_id];
-          double xaifa1 = iconvp*flui -idiffp*i_visc[face_id];
-          da[ii] -= xaifa2;
-          da[jj] -= xaifa1;
+	  double xaifa2 = iconvp*fluj -idiffp*i_visc[face_id];
+	  double xaifa1 = iconvp*flui -idiffp*i_visc[face_id];
+	  da[ii] -= xaifa2;
+	  da[jj] -= xaifa1;
 
-        }
+	}
       }
     }
 
@@ -1621,20 +1590,20 @@ cs_matrix_time_step(const cs_mesh_t          *m,
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+	for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+	     face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+	     face_id++) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+	  cs_lnum_t ii = i_face_cells[face_id][0];
+	  cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
+	  double flui = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
 
-          double xaifa1 = iconvp*flui -idiffp*i_visc[face_id];
-          da[ii] -= xaifa1;
-          da[jj] -= xaifa1;
+	  double xaifa1 = iconvp*flui -idiffp*i_visc[face_id];
+	  da[ii] -= xaifa1;
+	  da[jj] -= xaifa1;
 
-        }
+	}
       }
     }
 
@@ -1645,8 +1614,8 @@ cs_matrix_time_step(const cs_mesh_t          *m,
 # pragma omp parallel for if (m->n_b_faces > CS_THR_MIN)
   for (int t_id = 0; t_id < n_b_threads; t_id++) {
     for (cs_lnum_t face_id = b_group_index[t_id*2];
-         face_id < b_group_index[t_id*2 + 1];
-         face_id++) {
+	 face_id < b_group_index[t_id*2 + 1];
+	 face_id++) {
 
       cs_lnum_t ii = b_face_cells[face_id];
 
@@ -1654,7 +1623,7 @@ cs_matrix_time_step(const cs_mesh_t          *m,
       double fluj = -0.5*(b_massflux[face_id] + fabs(b_massflux[face_id]));
 
       da[ii] +=   iconvp*(-fluj + flui*coefbp[face_id])
-                + idiffp*b_visc[face_id]*cofbfp[face_id];
+		+ idiffp*b_visc[face_id]*cofbfp[face_id];
 
     }
   }
@@ -1702,19 +1671,19 @@ cs_matrix_time_step(const cs_mesh_t          *m,
 
 void
 cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
-                                const cs_mesh_quantities_t *mq,
-                                int                         iconvp,
-                                int                         idiffp,
-                                double                      thetap,
-                                const cs_real_33_t          coefbp[],
-                                const cs_real_33_t          cofbfp[],
-                                const cs_real_33_t          fimp[],
-                                const cs_real_t             i_massflux[],
-                                const cs_real_t             b_massflux[],
-                                const cs_real_33_t          i_visc[],
-                                const cs_real_t             b_visc[],
-                                cs_real_33_t      *restrict da,
-                                cs_real_332_t     *restrict xa)
+				const cs_mesh_quantities_t *mq,
+				int                         iconvp,
+				int                         idiffp,
+				double                      thetap,
+				const cs_real_33_t          coefbp[],
+				const cs_real_33_t          cofbfp[],
+				const cs_real_33_t          fimp[],
+				const cs_real_t             i_massflux[],
+				const cs_real_t             b_massflux[],
+				const cs_real_33_t          i_visc[],
+				const cs_real_t             b_visc[],
+				cs_real_33_t      *restrict da,
+				cs_real_332_t     *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1756,16 +1725,16 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        da[cell_id][j][i] = fimp[cell_id][j][i];
+	da[cell_id][j][i] = fimp[cell_id][j][i];
       }
     }
   }
   if (n_cells_ext > n_cells) {
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-          da[cell_id][j][i] = 0.;
-        }
+	for (int j = 0; j < 3; j++) {
+	  da[cell_id][j][i] = 0.;
+	}
       }
     }
   }
@@ -1773,8 +1742,8 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        xa[face_id][0][j][i] = 0.;
-        xa[face_id][1][j][i] = 0.;
+	xa[face_id][0][j][i] = 0.;
+	xa[face_id][1][j][i] = 0.;
       }
     }
   }
@@ -1795,14 +1764,14 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
       xa[face_id][0][i][i] = flu[0];
       xa[face_id][1][i][i] = flu[1];
       for (int j = 0; j < 3; j++) {
-        xa[face_id][0][i][j] = thetap*( xa[face_id][0][i][j]
-                                      + (i_f_face_factor[is_p*face_id][0] - 1.)
-                                        * normal[i] * normal[j] * flu[0]
-                                      - idiffp*i_visc[face_id][i][j]);//FIXME also diffusion? MF thinks so
-        xa[face_id][1][i][j] = thetap*( xa[face_id][1][i][j]
-                                      + (i_f_face_factor[is_p*face_id][1] - 1.)
-                                        * normal[i] * normal[j] * flu[1]
-                                      - idiffp*i_visc[face_id][i][j]);
+	xa[face_id][0][i][j] = thetap*( xa[face_id][0][i][j]
+				      + (i_f_face_factor[is_p*face_id][0] - 1.)
+					* normal[i] * normal[j] * flu[0]
+				      - idiffp*i_visc[face_id][i][j]);//FIXME also diffusion? MF thinks so
+	xa[face_id][1][i][j] = thetap*( xa[face_id][1][i][j]
+				      + (i_f_face_factor[is_p*face_id][1] - 1.)
+					* normal[i] * normal[j] * flu[1]
+				      - idiffp*i_visc[face_id][i][j]);
       }
     }
 
@@ -1824,8 +1793,8 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
       da[ii][i][i] -= iconvp*(1. - thetap)*i_massflux[face_id];
       da[jj][i][i] += iconvp*(1. - thetap)*i_massflux[face_id];
       for (int j = 0; j < 3; j++) {
-        da[ii][i][j] -= xa[face_id][0][i][j];
-        da[jj][i][j] -= xa[face_id][1][i][j];
+	da[ii][i][j] -= xa[face_id][0][i][j];
+	da[jj][i][j] -= xa[face_id][1][i][j];
       }
     }
   }
@@ -1852,21 +1821,21 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
 
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        cs_real_t d_ij = ((i == j) ? 1. : 0.);
-        /* D = theta (m_f)^+.1 + theta B (m_f)^- - m_f.1
-         * NB: stop here because the first two terms maybe scaled
-         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-         */
-          da[ii][i][j] +=
-            thetap * (
-                d_ij * flu[0]
-                + flu[1] * coefbp[face_id][i][j]
-                + idiffp * b_visc[face_id] * cofbfp[face_id][i][j]
-                + (flu[0] + flu[1] * n_b_n + idiffp * b_visc[face_id] * n_bf_n)
-                * (b_f_face_factor[is_p*face_id] - 1.) * normal[i] * normal[j]
-                )
-            - iconvp * d_ij * b_massflux[face_id];
+	cs_real_t d_ij = ((i == j) ? 1. : 0.);
+	/* D = theta (m_f)^+.1 + theta B (m_f)^- - m_f.1
+	 * NB: stop here because the first two terms maybe scaled
+	 *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+	 *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+	 */
+	  da[ii][i][j] +=
+	    thetap * (
+		d_ij * flu[0]
+		+ flu[1] * coefbp[face_id][i][j]
+		+ idiffp * b_visc[face_id] * cofbfp[face_id][i][j]
+		+ (flu[0] + flu[1] * n_b_n + idiffp * b_visc[face_id] * n_bf_n)
+		* (b_f_face_factor[is_p*face_id] - 1.) * normal[i] * normal[j]
+		)
+	    - iconvp * d_ij * b_massflux[face_id];
       }
     }
 
@@ -1914,18 +1883,18 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
 
 void
 cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
-                                       int                       iconvp,
-                                       int                       idiffp,
-                                       double                    thetap,
-                                       const cs_real_66_t        coefbp[],
-                                       const cs_real_66_t        cofbfp[],
-                                       const cs_real_66_t        fimp[],
-                                       const cs_real_t           i_massflux[],
-                                       const cs_real_t           b_massflux[],
-                                       const cs_real_66_t        i_visc[],
-                                       const cs_real_t           b_visc[],
-                                       cs_real_66_t    *restrict da,
-                                       cs_real_662_t   *restrict xa)
+				       int                       iconvp,
+				       int                       idiffp,
+				       double                    thetap,
+				       const cs_real_66_t        coefbp[],
+				       const cs_real_66_t        cofbfp[],
+				       const cs_real_66_t        fimp[],
+				       const cs_real_t           i_massflux[],
+				       const cs_real_t           b_massflux[],
+				       const cs_real_66_t        i_visc[],
+				       const cs_real_t           b_visc[],
+				       cs_real_66_t    *restrict da,
+				       cs_real_662_t   *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1942,16 +1911,16 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int j = 0; j < 6; j++) {
       for (int i = 0; i < 6; i++) {
-        da[cell_id][i][j] = fimp[cell_id][i][j];
+	da[cell_id][i][j] = fimp[cell_id][i][j];
       }
     }
   }
   if (n_cells_ext > n_cells) {
     for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       for (int j = 0; j < 6; j++) {
-        for (int i = 0; i < 6; i++) {
-          da[cell_id][i][j] = 0.;
-        }
+	for (int i = 0; i < 6; i++) {
+	  da[cell_id][i][j] = 0.;
+	}
       }
     }
   }
@@ -1959,8 +1928,8 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     for (int j = 0; j < 6; j++) {
       for (int i = 0; i < 6; i++) {
-        xa[face_id][0][j][i] = 0.;
-        xa[face_id][1][j][i] = 0.;
+	xa[face_id][0][j][i] = 0.;
+	xa[face_id][1][j][i] = 0.;
       }
     }
   }
@@ -1976,10 +1945,10 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
       xa[face_id][0][i][i] = iconvp*flui;
       xa[face_id][1][i][i] = iconvp*fluj;
       for (int j = 0; j < 6; j++) {
-        xa[face_id][0][i][j] = thetap*( xa[face_id][0][i][j]
-                                         - idiffp*i_visc[face_id][i][j]);
-        xa[face_id][1][i][j] = thetap*( xa[face_id][1][i][j]
-                                         - idiffp*i_visc[face_id][i][j]);
+	xa[face_id][0][i][j] = thetap*( xa[face_id][0][i][j]
+					 - idiffp*i_visc[face_id][i][j]);
+	xa[face_id][1][i][j] = thetap*( xa[face_id][1][i][j]
+					 - idiffp*i_visc[face_id][i][j]);
       }
     }
 
@@ -2002,8 +1971,8 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
       da[jj][i][i] += iconvp*(1. - thetap)*i_massflux[face_id];
 
       for (int j = 0; j < 6; j++) {
-        da[ii][i][j] -= xa[face_id][0][i][j];
-        da[jj][i][j] -= xa[face_id][1][i][j];
+	da[ii][i][j] -= xa[face_id][0][i][j];
+	da[jj][i][j] -= xa[face_id][1][i][j];
       }
     }
   }
@@ -2017,21 +1986,21 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
 
     for (int i = 0; i < 6; i++) {
       for (int j = 0; j < 6; j++) {
-        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
-         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-         */
-        if (j == i) {
-          da[ii][i][j] += iconvp*( thetap*flui
-                                        *(coefbp[face_id][i][j]-1.)
-                                       - (1. - thetap)*b_massflux[face_id])
-                              + idiffp*thetap*b_visc[face_id]
-                                      *cofbfp[face_id][i][j];
-        } else {
-          da[ii][i][j] += thetap*( iconvp*flui*coefbp[face_id][i][j]
-                                        +idiffp*b_visc[face_id]
-                                         *cofbfp[face_id][i][j] );
-        }
+	/* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+	 *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+	 *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+	 */
+	if (j == i) {
+	  da[ii][i][j] += iconvp*( thetap*flui
+					*(coefbp[face_id][i][j]-1.)
+				       - (1. - thetap)*b_massflux[face_id])
+			      + idiffp*thetap*b_visc[face_id]
+				      *cofbfp[face_id][i][j];
+	} else {
+	  da[ii][i][j] += thetap*( iconvp*flui*coefbp[face_id][i][j]
+					+idiffp*b_visc[face_id]
+					 *cofbfp[face_id][i][j] );
+	}
       }
     }
 
@@ -2072,14 +2041,14 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
-                                    int                       idiffp,
-                                    double                    thetap,
-                                    const cs_real_33_t        cofbfp[],
-                                    const cs_real_33_t        fimp[],
-                                    const cs_real_33_t        i_visc[],
-                                    const cs_real_t           b_visc[],
-                                    cs_real_33_t    *restrict da,
-                                    cs_real_33_t    *restrict xa)
+				    int                       idiffp,
+				    double                    thetap,
+				    const cs_real_33_t        cofbfp[],
+				    const cs_real_33_t        fimp[],
+				    const cs_real_33_t        i_visc[],
+				    const cs_real_t           b_visc[],
+				    cs_real_33_t    *restrict da,
+				    cs_real_33_t    *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -2096,16 +2065,16 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
+	da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
       }
     }
   }
   if (n_cells_ext > n_cells) {
     for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++) {
-          da[cell_id][jsou][isou] = 0.;
-        }
+	for (int jsou = 0; jsou < 3; jsou++) {
+	  da[cell_id][jsou][isou] = 0.;
+	}
       }
     }
   }
@@ -2113,7 +2082,7 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
   for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        xa[ifac][jsou][isou] = 0.;
+	xa[ifac][jsou][isou] = 0.;
       }
     }
   }
@@ -2124,7 +2093,7 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        xa[ifac][jsou][isou] = -thetap*idiffp*i_visc[ifac][jsou][isou];
+	xa[ifac][jsou][isou] = -thetap*idiffp*i_visc[ifac][jsou][isou];
       }
     }
 
@@ -2139,8 +2108,8 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        da[ii][jsou][isou] -= xa[ifac][jsou][isou];
-        da[jj][jsou][isou] -= xa[ifac][jsou][isou];
+	da[ii][jsou][isou] -= xa[ifac][jsou][isou];
+	da[jj][jsou][isou] -= xa[ifac][jsou][isou];
       }
     }
   }
@@ -2153,14 +2122,14 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        if (isou == jsou) {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
-                                      *cofbfp[ifac][jsou][isou];
-        }
-        else {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
-                                      *cofbfp[ifac][jsou][isou];
-        }
+	if (isou == jsou) {
+	  da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
+				      *cofbfp[ifac][jsou][isou];
+	}
+	else {
+	  da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
+				      *cofbfp[ifac][jsou][isou];
+	}
       }
     }
 
@@ -2201,14 +2170,14 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
 void
 cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
-                                           int                       idiffp,
-                                           double                    thetap,
-                                           const cs_real_66_t        cofbfp[],
-                                           const cs_real_66_t        fimp[],
-                                           const cs_real_66_t        i_visc[],
-                                           const cs_real_t           b_visc[],
-                                           cs_real_66_t    *restrict da,
-                                           cs_real_66_t    *restrict xa)
+					   int                       idiffp,
+					   double                    thetap,
+					   const cs_real_66_t        cofbfp[],
+					   const cs_real_66_t        fimp[],
+					   const cs_real_66_t        i_visc[],
+					   const cs_real_t           b_visc[],
+					   cs_real_66_t    *restrict da,
+					   cs_real_66_t    *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -2225,16 +2194,16 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
+	da[cell_id][jsou][isou] = fimp[cell_id][jsou][isou];
       }
     }
   }
   if (n_cells_ext > n_cells) {
     for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
-        for (int jsou = 0; jsou < 6; jsou++) {
-          da[cell_id][jsou][isou] = 0.;
-        }
+	for (int jsou = 0; jsou < 6; jsou++) {
+	  da[cell_id][jsou][isou] = 0.;
+	}
       }
     }
   }
@@ -2242,7 +2211,7 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
   for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        xa[ifac][jsou][isou] = 0.;
+	xa[ifac][jsou][isou] = 0.;
       }
     }
   }
@@ -2253,7 +2222,7 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        xa[ifac][jsou][isou] = -thetap*idiffp*i_visc[ifac][jsou][isou];
+	xa[ifac][jsou][isou] = -thetap*idiffp*i_visc[ifac][jsou][isou];
       }
     }
 
@@ -2268,8 +2237,8 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        da[ii][jsou][isou] -= xa[ifac][jsou][isou];
-        da[jj][jsou][isou] -= xa[ifac][jsou][isou];
+	da[ii][jsou][isou] -= xa[ifac][jsou][isou];
+	da[jj][jsou][isou] -= xa[ifac][jsou][isou];
       }
     }
   }
@@ -2282,8 +2251,8 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
-                                    *cofbfp[ifac][jsou][isou];
+	da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
+				    *cofbfp[ifac][jsou][isou];
       }
     }
 

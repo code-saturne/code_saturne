@@ -224,6 +224,12 @@ BEGIN_C_DECLS
           treatment IF iphydr=1
         - 0: no treatment (default)
 
+  \var  cs_velocity_pressure_param_t::igrdpp
+        For the compressible algorithm, indicate whether the pressure
+        should be updated after the solution of the acoustic equation.
+        - 1: true (default)
+        - 0: false
+
   \var  cs_velocity_pressure_param_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
@@ -321,6 +327,7 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
   .irecmf = 0,
   .igprij = 0,
   .igpust = 1,
+  .igrdpp = 1,
   .ipucou = 0,
   .itpcol = -1,
   .arak   = 1.0,

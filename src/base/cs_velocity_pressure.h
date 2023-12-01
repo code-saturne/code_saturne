@@ -133,6 +133,12 @@ typedef struct {
                                       (default)
                                  - 0: no treatment */
 
+  int         igrdpp;         /* For the compressible algorithm, indicate whether
+                                 the pressure should be updated after solution
+                                 of the acoustic equation.
+                                 - 1: true (default)
+                                 - 0: false */
+
   int         ipucou;         /* pseudo coupled pressure-velocity solver
                                  - 1: true (default)
                                  - 0: false */

@@ -157,10 +157,22 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 !===============================================================================
 
 procedure() :: atr1vf, cou1do, debvtl, distpr, distpr2, distyp, diffst
-procedure() :: dttvar, cs_compute_courant_fourier, cs_tagmro
+procedure() :: cs_tagmro
 procedure() :: phyvar, pthrbm, schtmp, scalai
 
 interface
+
+  subroutine cs_courant_fourier_compute()  &
+    bind(C, name='cs_courant_fourier_compute')
+    use, intrinsic :: iso_c_binding
+  end subroutine cs_courant_fourier_compute
+
+  subroutine cs_local_time_step_compute(itrale)  &
+    bind(C, name='cs_local_time_step_compute')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: itrale
+  end subroutine cs_local_time_step_compute
 
   subroutine cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale,    &
                                                italim, itrfin, ineefl, itrfup, &
@@ -652,7 +664,7 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1020)
 endif
 
-call dttvar(itrale, vcopt_u%iwarni, dt)
+call cs_local_time_step_compute(itrale)
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
@@ -1093,7 +1105,7 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1021)
 endif
 
-call cs_compute_courant_fourier()
+call cs_courant_fourier_compute()
 
 ! Free memory
 if (associated(hbord)) deallocate(hbord)

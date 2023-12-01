@@ -621,10 +621,6 @@ module ppincl
   !> pressure predicion by an evolution equation
   integer, save :: ippred
 
-  !> indicates whether the pressure should be updated (=1) or not (=0) after the
-  !> solution of the acoustic equation always usef
-  integer, save :: igrdpp
-
   ! --- Conditions aux limites prenant en compte l'equilibre hydrostatique
 
   !> indicates if the boundary conditions should take into account (=1)

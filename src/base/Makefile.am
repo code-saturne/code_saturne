@@ -108,6 +108,7 @@ cs_boundary_conditions_set_coeffs_turb.h \
 cs_boundary_conditions_type.h \
 cs_boundary_zone.h \
 cs_calcium.h \
+cs_time_step_compute.h \
 cs_control.h \
 cs_coupling.h \
 cs_crystal_router.h \
@@ -312,6 +313,7 @@ cscpfb.f90 \
 csinit.f90 \
 csopli.f90 \
 csprnt.f90 \
+cs_time_step_compute.c \
 cs_control.c \
 cs_coupling.c \
 cs_ext_library_info.c \
@@ -400,7 +402,6 @@ distpr.f90 \
 distpr2.f90 \
 distyp.f90 \
 driflu.f90 \
-dttvar.f90 \
 ecrava.f90 \
 ecrlis.f90 \
 findpt.f90 \
@@ -431,8 +432,7 @@ schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \
 varpos.f90 \
-verini.f90 \
-visecv.f90
+verini.f90
 
 libcsbase_a_LIBADD =
 local_libraries_add =

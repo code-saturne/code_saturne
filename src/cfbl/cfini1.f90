@@ -132,11 +132,6 @@ call uscfx2
 !     selon les developpements
 !===============================================================================
 
-! --> Prise en compte de la pression predite pour resoudre Navier-Stokes
-!     (oui = 1 , non = 0)
-
-igrdpp = 1
-
 ! --> Prediction de pression par une equation d'evolution
 
 !     ATTENTION   PAS ENCORE IMPLEMENTE
