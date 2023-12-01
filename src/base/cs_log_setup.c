@@ -55,6 +55,7 @@
 #include "cs_log.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mobile_structures.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_restart.h"
@@ -151,6 +152,10 @@ _log_global_model_options(void)
   /* Mesh quantity options */
 
   cs_mesh_quantities_log_setup();
+
+  /* Notebook parameters */
+
+  cs_notebook_log_setup();
 
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"

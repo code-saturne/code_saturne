@@ -297,7 +297,7 @@ cs_parameters_define_field_keys(void);
 /*!
  * \brief Read general restart info.
  *
- * This updates the previous time step info.
+ * This updates the previous time step info and notebook varaibles values.
  */
 /*----------------------------------------------------------------------------*/
 

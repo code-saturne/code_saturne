@@ -249,7 +249,7 @@ end interface
 
 elt_ids => null()
 
-! Check for restart and read matching time steps
+! Check for restart and read matching time steps and notebook values
 
 call parameters_read_restart_info
 

@@ -1130,7 +1130,7 @@ cs_parameters_define_field_keys(void)
 /*!
  * \brief Read general restart info.
  *
- * This updates the previous time step info.
+ * This updates the previous time step info and notebook varaibles values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1141,6 +1141,7 @@ cs_parameters_read_restart_info(void)
     cs_restart_t *r
       = cs_restart_create("main.csc", "restart", CS_RESTART_MODE_READ);
     cs_restart_read_time_step_info(r);
+    cs_restart_read_notebook_variables(r);
     cs_restart_destroy(&r);
   }
 }

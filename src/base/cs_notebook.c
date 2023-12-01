@@ -573,7 +573,7 @@ cs_notebook_destroy_all(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_notebook_log(void)
+cs_notebook_log_setup(void)
 {
   if (_n_entries == 0)
     return;
