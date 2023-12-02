@@ -587,9 +587,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.10.6",
-                    archive="hdf5-1.10.6.tar.gz",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/src/%s")
+                    version="1.12.3",
+                    archive="hdf5-1.12.3.tar.gz",
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.12.3/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-build-mode=production"
@@ -600,22 +600,22 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgns",
-                    version="4.3.0",
-                    archive="CGNS-4.3.0.tar.gz",
-                    url="https://github.com/CGNS/CGNS/archive/v4.3.0.tar.gz")
+                    version="4.4.0",
+                    archive="CGNS-4.4.0.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v4.4.0.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
 
         # MED library
-        # Note: alternative address: ftp://ftp.cea.fr/pub/salome/prerequisites/med-4.1.1.tar.gz
+        # Note: alternative address: ftp://ftp.cea.fr/pub/salome/prerequisites/med-5.0.0.tar.gz
 
         self.packages['med'] = \
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="4.1.1",
-                    archive="med-4.1.1.tar.gz",
+                    version="5.0.0",
+                    archive="med-5.0.0.tar.gz",
                     url="https://www.code-saturne.org/releases/external/%s")
 
         p = self.packages['med']
@@ -637,17 +637,17 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="7.0.3",
-                    archive="scotch_7.0.3.tar.gz",
-                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.3/%s")
+                    version="7.0.4",
+                    archive="scotch_7.0.4.tar.gz",
+                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.4/%s")
 
     #---------------------------------------------------------------------------
 
     def setup_defaults(self):
 
-        self.cc = find_executable(['cc', 'gcc', 'icc', 'xlc', 'clang'], 'CC')
-        self.fc = find_executable(['f95', 'gfortran', 'ifort'], 'FC')
-        self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++', 'clang++'], 'CXX')
+        self.cc = find_executable(['cc', 'gcc', 'icx', 'icc', 'xlc', 'clang'], 'CC')
+        self.fc = find_executable(['f95', 'gfortran', 'ifx', 'ifort'], 'FC')
+        self.cxx = find_executable(['c++', 'g++', 'icpx', 'icpc', 'xlc++', 'clang++'], 'CXX')
         self.mpicc = find_executable(['mpicc', 'mpicc.openmpi', 'mpicc.mpich'])
         self.mpicxx = find_executable(['mpicxx', 'mpicxx.openmpi', 'mpicxx.mpich'])
         self.python = find_executable(['python3'], 'PYTHON')
