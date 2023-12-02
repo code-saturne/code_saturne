@@ -686,9 +686,13 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       else if (isweep == 2) {
         beta = 0.;
         alph = -paxkrk/CS_MAX(nadxk, 1e-30*rnorm2);
+        if (isnan(alph))
+          alph = 0;
       }
       else {
         alph = -(paxkrk + beta*paxm1ax)/CS_MAX(nadxk, 1e-30*rnorm2);
+        if (isnan(alph))
+          alph = 0;
       }
 
       /* Writing */
