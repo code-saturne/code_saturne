@@ -203,22 +203,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv);
 
 void CS_PROCF (uiexop, UIEXOP)(void);
 
-/*----------------------------------------------------------------------------
- * groundwater model : read laws for capacity, saturation and permeability
- *
- * Fortran Interface:
- *
- * subroutine uidapp
- * *****************
- * integer         permeability    <--  permeability type
- * integer         diffusion       <--  diffusion type
- * integer         unsaturated     <--  unsaturated zone taken into account
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
-                                const int       *diffusion,
-                                const int       *unsaturated);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -270,6 +254,20 @@ cs_gui_get_equation_param(const char  *name);
 void
 cs_gui_fluid_properties_value(const char  *param,
                               double      *value);
+
+/*----------------------------------------------------------------------------
+ * Groundwater model : read laws for capacity, saturation and permeability
+ *
+ * parameters:
+ *   permeability  <--  permeability type
+ *   diffusion     <--  diffusion type
+ *   unsaturated   <--  unsaturated zone taken into account
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_groundwater_property_laws(int  permeability,
+                                 int  diffusion,
+                                 int  unsaturated);
 
 /*----------------------------------------------------------------------------*/
 /*!

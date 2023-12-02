@@ -735,14 +735,6 @@ _balance_internal_faces(const int         iupwin,
  * Local Macro Definitions
  *============================================================================*/
 
-#undef _CS_MODULE2_2
-
-#define _CS_MODULE2_2(vect) \
-  0.5*(vect[0] * vect[0] + vect[1] * vect[1] + vect[2] * vect[2])
-
-#define _CS_DOT_PRODUCT(vect1, vect2) \
-  (vect1[0] * vect2[0] + vect1[1] * vect2[1] + vect1[2] * vect2[2])
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1814,9 +1806,9 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   const cs_real_t *pressure = f_pres->val;
   const cs_field_t *f_vel = CS_F_(vel);
   const cs_real_3_t *velocity =  (const cs_real_3_t *)f_vel->val;
-  cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
-                         cs_glob_physical_constants->gravity[1],
-                         cs_glob_physical_constants->gravity[2]};
+  const cs_real_t gravity[3] = {cs_glob_physical_constants->gravity[0],
+                                cs_glob_physical_constants->gravity[1],
+                                cs_glob_physical_constants->gravity[2]};
 
   /* Zone cells selection variables*/
   cs_lnum_t n_i_faces_sel = 0;
@@ -2021,8 +2013,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     }
 
     /* Kinematic term */
-    cs_real_t u2 = _CS_MODULE2_2(velocity[c_id]);
-    cs_real_t a_u2 = _CS_MODULE2_2(a_u[f_id_sel]);
+    cs_real_t u2 = 0.5 * cs_math_3_square_norm(velocity[c_id]);
+    cs_real_t a_u2 = 0.5 * cs_math_3_square_norm(a_u[f_id_sel]);
     /* Approximation of u^2 BC */
     cs_real_t b_u2 = 1./6.*( b_u[f_id_sel][0][0] * b_u[f_id_sel][0][0]
                            + b_u[f_id_sel][1][1] * b_u[f_id_sel][1][1]
@@ -2057,7 +2049,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     }
 
     /* Gravity term */
-    cs_real_t gx = - _CS_DOT_PRODUCT(gravity, b_face_cog[f_id_sel]);
+    cs_real_t gx = - cs_math_3_dot_product(gravity, b_face_cog[f_id_sel]);
     /* Trivial BCs */
     cs_real_t a_gx = gx;
     cs_real_t b_gx = 0.;
@@ -2174,8 +2166,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     bi_bterms[0] = 0.;
     bi_bterms[1] = 0.;
 
-    cs_real_t u2_id1 = _CS_MODULE2_2(velocity[c_id1]);
-    cs_real_t u2_id2 = _CS_MODULE2_2(velocity[c_id2]);
+    cs_real_t u2_id1 = 0.5 * cs_math_3_square_norm(velocity[c_id1]);
+    cs_real_t u2_id2 = 0.5 * cs_math_3_square_norm(velocity[c_id2]);
 
     cs_i_cd_unsteady_upwind(ircflp,
                             diipf[f_id_sel],
@@ -2230,8 +2222,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     bi_bterms[0] = 0.;
     bi_bterms[1] = 0.;
 
-    cs_real_t gx_id1 = - _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
-    cs_real_t gx_id2 = - _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
+    cs_real_t gx_id1 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
+    cs_real_t gx_id2 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
 
     cs_i_cd_unsteady_upwind(ircflp,
                             diipf[f_id_sel],

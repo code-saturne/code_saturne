@@ -1399,18 +1399,19 @@ cs_tensor_divergence(const cs_mesh_t            *m,
         diverg[cell_id][isou] = 0.;
       }
     }
-  } else if (init == 0 && n_cells_ext > n_cells) {
+  }
+  else if (init == 0 && n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
         diverg[cell_id][isou] = 0.;
       }
     }
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
-
 
   /*==========================================================================
     2. Integration on internal faces
@@ -1435,7 +1436,6 @@ cs_tensor_divergence(const cs_mesh_t            *m,
     }
   }
 
-
   /*==========================================================================
     3. Integration on border faces
     ==========================================================================*/
@@ -1453,7 +1453,6 @@ cs_tensor_divergence(const cs_mesh_t            *m,
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

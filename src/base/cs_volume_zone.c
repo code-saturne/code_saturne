@@ -46,8 +46,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <ple_locator.h>
-
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
@@ -59,7 +57,6 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
-#include "cs_parameters.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -2124,387 +2124,6 @@ void CS_PROCF (uiexop, UIEXOP)(void)
   cs_gui_pressure_drop_by_zone();
 }
 
-/*----------------------------------------------------------------------------
- * groundwater model : read laws for capacity, saturation and permeability
- *
- * Fortran Interface:
- *
- * subroutine uidapp
- * *****************
- * integer         permeability    <--  permeability type
- * integer         diffusion       <--  diffusion type
- * integer         unsaturated     <--  unsaturated zone taken into account
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
-                                const int       *diffusion,
-                                const int       *unsaturated)
-{
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
-
-  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
-
-  cs_field_t *fsaturation   = cs_field_by_name_try("saturation");
-  cs_field_t *fcapacity     = cs_field_by_name_try("capacity");
-  cs_field_t *fpermeability = cs_field_by_name_try("permeability");
-  cs_field_t *fhhead     = CS_F_(head);
-  cs_field_t *fsoil_density = cs_field_by_name_try("soil_density");
-
-  cs_real_t   *saturation_field = fsaturation->val;
-  cs_real_t   *capacity_field   = fcapacity->val;
-  cs_real_t   *h_head_field   = fhhead->val;
-  cs_real_t   *soil_density   = fsoil_density->val;
-
-  cs_real_t     *permeability_field = NULL;
-  cs_real_6_t   *permeability_field_v = NULL;
-
-  cs_gnum_t cw[3];
-
-  if (*permeability == 0)
-    permeability_field = fpermeability->val;
-  else
-    permeability_field_v = (cs_real_6_t *)fpermeability->val;
-
-  cs_tree_node_t *tn_gw
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/groundwater");
-
-  /* number of volumic zones */
-
-  int n_zones = cs_volume_zone_n_zones();
-
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-
-    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-
-    if (_zone_id_is_type(z->id, "groundwater_law")) {
-
-      cs_tree_node_t *tn_zl = cs_tree_get_node(tn_gw, "groundwater_law");
-      tn_zl = _add_zone_id_test_attribute(tn_zl, z->id);
-
-      const cs_lnum_t n_cells = z->n_elts;
-      const cs_lnum_t *cell_ids = z->elt_ids;
-
-      char z_id_str[32];
-      snprintf(z_id_str, 31, "%d", z_id);
-
-      /* get ground properties for each zone */
-
-      /* get soil density by zone */
-      cs_real_t rhosoil = 0.;
-
-      cs_gui_node_get_child_real(tn_zl, "soil_density", &rhosoil);
-
-      for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-        cs_lnum_t iel = cell_ids[icel];
-        soil_density[iel] = rhosoil;
-      }
-
-      const char *mdl = cs_tree_node_get_child_value_str(tn_zl, "model");
-
-      /* law for permeability */
-      /* TODO: rename it in GUI, it is not Van Genuchten if saturated */
-
-      if (cs_gui_strcmp(mdl, "VanGenuchten")) {
-
-        cs_real_t alpha_param, ks_param, l_param, n_param;
-        cs_real_t thetas_param, thetar_param;
-        cs_real_t ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
-
-        cs_tree_node_t *tn_m
-          = cs_tree_node_get_child(tn_zl, "VanGenuchten_parameters");
-
-        /* Van Genuchten parameters */
-        if (*unsaturated) {
-          cs_gui_node_get_child_real(tn_m, "alpha",  &alpha_param);
-          cs_gui_node_get_child_real(tn_m, "l",      &l_param);
-          cs_gui_node_get_child_real(tn_m, "n",      &n_param);
-          cs_gui_node_get_child_real(tn_m, "thetar", &thetar_param);
-        }
-
-        cs_gui_node_get_child_real(tn_m, "thetas", &thetas_param);
-
-        if (*permeability == 0)
-          cs_gui_node_get_child_real(tn_m, "ks", &ks_param);
-        else {
-          cs_gui_node_get_child_real(tn_m, "ks_xx", &ks_xx);
-          cs_gui_node_get_child_real(tn_m, "ks_yy", &ks_yy);
-          cs_gui_node_get_child_real(tn_m, "ks_zz", &ks_zz);
-          cs_gui_node_get_child_real(tn_m, "ks_xy", &ks_xy);
-          cs_gui_node_get_child_real(tn_m, "ks_yz", &ks_yz);
-          cs_gui_node_get_child_real(tn_m, "ks_xz", &ks_xz);
-        }
-
-        /* unsaturated zone considered */
-        if (*unsaturated) {
-
-          const cs_physical_constants_t *phys_cst = cs_glob_physical_constants;
-          cs_real_t g_norm = cs_math_3_norm(phys_cst->gravity);
-          bool gravity = (g_norm > cs_math_epzero) ? true : false;
-          const cs_real_t g_n[3] = {phys_cst->gravity[0]/g_norm,
-                                    phys_cst->gravity[1]/g_norm,
-                                    phys_cst->gravity[2]/g_norm};
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            cs_real_t head = h_head_field[iel];
-
-            if (gravity)
-              head -= cs_math_3_dot_product(cell_cen[iel], g_n);
-
-            if (head >= 0) {
-              capacity_field[iel] = 0.;
-              saturation_field[iel] = thetas_param;
-
-              if (*permeability == 0)
-                permeability_field[iel] = ks_param;
-              else {
-                permeability_field_v[iel][0] = ks_xx;
-                permeability_field_v[iel][1] = ks_yy;
-                permeability_field_v[iel][2] = ks_zz;
-                permeability_field_v[iel][3] = ks_xy;
-                permeability_field_v[iel][4] = ks_yz;
-                permeability_field_v[iel][5] = ks_xz;
-              }
-            }
-            else {
-              cs_real_t m_param = 1 - 1 / n_param;
-              cs_real_t tmp1 = pow(fabs(alpha_param * head), n_param);
-              cs_real_t tmp2 = 1. / (1. + tmp1);
-              cs_real_t se_param = pow(tmp2, m_param);
-              cs_real_t perm = pow(se_param, l_param) *
-                               pow((1. - pow((1. - tmp2), m_param)), 2);
-
-              capacity_field[iel] = -m_param * n_param * tmp1 *
-                                    (thetas_param - thetar_param) *
-                                     se_param * tmp2 / head;
-              saturation_field[iel] = thetar_param +
-                                      se_param * (thetas_param - thetar_param);
-
-              if (*permeability == 0)
-                permeability_field[iel] = perm * ks_param;
-              else {
-                permeability_field_v[iel][0] = perm * ks_xx;
-                permeability_field_v[iel][1] = perm * ks_yy;
-                permeability_field_v[iel][2] = perm * ks_zz;
-                permeability_field_v[iel][3] = perm * ks_xy;
-                permeability_field_v[iel][4] = perm * ks_yz;
-                permeability_field_v[iel][5] = perm * ks_xz;
-              }
-            }
-          }
-        }
-        else { /* saturated */
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            capacity_field[iel] = 0.;
-            saturation_field[iel] = thetas_param;
-
-            if (*permeability == 0)
-              permeability_field[iel] = ks_param;
-            else {
-              permeability_field_v[iel][0] = ks_xx;
-              permeability_field_v[iel][1] = ks_yy;
-              permeability_field_v[iel][2] = ks_zz;
-              permeability_field_v[iel][3] = ks_xy;
-              permeability_field_v[iel][4] = ks_yz;
-              permeability_field_v[iel][5] = ks_xz;
-            }
-          }
-        }
-
-      } else {
-      /* user law for permeability */
-        const char *formula
-          = cs_tree_node_get_child_value_str(tn_zl, "formula");
-
-        if (formula != NULL) {
-          char _name_string[512];
-          snprintf(_name_string, 511, "%s+%s+%s",
-                   fcapacity->name, fsaturation->name, fpermeability->name);
-          _name_string[511] = '\0';
-          cs_real_t *fvals[3] = {fcapacity->val,
-                                 fsaturation->val,
-                                 fpermeability->val};
-          cs_meg_volume_function(z->name,
-                                 n_cells,
-                                 cell_ids,
-                                 cell_cen,
-                                 _name_string,
-                                 fvals);
-        }
-      }
-
-      const int kivisl = cs_field_key_id("diffusivity_id");
-      int n_fields = cs_field_n_fields();
-
-      /* get diffusivity and Kd for each scalar defined by the user on
-         current zone (and clsat only for scalars
-         with kinetic model) */
-      for (int f_id = 0; f_id < n_fields; f_id++) {
-
-        cs_field_t *f = cs_field_by_id(f_id);
-
-        if (   (f->type & CS_FIELD_VARIABLE)
-            && (f->type & CS_FIELD_USER)) {
-
-          /* get kd for current scalar and current zone */
-          char *kdname = NULL;
-          int len = strlen(f->name) + 4;
-          BFT_MALLOC(kdname, len, char);
-          strcpy(kdname, f->name);
-          strcat(kdname, "_kd");
-          cs_field_t *fkd = cs_field_by_name_try(kdname);
-          BFT_FREE(kdname);
-
-          cs_real_t kd_val = 0., diff_val = 0.;
-          cs_tree_node_t *tn_s = cs_tree_get_node(tn_zl, "scalar");
-          tn_s = cs_tree_node_get_sibling_with_tag(tn_s, "name", f->name);
-
-          cs_gui_node_get_child_real(tn_s, "kd", &kd_val);
-          cs_gui_node_get_child_real(tn_s, "diffusivity", &diff_val);
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            fkd->val[iel] = kd_val;
-          }
-
-          /* get diffusivity for current scalar and current zone */
-          int diff_id = cs_field_get_key_int(f, kivisl);
-          cs_field_t *fdiff = cs_field_by_id(diff_id);
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            fdiff->val[iel] = saturation_field[iel]*diff_val;
-          }
-
-          /* get clsat for current scalar and current zone */
-          cs_field_t *kp, *km;
-
-          if (false) {  /* TODO: kd + precipitation */
-
-            cs_real_t kp_val = 0., km_val = 0.;
-            cs_gui_node_get_child_real(tn_s, "clsat", &kp_val);
-
-            for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-              cs_lnum_t iel = cell_ids[icel];
-              kp->val[iel] = kp_val;
-              km->val[iel] = km_val;
-            }
-
-          }
-
-        }
-      }
-
-      /* get dispersion coefficient */
-      if (*diffusion == 1) { /* anisotropic dispersion */
-        /* TODO use a dedicated tensor field by species */
-
-        cs_field_t *fturbvisco
-          = cs_field_by_name_try("anisotropic_turbulent_viscosity");
-
-        if (fturbvisco != NULL) {
-          cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
-
-          double long_diffus = 0, trans_diffus = 0;
-
-          cs_tree_node_t *tn
-            = cs_tree_node_get_child(tn_zl, "diffusion_coefficient");
-          cs_gui_node_get_child_real(tn, "longitudinal", &long_diffus);
-          cs_gui_node_get_child_real(tn, "transverse", &trans_diffus);
-
-          const double diff = long_diffus - trans_diffus;
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            double norm = cs_math_3_square_norm(vel[iel]);
-            double tmp = trans_diffus * norm;
-            double denom = norm + 1.e-15;
-            visten_v[iel][0] = tmp + diff * vel[iel][0] * vel[iel][0] / denom;
-            visten_v[iel][1] = tmp + diff * vel[iel][1] * vel[iel][1] / denom;
-            visten_v[iel][2] = tmp + diff * vel[iel][2] * vel[iel][2] / denom;
-            visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
-            visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
-            visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
-          }
-        }
-
-      }
-      else { /* isotropic dispersion */
-        /* - same value of isotropic dispersion for each species
-           - assigned to diffusivity field of each species
-           TODO: allow to specifiy one value by species in GUI */
-
-        double diffus;
-
-        cs_tree_node_t *tn = cs_tree_node_get_child(tn_zl,
-                                                    "diffusion_coefficient");
-        cs_gui_node_get_child_real(tn, "isotropic", &diffus);
-
-        for (int f_id = 0; f_id < n_fields; f_id++) {
-          cs_field_t *f = cs_field_by_id(f_id);
-          if (   (f->type & CS_FIELD_VARIABLE)
-              && (f->type & CS_FIELD_USER)) {
-            int diff_id = cs_field_get_key_int(f, kivisl);
-            cs_field_t *fdiff = cs_field_by_id(diff_id);
-            cs_real_t *visten = fdiff->val;
-
-            /* WARNING: dispersion adds up to diffusivity
-               already assigned above */
-            for (cs_lnum_t l_id = 0; l_id < n_cells; l_id++) {
-              cs_lnum_t iel = cell_ids[l_id];
-              cs_real_t norm = sqrt(vel[iel][0] * vel[iel][0] +
-                                    vel[iel][1] * vel[iel][1] +
-                                    vel[iel][2] * vel[iel][2]);
-              visten[iel] = visten[iel] + diffus * norm;
-            }
-          }
-        }
-
-      }
-    }
-  }
-
-  /* check values */
-
-  {
-    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-
-    cw[0] = 0; cw[1] = 0; cw[2] = 0;
-
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      if (saturation_field[iel] > 1. || saturation_field[iel] < 0.)
-        cw[0] += 1;
-
-      if (capacity_field[iel] < 0.)
-        cw[1] += 1;
-
-      if (*permeability == 0) {
-        if (permeability_field[iel] < 0.)
-          cw[2] += 1;
-      }
-    }
-
-    cs_parall_counter(cw, 3);
-
-    if (cw[0] > 0)
-      bft_printf(_("soil_tracer_law, WARNING:\n"
-                   "  saturation is outside [0, 1] in %llu cells.\n"),
-                 (unsigned long long)(cw[0]));
-
-    if (cw[1] > 0)
-      bft_printf(_("soil_tracer_law, WARNING:\n"
-                   "  capacity is < 0 in %llu cells.\n"),
-                 (unsigned long long)(cw[1]));
-
-    if (cw[2] > 0)
-      bft_printf(_("soil_tracer_law, WARNING:\n"
-                   "  isotropic permeability is < 0 in %llu cells.\n"),
-                 (unsigned long long)(cw[2]));
-  }
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -2683,6 +2302,386 @@ cs_gui_fluid_properties_value(const char  *param,
   tn = cs_tree_get_node(tn, param);
 
   cs_gui_node_get_real(tn, value);
+}
+
+/*----------------------------------------------------------------------------
+ * Groundwater model : read laws for capacity, saturation and permeability
+ *
+ * parameters:
+ *   permeability  <--  permeability type
+ *   diffusion     <--  diffusion type
+ *   unsaturated   <--  unsaturated zone taken into account
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_groundwater_property_laws(int  permeability,
+                                 int  diffusion,
+                                 int  unsaturated)
+{
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
+  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
+
+  cs_field_t *fsaturation   = cs_field_by_name_try("saturation");
+  cs_field_t *fcapacity     = cs_field_by_name_try("capacity");
+  cs_field_t *fpermeability = cs_field_by_name_try("permeability");
+  cs_field_t *fhhead     = CS_F_(head);
+  cs_field_t *fsoil_density = cs_field_by_name_try("soil_density");
+
+  cs_real_t   *saturation_field = fsaturation->val;
+  cs_real_t   *capacity_field   = fcapacity->val;
+  cs_real_t   *h_head_field   = fhhead->val;
+  cs_real_t   *soil_density   = fsoil_density->val;
+
+  cs_real_t     *permeability_field = NULL;
+  cs_real_6_t   *permeability_field_v = NULL;
+
+  cs_gnum_t cw[3];
+
+  if (permeability == 0)
+    permeability_field = fpermeability->val;
+  else
+    permeability_field_v = (cs_real_6_t *)fpermeability->val;
+
+  cs_tree_node_t *tn_gw
+    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/groundwater");
+
+  /* number of volumic zones */
+
+  int n_zones = cs_volume_zone_n_zones();
+
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+    if (_zone_id_is_type(z->id, "groundwater_law")) {
+
+      cs_tree_node_t *tn_zl = cs_tree_get_node(tn_gw, "groundwater_law");
+      tn_zl = _add_zone_id_test_attribute(tn_zl, z->id);
+
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
+
+      char z_id_str[32];
+      snprintf(z_id_str, 31, "%d", z_id);
+
+      /* get ground properties for each zone */
+
+      /* get soil density by zone */
+      cs_real_t rhosoil = 0.;
+
+      cs_gui_node_get_child_real(tn_zl, "soil_density", &rhosoil);
+
+      for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+        cs_lnum_t iel = cell_ids[icel];
+        soil_density[iel] = rhosoil;
+      }
+
+      const char *mdl = cs_tree_node_get_child_value_str(tn_zl, "model");
+
+      /* law for permeability */
+      /* TODO: rename it in GUI, it is not Van Genuchten if saturated */
+
+      if (cs_gui_strcmp(mdl, "VanGenuchten")) {
+
+        cs_real_t alpha_param, ks_param, l_param, n_param;
+        cs_real_t thetas_param, thetar_param;
+        cs_real_t ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
+
+        cs_tree_node_t *tn_m
+          = cs_tree_node_get_child(tn_zl, "VanGenuchten_parameters");
+
+        /* Van Genuchten parameters */
+        if (unsaturated) {
+          cs_gui_node_get_child_real(tn_m, "alpha",  &alpha_param);
+          cs_gui_node_get_child_real(tn_m, "l",      &l_param);
+          cs_gui_node_get_child_real(tn_m, "n",      &n_param);
+          cs_gui_node_get_child_real(tn_m, "thetar", &thetar_param);
+        }
+
+        cs_gui_node_get_child_real(tn_m, "thetas", &thetas_param);
+
+        if (permeability == 0)
+          cs_gui_node_get_child_real(tn_m, "ks", &ks_param);
+        else {
+          cs_gui_node_get_child_real(tn_m, "ks_xx", &ks_xx);
+          cs_gui_node_get_child_real(tn_m, "ks_yy", &ks_yy);
+          cs_gui_node_get_child_real(tn_m, "ks_zz", &ks_zz);
+          cs_gui_node_get_child_real(tn_m, "ks_xy", &ks_xy);
+          cs_gui_node_get_child_real(tn_m, "ks_yz", &ks_yz);
+          cs_gui_node_get_child_real(tn_m, "ks_xz", &ks_xz);
+        }
+
+        /* unsaturated zone considered */
+        if (unsaturated) {
+
+          const cs_physical_constants_t *phys_cst = cs_glob_physical_constants;
+          cs_real_t g_norm = cs_math_3_norm(phys_cst->gravity);
+          bool gravity = (g_norm > cs_math_epzero) ? true : false;
+          const cs_real_t g_n[3] = {phys_cst->gravity[0]/g_norm,
+                                    phys_cst->gravity[1]/g_norm,
+                                    phys_cst->gravity[2]/g_norm};
+
+          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+            cs_lnum_t iel = cell_ids[icel];
+            cs_real_t head = h_head_field[iel];
+
+            if (gravity)
+              head -= cs_math_3_dot_product(cell_cen[iel], g_n);
+
+            if (head >= 0) {
+              capacity_field[iel] = 0.;
+              saturation_field[iel] = thetas_param;
+
+              if (permeability == 0)
+                permeability_field[iel] = ks_param;
+              else {
+                permeability_field_v[iel][0] = ks_xx;
+                permeability_field_v[iel][1] = ks_yy;
+                permeability_field_v[iel][2] = ks_zz;
+                permeability_field_v[iel][3] = ks_xy;
+                permeability_field_v[iel][4] = ks_yz;
+                permeability_field_v[iel][5] = ks_xz;
+              }
+            }
+            else {
+              cs_real_t m_param = 1 - 1 / n_param;
+              cs_real_t tmp1 = pow(fabs(alpha_param * head), n_param);
+              cs_real_t tmp2 = 1. / (1. + tmp1);
+              cs_real_t se_param = pow(tmp2, m_param);
+              cs_real_t perm = pow(se_param, l_param) *
+                               pow((1. - pow((1. - tmp2), m_param)), 2);
+
+              capacity_field[iel] = -m_param * n_param * tmp1 *
+                                    (thetas_param - thetar_param) *
+                                     se_param * tmp2 / head;
+              saturation_field[iel] = thetar_param +
+                                      se_param * (thetas_param - thetar_param);
+
+              if (permeability == 0)
+                permeability_field[iel] = perm * ks_param;
+              else {
+                permeability_field_v[iel][0] = perm * ks_xx;
+                permeability_field_v[iel][1] = perm * ks_yy;
+                permeability_field_v[iel][2] = perm * ks_zz;
+                permeability_field_v[iel][3] = perm * ks_xy;
+                permeability_field_v[iel][4] = perm * ks_yz;
+                permeability_field_v[iel][5] = perm * ks_xz;
+              }
+            }
+          }
+        }
+        else { /* saturated */
+          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+            cs_lnum_t iel = cell_ids[icel];
+            capacity_field[iel] = 0.;
+            saturation_field[iel] = thetas_param;
+
+            if (permeability == 0)
+              permeability_field[iel] = ks_param;
+            else {
+              permeability_field_v[iel][0] = ks_xx;
+              permeability_field_v[iel][1] = ks_yy;
+              permeability_field_v[iel][2] = ks_zz;
+              permeability_field_v[iel][3] = ks_xy;
+              permeability_field_v[iel][4] = ks_yz;
+              permeability_field_v[iel][5] = ks_xz;
+            }
+          }
+        }
+
+      }
+      else {
+      /* user law for permeability */
+        const char *formula
+          = cs_tree_node_get_child_value_str(tn_zl, "formula");
+
+        if (formula != NULL) {
+          char _name_string[512];
+          snprintf(_name_string, 511, "%s+%s+%s",
+                   fcapacity->name, fsaturation->name, fpermeability->name);
+          _name_string[511] = '\0';
+          cs_real_t *fvals[3] = {fcapacity->val,
+                                 fsaturation->val,
+                                 fpermeability->val};
+          cs_meg_volume_function(z->name,
+                                 n_cells,
+                                 cell_ids,
+                                 cell_cen,
+                                 _name_string,
+                                 fvals);
+        }
+      }
+
+      const int kivisl = cs_field_key_id("diffusivity_id");
+      int n_fields = cs_field_n_fields();
+
+      /* get diffusivity and Kd for each scalar defined by the user on
+         current zone (and clsat only for scalars
+         with kinetic model) */
+      for (int f_id = 0; f_id < n_fields; f_id++) {
+
+        cs_field_t *f = cs_field_by_id(f_id);
+
+        if (   (f->type & CS_FIELD_VARIABLE)
+            && (f->type & CS_FIELD_USER)) {
+
+          /* get kd for current scalar and current zone */
+          char *kdname = NULL;
+          int len = strlen(f->name) + 4;
+          BFT_MALLOC(kdname, len, char);
+          strcpy(kdname, f->name);
+          strcat(kdname, "_kd");
+          cs_field_t *fkd = cs_field_by_name_try(kdname);
+          BFT_FREE(kdname);
+
+          cs_real_t kd_val = 0., diff_val = 0.;
+          cs_tree_node_t *tn_s = cs_tree_get_node(tn_zl, "scalar");
+          tn_s = cs_tree_node_get_sibling_with_tag(tn_s, "name", f->name);
+
+          cs_gui_node_get_child_real(tn_s, "kd", &kd_val);
+          cs_gui_node_get_child_real(tn_s, "diffusivity", &diff_val);
+
+          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+            cs_lnum_t iel = cell_ids[icel];
+            fkd->val[iel] = kd_val;
+          }
+
+          /* get diffusivity for current scalar and current zone */
+          int diff_id = cs_field_get_key_int(f, kivisl);
+          cs_field_t *fdiff = cs_field_by_id(diff_id);
+
+          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+            cs_lnum_t iel = cell_ids[icel];
+            fdiff->val[iel] = saturation_field[iel]*diff_val;
+          }
+
+          /* get clsat for current scalar and current zone */
+          cs_field_t *kp, *km;
+
+          if (false) {  /* TODO: kd + precipitation */
+
+            cs_real_t kp_val = 0., km_val = 0.;
+            cs_gui_node_get_child_real(tn_s, "clsat", &kp_val);
+
+            for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+              cs_lnum_t iel = cell_ids[icel];
+              kp->val[iel] = kp_val;
+              km->val[iel] = km_val;
+            }
+
+          }
+
+        }
+      }
+
+      /* get dispersion coefficient */
+      if (diffusion == 1) { /* anisotropic dispersion */
+        /* TODO use a dedicated tensor field by species */
+
+        cs_field_t *fturbvisco
+          = cs_field_by_name_try("anisotropic_turbulent_viscosity");
+
+        if (fturbvisco != NULL) {
+          cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
+
+          double long_diffus = 0, trans_diffus = 0;
+
+          cs_tree_node_t *tn
+            = cs_tree_node_get_child(tn_zl, "diffusion_coefficient");
+          cs_gui_node_get_child_real(tn, "longitudinal", &long_diffus);
+          cs_gui_node_get_child_real(tn, "transverse", &trans_diffus);
+
+          const double diff = long_diffus - trans_diffus;
+
+          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+            cs_lnum_t iel = cell_ids[icel];
+            double norm = cs_math_3_square_norm(vel[iel]);
+            double tmp = trans_diffus * norm;
+            double denom = norm + 1.e-15;
+            visten_v[iel][0] = tmp + diff * vel[iel][0] * vel[iel][0] / denom;
+            visten_v[iel][1] = tmp + diff * vel[iel][1] * vel[iel][1] / denom;
+            visten_v[iel][2] = tmp + diff * vel[iel][2] * vel[iel][2] / denom;
+            visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
+            visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
+            visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
+          }
+        }
+
+      }
+      else { /* isotropic dispersion */
+        /* - same value of isotropic dispersion for each species
+           - assigned to diffusivity field of each species
+           TODO: allow to specifiy one value by species in GUI */
+
+        double diffus;
+
+        cs_tree_node_t *tn = cs_tree_node_get_child(tn_zl,
+                                                    "diffusion_coefficient");
+        cs_gui_node_get_child_real(tn, "isotropic", &diffus);
+
+        for (int f_id = 0; f_id < n_fields; f_id++) {
+          cs_field_t *f = cs_field_by_id(f_id);
+          if (   (f->type & CS_FIELD_VARIABLE)
+              && (f->type & CS_FIELD_USER)) {
+            int diff_id = cs_field_get_key_int(f, kivisl);
+            cs_field_t *fdiff = cs_field_by_id(diff_id);
+            cs_real_t *visten = fdiff->val;
+
+            /* WARNING: dispersion adds up to diffusivity
+               already assigned above */
+            for (cs_lnum_t l_id = 0; l_id < n_cells; l_id++) {
+              cs_lnum_t iel = cell_ids[l_id];
+              cs_real_t norm = sqrt(vel[iel][0] * vel[iel][0] +
+                                    vel[iel][1] * vel[iel][1] +
+                                    vel[iel][2] * vel[iel][2]);
+              visten[iel] = visten[iel] + diffus * norm;
+            }
+          }
+        }
+
+      }
+    }
+  }
+
+  /* check values */
+
+  {
+    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+    cw[0] = 0; cw[1] = 0; cw[2] = 0;
+
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      if (saturation_field[iel] > 1. || saturation_field[iel] < 0.)
+        cw[0] += 1;
+
+      if (capacity_field[iel] < 0.)
+        cw[1] += 1;
+
+      if (permeability == 0) {
+        if (permeability_field[iel] < 0.)
+          cw[2] += 1;
+      }
+    }
+
+    cs_parall_counter(cw, 3);
+
+    if (cw[0] > 0)
+      bft_printf(_("soil_tracer_law, WARNING:\n"
+                   "  saturation is outside [0, 1] in %llu cells.\n"),
+                 (unsigned long long)(cw[0]));
+
+    if (cw[1] > 0)
+      bft_printf(_("soil_tracer_law, WARNING:\n"
+                   "  capacity is < 0 in %llu cells.\n"),
+                 (unsigned long long)(cw[1]));
+
+    if (cw[2] > 0)
+      bft_printf(_("soil_tracer_law, WARNING:\n"
+                   "  isotropic permeability is < 0 in %llu cells.\n"),
+                 (unsigned long long)(cw[2]));
+  }
 }
 
 /*----------------------------------------------------------------------------*/

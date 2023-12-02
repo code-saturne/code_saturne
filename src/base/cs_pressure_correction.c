@@ -780,8 +780,7 @@ _pressure_correction_fv(int        iterns,
    * ==================================================================== */
 
   /* Standard initialization */
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
-    iflux[f_id] = 0;
+  cs_array_real_fill_zero(n_i_faces, iflux);
 
   if (vp_param->staggered == 0) {
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -1211,38 +1210,38 @@ _pressure_correction_fv(int        iterns,
                               frcxt,
                               gradp);
 
-  if (vp_param->iphydr == 1) {
-
-    if (cs_glob_porous_model == 3) {
-
-      cs_real_3_t *cpro_poro_div_duq
-        = (cs_real_3_t *)(cs_field_by_name("poro_div_duq")->val);
-
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          wrk[c_id][j] =   gradp[c_id][j] - frcxt[c_id][j]
-                          - cpro_poro_div_duq[c_id][j];
-        }
-    }
-
-    else {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          wrk[c_id][j] = gradp[c_id][j] - frcxt[c_id][j];
-        }
-    }
-
-  }
-  else {
-
-    cs_array_real_copy(3*n_cells, (const cs_real_t *)gradp, (cs_real_t *)wrk);
-
-  }
-
   const cs_real_t arak = vp_param->arak;
 
   /* Rhie and Chow filter */
   if (arak > 0.) {
+
+    if (vp_param->iphydr == 1) {
+
+      if (cs_glob_porous_model == 3) {
+
+        cs_real_3_t *cpro_poro_div_duq
+          = (cs_real_3_t *)(cs_field_by_name("poro_div_duq")->val);
+
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            wrk[c_id][j] =   gradp[c_id][j] - frcxt[c_id][j]
+                           - cpro_poro_div_duq[c_id][j];
+          }
+      }
+
+      else {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            wrk[c_id][j] = gradp[c_id][j] - frcxt[c_id][j];
+          }
+      }
+
+    }
+    else {
+
+      cs_array_real_copy(3*n_cells, (const cs_real_t *)gradp, (cs_real_t *)wrk);
+
+    }
 
     if (   (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
         && vp_param->rcfact == 0) {
@@ -1264,14 +1263,14 @@ _pressure_correction_fv(int        iterns,
         cs_real_t wrkn[3];
 
         wrkn[0] = arsr * (  da_uu[c_id][0]*wrk[c_id][0]
-                           + da_uu[c_id][3]*wrk[c_id][1]
-                           + da_uu[c_id][5]*wrk[c_id][2]);
+                          + da_uu[c_id][3]*wrk[c_id][1]
+                          + da_uu[c_id][5]*wrk[c_id][2]);
         wrkn[1] = arsr * (  da_uu[c_id][3]*wrk[c_id][0]
-                           + da_uu[c_id][1]*wrk[c_id][1]
-                           + da_uu[c_id][4]*wrk[c_id][2]);
+                          + da_uu[c_id][1]*wrk[c_id][1]
+                          + da_uu[c_id][4]*wrk[c_id][2]);
         wrkn[2] = arsr * (  da_uu[c_id][5]*wrk[c_id][0]
-                           + da_uu[c_id][4]*wrk[c_id][1]
-                           + da_uu[c_id][2]*wrk[c_id][2]);
+                          + da_uu[c_id][4]*wrk[c_id][1]
+                          + da_uu[c_id][2]*wrk[c_id][2]);
 
         wrk[c_id][0] = wrkn[0];
         wrk[c_id][1] = wrkn[1];
@@ -1856,7 +1855,7 @@ _pressure_correction_fv(int        iterns,
       cpro_divu[c_id] -= cell_f_vol[c_id]*gamcav[c_id]*(1./rho2 - 1./rho1);
   }
 
-  /* Norm resiudal
+  /* Norm residual
    * Historical norm for the pressure step:
    *   div(rho u* + dt gradP^(n))-Gamma
    *   i.e.  RHS of the pressure + div(dt gradP^n) (otherwise there is a risk
@@ -1864,8 +1863,9 @@ _pressure_correction_fv(int        iterns,
    *   balance. */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t dt_d_rho = dt[c_id] / crom[c_id];
     for (cs_lnum_t j = 0; j < 3; j++) {
-      wrk[c_id][j] = (dt[c_id] / crom[c_id]) * gradp[c_id][j];
+      wrk[c_id][j] = dt_d_rho * gradp[c_id][j];
     }
   }
 
@@ -1874,7 +1874,6 @@ _pressure_correction_fv(int        iterns,
 
   {
     int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
-    int init = 1;
 
     /* VOF algorithm: the pressure step corresponds to the
        correction of the volumetric flux, not the mass flux */
@@ -1898,7 +1897,7 @@ _pressure_correction_fv(int        iterns,
                  coefav, coefbv,
                  iflux, bflux);
 
-    cs_divergence(m, init, iflux, bflux, res);
+    cs_divergence(m, 1, iflux, bflux, res);
   }
 
   BFT_FREE(iflux);

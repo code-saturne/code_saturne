@@ -2374,22 +2374,27 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   }
   else {
-
-    int t_order = 1;
-    if (cs_glob_time_scheme->time_order == 2 && vp_param->itpcol == 1)
-      t_order = 2;
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_real_t drom;
-      if (t_order == 2)
-        drom = (1.5*croma[c_id] - 0.5*cromaa[c_id] - fp->ro0);
-      else
-        drom = (crom[c_id] - fp->ro0);
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii] )
-                          * cell_f_vol[c_id];
+    /* 2nd order */
+    if (cs_glob_time_scheme->time_order == 2 && vp_param->itpcol == 1) {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t drom = (1.5*croma[c_id] - 0.5*cromaa[c_id] - fp->ro0);
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii] )
+                            * cell_f_vol[c_id];
+      }
     }
 
+    /* 1st order */
+    else {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t drom = (crom[c_id] - fp->ro0);
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii] )
+                            * cell_f_vol[c_id];
+      }
+    }
   }
 
   BFT_FREE(grad);
@@ -2498,7 +2503,7 @@ _velocity_prediction(const cs_mesh_t             *m,
        *          rho^n grad k^n if rho     extrapolated */
       st_ctrb = c_st_vel;
     }
-    /* If the source terms are not extrapolate in time: trav or trava */
+    /* If the source terms are not extrapolated in time: trav or trava */
     else {
       if (vp_param->nterup == 1)
         st_ctrb = trav;
