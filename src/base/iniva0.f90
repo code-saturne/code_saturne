@@ -169,7 +169,7 @@ do ifac = 1, nfabor
 enddo
 
 ! Boussinesq
-if (ibeta.ge.0) then
+if (idilat.eq.0) then
   call field_get_val_s(ibeta, cpro_beta)
   do iel = 1, ncelet
     cpro_beta(iel) = -1.d0
