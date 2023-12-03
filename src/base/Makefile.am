@@ -180,6 +180,7 @@ cs_sat_coupling.h \
 cs_scalar_clipping.h \
 cs_search.h \
 cs_selector.h \
+cs_solid_zone.h \
 cs_solve_equation.h \
 cs_solve_navier_stokes.h \
 cs_sort.h \
@@ -370,6 +371,7 @@ cs_scalar_clipping.c\
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
+cs_solid_zone.c \
 cs_solve_equation.c \
 cs_solve_navier_stokes.c \
 cs_sort.c \

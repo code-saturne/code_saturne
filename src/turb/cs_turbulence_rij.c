@@ -70,6 +70,7 @@
 #include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
+#include "cs_solid_zone.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
@@ -674,11 +675,22 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   const cs_real_t deltij[6] = {1, 1, 1, 0, 0, 0};
 
+  cs_lnum_t solid_stride = 1;
+  const int c_is_solid_ref[1] = {0};
+  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  if (c_is_solid == NULL) {
+    c_is_solid = c_is_solid_ref;
+    solid_stride = 0;
+  }
+
   /* Production, Pressure-Strain correlation, dissipation
    * ---------------------------------------------------- */
 
 # pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    if (c_is_solid[solid_stride*c_id])
+      continue;
 
     cs_real_t impl_lin_cst = 0, impl_id_cst = 0;
 
@@ -809,6 +821,9 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     }
 
   } /* end loop on cells */
+
+  if (c_is_solid != c_is_solid_ref)
+    BFT_FREE(c_is_solid);
 
   /* Coriolis terms in the Phi1 and production
    * ----------------------------------------- */
@@ -1090,6 +1105,14 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   const cs_real_6_t deltij = {1, 1, 1, 0, 0, 0};
 
+  cs_lnum_t solid_stride = 1;
+  const int c_is_solid_ref[1] = {0};
+  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  if (c_is_solid == NULL) {
+    c_is_solid = c_is_solid_ref;
+    solid_stride = 0;
+  }
+
   /* Production, Pressure-Strain correlation, dissipation
    * ---------------------------------------------------- */
 
@@ -1113,6 +1136,9 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      if (c_is_solid[solid_stride*c_id])
+        continue;
 
       /* Half-traces of Prod and R */
       const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
@@ -1172,6 +1198,9 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
+      if (c_is_solid[solid_stride*c_id])
+        continue;
+
       /* Half-traces of Prod and R */
       const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
       const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
@@ -1197,6 +1226,9 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
     }
 
   }
+
+  if (c_is_solid != c_is_solid_ref)
+    BFT_FREE(c_is_solid);
 
   /* Coriolis terms in the Phi1 and production
    * -----------------------------------------*/
@@ -1532,8 +1564,19 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
   BFT_MALLOC(w2, n_cells_ext, cs_real_t);
 
+  cs_lnum_t solid_stride = 1;
+  const int c_is_solid_ref[1] = {0};
+  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  if (c_is_solid == NULL) {
+    c_is_solid = c_is_solid_ref;
+    solid_stride = 0;
+  }
+
 # pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    if (c_is_solid[solid_stride*c_id])
+      continue;
 
     cs_real_t xnal[3] = {0, 0, 0};
 
@@ -1925,6 +1968,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
+        if (c_is_solid[solid_stride*c_id])
+          continue;
+
         const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
         const cs_real_t k_ov_eps = trrij / cvara_ep[c_id];
 
@@ -1987,6 +2033,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     } /* End of test on coupled components */
 
   } /* End for buoyancy source term */
+
+  if (c_is_solid != c_is_solid_ref)
+    BFT_FREE(c_is_solid);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
    * -------------------------------------------------------------------- */
@@ -2454,8 +2503,6 @@ _solve_epsilon(int              phase_id,
                       viscb);
   }
 
-
-
   /* Solving
    * ------- */
 
@@ -2465,6 +2512,8 @@ _solve_epsilon(int              phase_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       rhs[c_id] += thetp1*c_st_prv[c_id];
   }
+
+  cs_solid_zone_set_zero_on_cells(1, rhs);
 
   /* Get boundary conditions coefficients */
 
@@ -3119,9 +3168,9 @@ cs_turbulence_rij(int          phase_id,
   cs_real_6_t *viscce;
   cs_real_2_t *weighf;
 
-   BFT_MALLOC(weighb, n_b_faces, cs_real_t);
-   BFT_MALLOC(weighf, n_i_faces, cs_real_2_t);
-   BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(weighb, n_b_faces, cs_real_t);
+  BFT_MALLOC(weighf, n_i_faces, cs_real_2_t);
+  BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
 
    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
      if (turb_rans_model->irijco == 1)
@@ -3205,6 +3254,8 @@ cs_turbulence_rij(int          phase_id,
        for (cs_lnum_t ii = 0; ii < 6; ii++)
          smbrts[c_id][ii] += thetp1 * c_st_prv[c_id][ii];
    }
+
+   cs_solid_zone_set_zero_on_cells(6, (cs_real_t *)smbrts);
 
    /* All boundary convective flux with upwind */
    int icvflb = 0;
@@ -3454,6 +3505,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
   BFT_FREE(w1);
 
+  cs_solid_zone_set_zero_on_cells(1, rhs);
+
   /* Effective resolution of the equation of alpha
      ============================================= */
 
@@ -3508,6 +3561,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
   BFT_FREE(dpvar);
   BFT_FREE(rhs);
+
+  cs_solid_zone_set_scalar_on_cells(1., cvar_al);
 
   /* Clipping
      ======== */
@@ -3599,6 +3654,10 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
     }
   }
 
+  cs_solid_zone_set_zero_on_cells(6, (cs_real_t *)cvar_rij);
+  cs_solid_zone_set_scalar_on_cells(1e-12, cvar_ep);
+  //cs_solid_zone_set_zero_on_cells(1, cvar_ep);
+
   /* For EBRSM, initialize alpha */
 
   if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
@@ -3682,6 +3741,14 @@ cs_turbulence_rij_clip(int        phase_id,
   const cs_real_t trref = rijmax[0] + rijmax[1] + rijmax[2];
   const cs_real_t rijref = cs_math_fmax(trref/3., cs_math_epzero);
 
+  cs_lnum_t solid_stride = 1;
+  const int c_is_solid_ref[1] = {0};
+  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  if (c_is_solid == NULL) {
+    c_is_solid = c_is_solid_ref;
+    solid_stride = 0;
+  }
+
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   {
     cs_lnum_t t_icltot = 0;
@@ -3694,6 +3761,16 @@ cs_turbulence_rij_clip(int        phase_id,
     for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++) {
 
       int is_clipped = 0;
+
+      /* Special case for solid cells (which are set to 0 but should
+         not count as clippings) */
+
+      if (c_is_solid[solid_stride*c_id]) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          cvar_rij[c_id][ii] = 0;
+        cvar_ep[c_id] = 1e-12;
+        continue;
+      }
 
       /* Check if R is positive and ill-conditioned (since the former
        * will induce the latter after clipping ...*/
@@ -3818,6 +3895,9 @@ cs_turbulence_rij_clip(int        phase_id,
     icltot += t_icltot;
   }
 
+  if (c_is_solid != c_is_solid_ref)
+    BFT_FREE(c_is_solid);
+
   /* Store number of clippings for logging */
 
   cs_lnum_t iclrij_max[6] = {0, 0, 0, 0, 0, 0}, iclep_max[1] = {0};
@@ -3830,8 +3910,115 @@ cs_turbulence_rij_clip(int        phase_id,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Compute Rusanov equivalent diffusivity of the model
+/*!
+ * \brief Compute the turbulent viscosity for the Reynolds Stress model.
  *
+ * \param[in]  phase_id  turbulent phase id (-1 for single phase flow)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_mu_t(int  phase_id)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  /* Initialization
+   * ============== */
+
+  /* Map field arrays */
+
+  const cs_field_t *f_rij = CS_F_(rij);
+  const cs_field_t *f_eps = CS_F_(eps);
+  const cs_field_t *f_alpbl = CS_F_(alp_bl);
+  const cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_mut = CS_F_(mu_t);
+
+  if (phase_id >= 0) {
+    f_rij = CS_FI_(rij, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_alpbl = CS_FI_(alp_bl, phase_id);
+    f_rho = CS_FI_(rho, phase_id);
+    f_mut = CS_FI_(mu_t, phase_id);
+  }
+
+  const cs_real_6_t *cvar_rij = (const cs_real_6_t *)f_rij->val;
+  const cs_real_t *cvar_ep = f_eps->val;
+  const cs_real_t *crom = f_rho->val;
+  cs_real_t *visct = f_mut->val;
+
+  /* EBRSM case */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+
+    cs_real_3_t *grad_al = NULL;
+    BFT_MALLOC(grad_al, n_cells_ext, cs_real_3_t);
+    cs_field_gradient_scalar(f_alpbl, true, 1, grad_al);
+
+    const cs_real_t *cvar_al = f_alpbl->val;
+
+#   pragma omp parallel if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t xrij[3][3];
+      xrij[0][0] = cvar_rij[c_id][0];
+      xrij[1][1] = cvar_rij[c_id][1];
+      xrij[2][2] = cvar_rij[c_id][2];
+      xrij[1][0] = cvar_rij[c_id][3];
+      xrij[2][1] = cvar_rij[c_id][4];
+      xrij[2][0] = cvar_rij[c_id][5];
+      xrij[0][1] = xrij[1][0];
+      xrij[0][2] = xrij[2][0];
+      xrij[1][2] = xrij[2][1];
+
+      /* Compute the magnitude of the Alpha gradient */
+      cs_real_t xnal[3];
+      cs_math_3_normalize(grad_al[c_id], xnal);
+
+      cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
+
+      cs_real_t xk = 0.5 * (xrij[0][0] + xrij[1][1] + xrij[2][2]);
+      cs_real_t xe = cvar_ep[c_id];
+
+      /* We compute the normal Reynolds Stresses */
+
+      cs_real_t xrnn = 0;
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          xrnn += xrij[ii][jj]*xnal[jj]*xnal[ii];
+      }
+      xrnn = (1.-alpha3)*xrnn + alpha3*xk;
+      xrnn = cs_math_fmax(xrnn, 1.e-12);
+
+      visct[c_id] = crom[c_id] * cs_turb_cmu * xrnn * xk / xe;
+    }
+
+    BFT_FREE(grad_al);
+
+  }
+
+  /* SSG and LRR */
+
+  else {
+
+#   pragma omp parallel if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cs_real_t xk = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+      cs_real_t xrnn = cs_math_fmax(xk, 1.e-12);
+      cs_real_t xe = cvar_ep[c_id];
+
+      visct[c_id] = crom[c_id] * cs_turb_cmu * xrnn * xk / xe;
+    }
+
+  }
+
+  /* Zero turbulent viscosity for solid cells */
+
+  cs_solid_zone_set_zero_on_cells(1, visct);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Compute Rusanov equivalent diffusivity of the model.
  !*/
 /*----------------------------------------------------------------------------*/
 

@@ -114,9 +114,19 @@ cs_turbulence_rij_clip(int        phase_id,
                        cs_lnum_t  n_cells);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Compute Rusanov equivalent diffusivity of the model
+/*!
+ * \brief Compute the turbulent viscosity for the Reynolds Stress model.
  *
- !*/
+ * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_mu_t(int  phase_id);
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Compute Rusanov equivalent diffusivity of the model.
+ */
 /*----------------------------------------------------------------------------*/
 
 void
