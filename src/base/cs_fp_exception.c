@@ -136,9 +136,10 @@ cs_fp_exception_disable_trap(void)
 {
 #if defined(CS_FPE_TRAP)
   if (_fenv_save == 0) {
-    if (fegetenv(&_fenv_old) == 0)
+    if (fegetenv(&_fenv_old) == 0) {
       _fenv_save += 1;
-    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+      fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+    }
   }
   else
     _fenv_save += 1;
