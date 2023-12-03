@@ -3,6 +3,9 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Internal coupling for conjugate heat transfer: fix spurious velocity
+  in solid zone with RSM models.
+
 - Lagrangian module: fix flags for boundary u* field.
   Ths fixes GitHub issue #103.
 

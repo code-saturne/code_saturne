@@ -64,6 +64,7 @@
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
+#include "cs_solid_zone.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
@@ -605,6 +606,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
     }
 
   } /* End loop on cells */
+
+  cs_solid_zone_set_zero_on_cells(3, (cs_real_t *)xut);
 
   /* FIXME the line below would reproduce the previous behavior, which
      is incorrect (see issue #387). Either we should consider

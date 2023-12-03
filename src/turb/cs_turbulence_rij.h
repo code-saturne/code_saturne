@@ -108,6 +108,15 @@ void
 cs_turbulence_rij_clip(cs_lnum_t  n_cells);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the turbulent viscosity for the Reynolds Stress model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_mu_t(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

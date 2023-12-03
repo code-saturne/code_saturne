@@ -176,6 +176,7 @@ cs_sat_coupling.h \
 cs_scalar_clipping.h \
 cs_search.h \
 cs_selector.h \
+cs_solid_zone.h \
 cs_sort.h \
 cs_sort_partition.h \
 cs_syr_coupling.h \
@@ -361,6 +362,7 @@ cs_scalar_clipping.c\
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
+cs_solid_zone.c \
 cs_sort.c \
 cs_sort_partition.c \
 cs_syr_coupling.c \
