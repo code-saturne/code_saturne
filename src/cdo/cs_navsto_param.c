@@ -1143,11 +1143,15 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the numerical settings defined for the Navier-Stokes system
- *         to an equation related to this system.
+ * \brief Apply the numerical settings defined for the Navier-Stokes system to
+ *        an equation related to this system. Be aware that the user-defined
+ *        settings can be modified in this function when a different choice is
+ *        set between the settings for the Navier-Stokes system and the
+ *        settings for the momentum equation. The final choice is given by the
+ *        settings for the Navier-Stokes system.
  *
- * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in, out]  eqp    pointer to a \ref cs_equation_param_t structure
+ * \param[in]      nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] eqp    pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1161,13 +1165,15 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
 
   const char  *ss_key = _space_scheme_key[nsp->space_scheme];
 
-  cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
+  if (nsp->space_scheme != eqp->space_scheme)
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
 
   /*  Set the way DoFs are defined */
 
   const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
 
-  cs_equation_param_set(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
+  if (nsp->dof_reduction_mode != eqp->dof_reduction)
+    cs_equation_param_set(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
 
   /*  Set quadratures type */
 
