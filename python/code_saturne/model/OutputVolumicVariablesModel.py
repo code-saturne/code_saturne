@@ -127,7 +127,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         and possibly postprocessing fields).
         """
 
-        tags = ['variable', 'property', 'scalar']
+        tags = ['variable', 'property']
         if time_averages:
             tags.append('time_average')
 
