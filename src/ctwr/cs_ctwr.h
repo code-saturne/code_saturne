@@ -70,6 +70,7 @@ typedef enum {
 
   CS_CTWR_COUNTER_CURRENT = 1,   /*!< counter-current zone */
   CS_CTWR_CROSS_CURRENT = 2,     /*!< cross-current zone */
+  CS_CTWR_INJECTION = 3,         /*!< water injection zone */
 
 } cs_ctwr_zone_type_t;
 
@@ -88,7 +89,7 @@ typedef struct {
   cs_ctwr_model_t  evap_model;
   bool             has_rain;
   bool             solve_rain_velocity; /*!< Activate drift velocity
-                                          resulution */
+                                          resolution */
 } cs_ctwr_option_t;
 
 /*============================================================================
