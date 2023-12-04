@@ -106,6 +106,7 @@ dist_model_PYTHON = \
   TurboMachineryModel.py \
   TurbulenceModel.py \
   TurbulenceNeptuneModel.py \
+	UserCalculatorModel.py \
   UsersControlModel.py \
   XMLengine.py \
   XMLinitializeNeptune.py \

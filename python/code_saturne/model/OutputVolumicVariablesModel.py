@@ -185,12 +185,14 @@ class OutputVolumicVariablesModel(Variables, Model):
 
             # Check that we wish to show the field
             if not (node['support'] and node['support'] == "boundary"):
-                # Add main field. "-1" is used as default since for
-                # vectors/tensors it yields all components
-                dicoLabel2Name[label] = (name, str(-1))
 
                 # Check if we want to also get components
                 dim = node['dimension']
+
+                # Add main field. "-1" is used as default since for
+                # vectors/tensors it yields all components
+                dicoLabel2Name[label] = (name, str(-1), str(dim))
+
                 if dim and int(dim) > 1 and get_components:
                     # If we consider the Rij tensor, the user will see
                     # R11, R22, ... in the GUI instead of Rij[0], Rij[1], ...

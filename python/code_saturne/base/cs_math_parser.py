@@ -726,24 +726,30 @@ class cs_math_parser:
         tokens, comments = self.tokenize(segments)
 
         for t in tokens:
-            tk = t[0]
-            if tk not in known_symbols:
-                # We use a double if and not if/else because some symbols
-                # may be present in both lists
-                if tk in glob_tokens.keys():
-                    usr_defs.append(glob_tokens[tk] + '\n')
-                    known_symbols.append(tk)
-                if tk in loop_tokens.keys():
-                    usr_code.append(loop_tokens[tk] + '\n')
-                    if tk not in known_symbols:
-                        known_symbols.append(tk)
+            # In the case of components, ensure the main field is added
+            tklist = [t[0]]
+            if (bool(re.search('\[[0-9]\]', t[0]))):
+                tklist.append(re.sub('\[[0-9]\]', '', t[0]))
 
-                    # For momentum source terms, check for velocity
-                    if func_type == "src" and tk in ['u','v','w']:
-                        if 'velocity' not in known_symbols:
-                            if 'velocity' in glob_tokens:
-                                known_symbols.append('velocity')
-                                usr_defs.append(glob_tokens['velocity']+'\n')
+            for tk in tklist:
+                if tk not in known_symbols:
+                    print("New token: ", tk)
+                    # We use a double if and not if/else because some symbols
+                    # may be present in both lists
+                    if tk in glob_tokens.keys():
+                        usr_defs.append(glob_tokens[tk] + '\n')
+                        known_symbols.append(tk)
+                    if tk in loop_tokens.keys():
+                        usr_code.append(loop_tokens[tk] + '\n')
+                        if tk not in known_symbols:
+                            known_symbols.append(tk)
+
+                        # For momentum source terms, check for velocity
+                        if func_type == "src" and tk in ['u','v','w']:
+                            if 'velocity' not in known_symbols:
+                                if 'velocity' in glob_tokens:
+                                    known_symbols.append('velocity')
+                                    usr_defs.append(glob_tokens['velocity']+'\n')
 
         #-------------------------
 
@@ -794,6 +800,13 @@ class cs_math_parser:
 
                 elif func_type == 'ibm':
                     new_v = '*ipenal'
+
+                elif func_type == 'pca':
+                    if nreq > 1:
+                        ir = req.index(tk)
+                        new_v = 'retvals[%d * e_id + %d]' % (nreq, ir)
+                    else:
+                        new_v = 'retvals[e_id]'
 
                 if tk in req_to_replace:
                     req_to_replace.remove(tk)

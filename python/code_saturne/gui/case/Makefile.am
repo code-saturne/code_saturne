@@ -121,6 +121,7 @@ VerifyExistenceLabelDialogView.py \
 WelcomeView.py \
 XMLEditorView.py \
 SpeciesView.py \
+UserCalculatorView.py \
 UsersControlView.py \
 OutputFieldsView.py \
 OpenTurnsDialogView.py \
@@ -229,6 +230,7 @@ MainFieldsInitialization.ui \
 MainFieldsSourceTerms.ui \
 CathareCouplingForm.ui \
 BoundaryConditionsNeptune.ui \
+UserCalculatorForm.ui \
 UsersControl.ui \
 OutputFields.ui \
 Solid.ui \

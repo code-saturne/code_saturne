@@ -61,6 +61,7 @@
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_file.h"
+#include "cs_function.h"
 #include "cs_log.h"
 #include "cs_gui_util.h"
 #include "cs_gui_boundary_conditions.h"
@@ -70,6 +71,7 @@
 #include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_meg_prototypes.h"
+#include "cs_meg_xdef_wrapper.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
@@ -81,6 +83,7 @@
 #include "cs_param_sles.h"
 #include "cs_partition.h"
 #include "cs_physical_model.h"
+#include "cs_post.h"
 #include "cs_rotation.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
@@ -1697,6 +1700,29 @@ _read_diffusivity(void)
       }
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Get cs_mesh_location type from string
+ *----------------------------------------------------------------------------*/
+static cs_mesh_location_type_t
+_cs_mesh_location_type_from_str(const char *location_name)
+{
+  cs_mesh_location_type_t loc = CS_MESH_LOCATION_NONE;
+
+  if (strcmp(location_name, "cells") == 0)
+    loc = CS_MESH_LOCATION_CELLS;
+
+  else if (strcmp(location_name, "internal") == 0)
+    loc = CS_MESH_LOCATION_INTERIOR_FACES;
+
+  else if (strcmp(location_name, "boundary") == 0)
+    loc = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+  else if (strcmp(location_name, "vertices") == 0)
+    loc = CS_MESH_LOCATION_VERTICES;
+
+  return loc;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -4965,25 +4991,58 @@ cs_gui_user_arrays(void)
     cs_gui_node_get_int(dtn, &array_dim);
 
     const char *location_name = cs_gui_node_get_tag(tn, "support");
+    cs_mesh_location_type_t _loc
+      = _cs_mesh_location_type_from_str(location_name);
 
-    if (strcmp(location_name, "cells") == 0)
-      cs_parameters_add_property(name, array_dim, CS_MESH_LOCATION_CELLS);
+    cs_parameters_add_property(name, array_dim, _loc);
+  }
+}
 
-    else if (strcmp(location_name, "internal") == 0)
-      cs_parameters_add_property(name,
-                                 array_dim,
-                                 CS_MESH_LOCATION_INTERIOR_FACES);
+/*----------------------------------------------------------------------------
+ * Define user calculator functions through the GUI
+ *----------------------------------------------------------------------------*/
 
-    else if (strcmp(location_name, "boundary") == 0)
-      cs_parameters_add_property(name,
-                                 array_dim,
-                                 CS_MESH_LOCATION_BOUNDARY_FACES);
+void
+cs_gui_calculator_functions(void)
+{
+  const char path_s[] = "user_functions/calculator/function";
+  cs_tree_node_t *tn_s = cs_tree_get_node(cs_glob_tree, path_s);
 
-    else if (strcmp(location_name, "vertices") == 0)
-      cs_parameters_add_property(name,
-                                 array_dim,
-                                 CS_MESH_LOCATION_VERTICES);
+  for (cs_tree_node_t *tn = tn_s;
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
+    const char *name = cs_gui_node_get_tag(tn, "name");
+
+    int dim = 1;
+    cs_tree_node_t *dtn = cs_tree_get_node(tn, "dimension");
+    cs_gui_node_get_int(dtn, &dim);
+
+    const char *location_name = cs_gui_node_get_tag(tn, "support");
+    cs_mesh_location_type_t _loc
+      = _cs_mesh_location_type_from_str(location_name);
+
+    /* Define the cs_function_t based on MEG function*/
+    cs_tree_node_t *n_f = cs_tree_get_node(tn, "formula");
+    if (n_f != NULL) {
+      cs_meg_xdef_input_t *_input
+        = cs_meg_xdef_wrapper_add_input(CS_MEG_CALCULATOR_FUNC,
+                                        -1,
+                                        dim,
+                                        name,
+                                        NULL);
+
+      cs_function_t *f
+        = cs_function_define_by_analytic_func(name,
+                                              _loc,
+                                              dim,
+                                              true,
+                                              cs_meg_xdef_wrapper,
+                                              _input);
+      cs_function_set_label(f, name);
+      f->post_vis = CS_POST_ON_LOCATION;
+      f->log      = 1;
+    }
   }
 }
 

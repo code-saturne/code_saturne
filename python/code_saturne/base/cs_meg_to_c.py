@@ -151,6 +151,14 @@ cs_meg_post_profiles(const char       *name,
 'pwa':"""void
 cs_meg_post_activate(void)
 {
+""",
+'pca':"""void
+cs_meg_post_calculator(const char       *name,
+                       const cs_lnum_t   n_elts,
+                       const cs_lnum_t  *elt_ids,
+                       const cs_real_t   xyz[][3],
+                       cs_real_t        *retvals)
+{
 """
 }
 
@@ -161,7 +169,8 @@ _function_names = {'vol': 'cs_meg_volume_function.c',
                    'ibm': 'cs_meg_immersed_boundaries_inout.c',
                    'fsi': 'cs_meg_fsi_struct.c',
                    'pfl': 'cs_meg_post_profile.c',
-                   'pwa': 'cs_meg_post_output.c'}
+                   'pwa': 'cs_meg_post_output.c',
+                   'pca': 'cs_meg_post_calculator.c'}
 
 _block_comments = {'vol': 'User defined formula for variable(s) %s over zone %s',
                    'bnd': 'User defined formula for "%s" over BC=%s',
@@ -170,7 +179,8 @@ _block_comments = {'vol': 'User defined formula for variable(s) %s over zone %s'
                    'ibm': 'User defined explicit formula of %s indicator for object %s',
                    'fsi': 'User defined FSI coupling structure %s for zone %s',
                    'pfl': 'User-defined %s for profile %s',
-                   'pwa': 'User defined %s for writer %s'}
+                   'pwa': 'User defined %s for writer %s',
+                   'pca': 'User defined postprocessing formula for "%s"'}
 
 _func_short_to_long = {'vol': 'volume zone',
                        'bnd': 'boundary',
@@ -179,7 +189,8 @@ _func_short_to_long = {'vol': 'volume zone',
                        'ibm': 'Immersed boundaries',
                        'fsi': 'Mechanicaly-coupled structures',
                        'pfl': 'Profile coordinates',
-                       'pwa': 'Writer activation'}
+                       'pwa': 'Writer activation',
+                       'pca': 'Postprocessing calculator'}
 
 #-------------------------------------------------------------------------------
 
@@ -321,7 +332,8 @@ class meg_to_c_interpreter:
                       'ibm': {},
                       'fsi': {},
                       'pfl': {},
-                      'pwa': {}}
+                      'pwa': {},
+                      'pca': {}}
 
         self.code_to_write = ""
 
@@ -369,6 +381,9 @@ class meg_to_c_interpreter:
 
             # Writer activation
             self.generate_writer_activation_code()
+
+            # Postprocessing calculator
+            self.generate_post_calculator_code()
 
     #---------------------------------------------------------------------------
 
@@ -1222,6 +1237,121 @@ class meg_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def write_post_calculator_block(self, func_key):
+
+        if func_key not in self.funcs['pca'].keys():
+            return
+
+        func_params = self.funcs['pca'][func_key]
+
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
+
+        exp_lines_comp = func_params['lines']
+
+        name = func_key.split('::')[1]
+
+        # Get user definitions and code
+        usr_defs = ''
+        usr_code = ''
+        usr_blck = ''
+
+        tab   = "  "
+        ntabs = 2
+
+        known_symbols = []
+        coords = ['x', 'y', 'z']
+        need_coords = False
+
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
+
+        # Coordinates:
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t {} = xyz[c_id][{}];'.format(kc, str(ic))
+
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+
+        # Fields
+        label_not_name = ['Additional scalar', 'Thermal scalar', 'Pressure']
+        for f in known_fields:
+            # Get label, name and dimension
+            try:
+                (fl, fn, fdim) = f
+                fdim = int(fdim)
+                if fdim < 1:
+                    fdim = 1
+            except:
+                (fl, fn) = f
+                fdim = 1
+
+            for lnn in label_not_name:
+                if lnn in fn:
+                    fn = fl
+
+            glob_tokens[fl] = \
+                 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
+                 % (fl, fn)
+
+            if fdim == 1:
+                loop_tokens[fl] = 'const cs_real_t %s = %s_vals[c_id];' \
+                     % (fl, fl)
+            else:
+                loop_tokens[fl] = 'const cs_real_t *%s = %s_vals + %d*c_id;' \
+                     % (fl, fl, fdim)
+
+        # ------------------------
+
+        for s in required:
+            known_symbols.append(s);
+
+        known_symbols.append('#')
+
+        ntabs += 1
+
+        # Parse the user expression
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'pca',
+                                          glob_tokens,
+                                          loop_tokens,
+                                          need_for_loop=True)
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
+
+        # Write the block
+        nsplit = name.split('+')
+        usr_blck = tab + 'if (strcmp(name, "%s") == 0) {\n' % (name)
+
+        usr_blck += usr_defs
+
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = (elt_ids == NULL) ? e_id : elt_ids[e_id];\n'
+
+        usr_blck += usr_code
+
+        usr_blck += 2*tab + '}\n'
+        usr_blck += tab + '}\n'
+
+        return usr_blck
+
+    #---------------------------------------------------------------------------
+
     def write_block(self, func_type, key):
 
         # Check if function exists
@@ -1244,6 +1374,8 @@ class meg_to_c_interpreter:
             return self.write_profile_coo_block(key)
         elif func_type == 'pwa':
             return self.write_writer_activation_block(key)
+        elif func_type == 'pca':
+            return self.write_post_calculator_block(key)
         else:
             return None
 
@@ -2207,6 +2339,18 @@ class meg_to_c_interpreter:
             self.init_block('pwa', str(writer_id), 'activation',
                             formula, req, sym, known_fields=[])
 
+
+    def generate_post_calculator_code(self):
+        # Postprocessing calculator
+
+
+        from code_saturne.model.UserCalculatorModel import UserCalculatorModel
+        calculator = UserCalculatorModel(self.case)
+
+        for name in calculator.getFunctionsNamesList():
+            exp, req, known_fields, sym = calculator.getFunctionFormulaComponents(name)
+            self.init_block('pca', 'None', name, exp, req, sym, known_fields)
+
     #---------------------------------------------------------------------------
 
     def check_meg_code_syntax(self, function_name):
@@ -2369,7 +2513,10 @@ class meg_to_c_interpreter:
                     continue
                 zone_name, var_name = key.split('::')
                 var_name = var_name.replace("+", ", ")
-                m1 = _block_comments[func_type] % (var_name, zone_name)
+                if zone_name != 'None':
+                    m1 = _block_comments[func_type] % (var_name, zone_name)
+                else:
+                    m1 = _block_comments[func_type] % (var_name)
                 m2 = '  -' + '-'*len(m1) + ' */\n\n'
                 m1 = '/* ' + m1 + '\n'
 

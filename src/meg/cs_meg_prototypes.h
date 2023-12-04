@@ -214,6 +214,25 @@ cs_meg_post_profiles(const char   *name,
                      cs_real_t     coords[][3]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to compute user defined calculator formulae.
+ *        The mathematical expression is defined in the GUI.
+ *
+ * \param[in]  field_name   function name
+ * \param[in]  n_elts       number of elements related to the zone
+ * \param[in]  elt_ids      list of element ids related to the zone
+ * \param[in]  xyz          list of coordinates related to the zone
+ * \param[out] retvals      array of computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_post_calculator(const char       *name,
+                       const cs_lnum_t   n_elts,
+                       const cs_lnum_t  *elt_ids,
+                       const cs_real_t   xyz[][3],
+                       cs_real_t        *retvals);
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

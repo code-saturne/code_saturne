@@ -256,6 +256,26 @@ cs_meg_xdef_wrapper(cs_real_t         time,
       }
     }
     break;
+
+  case CS_MEG_CALCULATOR_FUNC:
+    {
+      cs_meg_post_calculator(_input->name,
+                             n_elts,
+                             elt_ids,
+                             _coords,
+                             meg_vals);
+      if (!dense_output) {
+        cs_array_real_copy_subset(n_elts,
+                                  _input->stride,
+                                  elt_ids,
+                                  CS_ARRAY_SUBSET_OUT,
+                                  meg_vals,
+                                  retval);
+        BFT_FREE(meg_vals);
+      }
+    }
+    break;
+
   default:
     {
       bft_error

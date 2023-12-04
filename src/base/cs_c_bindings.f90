@@ -2190,6 +2190,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for user calculator functions
+
+    subroutine cs_gui_calculator_functions()  &
+      bind(C, name='cs_gui_calculator_functions')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_calculator_functions
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for physical model options
 
     subroutine cs_user_model()  &

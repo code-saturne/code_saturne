@@ -344,6 +344,7 @@ call pplecd
 
 call cs_gui_user_variables
 call cs_gui_user_arrays
+call cs_gui_calculator_functions
 
 ! Solid zones
 

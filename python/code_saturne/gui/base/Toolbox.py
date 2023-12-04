@@ -221,6 +221,10 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.gui.case.OutputControlView as Page
         thisPage = Page.OutputControlView(root, case, tree)
 
+    elif page_name == tr("Calculator"):
+        import code_saturne.gui.case.UserCalculatorView as Page
+        thisPage = Page.UserCalculatorView(root, case)
+
     elif page_name == tr("Additional user arrays"):
         import code_saturne.gui.case.UsersControlView as Page
         thisPage = Page.UsersControlView(root, case)
