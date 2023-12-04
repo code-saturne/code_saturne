@@ -1113,11 +1113,15 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the numerical settings defined for the Navier-Stokes system
- *         to an equation related to this system.
+ * \brief Apply the numerical settings defined for the Navier-Stokes system to
+ *        an equation related to this system. Be aware that the user-defined
+ *        settings can be modified in this function when a different choice is
+ *        set between the settings for the Navier-Stokes system and the
+ *        settings for the momentum equation. The final choice is given by the
+ *        settings for the Navier-Stokes system.
  *
- * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in, out]  eqp    pointer to a \ref cs_equation_param_t structure
+ * \param[in]      nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] eqp    pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
