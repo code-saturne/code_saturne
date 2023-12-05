@@ -48,6 +48,12 @@ Master (not on release branches yet)
   on interior faces or interior face centers.
   * The "per cell" and "per vertex" maxima are removed.
 
+- Modifications in the way to set MUMPS solvers using cs_sles_param_t
+  structure. Advanced settings can now be set thanks to the two functions
+  cs_param_sles_mumps() and cs_param_sles_mumps_advanced(). More advanced
+  settings can still be specified using the user-defined function
+  cs_user_sles_mumps_hook
+
 ### Numerics:
 
 - Use local fixed-point algorithm for vector and tensor least-squares
@@ -76,6 +82,10 @@ Master (not on release branches yet)
   but it seems that Star-CCM+ 2022 uses it.
 
 - Preprocessor: fix reading of polygons in MED files, broken in v7.3.
+
+- Fix numerical settings for Navier-Stokes problems with CDO schemes. User
+  modifications may not be taken into account and one remains to the default
+  settings (e.g. Hodge parameters for the viscous term)
 
 Release 8.0.0 (2023-06-30)
 --------------------------

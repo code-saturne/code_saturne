@@ -1713,15 +1713,6 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
     KSPSetType(u_ksp, KSPFGMRES);
     break;
 
-  case CS_PARAM_ITSOL_MUMPS_LDLT:     /* Direct solver (factorization) */
-  case CS_PARAM_ITSOL_MUMPS_SYM:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver. Try MUMPS.",
-              __func__);
-    break;
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver.", __func__);
     break;
@@ -2676,11 +2667,6 @@ _notay_hook(void     *context,
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_MUMPS:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_SYM:
 #if defined(PETSC_HAVE_MUMPS)
     {
       KSPSetType(ksp, KSPPREONLY);

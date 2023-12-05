@@ -128,18 +128,21 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
+/* Type of factorization to perform with MUMPS (precision / facto) */
+
 typedef enum {
 
-  CS_SLES_MUMPS_DOUBLE_LDLT,  /* LDLt factorization with dmumps */
-  CS_SLES_MUMPS_DOUBLE_LU,    /* LU factorization with dmumps */
-  CS_SLES_MUMPS_DOUBLE_SYM,   /* LU factorization with dmumps for sym. mat.*/
-  CS_SLES_MUMPS_SINGLE_LDLT,  /* LDLt factorization with smumps */
-  CS_SLES_MUMPS_SINGLE_LU,    /* LU factorization with smumps */
-  CS_SLES_MUMPS_SINGLE_SYM,   /* LU factorization with smumps for sym. mat.*/
+  CS_SLES_MUMPS_DOUBLE_LU,       /* LU facto. with dmumps */
+  CS_SLES_MUMPS_DOUBLE_LDLT_SYM, /* LDLt facto. with dmumps for sym. matrices */
+  CS_SLES_MUMPS_DOUBLE_LDLT_SPD, /* LDLt facto. with dmumps for SPD matrices */
+  CS_SLES_MUMPS_SINGLE_LU,       /* LU facto. with smumps */
+  CS_SLES_MUMPS_SINGLE_LDLT_SYM, /* LDLt facto. with smumps for sym. matrices */
+  CS_SLES_MUMPS_SINGLE_LDLT_SPD, /* LDLt facto. with smumps for SPD matrices */
 
   CS_SLES_MUMPS_N_TYPES
 
 } cs_sles_mumps_type_t;
+
 
 struct _cs_sles_mumps_t {
 
@@ -228,49 +231,42 @@ static inline cs_sles_mumps_type_t
 _set_type(const cs_param_sles_t  *slesp)
 {
   assert(slesp != NULL);
+  assert(slesp->context_param != NULL);
 
-  switch (slesp->solver) {
+  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
 
-  case CS_PARAM_ITSOL_MUMPS:
-    return CS_SLES_MUMPS_DOUBLE_LU;
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-    return CS_SLES_MUMPS_DOUBLE_LDLT;
-  case CS_PARAM_ITSOL_MUMPS_SYM:
-    return CS_SLES_MUMPS_DOUBLE_SYM;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-    return CS_SLES_MUMPS_SINGLE_LU;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-    return CS_SLES_MUMPS_SINGLE_LDLT;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
-    return CS_SLES_MUMPS_SINGLE_SYM;
+  if (mumpsp->is_single) {
 
-  default: /* Not a solver. Try as preconditioner */
-    switch(slesp->precond) {
+    switch(mumpsp->facto_type) {
 
-    case CS_PARAM_PRECOND_MUMPS:
-      return CS_SLES_MUMPS_DOUBLE_LU;
-    case CS_PARAM_PRECOND_MUMPS_LDLT:
-      return CS_SLES_MUMPS_DOUBLE_LDLT;
-    case CS_PARAM_PRECOND_MUMPS_SYM:
-      return CS_SLES_MUMPS_DOUBLE_SYM;
-    case CS_PARAM_PRECOND_MUMPS_FLOAT:
+    case CS_PARAM_SLES_FACTO_LU:
       return CS_SLES_MUMPS_SINGLE_LU;
-    case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
-      return CS_SLES_MUMPS_SINGLE_LDLT;
-    case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
-      return CS_SLES_MUMPS_SINGLE_SYM;
+    case CS_PARAM_SLES_FACTO_LDLT_SYM:
+      return CS_SLES_MUMPS_SINGLE_LDLT_SYM;
+    case CS_PARAM_SLES_FACTO_LDLT_SPD:
+      return CS_SLES_MUMPS_SINGLE_LDLT_SPD;
 
     default:
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: MUMPS not defined as solver or as preconditioner\n"
-                "%s: for the system \"%s\".\n",
-                __func__, __func__, slesp->name);
-    break;
+      return CS_SLES_MUMPS_N_TYPES;
     }
 
   }
+  else {
 
-  return CS_SLES_MUMPS_N_TYPES;
+    switch(mumpsp->facto_type) {
+
+    case CS_PARAM_SLES_FACTO_LU:
+      return CS_SLES_MUMPS_DOUBLE_LU;
+    case CS_PARAM_SLES_FACTO_LDLT_SYM:
+      return CS_SLES_MUMPS_DOUBLE_LDLT_SYM;
+    case CS_PARAM_SLES_FACTO_LDLT_SPD:
+      return CS_SLES_MUMPS_DOUBLE_LDLT_SPD;
+
+    default:
+      return CS_SLES_MUMPS_N_TYPES;
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -291,22 +287,12 @@ _set_pc_usage(const cs_param_sles_t  *slesp)
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_MUMPS:
-  case CS_PARAM_ITSOL_MUMPS_SYM:
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
     return false;
 
   default: /* Not a solver. Try as preconditioner */
     switch(slesp->precond) {
 
     case CS_PARAM_PRECOND_MUMPS:
-    case CS_PARAM_PRECOND_MUMPS_SYM:
-    case CS_PARAM_PRECOND_MUMPS_LDLT:
-    case CS_PARAM_PRECOND_MUMPS_FLOAT:
-    case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
-    case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
       return true;
 
     default:
@@ -338,13 +324,13 @@ _is_dmumps(const cs_sles_mumps_t  *c)
 {
   switch (c->type) {
 
-  case CS_SLES_MUMPS_DOUBLE_LDLT:
-  case CS_SLES_MUMPS_DOUBLE_SYM:
+  case CS_SLES_MUMPS_DOUBLE_LDLT_SPD:
+  case CS_SLES_MUMPS_DOUBLE_LDLT_SYM:
   case CS_SLES_MUMPS_DOUBLE_LU:
     return true;
 
-  case CS_SLES_MUMPS_SINGLE_LDLT:
-  case CS_SLES_MUMPS_SINGLE_SYM:
+  case CS_SLES_MUMPS_SINGLE_LDLT_SPD:
+  case CS_SLES_MUMPS_SINGLE_LDLT_SYM:
   case CS_SLES_MUMPS_SINGLE_LU:
     return false;
 
@@ -1996,6 +1982,227 @@ _native_sym_smumps(int                   verbosity,
   smumps->nnz = (MUMPS_INT8)(n_rows + n_faces);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic settings derived from the high-level interface between
+ *        code_saturne and MUMPS. These settings are done before the analysis
+ *        step and they can still be modified by the user thanks to the function
+ *        \ref cs_user_sles_mumps_hook
+ *
+ * \param[in]      type    type of factorization to handle
+ * \param[in]      slesp   pointer to the related cs_param_sles_t structure
+ * \param[in, out] mumps   pointer to a DMUMPS_STRUC_C struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
+                                           const cs_param_sles_t   *slesp,
+                                           DMUMPS_STRUC_C          *mumps)
+{
+  CS_NO_WARN_IF_UNUSED(type);
+
+  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+
+  /* Set the algorithm for the analysis step: renumbering and graph
+     manipulations */
+
+  switch (mumpsp->analysis_algo) {
+
+  case CS_PARAM_SLES_ANALYSIS_AMD:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 0;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_QAMD:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 6;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_PORD:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 4;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 3;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+    mumps->ICNTL(28) = 2;  /* parallel analysis */
+    mumps->ICNTL(29) = 1;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_METIS:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 5;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+    mumps->ICNTL(28) = 2;  /* parallel analysis */
+    mumps->ICNTL(29) = 2;
+    break;
+
+  default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
+    mumps->ICNTL(7) = 7;
+    break;
+
+  } /* Type of algorithm for the analysis step */
+
+  /* Analysis by block if requested */
+
+  if (mumpsp->block_analysis > 1)
+    mumps->ICNTL(15) = -mumpsp->block_analysis;
+
+  /* More advanced optimized settings */
+
+  if (mumpsp->advanced_optim) {
+
+    mumps->KEEP(268) = -2;  /* relaxed pivoting for large enough frontal
+                               matrices */
+
+    if (cs_glob_n_ranks > 1 || cs_glob_n_threads > 1) {
+
+      mumps->KEEP(370) = 1; /* Better memory consumption prediction */
+      mumps->KEEP(371) = 1; /* Advanced optimization */
+
+    }
+
+    if (cs_glob_n_threads > 1)
+      mumps->KEEP(401) = 1; /* Activate openMP tree parallelism (L0-threads) */
+
+  }
+
+  /* Iterative refinement */
+
+  if (mumpsp->ir_steps > 0)
+    mumps->ICNTL(10) = -mumpsp->ir_steps; /* Fixed number of iterations */
+
+  /* BLR compression */
+
+  if (mumpsp->blr_threshold > 0) {
+
+    mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
+    mumps->ICNTL(36) = 1; /* Variante de BLR (0 is also a good choice) */
+    mumps->ICNTL(37) = 0; /* Memory compression (= 1) but time consumming */
+    mumps->ICNTL(40) = 0; /* Memory compression (= 1) mixed precision */
+    mumps->CNTL(7) = mumpsp->blr_threshold; /* Compression rate */
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic settings derived from the high-level interface between
+ *        code_saturne and MUMPS. These settings are done before the analysis
+ *        step and they can still be modified by the user thanks to the function
+ *        \ref cs_user_sles_mumps_hook
+ *        Case of single-precision factorizations.
+ *
+ * \param[in]      type    type of factorization to handle
+ * \param[in]      slesp   pointer to the related cs_param_sles_t structure
+ * \param[in, out] mumps   pointer to a SMUMPS_STRUC_C struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
+                                           const cs_param_sles_t   *slesp,
+                                           SMUMPS_STRUC_C          *mumps)
+{
+  CS_NO_WARN_IF_UNUSED(type);
+
+  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+
+  /* Set the algorithm for the analysis step: renumbering and graph
+     manipulations */
+
+  switch (mumpsp->analysis_algo) {
+
+  case CS_PARAM_SLES_ANALYSIS_AMD:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 0;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_QAMD:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 6;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_PORD:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 4;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 3;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+    mumps->ICNTL(28) = 2;  /* parallel analysis */
+    mumps->ICNTL(29) = 1;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_METIS:
+    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(7) = 5;
+    break;
+
+  case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+    mumps->ICNTL(28) = 2;  /* parallel analysis */
+    mumps->ICNTL(29) = 2;
+    break;
+
+  default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
+    mumps->ICNTL(7) = 7;
+    break;
+
+  } /* Type of algorithm for the analysis step */
+
+  /* Analysis by block if requested */
+
+  if (mumpsp->block_analysis > 1)
+    mumps->ICNTL(15) = -mumpsp->block_analysis;
+
+  /* More advanced optimized settings */
+
+  if (mumpsp->advanced_optim) {
+
+    mumps->KEEP(268) = -2;  /* relaxed pivoting for large enough frontal
+                               matrices */
+
+    if (cs_glob_n_ranks > 1 || cs_glob_n_threads > 1) {
+
+      mumps->KEEP(370) = 1; /* Better memory consumption prediction */
+      mumps->KEEP(371) = 1; /* Advanced optimization */
+
+    }
+
+    if (cs_glob_n_threads > 1)
+      mumps->KEEP(401) = 1; /* Activate openMP tree parallelism (L0-threads) */
+
+  }
+
+  /* Iterative refinement */
+
+  if (mumpsp->ir_steps > 0)
+    mumps->ICNTL(10) = -mumpsp->ir_steps; /* Fixed number of iterations */
+
+  /* BLR compression */
+
+  if (mumpsp->blr_threshold > 0) {
+
+    mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
+    mumps->ICNTL(36) = 1; /* Variante de BLR (0 is also a good choice) */
+    mumps->ICNTL(37) = 0; /* Memory compression (= 1) but time consumming */
+    mumps->ICNTL(40) = 0; /* Memory compression (= 1) mixed precision */
+    mumps->CNTL(7) = mumpsp->blr_threshold; /* Compression rate */
+
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -2103,12 +2310,7 @@ cs_sles_mumps_pc_create(const cs_param_sles_t       *slesp)
   if (slesp == NULL)
     return NULL;
 
-  assert(slesp->precond == CS_PARAM_PRECOND_MUMPS            ||
-         slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT      ||
-         slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_SYM  ||
-         slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT ||
-         slesp->precond == CS_PARAM_PRECOND_MUMPS_SYM        ||
-         slesp->precond == CS_PARAM_PRECOND_MUMPS_LDLT);
+  assert(slesp->precond == CS_PARAM_PRECOND_MUMPS);
 
   cs_sles_mumps_t  *c = cs_sles_mumps_create(slesp,
                                              cs_user_sles_mumps_hook,
@@ -2394,9 +2596,9 @@ cs_sles_mumps_setup(void               *context,
 
     if (c->type == CS_SLES_MUMPS_DOUBLE_LU)
       dmumps->sym = 0;
-    else if (c->type == CS_SLES_MUMPS_DOUBLE_LDLT)
+    else if (c->type == CS_SLES_MUMPS_DOUBLE_LDLT_SPD)
       dmumps->sym = 1;
-    else if (c->type == CS_SLES_MUMPS_DOUBLE_SYM)
+    else if (c->type == CS_SLES_MUMPS_DOUBLE_LDLT_SYM)
       dmumps->sym = 2;
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -2436,9 +2638,9 @@ cs_sles_mumps_setup(void               *context,
 
     if (c->type == CS_SLES_MUMPS_SINGLE_LU)
       smumps->sym = 0;
-    else if (c->type == CS_SLES_MUMPS_SINGLE_LDLT)
+    else if (c->type == CS_SLES_MUMPS_SINGLE_LDLT_SPD)
       smumps->sym = 1;
-    else if (c->type == CS_SLES_MUMPS_SINGLE_SYM)
+    else if (c->type == CS_SLES_MUMPS_SINGLE_LDLT_SYM)
       smumps->sym = 2;
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -2495,8 +2697,8 @@ cs_sles_mumps_setup(void               *context,
     }
     break;
 
-  case CS_SLES_MUMPS_DOUBLE_LDLT:
-  case CS_SLES_MUMPS_DOUBLE_SYM:
+  case CS_SLES_MUMPS_DOUBLE_LDLT_SPD:
+  case CS_SLES_MUMPS_DOUBLE_LDLT_SYM:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2542,8 +2744,8 @@ cs_sles_mumps_setup(void               *context,
     }
     break;
 
-  case CS_SLES_MUMPS_SINGLE_LDLT:
-  case CS_SLES_MUMPS_SINGLE_SYM:
+  case CS_SLES_MUMPS_SINGLE_LDLT_SPD:
+  case CS_SLES_MUMPS_SINGLE_LDLT_SYM:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2587,6 +2789,8 @@ cs_sles_mumps_setup(void               *context,
 
     dmumps->job = MUMPS_JOB_ANALYSIS;
 
+    _automatic_dmumps_settings_before_analysis(c->type, c->sles_param, dmumps);
+
     /* Window to enable advanced user settings (before analysis) */
 
     if (c->setup_hook != NULL)
@@ -2620,6 +2824,8 @@ cs_sles_mumps_setup(void               *context,
     /* ------------- */
 
     smumps->job = MUMPS_JOB_ANALYSIS;
+
+    _automatic_smumps_settings_before_analysis(c->type, c->sles_param, smumps);
 
     /* Window to enable advanced user settings (before analysis) */
 
@@ -2949,11 +3155,11 @@ cs_sles_mumps_log(const void  *context,
     strncpy(sym_type_name, "non-symmetric", 31);
     strncpy(storage_type_name, "double-precision", 31);
     break;
-  case CS_SLES_MUMPS_DOUBLE_LDLT:
+  case CS_SLES_MUMPS_DOUBLE_LDLT_SPD:
     strncpy(sym_type_name, "symmetric; SPD", 31);
     strncpy(storage_type_name, "double-precision", 31);
     break;
-  case CS_SLES_MUMPS_DOUBLE_SYM:
+  case CS_SLES_MUMPS_DOUBLE_LDLT_SYM:
     strncpy(sym_type_name, "general symmetric", 31);
     strncpy(storage_type_name, "double-precision", 31);
     break;
@@ -2961,11 +3167,11 @@ cs_sles_mumps_log(const void  *context,
     strncpy(sym_type_name, "non-symmetric", 31);
     strncpy(storage_type_name, "single-precision", 31);
     break;
-  case CS_SLES_MUMPS_SINGLE_LDLT:
+  case CS_SLES_MUMPS_SINGLE_LDLT_SPD:
     strncpy(sym_type_name, "symmetric; SPD", 31);
     strncpy(storage_type_name, "single-precision", 31);
     break;
-  case CS_SLES_MUMPS_SINGLE_SYM:
+  case CS_SLES_MUMPS_SINGLE_LDLT_SYM:
     strncpy(sym_type_name, "general symmetric", 31);
     strncpy(storage_type_name, "single-precision", 31);
     break;

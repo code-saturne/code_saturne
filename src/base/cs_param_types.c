@@ -576,22 +576,7 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
     return "MinRes";
     break;
   case CS_PARAM_ITSOL_MUMPS:
-    return "MUMPS (LU factorization)";
-    break;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-    return "MUMPS (LU factorization) with float";
-    break;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-    return "MUMPS (LDLT factorization) with float";
-    break;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
-    return "MUMPS (LU factorization; SYM) with float";
-    break;
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-    return "MUMPS (LDLT factorization)";
-    break;
-  case CS_PARAM_ITSOL_MUMPS_SYM:
-    return "MUMPS (LU factorization; SYM)";
+    return "MUMPS";
     break;
   case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
     return "Symmetric.Gauss.Seidel";
@@ -655,22 +640,7 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
     return  "ICC0";
     break;
   case CS_PARAM_PRECOND_MUMPS:
-    return  "dMUMPS (LU)";
-    break;
-  case CS_PARAM_PRECOND_MUMPS_FLOAT:
-    return  "sMUMPS (LU)";
-    break;
-  case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
-    return  "sMUMPS (LDLt)";
-    break;
-  case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
-    return  "sMUMPS (LU;SYM)";
-    break;
-  case CS_PARAM_PRECOND_MUMPS_LDLT:
-    return  "dMUMPS (LDLt)";
-    break;
-  case CS_PARAM_PRECOND_MUMPS_SYM:
-    return  "dMUMPS (LU;SYM)";
+    return  "MUMPS";
     break;
   case CS_PARAM_PRECOND_POLY1:
     return  "Neumann.Poly.O1";

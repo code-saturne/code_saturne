@@ -47,8 +47,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_SLES_MUMPS_JOB_INIT -1
-
 /* Set of macros defined in order to match MUMPS documentation (because of the
  * difference between C/FORTRAN programming language)
  */

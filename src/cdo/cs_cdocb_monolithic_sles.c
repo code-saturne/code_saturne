@@ -280,17 +280,12 @@ cs_cdocb_monolithic_set_sles(cs_equation_param_t   *eqp,
   slesp->field_id = field_id;
 
 #if defined(HAVE_MUMPS)
-  if (slesp->solver != CS_PARAM_ITSOL_MUMPS &&
-      slesp->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
-      slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
-      slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
-    slesp->solver = CS_PARAM_ITSOL_MUMPS;
-
-  cs_sles_mumps_define(field_id,
-                       NULL,
-                       slesp,
-                       cs_user_sles_mumps_hook,
-                       NULL);
+  if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
+    cs_sles_mumps_define(field_id,
+                         NULL,
+                         slesp,
+                         cs_user_sles_mumps_hook,
+                         NULL);
 #endif  /* HAVE_MUMPS */
 
   /* Define the level of verbosity for SLES structure */
