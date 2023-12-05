@@ -4112,9 +4112,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("   Friction thermal sca.    tstar : %12.5e %12.5e\n"
-             "   Dim-less thermal sca.    tplus : %12.5e %12.5e\n"
-             "   Inverse Monin-Ob. length dlmo  : %12.5e %12.5e\n"),
-           tetmin, tetmax, tplumn, tplumx, dlmomin, dlmomax);
+             "   Dim-less thermal sca.    tplus : %12.5e %12.5e\n"),
+           tetmin, tetmax, tplumn, tplumx);
+        if (iwalfs == CS_WALL_F_S_MONIN_OBUKHOV)
+          cs_log_printf
+            (CS_LOG_DEFAULT,
+             _("   Inverse Monin-Ob. length dlmo  : %12.5e %12.5e\n"),
+             dlmomin, dlmomax);
       }
 
       cs_log_printf
