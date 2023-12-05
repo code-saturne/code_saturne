@@ -38,6 +38,7 @@
 
   - \subpage base_examples
   - \subpage note_book
+  - \subpage time_table
   - \subpage base_examples_legacy
   - \subpage channel_inlet_mapped
   - \subpage channel_inlet_auto
@@ -238,7 +239,7 @@
   a callback function of the type  of type \ref cs_dof_func_t can be defined,
   such as the following (for a time table named "inlet_temperature"):
 
-  \snippet cs_user_boundary_conditions-time_table.c timetabe_dof_func
+  \snippet cs_user_boundary_conditions-time_table.c time_table_dof_func
 
   Note that accessing the time table value in the function above is done
   through the call to \ref cs_time_table_compute_time_value.
@@ -247,7 +248,7 @@
   for variable "scalar1" in the usual way
   (in \ref cs_user_boundary_conditions_setup):
 
-  \snippet cs_boundary_conditions-time_table.c time_table_dof_inlet
+  \snippet cs_user_boundary_conditions-time_table.c time_table_dof_inlet
 */
 
 /*-----------------------------------------------------------------------------*/
