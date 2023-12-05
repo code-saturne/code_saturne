@@ -174,12 +174,17 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
                                     xdh,
                                     b_rho,
                                     viscl0);
+  }
 
-    /* Set user scalar values to 1 */
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *f = cs_field_by_id(f_id);
-      if (cs_field_get_key_int(f, keysca) > 0)
+  /* Set user scalar values to 1 */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (cs_field_get_key_int(f, keysca) > 0) {
+      for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+        const cs_lnum_t face_id = zn->elt_ids[e_idx];
         f->bc_coeffs->rcodcl1[face_id] = 1.0;
+      }
     }
   }
   /*! [example_1] */
@@ -215,12 +220,17 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
      *   (their initialization is not needed here but is good practice) */
 
     cs_turbulence_bc_inlet_turb_intensity(face_id, uref2, xitur, xdh);
+  }
 
-    /* Set user scalar values to 1 */
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *f = cs_field_by_id(f_id);
-      if (cs_field_get_key_int(f, keysca) > 0)
+  /* Set user scalar values to 1 */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (cs_field_get_key_int(f, keysca) > 0) {
+      for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+        const cs_lnum_t face_id = zn->elt_ids[e_idx];
         f->bc_coeffs->rcodcl1[face_id] = 1.0;
+      }
     }
   }
   /*![example_2]*/
