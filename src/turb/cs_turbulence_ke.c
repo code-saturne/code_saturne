@@ -72,6 +72,7 @@
 #include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
+#include "cs_solid_zone.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
@@ -1898,6 +1899,8 @@ cs_turbulence_ke(int              phase_id,
     }
   }
 
+  cs_solid_zone_set_zero_on_cells(1, smbrk);
+
   /* Solve for turbulent kinetic energy (k)
      ---------------------------------- */
 
@@ -2354,6 +2357,85 @@ cs_turbulence_ke_clip(int        phase_id,
                                     vmax + ii,
                                     iclpmn + ii,
                                     iclpmx);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for the K-epsilon model.
+ *
+ * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_mu_t(int  phase_id)
+{
+  /* Map field arrays */
+
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_eps = CS_F_(eps);
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_mu = CS_F_(mu);
+  cs_field_t *f_mut = CS_F_(mu_t);
+
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_vel = CS_FI_(vel, phase_id);
+    f_rho = CS_FI_(rho, phase_id);
+    f_mu = CS_FI_(mu, phase_id);
+    f_mut = CS_FI_(mu_t, phase_id);
+  }
+
+  cs_real_t *visct = f_mut->val;
+  const cs_real_t *viscl =  f_mu->val;
+  const cs_real_t *crom = f_rho->val;
+  const cs_real_t *cvar_k = f_k->val;
+  const cs_real_t *cvar_ep = f_eps->val;
+
+  /* Launder-Sharma */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+
+    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+    /* Initialization
+     * ============== */
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t xk = cvar_k[c_id];
+      const cs_real_t xe = cvar_ep[c_id];
+      const cs_real_t xmu = viscl[c_id];
+      const cs_real_t xmut = crom[c_id] * cs_math_pow2(xk) / xe;
+      const cs_real_t xfmu = exp(-3.4 / cs_math_pow2(1. + xmut/xmu/50.));
+
+      visct[c_id] = cs_turb_cmu * xfmu * xmut;
+    }
+
+  }
+
+  /* Baglietto model */
+
+  else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
+    cs_turbulence_ke_q_mu_t(phase_id);
+  }
+
+  /* Standard and linear-production */
+
+  else {
+
+    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      visct[c_id] =   crom[c_id] * cs_turb_cmu
+                    * cs_math_pow2(cvar_k[c_id]) / cvar_ep[c_id];
+    }
+
   }
 }
 
