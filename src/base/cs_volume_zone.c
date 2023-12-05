@@ -1096,13 +1096,7 @@ cs_volume_zone_print_info(void)
       bft_printf(_("    Fluid volume    = %1.5g\n"),
                  z->f_measure);
 
-    if (z->boundary_measure < 0.) {
-      bft_printf(_("    Surface         = -1 (not computed)\n"));
-      /* Only log fluid fluid when different to surface */
-      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
-        bft_printf(_("    Fluid surface   = -1 (not computed)\n"));
-    }
-    else {
+    if (z->boundary_measure >= 0.) {
       bft_printf(_("    Surface         = %1.5g\n"),
                  z->f_boundary_measure);
       /* Only log fluid fluid when different to surface */
