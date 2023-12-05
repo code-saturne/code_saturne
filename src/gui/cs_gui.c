@@ -400,7 +400,7 @@ _physical_property_thermal_law(cs_field_t           *c_prop,
 }
 
 /*-----------------------------------------------------------------------------
- * use MEI for thermal diffusivity
+ * use MEG for thermal diffusivity
  *
  * This is a special case of _physical_property_, where the thermal
  * diffusivity computation is based on that of the thermal conductivity.
