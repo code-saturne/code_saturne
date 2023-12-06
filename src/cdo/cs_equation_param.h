@@ -1718,6 +1718,20 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get the pointer to the set of parameters to handle the SLES solver
+ *        associated to this set of equation parameters
+ *
+ * \param[in] eqp      pointer to a \ref cs_equation_param_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_equation_param_get_sles_param(cs_equation_param_t   *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
