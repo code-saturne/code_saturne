@@ -148,8 +148,25 @@ cs_user_parameters(cs_domain_t    *domain)
     /* Linear algebra settings */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+
 #if defined(HAVE_MUMPS)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+
+    /* More advanced usage */
+
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(mom_eqp);
+
+    cs_param_sles_mumps(slesp,
+                        false,  /* single-precision ? */
+                        CS_PARAM_SLES_FACTO_LU);
+
+    cs_param_sles_mumps_advanced(slesp,
+                                 CS_PARAM_SLES_ANALYSIS_AUTO,
+                                 3,     /* size of the block for analysis */
+                                 -1,    /* pct memory increase < 0 = not used */
+                                 -1,    /* BLR compression < 0 = not used */
+                                 0,     /* iterative refinement steps */
+                                 true); /* advanced optimizations */
 #else
     bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
 #endif
