@@ -717,7 +717,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.frameMeshCartesian.show()
 
 
-
         self.radioButtonImport.clicked.connect(self.slotSetImportMesh)
         self.radioButtonExists.clicked.connect(self.slotSetInputMesh)
         self.radioButtonCartesianMesh.clicked.connect(self.slotSetCartesianMesh)
@@ -769,11 +768,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.slotSetCartesianParam(val, "z_law"))
 
         # Set initial values
-        for k in self.cartParams.keys():
-            d = k.split("_")[0] + "_direction"
-            p = k.split("_")[1]
-            val = self.mdl.getCartesianParam(d, p)
-            self.slotSetCartesianParam(val, k)
+        self.mesh_origin = self.mdl.getMeshOrigin()
+
+        if self.mesh_origin == "mesh_cartesian":
+            self.slotSetCartesianMesh()
 
         # 1) Meshes directory
 
@@ -1208,26 +1206,17 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self.setMeshOriginChoice("mesh_cartesian")
 
+        for k in self.cartParams.keys():
+            d = k.split("_")[0] + "_direction"
+            p = k.split("_")[1]
+            val = self.mdl.getCartesianParam(d, p)
+            self.slotSetCartesianParam(val, k)
+
 
     @pyqtSlot(str)
     def slotSetCartesianParam(self, text, name):
 
         val = text
-        if val is None:
-            # defaul values:
-            if name in ("x_ncells", "y_ncells", "z_ncells"):
-                val = "1"
-            elif name in ("x_min", "y_min", "z_min"):
-                val = "0.0"
-            elif name in ("x_max", "y_max", "z_max"):
-                val = "1.0"
-            elif name in ("x_prog", "y_prog", "z_prog"):
-                val = "1.0"
-            elif name in ("x_law", "y_law", "z_law"):
-                val = "constant"
-            else:
-                val = "-1"
-
         if name in ("x_law", "y_law", "z_law"):
             self.cartParams[name].setItem(str_model=val)
             l0 = name[0]
