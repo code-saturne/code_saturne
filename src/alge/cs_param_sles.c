@@ -1779,6 +1779,11 @@ _set_mumps_sles(bool                 use_field_id,
   const  char  *sles_name = use_field_id ? NULL : slesp->name;
   assert(slesp->field_id > -1 || sles_name != NULL);
 
+  if (slesp->context_param == NULL) /* Define the context by default */
+    cs_param_sles_mumps(slesp,
+                        false,  /* is single-precision ? */
+                        CS_PARAM_SLES_FACTO_LU);
+
 #if defined(HAVE_MUMPS)
   cs_sles_mumps_define(slesp->field_id,
                        sles_name,
