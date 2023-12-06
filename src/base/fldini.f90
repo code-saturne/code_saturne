@@ -82,7 +82,7 @@ integer          turb_flux_model, turb_flux_model_type
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
 integer          f_id, kscavr, f_type
-integer          iopchr, ilog
+integer          iopchr, ilog, ischcp
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
 integer          idfm, iggafm, nfld
@@ -189,6 +189,16 @@ else if (iphydr.eq.2) then
   call field_find_or_create('hydrostatic_pressure_prd', &
                             itycat, ityloc, idim1, f_id)
 endif
+
+! Hybrid blending field
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+ischcp = vcopt%ischcv
+if (ischcp.eq.3) then
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 1 ! cells
+  call field_find_or_create('hybrid_blend', itycat, ityloc, idim1, f_id)
+end if
 
 ! friction velocity at the wall, in the case of a LES calculation
 ! with van Driest-wall damping (delayed here rather than placed in

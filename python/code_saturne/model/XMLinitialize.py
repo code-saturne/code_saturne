@@ -210,6 +210,8 @@ class XMLinit(BaseXmlInit):
                 self.setNewVariable(node, 'hydraulic_head')
             else:
                 self.setNewVariable(node, 'pressure')
+                n = node.xmlGetNode('variable', name='pressure')
+                n['_convect'] = 'no'
             self.setNewVariable(node, 'velocity', dim = '3')
             self.setNewProperty(node, 'total_pressure')
 

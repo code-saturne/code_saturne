@@ -107,7 +107,12 @@ class NumericalParamEquationModel(Model):
         self.default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
             self.default['solver_precision_pressure'] = 1e-5
-        self.default['slope_test'] = 'on'
+        if name == 'void_fraction':
+            self.default['slope_test'] = 'beta_limiter'
+            self.default['nvd_limiter'] = 'cicsam'
+        else:
+            self.default['slope_test'] = 'on'
+            self.default['nvd_limiter'] = 'gamma'
         self.default['flux_reconstruction'] = 'on'
 
         self.default['solver_choice'] = 'automatic'
@@ -122,7 +127,6 @@ class NumericalParamEquationModel(Model):
 
         from code_saturne.model.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            self.default['order_scheme'] = 'upwind'
             self.default['blending_factor'] = 0.
         del CompressibleModel
 
@@ -363,17 +367,25 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getSchemeList(self):
-        """ Return the variables name list for scheme parameters """
+        """
+        Return the variables name and category list for scheme parameters.
+        category values are 0 (not convected), 1 (scalar), 2 (non-scalar),
+        and 3 (VoF)
+        """
         lst = []
-        if self.darcy == "off":
-            for node in self._getSchemeNodesList():
-                for n in node:
-                    lst.append(n['name'])
-        else:
-            for node in self._getSchemeNodesList():
-                for n in node:
-                    if n['name'] != "velocity":
-                        lst.append(n['name'])
+        for node in self._getSchemeNodesList():
+            for n in node:
+                category = 1
+                name = n['name']
+                dim = n['dimension']
+                if dim:
+                    if int(dim) > 1:
+                        category = 2
+                if n['_convect'] == 'off':
+                    category = 0
+                elif name == 'void_fraction':
+                    category = 3
+                lst.append((n['name'], category))
         return lst
 
 
@@ -417,12 +429,21 @@ class NumericalParamEquationModel(Model):
     def getScheme(self, name):
         """ Return value of order scheme for variable labelled name """
         node = self._getSchemeNameNode(name)
-        if self._isPressure(node):
+        if node['_convect'] == 'off':
             return None
         value = self._defaultValues(name)['order_scheme']
         n = node.xmlGetNode('order_scheme')
         if n:
             value = n['choice']
+
+            # Compatibility with older definitions
+            # (which were not consistent with the internal code_saturne
+            # model, as upwind could be defined in 2 different ways).
+            if value == 'upwind':
+                value = 'centered'
+                node.xmlSetData('blending_factor', 0.0)
+                n['choice'] = 'centered'
+
         return value
 
 
@@ -447,7 +468,32 @@ class NumericalParamEquationModel(Model):
         value = self._defaultValues(name)['slope_test']
         n = node.xmlGetNode('slope_test')
         if n:
-            value = n['status']
+            attributes = n.xmlGetAttributeDictionary()
+            if 'status' in attributes:
+                value = n['status']
+            elif 'choice' in attributes:
+                value = n['choice']
+        return value
+
+
+    @Variables.noUndo
+    def getNVDLimiter(self, name):
+        """ Return value of NVD limiter for variable labelled name """
+        node = self._getSchemeNameNode(name)
+        if node['_convect'] == 'off':
+            return None
+
+        sv = self._defaultValues(name)['order_scheme']
+        n = node.xmlGetNode('order_scheme')
+        if n:
+            sv = n['choice']
+        if sv != 'nvd_tvd':
+            return None
+
+        value = self._defaultValues(name)['nvd_limiter']
+        n = node.xmlGetNode('nvd_limiter')
+        if n:
+                value = n['choice']
         return value
 
 
@@ -482,18 +528,11 @@ class NumericalParamEquationModel(Model):
             return
         self.isGreaterOrEqual(value, 0.)
         self.isLowerOrEqual(value, 1.)
-        scheme = self.getScheme(name)
-        if scheme == self._defaultValues(name)['order_scheme']:
-            if scheme == 'upwind':
-                node.xmlRemoveChild('blending_factor')
-            else:
-                node.xmlSetData('blending_factor', value)
+        if self.getScheme(name) == 'automatic' \
+           and value == self._defaultValues(name)['blending_factor']:
+            node.xmlRemoveChild('blending_factor')
         else:
             node.xmlSetData('blending_factor', value)
-#            if value != self._defaultValues(name)['blending_factor']:
-#                node.xmlSetData('blending_factor', value)
-#            else:
-#                node.xmlRemoveChild('blending_factor')
 
 
     @Variables.undoGlobal
@@ -502,29 +541,56 @@ class NumericalParamEquationModel(Model):
         Put value of order scheme for variable or scalar labelled name
         only if it 's different of default value
         """
-        self.isInList(value, ('automatic', 'upwind', 'centered', 'solu'))
+        self.isInList(value, ('automatic', 'centered', 'solu',
+                              'solu_upwind_gradient', 'blending',
+                              'nvd_tvd'))
         node = self._getSchemeNameNode(name)
         if value == self._defaultValues(name)['order_scheme']:
             node.xmlRemoveChild('order_scheme')
-            if self.getBlendingFactor(name) == self._defaultValues(name)['blending_factor']\
-                or value == 'centered' and self.getBlendingFactor(name) == 0. \
-                or value == 'upwind' and self.getBlendingFactor(name) != 0.:
+            blencv = node.xmlGetDouble('blending_factor')
+            if blencv is not None:
+                if blencv == self._defaultValues(name)['blending_factor']:
                     node.xmlRemoveChild('blending_factor')
         else:
             n = node.xmlInitNode('order_scheme')
             n['choice'] = value
 
+        if value != 'nvd_tvd':   # precaution
+            node.xmlRemoveChild('nvd_limiter')
+
 
     @Variables.undoLocal
-    def setSlopeTest(self, name, status):
+    def setSlopeTest(self, name, value):
         """ Put status of slope test for variable labelled name """
-        self.isOnOff(status)
+        self.isInList(value, ('on', 'off', 'beta_limiter'))
         node = self._getSchemeNameNode(name)
-        if status == self._defaultValues(name)['slope_test']:
+        if value == self._defaultValues(name)['slope_test']:
             node.xmlRemoveChild('slope_test')
         else:
             n = node.xmlInitNode('slope_test')
-            n['status'] = status
+            if value in ('on', 'off'):
+                n['status'] = value
+                if 'choice' in n.xmlGetAttributeDictionary():
+                    del n['choice']
+            elif value == 'beta_limiter':
+                n['choice'] = value
+                if 'status' in n.xmlGetAttributeDictionary():
+                    del n['status']
+
+
+    @Variables.undoLocal
+    def setNVDLimiter(self, name, value):
+        """ Put status of NVD limiter for variable labelled name """
+        if value:
+            self.isInList(value, ('gamma', 'smart', 'cubista', 'superbee',
+                                  'muscl', 'minmod', 'clam', 'stoic',
+                                  'osher', 'waseb', 'hric', 'cicsam', 'stacs'))
+        node = self._getSchemeNameNode(name)
+        if not value or value == self._defaultValues(name)['nvd_limiter']:
+            node.xmlRemoveChild('nvd_limiter')
+        else:
+            n = node.xmlInitNode('nvd_limiter')
+            n['choice'] = value
 
 
     @Variables.undoLocal

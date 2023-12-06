@@ -70,26 +70,144 @@ class SchemeOrderDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
-    def __init__(self, parent=None, xml_model=None):
+    def __init__(self, parent=None, update_layout=None):
         super(SchemeOrderDelegate, self).__init__(parent)
+        self.parent = parent
+        self.update_layout = update_layout
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            editor.addItem("Automatic")
+            editor.addItem("Centered")
+            editor.addItem("SOLU (centered gradient)")
+            editor.addItem("SOLU (upwind gradient)")
+            editor.addItem("Blending (SOLU/centered)")
+            if category != 2:
+                editor.addItem("NVD/TVD")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"automatic": 0, "centered": 1, "solu": 2,
+                "solu_upwind_gradient": 3, "blending": 4,
+                "nvd_tvd": 5}
+        row = index.row()
+        string = index.model().dataScheme[row]['ischcv']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+        if self.update_layout != None:
+            self.update_layout()
+
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for ISSTPC
+#-------------------------------------------------------------------------------
+
+class SchemeSlopeTestDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SchemeSlopeTestDelegate, self).__init__(parent)
         self.parent = parent
         self.mdl = xml_model
 
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        editor.addItem("Automatic")
-        editor.addItem("Upwind")
-        editor.addItem("Centered")
-        editor.addItem("SOLU")
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            if index.model().dataScheme[row]['ischcv'] not in ('blending', 'nvd_tvd'):
+                editor.addItem("Enabled")
+            editor.addItem("Disabled")
+            if category != 2:
+                editor.addItem("Beta limiter")
         editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"automatic": 0, "upwind": 1, "centered": 2, "solu": 3}
+        dico = {"on": 0, "off": 1, "beta_limiter": 2}
         row = index.row()
-        string = index.model().dataScheme[row]['ischcv']
+        string = index.model().dataScheme[row]['isstpc']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for TVD/NVD limiter
+#-------------------------------------------------------------------------------
+
+class SchemeNVDLimiterDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SchemeNVDLimiterDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            editor.addItem("GAMMA")
+            editor.addItem("SMART")
+            editor.addItem("CUBISTA")
+            editor.addItem("SUPERBEE")
+            editor.addItem("MUSCL")
+            editor.addItem("MINMOD")
+            editor.addItem("CLAM")
+            editor.addItem("STOIC")
+            editor.addItem("OSHER")
+            editor.addItem("WASEB")
+            if category == 3:
+                editor.addItem("HRIC")
+                editor.addItem("CICSAM")
+                editor.addItem("STACS")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"gamma": 0,
+                "smart": 1,
+                "cubista": 2,
+                "superbee": 3,
+                "muscl": 4,
+                "minmod": 5,
+                "clam": 6,
+                "stoic": 7,
+                "osher": 8,
+                "waseb": 9,
+                "hric": 10,
+                "cicsam": 11,
+                "stacs": 12}
+        row = index.row()
+        string = index.model().dataScheme[row]['nvd_limiter']
         idx = dico[string]
         comboBox.setCurrentIndex(idx)
 
@@ -333,20 +451,23 @@ class StandardItemModelScheme(QStandardItemModel):
         self.dataScheme = []
         # list of items to be disabled in the QTableView
         self.disabledItem = []
+        self.nvd_count = 0
         self.populateModel()
         self.headers = [self.tr("Name"),
                         self.tr("Scheme"),
-                        self.tr("Blending\nFactor"),
+                        self.tr("Centering\nBlend"),
                         self.tr("Slope\nTest"),
+                        self.tr("NVD\nLimiter"),
                         self.tr("Flux\nReconstruction"),
                         self.tr("RHS Sweep\nReconstruction")]
-        self.keys = ['name', 'ischcv', 'blencv', 'isstpc', 'ircflu', 'nswrsm']
+        self.keys = ['name', 'ischcv', 'blencv', 'isstpc', 'nvd_limiter',
+                     'ircflu', 'nswrsm']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                if column == 1 or column == 2 or column == 5:
+                if column in (1, 2, 3, 4, 6):
                     role = Qt.DisplayRole
                 else:
                     role = Qt.CheckStateRole
@@ -354,19 +475,67 @@ class StandardItemModelScheme(QStandardItemModel):
                 value = self.data(index, role)
                 self.setData(index, value)
 
+        self.tooltips = [
+            self.tr("Equation parameter: 'ischcv'\n\n"
+                    "Base (second-order) convective scheme"),
+            self.tr("Equation parameter: 'blencv'\n\n"
+                    "Blending of chosen convective scheme with upwind scheme\n"
+                    "(0: full upwind, 1: pure base convection scheme)"),
+            self.tr("Equation parameter: 'isstpc'\n\n"
+                    "Enable slope test to switch to an upwind convective\n"
+                    "scheme under certain conditions.\n"
+                    "The use of the slope test stabilizes the calculation\n"
+                    "but may reduce spatial convergence order."),
+            self.tr("Field keyword: 'limiter_choice'\n\n"
+                    "NVD limiter choice (for NVD/TVD convective scheme)."),
+            self.tr("Equation parameter: 'ircflux'\n\n"
+                    "Flux reconstruction: indicate whether the convective\n"
+                    "and diffusive fluxes at the faces should be reconstructed\n"
+                    "at non-orthogonal mesh faces.\n"
+                    "Deactivating this reconstruction can have a stabilizing\n"
+                    "effect on the calculation.\n"
+                    "It is sometimes useful with the k−ε model, if the mesh\n"
+                    "is strongly non-orthogonal in the near-wall region,\n"
+                    " where the gradients of k and ε are strong"),
+             self.tr("Equation parameter: 'nswrsm'\n\n"
+                     "RHS Sweep Reconstruction: number of iterations for the\n"
+                     "reconstruction of the right-hand sides of the equation")
+        ]
 
     def populateModel(self):
-        self.dicoV2M= {"Automatic" : 'automatic', "Upwind" : 'upwind', "Centered": 'centered', "SOLU": 'solu'}
-        self.dicoM2V= {'automatic' : "Automatic", "upwind" : 'Upwind', "centered": 'Centered', "solu": 'SOLU'}
+        self.dicoV2M= {"Automatic": 'automatic',
+                       "Centered": 'centered',
+                       "SOLU (centered gradient)": 'solu',
+                       "SOLU (upwind gradient)": 'solu_upwind_gradient',
+                       "Blending (SOLU/centered)": 'blending',
+                       "NVD/TVD": 'nvd_tvd'}
+        self.dicoM2V= {'automatic': "Automatic",
+                       'centered': "Centered",
+                       'solu': "SOLU (centered gradient)",
+                       'solu_upwind_gradient': "SOLU (upwind gradient)",
+                       'blending': "Blending (SOLU/centered)",
+                       'nvd_tvd': "NVD/TVD"}
 
-        for name in self.NPE.getSchemeList():
+        self.dicoV2M_isstpc= {"Enabled": 'on',
+                              "Disabled": 'off',
+                              "Beta limiter": 'beta_limiter'}
+        self.dicoM2V_isstpc= {'on': "Enabled",
+                              'off': "Disabled",
+                              'beta_limiter': "Beta limiter"}
+
+        for v in self.NPE.getSchemeList():
+            name = v[0]
             dico           = {}
             dico['name']  = name
             dico['blencv'] = self.NPE.getBlendingFactor(name)
             dico['ischcv'] = self.NPE.getScheme(name)
+            if dico['ischcv'] == 'nvd_tvd':
+                self.nvd_count += 1
             dico['isstpc'] = self.NPE.getSlopeTest(name)
+            dico['nvd_limiter'] = self.NPE.getNVDLimiter(name)
             dico['ircflu'] = self.NPE.getFluxReconstruction(name)
             dico['nswrsm'] = self.NPE.getRhsReconstruction(name)
+            dico['category'] = v[1]
             self.dataScheme.append(dico)
             log.debug("populateModel-> dataScheme = %s" % dico)
             row = self.rowCount()
@@ -386,18 +555,32 @@ class StandardItemModelScheme(QStandardItemModel):
             return None
 
         if role == Qt.ToolTipRole:
-            if index.column() > 0:
-                return self.tr("code_saturne keyword: " + key.upper())
+            col = index.column()
+            if col > 0 and col < 6:
+                return self.tooltips[col-1]
+            elif col > 0:
+                return self.tr("code_saturne keyword: " + key)
 
-        elif role == Qt.DisplayRole and not column in [3, 4]:
+        elif role == Qt.DisplayRole and not column == 5:
             if key == 'ischcv':
                 return self.dicoM2V[dico[key]]
+            elif key == 'isstpc':
+                if self.dataScheme[row]['blencv'] > 0:
+                    return self.dicoM2V_isstpc[dico[key]]
+                else:
+                    return ""
+            elif key == 'nvd_limiter':
+                v = dico[key]
+                if v is not None:
+                    return v.upper()
+                else:
+                    return v
             else:
                 return dico[key]
 
-        elif role == Qt.CheckStateRole and column in [3, 4]:
+        elif role == Qt.CheckStateRole and column == 5:
             st = None
-            if key in ['isstpc', 'ircflu']:
+            if key in ['ircflu']:
                 st = dico[key]
             if st == 'on':
                 return Qt.Checked
@@ -414,15 +597,27 @@ class StandardItemModelScheme(QStandardItemModel):
         if not index.isValid():
             return Qt.NoItemFlags
 
-        # disable item
-        if (index.row(), index.column()) in self.disabledItem:
+        column = index.column()
+        row = index.row()
+        # disabled item
+        if (row, column) in self.disabledItem:
             return Qt.NoItemFlags
 
-        if index.column() == 0:
+        if column == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() == 1 or index.column() == 2 or index.column() == 5:
+        elif column in (1, 2, 6):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-        elif index.column() == 3 or index.column() == 4:
+        elif column == 3:
+            if self.dataScheme[row]['blencv'] > 0:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            else:
+                return Qt.NoItemFlags
+        elif column == 4:
+            if self.dataScheme[row]['ischcv'] == 'nvd_tvd':
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            else:
+                return Qt.NoItemFlags
+        elif column == 5:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
@@ -431,6 +626,13 @@ class StandardItemModelScheme(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.headers[section]
+
+        if role == Qt.ToolTipRole:
+            if section == 0:
+                return self.tr("variable or equation name")
+            elif section < 6:
+                return self.tooltips[section-1]
+
         return None
 
 
@@ -441,49 +643,52 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # for Pressure, most fields are empty
         if column > 0 and str(from_qvariant(value, to_text_string)) in ['', 'None']:
-            if (row, column) not in self.disabledItem:
-                self.disabledItem.append((row, column))
+            if column not in (3, 4):
+                if (row, column) not in self.disabledItem:
+                    self.disabledItem.append((row, column))
+            else:
+                if (row, 2) in self.disabledItem:
+                    self.disabledItem.append((row, column))
             return False
 
         # set ISCHCV
         if column == 1:
-            self.dataScheme[row]['ischcv'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
-            if self.dataScheme[row]['ischcv'] == "upwind":
-                if (row, 2) not in self.disabledItem:
-                    self.disabledItem.append((row, 2))
-                if (row, 3) not in self.disabledItem:
-                    self.disabledItem.append((row, 3))
-                self.dataScheme[row]['blencv'] = 0.0
-                self.dataScheme[row]['isstpc'] = "off"
-            else:
-                if (row, 2) in self.disabledItem:
-                    self.disabledItem.remove((row, 2))
-                    self.dataScheme[row]['blencv'] = 1.0
-                if (row, 3) in self.disabledItem:
-                    self.disabledItem.remove((row, 3))
-                    self.dataScheme[row]['isstpc'] = "on"
-
+            ischcv_prev = self.dataScheme[row]['ischcv']
+            ischcv = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['ischcv'] = ischcv
             self.NPE.setScheme(name, self.dataScheme[row]['ischcv'])
             self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
+            nvd_inc = 0
+            if ischcv_prev == 'nvd_tvd':
+                nvd_inc -= 1
+            if ischcv == 'nvd_tvd':
+                nvd_inc += 1
+            elif ischcv in ('blending', 'nvd_tvd'):
+                if self.dataScheme[row]['isstpc'] == 'on':
+                    self.dataScheme[row]['isstpc'] = 'off'
+                    self.NPE.setSlopeTest(name, self.dataScheme[row]['isstpc'])
+
+            if nvd_inc != 0:
+                self.dataScheme[row]['nvd_limiter'] = self.NPE.getNVDLimiter(name)
+                self.nvd_count += nvd_inc
 
         # set BLENCV
         elif column == 2:
-            if self.dataScheme[row]['ischcv'] != "upwind":
-                self.dataScheme[row]['blencv'] = from_qvariant(value, float)
-                self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
+            self.dataScheme[row]['blencv'] = from_qvariant(value, float)
+            self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
 
         # set ISSTPC
         elif column == 3:
-            if self.dataScheme[row]['ischcv'] != "upwind":
-                v = from_qvariant(value, int)
-                if v == Qt.Unchecked:
-                    self.dataScheme[row]['isstpc'] = "off"
-                else:
-                    self.dataScheme[row]['isstpc'] = "on"
-                self.NPE.setSlopeTest(name, self.dataScheme[row]['isstpc'])
+            self.dataScheme[row]['isstpc'] = self.dicoV2M_isstpc[str(from_qvariant(value, to_text_string))]
+            self.NPE.setSlopeTest(name, self.dataScheme[row]['isstpc'])
+
+        # set limiter
+        elif column == 4:
+            self.dataScheme[row]['nvd_limiter'] = str(from_qvariant(value, to_text_string)).lower()
+            self.NPE.setNVDLimiter(name, self.dataScheme[row]['nvd_limiter'])
 
         # set IRCFLU
-        elif column == 4:
+        elif column == 5:
             v = from_qvariant(value, int)
             if v == Qt.Unchecked:
                 self.dataScheme[row]['ircflu'] = "off"
@@ -492,7 +697,7 @@ class StandardItemModelScheme(QStandardItemModel):
             self.NPE.setFluxReconstruction(name, self.dataScheme[row]['ircflu'])
 
         # set NSWRSM
-        elif column == 5:
+        elif column == 6:
             self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
             self.NPE.setRhsReconstruction(name, self.dataScheme[row]['nswrsm'])
 
@@ -583,11 +788,12 @@ class StandardItemModelSolver(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             if index.column() == 3:
-                return self.tr("Field variable calculation option keyword: epsilo")
+                return self.tr("Equation parameter: epsilo\n\n"
+                               "Convergence threshold for linear solver")
             elif index.column() == 4:
-                return self.tr("Field variable calculation option keyword: iwarni")
+                return self.tr("Equation parameter: verbosity")
             elif index.column() == 5:
-                return self.tr("code_saturne keyword: CDTVAR")
+                return self.tr("code_saturne keyword: cdtvar")
 
         elif role == Qt.DisplayRole:
             row = index.row()
@@ -598,7 +804,12 @@ class StandardItemModelSolver(QStandardItemModel):
             elif index.column() == 1:
                 return self.dicoM2V[dico['iresol']]
             elif index.column() == 2:
-                return self.dicoM2V[dico['precond']]
+                if dico['iresol'] not in ('multigrid', 'jacobi',
+                                          'gauss_seidel',
+                                          'symmetric_gauss_seidel'):
+                    return self.dicoM2V[dico['precond']]
+                else:
+                    return None
             elif index.column() == 3:
                 return dico['epsilo']
             elif index.column() == 4:
@@ -618,12 +829,21 @@ class StandardItemModelSolver(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
 
+        row = index.row()
+        column = index.column()
         # disable item
-        if (index.row(), index.column()) in self.disabledItem:
-            return Qt.ItemIsEnabled
+        if (row, column) in self.disabledItem:
+            return Qt.NoItemFlags
 
-        if index.column() == 0:
+        if column == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        elif column == 2:
+            if self.dataSolver[row]['iresol'] not in ('multigrid', 'jacobi',
+                                                      'gauss_seidel',
+                                                      'symmetric_gauss_seidel'):
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            else:
+                return Qt.NoItemFlags
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
@@ -933,14 +1153,20 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         elif QT_API == "PYQT5":
             self.tableViewScheme.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        delegateISCHCV = SchemeOrderDelegate(self.tableViewScheme)
+        delegateISCHCV = SchemeOrderDelegate(self.tableViewScheme, self._tableViewLayout)
         self.tableViewScheme.setItemDelegateForColumn(1, delegateISCHCV)
 
         delegateBLENCV = BlendingFactorDelegate(self.tableViewScheme, self.turb)
         self.tableViewScheme.setItemDelegateForColumn(2, delegateBLENCV)
 
+        delegateISSTPC = SchemeSlopeTestDelegate(self.tableViewScheme)
+        self.tableViewScheme.setItemDelegateForColumn(3, delegateISSTPC)
+
+        delegateNVDLIM = SchemeNVDLimiterDelegate(self.tableViewScheme)
+        self.tableViewScheme.setItemDelegateForColumn(4, delegateNVDLIM)
+
         delegateNSWRSM = RhsReconstructionDelegate(self.tableViewScheme, self.turb)
-        self.tableViewScheme.setItemDelegateForColumn(5, delegateNSWRSM)
+        self.tableViewScheme.setItemDelegateForColumn(6, delegateNSWRSM)
 
         # Solver
         self.modelSolver = StandardItemModelSolver(self.NPE)
@@ -959,7 +1185,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         from code_saturne.model.TimeStepModel import TimeStepModel
         idtvar = TimeStepModel(self.case).getTimePassing()
         if idtvar in [-1, 2]:
-            self.tableViewSolver.setColumnHidden(5, True)
+            self.tableViewSolver.setColumnHidden(6, True)
 
         delegate = SolverDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegate(delegate)
@@ -1002,6 +1228,8 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         self.case.undoStartGlobal()
 
+        self._tableViewLayout()
+
 
     @pyqtSlot(int)
     def slotchanged(self, index):
@@ -1009,6 +1237,25 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         Changed tab
         """
         self.case['current_tab'] = index
+
+
+    def _tableViewLayout(self):
+        """
+        Configure QTableView column number
+        """
+        fm = self.tableViewScheme.fontMetrics()
+
+        if QT_API == "PYQT4":
+            self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewScheme.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+        elif QT_API == "PYQT5":
+            self.tableViewScheme.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewScheme.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
+        if self.modelScheme.nvd_count == 0 :
+            self.tableViewScheme.setColumnHidden(4, True)
+        else:
+            self.tableViewScheme.setColumnHidden(4, False)
 
 
 #-------------------------------------------------------------------------------

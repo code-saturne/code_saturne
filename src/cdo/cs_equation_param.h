@@ -306,6 +306,7 @@ typedef struct {
    * --- VOF scheme ---
    * - 10: M-HRIC
    * - 11: M-CICSAM
+   * - 12: M-STACS
    *
    * \var ibdtso
    * Backward differential scheme in time order.

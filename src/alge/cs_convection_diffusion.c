@@ -52,6 +52,7 @@
 #include "cs_blas.h"
 #include "cs_bad_cells_regularisation.h"
 #include "cs_boundary_conditions.h"
+#include "cs_equation_param.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -59,6 +60,7 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
@@ -137,7 +139,8 @@ _calc_heq(cs_real_t h1,
  * beta limiter (ensuring preservation of a given min/max pair of values).
  *
  * parameters:
- *   f_id        <-- field id
+ *   f           <-- pointer to field
+ *   eqp         <-- associated equation parameters
  *   inc         <-- 0 if an increment, 1 otherwise
  *   denom_inf   --> computed denominator for the lower bound
  *   denom_sup   --> computed denominator for the upper bound
@@ -147,10 +150,11 @@ _calc_heq(cs_real_t h1,
  *----------------------------------------------------------------------------*/
 
 static void
-_beta_limiter_denom(const int              f_id,
-                    const int              inc,
-                    cs_real_t    *restrict denom_inf,
-                    cs_real_t    *restrict denom_sup)
+_beta_limiter_denom(cs_field_t                 *f,
+                    const cs_equation_param_t  *eqp,
+                    const int                   inc,
+                    cs_real_t         *restrict denom_inf,
+                    cs_real_t         *restrict denom_sup)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -174,25 +178,17 @@ _beta_limiter_denom(const int              f_id,
   const cs_real_3_t *restrict djjpf
     = (const cs_real_3_t *restrict)fvq->djjpf;
 
-  /* Get option from the field */
-  cs_field_t *f = cs_field_by_id(f_id);
-
   const cs_real_t *restrict pvar  = f->val;
   const cs_real_t *restrict pvara = f->val_pre;
 
   const cs_real_t *restrict coefap = f->bc_coeffs->a;
   const cs_real_t *restrict coefbp = f->bc_coeffs->b;
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-  const int ischcp = var_cal_opt.ischcv;
-  const int ircflp = var_cal_opt.ircflu;
-  const int imrgra = var_cal_opt.imrgra;
-  const cs_real_t thetap = var_cal_opt.thetav;
-  const cs_real_t blencp = var_cal_opt.blencv;
+  const int ischcp = eqp->ischcv;
+  const int ircflp = eqp->ircflu;
+  const int imrgra = eqp->imrgra;
+  const cs_real_t thetap = eqp->thetav;
+  const cs_real_t blencp = eqp->blencv;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -226,7 +222,7 @@ _beta_limiter_denom(const int              f_id,
     /* local extrema computation */
     BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
     BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
-    cs_field_local_extrema_scalar(f_id,
+    cs_field_local_extrema_scalar(f->id,
                                   halo_type,
                                   local_max,
                                   local_min);
@@ -234,7 +230,7 @@ _beta_limiter_denom(const int              f_id,
     /* cell Courant number computation */
     if (limiter_choice >= CS_NVD_VOF_HRIC) {
       BFT_MALLOC(courant, n_cells_ext, cs_real_t);
-      cs_cell_courant_number(f_id, courant);
+      cs_cell_courant_number(f->id, courant);
     }
   }
 
@@ -251,6 +247,8 @@ _beta_limiter_denom(const int              f_id,
   BFT_MALLOC(grdpa, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(grdpaa, n_cells_ext, cs_real_3_t);
 
+  /* TODO check if we can remove this initialization, as it seems
+     redundant with assignment in following calls */
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     grdpa[cell_id][0] = 0.;
@@ -263,7 +261,7 @@ _beta_limiter_denom(const int              f_id,
   }
 
   /* legacy SOLU Scheme or centered scheme */
-  if (ischcp == 0 || ischcp == 1 || ischcp == 3 || ischcp == 4) {
+  if (ischcp != 2) {
 
     cs_field_gradient_scalar(f,
                              false, /* use_previous_t */
@@ -279,7 +277,7 @@ _beta_limiter_denom(const int              f_id,
   /* pure SOLU scheme (upwind gradient reconstruction) */
   else if (ischcp == 2) {
 
-    cs_upwind_gradient(f_id,
+    cs_upwind_gradient(f->id,
                        inc,
                        halo_type,
                        coefap,
@@ -289,7 +287,7 @@ _beta_limiter_denom(const int              f_id,
                        pvar,
                        grdpa);
 
-    cs_upwind_gradient(f_id,
+    cs_upwind_gradient(f->id,
                        inc,
                        halo_type,
                        coefap,
@@ -443,15 +441,15 @@ _beta_limiter_denom(const int              f_id,
         cs_real_t flui = 0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
         cs_real_t fluj = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
 
-        cs_real_t flux =     thetap  * ( (pif  - pi )*flui
-                                       + (pjf  - pj )*fluj)
-                       + (1.-thetap) * ( (pifa - pia)*flui
-                                       + (pjfa - pja)*fluj);
+        cs_real_t flux =       thetap  * (  (pif  - pi )*flui
+                                          + (pjf  - pj )*fluj)
+                         + (1.-thetap) * (  (pifa - pia)*flui
+                                          + (pjfa - pja)*fluj);
 
         /* blending to prevent lower bound violation
           We need to take the positive part*/
-        cs_real_t partii = 0.5*(flux + CS_ABS(flux));
-        cs_real_t partjj = 0.5*(flux - CS_ABS(flux));
+        cs_real_t partii = 0.5*(flux + cs_math_fabs(flux));
+        cs_real_t partjj = 0.5*(flux - cs_math_fabs(flux));
 
         denom_inf[ii] += partii;
         denom_inf[jj] -= partjj;
@@ -473,14 +471,14 @@ _beta_limiter_denom(const int              f_id,
   BFT_FREE(courant);
   BFT_FREE(grdpa);
   BFT_FREE(grdpaa);
-
 }
 
 /*----------------------------------------------------------------------------
  * Return the diagonal part of the numerator to build the Min/max limiter.
  *
  * parameters:
- *   f_id        <-- field id (or -1)
+ *   f           <-- pointer to field
+ *   eqp         <-- associated equation parameters
  *   rovsdt      <-- rho * volume / dt
  *   num_inf     --> computed numerator for the lower bound
  *   num_sup     --> computed numerator for the upper bound
@@ -488,11 +486,12 @@ _beta_limiter_denom(const int              f_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_beta_limiter_num(const int           f_id,
-                  const int           inc,
-                  const cs_real_t     rovsdt[],
-                  cs_real_t          *num_inf,
-                  cs_real_t          *num_sup)
+_beta_limiter_num(cs_field_t                 *f,
+                  const cs_equation_param_t  *eqp,
+                  const int                   inc,
+                  const cs_real_t             rovsdt[],
+                  cs_real_t                  *num_inf,
+                  cs_real_t                  *num_sup)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
@@ -510,7 +509,6 @@ _beta_limiter_num(const int           f_id,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   /* Get option from the field */
-  cs_field_t *f = cs_field_by_id(f_id);
 
   const cs_real_t *restrict pvara = f->val_pre;
 
@@ -523,12 +521,7 @@ _beta_limiter_num(const int           f_id,
   cs_real_t scalar_max = cs_field_get_key_double(f, key_scamax_id);
   cs_real_t scalar_min = cs_field_get_key_double(f, key_scamin_id);
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-  const cs_real_t thetex =  1.-var_cal_opt.thetav;
+  const cs_real_t thetex =  1. - eqp->thetav;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -801,10 +794,10 @@ cs_cell_courant_number(const int   f_id,
         cs_lnum_t ii = i_face_cells[face_id][0];
         cs_lnum_t jj = i_face_cells[face_id][1];
 
-        cs_real_t cnt = CS_ABS(i_massflux[face_id])*dt[ii]/vol[ii];
+        cs_real_t cnt = cs_math_fabs(i_massflux[face_id])*dt[ii]/vol[ii];
         courant[ii] = cs_math_fmax(courant[ii], cnt); //FIXME may contain rho
 
-        cnt = CS_ABS(i_massflux[face_id])*dt[jj]/vol[jj];
+        cnt = cs_math_fabs(i_massflux[face_id])*dt[jj]/vol[jj];
         courant[jj] = cs_math_fmax(courant[jj], cnt);
       }
     }
@@ -819,7 +812,7 @@ cs_cell_courant_number(const int   f_id,
          face_id++) {
       cs_lnum_t ii = b_face_cells[face_id];
 
-      cs_real_t cnt = CS_ABS(b_massflux[face_id])*dt[ii]/vol[ii];
+      cs_real_t cnt = cs_math_fabs(b_massflux[face_id])*dt[ii]/vol[ii];
       courant[ii] = cs_math_fmax(courant[ii], cnt);
     }
   }
@@ -1455,21 +1448,18 @@ cs_beta_limiter_building(int              f_id,
                          int              inc,
                          const cs_real_t  rovsdt[])
 {
+  /* Get options from the field */
+
+  cs_field_t *f = cs_field_by_id(f_id);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+  if (eqp->isstpc != 2)
+    return;
+
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_halo_t *halo = m->halo;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-
-  /* Get options from the field */
-
-  cs_field_t *f = cs_field_by_id(f_id);
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-  if (var_cal_opt.isstpc != 2)
-    return;
 
   cs_real_t* cpro_beta = cs_field_by_id(
       cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id")))->val;
@@ -1486,14 +1476,16 @@ cs_beta_limiter_building(int              f_id,
 
   /* computation of the denominator for the inferior and upper bound */
 
-  _beta_limiter_denom(f_id,
+  _beta_limiter_denom(f,
+                      eqp,
                       inc,
                       denom_inf,
                       denom_sup);
 
   /* computation of the numerator for the inferior and upper bound */
 
-  _beta_limiter_num(f_id,
+  _beta_limiter_num(f,
+                    eqp,
                     inc,
                     rovsdt,
                     num_inf,
@@ -1507,7 +1499,7 @@ cs_beta_limiter_building(int              f_id,
     if (denom_inf[ii] <= num_inf[ii]) {
       beta_inf = 1.;
     }
-    else if (denom_inf[ii] <= CS_ABS(num_inf[ii])) {
+    else if (denom_inf[ii] <= cs_math_fabs(num_inf[ii])) {
       beta_inf = -1.;
     }
     else {
@@ -1520,7 +1512,7 @@ cs_beta_limiter_building(int              f_id,
     if (denom_sup[ii] <= num_sup[ii]) {
       beta_sup = 1.;
     }
-    else if (denom_sup[ii] <= CS_ABS(num_sup[ii])) {
+    else if (denom_sup[ii] <= cs_math_fabs(num_sup[ii])) {
       beta_sup = -1.;
     }
     else {

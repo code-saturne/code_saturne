@@ -787,10 +787,47 @@ _order_scheme_value(cs_tree_node_t  *tn_v,
   cs_tree_node_t *tn = cs_tree_node_get_child(tn_v, "order_scheme");
   const char *choice = cs_tree_node_get_child_value_str(tn, "choice");
 
+  if (cs_gui_strcmp(choice, "upwind")) /* for old xml compatibility */
+    *keyword = 1;
   if (cs_gui_strcmp(choice, "centered"))
     *keyword = 1;
   else if (cs_gui_strcmp(choice, "solu"))
     *keyword = 0;
+  else if (cs_gui_strcmp(choice, "solu_upwind_gradient"))
+    *keyword = 2;
+  else if (cs_gui_strcmp(choice, "blending"))
+    *keyword = 3;
+  else if (cs_gui_strcmp(choice, "nvd_tvd"))
+    *keyword = 4;
+}
+
+/*----------------------------------------------------------------------------
+ * Get the attribute value from the NVD limiter
+ *
+ * parameters:
+ *   tn_v    <-- node assocaited with variable
+ *   keyword -->  value of attribute node
+ *----------------------------------------------------------------------------*/
+
+static void
+_nvd_limiter_scheme_value(cs_tree_node_t  *tn_v,
+                          int             *keyword)
+{
+  cs_tree_node_t *tn = cs_tree_node_get_child(tn_v, "nvd_limiter");
+  const char *choice = cs_tree_node_get_child_value_str(tn, "choice");
+
+  static const char *names[] = {"gamma", "smart", "cubista", "superbee",
+                                "muscl", "minmod", "clam", "stoic",
+                                "osher", "waseb", "hric", "cicsam", "stacs"};
+
+  if (choice != NULL) {
+    for (int i = 0; i < 13; i++) {
+      if (strcmp(choice, names[i]) == 0) {
+        *keyword = i;
+        break;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -807,12 +844,23 @@ _slope_test_value(cs_tree_node_t  *tn,
                   int             *keyword)
 {
   int result = -999;
-  cs_gui_node_get_child_status_int(tn, "slope_test", &result);
+  cs_tree_node_t *tn_c = cs_tree_node_get_child(tn, "slope_test");
+  if (tn_c != NULL) {
+    cs_gui_node_get_status_int(tn_c, &result);
 
-  if (result == 1)
-    *keyword = 0;
-  if (result == 0)
-    *keyword = 1;
+    if (result == 1)
+      *keyword = 0;
+    if (result == 0)
+      *keyword = 1;
+
+    else {
+      const char *choice = cs_tree_node_get_tag(tn_c, "choice");
+      if (choice != NULL) {
+        if (strcmp(choice, "beta_limiter") == 0)
+          *keyword = 2;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -2205,6 +2253,15 @@ cs_gui_equation_parameters(void)
         cs_gui_node_get_child_real(tn_v, "blending_factor",
                                    &(eqp->blencv));
         _order_scheme_value(tn_v, &(eqp->ischcv));
+        if (eqp->ischcv == 4) {
+          int nvd_limiter = -1;
+          _nvd_limiter_scheme_value(tn_v, &nvd_limiter);
+          if (nvd_limiter >= 0) {
+            cs_field_set_key_int(f,
+                                 cs_field_key_id("limiter_choice"),
+                                 nvd_limiter);
+          }
+        }
         _slope_test_value(tn_v, &(eqp->isstpc));
       }
 

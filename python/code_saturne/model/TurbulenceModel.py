@@ -293,6 +293,9 @@ class TurbulenceModel(Variables, Model):
                     self.setNewVariable(self.node_turb, 'rij', label='Rij', dim='6')
                 else:
                     self.setNewVariable(self.node_turb, v, label=v)
+                if v == 'alpha':
+                    v_n = node.xmlGetNode('variable', name=v)
+                    v_n['_convect'] = 'no'
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
