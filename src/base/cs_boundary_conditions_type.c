@@ -1280,7 +1280,7 @@ cs_boundary_conditions_type(bool  init,
            _("Error: incorrect or incomplete boundary conditions\n"
              "======\n\n"
              "At least one open boundary face declared as inlet (or outlet)\n"
-             "with prescribed velocity for which the velocity value of \"%s\"\n"
+             "with prescribed velocity for which the value of \"%s\"\n"
              "has not been specified (Dirichlet condition).\n"),
            cs_field_by_id(err_flags[1])->name);
 
