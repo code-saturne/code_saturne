@@ -979,9 +979,9 @@ class BoundaryLocalizationModel(LocalizationModel):
 
         # Create nature boundary
         if self.case.module_name() == 'code_saturne':
-            Boundary(newZone.getNature(), newZone.getLabel(), self.case)
+            Boundary(newZone.getNatureList()[0], newZone.getLabel(), self.case)
         elif self.case.module_name() == 'neptune_cfd':
-            BoundaryNCFD(newZone.getNature(), newZone.getLabel(), self.case)
+            BoundaryNCFD(newZone.getNatureList()[0], newZone.getLabel(), self.case)
 
         return newZone
 
