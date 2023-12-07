@@ -55,6 +55,7 @@
 
 #include "cs_fp_exception.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_multigrid.h"
 #include "cs_sles.h"
 
@@ -2536,7 +2537,7 @@ _log_mumps_param(const char                    *name,
     cs_log_printf(CS_LOG_SETUP, "  * %s | Block_Size in analysis:   %d\n",
                   name, mumpsp->block_analysis);
 
-  if (fabs(mumpsp->ir_steps) > 0)
+  if (cs_math_fabs(mumpsp->ir_steps) > 0)
     cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:     %d\n",
                   name, mumpsp->ir_steps);
 
