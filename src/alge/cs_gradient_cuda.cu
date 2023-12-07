@@ -1318,18 +1318,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
 
   unsigned int blocksize = 256;
-  unsigned int gridsize_b
-    =  (unsigned int)ceil((double)m->n_b_cells / blocksize);
-  unsigned int gridsize_if
-    = (unsigned int)ceil((double)m->n_i_faces / blocksize);
-  unsigned int gridsize_bf
-    = (unsigned int)ceil((double)m->n_b_faces / blocksize);
-  unsigned int gridsize
-      = (unsigned int)ceil((double)m->n_cells / blocksize);
-  unsigned int gridsize_init
-      = (unsigned int)ceil((double)m->n_cells*3*3 / blocksize);
-  unsigned int gridsize_ext
-    = (unsigned int)ceil((double)n_cells_ext / blocksize);
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)cs_get_device_ptr_const_pf(m->i_face_cells);
@@ -1431,7 +1419,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   /* Interior faces contribution */
 
   /*************************************Kernels Scatter**************************************************/
-  // _compute_reconstruct_v_i_face<<<gridsize_if, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face<<<get_gridsize(n_i_faces, blocksize), blocksize, 0, stream>>>
   //                               (n_i_faces,
   //                               i_face_cells,
   //                               pvar_d,
@@ -1442,7 +1430,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               dofij,
   //                               i_f_face_normal);
 
-  // _compute_reconstruct_v_i_face_v2<<<gridsize_if * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_v2<<<get_gridsize(n_i_faces, blocksize) * 3, blocksize, 0, stream>>>
   //                               (n_i_faces * 3,
   //                               i_face_cells,
   //                               pvar_d,
@@ -1454,7 +1442,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               i_f_face_normal);
 
   /*************************************Kernels Scatter conflict free**************************************/
-  // _compute_reconstruct_v_i_face_cf<<<gridsize_if, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_cf<<<get_gridsize(n_i_faces, blocksize), blocksize, 0, stream>>>
   //                               (n_i_faces,
   //                               i_face_cells,
   //                               pvar_d,
@@ -1465,7 +1453,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               dofij,
   //                               i_f_face_normal);
 
-  // _compute_reconstruct_v_i_face_v2_cf<<<gridsize_if * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_v2_cf<<<get_gridsize(n_i_faces, blocksize) * 3, blocksize, 0, stream>>>
   //                               (n_i_faces * 3,
   //                               i_face_cells,
   //                               pvar_d,
@@ -1477,7 +1465,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               i_f_face_normal);
   
   /*************************************Kernels Gather**************************************************/
-  // _compute_reconstruct_v_i_face_gather<<<gridsize, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_gather<<<get_gridsize(n_cells, blocksize), blocksize, 0, stream>>>
   //                                     ( n_cells,
   //                                       pvar_d,
   //                                       weight,
@@ -1492,7 +1480,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                                       cell_i_faces_sgn);
 
 
-  // _compute_reconstruct_v_i_face_gather_v2<<<gridsize * 3 * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_gather_v2<<<get_gridsize(n_cells, blocksize) * 3 * 3, blocksize, 0, stream>>>
   //                                     ( n_cells * 3 * 3,
   //                                       pvar_d,
   //                                       weight,
@@ -1509,7 +1497,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
 
   /*************************************Kernels Gather registers memory************************************/
-  // _compute_reconstruct_v_i_face_gather_v3<<<gridsize, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_gather_v3<<<get_gridsize(n_cells, blocksize), blocksize, 0, stream>>>
   //                                     ( n_cells,
   //                                       pvar_d,
   //                                       weight,
@@ -1524,7 +1512,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                                       cell_i_faces_sgn);
 
 
-  // _compute_reconstruct_v_i_face_gather_v4<<<gridsize * 3 * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_gather_v4<<<get_gridsize(n_cells, blocksize) * 3 * 3, blocksize, 0, stream>>>
   //                                     ( n_cells * 3 * 3,
   //                                       pvar_d,
   //                                       weight,
@@ -1542,7 +1530,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
 
   /*************************************Kernels Gather shared memory***************************************/
-  // _compute_reconstruct_v_i_face_gather_v5<<<gridsize, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_i_face_gather_v5<<<get_gridsize(n_cells, blocksize), blocksize, 0, stream>>>
   //                                     ( n_cells,
   //                                       pvar_d,
   //                                       weight,
@@ -1588,7 +1576,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
 
   /*************************************Kernels Scatter**************************************************/
-  // _compute_reconstruct_v_b_face<<<gridsize_bf, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face<<<get_gridsize(n_b_faces, blocksize), blocksize, 0, stream>>>
   //                             ( n_b_faces,
   //                               coefb_d,
   //                               coefa_d,
@@ -1601,7 +1589,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               b_face_cells);
 
 
-  // _compute_reconstruct_v_b_face_v2<<<gridsize_bf * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_v2<<<get_gridsize(n_b_faces, blocksize) * 3, blocksize, 0, stream>>>
   //                             ( n_b_faces * 3,
   //                               coefb_d,
   //                               coefa_d,
@@ -1614,7 +1602,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               b_face_cells);
   
   /*************************************Kernels Scatter conflict free************************************/
-  // _compute_reconstruct_v_b_face_cf<<<gridsize_bf, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_cf<<<get_gridsize(n_b_faces, blocksize), blocksize, 0, stream>>>
   //                             ( n_b_faces,
   //                               coefb_d,
   //                               coefa_d,
@@ -1626,7 +1614,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               b_f_face_normal,
   //                               b_face_cells);
 
-  // _compute_reconstruct_v_b_face_v2_cf<<<gridsize_bf * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_v2_cf<<<get_gridsize(n_b_faces, blocksize) * 3, blocksize, 0, stream>>>
   //                             ( n_b_faces * 3,
   //                               coefb_d,
   //                               coefa_d,
@@ -1639,7 +1627,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               b_face_cells);
 
   /*************************************Kernels Gather**************************************************/
-  // _compute_reconstruct_v_b_face_gather<<<gridsize_b, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_gather<<<get_gridsize(n_b_cells, blocksize), blocksize, 0, stream>>>
   //                             ( m->n_b_cells,
   //                               coefb_d,
   //                               coefa_d,
@@ -1654,7 +1642,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               cell_b_faces_idx);
 
 
-  // _compute_reconstruct_v_b_face_gather_v2<<<gridsize_b * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_gather_v2<<<get_gridsize(n_b_cells, blocksize) * 3, blocksize, 0, stream>>>
   //                             ( m->n_b_cells * 3,
   //                               coefb_d,
   //                               coefa_d,
@@ -1669,7 +1657,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               cell_b_faces_idx);
 
   /*************************************Kernels Gather registers memory***************************************/
-  // _compute_reconstruct_v_b_face_gather_v3<<<gridsize_b, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_gather_v3<<<get_gridsize(n_b_cells, blocksize), blocksize, 0, stream>>>
   //                             ( m->n_b_cells,
   //                               coefb_d,
   //                               coefa_d,
@@ -1684,7 +1672,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               cell_b_faces_idx);
 
 
-  // _compute_reconstruct_v_b_face_gather_v4<<<gridsize_b * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_gather_v4<<<get_gridsize(n_b_cells, blocksize) * 3, blocksize, 0, stream>>>
   //                             ( m->n_b_cells * 3,
   //                               coefb_d,
   //                               coefa_d,
@@ -1701,7 +1689,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
 
   /*************************************Kernels Gather shared memory***************************************/
-  // _compute_reconstruct_v_b_face_gather_v5<<<gridsize_b, blocksize, 0, stream>>>
+  // _compute_reconstruct_v_b_face_gather_v5<<<get_gridsize(n_b_cells, blocksize), blocksize, 0, stream>>>
   //                             ( m->n_b_cells,
   //                               coefb_d,
   //                               coefa_d,
@@ -1718,7 +1706,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   CS_CUDA_CHECK(cudaEventRecord(b_faces_2, stream));
   
-  // _compute_reconstruct_correction<<<gridsize, blocksize, 0, stream>>>
+  // _compute_reconstruct_correction<<<get_gridsize(n_cells, blocksize), blocksize, 0, stream>>>
   //                             ( n_cells,
   //                               has_dc,
   //                               c_disable_flag,
@@ -1728,7 +1716,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               test_bool
   //                             );
 
-  // _compute_reconstruct_correction_v2<<<gridsize * 3, blocksize, 0, stream>>>
+  // _compute_reconstruct_correction_v2<<<get_gridsize(n_cells, blocksize) * 3, blocksize, 0, stream>>>
   //                             ( n_cells * 3,
   //                               has_dc,
   //                               c_disable_flag,
@@ -1826,25 +1814,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 }
 
 
-
-
-
-__global__ static void
-_set_one_to_coeff_b(const cs_lnum_t            n_b_faces,
-                    cs_real_33_t   *_bc_coeff_b)
-{
-  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if(c_idx >= n_b_faces){
-    return;
-  }
-
-  cs_lnum_t f_id = c_idx / 3;
-  size_t i = c_idx % 3;
-  
-  _bc_coeff_b[f_id][i][i] = 1;
-}
-
 /*----------------------------------------------------------------------------
  * _gradient_vector the gradient of a vector using a given gradient of
  * this vector (typically lsq).
@@ -1888,9 +1857,6 @@ _gradient_vector_cuda(const cs_mesh_t   *mesh,
   CS_CUDA_CHECK(cudaEventRecord(start, stream));
 
   unsigned int blocksize = 256;
-  unsigned int gridsize_f
-      = (unsigned int)ceil((double)n_b_faces / blocksize);
-
 
   cs_real_3_t *_bc_coeff_a_d;
   CS_CUDA_CHECK(cudaMalloc(&_bc_coeff_a_d, n_b_faces * sizeof(cs_real_3_t)));
@@ -1905,7 +1871,7 @@ _gradient_vector_cuda(const cs_mesh_t   *mesh,
   CS_CUDA_CHECK(cudaEventRecord(init1, stream));
   cudaMemset(_bc_coeff_b_d, 0, n_b_faces * sizeof(cs_real_33_t));
 
-  _set_one_to_coeff_b<<<gridsize_f * 3, blocksize, 0, stream>>>
+  _set_one_to_coeff_b<<< n_b_faces/blocksize * 3, blocksize, 0, stream>>>
                               (n_b_faces, _bc_coeff_b_d);
   CS_CUDA_CHECK(cudaEventRecord(init2, stream));
 

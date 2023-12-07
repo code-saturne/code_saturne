@@ -80,6 +80,21 @@
 #include "cs_gradient_priv.h"
 
 
+__global__ static void
+_set_one_to_coeff_b(const cs_lnum_t            n_b_faces,
+                    cs_real_33_t   *_bc_coeff_b)
+{
+  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if(c_idx >= n_b_faces){
+    return;
+  }
+
+  cs_lnum_t f_id = c_idx / 3;
+  size_t i = c_idx % 3;
+  
+  _bc_coeff_b[f_id][i][i] = 1;
+}
 
 __device__ void cs_math_3_normalise_cuda(const cs_real_t in[3],
                                          cs_real_t out[3])

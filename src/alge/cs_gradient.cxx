@@ -5590,9 +5590,9 @@ res_cpu = !compute_cuda;
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
-  compute_cuda  = true;
+  compute_cuda  = false;
   compute_cpu   = true;
-  res_cpu       = false;
+  res_cpu       = true;
 
   // A ne pas garder dans la version finale
   perf        = false;
@@ -6944,7 +6944,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   res_cpu       = true;
 
   // A ne pas garder dans la version finale
-  perf        = true;
+  perf        = false;
   accuracy    = false;
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
