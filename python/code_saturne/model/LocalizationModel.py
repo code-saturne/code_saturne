@@ -209,7 +209,7 @@ class BoundaryZone(Zone):
         """
         dico = Zone.defaultValues(self)
         dico['label'] = 'BC_'
-        dico['nature'] = {}
+        dico['nature'] = self._natureList[0]
         return dico
 
 
@@ -739,6 +739,8 @@ class VolumicLocalizationModel(LocalizationModel):
         node.xmlSetTextNode(newLocal)
         for k, v in list(new_zone.getNature().items()):
             node[k] = v
+
+        for k in node.xmlGetAttributeDictionary():
             if node[k] == 'off':
                 del(node[k])
 
