@@ -8496,11 +8496,12 @@ _gradient_scalar(const char                    *var_name,
     inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
                  uncoupled faces, and bc_coeff_a used for coupled faces. */
 
+    cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
     cs_internal_coupling_update_bc_coeff_s(bc_coeffs,
                                            cpl,
                                            halo_type,
                                            w_stride,
-                                           clip_coeff,
+                                           _clip_coeff,
                                            _bc_coeff_a,
                                            _bc_coeff_b,
                                            var,
@@ -8829,10 +8830,11 @@ _gradient_vector(const char                     *var_name,
     inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
                  uncoupled faces, and bc_coeff_a used for coupled faces. */
 
+    cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
     cs_internal_coupling_update_bc_coeff_v(bc_coeffs,
                                            cpl,
                                            halo_type,
-                                           clip_coeff,
+                                           _clip_coeff,
                                            _bc_coeff_a,
                                            _bc_coeff_b,
                                            var,
