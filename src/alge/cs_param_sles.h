@@ -479,7 +479,7 @@ cs_param_sles_mumps(cs_param_sles_t              *slesp,
  *
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      analysis_algo    algorithm used for the analysis step
- * \param[in]      block_analysis   < 0: fixed block size; 0: nothing
+ * \param[in]      block_analysis   > 0: fixed block size; 0: nothing
  * \param[in]      mem_coef         percentage increase in the memory workspace
  * \param[in]      blr_threshold    Accuracy in BLR compression (< 0: not used)
  * \param[in]      ir_steps         0: No, otherwise number of iterations
