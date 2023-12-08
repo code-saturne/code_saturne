@@ -63,163 +63,6 @@ log = logging.getLogger("NumericalParamEquationView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Combo box delegate for ISCHCV
-#-------------------------------------------------------------------------------
-
-class SchemeOrderDelegate(QItemDelegate):
-    """
-    Use of a combo box in the table.
-    """
-    def __init__(self, parent=None, update_layout=None):
-        super(SchemeOrderDelegate, self).__init__(parent)
-        self.parent = parent
-        self.update_layout = update_layout
-
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-        row = index.row()
-        category = index.model().dataScheme[row]['category']
-        if category > 0:
-            editor.addItem("Automatic")
-            editor.addItem("Centered")
-            editor.addItem("SOLU (centered gradient)")
-            editor.addItem("SOLU (upwind gradient)")
-            editor.addItem("Blending (SOLU/centered)")
-            if category != 2:
-                editor.addItem("NVD/TVD")
-        editor.installEventFilter(self)
-        return editor
-
-
-    def setEditorData(self, comboBox, index):
-        dico = {"automatic": 0, "centered": 1, "solu": 2,
-                "solu_upwind_gradient": 3, "blending": 4,
-                "nvd_tvd": 5}
-        row = index.row()
-        string = index.model().dataScheme[row]['ischcv']
-        idx = dico[string]
-        comboBox.setCurrentIndex(idx)
-
-
-    def setModelData(self, comboBox, model, index):
-        value = comboBox.currentText()
-        selectionModel = self.parent.selectionModel()
-        for idx in selectionModel.selectedIndexes():
-            if idx.column() == index.column():
-                model.setData(idx, value)
-        if self.update_layout != None:
-            self.update_layout()
-
-
-#-------------------------------------------------------------------------------
-# Combo box delegate for ISSTPC
-#-------------------------------------------------------------------------------
-
-class SchemeSlopeTestDelegate(QItemDelegate):
-    """
-    Use of a combo box in the table.
-    """
-    def __init__(self, parent=None, xml_model=None):
-        super(SchemeSlopeTestDelegate, self).__init__(parent)
-        self.parent = parent
-        self.mdl = xml_model
-
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-        row = index.row()
-        category = index.model().dataScheme[row]['category']
-        if category > 0:
-            if index.model().dataScheme[row]['ischcv'] not in ('blending', 'nvd_tvd'):
-                editor.addItem("Enabled")
-            editor.addItem("Disabled")
-            if category != 2:
-                editor.addItem("Beta limiter")
-        editor.installEventFilter(self)
-        return editor
-
-
-    def setEditorData(self, comboBox, index):
-        dico = {"on": 0, "off": 1, "beta_limiter": 2}
-        row = index.row()
-        string = index.model().dataScheme[row]['isstpc']
-        idx = dico[string]
-        comboBox.setCurrentIndex(idx)
-
-
-    def setModelData(self, comboBox, model, index):
-        value = comboBox.currentText()
-        selectionModel = self.parent.selectionModel()
-        for idx in selectionModel.selectedIndexes():
-            if idx.column() == index.column():
-                model.setData(idx, value)
-
-#-------------------------------------------------------------------------------
-# Combo box delegate for TVD/NVD limiter
-#-------------------------------------------------------------------------------
-
-class SchemeNVDLimiterDelegate(QItemDelegate):
-    """
-    Use of a combo box in the table.
-    """
-    def __init__(self, parent=None, xml_model=None):
-        super(SchemeNVDLimiterDelegate, self).__init__(parent)
-        self.parent = parent
-        self.mdl = xml_model
-
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-        row = index.row()
-        category = index.model().dataScheme[row]['category']
-        if category > 0:
-            editor.addItem("GAMMA")
-            editor.addItem("SMART")
-            editor.addItem("CUBISTA")
-            editor.addItem("SUPERBEE")
-            editor.addItem("MUSCL")
-            editor.addItem("MINMOD")
-            editor.addItem("CLAM")
-            editor.addItem("STOIC")
-            editor.addItem("OSHER")
-            editor.addItem("WASEB")
-            if category == 3:
-                editor.addItem("HRIC")
-                editor.addItem("CICSAM")
-                editor.addItem("STACS")
-        editor.installEventFilter(self)
-        return editor
-
-
-    def setEditorData(self, comboBox, index):
-        dico = {"gamma": 0,
-                "smart": 1,
-                "cubista": 2,
-                "superbee": 3,
-                "muscl": 4,
-                "minmod": 5,
-                "clam": 6,
-                "stoic": 7,
-                "osher": 8,
-                "waseb": 9,
-                "hric": 10,
-                "cicsam": 11,
-                "stacs": 12}
-        row = index.row()
-        string = index.model().dataScheme[row]['nvd_limiter']
-        idx = dico[string]
-        comboBox.setCurrentIndex(idx)
-
-
-    def setModelData(self, comboBox, model, index):
-        value = comboBox.currentText()
-        selectionModel = self.parent.selectionModel()
-        for idx in selectionModel.selectedIndexes():
-            if idx.column() == index.column():
-                model.setData(idx, value)
-
-#-------------------------------------------------------------------------------
 # Combo box delegate for IRESOL
 #-------------------------------------------------------------------------------
 
@@ -438,6 +281,163 @@ class SolverDelegate(QItemDelegate):
                     model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
+# Combo box delegate for ISCHCV
+#-------------------------------------------------------------------------------
+
+class SchemeOrderDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, update_layout=None):
+        super(SchemeOrderDelegate, self).__init__(parent)
+        self.parent = parent
+        self.update_layout = update_layout
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            editor.addItem("Automatic")
+            editor.addItem("Centered")
+            editor.addItem("SOLU (centered gradient)")
+            editor.addItem("SOLU (upwind gradient)")
+            editor.addItem("Blending (SOLU/centered)")
+            if category != 2:
+                editor.addItem("NVD/TVD")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"automatic": 0, "centered": 1, "solu": 2,
+                "solu_upwind_gradient": 3, "blending": 4,
+                "nvd_tvd": 5}
+        row = index.row()
+        string = index.model().dataScheme[row]['ischcv']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+        if self.update_layout != None:
+            self.update_layout()
+
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for ISSTPC
+#-------------------------------------------------------------------------------
+
+class SchemeSlopeTestDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SchemeSlopeTestDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            if index.model().dataScheme[row]['ischcv'] not in ('blending', 'nvd_tvd'):
+                editor.addItem("Enabled")
+            editor.addItem("Disabled")
+            if category != 2:
+                editor.addItem("Beta limiter")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"on": 0, "off": 1, "beta_limiter": 2}
+        row = index.row()
+        string = index.model().dataScheme[row]['isstpc']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for TVD/NVD limiter
+#-------------------------------------------------------------------------------
+
+class SchemeNVDLimiterDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SchemeNVDLimiterDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            editor.addItem("GAMMA")
+            editor.addItem("SMART")
+            editor.addItem("CUBISTA")
+            editor.addItem("SUPERBEE")
+            editor.addItem("MUSCL")
+            editor.addItem("MINMOD")
+            editor.addItem("CLAM")
+            editor.addItem("STOIC")
+            editor.addItem("OSHER")
+            editor.addItem("WASEB")
+            if category == 3:
+                editor.addItem("HRIC")
+                editor.addItem("CICSAM")
+                editor.addItem("STACS")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"gamma": 0,
+                "smart": 1,
+                "cubista": 2,
+                "superbee": 3,
+                "muscl": 4,
+                "minmod": 5,
+                "clam": 6,
+                "stoic": 7,
+                "osher": 8,
+                "waseb": 9,
+                "hric": 10,
+                "cicsam": 11,
+                "stacs": 12}
+        row = index.row()
+        string = index.model().dataScheme[row]['nvd_limiter']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+#-------------------------------------------------------------------------------
 # Scheme class
 #-------------------------------------------------------------------------------
 
@@ -497,31 +497,31 @@ class StandardItemModelScheme(QStandardItemModel):
                     "It is sometimes useful with the k−ε model, if the mesh\n"
                     "is strongly non-orthogonal in the near-wall region,\n"
                     " where the gradients of k and ε are strong"),
-             self.tr("Equation parameter: 'nswrsm'\n\n"
-                     "RHS Sweep Reconstruction: number of iterations for the\n"
-                     "reconstruction of the right-hand sides of the equation")
+            self.tr("Equation parameter: 'nswrsm'\n\n"
+                    "RHS Sweep Reconstruction: number of iterations for the\n"
+                    "reconstruction of the right-hand sides of the equation")
         ]
 
     def populateModel(self):
-        self.dicoV2M= {"Automatic": 'automatic',
-                       "Centered": 'centered',
-                       "SOLU (centered gradient)": 'solu',
-                       "SOLU (upwind gradient)": 'solu_upwind_gradient',
-                       "Blending (SOLU/centered)": 'blending',
-                       "NVD/TVD": 'nvd_tvd'}
-        self.dicoM2V= {'automatic': "Automatic",
-                       'centered': "Centered",
-                       'solu': "SOLU (centered gradient)",
-                       'solu_upwind_gradient': "SOLU (upwind gradient)",
-                       'blending': "Blending (SOLU/centered)",
-                       'nvd_tvd': "NVD/TVD"}
+        self.dicoV2M = {"Automatic": 'automatic',
+                        "Centered": 'centered',
+                        "SOLU (centered gradient)": 'solu',
+                        "SOLU (upwind gradient)": 'solu_upwind_gradient',
+                        "Blending (SOLU/centered)": 'blending',
+                        "NVD/TVD": 'nvd_tvd'}
+        self.dicoM2V = {'automatic': "Automatic",
+                        'centered': "Centered",
+                        'solu': "SOLU (centered gradient)",
+                        'solu_upwind_gradient': "SOLU (upwind gradient)",
+                        'blending': "Blending (SOLU/centered)",
+                        'nvd_tvd': "NVD/TVD"}
 
-        self.dicoV2M_isstpc= {"Enabled": 'on',
-                              "Disabled": 'off',
-                              "Beta limiter": 'beta_limiter'}
-        self.dicoM2V_isstpc= {'on': "Enabled",
-                              'off': "Disabled",
-                              'beta_limiter': "Beta limiter"}
+        self.dicoV2M_isstpc = {"Enabled": 'on',
+                               "Disabled": 'off',
+                               "Beta limiter": 'beta_limiter'}
+        self.dicoM2V_isstpc = {'on': "Enabled",
+                               'off': "Disabled",
+                               'beta_limiter': "Beta limiter"}
 
         for v in self.NPE.getSchemeList():
             name = v[0]
@@ -556,7 +556,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             col = index.column()
-            if col > 0 and col < 6:
+            if col > 0 and col < 7:
                 return self.tooltips[col-1]
             elif col > 0:
                 return self.tr("code_saturne keyword: " + key)
@@ -630,7 +630,7 @@ class StandardItemModelScheme(QStandardItemModel):
         if role == Qt.ToolTipRole:
             if section == 0:
                 return self.tr("variable or equation name")
-            elif section < 6:
+            elif section < 7:
                 return self.tooltips[section-1]
 
         return None
@@ -656,7 +656,7 @@ class StandardItemModelScheme(QStandardItemModel):
             ischcv_prev = self.dataScheme[row]['ischcv']
             ischcv = self.dicoV2M[str(from_qvariant(value, to_text_string))]
             self.dataScheme[row]['ischcv'] = ischcv
-            self.NPE.setScheme(name, self.dataScheme[row]['ischcv'])
+            self.NPE.setScheme(name, ischcv)
             self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
             nvd_inc = 0
             if ischcv_prev == 'nvd_tvd':
@@ -700,6 +700,340 @@ class StandardItemModelScheme(QStandardItemModel):
         elif column == 6:
             self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
             self.NPE.setRhsReconstruction(name, self.dataScheme[row]['nswrsm'])
+
+        self.dataChanged.emit(index, index)
+        return True
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for Gradient type
+#-------------------------------------------------------------------------------
+
+class GradientTypeDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, boundary=False):
+        super(GradientTypeDelegate, self).__init__(parent)
+        self.parent = parent
+        self.boundary = boundary
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        if self.boundary:
+            editor.addItem("Automatic")
+        else:
+            editor.addItem("Global")
+        editor.addItem("Green Iter")
+        editor.addItem("LSQ")
+        editor.addItem("LSQ Ext")
+        editor.addItem("Green LSQ")
+        editor.addItem("Green LSQ Ext")
+        editor.addItem("Green VTX")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"automatic": 0, "global": 0,
+                "green_iter": 1, "lsq": 2, "lsq_ext": 3,
+                "green_lsq": 4, "green_lsq_ext": 5,
+                "green_vtx": 6}
+        row = index.row()
+        if self.boundary:
+            string = index.model().dataScheme[row]['b_gradient_r']
+        else:
+            string = index.model().dataScheme[row]['c_gradient_r']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for Gradient type
+#-------------------------------------------------------------------------------
+
+class GradientLimiterDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None):
+        super(GradientLimiterDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        editor.addItem("Disabled")
+        editor.addItem("Cell gradient")
+        editor.addItem("Face gradient")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"none": 0, "cell": 1, "face": 2}
+        row = index.row()
+        string = index.model().dataScheme[row]['imligr']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for gradient epsilon
+#-------------------------------------------------------------------------------
+
+class GradientFloatDelegate(QItemDelegate):
+    def __init__(self, parent=None, max_val=None):
+        super(GradientFloatDelegate, self).__init__(parent)
+        self.parent = parent
+        self.max_val = max_val
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        if self.max_val != None:
+            validator = DoubleValidator(editor, min=0., max=self.max_val)
+        else:
+            validator = DoubleValidator(editor, min=0.)
+        editor.setValidator(validator)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        if editor.validator().state == QValidator.Acceptable:
+            value = from_qvariant(editor.text(), float)
+            selectionModel = self.parent.selectionModel()
+            for idx in selectionModel.selectedIndexes():
+                if idx.column() == index.column():
+                    model.setData(idx, value)
+
+#-------------------------------------------------------------------------------
+# Gradient class
+#-------------------------------------------------------------------------------
+
+class StandardItemModelGradient(QStandardItemModel):
+
+    def __init__(self, NPE):
+        """
+        """
+        QStandardItemModel.__init__(self)
+        self.NPE = NPE
+        self.dataScheme = []
+        # list of items to be disabled in the QTableView
+        self.disabledItem = []
+        self.populateModel()
+        self.headers = [self.tr("Name"),
+                        self.tr("Volume\nGradient"),
+                        self.tr("Boundary\nReconstruction"),
+                        self.tr("Fixed-point\nThreshold"),
+                        self.tr("Limiter\nType"),
+                        self.tr("Limiter\nFactor")]
+        self.keys = ['name', 'c_gradient_r', 'b_gradient_r', 'epsrgr',
+                     'imligr', 'climgr']
+        self.setColumnCount(len(self.headers))
+
+        # Initialize the flags
+        for row in range(self.rowCount()):
+            for column in range(self.columnCount()):
+                role = Qt.DisplayRole
+                index = self.index(row, column)
+                value = self.data(index, role)
+                self.setData(index, value)
+
+        self.tooltips = [
+            self.tr("Equation parameter: 'imrgra'\n\n"
+                    "Gradient reconstruction scheme\n\n"
+                    "- Green Iter: Green-Gauss with iterative face value reconstruction\n"
+                    "- LSQ: least-squares on standard (face-adjacent) neighborhood\n"
+                    "- LSQ Ext: least-squares on extended neighborhood\n"
+                    "- Green LSQ: Green-Gauss with LSQ gradient face values\n"
+                    "- Green LSQ Ext: Green-Gauss with LSQ Ext gradient face values\n"
+                    "- Green VTX: Green-Gauss with vertex interpolated face values."),
+            self.tr("Equation parameter: 'b_gradient_r'\n\n"
+                    "Local boundary gradient for reconstruction at boundaries;\n"
+                    "Using the default least-squares reconstruction\n"
+                    "allows computing the gradient only at selected cells\n"
+                    "for better performance\n\n."
+                    "- Green Iter: Green-Gauss with iterative face value reconstruction\n"
+                    "- LSQ: least-squares on standard (face-adjacent) neighborhood\n"
+                    "- LSQ Ext: least-squares on extended neighborhood\n"
+                    "- Green LSQ: Green-Gauss with LSQ gradient face values\n"
+                    "- Green LSQ Ext: Green-Gauss with LSQ Ext gradient face values\n"
+                    "- Green VTX: Green-Gauss with vertex interpolated face values."),
+            self.tr("Equation parameter: 'epsrgr'\n\n"
+                    "Relative precision for the iterative gradient and\n"
+                    "fixed-point Neumann BC computation for least-squares gradient."),
+            self.tr("Equation parameter: 'imligr'\n\n"
+                    "Gradient limiter type.\n"
+                    "For the default/least squares boundary reconstruction\n",
+                    "the face gradient limiter is replaced\n"
+                    "by the cell gradient limiter"),
+            self.tr("Equation parameter: 'cmligr'\n\n"
+                    "Gradient limiter factor.")
+        ]
+
+
+    def populateModel(self):
+        self.dicoV2M = {"Automatic": 'automatic',
+                        "Global": 'global',
+                        "Green Iter": 'green_iter',
+                        "LSQ": 'lsq',
+                        "LSQ Ext": 'lsq_ext',
+                        "Green LSQ": 'green_lsq',
+                        "Green LSQ Ext": 'green_lsq_ext',
+                        "Green VTX": 'green_vtx'}
+        self.dicoM2V = {}
+        for k in self.dicoV2M:
+            self.dicoM2V[self.dicoV2M[k]] = k
+
+        self.dicoV2M_imligr = {"Disabled": 'none',
+                               "Cell gradient": 'cell',
+                               "Face gradient": 'face'}
+        self.dicoM2V_imligr = {}
+        for k in self.dicoV2M_imligr:
+            self.dicoM2V_imligr[self.dicoV2M_imligr[k]] = k
+
+        for v in self.NPE.getSchemeList():
+            name = v[0]
+            dico = {}
+            dico['name']  = name
+            dico['c_gradient_r'] = self.NPE.getCellGradientType(name)
+            dico['b_gradient_r'] = self.NPE.getBoundaryGradientType(name)
+            dico['epsrgr'] = self.NPE.getGradientEpsilon(name)
+            dico['imligr'] = self.NPE.getGradientLimiter(name)
+            dico['climgr'] = self.NPE.getGradientLimitFactor(name)
+            self.dataScheme.append(dico)
+            log.debug("populateModel-> dataScheme = %s" % dico)
+            row = self.rowCount()
+            self.setRowCount(row + 1)
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        row = index.row()
+        column = index.column()
+        dico = self.dataScheme[row]
+        key = self.keys[column]
+
+        if dico[key] is None:
+            return None
+
+        if role == Qt.ToolTipRole:
+            col = index.column()
+            if col > 0 and col < 6:
+                return self.tooltips[col-1]
+            elif col > 0:
+                return self.tr("code_saturne keyword: " + key)
+
+        elif role == Qt.DisplayRole:
+            if column in (1, 2):
+                return self.dicoM2V[dico[key]]
+            elif column == 4:
+                return self.dicoM2V_imligr[dico[key]]
+            elif column == 5:
+                if self.dataScheme[row]['imligr'] != 'none':
+                    return dico[key]
+                else:
+                    return ""
+            else:
+                return dico[key]
+
+        elif role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
+
+        return None
+
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.NoItemFlags
+
+        column = index.column()
+        row = index.row()
+        # disabled item
+        if (row, column) in self.disabledItem:
+            return Qt.NoItemFlags
+
+        if column == 0:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        elif column == 5:
+            if self.dataScheme[row]['imligr'] != 'none':
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            else:
+                return Qt.NoItemFlags
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.headers[section]
+
+        if role == Qt.ToolTipRole:
+            if section == 0:
+                return self.tr("variable or equation name")
+            elif section < 6:
+                return self.tooltips[section-1]
+
+        return None
+
+
+    def setData(self, index, value, role=None):
+        row = index.row()
+        column = index.column()
+        name = self.dataScheme[row]['name']
+
+        if column == 1:
+            c_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['c_gradient_r'] = c_gradient_r
+            self.NPE.setCellGradientType(name, c_gradient_r)
+
+        elif column == 2:
+            b_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['b_gradient_r'] = b_gradient_r
+            self.NPE.setBoundaryGradientType(name, b_gradient_r)
+
+        elif column == 3:
+            v = from_qvariant(value, float)
+            self.dataScheme[row]['epsrgr'] = v
+            self.NPE.setGradientEpsilon(name, v)
+
+        elif column == 4:
+            imligr = self.dicoV2M_imligr[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['imligr'] = imligr
+            self.NPE.setGradientLimiter(name, imligr)
+
+        elif column == 5:
+            if value != "":
+                v = from_qvariant(value, float)
+                self.dataScheme[row]['climgr'] = v
+                self.NPE.setGradientLimitFactor(name, v)
 
         self.dataChanged.emit(index, index)
         return True
@@ -841,7 +1175,7 @@ class StandardItemModelSolver(QStandardItemModel):
             if self.dataSolver[row]['iresol'] not in ('multigrid', 'jacobi',
                                                       'gauss_seidel',
                                                       'symmetric_gauss_seidel'):
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
                 return Qt.NoItemFlags
         else:
@@ -1198,6 +1532,35 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         delegateVerbosity = VerbosityDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegateForColumn(4, delegateVerbosity)
+
+        # Gradient
+        self.modelGradient = StandardItemModelGradient(self.NPE)
+        self.tableViewGradient.setModel(self.modelGradient)
+        self.tableViewGradient.setAlternatingRowColors(True)
+        self.tableViewGradient.resizeColumnToContents(0)
+        self.tableViewGradient.resizeRowsToContents()
+        self.tableViewGradient.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.tableViewGradient.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.tableViewGradient.setEditTriggers(QAbstractItemView.DoubleClicked)
+        if QT_API == "PYQT4":
+            self.tableViewGradient.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewGradient.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        delegateIMRGRA = GradientTypeDelegate(self.tableViewGradient)
+        self.tableViewGradient.setItemDelegateForColumn(1, delegateIMRGRA)
+
+        delegateIMRGRB = GradientTypeDelegate(self.tableViewGradient, boundary=True)
+        self.tableViewGradient.setItemDelegateForColumn(2, delegateIMRGRB)
+
+        delegateEPSRGR = GradientFloatDelegate(self.tableViewGradient, 1.0)
+        self.tableViewGradient.setItemDelegateForColumn(3, delegateEPSRGR)
+
+        delegateIMLIGR = GradientLimiterDelegate(self.tableViewGradient)
+        self.tableViewGradient.setItemDelegateForColumn(4, delegateIMLIGR)
+
+        delegateCLIMGR = GradientFloatDelegate(self.tableViewGradient)
+        self.tableViewGradient.setItemDelegateForColumn(5, delegateCLIMGR)
 
         # Clipping
         self.modelClipping = StandardItemModelClipping(self, self.NPE)

@@ -864,6 +864,65 @@ _slope_test_value(cs_tree_node_t  *tn,
 }
 
 /*----------------------------------------------------------------------------
+ * Get the attribute value for a variable's cell gradient
+ *
+ * parameters:
+ *   tn_v    <-- node assocaited with variable
+ *   kw      <-- associated keyword
+ *   keyword -->  value of attribute node
+ *----------------------------------------------------------------------------*/
+
+static void
+_var_gradient_type(cs_tree_node_t  *tn_v,
+                   const char      *kw,
+                   int             *keyword)
+{
+  const char *choice = cs_tree_node_get_child_value_str(tn_v, kw);
+
+  if (choice != NULL) {
+    /* Default: "global" for cells, "automatic" for boundary faces, or none */
+
+    if (strcmp(choice, "green_iter") == 0)
+      *keyword = 0;
+    else if (strcmp(choice, "lsq") == 0)
+      *keyword = 1;
+    else if (strcmp(choice, "lsq_ext") == 0)
+      *keyword = 2;
+    else if (strcmp(choice, "green_lsq") == 0)
+      *keyword = 4;
+    else if (strcmp(choice, "green_lsq_ext") == 0)
+      *keyword = 5;
+    else if (strcmp(choice, "green_vtx") == 0)
+      *keyword = 7;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Get the attribute value for a variable's cell gradient
+ *
+ * parameters:
+ *   tn_v    <-- node assocaited with variable
+ *   keyword -->  value of attribute node
+ *----------------------------------------------------------------------------*/
+
+static void
+_var_gradient_limiter_type(cs_tree_node_t  *tn_v,
+                           int             *keyword)
+{
+  const char *choice = cs_tree_node_get_child_value_str(tn_v,
+                                                        "gradient_limiter_type");
+
+  if (choice != NULL) {
+    /* Default: "none" for -1 */
+
+    if (strcmp(choice, "cell") == 0)
+      *keyword = 0;
+    else if (strcmp(choice, "face") == 0)
+      *keyword = 1;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Return the attribute choice associated to a child markup from a variable.
  *
  * parameters:
@@ -2263,6 +2322,19 @@ cs_gui_equation_parameters(void)
           }
         }
         _slope_test_value(tn_v, &(eqp->isstpc));
+      }
+
+      /* Gradient options */
+      {
+        _var_gradient_type(tn_v, "cell_gradient_type",
+                           &(eqp->imrgra));
+        _var_gradient_type(tn_v, "boundary_gradient_type",
+                           &(eqp->b_gradient_r));
+        cs_gui_node_get_child_real(tn_v, "gradient_epsilon",
+                                   &(eqp->epsrgr));
+        _var_gradient_limiter_type(tn_v, &(eqp->imligr));
+        cs_gui_node_get_child_real(tn_v, "gradient_limiter_factor",
+                                   &(eqp->climgr));
       }
 
       /* only for additional variables (user or model) */

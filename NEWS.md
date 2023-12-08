@@ -20,6 +20,11 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- GUI: add access to various "per variable" equation parameters.
+  * Handling of convection schemes is revamped, allowing selection
+    of "true SOLU" (with upwind gradient), blended, and TVD/NVD schemes.
+  * Most individual gradient options are now available in a new tab.
+
 - Add high-level objects to handle open (inlet/outlet) boundary conditions
   in the general boundary conditions mechanism.
   * This is an evolution the the handling of BC's with the GUI, now

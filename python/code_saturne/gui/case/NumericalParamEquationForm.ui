@@ -47,7 +47,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="tab_solver">
       <attribute name="title">
        <string>Solver</string>
       </attribute>
@@ -82,7 +82,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="tab_scheme">
       <attribute name="title">
        <string>Scheme</string>
       </attribute>
@@ -114,6 +114,16 @@
           <string/>
          </property>
         </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_gradient">
+      <attribute name="title">
+       <string>Gradient</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QTableView" name="tableViewGradient"/>
        </item>
       </layout>
      </widget>

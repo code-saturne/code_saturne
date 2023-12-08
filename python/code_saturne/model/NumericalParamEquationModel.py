@@ -97,77 +97,86 @@ class NumericalParamEquationModel(Model):
                 if node['name'] == 'velocity':
                     self.UVW.append(node['name'])
 
+                    # Field-independent defaults
+
+        self.default = {}
+        self.default['verbosity'] = 0
+        self.default['c_gradient_r'] = 'global'
+        self.default['b_gradient_r'] = 'automatic'
+        self.default['epsrgr'] = 1e-4
+        self.default['imligr'] = 'none'
+        self.default['climgr'] = 1.5
+
 
     def _defaultValues(self, name=""):
         """ Private method: return default values """
-        self.default = {}
-        self.default['time_step_factor'] = 1.0
-        self.default['verbosity'] = 0
-        self.default['solver_precision'] = 1e-5
-        self.default['solver_precision_pressure'] = 1e-8
+        default = {}
+        default['time_step_factor'] = 1.0
+        default['solver_precision'] = 1e-5
+        default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
-            self.default['solver_precision_pressure'] = 1e-5
+            default['solver_precision_pressure'] = 1e-5
         if name == 'void_fraction':
-            self.default['slope_test'] = 'beta_limiter'
-            self.default['nvd_limiter'] = 'cicsam'
+            default['slope_test'] = 'beta_limiter'
+            default['nvd_limiter'] = 'cicsam'
         else:
-            self.default['slope_test'] = 'on'
-            self.default['nvd_limiter'] = 'gamma'
-        self.default['flux_reconstruction'] = 'on'
+            default['slope_test'] = 'on'
+            default['nvd_limiter'] = 'gamma'
+        default['flux_reconstruction'] = 'on'
 
-        self.default['solver_choice'] = 'automatic'
-        self.default['preconditioning_choice'] = 'automatic'
+        default['solver_choice'] = 'automatic'
+        default['preconditioning_choice'] = 'automatic'
 
-        self.default['order_scheme'] = 'automatic'
+        default['order_scheme'] = 'automatic'
 
         if name not in self.var:
-            self.default['blending_factor'] = 0.
+            default['blending_factor'] = 0.
         else:
-            self.default['blending_factor'] = 1.
+            default['blending_factor'] = 1.
 
         from code_saturne.model.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            self.default['blending_factor'] = 0.
+            default['blending_factor'] = 0.
         del CompressibleModel
 
         if TurbulenceModel(self.case).getTurbulenceModel() in \
             ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             if name in self.UVW:
-                self.default['slope_test'] = 'off'
+                default['slope_test'] = 'off'
             if name == 'pressure':
-                self.default['rhs_reconstruction'] = 5
+                default['rhs_reconstruction'] = 5
             else:
-                self.default['rhs_reconstruction'] = 10
+                default['rhs_reconstruction'] = 10
         else:
             if name == 'pressure':
-                self.default['rhs_reconstruction'] = 2
+                default['rhs_reconstruction'] = 2
             else:
-                self.default['rhs_reconstruction'] = 1
+                default['rhs_reconstruction'] = 1
 
         if name in self.thermo:
             for node in self._getThermalScalarNode():
                 if node['name'] == name:
                     mdl = ThermalScalarModel(self.case).getThermalScalarModel()
                     if mdl == 'temperature_celsius':
-                        self.default['min_value'] = -273.15
-                        self.default['max_value'] = 1e+12
+                        default['min_value'] = -273.15
+                        default['max_value'] = 1e+12
                     elif mdl =='temperature_kelvin':
-                        self.default['min_value'] = 0
-                        self.default['max_value'] = 1e+12
+                        default['min_value'] = 0
+                        default['max_value'] = 1e+12
                     elif mdl =='potential_temperature':
-                        self.default['min_value'] = 0
-                        self.default['max_value'] = 1e+12
+                        default['min_value'] = 0
+                        default['max_value'] = 1e+12
                     elif mdl =='liquid_potential_temperature':
-                        self.default['min_value'] = 0
-                        self.default['max_value'] = 1e+12
+                        default['min_value'] = 0
+                        default['max_value'] = 1e+12
                     else:
-                        self.default['min_value'] = -1e+12
-                        self.default['max_value'] = 1e+12
+                        default['min_value'] = -1e+12
+                        default['max_value'] = 1e+12
         else:
-            self.default['min_value'] = -1e+12
-            self.default['max_value'] = 1e+12
+            default['min_value'] = -1e+12
+            default['max_value'] = 1e+12
 
-        return self.default
+        return default
 
 
     def _getThermalScalarNode(self):
@@ -427,7 +436,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getScheme(self, name):
-        """ Return value of order scheme for variable labelled name """
+        """ Return value of order scheme for specified variable """
         node = self._getSchemeNameNode(name)
         if node['_convect'] == 'off':
             return None
@@ -447,99 +456,10 @@ class NumericalParamEquationModel(Model):
         return value
 
 
-    @Variables.noUndo
-    def getBlendingFactor(self, name):
-        """ Return value of blending factor for variable labelled name """
-        node = self._getSchemeNameNode(name)
-        if self._isPressure(node):
-            return None
-        value = node.xmlGetDouble('blending_factor')
-        if value is None:
-            value = self._defaultValues(name)['blending_factor']
-        return value
-
-
-    @Variables.noUndo
-    def getSlopeTest(self, name):
-        """ Return value of slope test for variable labelled name """
-        node = self._getSchemeNameNode(name)
-        if self._isPressure(node):
-            return None
-        value = self._defaultValues(name)['slope_test']
-        n = node.xmlGetNode('slope_test')
-        if n:
-            attributes = n.xmlGetAttributeDictionary()
-            if 'status' in attributes:
-                value = n['status']
-            elif 'choice' in attributes:
-                value = n['choice']
-        return value
-
-
-    @Variables.noUndo
-    def getNVDLimiter(self, name):
-        """ Return value of NVD limiter for variable labelled name """
-        node = self._getSchemeNameNode(name)
-        if node['_convect'] == 'off':
-            return None
-
-        sv = self._defaultValues(name)['order_scheme']
-        n = node.xmlGetNode('order_scheme')
-        if n:
-            sv = n['choice']
-        if sv != 'nvd_tvd':
-            return None
-
-        value = self._defaultValues(name)['nvd_limiter']
-        n = node.xmlGetNode('nvd_limiter')
-        if n:
-                value = n['choice']
-        return value
-
-
-    @Variables.noUndo
-    def getFluxReconstruction(self, name):
-        """ Return value of flux reconstruction for variable labelled name """
-        node = self._getSchemeNameNode(name)
-        value = self._defaultValues()['flux_reconstruction']
-        if node.xmlGetNode('flux_reconstruction'):
-            value = node.xmlGetNode('flux_reconstruction')['status']
-        return value
-
-
-    @Variables.noUndo
-    def getRhsReconstruction(self, name):
-        """ Return value of RHS reconstruction for variable labelled name """
-        node = self._getSchemeNameNode(name)
-        value = node.xmlGetDouble('rhs_reconstruction')
-        if value is None:
-            value = self._defaultValues(name)['rhs_reconstruction']
-        return value
-
-
-    @Variables.undoGlobal
-    def setBlendingFactor(self, name, value):
-        """
-        Put value of blending factor for variable labelled name
-        only if it 's different of default value
-        """
-        node = self._getSchemeNameNode(name)
-        if self._isPressure(node):
-            return
-        self.isGreaterOrEqual(value, 0.)
-        self.isLowerOrEqual(value, 1.)
-        if self.getScheme(name) == 'automatic' \
-           and value == self._defaultValues(name)['blending_factor']:
-            node.xmlRemoveChild('blending_factor')
-        else:
-            node.xmlSetData('blending_factor', value)
-
-
     @Variables.undoGlobal
     def setScheme(self, name, value):
         """
-        Put value of order scheme for variable or scalar labelled name
-        only if it 's different of default value
+        Set value of order scheme for specified variable.
         """
         self.isInList(value, ('automatic', 'centered', 'solu',
                               'solu_upwind_gradient', 'blending',
@@ -559,9 +479,56 @@ class NumericalParamEquationModel(Model):
             node.xmlRemoveChild('nvd_limiter')
 
 
+    @Variables.noUndo
+    def getBlendingFactor(self, name):
+        """ Return value of blending factor for specified variable """
+        node = self._getSchemeNameNode(name)
+        if self._isPressure(node):
+            return None
+        value = node.xmlGetDouble('blending_factor')
+        if value is None:
+            value = self._defaultValues(name)['blending_factor']
+        return value
+
+
+    @Variables.undoGlobal
+    def setBlendingFactor(self, name, value):
+        """
+        Put value of blending factor for specified variable
+        only if it 's different of default value
+        """
+        node = self._getSchemeNameNode(name)
+        if self._isPressure(node):
+            return
+        self.isGreaterOrEqual(value, 0.)
+        self.isLowerOrEqual(value, 1.)
+        if self.getScheme(name) == 'automatic' \
+           and value == self._defaultValues(name)['blending_factor']:
+            node.xmlRemoveChild('blending_factor')
+        else:
+            node.xmlSetData('blending_factor', value)
+
+
+    @Variables.noUndo
+    def getSlopeTest(self, name):
+        """ Return value of slope test for specified variable """
+        node = self._getSchemeNameNode(name)
+        if self._isPressure(node):
+            return None
+        value = self._defaultValues(name)['slope_test']
+        n = node.xmlGetNode('slope_test')
+        if n:
+            attributes = n.xmlGetAttributeDictionary()
+            if 'status' in attributes:
+                value = n['status']
+            elif 'choice' in attributes:
+                value = n['choice']
+        return value
+
+
     @Variables.undoLocal
     def setSlopeTest(self, name, value):
-        """ Put status of slope test for variable labelled name """
+        """ Put status of slope test for specified variable """
         self.isInList(value, ('on', 'off', 'beta_limiter'))
         node = self._getSchemeNameNode(name)
         if value == self._defaultValues(name)['slope_test']:
@@ -578,9 +545,29 @@ class NumericalParamEquationModel(Model):
                     del n['status']
 
 
+    @Variables.noUndo
+    def getNVDLimiter(self, name):
+        """ Return value of NVD limiter for specified variable """
+        node = self._getSchemeNameNode(name)
+        if node['_convect'] == 'off':
+            return None
+
+        sv = self._defaultValues(name)['order_scheme']
+        n = node.xmlGetNode('order_scheme')
+        if n:
+            sv = n['choice']
+        if sv != 'nvd_tvd':
+            return None
+
+        value = self._defaultValues(name)['nvd_limiter']
+        n = node.xmlGetNode('nvd_limiter')
+        if n:
+                value = n['choice']
+        return value
+
     @Variables.undoLocal
     def setNVDLimiter(self, name, value):
-        """ Put status of NVD limiter for variable labelled name """
+        """ Put status of NVD limiter for specified variable """
         if value:
             self.isInList(value, ('gamma', 'smart', 'cubista', 'superbee',
                                   'muscl', 'minmod', 'clam', 'stoic',
@@ -593,9 +580,19 @@ class NumericalParamEquationModel(Model):
             n['choice'] = value
 
 
+    @Variables.noUndo
+    def getFluxReconstruction(self, name):
+        """ Return value of flux reconstruction for specified variable """
+        node = self._getSchemeNameNode(name)
+        value = self._defaultValues()['flux_reconstruction']
+        if node.xmlGetNode('flux_reconstruction'):
+            value = node.xmlGetNode('flux_reconstruction')['status']
+        return value
+
+
     @Variables.undoLocal
     def setFluxReconstruction(self, name, value):
-        """ Put status of flux reconstruction for variable labelled name """
+        """ Put status of flux reconstruction for specified variable """
         self.isOnOff(value)
         node = self._getSchemeNameNode(name)
         if value == self._defaultValues()['flux_reconstruction']:
@@ -605,20 +602,156 @@ class NumericalParamEquationModel(Model):
             n['status']=value
 
 
+    @Variables.noUndo
+    def getRhsReconstruction(self, name):
+        """ Return value of RHS reconstruction for specified variable """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetDouble('rhs_reconstruction')
+        if value is None:
+            value = self._defaultValues(name)['rhs_reconstruction']
+        return value
+
+
     @Variables.undoLocal
     def setRhsReconstruction(self, name, value):
         """
-        Put value of RHS reconstruction
+        Set value of RHS reconstruction
         """
         self.isInt(value)
         node = self._getSchemeNameNode(name)
         node.xmlSetData('rhs_reconstruction', value)
 
 
+    @Variables.noUndo
+    def getCellGradientType(self, name):
+        """ Return cell gradient type for specified variable """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetString('cell_gradient_type')
+        if not value:
+            value = self.default['c_gradient_r']
+
+        return value
+
+
+    @Variables.undoGlobal
+    def setCellGradientType(self, name, value):
+        """
+        Set cell gradient type for specified variable.
+        """
+        self.isInList(value, ('global', 'green_iter', 'lsq', 'lsq_ext',
+                              'green_lsq', 'green_lsq_ext', 'green_vtx'))
+        node = self._getSchemeNameNode(name)
+        if value == self.default['c_gradient_r']:
+            node.xmlRemoveChild('cell_gradient_type')
+        else:
+            node.xmlSetData('cell_gradient_type', value)
+
+
+    @Variables.noUndo
+    def getBoundaryGradientType(self, name):
+        """ Return boundary gradient type for specified variable """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetString('boundary_gradient_type')
+        if not value:
+            value = self.default['b_gradient_r']
+
+        return value
+
+
+    @Variables.undoGlobal
+    def setBoundaryGradientType(self, name, value):
+        """
+        Set boundary gradient type for specified variable.
+        """
+        self.isInList(value, ('automatic', 'green_iter', 'lsq', 'lsq_ext',
+                              'green_lsq', 'green_lsq_ext', 'green_vtx'))
+        node = self._getSchemeNameNode(name)
+        if value == self.default['b_gradient_r']:
+            node.xmlRemoveChild('boundary_gradient_type')
+        else:
+            node.xmlSetData('boundary_gradient_type', value)
+
+
+    @Variables.noUndo
+    def getGradientEpsilon(self, name):
+        """
+        Get value of gradient iteration stop criteria for specified variable
+        """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetDouble('gradient_epsilon')
+        if not value:
+            value = self.default['epsrgr']
+
+        return value
+
+
+    @Variables.undoGlobal
+    def setGradientEpsilon(self, name, value):
+        """
+        Set value of gradient iteration stop criteria for specified variable.
+        """
+        node = self._getSchemeNameNode(name)
+        if value == self.default['epsrgr']:
+            node.xmlRemoveChild('gradient_epsilon')
+        else:
+            node.xmlSetData('gradient_epsilon', value)
+
+
+    @Variables.noUndo
+    def getGradientLimiter(self, name):
+        """
+        Get gradient limiter type for specified variable.
+        """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetString('gradient_limiter_type')
+        if not value:
+            value = self.default['imligr']
+
+        return value
+
+
+    @Variables.undoGlobal
+    def setGradientLimiter(self, name, value):
+        """
+        Set gradient limiter type for specified variable.
+        """
+        self.isInList(value, ('none', 'cell', 'face'))
+        node = self._getSchemeNameNode(name)
+        if value == self.default['imligr']:
+            node.xmlRemoveChild('gradient_limiter_type')
+        else:
+            node.xmlSetData('gradient_limiter_type', value)
+
+
+    @Variables.noUndo
+    def getGradientLimitFactor(self, name):
+        """
+        Get value of gradient limiter factor for specified variable
+        """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetDouble('gradient_limiter_factor')
+        if not value:
+            value = self.default['climgr']
+
+        return value
+
+
+    @Variables.undoGlobal
+    def setGradientLimitFactor(self, name, value):
+        """
+        Set value of gradient limiter factor for specified variable.
+        """
+        node = self._getSchemeNameNode(name)
+        if value == self.default['climgr']:
+            node.xmlRemoveChild('gradient_limiter_factor')
+        else:
+            node.xmlSetData('gradient_limiter_factor', value)
+
+
 # Following methods for dependances of solver:
     @Variables.undoLocal
     def setSolverPrecision(self, name, value):
-        """ Put value of solver precision for variable labelled name """
+        """ Put value of solver precision for specified variable """
         # for pressure default value always equal to 1e-8
         self.isPositiveFloat(value)
         node = self._getSolverNameNode(name)
@@ -635,7 +768,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.undoLocal
     def setSolverChoice(self, name, value):
-        """ Put choice of solver for variable labelled name """
+        """ Put choice of solver for specified variable """
         self.isInList(value, ('multigrid', 'multigrid_k_cycle',
                               'conjugate_gradient',
                               'flexible_conjugate_gradient',
@@ -655,7 +788,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.undoLocal
     def setPreconditioningChoice(self, name, value):
-        """ Put choice of preconditioning for variable labelled name """
+        """ Put choice of preconditioning for specified variable """
         self.isInList(value, ('multigrid',
                               'multigrid_k_cycle', 'multigrid_k_cycle_hpc',
                               'none', 'jacobi',
@@ -673,7 +806,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getSolverPrecision(self, name):
-        """ Return value of solver precision for variable labelled name """
+        """ Return value of solver precision for specified variable """
         node = self._getSolverNameNode(name)
 
         if self._isPressure(node):
@@ -701,7 +834,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getSolverChoice(self, name):
-        """ Return choice of solver for variable labelled name """
+        """ Return choice of solver for specified variable """
         node = self._getSolverNameNode(name)
         n = node.xmlGetNode('solver_choice')
 
@@ -714,7 +847,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getPreconditioningChoice(self, name):
-        """ Return choice of preconditioning for variable labelled name """
+        """ Return choice of preconditioning for specified variable """
         node = self._getSolverNameNode(name)
         n = node.xmlGetNode('preconditioning_choice')
 
@@ -727,7 +860,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getScalarTimeStepFactor(self, name):
-        """ Return value of time_step_factor for variable labelled name """
+        """ Return value of time_step_factor for specified variable """
         if self.isScalar(name):
             node = self._getSolverNameNode(name)
             value = node.xmlGetDouble('time_step_factor')
@@ -740,7 +873,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.undoLocal
     def setScalarTimeStepFactor(self, name, value):
-        """ Put value of time_step_factor for variable labelled name """
+        """ Put value of time_step_factor for specified variable """
         self.isStrictPositiveFloat(value)
         if self.isScalar(name):
             node = self._getSolverNameNode(name)
@@ -754,20 +887,20 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getVerbosity(self, name):
-        """ Return value of verbosity for variable labelled name """
+        """ Return value of verbosity for specified variable """
         node = self._getSolverNameNode(name)
         value = node.xmlGetInt('verbosity')
         if value is None:
-            value = self._defaultValues()['verbosity']
+            value = self.default['verbosity']
         return value
 
 
     @Variables.undoLocal
     def setVerbosity(self, name, value):
-        """ Put value of verbosity for variable labelled name """
+        """ Put value of verbosity for specified variable """
         self.isInt(value)
         node = self._getSolverNameNode(name)
-        if value != self._defaultValues()['verbosity']:
+        if value != self.default['verbosity']:
             node.xmlSetData('verbosity', value)
         else:
             node.xmlRemoveChild('verbosity')
