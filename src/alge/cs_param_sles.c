@@ -1739,6 +1739,11 @@ _set_saturne_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_MUMPS:
 #if defined(HAVE_MUMPS)
+      if (slesp->context_param == NULL)
+        cs_param_sles_mumps(slesp,
+                            true, /* single by default in case if precond. */
+                            CS_PARAM_SLES_FACTO_LU);
+
       pc = cs_sles_mumps_pc_create(slesp);
 #else
       bft_error(__FILE__, __LINE__, 0, "%s: MUMPS not available in this build.",
