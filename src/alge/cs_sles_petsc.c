@@ -1256,6 +1256,11 @@ cs_sles_petsc_solve(void                *context,
 
   }
 
+  /* Export the linear system with PETSc functions */
+
+  if (getenv("CS_PETSC_SYSTEM_VIEWER") != NULL)
+    _export_petsc_system(name, sd->ksp, b);
+
   /* Resolution */
 
   cs_fp_exception_disable_trap();
@@ -1263,9 +1268,6 @@ cs_sles_petsc_solve(void                *context,
   KSPSolve(sd->ksp, b, x);
 
   cs_fp_exception_restore_trap();
-
-  if (getenv("CS_PETSC_SYSTEM_VIEWER") != NULL)
-    _export_petsc_system(name, sd->ksp, b);
 
   if (sd->share_a) {
 
