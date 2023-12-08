@@ -3721,6 +3721,14 @@ static cs_sles_convergence_state_t
 _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 {
   cs_iter_algo_t  *algo = gkb->algo;
+
+  /* n = n_algo_iter + 1 since a sum on the square values of zeta is performed
+     to estimate the residual in energy norm and the current number of
+     iterations has not been updated yet (n_algo_iter = 0 after the first
+     resolution done inside _init_gkb_algo()). The number of iterations is
+     incremented at the end of the current function, inside the call to
+     cs_iter_algo_update_cvg_tol_given() */
+
   int  n_algo_iter = cs_iter_algo_get_n_iter(algo);
 
   /* Update the sum of square of zeta values (used for renormalization) */
@@ -3734,18 +3742,18 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
      threshold. The normalization arises from an iterative estimation of the
      initial error in the energy norm */
 
-  int  n = (n_algo_iter < gkb->z_size) ? n_algo_iter : gkb->z_size;
+  int  n = (n_algo_iter < gkb->z_size) ? n_algo_iter + 1: gkb->z_size;
   cs_real_t  err2_energy = 0.;
   for (int i = 0; i < n; i++)
     err2_energy += gkb->zeta_array[i];
 
   double  residual_norm = sqrt(err2_energy);
 
+  /* if n_algo_iter = 0, res0 is automatically set.  For GKB, the first
+   * estimation can be rough that's why an update is made at the second
+   * resolution */
+
   cs_iter_algo_update_residual(algo, residual_norm);
-
-  /* if = 0, res0 is automatically set.  For GKB, the first estimation can be
-   * rough that's why an update is made after the first resolution */
-
   if (n_algo_iter == 1)
     cs_iter_algo_set_initial_residual(algo, residual_norm);
 
@@ -4764,17 +4772,14 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   _transform_gkb_system(matrix, range_set, eqp, nslesp, div_op,
                         slesp, gkb, msles->sles, u_f, b_f, b_c);
 
-  /* Initialization */
+  /* Initialization (A first update of the solution array is done) */
 
   _init_gkb_algo(matrix, range_set, div_op, slesp, gkb, msles->sles, p_c);
 
   /* Main loop */
   /* ========= */
 
-  cs_sles_convergence_state_t
-    cvg_status = cs_iter_algo_get_cvg_status(gkb->algo);
-
-  while (cvg_status == CS_SLES_ITERATING) {
+  while (CS_SLES_ITERATING == _gkb_cvg_test(gkb)) {
 
     /* Compute g (store as an update of d__v), q */
 
@@ -4861,11 +4866,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
       p_c[ip] += -gkb->zeta * gkb->d[ip];
     }
 
-    /* Update error norm and test if one needs one more iteration */
-
-    cvg_status = _gkb_cvg_test(gkb);
-
-  }
+  } /* Main loop on the GKB algorithm */
 
   /* Return to the initial velocity formulation
    * u: = u_tilda + M^-1.(b_f + gamma.N^-1.b_c)
