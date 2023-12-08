@@ -6946,71 +6946,68 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cell_cells_lst[0:n_cells_ext], \
                                 cocg[0:n_cells_ext])
 {
-  #pragma omp target teams distribute parallel for collapse(3) map(tofrom: rhs[0:n_cells_ext])
+  #pragma omp target teams distribute parallel for collapse(3) \
+                      map(tofrom: rhs[0:n_cells_ext])
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)  {
-    for (cs_lnum_t i = 0; i < 3; i++)
-      for (cs_lnum_t j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 3; i++){
+      for (cs_lnum_t j = 0; j < 3; j++){
         rhs[c_id][i][j] = 0.0;
+      }
+    }
   }
 
- // for (int g_id = 0; g_id < n_i_groups; g_id++) {
+  #pragma omp target teams distribute parallel for \
+                      map(tofrom: rhs[0:n_cells_ext]) \
+                      map(to: i_face_cells[0:n_i_faces], \
+                              cell_f_cen[0:n_cells_ext], \
+                              pvar[0:n_cells_ext])
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
- //   for (int t_id = 0; t_id < n_i_threads; t_id++) {
-      #pragma omp target teams distribute parallel for map(tofrom: rhs[0:n_cells_ext]) \
-                                                        map(to: i_face_cells[0:n_i_faces], \
-                                cell_f_cen[0:n_cells_ext], pvar[0:n_cells_ext])
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    cs_lnum_t c_id1 = i_face_cells[f_id][0];
+    cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-       cs_lnum_t c_id1 = i_face_cells[f_id][0];
-       cs_lnum_t c_id2 = i_face_cells[f_id][1];
+    cs_real_t  dc[3], fctb[3];
 
-       cs_real_t  dc[3], fctb[3];
+    for (cs_lnum_t i = 0; i < 3; i++){
+      dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id1][i];
+    }
 
-       for (cs_lnum_t i = 0; i < 3; i++)
-         dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id1][i];
+    cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-       cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+    if (c_weight != NULL) {
+      cs_real_t pond = weight[f_id];
+      cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
+                              + (1. - pond)*c_weight[c_id2]);
 
-       if (c_weight != NULL) {
-         cs_real_t pond = weight[f_id];
-         cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
-                                 + (1. - pond)*c_weight[c_id2]);
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-         for (cs_lnum_t i = 0; i < 3; i++) {
-           cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          fctb[j] = dc[j] * pfac;
+          #pragma omp atomic
+          rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
+          #pragma omp atomic
+          rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
+        }
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-           for (cs_lnum_t j = 0; j < 3; j++) {
-             fctb[j] = dc[j] * pfac;
-             #pragma omp atomic
-             rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
-             #pragma omp atomic
-             rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
-           }
-         }
-       }
-       else {
-         for (cs_lnum_t i = 0; i < 3; i++) {
-           cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          fctb[j] = dc[j] * pfac;
+          #pragma omp atomic
+          rhs[c_id1][i][j] += fctb[j];
+          #pragma omp atomic
+          rhs[c_id2][i][j] += fctb[j];
+        }
+      }
+    }
 
-           for (cs_lnum_t j = 0; j < 3; j++) {
-             fctb[j] = dc[j] * pfac;
-             #pragma omp atomic
-             rhs[c_id1][i][j] += fctb[j];
-             #pragma omp atomic
-             rhs[c_id2][i][j] += fctb[j];
-           }
-         }
-       }
+  } 
 
-      } /* loop on faces */
-
- //   } /* loop on threads */
-
- // } /* loop on thread groups */
-
-  /* Contribution from extended neighborhood */
-
- if (halo_type == CS_HALO_EXTENDED) {
+  if (halo_type == CS_HALO_EXTENDED) {
 
    #pragma omp target teams distribute parallel for map(tofrom: rhs[0:n_cells_ext]) \
                                                     map(to: cell_f_cen[0:n_cells_ext], pvar[0:n_cells_ext],\
@@ -7025,8 +7022,9 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
        cs_real_t dc[3];
 
-       for (cs_lnum_t i = 0; i < 3; i++)
-         dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id1][i];
+       for (cs_lnum_t i = 0; i < 3; i++){
+        dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id1][i];
+       }
 
        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -7041,17 +7039,15 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
      }
    }
 
- } /* End for extended neighborhood */
+  } 
 
- /* Contribution from boundary faces */
-
-//  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-  #pragma omp target teams distribute parallel for map(tofrom: rhs[0:n_cells_ext]) \
-                                map(to: b_face_normal[0:n_b_faces], \
-                                coefav[0:n_b_faces], coefbv[0:n_b_faces], \
-                                pvar[0:n_cells_ext],\
-                                cocg[0:n_cells_ext])
+  #pragma omp target teams distribute parallel for \
+                      map(tofrom: rhs[0:n_cells_ext]) \
+                      map(to: b_face_normal[0:n_b_faces], \
+                              coefav[0:n_b_faces], \
+                              coefbv[0:n_b_faces], \
+                              pvar[0:n_cells_ext],\
+                              cocg[0:n_cells_ext])
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     cs_lnum_t c_id1 = b_face_cells[f_id];
@@ -7063,8 +7059,9 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
     cs_real_t d_b_dist = 1. / b_dist[f_id];
 
    //  /* Normal divided by b_dist */
-    for (cs_lnum_t i = 0; i < 3; i++)
+    for (cs_lnum_t i = 0; i < 3; i++){
       n_d_dist[i] *= d_b_dist;
+    }
 
     for (cs_lnum_t i = 0; i < 3; i++) {
       cs_real_t pfac =   coefav[f_id][i]*inc
@@ -7073,22 +7070,19 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                           + coefbv[f_id][2][i] * pvar[c_id1][2]
                           - pvar[c_id1][i]);
 
-      for (cs_lnum_t j = 0; j < 3; j++)
+      for (cs_lnum_t j = 0; j < 3; j++){
         #pragma omp atomic
         rhs[c_id1][i][j] += n_d_dist[j] * pfac;
+      }
     }
 
-   } /* loop on faces */
-//
-//  } /* loop on threads */
-//
-//  /* Compute gradient */
-//  /*------------------*/
+  } 
 
- #pragma omp target teams distribute parallel for map(tofrom: rhs[0:n_cells_ext]) \
-                                              map(from: gradv[0:n_cells_ext]) \
-                                              map(to: pvar[0:n_cells_ext],\
-                                                      cocg[0:n_cells_ext])
+ #pragma omp target teams distribute parallel for \
+                      map(tofrom: rhs[0:n_cells_ext]) \
+                      map(from: gradv[0:n_cells_ext]) \
+                      map(to: pvar[0:n_cells_ext],\
+                              cocg[0:n_cells_ext])
  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
    for (cs_lnum_t i = 0; i < 3; i++) {
     gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
@@ -7105,87 +7099,12 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
    }
  }
 
-} // end omp target
+} // end omp data
 
 t_end = omp_get_wtime();
 
 t_kernel = t_end - t_begin;
 printf("Time of kernel: %lf\n", t_kernel);
-
-// printf("Check grad target");
-// for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-//    for (cs_lnum_t i = 0; i < 3; i++) {
-//      for (int j = 0; j < 3; ++j) {
-//        if (gradv[c_id][i][j] != 0.) {
-//          printf("DIFFERENCE @%d-%d-%d: %f\n", c_id, i, j, gradv[c_id][i][j]);
-//        }
-//      }
-//    }
-//  }
-
-  /* Compute gradient on boundary cells */
-  /*------------------------------------*/
-
-//     cs_lnum_t t_s_id, t_e_id;
-//     cs_parall_thread_range(m->n_b_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
-
-//     /* Build indices bijection between [1-9] and [1-3]*[1-3] */
-
-//     cs_lnum_t _33_9_idx[9][2];
-//     int nn = 0;
-//     for (int ll = 0; ll < 3; ll++) {
-//       for (int mm = 0; mm < 3; mm++) {
-//         _33_9_idx[nn][0] = ll;
-//         _33_9_idx[nn][1] = mm;
-//         nn++;
-//       }
-//     }
-
-//     /* Loop on boundary cells */
-
-//     for (cs_lnum_t b_c_id = t_s_id; b_c_id < t_e_id; b_c_id++) {
-
-//       cs_lnum_t c_id = m->b_cells[b_c_id];
-
-//       cs_real_t cocgb[3][3], cocgb_v[45], rhsb_v[9], x[9];
-
-//       _complete_cocg_lsq(c_id, madj, fvq, cocgb_s[b_c_id], cocgb);
-
-//       _compute_cocgb_rhsb_lsq_v
-//         (c_id,
-//          inc,
-//          madj,
-//          fvq,
-//          _33_9_idx,
-//          (const cs_real_3_t *)pvar,
-//          (const cs_real_3_t *)coefav,
-//          (const cs_real_33_t *)coefbv,
-//          (const cs_real_3_t *)cocgb,
-//          (const cs_real_3_t *)rhs[c_id],
-//          cocgb_v,
-//          rhsb_v);
-
-//       _fw_and_bw_ldtl_pp(cocgb_v,
-//                          9,
-//                          x,
-//                          rhsb_v);
-
-//       for (int kk = 0; kk < 9; kk++) {
-//         int ii = _33_9_idx[kk][0];
-//         int jj = _33_9_idx[kk][1];
-//         gradv[c_id][ii][jj] = x[kk];
-//       }
-
-//     }
-  
-
-//   /* Periodicity and parallelism treatment */
-
-//   if (m->halo != NULL) {
-//     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, 9);
-//     if (cs_glob_mesh->have_rotation_perio)
-//       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
-//   }
 
   BFT_FREE(rhs);
 }
