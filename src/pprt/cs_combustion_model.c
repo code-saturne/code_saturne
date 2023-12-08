@@ -152,7 +152,10 @@ cs_f_coincl_get_pointers(double  **coefeg,
                          double  **xsoot,
                          double  **rosoot,
                          double  **hinfue,
-                         double  **hinoxy);
+                         double  **hinoxy,
+                         double  **pcigas,
+                         double  **tinfue,
+                         double  **tinoxy);
 
 void
 cs_f_cpincl_comb_get_pointers(int     **ico2,
@@ -281,14 +284,20 @@ cs_f_coincl_get_pointers(double  **coefeg,
                          double  **xsoot,
                          double  **rosoot,
                          double  **hinfue,
-                         double  **hinoxy)
+                         double  **hinoxy,
+                         double  **pcigas,
+                         double  **tinfue,
+                         double  **tinoxy)
 {
   *coefeg = &(cs_glob_combustion_model->gas->coefeg[0][0]);
   *compog = &(cs_glob_combustion_model->gas->compog[0][0]);
   *xsoot  = &(cs_glob_combustion_model->gas->xsoot);
   *rosoot = &(cs_glob_combustion_model->gas->rosoot);
   *hinfue = &(cs_glob_combustion_model->gas->hinfue);
+  *tinfue = &(cs_glob_combustion_model->gas->tinfue);
   *hinoxy = &(cs_glob_combustion_model->hinoxy);
+  *tinoxy = &(cs_glob_combustion_model->tinoxy);
+  *pcigas = &(cs_glob_combustion_model->pcigas);
 }
 
 /*----------------------------------------------------------------------------

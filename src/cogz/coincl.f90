@@ -45,7 +45,7 @@ module coincl
   character(len=12) :: namgas
 
   ! combustible reaction enthalpy (Pouvoir Calorifique Inferieur)
-  double precision, save :: pcigas
+  double precision, save, pointer :: pcigas
 
   ! mass fraction conversion coefficients
   ! from global species to elementary species
@@ -82,9 +82,9 @@ module coincl
 
   integer(c_int), pointer, save :: ientox(:), ientfu(:)
 
-  double precision, save :: tinoxy, tinfue, hstoea
+  double precision, save :: hstoea
   double precision, save :: hh(nmaxhm), ff(nmaxfm), tfh(nmaxfm,nmaxhm)
-
+  real(c_double), pointer, save :: tinfue, tinoxy
   real(c_double), pointer, save :: hinfue, hinoxy
 
   !--> MODELE FLAMME DE DIFFUSION: Steady laminar flamelet
@@ -208,12 +208,15 @@ module coincl
 
     subroutine cs_f_coincl_get_pointers(p_coefeg, p_compog,   &
                                         p_xsoot, p_rosoot,    &
-                                        p_hinfue, p_hinoxy)   &
+                                        p_hinfue, p_hinoxy,   &
+                                        p_pcigas, p_tinfue,   &
+                                        p_tinoxy)             &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot
-      type(c_ptr), intent(out) :: p_hinfue, p_hinoxy
+      type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
+      type(c_ptr), intent(out) :: p_tinoxy
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -255,11 +258,15 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_coefeg, c_compog, c_xsoot, c_rosoot, c_hinfue, c_hinoxy
+    type(c_ptr) :: c_coefeg, c_compog, c_xsoot,  &
+                   c_rosoot, c_hinfue, c_hinoxy, &
+                   c_pcigas, c_tinfue, c_tinoxy
 
-    call cs_f_coincl_get_pointers(c_coefeg, c_compog, &
+    call cs_f_coincl_get_pointers(c_coefeg, c_compog,  &
                                   c_xsoot,  c_rosoot,  &
-                                  c_hinfue, c_hinoxy)
+                                  c_hinfue, c_hinoxy,  &
+                                  c_pcigas, c_tinfue,  &
+                                  c_tinoxy)
 
     call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
     call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
@@ -267,6 +274,9 @@ contains
     call c_f_pointer(c_rosoot, rosoot)
     call c_f_pointer(c_hinfue, hinfue)
     call c_f_pointer(c_hinoxy, hinoxy)
+    call c_f_pointer(c_pcigas, pcigas)
+    call c_f_pointer(c_tinfue, tinfue)
+    call c_f_pointer(c_tinoxy, tinoxy)
 
   end subroutine co_models_init
 

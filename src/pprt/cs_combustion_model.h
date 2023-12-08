@@ -75,7 +75,8 @@ typedef struct {
 
   int     iic;                     /*!< rank of C in gas composition (base 1) */
 
-  double  hinfue;                  /*! input mass enthalpy for fuel */
+  double  hinfue;                  /*!< input mass enthalpy for fuel */
+  double  tinfue;                  /*!< input temperature for fuel en K */
 
   double  xsoot;                   /*!< soot fraction production (isoot = 0) */
   double  rosoot;                  /*!< soot density */
@@ -135,9 +136,12 @@ typedef struct {
                                        for gas or coal combustion
                                        (\ref diffusivity_ref is automatically set
                                        to \ref diftl0 for the enthalpy). */
+  double  pcigas;                    /*!< combustible reaction enthalpy
+                                       (Lower Calorific Value)*/
   double  xco2;                      /*!< molar coefficient of CO2 */
   double  xh2o;                      /*!< molar coefficient of H2O */
   double  hinoxy;                    /*!< input mass enthalpy for the oxidant */
+  double  tinoxy;                    /*! input temperature for oxydant */
 
   /*! molar mass of an elementary gas component */
   double  wmole[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
