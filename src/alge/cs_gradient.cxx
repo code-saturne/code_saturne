@@ -6892,6 +6892,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                      cs_real_33_t         *restrict rhs)
 {
   const cs_lnum_t n_cells                 = m->n_cells;
+  const cs_lnum_t n_b_cells                 = m->n_b_cells;
   const cs_lnum_t n_i_faces                 = m->n_i_faces;
   const cs_lnum_t n_b_faces                 = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -6909,6 +6910,15 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
     = (const cs_lnum_t *restrict)m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
+
+  const cs_lnum_t *restrict cell_cells
+    = (const cs_lnum_t *restrict)madj->cell_cells;
+  const cs_lnum_t *restrict cell_i_faces_sgn
+    = (const cs_lnum_t *restrict)madj->cell_i_faces_sgn;
+  const short int *restrict cell_i_faces
+    = (const short int *restrict)madj->cell_i_faces;
+  const short int *restrict cell_b_faces
+    = (const short int *restrict)madj->cell_b_faces;
 
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *restrict)fvq->cell_f_cen;
@@ -6933,6 +6943,8 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
   double t_kernel = 0.0;
 	double t_begin, t_end;
 
+  bool scatter = true;
+
   /* Contribution from interior faces */
   int num_device = omp_get_num_devices();
   printf("OMP supported devices %d\n", num_device);
@@ -6955,62 +6967,119 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
       }
     }
   }
+  if(scatter){
+    #pragma omp target teams distribute parallel for \
+                        map(tofrom: rhs[0:n_cells_ext]) \
+                        map(to: i_face_cells[0:n_i_faces], \
+                                cell_f_cen[0:n_cells_ext], \
+                                pvar[0:n_cells_ext])
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
-  #pragma omp target teams distribute parallel for \
-                      map(tofrom: rhs[0:n_cells_ext]) \
-                      map(to: i_face_cells[0:n_i_faces], \
-                              cell_f_cen[0:n_cells_ext], \
-                              pvar[0:n_cells_ext])
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+      cs_lnum_t c_id1 = i_face_cells[f_id][0];
+      cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-    cs_lnum_t c_id1 = i_face_cells[f_id][0];
-    cs_lnum_t c_id2 = i_face_cells[f_id][1];
+      cs_real_t  dc[3], fctb[3];
 
-    cs_real_t  dc[3], fctb[3];
+      for (cs_lnum_t i = 0; i < 3; i++){
+        dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id1][i];
+      }
 
-    for (cs_lnum_t i = 0; i < 3; i++){
-      dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id1][i];
-    }
+      cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-    cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+      if (c_weight != NULL) {
+        cs_real_t pond = weight[f_id];
+        cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
+                                + (1. - pond)*c_weight[c_id2]);
 
-    if (c_weight != NULL) {
-      cs_real_t pond = weight[f_id];
-      cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
-                              + (1. - pond)*c_weight[c_id2]);
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          fctb[j] = dc[j] * pfac;
-          #pragma omp atomic
-          rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
-          #pragma omp atomic
-          rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            fctb[j] = dc[j] * pfac;
+            #pragma omp atomic
+            rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
+            #pragma omp atomic
+            rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
+          }
         }
       }
-    }
-    else {
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+      else {
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          fctb[j] = dc[j] * pfac;
-          #pragma omp atomic
-          rhs[c_id1][i][j] += fctb[j];
-          #pragma omp atomic
-          rhs[c_id2][i][j] += fctb[j];
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            fctb[j] = dc[j] * pfac;
+            #pragma omp atomic
+            rhs[c_id1][i][j] += fctb[j];
+            #pragma omp atomic
+            rhs[c_id2][i][j] += fctb[j];
+          }
         }
       }
-    }
 
-  } 
+    }
+  }
+  else{
+    #pragma omp target teams distribute parallel for \
+                        map(tofrom: rhs[0:n_cells_ext]) \
+                        map(to: i_face_cells[0:n_i_faces], \
+                                cell_cells_idx[0:n_cells_ext], \
+                                cell_cells[0:n_cells_ext], \
+                                cell_f_cen[0:n_cells_ext], \
+                                pvar[0:n_cells_ext])
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cs_lnum_t s_id = cell_cells_idx[c_id];
+      cs_lnum_t e_id = cell_cells_idx[c_id+1];
+
+      cs_lnum_t c_id2, f_id;
+
+      cs_real_t  dc[3], fctb[3];
+      for(cs_lnum_t index = s_id; index < e_id; index++){
+
+        c_id2 = cell_cells[index];
+
+        for (cs_lnum_t i = 0; i < 3; i++){
+          dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id][i];
+        }
+
+        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        if (c_weight != NULL) {
+          f_id = cell_i_faces[index];
+          cs_real_t pond = (cell_i_faces_sgn[index] > 0) ? weight[f_id] : 1. - weight[f_id];
+          cs_real_t denom = 1. / (  pond       *c_weight[c_id]
+                                  + (1. - pond)*c_weight[c_id2]);
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id][i]) * ddc;
+
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              fctb[j] = dc[j] * pfac;
+              rhs[c_id][i][j] += c_weight[c_id2] * denom * fctb[j];
+            }
+          }
+        }
+        else {
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id][i]) * ddc;
+
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              fctb[j] = dc[j] * pfac;
+              rhs[c_id][i][j] += fctb[j];
+            }
+          }
+        }
+      }
+
+    } 
+  }
 
   if (halo_type == CS_HALO_EXTENDED) {
 
-   #pragma omp target teams distribute parallel for map(tofrom: rhs[0:n_cells_ext]) \
-                                                    map(to: cell_f_cen[0:n_cells_ext], pvar[0:n_cells_ext],\
+   #pragma omp target teams distribute parallel for \
+                        map(tofrom: rhs[0:n_cells_ext]) \
+                        map(to: cell_f_cen[0:n_cells_ext], pvar[0:n_cells_ext],\
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells_lst[0:n_cells_ext])
    for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
@@ -7041,42 +7110,91 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
   } 
 
-  #pragma omp target teams distribute parallel for \
-                      map(tofrom: rhs[0:n_cells_ext]) \
-                      map(to: b_face_normal[0:n_b_faces], \
-                              coefav[0:n_b_faces], \
-                              coefbv[0:n_b_faces], \
-                              pvar[0:n_cells_ext],\
-                              cocg[0:n_cells_ext])
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  if(scatter){
+    #pragma omp target teams distribute parallel for \
+                        map(tofrom: rhs[0:n_cells_ext]) \
+                        map(to: b_face_normal[0:n_b_faces], \
+                                coefav[0:n_b_faces], \
+                                coefbv[0:n_b_faces], \
+                                pvar[0:n_cells_ext],\
+                                cocg[0:n_cells_ext])
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    cs_lnum_t c_id1 = b_face_cells[f_id];
+      cs_lnum_t c_id1 = b_face_cells[f_id];
 
-    cs_real_t n_d_dist[3];
-   //  /* Normal is vector 0 if the b_face_normal norm is too small */
-   cs_math_3_normalize_target(b_face_normal[f_id], n_d_dist);
+      cs_real_t n_d_dist[3];
+    //  /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalize_target(b_face_normal[f_id], n_d_dist);
 
-    cs_real_t d_b_dist = 1. / b_dist[f_id];
+      cs_real_t d_b_dist = 1. / b_dist[f_id];
 
-   //  /* Normal divided by b_dist */
-    for (cs_lnum_t i = 0; i < 3; i++){
-      n_d_dist[i] *= d_b_dist;
-    }
-
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      cs_real_t pfac =   coefav[f_id][i]*inc
-                       + (  coefbv[f_id][0][i] * pvar[c_id1][0]
-                          + coefbv[f_id][1][i] * pvar[c_id1][1]
-                          + coefbv[f_id][2][i] * pvar[c_id1][2]
-                          - pvar[c_id1][i]);
-
-      for (cs_lnum_t j = 0; j < 3; j++){
-        #pragma omp atomic
-        rhs[c_id1][i][j] += n_d_dist[j] * pfac;
+    //  /* Normal divided by b_dist */
+      for (cs_lnum_t i = 0; i < 3; i++){
+        n_d_dist[i] *= d_b_dist;
       }
-    }
 
-  } 
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        cs_real_t pfac =   coefav[f_id][i]*inc
+                        + (  coefbv[f_id][0][i] * pvar[c_id1][0]
+                            + coefbv[f_id][1][i] * pvar[c_id1][1]
+                            + coefbv[f_id][2][i] * pvar[c_id1][2]
+                            - pvar[c_id1][i]);
+
+        for (cs_lnum_t j = 0; j < 3; j++){
+          #pragma omp atomic
+          rhs[c_id1][i][j] += n_d_dist[j] * pfac;
+        }
+      }
+
+    } 
+  }
+  else{
+    #pragma omp target teams distribute parallel for \
+                        map(tofrom: rhs[0:n_cells_ext]) \
+                        map(to: b_face_normal[0:n_b_faces], \
+                                cell_b_faces[0:n_b_faces], \
+                                coefav[0:n_b_faces], \
+                                coefbv[0:n_b_faces], \
+                                pvar[0:n_cells_ext],\
+                                cocg[0:n_cells_ext])
+    for (cs_lnum_t c_id = 0; c_id < n_b_cells; c_id++) {
+
+      cs_lnum_t s_id = cell_cells_idx[c_id];
+      cs_lnum_t e_id = cell_cells_idx[c_id+1];
+
+      cs_lnum_t c_id2, f_id;
+
+      cs_real_t n_d_dist[3];
+
+      for(cs_lnum_t index = s_id; index < e_id; index++){
+
+        f_id = cell_b_faces[index];
+
+        cs_math_3_normalize_target(b_face_normal[f_id], n_d_dist);
+
+        cs_real_t d_b_dist = 1. / b_dist[f_id];
+
+        //  /* Normal divided by b_dist */
+        for (cs_lnum_t i = 0; i < 3; i++){
+          n_d_dist[i] *= d_b_dist;
+        }
+
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          cs_real_t pfac =   coefav[f_id][i]*inc
+                          + (  coefbv[f_id][0][i] * pvar[c_id][0]
+                              + coefbv[f_id][1][i] * pvar[c_id][1]
+                              + coefbv[f_id][2][i] * pvar[c_id][2]
+                              - pvar[c_id][i]);
+
+          for (cs_lnum_t j = 0; j < 3; j++){
+            rhs[c_id][i][j] += n_d_dist[j] * pfac;
+          }
+        }
+      }
+
+    } 
+  }
+  
 
  #pragma omp target teams distribute parallel for \
                       map(tofrom: rhs[0:n_cells_ext]) \
