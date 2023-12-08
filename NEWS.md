@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 8.1.0 (unreleased)
+--------------------------
+
 ### Physical modeling
 
 - Remove obsolete and experimental heavy fuel combustion model
