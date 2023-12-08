@@ -795,6 +795,18 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Temperature liq packing");
   }
+  {
+    /* True liquid mass fraction in packing */
+    f = cs_field_create("y_liq_packing",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Liq mass fraction packing");
+  }
+
 
   {
     /* Liquid vertical velocity in packing */
@@ -831,6 +843,18 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Temperature rain");
+  }
+
+  {
+    /* True rain mass fraction */
+    f = cs_field_create("y_rain",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Rain mass fraction");
   }
 
   /* Properties to create for rain velocity equation solving */
@@ -2474,12 +2498,6 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
       cs_lnum_t cell_id = ze_cell_ids[i];
 
-      /* Update the liquid temperature based on the solved liquid enthalpy
-       * NB: May not be required as it is also done in 'cs_ctwr_phyvar_update'?
-       * No, it must be done here because here we sweep over the entire
-       * computational domain whereas 'cs_ctwr_phyvar_update' updates
-       * T_l only over the packing zones */
-
       /* Initialize the liquid vertical velocity component
        * this is correct for droplet and extended for other packing zones */
       vel_l[cell_id] = ct->v_liq_pack;
@@ -2562,6 +2580,9 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;      /* Liquid enthalpy */
   cs_real_t *y_l = (cs_real_t *)CS_F_(y_l_pack)->val; /* Liquid mass per unit
                                                          cell volume*/
+  cs_real_t *yl_pack = cs_field_by_name("y_liq_packing")->val; /* Liquid mass
+                                                                * fraction in
+                                                                * packing */
   cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val; /* Liquid vertical
                                                             velocity */
   cs_real_t *mf_l = cs_field_by_name("mass_flux_l")->val; /* Liquid mass flux */
@@ -2570,7 +2591,9 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     = cs_field_by_name("inner_mass_flux_y_l_packing")->val; //FIXME
 
   /* Variable and properties for rain zones */
-  cs_field_t *cfld_yp = cs_field_by_name_try("y_p");   /* Rain mass fraction */
+  cs_field_t *cfld_yp = cs_field_by_name_try("y_p");   /* Rain scalar */
+  cs_real_t *y_rain = cs_field_by_name("y_rain")->val; /* Yp times Tp */
+
   cs_real_t *yt_rain = cs_field_by_name("y_p_t_l")->val; /* Yp times Tp */
   cs_real_t *t_rain = cs_field_by_name("t_rain")->val; /* Rain temperature */
 
@@ -2610,11 +2633,10 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
         nclip_yp_max += 1;
       }
 
-      /* Continuous phase mass fraction */
-      cpro_x1[cell_id] = 1. - y_p[cell_id];
-      //TODO not one for rain zones - Why not?
-      //If it represents the humid air, then it should be one?  If it represents
-      //the dry air, then it should account for both y_p and y_w
+      /* Recompute real rain mass fraction from Yp */
+      if (y_p[cell_id] > 0.){
+        y_rain[cell_id] = y_p[cell_id] / (1 + y_p[cell_id]);
+      }
 
       /* Recompute real rain temperature from Yp.Tp */
       if (y_p[cell_id] > 1.e-4){
@@ -2624,6 +2646,13 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
         t_rain[cell_id] = 0.;
       }
     }
+
+    /* Continuous phase mass fraction */
+    cpro_x1[cell_id] = 1. - y_rain[cell_id];
+    //TODO not one for rain zones - Why not?
+    //If it represents the humid air, then it should be one?  If it represents
+    //the dry air, then it should account for both y_p and y_w
+
 
     /* Update humidity field */
     x[cell_id] = y_w[cell_id]/(1.0-y_w[cell_id]);
@@ -2760,6 +2789,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
         cs_real_t h_liq = h_l[cell_id] / y_l[cell_id];
         t_l[cell_id] = cs_liq_h_to_t(h_liq);
         mf_l[cell_id] = y_l[cell_id] * rho_h[cell_id] * vel_l[cell_id];
+        yl_pack[cell_id] = y_l[cell_id] / (1 + y_l[cell_id]);
       }
     }
 
@@ -2804,9 +2834,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
       /* Clipping between 0 and 100 */
       ct->t_l_bc = CS_MAX(CS_MIN(ct->t_l_bc, 100.), 0.);
-
     }
-
   }
 
 
