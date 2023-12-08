@@ -144,7 +144,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
-                         double  **fs);
+                         double  **fs,
+                         double  **th);
 
 void
 cs_f_coincl_get_pointers(double  **coefeg,
@@ -250,7 +251,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
-                         double  **fs)
+                         double  **fs,
+                         double  **th)
 {
   *ngaze  = &(cs_glob_combustion_model->n_gas_el_comp);
   *ngazg  = &(cs_glob_combustion_model->n_gas_species);
@@ -265,6 +267,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
   *xh2o   = &(cs_glob_combustion_model->xh2o);
   *ckabs1 = &(cs_glob_combustion_model->ckabs0);
   *fs     = cs_glob_combustion_model->gas->fs;
+  *th     = cs_glob_combustion_model->th;
 }
 
 /*----------------------------------------------------------------------------

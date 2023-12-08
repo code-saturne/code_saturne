@@ -116,7 +116,7 @@ module ppthch
   double precision, save ::  nreact(ngazgm)
 
   !> temperature (in K)
-  double precision, save ::  th(npot)
+  real(c_double), pointer, save :: th(:)
 
   !> engaze(ij) is the massic enthalpy (J/kg) of the i-th elementary gas component
   !> at temperature  th(j)
@@ -183,15 +183,15 @@ module ppthch
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,   &
-                                        p_iic, p_wmole, p_wmolg,  p_diftl0,  &
-                                        p_xco2, p_xh2o, p_ckabs1, p_fs)      &
+    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,     &
+                                        p_iic, p_wmole, p_wmolg,  p_diftl0,    &
+                                        p_xco2, p_xh2o, p_ckabs1, p_fs, p_th)  &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,    &
                                   p_wmolg, p_wmole, p_diftl0, p_xco2, p_xh2o,  &
-                                  p_ckabs1,  p_fs
+                                  p_ckabs1,  p_fs, p_th
     end subroutine cs_f_ppthch_get_pointers
 
     !---------------------------------------------------------------------------
@@ -220,11 +220,11 @@ contains
 
     type(c_ptr) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic
     type(c_ptr) :: p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
-    type(c_ptr) :: p_fs, p_diftl0
+    type(c_ptr) :: p_fs, p_diftl0, p_th
 
     call cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,  &
                                   p_wmole, p_wmolg, p_diftl0,                &
-                                  p_xco2, p_xh2o, p_ckabs1, p_fs)
+                                  p_xco2, p_xh2o, p_ckabs1, p_fs, p_th)
 
     call c_f_pointer(p_ngaze, ngaze)
     call c_f_pointer(p_ngazg, ngazg)
@@ -238,6 +238,7 @@ contains
     call c_f_pointer(p_xh2o, xh2o)
     call c_f_pointer(p_ckabs1, ckabs1)
     call c_f_pointer(p_fs, fs, [nrgazm])
+    call c_f_pointer(p_th, th, [npot])
 
   end subroutine thch_models_init
 

@@ -158,6 +158,9 @@ typedef struct {
   /*! composition of CO2 oxidants */
   double oxyco2[CS_COMBUSTION_MAX_OXYDANTS];
 
+  /*! temperature in K */
+  double th[CS_COMBUSTION_MAX_TABULATION_POINTS];
+
 } cs_combustion_model_t;
 
 /*============================================================================
