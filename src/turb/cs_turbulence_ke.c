@@ -2375,7 +2375,6 @@ cs_turbulence_ke_mu_t(int  phase_id)
 
   cs_field_t *f_k = CS_F_(k);
   cs_field_t *f_eps = CS_F_(eps);
-  cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_rho = CS_F_(rho);
   cs_field_t *f_mu = CS_F_(mu);
   cs_field_t *f_mut = CS_F_(mu_t);
@@ -2383,7 +2382,6 @@ cs_turbulence_ke_mu_t(int  phase_id)
   if (phase_id >= 0) {
     f_k = CS_FI_(k, phase_id);
     f_eps = CS_FI_(eps, phase_id);
-    f_vel = CS_FI_(vel, phase_id);
     f_rho = CS_FI_(rho, phase_id);
     f_mu = CS_FI_(mu, phase_id);
     f_mut = CS_FI_(mu_t, phase_id);

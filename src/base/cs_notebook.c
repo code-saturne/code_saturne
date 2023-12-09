@@ -623,19 +623,19 @@ cs_notebook_nb_var(void)
  *
  * Returns a boolean to indicate wheter this parameter is editable
  *
- * \param[in]   ind   Id of the notebook parameter
+ * \param[in]   id   Id of the notebook parameter
  *
  * \returns true is variable can be edited, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_notebook_var_is_editable(const int ind)
+cs_notebook_var_is_editable(const int id)
 {
   if (_n_entries == 0)
     return false;
 
-  return _entries[ind]->editable;
+  return _entries[id]->editable;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -644,57 +644,58 @@ cs_notebook_var_is_editable(const int ind)
  *
  * Returns a boolean to indicate wheter this parameter is read at restart
  *
- * \param[in]   ind   Id of the notebook parameter
+ * \param[in]   id   Id of the notebook parameter
  *
  * \returns true if variable should be read from checkpoint file, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_notebook_var_is_read_from_checkpoint(const int ind)
+cs_notebook_var_is_read_from_checkpoint(const int id)
 {
   if (_n_entries == 0)
     return false;
 
-  return _entries[ind]->restart;
+  return _entries[id]->restart;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Change the editable property of the notebook parameter
  *
- * \param[in]   ind   Id of the notebook parameter
+ * \param[in]   id    Id of the notebook parameter
  * \param[in]   val   flag (bool) indicating if the value is set to editable
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_notebook_var_change_editable(const int ind, const bool val)
+cs_notebook_var_change_editable(int    id,
+                                const  bool val)
 {
   if (_n_entries == 0)
     return;
 
-  _entries[ind]->editable = val;
+  _entries[id]->editable = val;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get name of a notebook parameter based on its id
  *
- * \param[in]   ind   Id of the notebook parameter
+ * \param[in]   id    Id of the notebook parameter
  * \param[out]  name  Name of the notebook parameter
  *
  * \returns name of variable (char *)
  */
 /*----------------------------------------------------------------------------*/
 
-char *
-cs_notebook_name_by_id(const int ind)
+const char *
+cs_notebook_name_by_id(int  id)
 {
   if (_n_entries == 0)
     return NULL;
 
-  return _entries[ind]->name;
+  return _entries[id]->name;
 }
 
 /*----------------------------------------------------------------------------*/
