@@ -169,8 +169,8 @@ _beta_limiter_denom(cs_field_t                 *f,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -362,7 +362,7 @@ _beta_limiter_denom(cs_field_t                 *f,
                                blencp,
                                cell_cen[ic],
                                cell_cen[id],
-                               i_face_normal[face_id],
+                               i_face_u_normal[face_id],
                                i_face_cog[face_id],
                                grdpa[ic],
                                pvar[ic],
@@ -377,7 +377,7 @@ _beta_limiter_denom(cs_field_t                 *f,
                                blencp,
                                cell_cen[ic],
                                cell_cen[id],
-                               i_face_normal[face_id],
+                               i_face_u_normal[face_id],
                                i_face_cog[face_id],
                                grdpaa[ic],
                                pvara[ic],
@@ -914,10 +914,14 @@ cs_slope_test_gradient(int                     f_id,
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf
+    = (const cs_real_t *restrict)fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
+  const cs_real_3_t *restrict b_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipb
@@ -954,9 +958,11 @@ cs_slope_test_gradient(int                     f_id,
         cs_real_t pfac = pjf;
         if (i_massflux[face_id] > 0.) pfac = pif;
 
-        cs_real_t pfac1 = pfac*i_face_normal[face_id][0];
-        cs_real_t pfac2 = pfac*i_face_normal[face_id][1];
-        cs_real_t pfac3 = pfac*i_face_normal[face_id][2];
+        pfac *= i_face_surf[face_id];
+
+        cs_real_t pfac1 = pfac*i_face_u_normal[face_id][0];
+        cs_real_t pfac2 = pfac*i_face_u_normal[face_id][1];
+        cs_real_t pfac3 = pfac*i_face_u_normal[face_id][2];
 
         grdpa[ii][0] = grdpa[ii][0] + pfac1;
         grdpa[ii][1] = grdpa[ii][1] + pfac2;
@@ -980,9 +986,11 @@ cs_slope_test_gradient(int                     f_id,
 
       cs_real_t pfac = inc*coefap[face_id] + coefbp[face_id]
         * (pvar[ii] + cs_math_3_dot_product(grad[ii], diipb[face_id]));
-      grdpa[ii][0] += pfac*b_face_normal[face_id][0];
-      grdpa[ii][1] += pfac*b_face_normal[face_id][1];
-      grdpa[ii][2] += pfac*b_face_normal[face_id][2];
+      pfac *= b_face_surf[face_id];
+
+      grdpa[ii][0] += pfac*b_face_u_normal[face_id][0];
+      grdpa[ii][1] += pfac*b_face_u_normal[face_id][1];
+      grdpa[ii][2] += pfac*b_face_u_normal[face_id][2];
 
     }
   }
@@ -1051,10 +1059,14 @@ cs_upwind_gradient(const int                     f_id,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf
+    = (const cs_real_t *restrict)fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
+  const cs_real_3_t *restrict b_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
 
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
@@ -1077,9 +1089,10 @@ cs_upwind_gradient(const int                     f_id,
 
         cs_real_t pfac = pjf;
         if (i_massflux[face_id] > 0.) pfac = pif;
+        pfac *= i_face_surf[face_id];
 
         for (cs_lnum_t k = 0; k < 3; k++) {
-          cs_real_t pfack = pfac*i_face_normal[face_id][k];
+          cs_real_t pfack = pfac*i_face_u_normal[face_id][k];
           grdpa[ii][k] += pfack;
           grdpa[jj][k] -= pfack;
         }
@@ -1097,13 +1110,13 @@ cs_upwind_gradient(const int                     f_id,
       cs_lnum_t ii = b_face_cells[face_id];
 
       cs_real_t pfac = pvar[ii];
-
       if (b_massflux[face_id] < 0)
         pfac = inc*coefap[face_id] + coefbp[face_id] * pvar[ii];
+      pfac *= b_face_surf[face_id];
 
-      grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_normal[face_id][0];
-      grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_normal[face_id][1];
-      grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_normal[face_id][2];
+      grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_u_normal[face_id][0];
+      grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_u_normal[face_id][1];
+      grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_u_normal[face_id][2];
 
     }
   }
@@ -1642,13 +1655,12 @@ cs_convection_diffusion_scalar(int                       idtvar,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -2269,7 +2281,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                    beta,
                                    cell_cen[ic],
                                    cell_cen[id],
-                                   i_face_normal[face_id],
+                                   i_face_u_normal[face_id],
                                    i_face_cog[face_id],
                                    grad[ic],
                                    _pvar[ic],
@@ -2373,10 +2385,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                       blend_st,
                                       weight[face_id],
                                       i_dist[face_id],
-                                      i_face_surf[face_id],
                                       cell_cen[ii],
                                       cell_cen[jj],
-                                      i_face_normal[face_id],
+                                      i_face_u_normal[face_id],
                                       i_face_cog[face_id],
                                       diipf[face_id],
                                       djjpf[face_id],
@@ -2477,10 +2488,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                         blend_st,
                                         weight[face_id],
                                         i_dist[face_id],
-                                        i_face_surf[face_id],
                                         cell_cen[ii],
                                         cell_cen[jj],
-                                        i_face_normal[face_id],
+                                        i_face_u_normal[face_id],
                                         i_face_cog[face_id],
                                         diipf[face_id],
                                         djjpf[face_id],
@@ -3079,12 +3089,11 @@ cs_face_convection_scalar(int                       idtvar,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -3642,7 +3651,7 @@ cs_face_convection_scalar(int                       idtvar,
                                    beta,
                                    cell_cen[ic],
                                    cell_cen[id],
-                                   i_face_normal[face_id],
+                                   i_face_u_normal[face_id],
                                    i_face_cog[face_id],
                                    grad[ic],
                                    _pvar[ic],
@@ -3717,10 +3726,9 @@ cs_face_convection_scalar(int                       idtvar,
                                       blend_st,
                                       weight[face_id],
                                       i_dist[face_id],
-                                      i_face_surf[face_id],
                                       cell_cen[ii],
                                       cell_cen[jj],
-                                      i_face_normal[face_id],
+                                      i_face_u_normal[face_id],
                                       i_face_cog[face_id],
                                       diipf[face_id],
                                       djjpf[face_id],
@@ -3808,10 +3816,9 @@ cs_face_convection_scalar(int                       idtvar,
                                         blend_st,
                                         weight[face_id],
                                         i_dist[face_id],
-                                        i_face_surf[face_id],
                                         cell_cen[ii],
                                         cell_cen[jj],
-                                        i_face_normal[face_id],
+                                        i_face_u_normal[face_id],
                                         i_face_cog[face_id],
                                         diipf[face_id],
                                         djjpf[face_id],
@@ -4210,17 +4217,16 @@ cs_convection_diffusion_vector(int                         idtvar,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict b_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
@@ -4488,9 +4494,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
-              cs_real_3_t n;
-              cs_math_3_normalize(i_face_normal[face_id], n);
-
+              const cs_real_t *n = i_face_u_normal[face_id];
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -4589,9 +4593,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
-              cs_real_3_t n;
-              cs_math_3_normalize(i_face_normal[face_id], n);
-
+              const cs_real_t *n = i_face_u_normal[face_id];
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
             }
@@ -4701,9 +4703,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
-              cs_real_3_t n;
-              cs_math_3_normalize(i_face_normal[face_id], n);
-
+              const cs_real_t *n = i_face_u_normal[face_id];
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -4805,9 +4805,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
-              cs_real_3_t n;
-              cs_math_3_normalize(i_face_normal[face_id], n);
-
+              const cs_real_t *n = i_face_u_normal[face_id];
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
             }
@@ -4937,9 +4935,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
-              cs_real_3_t n;
-              cs_math_3_normalize(i_face_normal[face_id], n);
-
+              const cs_real_t *n = i_face_u_normal[face_id];
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -4961,10 +4957,9 @@ cs_convection_diffusion_vector(int                         idtvar,
                                              blend_st,
                                              weight[face_id],
                                              i_dist[face_id],
-                                             i_face_surf[face_id],
                                              cell_cen[ii],
                                              cell_cen[jj],
-                                             i_face_normal[face_id],
+                                             i_face_u_normal[face_id],
                                              i_face_cog[face_id],
                                              diipf[face_id],
                                              djjpf[face_id],
@@ -5049,9 +5044,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
-              cs_real_3_t n;
-              cs_math_3_normalize(i_face_normal[face_id], n);
-
+              const cs_real_t *n = i_face_u_normal[face_id];
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
             }
@@ -5070,10 +5063,9 @@ cs_convection_diffusion_vector(int                         idtvar,
                                                blend_st,
                                                weight[face_id],
                                                i_dist[face_id],
-                                               i_face_surf[face_id],
                                                cell_cen[ii],
                                                cell_cen[jj],
-                                               i_face_normal[face_id],
+                                               i_face_u_normal[face_id],
                                                i_face_cog[face_id],
                                                diipf[face_id],
                                                djjpf[face_id],
@@ -5193,9 +5185,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = i_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
           }
@@ -5269,9 +5259,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
 
@@ -5322,9 +5310,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
 
@@ -5395,9 +5381,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
           }
 
@@ -5480,9 +5464,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
 
@@ -5529,9 +5511,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
 
@@ -5614,9 +5594,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
           }
@@ -5693,9 +5671,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
           }
 
@@ -5804,18 +5780,18 @@ cs_convection_diffusion_vector(int                         idtvar,
           double secvis = i_secvis[face_id]; /* - 2/3 * mu */
           double visco = i_visc[face_id]; /* mu S_ij / d_ij */
 
-          double grdtrv =      pnd*(grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2])
-                 + (1.-pnd)*(grad[jj][0][0]+grad[jj][1][1]+grad[jj][2][2]);
+          double grdtrv =      pnd *(grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2])
+                         + (1.-pnd)*(grad[jj][0][0]+grad[jj][1][1]+grad[jj][2][2]);
 
-          cs_real_3_t n, ipjp;
-          cs_math_3_normalize(i_face_normal[face_id], n);
+          cs_real_t ipjp[3];
+          const cs_real_t *n = i_face_u_normal[face_id];
 
           /* I'J' */
           for (int i = 0; i < 3; i++)
             ipjp[i] = n[i] * i_dist[face_id];
 
           /* We need to compute trans_grad(u).I'J' which is equal to I'J'.grad(u) */
-          for (int isou = 0; isou < 3; isou++) {
+          for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
             double tgrdfl = ipjp[0] * (      pnd*grad[ii][0][isou]
                                       + (1.-pnd)*grad[jj][0][isou])
@@ -5968,12 +5944,11 @@ cs_convection_diffusion_tensor(int                         idtvar,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -6539,10 +6514,9 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                              blend_st,
                                              weight[face_id],
                                              i_dist[face_id],
-                                             i_face_surf[face_id],
                                              cell_cen[ii],
                                              cell_cen[jj],
-                                             i_face_normal[face_id],
+                                             i_face_u_normal[face_id],
                                              i_face_cog[face_id],
                                              diipf[face_id],
                                              djjpf[face_id],
@@ -6634,10 +6608,9 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                                blend_st,
                                                weight[face_id],
                                                i_dist[face_id],
-                                               i_face_surf[face_id],
                                                cell_cen[ii],
                                                cell_cen[jj],
-                                               i_face_normal[face_id],
+                                               i_face_u_normal[face_id],
                                                i_face_cog[face_id],
                                                diipf[face_id],
                                                djjpf[face_id],
@@ -6938,13 +6911,12 @@ cs_convection_diffusion_thermal(int                       idtvar,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -7545,7 +7517,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                    beta,
                                    cell_cen[ic],
                                    cell_cen[id],
-                                   i_face_normal[face_id],
+                                   i_face_u_normal[face_id],
                                    i_face_cog[face_id],
                                    grad[ic],
                                    _pvar[ic],
@@ -7697,10 +7669,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                       blend_st,
                                       weight[face_id],
                                       i_dist[face_id],
-                                      i_face_surf[face_id],
                                       cell_cen[ii],
                                       cell_cen[jj],
-                                      i_face_normal[face_id],
+                                      i_face_u_normal[face_id],
                                       i_face_cog[face_id],
                                       diipf[face_id],
                                       djjpf[face_id],
@@ -7801,10 +7772,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                         blend_st,
                                         weight[face_id],
                                         i_dist[face_id],
-                                        i_face_surf[face_id],
                                         cell_cen[ii],
                                         cell_cen[jj],
-                                        i_face_normal[face_id],
+                                        i_face_u_normal[face_id],
                                         i_face_cog[face_id],
                                         diipf[face_id],
                                         djjpf[face_id],
@@ -9030,8 +9000,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
@@ -9436,8 +9406,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
             =        pnd*(gradv[ii][0][0]+gradv[ii][1][1]+gradv[ii][2][2])
               + (1.-pnd)*(gradv[jj][0][0]+gradv[jj][1][1]+gradv[jj][2][2]);
 
-          cs_real_3_t n, ipjp;
-          cs_math_3_normalize(i_face_normal[face_id], n);
+          cs_real_t ipjp[3];
+          const cs_real_t *n = i_face_u_normal[face_id];
 
           /* I'J' */
           for (int i = 0; i < 3; i++)
@@ -11855,9 +11825,7 @@ cs_diffusion_potential(const int                 f_id,
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION) {
       BFT_MALLOC(_pvar, n_cells_ext, cs_real_t);
-
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
-        _pvar[cell_id] = pvar[cell_id];
+      cs_array_real_copy(n_cells_ext, pvar, _pvar);
 
       cs_bad_cells_regularisation_scalar(_pvar);
     }
@@ -11904,7 +11872,6 @@ cs_diffusion_potential(const int                 f_id,
           double i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
 
           if (mass_flux_rec_type == 0) {
-
             /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
             double dijx = diipf[face_id][0] - djjpf[face_id][0];
             double dijy = diipf[face_id][1] - djjpf[face_id][1];
@@ -11943,13 +11910,8 @@ cs_diffusion_potential(const int                 f_id,
 
         cs_lnum_t ii = b_face_cells[face_id];
 
-        double diipbx = diipb[face_id][0];
-        double diipby = diipb[face_id][1];
-        double diipbz = diipb[face_id][2];
-
-        double pip = pvar[ii] + grad[ii][0]*diipbx
-                              + grad[ii][1]*diipby
-                              + grad[ii][2]*diipbz;
+        double pip = pvar[ii] + cs_math_3_dot_product(grad[ii],
+                                                      diipb[face_id]);
         double pfac = inc*cofafp[face_id] +cofbfp[face_id]*pip;
 
         double b_massflux = b_visc[face_id]*pfac;

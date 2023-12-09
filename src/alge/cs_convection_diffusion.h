@@ -286,27 +286,27 @@ cs_nvd_scheme_scalar(const cs_nvd_type_t  limiter,
  * \brief Compute the normalised face scalar using the specified NVD scheme
  *        for the case of a Volume-of-Fluid (VOF) transport equation.
  *
- * \param[in]  limiter         choice of the NVD scheme
- * \param[in]  i_face_normal   normal of face ij
- * \param[in]  face_id         the current cell face
- * \param[in]  nvf_p_c         normalised property of the current cell
- * \param[in]  nvf_r_f         normalised distance from the face
- * \param[in]  nvf_r_c         normalised distance from the current cell
- * \param[in]  gradv_c         gradient at central cell
- * \param[in]  courant_c       courant at central cell
+ * \param[in]  limiter          choice of the NVD scheme
+ * \param[in]  i_face_u_normal  unit normal of face ij
+ * \param[in]  face_id          the current cell face
+ * \param[in]  nvf_p_c          normalised property of the current cell
+ * \param[in]  nvf_r_f          normalised distance from the face
+ * \param[in]  nvf_r_c          normalised distance from the current cell
+ * \param[in]  gradv_c          gradient at central cell
+ * \param[in]  courant_c        courant at central cell
  *
  * \return  normalised face scalar
  */
 /*----------------------------------------------------------------------------*/
 
 inline static cs_real_t
-cs_nvd_vof_scheme_scalar(const cs_nvd_type_t  limiter,
-                         const cs_real_3_t    i_face_normal,
-                         const cs_real_t      nvf_p_c,
-                         const cs_real_t      nvf_r_f,
-                         const cs_real_t      nvf_r_c,
-                         const cs_real_3_t    gradv_c,
-                         const cs_real_t      c_courant)
+cs_nvd_vof_scheme_scalar(cs_nvd_type_t    limiter,
+                         const cs_real_t  i_face_u_normal[3],
+                         cs_real_t        nvf_p_c,
+                         cs_real_t        nvf_r_f,
+                         cs_real_t        nvf_r_c,
+                         const cs_real_t  gradv_c[3],
+                         const cs_real_t  c_courant)
 {
   assert(limiter >= CS_NVD_VOF_HRIC);
 
@@ -314,10 +314,9 @@ cs_nvd_vof_scheme_scalar(const cs_nvd_type_t  limiter,
   cs_real_t blend, high_order, low_order, ratio;
 
   /* Compute gradient angle indicator */
-  cs_real_t dotp = CS_ABS(cs_math_3_dot_product(gradv_c, i_face_normal));
+  cs_real_t dotp = cs_math_fabs(cs_math_3_dot_product(gradv_c, i_face_u_normal));
   cs_real_t sgrad = cs_math_3_norm(gradv_c);
-  cs_real_t snorm = cs_math_3_norm(i_face_normal);
-  cs_real_t denom = snorm*sgrad;
+  cs_real_t denom = sgrad;
 
   if (limiter == CS_NVD_VOF_HRIC) {   /* M-HRIC scheme */
     /* High order scheme : Bounded Downwind */
@@ -419,18 +418,17 @@ cs_nvd_vof_scheme_scalar(const cs_nvd_type_t  limiter,
 /*!
  * \brief Compute slope test criteria at internal face between cell i and j.
  *
- * \param[in]     pi              value at cell i
- * \param[in]     pj              value at cell j
- * \param[in]     distf           distance IJ.Nij
- * \param[in]     srfan           face surface
- * \param[in]     i_face_normal   face normal
- * \param[in]     gradi           gradient at cell i
- * \param[in]     gradj           gradient at cell j
- * \param[in]     grdpai          upwind gradient at cell i
- * \param[in]     grdpaj          upwind gradient at cell j
- * \param[in]     i_massflux      mass flux at face (from i to j)
- * \param[out]    testij          value of slope test first criterion
- * \param[out]    tesqck          value of slope test second criterion
+ * \param[in]     pi                value at cell i
+ * \param[in]     pj                value at cell j
+ * \param[in]     distf             distance IJ.Nij
+ * \param[in]     i_face_u_normal   face unit normal
+ * \param[in]     gradi             gradient at cell i
+ * \param[in]     gradj             gradient at cell j
+ * \param[in]     grdpai            upwind gradient at cell i
+ * \param[in]     grdpaj            upwind gradient at cell j
+ * \param[in]     i_massflux        mass flux at face (from i to j)
+ * \param[out]    testij            value of slope test first criterion
+ * \param[out]    tesqck            value of slope test second criterion
  */
 /*----------------------------------------------------------------------------*/
 
@@ -438,8 +436,7 @@ inline static void
 cs_slope_test(const cs_real_t   pi,
               const cs_real_t   pj,
               const cs_real_t   distf,
-              const cs_real_t   srfan,
-              const cs_real_t   i_face_normal[3],
+              const cs_real_t   i_face_u_normal[3],
               const cs_real_t   gradi[3],
               const cs_real_t   gradj[3],
               const cs_real_t   grdpai[3],
@@ -448,34 +445,31 @@ cs_slope_test(const cs_real_t   pi,
               cs_real_t        *testij,
               cs_real_t        *tesqck)
 {
-  cs_real_t testi, testj;
   cs_real_t dcc, ddi, ddj;
 
   /* Slope test */
-
-  testi =   grdpai[0]*i_face_normal[0]
-          + grdpai[1]*i_face_normal[1]
-          + grdpai[2]*i_face_normal[2];
-  testj =   grdpaj[0]*i_face_normal[0]
-          + grdpaj[1]*i_face_normal[1]
-          + grdpaj[2]*i_face_normal[2];
 
   *testij =   grdpai[0]*grdpaj[0]
             + grdpai[1]*grdpaj[1]
             + grdpai[2]*grdpaj[2];
 
-  if (i_massflux>0.) {
-    dcc =   gradi[0]*i_face_normal[0]
-          + gradi[1]*i_face_normal[1]
-          + gradi[2]*i_face_normal[2];
-    ddi = testi;
-    ddj = (pj-pi)/distf *srfan;
-  } else {
-    dcc =   gradj[0]*i_face_normal[0]
-          + gradj[1]*i_face_normal[1]
-          + gradj[2]*i_face_normal[2];
-    ddi = (pj-pi)/distf *srfan;
-    ddj = testj;
+  if (i_massflux > 0.) {
+    dcc =   gradi[0]*i_face_u_normal[0]
+          + gradi[1]*i_face_u_normal[1]
+          + gradi[2]*i_face_u_normal[2];
+    ddi =   grdpai[0]*i_face_u_normal[0]
+          + grdpai[1]*i_face_u_normal[1]
+          + grdpai[2]*i_face_u_normal[2];
+    ddj = (pj-pi)/distf;
+  }
+  else {
+    dcc =   gradj[0]*i_face_u_normal[0]
+          + gradj[1]*i_face_u_normal[1]
+          + gradj[2]*i_face_u_normal[2];
+    ddi = (pj-pi)/distf;
+    ddj =   grdpaj[0]*i_face_u_normal[0]
+          + grdpaj[1]*i_face_u_normal[1]
+          + grdpaj[2]*i_face_u_normal[2];
   }
 
   *tesqck = cs_math_sq(dcc) - cs_math_sq(ddi-ddj);
@@ -485,18 +479,17 @@ cs_slope_test(const cs_real_t   pi,
 /*!
  * \brief Compute slope test criteria at internal face between cell i and j.
  *
- * \param[in]     pi              value at cell i
- * \param[in]     pj              value at cell j
- * \param[in]     distf           distance IJ.Nij
- * \param[in]     srfan           face surface
- * \param[in]     i_face_normal   face normal
- * \param[in]     gradi           gradient at cell i
- * \param[in]     gradj           gradient at cell j
- * \param[in]     grdpai          upwind gradient at cell i
- * \param[in]     grdpaj          upwind gradient at cell j
- * \param[in]     i_massflux      mass flux at face (from i to j)
- * \param[out]    testij          value of slope test first criterion
- * \param[out]    tesqck          value of slope test second criterion
+ * \param[in]     pi                value at cell i
+ * \param[in]     pj                value at cell j
+ * \param[in]     distf             distance IJ.Nij
+ * \param[in]     i_face_u_normal   face unit normal
+ * \param[in]     gradi             gradient at cell i
+ * \param[in]     gradj             gradient at cell j
+ * \param[in]     grdpai            upwind gradient at cell i
+ * \param[in]     grdpaj            upwind gradient at cell j
+ * \param[in]     i_massflux        mass flux at face (from i to j)
+ * \param[out]    testij            value of slope test first criterion
+ * \param[out]    tesqck            value of slope test second criterion
  */
 /*----------------------------------------------------------------------------*/
 
@@ -504,8 +497,7 @@ inline static void
 cs_slope_test_vector(const cs_real_t   pi[3],
                      const cs_real_t   pj[3],
                      const cs_real_t   distf,
-                     const cs_real_t   srfan,
-                     const cs_real_t   i_face_normal[3],
+                     const cs_real_t   i_face_u_normal[3],
                      const cs_real_t   gradi[3][3],
                      const cs_real_t   gradj[3][3],
                      const cs_real_t   gradsti[3][3],
@@ -514,7 +506,6 @@ cs_slope_test_vector(const cs_real_t   pi[3],
                      cs_real_t        *testij,
                      cs_real_t        *tesqck)
 {
-  cs_real_t testi[3], testj[3];
   cs_real_t dcc[3], ddi[3], ddj[3];
   *testij = 0.;
   *tesqck = 0.;
@@ -526,25 +517,24 @@ cs_slope_test_vector(const cs_real_t   pi[3],
              + gradsti[i][1]*gradstj[i][1]
              + gradsti[i][2]*gradstj[i][2];
 
-    testi[i] = gradsti[i][0]*i_face_normal[0]
-             + gradsti[i][1]*i_face_normal[1]
-             + gradsti[i][2]*i_face_normal[2];
-    testj[i] = gradstj[i][0]*i_face_normal[0]
-             + gradstj[i][1]*i_face_normal[1]
-             + gradstj[i][2]*i_face_normal[2];
-
     if (i_massflux > 0.) {
-      dcc[i] = gradi[i][0]*i_face_normal[0]
-             + gradi[i][1]*i_face_normal[1]
-             + gradi[i][2]*i_face_normal[2];
-      ddi[i] = testi[i];
-      ddj[i] = (pj[i]-pi[i])/distf *srfan;
-    } else {
-      dcc[i] = gradj[i][0]*i_face_normal[0]
-             + gradj[i][1]*i_face_normal[1]
-             + gradj[i][2]*i_face_normal[2];
-      ddi[i] = (pj[i]-pi[i])/distf *srfan;
-      ddj[i] = testj[i];
+      dcc[i] =   gradi[i][0]*i_face_u_normal[0]
+               + gradi[i][1]*i_face_u_normal[1]
+               + gradi[i][2]*i_face_u_normal[2];
+      ddi[i] =   gradsti[i][0]*i_face_u_normal[0]
+               + gradsti[i][1]*i_face_u_normal[1]
+               + gradsti[i][2]*i_face_u_normal[2];
+      ddj[i] = (pj[i]-pi[i])/distf;
+    }
+    else {
+      dcc[i] =   gradj[i][0]*i_face_u_normal[0]
+               + gradj[i][1]*i_face_u_normal[1]
+               + gradj[i][2]*i_face_u_normal[2];
+      ddi[i] = (pj[i]-pi[i])/distf;
+      ddj[i] =   gradstj[i][0]*i_face_u_normal[0]
+               + gradstj[i][1]*i_face_u_normal[1]
+               + gradstj[i][2]*i_face_u_normal[2];
+
     }
   }
 
@@ -555,18 +545,17 @@ cs_slope_test_vector(const cs_real_t   pi[3],
 /*!
  * \brief Compute slope test criteria at internal face between cell i and j.
  *
- * \param[in]     pi              value at cell i
- * \param[in]     pj              value at cell j
- * \param[in]     distf           distance IJ.Nij
- * \param[in]     srfan           face surface
- * \param[in]     i_face_normal   face normal
- * \param[in]     gradi           gradient at cell i
- * \param[in]     gradj           gradient at cell j
- * \param[in]     grdpai          upwind gradient at cell i
- * \param[in]     grdpaj          upwind gradient at cell j
- * \param[in]     i_massflux      mass flux at face (from i to j)
- * \param[out]    testij          value of slope test first criterion
- * \param[out]    tesqck          value of slope test second criterion
+ * \param[in]     pi                value at cell i
+ * \param[in]     pj                value at cell j
+ * \param[in]     distf             distance IJ.Nij
+ * \param[in]     i_face_u_normal   face unit normal
+ * \param[in]     gradi             gradient at cell i
+ * \param[in]     gradj             gradient at cell j
+ * \param[in]     grdpai            upwind gradient at cell i
+ * \param[in]     grdpaj            upwind gradient at cell j
+ * \param[in]     i_massflux        mass flux at face (from i to j)
+ * \param[out]    testij            value of slope test first criterion
+ * \param[out]    tesqck            value of slope test second criterion
  */
 /*----------------------------------------------------------------------------*/
 
@@ -574,8 +563,7 @@ inline static void
 cs_slope_test_tensor(const cs_real_t   pi[6],
                      const cs_real_t   pj[6],
                      const cs_real_t   distf,
-                     const cs_real_t   srfan,
-                     const cs_real_t   i_face_normal[3],
+                     const cs_real_t   i_face_u_normal[3],
                      const cs_real_t   gradi[6][3],
                      const cs_real_t   gradj[6][3],
                      const cs_real_t   gradsti[6][3],
@@ -584,7 +572,6 @@ cs_slope_test_tensor(const cs_real_t   pi[6],
                      cs_real_t        *testij,
                      cs_real_t        *tesqck)
 {
-  cs_real_t testi[6], testj[6];
   cs_real_t dcc[6], ddi[6], ddj[6];
 
   *testij = 0.;
@@ -596,26 +583,24 @@ cs_slope_test_tensor(const cs_real_t   pi[6],
     *testij +=   gradsti[ij][0]*gradstj[ij][0]
                + gradsti[ij][1]*gradstj[ij][1]
                + gradsti[ij][2]*gradstj[ij][2];
-    testi[ij] =   gradsti[ij][0]*i_face_normal[0]
-                + gradsti[ij][1]*i_face_normal[1]
-                + gradsti[ij][2]*i_face_normal[2];
-    testj[ij] =   gradstj[ij][0]*i_face_normal[0]
-                + gradstj[ij][1]*i_face_normal[1]
-                + gradstj[ij][2]*i_face_normal[2];
 
     if (i_massflux > 0.) {
-      dcc[ij] =   gradi[ij][0]*i_face_normal[0]
-                + gradi[ij][1]*i_face_normal[1]
-                + gradi[ij][2]*i_face_normal[2];
-      ddi[ij] = testi[ij];
-      ddj[ij] = (pj[ij]-pi[ij])/distf *srfan;
+      dcc[ij] =   gradi[ij][0]*i_face_u_normal[0]
+                + gradi[ij][1]*i_face_u_normal[1]
+                + gradi[ij][2]*i_face_u_normal[2];
+      ddi[ij] =   gradsti[ij][0]*i_face_u_normal[0]
+                + gradsti[ij][1]*i_face_u_normal[1]
+                + gradsti[ij][2]*i_face_u_normal[2];
+      ddj[ij] = (pj[ij]-pi[ij])/distf;
     }
     else {
-      dcc[ij] =   gradj[ij][0]*i_face_normal[0]
-                + gradj[ij][1]*i_face_normal[1]
-                + gradj[ij][2]*i_face_normal[2];
-      ddi[ij] = (pj[ij]-pi[ij])/distf *srfan;
-      ddj[ij] = testj[ij];
+      dcc[ij] =   gradj[ij][0]*i_face_u_normal[0]
+                + gradj[ij][1]*i_face_u_normal[1]
+                + gradj[ij][2]*i_face_u_normal[2];
+      ddi[ij] = (pj[ij]-pi[ij])/distf;
+      ddj[ij] =   gradstj[ij][0]*i_face_u_normal[0]
+                + gradstj[ij][1]*i_face_u_normal[1]
+                + gradstj[ij][2]*i_face_u_normal[2];
     }
 
     *tesqck += cs_math_sq(dcc[ij]) - cs_math_sq(ddi[ij]-ddj[ij]);
@@ -2706,7 +2691,6 @@ cs_i_cd_unsteady_tensor(const cs_real_t     bldfrp,
  *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
- * \param[in]     i_face_surf     face surface
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
  * \param[in]     cell_cenj       center of gravity coordinates of cell j
  * \param[in]     i_face_normal   face normal
@@ -2745,20 +2729,19 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
                           const double       blend_st,
                           const cs_real_t    weight,
                           const cs_real_t    i_dist,
-                          const cs_real_t    i_face_surf,
-                          const cs_real_3_t  cell_ceni,
-                          const cs_real_3_t  cell_cenj,
-                          const cs_real_3_t  i_face_normal,
-                          const cs_real_3_t  i_face_cog,
-                          const cs_real_3_t  diipf,
-                          const cs_real_3_t  djjpf,
+                          const cs_real_t    cell_ceni[3],
+                          const cs_real_t    cell_cenj[3],
+                          const cs_real_t    i_face_u_normal[3],
+                          const cs_real_t    i_face_cog[3],
+                          const cs_real_t    diipf[3],
+                          const cs_real_t    djjpf[3],
                           const cs_real_t    i_massflux,
-                          const cs_real_3_t  gradi,
-                          const cs_real_3_t  gradj,
-                          const cs_real_3_t  gradupi,
-                          const cs_real_3_t  gradupj,
-                          const cs_real_3_t  gradsti,
-                          const cs_real_3_t  gradstj,
+                          const cs_real_t    gradi[3],
+                          const cs_real_t    gradj[3],
+                          const cs_real_t    gradupi[3],
+                          const cs_real_t    gradupj[3],
+                          const cs_real_t    gradsti[3],
+                          const cs_real_t    gradstj[3],
                           const cs_real_t    pi,
                           const cs_real_t    pj,
                           const cs_real_t    pia,
@@ -2807,8 +2790,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
     cs_slope_test(pi,
                   pj,
                   i_dist,
-                  i_face_surf,
-                  i_face_normal,
+                  i_face_u_normal,
                   gradi,
                   gradj,
                   gradsti,
@@ -2963,10 +2945,9 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
  *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
- * \param[in]     i_face_surf     face surface
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
- * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_u_normal face unit normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     diipf           distance II'
  * \param[in]     djjpf           distance JJ'
@@ -3000,10 +2981,9 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
                                  const double        blend_st,
                                  const cs_real_t     weight,
                                  const cs_real_t     i_dist,
-                                 const cs_real_t     i_face_surf,
                                  const cs_real_3_t   cell_ceni,
                                  const cs_real_3_t   cell_cenj,
-                                 const cs_real_3_t   i_face_normal,
+                                 const cs_real_3_t   i_u_face_normal,
                                  const cs_real_3_t   i_face_cog,
                                  const cs_real_3_t   diipf,
                                  const cs_real_3_t   djjpf,
@@ -3059,8 +3039,7 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
     cs_slope_test_vector(pi,
                          pj,
                          i_dist,
-                         i_face_surf,
-                         i_face_normal,
+                         i_u_face_normal,
                          gradi,
                          gradj,
                          grdpai,
@@ -3122,8 +3101,8 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
 
     }
 
-    /* Slope test: Pourcentage of upwind
-       ----------------------------------*/
+    /* Slope test: Percentage of upwind
+       -------------------------------- */
 
     if (tesqck <= 0. || testij <= 0.) {
       cs_blend_f_val_vector(blend_st,
@@ -3193,10 +3172,9 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
  *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
- * \param[in]     i_face_surf     face surface
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
- * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_u_normal face unit normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     diipf           distance II'
  * \param[in]     djjpf           distance JJ'
@@ -3230,10 +3208,9 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
                                  const double        blend_st,
                                  const cs_real_t     weight,
                                  const cs_real_t     i_dist,
-                                 const cs_real_t     i_face_surf,
                                  const cs_real_3_t   cell_ceni,
                                  const cs_real_3_t   cell_cenj,
-                                 const cs_real_3_t   i_face_normal,
+                                 const cs_real_3_t   i_face_u_normal,
                                  const cs_real_3_t   i_face_cog,
                                  const cs_real_3_t   diipf,
                                  const cs_real_3_t   djjpf,
@@ -3289,8 +3266,7 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
     cs_slope_test_tensor(pi,
                          pj,
                          i_dist,
-                         i_face_surf,
-                         i_face_normal,
+                         i_face_u_normal,
                          gradi,
                          gradj,
                          grdpai,
@@ -3423,10 +3399,9 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
  *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
- * \param[in]     i_face_surf     face surface
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
- * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_u_normal face unit normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     diipf           distance II'
  * \param[in]     djjpf           distance JJ'
@@ -3455,10 +3430,9 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                             const double       blend_st,
                             const cs_real_t    weight,
                             const cs_real_t    i_dist,
-                            const cs_real_t    i_face_surf,
                             const cs_real_3_t  cell_ceni,
                             const cs_real_3_t  cell_cenj,
-                            const cs_real_3_t  i_face_normal,
+                            const cs_real_3_t  i_face_u_normal,
                             const cs_real_3_t  i_face_cog,
                             const cs_real_3_t  diipf,
                             const cs_real_3_t  djjpf,
@@ -3500,8 +3474,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
     cs_slope_test(pi,
                   pj,
                   i_dist,
-                  i_face_surf,
-                  i_face_normal,
+                  i_face_u_normal,
                   gradi,
                   gradj,
                   gradsti,
@@ -3633,7 +3606,7 @@ cs_central_downwind_cells(const cs_lnum_t    ii,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     cell_cen_c      center of gravity coordinates of central cell
  * \param[in]     cell_cen_d      center of gravity coordinates of downwind cell
- * \param[in]     i_face_normal   normal of face ij
+ * \param[in]     i_face_u_normal unit normal of face ij
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     gradv_c         gradient at central cell
  * \param[in]     p_c             value at central cell
@@ -3651,7 +3624,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
                      const double         beta,
                      const cs_real_3_t    cell_cen_c,
                      const cs_real_3_t    cell_cen_d,
-                     const cs_real_3_t    i_face_normal,
+                     const cs_real_3_t    i_face_u_normal,
                      const cs_real_3_t    i_face_cog,
                      const cs_real_3_t    gradv_c,
                      const cs_real_t      p_c,
@@ -3711,7 +3684,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
       /* Highly compressive NVD scheme for VOF */
       if (limiter >= CS_NVD_VOF_HRIC) {
         nvf_p_f = cs_nvd_vof_scheme_scalar(limiter,
-                                           i_face_normal,
+                                           i_face_u_normal,
                                            nvf_p_c,
                                            nvf_r_f,
                                            nvf_r_c,
@@ -3752,10 +3725,9 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
  *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
- * \param[in]     i_face_surf     face surface
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
- * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_u_normal face unit normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     diipf           distance II'
  * \param[in]     djjpf           distance JJ'
@@ -3782,10 +3754,9 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                                    const double        blend_st,
                                    const cs_real_t     weight,
                                    const cs_real_t     i_dist,
-                                   const cs_real_t     i_face_surf,
                                    const cs_real_3_t   cell_ceni,
                                    const cs_real_3_t   cell_cenj,
-                                   const cs_real_3_t   i_face_normal,
+                                   const cs_real_3_t   i_face_u_normal,
                                    const cs_real_3_t   i_face_cog,
                                    const cs_real_3_t   diipf,
                                    const cs_real_3_t   djjpf,
@@ -3821,8 +3792,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
     cs_slope_test_vector(pi,
                          pj,
                          i_dist,
-                         i_face_surf,
-                         i_face_normal,
+                         i_face_u_normal,
                          gradi,
                          gradj,
                          grdpai,
@@ -3923,10 +3893,9 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
  *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
- * \param[in]     i_face_surf     face surface
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
- * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_u_normal face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     diipf           distance II'
  * \param[in]     djjpf           distance JJ'
@@ -3953,10 +3922,9 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
                                    const double        blend_st,
                                    const cs_real_t     weight,
                                    const cs_real_t     i_dist,
-                                   const cs_real_t     i_face_surf,
                                    const cs_real_3_t   cell_ceni,
                                    const cs_real_3_t   cell_cenj,
-                                   const cs_real_3_t   i_face_normal,
+                                   const cs_real_3_t   i_face_u_normal,
                                    const cs_real_3_t   i_face_cog,
                                    const cs_real_3_t   diipf,
                                    const cs_real_3_t   djjpf,
@@ -3993,8 +3961,7 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
     cs_slope_test_tensor(pi,
                          pj,
                          i_dist,
-                         i_face_surf,
-                         i_face_normal,
+                         i_face_u_normal,
                          gradi,
                          gradj,
                          grdpai,
