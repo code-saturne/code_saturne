@@ -2549,7 +2549,7 @@ _velocity_prediction(const cs_mesh_t             *m,
    * -----------
    * (if iphydr=1 this term has already been taken into account)
    *
-   * Remark: the icepdc is rebuilt locally, but can be avoided
+   * Remark: icepdc is rebuilt locally, but can be avoided
    * in the future by simply looping over the required zones.
    * This also requires that the "iflow" Lagrangian rentrainment
    * model simply force the base "all cells" zone to head loss

@@ -64,14 +64,12 @@ cs_volume_mass_injection_flag_zones(void);
  *
  * \param[in]   n_cells       number of cells in mass source term zones
  * \param[out]  cell_num      numbers (1-based) cells in mass source term zones
- * \param[out]  cell_zone_id  associated zone ids
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_volume_mass_injection_build_lists(cs_lnum_t   n_cells,
-                                     cs_lnum_t   cell_num[],
-                                     int         cell_zone_id[]);
+                                     cs_lnum_t   cell_num[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

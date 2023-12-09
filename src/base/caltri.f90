@@ -257,12 +257,12 @@ interface
 
   !=============================================================================
 
-  subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm) &
+  subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm) &
     bind(C, name='cs_volume_mass_injection_build_lists')
     use, intrinsic :: iso_c_binding
     implicit none
     integer(kind=c_int), value :: ncetsm
-    integer(kind=c_int), dimension(*), intent(out) :: icetsm, izctsm
+    integer(kind=c_int), dimension(*), intent(out) :: icetsm
   end subroutine cs_volume_mass_injection_build_lists
 
   !=============================================================================
@@ -329,9 +329,6 @@ iappel = 1
 !   condensation sources term and 1D-wall module
 !===============================================================================
 
-! Allocate temporary arrays for zones definition
-allocate(izctsm(ncel))
-
 ! -----------------
 ! Mass source terms
 ! -----------------
@@ -385,7 +382,6 @@ endif
 call cs_1d_wall_thermal_check(iappel, isuit1)
 
 ! Free memory if relevant
-if (nctsmt.eq.0) deallocate(izctsm)
 if (nfpt1t.eq.0) call cs_1d_wall_thermal_finalize
 
 ! Formats
@@ -729,7 +725,7 @@ call cs_boundary_conditions_set_coeffs_init()
 ! This is a collective call for consistency and in case the user requires it.
 
 if (nctsmt.gt.0) then
-  call cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm)
+  call cs_volume_mass_injection_build_lists(ncetsm, icetsm)
 endif
 
 ! ALE mobile structures
