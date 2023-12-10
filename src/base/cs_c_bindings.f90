@@ -79,7 +79,7 @@ module cs_c_bindings
   procedure() :: csexit, dmtmps
   procedure() :: cslogname, csdatadir
 
-  procedure() :: divmas, matrix, viscfa
+  procedure() :: divmas, viscfa
 
   !-----------------------------------------------------------------------------
 

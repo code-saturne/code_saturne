@@ -87,20 +87,6 @@ module cs_f_interfaces
 
     !---------------------------------------------------------------------------
 
-    subroutine matrix &
-      (iconvp, idiffp, ndircp, isym, thetap, imucpp, coefbp, cofbfp,           &
-      rovsdt, i_massflux, b_massflux, i_visc, b_visc, xcpp, da, xa)
-      use mesh
-      integer :: iconvp, idiffp, ndircp, isym, imucpp
-      double precision :: thetap
-      double precision, dimension(ncelet) :: rovsdt, xcpp, da
-      double precision, dimension(nfabor) :: coefbp, cofbfp, b_massflux, b_visc
-      double precision, dimension(nfac) :: i_massflux, i_visc
-      double precision, dimension(2,nfac) :: xa
-    end subroutine matrix
-
-    !---------------------------------------------------------------------------
-
     subroutine matrdt &
       (iconvp, idiffp, isym, coefbp, cofbfp,                                   &
       i_massflux, b_massflux, i_visc, b_visc, da)
