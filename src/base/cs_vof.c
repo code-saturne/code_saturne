@@ -40,6 +40,7 @@
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
 #include "cs_convection_diffusion.h"
+#include "cs_convection_diffusion_priv.h"
 #include "cs_equation.h"
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"

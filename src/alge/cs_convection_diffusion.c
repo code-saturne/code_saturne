@@ -49,6 +49,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_bad_cells_regularisation.h"
 #include "cs_boundary_conditions.h"
@@ -64,7 +65,7 @@
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
-#include "cs_ext_neighborhood.h"
+//#include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
@@ -78,6 +79,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_convection_diffusion.h"
+#include "cs_convection_diffusion_priv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -196,6 +198,10 @@ _beta_limiter_denom(cs_field_t                 *f,
     cs_field_by_id(cs_field_get_key_int(f, kimasf))->val;
   const cs_real_t *restrict b_massflux =
     cs_field_by_id(cs_field_get_key_int(f, kbmasf))->val;
+
+  const cs_real_t *hybrid_blend;
+  if (CS_F_(hybrid_blend) != NULL)
+    hybrid_blend = CS_F_(hybrid_blend)->val;
 
   /* select halo type according to field gradient method */
 
@@ -328,8 +334,8 @@ _beta_limiter_denom(cs_field_t                 *f,
 
         cs_real_t hybrid_coef_ii, hybrid_coef_jj;
         if (ischcp == 3) {
-          hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-          hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+          hybrid_coef_ii = hybrid_blend[ii];
+          hybrid_coef_jj = hybrid_blend[jj];
         }
         else {
           hybrid_coef_ii = 0.;
@@ -830,8 +836,8 @@ cs_cell_courant_number(const int   f_id,
  *----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_get_v_slope_test(int                       f_id,
-                    const cs_var_cal_opt_t    var_cal_opt)
+cs_get_v_slope_test(int                        f_id,
+                    const cs_equation_param_t  var_cal_opt)
 {
   const int iconvp = var_cal_opt.iconv;
   const int isstpp = var_cal_opt.isstpc;
@@ -1306,22 +1312,22 @@ cs_slope_test_gradient_vector(const int              inc,
  * \param[out]    grdpa        upwind gradient
  * \param[in]     pvar         values
  * \param[in]     coefa        boundary condition array for the variable
-                               (Explicit part)
+ *                             (explicit part)
  * \param[in]     coefb        boundary condition array for the variable
-                              (Implicit part)
+ *                             (implicit part)
  * \param[in]     i_massflux   mass flux at interior faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_slope_test_gradient_tensor(const int              inc,
-                              const cs_halo_type_t   halo_type,
-                              const cs_real_63_t    *grad,
-                              cs_real_63_t          *grdpa,
-                              const cs_real_6_t     *pvar,
-                              const cs_real_6_t     *coefa,
-                              const cs_real_66_t    *coefb,
-                              const cs_real_t       *i_massflux)
+cs_slope_test_gradient_tensor(const int               inc,
+                              const cs_halo_type_t    halo_type,
+                              const cs_real_63_t     *grad,
+                              cs_real_63_t           *grdpa,
+                              const cs_real_6_t      *pvar,
+                              const cs_real_6_t      *coefa,
+                              const cs_real_66_t     *coefb,
+                              const cs_real_t        *i_massflux)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -1601,24 +1607,24 @@ cs_beta_limiter_building(int              f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_diffusion_scalar(int                       idtvar,
-                               int                       f_id,
-                               const cs_var_cal_opt_t    var_cal_opt,
-                               int                       icvflb,
-                               int                       inc,
-                               int                       imasac,
-                               cs_real_t       *restrict pvar,
-                               const cs_real_t *restrict pvara,
-                               const int                 icvfli[],
-                               const cs_real_t           coefap[],
-                               const cs_real_t           coefbp[],
-                               const cs_real_t           cofafp[],
-                               const cs_real_t           cofbfp[],
-                               const cs_real_t           i_massflux[],
-                               const cs_real_t           b_massflux[],
-                               const cs_real_t           i_visc[],
-                               const cs_real_t           b_visc[],
-                               cs_real_t       *restrict rhs)
+cs_convection_diffusion_scalar(int                         idtvar,
+                               int                         f_id,
+                               const cs_equation_param_t   var_cal_opt,
+                               int                         icvflb,
+                               int                         inc,
+                               int                         imasac,
+                               cs_real_t         *restrict pvar,
+                               const cs_real_t   *restrict pvara,
+                               const int                   icvfli[],
+                               const cs_real_t             coefap[],
+                               const cs_real_t             coefbp[],
+                               const cs_real_t             cofafp[],
+                               const cs_real_t             cofbfp[],
+                               const cs_real_t             i_massflux[],
+                               const cs_real_t             b_massflux[],
+                               const cs_real_t             i_visc[],
+                               const cs_real_t             b_visc[],
+                               cs_real_t         *restrict rhs)
 {
   const int iconvp = var_cal_opt.iconv;
   const int idiffp = var_cal_opt.idiff;
@@ -1698,6 +1704,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  var_cal_opt);
+
+  const cs_real_t *hybrid_blend;
+  if (CS_F_(hybrid_blend) != NULL)
+    hybrid_blend = CS_F_(hybrid_blend)->val;
 
   /* Internal coupling variables */
   cs_real_t *pvar_local = NULL;
@@ -2217,8 +2227,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             if (ischcp != 4) {
               cs_real_t hybrid_coef_ii, hybrid_coef_jj;
               if (ischcp == 3) {
-                hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-                hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+                hybrid_coef_ii = hybrid_blend[ii];
+                hybrid_coef_jj = hybrid_blend[jj];
               }
               else {
                 hybrid_coef_ii = 0.;
@@ -3008,6 +3018,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \brief Update face flux with convection contribution of a standard transport
  * equation of a scalar field \f$ \varia \f$.
  *
+ * <a name="cs_face_convection_scalar"></a>
+ *
  * \f[
  * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
  * \f]
@@ -3132,11 +3144,13 @@ cs_face_convection_scalar(int                       idtvar,
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  var_cal_opt);
 
+  const cs_real_t *hybrid_blend;
+  if (CS_F_(hybrid_blend) != NULL)
+    hybrid_blend = CS_F_(hybrid_blend)->val;
+
   /* Internal coupling variables */
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
-
-  /* Initialization */
 
   /* Allocate work arrays */
 
@@ -3588,8 +3602,8 @@ cs_face_convection_scalar(int                       idtvar,
             if (ischcp != 4) {
               cs_real_t hybrid_coef_ii, hybrid_coef_jj;
               if (ischcp == 3) {
-                hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-                hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+                hybrid_coef_ii = hybrid_blend[ii];
+                hybrid_coef_jj = hybrid_blend[jj];
               }
               else {
                 hybrid_coef_ii = 0.;
@@ -4160,7 +4174,7 @@ cs_face_convection_scalar(int                       idtvar,
 void
 cs_convection_diffusion_vector(int                         idtvar,
                                int                         f_id,
-                               const cs_var_cal_opt_t      var_cal_opt,
+                               const cs_equation_param_t   var_cal_opt,
                                int                         icvflb,
                                int                         inc,
                                int                         ivisep,
@@ -4778,6 +4792,10 @@ cs_convection_diffusion_vector(int                         idtvar,
     }
     else {
 
+      const cs_real_t *hybrid_blend;
+      if (CS_F_(hybrid_blend) != NULL)
+        hybrid_blend = CS_F_(hybrid_blend)->val;
+
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
@@ -4812,8 +4830,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             cs_real_t hybrid_coef_ii, hybrid_coef_jj;
             if (ischcp == 3) {
-              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+              hybrid_coef_ii = hybrid_blend[ii];
+              hybrid_coef_jj = hybrid_blend[jj];
             }
             else {
               hybrid_coef_ii = 0.;
@@ -6951,6 +6969,10 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  var_cal_opt);
 
+  const cs_real_t *hybrid_blend;
+  if (CS_F_(hybrid_blend) != NULL)
+    hybrid_blend = CS_F_(hybrid_blend)->val;
+
   /* Internal coupling variables */
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
@@ -7462,8 +7484,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
             cs_real_t hybrid_coef_ii, hybrid_coef_jj;
             if (ischcp == 3) {
-              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+              hybrid_coef_ii = hybrid_blend[ii];
+              hybrid_coef_jj = hybrid_blend[jj];
 
               cs_i_cd_unsteady(bldfrp,
                                ischcp,
@@ -8200,22 +8222,22 @@ cs_convection_diffusion_thermal(int                       idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_scalar(int                       idtvar,
-                                int                       f_id,
-                                const cs_var_cal_opt_t    var_cal_opt,
-                                int                       inc,
-                                cs_real_t       *restrict pvar,
-                                const cs_real_t *restrict pvara,
-                                const cs_real_t           coefap[],
-                                const cs_real_t           coefbp[],
-                                const cs_real_t           cofafp[],
-                                const cs_real_t           cofbfp[],
-                                const cs_real_t           i_visc[],
-                                const cs_real_t           b_visc[],
-                                cs_real_6_t     *restrict viscel,
-                                const cs_real_2_t         weighf[],
-                                const cs_real_t           weighb[],
-                                cs_real_t       *restrict rhs)
+cs_anisotropic_diffusion_scalar(int                        idtvar,
+                                int                        f_id,
+                                const cs_equation_param_t  var_cal_opt,
+                                int                        inc,
+                                cs_real_t        *restrict pvar,
+                                const cs_real_t  *restrict pvara,
+                                const cs_real_t            coefap[],
+                                const cs_real_t            coefbp[],
+                                const cs_real_t            cofafp[],
+                                const cs_real_t            cofbfp[],
+                                const cs_real_t            i_visc[],
+                                const cs_real_t            b_visc[],
+                                cs_real_6_t      *restrict viscel,
+                                const cs_real_2_t          weighf[],
+                                const cs_real_t            weighb[],
+                                cs_real_t        *restrict rhs)
 {
   const int nswrgp = var_cal_opt.nswrgr;
   const int imrgra = var_cal_opt.imrgra;
@@ -8955,7 +8977,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 void
 cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      int                         f_id,
-                                     const cs_var_cal_opt_t      var_cal_opt,
+                                     const cs_equation_param_t   var_cal_opt,
                                      int                         inc,
                                      int                         ivisep,
                                      cs_real_3_t       *restrict pvar,
@@ -9502,21 +9524,21 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_right_diffusion_vector(int                         idtvar,
-                                      int                         f_id,
-                                      const cs_var_cal_opt_t      var_cal_opt,
-                                      int                         inc,
-                                      cs_real_3_t       *restrict pvar,
-                                      const cs_real_3_t *restrict pvara,
-                                      const cs_real_3_t           coefav[],
-                                      const cs_real_33_t          coefbv[],
-                                      const cs_real_3_t           cofafv[],
-                                      const cs_real_33_t          cofbfv[],
-                                      const cs_real_t             i_visc[],
-                                      const cs_real_t             b_visc[],
-                                      cs_real_6_t     *restrict   viscel,
-                                      const cs_real_2_t           weighf[],
-                                      const cs_real_t             weighb[],
+cs_anisotropic_right_diffusion_vector(int                          idtvar,
+                                      int                          f_id,
+                                      const cs_equation_param_t    var_cal_opt,
+                                      int                          inc,
+                                      cs_real_3_t        *restrict pvar,
+                                      const cs_real_3_t  *restrict pvara,
+                                      const cs_real_3_t            coefav[],
+                                      const cs_real_33_t           coefbv[],
+                                      const cs_real_3_t            cofafv[],
+                                      const cs_real_33_t           cofbfv[],
+                                      const cs_real_t              i_visc[],
+                                      const cs_real_t              b_visc[],
+                                      cs_real_6_t        *restrict viscel,
+                                      const cs_real_2_t            weighf[],
+                                      const cs_real_t              weighb[],
                                       cs_real_3_t       *restrict rhs)
 {
   const int nswrgp = var_cal_opt.nswrgr;
@@ -10216,21 +10238,21 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_tensor(int                         idtvar,
-                                int                         f_id,
-                                const cs_var_cal_opt_t      var_cal_opt,
-                                int                         inc,
-                                cs_real_6_t       *restrict pvar,
-                                const cs_real_6_t *restrict pvara,
-                                const cs_real_6_t           coefa[],
-                                const cs_real_66_t          coefb[],
-                                const cs_real_6_t           cofaf[],
-                                const cs_real_66_t          cofbf[],
-                                const cs_real_t             i_visc[],
-                                const cs_real_t             b_visc[],
-                                cs_real_6_t     *restrict   viscel,
-                                const cs_real_2_t           weighf[],
-                                const cs_real_t             weighb[],
+cs_anisotropic_diffusion_tensor(int                          idtvar,
+                                int                          f_id,
+                                const cs_equation_param_t    var_cal_opt,
+                                int                          inc,
+                                cs_real_6_t        *restrict pvar,
+                                const cs_real_6_t  *restrict pvara,
+                                const cs_real_6_t            coefa[],
+                                const cs_real_66_t           coefb[],
+                                const cs_real_6_t            cofaf[],
+                                const cs_real_66_t           cofbf[],
+                                const cs_real_t              i_visc[],
+                                const cs_real_t              b_visc[],
+                                cs_real_6_t        *restrict viscel,
+                                const cs_real_2_t            weighf[],
+                                const cs_real_t              weighb[],
                                 cs_real_6_t     *restrict   rhs)
 {
   const int nswrgp = var_cal_opt.nswrgr;

@@ -78,6 +78,9 @@ libcsalge_hypre_a_CPPFLAGS =\
 -I$(top_srcdir)/src/mesh \
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
 
+noinst_HEADERS = \
+cs_convection_diffusion_priv.h
+
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \

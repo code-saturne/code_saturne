@@ -49,6 +49,9 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_boundary_conditions.h"
+#include "cs_convection_diffusion.h"
+#include "cs_convection_diffusion_priv.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
@@ -59,18 +62,14 @@
 #include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
-
-#include "cs_post.h"
-
 #include "cs_face_viscosity.h"
 #include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
-#include "cs_convection_diffusion.h"
-#include "cs_boundary_conditions.h"
 #include "cs_volume_mass_injection.h"
 
 /*----------------------------------------------------------------------------

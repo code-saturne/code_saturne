@@ -60,6 +60,7 @@
 #include "cs_meg_prototypes.h"
 #include "cs_mesh.h"
 #include "cs_mobile_structures.h"
+#include "cs_parameters.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"
 #include "cs_volume_zone.h"
