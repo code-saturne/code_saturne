@@ -604,6 +604,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
   case CS_PARAM_PRECOND_LU:
 #if defined(PETSC_HAVE_MUMPS)
+  case CS_PARAM_PRECOND_MUMPS:
     _petsc_cmd(true, slesp->name, "pc_type", "lu");
     _petsc_cmd(true, slesp->name, "pc_factor_mat_solver_type", "mumps");
 #else
