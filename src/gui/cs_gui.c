@@ -4369,6 +4369,12 @@ cs_gui_scalar_model_settings(void)
   const int keysca = cs_field_key_id("scalar_id");
   const int kturt  = cs_field_key_id("turbulent_flux_model");
 
+  /* Values used by optional beta-limiters: do not need to be the same
+     as clipping values, but this seesm a good initial setting
+     (an independent value in the GUI would be better). */
+  const int k_beta_max = cs_field_key_id("max_scalar");
+  const int k_beta_min = cs_field_key_id("min_scalar");
+
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) { /* variable ? */
@@ -4384,6 +4390,9 @@ cs_gui_scalar_model_settings(void)
           cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
           cs_field_set_key_double(f, kscmin, scal_min);
           cs_field_set_key_double(f, kscmax, scal_max);
+
+          cs_field_set_key_double(f, k_beta_max, scal_max);
+          cs_field_set_key_double(f, k_beta_min, scal_min);
 
 #if _XML_DEBUG_
           bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
