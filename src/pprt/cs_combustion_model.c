@@ -138,6 +138,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **nato,
                          int     **nrgaz,
                          int     **iic,
+                         int     **npo,
                          double  **wmole,
                          double  **wmolg,
                          double  **diftl0,
@@ -145,7 +146,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **xh2o,
                          double  **ckabs1,
                          double  **fs,
-                         double  **th);
+                         double  **th,
+                         double  **cpgazg);
 
 void
 cs_f_coincl_get_pointers(double  **coefeg,
@@ -245,6 +247,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **nato,
                          int     **nrgaz,
                          int     **iic,
+                         int     **npo,
                          double  **wmole,
                          double  **wmolg,
                          double  **diftl0,
@@ -252,14 +255,16 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **xh2o,
                          double  **ckabs1,
                          double  **fs,
-                         double  **th)
+                         double  **th,
+                         double  **cpgazg)
 {
   *ngaze  = &(cs_glob_combustion_model->n_gas_el_comp);
   *ngazg  = &(cs_glob_combustion_model->n_gas_species);
   *nato   = &(cs_glob_combustion_model->n_atomic_species);
   *nrgaz  = &(cs_glob_combustion_model->n_reactions);
-
+  *npo    = &(cs_glob_combustion_model->n_tab_points);
   *iic    = &(cs_glob_combustion_model->gas->iic);
+
   *wmole  = cs_glob_combustion_model->wmole;
   *wmolg  = cs_glob_combustion_model->gas->wmolg;
   *diftl0 = &(cs_glob_combustion_model->diftl0);
@@ -268,6 +273,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
   *ckabs1 = &(cs_glob_combustion_model->ckabs0);
   *fs     = cs_glob_combustion_model->gas->fs;
   *th     = cs_glob_combustion_model->th;
+  *cpgazg = cs_glob_combustion_model->gas->cpgazg;
 }
 
 /*----------------------------------------------------------------------------

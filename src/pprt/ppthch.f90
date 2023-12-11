@@ -82,7 +82,7 @@ module ppthch
   character(len=12) :: nomcoe(ngazem)
 
   !> number of tabulation points
-  integer, save ::           npo
+  integer, pointer, save :: npo
 
   !> number of elementary gas components
   integer, pointer, save ::  ngaze
@@ -128,7 +128,7 @@ module ppthch
 
   !> cpgazg(ij) is the massic calorific capacity (J/kg/K) of the i-th global secies
   !> at temperature  th(j)
-  double precision, save ::  cpgazg(ngazgm,npot)
+  real(c_double), pointer, save ::  cpgazg(:,:)
 
   !> molar mass of an elementary gas component
   real(c_double), pointer, save ::  wmole(:)
@@ -183,15 +183,16 @@ module ppthch
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,     &
-                                        p_iic, p_wmole, p_wmolg,  p_diftl0,    &
-                                        p_xco2, p_xh2o, p_ckabs1, p_fs, p_th)  &
+    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,         &
+                                        p_iic, p_npo, p_wmole, p_wmolg, p_diftl0,  &
+                                        p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,      &
+                                        p_cpgazg)      &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,    &
                                   p_wmolg, p_wmole, p_diftl0, p_xco2, p_xh2o,  &
-                                  p_ckabs1,  p_fs, p_th
+                                  p_ckabs1,  p_fs, p_th, p_npo, p_cpgazg
     end subroutine cs_f_ppthch_get_pointers
 
     !---------------------------------------------------------------------------
@@ -220,11 +221,13 @@ contains
 
     type(c_ptr) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic
     type(c_ptr) :: p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
-    type(c_ptr) :: p_fs, p_diftl0, p_th
+    type(c_ptr) :: p_fs, p_diftl0, p_th, p_npo, p_cpgazg
 
-    call cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,  &
-                                  p_wmole, p_wmolg, p_diftl0,                &
-                                  p_xco2, p_xh2o, p_ckabs1, p_fs, p_th)
+    call cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,     &
+                                  p_iic,  p_npo,                         &
+                                  p_wmole, p_wmolg, p_diftl0,            &
+                                  p_xco2, p_xh2o, p_ckabs1, p_fs,        &
+                                  p_th, p_cpgazg)
 
     call c_f_pointer(p_ngaze, ngaze)
     call c_f_pointer(p_ngazg, ngazg)
@@ -239,6 +242,8 @@ contains
     call c_f_pointer(p_ckabs1, ckabs1)
     call c_f_pointer(p_fs, fs, [nrgazm])
     call c_f_pointer(p_th, th, [npot])
+    call c_f_pointer(p_npo, npo)
+    call c_f_pointer(p_cpgazg, cpgazg, [ngazgm, npot])
 
   end subroutine thch_models_init
 

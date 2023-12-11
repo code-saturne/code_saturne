@@ -97,6 +97,11 @@ typedef struct {
   /*! Mixing rate at the stoichiometry */
   double fs[CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS];
 
+  /*! cpgazg[j][i] is the massic calorific capacity
+      (J/kg/K) of the i-th global species at temperature */
+  double cpgazg[CS_COMBUSTION_MAX_TABULATION_POINTS]
+               [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+
 } cs_combustion_gas_model_t;
 
 /*! Combustion model parameters structure */
@@ -113,6 +118,8 @@ typedef struct {
 
   int     n_reactions;               /*!< number of global reactions
                                       *   in gas phase */
+
+  int     n_tab_points;              /*!< number of tabulation points */
 
   int     idrift;                    /*!< drift (0: off, 1: on) */
 
