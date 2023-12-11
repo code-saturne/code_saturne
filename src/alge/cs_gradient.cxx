@@ -7516,7 +7516,6 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   BFT_FREE(rhs);
 }
 
-
 /*----------------------------------------------------------------------------
  * Compute cell gradient of a scalar using least-squares reconstruction for
  * non-orthogonal meshes (n_r_sweeps > 1).

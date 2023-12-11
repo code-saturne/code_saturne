@@ -1274,7 +1274,6 @@ _update_fluid_vel(const cs_mesh_t             *m,
                   cs_real_3_t                  frcxt[],
                   cs_real_6_t                  dttens[],
                   const int                    isostd[])
-
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -3030,7 +3029,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     BFT_MALLOC(eswork, n_cells_ext, cs_real_3_t);
 
   if (iappel == 1) {
-    /* Store fimp as the velocity matrix is stored in it in codtiv call */
+    /* Store fimp as the velocity matrix is stored in codtiv call */
     cs_real_33_t *fimpcp = NULL;
     BFT_MALLOC(fimpcp, n_cells_ext, cs_real_33_t);
     cs_array_real_copy(9*n_cells, (const cs_real_t *)fimp, (cs_real_t *)fimpcp);
@@ -3080,7 +3079,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                                        vel,
                                        eswork);
 
-    /* Compute kinetic energy balance for compressible algorithme
+    /* Compute kinetic energy balance for compressible algorithm
      * See H. Amino thesis */
     cs_thermal_model_kinetic_st_prepare(imasfl, bmasfl, vela, vel);
 
@@ -3121,8 +3120,9 @@ _velocity_prediction(const cs_mesh_t             *m,
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
         for (cs_lnum_t ii = 0; ii < 3; ii++) {
-          smbr[c_id][ii] = cell_f_vol[c_id];
+          smbr[c_id][ii] = c_act * cell_f_vol[c_id];
           vect[c_id][ii] = 0;
         }
       }

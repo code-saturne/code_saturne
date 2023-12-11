@@ -602,7 +602,6 @@ cs_velocity_pressure_model_log_setup(void)
       (CS_LOG_SETUP,
        _("\n"
          "  Pressure correction equation is solved by CDO\n\n"));
-
 }
 
 /*----------------------------------------------------------------------------*/
