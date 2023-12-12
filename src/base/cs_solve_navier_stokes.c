@@ -1649,8 +1649,9 @@ _log_norm(const cs_mesh_t                *m,
   const cs_real_t *b_face_surf = mq->b_face_surf;
   const cs_real_t *b_f_face_surf = mq->b_f_face_surf;
 
-  bft_printf(" AFTER CONTINUITY PRESSURE\n"
-             " -------------------------\n");
+  cs_log_printf(CS_LOG_DEFAULT,
+                _(" AFTER CONTINUITY PRESSURE\n"
+                  " -------------------------\n"));
   cs_real_t rnorm = -1.0, rnormt = -1.0;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1791,7 +1792,7 @@ _log_norm(const cs_mesh_t                *m,
   cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
 
   bft_printf(" Mass balance  at boundary: %14.6e\n", rnorm);
-  bft_printf(" ------------------------------------------------------\n");
+  bft_printf(" ----------------------------------------\n");
 
   const cs_velocity_pressure_param_t *vp_param = cs_glob_velocity_pressure_param;
 
@@ -4073,7 +4074,7 @@ cs_solve_navier_stokes(const int   iterns,
      ------------------------ */
 
   if (eqp_u->iwarni > 0)
-    bft_printf(" ** SOLVING CONTINUITY PRESSURE\n");
+    bft_printf("** SOLVING CONTINUITY PRESSURE\n");
 
   cs_real_t *coefa_dp = cs_field_by_name("pressure_increment")->bc_coeffs->a;
   cs_real_t *coefb_dp = cs_field_by_name("pressure_increment")->bc_coeffs->b;
