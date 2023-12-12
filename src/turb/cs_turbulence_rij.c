@@ -1566,7 +1566,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   cs_lnum_t solid_stride = 1;
   const int c_is_solid_ref[1] = {0};
-  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  const int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
   if (c_is_solid == NULL) {
     c_is_solid = c_is_solid_ref;
     solid_stride = 0;
