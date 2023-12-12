@@ -245,7 +245,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   cs_real_t *cofaf_sc = f_sc->bc_coeffs->af;
   cs_real_t *cofbf_sc = f_sc->bc_coeffs->bf;
 
-  cs_real_t *crom = crom = CS_F_(rho)->val;
+  cs_real_t *crom = CS_F_(rho)->val;
 
   const cs_real_t *cpro_cp = NULL, *cpro_cv = NULL;
   if (icp >= 0)
