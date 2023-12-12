@@ -113,6 +113,7 @@ cs_control.h \
 cs_coupling.h \
 cs_crystal_router.h \
 cs_defs.h \
+cs_drift_convective_flux.h \
 cs_equation_iterative_solve.h \
 cs_ext_library_info.h \
 cs_ext_neighborhood.h \
@@ -316,6 +317,7 @@ csprnt.f90 \
 cs_time_step_compute.c \
 cs_control.c \
 cs_coupling.c \
+cs_drift_convective_flux.c \
 cs_ext_library_info.c \
 cs_ext_neighborhood.c \
 cs_equation_iterative_solve.c \
@@ -401,7 +403,6 @@ diffst.f90 \
 distpr.f90 \
 distpr2.f90 \
 distyp.f90 \
-driflu.f90 \
 ecrava.f90 \
 ecrlis.f90 \
 findpt.f90 \

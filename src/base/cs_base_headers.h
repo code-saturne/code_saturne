@@ -46,6 +46,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_coupling.h"
 #include "cs_defs.h"
+#include "cs_drift_convective_flux.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_fan.h"

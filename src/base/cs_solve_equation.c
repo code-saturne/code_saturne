@@ -58,6 +58,7 @@
 #include "cs_combustion_model.h"
 #include "cs_ctwr.h"
 #include "cs_divergence.h"
+#include "cs_drift_convective_flux.h"
 #include "cs_elec_model.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
@@ -1649,8 +1650,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cs_real_t *divflu;
     BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
 
-    cs_drift_convective_flux(f->id,
-                             dt,
+    cs_drift_convective_flux(f,
                              imasfl,
                              bmasfl,
                              divflu);
@@ -2272,8 +2272,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     cs_real_t *divflu;
     BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
 
-    cs_drift_convective_flux(f->id,
-                             dt,
+    cs_drift_convective_flux(f,
                              imasfl,
                              bmasfl,
                              divflu);

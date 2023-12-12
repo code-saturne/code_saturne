@@ -222,25 +222,6 @@ cs_coal_thfieldconv1(int              location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the modified convective flux for scalars with a drift.
- *
- * \param[in]     iflid         index of the current drift scalar field
- * \param[in]     dt            time step (per cell)
- * \param[in,out] imasfl        scalar mass flux at interior face centers
- * \param[in,out] bmasfl        scalar mass flux at boundary face centers
- * \param[in,out] divflu        divergence of drift flux
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_drift_convective_flux(int              f_id,
-                         const cs_real_t  dt[],
-                         cs_real_t        imasfl[],
-                         cs_real_t        bmasf[],
-                         cs_real_t        divflu[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Convert an enthalpy to temperature value for gas combustion.
  *
  * \param[in]     x_sp    mass fraction of constituents
