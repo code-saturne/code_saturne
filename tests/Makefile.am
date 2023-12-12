@@ -195,16 +195,16 @@ cs_geom_test_LDADD    = $(LDADD_CS_TESTS)
 
 if HAVE_ACCEL
 
-cs_gpu_test_sources = $(top_srcdir)/tests/cs_gpu_test.cxx
+cs_gpu_test_SOURCES = $(top_srcdir)/tests/cs_gpu_test.cxx
 if HAVE_CUDA
-  cs_gpu_test_sources += $(top_srcdir)/tests/cs_gpu_cuda_test.cu
+  cs_gpu_test_SOURCES += $(top_srcdir)/tests/cs_gpu_cuda_test.cu
 endif
 
 cs_gpu_test$(EXEEXT): $(top_srcdir)/tests/cs_gpu_test.cxx $(top_srcdir)/tests/cs_gpu_cuda_test.cu
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_gpu_test \
-	${cs_gpu_test_sources}
+	${cs_gpu_test_SOURCES}
 
 endif
 
