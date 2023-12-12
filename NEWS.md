@@ -1,4 +1,4 @@
-Release 8.1.0 (unreleased)
+Release 8.1.0 (2023-13-12)
 --------------------------
 
 ### Physical modeling
