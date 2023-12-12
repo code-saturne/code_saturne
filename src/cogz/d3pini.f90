@@ -76,6 +76,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -83,7 +84,7 @@ implicit none
 
 ! Local variables
 
-integer          iel, igg, mode
+integer          iel, igg
 double precision coefg(ngazgm), hair, tinitk
 
 double precision, dimension(:), pointer :: cvar_scalt
@@ -120,11 +121,7 @@ if ( isuite.eq.0 ) then
   coefg(1) = zero
   coefg(2) = 1.d0
   coefg(3) = zero
-  mode     = -1
-  call cothht                                                     &
-  ( mode   , ngazg , ngazgm  , coefg  ,                           &
-    npo    , npot   , th     , ehgazg ,                           &
-    hair   , tinitk )
+  hair = cs_gas_combustion_t_to_h(coefg, tinitk)
 
   do iel = 1, ncel
 
@@ -151,21 +148,13 @@ if ( isuite.eq.0 ) then
   coefg(1) = zero
   coefg(2) = 1.d0
   coefg(3) = zero
-  mode     = -1
-  call cothht                                                     &
-  ( mode   , ngazg , ngazgm  , coefg  ,                           &
-    npo    , npot   , th     , ehgazg ,                           &
-    hinoxy , tinoxy )
+  hinoxy = cs_gas_combustion_t_to_h(coefg, tinoxy)
 
   ! Fuel enthalpy HINFUE at TINFUE
   coefg(1) = 1.d0
   coefg(2) = zero
   coefg(3) = zero
-  mode     = -1
-  call cothht                                                     &
-  ( mode   , ngazg , ngazgm  , coefg  ,                           &
-    npo    , npot   , th     , ehgazg ,                           &
-    hinfue , tinfue )
+  hinfue = cs_gas_combustion_t_to_h(coefg, tinfue)
 
   ! ---> Parallelism and periodic exchange
   if (irangp.ge.0.or.iperio.eq.1) then

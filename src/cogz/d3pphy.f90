@@ -54,6 +54,7 @@ use ppincl
 use radiat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -62,7 +63,7 @@ implicit none
 ! Local variables
 
 integer          if, ih, iel, igg
-integer          ifac, mode
+integer          ifac
 
 double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
 
@@ -129,13 +130,7 @@ if ( ipass.le.2 ) then
   coefg(1) = zero
   coefg(2) = zero
   coefg(3) = 1.d0
-  mode = 1
-  call cothht                                                     &
-  !==========
-  ( mode   , ngazg , ngazgm  , coefg  ,                           &
-    npo    , npot   , th     , ehgazg ,                           &
-    hstoea , tstoea )
-
+  tstoea = cs_gas_combustion_h_to_t(coefg, hstoea)
 
 ! ---> Construction d'une table Temperature en fonction de la richesse
 !        et de l'enthalpie stoechiometrique
@@ -159,12 +154,7 @@ if ( ipass.le.2 ) then
   coefg(2) = zero
   coefg(3) = 1.d0
   tin = min(tinfue,tinoxy)
-  mode    = -1
-  call cothht                                                     &
-  !==========
-  ( mode      , ngazg , ngazgm  , coefg  ,                        &
-    npo       , npot   , th     , ehgazg ,                        &
-    hh(nmaxh) , tin    )
+  hh(nmaxh) = cs_gas_combustion_t_to_h(coefg, tin)
   hh(1) = hstoea
   do ih = 2, (nmaxh-1)
     hh(ih) = hh(1) + (hh(nmaxh)-hh(1))*                           &
@@ -181,12 +171,7 @@ if ( ipass.le.2 ) then
       coefg(3) = ff(if)/fsir
       hhloc = hinoxy + dble(2*if-2)/dble(nmaxf-1)                 &
                      * (hh(ih)-hinoxy)
-      mode = 1
-      call cothht                                                 &
-      !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                       &
-        npo    , npot   , th     , ehgazg ,                       &
-        hhloc , tfh(if,ih) )
+      tfh(if,ih) = cs_gas_combustion_h_to_t(coefg, hhloc)
     enddo
     do if = (nmaxf/2+2), nmaxf
 ! ----- Melange riche
@@ -197,12 +182,7 @@ if ( ipass.le.2 ) then
                 + dble(2*nmaxf)*hh(ih)                            &
                 - hinfue*dble(nmaxf+1) )                          &
             / dble(nmaxf-1)
-      mode = 1
-      call cothht                                                 &
-      !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                       &
-        npo    , npot   , th     , ehgazg ,                       &
-        hhloc , tfh(if,ih) )
+      tfh(if,ih) = cs_gas_combustion_h_to_t(coefg, hhloc)
     enddo
 
   enddo

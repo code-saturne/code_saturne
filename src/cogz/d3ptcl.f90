@@ -104,7 +104,7 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          igg, ifac, izone, mode, iscal
+integer          igg, ifac, izone, iscal
 integer          ii, ifue, ioxy
 double precision qimabs, qimpl(1), qisqc
 double precision qcalc(nozppm)
@@ -186,11 +186,7 @@ if (ifue.eq.1) then
   coefg(1) = 1.d0
   coefg(2) = zero
   coefg(3) = zero
-  mode    = -1
-  call cothht                                                   &
-      ( mode   , ngazg , ngazgm  , coefg  ,                     &
-        npo    , npot   , th     , ehgazg ,                     &
-        hinfue , tinfue )
+  hinfue = cs_gas_combustion_t_to_h(coefg, tinfue)
 endif
 
 ! Oxidant inlet at TINOXY: HINOXY calculation
@@ -198,11 +194,7 @@ if (ioxy.eq.1) then
   coefg(1) = zero
   coefg(2) = 1.d0
   coefg(3) = zero
-  mode    = -1
-  call cothht                                                   &
-      ( mode   , ngazg , ngazgm  , coefg  ,                     &
-        npo    , npot   , th     , ehgazg ,                     &
-        hinoxy , tinoxy  )
+  hinoxy = cs_gas_combustion_t_to_h(coefg, tinoxy)
 endif
 
 

@@ -75,6 +75,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -167,11 +168,7 @@ if ( isuite.eq.0 ) then
       coefg(1) = zero
       coefg(2) = 1.d0
       coefg(3) = zero
-      mode     = -1
-      call cothht                                                 &
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          hair   , tinitk )
+      hair = cs_gas_combustion_t_to_h(coefg, tinitk)
     endif
 
 ! ----- On en profite pour initialiser FRMEL et TGF
@@ -274,11 +271,7 @@ if ( isuite.eq.0 ) then
       coefg(1) = fmelm
       coefg(2) = (1.d0-fmelm)
       coefg(3) = zero
-      mode     = -1
-      call cothht                                                 &
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          hinit  , tentm )
+      hinit = cs_gas_combustion_t_to_h(coefg, tentm)
     endif
 
 ! ----- En periodique et en parallele,

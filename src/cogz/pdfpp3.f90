@@ -95,6 +95,8 @@ use ppthch
 use ppincl
 use coincl
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -110,7 +112,6 @@ double precision coyfp(ncelet)
 ! Local variables
 
 integer          iel, igg, idirac
-integer          mode
 integer          clicoy, cliy1, cliy2 , cliy2p
 integer          clif  , cliy , clifp2, clyfp2
 
@@ -323,12 +324,7 @@ do iel =1, ncel
 
 ! ------ Calcul de la temperature pour le pic 1 et 2
 
-      mode    = 1
-      call cothht                                                 &
-      !==========
-           ( mode   , ngazg , ngazgm  , coefg  ,                  &
-           npo    , npot  , th      , ehgazg ,                    &
-           h(idirac)     , teml(idirac)    )
+      teml(idirac) = cs_gas_combustion_h_to_t(coefg, h(idirac))
 
 !     ---> Calcul de la masse volumique en 1 et 2
 
@@ -398,10 +394,9 @@ do iel =1, ncel
 
 !---> Masse volumique du melange
 
-    if ( ipass.gt.1 .or.                                          &
-        (isuite.eq.1.and.initro.eq.1) ) then
-      crom(iel) = srrom*crom(iel)               &
-                          +(1.d0-srrom)*(p0/(cs_physical_constants_r*temsmm))
+    if (ipass.gt.1 .or. (isuite.eq.1.and.initro.eq.1) ) then
+      crom(iel) =    srrom*crom(iel)                                    &
+                  + (1.d0-srrom)*(p0/(cs_physical_constants_r*temsmm))
     endif
 
   else
@@ -416,16 +411,11 @@ do iel =1, ncel
 
 !-------->Calcul de F1 et F2 avec Curl em F
 
-    call lwcurl                                                   &
-!         =========
-         ( cst  , fmp , fp2mp  ,                                  &
-         fmin , fmax ,                                            &
-         f1 , f2 , cstfa1 , cstfa2 )
+    call lwcurl(cst, fmp, fp2mp, fmin, fmax, f1, f2, cstfa1, cstfa2)
 
 ! ------>  On calcul les Moyennes conditionnelles Y1, Y2
 
-    y2 = ((fmp*yfmp + coyfpp) - f1*yfmp)                          &
-         /(cstfa1*(f2 - f1))
+    y2 = ((fmp*yfmp + coyfpp) - f1*yfmp) / (cstfa1*(f2 - f1))
     y1 = (yfmp - cstfa2*y2)/cstfa1
 
     ymin(1) = max(zero , ((f1- fs(1))/(1d0-fs(1))))
@@ -476,11 +466,8 @@ do iel =1, ncel
       cliy2p = cliy2p + 1
     endif
 !==== fin
-    call lwcurl                                                   &
-!         =========
-         ( cstfa1  , y1   , y2p(1)  ,                             &
-         ymin(1) , ymax(1) ,                                      &
-         y(1) , y(2) , d(1) , d(2) )
+    call lwcurl(cstfa1, y1, y2p(1), ymin(1), ymax(1),             &
+                y(1), y(2), d(1), d(2))
 
 ! ---------> Parametres des dirac en F1
 
@@ -536,12 +523,7 @@ do iel =1, ncel
 
 ! ------ Calcul de la temperature pour le pic 1 et 2
 
-      mode    = 1
-      call cothht                                                 &
-      !==========
-           ( mode   , ngazg , ngazgm  , coefg  ,                  &
-           npo    , npot  , th      , ehgazg ,                    &
-           h(idirac)      , teml(idirac)    )
+      teml(idirac) = cs_gas_combustion_h_to_t(coefg, h(idirac))
 
 ! ---> Calcul de la masse volumique en 1 et 2
 
@@ -604,18 +586,18 @@ do iel =1, ncel
       if ((f(idirac).ne.zero).and.(y(idirac).ne.zero)) then
         if ((f(idirac).gt.fs(1)).or.                              &
              (f(idirac).lt.0.8*fs(1))) then
-          WRITE(NFECRA,*)'==============F OUT=============*',     &
+          write(nfecra,*)'==============F OUT=============*',     &
                idirac
-          WRITE(NFECRA,*)'F',F(IDIRAC)
-          WRITE(NFECRA,*)' IEL =', IEL
+          write(nfecra,*)'F',f(idirac)
+          write(nfecra,*)' IEL =', iel
         endif
 
         if ((y(idirac).gt.f(idirac))                              &
              .or.(y(idirac).lt.-epsi)) then
-          WRITE(NFECRA,*)'=============Y OUT=================',   &
+          write(nfecra,*)'=============Y OUT=================',   &
                idirac
-          WRITE(NFECRA,*)'Y',Y(IDIRAC)
-          WRITE(NFECRA,*)' IEL =', IEL
+          write(nfecra,*)'Y',y(idirac)
+          write(nfecra,*)' IEL =', iel
         endif
       endif
     enddo

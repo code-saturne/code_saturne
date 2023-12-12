@@ -67,6 +67,7 @@ use optcal
 use cstphy
 use cstnum
 use entsor
+use cs_c_bindings
 
 !===============================================================================
 
@@ -80,92 +81,26 @@ double precision xespec(nespem)
 double precision th(npot) , eh(nespem,npot)
 double precision temper , enthal
 
-! Local variables
-
-integer          it , iesp
-
-double precision eh1 , eh0
-
-!===============================================================================
 !===============================================================================
 ! 1. CALCUL DE L'ENTHALPIE A PARTIR DE LA TEMPERATURE
 !===============================================================================
 
-if ( mode.eq.-1 ) then
+if (mode.eq.-1) then
 
-  it = npo
-  if ( temper.ge.th(it) ) then
-    enthal = zero
-    do iesp = 1, nespec
-      enthal = enthal + xespec(iesp)*eh(iesp,it)
-    enddo
-    go to 11
-  endif
-
-  it = 1
-  if ( temper.le.th(it) ) then
-    enthal = zero
-    do iesp = 1, nespec
-      enthal = enthal + xespec(iesp)*eh(iesp,it)
-    enddo
-    go to 11
-  endif
- 10     continue
-
-  it = it + 1
-  if ( temper.le.th(it) ) then
-    eh0 = zero
-    eh1 = zero
-    do iesp = 1, nespec
-      eh0 = eh0 + xespec(iesp)*eh(iesp,it-1)
-      eh1 = eh1 + xespec(iesp)*eh(iesp,it  )
-    enddo
-    enthal = eh0                                                  &
-           + (eh1-eh0)*(temper-th(it-1))/(th(it)-th(it-1))
-    goto 11
-  endif
-  goto 10
- 11     continue
-
+  enthal = cs_gas_combustion_t_to_h(xespec, temper)
 
 !===============================================================================
 ! 2. CALCUL DE LA TEMPERATURE A PARTIR DE l'ENTHALPIE
 !===============================================================================
 
-else if ( mode.eq.1 ) then
+else if (mode.eq.1) then
 
-  it  = npo-1
-  eh1 = zero
-  do iesp = 1, nespec
-    eh1 = eh1 + xespec(iesp)*eh(iesp,it+1)
-  enddo
-  if ( enthal.ge.eh1 ) temper = th(it+1)
-
-  it  = 1
-  eh0 = zero
-  do iesp = 1, nespec
-    eh0 = eh0 + xespec(iesp)*eh(iesp,it  )
-  enddo
-  if ( enthal.le.eh0 ) temper = th(it)
-
-  do it = 1, npo-1
-    eh0 = zero
-    eh1 = zero
-    do iesp = 1, nespec
-      eh0 = eh0 + xespec(iesp)*eh(iesp,it  )
-      eh1 = eh1 + xespec(iesp)*eh(iesp,it+1)
-    enddo
-    if ( enthal.ge.eh0 .and. enthal.le.eh1 )                      &
-      temper = th(it)                                             &
-             + (enthal-eh0)*(th(it+1)-th(it))/(eh1-eh0)
-  enddo
-
+  temper = cs_gas_combustion_h_to_t(xespec, enthal)
 
 else
 
   write(nfecra,1000) mode
   call csexit (1)
-
 
 endif
 
@@ -194,6 +129,182 @@ endif
 
 return
 end subroutine
+
+!===============================================================================
+! Function :
+! --------
+
+!> \brief Convert enthalpy to temperature at cells for gas combustion.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     xespec       mass fraction of constituents
+!> \param[in]     enthal       enthalpy at cells
+!> \param[out]    temper       temperature at cells
+!_______________________________________________________________________________
+
+
+function cs_gas_combustion_h_to_t(xespec, enthal) result(temper)  &
+   bind(C, name='cs_gas_combustion_h_to_t')
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use, intrinsic :: iso_c_binding
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use ppthch
+use coincl
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+real(kind=c_double), dimension(*) :: xespec
+real(c_double), value :: enthal
+real(c_double) :: temper
+
+! Local variables
+
+integer          it , iesp
+
+double precision eh1 , eh0
+
+it  = npo-1
+eh1 = zero
+do iesp = 1, ngazg
+  eh1 = eh1 + xespec(iesp)*ehgazg(iesp,it+1)
+enddo
+if (enthal.ge.eh1) temper = th(it+1)
+
+it  = 1
+eh0 = zero
+do iesp = 1, ngazg
+  eh0 = eh0 + xespec(iesp)*ehgazg(iesp,it  )
+enddo
+if (enthal.le.eh0) temper = th(it)
+
+do it = 1, npo-1
+  eh0 = zero
+  eh1 = zero
+  do iesp = 1, ngazg
+    eh0 = eh0 + xespec(iesp)*ehgazg(iesp,it  )
+    eh1 = eh1 + xespec(iesp)*ehgazg(iesp,it+1)
+  enddo
+  if (enthal.ge.eh0 .and. enthal.le.eh1)                        &
+    temper = th(it) + (enthal-eh0)*(th(it+1)-th(it))/(eh1-eh0)
+enddo
+
+!----
+! End
+!----
+
+return
+end function cs_gas_combustion_h_to_t
+
+!===============================================================================
+! Function :
+! --------
+
+!> \brief Convert a temperature value to enthalpy for gas combustion.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     xespec       mass fraction of constituants
+!> \param[in]     temper       temperature at cells
+!> \param[out]    enthal       enthalpy at cells
+!_______________________________________________________________________________
+
+
+function cs_gas_combustion_t_to_h(xespec, temper) result(enthal)  &
+   bind(C, name='cs_gas_combustion_t_to_h')
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use, intrinsic :: iso_c_binding
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use ppthch
+use coincl
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+real(kind=c_double), dimension(*) :: xespec
+real(c_double), value :: temper
+real(c_double) :: enthal
+
+! Local variables
+
+integer          it , iesp
+
+double precision eh1 , eh0
+
+!===============================================================================
+! 1. CALCUL DE L'ENTHALPIE A PARTIR DE LA TEMPERATURE
+!===============================================================================
+
+it = npo
+if (temper.ge.th(it)) then
+  enthal = zero
+  do iesp = 1, ngazg
+    enthal = enthal + xespec(iesp)*ehgazg(iesp,it)
+  enddo
+  go to 11
+endif
+
+it = 1
+if (temper.le.th(it)) then
+  enthal = zero
+  do iesp = 1, ngazg
+    enthal = enthal + xespec(iesp)*ehgazg(iesp,it)
+  enddo
+  go to 11
+endif
+10 continue
+
+it = it + 1
+if (temper.le.th(it)) then
+  eh0 = zero
+  eh1 = zero
+  do iesp = 1, ngazg
+    eh0 = eh0 + xespec(iesp)*ehgazg(iesp,it-1)
+    eh1 = eh1 + xespec(iesp)*ehgazg(iesp,it  )
+  enddo
+  enthal = eh0 + (eh1-eh0)*(temper-th(it-1))/(th(it)-th(it-1))
+  goto 11
+endif
+goto 10
+11 continue
+
+!----
+! End
+!----
+
+return
+end function cs_gas_combustion_t_to_h
 
 !===============================================================================
 ! Function :
@@ -256,8 +367,6 @@ double precision, dimension(:), pointer :: bym1, bym2, bym3, cpro_temp
 
 !===============================================================================
 
-mode = 1
-
 ! Non-specific physics
 
 if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
@@ -276,8 +385,7 @@ if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
     coefg(1) = bym1(ifac)
     coefg(2) = bym2(ifac)
     coefg(3) = bym3(ifac)
-    call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg,   &
-                hbl, t_b(ifac))
+    t_b(ifac) = cs_gas_combustion_h_to_t(coefg, hbl)
   enddo
 
 elseif (ippmod(islfm).ge.0) then
@@ -343,6 +451,7 @@ use ppincl
 use radiat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -358,7 +467,7 @@ double precision, dimension(nfabor), intent(out), target :: h_b
 
 ! Local variables
 
-integer          iel , ilst, ifac, igg, mode, izone
+integer          iel , ilst, ifac, igg, izone
 
 double precision coefg(ngazgm)
 double precision tbl
@@ -366,8 +475,6 @@ double precision tbl
 double precision, dimension(:), pointer :: bym1, bym2, bym3, cvar_h
 
 !===============================================================================
-
-mode = -1
 
 if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
 
@@ -391,7 +498,7 @@ if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
     coefg(1) = bym1(ifac)
     coefg(2) = bym2(ifac)
     coefg(3) = bym3(ifac)
-    call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg, h_b(ifac), tbl)
+    h_b(ifac) = cs_gas_combustion_t_to_h(coefg, tbl)
 
   enddo
 

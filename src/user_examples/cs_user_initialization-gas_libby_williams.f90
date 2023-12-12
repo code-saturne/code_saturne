@@ -74,6 +74,7 @@ use ppcpfu
 use cs_coal_incl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -88,7 +89,7 @@ double precision dt(ncelet)
 ! Local variables
 
 !< [loc_var_dec]
-integer          iel, mode, igg, izone
+integer          iel, igg, izone
 double precision hinit, coefg(ngazgm)
 double precision sommqf, sommqt, sommq, tentm, fmelm
 
@@ -153,11 +154,10 @@ if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3               &
   coefg(1) = fmelm
   coefg(2) = (1.d0-fmelm)
   coefg(3) = zero
-  mode     = -1
 
   !   Converting the mean temperatur boundary conditions into
   !   enthalpy values
-  call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg, hinit, tentm)
+  hinit = cs_gas_combustion_t_to_h(coefg, tentm)
 endif
 
 do iel = 1, ncel

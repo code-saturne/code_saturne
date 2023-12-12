@@ -65,6 +65,7 @@ use ppincl
 use radiat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -79,7 +80,6 @@ integer          izfppp(nfabor)
 
 integer          igg, iel
 integer          ifac, izone
-integer          mode
 double precision coefg(ngazgm), ygfm, ygbm, epsi
 double precision nbmol , temsmm , fmel , ckabgf, ckabgb
 double precision masmgb, hgb, tgb, masmgf, masmg
@@ -97,8 +97,6 @@ double precision, dimension(:), pointer :: cpro_ckabs, cpro_t4m, cpro_t3m
 integer       ipass
 data          ipass /0/
 save          ipass
-
-!===============================================================================
 
 !===============================================================================
 ! 0. ON COMPTE LES PASSAGES
@@ -240,11 +238,7 @@ do iel = 1, ncel
 
 ! ---> Calcul de l'enthalpie des gaz frais
 
-  mode    = -1
-  call cothht                                                     &
-  ( mode   , ngazg , ngazgm  , coefg  ,                           &
-    npo    , npot   , th     , ehgazg ,                           &
-    hgf    , tgf    )
+  hgf = cs_gas_combustion_t_to_h(coefg, tgf)
 
 ! ---> Masse molaire des gaz brules
 
@@ -277,11 +271,7 @@ do iel = 1, ncel
     endif
   endif
 
-  mode = 1
-  call cothht                                                     &
-  ( mode   , ngazg , ngazgm  , coefg  ,                           &
-    npo    , npot   , th     , ehgazg ,                           &
-    hgb    , tgb    )
+  tgb = cs_gas_combustion_h_to_t(coefg, hgb)
 
   if ( ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2 ) then
 ! ---- EBU Standard et modifie en conditions adiabatiques (sans H)

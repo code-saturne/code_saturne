@@ -250,6 +250,32 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Convert enthalpy to temperature for gas combustion.
+
+    function cs_gas_combustion_h_to_t(xespec, enthal) result(temper)  &
+      bind(C, name='cs_gas_combustion_h_to_t')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: xespec
+      real(c_double), value :: enthal
+      real(c_double) :: temper
+    end function cs_gas_combustion_h_to_t
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Convert temperature to enthalpy for gas combustion.
+
+    function cs_gas_combustion_t_to_h(xespec, temper) result(enthal)  &
+      bind(C, name='cs_gas_combustion_t_to_h')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: xespec
+      real(c_double), value :: temper
+      real(c_double) :: enthal
+    end function cs_gas_combustion_t_to_h
+
+    !---------------------------------------------------------------------------
+
     !> \brief Define automatic turbulence values for specific physical modules.
 
     !> The definitions are similar to those of the standard case, though wall

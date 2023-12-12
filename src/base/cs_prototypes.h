@@ -241,6 +241,36 @@ cs_drift_convective_flux(int              f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Convert an enthalpy to temperature value for gas combustion.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     h       enthalpy
+ *
+ * \return  temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gas_combustion_h_to_t(const cs_real_t   x_sp[restrict],
+                         cs_real_t         h);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert a temperature to enthalpy value for gas combustion.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     t       temperature at cells
+ *
+ * \return  enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_user_gas_combustion_t_to_h(const cs_real_t   x_sp[restrict],
+                              cs_real_t         t);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return pointer to cavitation "dgdpca" array.
  *
  * \return  pointer to "dgdpca" array.

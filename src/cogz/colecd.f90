@@ -52,6 +52,7 @@ use coincl
 use cpincl
 use ppincl
 use radiat
+use cs_c_bindings
 
 !===============================================================================
 
@@ -70,7 +71,6 @@ integer          inicoe, inicha
 integer          lonch, ichai, ichcoe
 integer          iereac(ngazem)
 integer          ncoel, icoel
-integer          mode
 
 double precision tmin, tmax
 double precision kabse(ngazem)
@@ -660,9 +660,7 @@ if (indjon.eq.1) then
       coefg(igg) = 1.d0
       tgaz      = 300.d0
 
-      mode = -1
-      call cothht(mode, ngazg, ngazgm, coefg,                 &
-                  npo, npot, th, ehgazg, efgaz(igg), tgaz)
+      efgaz(igg) = cs_gas_combustion_t_to_h(coefg, tgaz)
 
       pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
 
@@ -775,12 +773,7 @@ else
       coefg(igg) = 1.d0
       tgaz      = 300.d0
 
-      mode = -1
-      call cothht                                                   &
-      !==========
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          efgaz(igg)      , tgaz   )
+      efgaz(igg) = cs_gas_combustion_t_to_h(coefg, tgaz)
 
       pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
 

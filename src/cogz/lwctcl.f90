@@ -93,7 +93,7 @@ double precision rcodcl(nfabor,nvar,3)
 ! Local variables
 
 integer          nbr
-integer          igg, ifac, izone, mode
+integer          igg, ifac, izone
 integer          icke, ii, iel, iok
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision hgazf , tgazf, hgazb, tgazb
@@ -131,7 +131,7 @@ enddo
 !    Si ce n'est pas le cas, c'est plus complique mais on peut s'en tirer
 !    avec un max quand meme.
 
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parrmx(nozapm,qimp  )
   call parrmx(nozapm,fment )
   call parrmx(nozapm,tkent )
@@ -360,11 +360,7 @@ do ii = 1, nzfppp
     coefg(1) = fment(izone)
     coefg(2) = 1.d0 - fment(izone)
     coefg(3) = zero
-    mode    = -1
-    call cothht                                                   &
-     ( mode   , ngazg  , ngazgm , coefg  ,                        &
-       npo    , npot   , th     , ehgazg ,                        &
-       hgazf  , tgazf  )
+    hgazf = cs_gas_combustion_t_to_h(coefg, tgazf)
     hgent(izone) = hgazf
 !       Entree 2
   elseif ( ientgb(izone).eq.1 ) then
@@ -372,11 +368,7 @@ do ii = 1, nzfppp
     coefg(1) = fment(izone)
     coefg(2) = 1.d0 - fment(izone)
     coefg(3) = zero
-    mode    = -1
-    call cothht                                                   &
-     ( mode   , ngazg , ngazgm  , coefg  ,                        &
-       npo    , npot   , th     , ehgazg ,                        &
-       hgazb , tgazb )
+    hgazb = cs_gas_combustion_t_to_h(coefg, tgazb)
     hgent(izone) = hgazb
   endif
 enddo

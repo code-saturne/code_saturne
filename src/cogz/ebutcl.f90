@@ -92,7 +92,7 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          igg, ifac, izone, mode
+integer          igg, ifac, izone
 integer          ii, iok
 double precision qisqc
 double precision hgazf , tgazf, hgazb, tgazb
@@ -308,12 +308,7 @@ if ( ippmod(icoebu) .eq. 1 .or.                                   &
       coefg(1) = fment(izone)
       coefg(2) = 1.d0 - fment(izone)
       coefg(3) = zero
-      mode    = -1
-      call cothht                                                 &
-      !==========
-       ( mode   , ngazg  , ngazgm , coefg  ,                      &
-         npo    , npot   , th     , ehgazg ,                      &
-         hgazf  , tgazf  )
+      hgazf = cs_gas_combustion_t_to_h(coefg, tgazf)
       hgent(izone) = hgazf
 !       Entree gaz brules (flamme pilote)
     elseif ( ientgb(izone).eq.1 ) then
@@ -321,12 +316,7 @@ if ( ippmod(icoebu) .eq. 1 .or.                                   &
       coefg(1) = max(zero,(fment(izone)-fs(1))/(1.d0-fs(1)))
       coefg(3) = (fment(izone)-coefg(1))/fs(1)
       coefg(2) = 1.d0 - coefg(1) - coefg(3)
-      mode    = -1
-      call cothht                                                 &
-      !==========
-       ( mode   , ngazg , ngazgm  , coefg  ,                      &
-         npo    , npot   , th     , ehgazg ,                      &
-         hgazb , tgazb )
+      hgazb = cs_gas_combustion_t_to_h(coefg, tgazb)
       hgent(izone) = hgazb
     endif
   enddo
