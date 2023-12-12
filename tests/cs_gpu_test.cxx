@@ -180,7 +180,11 @@ main (int argc, char *argv[])
   /* Allocation tests */
   /*------------------*/
 
+#if defined(HAVE_OPENMP_TARGET)
+
   cs_omp_target_select_default_device();  /* Initialize device id */
+
+#endif
 
   cs_real_t *a0, *a1, *a2;
   CS_MALLOC_HD(a0, 100, cs_real_t, CS_ALLOC_HOST);
