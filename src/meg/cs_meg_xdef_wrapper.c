@@ -191,7 +191,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
       /* Copy values to retval, knowing that "meg_vals" is dense! */
       if (!dense_output) {
         cs_array_real_copy_subset(n_elts,
-                                  _input->stride * n_elts,
+                                  _input->stride,
                                   elt_ids,
                                   CS_ARRAY_SUBSET_OUT,
                                   meg_vals,
@@ -224,7 +224,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
       /* Copy values to retval, knowing that "meg_vals" is dense! */
       if (!dense_output) {
         cs_array_real_copy_subset(n_elts,
-                                  _input->stride * n_elts,
+                                  _input->stride,
                                   elt_ids,
                                   CS_ARRAY_SUBSET_OUT,
                                   meg_vals,
@@ -247,7 +247,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
       /* Copy values to retval, knowing that "meg_vals" is dense! */
       if (!dense_output) {
         cs_array_real_copy_subset(n_elts,
-                                  _input->stride * n_elts,
+                                  _input->stride,
                                   elt_ids,
                                   CS_ARRAY_SUBSET_OUT,
                                   meg_vals,
