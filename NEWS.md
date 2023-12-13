@@ -1,3 +1,13 @@
+Release 8.1.1 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Radiative model: fix default value for `idiver` (explicit radiative
+  source term computation mode), which was inverted between atmospheric
+  and other models and could lead to incorrect results if not modified
+  by the user.
+
 Release 8.1.0 (2023-13-12)
 --------------------------
 
