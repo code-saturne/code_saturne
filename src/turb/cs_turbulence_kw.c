@@ -1548,13 +1548,13 @@ cs_turbulence_kw(int              phase_id,
   int kclipp = cs_field_key_id("clipping_id");
 
   int clip_k_id = cs_field_get_key_int(f_k, kclipp);
-  cs_real_t *cpro_k_clipped;
+  cs_real_t *cpro_k_clipped = NULL;
   if (clip_k_id >= 0) {
     cpro_k_clipped = cs_field_by_id(clip_k_id)->val;
   }
 
   int clip_w_id =  cs_field_get_key_int(f_omg, kclipp);
-  cs_real_t *cpro_w_clipped;
+  cs_real_t *cpro_w_clipped = NULL;
   if (clip_w_id >= 0) {
     cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
   }

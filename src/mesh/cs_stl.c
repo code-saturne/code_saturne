@@ -819,30 +819,34 @@ _tetrahedron_plane_volume_intersection(cs_real_t x1[3],
       vol = _tetra_vol(x1, x2, x3, x4);
 
       /* Looking for the point located inside */
-      cs_real_t *a, *b, *c, *d;
+      cs_real_t *a = NULL, *b = NULL, *c = NULL, *d = NULL;
 
       if (v1_is_inside == 1) {
         a = &x1[0];
         b = &x2[0];
         c = &x3[0];
         d = &x4[0];
-      } else if (v2_is_inside == 1) {
+      }
+      else if (v2_is_inside == 1) {
         a = &x2[0];
         b = &x1[0];
         c = &x3[0];
         d = &x4[0];
-      } else if (v3_is_inside == 1) {
+      }
+      else if (v3_is_inside == 1) {
         a = &x3[0];
         b = &x1[0];
         c = &x2[0];
         d = &x4[0];
-      } else if (v4_is_inside == 1) {
+      }
+      else if (v4_is_inside == 1) {
         a = &x4[0];
         b = &x1[0];
         c = &x2[0];
         d = &x3[0];
       }
 
+      assert(a != NULL && b != NULL && c != NULL && d != NULL);
 
       cs_real_t ab[3], ac[3], ad[3];
       for (int i = 0; i < 3; i++) {
@@ -873,29 +877,34 @@ _tetrahedron_plane_volume_intersection(cs_real_t x1[3],
       vol = _tetra_vol(x1, x2, x3, x4);
 
       /* Lookink for the point located outside */
-      cs_real_t *a, *b, *c, *d;
+      cs_real_t *a = NULL, *b = NULL, *c = NULL, *d = NULL;
 
       if (v1_is_inside == 0){
         a = &x1[0];
         b = &x2[0];
         c = &x3[0];
         d = &x4[0];
-      } else if (v2_is_inside == 0) {
+      }
+      else if (v2_is_inside == 0) {
         a = &x2[0];
         b = &x1[0];
         c = &x3[0];
         d = &x4[0];
-      } else if (v3_is_inside == 0) {
+      }
+      else if (v3_is_inside == 0) {
         a = &x3[0];
         b = &x1[0];
         c = &x2[0];
         d = &x4[0];
-      } else if (v4_is_inside == 0) {
+      }
+      else if (v4_is_inside == 0) {
         a = &x4[0];
         b = &x1[0];
         c = &x2[0];
         d = &x3[0];
       }
+
+      assert(a != NULL && b != NULL && c != NULL && d != NULL);
 
       cs_real_t ab[3], ac[3], ad[3];
       for (int i = 0; i < 3; i++) {
@@ -924,39 +933,46 @@ _tetrahedron_plane_volume_intersection(cs_real_t x1[3],
     case 2: /* 4 intersection points */
     {
       /* Looking for the 2 inside and 2 outside points */
-      cs_real_t *a, *b, *c, *d;
+      cs_real_t *a = NULL, *b = NULL, *c = NULL, *d = NULL;
 
       if (v1_is_inside && v2_is_inside) {
         a = &x1[0];
         b = &x2[0];
         c = &x3[0];
         d = &x4[0];
-      } else if (v1_is_inside && v3_is_inside) {
+      }
+      else if (v1_is_inside && v3_is_inside) {
         a = &x1[0];
         b = &x3[0];
         c = &x2[0];
         d = &x4[0];
-      } else if (v1_is_inside && v4_is_inside) {
+      }
+      else if (v1_is_inside && v4_is_inside) {
         a = &x1[0];
         b = &x4[0];
         c = &x2[0];
         d = &x3[0];
-      } else if (v2_is_inside && v3_is_inside) {
+      }
+      else if (v2_is_inside && v3_is_inside) {
         a = &x2[0];
         b = &x3[0];
         c = &x1[0];
         d = &x4[0];
-      } else if (v2_is_inside && v4_is_inside) {
+      }
+      else if (v2_is_inside && v4_is_inside) {
         a = &x2[0];
         b = &x4[0];
         c = &x1[0];
         d = &x3[0];
-      } else if (v3_is_inside && v4_is_inside) {
+      }
+      else if (v3_is_inside && v4_is_inside) {
         a = &x3[0];
         b = &x4[0];
         c = &x1[0];
         d = &x2[0];
       }
+
+      assert(a != NULL && b != NULL && c != NULL && d != NULL);
 
       cs_real_t ac[3], ad[3], bc[3], bd[3];
       for (int i = 0; i < 3; i++) {

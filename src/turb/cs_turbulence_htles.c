@@ -276,12 +276,11 @@ cs_turbulence_htles(void)
 
     /* Internal Consistency Constraint (ICC) */
     cs_real_t xicc = 1.0;
-    if (cs_glob_turb_hybrid_model->iicc == 1) {
+    if (cs_glob_turb_hybrid_model->iicc == 1)
       xicc = xrc;
-    }
 
     /* Hybridation function psi */
-    cs_real_t xpsi;
+    cs_real_t xpsi = 0;
     if (turb_model->iturb == CS_TURB_K_OMEGA) {
       cs_real_t xxf1   = kwsst_f1[c_id];
       cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
@@ -295,13 +294,11 @@ cs_turbulence_htles(void)
     }
 
     /* Modeled time scale T */
-    cs_real_t xt;
-    if (turb_model->iturb == CS_TURB_K_OMEGA) {
+    cs_real_t xt = 0;
+    if (turb_model->iturb == CS_TURB_K_OMEGA)
       xt = xr/xpsi*(xkm+xicc*xkr)/(xcmu * mean_omg[c_id] * xkm);
-    }
-    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K)
       xt = xr/xpsi*(xkm+xicc*xkr)/(xepsm);
-    }
 
     /* Save fields */
     hybrid_fd_coeff[c_id] = xrc;

@@ -428,8 +428,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
     /* Turbulent time-scale (constant in AFM) */
     const cs_real_t xtt = xk/xe;
     cs_real_t alpha_theta = 0, xpk = 0., xgk = 0;
-
-    cs_real_t eta_ebafm, xi_ebafm, gamma_eb;
+    cs_real_t eta_ebafm = 0, xi_ebafm = 0, gamma_eb = 0;
 
     if ((turb_flux_model == 11) || (turb_flux_model == 21)) {
 
@@ -470,8 +469,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
       /* Constants for EB-AFM */
       if (turb_flux_model == 21) {
-        eta_ebafm   = 1.0 - alpha_theta*0.6;
-        xi_ebafm    = 1.0 - alpha_theta*0.3;
+        eta_ebafm = 1.0 - alpha_theta*0.6;
+        xi_ebafm  = 1.0 - alpha_theta*0.3;
       }
 
     }
@@ -502,7 +501,9 @@ _thermal_flux_and_diff(cs_field_t         *f,
       }
 
       /* EB-AFM model
-       *  "-C_theta*k/eps*(xi*uT'.Gradu+eta*beta*g_i*T'^2 + eps/k gamma uT' ni nj)" */
+       *  "-C_theta*k/eps*(  xi*uT'.Gradu+eta*beta*g_i*T'^2
+       *                   + eps/k gamma uT' ni nj )"
+       */
       if (turb_flux_model == 21) {
         if ((cvara_tt != NULL) && (cpro_beta != NULL))
           temp[ii] -=   ctheta * xtt * eta_ebafm
