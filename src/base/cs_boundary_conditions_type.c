@@ -423,7 +423,8 @@ cs_boundary_conditions_type(bool  init,
 
   /* ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
      (or closest free inlet)
-     itbslb = max of ifrslb on all ranks, standard outlet face presence indicator */
+     itbslb = max of ifrslb on all ranks,
+     standard outlet face presence indicator */
 
   /* Even when the user has not chosen xyzp0 (and it is thus at the
      origin), we choose the face whose center is closest to it, so
