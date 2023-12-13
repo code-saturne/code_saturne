@@ -202,6 +202,8 @@ _beta_limiter_denom(cs_field_t                 *f,
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != NULL)
     hybrid_blend = CS_F_(hybrid_blend)->val;
+  else
+    hybrid_blend = NULL;
 
   /* select halo type according to field gradient method */
 
@@ -1708,6 +1710,8 @@ cs_convection_diffusion_scalar(int                         idtvar,
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != NULL)
     hybrid_blend = CS_F_(hybrid_blend)->val;
+  else
+    hybrid_blend = NULL;
 
   /* Internal coupling variables */
   cs_real_t *pvar_local = NULL;
@@ -3147,6 +3151,8 @@ cs_face_convection_scalar(int                       idtvar,
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != NULL)
     hybrid_blend = CS_F_(hybrid_blend)->val;
+  else
+    hybrid_blend = NULL;
 
   /* Internal coupling variables */
   int coupling_id;
@@ -4795,6 +4801,8 @@ cs_convection_diffusion_vector(int                         idtvar,
       const cs_real_t *hybrid_blend;
       if (CS_F_(hybrid_blend) != NULL)
         hybrid_blend = CS_F_(hybrid_blend)->val;
+      else
+        hybrid_blend = NULL;
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
@@ -6972,6 +6980,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != NULL)
     hybrid_blend = CS_F_(hybrid_blend)->val;
+  else
+    hybrid_blend = NULL;
 
   /* Internal coupling variables */
   cs_real_t *pvar_local = NULL;
