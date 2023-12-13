@@ -266,8 +266,8 @@ cs_gas_combustion_h_to_t(const cs_real_t   x_sp[restrict],
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_user_gas_combustion_t_to_h(const cs_real_t   x_sp[restrict],
-                              cs_real_t         t);
+cs_gas_combustion_t_to_h(const cs_real_t   x_sp[restrict],
+                         cs_real_t         t);
 
 /*----------------------------------------------------------------------------*/
 /*!
