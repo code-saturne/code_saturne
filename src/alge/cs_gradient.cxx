@@ -6877,6 +6877,13 @@ void cs_math_3_normalize_target(const cs_real_t in[3],
   out[2] = inverse_norm * in[2];
 }
 
+unsigned int 
+num_block(unsigned int size, unsigned int num_threads){
+  unsigned int num = (unsigned int)ceil((double)size / num_threads);
+
+  return num;
+}
+
 static void
 _lsq_vector_gradient_target(const cs_mesh_t               *m,
                      const cs_mesh_adjacencies_t   *madj,
@@ -6907,18 +6914,22 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+    = (const cs_lnum_t *restrict)madj->cell_cells_idx;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict)madj->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
+  const cs_lnum_t *restrict b_cells
+    = (const cs_lnum_t *restrict)m->b_cells;
 
   const cs_lnum_t *restrict cell_cells
     = (const cs_lnum_t *restrict)madj->cell_cells;
-  const cs_lnum_t *restrict cell_i_faces_sgn
-    = (const cs_lnum_t *restrict)madj->cell_i_faces_sgn;
-  const short int *restrict cell_i_faces
-    = (const short int *restrict)madj->cell_i_faces;
-  const short int *restrict cell_b_faces
-    = (const short int *restrict)madj->cell_b_faces;
+  const short int *restrict cell_i_faces_sgn
+    = (const short int *restrict)madj->cell_i_faces_sgn;
+  const cs_lnum_t *restrict cell_i_faces
+    = (const cs_lnum_t *restrict)madj->cell_i_faces;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict)madj->cell_b_faces;
 
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *restrict)fvq->cell_f_cen;
@@ -6943,7 +6954,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
   double t_kernel = 0.0;
 	double t_begin, t_end;
 
-  bool scatter = true;
+  bool scatter = false;
 
   /* Contribution from interior faces */
   int num_device = omp_get_num_devices();
@@ -6956,6 +6967,8 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cell_f_cen[0:n_cells_ext], pvar[0:n_cells_ext],\
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells_lst[0:n_cells_ext], \
+                                cell_b_faces_idx[0:n_cells+1], \
+                                b_cells[0:n_b_cells], \
                                 cocg[0:n_cells_ext])
 {
   #pragma omp target teams distribute parallel for collapse(3) \
@@ -6978,7 +6991,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
       cs_lnum_t c_id1 = i_face_cells[f_id][0];
       cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-      cs_real_t  dc[3], fctb[3];
+      cs_real_t  dc[3], fctb[3],_weight1, _weight2, _denom, _pond, pfac;
 
       for (cs_lnum_t i = 0; i < 3; i++){
         dc[i] = cell_f_cen[c_id2][i] - cell_f_cen[c_id1][i];
@@ -6986,34 +6999,27 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
       cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-      if (c_weight != NULL) {
-        cs_real_t pond = weight[f_id];
-        cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
-                                + (1. - pond)*c_weight[c_id2]);
-
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
-
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            fctb[j] = dc[j] * pfac;
-            #pragma omp atomic
-            rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
-            #pragma omp atomic
-            rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
-          }
-        }
+      if (c_weight == NULL){
+        _weight1 = 1.;
+        _weight2 = 1.;
       }
-      else {
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+      else{
+        _pond = weight[f_id];
+        _denom = 1. / (  _pond       *c_weight[c_id1]
+                                    + (1. - _pond)*c_weight[c_id2]);
+        _weight1 = c_weight[c_id1] * _denom;
+        _weight2 = c_weight[c_id2] * _denom;
+      }
 
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            fctb[j] = dc[j] * pfac;
-            #pragma omp atomic
-            rhs[c_id1][i][j] += fctb[j];
-            #pragma omp atomic
-            rhs[c_id2][i][j] += fctb[j];
-          }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          fctb[j] = dc[j] * pfac;
+          #pragma omp atomic
+          rhs[c_id1][i][j] += _weight2 * fctb[j];
+          #pragma omp atomic
+          rhs[c_id2][i][j] += _weight1 * fctb[j];
         }
       }
 
@@ -7026,7 +7032,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells[0:n_cells_ext], \
                                 cell_f_cen[0:n_cells_ext], \
-                                pvar[0:n_cells_ext])
+                                pvar[0:n_cells_ext]) num_teams(num_block(n_cells, 256))
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_lnum_t s_id = cell_cells_idx[c_id];
@@ -7034,7 +7040,16 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
       cs_lnum_t c_id2, f_id;
 
-      cs_real_t  dc[3], fctb[3];
+      cs_real_t _rhs[256][3][3];
+      cs_lnum_t tid = omp_get_thread_num();
+
+      for(cs_lnum_t i = 0; i < 3; i++){
+        for(cs_lnum_t j = 0; j < 3; j++){
+          _rhs[tid][i][j] = 0.0;
+        }
+      }
+
+      cs_real_t  dc[3], fctb[3], _weight, _denom, _pond, pfac;
       for(cs_lnum_t index = s_id; index < e_id; index++){
 
         c_id2 = cell_cells[index];
@@ -7045,30 +7060,31 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
         cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        if (c_weight != NULL) {
-          f_id = cell_i_faces[index];
-          cs_real_t pond = (cell_i_faces_sgn[index] > 0) ? weight[f_id] : 1. - weight[f_id];
-          cs_real_t denom = 1. / (  pond       *c_weight[c_id]
-                                  + (1. - pond)*c_weight[c_id2]);
+      if (c_weight == NULL){
+        _weight = 1.;
+      }
+      else{
+        f_id = cell_i_faces[index];
+        _pond = (cell_i_faces_sgn[index] > 0) ? weight[f_id] : 1. - weight[f_id];
+        _denom = 1. / (  _pond       *c_weight[c_id]
+                                    + (1. - _pond)*c_weight[c_id2]);
+        _weight = c_weight[c_id2] * _denom;
+      }
 
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id][i]) * ddc;
 
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              fctb[j] = dc[j] * pfac;
-              rhs[c_id][i][j] += c_weight[c_id2] * denom * fctb[j];
-            }
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          pfac = (pvar[c_id2][i] - pvar[c_id][i]) * ddc;
+
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            fctb[j] = dc[j] * pfac;
+            _rhs[tid][i][j] += _weight * fctb[j];
           }
         }
-        else {
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id][i]) * ddc;
+      }
 
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              fctb[j] = dc[j] * pfac;
-              rhs[c_id][i][j] += fctb[j];
-            }
-          }
+      for(cs_lnum_t i = 0; i < 3; i++){
+        for(cs_lnum_t j = 0; j < 3; j++){
+          rhs[c_id][i][j] = _rhs[tid][i][j];
         }
       }
 
@@ -7155,14 +7171,18 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cell_b_faces[0:n_b_faces], \
                                 coefav[0:n_b_faces], \
                                 coefbv[0:n_b_faces], \
+                                b_cells[0:n_cells], \
+                                cell_b_faces_idx[0:n_cells+1], \
                                 pvar[0:n_cells_ext],\
                                 cocg[0:n_cells_ext])
-    for (cs_lnum_t c_id = 0; c_id < n_b_cells; c_id++) {
+    for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
 
-      cs_lnum_t s_id = cell_cells_idx[c_id];
-      cs_lnum_t e_id = cell_cells_idx[c_id+1];
+      cs_lnum_t c_id = b_cells[c_idx];
 
-      cs_lnum_t c_id2, f_id;
+      cs_lnum_t s_id = cell_b_faces_idx[c_id];
+      cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+      cs_lnum_t f_id;
 
       cs_real_t n_d_dist[3];
 
