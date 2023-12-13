@@ -3081,8 +3081,9 @@ _gkb_precond_hook(void     *context,
 
 static void
 _mumps_hook(void     *context,
-            KSP       ksp)
+            void     *ksp_struct)
 {
+  KSP  ksp = ksp_struct;
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -4248,33 +4249,47 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     if (!cs_param_sles_is_mumps_set(mom_slesp->solver))
       mom_slesp->solver = CS_PARAM_ITSOL_MUMPS;
 
+    if (mom_slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS) {
 #if defined(HAVE_MUMPS)
-    cs_sles_mumps_define(field_id,
-                         NULL,
-                         mom_slesp,
-                         cs_user_sles_mumps_hook,
-                         NULL);
+      cs_sles_mumps_define(field_id,
+                           NULL,
+                           mom_slesp,
+                           cs_user_sles_mumps_hook,
+                           NULL);
 #else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " MUMPS is not available.\n",
+                __func__, mom_eqp->name);
+#endif  /* HAVE_MUMPS */
+    }
+    else if (mom_slesp->solver_class == CS_PARAM_SLES_CLASS_PETSC) {
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _mumps_hook,
-                         (void *)mom_eqp);
+      cs_sles_petsc_init();
+      cs_sles_petsc_define(field_id,
+                           NULL,
+                           MATMPIAIJ,
+                           _mumps_hook,
+                           (void *)mom_eqp);
 #else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system \"%s\"\n"
-              " PETSc with MUMPS is required with this option.\n",
-              __func__, mom_eqp->name);
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " Installation of PETSc with MUMPS is required.\n",
+                __func__, mom_eqp->name);
 #endif  /* PETSC_HAVE_MUMPS */
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system \"%s\"\n"
-              " Neither PETSc nor MUMPS is available.\n",
-              __func__, mom_eqp->name);
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " Installation of PETSc with MUMPS is required.\n",
+                __func__, mom_eqp->name);
 #endif  /* HAVE_PETSC */
-#endif  /* HAVE_MUMPS */
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " Neither PETSc nor MUMPS is called.\n",
+                __func__, mom_eqp->name);
     break;
 
   default:
