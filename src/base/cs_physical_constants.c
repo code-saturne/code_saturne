@@ -320,6 +320,9 @@ BEGIN_C_DECLS
         thermodynamic maximum pressure for user clipping, used to model a
         venting effect
 
+  \var  cs_fluid_properties_t::eint0
+        Reference internal energy for the barotropic compressible module.
+
   \var  cs_fluid_properties_t::sleak
         Leak surface
 
@@ -384,6 +387,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .pther    = 1.013e5,
   .pthera   = 0.,
   .pthermax = -1.,
+  .eint0    = 0.,
   .sleak    = 0.,
   .kleak    = 2.9,
   .roref    = 1.17862

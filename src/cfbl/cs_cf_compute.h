@@ -46,14 +46,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
-  * \brief Solves the continuity equation in pressure formulation and then
-  *        updates the density and the mass flux
-  *
-  * \param[in]     iterns        Navier-Stokes iteration number
-  * \param[in]     dt            time step (per cell)
-  * \param[in]     vela          velocity value at time step beginning
-  */
+/*
+ * \param[in]     iterns        Navier-Stokes iteration number
+ */
 /*----------------------------------------------------------------------------*/
 
 void

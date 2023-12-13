@@ -66,10 +66,12 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_cf_boundary_conditions.h \
+cs_cf_compute.h \
+cs_cf_energy.h \
 cs_cf_model.h \
 cs_cf_thermo.h \
 cs_cfbl_headers.h \
-cs_cf_compute.h \
 cs_hgn_thermo.h \
 cs_hgn_phase_thermo.h \
 cs_hgn_source_terms_step.h
@@ -79,7 +81,6 @@ cs_hgn_source_terms_step.h
 noinst_LIBRARIES = libcscfbl.a
 libcscfbl_a_SOURCES = \
 cfdivs.f90 \
-cfener.f90 \
 cfini1.f90 \
 cfiniv.f90 \
 cfphyv.f90 \
@@ -88,7 +89,9 @@ cfrusb.f90 \
 cffana.f90 \
 cfvarp.f90 \
 cfxtcl.f90 \
+cs_cf_boundary_conditions.c \
 cs_cf_compute.c \
+cs_cf_energy.c \
 cs_cf_model.c \
 cs_cf_thermo.c \
 cs_hgn_thermo.c \

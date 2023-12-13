@@ -128,13 +128,6 @@ elseif (ippmod(icompf).ge.0) then
     izfppp(ifac) = 0
   enddo
 
-  ! Marqueur d'utilisation de Rusanov au bord (0 = non)
-  ! Marqueur de flux conductif impose au bord (0 = non)
-  do ifac = 1, nfabor
-    icvfli(ifac) = 0
-    ifbet(ifac) = 0
-  enddo
-
 ! ---> Version electrique
 !      Effet Joule
 !      Conduction ionique

@@ -45,7 +45,7 @@ module cfpoin
 
   !> imposed thermal flux indicator at the boundary
   !> (some boundary contributions of the total energy eq. have to be cancelled)
-  integer, allocatable, dimension(:) :: ifbet
+  integer, allocatable, dimension(:), target :: ifbet
 
   !> boundary convection flux indicator of a Rusanov or an analytical flux
   !> (some boundary contributions of the momentum eq. have to be cancelled)
@@ -76,7 +76,10 @@ module cfpoin
   !=============================================================================
 
   type(c_ptr) :: p_icvfli
-  bind(C, name='icvfli') :: p_icvfli
+  bind(C, name='cs_glob_cf_icvfli') :: p_icvfli
+
+  type(c_ptr) :: p_ifbet
+  bind(C, name='cs_glob_cf_ifbet') :: p_ifbet
 
   interface
 
@@ -153,6 +156,7 @@ contains
 
     ! Map pointers to C
     p_icvfli = c_loc(icvfli)
+    p_ifbet = c_loc(ifbet)
 
   end subroutine init_compf
 

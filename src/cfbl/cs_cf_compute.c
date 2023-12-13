@@ -325,7 +325,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
     eqp_vel_loc.epsilo = -1;
     eqp_vel_loc.epsrsm = -1;
 
-    int *icvfli = cs_get_icvfli();
+    int *icvfli = cs_cf_get_icvfli();
 
     cs_balance_vector(idtvar,
                       vel->id,

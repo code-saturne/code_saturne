@@ -199,7 +199,7 @@ cs_local_time_step_compute(int  itrale)
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
-  const cs_real_t *crom = CS_F_(rho)->val;
+  cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *brom = CS_F_(rho_b)->val;
 
   /* Compute CFL like condition on the time step for

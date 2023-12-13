@@ -1,8 +1,8 @@
-#ifndef __CS_CF_MODEL_H__
-#define __CS_CF_MODEL_H__
+#ifndef __CS_CF_BOUNDARY_CONDITIONS_H__
+#define __CS_CF_BOUNDARY_CONDITIONS_H__
 
 /*============================================================================
- * Thermodynamic laws for the compressible module
+ * Compressible flow boundary conditions.
  *============================================================================*/
 
 /*
@@ -34,7 +34,7 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -43,47 +43,14 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* compressible model general options descriptor */
-/*-----------------------------------------------*/
-
-typedef struct {
-
-  int           ieos;             /* indicator of equation of state */
-
-  int           ithvar;           /* indicator for thermodynamic
-                                     variables initialization */
-
-  double        psginf;       /* stiffened gas limit pressure (zero in
-                                 perfect gas) (Pa) for single phase model */
-
-  double        gammasg;      /* stiffened gas polytropic coefficient,
-                                 (dimensionless) for single phase model */
-
-  int           hgn_relax_eq_st;  /* source term step:
-                                     - -1 disabled
-                                     -  0 enabled
-                                   */
-
-} cs_cf_model_t;
-
-typedef enum {
-
-  CS_EOS_NONE                  = -1,
-  CS_EOS_IDEAL_GAS             = 1,
-  CS_EOS_STIFFENED_GAS         = 2,
-  CS_EOS_GAS_MIX               = 3,
-  CS_EOS_HOMOGENEOUS_TWO_PHASE = 4,
-  CS_EOS_MOIST_AIR             = 5
-
-} cs_cf_model_eos_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-/* pointer to main compressible model descriptor structure */
+/* pointer to global compressible model arrays */
 
-extern const cs_cf_model_t         *cs_glob_cf_model;
+extern int *cs_glob_cf_icvfli;
+extern int *cs_glob_cf_ifbet;
 
 /*=============================================================================
  * Public function definitions
@@ -91,37 +58,15 @@ extern const cs_cf_model_t         *cs_glob_cf_model;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to compressible model global structure cs_glob_cf_model
+ * \brief Prepare (reset) condition coefficients specific to compressible flows.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cf_model_t *
-cs_get_glob_cf_model(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide access to boundary face indicator array of convection flux
- *        - 0 upwind scheme
- *        - 1 imposed flux
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_cf_get_icvfli(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide access to imposed thermal flux indicator at the boundary
- *        (some boundary contributions of the total energy eq. have to be
- *         cancelled)
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_cf_get_ifbet(void);
+void
+cs_cf_boundary_conditions_reset(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CF_MODEL_H__ */
+#endif /* __CS_CF_BOUNDARY_CONDITIONS_H__ */

@@ -102,10 +102,18 @@ save             ipass
 !===============================================================================
 
 procedure() :: kinrates, ppinv2, cs_coal_masstransfer
-procedure() :: cfener, set_dirichlet_scalar, max_mid_min_progvar, elflux
+procedure() :: set_dirichlet_scalar, max_mid_min_progvar, elflux
 procedure() :: compute_gaseous_chemistry, elreca
 
 interface
+
+  subroutine cs_cf_energy                            &
+     (field_id)                                      &
+    bind(C, name='cs_cf_energy')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: field_id
+  end subroutine cs_cf_energy
 
    subroutine solve_equation_scalar                   &
      (f_id, ncesmp,                                   &
@@ -245,11 +253,7 @@ if (nscapp.gt.0) then
 ! ---> Enthalpie       : a resoudre
 
       if (ispecf.eq.2) then
-
-        call cfener(nvar, nscal, ncepdc, ncetsm, iscal,           &
-                    icepdc, icetsm, itypsm, dt,                   &
-                    ckupdc, smacel)
-
+         call cs_cf_energy(ivarfl(isca(iscal)))
       endif
 
     endif

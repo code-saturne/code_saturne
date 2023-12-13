@@ -133,8 +133,6 @@ extern cs_real_t *cs_glob_ckupdc;
  * Prototypes for Fortran functions and variables.
  *============================================================================*/
 
-//extern int *icvfli;
-
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
@@ -3050,7 +3048,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* Warning: in case of convergence estimators, eswork gives the estimator
        of the predicted velocity */
 
-    int *icvfli = cs_get_icvfli();
+    int *icvfli = cs_cf_get_icvfli();
 
     cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                        iterns,
@@ -3215,7 +3213,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     eqp_loc.epsilo = -1;
     eqp_loc.epsrsm = -1;
 
-    int *icvfli = cs_get_icvfli();
+    int *icvfli = cs_cf_get_icvfli();
 
     cs_balance_vector(idtva0,
                       CS_F_(vel)->id,

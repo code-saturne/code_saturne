@@ -100,6 +100,8 @@ typedef struct {
                                  step */
   double        pthermax;     /* thermodynamic maximum pressure for user
                                  clipping, used to model a venting effect */
+  double        eint0;        /* reference internal energy for the barotropic
+                                 compressible module. */
   double        sleak;        /* leak surface */
   double        kleak;        /* leak head loss (2.9 by default, from Idelcick) */
   double        roref;        /* Initial reference density */

@@ -60,6 +60,7 @@
 #include "cs_boundary_conditions_set_coeffs_symmetry.h"
 #include "cs_boundary_conditions_set_coeffs_turb.h"
 #include "cs_boundary_conditions_type.h"
+#include "cs_cf_boundary_conditions.h"
 #include "cs_coupling.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -654,6 +655,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    *--------------------------------------------------------------------------*/
 
   cs_boundary_conditions_reset();
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >=  0)
+    cs_cf_boundary_conditions_reset();
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1)
     cs_f_ppprcl(bc_type, dt);

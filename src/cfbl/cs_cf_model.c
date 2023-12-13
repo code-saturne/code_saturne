@@ -54,7 +54,8 @@ BEGIN_C_DECLS
  * Prototypes for Fortran functions and variables.
  *============================================================================*/
 
-extern int *icvfli = NULL;
+extern int *cs_glob_cf_icvfli = NULL;
+extern int *cs_glob_cf_ifbet = NULL;
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -206,9 +207,23 @@ cs_get_glob_cf_model(void)
 /*----------------------------------------------------------------------------*/
 
 int *
-cs_get_icvfli(void)
+cs_cf_get_icvfli(void)
 {
-  return icvfli;
+  return cs_glob_cf_icvfli;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to imposed thermal flux indicator at the boundary
+ *        (some boundary contributions of the total energy eq. have to be
+ *         cancelled)
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_cf_get_ifbet(void)
+{
+  return cs_glob_cf_ifbet;
 }
 
 /*----------------------------------------------------------------------------*/
