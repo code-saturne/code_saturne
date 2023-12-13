@@ -2620,7 +2620,7 @@ _log_mumps_param(const char                    *name,
                   name, mumpsp->blr_threshold);
 
   if (mumpsp->mem_coef > 0)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory pct. increase:     %f\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory pct. increase:    %f\n",
                   name, mumpsp->mem_coef);
 }
 
@@ -2943,8 +2943,8 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_copy_from(cs_param_sles_t   *src,
-                        cs_param_sles_t   *dst)
+cs_param_sles_copy_from(const cs_param_sles_t   *src,
+                        cs_param_sles_t         *dst)
 {
   if (src == NULL || dst == NULL)
     return;

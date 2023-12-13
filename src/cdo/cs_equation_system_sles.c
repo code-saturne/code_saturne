@@ -98,8 +98,9 @@ BEGIN_C_DECLS
 
 static void
 _mumps_hook(void     *context,
-            KSP       ksp)
+            void     *ksp_struct)
 {
+  KSP  ksp = ksp_struct;
   cs_equation_system_param_t  *sysp = context;
   cs_param_sles_t  *sys_slesp = sysp->sles_param;
   cs_param_sles_cvg_t  cvgp = sys_slesp->cvg_param;

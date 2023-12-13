@@ -537,8 +537,8 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_copy_from(cs_param_sles_t   *src,
-                        cs_param_sles_t   *dst);
+cs_param_sles_copy_from(const cs_param_sles_t   *src,
+                        cs_param_sles_t         *dst);
 
 /*----------------------------------------------------------------------------*/
 /*!

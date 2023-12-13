@@ -3074,8 +3074,8 @@ _gkb_precond_hook(void     *context,
  *        preconditioner.
  *        Case of MUMPS via PETSc
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context     pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct  pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
