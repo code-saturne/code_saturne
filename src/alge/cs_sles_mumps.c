@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/sysinfo.h>
 #include <assert.h>
 #include <float.h>
 #include <math.h>
@@ -128,6 +129,8 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
+static const int  cs_sles_mumps_n_max_tries = 3;
+
 /* Type of factorization to perform with MUMPS (precision / facto) */
 
 typedef enum {
@@ -150,9 +153,10 @@ struct _cs_sles_mumps_t {
 
   /* Performance data */
 
+  int                  n_tries;       /* Number of analysis/facto done */
   int                  n_setups;      /* Number of times system setup */
   int                  n_solves;      /* Number of times system solved since
-                                       * it's a direct solver:
+                                       * it's a direct solver thus
                                        * n_solves = n_iterations_tot */
 
   cs_timer_counter_t   t_setup;       /* Total setup (factorization) */
@@ -183,8 +187,8 @@ struct _cs_sles_mumps_t {
  *============================================================================*/
 
 static int  _n_mumps_systems = 0;
-static double  cs_sles_mumps_zero_dthreshold = 100*DBL_MIN;
-static double  cs_sles_mumps_zero_fthreshold = 100*FLT_MIN;
+static double  cs_sles_mumps_zero_dthreshold = 64*DBL_MIN;
+static double  cs_sles_mumps_zero_fthreshold = 128*FLT_MIN;
 
 /*============================================================================
  * Static inline private function definitions
@@ -1984,10 +1988,78 @@ _native_sym_smumps(int                   verbosity,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Test if one has to do a new analysis/facto due to an error rising
+ *        from the MUMPS feedback. Handle the lack of memory.
+ *        Case of DMUMPS structure
+ *
+ * \param[in, out] c     structure to manage MUMPS execution
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_try_again_dmumps(cs_sles_mumps_t     *c)
+{
+  DMUMPS_STRUC_C  *mumps = c->mumps_struct;
+
+  int  infog1 = mumps->INFOG(1);
+
+  if (infog1 ==  -8 || infog1 ==  -9 || infog1 == -14 ||
+      infog1 == -15 || infog1 == -17 || infog1 == -20) {
+
+    mumps->ICNTL(14) *= 2;  /* Double the portion of memory used in some
+                               parts of MUMPS */
+
+    c->n_tries += 1;
+
+    if (c->n_tries > cs_sles_mumps_n_max_tries)
+      return false;
+
+    else {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s: DMUMPS has detected a lack of memory.\n"
+                    " A new analysis/factorization cycle is going to start.",
+                    __func__);
+
+      return true;
+
+    }
+
+  }
+  else if (infog1 == -13 || infog1 == -19) {
+
+    mumps->ICNTL(23) = 0;
+
+    c->n_tries += 1;
+
+    if (c->n_tries > cs_sles_mumps_n_max_tries)
+      return false;
+
+    else {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s: DMUMPS has detected a lack of memory.\n"
+                    " A new analysis/factorization cycle is going to start.",
+                    __func__);
+
+      return true;
+
+    }
+
+  }
+
+  return false; /* No need to perform a new computation */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Automatic settings derived from the high-level interface between
  *        code_saturne and MUMPS. These settings are done before the analysis
  *        step and they can still be modified by the user thanks to the function
  *        \ref cs_user_sles_mumps_hook
+ *        Case of double-precision MUMPS
  *
  * \param[in]      type    type of factorization to handle
  * \param[in]      slesp   pointer to the related cs_param_sles_t structure
@@ -2059,8 +2131,9 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   if (mumpsp->advanced_optim) {
 
-    mumps->KEEP(268) = -2;  /* relaxed pivoting for large enough frontal
+    mumps->KEEP(268) = -2;  /* Relaxed pivoting for large enough frontal
                                matrices */
+    mumps->ICNTL(58) = 2;   /* Acceleration of the symbolic factorization */
 
     if (cs_glob_n_ranks > 1 || cs_glob_n_threads > 1) {
 
@@ -2081,15 +2154,164 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   /* BLR compression */
 
-  if (mumpsp->blr_threshold > 0) {
+  if (fabs(mumpsp->blr_threshold) > FLT_MIN) {
 
     mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
-    mumps->ICNTL(36) = 1; /* Variante de BLR (0 is also a good choice) */
-    mumps->ICNTL(37) = 0; /* Memory compression (= 1) but time consumming */
-    mumps->ICNTL(40) = 0; /* Memory compression (= 1) mixed precision */
-    mumps->CNTL(7) = mumpsp->blr_threshold; /* Compression rate */
+    mumps->CNTL(7) = fabs(mumpsp->blr_threshold); /* Compression rate */
+
+    if (mumpsp->blr_threshold < 0)
+      mumps->ICNTL(36) = 0; /* Variante de BLR0 */
+    else
+      mumps->ICNTL(36) = 1; /* Variante de BLR1 */
+
+    if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CONSTRAINED) {
+
+      mumps->ICNTL(37) = 1; /* Memory compression but time consumming */
+      mumps->ICNTL(40) = 1; /* Memory compression mixed precision */
+      mumps->ICNTL(49) = 1; /* Memory cleaning of the workspace */
+
+    }
+    else {
+
+      mumps->ICNTL(37) = 0; /* No memory compression to save time */
+      mumps->ICNTL(40) = 0; /* No memory compression to save time */
+
+    }
+
 
   }
+
+  /* Memory workspace */
+
+  if (mumpsp->mem_coef > 0)
+    mumps->ICNTL(14) = mumpsp->mem_coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic settings derived from the high-level interface between
+ *        code_saturne and MUMPS. These settings are done before the
+ *        factorization step and they can still be modified by the user thanks
+ *        to the function \ref cs_user_sles_mumps_hook
+ *        Case of double-precision MUMPS
+ *
+ * \param[in]      slesp   pointer to the related cs_param_sles_t structure
+ * \param[in, out] mumps   pointer to a DMUMPS_STRUC_C struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
+                                        DMUMPS_STRUC_C          *mumps)
+{
+  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+
+  if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CPU_DRIVEN) {
+
+    unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
+    if (mumps->ICNTL(35) > 1) /* BLR activated */
+      max_estimated_mem = mumps->INFOG(36);
+
+    /* In-core usage only up to now.
+     * Compute the free memory in RAM */
+
+    struct sysinfo  sys;
+    short  status = sysinfo(&sys);
+
+    unsigned long  max_mem_space = max_estimated_mem;
+    if (status >= 0)
+      max_mem_space = sys.freeram/(1024*1024*sys.mem_unit);
+
+    unsigned long  mem_space = 90*CS_MIN(2*max_estimated_mem,
+                                         max_mem_space) / 100;
+
+    mumps->ICNTL(23) = mem_space;
+
+    if (slesp->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
+                    " Estimation of the memory requirement: %lu --> %lu MB\n",
+                    max_estimated_mem, mem_space);
+
+  }
+  else {
+
+    unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
+    if (mumps->ICNTL(35) > 1) /* BLR activated */
+      max_estimated_mem = mumps->INFOG(36);
+
+    if (slesp->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
+                    " Estimation of the memory requirement: %lu MB\n",
+                    max_estimated_mem);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Test if one has to do a new analysis/facto due to an error rising
+ *        from the MUMPS feedback. Handle the lack of memory.
+ *        Case of a SMUMPS structure
+ *
+ * \param[in, out] c     structure to manage MUMPS execution
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_try_again_smumps(cs_sles_mumps_t     *c)
+{
+  SMUMPS_STRUC_C  *mumps = c->mumps_struct;
+
+  int  infog1 = mumps->INFOG(1);
+
+  if (infog1 ==  -8 || infog1 ==  -9 || infog1 == -14 ||
+      infog1 == -15 || infog1 == -17 || infog1 == -20) {
+
+    mumps->ICNTL(14) *= 2;  /* Double the portion of memory used in some
+                               parts of MUMPS */
+
+    c->n_tries += 1;
+
+    if (c->n_tries > cs_sles_mumps_n_max_tries)
+      return false;
+
+    else {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s: SMUMPS has detected a lack of memory.\n"
+                    " A new analysis/factorization cycle is going to start.",
+                    __func__);
+
+      return true;
+
+    }
+
+  }
+  else if (infog1 == -13 || infog1 == -19) {
+
+    mumps->ICNTL(23) = 0;
+
+    c->n_tries += 1;
+
+    if (c->n_tries > cs_sles_mumps_n_max_tries)
+      return false;
+
+    else {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s: SMUMPS has detected a lack of memory.\n"
+                    " A new analysis/factorization cycle is going to start.",
+                    __func__);
+
+      return true;
+
+    }
+
+  }
+
+  return false; /* No need to perform a new computation */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2098,7 +2320,7 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
  *        code_saturne and MUMPS. These settings are done before the analysis
  *        step and they can still be modified by the user thanks to the function
  *        \ref cs_user_sles_mumps_hook
- *        Case of single-precision factorizations.
+ *        Case of single-precision MUMPS
  *
  * \param[in]      type    type of factorization to handle
  * \param[in]      slesp   pointer to the related cs_param_sles_t structure
@@ -2172,6 +2394,7 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
     mumps->KEEP(268) = -2;  /* relaxed pivoting for large enough frontal
                                matrices */
+    mumps->ICNTL(58) = 2;   /* Acceleration of the symbolic factorization */
 
     if (cs_glob_n_ranks > 1 || cs_glob_n_threads > 1) {
 
@@ -2192,13 +2415,94 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   /* BLR compression */
 
-  if (mumpsp->blr_threshold > 0) {
+  if (fabs(mumpsp->blr_threshold) > FLT_MIN) {
 
     mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
-    mumps->ICNTL(36) = 1; /* Variante de BLR (0 is also a good choice) */
-    mumps->ICNTL(37) = 0; /* Memory compression (= 1) but time consumming */
-    mumps->ICNTL(40) = 0; /* Memory compression (= 1) mixed precision */
-    mumps->CNTL(7) = mumpsp->blr_threshold; /* Compression rate */
+    mumps->CNTL(7) = fabs(mumpsp->blr_threshold); /* Compression rate */
+
+    if (mumpsp->blr_threshold < 0)
+      mumps->ICNTL(36) = 0; /* Variante de BLR0 */
+    else
+      mumps->ICNTL(36) = 1; /* Variante de BLR1 */
+
+    if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CONSTRAINED) {
+
+      mumps->ICNTL(37) = 1; /* Memory compression but time consumming */
+      mumps->ICNTL(40) = 1; /* Memory compression mixed precision */
+      mumps->ICNTL(49) = 1; /* Memory cleaning of the workspace */
+
+    }
+    else {
+
+      mumps->ICNTL(37) = 0; /* No memory compression to save time */
+      mumps->ICNTL(40) = 0; /* No memory compression to save time */
+
+    }
+
+  }
+
+  /* Memory workspace */
+
+  if (mumpsp->mem_coef > 0)
+    mumps->ICNTL(14) = mumpsp->mem_coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic settings derived from the high-level interface between
+ *        code_saturne and MUMPS. These settings are done before the
+ *        factorization step and they can still be modified by the user thanks
+ *        to the function \ref cs_user_sles_mumps_hook
+ *        Case of single-precision MUMPS
+ *
+ * \param[in]      slesp   pointer to the related cs_param_sles_t structure
+ * \param[in, out] mumps   pointer to a SMUMPS_STRUC_C struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_automatic_smumps_settings_before_facto(const cs_param_sles_t   *slesp,
+                                        SMUMPS_STRUC_C          *mumps)
+{
+  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+
+  if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CPU_DRIVEN) {
+
+    unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
+    if (mumps->ICNTL(35) > 1) /* BLR activated */
+      max_estimated_mem = mumps->INFOG(36);
+
+    /* In-core usage only up to now.
+     * Compute the free memory in RAM */
+
+    struct sysinfo  sys;
+    short  status = sysinfo(&sys);
+
+    unsigned long  max_mem_space = max_estimated_mem;
+    if (status >= 0)
+      max_mem_space = sys.freeram/(1024*1024*sys.mem_unit);
+
+    unsigned long  mem_space = 90*CS_MIN(2*max_estimated_mem,
+                                         max_mem_space) / 100;
+
+    mumps->ICNTL(23) = mem_space;
+
+    if (slesp->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
+                    " Estimation of the memory requirement: %lu --> %lu MB\n",
+                    max_estimated_mem, mem_space);
+
+  }
+  else {
+
+    unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
+    if (mumps->ICNTL(35) > 1) /* BLR activated */
+      max_estimated_mem = mumps->INFOG(36);
+
+    if (slesp->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
+                    " Estimation of the memory requirement: %lu MB\n",
+                    max_estimated_mem);
 
   }
 }
@@ -2356,6 +2660,7 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
 
   c->type = _set_type(slesp);
 
+  c->n_tries = 0;
   c->n_setups = 0;
   c->n_solves = 0;
 
@@ -2575,7 +2880,7 @@ cs_sles_mumps_setup(void               *context,
 
   cs_sles_mumps_t  *c = context;
 
-  c->mumps_struct = NULL;        /* Not used anymore */
+  c->mumps_struct = NULL;
 
   /* 1. Initialize the MUMPS structure */
   /* --------------------------------- */
@@ -2651,6 +2956,7 @@ cs_sles_mumps_setup(void               *context,
 #if defined(HAVE_MPI)
     smumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
 #else
+
     /* Not used in this case and set to the default value given by the MUMPS
        documentation */
 
@@ -2780,78 +3086,94 @@ cs_sles_mumps_setup(void               *context,
 
   MUMPS_INT  infog1, infog2;
 
+  c->n_tries = 0;    /* reset the number of tries */
+
   if (_is_dmumps(c)) {
 
     DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
 
-    /* Analysis step */
-    /* ------------- */
+    do {
 
-    dmumps->job = MUMPS_JOB_ANALYSIS;
+      /* Analysis step */
+      /* ------------- */
 
-    _automatic_dmumps_settings_before_analysis(c->type, c->sles_param, dmumps);
+      dmumps->job = MUMPS_JOB_ANALYSIS;
 
-    /* Window to enable advanced user settings (before analysis) */
+      _automatic_dmumps_settings_before_analysis(c->type, c->sles_param,
+                                                 dmumps);
 
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, dmumps);
+      /* Window to enable advanced user settings (before analysis) */
 
-    dmumps_c(dmumps);
+      if (c->setup_hook != NULL)
+        c->setup_hook(c->sles_param, c->hook_context, dmumps);
 
-    /* Factorization step */
-    /* ------------------ */
+      dmumps_c(dmumps);
 
-    dmumps->job = MUMPS_JOB_FACTORIZATION;
+      /* Factorization step */
+      /* ------------------ */
 
-    /* Window to enable advanced user settings (before factorization) */
+      dmumps->job = MUMPS_JOB_FACTORIZATION;
 
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, dmumps);
+      _automatic_dmumps_settings_before_facto(c->sles_param, dmumps);
 
-    dmumps_c(dmumps);
+      /* Window to enable advanced user settings (before factorization) */
 
-    /* Feedback */
+      if (c->setup_hook != NULL)
+        c->setup_hook(c->sles_param, c->hook_context, dmumps);
 
-    infog1 = dmumps->INFOG(1);
-    infog2 = dmumps->INFOG(2);
+      dmumps_c(dmumps);
+
+      /* Feedback */
+
+      infog1 = dmumps->INFOG(1);
+      infog2 = dmumps->INFOG(2);
+
+    } while (_try_again_dmumps(c));
 
   }
   else {
 
     SMUMPS_STRUC_C  *smumps = c->mumps_struct;
 
-    /* Analysis step */
-    /* ------------- */
+    do {
 
-    smumps->job = MUMPS_JOB_ANALYSIS;
+      /* Analysis step */
+      /* ------------- */
 
-    _automatic_smumps_settings_before_analysis(c->type, c->sles_param, smumps);
+      smumps->job = MUMPS_JOB_ANALYSIS;
 
-    /* Window to enable advanced user settings (before analysis) */
+      _automatic_smumps_settings_before_analysis(c->type, c->sles_param,
+                                                 smumps);
 
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, smumps);
+      /* Window to enable advanced user settings (before analysis) */
 
-    smumps_c(smumps);
+      if (c->setup_hook != NULL)
+        c->setup_hook(c->sles_param, c->hook_context, smumps);
 
-    /* Factorization step */
-    /* ------------------ */
+      smumps_c(smumps);
 
-    smumps->job = MUMPS_JOB_FACTORIZATION;
+      /* Factorization step */
+      /* ------------------ */
 
-    /* Window to enable advanced user settings (before factorization) */
+      smumps->job = MUMPS_JOB_FACTORIZATION;
 
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, smumps);
+      _automatic_smumps_settings_before_facto(c->sles_param, smumps);
 
-    smumps_c(smumps);
+      /* Window to enable advanced user settings (before factorization) */
 
-    /* Feedback */
+      if (c->setup_hook != NULL)
+        c->setup_hook(c->sles_param, c->hook_context, smumps);
 
-    infog1 = smumps->INFOG(1);
-    infog2 = smumps->INFOG(2);
+      smumps_c(smumps);
 
-  }
+      /* Feedback */
+
+      infog1 = smumps->INFOG(1);
+      infog2 = smumps->INFOG(2);
+
+    } while(_try_again_smumps(c));
+
+  } /* single-precision case */
 
   /* Check the feedback given by MUMPS */
 

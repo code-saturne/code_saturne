@@ -2461,8 +2461,10 @@ _create_mumps_param(bool                            is_single,
   /* Advanced options (default settings) */
 
   mumpsp->analysis_algo = CS_PARAM_SLES_ANALYSIS_AUTO;
+  mumpsp->mem_usage = CS_PARAM_SLES_MEMORY_AUTO;
+
   mumpsp->advanced_optim = false;   /* No advanced MPI/OpenMP optimization */
-  mumpsp->blr_threshold = -1e-6;    /* No BLR */
+  mumpsp->blr_threshold = 0;        /* No BLR */
   mumpsp->mem_coef = -1;            /* No additional memory range */
   mumpsp->block_analysis = 0;       /* No clustered analysis */
   mumpsp->ir_steps = 0;             /* No iterative refinement */
@@ -2490,6 +2492,7 @@ _copy_mumps_param(const cs_param_sles_mumps_t   *mumpsp)
   cpy->facto_type = mumpsp->facto_type;
 
   cpy->is_single = mumpsp->is_single;
+  cpy->mem_usage = mumpsp->mem_usage;
   cpy->advanced_optim = mumpsp->advanced_optim;
   cpy->blr_threshold = mumpsp->blr_threshold;
   cpy->mem_coef = mumpsp->mem_coef;
@@ -2536,6 +2539,70 @@ _log_mumps_param(const char                    *name,
   cs_log_printf(CS_LOG_SETUP, "  * %s | MUMPS_type:              %s\n",
                 name, tag);
 
+  /* Strategy for the memory usage */
+
+  switch (mumpsp->mem_usage) {
+  case CS_PARAM_SLES_MEMORY_CONSTRAINED:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "constrained");
+    break;
+  case CS_PARAM_SLES_MEMORY_AUTO:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "automatic");
+    break;
+  case CS_PARAM_SLES_MEMORY_CPU_DRIVEN:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "CPU-driven (efficiency first)");
+    break;
+
+  default:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "Undefined");
+    break;
+  }
+
+  /* Algorithm used for the analysis step */
+
+  switch (mumpsp->analysis_algo) {
+  case CS_PARAM_SLES_ANALYSIS_AMD:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "AMD");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_QAMD:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "QAMD");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_PORD:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "PORD");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "SCOTCH");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "PT-SCOTCH");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_METIS:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "METIS");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "PARMETIS");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_AUTO:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "automatic choice done by MUMPS");
+    break;
+
+  default:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "Undefined");
+    break;
+  }
+
   cs_log_printf(CS_LOG_SETUP, "  * %s | Advanced_Optim:          %s\n",
                 name, cs_base_strtf(mumpsp->advanced_optim));
 
@@ -2547,7 +2614,7 @@ _log_mumps_param(const char                    *name,
     cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:     %d\n",
                   name, mumpsp->ir_steps);
 
-  if (mumpsp->blr_threshold > 0)
+  if (fabs(mumpsp->blr_threshold) > FLT_MIN)
     cs_log_printf(CS_LOG_SETUP, "  * %s | BLR_threshold:            %e\n",
                   name, mumpsp->blr_threshold);
 
@@ -2694,8 +2761,8 @@ cs_param_sles_saddle_free(cs_param_sles_saddle_t    **p_saddlep)
  * \brief  Create a \ref cs_param_sles_t structure and assign a default
  *         settings
  *
- * \param[in]  field_id      id related to to the variable field or -1
- * \param[in]  system_name   name of the system to solve or NULL
+ * \param[in] field_id      id related to to the variable field or -1
+ * \param[in] system_name   name of the system to solve or NULL
  *
  * \return a pointer to a cs_param_sles_t stucture
  */
@@ -2743,9 +2810,9 @@ cs_param_sles_create(int          field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a \ref cs_param_sles_t structure
+ * \brief Free a \ref cs_param_sles_t structure
  *
- * \param[in, out]  slesp    pointer to a \cs_param_sles_t structure to free
+ * \param[in, out] slesp    pointer to a \cs_param_sles_t structure to free
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2773,8 +2840,8 @@ cs_param_sles_free(cs_param_sles_t   **p_slesp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Log information related to the linear settings stored in the
- *         structure
+ * \brief Log information related to the linear settings stored in the
+ *        structure
  *
  * \param[in] slesp    pointer to a \ref cs_param_sles_log
  */
@@ -3031,20 +3098,22 @@ cs_param_sles_mumps(cs_param_sles_t              *slesp,
  * \param[in]      analysis_algo    algorithm used for the analysis step
  * \param[in]      block_analysis   > 0: fixed block size; 0: nothing
  * \param[in]      mem_coef         percentage increase in the memory workspace
- * \param[in]      blr_threshold    Accuracy in BLR compression (< 0: not used)
+ * \param[in]      blr_threshold    Accuracy in BLR compression (0: not used)
  * \param[in]      ir_steps         0: No, otherwise number of iterations
+ * \param[in]      mem_usage        strategy to adopt for the memory usage
  * \param[in]      advanced_optim   activate advanced optimization (MPI/openMP)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_mumps_advanced(cs_param_sles_t               *slesp,
-                             cs_param_sles_analysis_algo_t  analysis_algo,
-                             int                            block_analysis,
-                             double                         mem_coef,
-                             double                         blr_threshold,
-                             int                            ir_steps,
-                             bool                           advanced_optim)
+cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
+                             cs_param_sles_analysis_algo_t   analysis_algo,
+                             int                             block_analysis,
+                             double                          mem_coef,
+                             double                          blr_threshold,
+                             int                             ir_steps,
+                             cs_param_sles_memory_usage_t    mem_usage,
+                             bool                            advanced_optim)
 {
   if (slesp == NULL)
     return;
@@ -3061,6 +3130,7 @@ cs_param_sles_mumps_advanced(cs_param_sles_t               *slesp,
   mumpsp->mem_coef = mem_coef;
   mumpsp->blr_threshold = blr_threshold;
   mumpsp->ir_steps = CS_MAX(ir_steps, -ir_steps);
+  mumpsp->mem_usage = mem_usage;
   mumpsp->advanced_optim = advanced_optim;
 }
 
