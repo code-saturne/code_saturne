@@ -71,10 +71,11 @@ BEGIN_C_DECLS
 
 static bool  _cs_log_atexit_set = false;
 
-static FILE* _cs_log[] = {NULL, NULL, NULL};
+static FILE* _cs_log[] = {NULL, NULL, NULL, NULL};
 static const char* _cs_log_name[] = {"",
                                      "setup.log",
-                                     "performance.log"};
+                                     "performance.log",
+                                     "warnings.log"};
 
 static bool  _cs_log_default_active = true;
 
@@ -466,6 +467,11 @@ cs_log_vprintf(cs_log_t     log,
 
     retval = vfprintf(_cs_log[log], format, arg_ptr);
 
+    if (log == CS_LOG_WARNINGS) {
+      bft_printf_proxy_t *_printf_proxy = bft_printf_proxy_get();
+      _printf_proxy(format, arg_ptr);
+    }
+
   }
 
   else {
@@ -516,6 +522,11 @@ cs_log_printf(cs_log_t     log,
     va_start(arg_ptr, format);
 
     retval = vfprintf(_cs_log[log], format, arg_ptr);
+
+    if (log == CS_LOG_WARNINGS) {
+      bft_printf_proxy_t *_printf_proxy = bft_printf_proxy_get();
+      _printf_proxy(format, arg_ptr);
+    }
 
     va_end(arg_ptr);
 
