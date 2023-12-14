@@ -29,7 +29,8 @@
 !> \brief This subroutine defines the source terms for scalars which are part of
 !> specific physics models. Source terms are defined over one time step.
 !>
-!> Warning: source terms are treated differently from the way they are in ustssc.
+!> Warning: source terms are treated differently from the way they are
+!>          in cs_user_source_terms.
 !> rovsdt*d(var) = smbrs is solved. rovsdt and smbrs already hold possible user
 !> source terms values and thus have to be incremented (and not overwritten).
 !>

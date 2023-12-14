@@ -29,7 +29,7 @@
 !>   on a step of time
 !>
 !> \warning  the treatement of source terms is different
-!> -------   from that of ustssc.f
+!> -------   from that of cs_user_source_terms.
 !>
 !> We solve: \f[ rovsdt D(var) = smbrs \f]
 !>
