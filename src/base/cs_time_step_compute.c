@@ -313,9 +313,9 @@ cs_local_time_step_compute(int  itrale)
                          eqp_p->epsrgr,
                          eqp_p->climgr,
                          NULL,          /* f_ext */
-                         crom,          /* coefa */
-                         brom,          /* coefb */
-                         coefbr,        /* pvar */
+                         brom,          /* coefa */
+                         coefbr,        /* coefb */
+                         crom,          /* pvar */
                          NULL,          /* c_weight */
                          NULL,          /* cpl */
                          grad);
