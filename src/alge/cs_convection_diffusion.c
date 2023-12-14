@@ -4375,9 +4375,8 @@ cs_convection_diffusion_vector(int                         idtvar,
   /* Timing the computation */
 
   clock_t start, stop;
-  double elapsed, elapsed_cuda;
+  unsigned long elapsed, elapsed_cuda;
 
-  cs_real_3_t *rhs_cpu, *rhs_gpu;
   cs_real_33_t *grad_cpu, *grad_gpu;
   cs_real_33_t *grdpa_cpu, *grdpa_gpu;
   
@@ -4412,25 +4411,22 @@ res_cpu = !compute_cuda;
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
-  compute_cuda  = false;
+  compute_cuda  = true;
   compute_cpu   = true;
-  res_cpu       = true;
+  res_cpu       = false;
 
   // A ne pas garder dans la version finale
   perf        = true;
   accuracy    = true;
 
-printf("je passe dans convection_diffusion\n");
 #if defined(HAVE_CUDA)
   if(compute_cuda){
     if(!res_cpu){
       grad_gpu = grad;
       grdpa_gpu = grdpa;
-      rhs_gpu = rhs;
     } else {
       BFT_MALLOC(grad_gpu, n_cells_ext, cs_real_33_t);
       BFT_MALLOC(grdpa_gpu, n_cells_ext, cs_real_33_t);
-      BFT_MALLOC(rhs_gpu, n_cells_ext, cs_real_3_t);
     }
     if(perf){
       start = clock();
@@ -4471,17 +4467,18 @@ printf("je passe dans convection_diffusion\n");
                                       _pvar,
                                       gweight, /* weighted gradient */
                                       cpl,
-                                      grad_cpu);
+                                      grad_gpu);
     }
 
     bool flag2 = (iconvp > 0 && iupwin == 0 && isstpp == 0);
+
     cs_convection_diffusion_vector_cuda(m,
+                                        cs_glob_mesh_adjacencies,
                                         fvq,
                                         _pvar,
                                         i_massflux,
                                         grad_gpu,
                                         grdpa_gpu,
-                                        rhs_gpu,
                                         coefav,
                                         coefbv,
                                         inc,
@@ -4489,24 +4486,29 @@ printf("je passe dans convection_diffusion\n");
                                         flag2,
                                         perf);
 
+    /* Handle parallelism and periodicity */
+    if (flag2){
+      if (halo != NULL) {
+        cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa_gpu, 9);
+        if (m->n_init_perio > 0)
+          cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)grdpa_gpu);
+      }
+    }
 
     if(perf){
       stop = clock();
-      elapsed_cuda = (double) (stop - start);
+      elapsed_cuda = (stop - start) * 1e6 / CLOCKS_PER_SEC;
     }
   }
 #endif
-
 
   if(compute_cpu){
     if(res_cpu){
       grad_cpu = grad;
       grdpa_cpu = grdpa;
-      rhs_cpu = rhs;
     } else {
       BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
       BFT_MALLOC(grdpa_cpu, n_cells_ext, cs_real_33_t);
-      BFT_MALLOC(rhs_cpu, n_cells_ext, cs_real_3_t);
     }
 
     if(perf){
@@ -4558,9 +4560,9 @@ printf("je passe dans convection_diffusion\n");
       }
     }
 
-  /* ======================================================================
-     ---> Compute uncentered gradient grdpa for the slope test
-     ======================================================================*/
+/* ======================================================================
+    ---> Compute uncentered gradient grdpa for the slope test
+    ======================================================================*/
 
   # pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -4583,23 +4585,22 @@ printf("je passe dans convection_diffusion\n");
 
     }
 
-    /* ======================================================================
-      ---> Contribution from interior faces
-      ======================================================================*/
-
-    n_upwind = 0;
-
-    if (n_cells_ext > n_cells) {
-  #   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
-      for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
-        for (int isou = 0; isou < 3; isou++)
-          rhs_cpu[cell_id][isou] = 0.;
-      }
-    }
-
     if(perf){
       stop = clock();
-      elapsed = (double) (stop - start);
+      elapsed = (stop - start) * 1e6 / CLOCKS_PER_SEC;
+    }
+  }
+
+  /* Performances */
+  if(perf){
+    #if defined(HAVE_CUDA)
+      if(compute_cuda){
+        printf("convection Compute and tranferts time in us: CUDA = %ld\n", elapsed_cuda);
+      }
+    #endif
+
+    if(compute_cpu){
+      printf("convection Compute and tranferts time in us: CPU = %ld\n", elapsed);
     }
   }
 
@@ -4612,18 +4613,12 @@ printf("je passe dans convection_diffusion\n");
           double err;
           for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
             for (cs_lnum_t i = 0; i < 3; i++) {
-              cpu = rhs_cpu[c_id][i];
-              cuda = rhs_gpu[c_id][i];
-              err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
-              if (err> 1e-12) {
-                printf("convection_diffusion_a DIFFERENCE @%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\n", c_id, i, cpu, cuda, fabs(cpu - cuda), err);
-              }
               for (int j  =0; j < 3; ++j) {
                 cpu = grdpa_cpu[c_id][i][j];
                 cuda = grdpa_gpu[c_id][i][j];
                 err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
-                if (err> 1e-12) {
-                  printf("convection_diffusion_b DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err);
+                if (err> 1e-6) {
+                  printf("convection_diffusion_b DIFFERENCE @%d-%d-%d: CPU = %.17f\tCUDA = %.17f\tdiff = %.17f\tdiff relative = %.17f\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err);
                 }
               }
             }
@@ -4639,7 +4634,6 @@ printf("je passe dans convection_diffusion\n");
     if(res_cpu){
       BFT_FREE(grad_gpu);
       BFT_FREE(grdpa_gpu);
-      BFT_FREE(rhs_gpu);
     }
   }
 #endif
@@ -4649,10 +4643,23 @@ printf("je passe dans convection_diffusion\n");
     if(!res_cpu){
       BFT_FREE(grad_cpu);
       BFT_FREE(grdpa_cpu);
-      BFT_FREE(rhs_cpu);
     }
   }
 
+
+    /* ======================================================================
+      ---> Contribution from interior faces
+      ======================================================================*/
+
+  n_upwind = 0;
+
+  if (n_cells_ext > n_cells) {
+#   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+      for (int isou = 0; isou < 3; isou++)
+        rhs[cell_id][isou] = 0.;
+    }
+  }
   /* --> Pure upwind flux
      =====================*/
 

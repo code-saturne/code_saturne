@@ -68,12 +68,12 @@ BEGIN_C_DECLS
 
 void
 cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
+                                    const cs_mesh_adjacencies_t *madj,
                                     const cs_mesh_quantities_t  *fvq,
                                     const cs_real_3_t  *restrict pvar,
                                     const cs_real_t              i_massflux[],
                                     const cs_real_33_t          *grad,
                                     cs_real_33_t                *grdpa,
-                                    cs_real_3_t       *restrict  rhs,
                                     const cs_real_3_t  *restrict coefav,
                                     const cs_real_33_t *restrict coefbv,
                                     const int                    inc,
