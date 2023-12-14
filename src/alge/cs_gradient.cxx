@@ -9580,9 +9580,9 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     } /* End of loop on iterations */
 
     /* If the last correction was too large, we suspect
-         the the algorithm did not converge at all/diverged,
-         so we simply restore the non-reconstructed value
-         (additional precaution, not encountered in testing). */
+       the the algorithm did not converge at all/diverged,
+       so we simply restore the non-reconstructed value
+       (additional precaution, not encountered in testing). */
 
     if (c_norm > eps_dvg * ref_norm) {
       memcpy(c_grad, grad_0, sizeof(cs_real_t)*stride*3);
@@ -9603,20 +9603,6 @@ BEGIN_C_DECLS
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
-
-void
-cs_f_gradient_s(int               f_id,
-                int               imrgra,
-                int               inc,
-                int               n_r_sweeps,
-                int               iwarnp,
-                int               imligp,
-                cs_real_t         epsrgp,
-                cs_real_t         climgp,
-                const cs_real_t   coefap[],
-                const cs_real_t   coefbp[],
-                cs_real_t         pvar[],
-                cs_real_3_t       grad[]);
 
 void
 cs_f_gradient_hn_s(int               f_id,
@@ -9652,22 +9638,20 @@ cs_f_gradient_weighted_s(int               f_id,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field.
+ * Compute cell gradient of scalar field with homogeneous Neumann BC's.
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_gradient_s(int               f_id,
-                int               imrgra,
-                int               inc,
-                int               n_r_sweeps,
-                int               iwarnp,
-                int               imligp,
-                cs_real_t         epsrgp,
-                cs_real_t         climgp,
-                const cs_real_t   coefap[],
-                const cs_real_t   coefbp[],
-                cs_real_t         pvar[],
-                cs_real_3_t       grad[])
+cs_f_gradient_hn_s(int               f_id,
+                   int               imrgra,
+                   int               inc,
+                   int               n_r_sweeps,
+                   int               iwarnp,
+                   int               imligp,
+                   cs_real_t         epsrgp,
+                   cs_real_t         climgp,
+                   cs_real_t         pvar[],
+                   cs_real_3_t       grad[])
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -9713,42 +9697,12 @@ cs_f_gradient_s(int               f_id,
                      epsrgp,
                      climgp,
                      NULL,          /* f_ext */
-                     coefap,
-                     coefbp,
+                     NULL,  /* coefap */
+                     NULL,  /* coefbp */
                      pvar,
                      NULL,          /* c_weight */
                      cpl,
                      grad);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field with homogeneous Neumann BC's.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_gradient_hn_s(int               f_id,
-                   int               imrgra,
-                   int               inc,
-                   int               n_r_sweeps,
-                   int               iwarnp,
-                   int               imligp,
-                   cs_real_t         epsrgp,
-                   cs_real_t         climgp,
-                   cs_real_t         pvar[],
-                   cs_real_3_t       grad[])
-{
-  cs_f_gradient_s(f_id,
-                  imrgra,
-                  inc,
-                  n_r_sweeps,
-                  iwarnp,
-                  imligp,
-                  epsrgp,
-                  climgp,
-                  NULL,  /* coefap */
-                  NULL,  /* coefbp */
-                  pvar,
-                  grad);
 }
 
 /*----------------------------------------------------------------------------

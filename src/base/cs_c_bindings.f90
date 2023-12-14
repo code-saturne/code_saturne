@@ -3382,24 +3382,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for scalar gradient
-
-    subroutine cs_f_gradient_s(f_id, imrgra, inc, n_r_sweeps,                  &
-                               iwarnp, imligp, epsrgp, climgp,                 &
-                               coefap, coefbp, pvar, grad)                     &
-      bind(C, name='cs_f_gradient_s')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id, imrgra, inc, n_r_sweeps
-      integer(c_int), value :: iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, climgp
-      real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
-      real(kind=c_double), dimension(*), intent(inout) :: pvar
-      real(kind=c_double), dimension(*), intent(inout) :: grad
-    end subroutine cs_f_gradient_s
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for scalar gradient with homogeneous Neumann BCs
 
     subroutine cs_f_gradient_hn_s(f_id, imrgra, inc, n_r_sweeps,               &
@@ -4143,55 +4125,6 @@ contains
     return
 
   end subroutine field_get_key_struct_gas_mix_species_prop
-
-  !=============================================================================
-
-  !> \brief  Compute cell gradient
-
-  !> \param[in]       f_id             field id, or -1
-  !> \param[in]       imrgra           gradient computation mode
-  !> \param[in]       inc              0: increment; 1: do not increment
-  !> \param[in]       nswrgp           number of sweeps for reconstruction
-  !> \param[in]       imligp           gradient limitation method:
-  !>                                     < 0 no limitation
-  !>                                     = 0 based on neighboring gradients
-  !>                                     = 1 based on mean gradient
-  !> \param[in]       iwarnp           verbosity
-  !> \param[in]       epsrgp           relative precision for reconstruction
-  !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in, out]  pvar             cell values whose gradient is computed
-  !> \param[in]       coefap           boundary coefap coefficients
-  !> \param[in]       coefbp           boundary coefap coefficients
-  !> \param[out]      grad             resulting gradient
-
-  subroutine gradient_s(f_id, imrgra, inc, nswrgp,                             &
-                        imligp, iwarnp, epsrgp, climgp,                        &
-                        pvar, coefap, coefbp, grad)
-
-    use, intrinsic :: iso_c_binding
-    use paramx
-    use mesh
-    use field
-    use period
-
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: f_id, imrgra, inc, nswrgp
-    integer, intent(in) :: imligp, iwarnp
-    double precision, intent(in) :: epsrgp, climgp
-    real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
-    real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
-
-    ! The gradient of a potential (pressure, ...) is a vector
-
-    call cs_f_gradient_s(f_id, imrgra, inc, nswrgp,                            &
-                         iwarnp, imligp,                                       &
-                         epsrgp, climgp, coefap, coefbp, pvar, grad)
-
-  end subroutine gradient_s
 
   !=============================================================================
 
