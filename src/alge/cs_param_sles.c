@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #if defined(HAVE_PETSC)
 #include <petsc.h>
