@@ -1834,6 +1834,9 @@ cs_parameters_global_complete(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Complete general equation parameter definitions.
+ *
+ * Also set associated field properties such as number of associated
+ * time values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1912,6 +1915,11 @@ cs_parameters_eqp_complete(void)
          diffusion equations */
       if (eqp->iswdyn == -1 && eqp->iconv == 0)
         eqp->iswdyn = 2;
+
+      /* Set previous values for backward n order in time. */
+
+      if (eqp->ibdtso > 1)
+        cs_field_set_n_time_vals(f, eqp->ibdtso + 1);
 
     }  /* end if (f->type & CS_FIELD_VARIABLE) */
   }

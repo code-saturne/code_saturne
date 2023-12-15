@@ -41,6 +41,7 @@ use field
 use lagran
 use cpincl
 use dimens
+use numvar, only : nscaus, nscapp
 use radiat
 use cdomod
 
@@ -180,6 +181,8 @@ if (icdo.lt.2) then
 endif
 
 call cs_parameters_eqp_complete
+
+nscal = nscaus + nscapp
 
 !===============================================================================
 ! Time moments called after additionnal creation

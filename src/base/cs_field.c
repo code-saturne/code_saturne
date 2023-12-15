@@ -48,8 +48,8 @@
 
 #include "cs_log.h"
 #include "cs_map.h"
-#include "cs_parall.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

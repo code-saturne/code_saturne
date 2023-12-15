@@ -49,7 +49,9 @@
 #include "cs_equation_param.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
+#include "cs_physical_model.h"
 #include "cs_post.h"
+#include "cs_turbulence_bc.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -500,6 +502,107 @@ cs_field_free_bc_codes_all(void)
 
   _n_vars_bc = 0;
   _n_b_faces = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize all field BC coefficients.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_map_and_init_bcs(void)
+{
+  const int k_turb_flux_model = cs_field_key_id("turbulent_flux_model");
+  const int n_fields = cs_field_n_fields();
+
+  /* Some fields may require BC coefficients; use 4 flags per field:
+     - 0: have_flux_bc
+     - 1: have_mom_bc
+     - 2: have_conv_bc
+     - 3: have_exch_bc */
+
+  bool *bc_flags;
+  BFT_MALLOC(bc_flags, n_fields*4, bool);
+  for (int i = 0; i < n_fields*4; i++)
+    bc_flags[i] = false;
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+    bc_flags[cs_field_by_name("velocity")->id * 4 + 2] = true;
+    bc_flags[cs_field_by_name("total_energy")->id * 4 + 2] = true;
+  }
+
+  /* BC coeffs also used for some fields which are not direclty
+     saved variables (to shave values between various computation
+     stages). */
+
+  const char *sp_names[] = {"pressure_increment", "lagr_time"};
+  for (int i = 0; i < 2; i++) {
+    const cs_field_t *f = cs_field_by_name_try(sp_names[i]);
+    if (f != NULL) {
+      if (! (f->type & CS_FIELD_USER))
+        bc_flags[f->id * 4] = true;
+    }
+  }
+
+  /* Loop over variables
+     ------------------- */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+
+    if (! (f->type & CS_FIELD_VARIABLE))
+      continue;
+    if (f->type & CS_FIELD_CDO)
+      continue;
+
+    bc_flags[f->id * 4] = true;
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    if (eqp->icoupl > 0)
+      bc_flags[f_id*4 + 3] = true;
+
+    if (f->dim == 6) {
+      if (strcmp(f->name, "rij") == 0)
+        bc_flags[f_id*4 + 1] = true;
+    }
+
+    int turb_flux_model_type = cs_field_get_key_int(f, k_turb_flux_model) / 10;
+
+    /* Boundary conditions of the turbulent fluxes T'u' or Y'u' */
+    if (turb_flux_model_type == 3) {
+      cs_field_t  *f_ut = cs_field_by_composite_name_try(f->name,
+                                                         "turbulent_flux");
+      bc_flags[f_ut->id*4 + 1] = true;
+    }
+  }
+
+  /* Now allocate BC coefficients */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    /* have flux_bc always true if other coefficients are used */
+
+    if (bc_flags[f_id*4] == false)
+      continue;
+
+    cs_field_t  *f = cs_field_by_id(f_id);
+
+    bool has_mom_bc  = bc_flags[f_id*4 + 1];
+    bool has_conv_bc = bc_flags[f_id*4 + 2];
+    bool has_exch_bc = bc_flags[f_id*4 + 3];
+
+    cs_field_allocate_bc_coeffs(f, true, has_mom_bc, has_conv_bc, has_exch_bc);
+    cs_field_init_bc_coeffs(f);
+
+  }
+
+  BFT_FREE(bc_flags);
+
+  /* Map pointers to BC's now that BC coefficient pointers are allocated */
+
+  cs_turbulence_bc_init_pointers();
 }
 
 /*----------------------------------------------------------------------------*/

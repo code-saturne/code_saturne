@@ -456,6 +456,9 @@ cs_parameters_global_complete(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Complete general equation parameter definitions.
+ *
+ * Also set associated field properties such as number of associated
+ * time values.
  */
 /*----------------------------------------------------------------------------*/
 

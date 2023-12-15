@@ -119,6 +119,14 @@ interface
 
   !=============================================================================
 
+  subroutine cs_field_map_and_init_bcs()  &
+    bind(C, name='cs_field_map_and_init_bcs')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_field_map_and_init_bcs
+
+  !=============================================================================
+
   subroutine cs_initialize_fields_stage_0()  &
     bind(C, name='cs_initialize_fields_stage_0')
     use, intrinsic :: iso_c_binding
@@ -273,14 +281,6 @@ interface
     implicit none
     integer(c_int) :: ierr
   end function cs_runaway_check
-
-  !=============================================================================
-
-  subroutine fldtri() &
-    bind(C, name='cs_field_map_and_init_bcs')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine fldtri
 
   !=============================================================================
 
@@ -460,7 +460,7 @@ endif
 ! Default initializations
 !===============================================================================
 
-call fldtri
+call cs_field_map_and_init_bcs
 
 call field_allocate_or_map_all
 

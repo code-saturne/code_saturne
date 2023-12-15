@@ -407,7 +407,6 @@ ecrava.f90 \
 ecrlis.f90 \
 findpt.f90 \
 fldini.f90 \
-fldtri.f90 \
 fldvar.f90 \
 fldprp.f90 \
 idrbla.f90 \
