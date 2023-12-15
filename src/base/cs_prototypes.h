@@ -286,21 +286,6 @@ cs_get_cavitation_dgdp_st(void);
 cs_real_t *
 cs_get_cavitation_gam(void);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Computes a hydrostatic pressure \f$ P_{hydro} \f$ solving an
- *        a priori simplified momentum equation:
- *
- * \param[out]    grdphd         the a priori hydrostatic pressure gradient
- *                              \f$ \partial _x (P_{hydro}) \f$
- * \param[in]     iterns        Navier-Stokes iteration number
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
-                                   int        iterns);
-
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.
  *

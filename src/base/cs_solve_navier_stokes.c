@@ -1958,10 +1958,10 @@ _velocity_prediction(const cs_mesh_t             *m,
   const cs_time_step_options_t  *tso = cs_glob_time_step_options;
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
   const cs_vof_parameters_t *vof_param = cs_glob_vof_parameters;
-  const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
+  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
   const cs_velocity_pressure_model_t
     *vp_model = cs_glob_velocity_pressure_model;
-  cs_velocity_pressure_param_t *vp_param = cs_get_glob_velocity_pressure_param();
+  const cs_velocity_pressure_param_t *vp_param = cs_glob_velocity_pressure_param;
 
   cs_equation_param_t *eqp_u
     = cs_field_get_equation_param(CS_F_(vel));
@@ -3308,6 +3308,202 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a hydrostatic pressure \f$ P_{hydro} \f$ solving an
+ *        a priori simplified momentum equation:
+ *
+ * \param[out]    grdphd         the a priori hydrostatic pressure gradient
+ *                              \f$ \partial _x (P_{hydro}) \f$
+ * \param[in]     iterns        Navier-Stokes iteration number
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
+                                 int        iterns)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const int idtvar = cs_glob_time_step_options->idtvar;
+
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  cs_real_t *prhyd = cs_field_by_name("hydrostatic_pressure_prd")->val;
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
+  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+
+  cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
+  cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+
+  /* Boundary conditions for delta P */
+  cs_real_t *coefap, *cofafp, *coefbp, *cofbfp;
+  BFT_MALLOC(coefap, n_b_faces, cs_real_t);
+  BFT_MALLOC(cofafp, n_b_faces, cs_real_t);
+  BFT_MALLOC(coefbp, n_b_faces, cs_real_t);
+  BFT_MALLOC(cofbfp, n_b_faces, cs_real_t);
+
+  /*
+   * Solve a diffusion equation with source term to obtain
+   * the a priori hydrostatic pressure
+   * ----------------------------------------------------- */
+
+  cs_real_t *xinvro, *rovsdt, *rhs;
+  BFT_MALLOC(xinvro, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+
+  /* Initialization of the variable to solve from the interior cells */
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    xinvro[c_id] = 1. / crom[c_id];
+    rovsdt[c_id] = 0;
+    rhs[c_id] = 0;
+  }
+
+  /* Allocate work arrays */
+  cs_real_t *viscf, *viscb;
+  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
+  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+
+  /* Viscosity (k_t := 1/rho ) */
+
+  cs_face_viscosity(m, mq,
+                    1, /* harmonic mean */
+                    xinvro,
+                    viscf, viscb);
+
+  /* Neumann boundary condition for the pressure increment */
+
+  const cs_real_t *distb = mq->b_dist;
+  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
+
+# pragma omp parallel if (n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    const cs_lnum_t c_id = b_face_cells[f_id];
+
+    /* Prescribe the pressure gradient: kt.grd(Phyd)|_b = (g.n)|_b */
+
+    cs_real_t hint = 1. / (crom[c_id] * distb[f_id]);
+    cs_real_t qimp = - cs_math_3_dot_product(b_face_u_normal[f_id],
+                                             gxyz);
+    cs_boundary_conditions_set_neumann_scalar(&coefap[f_id],
+                                              &cofafp[f_id],
+                                              &coefbp[f_id],
+                                              &cofbfp[f_id],
+                                              qimp,
+                                              hint);
+  }
+
+  /* Solve the diffusion equation.
+
+     By default, the hydrostatic pressure variable is resolved with 5 sweeps
+     for the reconstruction gradient. Here we make the assumption that the
+     mesh is orthogonal (any reconstruction gradient is done for the
+     hydrostatic pressure variable). */
+
+  const cs_equation_param_t *eqp_p
+    = cs_field_get_equation_param_const(CS_F_(p));
+
+  cs_equation_param_t eqp_loc = *eqp_p;
+
+  eqp_loc.iconv = 0;
+  eqp_loc.istat = 0;
+  eqp_loc.icoupl = -1;
+  eqp_loc.ndircl = 0;
+  eqp_loc.idiff  = 1;
+  eqp_loc.idifft = -1;
+  eqp_loc.idften = CS_ISOTROPIC_DIFFUSION;
+  eqp_loc.nswrsm = 1;    /* no reconstruction gradient
+                            (important for mesh with reconstruction) */
+  eqp_loc.iwgrec = 0;    /* Warning, may be overwritten if a field */
+  eqp_loc.blend_st = 0;  /* Warning, may be overwritten if a field */
+
+  cs_real_t *dpvar;
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+
+  const char var_name[] = "Prhydro";
+
+  cs_equation_iterative_solve_scalar(idtvar,
+                                     iterns,
+                                     -1,     /* field id */
+                                     var_name,
+                                     0,      /* iescap */
+                                     0,      /* imucpp */
+                                     -1,     /* normp */
+                                     &eqp_loc,
+                                     prhyd, prhyd,
+                                     coefap, coefbp,
+                                     cofafp, cofbfp,
+                                     imasfl, bmasfl,
+                                     viscf, viscb,
+                                     viscf, viscb,
+                                     NULL,   /* viscel */
+                                     NULL,   /* weighf */
+                                     NULL,   /* weighb */
+                                     0,      /* icvflb (upwind conv. flux) */
+                                     NULL,   /* icvfli */
+                                     rovsdt,
+                                     rhs,
+                                     prhyd, dpvar,
+                                     NULL,   /* xcpp */
+                                     NULL);  /* eswork */
+
+  BFT_FREE(dpvar);
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  cs_gradient_type_by_imrgra(eqp_loc.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_gradient_scalar(var_name,
+                     gradient_type,
+                     halo_type,
+                     1, /* inc */
+                     1, /* n_r_sweeps */
+                     0, /* hyd_p_flag */
+                     1,             /* w_stride */
+                     eqp_loc.verbosity,
+                     (cs_gradient_limit_t)eqp_loc.imligr,
+                     eqp_loc.epsrgr,
+                     eqp_loc.climgr,
+                     NULL, /* f_ext */
+                     coefap,
+                     coefbp,
+                     prhyd,
+                     xinvro,
+                     NULL,
+                     grdphd);
+
+  /* Free memory */
+
+  BFT_FREE(viscf);
+  BFT_FREE(viscb);
+
+  BFT_FREE(xinvro);
+  BFT_FREE(rovsdt);
+  BFT_FREE(rhs);
+
+  BFT_FREE(coefap);
+  BFT_FREE(cofafp);
+  BFT_FREE(coefbp);
+  BFT_FREE(cofbfp);
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -3610,7 +3806,7 @@ cs_solve_navier_stokes(const int   iterns,
   cs_real_3_t *grdphd = NULL;
   if (vp_param->iphydr == 2) {
     BFT_MALLOC(grdphd, n_cells_ext, cs_real_3_t);
-    cs_hydrostatic_pressure_prediction(grdphd, iterns);
+    _hydrostatic_pressure_prediction(grdphd, iterns);
   }
 
   /* Pressure resolution and computation of mass flux for compressible flow
