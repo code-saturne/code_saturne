@@ -299,6 +299,28 @@ cs_log_timer_array(cs_log_t                   log,
                    const cs_timer_counter_t   time_count[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print log info to a given log type.
+ *
+ * The format and variable arguments are similar to those of the printf()
+ * type functions.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  log     log file type
+ * \param[in]  format  format string, as printf() and family.
+ * \param[in]  ...     variable arguments based on format string.
+ *
+ * \return number of characters printed, not counting the trailing '\0' used
+ *         to end output strings
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_log_warning(const char *format,
+               ...);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

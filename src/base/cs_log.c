@@ -467,11 +467,6 @@ cs_log_vprintf(cs_log_t     log,
 
     retval = vfprintf(_cs_log[log], format, arg_ptr);
 
-    if (log == CS_LOG_WARNINGS) {
-      bft_printf_proxy_t *_printf_proxy = bft_printf_proxy_get();
-      _printf_proxy(format, arg_ptr);
-    }
-
   }
 
   else {
@@ -522,11 +517,6 @@ cs_log_printf(cs_log_t     log,
     va_start(arg_ptr, format);
 
     retval = vfprintf(_cs_log[log], format, arg_ptr);
-
-    if (log == CS_LOG_WARNINGS) {
-      bft_printf_proxy_t *_printf_proxy = bft_printf_proxy_get();
-      _printf_proxy(format, arg_ptr);
-    }
 
     va_end(arg_ptr);
 
@@ -716,6 +706,52 @@ cs_log_timer_array(cs_log_t                   log,
                     "%*s%s %12.3f\n",
                     indent, " ", tmp_s[0], wtime);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print a warning message to the warnings.log file and a copy to the
+ * default log file.
+ *
+ * The format and variable arguments are similar to those of the printf()
+ * type functions.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  format  format string, as printf() and family.
+ * \param[in]  ...     variable arguments based on format string.
+ *
+ * \return number of characters printed, not counting the trailing '\0' used
+ *         to end output strings
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_log_warning(const char *format,
+               ...)
+{
+  int retval = 0;
+  va_list arg_ptr;
+
+  if (cs_glob_rank_id > 0)
+    return 0;
+
+  va_start(arg_ptr, format);
+
+  /* Print to warning log */
+  cs_log_separator(CS_LOG_WARNINGS);
+  retval = cs_log_vprintf(CS_LOG_WARNINGS, format, arg_ptr);
+  cs_log_separator(CS_LOG_WARNINGS);
+  cs_log_printf(CS_LOG_WARNINGS, "\n");
+
+  /* Print copy to main log */
+  cs_log_printf(CS_LOG_DEFAULT, "\nWarning message :\n");
+  cs_log_printf(CS_LOG_DEFAULT, "-----------------\n\n");
+  cs_log_vprintf(CS_LOG_DEFAULT, format, arg_ptr);
+
+  va_end(arg_ptr);
+
+  return retval;
 }
 
 /*-----------------------------------------------------------------------------*/
