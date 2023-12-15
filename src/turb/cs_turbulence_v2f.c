@@ -194,9 +194,8 @@ _clip_v2f(cs_lnum_t  n_cells,
   cs_parall_counter(nclp, 2);
 
   if (nclp[1] > 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  _("Warning: variable phi, maximum physical value of 2 "
-                    "exceeded for, %llu cells"),
+    cs_log_warning(_("Warning: variable phi, maximum physical value of 2 "
+                     "exceeded for, %llu cells"),
                   (unsigned long long)nclp[1]);
 
   cs_lnum_t nclpmn[1] = {nclp[0]}, nclpmx[1] = {nclp[1]};

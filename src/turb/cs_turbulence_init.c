@@ -251,14 +251,14 @@ cs_turbulence_init_clip_and_verify(void)
       cs_turbulence_ke_clip(-1, n_cells, 1);
     else {
       n_errors += 1;
-      bft_printf(_("Error in variables initialization\n"
-                   "----\n\n"
-                   "  Negative or null turbulence\n"
-                   "    Minimum value of k  = %g\n"
-                   "    Minimum value of epsilon  = %g\n\n"
-                   "  Check user-defined initialization, restart data,\n"
-                   "  and value of reference velocity (uref)\n"),
-                 xekmin, xepmin);
+      cs_log_warning(_("Error in variables initialization\n"
+                       "----\n\n"
+                       "  Negative or null turbulence\n"
+                       "    Minimum value of k  = %g\n"
+                       "    Minimum value of epsilon  = %g\n\n"
+                       "  Check user-defined initialization, restart data,\n"
+                       "  and value of reference velocity (uref)\n"),
+                     xekmin, xepmin);
     }
 
     /* For v2-f, phi-fbar or BL-v2/k, check that phi is between 0 and 2. */
@@ -291,7 +291,7 @@ cs_turbulence_init_clip_and_verify(void)
          we clip only to 0 and not to 2 */
       if (v_min[0] < 0.) {
         n_errors += 1;
-        bft_printf
+        cs_log_warning
           (_("Error in variables initialization\n"
              "----\n\n"
              "  Phi variable (v2f phi_bar or BL-v2k) out of [0, 2]bounds\n"
@@ -307,7 +307,7 @@ cs_turbulence_init_clip_and_verify(void)
       if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
         if (v_min[1] < 0. || v_max[1] > 1.) {
           n_errors += 1;
-          bft_printf
+          cs_log_warning
             (_("Error in variables initialization\n"
                "----\n\n"
                "  Alpha variable (v2f BL-v2k) out of [0, 1] bounds\n"
@@ -358,7 +358,7 @@ cs_turbulence_init_clip_and_verify(void)
     }
     else {
       n_errors += 1;
-      bft_printf
+      cs_log_warning
         (_("Error in variables initialization\n"
            "----\n\n"
            "  Negative or null turbulence\n"
@@ -376,7 +376,7 @@ cs_turbulence_init_clip_and_verify(void)
 
       if (v_min[4] < 0. || al_max[0] > 1.) {
         n_errors += 1;
-        bft_printf
+        cs_log_warning
           (_("Error in variables initialization\n"
              "----\n\n"
              "  Alpha variable (EBRSM) out of [0, 1] bounds\n"
@@ -405,14 +405,14 @@ cs_turbulence_init_clip_and_verify(void)
     /* For k-omega, clip only to 0 */
     if (f_min[0] < 0. || f_min[1] <= 0.) {
       n_errors += 1;
-      bft_printf(_("Error in variables initialization\n"
-                   "----\n\n"
-                   "  Negative or null turbulence\n"
-                   "    Minimum value of k  = %g\n"
-                   "    Minimum value of omega  = %g\n\n"
-                   "  Check user-defined initialization, restart data,\n"
-                   "  and value of reference velocity (uref)\n"),
-                 f_min[0], f_min[1]);
+      cs_log_warning(_("Error in variables initialization\n"
+                       "----\n\n"
+                       "  Negative or null turbulence\n"
+                       "    Minimum value of k  = %g\n"
+                       "    Minimum value of omega  = %g\n\n"
+                       "  Check user-defined initialization, restart data,\n"
+                       "  and value of reference velocity (uref)\n"),
+                     f_min[0], f_min[1]);
     }
 
   }
@@ -431,13 +431,13 @@ cs_turbulence_init_clip_and_verify(void)
 
     if (nu_min < 0) {
       n_errors += 1;
-      bft_printf(_("Error in variables initialization\n"
-                   "----\n\n"
-                   "  Negative or null turbulence\n"
-                   "    Minimum value of nu = %g\n"
-                   "  Check user-defined initialization, restart data,\n"
-                   "  and value of reference velocity (uref)\n"),
-                 nu_min);
+      cs_log_warning(_("Error in variables initialization\n"
+                       "----\n\n"
+                       "  Negative or null turbulence\n"
+                       "    Minimum value of nu = %g\n"
+                       "  Check user-defined initialization, restart data,\n"
+                       "  and value of reference velocity (uref)\n"),
+                     nu_min);
     }
 
   }
