@@ -163,14 +163,16 @@ static void
 _boundary_condition_rt_type(const cs_mesh_t             *m,
                             const cs_mesh_quantities_t  *mq,
                             const bool                  init,
-                            const cs_real_t             dt[],
                             const int                   bc_type[])
 {
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  /* Unfinished function */
 
-  const cs_real_t *surfbn = mq->b_face_surf;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *)mq->b_face_normal;
+  CS_UNUSED(m);
+  CS_UNUSED(mq);
+  CS_UNUSED(init);
+  CS_UNUSED(bc_type);
+
+  const cs_lnum_t n_b_faces =  m->n_b_faces;
 
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
@@ -183,28 +185,22 @@ _boundary_condition_rt_type(const cs_mesh_t             *m,
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
-    cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
+    // cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
     cs_field_t *f_rad = CS_FI_(radiance, gg_id);
 
-    int *icodcl_rad = NULL;
+    // int *icodcl_rad = NULL;
     cs_real_t *rcodcl1_rad = NULL;
 
     if (f_rad->bc_coeffs != NULL) {
-      icodcl_rad = f_rad->bc_coeffs->icodcl;
+      // icodcl_rad = f_rad->bc_coeffs->icodcl;
       rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
     }
 
-
-# pragma omp parallel for  if (n_b_faces > CS_THR_MIN)
+#   pragma omp parallel for  if (n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (rcodcl1_rad[face_id] > cs_math_infinite_r*0.5)
         rcodcl1_rad[face_id] = 0;
     }
-
-    /* Check the consistency of BC types
-     * --------------------------------- */
-
-    int ierror[1] = {0};
 
   }
 
@@ -889,7 +885,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       _boundary_condition_rt_type(mesh,
                                   fvq,
                                   false,
-                                  dt,
                                   bc_type);
 
     if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
@@ -3804,7 +3799,6 @@ cs_boundary_conditions_set_coeffs_init(void)
     _boundary_condition_rt_type(mesh,
                                 cs_glob_mesh_quantities,
                                 true,
-                                dt,
                                 bc_type);
 
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
