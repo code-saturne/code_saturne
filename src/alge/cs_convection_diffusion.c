@@ -1288,6 +1288,293 @@ cs_slope_test_gradient_vector(const int              inc,
   }
 }
 
+void
+cs_slope_test_gradient_vector_target(const int              inc,
+                              const cs_halo_type_t   halo_type,
+                              const cs_real_33_t    *grad,
+                              cs_real_33_t          *grdpa,
+                              const cs_real_3_t     *pvar,
+                              const cs_real_3_t     *coefa,
+                              const cs_real_33_t    *coefb,
+                              const cs_real_t       *i_massflux)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
+  const cs_halo_t  *halo = m->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells                   = m->n_cells;
+  const cs_lnum_t n_b_cells                 = m->n_b_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces                 = m->n_i_faces;
+  const cs_lnum_t n_b_faces                 = m->n_b_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict b_cells
+    = (const cs_lnum_t *restrict)m->b_cells;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict)madj->cell_cells_idx;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict)madj->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_cells
+    = (const cs_lnum_t *restrict)madj->cell_cells;
+  const short int *restrict cell_i_faces_sgn
+    = (const short int *restrict)madj->cell_i_faces_sgn;
+  const cs_lnum_t *restrict cell_i_faces
+    = (const cs_lnum_t *restrict)madj->cell_i_faces;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict)madj->cell_b_faces;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  bool scatter = true;
+
+#pragma omp target data map(tofrom: grdpa[0:n_cells_ext]) \
+                        map(to: grad[0:n_cells_ext], \
+                                i_face_cog[0:n_i_faces], \
+                                cell_cen[0:n_cells_ext], \
+                                pvar[0:n_cells_ext], \
+                                i_massflux[0:n_i_faces], \
+                                i_f_face_normal[0:n_i_faces], \
+                                b_face_cells[0:n_b_faces], \
+                                coefb[0:n_b_faces], \
+                                coefa[0:n_b_faces], \
+                                cell_cells_idx[0:n_cells_ext], \
+                                cell_cells[0:n_cells_ext], \
+                                b_cells[0:n_cells], \
+                                cell_b_faces_idx[0:n_cells+1], \
+                                cell_vol[0:n_cells_ext], \
+                                i_face_cells[0:n_i_faces])
+{
+  if(scatter){
+    #pragma omp target teams distribute parallel for \
+                        map(tofrom: grdpa[0:n_cells_ext]) \
+                        map(to: grad[0:n_cells_ext], \
+                                i_face_cog[0:n_i_faces], \
+                                cell_cen[0:n_cells_ext], \
+                                pvar[0:n_cells_ext], \
+                                i_massflux[0:n_i_faces], \
+                                i_f_face_normal[0:n_i_faces], \
+                                i_face_cells[0:n_i_faces])
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++){
+
+      cs_real_t difv[3], djfv[3];
+
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
+
+      for (int jsou = 0; jsou < 3; jsou++) {
+        difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
+        djfv[jsou] = i_face_cog[face_id][jsou] - cell_cen[jj][jsou];
+      }
+
+      /* x-y-z component, p = u, v, w */
+
+      for (int isou = 0; isou < 3; isou++) {
+        cs_real_t pif = pvar[ii][isou];
+        cs_real_t pjf = pvar[jj][isou];
+        for (int jsou = 0; jsou < 3; jsou++) {
+          pif = pif + grad[ii][isou][jsou]*difv[jsou];
+          pjf = pjf + grad[jj][isou][jsou]*djfv[jsou];
+        }
+
+        cs_real_t pfac = pjf;
+        if (i_massflux[face_id] > 0.) pfac = pif;
+
+        /* U gradient */
+
+        cs_real_t vfac[3];
+
+        for (int jsou = 0; jsou < 3; jsou++) {
+          vfac[jsou] = pfac*i_f_face_normal[face_id][jsou];
+          #pragma omp atomic
+          grdpa[ii][isou][jsou] = grdpa[ii][isou][jsou] + vfac[jsou];
+          #pragma omp atomic
+          grdpa[jj][isou][jsou] = grdpa[jj][isou][jsou] - vfac[jsou];
+        }
+      }
+
+    }
+
+    #pragma omp target teams distribute parallel for \
+                      map(tofrom: grdpa[0:n_cells_ext]) \
+                      map(to: b_face_cells[0:n_b_faces], \
+                              coefb[0:n_b_faces], \
+                              coefa[0:n_b_faces], \
+                              grad[0:n_cells_ext]) \
+                      if(m->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+      cs_real_t diipbv[3];
+      cs_lnum_t ii = b_face_cells[face_id];
+
+      for (int jsou = 0; jsou < 3; jsou++){
+        diipbv[jsou] = diipb[face_id][jsou];
+      }
+
+      /* x-y-z components, p = u, v, w */
+
+      for (int isou = 0; isou < 3; isou++) {
+        cs_real_t pfac = inc*coefa[face_id][isou];
+        /*coefu is a matrix */
+        for (int jsou =  0; jsou < 3; jsou++)
+          pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
+                                              + grad[ii][jsou][0]*diipbv[0]
+                                              + grad[ii][jsou][1]*diipbv[1]
+                                              + grad[ii][jsou][2]*diipbv[2]);
+
+        for (int jsou = 0; jsou < 3; jsou++){
+          #pragma omp atomic
+          grdpa[ii][isou][jsou] += pfac*b_f_face_normal[face_id][jsou];
+        }
+      }
+
+    }
+
+  }
+  else{
+    #pragma omp target teams distribute parallel for \
+                        map(tofrom: grdpa[0:n_cells_ext]) \
+                        map(to: grad[0:n_cells_ext], \
+                                i_face_cog[0:n_i_faces], \
+                                cell_cen[0:n_cells_ext], \
+                                cell_cells_idx[0:n_cells_ext], \
+                                cell_cells[0:n_cells_ext], \
+                                pvar[0:n_cells_ext], \
+                                i_massflux[0:n_i_faces], \
+                                i_f_face_normal[0:n_i_faces])
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++){
+
+      cs_lnum_t s_id = cell_cells_idx[ii];
+      cs_lnum_t e_id = cell_cells_idx[ii+1];
+
+      cs_real_t difv[3], djfv[3];
+
+      cs_lnum_t jj, face_id;
+
+      for(cs_lnum_t index = s_id; index < e_id; index++){
+
+        jj = cell_cells[index];
+        face_id = cell_i_faces[index];
+
+        for (int jsou = 0; jsou < 3; jsou++) {
+          difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
+          djfv[jsou] = i_face_cog[face_id][jsou] - cell_cen[jj][jsou];
+        }
+
+        /* x-y-z component, p = u, v, w */
+
+        for (int isou = 0; isou < 3; isou++) {
+          cs_real_t pif = pvar[ii][isou];
+          cs_real_t pjf = pvar[jj][isou];
+          for (int jsou = 0; jsou < 3; jsou++) {
+            pif = pif + grad[ii][isou][jsou]*difv[jsou];
+            pjf = pjf + grad[jj][isou][jsou]*djfv[jsou];
+          }
+
+          cs_real_t pfac = pjf;
+          if (i_massflux[face_id] > 0.) pfac = pif;
+
+          /* U gradient */
+
+          cs_real_t vfac[3];
+
+          for (int jsou = 0; jsou < 3; jsou++) {
+            vfac[jsou] = pfac*i_f_face_normal[face_id][jsou];
+            grdpa[ii][isou][jsou] = grdpa[ii][isou][jsou] + vfac[jsou];
+          }
+        }
+      }
+
+    }
+
+    #pragma omp target teams distribute parallel for \
+                        map(tofrom: grdpa[0:n_cells_ext]) \
+                        map(to: b_face_cells[0:n_b_faces], \
+                                coefb[0:n_b_faces], \
+                                coefa[0:n_b_faces], \
+                                b_cells[0:n_cells], \
+                                cell_b_faces_idx[0:n_cells+1], \
+                                grad[0:n_cells_ext]) \
+                        if(m->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
+
+      cs_lnum_t ii = b_cells[c_idx];
+
+      cs_lnum_t s_id = cell_b_faces_idx[ii];
+      cs_lnum_t e_id = cell_b_faces_idx[ii+1];
+
+      cs_lnum_t face_id;
+
+      cs_real_t diipbv[3];
+
+      for(cs_lnum_t index = s_id; index < e_id; index++){
+
+        face_id = cell_b_faces[index];
+
+        for (int jsou = 0; jsou < 3; jsou++){
+          diipbv[jsou] = diipb[face_id][jsou];
+        }
+
+        /* x-y-z components, p = u, v, w */
+
+        for (int isou = 0; isou < 3; isou++) {
+          cs_real_t pfac = inc*coefa[face_id][isou];
+          /*coefu is a matrix */
+          for (int jsou =  0; jsou < 3; jsou++)
+            pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
+                                                + grad[ii][jsou][0]*diipbv[0]
+                                                + grad[ii][jsou][1]*diipbv[1]
+                                                + grad[ii][jsou][2]*diipbv[2]);
+
+          for (int jsou = 0; jsou < 3; jsou++){
+            grdpa[ii][isou][jsou] += pfac*b_f_face_normal[face_id][jsou];
+          }
+        }
+      }
+
+    }
+  }
+
+  #pragma omp target teams distribute parallel for \
+                      map(tofrom: grdpa[0:n_cells_ext]) \
+                      map(to: cell_vol[0:n_cells_ext])
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t unsvol = 1./cell_vol[cell_id];
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++){
+        grdpa[cell_id][isou][jsou] = grdpa[cell_id][isou][jsou]*unsvol;
+      }
+    }
+  }
+}
+  /* Handle parallelism and periodicity */
+
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 9);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)grdpa);
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
@@ -4276,6 +4563,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   int iupwin = 0;
 
   cs_real_33_t *grad, *grdpa;
+  cs_real_33_t *grad_target, *grdpa_target;
   cs_real_t *bndcel;
 
   const cs_real_3_t *coface = NULL;
@@ -4302,6 +4590,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
   BFT_MALLOC(grdpa, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(grad_target, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(grdpa_target, n_cells_ext, cs_real_33_t);
 
   /* Choose gradient type */
 
@@ -4574,14 +4864,24 @@ res_cpu = !compute_cuda;
 
     if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-      cs_slope_test_gradient_vector(inc,
-                                    halo_type,
-                                    (const cs_real_33_t *)grad_cpu,
-                                    grdpa_cpu,
-                                    _pvar,
-                                    coefav,
-                                    coefbv,
-                                    i_massflux);
+      // cs_slope_test_gradient_vector(inc,
+      //                               halo_type,
+      //                               (const cs_real_33_t *)grad_cpu,
+      //                               grdpa_cpu,
+      //                               _pvar,
+      //                               coefav,
+      //                               coefbv,
+      //                               i_massflux);
+
+      
+    cs_slope_test_gradient_vector_target(inc,
+                                         halo_type,
+                                         (const cs_real_33_t *)grad,
+                                         grdpa_cpu,
+                                         _pvar,
+                                         coefav,
+                                         coefbv,
+                                         i_massflux);
 
     }
 

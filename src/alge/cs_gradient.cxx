@@ -6884,7 +6884,8 @@ num_block(unsigned int size, unsigned int num_threads){
   return num;
 }
 
-static void
+BEGIN_C_DECLS
+void
 _lsq_vector_gradient_target(const cs_mesh_t               *m,
                      const cs_mesh_adjacencies_t   *madj,
                      const cs_mesh_quantities_t    *fvq,
@@ -6971,7 +6972,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 b_cells[0:n_b_cells], \
                                 cocg[0:n_cells_ext])
 {
-  #pragma omp target teams distribute parallel for collapse(3) \
+  #pragma omp target teams distribute parallel for \
                       map(tofrom: rhs[0:n_cells_ext])
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)  {
     for (cs_lnum_t i = 0; i < 3; i++){
@@ -7032,7 +7033,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells[0:n_cells_ext], \
                                 cell_f_cen[0:n_cells_ext], \
-                                pvar[0:n_cells_ext]) num_teams(num_block(n_cells, 256))
+                                pvar[0:n_cells_ext]) //num_teams(num_block(n_cells, 256))
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_lnum_t s_id = cell_cells_idx[c_id];
@@ -7040,14 +7041,14 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
       cs_lnum_t c_id2, f_id;
 
-      cs_real_t _rhs[256][3][3];
-      cs_lnum_t tid = omp_get_thread_num();
+      // cs_real_t _rhs[256][3][3];
+      // cs_lnum_t tid = omp_get_thread_num();
 
-      for(cs_lnum_t i = 0; i < 3; i++){
-        for(cs_lnum_t j = 0; j < 3; j++){
-          _rhs[tid][i][j] = 0.0;
-        }
-      }
+      // for(cs_lnum_t i = 0; i < 3; i++){
+      //   for(cs_lnum_t j = 0; j < 3; j++){
+      //     _rhs[tid][i][j] = 0.0;
+      //   }
+      // }
 
       cs_real_t  dc[3], fctb[3], _weight, _denom, _pond, pfac;
       for(cs_lnum_t index = s_id; index < e_id; index++){
@@ -7077,16 +7078,16 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
           for (cs_lnum_t j = 0; j < 3; j++) {
             fctb[j] = dc[j] * pfac;
-            _rhs[tid][i][j] += _weight * fctb[j];
+            rhs[c_id][i][j] += _weight * fctb[j];
           }
         }
       }
 
-      for(cs_lnum_t i = 0; i < 3; i++){
-        for(cs_lnum_t j = 0; j < 3; j++){
-          rhs[c_id][i][j] = _rhs[tid][i][j];
-        }
-      }
+      // for(cs_lnum_t i = 0; i < 3; i++){
+      //   for(cs_lnum_t j = 0; j < 3; j++){
+      //     rhs[c_id][i][j] = _rhs[tid][i][j];
+      //   }
+      // }
 
     } 
   }
@@ -7221,20 +7222,34 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                       map(from: gradv[0:n_cells_ext]) \
                       map(to: pvar[0:n_cells_ext],\
                               cocg[0:n_cells_ext])
- for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-   for (cs_lnum_t i = 0; i < 3; i++) {
-    gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
-                        + rhs[c_id][i][1] * cocg[c_id][3]
-                        + rhs[c_id][i][2] * cocg[c_id][5];
+ for (cs_lnum_t c_idx = 0; c_idx < n_cells*3*3; c_idx++) {
 
-    gradv[c_id][i][1] =   rhs[c_id][i][0] * cocg[c_id][3]
-                        + rhs[c_id][i][1] * cocg[c_id][1]
-                        + rhs[c_id][i][2] * cocg[c_id][4];
+  size_t c_id = c_idx / (3*3);
+  size_t i = (c_idx / 3) % 3;
+  size_t j = c_idx % 3;
 
-    gradv[c_id][i][2] =   rhs[c_id][i][0] * cocg[c_id][5]
-                        + rhs[c_id][i][1] * cocg[c_id][4]
-                        + rhs[c_id][i][2] * cocg[c_id][2];
-   }
+  auto cocg_temp = cocg[c_id];
+  cs_real_t _cocg[3];
+
+  _cocg[0] = cocg_temp[5];
+  _cocg[1] = cocg_temp[4];
+  _cocg[2] = cocg_temp[2];
+
+  if(j == 0){
+    _cocg[0] = cocg_temp[0];
+    _cocg[1] = cocg_temp[3];
+    _cocg[2] = cocg_temp[5];
+  }
+
+  if(j == 1){
+    _cocg[0] = cocg_temp[3];
+    _cocg[1] = cocg_temp[1];
+    _cocg[2] = cocg_temp[4];
+  }
+
+  gradv[c_id][i][j] =   rhs[c_id][i][0] * _cocg[0]
+                      + rhs[c_id][i][1] * _cocg[1]
+                      + rhs[c_id][i][2] * _cocg[2];
  }
 
 } // end omp data
@@ -7246,6 +7261,7 @@ printf("Time of kernel: %lf\n", t_kernel);
 
   BFT_FREE(rhs);
 }
+END_C_DECLS
 
 static void
 _lsq_vector_gradient(const cs_mesh_t               *m,
