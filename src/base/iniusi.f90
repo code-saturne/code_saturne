@@ -350,8 +350,6 @@ call cs_velocity_pressure_set_solid
 
 call cfnmtd(ficfpp, len(ficfpp))
 
-call cs_rad_transfer_options
-
 ! Define fields for variables, check and build iscapp
 ! and computes the number of user scalars (nscaus)
 if (icdo.lt.2) then
@@ -360,6 +358,8 @@ if (icdo.lt.2) then
   ! Activate the pressure correction model only if CDO mode is not stand-alone
   call cs_pressure_correction_model_activate
 endif
+
+call cs_rad_transfer_options
 
 if (iale.ge.1) then
   call cs_gui_ale_diffusion_type
