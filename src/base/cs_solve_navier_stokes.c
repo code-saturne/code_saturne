@@ -4109,7 +4109,9 @@ cs_solve_navier_stokes(const int   iterns,
            Remark: most of what is done in this call is redundant with the
            original initialization, and this call could probably be removed. */
 
-        cs_field_map_and_init_bcs();
+        /* BC's do not need to be remapped as boundary faces are
+           not expected to change */
+
         dt = cs_field_by_name("dt")->val;
 
         /* Resize auxiliary arrays (pointe module) */
