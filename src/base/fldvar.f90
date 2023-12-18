@@ -320,12 +320,7 @@ endif
 
 nscaus = cs_parameters_n_added_variables()
 
-! ---> Lecture donnees thermochimie
-
-call pplecd
-
-! ---> Definition des variables
-
+! Specific physics variables
 call ppvarp
 
 ! Thermal model with no specific physics

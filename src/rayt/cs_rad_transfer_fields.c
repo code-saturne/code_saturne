@@ -56,8 +56,10 @@
 #include "cs_gui_radiative_transfer.h"
 
 #include "cs_parameters.h"
+#include "cs_parameters_check.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
+#include "cs_thermal_model.h"
 
 #include "cs_rad_transfer.h"
 
@@ -100,6 +102,18 @@ cs_rad_transfer_add_variable_fields(void)
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
   if (rt_params->type <= CS_RAD_TRANSFER_NONE)
     return;
+
+  /* Coherency check with thermal model */
+  if (   rt_params->type == CS_RAD_TRANSFER_DOM
+      || rt_params->type == CS_RAD_TRANSFER_P1)
+    cs_parameters_is_in_range_int
+      (CS_ABORT_DELAYED,
+       _("in Radiative module"),
+       _("Thermal model option (cs_glob_thermal model->itherm)"),
+       cs_glob_thermal_model->itherm,
+       CS_THERMAL_MODEL_TEMPERATURE, CS_THERMAL_MODEL_TOTAL_ENERGY);
+
+  cs_parameters_error_barrier();
 
   /* radiance (per band) */
   for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {

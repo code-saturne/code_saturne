@@ -222,17 +222,6 @@ cs_rad_transfer_options(void)
                                 cs_glob_rad_transfer_params->imodak,
                                 0, 3);
 
-  if (   rt_params->type == CS_RAD_TRANSFER_DOM
-      || rt_params->type == CS_RAD_TRANSFER_P1)
-    cs_parameters_is_in_range_int
-      (CS_ABORT_DELAYED,
-       _("in Radiative module"),
-       _("Thermal model option (cs_glob_thermal model->itherm)"),
-       cs_glob_thermal_model->itherm,
-       CS_THERMAL_MODEL_TEMPERATURE, CS_THERMAL_MODEL_TOTAL_ENERGY);
-
-  cs_parameters_error_barrier();
-
   /* Verifications */
 
   if (rt_params->type > CS_RAD_TRANSFER_NONE) {
