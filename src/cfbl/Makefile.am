@@ -80,7 +80,6 @@ cs_hgn_source_terms_step.h
 
 noinst_LIBRARIES = libcscfbl.a
 libcscfbl_a_SOURCES = \
-cfdivs.f90 \
 cfini1.f90 \
 cfiniv.f90 \
 cfphyv.f90 \
