@@ -660,6 +660,7 @@ if (vcopt_e%idiff.ge. 1) then
     call field_gradient_scalar(ivarfl(isca(itempk)), use_previous, inc, grad)
 
     do ifac = 1, nfabor
+      iel = ifabor(ifac)
       grad_dd(ifac) = 0.d0
 
       tip = cvar_tempk(iel) + grad(1,iel)*diipb(1,ifac) &

@@ -3,6 +3,8 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix error in boundary temperature computation for compressible model.
+
 - GUI: fix crash when visiting base volume zone settings if the
   compressible model is activated.
 
