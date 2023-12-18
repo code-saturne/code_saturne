@@ -169,10 +169,12 @@ cs_local_time_step_compute(int  itrale)
   if (cs_glob_vof_parameters->vof_model > 0) {
     cs_field_t *volf2 = CS_F_(void_f);
 
-    int iflmas = cs_field_get_key_int(volf2, cs_field_key_id("inner_mass_flux_id"));
+    int iflmas
+      = cs_field_get_key_int(volf2, cs_field_key_id("inner_mass_flux_id"));
     i_mass_flux_volf = cs_field_by_id(iflmas)->val;
 
-    int iflmab = cs_field_get_key_int(vel, cs_field_key_id("boundary_mass_flux_id"));
+    int iflmab
+      = cs_field_get_key_int(volf2, cs_field_key_id("boundary_mass_flux_id"));
     b_mass_flux_volf = cs_field_by_id(iflmab)->val;
   }
 
