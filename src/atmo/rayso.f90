@@ -144,7 +144,6 @@ end subroutine reftra
 !> \param[in]   romray      air density
 !> \param[in]   preray      pressure
 !> \param[in]   temray      temperature
-!> \param[in]   aeroso      aerosol concentration in micro-g/m3
 !> \param[out]  fos         global downward solar flux at the ground
 !> \param[out]  rayst       flux divergence of solar radiation
 !_______________________________________________________________________________
