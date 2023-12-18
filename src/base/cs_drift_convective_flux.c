@@ -302,22 +302,23 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     if (icla >= 1) {
 
       char var_name[15];
-      snprintf(var_name, 14, "vd_p_%d", icla);
+      snprintf(var_name, 14, "vd_p_%02d", icla);
       var_name[14] = '\0';
 
       cs_field_t *f_vdp_i = cs_field_by_name_try(var_name);
       cs_real_3_t *vdp_i = NULL;
 
-      if (f_vdp_i != NULL)
+      if (f_vdp_i != NULL) {
         vdp_i = (cs_real_3_t *)f_vdp_i->val;
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-        const cs_real_t rho = crom[c_id];
-        drift_vel[c_id][0] = rho * vdp_i[c_id][0];
-        drift_vel[c_id][1] = rho * vdp_i[c_id][1];
-        drift_vel[c_id][2] = rho * vdp_i[c_id][2];
+          const cs_real_t rho = crom[c_id];
+          drift_vel[c_id][0] = rho * vdp_i[c_id][0];
+          drift_vel[c_id][1] = rho * vdp_i[c_id][1];
+          drift_vel[c_id][2] = rho * vdp_i[c_id][2];
 
+        }
       }
     }
 
@@ -624,42 +625,42 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       if (icla >= 1) {
 
         char var_name[15];
-        snprintf(var_name, 14, "x_p_%d", icla);
+        snprintf(var_name, 14, "x_p_%02d", icla);
         var_name[14] = '\0';
 
         cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
         cs_real_t *x2 = NULL;
 
-        if (f_x_p_i != NULL)
+        if (f_x_p_i != NULL) {
           x2 = f_x_p_i->val;
 
 #       pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-        for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+          for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-          /* Upwind value of x2 at the face, consistent with the
-             other transport equations */
+            /* Upwind value of x2 at the face, consistent with the
+               other transport equations */
 
-          cs_lnum_t c_id_up = i_face_cells[face_id][1];
+            cs_lnum_t c_id_up = i_face_cells[face_id][1];
 
-          if (i_mass_flux[face_id] >= 0.0)
-            c_id_up = i_face_cells[face_id][0];
+            if (i_mass_flux[face_id] >= 0.0)
+              c_id_up = i_face_cells[face_id][0];
 
-          i_mass_flux_gas[face_id] += -x2[c_id_up] * i_mass_flux[face_id];
+            i_mass_flux_gas[face_id] += -x2[c_id_up] * i_mass_flux[face_id];
 
-        }
+          }
 
 #       pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+          for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-          /* TODO Upwind value of x2 at the face, consistent with the
-             other transport equations
-             !if (bmasfl[face_id]>=0.d0) */
-          cs_lnum_t c_id_up = b_face_cells[face_id];
-          b_mass_flux_gas[face_id] +=  -x2[c_id_up] * b_mass_flux[face_id];
+            /* TODO Upwind value of x2 at the face, consistent with the
+               other transport equations
+               !if (bmasfl[face_id]>=0.d0) */
+            cs_lnum_t c_id_up = b_face_cells[face_id];
+            b_mass_flux_gas[face_id] +=  -x2[c_id_up] * b_mass_flux[face_id];
 
+          }
         }
       }
-
     } /* End drift scalar imposed mass flux */
 
       /* Finalize the convective flux of the gas "class" by scaling by x1
