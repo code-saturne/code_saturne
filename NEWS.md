@@ -3,6 +3,9 @@ Release 8.1.1 (unreleased)
 
 ### Bug fixes:
 
+- GUI: fix crash when visiting base volume zone settings if the
+  compressible model is activated.
+
 - GUI: fix crash when activating reactive flows.
 
 - Radiative model: fix default value for `idiver` (explicit radiative

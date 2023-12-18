@@ -1098,6 +1098,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         Initialisation of the thermodynamics values for the compressible model
         """
         if self.comp.getCompressibleModel() != 'off':
+            zone_id = str(self.zone.getCodeNumber())
             nb_box = 0
             box_list = self.init.getCheckedBoxList(zone_id)
             if box_list == []:
