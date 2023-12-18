@@ -3,6 +3,9 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- GUI: fix crash when visiting base volume zone settings if the
+  compressible model is activated.
+
 - Internal coupling for conjugate heat transfer: fix spurious velocity
   in solid zone with RSM models.
 
