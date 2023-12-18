@@ -152,6 +152,17 @@ cs_f_user_boundary_conditions_wrapper(const cs_lnum_t  itrifb[],
                                       const int        izfppp[],
                                       cs_real_t        dt[]);
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_boundary_conditions_set_coeffs.c
+        Boundary condition management.
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -509,6 +520,8 @@ _boundary_condition_ale_type(const cs_mesh_t             *m,
 
   BFT_FREE(_rcodcl1_mesh_u);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -55,8 +55,8 @@
 !_______________________________________________________________________________
 
 subroutine resvoi &
- ( dt     , iterns ) &
- bind(C, name='cs_vof_solve_void_fraction')
+ ( dt     , iterns )
+ !bind(C, name='cs_vof_solve_void_fraction')
 
 !===============================================================================
 
@@ -324,9 +324,9 @@ if (idrift.gt.0) then
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
 
-  call vof_drift_term &
-( imrgrp , nswrgp , imligp , iwarnp , epsrgp , climgp ,          &
-  cvar_voidf      , cvara_voidf     , smbrs  )
+  !call vof_drift_term &
+!(imrgrp , nswrgp , imligp , iwarnp , epsrgp , climgp ,          &
+!  cvar_voidf      , cvara_voidf     , smbrs  )
 endif
 
 ! Unteady term

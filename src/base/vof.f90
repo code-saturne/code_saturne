@@ -93,21 +93,6 @@ module vof
 
      !---------------------------------------------------------------------------
 
-     ! Interface to C function cs_vof_source_term
-
-     subroutine vof_drift_term(imrgra, nswrgp, imligp, iwarnp, epsrgp,    &
-                               climgp, pvar  , pvara , smbrs )            &
-       bind(C, name='cs_vof_drift_term')
-       use, intrinsic :: iso_c_binding
-       implicit none
-       integer(c_int), value :: imrgra, imligp, iwarnp, nswrgp
-       real(kind=c_double), value :: epsrgp, climgp
-       real(kind=c_double), dimension(*), intent(in) :: pvar, pvara
-       real(kind=c_double), dimension(*), intent(inout) :: smbrs
-     end subroutine vof_drift_term
-
-     !---------------------------------------------------------------------------
-
      !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
      !---------------------------------------------------------------------------

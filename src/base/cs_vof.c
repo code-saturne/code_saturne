@@ -36,6 +36,7 @@
 
 #include "bft_mem.h"
 
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
@@ -44,16 +45,19 @@
 #include "cs_equation.h"
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"
+#include "cs_equation_iterative_solve.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
 #include "cs_physical_constants.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles_default.h"
 #include "cs_turbomachinery.h"
@@ -379,23 +383,9 @@ cs_f_cavitation_get_pointers(double **presat,
   *itscvi = &(_cavit_parameters.itscvi);
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
- * Public function definitions
+ * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- *!
- * \brief Provide access to VOF structure.
- */
-/*----------------------------------------------------------------------------*/
-
-cs_vof_parameters_t *
-cs_get_glob_vof_parameters(void)
-{
-  return &_vof_parameters;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -558,7 +548,8 @@ _smoothe(const cs_mesh_t              *m,
   /* Linear system initialization is in nc_sles_default */
   /* Linear system resolution options */
   cs_real_t precision = 1.e-5; /* Solver precision */
-  int n_equiv_iter = 0;     /* Number of equivalent iterative solver iterations */
+  int n_equiv_iter = 0;     /* Number of equivalent iterative
+                               solver iterations */
   cs_real_t residual;       /* Residual */
 
   /* Linear system resolution */
@@ -612,6 +603,24 @@ _smoothe(const cs_mesh_t              *m,
   BFT_FREE(rtpdp);
   BFT_FREE(smbdp);
   BFT_FREE(grad);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide access to VOF structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_vof_parameters_t *
+cs_get_glob_vof_parameters(void)
+{
+  return &_vof_parameters;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1436,6 +1445,394 @@ cs_cavitation_parameters_t *
 cs_get_glob_cavitation_parameters(void)
 {
   return &_cavit_parameters;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve the void fraction \f$ \alpha \f$ for the Volume of Fluid
+ *        method (and hence for cavitating flows).
+ *
+ * This function solves:
+ * \f[
+ * \dfrac{\alpha^n - \alpha^{n-1}}{\Delta t}
+ *     + \divs \left( \alpha^n \vect{u}^n \right)
+ *     + \divs \left( \left[ \alpha^n
+ *                           \left( 1 - \alpha^{n} \right)
+ *                    \right] \vect{u^r}^n \right)
+ *     = \dfrac{\Gamma_V \left( \alpha^{n-1}, p^n \right)}{\rho_v}
+ * \f]
+ * with \f$ \Gamma_V \f$ the eventual vaporization source term (Merkle model) in
+ * case the cavitation model is enabled, \f$ \rho_v \f$ the reference gas
+ * density and \f$ \vect{u^r} \f$ the drift velocity for the compressed
+ * interface.
+ *
+ * \param[in]     iterns        Navier-Stokes iteration number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
+{
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+
+  cs_real_t *dt = CS_F_(dt)->val;
+
+  const cs_real_t rho1 = _vof_parameters.rho1;
+  const cs_real_t rho2 = _vof_parameters.rho2;
+  const cs_cavitation_parameters_t *cavitation_parameters
+    = cs_get_glob_cavitation_parameters();
+
+  /* Initialization
+     -------------- */
+
+  const int i_vof_mass_transfer
+    = (_vof_parameters.vof_model & CS_VOF_MERKLE_MASS_TRANSFER);
+
+  cs_field_t *volf2 = cs_field_by_name("void_fraction");
+  cs_equation_param_t *eqp_vol = cs_field_get_equation_param(volf2);
+
+  cs_real_t *cvar_voidf = volf2->val;
+  cs_real_t *cvara_voidf = volf2->val_pre;
+
+  /* Implicitation in pressure of the
+     vaporization/condensation model (cavitation) */
+
+  cs_field_t *f_pr = CS_F_(p);
+  cs_real_t *cvar_pr = NULL;
+  cs_real_t *cvara_pr = NULL;
+  if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
+    cvar_pr = f_pr->val;
+    cvara_pr = f_pr->val_pre;
+  }
+
+  /* Allocate temporary arrays */
+
+  cs_real_t *i_visc, *b_visc, *smbrs, *rovsdt;
+  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+
+  /* Allocate work arrays */
+  cs_real_t *dpvar;
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+
+  /* Boundary conditions */
+
+  cs_real_t *coefa_vol = volf2->bc_coeffs->a;
+  cs_real_t *coefb_vol = volf2->bc_coeffs->b;
+  cs_real_t *cofaf_vol = volf2->bc_coeffs->af;
+  cs_real_t *cofbf_vol = volf2->bc_coeffs->bf;
+
+  /* Physical quantities */
+
+  const int iflmas
+    = cs_field_get_key_int(volf2, cs_field_key_id("inner_mass_flux_id"));
+  cs_real_t *i_mass_flux_volf = cs_field_by_id(iflmas)->val;
+
+  const int iflmab
+    = cs_field_get_key_int(volf2, cs_field_key_id("boundary_mass_flux_id"));
+  cs_real_t *b_mass_flux_volf = cs_field_by_id(iflmab)->val;
+
+  /* Key id for clipping */
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+
+  /* Theta related to explicit source terms */
+
+  cs_real_t *c_st_voidf = NULL;
+  const cs_real_t thets = cs_glob_time_scheme->thetsn;
+  if (cs_glob_time_scheme->isno2t > 0) {
+    const int kstprv = cs_field_key_id("source_term_prev_id");
+    const int istprv = cs_field_get_key_int(volf2, kstprv);
+
+    c_st_voidf = cs_field_by_id(istprv)->val;
+  }
+
+  /* Theta related to void fraction */
+  //const cs_real_t thetv = eqp_vol->thetav; /* UNUSED */
+
+  /* Initialization */
+
+  cs_array_real_fill_zero(n_cells, smbrs);
+
+  /* Arbitrary initialization (no diffusion for void fraction) */
+  cs_array_real_set_scalar(n_i_faces, 1.0, i_visc);
+  cs_array_real_set_scalar(n_b_faces, 1.0, b_visc);
+
+  /* Initialize void fraction convection flux */
+  const int kiflux = cs_field_key_id("inner_flux_id");
+  const int kbflux = cs_field_key_id("boundary_flux_id");
+
+  const int icflux_id = cs_field_get_key_int(volf2, kiflux);
+  const int bcflux_id = cs_field_get_key_int(volf2, kbflux);
+
+  cs_real_t *icflux = cs_field_by_id(icflux_id)->val;
+  cs_array_real_fill_zero(n_i_faces, icflux);
+
+  cs_real_t *bcflux = cs_field_by_id(bcflux_id)->val;
+  cs_array_real_fill_zero(n_b_faces, bcflux);
+
+  /* Preliminary computations
+     ------------------------ */
+
+  /* Update the cavitation source term with pressure increment
+     if it has been implicited in pressure at correction step,
+     in order to ensure mass conservation. */
+
+  cs_real_t *gamcav = cs_get_cavitation_gam();
+  cs_real_t *dgdpca = cs_get_cavitation_dgdp_st();
+
+  if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      gamcav[c_id] += dgdpca[c_id] * (cvar_pr[c_id] - cvara_pr[c_id]);
+  }
+
+  /* Compute the limiting time step to satisfy min/max principle.
+     Only if a source term is accounted for. */
+
+  cs_real_t dtmaxl = 1.e15; // ou cs_math_big_r ?
+  cs_real_t dtmaxg = 1.e15;
+
+  if (i_vof_mass_transfer != 0) {
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      if (gamcav[c_id] < 0.0)
+        dtmaxl = - rho2 * cvara_voidf[c_id] / gamcav[c_id];
+      else
+        dtmaxl = rho1 * (1.0 - cvara_voidf[c_id]) / gamcav[c_id];
+
+      dtmaxg = cs_math_fmin(dtmaxl, dtmaxg);
+
+    }
+    if (cs_glob_rank_id > -1)
+      cs_parall_min(1, CS_DOUBLE, &dtmaxg);
+
+    if (dt[0] > dtmaxg) {
+
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _("@\n"
+           "@ @@ Warning: Void fraction resolution\n"
+           "@    ========\n"
+           "@  The current time step is too large to ensure the min/max\n"
+           "@     principle on void fraction.\n"
+           "@\n"
+           "@  The current time step is %13.5e while\n"
+           "@     the maximum admissible value is %13.5e\n"
+           "@\n"
+           "@  Clipping on void fraction should occur and\n"
+           "@     mass conservation is lost.\n"
+           "@\n"),
+         dt[0], dtmaxg);
+    }
+
+  }
+
+  /* Visualization of divu
+   (only for advanced using purposed, not used in the source terms hereafter) */
+
+  cs_field_t *vel_div = cs_field_by_name_try("velocity_divergence");
+  cs_real_t *divu = NULL, *t_divu = NULL;
+  if (vel_div != NULL)
+    divu = vel_div->val;
+  else {
+    /* Allocation */
+    BFT_MALLOC(t_divu, n_cells_ext, cs_real_t);
+    divu = t_divu;
+  }
+
+  cs_divergence(mesh,
+                1, /* init */
+                i_mass_flux_volf,
+                b_mass_flux_volf,
+                divu);
+
+  BFT_FREE(t_divu);
+
+  /* Construct the system to solve
+     ----------------------------- */
+
+  /* Source terms */
+
+  /* Cavitation source term (explicit) */
+  if (i_vof_mass_transfer != 0) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      smbrs[c_id] += cell_f_vol[c_id] * gamcav[c_id] / rho2;
+  }
+
+  /* Source terms assembly for cs_equation_iterative_solve_scalar */
+
+  /* If source terms are extrapolated over time */
+  if (cs_glob_time_scheme->isno2t > 0) {
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t tsexp = c_st_voidf[c_id];
+      c_st_voidf[c_id] = smbrs[c_id];
+      smbrs[c_id] = - thets * tsexp + (1.0 + thets) * smbrs[c_id];
+    }
+  }
+
+  /* Source term linked with the non-conservative form of convection term
+     in cs_equation_iterative_solve_scalar (always implicited)
+     FIXME set imasac per variable? Here it could be set to 0
+     (or Gamma(1/rho2 - 1/rho1) for cavitation) and divu not used.
+     Note: we prefer to be not perfectly conservative (up to the precision
+     of the pressure solver, but that allows to fullfill the min/max principle
+     on alpha */
+
+  if (i_vof_mass_transfer != 0) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      /* Should be for the conservative form: */
+
+      smbrs[c_id] += - cell_f_vol[c_id] * gamcav[c_id]
+                     * (1.0/rho2 - 1.0/rho1) * cvara_voidf[c_id];
+
+      rovsdt[c_id] = cell_f_vol[c_id] * gamcav[c_id] * (1.0/rho2 - 1.0/rho1);
+    }
+  }
+  else {
+    cs_array_real_fill_zero(n_cells, rovsdt);
+  }
+
+  if (cs_glob_vof_parameters->idrift > 0) {
+
+    cs_vof_drift_term(eqp_vol->imrgra,
+                      eqp_vol->nswrgr,
+                      eqp_vol->imligr,
+                      eqp_vol->verbosity,
+                      eqp_vol->epsrgr,
+                      eqp_vol->climgr,
+                      cvar_voidf,
+                      cvara_voidf,
+                      smbrs);
+  }
+
+  /* Unteady term */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    rovsdt[c_id] += eqp_vol->istat * cell_f_vol[c_id] / dt[c_id];
+
+  /* Solving
+     ------- */
+
+  /* Solving void fraction */
+  int iescap = 0;
+  int imucpp = 0;
+  /* All boundary convective flux with upwind */
+  int icvflb = 0;
+  cs_real_t normp = -1.0;
+
+  cs_equation_param_t eqp_loc = *eqp_vol;
+
+  eqp_loc.icoupl = -1;
+  eqp_loc.idifft = -1;
+  eqp_loc.iwgrec = 0; /* Warning, may be overwritten if a field */
+  eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
+
+  cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
+                                     iterns,
+                                     volf2->id,
+                                     NULL,
+                                     iescap,
+                                     imucpp,
+                                     normp,
+                                     &eqp_loc,
+                                     cvara_voidf,
+                                     cvara_voidf,
+                                     coefa_vol, coefb_vol,
+                                     cofaf_vol, cofbf_vol,
+                                     i_mass_flux_volf, b_mass_flux_volf,
+                                     i_visc, b_visc,
+                                     i_visc, b_visc,
+                                     NULL, /* viscel */
+                                     NULL, NULL, /* weighf, weighb */
+                                     icvflb,
+                                     NULL, /* icvfli */
+                                     rovsdt,
+                                     smbrs,
+                                     cvar_voidf,
+                                     dpvar,
+                                     NULL,  /* xcpp */
+                                     NULL); /* eswork */
+
+  /* Clipping: only if min/max principle is not satisfied for cavitation
+     ------------------------------------------------------------------- */
+
+  cs_lnum_t iclmax = 0;
+  cs_lnum_t iclmin = 0;
+
+  if (  (i_vof_mass_transfer != 0 && dt[0] > dtmaxg)
+      || i_vof_mass_transfer == 0) {
+
+    /* Compute min and max */
+    cs_real_t vmin = cvar_voidf[0];
+    cs_real_t vmax = cvar_voidf[0];
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      vmin = cs_math_fmin(vmin, cvar_voidf[c_id]);
+      vmax = cs_math_fmax(vmax, cvar_voidf[c_id]);
+    }
+
+    /* Get the min and max clipping */
+
+    const int scminp = cs_field_get_key_double(volf2, kscmin);
+    const int scmaxp = cs_field_get_key_double(volf2, kscmax);
+    const int kclipp = cs_field_key_id("clipping_id");
+
+    /* Postprocess clippings ? */
+
+    const int clip_voidf_id = cs_field_get_key_int(volf2, kclipp);
+    cs_real_t *voidf_clipped = NULL;
+
+    if (clip_voidf_id >= 0) {
+      voidf_clipped = cs_field_by_id(clip_voidf_id)->val;
+      cs_array_real_fill_zero(n_cells, voidf_clipped);
+    }
+
+    if (scmaxp > scminp) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        if (cvar_voidf[c_id] > scmaxp) {
+          iclmax += iclmax + 1;
+
+          if (clip_voidf_id >= 0)
+            voidf_clipped[c_id] = cvar_voidf[c_id] - scmaxp;
+
+          cvar_voidf[c_id] = scmaxp;
+        }
+        if (cvar_voidf[c_id] < scminp) {
+          iclmin = iclmin + 1;
+
+          if (clip_voidf_id >= 0)
+            voidf_clipped[c_id] = cvar_voidf[c_id] - scminp;
+
+          cvar_voidf[c_id] = scminp;
+        }
+      }
+    }
+
+    cs_log_iteration_clipping_field(volf2->id,
+                                    iclmin,
+                                    iclmax,
+                                    &vmin,
+                                    &vmax,
+                                    &iclmin,
+                                    &iclmax);
+
+  }
+
+  /* Free memory */
+
+  BFT_FREE(i_visc);
+  BFT_FREE(b_visc);
+  BFT_FREE(smbrs);
+  BFT_FREE(rovsdt);
+  BFT_FREE(dpvar);
 }
 
 /*----------------------------------------------------------------------------*/
