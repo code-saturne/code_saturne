@@ -976,11 +976,11 @@ class NumericalParamEquatTestCase(ModelTest):
         Check whether the NumericalParamEquationModel class could set and get scheme
         """
         model = NumericalParamEquationModel(self.case)
-        model.setScheme('Velocity', 'upwind')
+        model.setScheme('Velocity', 'centered')
         doc = """<velocity_pressure>
                         <variable label="Pressure" name="pressure"/>
                         <variable label="Velocity" name="velocity"/>
-                                <order_scheme choice="upwind"/>
+                                <order_scheme choice="centered"/>
                         </variable>
                         <property label="total_pressure" name="total_pressure"/>
                         <property label="Yplus" name="yplus" support="boundary"/>
@@ -988,7 +988,7 @@ class NumericalParamEquatTestCase(ModelTest):
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set scheme in NumericalParamEquationModel'
-        assert model.getScheme('VelocitW') == 'upwind',\
+        assert model.getScheme('VelocitW') == 'centered',\
                 'Could not get scheme in NumericalParamEquationModel'
 
     def checkSetAndGetBlendingFactor(self):
