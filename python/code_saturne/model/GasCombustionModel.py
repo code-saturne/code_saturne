@@ -313,7 +313,7 @@ class GasCombustionModel(Variables, Model):
             for node in self.node_gas.xmlGetChildNodeList('variable'):
                 name = node['name']
                 NPE.setBlendingFactor(name, 0.)
-                NPE.setScheme(name, 'upwind')
+                NPE.setScheme(name, 'centered')
                 NPE.setFluxReconstruction(name, 'off')
 
                 if self.getGasCombustionModel() == "d3p":
