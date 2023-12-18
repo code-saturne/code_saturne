@@ -4416,8 +4416,8 @@ res_cpu = !compute_cuda;
   res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  perf        = true;
-  accuracy    = true;
+  perf        = false;
+  accuracy    = false;
 
 #if defined(HAVE_CUDA)
   if(compute_cuda){

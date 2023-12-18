@@ -49,8 +49,8 @@
 #include "cs_convection_diffusion.h"
 #include "cs_convection_diffusion_priv.h"
 
-#include "cs_convection_diffusion_cuda_scatter.cuh"
-#include "cs_convection_diffusion_cuda_gather.cuh"
+#include "cs_slope_test_gradient_vector_cuda_scatter.cuh"
+#include "cs_slope_test_gradient_vector_cuda_gather.cuh"
 
 
 
@@ -240,60 +240,60 @@ cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
   CS_CUDA_CHECK(cudaEventRecord(init, stream));
 
   if (flag2) {
-    // cs_slope_test_gradient_vector_cuda_i<<<(unsigned int)ceil((double)n_i_faces / blocksize), blocksize, 0, stream>>>
-    //                               (n_i_faces,
-    //                                i_face_cells,
-    //                                i_face_cog,
-    //                                cell_cen,
-    //                                pvar_d,
-    //                                i_massflux_d,
-    //                                i_f_face_normal,
-    //                                grad_d,
-    //                                grdpa_d);
+    cs_slope_test_gradient_vector_cuda_i<<<(unsigned int)ceil((double)n_i_faces / blocksize), blocksize, 0, stream>>>
+                                  (n_i_faces,
+                                   i_face_cells,
+                                   i_face_cog,
+                                   cell_cen,
+                                   pvar_d,
+                                   i_massflux_d,
+                                   i_f_face_normal,
+                                   grad_d,
+                                   grdpa_d);
     
 
-    cs_slope_test_gradient_vector_cuda_i_gather<<<(unsigned int)ceil((double)n_cells / blocksize), blocksize, 0, stream>>>
-                                  (n_cells,
-                                  i_face_cog,
-                                  cell_cen,
-                                  pvar_d,
-                                  i_massflux_d,
-                                  i_f_face_normal,
-                                  cell_cells_idx,
-                                  cell_cells,
-                                  cell_i_faces,
-                                  cell_i_faces_sgn,
-                                  grad_d,
-                                  grdpa_d);
+    // cs_slope_test_gradient_vector_cuda_i_gather<<<(unsigned int)ceil((double)n_cells / blocksize), blocksize, 0, stream>>>
+    //                               (n_cells,
+    //                               i_face_cog,
+    //                               cell_cen,
+    //                               pvar_d,
+    //                               i_massflux_d,
+    //                               i_f_face_normal,
+    //                               cell_cells_idx,
+    //                               cell_cells,
+    //                               cell_i_faces,
+    //                               cell_i_faces_sgn,
+    //                               grad_d,
+    //                               grdpa_d);
 
     CS_CUDA_CHECK(cudaEventRecord(f_i, stream));
 
-    // cs_slope_test_gradient_vector_cuda_b<<<(unsigned int)ceil((double)n_b_faces / blocksize), blocksize, 0, stream>>>
-    //                                 (n_b_faces,
-    //                                  pvar_d,
-    //                                  b_face_cells,
-    //                                  diipb,
-    //                                  inc,
-    //                                  coefa_d,
-    //                                  coefb_d,
-    //                                  b_f_face_normal,
-    //                                  grad_d,
-    //                                  grdpa_d);
+    cs_slope_test_gradient_vector_cuda_b<<<(unsigned int)ceil((double)n_b_faces / blocksize), blocksize, 0, stream>>>
+                                    (n_b_faces,
+                                     pvar_d,
+                                     b_face_cells,
+                                     diipb,
+                                     inc,
+                                     coefa_d,
+                                     coefb_d,
+                                     b_f_face_normal,
+                                     grad_d,
+                                     grdpa_d);
 
 
-    cs_slope_test_gradient_vector_cuda_b_gather<<<(unsigned int)ceil((double)n_b_cells / blocksize), blocksize, 0, stream>>>
-                                    (n_b_cells,
-                                    pvar_d,
-                                    diipb,
-                                    inc,
-                                    coefa_d,
-                                    coefb_d,
-                                    b_f_face_normal,
-                                    b_cells,
-                                    cell_b_faces,
-                                    cell_b_faces_idx,
-                                    grad_d,
-                                    grdpa_d);
+    // cs_slope_test_gradient_vector_cuda_b_gather<<<(unsigned int)ceil((double)n_b_cells / blocksize), blocksize, 0, stream>>>
+    //                                 (n_b_cells,
+    //                                 pvar_d,
+    //                                 diipb,
+    //                                 inc,
+    //                                 coefa_d,
+    //                                 coefb_d,
+    //                                 b_f_face_normal,
+    //                                 b_cells,
+    //                                 cell_b_faces,
+    //                                 cell_b_faces_idx,
+    //                                 grad_d,
+    //                                 grdpa_d);
 
     CS_CUDA_CHECK(cudaEventRecord(f_b, stream));
 

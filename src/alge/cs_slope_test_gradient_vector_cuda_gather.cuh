@@ -19,7 +19,7 @@ cs_slope_test_gradient_vector_cuda_i_gather( const cs_lnum_t      n_cells,
   }
 
   cs_real_t difv[3], djfv[3], vfac[3];
-  cs_real_t pif, pjf, pfac;
+  cs_real_t pif, pjf, pfac, face_sgn;
   cs_lnum_t c_id2, f_id;
 
   cs_lnum_t s_id = cell_cells_idx[c_id1];
@@ -29,6 +29,7 @@ cs_slope_test_gradient_vector_cuda_i_gather( const cs_lnum_t      n_cells,
   for(cs_lnum_t index = s_id; index < e_id; index++){
     c_id2 = cell_cells[index];
     f_id = cell_i_faces[index];
+    face_sgn = cell_i_faces_sgn[index];
 
     for (int jsou = 0; jsou < 3; jsou++) {
       difv[jsou] = i_face_cog[f_id][jsou] - cell_cen[c_id1][jsou];
@@ -41,19 +42,20 @@ cs_slope_test_gradient_vector_cuda_i_gather( const cs_lnum_t      n_cells,
       pif = pvar[c_id1][isou];
       pjf = pvar[c_id2][isou];
       for (int jsou = 0; jsou < 3; jsou++) {
-        pif = pif + grad[c_id1][isou][jsou]*difv[jsou];
-        pjf = pjf + grad[c_id2][isou][jsou]*djfv[jsou];
+        pif = pif + grad[c_id1][isou][jsou] * difv[jsou];
+        pjf = pjf + grad[c_id2][isou][jsou] * djfv[jsou];
       }
 
       pfac = pjf;
-      if (i_massflux[f_id] > 0.) 
+      if (i_massflux[f_id] * face_sgn > 0.) 
         pfac = pif;
+      pfac *= face_sgn;
 
       /* U gradient */
 
       for (int jsou = 0; jsou < 3; jsou++) {
         vfac[jsou] = pfac*i_f_face_normal[f_id][jsou];
-        grdpa[c_id1][isou][jsou] += cell_i_faces_sgn[index] * vfac[jsou];
+        grdpa[c_id1][isou][jsou] += vfac[jsou];
       }
     }
   }
