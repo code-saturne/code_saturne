@@ -170,7 +170,7 @@ cs_benchmark_matrix.c \
 cs_blas.c \
 cs_bw_time_diff.c \
 cs_cell_to_vertex.c \
-cs_convection_diffusion.c \
+cs_convection_diffusion.cxx \
 cs_divergence.c \
 cs_face_viscosity.c \
 cs_gradient.cxx \

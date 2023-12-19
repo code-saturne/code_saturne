@@ -27,8 +27,10 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
+
+#include <cmath>
 
 #include <assert.h>
 #include <errno.h>
@@ -218,7 +220,7 @@ _beta_limiter_denom(cs_field_t                 *f,
   /* for NVD / TVD schemes (including VoF schemes) */
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
-  int limiter_choice = -1;
+  cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
 
   cs_real_t *local_min = NULL;
   cs_real_t *local_max = NULL;
@@ -226,7 +228,7 @@ _beta_limiter_denom(cs_field_t                 *f,
 
   if (ischcp == 4) {
     /* get limiter choice */
-    limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+    limiter_choice = (cs_nvd_type_t)(cs_field_get_key_int(f, key_lim_choice));
 
     /* local extrema computation */
     BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
@@ -447,8 +449,8 @@ _beta_limiter_denom(cs_field_t                 *f,
                            &pjpa);
         }
 
-        cs_real_t flui = 0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
-        cs_real_t fluj = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
+        cs_real_t flui = 0.5*(i_massflux[face_id] +abs(i_massflux[face_id]));
+        cs_real_t fluj = 0.5*(i_massflux[face_id] -abs(i_massflux[face_id]));
 
         cs_real_t flux =       thetap  * (  (pif  - pi )*flui
                                           + (pjf  - pj )*fluj)
@@ -457,8 +459,8 @@ _beta_limiter_denom(cs_field_t                 *f,
 
         /* blending to prevent lower bound violation
           We need to take the positive part*/
-        cs_real_t partii = 0.5*(flux + cs_math_fabs(flux));
-        cs_real_t partjj = 0.5*(flux - cs_math_fabs(flux));
+        cs_real_t partii = 0.5*(flux + abs(flux));
+        cs_real_t partjj = 0.5*(flux - abs(flux));
 
         denom_inf[ii] += partii;
         denom_inf[jj] -= partjj;
@@ -562,8 +564,8 @@ _beta_limiter_num(cs_field_t                 *f,
         cs_lnum_t ii = i_face_cells[face_id][0];
         cs_lnum_t jj = i_face_cells[face_id][1];
 
-        cs_real_t flui = 0.5*(i_massflux[face_id] + fabs(i_massflux[face_id]));
-        cs_real_t fluj = 0.5*(i_massflux[face_id] - fabs(i_massflux[face_id]));
+        cs_real_t flui = 0.5*(i_massflux[face_id] + abs(i_massflux[face_id]));
+        cs_real_t fluj = 0.5*(i_massflux[face_id] - abs(i_massflux[face_id]));
 
         cs_real_t pi = fmax(pvara[ii]-scalar_min, 0.);
         cs_real_t pj = fmax(pvara[jj]-scalar_min, 0.);
@@ -590,8 +592,8 @@ _beta_limiter_num(cs_field_t                 *f,
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      cs_real_t flui = 0.5*(b_massflux[face_id]+fabs(b_massflux[face_id]));
-      cs_real_t fluf = 0.5*(b_massflux[face_id]-fabs(b_massflux[face_id]));
+      cs_real_t flui = 0.5*(b_massflux[face_id]+abs(b_massflux[face_id]));
+      cs_real_t fluf = 0.5*(b_massflux[face_id]-abs(b_massflux[face_id]));
       cs_real_t pfabor = inc*coefap[face_id]+coefbp[face_id]*pvara[ii];
 
       num_inf[ii] -= thetex *( fmax(pvara[ii]-scalar_min, 0.) * flui
@@ -803,10 +805,10 @@ cs_cell_courant_number(const int   f_id,
         cs_lnum_t ii = i_face_cells[face_id][0];
         cs_lnum_t jj = i_face_cells[face_id][1];
 
-        cs_real_t cnt = cs_math_fabs(i_massflux[face_id])*dt[ii]/vol[ii];
+        cs_real_t cnt = abs(i_massflux[face_id])*dt[ii]/vol[ii];
         courant[ii] = cs_math_fmax(courant[ii], cnt); //FIXME may contain rho
 
-        cnt = cs_math_fabs(i_massflux[face_id])*dt[jj]/vol[jj];
+        cnt = abs(i_massflux[face_id])*dt[jj]/vol[jj];
         courant[jj] = cs_math_fmax(courant[jj], cnt);
       }
     }
@@ -821,7 +823,7 @@ cs_cell_courant_number(const int   f_id,
          face_id++) {
       cs_lnum_t ii = b_face_cells[face_id];
 
-      cs_real_t cnt = cs_math_fabs(b_massflux[face_id])*dt[ii]/vol[ii];
+      cs_real_t cnt = abs(b_massflux[face_id])*dt[ii]/vol[ii];
       courant[ii] = cs_math_fmax(courant[ii], cnt);
     }
   }
@@ -831,8 +833,8 @@ cs_cell_courant_number(const int   f_id,
  * Return pointer to slope test indicator field values if active.
  *
  * parameters:
- *   f_id        <-- field id (or -1)
- *   var_cal_opt <-- variable calculation options
+ *   f_id  <-- field id (or -1)
+ *   eqp   <-- equation parameters
  *
  * return:
  *   pointer to local values array, or NULL;
@@ -840,11 +842,11 @@ cs_cell_courant_number(const int   f_id,
 
 cs_real_t *
 cs_get_v_slope_test(int                        f_id,
-                    const cs_equation_param_t  var_cal_opt)
+                    const cs_equation_param_t  eqp)
 {
-  const int iconvp = var_cal_opt.iconv;
-  const int isstpp = var_cal_opt.isstpc;
-  const double blencp = var_cal_opt.blencv;
+  const int iconvp = eqp.iconv;
+  const int isstpp = eqp.isstpc;
+  const double blencp = eqp.blencv;
 
   cs_real_t  *v_slope_test = NULL;
 
@@ -1473,7 +1475,7 @@ cs_beta_limiter_building(int              f_id,
   /* Get options from the field */
 
   cs_field_t *f = cs_field_by_id(f_id);
-  const cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   if (eqp->isstpc != 2)
     return;
@@ -1521,7 +1523,7 @@ cs_beta_limiter_building(int              f_id,
     if (denom_inf[ii] <= num_inf[ii]) {
       beta_inf = 1.;
     }
-    else if (denom_inf[ii] <= cs_math_fabs(num_inf[ii])) {
+    else if (denom_inf[ii] <= abs(num_inf[ii])) {
       beta_inf = -1.;
     }
     else {
@@ -1534,7 +1536,7 @@ cs_beta_limiter_building(int              f_id,
     if (denom_sup[ii] <= num_sup[ii]) {
       beta_sup = 1.;
     }
-    else if (denom_sup[ii] <= cs_math_fabs(num_sup[ii])) {
+    else if (denom_sup[ii] <= abs(num_sup[ii])) {
       beta_sup = -1.;
     }
     else {
@@ -1578,7 +1580,7 @@ cs_beta_limiter_building(int              f_id,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -1612,7 +1614,7 @@ cs_beta_limiter_building(int              f_id,
 void
 cs_convection_diffusion_scalar(int                         idtvar,
                                int                         f_id,
-                               const cs_equation_param_t   var_cal_opt,
+                               const cs_equation_param_t   eqp,
                                int                         icvflb,
                                int                         inc,
                                int                         imasac,
@@ -1629,23 +1631,23 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                const cs_real_t             b_visc[],
                                cs_real_t         *restrict rhs)
 {
-  const int iconvp = var_cal_opt.iconv;
-  const int idiffp = var_cal_opt.idiff;
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int ischcp = var_cal_opt.ischcv;
-  const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.verbosity;
-  const int icoupl = var_cal_opt.icoupl;
-  int limiter_choice = -1;
-  const double blencp = var_cal_opt.blencv;
-  const double blend_st = var_cal_opt.blend_st;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int iconvp = eqp.iconv;
+  const int idiffp = eqp.idiff;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int ischcp = eqp.ischcv;
+  const int isstpp = eqp.isstpc;
+  const int iwarnp = eqp.verbosity;
+  const int icoupl = eqp.icoupl;
+  cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
+  const double blencp = eqp.blencv;
+  const double blend_st = eqp.blend_st;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -1706,7 +1708,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
-  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  var_cal_opt);
+  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != NULL)
@@ -1755,7 +1757,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+      limiter_choice = (cs_nvd_type_t)(cs_field_get_key_int(f, key_lim_choice));
       BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
       BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(f_id,
@@ -1838,8 +1840,8 @@ cs_convection_diffusion_scalar(int                         idtvar,
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+        if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -2455,8 +2457,8 @@ cs_convection_diffusion_scalar(int                         idtvar,
               if (ii < n_cells)
                 n_upwind++;
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             }
@@ -2552,8 +2554,8 @@ cs_convection_diffusion_scalar(int                         idtvar,
                 n_upwind++;
 
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
             }
 
@@ -3031,7 +3033,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -3056,38 +3058,38 @@ cs_convection_diffusion_scalar(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_convection_scalar(int                       idtvar,
-                          int                       f_id,
-                          const cs_var_cal_opt_t    var_cal_opt,
-                          int                       icvflb,
-                          int                       inc,
-                          int                       imasac,
-                          cs_real_t       *restrict pvar,
-                          const cs_real_t *restrict pvara,
-                          const int                 icvfli[],
-                          const cs_real_t           coefap[],
-                          const cs_real_t           coefbp[],
-                          const cs_real_t           i_massflux[],
-                          const cs_real_t           b_massflux[],
-                          cs_real_2_t               i_conv_flux[],
-                          cs_real_t                 b_conv_flux[])
+cs_face_convection_scalar(int                        idtvar,
+                          int                        f_id,
+                          const cs_equation_param_t  eqp,
+                          int                        icvflb,
+                          int                        inc,
+                          int                        imasac,
+                          cs_real_t        *restrict pvar,
+                          const cs_real_t  *restrict pvara,
+                          const int                  icvfli[],
+                          const cs_real_t            coefap[],
+                          const cs_real_t            coefbp[],
+                          const cs_real_t            i_massflux[],
+                          const cs_real_t            b_massflux[],
+                          cs_real_2_t                i_conv_flux[],
+                          cs_real_t                  b_conv_flux[])
 {
-  const int iconvp = var_cal_opt.iconv;
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int ischcp = var_cal_opt.ischcv;
-  const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.verbosity;
-  const int icoupl = var_cal_opt.icoupl;
-  int limiter_choice = -1;
-  const double blencp = var_cal_opt.blencv;
-  const double blend_st = var_cal_opt.blend_st;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int iconvp = eqp.iconv;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int ischcp = eqp.ischcv;
+  const int isstpp = eqp.isstpc;
+  const int iwarnp = eqp.verbosity;
+  const int icoupl = eqp.icoupl;
+  cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
+  const double blencp = eqp.blencv;
+  const double blend_st = eqp.blend_st;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -3147,7 +3149,7 @@ cs_face_convection_scalar(int                       idtvar,
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
-  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  var_cal_opt);
+  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != NULL)
@@ -3189,7 +3191,7 @@ cs_face_convection_scalar(int                       idtvar,
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+      limiter_choice = (cs_nvd_type_t)cs_field_get_key_int(f, key_lim_choice);
       BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
       BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(f_id,
@@ -3264,8 +3266,8 @@ cs_face_convection_scalar(int                       idtvar,
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+        if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -3793,8 +3795,8 @@ cs_face_convection_scalar(int                       idtvar,
               if (ii < n_cells)
                 n_upwind++;
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             }
@@ -3877,8 +3879,8 @@ cs_face_convection_scalar(int                       idtvar,
                 n_upwind++;
 
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
             }
 
@@ -4138,7 +4140,7 @@ cs_face_convection_scalar(int                       idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -4181,7 +4183,7 @@ cs_face_convection_scalar(int                       idtvar,
 void
 cs_convection_diffusion_vector(int                         idtvar,
                                int                         f_id,
-                               const cs_equation_param_t   var_cal_opt,
+                               const cs_equation_param_t   eqp,
                                int                         icvflb,
                                int                         inc,
                                int                         ivisep,
@@ -4203,22 +4205,22 @@ cs_convection_diffusion_vector(int                         idtvar,
                                cs_real_3_t       *restrict b_pvar,
                                cs_real_3_t       *restrict rhs)
 {
-  const int iconvp = var_cal_opt.iconv;
-  const int idiffp = var_cal_opt.idiff;
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int ischcp = var_cal_opt.ischcv;
-  const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.verbosity;
-  const int icoupl = var_cal_opt.icoupl;
-  const double blencp = var_cal_opt.blencv;
-  const double blend_st = var_cal_opt.blend_st;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int iconvp = eqp.iconv;
+  const int idiffp = eqp.idiff;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int ischcp = eqp.ischcv;
+  const int isstpp = eqp.isstpc;
+  const int iwarnp = eqp.verbosity;
+  const int icoupl = eqp.icoupl;
+  const double blencp = eqp.blencv;
+  const double blend_st = eqp.blend_st;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -4301,7 +4303,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   cs_real_t *gweight = NULL;
 
-  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  var_cal_opt);
+  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
   /* Internal coupling variables */
   cs_real_3_t *pvar_local = NULL;
@@ -4394,8 +4396,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+        if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -5139,8 +5141,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                 n_upwind++;
 
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
             }
             /* Saving velocity at internal faces, if needed */
@@ -5891,7 +5893,7 @@ cs_convection_diffusion_vector(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -5922,7 +5924,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 void
 cs_convection_diffusion_tensor(int                         idtvar,
                                int                         f_id,
-                               const cs_var_cal_opt_t      var_cal_opt,
+                               const cs_equation_param_t   eqp,
                                int                         icvflb,
                                int                         inc,
                                int                         imasac,
@@ -5938,21 +5940,21 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                const cs_real_t             b_visc[],
                                cs_real_6_t       *restrict rhs)
 {
-  const int iconvp = var_cal_opt.iconv;
-  const int idiffp = var_cal_opt.idiff;
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int ischcp = var_cal_opt.ischcv;
-  const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.verbosity;
-  const double blencp = var_cal_opt.blencv;
-  const double blend_st = var_cal_opt.blend_st;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int iconvp = eqp.iconv;
+  const int idiffp = eqp.idiff;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int ischcp = eqp.ischcv;
+  const int isstpp = eqp.isstpc;
+  const int iwarnp = eqp.verbosity;
+  const double blencp = eqp.blencv;
+  const double blend_st = eqp.blend_st;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -6000,7 +6002,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   cs_field_t *f;
 
-  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id, var_cal_opt);
+  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id, eqp);
 
   /*==========================================================================*/
 
@@ -6683,8 +6685,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                 n_upwind++;
 
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
             }
 
@@ -6858,7 +6860,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters)
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -6885,41 +6887,41 @@ cs_convection_diffusion_tensor(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_diffusion_thermal(int                       idtvar,
-                                int                       f_id,
-                                const cs_var_cal_opt_t    var_cal_opt,
-                                int                       inc,
-                                int                       imasac,
-                                cs_real_t       *restrict pvar,
-                                const cs_real_t *restrict pvara,
-                                const cs_real_t           coefap[],
-                                const cs_real_t           coefbp[],
-                                const cs_real_t           cofafp[],
-                                const cs_real_t           cofbfp[],
-                                const cs_real_t           i_massflux[],
-                                const cs_real_t           b_massflux[],
-                                const cs_real_t           i_visc[],
-                                const cs_real_t           b_visc[],
-                                const cs_real_t           xcpp[],
-                                cs_real_t       *restrict rhs)
+cs_convection_diffusion_thermal(int                        idtvar,
+                                int                        f_id,
+                                const cs_equation_param_t  eqp,
+                                int                        inc,
+                                int                        imasac,
+                                cs_real_t        *restrict pvar,
+                                const cs_real_t  *restrict pvara,
+                                const cs_real_t            coefap[],
+                                const cs_real_t            coefbp[],
+                                const cs_real_t            cofafp[],
+                                const cs_real_t            cofbfp[],
+                                const cs_real_t            i_massflux[],
+                                const cs_real_t            b_massflux[],
+                                const cs_real_t            i_visc[],
+                                const cs_real_t            b_visc[],
+                                const cs_real_t            xcpp[],
+                                cs_real_t        *restrict rhs)
 {
-  const int iconvp = var_cal_opt.iconv ;
-  const int idiffp = var_cal_opt.idiff ;
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int ischcp = var_cal_opt.ischcv;
-  const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.verbosity;
-  const int icoupl = var_cal_opt.icoupl;
-  int limiter_choice = -1;
-  const double blencp = var_cal_opt.blencv;
-  const double blend_st = var_cal_opt.blend_st;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int iconvp = eqp.iconv ;
+  const int idiffp = eqp.idiff ;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int ischcp = eqp.ischcv;
+  const int isstpp = eqp.isstpc;
+  const int iwarnp = eqp.verbosity;
+  const int icoupl = eqp.icoupl;
+  cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
+  const double blencp = eqp.blencv;
+  const double blend_st = eqp.blend_st;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -6976,7 +6978,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   cs_real_t *gweight = NULL;
 
-  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  var_cal_opt);
+  cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != NULL)
@@ -7026,7 +7028,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
     /* Get option from the field */
     if (ischcp == 4) {
       const int key_limiter = cs_field_key_id("limiter_choice");
-      limiter_choice = cs_field_get_key_int(f, key_limiter);
+      limiter_choice = (cs_nvd_type_t)cs_field_get_key_int(f, key_limiter);
       BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
       BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(f_id,
@@ -7101,8 +7103,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+        if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -7757,8 +7759,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
               if (ii < n_cells)
                 n_upwind++;
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             }
@@ -7854,8 +7856,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
               if (ii < n_cells)
                 n_upwind++;
               if (v_slope_test != NULL) {
-                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             }
@@ -8205,7 +8207,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -8235,7 +8237,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 void
 cs_anisotropic_diffusion_scalar(int                        idtvar,
                                 int                        f_id,
-                                const cs_equation_param_t  var_cal_opt,
+                                const cs_equation_param_t  eqp,
                                 int                        inc,
                                 cs_real_t        *restrict pvar,
                                 const cs_real_t  *restrict pvara,
@@ -8250,16 +8252,16 @@ cs_anisotropic_diffusion_scalar(int                        idtvar,
                                 const cs_real_t            weighb[],
                                 cs_real_t        *restrict rhs)
 {
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.verbosity;
-  const int icoupl = var_cal_opt.icoupl;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int iwarnp = eqp.verbosity;
+  const int icoupl = eqp.icoupl;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -8427,8 +8429,8 @@ cs_anisotropic_diffusion_scalar(int                        idtvar,
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idifft > 0) {
+      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+        if (eqp.idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -8958,7 +8960,7 @@ cs_anisotropic_diffusion_scalar(int                        idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -8988,7 +8990,7 @@ cs_anisotropic_diffusion_scalar(int                        idtvar,
 void
 cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      int                         f_id,
-                                     const cs_equation_param_t   var_cal_opt,
+                                     const cs_equation_param_t   eqp,
                                      int                         inc,
                                      int                         ivisep,
                                      cs_real_3_t       *restrict pvar,
@@ -9002,17 +9004,17 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      const cs_real_t             i_secvis[],
                                      cs_real_3_t       *restrict rhs)
 {
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int idiffp = var_cal_opt.idiff;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.verbosity;
-  const int icoupl = var_cal_opt.icoupl;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int nswrgp = eqp.nswrgr;
+  const int idiffp = eqp.idiff;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int iwarnp = eqp.verbosity;
+  const int icoupl = eqp.icoupl;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -9507,7 +9509,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -9537,7 +9539,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 void
 cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                       int                          f_id,
-                                      const cs_equation_param_t    var_cal_opt,
+                                      const cs_equation_param_t    eqp,
                                       int                          inc,
                                       cs_real_3_t        *restrict pvar,
                                       const cs_real_3_t  *restrict pvara,
@@ -9552,16 +9554,16 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                       const cs_real_t              weighb[],
                                       cs_real_3_t       *restrict rhs)
 {
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.verbosity;
-  const int icoupl = var_cal_opt.icoupl;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int iwarnp = eqp.verbosity;
+  const int icoupl = eqp.icoupl;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -10221,7 +10223,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -10251,7 +10253,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 void
 cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 int                          f_id,
-                                const cs_equation_param_t    var_cal_opt,
+                                const cs_equation_param_t    eqp,
                                 int                          inc,
                                 cs_real_6_t        *restrict pvar,
                                 const cs_real_6_t  *restrict pvara,
@@ -10266,15 +10268,15 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 const cs_real_t              weighb[],
                                 cs_real_6_t     *restrict   rhs)
 {
-  const int nswrgp = var_cal_opt.nswrgr;
-  const int imrgra = var_cal_opt.imrgra;
-  const int imligp = var_cal_opt.imligr;
-  const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.verbosity;
-  const double epsrgp = var_cal_opt.epsrgr;
-  const double climgp = var_cal_opt.climgr;
-  const double relaxp = var_cal_opt.relaxv;
-  const double thetap = var_cal_opt.thetav;
+  const int nswrgp = eqp.nswrgr;
+  const int imrgra = eqp.imrgra;
+  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
+  const int ircflp = eqp.ircflu;
+  const int iwarnp = eqp.verbosity;
+  const double epsrgp = eqp.epsrgr;
+  const double climgp = eqp.climgr;
+  const double relaxp = eqp.relaxv;
+  const double thetap = eqp.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -11024,11 +11026,10 @@ cs_face_diffusion_potential(const int                 f_id,
 
     else if (f_id > -1) {
       /* Get the calculation option from the field */
-      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-      cs_var_cal_opt_t var_cal_opt;
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+      const cs_equation_param_t *eqp
+        = cs_field_get_equation_param_const(f);
+      if (f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+        if (eqp->idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -11049,7 +11050,7 @@ cs_face_diffusion_potential(const int                 f_id,
                                     iphydp,
                                     w_stride,
                                     iwarnp,
-                                    imligp,
+                                    (cs_gradient_limit_t)imligp,
                                     epsrgp,
                                     climgp,
                                     frcxt,
@@ -11431,11 +11432,10 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
     else if (f_id > -1) {
       /* Get the calculation option from the field */
-      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-      cs_var_cal_opt_t var_cal_opt;
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idifft > 0) {
+      const cs_equation_param_t *eqp
+        = cs_field_get_equation_param_const(f);
+      if (f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+        if (eqp->idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -11457,7 +11457,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                     iphydp,
                                     w_stride,
                                     iwarnp,
-                                    imligp,
+                                    (cs_gradient_limit_t)imligp,
                                     epsrgp,
                                     climgp,
                                     frcxt,
@@ -11838,11 +11838,10 @@ cs_diffusion_potential(const int                 f_id,
 
     else if (f_id > -1) {
       /* Get the calculation option from the field */
-      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-      cs_var_cal_opt_t var_cal_opt;
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+      const cs_equation_param_t *eqp
+        = cs_field_get_equation_param_const(f);
+      if (f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+        if (eqp->idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -11872,7 +11871,7 @@ cs_diffusion_potential(const int                 f_id,
                                     iphydp,
                                     w_stride,
                                     iwarnp,
-                                    imligp,
+                                    (cs_gradient_limit_t)imligp,
                                     epsrgp,
                                     climgp,
                                     frcxt,
@@ -12269,11 +12268,10 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
 
     else if (f_id > -1) {
       /* Get the calculation option from the field */
-      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-      cs_var_cal_opt_t var_cal_opt;
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idifft > 0) {
+      const cs_equation_param_t *eqp
+        = cs_field_get_equation_param_const(f);
+      if (f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+        if (eqp->idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -12295,7 +12293,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                     iphydp,
                                     w_stride,
                                     iwarnp,
-                                    imligp,
+                                    (cs_gradient_limit_t)imligp,
                                     epsrgp,
                                     climgp,
                                     frcxt,
