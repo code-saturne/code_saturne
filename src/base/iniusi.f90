@@ -277,9 +277,6 @@ call cs_wall_condensation_set_onoff_state(icondb, icondv)
 ! ALE parameters
 call uialin (nalinf, nalimx, epalim)
 
-! Read thermochemical data for specific physics
-call pplecd
-
 ! thermal model
 call cs_gui_thermal_model
 
@@ -337,6 +334,9 @@ endif
 if (iale.ge.1) then
   call cs_gui_mobile_mesh_structures_add
 endif
+
+! Read thermochemical data for specific physics
+call pplecd
 
 ! Other model parameters, including user-defined scalars
 
