@@ -1612,7 +1612,7 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
 
     }
     if (cs_glob_rank_id > -1)
-      cs_parall_min(1, CS_DOUBLE, &dtmaxg);
+      cs_parall_min(1, CS_REAL_TYPE, &dtmaxg);
 
     if (dt[0] > dtmaxg) {
 
@@ -1661,44 +1661,56 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
 
   /* Source terms */
 
-  /* Cavitation source term (explicit) */
-  if (i_vof_mass_transfer != 0) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      smbrs[c_id] += cell_f_vol[c_id] * gamcav[c_id] / rho2;
-  }
+# pragma omp parallel
+  {
+    cs_lnum_t t_s_id, t_e_id;
+    cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
-  /* Source terms assembly for cs_equation_iterative_solve_scalar */
-
-  /* If source terms are extrapolated over time */
-  if (cs_glob_time_scheme->isno2t > 0) {
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t tsexp = c_st_voidf[c_id];
-      c_st_voidf[c_id] = smbrs[c_id];
-      smbrs[c_id] = - thets * tsexp + (1.0 + thets) * smbrs[c_id];
+    /* Cavitation source term (explicit) */
+    if (i_vof_mass_transfer != 0) {
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+        smbrs[c_id] += cell_f_vol[c_id] * gamcav[c_id] / rho2;
     }
-  }
 
-  /* Source term linked with the non-conservative form of convection term
-     in cs_equation_iterative_solve_scalar (always implicited)
-     FIXME set imasac per variable? Here it could be set to 0
-     (or Gamma(1/rho2 - 1/rho1) for cavitation) and divu not used.
-     Note: we prefer to be not perfectly conservative (up to the precision
-     of the pressure solver, but that allows to fullfill the min/max principle
-     on alpha */
+    /* Source terms assembly for cs_equation_iterative_solve_scalar */
 
-  if (i_vof_mass_transfer != 0) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      /* Should be for the conservative form: */
-
-      smbrs[c_id] += - cell_f_vol[c_id] * gamcav[c_id]
-                     * (1.0/rho2 - 1.0/rho1) * cvara_voidf[c_id];
-
-      rovsdt[c_id] = cell_f_vol[c_id] * gamcav[c_id] * (1.0/rho2 - 1.0/rho1);
+    /* If source terms are extrapolated over time */
+    if (cs_glob_time_scheme->isno2t > 0) {
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++) {
+        const cs_real_t tsexp = c_st_voidf[c_id];
+        c_st_voidf[c_id] = smbrs[c_id];
+        smbrs[c_id] = - thets * tsexp + (1.0 + thets) * smbrs[c_id];
+      }
     }
-  }
-  else {
-    cs_array_real_fill_zero(n_cells, rovsdt);
+
+    /* Source term linked with the non-conservative form of convection term
+       in cs_equation_iterative_solve_scalar (always implicited)
+       FIXME set imasac per variable? Here it could be set to 0
+       (or Gamma(1/rho2 - 1/rho1) for cavitation) and divu not used.
+       Note: we prefer to be not perfectly conservative (up to the precision
+       of the pressure solver, but that allows to fullfill the min/max principle
+       on alpha */
+
+    if (i_vof_mass_transfer != 0) {
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++) {
+        /* Should be for the conservative form */
+
+        smbrs[c_id] += - cell_f_vol[c_id] * gamcav[c_id]
+                       * (1.0/rho2 - 1.0/rho1) * cvara_voidf[c_id];
+
+        rovsdt[c_id] = cell_f_vol[c_id] * gamcav[c_id] * (1.0/rho2 - 1.0/rho1);
+      }
+    }
+    else {
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+        rovsdt[c_id] = 0;
+    }
+
+    /* Unteady term */
+    if (eqp_vol->istat > 0) {
+      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
+        rovsdt[c_id] += cell_f_vol[c_id] / dt[c_id];
+    }
   }
 
   if (cs_glob_vof_parameters->idrift > 0) {
@@ -1713,10 +1725,6 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
                       cvara_voidf,
                       smbrs);
   }
-
-  /* Unteady term */
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    rovsdt[c_id] += eqp_vol->istat * cell_f_vol[c_id] / dt[c_id];
 
   /* Solving
      ------- */
@@ -1796,9 +1804,11 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
     }
 
     if (scmaxp > scminp) {
+#     pragma omp parallel for reduction(+:iclmax, iclmin)  \
+        if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         if (cvar_voidf[c_id] > scmaxp) {
-          iclmax += iclmax + 1;
+          iclmax += + 1;
 
           if (clip_voidf_id >= 0)
             voidf_clipped[c_id] = cvar_voidf[c_id] - scmaxp;
@@ -1806,7 +1816,7 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
           cvar_voidf[c_id] = scmaxp;
         }
         if (cvar_voidf[c_id] < scminp) {
-          iclmin = iclmin + 1;
+          iclmin += 1;
 
           if (clip_voidf_id >= 0)
             voidf_clipped[c_id] = cvar_voidf[c_id] - scminp;

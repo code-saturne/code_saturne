@@ -1806,15 +1806,15 @@ cs_ctwr_log_balance(void)
       ct->q_h_in  += sign * mass_flow[face_id];
     }
 
-    cs_parall_sum(1, CS_DOUBLE, &(ct->t_l_out));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->q_l_out));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->h_l_out));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->t_l_out));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->q_l_out));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->h_l_out));
 
-    cs_parall_sum(1, CS_DOUBLE, &(ct->t_h_in));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->h_h_in));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->q_h_in));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->t_h_in));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->h_h_in));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->q_h_in));
 
-    cs_parall_sum(1, CS_DOUBLE, &(ct->p_in));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->p_in));
 
     ct->t_l_out /= ct->q_l_out;
     ct->h_l_out /= ct->q_l_out;
@@ -2288,8 +2288,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     BFT_REALLOC(ct->outlet_faces_ids, ct->n_outlet_faces, cs_lnum_t);
     BFT_REALLOC(ct->outlet_cells_ids, ct->n_outlet_cells, cs_lnum_t);
 
-    cs_parall_sum(1, CS_DOUBLE, &(ct->surface_in));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->surface_out));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->surface_in));
+    cs_parall_sum(1, CS_REAL_TYPE, &(ct->surface_out));
   }
 
   BFT_FREE(packing_cell);
@@ -2832,8 +2832,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
         ct->q_l_out += sign * y_l[cell_id_l] * liq_mass_flow[face_id];
       }
 
-      cs_parall_sum(1, CS_DOUBLE, &(ct->t_l_out));
-      cs_parall_sum(1, CS_DOUBLE, &(ct->q_l_out));
+      cs_parall_sum(1, CS_REAL_TYPE, &(ct->t_l_out));
+      cs_parall_sum(1, CS_REAL_TYPE, &(ct->q_l_out));
 
       ct->t_l_out /= ct->q_l_out;
 

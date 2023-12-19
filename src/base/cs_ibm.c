@@ -2399,7 +2399,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
       if (comp_cell[c_id] > 0)
         volpor += cell_vol[c_id] * CS_F_(poro)->val[c_id];
 
-    cs_parall_sum(1, CS_DOUBLE, &volpor);
+    cs_parall_sum(1, CS_REAL_TYPE, &volpor);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       if (comp_cell[c_id] > 0)
@@ -2418,8 +2418,8 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
             bb += porloc * cell_vol[c_id];
           }
 
-        cs_parall_sum(1, CS_DOUBLE, &aa);
-        cs_parall_sum(1, CS_DOUBLE, &bb);
+        cs_parall_sum(1, CS_REAL_TYPE, &aa);
+        cs_parall_sum(1, CS_REAL_TYPE, &bb);
 
         cs_real_t beta = (volpor - bb) / cs_math_fmax(aa, 1.e-20);
 
