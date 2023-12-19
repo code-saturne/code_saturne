@@ -602,10 +602,10 @@ _cs_rad_transfer_sol(int                        gg_id,
              dir_id < rt_params->ndirs && !finished;
              dir_id++) {
 
-          char    cname[80];
+          char sles_name[80];
 
           if (one_dir) {
-            snprintf(cname, 79, "%s", "direct_radiation");
+            snprintf(sles_name, 79, "%s", "direct_radiation");
             finished = true;
           }
           /* Many directions */
@@ -617,7 +617,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
             /* Gloal direction id */
             kdir++;
-            snprintf(cname, 79, "%s%03d", "radiation_", kdir);
+            snprintf(sles_name, 79, "%s%03d", "radiation_", kdir);
           }
 
           /* Update boundary condition coefficients
@@ -733,10 +733,13 @@ _cs_rad_transfer_sol(int                        gg_id,
           /* In case of a theta-scheme, set theta = 1;
              no relaxation in steady case either */
 
+          int f_id = CS_FI_(radiance, gg_id)->id;
+          cs_sles_push(f_id, sles_name);
+
           cs_equation_iterative_solve_scalar(0,   /* idtvar */
                                              1,   /* external sub-iteration */
-                                             CS_FI_(radiance, gg_id)->id,
-                                             cname,
+                                             f_id,
+                                             sles_name,
                                              0,   /* iescap */
                                              0,   /* imucpp */
                                              -1,  /* normp */
@@ -764,6 +767,8 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              dpvar,
                                              NULL,
                                              NULL);
+
+          cs_sles_pop(f_id);
 
           /* Integration of fluxes and source terms
            * Increment absorption and emission for Atmo on the fly */

@@ -1254,7 +1254,7 @@ cs_compute_porosity_from_scan(void)
     cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
                                        -1,  /* no over loops */
                                        f->id,
-                                       f->name,
+                                       NULL,
                                        0,   /* iescap */
                                        0,   /* imucpp */
                                        norm,

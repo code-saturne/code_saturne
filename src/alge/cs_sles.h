@@ -342,7 +342,7 @@ void
 cs_sles_log(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointer to linear system object, based on matching field id or
  *        system name.
  *
@@ -360,7 +360,7 @@ cs_sles_find(int          f_id,
              const char  *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointer to linear system object, based on matching field id or
  *        system name.
  *
@@ -383,18 +383,16 @@ cs_sles_find_or_add(int          f_id,
                     const char  *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Temporarily replace field id with name for matching calls
  * to \ref cs_sles_setup, \ref cs_sles_solve, \ref cs_sles_free, and other
  * operations involving access through a field id.
  *
- * \deprecated This function is provided to allow some peculiar
- * calling sequences, in which \ref cs_equation_iterative_solve_scalar
- * is called with a nonzero \c ivar value, but specific solver options must
- * still be set.
- * In the future, a more consistent mechanism (using a zero \c ivar
- * value or designing a cleaner method to handle those exceptional cases)
- * is preferred. As such, only a stack depth of 1 is allowed.
+ * This function is provided to allow some peculiar calling sequences,
+ * in which \ref cs_equation_iterative_solve_scalar is called with a given
+ * field id, but specific solver options must still be set.
+ * In the future, a cleaner method to handle those exceptional cases
+ * would be preferred. As such, only a stack depth of 1 is allowed.
  *
  * \param[in]  f_id  associated field id, or < 0
  * \param[in]  name  associated name if f_id < 0, or NULL
@@ -406,7 +404,7 @@ cs_sles_push(int          f_id,
              const char  *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Restore behavior temporarily modified by \ref cs_sles_push.
  *
  * \deprecated This function matches \ref cs_sles_push, which is deprecated.
@@ -501,7 +499,7 @@ int
 cs_sles_get_verbosity(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Activate postprocessing output for a given linear equation solver.
  *
  * This allows the output of the residual at the end of each solution
@@ -518,7 +516,7 @@ cs_sles_set_post_output(cs_sles_t  *sles,
                         int         writer_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the id of the associated writer if postprocessing output
  *        is active for a given linear equation solver.
  *
@@ -532,7 +530,7 @@ int
 cs_sles_get_post_output(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return type name of solver context.
  *
  * The returned string is intended to help determine which type is associated
@@ -556,7 +554,7 @@ const char *
 cs_sles_get_type(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointer to solver context structure pointer.
  *
  * The context structure depends on the type of solver used, which may in
@@ -573,7 +571,7 @@ void *
 cs_sles_get_context(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return field id associated with a given sparse linear equation solver.
  *
  * \param[in]  sles  pointer to solver object
@@ -586,7 +584,7 @@ int
 cs_sles_get_f_id(const cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return name associated with a given sparse linear equation solver.
  *
  * This is simply a utility function which will return its name argument
@@ -602,7 +600,7 @@ const char *
 cs_sles_get_name(const cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Query if immediate_return ("no-op") is allowed when initial
  * guess is zero (solve by increments) and the RHS is already zero within the
  * normalized tolerance criteria.
@@ -618,7 +616,7 @@ bool
 cs_sles_get_allow_no_op(const cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Indicate if immediate_return ("no-op") is allowed when initial
  * guess is zero (solve by increments) and the RHS is already zero within the
  * normalized tolerance criteria.
@@ -634,7 +632,7 @@ cs_sles_set_allow_no_op(cs_sles_t  *sles,
                         bool        allow_no_op);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Setup sparse linear equation solver.
  *
  * Use of this function is optional: if a \ref cs_sles_solve is called
@@ -654,7 +652,7 @@ cs_sles_setup(cs_sles_t          *sles,
               const cs_matrix_t  *a);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief General sparse linear system resolution.
  *
  * If no options were previously provided for the matching system,
@@ -698,7 +696,7 @@ cs_sles_solve(cs_sles_t           *sles,
               void                *aux_vectors);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free sparse linear equation solver setup.
  *
  * This function frees resolution-related data, such as multigrid hierarchy,
@@ -714,7 +712,7 @@ void
 cs_sles_free(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy the definition of a sparse linear equation solver to another.
  *
  * The intended use of this function is to allow associating different
@@ -740,7 +738,7 @@ cs_sles_copy(cs_sles_t        *dest,
              const cs_sles_t  *src);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a convergence error handler to a given sparse linear
  *        equation solver.
  *
@@ -761,7 +759,7 @@ cs_sles_set_error_handler(cs_sles_t                *sles,
                           cs_sles_error_handler_t  *error_handler_func);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointer to default sparse linear solver definition function.
  *
  * The associated function will be used to provide a definition when
@@ -776,7 +774,7 @@ cs_sles_define_t  *
 cs_sles_get_default_define(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set default sparse linear solver definition function.
  *
  * The provided function will be used to provide a definition when
@@ -791,7 +789,7 @@ void
 cs_sles_set_default_define(cs_sles_define_t  *define_func);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set default verbosity definition function.
  *
  * The provided function will be used to define the verbosity when
@@ -805,7 +803,7 @@ void
 cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Output default post-processing data for failed system convergence.
  *
  * \param[in]       name           variable name
@@ -824,7 +822,7 @@ cs_sles_post_error_output_def(const char          *name,
                               cs_real_t           *vx);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Output post-processing variable related to system convergence.
  *
  * \param[in]       name             variable name
@@ -846,7 +844,7 @@ cs_sles_post_output_var(const char      *name,
                         cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return base name associated to a field id, name couple.
  *
  * This is simply a utility function which will return its name argument
@@ -864,7 +862,7 @@ cs_sles_base_name(int          f_id,
                   const char  *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return name associated to a field id, name couple.
  *
  * \param[in]  f_id  associated field id, or < 0

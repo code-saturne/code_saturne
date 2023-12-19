@@ -637,7 +637,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     ressol = residu;
 
     cs_sles_solve_native(f_id,
-                         "",
+                         NULL,
                          symmetric,
                          1, /* db_size */
                          1, /* eb_size */
@@ -3136,7 +3136,7 @@ cs_atmo_z_ground_compute(void)
     cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
                                        -1,  /* no over loops */
                                        f->id,
-                                       f->name,
+                                       NULL,
                                        0,   /* iescap */
                                        0,   /* imucpp */
                                        norm,

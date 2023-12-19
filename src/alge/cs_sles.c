@@ -1257,13 +1257,11 @@ cs_sles_find_or_add(int          f_id,
  * to \ref cs_sles_setup, \ref cs_sles_solve, \ref cs_sles_free, and other
  * operations involving access through a field id.
  *
- * \deprecated This function is provided to allow some peculiar
- * calling sequences, in which \ref cs_equation_iterative_solve_scalar is
- * called with a nonzero \c ivar value, but specific solver options
- * must still be set.
- * In the future, a more consistent mechanism (using a zero \c ivar
- * value or designing a cleaner method to handle those exceptional cases)
- * is preferred. As such, only a stack depth of 1 is allowed.
+ * This function is provided to allow some peculiar calling sequences,
+ * in which \ref cs_equation_iterative_solve_scalar is called with a given
+ * field id, but specific solver options must still be set.
+ * In the future, a cleaner method to handle those exceptional cases
+ * would be preferred. As such, only a stack depth of 1 is allowed.
  *
  * \param[in]  f_id  associated field id, or < 0
  * \param[in]  name  associated name if f_id < 0, or NULL
