@@ -1345,11 +1345,13 @@ cs_slope_test_gradient_vector_target(const int              inc,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  bool scatter = true;
+  bool scatter = false;
 
 #pragma omp target data map(tofrom: grdpa[0:n_cells_ext]) \
                         map(to: grad[0:n_cells_ext], \
                                 i_face_cog[0:n_i_faces], \
+                                cell_i_faces_sgn[0:n_i_faces], \
+                                cell_i_faces[0:n_i_faces], \
                                 cell_cen[0:n_cells_ext], \
                                 pvar[0:n_cells_ext], \
                                 i_massflux[0:n_i_faces], \
@@ -1373,7 +1375,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
                                 pvar[0:n_cells_ext], \
                                 i_massflux[0:n_i_faces], \
                                 i_f_face_normal[0:n_i_faces], \
-                                i_face_cells[0:n_i_faces])
+                                i_face_cells[0:n_i_faces]) schedule(static,1)
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++){
 
       cs_real_t difv[3], djfv[3];
@@ -1419,7 +1421,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
                       map(to: b_face_cells[0:n_b_faces], \
                               coefb[0:n_b_faces], \
                               coefa[0:n_b_faces], \
-                              grad[0:n_cells_ext]) \
+                              grad[0:n_cells_ext]) schedule(static,1) \
                       if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -1455,12 +1457,14 @@ cs_slope_test_gradient_vector_target(const int              inc,
                         map(tofrom: grdpa[0:n_cells_ext]) \
                         map(to: grad[0:n_cells_ext], \
                                 i_face_cog[0:n_i_faces], \
+                                cell_i_faces_sgn[0:n_i_faces], \
+                                cell_i_faces[0:n_i_faces], \
                                 cell_cen[0:n_cells_ext], \
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells[0:n_cells_ext], \
                                 pvar[0:n_cells_ext], \
                                 i_massflux[0:n_i_faces], \
-                                i_f_face_normal[0:n_i_faces])
+                                i_f_face_normal[0:n_i_faces]) schedule(static,1)
     for (cs_lnum_t ii = 0; ii < n_cells; ii++){
 
       cs_lnum_t s_id = cell_cells_idx[ii];
@@ -1468,19 +1472,18 @@ cs_slope_test_gradient_vector_target(const int              inc,
 
       cs_real_t difv[3], djfv[3];
 
-      cs_lnum_t jj, face_id;
+      cs_lnum_t jj, face_id, face_sgn;
 
       for(cs_lnum_t index = s_id; index < e_id; index++){
 
         jj = cell_cells[index];
         face_id = cell_i_faces[index];
+        face_sgn = cell_i_faces_sgn[index];
 
         for (int jsou = 0; jsou < 3; jsou++) {
           difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
           djfv[jsou] = i_face_cog[face_id][jsou] - cell_cen[jj][jsou];
         }
-
-        /* x-y-z component, p = u, v, w */
 
         for (int isou = 0; isou < 3; isou++) {
           cs_real_t pif = pvar[ii][isou];
@@ -1491,9 +1494,9 @@ cs_slope_test_gradient_vector_target(const int              inc,
           }
 
           cs_real_t pfac = pjf;
-          if (i_massflux[face_id] > 0.) pfac = pif;
+          if (i_massflux[face_id]*face_sgn > 0.) pfac = pif;
 
-          /* U gradient */
+          pfac *= face_sgn;
 
           cs_real_t vfac[3];
 
@@ -1513,7 +1516,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
                                 coefa[0:n_b_faces], \
                                 b_cells[0:n_cells], \
                                 cell_b_faces_idx[0:n_cells+1], \
-                                grad[0:n_cells_ext]) \
+                                grad[0:n_cells_ext]) schedule(static,1)\
                         if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
 

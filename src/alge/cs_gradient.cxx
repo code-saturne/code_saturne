@@ -6955,7 +6955,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
   double t_kernel = 0.0;
 	double t_begin, t_end;
 
-  bool scatter = false;
+  bool scatter = true;
 
   /* Contribution from interior faces */
   int num_device = omp_get_num_devices();
@@ -6973,7 +6973,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cocg[0:n_cells_ext])
 {
   #pragma omp target teams distribute parallel for \
-                      map(tofrom: rhs[0:n_cells_ext])
+                      map(tofrom: rhs[0:n_cells_ext]) schedule(static,1)
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)  {
     for (cs_lnum_t i = 0; i < 3; i++){
       for (cs_lnum_t j = 0; j < 3; j++){
@@ -6986,7 +6986,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                         map(tofrom: rhs[0:n_cells_ext]) \
                         map(to: i_face_cells[0:n_i_faces], \
                                 cell_f_cen[0:n_cells_ext], \
-                                pvar[0:n_cells_ext])
+                                pvar[0:n_cells_ext]) schedule(static,1)
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
       cs_lnum_t c_id1 = i_face_cells[f_id][0];
@@ -7033,7 +7033,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells[0:n_cells_ext], \
                                 cell_f_cen[0:n_cells_ext], \
-                                pvar[0:n_cells_ext]) //num_teams(num_block(n_cells, 256))
+                                pvar[0:n_cells_ext]) schedule(static,1) //num_teams(num_block(n_cells, 64))
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_lnum_t s_id = cell_cells_idx[c_id];
@@ -7041,7 +7041,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
       cs_lnum_t c_id2, f_id;
 
-      // cs_real_t _rhs[256][3][3];
+      // cs_real_t _rhs[64][3][3];
       // cs_lnum_t tid = omp_get_thread_num();
 
       // for(cs_lnum_t i = 0; i < 3; i++){
@@ -7098,7 +7098,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                         map(tofrom: rhs[0:n_cells_ext]) \
                         map(to: cell_f_cen[0:n_cells_ext], pvar[0:n_cells_ext],\
                                 cell_cells_idx[0:n_cells_ext], \
-                                cell_cells_lst[0:n_cells_ext])
+                                cell_cells_lst[0:n_cells_ext]) schedule(static,1)
    for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
      for (cs_lnum_t cidx = cell_cells_idx[c_id1];
           cidx < cell_cells_idx[c_id1+1];
@@ -7134,7 +7134,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 coefav[0:n_b_faces], \
                                 coefbv[0:n_b_faces], \
                                 pvar[0:n_cells_ext],\
-                                cocg[0:n_cells_ext])
+                                cocg[0:n_cells_ext]) schedule(static,1)
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
       cs_lnum_t c_id1 = b_face_cells[f_id];
@@ -7175,7 +7175,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 b_cells[0:n_cells], \
                                 cell_b_faces_idx[0:n_cells+1], \
                                 pvar[0:n_cells_ext],\
-                                cocg[0:n_cells_ext])
+                                cocg[0:n_cells_ext]) schedule(static,1)
     for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
 
       cs_lnum_t c_id = b_cells[c_idx];
@@ -7221,7 +7221,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                       map(tofrom: rhs[0:n_cells_ext]) \
                       map(from: gradv[0:n_cells_ext]) \
                       map(to: pvar[0:n_cells_ext],\
-                              cocg[0:n_cells_ext])
+                              cocg[0:n_cells_ext]) schedule(static,1)
  for (cs_lnum_t c_idx = 0; c_idx < n_cells*3*3; c_idx++) {
 
   size_t c_id = c_idx / (3*3);
