@@ -19,7 +19,8 @@
 
   You should have received a copy of the GNU General Public License along with
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-  Street, Fifth Floor, Boston, MA 02110-1301, USA. */
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 
 /*----------------------------------------------------------------------------*/
 
@@ -10806,8 +10807,9 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  * \f]
  *
  * Please refer to the
- * <a href="../../theory.pdf#itrmas"><b>itrmas/itrgrp</b></a> section of the
- * theory guide for more information.
+ * <a href="../../theory.pdf#cs_face_diffusion_potential">
+     <b>cs_face_diffusion_potential/cs_diffusion_potential</b></a>
+ * section of the theory guide for more information.
  *
  * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh

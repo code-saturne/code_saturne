@@ -294,7 +294,7 @@ or on the other hand:
  + (\ \vect{JJ'} - \vect{II'}\ )\,\displaystyle \frac{1}{2}\ (\,{\grad P}_I + \,{\grad P}_J\,)\right]\, \displaystyle \frac{S_{\,ij}}{\overline{I'J'}}
 \end{array}
 \end{equation}
-This is used during reconstruction of the gradients in the second member of the final system of equations to solve, by calling the subroutines \fort{itrmas} and \fort{itrgrp}.\\
+This is used during reconstruction of the gradients in the second member of the final system of equations to solve, by calling the subroutines \fort{cs\_face\_diffusion\_potential} and \fort{cs\_diffusion\_potential}.\\
 The approximation ($\displaystyle \widetilde{T}^n_{\,ij}=(\tens{T}^n_{\,ij}\ \vect{n})\,.\,\vect{n}$) is not in fact used. This is because the directional gradient of the pressure increment is computed using the subroutine \fort{grdcel}, allowing us to take the liberty of using the tensor $\tens{T}$ to correct the term $[\ \tens{T}^{\,n}_{\,ij}\ (\grad{\delta p})_{\,f_{\,ij}}]\,.\,\vect{S}_{\,ij}$ .\\
 In practice, the latter is discretized, for an internal face $ij$, by\footnote{The factor $\displaystyle \frac{1}{2}$ appearing in the discretization (\ref{Base_Resopv_grad1}) is introduced for reasons of numerical stability. Although the use of weighting coefficients on the faces would in effect yield a more accurate numerical solution, it would probably also be less stable.}
 :
@@ -406,12 +406,12 @@ $$ \var{TRAV}(I) = \widetilde{\vect{u}}_{\,I} + \frac{\var{ARAK}}{\rho_I} \ \ten
 
 $$m_{\,ij} = \left[\rho \widetilde{\vect{u}}+ \displaystyle \alpha_{\,Arak}\ \tens{T}^n\ \grad(p^n)\right]_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$$
 
-\item Call to \fort{itrmas} to increment the mass flux at the faces\footnote{$(\grad{p^n})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$ is the gradient normal to the face that is equal to  $\displaystyle \frac{ p^n_J - p^n_I}{\overline{IJ}} S_{\,ij}$ on an orthogonal mesh.} by $$- \alpha_{\,Arak}\  \widetilde{T}^{\,n}_{\,ij}\ (\grad{p}^n)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}.$$
+\item Call to \fort{cs\_face\_diffusion\_potential} to increment the mass flux at the faces\footnote{$(\grad{p^n})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$ is the gradient normal to the face that is equal to  $\displaystyle \frac{ p^n_J - p^n_I}{\overline{IJ}} S_{\,ij}$ on an orthogonal mesh.} by $$- \alpha_{\,Arak}\  \widetilde{T}^{\,n}_{\,ij}\ (\grad{p}^n)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}.$$
 
 \item Call to \fort{clmlga} to compute the inversion of the pressure matrix with the algebraic multigrid algorithm.
 
 \item initialisation of $\delta p$, $\delta(\delta p)$ and \var{SMBR} to 0. \var{SMBR} will serve to store the second member. In the code, $\delta p$ and $\delta(\delta p)$ are contained respectively in \var{RTP(*,IPRIPH)} and \var{DRTP}.
-\item Call to \fort{divmas} for calculation of the divergence of the mass flux resulting from the last call to \fort{itrmas}. This divergence is stored in the working array \var{W7}.
+\item Call to \fort{divmas} for calculation of the divergence of the mass flux resulting from the last call to \fort{cs\_face\_diffusion\_potential}. This divergence is stored in the working array \var{W7}.
 \item Addition of the contributions of the mass source terms\footnote{The array \var{W7} contains the second member without the gradient of $\delta p$. It therefore remains invariant at each sweep. On the other hand, \var{SMBR} contains the entire second member and consequently varies at each sweep.} to \var{W7}.
 \begin{equation}
 \var{W7}(I) =  \var{W7}(I) - |\Omega_i|\ \var{SMACEL}(I)
@@ -434,7 +434,7 @@ $$ \var{SMBR}(I) = -\var{W7}(I) - \var{SMBR}(I) $$
 \item[$\star$] Calculation of the norm of \var{SMBR} in \fort{prodsc}. It is called \var{RESIDU} in the code. As we solve the system incrementally, the second member must cancel out convergence.
 \item[$\star$] If $ \var{RESIDU} < 10 \times \varepsilon \times \var{RNORMP}$, convergence is attained\footnote{$\varepsilon$ is the pressure convergence tolerance which can be modified by the user in \fort{usini1}, {\it via} the array \var{EPSILO}.}.
 \begin{itemize}
-\item[$\Rightarrow$] Call to \fort{itrmas} to reupdate the mass flux with the facet gradient $(\grad (\delta p)^k)_{\,f}$. We calculate at each face $\widetilde{T}^{\,n}_{\,ij}\ (\grad(\delta p)^k)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$ et $\widetilde{T}^{\,n}_{\,b_{\,ik}}\ (\grad(\delta p)^k)_{\,f_{\,b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}$.
+\item[$\Rightarrow$] Call to \fort{cs\_face\_diffusion\_potential} to reupdate the mass flux with the facet gradient $(\grad (\delta p)^k)_{\,f}$. We calculate at each face $\widetilde{T}^{\,n}_{\,ij}\ (\grad(\delta p)^k)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$ et $\widetilde{T}^{\,n}_{\,b_{\,ik}}\ (\grad(\delta p)^k)_{\,f_{\,b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}$.
 
 \item[$\Rightarrow$] Reupdate\footnote{$(\delta p)^k = \sum\limits_{l=1}^{l=k} (\delta(\delta p))^l $ is stored in \var{RTP(*,IPRIPH)}.} of the pressure $p^{n+1} = p^{n} + \sum\limits_{l=1}^{l=k} (\delta(\delta p))^l$.
 \end{itemize}
@@ -446,14 +446,14 @@ $$ \var{SMBR}(I) = -\var{W7}(I) - \var{SMBR}(I) $$
 \end{itemize}
 \item[$\star$] If the maximum number of sweeps is attained,
 \begin{itemize}
-\item[$\Rightarrow$] Call to \fort{itrmas} to increment the mass flux by the pressure gradient $(\delta p)^{k}$.
-\item[$\Rightarrow$] Second call to \fort{itrmas} for incrementation of the mass flux with the non-reconstructed gradient of $(\delta(\delta p))^{k+1}$ to ensure a final divergence-free field is obtained, thereby assuring consistency with the pressure matrix which does not take non orthogonalities into account\footnote{Reference can be made to the subroutine \fort{cs\_solve\_navier\_stokes} for further detail.}.
+\item[$\Rightarrow$] Call to \fort{cs\_face\_diffusion\_potential} to increment the mass flux by the pressure gradient $(\delta p)^{k}$.
+\item[$\Rightarrow$] Second call to \fort{cs\_face\_diffusion\_potential} for incrementation of the mass flux with the non-reconstructed gradient of $(\delta(\delta p))^{k+1}$ to ensure a final divergence-free field is obtained, thereby assuring consistency with the pressure matrix which does not take non orthogonalities into account\footnote{Reference can be made to the subroutine \fort{cs\_solve\_navier\_stokes} for further detail.}.
 \item[$\Rightarrow$] Update of the pressure increment $(\delta p)^{k+1} = (\delta p)^{k} + (\delta(\delta p))^{k+1}$.
 \end{itemize}
 \item[$\star$]  Otherwise,
 \begin{itemize}
 \item[$\Rightarrow$] Incrementation of the mass flux taking into account a coefficient of relaxation. $ (\delta p)^{k+1} = (\delta  p)^{k} + \var{RELAX} \times (\delta(\delta) p)^{k+1}$. The relaxation factor has a default setting of $1$; however this can be modified in \fort{usini1}.
-\item[$\Rightarrow$] Call to \fort{itrgrp} for calculation of the $\tens{T}^n\ \grad{(\delta p)}$ part of the second member (to which the array \var{W7} will be added at the start of a (new) loop).
+\item[$\Rightarrow$] Call to \fort{cs\_diffusion\_potential} for calculation of the $\tens{T}^n\ \grad{(\delta p)}$ part of the second member (to which the array \var{W7} will be added at the start of a (new) loop).
 $$\var{SMBR}(I) = \sum\limits_{j\in Neigh(i)}\,\widetilde{T}^{\,n}_{\,ij}\ (\grad(\delta p)^k)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}} \,\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{(\delta p)^k})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}$$
 \end{itemize}
 \end{itemize}
@@ -484,7 +484,7 @@ There are a number of outstanding issues that still need to be resolved:
 
 \item The approximation $\ \widetilde{T}^n \approx (\tens{T}^n \ \vect{n})\,.\,\vect{n}\ $ is not made for the reconstruction of the gradients in the second member of the pressure equation. Nor is it made when calculating the cell-based gradient during application of the Rhie \& Chow filter.
 
-\item Use of the weighting factor $\displaystyle \frac {1}{2}$ to improve numerical stability when computing calculations based on the values at the faces  (e.g. in \fort{itrmas} or \fort{itrgrp} during reconstruction of the pressure increment gradient at the face).
+\item Use of the weighting factor $\displaystyle \frac {1}{2}$ to improve numerical stability when computing calculations based on the values at the faces  (e.g. in \fort{cs\_face\_diffusion\_potential} or \fort{cs\_diffusion\_potential} during reconstruction of the pressure increment gradient at the face).
 
 \item We could verify the normalized residual calculation (see \fort{cs\_velocity\_prediction}).
 

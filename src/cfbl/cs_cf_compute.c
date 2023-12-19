@@ -809,7 +809,7 @@ cs_cf_convective_mass_flux(int  iterns)
 
   /* Mass flux = [dt (grad P).n] + [rho (u + dt f)] */
 
-  /* Computation of [dt (grad P).n] by itrmas */
+  /* Computation of [dt (grad P).n] by cs_face_diffusion_potential */
 
   /* festx,y,z    = rvoid
      i_visc, b_visc = arithmetic mean at faces

@@ -935,8 +935,9 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  * \f]
  *
  * Please refer to the
- * <a href="../../theory.pdf#itrmas"><b>itrmas/itrgrp</b></a> section of the
- * theory guide for more information.
+ * <a href="../../theory.pdf#cs_face_diffusion_potential">
+     <b>cs_face_diffusion_potential/cs_diffusion_potential</b></a>
+ * section of the theory guide for more information.
  *
  * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh

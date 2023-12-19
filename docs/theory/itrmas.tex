@@ -20,32 +20,11 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{itrmas/itrgrp}
+\programme{cs\_face\_diffusion\_potential/cs\_diffusion\_potential}
 
-\hypertarget{itrmas}{}
+\hypertarget{cs\_face\_diffusion\_potential}{}
 
 \vspace{1cm}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Fonction}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Le but du sous-programme \fort{itrmas} est de calculer un gradient de pression
-``facette''. Il est utilis\'e dans la phase de correction de pression
-(deuxi\`eme phase de \fort{cs\_solve\_navier\_stokes}) o\`u le flux de masse est mis \`a jour \`a l'aide de termes en $-\Delta t_{\,ij}(\grad_f P)_{\,ij}.\vect{S}_{\,ij}$ et en $-\Delta t_{\,b_{ik}}(\grad_f P)_{\,b_{ik}}\,.\,\vect{S}_{\,b_{ik}}$.
-
-Le sous-programme \fort{itrgrp} calcule un gradient ``facette'' de pression et
-en prend la divergence, c'est-\`a-dire calcule le terme :
-\begin{displaymath}
--\sum\limits_{j\in Vois(i)}\Delta t_{\,ij}(\grad_f P)_{\,ij}.\vect{S}_{\,ij}
--\sum\limits_{k\in\gamma_b(i)}\Delta t_{\,b_{ik}}(\grad_f P)_{\,b_{ik}}\,.\,\vect{S}_{\,b_{ik}}
-\end{displaymath}
-En pratique \fort{itrgrp} correspond \`a la combinaison de \fort{itrmas} et de
-\fort{divmas}, mais permet par son traitement en un seul bloc d'\'eviter la
-d\'efinition de tableaux de travail de taille \var{NFAC} et \var{NFABOR}.
-
-See the \doxygenanchor{cs__convection__diffusion_8c.html\#itrmas}{programmers reference of the dedicated subroutine}
-for further details.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -86,7 +65,6 @@ Les pas de temps aux faces $\Delta t_{\,ij}$ et $\Delta t_{\,b_{ik}}$ sont calcu
 par interpolation par les sous-programmes \fort{viscfa} (cas isotrope,
 \var{IPUCOU=0}) ou \fort{visort} (cas anisotrope, \var{IPUCOU=1}).
 
-
 \subsection*{Calcul avec reconstruction des non orthogonalit\'es}
 Plusieurs discr\'etisations peuvent \^etre propos\'ees pour le traitement des
 non orthogonalit\'es. Celle retenue dans le code est issue des premiers tests
@@ -117,15 +95,15 @@ Pour les faces de bord, on \'ecrit :
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Les principaux arguments pass\'es \`a \fort{itrmas} et \fort{itrgrp} sont la
+Les principaux arguments pass\'es \`a \fort{cs\_face\_diffusion\_potential} et \fort{cs\_diffusion\_potential} sont la
 variable trait\'ee \var{PVAR} (la pression), ses conditions aux limites, le pas
 de temps projet\'e aux faces\footnote{%
 Plus pr\'ecis\'ement, le pas de temps projet\'e aux faces, multipli\'e par la
 surface et divis\'e par $\overline{I^\prime J^\prime}$ ou $\overline{I^\prime F}$, cf. \fort{viscfa}}
 (\var{VISCF} et \var{VISCB}), le pas de temps au
 centre des cellules, \'eventuellement anisotrope (\var{VISELX}, \var{VISELY},
-\var{VISELZ}). \fort{itrmas} retourne les tableaux \var{FLUMAS} et \var{FLUMAB}
-(flux de masse aux faces) mis \`a jour. \fort{itrgrp} retourne directement la
+\var{VISELZ}). \fort{cs\_face\_diffusion\_potential} retourne les tableaux \var{FLUMAS} et \var{FLUMAB}
+(flux de masse aux faces) mis \`a jour. \fort{cs\_diffusion\_potential} retourne directement la
 divergence du flux de masse mis \`a jour, dans le tableau \var{DIVERG}.
 
 \etape{Initialisation}
@@ -140,9 +118,9 @@ par la variable \var{NSWRGP}. Une valeur inf\'erieure ou \'egale \`a 1 enclenche
 le traitement sans reconstruction.\\
 Des boucles sur les faces internes et les faces de bord utilisent directement
 les formules (\ref{Base_Itrmas_eq_intssrec}) et (\ref{Base_Itrmas_eq_brdssrec}) pour remplir les
-tableaux \var{FLUMAS} et \var{FLUMAB} (\fort{itrmas}) ou des variables de
+tableaux \var{FLUMAS} et \var{FLUMAB} (\fort{cs\_face\_diffusion\_potential}) ou des variables de
 travail \var{FLUMAS} et \var{FLUMAB} qui servent \`a mettre \`a jour le tableau
-\var{DIVERG} (\fort{itrgrp}).
+\var{DIVERG} (\fort{cs\_diffusion\_potential}).
 
 \`A noter que les tableaux \var{VISCF} et \var{VISCB} contiennent respectivement
 $\displaystyle\frac{\Delta t_{\,ij}S_{\,ij}}{\overline{I^\prime J^\prime}}$ et
@@ -153,14 +131,4 @@ Apr\`es un appel \`a \fort{GRDCEL} pour calculer le gradient cellule de
 pression, on remplit les tableaux \var{FLUMAS} et \var{FLUMAB} ou \var{DIVERG}
 l\`a encore par une application directe des formules (\ref{Base_Itrmas_eq_intavcrec}) et
 (\ref{Base_Itrmas_eq_brdavcrec}).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Il est un peu redondant de passer en argument \`a la fois le pas de temps
-projet\'e aux faces et le pas de temps au centre des cellules. Il faudrait
-s'assurer de la r\'eelle n\'ecessit\'e de cela, ou alors \'etudier des
-formulations plus simples de la partie reconstruction.
 
