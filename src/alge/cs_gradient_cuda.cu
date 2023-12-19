@@ -23,7 +23,7 @@
 */
 
 /*----------------------------------------------------------------------------*/
-#include "cs_gradient_cuda.cuh"
+#include "cs_alge_cuda.cuh"
 
 #include "cs_gradient.h"
 #include "cs_gradient_lsq_vector.cuh"
@@ -42,6 +42,13 @@
 #include "cs_reconstruct_vector_gradient_scatter_cf.cuh"
 #include "cs_reconstruct_vector_gradient_scatter_v2.cuh"
 #include "cs_reconstruct_vector_gradient_scatter_v2_cf.cuh"
+
+/*----------------------------------------------------------------------------
+ *  Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_gradient.h"
+#include "cs_gradient_priv.h"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -530,48 +537,6 @@ _compute_gradient_lsq_b_v(cs_lnum_t         size,
  *   buf_d          --> matching allocation pointer on device (should be freed
  *                      after use if non-NULL)
  *----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-_sync_or_copy_real_h2d(const  T   *val_h,
-                       cs_lnum_t           n_vals,
-                       int                 device_id,
-                       cudaStream_t        stream,
-                       const T   **val_d,
-                       void              **buf_d)
-{
-  const T  *_val_d = NULL;
-  void             *_buf_d = NULL;
-
-  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
-  size_t size = n_vals * sizeof(T);
-
-  if (alloc_mode == CS_ALLOC_HOST) {
-    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
-    cs_cuda_copy_h2d(_buf_d, val_h, size);
-    _val_d = (const T *)_buf_d;
-  }
-  else {
-    _val_d = (const T *)cs_get_device_ptr((void *)val_h);
-
-    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cudaMemPrefetchAsync(val_h, size, device_id, stream);
-    else
-      cs_sync_h2d(val_h);
-  }
-
-  *val_d = _val_d;
-  *buf_d = _buf_d;
-}
-
-/* Compute gridsize*/
-
-unsigned int 
-get_gridsize(unsigned int size, unsigned int blocksize){
-  unsigned int gridsize = (unsigned int)ceil((double)size / blocksize);
-
-  return gridsize;
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

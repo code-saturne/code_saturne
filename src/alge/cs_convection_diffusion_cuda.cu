@@ -1,91 +1,10 @@
-#include "cs_defs.h"
-
-/*----------------------------------------------------------------------------
- * Standard C library headers
- *----------------------------------------------------------------------------*/
-
-#include <assert.h>
-#include <errno.h>
-#include <float.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <chrono>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
-#include <cuda_runtime_api.h>
-
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
-
-#include "bft_error.h"
-#include "bft_mem.h"
-
-#include "cs_base_accel.h"
-#include "cs_base_cuda.h"
-#include "cs_blas.h"
-#include "cs_cell_to_vertex.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_porous_model.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
+#include "cs_alge_cuda.cuh"
 
 #include "cs_convection_diffusion.h"
 #include "cs_convection_diffusion_priv.h"
 
 #include "cs_slope_test_gradient_vector_cuda_scatter.cuh"
 #include "cs_slope_test_gradient_vector_cuda_gather.cuh"
-
-
-
-template <typename T>
-static void
-_sync_or_copy_real_h2d_c(const  T   *val_h,
-                       cs_lnum_t           n_vals,
-                       int                 device_id,
-                       cudaStream_t        stream,
-                       const T   **val_d,
-                       void              **buf_d)
-{
-  const T  *_val_d = NULL;
-  void             *_buf_d = NULL;
-
-  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
-  size_t size = n_vals * sizeof(T);
-
-  if (alloc_mode == CS_ALLOC_HOST) {
-    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
-    cs_cuda_copy_h2d(_buf_d, val_h, size);
-    _val_d = (const T *)_buf_d;
-  }
-  else {
-    _val_d = (const T *)cs_get_device_ptr((void *)val_h);
-
-    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cudaMemPrefetchAsync(val_h, size, device_id, stream);
-    else
-      cs_sync_h2d(val_h);
-  }
-
-  *val_d = _val_d;
-  *buf_d = _buf_d;
-}
 
 /*----------------------------------------------------------------------------
  * _gradient_vector the gradient of a vector using a given gradient of
@@ -219,11 +138,11 @@ cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
 
   /* Initialization */
 
-  _sync_or_copy_real_h2d_c(pvar, n_cells_ext, device_id, stream,
+  _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream,
     &pvar_d, &_pvar_d);
-  _sync_or_copy_real_h2d_c(coefav, n_b_faces, device_id, stream,
+  _sync_or_copy_real_h2d(coefav, n_b_faces, device_id, stream,
         &coefa_d, &_coefa_d);
-  _sync_or_copy_real_h2d_c(coefbv, n_b_faces, device_id, stream,
+  _sync_or_copy_real_h2d(coefbv, n_b_faces, device_id, stream,
         &coefb_d, &_coefb_d);
 
   if(flag1){
@@ -268,7 +187,7 @@ cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
 
     CS_CUDA_CHECK(cudaEventRecord(f_i, stream));
 
-    cs_slope_test_gradient_vector_cuda_b<<<(unsigned int)ceil((double)n_b_faces / blocksize), blocksize, 0, stream>>>
+    cs_slope_test_gradient_vector_cuda_b<<<get_gridsize(n_b_faces, blocksize), blocksize, 0, stream>>>
                                     (n_b_faces,
                                      pvar_d,
                                      b_face_cells,
@@ -281,7 +200,7 @@ cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
                                      grdpa_d);
 
 
-    // cs_slope_test_gradient_vector_cuda_b_gather<<<(unsigned int)ceil((double)n_b_cells / blocksize), blocksize, 0, stream>>>
+    // cs_slope_test_gradient_vector_cuda_b_gather<<<get_gridsize(n_b_cells, blocksize), blocksize, 0, stream>>>
     //                                 (n_b_cells,
     //                                 pvar_d,
     //                                 diipb,
@@ -297,7 +216,7 @@ cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
 
     CS_CUDA_CHECK(cudaEventRecord(f_b, stream));
 
-    cs_slope_test_gradient_vector_cuda_f<<<(unsigned int)ceil((double)n_cells * 3 * 3 / blocksize), blocksize, 0, stream>>>
+    cs_slope_test_gradient_vector_cuda_f<<<get_gridsize(n_cells * 3 * 3, blocksize), blocksize, 0, stream>>>
                                     (n_cells * 3 * 3,
                                      cell_vol,
                                      grdpa_d);
