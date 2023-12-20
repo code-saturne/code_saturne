@@ -733,7 +733,6 @@ class cs_math_parser:
 
             for tk in tklist:
                 if tk not in known_symbols:
-                    print("New token: ", tk)
                     # We use a double if and not if/else because some symbols
                     # may be present in both lists
                     if tk in glob_tokens.keys():
