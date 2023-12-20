@@ -365,8 +365,9 @@ cs_local_time_step_compute(int  itrale)
 
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
           w1[c_id] =   coumax
-                     / (cs_math_fmax(dam[c_id]/(crom[c_id]*cell_f_vol[c_id]),
+                     / (cs_math_fmax(dam[c_id]/(crom[c_id]*c_vol),
                                      cs_math_epzero));
         }
 
@@ -393,9 +394,9 @@ cs_local_time_step_compute(int  itrale)
 
 #         pragma omp parallel for if (n_cells > CS_THR_MIN)
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+            cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
             w1[c_id] =   coumax
-                       / (cs_math_fmax(dam[c_id]/cell_f_vol[c_id],
-                                       cs_math_epzero));
+                       / (cs_math_fmax(dam[c_id]/c_vol, cs_math_epzero));
           }
 
         }
@@ -442,7 +443,8 @@ cs_local_time_step_compute(int  itrale)
 
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_real_t w2_l = dam[c_id] / (crom[c_id] * cell_f_vol[c_id]);
+          cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
+          cs_real_t w2_l = dam[c_id] / (crom[c_id] * c_vol);
           w2[c_id] = foumax / cs_math_fmax(w2_l, cs_math_epzero);
         }
 
@@ -1057,14 +1059,17 @@ cs_courant_fourier_compute(void)
     if (i != 1) {
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
         cpro_tab[c_id]
-          = dam[c_id] / (crom[c_id] * cell_f_vol[c_id]) * dt[c_id];
+          = dam[c_id] / (crom[c_id] * c_vol) * dt[c_id];
       }
     }
     else if (i == 1) { /* Volume courant */
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        cpro_tab[c_id] = dam[c_id] / cell_f_vol[c_id] * dt[c_id];
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
+        cpro_tab[c_id] = dam[c_id] / c_vol * dt[c_id];
+      }
     }
 
     if (i == 3)
