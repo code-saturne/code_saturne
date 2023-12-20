@@ -81,23 +81,25 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
-static const char _err_empty_nsp[] =
-  N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
-     " Please check your settings.\n");
+static const char _err_empty_nsp[]
+  = N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
+       " Please check your settings.\n");
 
-static const char
-cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
-  { N_("Stokes equations"),
-    N_("Oseen equations"),
-    N_("Incompressible Navier-Stokes equations"),
-  };
+static const char cs_navsto_param_model_name[CS_NAVSTO_N_MODELS]
+                                            [CS_BASE_STRING_LEN]
+  = {
+      N_("Stokes equations"),
+      N_("Oseen equations"),
+      N_("Incompressible Navier-Stokes equations"),
+    };
 
-static const char
-cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
-  { N_("Artificial compressibility algorithm"),
-    N_("Monolithic"),
-    N_("Incremental projection algorithm"),
-  };
+static const char cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS]
+                                               [CS_BASE_STRING_LEN]
+  = {
+      N_("Artificial compressibility algorithm"),
+      N_("Monolithic"),
+      N_("Incremental projection algorithm"),
+    };
 
 /* Keys to transfer settings from cs_param_navsto_t to cs_equation_param_t */
 
@@ -155,7 +157,7 @@ _check_petsc_strategy(const char         *val,
                       cs_navsto_sles_t    sles_type)
 {
 #if defined(HAVE_PETSC)
-#if PETSC_VERSION_GE(3,11,0)
+#if PETSC_VERSION_GE(3, 11, 0)
   CS_UNUSED(val);
   return sles_type;
 #else
@@ -239,7 +241,6 @@ _propagate_qtype(cs_navsto_param_t    *nsp)
     cs_xdef_set_quadrature(nsp->pressure_bc_defs[i], nsp->qtype);
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Create a new structure to store the settings related to the
@@ -319,8 +320,8 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   /* Settings for driving the linear algebra related to the Schur complement
      approximation */
 
-  cs_param_sles_t  *schur_slesp = cs_param_sles_create(-1,
-                                                       "schur_approximation");
+  cs_param_sles_t *schur_slesp
+    = cs_param_sles_create(-1, "schur_approximation");
 
   schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
   schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
