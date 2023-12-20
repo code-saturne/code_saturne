@@ -929,6 +929,15 @@ void
 cs_user_partition(void);
 
 /*----------------------------------------------------------------------------
+ * User function for input of radiative transfer module options.
+ *
+ * Deprecated Use cs_user_model instead.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_radiative_transfer_parameters(void);
+
+/*----------------------------------------------------------------------------
  * Define sparse matrix tuning options.
  *----------------------------------------------------------------------------*/
 
