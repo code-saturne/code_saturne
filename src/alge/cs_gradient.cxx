@@ -5459,6 +5459,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
+ *   madj           <-- pointer to mesh adjacencies structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   coefav         <-- B.C. coefficients for boundary face normals
@@ -5472,6 +5473,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 template <cs_lnum_t stride>
 static void
 _reconstruct_strided_gradient(const cs_mesh_t              *m,
+                              const cs_mesh_adjacencies_t  *madj,
                               const cs_mesh_quantities_t   *fvq,
                               cs_halo_type_t                halo_type,
                               int                           inc,
@@ -5484,13 +5486,15 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-  const int n_b_threads = m->b_face_numbering->n_threads;
+
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) madj->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) madj->cell_b_faces;
+  const cs_lnum_t n_b_cells = m->n_b_cells;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -5589,16 +5593,17 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
 
   /* Boundary face treatment */
 
-# pragma omp parallel for  if (n_b_faces > CS_THR_MIN)
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+# pragma omp parallel for  if (n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_b_cells; ii++) {
 
-    cs_lnum_t s_id, e_id;
-    cs_mesh_b_faces_thread_block_range(m, t_id, n_i_threads, 0,
-                                       &s_id, &e_id);
+    cs_lnum_t c_id = m->b_cells[ii];
 
-    for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
-      cs_lnum_t c_id = b_face_cells[f_id];
+    for (cs_lnum_t fidx = s_id; fidx < e_id; fidx++) { /* loop on boundary faces */
+
+      cs_lnum_t f_id = cell_b_faces[fidx];
 
       /*
         Remark: for the cell \f$ \celli \f$ we remove
@@ -5623,14 +5628,14 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
           rfac += coefbv[f_id][i][k] * vecfac;
         }
 
-        for (cs_lnum_t j = 0; j < 3; j++)
+        for (cs_lnum_t j = 0; j < 3; j++) {
           grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
-
+        }
       }
 
     } /* loop on faces */
 
-  } /* loop on threads */
+  } /* loop on boundary cells */
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -8749,6 +8754,7 @@ _gradient_vector(const char                     *var_name,
                  cs_real_33_t          *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
@@ -8877,7 +8883,7 @@ _gradient_vector(const char                     *var_name,
 
     if (_use_legacy_strided_lsq_gradient) {
       _lsq_vector_gradient(mesh,
-                           cs_glob_mesh_adjacencies,
+                           madj,
                            fvq,
                            halo_type,
                            inc,
@@ -8896,7 +8902,7 @@ _gradient_vector(const char                     *var_name,
       else
         gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
       gradient_f(mesh,
-                 cs_glob_mesh_adjacencies,
+                 madj,
                  fvq,
                  halo_type,
                  inc,
@@ -8919,7 +8925,7 @@ _gradient_vector(const char                     *var_name,
 
       if (_use_legacy_strided_lsq_gradient) {
         _lsq_vector_gradient(mesh,
-                             cs_glob_mesh_adjacencies,
+                             madj,
                              fvq,
                              halo_type,
                              inc,
@@ -8938,7 +8944,7 @@ _gradient_vector(const char                     *var_name,
         else
           gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
         gradient_f(mesh,
-                   cs_glob_mesh_adjacencies,
+                   madj,
                    fvq,
                    halo_type,
                    inc,
@@ -8953,6 +8959,7 @@ _gradient_vector(const char                     *var_name,
       }
 
       _reconstruct_strided_gradient<3>(mesh,
+                                       madj,
                                        fvq,
                                        halo_type,
                                        inc,
@@ -8989,7 +8996,7 @@ _gradient_vector(const char                     *var_name,
 
   _strided_gradient_clipping<3>(mesh,
                                 fvq,
-                                cs_glob_mesh_adjacencies,
+                                madj,
                                 halo_type,
                                 clip_mode,
                                 verbosity,
@@ -9041,6 +9048,7 @@ _gradient_tensor(const char                *var_name,
                  cs_real_63_t           *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -9108,7 +9116,7 @@ _gradient_tensor(const char                *var_name,
 
     if (_use_legacy_strided_lsq_gradient) {
       _lsq_tensor_gradient(mesh,
-                           cs_glob_mesh_adjacencies,
+                           madj,
                            fvq,
                            halo_type,
                            inc,
@@ -9127,7 +9135,7 @@ _gradient_tensor(const char                *var_name,
       else
         gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
       gradient_f(mesh,
-                 cs_glob_mesh_adjacencies,
+                 madj,
                  fvq,
                  halo_type,
                  inc,
@@ -9150,7 +9158,7 @@ _gradient_tensor(const char                *var_name,
 
       if (_use_legacy_strided_lsq_gradient) {
         _lsq_tensor_gradient(mesh,
-                             cs_glob_mesh_adjacencies,
+                             madj,
                              fvq,
                              halo_type,
                              inc,
@@ -9169,7 +9177,7 @@ _gradient_tensor(const char                *var_name,
         else
           gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
         gradient_f(mesh,
-                   cs_glob_mesh_adjacencies,
+                   madj,
                    fvq,
                    halo_type,
                    inc,
@@ -9184,6 +9192,7 @@ _gradient_tensor(const char                *var_name,
       }
 
       _reconstruct_strided_gradient<6>(mesh,
+                                       madj,
                                        fvq,
                                        halo_type,
                                        inc,
@@ -9220,7 +9229,7 @@ _gradient_tensor(const char                *var_name,
 
   _strided_gradient_clipping<6>(mesh,
                                 fvq,
-                                cs_glob_mesh_adjacencies,
+                                madj,
                                 halo_type,
                                 clip_mode,
                                 verbosity,

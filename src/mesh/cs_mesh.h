@@ -808,52 +808,6 @@ cs_mesh_i_faces_thread_block_range(const cs_mesh_t     *m,
                                    cs_lnum_t           *e_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Return number of boundary face blocks associated to threads or tasks.
- *
- * \param[in]  m           pointer to mesh
- * \param[in]  block_size  size of thread blocks (chunks) if > 0,
- *                         ignored (recomputed) if 0
- *
- * \return  number of associated blocks if block_size > 0, number of threads
- *          if block_size = 0.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_mesh_b_faces_thread_block_count(const cs_mesh_t  *m,
-                                   int               block_size);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute array index bounds for a block of boundary faces
- *        associated to a thread or task.
- *
- * When the mesh boundary faces are renumbered for threads (lexicographical
- * ordering based on cell adjacency), the start and past-the-end indexes for
- * the array range assigned to that block are adjusted so as to ensure all
- * boundary faces adjacent to a given cell are assigned to the same block, so
- * that no other block (task) thread references the same cell.
- *
- * \param[in]       m            pointer to mesh
- * \param[in]       block_id     block id (usually matches chunk/task)
- * \param[in]       block_count  number of thread blocks
- * \param[in]       block_size   size of thread blocks (chunks) if > 0,
- *                               ignored (recomputed) if 0
- * \param[in, out]  s_id         start index for the current block
- * \param[in, out]  e_id         past-the-end index for the current block
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_b_faces_thread_block_range(const cs_mesh_t  *m,
-                                   int               block_id,
-                                   int               block_count,
-                                   int               block_size,
-                                   cs_lnum_t        *s_id,
-                                   cs_lnum_t        *e_id);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
