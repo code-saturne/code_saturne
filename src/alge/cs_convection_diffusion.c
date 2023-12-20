@@ -4411,13 +4411,13 @@ res_cpu = !compute_cuda;
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
-  compute_cuda  = true;
-  compute_cpu   = true;
-  res_cpu       = false;
+  // compute_cuda  = true;
+  // compute_cpu   = true;
+  // res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  perf        = false;
-  accuracy    = false;
+  // perf        = false;
+  // accuracy    = false;
 
 #if defined(HAVE_CUDA)
   if(compute_cuda){
