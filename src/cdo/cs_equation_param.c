@@ -253,14 +253,15 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->flexible = true;
 
     }
-    else if (strcmp(keyval, "k_cycle") == 0) {
+    else if (strcmp(keyval, "k_cycle") == 0 || strcmp(keyval, "kamg") == 0) {
 
       eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
       eqp->sles_param->flexible = true;
 
     }
-    else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "boomer_v") == 0) {
+    else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "bamg") == 0 ||
+             strcmp(keyval, "boomer_v") == 0) {
 
       cs_param_sles_class_t  wanted_class = CS_PARAM_SLES_CLASS_HYPRE;
       if (eqp->sles_param->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
@@ -273,7 +274,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->solver_class = ret_class;
 
     }
-    else if (strcmp(keyval, "boomer_w") == 0) {
+    else if (strcmp(keyval, "boomer_w") == 0 || strcmp(keyval, "bamg_w") == 0) {
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
@@ -344,9 +345,11 @@ _set_key(cs_equation_param_t   *eqp,
 
     }
     else {
+
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_AMG_TYPE");
+
     }
     break;
 
@@ -418,7 +421,7 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_DOF_REDUCTION:
-    if (strcmp(keyval, "derham") == 0)
+    if (strcmp(keyval, "derham") == 0 || strcmp(keyval, "de_rham") == 0)
       eqp->dof_reduction = CS_PARAM_REDUCTION_DERHAM;
     else if (strcmp(keyval, "average") == 0)
       eqp->dof_reduction = CS_PARAM_REDUCTION_AVERAGE;
