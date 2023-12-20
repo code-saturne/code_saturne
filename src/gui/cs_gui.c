@@ -83,7 +83,6 @@
 #include "cs_param_sles.h"
 #include "cs_partition.h"
 #include "cs_physical_model.h"
-#include "cs_post.h"
 #include "cs_rotation.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
@@ -5040,7 +5039,6 @@ cs_gui_calculator_functions(void)
                                               cs_meg_xdef_wrapper,
                                               _input);
       cs_function_set_label(f, name);
-      f->post_vis = CS_POST_ON_LOCATION;
       f->log      = 1;
     }
   }

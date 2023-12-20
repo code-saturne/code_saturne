@@ -217,6 +217,57 @@ _field_post(const char  *field_type,
     cs_field_set_key_str(f, k_lbl, label);
 }
 
+/*-----------------------------------------------------------------------------
+ * Post-processing options for user defind calculator functions (GUI)
+ *
+ * parameters:
+ *   f_id <-- field id
+ *----------------------------------------------------------------------------*/
+
+static void
+_function_post(const int id)
+{
+  cs_function_t *f = cs_function_by_id(id);
+
+  const char path_s[] = "user_functions/calculator/function";
+  cs_tree_node_t *tn_s = cs_tree_get_node(cs_glob_tree, path_s);
+
+  cs_tree_node_t *_tn = NULL;
+  for (cs_tree_node_t *tn = tn_s;
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+    const char *name = cs_gui_node_get_tag(tn, "name");
+    if (strcmp(name, f->name) == 0) {
+      _tn = tn;
+      break;
+    }
+  }
+
+  if (_tn == NULL)
+    return;
+
+  /* By default, if function exists in GUI, use parameters defined in it */
+  int f_post   = 1;
+  int f_log    = 1;
+  int f_probes = 1;
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(_tn, "postprocessing_recording"),
+                             &f_post);
+  f->post_vis |= CS_POST_ON_LOCATION;
+  if (f_post == 0)
+    f->post_vis -= CS_POST_ON_LOCATION;
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(_tn, "probes_recording"),
+                             &f_probes);
+  f->post_vis |= CS_POST_MONITOR;
+  if (f_probes == 0)
+    f->post_vis -= CS_POST_MONITOR;
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(_tn, "listing_printing"),
+                             &f_log);
+  f->log = f_log;
+}
+
 /*----------------------------------------------------------------------------
  * Get postprocessing value status for surfacic variables
  *
@@ -712,6 +763,11 @@ cs_gui_output(void)
   }
 
   BFT_FREE(moment_id);
+
+  /* User functions */
+  for (int f_id = 0; f_id < cs_function_n_functions(); f_id++) {
+    _function_post(f_id);
+  }
 
 #if _XML_DEBUG_
   bft_printf("%s\n", __func__);

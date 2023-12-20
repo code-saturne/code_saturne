@@ -53,6 +53,12 @@ class UserCalculatorModel(Variables, Model):
         return _d
 
 
+    def getNumberOfFunctions(self, location=None):
+        """
+        """
+        return len(self.__get_nodes_list(location))
+
+
     def getFunctionsNamesList(self, location=None):
         """
         """
@@ -220,6 +226,57 @@ class UserCalculatorModel(Variables, Model):
 
         return exp, req, known_fields, symbols
 
+
+    @Variables.noUndo
+    def getPrintingStatus(self, f_name):
+        """
+        """
+        n = self.__get_function_node(f_name)
+        return self.__get_on_off_sub_node_status(n, 'listing_recording')
+
+
+    @Variables.undoLocal
+    def setPrintingStatus(self, f_name, status):
+        """
+        Set status for printing in listing.
+        """
+        n = self.__get_function_node(f_name)
+        self.__update_on_off_sub_node(n, 'listing_printing', status)
+
+
+    @Variables.noUndo
+    def getPostStatus(self, f_name):
+        """
+        """
+        n = self.__get_function_node(f_name)
+        return self.__get_on_off_sub_node_status(n, 'postprocessing_recording')
+
+
+    @Variables.undoLocal
+    def setPostStatus(self, f_name, status):
+        """
+        Update Postprocessing status
+        """
+        n = self.__get_function_node(f_name)
+        self.__update_on_off_sub_node(n, 'postprocessing_recording', status)
+
+
+    @Variables.noUndo
+    def getMonitorStatus(self, f_name):
+        """
+        """
+        n = self.__get_function_node(f_name)
+        return self.__get_on_off_sub_node_status(n, 'probes_recording')
+
+
+    @Variables.undoLocal
+    def setMonitorStatus(self, f_name, status):
+        """
+        """
+        n = self.__get_function_node(f_name)
+        self.__update_on_off_sub_node(n, 'probes_recording', status)
+
+
     # -------------------------------------------------------------------------
     # Private functions
     # -------------------------------------------------------------------------
@@ -263,6 +320,34 @@ class UserCalculatorModel(Variables, Model):
         n = self.__get_function_node(f_name)
         if n is not None:
             n.xmlRemoveNode()
+
+
+    def __update_on_off_sub_node(self, node, sub_node_name, status):
+        """
+        """
+        if node is None:
+            return
+
+        self.isOnOff(status)
+
+        if status is "off":
+            node.xmlInitChildNode(sub_node_name)['status'] = status
+        else:
+            if node.xmlGetChildNode(sub_node_name):
+                node.xmlRemoveChild(sub_node_name)
+
+
+    def __get_on_off_sub_node_status(self, node, sub_node_name):
+        """
+        """
+        retval = "on"
+
+        if node:
+            sn = node.xmlGetChildNode(sub_node_name, 'status')
+            if sn:
+                retval = sn['status']
+
+        return retval
 
 
     def __get_nodes_list(self, location=None):

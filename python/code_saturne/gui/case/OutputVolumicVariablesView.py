@@ -51,6 +51,7 @@ from code_saturne.gui.base.QtPage import ComboModel
 from code_saturne.gui.case.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.model.UserCalculatorModel import UserCalculatorModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -60,6 +61,7 @@ logging.basicConfig()
 log = logging.getLogger("OutputVolumicVariablesView")
 log.setLevel(GuiParam.DEBUG)
 
+_calculator_group = "User functions"
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -196,7 +198,7 @@ class TreeItem(object):
 
 class VolumicOutputStandardItemModel(QAbstractItemModel):
 
-    def __init__(self, parent, case, mdl):
+    def __init__(self, parent, case, mdl, calculator=None):
         """
         """
         QAbstractItemModel.__init__(self)
@@ -204,6 +206,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         self.parent = parent
         self.case   = case
         self.mdl    = mdl
+        self.calculator = calculator
 
         self.noderoot = {}
         self.prtlist = []
@@ -232,6 +235,10 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 rlist.append(self.prtlist.index('Time moments'))
 
             self.prtlist = [self.prtlist[j] for j in rlist]
+
+        if self.calculator:
+            if self.calculator.getNumberOfFunctions(location="cells") > 0:
+                self.prtlist.append(_calculator_group)
 
 
         self.rootItem = TreeItem(None, "ALL", None)
@@ -370,17 +377,18 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             self.rootItem.appendChild(newparent)
             self.noderoot[bs] = newparent
 
+        _is_post_active = OutputControlModel(self.case).isVolumeWriterActive()
+
         for (name, value) in self.mdl.list_name:
             row = self.rowCount()
             parentItem = self.noderoot[value]
             label = self.mdl.dicoLabelName[name]
             printing = self.mdl.getPrintingStatus(name)
 
-            if not OutputControlModel(self.case).isVolumeWriterActive():
-                post = "off"
-                self.mdl.setPostStatus(name, post)
-            else:
-                post = self.mdl.getPostStatus(name)
+            if not _is_post_active:
+                self.mdl.setPostStatus(name, "off")
+
+            post = self.mdl.getPostStatus(name)
 
             if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
                 from code_saturne.model.TimeStepModel import TimeStepModel
@@ -394,6 +402,22 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
             # StandardItemModel data
             item = item_class(name, label, printing, post, monitor, value)
+            newItem = TreeItem(item, "", parentItem)
+            parentItem.appendChild(newItem)
+
+        # Calculator functions
+        for func in self.calculator.getFunctionsNamesList(location="cells"):
+            row = self.rowCount()
+            parentItem = self.noderoot[_calculator_group]
+            printing = self.calculator.getPrintingStatus(func)
+
+            if not _is_post_active:
+                self.calculator.setPostStatus("off")
+            post = self.calculator.getPostStatus(func)
+
+            monitor = self.calculator.getMonitorStatus(func)
+
+            item = item_class(func, func, printing, post, monitor, _calculator_group)
             newItem = TreeItem(item, "", parentItem)
             parentItem.appendChild(newItem)
 
@@ -442,7 +466,10 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             if label == "":
                 label = item.label
             if item not in self.noderoot.values():
-                self.mdl.setVariableLabel(item.item.label, label)
+                if item.item.variable != _calculator_group:
+                    self.mdl.setVariableLabel(item.item.label, label)
+                else:
+                    self.calculator.setName(label)
             item.item.label = label
 
         elif index.column() >= 2:
@@ -456,13 +483,26 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 if not OutputControlModel(self.case).isVolumeWriterActive():
                     item.item.status[1] = "off"
             if item not in self.noderoot.values():
-
-                if c_id == 0:
-                    self.mdl.setPrintingStatus(item.item.name, item.item.status[0])
-                elif c_id == 1:
-                    self.mdl.setPostStatus(item.item.name, item.item.status[1])
-                elif c_id == 2:
-                    self.mdl.setMonitorStatus(item.item.name, item.item.status[2])
+                if item.item.value == _calculator_group:
+                    if c_id == 0:
+                        self.calculator.setPrintingStatus(item.item.name,
+                                                          item.item.status[c_id])
+                    elif c_id == 1:
+                        self.calculator.setPostStatus(item.item.name,
+                                                      item.item.status[c_id])
+                    elif c_id == 2:
+                        self.calculator.setMonitorStatus(item.item.name,
+                                                         item.item.status[c_id])
+                else:
+                    if c_id == 0:
+                        self.mdl.setPrintingStatus(item.item.name,
+                                                   item.item.status[0])
+                    elif c_id == 1:
+                        self.mdl.setPostStatus(item.item.name,
+                                               item.item.status[1])
+                    elif c_id == 2:
+                        self.mdl.setMonitorStatus(item.item.name,
+                                                  item.item.status[2])
                 # count for parent item
                 size = len(item.parentItem.childItems)
                 active = 0
@@ -478,12 +518,27 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
             else:
                 for itm in item.childItems:
-                    if c_id == 0:
-                        self.mdl.setPrintingStatus(itm.item.name, item.item.status[0])
-                    elif c_id == 1:
-                        self.mdl.setPostStatus(itm.item.name, item.item.status[1])
-                    elif c_id == 2:
-                        self.mdl.setMonitorStatus(itm.item.name, item.item.status[2])
+                    if itm.item.value == _calculator_group:
+                        if c_id == 0:
+                            self.calculator.setPrintingStatus(itm.item.name,
+                                                              item.item.status[c_id])
+                        elif c_id == 1:
+                            self.calculator.setPostStatus(itm.item.name,
+                                                          item.item.status[c_id])
+                        elif c_id == 2:
+                            self.calculator.setMonitorStatus(itm.item.name,
+                                                             item.item.status[c_id])
+                    else:
+                        if c_id == 0:
+                            self.mdl.setPrintingStatus(itm.item.name,
+                                                       item.item.status[0])
+                        elif c_id == 1:
+                            self.mdl.setPostStatus(itm.item.name,
+                                                   item.item.status[1])
+                        elif c_id == 2:
+                            self.mdl.setMonitorStatus(itm.item.name,
+                                                      item.item.status[2])
+
                     itm.item.status[c_id] = item.item.status[c_id]
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
@@ -513,8 +568,9 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.info_turb_name = []
 
         self.mdl = OutputVolumicVariablesModel(self.case)
+        self.calculator = UserCalculatorModel(self.case)
 
-        self.modelOutput = VolumicOutputStandardItemModel(parent, self.case, self.mdl)
+        self.modelOutput = VolumicOutputStandardItemModel(parent, self.case, self.mdl, self.calculator)
         self.treeViewOutput.setModel(self.modelOutput)
         self.treeViewOutput.setAlternatingRowColors(True)
         self.treeViewOutput.setSelectionBehavior(QAbstractItemView.SelectItems)
