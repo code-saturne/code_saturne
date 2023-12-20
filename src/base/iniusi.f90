@@ -267,6 +267,8 @@ call parameters_read_restart_info
 
 call cs_gui_physical_model_select
 
+call cfnmtd(ficfpp, len(ficfpp))
+
 ! Flow model selection through user Fortran subroutine
 
 call usppmo(1)
@@ -350,8 +352,6 @@ call cs_velocity_pressure_set_solid
 !===============================================================================
 ! 2. Initialize parameters for specific physics
 !===============================================================================
-
-call cfnmtd(ficfpp, len(ficfpp))
 
 call cs_rad_transfer_options
 
