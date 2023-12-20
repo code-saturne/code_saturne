@@ -651,6 +651,24 @@ cs_parall_thread_range_upper(cs_lnum_t    n,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute number of blocks needed for a given array and block sizes.
+ *
+ * \param[in]  n           size of array
+ * \param[in]  block_size  block size for sub-loops
+ *
+ * \return  number of required blocks
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline size_t
+cs_parall_block_count(size_t  n,
+                      size_t  block_size)
+{
+  return (n % block_size) ?  n/block_size + 1 : n/block_size;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
