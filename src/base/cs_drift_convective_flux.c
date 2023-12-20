@@ -80,7 +80,7 @@ BEGIN_C_DECLS
 
 /*!
   ! \file cs_drift_scalar_convective_flux_compute.c
-
+*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

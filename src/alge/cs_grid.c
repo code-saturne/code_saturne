@@ -5894,7 +5894,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
   }
 
   if (f->use_faces)
-    cs_matrix_set_mesh_association(c->matrix,
+    cs_matrix_set_mesh_association(c->_matrix,
                                    NULL,
                                    NULL,
                                    NULL,
