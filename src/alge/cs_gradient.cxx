@@ -5590,13 +5590,13 @@ res_cpu = !compute_cuda;
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
-  compute_cuda  = true;
-  compute_cpu   = true;
-  res_cpu       = false;
+  // compute_cuda  = true;
+  // compute_cpu   = true;
+  // res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  perf        = false;
-  accuracy    = false;
+  // perf        = false;
+  // accuracy    = false;
 
 
 #if defined(HAVE_CUDA)
@@ -6936,11 +6936,20 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   accuracy    = false;
 #endif
 
-BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
-BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
-BFT_MALLOC(gradv_cuda, n_cells_ext, cs_real_33_t);
-BFT_MALLOC(gradv_cpu, n_cells_ext, cs_real_33_t);
+  // Pour l'instant ces lignes sont pour moi
+  // Elles seront à enlever
+  // compute_cuda  = true;
+  // compute_cpu   = true;
+  // res_cpu       = false;
 
+  // A ne pas garder dans la version finale
+  // perf        = false;
+  // accuracy    = false;
+
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(gradv_cuda, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(gradv_cpu, n_cells_ext, cs_real_33_t);
   /* Compute Right-Hand Side */
   /*-------------------------*/
 #if defined(HAVE_CUDA)
@@ -9152,13 +9161,13 @@ res_cpu = !compute_cuda;
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
-  compute_cuda  = true;
-  compute_cpu   = true;
-  res_cpu       = false;
+  // compute_cuda  = true;
+  // compute_cpu   = true;
+  // res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  perf        = false;
-  accuracy    = false;
+  // perf        = false;
+  // accuracy    = false;
 
 // Compute on GPU
 #if defined(HAVE_CUDA)

@@ -193,6 +193,7 @@ libcsalge_a_SOURCES += \
 cs_benchmark_cuda.cu \
 cs_blas_cuda.cu \
 cs_gradient_cuda.cu \
+cs_convection_diffusion_cuda.cu \
 cs_matrix_spmv_cuda.cu \
 cs_sles_it_cuda.cu \
 cs_sles_pc_cuda.cu

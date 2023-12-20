@@ -23,6 +23,7 @@
 */
 
 /*----------------------------------------------------------------------------*/
+#pragma once
 
 #include "cs_defs.h"
 
@@ -72,14 +73,58 @@
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
+BEGIN_C_DECLS
 
-#include "cs_gradient.h"
-#include "cs_gradient_priv.h"
+  typedef cs_real_t  cs_cocg_t;
+  typedef cs_real_t  cs_cocg_6_t[6];
+  typedef cs_real_t  cs_cocg_33_t[3][3];
 
-__device__ cs_real_t
+END_C_DECLS
+
+template <typename T>
+static void
+_sync_or_copy_real_h2d(const  T   *val_h,
+                       cs_lnum_t           n_vals,
+                       int                 device_id,
+                       cudaStream_t        stream,
+                       const T   **val_d,
+                       void              **buf_d)
+{
+  const T  *_val_d = NULL;
+  void             *_buf_d = NULL;
+
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
+  size_t size = n_vals * sizeof(T);
+
+  if (alloc_mode == CS_ALLOC_HOST) {
+    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
+    cs_cuda_copy_h2d(_buf_d, val_h, size);
+    _val_d = (const T *)_buf_d;
+  }
+  else {
+    _val_d = (const T *)cs_get_device_ptr((void *)val_h);
+
+    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
+      cudaMemPrefetchAsync(val_h, size, device_id, stream);
+    else
+      cs_sync_h2d(val_h);
+  }
+
+  *val_d = _val_d;
+  *buf_d = _buf_d;
+}
+
+/* Compute gridsize*/
+
+static unsigned int 
+get_gridsize(unsigned int size, unsigned int blocksize){
+  unsigned int gridsize = (unsigned int)ceil((double)size / blocksize);
+
+  return gridsize;
+}
+
+
+__device__ static cs_real_t
 cs_math_fabs_cuda(cs_real_t  x)
 {
   cs_real_t ret = (x <  0) ? -x : x;
@@ -87,7 +132,7 @@ cs_math_fabs_cuda(cs_real_t  x)
   return ret;
 }
 
-__device__ cs_real_t
+__device__ static cs_real_t
 cs_math_3_dot_product_cuda(const cs_real_t  u[3],
                       const cs_real_t  v[3])
 {
@@ -96,8 +141,23 @@ cs_math_3_dot_product_cuda(const cs_real_t  u[3],
   return prod;
 }
 
+__global__ static void
+_set_one_to_coeff_b(const cs_lnum_t            n_b_faces,
+                    cs_real_33_t   *_bc_coeff_b)
+{
+  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-__device__ void cs_math_3_normalize_cuda(const cs_real_t in[3],
+  if(c_idx >= n_b_faces){
+    return;
+  }
+
+  cs_lnum_t f_id = c_idx / 3;
+  size_t i = c_idx % 3;
+  
+  _bc_coeff_b[f_id][i][i] = 1;
+}
+
+__device__ static void cs_math_3_normalize_cuda(const cs_real_t in[3],
                                          cs_real_t out[3])
 {
   cs_real_t norm = sqrt(in[0]*in[0] 
@@ -111,12 +171,12 @@ __device__ void cs_math_3_normalize_cuda(const cs_real_t in[3],
   out[2] = inverse_norm * in[2];
 }
 
-__device__ cs_real_t cs_math_3_square_norm_cuda(const cs_real_t in[3]){
+__device__ static cs_real_t cs_math_3_square_norm_cuda(const cs_real_t in[3]){
   cs_real_t norm = in[0]*in[0] + in[1]*in[1] + in[2]*in[2];
   return norm;
 }
 
-__device__ void _math_6_inv_cramer_sym_in_place_cuda(cs_cocg_t in[6]){
+__device__ static void _math_6_inv_cramer_sym_in_place_cuda(cs_cocg_t in[6]){
   cs_real_t in00 = in[1]*in[2] - in[4]*in[4];
   cs_real_t in01 = in[4]*in[5] - in[3]*in[2];
   cs_real_t in02 = in[3]*in[4] - in[1]*in[5];
@@ -135,7 +195,7 @@ __device__ void _math_6_inv_cramer_sym_in_place_cuda(cs_cocg_t in[6]){
 }
 
 template <int d_size>
-__device__ void
+__device__ static void
 _fact_crout_pp_cuda(cs_real_t  *ad)
 {
   cs_real_t aux[d_size];
@@ -154,7 +214,7 @@ _fact_crout_pp_cuda(cs_real_t  *ad)
 }
 
 template <int d_size>
-__device__ void
+__device__ static void
 _fw_and_bw_ldtl_pp_cuda(const cs_real_t mat[],
                          cs_real_t x[],
                    const cs_real_t b[])

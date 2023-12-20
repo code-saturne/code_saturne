@@ -74,8 +74,9 @@
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
-
+#include "time.h"
 #include "cs_convection_diffusion.h"
+#include "cs_convection_diffusion_priv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -4369,80 +4370,286 @@ cs_convection_diffusion_vector(int                         idtvar,
          - when we have convection, we are not in pure upwind
            and we have not shunted the slope test. */
 
-  if (  (idiffp != 0 && ircflp == 1) || ivisep == 1
-     || (   iconvp != 0 && iupwin == 0
-         && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
 
-    if (f_id != -1) {
-      /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
-          int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
-          if (diff_id > -1) {
-            cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
-            cs_field_synchronize(weight_f, halo_type);
+
+  /* Timing the computation */
+
+  clock_t start, stop;
+  unsigned long elapsed, elapsed_cuda;
+
+  cs_real_33_t *grad_cpu, *grad_gpu;
+  cs_real_33_t *grdpa_cpu, *grdpa_gpu;
+  
+  bool compute_cuda;
+  bool compute_cpu;
+  bool res_cpu;
+  bool perf;
+  bool accuracy;
+
+#if defined(HAVE_CUDA)
+  compute_cuda = (cs_get_device_id() > -1) ? true : false;
+#else
+  compute_cuda = false;
+#endif
+
+res_cpu = !compute_cuda;
+
+#if defined(DEBUG)
+  compute_cpu = true;
+  perf        = true;
+  accuracy    = true;
+#elif defined(NDEBUG)
+  compute_cpu = true;
+  perf        = false;
+  accuracy    = false;
+#else
+  compute_cpu = false;
+  perf        = false;
+  accuracy    = false;
+#endif
+
+
+  // Pour l'instant ces lignes sont pour moi
+  // Elles seront à enlever
+  // compute_cuda  = true;
+  // compute_cpu   = true;
+  // res_cpu       = false;
+
+  // A ne pas garder dans la version finale
+  // perf        = false;
+  // accuracy    = false;
+
+#if defined(HAVE_CUDA)
+  if(compute_cuda){
+    if(!res_cpu){
+      grad_gpu = grad;
+      grdpa_gpu = grdpa;
+    } else {
+      BFT_MALLOC(grad_gpu, n_cells_ext, cs_real_33_t);
+      BFT_MALLOC(grdpa_gpu, n_cells_ext, cs_real_33_t);
+    }
+    if(perf){
+      start = clock();
+    }
+    
+    bool flag1 = (  (idiffp != 0 && ircflp == 1) || ivisep == 1
+      || (   iconvp != 0 && iupwin == 0
+          && (ischcp == 0 || ircflp == 1 || isstpp == 0)));
+
+    if (flag1) {
+
+      if (f_id != -1) {
+        /* Get the calculation option from the field */
+        if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+          if (var_cal_opt.idiff > 0) {
+            int key_id = cs_field_key_id("gradient_weighting_id");
+            int diff_id = cs_field_get_key_int(f, key_id);
+            if (diff_id > -1) {
+              cs_field_t *weight_f = cs_field_by_id(diff_id);
+              gweight = weight_f->val;
+              cs_field_synchronize(weight_f, halo_type);
+            }
           }
+        }
+      }
+
+      cs_gradient_vector_synced_input(var_name,
+                                      gradient_type,
+                                      halo_type,
+                                      inc,
+                                      nswrgp,
+                                      iwarnp,
+                                      imligp,
+                                      epsrgp,
+                                      climgp,
+                                      coefav,
+                                      coefbv,
+                                      _pvar,
+                                      gweight, /* weighted gradient */
+                                      cpl,
+                                      grad_gpu);
+    }
+
+    bool flag2 = (iconvp > 0 && iupwin == 0 && isstpp == 0);
+
+    cs_convection_diffusion_vector_cuda(m,
+                                        cs_glob_mesh_adjacencies,
+                                        fvq,
+                                        _pvar,
+                                        i_massflux,
+                                        grad_gpu,
+                                        grdpa_gpu,
+                                        coefav,
+                                        coefbv,
+                                        inc,
+                                        flag1,
+                                        flag2,
+                                        perf);
+
+    /* Handle parallelism and periodicity */
+    if (flag2){
+      if (halo != NULL) {
+        cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa_gpu, 9);
+        if (m->n_init_perio > 0)
+          cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)grdpa_gpu);
+      }
+    }
+
+    if(perf){
+      stop = clock();
+      elapsed_cuda = (stop - start) * 1e6 / CLOCKS_PER_SEC;
+    }
+  }
+#endif
+
+  if(compute_cpu){
+    if(res_cpu){
+      grad_cpu = grad;
+      grdpa_cpu = grdpa;
+    } else {
+      BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
+      BFT_MALLOC(grdpa_cpu, n_cells_ext, cs_real_33_t);
+    }
+
+    if(perf){
+      start = clock();
+    }
+
+    if (  (idiffp != 0 && ircflp == 1) || ivisep == 1
+      || (   iconvp != 0 && iupwin == 0
+          && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
+
+      if (f_id != -1) {
+        /* Get the calculation option from the field */
+        if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+          if (var_cal_opt.idiff > 0) {
+            int key_id = cs_field_key_id("gradient_weighting_id");
+            int diff_id = cs_field_get_key_int(f, key_id);
+            if (diff_id > -1) {
+              cs_field_t *weight_f = cs_field_by_id(diff_id);
+              gweight = weight_f->val;
+              cs_field_synchronize(weight_f, halo_type);
+            }
+          }
+        }
+      }
+
+      cs_gradient_vector_synced_input(var_name,
+                                      gradient_type,
+                                      halo_type,
+                                      inc,
+                                      nswrgp,
+                                      iwarnp,
+                                      imligp,
+                                      epsrgp,
+                                      climgp,
+                                      coefav,
+                                      coefbv,
+                                      _pvar,
+                                      gweight, /* weighted gradient */
+                                      cpl,
+                                      grad_cpu);
+    }
+    else {
+  #   pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+        for (int isou = 0; isou < 3; isou++) {
+          for (int jsou = 0; jsou < 3; jsou++)
+            grad_cpu[cell_id][isou][jsou] = 0.;
         }
       }
     }
 
-    cs_gradient_vector_synced_input(var_name,
-                                    gradient_type,
-                                    halo_type,
-                                    inc,
-                                    nswrgp,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
-                                    coefav,
-                                    coefbv,
-                                    _pvar,
-                                    gweight, /* weighted gradient */
-                                    cpl,
-                                    grad);
+/* ======================================================================
+    ---> Compute uncentered gradient grdpa for the slope test
+    ======================================================================*/
 
-  }
-  else {
-#   pragma omp parallel for
+  # pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++)
-          grad[cell_id][isou][jsou] = 0.;
+      for (int jsou = 0; jsou < 3; jsou++) {
+        for (int isou = 0; isou < 3; isou++)
+          grdpa_cpu[cell_id][isou][jsou] = 0.;
       }
     }
-  }
 
-  /* ======================================================================
-     ---> Compute uncentered gradient grdpa for the slope test
-     ======================================================================*/
+    if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (int jsou = 0; jsou < 3; jsou++) {
-      for (int isou = 0; isou < 3; isou++)
-        grdpa[cell_id][isou][jsou] = 0.;
+      cs_slope_test_gradient_vector(inc,
+                                    halo_type,
+                                    (const cs_real_33_t *)grad_cpu,
+                                    grdpa_cpu,
+                                    _pvar,
+                                    coefav,
+                                    coefbv,
+                                    i_massflux);
+
+    }
+
+    if(perf){
+      stop = clock();
+      elapsed = (stop - start) * 1e6 / CLOCKS_PER_SEC;
     }
   }
 
-  if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
+  /* Performances */
+  if(perf){
+    #if defined(HAVE_CUDA)
+      if(compute_cuda){
+        printf("convection Compute and tranferts time in us: CUDA = %ld\n", elapsed_cuda);
+      }
+    #endif
 
-    cs_slope_test_gradient_vector(inc,
-                                  halo_type,
-                                  (const cs_real_33_t *)grad,
-                                  grdpa,
-                                  _pvar,
-                                  coefav,
-                                  coefbv,
-                                  i_massflux);
-
+    if(compute_cpu){
+      printf("convection compute time in us: CPU = %ld\n", elapsed);
+    }
   }
 
-  /* ======================================================================
-     ---> Contribution from interior faces
-     ======================================================================*/
+  /* Accuracy grad_cpu and grad_gpu */
+  if(accuracy){
+    #if defined(HAVE_CUDA)
+      if(compute_cuda){
+        if(compute_cpu){
+          cs_real_t cpu, cuda;
+          double err;
+          for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+            for (cs_lnum_t i = 0; i < 3; i++) {
+              for (int j  =0; j < 3; ++j) {
+                cpu = grdpa_cpu[c_id][i][j];
+                cuda = grdpa_gpu[c_id][i][j];
+                err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
+                if (err> 1e-6) {
+                  printf("convection_diffusion_b DIFFERENCE @%d-%d-%d: CPU = %.17f\tCUDA = %.17f\tdiff = %.17f\tdiff relative = %.17f\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err);
+                }
+              }
+            }
+          }
+        }
+      }
+    #endif
+  }
+
+// Free memory 
+#if defined(HAVE_CUDA)
+  if(compute_cuda){
+    if(res_cpu){
+      BFT_FREE(grad_gpu);
+      BFT_FREE(grdpa_gpu);
+    }
+  }
+#endif
+
+// Free memory
+  if(compute_cpu){
+    if(!res_cpu){
+      BFT_FREE(grad_cpu);
+      BFT_FREE(grdpa_cpu);
+    }
+  }
+
+
+    /* ======================================================================
+      ---> Contribution from interior faces
+      ======================================================================*/
 
   n_upwind = 0;
 
@@ -4453,7 +4660,6 @@ cs_convection_diffusion_vector(int                         idtvar,
         rhs[cell_id][isou] = 0.;
     }
   }
-
   /* --> Pure upwind flux
      =====================*/
 
