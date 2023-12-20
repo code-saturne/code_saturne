@@ -36,8 +36,6 @@ cs_slope_test_gradient_vector_cuda_i_gather( const cs_lnum_t      n_cells,
       djfv[jsou] = i_face_cog[f_id][jsou] - cell_cen[c_id2][jsou];
     }
 
-    /* x-y-z component, p = u, v, w */
-
     for (int isou = 0; isou < 3; isou++) {
       pif = pvar[c_id1][isou];
       pjf = pvar[c_id2][isou];
@@ -50,8 +48,6 @@ cs_slope_test_gradient_vector_cuda_i_gather( const cs_lnum_t      n_cells,
       if (i_massflux[f_id] * face_sgn > 0.) 
         pfac = pif;
       pfac *= face_sgn;
-
-      /* U gradient */
 
       for (int jsou = 0; jsou < 3; jsou++) {
         vfac[jsou] = pfac*i_f_face_normal[f_id][jsou];
@@ -93,8 +89,6 @@ cs_slope_test_gradient_vector_cuda_b_gather(const cs_lnum_t      n_b_cells,
 
   for(cs_lnum_t index = s_id; index < e_id; index++){
     f_id = cell_b_faces[index];
-
-    /* x-y-z components, p = u, v, w */
 
     for (int jsou = 0; jsou < 3; jsou++)
       diipbv[jsou] = diipb[f_id][jsou];

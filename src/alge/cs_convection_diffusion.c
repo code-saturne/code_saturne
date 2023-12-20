@@ -4600,7 +4600,7 @@ res_cpu = !compute_cuda;
     #endif
 
     if(compute_cpu){
-      printf("convection Compute and tranferts time in us: CPU = %ld\n", elapsed);
+      printf("convection compute time in us: CPU = %ld\n", elapsed);
     }
   }
 
