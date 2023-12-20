@@ -1288,6 +1288,7 @@ cs_slope_test_gradient_vector(const int              inc,
   }
 }
 
+#if defined(HAVE_OPENMP_TARGET)
 void
 cs_slope_test_gradient_vector_target(const int              inc,
                               const cs_halo_type_t   halo_type,
@@ -1345,7 +1346,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  bool scatter = false;
+  bool scatter = true;
 
 #pragma omp target data map(tofrom: grdpa[0:n_cells_ext]) \
                         map(to: grad[0:n_cells_ext], \
@@ -1577,6 +1578,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
       cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)grdpa);
   }
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4566,7 +4568,6 @@ cs_convection_diffusion_vector(int                         idtvar,
   int iupwin = 0;
 
   cs_real_33_t *grad, *grdpa;
-  cs_real_33_t *grad_target, *grdpa_target;
   cs_real_t *bndcel;
 
   const cs_real_3_t *coface = NULL;
@@ -4593,8 +4594,6 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
   BFT_MALLOC(grdpa, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(grad_target, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(grdpa_target, n_cells_ext, cs_real_33_t);
 
   /* Choose gradient type */
 
@@ -4876,16 +4875,16 @@ res_cpu = !compute_cuda;
       //                               coefbv,
       //                               i_massflux);
 
-      
-    cs_slope_test_gradient_vector_target(inc,
-                                         halo_type,
-                                         (const cs_real_33_t *)grad,
-                                         grdpa_cpu,
-                                         _pvar,
-                                         coefav,
-                                         coefbv,
-                                         i_massflux);
-
+      #if defined(HAVE_OPENMP_TARGET)
+      cs_slope_test_gradient_vector_target(inc,
+                                          halo_type,
+                                          (const cs_real_33_t *)grad,
+                                          grdpa_cpu,
+                                          _pvar,
+                                          coefav,
+                                          coefbv,
+                                          i_massflux);
+      #endif
     }
 
     if(perf){

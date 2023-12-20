@@ -6877,14 +6877,9 @@ void cs_math_3_normalize_target(const cs_real_t in[3],
   out[2] = inverse_norm * in[2];
 }
 
-unsigned int 
-num_block(unsigned int size, unsigned int num_threads){
-  unsigned int num = (unsigned int)ceil((double)size / num_threads);
-
-  return num;
-}
-
 BEGIN_C_DECLS
+#if defined(HAVE_OPENMP_TARGET)
+
 void
 _lsq_vector_gradient_target(const cs_mesh_t               *m,
                      const cs_mesh_adjacencies_t   *madj,
@@ -6964,11 +6959,12 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 #pragma omp target data map(tofrom: rhs[0:n_cells_ext]) \
                         map(from: gradv[0:n_cells_ext]) \
                         map(to: i_face_cells[0:n_i_faces], b_face_normal[0:n_b_faces], \
-                                coefav[0:n_b_faces], coefbv[0:n_b_faces], \
+                                coefav[0:n_b_faces], coefbv[0:n_b_faces], b_dist[0:n_b_faces],\
                                 cell_f_cen[0:n_cells_ext], pvar[0:n_cells_ext],\
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells_lst[0:n_cells_ext], \
                                 cell_b_faces_idx[0:n_cells+1], \
+                                b_face_cells[0:n_b_faces], \
                                 b_cells[0:n_b_cells], \
                                 cocg[0:n_cells_ext])
 {
@@ -7033,7 +7029,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 cell_cells_idx[0:n_cells_ext], \
                                 cell_cells[0:n_cells_ext], \
                                 cell_f_cen[0:n_cells_ext], \
-                                pvar[0:n_cells_ext]) schedule(static,1) //num_teams(num_block(n_cells, 64))
+                                pvar[0:n_cells_ext]) schedule(static,1)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_lnum_t s_id = cell_cells_idx[c_id];
@@ -7133,6 +7129,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                         map(to: b_face_normal[0:n_b_faces], \
                                 coefav[0:n_b_faces], \
                                 coefbv[0:n_b_faces], \
+                                b_face_cells[0:n_b_faces], \
                                 pvar[0:n_cells_ext],\
                                 cocg[0:n_cells_ext]) schedule(static,1)
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -7261,6 +7258,8 @@ printf("Time of kernel: %lf\n", t_kernel);
 
   BFT_FREE(rhs);
 }
+
+#endif
 END_C_DECLS
 
 static void
@@ -7335,7 +7334,6 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   perf        = false;
   accuracy    = false;
 #endif
-accuracy    = false;
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
@@ -7382,6 +7380,7 @@ BFT_MALLOC(gradv_target, n_cells_ext, cs_real_33_t);
 #endif
 
 start = std::chrono::high_resolution_clock::now();
+#if defined(HAVE_OPENMP_TARGET)
 _lsq_vector_gradient_target(m, 
                             madj, 
                             fvq, 
@@ -7394,6 +7393,7 @@ _lsq_vector_gradient_target(m,
                             gradv_target,
                             cocg,
                             rhs_target);
+#endif
 stop = std::chrono::high_resolution_clock::now();
 elapsed_target = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 printf("OMP target lsq %ld\n", elapsed_target.count());
@@ -7550,19 +7550,6 @@ if(compute_cpu){
     }
   }
 
-for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; ++j) {
-      auto cpu  = gradv_cpu[c_id][i][j];
-      auto omp = gradv_target[c_id][i][j];
-
-      if (fabs(cpu - omp) / fmax(fabs(cpu), 1e-6) > 1e-12) {
-        printf("DIFFERENCE @%d-%d-%d: CPU = %a\tOMP = %a\n|CPU - OMP| = %a\t|CPU - OMP|ulp = %a\n", c_id, i, j, cpu, omp, fabs(cpu - omp), cs_diff_ulp(cpu, omp));
-      }
-    }
-  }
-}
-
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
 
@@ -7658,7 +7645,10 @@ if(res_cpu){
 
   BFT_FREE(rhs);
   BFT_FREE(rhs_cuda);
+  BFT_FREE(rhs_target);
   BFT_FREE(gradv_cuda);
+  BFT_FREE(gradv_cpu);
+  BFT_FREE(gradv_target);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -9583,9 +9573,9 @@ res_cpu = !compute_cuda;
 
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
-  // compute_cuda  = true;
-  // compute_cpu   = true;
-  // res_cpu       = false;
+  compute_cuda  = false;
+  compute_cpu   = true;
+  res_cpu       = true;
 
   // A ne pas garder dans la version finale
   // perf        = false;
