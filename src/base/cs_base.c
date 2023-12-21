@@ -1202,7 +1202,7 @@ cs_base_logfile_head(int    argc,
 #endif
 
   bft_printf("\n");
-  bft_printf("  The code_saturne CFD tool  is free software;\n"
+  bft_printf("  The code_saturne CFD tool is free software;\n"
              "  you can redistribute it and/or modify it under the terms\n"
              "  of the GNU General Public License as published by the\n"
              "  Free Software Foundation; either version 2 of the License,\n"
@@ -1243,6 +1243,9 @@ cs_base_mpi_init(int    *argc,
   int arg_id = 0, flag = 0;
   int use_mpi = false;
 
+  if (getenv("PMIX_RANK") != NULL)
+    use_mpi = true;
+
 #if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
   /* Cray: assume MPI is always used. */
@@ -1256,11 +1259,12 @@ cs_base_mpi_init(int    *argc,
   if (getenv("PMI_RANK") != NULL)
     use_mpi = true;
 
-  else if (getenv("PCMPI") != NULL) /* Platform MPI */
+  else if (getenv("PCMPI") != NULL) /* IBM Platform MPI */
     use_mpi = true;
 
 #elif defined(OPEN_MPI)
-  if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 + */
+  /* OpenMPI 1.3+ ; 1.4 also defines PMIX_RANK */
+  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */
@@ -1270,9 +1274,8 @@ cs_base_mpi_init(int    *argc,
   if (getenv("SLURM_SRUN_COMM_HOST") != NULL)
     use_mpi = true;
 
-  /* If we have determined from known MPI environment variables
-     of command line arguments that we are running under MPI,
-     initialize MPI */
+  /* If we have determined from known environment variables
+     that we are running under MPI, initialize MPI */
 
   if (use_mpi == true) {
     MPI_Initialized(&flag);
