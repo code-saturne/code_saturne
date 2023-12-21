@@ -57,7 +57,15 @@
 
 BEGIN_C_DECLS
 
-static int _n_tubes = 1;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_mesh.c
+ *
+ * \brief Definition and modification of the calculation mesh.
+ *
+ * See \ref cs_user_mesh for examples.
+ */
+/*----------------------------------------------------------------------------*/
 
 /*============================================================================
  * User function definitions
@@ -80,7 +88,6 @@ static int _n_tubes = 1;
 void
 cs_user_mesh_restart_mode(void)
 {
-  const char *path = "mesh_input.csm";
 
 }
 
@@ -103,24 +110,11 @@ cs_user_mesh_input(void)
  */
 /*----------------------------------------------------------------------------*/
 
-
+#pragma weak cs_user_join
 void
 cs_user_join(void)
 {
-  int    join_num;
 
-  /* Add a joining operation */
-  /* ----------------------- */
-
-  int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-  int    visualization = 1; /* debug level if >= 3 */
-  float  fraction = 0.10, plane = 25.;
-
-  join_num = cs_join_add("join",
-                         fraction,
-                         plane,
-                         verbosity,
-                         visualization);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -129,26 +123,11 @@ cs_user_join(void)
  */
 /*----------------------------------------------------------------------------*/
 
-
+#pragma weak cs_user_periodicity
 void
 cs_user_periodicity(void)
 {
-  int    join_num;
 
-  int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-  int    visualization = 1; /* debug level if >= 3 */
-  float  fraction = 0.10, plane = 25.;
-
-  const double translation[3] = {0.0,
-                                 0.0450*_n_tubes,
-                                 0.0}; /* Translation vector */
-
-  join_num = cs_join_perio_add_translation("south or north",
-                                           fraction,
-                                           plane,
-                                           verbosity,
-                                           visualization,
-                                           translation);
 }
 
 /*----------------------------------------------------------------------------*/
