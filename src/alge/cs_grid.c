@@ -5741,7 +5741,8 @@ cs_grid_coarsen(const cs_grid_t  *f,
           || c->n_g_rows < merge_rows_glob_threshold) {
         _native_from_msr(c);
         _merge_grids(c, merge_stride, verbosity);
-        _msr_from_native(c);
+        if (c->n_rows > 0)
+          _msr_from_native(c);
       }
     }
 #endif
