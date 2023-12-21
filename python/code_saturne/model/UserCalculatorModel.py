@@ -40,7 +40,7 @@ class UserCalculatorModel(Variables, Model):
         Constructor
         """
         self.case = case
-        _node = self.case.xmlInitNode('user_functions')
+        _node = self.case.root().xmlInitNode('user_functions')
         self.calculator = _node.xmlInitNode('calculator')
 
         self.nb = NotebookModel(self.case)

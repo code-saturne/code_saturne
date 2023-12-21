@@ -127,7 +127,6 @@ class OutputSurfacicVariablesModel(Model):
         return nodeList
 
 
-
     def _updateDicoLabelName(self):
         """
         Private method: update dictionaries of labels for all properties .....
