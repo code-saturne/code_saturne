@@ -2993,7 +2993,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
            By the way, in this case: iuntur=0 */
         if (yplus > cs_math_epzero && iuntur == 1) { /* FIXME use only iuntur */
           pimp =   distbf * 4 * pow(uk, 5)
-                 / (xkappa * xnuii *xnuii * pow(yplus+2*dplus, 2));
+                 / (xkappa * xnuii *xnuii * cs_math_pow2(yplus+2*dplus));
 
           qimp = - pimp * hint; /* TODO transform it,
                                    it is only to be fully equivalent */
