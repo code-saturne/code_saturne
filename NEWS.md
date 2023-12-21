@@ -28,6 +28,8 @@ Release 8.0.3 (unreleased)
 
 ### Architectural changes:
 
+- Update MPI rank detection for MPMD "script" mode, to handle PMIx.
+
 - Update build for current Melissa library versions.
 
 Release 8.0.2 (2023-10-10)
