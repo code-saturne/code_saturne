@@ -216,7 +216,8 @@ static cs_atmo_option_t  _atmo_option = {
   .pot_t_met  = NULL,
   .soil_model = 0, /* off or user defined */
   .soil_cat = 0, /* CS_ATMO_SOIL_5_CAT */
-  .soil_zone_id = -1
+  .soil_zone_id = -1,
+  .soil_meb_model = 0
 };
 
 static const char *_univ_fn_name[] = {N_("Cheng 2005"),
@@ -2156,6 +2157,83 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, 0);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Soil deep T");
+
+    /* Fields usefull for heat budget plot on the soil boundary
+     * */
+    f = cs_field_create("soil_sensible_heat",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil sensible heat");
+
+    f = cs_field_create("soil_latent_heat",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil latent heat");
+
+    f = cs_field_create("soil_thermal_rad_upward",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil thermal radiation upward");
+
+    f = cs_field_create("soil_thermal_rad_downward",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil thermal radiation downward");
+
+    f = cs_field_create("soil_visible_rad_absorbed",
+                        field_type,
+                        z->location_id,
+                        1, /* dim */
+                        false); /* has_previous */
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Soil visible radiation absorbed");
+
+    if (cs_glob_atmo_option->soil_meb_model > CS_ATMO_SOIL_GENUINE) {
+      f = cs_field_create("cover_geometry_ratio",
+                          field_type,
+                          z->location_id,
+                          1,
+                          false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "Cover geometry ratio");
+
+      f = cs_field_create("cover_reflectivity",
+                          field_type,
+                          z->location_id,
+                          1,
+                          false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "Cover reflectivity");
+
+      f = cs_field_create("cover_temperature_radiative",
+                          field_type,
+                          z->location_id,
+                          1,
+                          false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "Cover temperature radiation");
+    }
+
   }
 
 }
@@ -2171,7 +2249,11 @@ cs_soil_model(void)
 {
   int z_id = cs_glob_atmo_option->soil_zone_id;
   if (z_id > -1) {
+    int micro_scale_option = cs_glob_atmo_option->soil_meb_model;
+    const cs_equation_param_t *eqp
+      = cs_field_get_equation_param_const(CS_F_(t));
 
+    const cs_domain_t *domain = cs_glob_domain;
     cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
     const cs_real_t stephn = cs_physical_constants_stephan;
@@ -2181,6 +2263,12 @@ cs_soil_model(void)
     cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
     const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
     cs_real_t *dt = cs_field_by_name("dt")->val;
+    /* Post treatment fields */
+    cs_field_t *soil_sensible_heat = cs_field_by_name_try("soil_sensible_heat");
+    cs_field_t *soil_latent_heat = cs_field_by_name_try("soil_latent_heat");
+    cs_field_t *soil_thermal_rad_upward = cs_field_by_name_try("soil_thermal_rad_upward");
+    cs_field_t *soil_thermal_rad_downward = cs_field_by_name_try("soil_thermal_rad_downward");
+    cs_field_t *soil_visible_rad_absorbed = cs_field_by_name_try("soil_visible_rad_absorbed");
 
     /* Soil related fields */
     cs_field_t *soil_temperature = cs_field_by_name("soil_temperature");
@@ -2227,6 +2315,11 @@ cs_soil_model(void)
     cs_field_current_to_previous(cs_field_by_name("soil_pot_temperature"));
     cs_field_current_to_previous(cs_field_by_name("soil_total_water"));
 
+    /* In case of multi energy balance (MEB) models including PV */
+    cs_field_t *cover_geometry_ratio = cs_field_by_name_try("cover_geometry_ratio");
+    cs_field_t *cover_reflectivity = cs_field_by_name_try("cover_reflectivity");
+    cs_field_t *cover_temperature_radiative = cs_field_by_name_try("cover_temperature_radiative");
+
     for (cs_lnum_t soil_id = 0; soil_id < z->n_elts; soil_id++) {
       cs_real_t ray2 = 0;
       cs_real_t chas2 = 0;
@@ -2256,6 +2349,13 @@ cs_soil_model(void)
       cs_lnum_t cell_id = b_face_cells[face_id];
       cs_real_t foir = 0.;
       cs_real_t fos = 0.;
+
+      cs_real_t gcr = 0.;
+      cs_real_t refl = 0.;
+      if (cover_geometry_ratio != NULL)
+        gcr = cover_geometry_ratio->val[soil_id];
+      if (cover_reflectivity != NULL)
+        refl = cover_reflectivity->val[soil_id];
 
       /* Infrared and Solar radiative fluxes
        * Warning: should be adapted for many verticales */
@@ -2293,6 +2393,8 @@ cs_soil_model(void)
           foir += f_qinspe->val[gg_id + face_id * stride];
       }
 
+      /* f_fos and f_foir store the radiations coming ontop of
+       * the boundary cell */
       f_fos[soil_id] = fos;
       f_foir[soil_id] = foir;
 
@@ -2333,8 +2435,7 @@ cs_soil_model(void)
       else {
 
       cs_real_t rscp1 = (rair / cp0) * (1. + (rvsra - cpvcpa)
-       * soil_total_water->val[soil_id] );
-
+          * soil_total_water->val[soil_id] );
 
       /* ===============================
        * Compute coefficients for heat and latent heat fluxes
@@ -2345,7 +2446,7 @@ cs_soil_model(void)
       cs_real_t cph_dcpd = (1. + (cpvcpa - 1.)
         * soil_total_water->val[soil_id] );
       /* Conversion theta -> T */
-      cs_real_t cht =  h_t[face_id] * pow(ps / pphy, rscp1) * cph_dcpd;
+      cs_real_t cht = h_t[face_id] * pow(ps / pphy, rscp1) * cph_dcpd;
 
       cs_real_t chq = h_q[face_id]
         * (clatev - 2370.* (soil_temperature->val[soil_id]) );
@@ -2390,6 +2491,11 @@ cs_soil_model(void)
       cs_real_t dqsat = pphy * rvsra * cstder * esat
         / cs_math_pow2(rapsat * (soil_temperature->val[soil_id] + 239.78));
 
+      /* Compute equivalent emissivity and reflexivity du to pannels/plants */
+      cs_real_t c_refl = 1. - refl;
+      cs_real_t emi = emissivity->val[face_id];
+      cs_real_t emi_eq = gcr * emi / (emi * refl + c_refl);
+      cs_real_t c_gcr = 1. - gcr;
       /* ============================
        * Compute the first member of soil_temperature equation
        * ============================ */
@@ -2400,7 +2506,7 @@ cs_soil_model(void)
 
       cs_lnum_t ichal = 1;
 
-      cs_real_t ray1 = 4. * emissivity->val[face_id] * stephn
+      cs_real_t ray1 = 4. * c_gcr * emissivity->val[face_id] * stephn
         * cs_math_pow3(soil_temperature->val[soil_id]
         + cs_physical_constants_celsius_to_kelvin);
       cs_real_t chas1 = cht;
@@ -2414,11 +2520,18 @@ cs_soil_model(void)
        * Compute the second member of soil_temperature equation
        * ============================ */
 
-      ray2 = fos*(1. - boundary_albedo->val[face_id])
-        + emissivity->val[face_id] * foir + 3.
-        * emissivity->val[face_id] * stephn
+      ray2 = c_gcr * fos*(1. - boundary_albedo->val[face_id])
+        + emi * c_gcr * foir
+        + 3. * (emi_eq * c_refl  + c_gcr) * emi * stephn
         * cs_math_pow4(soil_temperature->val[soil_id]
         + cs_physical_constants_celsius_to_kelvin);
+
+      if ((micro_scale_option == CS_ATMO_SOIL_PHOTOVOLTAICS) ||
+          (micro_scale_option == CS_ATMO_SOIL_VEGETATION)) {
+        ray2 += cs_math_pow4(cover_temperature_radiative->val[soil_id]
+            + cs_physical_constants_celsius_to_kelvin) * stephn
+          * emi_eq * c_refl * refl;
+      }
       chas2 = cht * atm_temp->val[cell_id]
         * pow(pphy / ps , rscp1);
       chal2 = chq * (atm_total_water->val[cell_id]
@@ -2446,6 +2559,28 @@ cs_soil_model(void)
         - soil_temperature->val[soil_id] ))
         + boundary_vegetation->val[soil_id] * atm_total_water->val[cell_id]
         * ( 1. - hu );
+
+      /* TODO filling soil fields should be done one for loop below
+       * by computing cht and chq for the ""lake model""
+       * At the moment the allocation is performed ONLY for ""soil model""  */
+
+      if (soil_latent_heat != NULL)
+        soil_latent_heat->val[soil_id] = chq * (qvs_plus
+            - atm_total_water->val[cell_id]);
+      if (soil_sensible_heat != NULL)
+        soil_sensible_heat->val[soil_id] = cht * ((ts_plus
+              * (pow(ps/pphy,(rair/cp0)
+                  * (1. + (rvsra - cpvcpa) * qvs_plus ))))
+            - atm_temp->val[cell_id]);
+      if (soil_thermal_rad_upward != NULL)
+        soil_thermal_rad_upward->val[soil_id] = stephn * emi
+          * cs_math_pow4(ts_plus);
+      if (soil_thermal_rad_downward != NULL)
+        soil_thermal_rad_downward->val[soil_id] = emi * foir;
+      if (soil_visible_rad_absorbed != NULL)
+        soil_visible_rad_absorbed->val[soil_id] =
+          (1. - boundary_albedo->val[cell_id]) * fos;
+
       }
 
       /* ============================
