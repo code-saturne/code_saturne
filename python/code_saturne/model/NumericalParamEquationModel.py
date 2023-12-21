@@ -438,7 +438,7 @@ class NumericalParamEquationModel(Model):
     def getScheme(self, name):
         """ Return value of order scheme for specified variable """
         node = self._getSchemeNameNode(name)
-        if node['_convect'] == 'off':
+        if node['_convect'] == 'no':
             return None
         value = self._defaultValues(name)['order_scheme']
         n = node.xmlGetNode('order_scheme')
@@ -549,7 +549,7 @@ class NumericalParamEquationModel(Model):
     def getNVDLimiter(self, name):
         """ Return value of NVD limiter for specified variable """
         node = self._getSchemeNameNode(name)
-        if node['_convect'] == 'off':
+        if node['_convect'] == 'no':
             return None
 
         sv = self._defaultValues(name)['order_scheme']
@@ -562,8 +562,9 @@ class NumericalParamEquationModel(Model):
         value = self._defaultValues(name)['nvd_limiter']
         n = node.xmlGetNode('nvd_limiter')
         if n:
-                value = n['choice']
+            value = n['choice']
         return value
+
 
     @Variables.undoLocal
     def setNVDLimiter(self, name, value):
