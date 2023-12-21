@@ -15,6 +15,10 @@ Release 8.1.1 (unreleased)
   and other models and could lead to incorrect results if not modified
   by the user.
 
+### Architectural changes:
+
+- Update MPI rank detection for MPMD "script" mode, to handle PMIX.
+
 Release 8.1.0 (2023-13-12)
 --------------------------
 
