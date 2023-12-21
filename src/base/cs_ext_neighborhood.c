@@ -1392,7 +1392,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
      This parameter could be differentiated for different cell
      types (ex : 10 for tetra, 16 for pyram, 15 for prism and 12 for hexa)
      but "optimal" values are derived from the case of regular
-     grids... where they are not used. */
+     grids... where they are not used. We only differentiate for hexa
+     later to maintain symmetry of the neighborhood.*/
 
   const cs_lnum_t n_c_min = 10;
 
@@ -1449,6 +1450,8 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
       cs_lnum_t n_c = c_e_id - c_s_id; /* n. cells in ext. neighborhood only */
 
       cs_lnum_t n_c_selected_in_ext = 0;
+
+      cs_lnum_t n_c_min_true = CS_MIN(n_c, n_c_min);
 
       if (n_c > n_max_c) {
         n_max_c = n_c*2;
@@ -1571,8 +1574,12 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
           cs_real_t norm_fj_2 = cs_math_3_square_norm(v_jf);
 
           /* if dot_p < 0.9 * sqrt(norm_if_2) * sqrt(norm_fj_2) */
-          if (cs_math_pow2(dot_p) < cs_math_pow2(0.9) * norm_if_2 * norm_fj_2)
+          if (cs_math_pow2(dot_p) < cs_math_pow2(0.9) * norm_if_2 * norm_fj_2) {
             is_regular = false;
+            /* 2 hexa at more than 60 deg */
+            if (cell_type == FVM_CELL_HEXA && cs_math_pow2(dot_p) < cs_math_pow2(0.5) * norm_if_2 * norm_fj_2)
+              n_c_min_true = 6;
+          }
         }
 
       } /* End of loop on interior faces */
@@ -1591,7 +1598,6 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
          At double boundary no risk of spurious mode
          (the cell is basically alone). */
 
-      cs_lnum_t n_c_min_true = CS_MIN(n_c, n_c_min);
       cs_real_t l1 = pow(cell_vol[c_id], one_over_3);
 
       cs_real_t aspect_r = 6.*l1*l1/sum_s;
@@ -1631,8 +1637,7 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
             if (is_selected[i] == false) {
               cs_real_t loc_crit = 0.;
               for (cs_lnum_t j = 0; j < 3; j++)
-                loc_crit+= cs_math_pow2(   n_c_selected*ic[j]
-                                        + (n_c_selected+2) * n_c_s[i][j]);
+                loc_crit+= cs_math_pow2(n_c_selected * ic[j] + 2*n_c_s[i][j]);
               if (loc_crit < min_loc_crit) {
                 i_c_selected[k] = i;
                 min_loc_crit = loc_crit;
