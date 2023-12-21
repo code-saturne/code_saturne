@@ -363,14 +363,6 @@ cs_local_time_step_compute(int  itrale)
 
         const cs_real_t coumax = cs_glob_time_step_options->coumax;
 
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
-          w1[c_id] =   coumax
-                     / (cs_math_fmax(dam[c_id]/(crom[c_id]*c_vol),
-                                     cs_math_epzero));
-        }
-
         /* When using VoF we also compute the volume Courant
            number (without rho). It replaces the mass Courant
            number constraint */
@@ -397,6 +389,17 @@ cs_local_time_step_compute(int  itrale)
             cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
             w1[c_id] =   coumax
                        / (cs_math_fmax(dam[c_id]/c_vol, cs_math_epzero));
+          }
+
+        }
+        else {
+
+#         pragma omp parallel for if (n_cells > CS_THR_MIN)
+          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+            cs_real_t c_vol = cs_math_fmax(cell_f_vol[c_id], 1e-18);
+            w1[c_id] =   coumax
+                       / (cs_math_fmax(dam[c_id]/(crom[c_id]*c_vol),
+                                       cs_math_epzero));
           }
 
         }
