@@ -945,10 +945,6 @@ typedef struct {
  * Relative tolerance at which the non-linearity arising from the advection
  * term is resolved
  *
- * \var CS_NSKEY_QUADRATURE
- * Set the type to use in all functions involving quadrature (similar to
- * \ref CS_EQKEY_BC_QUADRATURE)
- *
  * \var CS_NSKEY_SCHUR_STRATEGY
  * Set the way to define the Schur complement approximation
  * (cf. \ref cs_param_schur_approx_t)
@@ -989,7 +985,6 @@ typedef enum {
   CS_NSKEY_NL_ALGO_ATOL,
   CS_NSKEY_NL_ALGO_DTOL,
   CS_NSKEY_NL_ALGO_RTOL,
-  CS_NSKEY_QUADRATURE,
   CS_NSKEY_SCHUR_STRATEGY,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SLES_VERBOSITY,
@@ -1236,6 +1231,20 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling);
 void
 cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
                                  cs_real_t             pref);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the given quadrature rule to all existing definitions under
+ *        the cs_navsto_param_t structure
+ *
+ * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      qtype    type of quadrature to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
+                                      cs_quadrature_type_t  qtype);
 
 /*----------------------------------------------------------------------------*/
 /*!

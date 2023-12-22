@@ -369,30 +369,6 @@ _set_key(cs_equation_param_t   *eqp,
     }
     break;
 
-  case CS_EQKEY_BC_QUADRATURE:
-    {
-      cs_quadrature_type_t  qtype = CS_QUADRATURE_NONE;
-
-      if (strcmp(keyval, "bary") == 0)
-        qtype = CS_QUADRATURE_BARY;
-      else if (strcmp(keyval, "bary_subdiv") == 0)
-        qtype = CS_QUADRATURE_BARY_SUBDIV;
-      else if (strcmp(keyval, "higher") == 0)
-        qtype = CS_QUADRATURE_HIGHER;
-      else if (strcmp(keyval, "highest") == 0)
-        qtype = CS_QUADRATURE_HIGHEST;
-      else {
-        const char *_val = keyval;
-        bft_error(__FILE__, __LINE__, 0,
-                  emsg, __func__, eqname, _val, "CS_EQKEY_BC_QUADRATURE");
-      }
-
-      for (int i = 0; i < eqp->n_bc_defs; i++)
-        cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
-
-    }
-    break;
-
   case CS_EQKEY_BC_STRONG_PENA_COEFF:
     eqp->strong_pena_bc_coeff = atof(keyval);
     if (eqp->strong_pena_bc_coeff < 1.)
@@ -1858,6 +1834,51 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
               "%s: The requested class of solvers is not available"
               " for the equation %s\n"
               " Please modify your settings.", __func__, eqp->name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the given quadrature rule to all existing definitions under the
+ *        cs_equation_param_t structure.
+ *
+ *        If the default quadrature has been modified by the code, this
+ *        function set the value of the quadrture to the given parameter
+ *        whatever was the previous value.
+ *
+ *        To get a more detailed control of the quadrature rule, please
+ *        consider the function \ref cs_xdef_set_quadrature
+ *
+ * \param[in, out] eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]      qtype   type of quadrature to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_set_quadrature_to_all(cs_equation_param_t   *eqp,
+                                        cs_quadrature_type_t   qtype)
+{
+  if (eqp == NULL)
+    return;
+
+  /* Apply the quadrature rule to all BC definitions */
+
+  for (int i = 0; i < eqp->n_bc_defs; i++)
+    cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
+
+  /* Apply the quadrature rule to all source term definitions */
+
+  for (int i = 0; i < eqp->n_source_terms; i++)
+    cs_xdef_set_quadrature(eqp->source_terms[i], qtype);
+
+  /* Apply the quadrature rule to all IC definitions */
+
+  for (int i = 0; i < eqp->n_ic_defs; i++)
+    cs_xdef_set_quadrature(eqp->ic_defs[i], qtype);
+
+  /* Apply the quadrature rule to all volume_mass_injections */
+
+  for (int i = 0; i < eqp->n_volume_mass_injections; i++)
+    cs_xdef_set_quadrature(eqp->volume_mass_injections[i], qtype);
 }
 
 /*----------------------------------------------------------------------------*/

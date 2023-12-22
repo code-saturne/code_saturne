@@ -61,7 +61,8 @@ static const double  _quad_31ov240 = 31./240.;
 static const double  _tetr_quad15w3 = 10. / 189.;
 static const double  _tetr_quad15w4 = 16. / 135.;
 
-/* Constant quadrature weights */
+/* Constant quadrature weights which are pre-computed */
+
 static double  _edge_quad2c1;
 static double  _edge_quad2c2;
 static double  _edge_quad3c1;
@@ -99,7 +100,7 @@ cs_quadrature_type_name[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute constant weights for all quadratures used
+ * \brief Compute constant weights for all quadratures used
  */
 /*----------------------------------------------------------------------------*/
 
@@ -107,24 +108,29 @@ void
 cs_quadrature_setup(void)
 {
   /* Quadrature on edge with 2 points */
+
   _edge_quad2c1 = 0.5*(1 + _quad_over3*sqrt(3.));
   _edge_quad2c2 = 0.5*(1 - _quad_over3*sqrt(3.));
 
   /* Quadrature on edge with 3 points */
+
   _edge_quad3c1 = 0.5*(1 + sqrt(0.6));
   _edge_quad3c2 = 0.5*(1 - sqrt(0.6));
 
   /* Quadrature on triangles with 7 points */
+
   _tria_quad7c1 = (6. - sqrt(15.))/21.;
   _tria_quad7c2 = (6. + sqrt(15.))/21.;
   _tria_quad7c3 = _quad_31ov240 - sqrt(15.)/1200.;
   _tria_quad7c4 = _quad_31ov240 + sqrt(15.)/1200.;
 
   /* Quadrature on tetrahedron with 4 points */
+
   _tetr_quad4c1 = 0.05*(5. - sqrt(5));
   _tetr_quad4c2 = 1. -3.*_tetr_quad4c1;
 
   /* Quadrature on tetrahedron with 15 points */
+
   _tetr_quad15g1  = (7. - sqrt(15.) ) / 34.;
   _tetr_quad15g11 = 1. - 3. * _tetr_quad15g1;
   _tetr_quad15g2  = 7./17. - _tetr_quad15g1;
@@ -137,9 +143,9 @@ cs_quadrature_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return th name associated to a type of quadrature
+ * \brief Return th name associated to a type of quadrature
  *
- * \param[in]     type     cs_quadrature_type_t
+ * \param[in] type     cs_quadrature_type_t
  *
  * \return the name associated to a given type of quadrature
  */
@@ -172,12 +178,14 @@ cs_quadrature_edge_2pts(const cs_real_3_t  v1,
                         double             w[])
 {
   /* Compute quadrature points */
+
   for (int k = 0; k < 3; k++) {
     gpts[0][k] = v1[k]*_edge_quad2c2 + v2[k]*_edge_quad2c1;
     gpts[1][k] = v1[k]*_edge_quad2c1 + v2[k]*_edge_quad2c2;
   }
 
   /* Compute weights */
+
   w[0] = w[1] = 0.5*len;
 }
 
@@ -204,6 +212,7 @@ cs_quadrature_edge_3pts(const cs_real_3_t  v1,
   const double  b = len * _quad_over18;
 
   /* Compute quadrature points */
+
   for (int k = 0; k < 3; k++) {
     gpts[0][k] = 0.5*( v1[k] + v2[k] );
     gpts[1][k] = v1[k]*_edge_quad3c1 + v2[k]*_edge_quad3c2;
@@ -211,6 +220,7 @@ cs_quadrature_edge_3pts(const cs_real_3_t  v1,
   }
 
   /* Compute weights */
+
   w[0]= 8*b, w[1] = w[2] = 5*b;
 }
 
@@ -237,6 +247,7 @@ cs_quadrature_tria_3pts(const cs_real_3_t   v1,
                         double              w[])
 {
   /* Compute quadrature points */
+
   for (int k = 0; k < 3; k++) {
     gpts[0][k] = 0.5*( v1[k] + v2[k] );
     gpts[1][k] = 0.5*( v1[k] + v3[k] );
@@ -244,6 +255,7 @@ cs_quadrature_tria_3pts(const cs_real_3_t   v1,
   }
 
   /* Compute weight */
+
   w[0] = w[1] = w[2] = _quad_over3 * area;
 }
 
@@ -270,6 +282,7 @@ cs_quadrature_tria_4pts(const cs_real_3_t   v1,
                         double              w[])
 {
   /* Compute quadrature points */
+
   for (int k = 0; k < 3; k++) {
     gpts[0][k] = _quad_over3*( v1[k] + v2[k] + v3[k] );
     gpts[1][k] = 0.2*( v1[k] + v2[k] ) + 0.6*v3[k];
@@ -278,6 +291,7 @@ cs_quadrature_tria_4pts(const cs_real_3_t   v1,
   }
 
   /* Compute weight */
+
   w[0] = -_quad_9ov16 * area;
   w[1] = w[2] = w[3] = _quad_25ov48 * area;
 }
@@ -305,6 +319,7 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
                         double              w[])
 {
   /* Compute quadrature points */
+
   for (int k = 0; k < 3; k++) {
     gpts[0][k] = _quad_over3*( v1[k] + v2[k] + v3[k] );
     gpts[1][k] = _tria_quad7c1* (v1[k] + v2[k]) + (1-2*_tria_quad7c1)*v3[k];
@@ -316,10 +331,10 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
   }
 
   /* Compute weights */
+
   w[0] = _quad_9ov40 * area;
   w[1] = w[2] = w[3] = _tria_quad7c3 * area;
   w[4] = w[5] = w[6] = _tria_quad7c4 * area;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -347,6 +362,7 @@ cs_quadrature_tet_4pts(const cs_real_3_t  v1,
                        double             weights[])
 {
   /* Compute Gauss points */
+
   for (int k = 0; k < 3; k++) {
 
     const double v12 = v1[k] + v2[k], v34 = v3[k] + v4[k];
@@ -359,6 +375,7 @@ cs_quadrature_tet_4pts(const cs_real_3_t  v1,
   }
 
   /* Compute weights (multiplicity 4) */
+
   weights[0] = weights[1] = weights[2] = weights[3] = 0.25*vol;
 }
 
@@ -390,6 +407,7 @@ cs_quadrature_tet_5pts(const cs_real_3_t  v1,
   const double  wv2 = 0.45*vol;  /* multiplicity 4 */
 
   /* compute Gauss points */
+
   for (int k = 0; k < 3; k++) {
 
     const double v12 = v1[k] + v2[k], v34 = v3[k] + v4[k];
@@ -402,6 +420,7 @@ cs_quadrature_tet_5pts(const cs_real_3_t  v1,
   }
 
   /* Compute weights */
+
   weights[0] = weights[1] = weights[2] = weights[3] = wv2;
   weights[4] = wv1;
 }
@@ -491,6 +510,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
   cs_eflag_t ret_flag = 0;
 
   /* If necessary, enrich the mesh flag to account for the property */
+
   switch (qtype) {
 
   case CS_QUADRATURE_HIGHER:

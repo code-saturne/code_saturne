@@ -890,16 +890,6 @@ typedef struct {
  * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
  * technique is available up to now.
  *
- * \var CS_EQKEY_BC_QUADRATURE
- * Set the quadrature algorithm used for evaluating integral quantities on
- * faces or volumes. Available choices are:
- * - "bary"    used the barycenter approximation
- * - "higher"  used 4 Gauss points for approximating the integral
- * - "highest" used 5 Gauss points for approximating the integral
- *
- * Remark: "higher" and "highest" implies automatically a subdivision into
- * tetrahedra of each cell.
- *
  * \var CS_EQKEY_BC_STRONG_PENA_COEFF
  * Set the value of the penalization coefficient when "penalization" is
  * activated The default value is 1e12.
@@ -1194,7 +1184,6 @@ typedef enum {
   CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
-  CS_EQKEY_BC_QUADRATURE,
   CS_EQKEY_BC_STRONG_PENA_COEFF,
   CS_EQKEY_BC_WEAK_PENA_COEFF,
   CS_EQKEY_DO_LUMPING,
@@ -1719,6 +1708,22 @@ cs_equation_param_get_sles_param(cs_equation_param_t   *eqp);
 
 void
 cs_equation_param_set_sles(cs_equation_param_t      *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the given quadrature rule to all existing definitions under the
+ *        cs_equation_param_t structure. To get a more detailed control of the
+ *        quadrature rule, please consider the function
+ *        \ref cs_xdef_set_quadrature
+ *
+ * \param[in, out] eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]      qtype   type of quadrature to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_set_quadrature_to_all(cs_equation_param_t   *eqp,
+                                        cs_quadrature_type_t   qtype);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -49,6 +49,38 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*! \enum cs_quadrature_type_t
+ *  \brief Type of quadrature to use when computing an integral quantity. This
+ *  rationale is used for integrals along edges/lines, over faces/surfaces or
+ *  inside cells/volumes
+ *
+ * \var CS_QUADRATURE_NONE
+ * This is a P0-like approximation
+ *
+ * \var CS_QUADRATURE_BARY
+ * Use the value at the cell center (should be the barycenter to get linear
+ * exactness) and multiply by the measure of the related support (length or
+ * surface or volume according to the support)
+ *
+ * \var CS_QUADRATURE_BARY_SUBDIV
+ * Same as the \ref CS_QUADRATURE_BARY but the support is divided into
+ * simplices. The value at the barycenter of each sub-simplices is used.
+ *
+ * \var CS_QUADRATURE_HIGHER
+ * - For a triangle, this corresponds to a 4-points quadrature rule which is
+ * exact up to a polynomial of order 3
+ * - For a tetrahedron, this corresponds to a 4-points quadrature rule which is
+ * exact up to a polynomial of order 2
+ *
+ * \var CS_QUADRATURE_HIGHEST
+ * - For a triangle, this corresponds to a 7-points quadrature rule which is
+ * exact up to a polynomial of order 7
+ * - For a tetrahedron, this corresponds to a 5-points quadrature rule which is
+ * exact up to a polynomial of order 3. A 15-points quadrature rule is also
+ * available with HHO schemes. This latter quadrature is exact up to a
+ * polynomial of order 5.
+ */
+
 typedef enum {
 
   CS_QUADRATURE_NONE,
@@ -62,8 +94,8 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Generic function pointer to compute the quadrature points for an
- *          edge from v1 -> v2
+ * \brief Generic function pointer to compute the quadrature points for an
+ *        edge from v1 -> v2
  *
  * \param[in]      v1       first vertex
  * \param[in]      v2       second vertex
@@ -82,8 +114,8 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Generic functoin pointer to compute the quadrature points for a
- *          triangle
+ * \brief Generic functoin pointer to compute the quadrature points for a
+ *        triangle
  *
  * \param[in]      v1        first vertex
  * \param[in]      v2        second vertex
@@ -104,7 +136,7 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic function to compute the quadrature points in a tetrehedra.
+ * \brief Generic function to compute the quadrature points in a tetrehedra.
  *
  * \param[in]       v1       first vertex
  * \param[in]       v2       second vertex
@@ -127,8 +159,8 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over an edge based on a specified
- *         quadrature rule and add it to \p results
+ * \brief Compute the integral over an edge based on a specified
+ *        quadrature rule and add it to \p results
  *
  * \param[in]      tcur     current physical time of the simulation
  * \param[in]      v1       first point of the edge
@@ -151,8 +183,8 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over a triangle based on a specified
- *         quadrature rule and add it to \p results
+ * \brief Compute the integral over a triangle based on a specified
+ *        quadrature rule and add it to \p results
  *
  * \param[in]      tcur     current physical time of the simulation
  * \param[in]      v1       first point of the triangle
@@ -177,8 +209,8 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over a tetrahedron based on a specified
- *         quadrature rule and add it to \p results
+ * \brief Compute the integral over a tetrahedron based on a specified
+ *        quadrature rule and add it to \p results
  *
  * \param[in]      tcur     current physical time of the simulation
  * \param[in]      v1       first point of the tetrahedron
@@ -203,14 +235,13 @@ typedef void
                                  void                  *input,
                                  double                 results[]);
 
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute constant weights for all quadratures used
+ * \brief Compute constant weights for all quadratures used
  */
 /*----------------------------------------------------------------------------*/
 
@@ -219,9 +250,9 @@ cs_quadrature_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return th name associated to a type of quadrature
+ * \brief Return th name associated to a type of quadrature
  *
- * \param[in]     type     cs_quadrature_type_t
+ * \param[in] type     cs_quadrature_type_t
  *
  * \return the name associated to a given type of quadrature
  */
