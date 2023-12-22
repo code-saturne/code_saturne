@@ -2099,11 +2099,13 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
   case CS_PARAM_SLES_ANALYSIS_SCOTCH:
     mumps->ICNTL(28) = 1;  /* sequential analysis */
     mumps->ICNTL(7) = 3;
+    mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
   case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
     mumps->ICNTL(28) = 2;  /* parallel analysis */
     mumps->ICNTL(29) = 1;
+    mumps->ICNTL(58) = 0;   /* No symbolic factorization */
     break;
 
   case CS_PARAM_SLES_ANALYSIS_METIS:
@@ -2114,6 +2116,7 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
   case CS_PARAM_SLES_ANALYSIS_PARMETIS:
     mumps->ICNTL(28) = 2;  /* parallel analysis */
     mumps->ICNTL(29) = 2;
+    mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
   default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
@@ -2133,7 +2136,6 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
     mumps->KEEP(268) = -2;  /* Relaxed pivoting for large enough frontal
                                matrices */
-    mumps->ICNTL(58) = 2;   /* Acceleration of the symbolic factorization */
 
     if (cs_glob_n_ranks > 1 || cs_glob_n_threads > 1) {
 
@@ -2177,7 +2179,6 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
       mumps->ICNTL(40) = 0; /* No memory compression to save time */
 
     }
-
 
   }
 
@@ -2360,11 +2361,13 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
   case CS_PARAM_SLES_ANALYSIS_SCOTCH:
     mumps->ICNTL(28) = 1;  /* sequential analysis */
     mumps->ICNTL(7) = 3;
+    mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
   case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
     mumps->ICNTL(28) = 2;  /* parallel analysis */
     mumps->ICNTL(29) = 1;
+    mumps->ICNTL(58) = 0;  /* No symbolic factorization */
     break;
 
   case CS_PARAM_SLES_ANALYSIS_METIS:
@@ -2375,6 +2378,7 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
   case CS_PARAM_SLES_ANALYSIS_PARMETIS:
     mumps->ICNTL(28) = 2;  /* parallel analysis */
     mumps->ICNTL(29) = 2;
+    mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
   default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
@@ -2394,7 +2398,6 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
     mumps->KEEP(268) = -2;  /* relaxed pivoting for large enough frontal
                                matrices */
-    mumps->ICNTL(58) = 2;   /* Acceleration of the symbolic factorization */
 
     if (cs_glob_n_ranks > 1 || cs_glob_n_threads > 1) {
 
