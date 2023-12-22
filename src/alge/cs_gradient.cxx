@@ -6934,18 +6934,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
-  // cs_real_33_t *rhs;
-  // BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
-
   /* Timing the computation */
-
-#if defined(HAVE_CUDA)
-  bool accel = (cs_get_device_id() > -1) ? true : false;
-#else
-  bool accel = false;
-#endif
-
-  // _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb_s);
 
   double t_kernel = 0.0;
 	double t_begin, t_end;
@@ -7256,7 +7245,6 @@ t_end = omp_get_wtime();
 t_kernel = t_end - t_begin;
 printf("Time of kernel: %lf\n", t_kernel);
 
-  BFT_FREE(rhs);
 }
 
 #endif
