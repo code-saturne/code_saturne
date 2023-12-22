@@ -1224,10 +1224,69 @@ _petsc_block_hook(void     *context,
       break;
 
     case CS_PARAM_PRECOND_LU:
+    case CS_PARAM_PRECOND_MUMPS:
       _petsc_cmd(true, prefix, "ksp_type", "preonly");
 #if defined(PETSC_HAVE_MUMPS)
-      _petsc_cmd(true, prefix, "pc_type", "lu");
-      _petsc_cmd(true, prefix, "pc_factor_mat_solver_type", "mumps");
+      {
+        assert(slesp != NULL);
+        assert(slesp->context_param != NULL);
+
+        cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+
+        if (mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SPD)
+          _petsc_cmd(true, prefix, "pc_type", "cholesky");
+        else
+          _petsc_cmd(true, prefix, "pc_type", "lu");
+
+        _petsc_cmd(true, prefix, "pc_factor_mat_solver_type", "mumps");
+
+        switch (mumpsp->analysis_algo) {
+
+        case CS_PARAM_SLES_ANALYSIS_AMD:
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "0");
+          break;
+
+        case CS_PARAM_SLES_ANALYSIS_QAMD:
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "6");
+          break;
+
+        case CS_PARAM_SLES_ANALYSIS_PORD:
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "4");
+          break;
+
+        case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "3");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_58", "2");
+          break;
+
+        case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "2");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_29", "1");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_58", "0");
+          break;
+
+        case CS_PARAM_SLES_ANALYSIS_METIS:
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "5");
+          break;
+
+        case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "2");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_29", "2");
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_58", "2");
+          break;
+
+        default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
+          _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "7");
+          break;
+
+        } /* Type of algorithm for the analysis step */
+
+      }
 #else
       if (cs_glob_n_ranks == 1)
         _petsc_cmd(true, prefix, "pc_type", "lu");
