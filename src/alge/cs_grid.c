@@ -1140,6 +1140,95 @@ _coarsen_halo(const cs_grid_t   *f,
 
   c_halo->n_send_elts[1] = c_halo->n_send_elts[0];
 
+  /* Prune halo */
+  /*------------*/
+
+  /* Proceed halo section by halo section */
+
+  int domain_count = 0;
+
+  for (domain_id = 0; domain_id < c_halo->n_c_domains; domain_id++) {
+
+    cs_lnum_t recv_size =   c_halo->index[2*domain_id + 2]
+                          - c_halo->index[2*domain_id];
+    cs_lnum_t send_size =   c_halo->send_index[2*domain_id + 2]
+                          - c_halo->send_index[2*domain_id];
+
+    if (recv_size + send_size == 0) {
+      c_halo->c_domain_rank[domain_id] = -1;
+    }
+
+    else {
+      for (int i = 0; i < 2; i++) {
+        c_halo->index[2*domain_count + i]
+          = c_halo->index[2*domain_id + i];
+        c_halo->send_index[2*domain_count + i]
+          = c_halo->send_index[2*domain_id + i];
+      }
+
+      domain_count++;
+    }
+
+  }
+
+  c_halo->index[2*domain_count] = c_halo->index[2*c_halo->n_c_domains];
+  c_halo->send_index[2*domain_count] = c_halo->send_index[2*c_halo->n_c_domains];
+
+  CS_REALLOC_HD(c_halo->index, domain_count*2+1, cs_lnum_t, CS_ALLOC_HOST);
+  CS_REALLOC_HD(c_halo->send_index, domain_count*2+1, cs_lnum_t, CS_ALLOC_HOST);
+
+  if (domain_count < c_halo->n_c_domains && n_sections > 0) {
+
+    const cs_lnum_t  stride_o = 4*c_halo->n_c_domains;
+    const cs_lnum_t  stride_n = 4*domain_count;
+
+    cs_lnum_t *send_perio_lst, *perio_lst;
+    BFT_MALLOC(send_perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
+    BFT_MALLOC(perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
+
+    for (int i = 0; i < c_halo->n_transforms; i++) {
+
+      int j = 0;
+
+      for (int k = 0; k < c_halo->n_c_domains; k++) {
+
+        if (c_halo->c_domain_rank[k] > -1) {
+
+          for (int l = 0; l < 4; l++)
+            send_perio_lst[i*stride_n + 4*j + l]
+              = c_halo->send_perio_lst[i*stride_o + 4*k + l];
+
+          for (int l = 0; l < 4; l++)
+            perio_lst[i*stride_n + 4*j + l]
+              = c_halo->perio_lst[i*stride_o + 4*k + l];
+
+          j += 1;
+
+        }
+
+      }
+
+      assert(j == domain_count);
+
+    }
+
+    BFT_FREE(c_halo->send_perio_lst);
+    BFT_FREE(c_halo->perio_lst);
+    c_halo->send_perio_lst = send_perio_lst;
+    c_halo->perio_lst = perio_lst;
+
+  }
+
+  domain_count = 0;
+  for (int i = 0; i < c_halo->n_c_domains; i++) {
+    if (c_halo->c_domain_rank[i] > -1) {
+      c_halo->c_domain_rank[domain_count] = c_halo->c_domain_rank[i];
+      domain_count++;
+    }
+  }
+  c_halo->n_c_domains = domain_count;
+  BFT_REALLOC(c_halo->c_domain_rank, c_halo->n_c_domains, int);
+
   /* Free memory */
 
   BFT_FREE(coarse_send);
@@ -1250,9 +1339,6 @@ static void
 _rebuild_halo_send_lists(cs_halo_t  *h,
                          cs_lnum_t   new_src_cell_id[])
 {
-  /* As halos are based on interior faces, every domain is both
-     sender and receiver */
-
   cs_lnum_t start, length;
 
   int rank_id, tr_id;
@@ -1425,84 +1511,112 @@ _merge_halo_data(cs_halo_t   *h,
                  cs_lnum_t    new_src_cell_id[],
                  cs_lnum_t    new_halo_cell_id[])
 {
-  int  rank_id, prev_rank_id, tr_id, prev_section_id;
-  cs_lnum_t  ii, ii_0, ii_1, cur_id, section_id, src_id, prev_src_id;
-
-  int   stride = (h->n_transforms > 0) ? 3 : 2;
-  int   n_c_domains_ini = h->n_c_domains;
-
-  cs_lnum_t   n_elts_ini = h->n_elts[0];
-  cs_lnum_t  *order = NULL, *section_idx = NULL;
-  cs_gnum_t  *tmp_num = NULL;
-
+  const int  stride = (h->n_transforms > 0) ? 3 : 2;
+  const int  n_c_domains_ini = h->n_c_domains;
   const int  n_sections = h->n_transforms + 1;
 
-  if (h->n_elts[0] < 1) {
+  cs_lnum_t   n_elts_ini = h->n_elts[0];
+
+  if (h->n_elts[0] + h->n_send_elts[0] < 1) {
     _empty_halo(h);
     return;
   }
 
   /* Order list by rank, transform, and new element number */
 
+  cs_gnum_t  *tmp_num = NULL;
   BFT_MALLOC(tmp_num, n_elts_ini*stride, cs_gnum_t);
 
-  for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
-    for (ii = h->index[rank_id*2];
-         ii < h->index[(rank_id+1)*2];
+  for (int rank_idx = 0; rank_idx < n_c_domains_ini; rank_idx++) {
+    int c_rank_id = h->c_domain_rank[rank_idx];
+    if (c_rank_id == loc_rank_id) {
+      h->c_domain_rank[rank_idx] = -1; /* to appear first */
+      c_rank_id = -1;
+    }
+
+    for (cs_lnum_t ii = h->index[rank_idx*2];
+         ii < h->index[(rank_idx+1)*2];
          ii++)
-      tmp_num[ii*stride] = h->c_domain_rank[rank_id];
+      tmp_num[ii*stride] = c_rank_id + 1;
   }
 
   if (stride == 2) {
-    for (ii = 0; ii < n_elts_ini; ii++)
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++)
       tmp_num[ii*2 + 1] = new_src_cell_id[ii];
   }
   else { /* if (stride == 3) */
 
-    for (ii = 0; ii < n_elts_ini; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
       tmp_num[ii*3 + 1] = 0;
       tmp_num[ii*3 + 2] = new_src_cell_id[ii];
     }
 
-    for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
-      for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-        ii_0 = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
-        ii_1 = ii_0 + h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
-        for (ii = ii_0; ii < ii_1; ii++)
+    for (int rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
+      for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+        cs_lnum_t ii_0 = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
+        cs_lnum_t ii_1 = ii_0 + h->perio_lst[  h->n_c_domains*4*tr_id
+                                             + 4*rank_id + 1];
+        for (cs_lnum_t ii = ii_0; ii < ii_1; ii++)
           tmp_num[ii*3 + 1] = tr_id + 1;
       }
     }
   }
 
-  order = cs_order_gnum_s(NULL, tmp_num, stride, n_elts_ini);
+  /* Rebuild lists and build renumbering.
 
-  /* Rebuild lists and build renumbering */
+     As the send and receive indexes might not contain exactly the same
+     list of distant ranks (at least in case of periodicity), we must be careful
+     not to neighbor information here, so we only remove duplicates in the
+     current list. */
 
-  cur_id = order[0];
-  h->n_c_domains = 0;
-  h->index[0] = 0;
+  {
+    int j = 0;
+    cs_sort_int_shell(0, h->n_c_domains, h->c_domain_rank);
+
+    for (int i = 1; i < h->n_c_domains; i++) {
+      if (h->c_domain_rank[i] != h->c_domain_rank[j]) {
+        j++;
+        h->c_domain_rank[j] = h->c_domain_rank[i];
+      }
+    }
+
+    h->n_c_domains = j+1;
+    BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
+  }
+
+  cs_lnum_t *section_idx = NULL;
+
+  cs_lnum_t *order = cs_order_gnum_s(NULL, tmp_num, stride, n_elts_ini);
+
+  for (int i = 0; i < h->n_c_domains*2 + 1; i++)
+    h->index[i] = 0;
   h->n_elts[0] = 0;
   h->n_elts[1] = 0;
 
-  prev_rank_id = -1;
-  prev_src_id = 0;
+  cs_lnum_t prev_src_id = 0;
 
   if (stride == 2) {
 
-    for (ii = 0; ii < n_elts_ini; ii++) {
+    int prev_rank_id = -1, rank_idx = -1;
+
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
 
       bool is_same = true;
-      cur_id = order[ii];
+      cs_lnum_t cur_id = order[ii];
 
-      rank_id = tmp_num[cur_id*2];
-      src_id = tmp_num[cur_id*2 + 1];
+      int rank_id = tmp_num[cur_id*2] - 1;
+      cs_lnum_t src_id = tmp_num[cur_id*2 + 1];
 
-      if (rank_id != loc_rank_id) {
+      if (rank_id != -1) { /* local rank */
 
         if (rank_id != prev_rank_id) {
-          h->c_domain_rank[h->n_c_domains] = rank_id;
-          h->index[h->n_c_domains*2] = h->n_elts[0];
-          h->n_c_domains += 1;
+          if (rank_idx > -1)
+            h->index[rank_idx*2+1] = h->n_elts[0];
+          rank_idx++;
+          while (   h->c_domain_rank[rank_idx] != rank_id
+                 && rank_idx < h->n_c_domains)
+            rank_idx++;
+          assert(rank_idx < h->n_c_domains);
           is_same = false;
         }
         if (src_id != prev_src_id)
@@ -1519,39 +1633,45 @@ _merge_halo_data(cs_halo_t   *h,
         prev_src_id = src_id;
 
       }
-      else { /* if (rank_id == loc_rank_id) */
+      else { /* local rank */
         new_halo_cell_id[cur_id] = tmp_num[cur_id*2 + 1];
         assert(new_halo_cell_id[cur_id] < n_new_cells);
       }
     }
 
+    if (rank_idx > -1)
+      h->index[rank_idx*2+1] = h->n_elts[0];
+
   }
   else { /* if (stride == 3) */
 
-    int   rank_idx = -1;
+    int prev_rank_id = -2, rank_idx = -1;
     cs_lnum_t section_idx_size = 0;
 
-    prev_section_id = -1;
+    int prev_section_id = -1;
 
     /* Index will be initialized as count */
 
-    for (ii = 0; ii < n_elts_ini; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
 
       bool is_same = true;
-      cur_id = order[ii];
+      cs_lnum_t cur_id = order[ii];
 
-      rank_id = tmp_num[cur_id*3];
-      section_id = tmp_num[cur_id*3 + 1];
-      src_id = tmp_num[cur_id*3 + 2];
+      int rank_id = tmp_num[cur_id*3] - 1;
+      int section_id = tmp_num[cur_id*3 + 1];
+      cs_lnum_t src_id = tmp_num[cur_id*3 + 2];
 
-      if (rank_id != loc_rank_id || tmp_num[cur_id*3 + 1] != 0) {
+      if (rank_id != -1 || tmp_num[cur_id*3 + 1] != 0) {
 
         if (rank_id != prev_rank_id) {
-          h->c_domain_rank[h->n_c_domains] = rank_id;
-          h->index[h->n_c_domains*2] = h->n_elts[0];
-          h->n_c_domains += 1;
+          if (rank_idx > -1)
+            h->index[rank_idx*2+1] = h->n_elts[0];
+          rank_idx++;
+          while (   h->c_domain_rank[rank_idx] != rank_id
+                 && rank_idx < h->n_c_domains)
+            rank_idx++;
+          assert(rank_idx < h->n_c_domains);
           is_same = false;
-          rank_idx += 1;
         }
         if (section_id != prev_section_id)
           is_same = false;
@@ -1581,12 +1701,15 @@ _merge_halo_data(cs_halo_t   *h,
         prev_src_id = src_id;
 
       }
-      else { /* if (rank_id == loc_rank_id && tmp_num[cur_id*3 + 1] == 0) */
+      else { /* if (rank_id == -1 && tmp_num[cur_id*3 + 1] == 0) */
         new_halo_cell_id[cur_id] = tmp_num[cur_id*3 + 2];
         assert(new_halo_cell_id[cur_id] < n_new_cells);
       }
 
     }
+
+    if (rank_idx > -1)
+      h->index[rank_idx*2+1] = h->n_elts[0];
 
     /* Transform count to index */
 
@@ -1595,18 +1718,30 @@ _merge_halo_data(cs_halo_t   *h,
       section_idx[sid] += section_idx[sid - 1];
   }
 
+  BFT_FREE(order);
+  BFT_FREE(tmp_num);
+
+  /* Restore local rank in connected domains list */
+
+  for (int i = 0; i < h->n_c_domains; i++) {
+    if (h->c_domain_rank[i] == -1)
+      (h->c_domain_rank[i] = loc_rank_id);
+  }
+
+  /* Update transforms list */
+
   if (h->n_transforms > 0) {
 
-    for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-      for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-        section_id = rank_id*n_sections + tr_id + 1;
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id]
+    for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+      for (int rank_idx = 0; rank_idx < h->n_c_domains; rank_idx++) {
+        int section_id = rank_idx*n_sections + tr_id + 1;
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx]
           = section_idx[section_id];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1]
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 1]
           = section_idx[section_id + 1] - section_idx[section_id];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 2]
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 2]
           = section_idx[section_id + 1];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 3]
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 3]
           = 0;
       }
     }
@@ -1617,9 +1752,6 @@ _merge_halo_data(cs_halo_t   *h,
 
   /* Free and resize memory */
 
-  BFT_FREE(order);
-  BFT_FREE(tmp_num);
-  BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
   BFT_REALLOC(h->index, h->n_c_domains*2+1, cs_lnum_t);
   if (h->n_transforms > 0)
     BFT_REALLOC(h->perio_lst,
@@ -1628,8 +1760,11 @@ _merge_halo_data(cs_halo_t   *h,
 
   h->n_elts[1] = h->n_elts[0];
   h->index[h->n_c_domains*2] = h->n_elts[0];
-  for (ii = 0; ii < h->n_c_domains; ii++)
-    h->index[ii*2+1] = h->index[ii*2+2];
+  for (int i = 1; i < h->n_c_domains; i++) {
+    if (h->index[i*2+1] == 0)
+      h->index[i*2+1] = h->index[i*2-1];
+    h->index[i*2] = h->index[i*2-1];
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1794,7 +1929,7 @@ _append_halos(cs_grid_t   *g,
     _empty_halo(h);
   }
 
-  /* Cleanup halo and set pointer for coarsening (sub_rooot) ranks*/
+  /* Cleanup halo and set pointer for coarsening (sub_root) ranks*/
 
   if (h != NULL) {
 
@@ -1900,7 +2035,7 @@ _append_cell_data(cs_grid_t  *g)
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
       cs_lnum_t n_recv = (  g->merge_cell_idx[rank_id+1]
-                           - g->merge_cell_idx[rank_id]);
+                          - g->merge_cell_idx[rank_id]);
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
       if (g->relaxation > 0) {

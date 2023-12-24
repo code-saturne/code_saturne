@@ -3,6 +3,8 @@ Release 8.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix (optional) multigrid grid merging in case of periodicity.
+
 - Fix error in boundary temperature computation for compressible model.
 
 - GUI: fix crash when visiting base volume zone settings if the

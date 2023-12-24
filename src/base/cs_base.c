@@ -1438,10 +1438,9 @@ cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
     return MPI_COMM_NULL;
 
   int comm_id = 0;
-  if (_n_step_comms > 0) {
-    while (   _step_ranks[comm_id] != n_ranks
-           && comm_id < _n_step_comms)
-      comm_id++;
+  for (comm_id = 0; comm_id < _n_step_comms; comm_id++) {
+    if (_step_ranks[comm_id] == n_ranks)
+      break;
   }
 
   printf("get_rank_step_comm_recursive: %d glob id, %d parent, step %d -> id %d\n",
