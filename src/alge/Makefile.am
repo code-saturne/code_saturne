@@ -164,7 +164,7 @@ $(FCFLAGS_DBG) $(FCFLAGS_HOT) $(FCFLAGS_SHARED)
 libcsalge_a_SOURCES = \
 cs_bad_cells_regularisation.c \
 cs_balance.c \
-cs_balance_by_zone.c \
+cs_balance_by_zone.cxx \
 cs_benchmark.c \
 cs_benchmark_matrix.c \
 cs_blas.c \

@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_vof.c
+  \file cs_vof.cxx
         VOF model data.
 */
 
@@ -479,7 +479,7 @@ _smoothe(const cs_mesh_t              *m,
                      0,
                      w_stride,
                      eqp_volf->verbosity,
-                     eqp_volf->imligr,
+                     (cs_gradient_limit_t)eqp_volf->imligr,
                      eqp_volf->epsrgr,
                      eqp_volf->climgr,
                      NULL,
@@ -1025,7 +1025,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      0,
                      w_stride,
                      eqp_volf->verbosity,
-                     eqp_volf->imligr,
+                     (cs_gradient_limit_t)eqp_volf->imligr,
                      eqp_volf->epsrgr,
                      eqp_volf->climgr,
                      NULL,
@@ -1058,7 +1058,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      1,     /* inc */
                      eqp_volf->nswrgr,
                      eqp_volf->verbosity,
-                     eqp_volf->imligr,
+                     (cs_gradient_limit_t)eqp_volf->imligr,
                      eqp_volf->epsrgr,
                      eqp_volf->climgr,
                      (const cs_real_3_t *)coefa_vec,

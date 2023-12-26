@@ -394,7 +394,7 @@ cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_utilities.c \
 cs_velocity_pressure.c \
-cs_vof.c \
+cs_vof.cxx \
 cs_volume_mass_injection.c \
 cs_volume_zone.c \
 cs_wall_functions.c \
