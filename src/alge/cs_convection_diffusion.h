@@ -244,66 +244,6 @@ cs_upwind_gradient(const int                     f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the upwind gradient used in the slope tests.
- *
- * This function assumes the input gradient and pvar values have already
- * been synchronized.
- *
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     grad         standard gradient
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
- * \param[in]     coefa        boundary condition array for the variable
- *                             (explicit part)
- * \param[in]     coefb        boundary condition array for the variable
- *                             (implicit part)
- * \param[in]     i_massflux   mass flux at interior faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_slope_test_gradient_vector(const int              inc,
-                              const cs_halo_type_t   halo_type,
-                              const cs_real_33_t    *grad,
-                              cs_real_33_t          *grdpa,
-                              const cs_real_3_t     *pvar,
-                              const cs_real_3_t     *coefa,
-                              const cs_real_33_t    *coefb,
-                              const cs_real_t       *i_massflux);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the upwind gradient used in the slope tests.
- *
- * This function assumes the input gradient and pvar values have already
- * been synchronized.
- *
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     grad         standard gradient
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
- * \param[in]     coefa        boundary condition array for the variable
- *                             (explicit part)
- * \param[in]     coefb        boundary condition array for the variable
- *                             (implicit part)
- * \param[in]     i_massflux   mass flux at interior faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_slope_test_gradient_tensor(const int               inc,
-                              const cs_halo_type_t    halo_type,
-                              const cs_real_63_t     *grad,
-                              cs_real_63_t           *grdpa,
-                              const cs_real_6_t      *pvar,
-                              const cs_real_6_t      *coefa,
-                              const cs_real_66_t     *coefb,
-                              const cs_real_t        *i_massflux);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute the beta blending coefficient of the
  * beta limiter (ensuring preservation of a given min/max pair of values).
  *
