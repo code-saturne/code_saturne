@@ -3,6 +3,8 @@ Release 8.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix bug in the GUI concerning the intialization of void_fraction.
+
 - Fix (optional) multigrid grid merging in case of periodicity.
 
 - Fix error in boundary temperature computation for compressible model.
