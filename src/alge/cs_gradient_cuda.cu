@@ -2080,10 +2080,12 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 extern "C" void
-_gradient_vector_cuda(const cs_mesh_t   *mesh,
-                      cs_real_3_t       *_bc_coeff_a,
-                      cs_real_33_t      *_bc_coeff_b,
-                      bool              perf)
+_gradient_vector_cuda(const cs_mesh_t    *mesh,
+                      const cs_real_3_t  *bc_coeff_a_cpu,
+                      const cs_real_33_t *bc_coeff_b_cpu,
+                      cs_real_3_t        *_bc_coeff_a,
+                      cs_real_33_t       *_bc_coeff_b,
+                      bool                perf)
 {
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
 
@@ -2116,12 +2118,19 @@ _gradient_vector_cuda(const cs_mesh_t   *mesh,
   /* Initialization */
 
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
-  cudaMemset(_bc_coeff_a_d, 0, n_b_faces * sizeof(cs_real_3_t));
-  CS_CUDA_CHECK(cudaEventRecord(init1, stream));
-  cudaMemset(_bc_coeff_b_d, 0, n_b_faces * sizeof(cs_real_33_t));
 
-  _set_one_to_coeff_b<<< n_b_faces/blocksize * 3, blocksize, 0, stream>>>
-                              (n_b_faces, _bc_coeff_b_d);
+  if(bc_coeff_a_cpu == NULL){
+    cudaMemset(_bc_coeff_a_d, 0, n_b_faces * sizeof(cs_real_3_t));
+  }
+
+  CS_CUDA_CHECK(cudaEventRecord(init1, stream));
+
+  if(bc_coeff_b_cpu == NULL){
+    cudaMemset(_bc_coeff_b_d, 0, n_b_faces * sizeof(cs_real_33_t));
+    _set_one_to_coeff_b<<< get_gridsize(n_b_faces, blocksize) * 3, blocksize, 0, stream>>>
+                              (n_b_faces * 3, _bc_coeff_b_d);
+  }
+  
   CS_CUDA_CHECK(cudaEventRecord(init2, stream));
 
   

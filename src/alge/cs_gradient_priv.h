@@ -143,10 +143,12 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                                     bool                          perf);
 
 void
-_gradient_vector_cuda(const cs_mesh_t   *mesh,
-                      cs_real_3_t       *_bc_coeff_a,
-                      cs_real_33_t      *_bc_coeff_b,
-                      bool              perf);
+_gradient_vector_cuda(const cs_mesh_t     *mesh,
+                      const cs_real_3_t   *bc_coeff_a_cpu,
+                      const cs_real_33_t  *bc_coeff_b_cpu,
+                      cs_real_3_t         *_bc_coeff_a,
+                      cs_real_33_t        *_bc_coeff_b,
+                      bool                 perf);
                       
 #endif
 
