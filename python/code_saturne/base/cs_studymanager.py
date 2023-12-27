@@ -318,6 +318,8 @@ def run_studymanager(pkg, options):
     slurm_submission = False
     if (options.slurm_batch_size > 0 or options.slurm_batch_wtime > 0):
         slurm_submission = True
+        # we impose case analysis with slurm submission
+        options.casestate = True
         if (options.slurm_batch_size > 0 and options.slurm_batch_wtime < 1):
             options.slurm_batch_wtime = 12
         elif (options.slurm_batch_size < 1 and options.slurm_batch_wtime > 0):

@@ -1116,12 +1116,15 @@ class Studies(object):
         # Store options
 
         self.__pkg               = pkg
+        self.__exe               = exe
+        self.__filename          = options.filename
         self.__create_xml        = options.create_xml
         self.__update_smgr       = options.update_smgr
         self.__update_setup      = options.update_setup
         self.__force_rm          = options.remove_existing
         self.__disable_ow        = options.disable_overwrite
         self.__debug             = options.debug
+        self.__state             = options.casestate
         self.__n_procs           = options.n_procs
         self.__filter_level      = options.filter_level
         self.__filter_n_procs    = options.filter_n_procs
@@ -1178,6 +1181,7 @@ class Studies(object):
             if filename is None:
                 studyd = os.path.basename(studyp)
                 filename = "smgr.xml"
+                options.filename = filename
 
             filepath = os.path.join(studyp, filename)
             smgr, error = create_base_xml_file(filepath, self.__pkg)
@@ -1974,7 +1978,73 @@ class Studies(object):
 
             job_id_list = cur_job_id_list
 
+        # final submission to analyse all run cases
+        if self.__state:
+
+            slurm_batch_name = "slurm_batch_file_" + str(cur_batch_id) + ".sh"
+            slurm_batch_file = open(slurm_batch_name, mode='w')
+
+            # fill file with template
+            cmd = slurm_batch_template.format(nproc+1, 0, 10, cur_batch_id)
+
+            cmd += "\n"
+            slurm_batch_file.write(cmd)
+
+            # fill file with batch command for state analysis
+            batch_cmd += self.build_state_batch()
+            slurm_batch_file.write(batch_cmd)
+            slurm_batch_file.flush()
+
+            # list of dependency id should be in the
+            # :id1:id2:id3 format
+            list_id = ""
+            for item in job_id_list:
+                list_id += ":" + str(item)
+            if len(list_id) > 0:
+                output = subprocess.check_output(['sbatch',"--dependency=afterany"
+                       + list_id, slurm_batch_name])
+            else:
+                # empty list can occur with existing runs in study
+                output = subprocess.check_output(['sbatch', slurm_batch_name])
+
         self.reporting('')
+
+    #---------------------------------------------------------------------------
+
+    def build_state_batch(self):
+        """
+        Launch state option in DESTINATION
+        """
+        run_cmd_state = "cd " + self.__dest + os.linesep
+
+        run_cmd_state += self.build_state_cmd()
+
+        return run_cmd_state
+
+    #---------------------------------------------------------------------------
+
+    def build_state_cmd(self):
+        """
+        Define run command with specified options.
+        """
+
+        e = os.path.join(self.__pkg.get_dir('bindir'), self.__exe)
+
+        # final analysis after all run_cases are finished
+        state_cmd = e + " smgr --state" \
+                  + " -f " + self.__filename \
+                  + " --repo " + self.__repo \
+                  + " --dest " + self.__dest
+
+        # add tags options
+        if self.__with_tags:
+            tags = ','.join(str(n) for n in self.__with_tags)
+            state_cmd += " --with-tags " + '"' + tags + '"'
+        if self.__without_tags:
+            tags = ','.join(str(n) for n in self.__without_tags)
+            state_cmd += " --without-tags " + '"' + tags + '"'
+
+        return state_cmd
 
     #---------------------------------------------------------------------------
 
