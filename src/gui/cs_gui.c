@@ -2994,7 +2994,7 @@ void cs_gui_initial_conditions(void)
 
           cs_field_t *c = cs_field_by_name_try("void_fraction");
 
-          if (c == NULL && formula != NULL) {
+          if (c != NULL && formula != NULL) {
             cs_real_t *ini_vals = NULL;
             BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
 
