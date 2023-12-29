@@ -1190,8 +1190,8 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   /* Compute the max of flux/Surf over the entire domain*/
   cs_real_t maxfluxsurf = 0.;
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    if (maxfluxsurf < CS_ABS(i_volflux[f_id])/i_face_surf[f_id])
-      maxfluxsurf = CS_ABS(i_volflux[f_id])/i_face_surf[f_id];
+    if (maxfluxsurf < abs(i_volflux[f_id])/i_face_surf[f_id])
+      maxfluxsurf = abs(i_volflux[f_id])/i_face_surf[f_id];
   }
   cs_parall_max(1, CS_REAL_TYPE, &maxfluxsurf);
 
@@ -1201,7 +1201,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     cs_lnum_t cell_id1 = i_face_cells[f_id][0];
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
     cs_real_t fluxfactor =
-      CS_MIN(cdrift*CS_ABS(i_volflux[f_id])/i_face_surf[f_id], maxfluxsurf);
+      cs_math_fmin(cdrift*abs(i_volflux[f_id])/i_face_surf[f_id], maxfluxsurf);
 
     for (int idim = 0; idim < 3; idim++)
       gradface[idim] = (  voidf_grad[cell_id1][idim]
@@ -1597,12 +1597,13 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
   /* Compute the limiting time step to satisfy min/max principle.
      Only if a source term is accounted for. */
 
-  cs_real_t dtmaxl = 1.e15; // ou cs_math_big_r ?
-  cs_real_t dtmaxg = 1.e15;
+  cs_real_t dtmaxg = HUGE_VAL;
 
   if (i_vof_mass_transfer != 0) {
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cs_real_t dtmaxl;
       if (gamcav[c_id] < 0.0)
         dtmaxl = - rho2 * cvara_voidf[c_id] / gamcav[c_id];
       else
@@ -1611,8 +1612,7 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
       dtmaxg = cs_math_fmin(dtmaxl, dtmaxg);
 
     }
-    if (cs_glob_rank_id > -1)
-      cs_parall_min(1, CS_REAL_TYPE, &dtmaxg);
+    cs_parall_min(1, CS_REAL_TYPE, &dtmaxg);
 
     if (dt[0] > dtmaxg) {
 
@@ -1635,8 +1635,8 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
 
   }
 
-  /* Visualization of divu
-   (only for advanced using purposed, not used in the source terms hereafter) */
+  /* Visualization of divu (only for advanced analysis purpose,
+     not used in the source terms hereafter) */
 
   cs_field_t *vel_div = cs_field_by_name_try("velocity_divergence");
   cs_real_t *divu = NULL, *t_divu = NULL;
@@ -1789,8 +1789,8 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
 
     /* Get the min and max clipping */
 
-    const int scminp = cs_field_get_key_double(volf2, kscmin);
-    const int scmaxp = cs_field_get_key_double(volf2, kscmax);
+    const cs_real_t scminp = cs_field_get_key_double(volf2, kscmin);
+    const cs_real_t scmaxp = cs_field_get_key_double(volf2, kscmax);
     const int kclipp = cs_field_key_id("clipping_id");
 
     /* Postprocess clippings ? */
