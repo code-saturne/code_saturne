@@ -279,7 +279,11 @@ class Package:
             tar = tarfile.open(self.archive)
 
             first_member = tar.next()
-            relative_source_dir = first_member.name.split(os.path.sep)[0]
+            path = first_member.name.split(os.path.sep)
+            if path[0] == '.':
+                relative_source_dir = path[1]
+            else:
+                relative_source_dir = path[0]
             self.source_dir = os.path.abspath(relative_source_dir)
 
             try:
@@ -588,8 +592,8 @@ class Setup:
                     description="Hierarchical Data Format",
                     package="hdf5",
                     version="1.12.3",
-                    archive="hdf5-1.12.3.tar.gz",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.12.3/src/%s")
+                    archive="hdf5-1.12.3.tar.bz2",
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.3/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-build-mode=production"
@@ -615,7 +619,7 @@ class Setup:
                     description="Model for Exchange of Data",
                     package="med",
                     version="5.0.0",
-                    archive="med-5.0.0.tar.gz",
+                    archive="med-5.0.0.tar.bz2",
                     url="https://www.code-saturne.org/releases/external/%s")
 
         p = self.packages['med']

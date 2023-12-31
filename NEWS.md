@@ -3,6 +3,8 @@ Release 8.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Automatic installer: fix compilation of HDF5 and MED libraries.
+
 - Fix bug in the GUI concerning the intialization of void_fraction.
 
 - Fix (optional) multigrid grid merging in case of periodicity.
