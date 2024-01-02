@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2023  EDF S.A.
+  Copyright (C) 2005-2024  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -78,91 +78,6 @@ extern "C" {
 #define restrict __restrict
 #else
 #define restrict
-#endif
-
-/*============================================================================
- * Definitions that may not always be provided directly by the system
- *============================================================================*/
-
-/*
- * Usually stdint.h is included by inttypes.h, but only inttypes.h exists
- * on certain systems, such as Tru64Unix.
- */
-
-#if HAVE_STDINT_H
-# include <stdint.h>
-#elif HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
-
-/* C99 _Bool type */
-
-#if HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# if !HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-    define _Bool signed char;
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
-/* int32_t type */
-
-#if !defined(HAVE_INT32_T)
-# if (PLE_SIZEOF_INT == 4)
-typedef int int32_t;
-# elif (PLE_SIZEOF_SHORT == 4)
-typedef short int32_t;
-# else
-#  error
-# endif
-#endif
-
-/* int64_t type */
-
-#if !defined(HAVE_INT64_T)
-# if (PLE_SIZEOF_INT == 8)
-typedef int int64_t;
-# elif (PLE_SIZEOF_LONG == 8)
-typedef long int64_t;
-# elif (HAVE_LONG_LONG == 8)  /* PLE_SIZEOF_LONG_LONG not generally available */
-typedef long long int64_t;
-# else
-#  error
-# endif
-#endif
-
-/* uint32_t type */
-
-#if !defined(HAVE_UINT32_T)
-# if (PLE_SIZEOF_INT == 4)
-typedef unsigned uint32_t;
-# elif (PLE_SIZEOF_SHORT == 4)
-typedef unsigned short uint32_t;
-# else
-#  error
-# endif
-#endif
-
-/* uint64_t type */
-
-#if !defined(HAVE_UINT64_T)
-# if (PLE_SIZEOF_INT == 8)
-typedef unsigned uint64_t;
-# elif (PLE_SIZEOF_LONG == 8)
-typedef unsigned long uint64_t;
-# elif (HAVE_LONG_LONG) /* PLE_SIZEOF_LONG_LONG not generally available */
-typedef unsigned long long uint64_t;
-# else
-#  error
-# endif
 #endif
 
 /*----------------------------------------------------------------------------*/

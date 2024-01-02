@@ -9,6 +9,8 @@ Bug fixes:
 Changes:
 --------
 
+- Remove some definitions for some ancient compilers and MPI libraries.
+
 - Add `ple_locator_exchange_point_var_all` function to handle
   exchanges with both located and unlocated points.
 
