@@ -142,7 +142,7 @@ cs_rad_transfer_options(void)
    *            = 2 => Corrected semi-analytic (to be conservative)
    *     REMARK: if transparent, idiver = -1 automatically in raydom  */
 
-  if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
+  if (rt_params->atmo_model == CS_RAD_ATMO_3D_NONE)
     rt_params->idiver = 2;
 
   if (rt_params->imoadf == 1)
