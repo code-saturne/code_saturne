@@ -62,6 +62,7 @@ class ThermalRadiationModel(Variables, Model):
 
         self.radiativeModels = ('off', 'dom', 'p-1')
         self.optionsList = [0, 1, 2]
+        self.optionsListRenorm = [-1, 0, 1, 2]
 
         self.c_prop = {}
         self.b_prop = {}
@@ -394,7 +395,7 @@ class ThermalRadiationModel(Variables, Model):
     @Variables.undoLocal
     def setTrs(self, idiver):
         """ Put value of IDIVER for advanced options """
-        self.isIntInList(idiver, self.optionsList)
+        self.isIntInList(idiver, self.optionsListRenorm)
         self.node_ray.xmlSetData('thermal_radiative_source_term', idiver)
 
 

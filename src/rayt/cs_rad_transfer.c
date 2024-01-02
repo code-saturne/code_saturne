@@ -122,6 +122,7 @@ BEGIN_C_DECLS
         characteristic length of the domain).
   \var  cs_rad_transfer_params_t::idiver
         Indicates the method used to calculate the radiative source term:
+        - -1: no renormalization
         - 0: semi-analytic calculation (compulsory with transparent media)
         - 1: conservative calculation
         - 2: semi-analytic calculation corrected in order to be globally

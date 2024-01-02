@@ -95,10 +95,11 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         # Combo models
 
-        self.modelTSRay  = ComboModel(self.comboBoxTSRay, 3, 1)
+        self.modelTSRay  = ComboModel(self.comboBoxTSRay, 4, 1)
         self.modelPrintT = ComboModel(self.comboBoxPrintT, 3, 1)
         self.modelPrintL = ComboModel(self.comboBoxPrintL, 3, 1)
 
+        self.modelTSRay.addItem('-1', '-1')
         self.modelTSRay.addItem('0', '0')
         self.modelTSRay.addItem('1', '1')
         self.modelTSRay.addItem('2', '2')
