@@ -156,11 +156,25 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 ! Interfaces
 !===============================================================================
 
-procedure() :: atr1vf, cou1do, debvtl, distpr, distpr2, distyp, diffst
+procedure() :: atr1vf, cou1do, debvtl, distpr2, diffst
 procedure() :: cs_tagmro
 procedure() :: phyvar, pthrbm, schtmp, scalai
 
 interface
+
+  subroutine cs_wall_distance_yplus(visvdr)  &
+    bind(C, name='cs_wall_distance_yplus')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: visvdr
+  end subroutine cs_wall_distance_yplus
+
+  subroutine cs_wall_distance(iterns)  &
+    bind(C, name='cs_wall_distance')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: iterns
+  end subroutine cs_wall_distance
 
   subroutine cs_courant_fourier_compute()  &
     bind(C, name='cs_courant_fourier_compute')
@@ -887,7 +901,7 @@ do while (iterns.le.nterup)
     if (imajdy.eq.0 .and. ineedy.eq.1) then
 
       if (abs(icdpar).eq.1) then
-        call distpr(itypfb, iterns)
+        call cs_wall_distance(iterns)
       ! Deprecated algorithm
       else if (abs(icdpar).eq.2) then
         call distpr2(itypfb)
@@ -896,12 +910,12 @@ do while (iterns.le.nterup)
       if (iale.eq.0) imajdy = 1
     endif
 
-  endif
+ endif
 
   ! Compute y+ if needed
   ! and Van Driest "amortissement"
   if (itytur.eq.4 .and. idries.eq.1) then
-    call distyp(itypfb, visvdr)
+    call cs_wall_distance_yplus(c_visvdr)
   endif
 
 !===============================================================================

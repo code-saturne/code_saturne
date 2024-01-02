@@ -65,6 +65,17 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_boundary_conditions_check.c
+        Check boundary condition code.
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -97,6 +108,8 @@ _synchronize_boundary_conditions_error(cs_gnum_t  nerloc,
     }
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

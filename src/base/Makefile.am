@@ -207,6 +207,7 @@ cs_volume_zone.h \
 cs_volume_mass_injection.h \
 cs_wall_condensation.h \
 cs_wall_condensation_1d_thermal.h \
+cs_wall_distance.h \
 cs_wall_functions.h \
 cs_xdef_eval_at_zone.h \
 cs_zone.h \
@@ -397,12 +398,11 @@ cs_velocity_pressure.c \
 cs_vof.cxx \
 cs_volume_mass_injection.c \
 cs_volume_zone.c \
+cs_wall_distance.c \
 cs_wall_functions.c \
 cs_xdef_eval_at_zone.c \
 diffst.f90 \
-distpr.f90 \
 distpr2.f90 \
-distyp.f90 \
 ecrava.f90 \
 ecrlis.f90 \
 findpt.f90 \
