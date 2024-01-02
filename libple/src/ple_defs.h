@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2023  EDF S.A.
+  Copyright (C) 2005-2024  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -44,12 +44,6 @@ extern "C" {
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
-
-/* Absolute, minimum, and maximum values */
-
-#define PLE_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
-#define PLE_MIN(a,b)   ((a) > (b) ?  (b) : (a))  /* Minimum of a et b */
-#define PLE_MAX(a,b)   ((a) < (b) ?  (b) : (a))  /* Maximum of a et b */
 
 /*
  * Allocate memory for _ni items of type _type.
@@ -115,23 +109,9 @@ _ptr = ple_mem_free(_ptr, #_ptr, __FILE__, __LINE__)
  * General C types such as size_t which should be known
  *----------------------------------------------------------------------------*/
 
-/*
- * Obtain definitions such as that of size_t through stddef.h (C99 standard)
- * if available (preferred method), or through stdlib.h (which defines
- * malloc() and family and so must define size_t some way) otherwise.
- * This must be done in ple_defs.h in a way independent of the private
- * configuration files, as size_t is used in many public FVM headers.
- */
+/* Obtain definitions such as that of size_t */
 
-#if defined(__STDC_VERSION__)
-# if (__STDC_VERSION__ >= 199901L)
-#   include <stddef.h>
-# else
-#   include <stdlib.h>
-# endif
-#else
-# include <stdlib.h>
-#endif
+#include <stddef.h>
 
 /*----------------------------------------------------------------------------
  * Basic types used by PLE.
