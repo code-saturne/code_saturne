@@ -16,11 +16,6 @@ Release 8.1.1 (unreleased)
 
 - GUI: fix crash when activating reactive flows.
 
-- Radiative model: fix default value for `idiver` (explicit radiative
-  source term computation mode), which was inverted between atmospheric
-  and other models and could lead to incorrect results if not modified
-  by the user.
-
 ### Architectural changes:
 
 - Update MPI rank detection for MPMD "script" mode, to handle PMIX.
