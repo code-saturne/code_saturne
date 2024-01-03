@@ -3,6 +3,9 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Mesh refinement: fix occasional syncronization of face refinement
+  type on parallel boundaries.
+
 - Fix (optional) multigrid grid merging in case of periodicity.
 
 - Fix error in boundary temperature computation for compressible model.

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -4329,10 +4329,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     cs_mesh_update_auxiliary(m);
   }
 
-  /* Free data that will be rebuilt */
-
-  cs_mesh_free_rebuildable(m, true);
-
   m->verbosity = mv_save;
 
   if (m->verbosity > 0) {
@@ -4385,6 +4381,11 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                            1,
                            c_r_level);
   }
+
+  /* Free mesh data that will be rebuilt, as it would become
+     inconsistent once the mesh is modified. */
+
+  cs_mesh_free_rebuildable(m, true);
 
   /* Number of added vertices for edges, faces, and cells */
 
