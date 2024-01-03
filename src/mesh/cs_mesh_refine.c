@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -200,7 +200,7 @@ static cs_mesh_refine_type_t _refine_tria_type = CS_REFINE_TRIA;
 /*!
  * \brief Transform a counts array to an index.
  *
- * The counts array values are assumed shiftet by one, that is
+ * The counts array values are assumed shifted by one, that is
  * count[i] is stored in elt_idx[i+1]
  *
  * \param[in]       n_elts      number of elements
@@ -3053,7 +3053,6 @@ _subdivide_cell_tria_faces(const cs_mesh_t    *m,
   }
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Match a cell's triangle faces subdivision and partially update
@@ -3086,17 +3085,17 @@ _subdivide_cell_tria_faces(const cs_mesh_t    *m,
 
 static void
 _subdivide_cell_tria_q_faces(const cs_mesh_t  *m,
-                           cs_lnum_t           c_f_id_s,
-                           cs_lnum_t           c_f_id_e,
-                           cs_lnum_t           cell_id,
-                           cs_lnum_t           n_b_f_ini,
-                           const cs_lnum_t     c_o2n_idx[],
-                           const cs_lnum_t     i_face_o2n_idx[],
-                           const cs_lnum_t     b_face_o2n_idx[],
-                           cs_adjacency_t     *c2f,
-                           cs_lnum_t           c2f2v_start[],
-                           const cs_lnum_t     c_id_shift[][3],
-                           cs_lnum_t           tria_vtx[][7])
+                             cs_lnum_t           c_f_id_s,
+                             cs_lnum_t           c_f_id_e,
+                             cs_lnum_t           cell_id,
+                             cs_lnum_t           n_b_f_ini,
+                             const cs_lnum_t     c_o2n_idx[],
+                             const cs_lnum_t     i_face_o2n_idx[],
+                             const cs_lnum_t     b_face_o2n_idx[],
+                             cs_adjacency_t     *c2f,
+                             cs_lnum_t           c2f2v_start[],
+                             const cs_lnum_t     c_id_shift[][3],
+                             cs_lnum_t           tria_vtx[][7])
 {
   const cs_lnum_t s_id_c = c2f->idx[cell_id];
 
@@ -4785,10 +4784,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     cs_mesh_update_auxiliary(m);
   }
 
-  /* Free data that will be rebuilt */
-
-  cs_mesh_free_rebuildable(m, true);
-
   m->verbosity = mv_save;
 
   if (m->verbosity > 0) {
@@ -4841,6 +4836,11 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                            1,
                            c_r_level);
   }
+
+  /* Free mesh data that will be rebuilt, as it would become
+     inconsistent once the mesh is modified. */
+
+  cs_mesh_free_rebuildable(m, true);
 
   /* Number of added vertices for edges, faces, and cells */
 

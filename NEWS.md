@@ -3,6 +3,9 @@ Release 8.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Mesh refinement: fix occasional syncronization of face refinement
+  type on parallel boundaries.
+
 - Automatic installer: fix compilation of HDF5 and MED libraries.
 
 - Fix bug in the GUI concerning the intialization of void_fraction.
