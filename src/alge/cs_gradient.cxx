@@ -7315,7 +7315,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   // compute_cpu   = true;
   // res_cpu       = false;
   // perf        = false;
-  // accuracy    = false;
+  // accuracy    = true;
   
 BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
 BFT_MALLOC(rhs_cuda, n_cells_ext, cs_real_33_t);
@@ -7527,61 +7527,61 @@ if(compute_cpu){
   /* Compute gradient on boundary cells */
   /*------------------------------------*/
 
-  // #pragma omp parallel
-  // {
-  //   cs_lnum_t t_s_id, t_e_id;
-  //   cs_parall_thread_range(m->n_b_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+  #pragma omp parallel
+  {
+    cs_lnum_t t_s_id, t_e_id;
+    cs_parall_thread_range(m->n_b_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
-  //   /* Build indices bijection between [1-9] and [1-3]*[1-3] */
+    /* Build indices bijection between [1-9] and [1-3]*[1-3] */
 
-  //   cs_lnum_t _33_9_idx[9][2];
-  //   int nn = 0;
-  //   for (int ll = 0; ll < 3; ll++) {
-  //     for (int mm = 0; mm < 3; mm++) {
-  //       _33_9_idx[nn][0] = ll;
-  //       _33_9_idx[nn][1] = mm;
-  //       nn++;
-  //     }
-  //   }
+    cs_lnum_t _33_9_idx[9][2];
+    int nn = 0;
+    for (int ll = 0; ll < 3; ll++) {
+      for (int mm = 0; mm < 3; mm++) {
+        _33_9_idx[nn][0] = ll;
+        _33_9_idx[nn][1] = mm;
+        nn++;
+      }
+    }
 
-  //   /* Loop on boundary cells */
+    /* Loop on boundary cells */
 
-  //   for (cs_lnum_t b_c_id = t_s_id; b_c_id < t_e_id; b_c_id++) {
+    for (cs_lnum_t b_c_id = t_s_id; b_c_id < t_e_id; b_c_id++) {
 
-  //     cs_lnum_t c_id = m->b_cells[b_c_id];
+      cs_lnum_t c_id = m->b_cells[b_c_id];
 
-  //     cs_real_t cocgb[3][3], cocgb_v[45], rhsb_v[9], x[9];
+      cs_real_t cocgb[3][3], cocgb_v[45], rhsb_v[9], x[9];
 
-  //     _complete_cocg_lsq(c_id, madj, fvq, cocgb_s[b_c_id], cocgb);
+      _complete_cocg_lsq(c_id, madj, fvq, cocgb_s[b_c_id], cocgb);
 
-  //     _compute_cocgb_rhsb_lsq_v
-  //       (c_id,
-  //        inc,
-  //        madj,
-  //        fvq,
-  //        _33_9_idx,
-  //        (const cs_real_3_t *)pvar,
-  //        (const cs_real_3_t *)coefav,
-  //        (const cs_real_33_t *)coefbv,
-  //        (const cs_real_3_t *)cocgb,
-  //        (const cs_real_3_t *)rhs[c_id],
-  //        cocgb_v,
-  //        rhsb_v);
+      _compute_cocgb_rhsb_lsq_v
+        (c_id,
+         inc,
+         madj,
+         fvq,
+         _33_9_idx,
+         (const cs_real_3_t *)pvar,
+         (const cs_real_3_t *)coefav,
+         (const cs_real_33_t *)coefbv,
+         (const cs_real_3_t *)cocgb,
+         (const cs_real_3_t *)rhs[c_id],
+         cocgb_v,
+         rhsb_v);
 
-  //     _fw_and_bw_ldtl_pp(cocgb_v,
-  //                        9,
-  //                        x,
-  //                        rhsb_v);
+      _fw_and_bw_ldtl_pp(cocgb_v,
+                         9,
+                         x,
+                         rhsb_v);
 
-  //     for (int kk = 0; kk < 9; kk++) {
-  //       int ii = _33_9_idx[kk][0];
-  //       int jj = _33_9_idx[kk][1];
-  //       gradv_cpu[c_id][ii][jj] = x[kk];
-  //     }
+      for (int kk = 0; kk < 9; kk++) {
+        int ii = _33_9_idx[kk][0];
+        int jj = _33_9_idx[kk][1];
+        gradv_cpu[c_id][ii][jj] = x[kk];
+      }
 
-  //   }
+    }
 
-  // }
+  }
   stop = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 } // end if COMPUTE_CPU 
