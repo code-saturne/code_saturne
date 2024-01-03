@@ -668,7 +668,6 @@ cs_get_glob_fluid_properties(void)
 void
 cs_physical_constants_log_setup(void)
 {
-
   cs_log_printf
     (CS_LOG_SETUP,
      _("\n"

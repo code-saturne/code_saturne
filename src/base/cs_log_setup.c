@@ -167,8 +167,6 @@ _log_global_model_options(void)
   cs_physical_constants_log_setup();
   cs_fluid_properties_log_setup();
 
-  /* TODO : Add diftl0 printing */
-
   /* Thermal model */
 
   cs_thermal_model_log_setup();

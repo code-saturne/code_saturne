@@ -273,7 +273,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
   *ckabs1 = &(cs_glob_combustion_model->ckabs0);
   *fs     = cs_glob_combustion_model->gas->fs;
   *th     = cs_glob_combustion_model->th;
-  *cpgazg = cs_glob_combustion_model->gas->cpgazg;
+  *cpgazg = (double *)cs_glob_combustion_model->gas->cpgazg;
 }
 
 /*----------------------------------------------------------------------------
@@ -486,55 +486,68 @@ void
 cs_combustion_log_setup(void)
 {
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_LW]  >= 0) {
+      || cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
 
     cs_log_printf(CS_LOG_SETUP,
                   _("\n"
                     "Combustion module options\n"
                     "-------------------------\n\n"));
 
-    switch(cs_glob_combustion_model->isoot) {
-    case -1:
-      /* No Soot model */
-      cs_log_printf(CS_LOG_SETUP,
-                    _("    isoot:    -1 (No Soot model)\n\n"));
-      break;
-    case 0:
-      /* constant fraction of product Xsoot */
-      cs_log_printf(CS_LOG_SETUP,
-                    _("    isoot:     0 (Constant soot yield)\n\n"));
-      cs_log_printf(CS_LOG_SETUP,
-                    _("  Parameters for the soot model:\n"
-                      "    xsoot:  %14.5e (Fraction of product - Used only if\n"
-                      "            the soot yield is not defined in the\n"
-                      "            thermochemistry data file)\n"
-                      "    rosoot: %14.5e (Soot density)\n\n"),
-                    cs_glob_combustion_model->gas->xsoot,
-                    cs_glob_combustion_model->gas->rosoot);
-      break;
-    case 1:
-      /* 2 equations model of Moss et al. */
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    isoot:     1 (2 equations model of Moss et al.)\n\n"));
-      cs_log_printf(CS_LOG_SETUP,
-                    _("  Parameter for the soot model:\n"
-                      "    rosoot: %14.5e (Soot density)\n\n"),
+    /* Gas combistion only */
+
+    if (cs_glob_combustion_model->coal == NULL) {
+
+      switch(cs_glob_combustion_model->isoot) {
+      case -1:
+        /* No Soot model */
+        cs_log_printf(CS_LOG_SETUP,
+                      _("    isoot:    -1 (No Soot model)\n\n"));
+        break;
+      case 0:
+        /* constant fraction of product Xsoot */
+        cs_log_printf(CS_LOG_SETUP,
+                      _("    isoot:     0 (Constant soot yield)\n\n"));
+        cs_log_printf(CS_LOG_SETUP,
+                      _("  Parameters for the soot model:\n"
+                        "    xsoot:  %14.5e (Fraction of product - Used only\n"
+                        "            if the soot yield is not defined in the\n"
+                        "            thermochemistry data file)\n"
+                        "    rosoot: %14.5e (Soot density)\n\n"),
+                      cs_glob_combustion_model->gas->xsoot,
                       cs_glob_combustion_model->gas->rosoot);
-      break;
-    default:
-      break;
+        break;
+      case 1:
+        /* 2 equations model of Moss et al. */
+        cs_log_printf
+          (CS_LOG_SETUP,
+           _("    isoot:     1 (2 equations model of Moss et al.)\n\n"));
+        cs_log_printf(CS_LOG_SETUP,
+                      _("  Parameter for the soot model:\n"
+                        "    rosoot: %14.5e (Soot density)\n\n"),
+                      cs_glob_combustion_model->gas->rosoot);
+        break;
+      default:
+        break;
+      }
+
+      const char *ipthrm_value_str[] = {N_("0 (no mean pressure computation)"),
+                                        N_("1 (mean pressure computation)")};
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    ipthrm:    %s\n\n"),
+                    _(ipthrm_value_str[cs_glob_fluid_properties->ipthrm]));
+
     }
 
-    const char *ipthrm_value_str[] = {N_("0 (no mean pressure computation)"),
-                                      N_("1 (mean pressure computation)")};
     cs_log_printf(CS_LOG_SETUP,
-                  _("    ipthrm:    %s\n"),
-                  _(ipthrm_value_str[cs_glob_fluid_properties->ipthrm]));
-
+                  _("  Molecular diffusivity for the Enthalpy:\n"
+                    "    diftl0: %14.5e\n"),
+                    cs_glob_combustion_model->diftl0);
   }
 }
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
