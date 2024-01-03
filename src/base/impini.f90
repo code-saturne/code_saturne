@@ -323,7 +323,9 @@ if (idtvar.ge.0) then
 
 !   - Coefficient de relaxation de la masse volumique
 
-  if (ippmod(iphpar).ge.2.and.ippmod(ieljou).lt.0.and.ippmod(ielarc).lt.0) then
+  if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0 .or. &
+      ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0 .or. &
+      ippmod(iccoal).ge.0) then
     write(nfecra,3050) srrom
   endif
 
