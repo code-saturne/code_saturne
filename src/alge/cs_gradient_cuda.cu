@@ -2081,10 +2081,10 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
  *----------------------------------------------------------------------------*/
 extern "C" void
 _gradient_vector_cuda(const cs_mesh_t    *mesh,
-                      const cs_real_3_t  *bc_coeff_a_cpu,
-                      const cs_real_33_t *bc_coeff_b_cpu,
                       cs_real_3_t        *_bc_coeff_a,
                       cs_real_33_t       *_bc_coeff_b,
+                      bool                a_null,
+                      bool                b_null,
                       bool                perf)
 {
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -2119,15 +2119,15 @@ _gradient_vector_cuda(const cs_mesh_t    *mesh,
 
   CS_CUDA_CHECK(cudaEventRecord(mem_h2d, stream));
 
-  if(bc_coeff_a_cpu == NULL){
+  if(a_null){
     cudaMemset(_bc_coeff_a_d, 0, n_b_faces * sizeof(cs_real_3_t));
   }
 
   CS_CUDA_CHECK(cudaEventRecord(init1, stream));
 
-  if(bc_coeff_b_cpu == NULL){
+  if(b_null){
     cudaMemset(_bc_coeff_b_d, 0, n_b_faces * sizeof(cs_real_33_t));
-    _set_one_to_coeff_b<<< get_gridsize(n_b_faces, blocksize) * 3, blocksize, 0, stream>>>
+    _set_one_to_coeff_b<<< get_gridsize(n_b_faces * 3, blocksize), blocksize, 0, stream>>>
                               (n_b_faces * 3, _bc_coeff_b_d);
   }
   

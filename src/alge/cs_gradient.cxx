@@ -9577,7 +9577,7 @@ res_cpu = !compute_cuda;
     if(perf){
       start = std::chrono::high_resolution_clock::now();
     }
-    _gradient_vector_cuda(mesh, bc_coeff_a, bc_coeff_b, _bc_coeff_a_gpu, _bc_coeff_b_gpu, perf);
+    _gradient_vector_cuda(mesh, _bc_coeff_a_gpu, _bc_coeff_b_gpu, (bc_coeff_a == NULL), (bc_coeff_b == NULL), perf);
     if(perf){
       stop = std::chrono::high_resolution_clock::now();
       elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
