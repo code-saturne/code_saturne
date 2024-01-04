@@ -989,7 +989,7 @@ do while (iterns.le.nterup)
       if (fluid_solid) call cs_porous_model_set_has_disable_flag(0)
 
       ! Update buoyant scalar(s)
-      call scalai(nvar, nscal , iterns , dt)
+      call scalai(nscal , iterns , dt)
 
       ! Diffusion terms for weakly compressible algorithm
       if (idilat.ge.4) then
@@ -1299,7 +1299,7 @@ if (nscal.ge.1) then
 
   ! Update non-buoyant scalar(s)
   iterns = -1
-  call scalai(nvar, nscal, iterns, dt)
+  call scalai(nscal, iterns, dt)
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then
