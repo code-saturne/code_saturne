@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -890,8 +890,7 @@ cs_user_parameters(cs_domain_t *domain)
   /* Example: change Reference fluid properties options */
   /*----------------------------------------------------*/
 
-  /* Members of the structure cs_fluid_properties_t
-   */
+  /* Members of the structure cs_fluid_properties_t */
 
   /*! [param_fluid_properties] */
   {
@@ -1115,6 +1114,45 @@ cs_user_parameters(cs_domain_t *domain)
     cs_field_set_key_int(cs_field_by_name("t_1"), kscacp, 0);
   }
   /*! [param_kscacp] */
+
+  /* Physical properties for compressible flows */
+
+  /*! [param_compressible] */
+  {
+    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+
+    /* Reference molecular thermal conductivity
+       visls0 = lambda0 (molecular thermal conductivity, W/(m K)) */
+
+    const int kvisl0 = cs_field_key_id("diffusivity_ref");
+
+    cs_field_set_key_double(CS_F_(t), kvisl0, 3.e-2);
+
+    /* If the molecular thermal conductivity is variable, its values
+       must be provided in 'cs_user_physical_properties'. */
+
+    /* Reference volumetric molecular viscosity
+       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s)) */
+
+    fp->viscv0 = 0;
+
+    /* If the volumetric molecular viscosity is variable, its values
+       must be provided in 'cs_user_physical_properties' */
+
+    /* Molar mass of the gas (kg/mol)
+       For example with dry air, xmasml is around 28.8d-3 kg/mol */
+
+    fp->xmasmr = 0.028966;
+
+    /* Hydrostatic equilibrium at boundaries
+       Specify if the hydrostatic equilibrium must be accounted for
+       (yes = 1 , no = 0) */
+
+    cs_cf_model_t *cf_model = cs_get_glob_cf_model();
+
+    cf_model->icfgrp = 1;
+  }
+  /*! [param_compressible] */
 
   /* Example: Change options relative to the inner iterations
    * over prediction-correction.

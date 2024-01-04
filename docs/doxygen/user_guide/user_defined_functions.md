@@ -1,7 +1,7 @@
 <!--
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -261,10 +261,6 @@ Functions called during time stepping
 
   Allow defining and modifying boundary conditions and volume injections for
   the Lagrangian particles (dispersed phase).
-
-- \ref uscfx1 and \ref uscfx2 (in \ref cs_user_parameters.f90)
-
-  Allow setting managing options specific to the *compressible* model.
 
 Functions called during after time stepping
 -------------------------------------------

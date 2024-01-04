@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -577,31 +577,6 @@ module ppincl
 
   !> \}
 
-  !> \defgroup comp_properties Physical properties
-
-  !> \addtogroup comp_properties
-  !> \{
-
-  !> additional property:
-  !>  - 0 indicates that the volume viscosity is constant and equal to
-  !> the reference volume viscosity \ref viscv0.
-  !>  - 1 indicates that the volume viscosity is variable: its
-  !> variation law must be specified in the user subroutine \ref cs_user_physical_properties.
-  !>
-  !> Always useful.
-  !> The volume viscosity \f$\kappa\f$ is defined by the formula expressing the stress:
-  !> \f{eqnarray*}{
-  !> \tens{\sigma} = -P\,\tens{Id} + \mu (\grad\,\vect{u} +
-  !> \ ^{t}\ggrad\,\vect{u})
-  !> +(\kappa-\frac{2}{3}\mu)\,\dive(\vect{u})\,\tens{Id}
-  !> \f}
-  !>
-  integer, save :: iviscv
-
-  !> \}
-  !> \}
-
-
   !> \defgroup common Common
 
   !> \addtogroup common
@@ -617,42 +592,6 @@ module ppincl
 
   !> reference volume viscosity
   real(c_double), pointer, save :: viscv0
-
-  !> pressure predicion by an evolution equation
-  integer, save :: ippred
-
-  ! --- Conditions aux limites prenant en compte l'equilibre hydrostatique
-
-  !> indicates if the boundary conditions should take into account (=1)
-  !> or not (=0) the hydrostatic balance.
-  !>
-  !> Always useful.
-  !>
-  !> In the cases where gravity is predominant, taking into account
-  !> the hydrostatic pressure allows to get rid of the disturbances which
-  !> may appear near the horizontal walls when the flow is little convective.
-  !>
-  !> Otherwise, when \ref icfgrp=0, the pressure condition is calculated
-  !> from the solution of the unidimensional Euler equations for a perfect
-  !> gas near a wall, for the variables "normal velocity", "density" and
-  !> "pressure":
-  !>
-  !> Case of an expansion (M <= 0):
-  !> \f{align*}{
-  !>    P_p &= 0 & \textrm{if } 1 + \displaystyle\frac{\gamma-1}{2}M<0
-  !> \\ P_p &= P_i \left(1 + \displaystyle\frac{\gamma-1}{2}M\right)
-  !> ^{\frac{2\gamma}{\gamma-1}} & \textrm{otherwise}
-  !> \f}
-  !>
-  !> Case of a schock (M > 0):
-  !> \f{eqnarray*}{
-  !> P_p = P_i \left(1 + \displaystyle\frac{\gamma(\gamma+1)}{4}M^2
-  !> +\gamma M \displaystyle\sqrt{1+\displaystyle\frac{(\gamma+1)^2}{16}M^2}\right)
-  !> \f}
-  !>
-  !> with \f$M = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}\f$,
-  !> internal Mach number calculated with the variables taken in the cell.
-  integer, save :: icfgrp
 
   !> \}
 

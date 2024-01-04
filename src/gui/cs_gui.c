@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1735,11 +1735,11 @@ _cs_mesh_location_type_from_str(const char *location_name)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSCPVA
+ * SUBROUTINE CFPPVA
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscpva, CSCPVA) (void)
+void CS_PROCF (csfpva, CSFPVA) (void)
 {
   int choice;
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
@@ -1747,33 +1747,13 @@ void CS_PROCF (cscpva, CSCPVA) (void)
   if (_properties_choice_id("specific_heat", &choice))
     phys_pp->icp = (choice > 0) ? 0 : -1;
 
+  if (_properties_choice_id("volume_viscosity", &choice))
+    phys_pp->iviscv = (choice > 0) ? 0 : -1;
+
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--icp = %i\n", phys_pp->icp);
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Volumic viscosity variable or constant indicator.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSCVVVA (IVISCV)
- * *****************
- *
- * INTEGER        IVISCV  --> volumic viscosity variable or constant indicator
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csvvva, CSVVVA) (int *iviscv)
-{
-  int choice;
-
-  if (_properties_choice_id("volume_viscosity", &choice))
-    *iviscv = (choice > 0) ? 0 : -1;
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--iviscv = %i\n", *iviscv);
+  bft_printf("--iviscv = %i\n", phys_pp->iviscv);
 #endif
 }
 
@@ -1905,24 +1885,25 @@ void CS_PROCF (csiphy, CSIPHY) (void)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSCFGP (icfgrp)
+ * subroutine cscfgp
  * *****************
- *
- * INTEGER          icfgrp  -->   hydrostatic equilibrium
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp)
+void CS_PROCF (cscfgp, CSCFGP) (void)
 {
-  int result = *icfgrp;
+  cs_cf_model_t *cf_model = cs_get_glob_cf_model();
+
+  int result = cf_model->icfgrp;
   cs_tree_node_t *tn
     = cs_tree_find_node(cs_glob_tree,
                         "numerical_parameters/hydrostatic_equilibrium/");
   cs_gui_node_get_status_int(tn, &result);
-  *icfgrp = result;
+
+  cf_model->icfgrp = result;
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--icfgrp = %i\n", *icfgrp);
+  bft_printf("--icfgrp = %i\n", cf_model->icfgrp);
 #endif
 }
 
@@ -2093,11 +2074,9 @@ void CS_PROCF(uiporo, UIPORO)(void)
  *
  * subroutine uiphyv
  * *****************
- *
- * integer          iviscv   <--  pointer for volumic viscosity viscv
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
+void CS_PROCF(uiphyv, UIPHYV)(void)
 {
   double time0 = cs_timer_wtime();
 
@@ -2169,7 +2148,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
 
   /* law for volumic viscosity (compressible model) */
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-    if (*iviscv > 0) {
+    if (cs_glob_fluid_properties->iviscv > 0) {
       cs_field_t *c = cs_field_by_name_try("volume_viscosity");
       if (n_zones_pp > 0 && c != NULL) {
         for (int z_id = 0; z_id < n_zones; z_id++) {
@@ -2245,9 +2224,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIEXOP
+ * subroutine uiexop
  * *****************
- *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiexop, UIEXOP)(void)

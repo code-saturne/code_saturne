@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -114,8 +114,24 @@ BEGIN_C_DECLS
         compressible module for non perfect gases.
 
   \var  cs_fluid_properties_t::icv
-        property index of the isochoric specific heat
+        property field id of the isochoric specific heat
         - -1: uniform isochoric specific heat (no property field defined)
+        - 0: initial indicator for variable \f$C_p\f$, automatically reset
+        by the code to to matching field id.
+
+  \var  cs_fluid_properties_t::iviscv
+        - -1: constant volume viscosity, equal to \ref viscv0.
+        - 0: initial indicator for variable volume viscosity, automatically
+        reset by the code to to matching field id. Tts variation
+        law may be specified in the \ref cs_user_physical_properties
+        user-defined function.\n
+
+        Useful for compressible flows.
+        The volume viscosity \f$\kappa\f$ is defined by the formula expressing
+        the stress:
+        \f$ \tens{\sigma} = -P\,\tens{Id} + \mu (\grad\,\vect{u} +
+        \ ^{t}\ggrad\,\vect{u})
+        +(\kappa-\frac{2}{3}\mu)\,\dive(\vect{u})\,\tens{Id} \f$
 
   \var  cs_fluid_properties_t::irovar
         variable density field \f$ \rho \f$:
@@ -362,6 +378,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .ixyzp0   = -1,
   .icp      = -1,
   .icv      = -1,
+  .iviscv   = -1,
   .irovar   = 0,
   .ivivar   = 0,
   .ivsuth   = 0,
@@ -705,8 +722,11 @@ cs_fluid_properties_log_setup(void)
        "  Continuous phase:\n"
        "    ro0:         %14.5e (Reference density)\n"
        "    viscl0:      %14.5e (Ref. molecular dyn. visc.)\n"
+       "    viscv0:      %14.5e (Ref. volume viscosity)\n"
        "    cp0:         %14.5e (Ref. specific heat)\n"
-       "    icp:         %4d (> 0: Variable Cp (cs_user_physical_properties))\n"
+       "    icp:         %4d (>= 0: Variable Cp)\n"
+       "    icv:         %4d (>= 0: Variable Cv)\n"
+       "    iviscv:      %4d (>= 0: Variable volume viscosity)\n"
        "    p0:          %14.5e (Ref. total pressure)\n"
        "    pred0:       %14.5e (Ref. reduced pressure)\n"
        "    t0:          %14.5e (Ref. temperature)\n\n"
@@ -714,8 +734,10 @@ cs_fluid_properties_log_setup(void)
        "    xyzp0:       %14.5e %14.5e %14.5e\n\n"),
        cs_glob_fluid_properties->ro0,
        cs_glob_fluid_properties->viscl0,
+       cs_glob_fluid_properties->viscv0,
        cs_glob_fluid_properties->cp0,
        cs_glob_fluid_properties->icp,
+       cs_glob_fluid_properties->icv,
        cs_glob_fluid_properties->p0,
        cs_glob_fluid_properties->pred0,
        cs_glob_fluid_properties->t0,

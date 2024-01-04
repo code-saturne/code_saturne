@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -95,7 +95,7 @@ integer, dimension(:), pointer :: elt_ids
 
 procedure() :: varpos, usppmo, uialin, cscpva, usipph, cfnmtd, fldvar, csivis
 procedure() :: atini1, solcat, csidtv, csiphy, fldprp, cstime, usipsu
-procedure() :: indsui, uscfx2
+procedure() :: indsui
 
 interface
 
@@ -285,8 +285,8 @@ call cs_gui_thermal_model
 ! turbulence model choice
 call cs_gui_turb_model
 
-! constant or variable specific heat
-call cscpva
+! constant or variable specific heat, volume viscosity, ...
+call csfpva
 
 ! Other models selection through user Fortran subroutine
 
@@ -385,6 +385,7 @@ if (ippmod(iatmos).ge.0) then
 endif
 
 ! Compressible
+call cscfgp
 call field_get_id_try('velocity', f_id)
 if (f_id .ge. 0) then
   if (ippmod(icompf).ge.0) then
@@ -517,12 +518,6 @@ if (ippmod(icompf).ge.0) then
   ! The variability of the thermal conductivity
   ! (diffusivity_id for itempk) and the volume viscosity (iviscv) has
   ! been set in fldprp.
-
-  ! Here call to uscfx2 to get visls_0(itempk), viscv0, xmasmr, ivivar and
-  ! psginf, gammasg, cv0 in stiffened gas thermodynamic.
-  ! With GUI, visls_0(itempk), viscv0, xmasmr and ivivar have already been read
-  ! above in the call to csphys.
-  call uscfx2
 
   ! Compute cv0 according to chosen EOS.
   l_size = 1

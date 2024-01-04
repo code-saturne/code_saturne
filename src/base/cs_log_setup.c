@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,7 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
+#include "cs_cf_model.h"
 #include "cs_ctwr.h"
 #include "cs_combustion_model.h"
 #include "cs_domain.h"
@@ -187,6 +188,10 @@ _log_global_model_options(void)
   cs_velocity_pressure_param_log_setup();
 
   _log_error_estimators();
+
+  /* Compressible model */
+
+  cs_cf_model_log_setup();
 
   /* Atmospheric */
 

@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -62,24 +62,11 @@ typedef struct {
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSCPVA
+ * SUBROUTINE CSFPVA
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscpva, CSCPVA) (void);
-
-/*----------------------------------------------------------------------------
- * Volumic viscosity variable or constant indicator.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSCVVVA (ICP)
- * *****************
- *
- * INTEGER          IVISCV     -->   specific heat variable or constant indicator
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csvvva, CSVVVA) (int *iviscv);
+void CS_PROCF (csfpva, CSFPVA) (void);
 
 /*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
@@ -121,13 +108,11 @@ void CS_PROCF (csiphy, CSIPHY) (void);
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSCFGP (ICFGRP)
+ * subroutine cscfgp (icfgrp)
  * *****************
- *
- * INTEGER          ICFGRP  -->   hydrostatic equilibrium
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp);
+void CS_PROCF (cscfgp, CSCFGP) (void);
 
 /*----------------------------------------------------------------------------
  * Time passing parameters.
@@ -185,20 +170,17 @@ void CS_PROCF (uiporo, UIPORO) (void);
  *
  * subroutine uiphyv
  * *****************
- *
- * integer          iviscv   <--  pointer for volumic viscosity viscv
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv);
+void CS_PROCF(uiphyv, UIPHYV)(void);
 
 /*----------------------------------------------------------------------------
  * extra operations
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIEXOP
+ * subroutine uiexop
  * *****************
- *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiexop, UIEXOP)(void);

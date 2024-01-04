@@ -4,10 +4,15 @@ Master (not on release branches yet)
 ### Numerics:
 
 - Reshape the interface with the MUMPS library (sparse direct solver)
-  to make easier the usage of common MUMPS options. Take benefit from
+  to make the usage of common MUMPS options easier. Take benefit from
   optimizations available in the latest 5.6.2 version.
 
-Release 8.1.0 (unreleased)
+### User changes:
+
+- Compressible flows: remove uscfx1 and uscfx2 user-defined functions.
+  Standard functions such as cs_user_parameters can be used instead.
+
+Release 8.1.0 (2023-12-13)
 --------------------------
 
 ### Physical modeling
