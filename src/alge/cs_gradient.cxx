@@ -5820,7 +5820,7 @@ res_cpu = !compute_cuda;
                 auto cuda = grad_gpu[c_id][i][j];
                 double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
                 if (err> 1e-6) {
-                  printf("reconstruct DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+                  printf("reconstruct DIFFERENCE @%d-%d-%d: CPU = %.17f\tCUDA = %.17f\tdiff = %.17f\tdiff relative = %.17f\tulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
                 }
               }
             }
@@ -7609,7 +7609,7 @@ if(accuracy){
         auto cuda = gradv[c_id][i][j];
 
         if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-12) {
-          printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
+          printf("lsq DIFFERENCE @%d-%d-%d: CPU = %.17f\tCUDA = %.17f\t|CPU - CUDA| = %.17f\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
         }
       }
     }
@@ -8228,7 +8228,7 @@ cs_real_t c_norm, ref_norm;
         auto cuda = gradv[c_id][i][j];
 
         if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-6) {
-          printf("DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\n|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
+          printf("lsq_strided DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\t|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
         }
       }
     }
@@ -9577,7 +9577,7 @@ res_cpu = !compute_cuda;
     if(perf){
       start = std::chrono::high_resolution_clock::now();
     }
-    _gradient_vector_cuda(mesh, _bc_coeff_a_gpu, _bc_coeff_b_gpu, perf);
+    _gradient_vector_cuda(mesh, _bc_coeff_a_gpu, _bc_coeff_b_gpu, (bc_coeff_a == NULL), (bc_coeff_b == NULL), perf);
     if(perf){
       stop = std::chrono::high_resolution_clock::now();
       elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -9656,14 +9656,19 @@ res_cpu = !compute_cuda;
               auto cuda = _bc_coeff_a_gpu[f_id][i];
               double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
               if (err> 1e-12) {
-                printf("_gradient_vector_a DIFFERENCE @%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", f_id, i, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+                printf("_gradient_vector_a DIFFERENCE @%d-%d: CPU = %.17f\tCUDA = %.17f\tdiff = %.17f\tdiff relative = %.17f\tulp = %a\n", f_id, i, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
               }
+            }
+          }
+
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            for (cs_lnum_t i = 0; i < 3; i++) {
               for (int j  =0; j < 3; ++j) {
                 auto cpu = _bc_coeff_b_cpu[f_id][i][j];
                 auto cuda = _bc_coeff_b_gpu[f_id][i][j];
                 double err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
                 if (err> 1e-12) {
-                  printf("_gradient_vector_b DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\tdiff = %a\tdiff relative = %a\tulp = %a\n", f_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
+                  printf("_gradient_vector_b DIFFERENCE @%d-%d-%d: CPU = %.17f\tCUDA = %.17f\tdiff = %.17f\tdiff relative = %.17f\tulp = %a\n", f_id, i, j, cpu, cuda, fabs(cpu - cuda), err, cs_diff_ulp(cpu, cuda));
                 }
               }
             }

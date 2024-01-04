@@ -4866,25 +4866,25 @@ res_cpu = !compute_cuda;
 
     if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-      // cs_slope_test_gradient_vector(inc,
-      //                               halo_type,
-      //                               (const cs_real_33_t *)grad_cpu,
-      //                               grdpa_cpu,
-      //                               _pvar,
-      //                               coefav,
-      //                               coefbv,
-      //                               i_massflux);
+      cs_slope_test_gradient_vector(inc,
+                                    halo_type,
+                                    (const cs_real_33_t *)grad_cpu,
+                                    grdpa_cpu,
+                                    _pvar,
+                                    coefav,
+                                    coefbv,
+                                    i_massflux);
 
-      #if defined(HAVE_OPENMP_TARGET)
-      cs_slope_test_gradient_vector_target(inc,
-                                          halo_type,
-                                          (const cs_real_33_t *)grad,
-                                          grdpa_cpu,
-                                          _pvar,
-                                          coefav,
-                                          coefbv,
-                                          i_massflux);
-      #endif
+      // #if defined(HAVE_OPENMP_TARGET)
+      // cs_slope_test_gradient_vector_target(inc,
+      //                                     halo_type,
+      //                                     (const cs_real_33_t *)grad_cpu,
+      //                                     grdpa_cpu,
+      //                                     _pvar,
+      //                                     coefav,
+      //                                     coefbv,
+      //                                     i_massflux);
+      // #endif
     }
 
     if(perf){
@@ -4920,7 +4920,7 @@ res_cpu = !compute_cuda;
                 cuda = grdpa_gpu[c_id][i][j];
                 err = (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) );
                 if (err> 1e-6) {
-                  printf("convection_diffusion_b DIFFERENCE @%d-%d-%d: CPU = %.17f\tCUDA = %.17f\tdiff = %.17f\tdiff relative = %.17f\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err);
+                  printf("slop_test DIFFERENCE @%d-%d-%d: CPU = %.17f\tCUDA = %.17f\tdiff = %.17f\tdiff relative = %.17f\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), err);
                 }
               }
             }
