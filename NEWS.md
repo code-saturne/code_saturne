@@ -23,7 +23,7 @@ Release 8.1.1 (unreleased)
 
 - Update MPI rank detection for MPMD "script" mode, to handle PMIX.
 
-Release 8.1.0 (2023-13-12)
+Release 8.1.0 (2023-12-13)
 --------------------------
 
 ### Physical modeling
