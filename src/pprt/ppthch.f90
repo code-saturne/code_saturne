@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -152,15 +152,6 @@ module ppthch
   !> Absorption coefficient of gas mixture
   real(c_double), pointer, save ::  ckabs1
 
-  !> \anchor diftl0
-  !> molecular diffusivity for the enthalpy (\f$kg.m^{-1}.s^{-1}\f$)
-  !> for gas or coal combustion (the code then automatically sets
-  !> \ref diffusivity_ref to \ref diftl0 for the scalar
-  !> representing the enthalpy).
-  !>
-  !> Always useful for gas or coal combustion.
-  real(c_double), pointer, save ::  diftl0
-
   !> Molar coefficient of CO2
   real(c_double), pointer, save ::  xco2
   !> Molar coefficient of H2O
@@ -183,15 +174,15 @@ module ppthch
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,         &
-                                        p_iic, p_npo, p_wmole, p_wmolg, p_diftl0,  &
-                                        p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,      &
+    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,     &
+                                        p_iic, p_npo, p_wmole, p_wmolg,        &
+                                        p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,  &
                                         p_cpgazg)      &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,    &
-                                  p_wmolg, p_wmole, p_diftl0, p_xco2, p_xh2o,  &
+                                  p_wmolg, p_wmole, p_xco2, p_xh2o,            &
                                   p_ckabs1,  p_fs, p_th, p_npo, p_cpgazg
     end subroutine cs_f_ppthch_get_pointers
 
@@ -221,11 +212,11 @@ contains
 
     type(c_ptr) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic
     type(c_ptr) :: p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
-    type(c_ptr) :: p_fs, p_diftl0, p_th, p_npo, p_cpgazg
+    type(c_ptr) :: p_fs, p_th, p_npo, p_cpgazg
 
     call cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,     &
                                   p_iic,  p_npo,                         &
-                                  p_wmole, p_wmolg, p_diftl0,            &
+                                  p_wmole, p_wmolg,                      &
                                   p_xco2, p_xh2o, p_ckabs1, p_fs,        &
                                   p_th, p_cpgazg)
 
@@ -237,7 +228,6 @@ contains
     call c_f_pointer(p_wmole, wmole, [ngazem])
     call c_f_pointer(p_wmolg, wmolg, [ngazgm])
     call c_f_pointer(p_xco2, xco2)
-    call c_f_pointer(p_diftl0, diftl0)
     call c_f_pointer(p_xh2o, xh2o)
     call c_f_pointer(p_ckabs1, ckabs1)
     call c_f_pointer(p_fs, fs, [nrgazm])

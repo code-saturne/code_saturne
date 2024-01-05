@@ -9,6 +9,10 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Combustion models: remove diftl0 keyword. The corresponding value
+  should be handled directly using the "diffusivity_ref" keyword
+  for the Enthalpy field.
+
 - Compressible flows: remove uscfx1 and uscfx2 user-defined functions.
   Standard functions such as cs_user_parameters can be used instead.
 

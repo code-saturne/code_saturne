@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -74,39 +74,15 @@ integer          iok
 
 ! Local variables
 
-
-!===============================================================================
-
 !===============================================================================
 ! 1. OPTIONS DU CALCUL : TABLEAUX DE ppincl.h : formats 2000
 !===============================================================================
 ! --> Coefficient de relaxation de la masse volumique
 
-if( srrom.lt.0d0 .or. srrom.ge.1d0) then
+if (srrom.lt.0d0 .or. srrom.ge.1d0) then
   write(nfecra,2000)'srrom ', srrom
   iok = iok + 1
 endif
-
-!===============================================================================
-! 2. TABLEAUX DE cstphy.h et ppthch.F : formats 3000
-!===============================================================================
-
-! --> Masse volumique
-
-if( ro0.lt.0d0) then
-  write(nfecra,3000) 'ro0   ', ro0
-  iok = iok + 1
-endif
-
-! --> Diffusivite dynamique en kg/(m s) : DIFTL0
-
-if( diftl0.lt.0d0) then
-  write(nfecra,3010)'dift0', diftl0
-  iok = iok + 1
-else
-  call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
-endif
-
 
 !--------
 ! Formats
@@ -120,36 +96,6 @@ endif
 '@    =========                                               ',/,&
 '@    ',A6,                            ' DOIT ETRE UN REEL    ',/,&
 '@    SUPERIEUR OU EGAL A ZERO ET INFERIEUR STRICTEMENT A 1   ',/,&
-'@    IL VAUT ICI ',E14.5                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier user_coal_ini1.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' DOIT ETRE UN REEL POSITIF                        ',/,&
-'@    IL VAUT ICI ',E14.5                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier user_coal_ini1.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' DOIT ETRE UN REEL POSITIF                        ',/,&
 '@    IL VAUT ICI ',E14.5                                      ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&

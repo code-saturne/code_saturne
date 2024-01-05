@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -111,7 +111,6 @@ cs_combustion_model_t
                        .ieqnox = 0,
                        .isoot = -1,
                        .ckabs0 = 0,
-                       .diftl0 = -1,
                        .xco2 = -1,
                        .xh2o = -1,
                        .hinoxy = 0};
@@ -141,7 +140,6 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **npo,
                          double  **wmole,
                          double  **wmolg,
-                         double  **diftl0,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
@@ -234,7 +232,6 @@ cs_f_combustion_model_get_pointers(int  **isoot)
  *   iic    --> pointer to rank of C in gas composition
  *   wmole  --> pointer to molar mass of elementary gas components
  *   wmolg  --> pointer to molar mass of global species
- *   diftl0 --> pointer to molecular diffusivity for the enthalpy.
  *   xco2   --> pointer to molar coefficient of co2
  *   xh2o   --> pointer to molar coefficient of h2o
  *   ckabs1 --> pointer to absorption coefficient of gas mixture
@@ -250,7 +247,6 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **npo,
                          double  **wmole,
                          double  **wmolg,
-                         double  **diftl0,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
@@ -267,7 +263,6 @@ cs_f_ppthch_get_pointers(int     **ngaze,
 
   *wmole  = cs_glob_combustion_model->wmole;
   *wmolg  = cs_glob_combustion_model->gas->wmolg;
-  *diftl0 = &(cs_glob_combustion_model->diftl0);
   *xco2   = &(cs_glob_combustion_model->xco2);
   *xh2o   = &(cs_glob_combustion_model->xh2o);
   *ckabs1 = &(cs_glob_combustion_model->ckabs0);
@@ -496,7 +491,7 @@ cs_combustion_log_setup(void)
                     "Combustion module options\n"
                     "-------------------------\n\n"));
 
-    /* Gas combistion only */
+    /* Gas combustion only */
 
     if (cs_glob_combustion_model->coal == NULL) {
 
@@ -540,11 +535,6 @@ cs_combustion_log_setup(void)
                     _(ipthrm_value_str[cs_glob_fluid_properties->ipthrm]));
 
     }
-
-    cs_log_printf(CS_LOG_SETUP,
-                  _("  Molecular diffusivity for the Enthalpy:\n"
-                    "    diftl0: %14.5e\n"),
-                    cs_glob_combustion_model->diftl0);
   }
 }
 

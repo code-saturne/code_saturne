@@ -404,8 +404,9 @@ srrom = 0.8d0
 ! 2. Physical Constants
 !===============================================================================
 
-! diftl0: Dynamic Diffusion Coefficient (kg/(m s))
-diftl0 = 4.25d-5
+! Dynamic Diffusion Coefficient (kg/(m s))
+! Should rather be set in cs_user_parameters
+call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, 4.25d-5)
 
 ! -----------------------------------------------------------------------------
 ! 2.1 For 3 points combusution model ONLY

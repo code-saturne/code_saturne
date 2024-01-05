@@ -1,7 +1,7 @@
 <!--
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -751,7 +751,7 @@ start, can be used to:
 
 - set the relaxation coefficient of the density \ref srrom.
 
-- set the dynamic viscosity \ref diftl0.
+- set the dynamic viscosity of Enthaly.
 
 - set the value of the constant \ref cebu of the Eddy Break Up model (only in
 \ref cs_user_combustion).

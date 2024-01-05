@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1659,20 +1659,21 @@ cs_gui_combustion_ref_values(void)
   }
 
   if (combustion) {
+    double diftl0;
     cs_combustion_model_t *cm = cs_glob_combustion_model;
-    cs_gui_properties_value("dynamic_diffusion", &(cm->diftl0));
+    cs_gui_properties_value("dynamic_diffusion", &diftl0);
 
     cs_field_t *tf = cs_field_by_name_try("enthalpy");
     if (tf != NULL) {
       const int kvisls0 = cs_field_key_id("diffusivity_ref");
-      cs_field_set_key_double(tf, kvisls0, cm->diftl0);
+      cs_field_set_key_double(tf, kvisls0, diftl0);
     }
   }
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   if (combustion) {
-    bft_printf("--diftl0  = %f\n", cs_glob_combustion_model->diftl0);
+    bft_printf("--diftl0  = %f\n", diftl0);
   }
 #endif
 }
