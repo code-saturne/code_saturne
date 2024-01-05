@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -62,7 +62,7 @@
 #include "cs_timer.h"
 #include "cs_thermal_model.h"
 
-#include "cs_combustion_model.h"
+#include "cs_coal.h"
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
 
@@ -114,10 +114,11 @@ cs_rad_transfer_options(void)
   /* -> nrphas: for pulverized coal and fuel combustion:
    *            nrphas = 1 (gas) + number of classes (particles or droplets) */
 
-  /* -> For pulverized coal and fuel combustion:   */
+  /* -> For pulverized coal combustion:   */
 
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
-    rt_params->nrphas += cs_glob_combustion_model->coal->nclacp;
+  if (cs_glob_coal_model != NULL) {
+    rt_params->nrphas += cs_glob_coal_model->nclacp;
+  }
 
   /* Default initializations
    * ----------------------- */

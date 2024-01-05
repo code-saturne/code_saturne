@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -78,11 +78,7 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
-                                const int    *ncharm,
-                                int          *ncharb,
                                 int          *nclpch,
-                                int          *nclacp,
-                                const int    *ncpcmx,
                                 int          *ichcor,
                                 double       *diam20,
                                 double       *cch,
@@ -124,15 +120,12 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                                 double       *ahetwt,
                                 double       *ehetwt,
                                 int          *ioetwt,
-                                int          *ieqnox,
-                                int          *ieqco2,
                                 int          *imdnox,
                                 int          *irb,
                                 int          *ihtco2,
                                 int          *ihth2o,
                                 double       *qpr,
                                 double       *fn,
-                                double       *ckabs1,
                                 int          *noxyd,
                                 double       *oxyo2,
                                 double       *oxyn2,
@@ -141,14 +134,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                                 double       *repnck,
                                 double       *repnle,
                                 double       *repnlo);
-
-/*----------------------------------------------------------------------------
- * Copy name of thermophysical data file from C to Fortran
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
-                               int           *len      /* --> String Length  */
-                               CS_ARGF_SUPP_CHAINE);
 
 /*=============================================================================
  * Public function prototypes

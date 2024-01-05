@@ -82,9 +82,9 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 
   cs_real_t q_burner = cs_notebook_parameter_value_by_name("q_burner");
 
-  cs_real_t q_inlet = q_burner / 360.;                             /* W */
-  cs_real_t m_inlet = q_inlet / cs_glob_combustion_model->pcigas;  /* kg/s */
-  cs_real_t r_inlet = 0.15;                                        /* m */
+  cs_real_t q_inlet = q_burner / 360.;                                 /* W */
+  cs_real_t m_inlet = q_inlet / cs_glob_combustion_gas_model->pcigas;  /* kg/s */
+  cs_real_t r_inlet = 0.15;                                            /* m */
 
   cs_boundary_conditions_open_set_mass_flow_rate_by_value(z, m_inlet);
 
@@ -143,7 +143,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
 
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
-  cs_combustion_model_t  *cm = cs_glob_combustion_model;
+  cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const int iflmab =  cs_field_get_key_int(CS_F_(vel), kbmasf);
@@ -172,7 +172,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     cs_glob_bc_pm_info->ientfu[z->id] = 1;
 
     /* Inlet Temperature in K */
-    cm->gas->tinfue = fp->t0;
+    cm->tinfue = fp->t0;
   }
   /*! [inlet] */
 
@@ -248,7 +248,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
       /* Density */
       brom[face_id] = fp->p0/(  cs_physical_constants_r
-                              * cm->tinoxy/cm->gas->wmolg[1]);
+                              * cm->tinoxy/cm->wmolg[1]);
     }
   }
   /*! [open] */

@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -125,7 +125,13 @@ interface
 end interface
 
 !===============================================================================
-!
+
+! Additional properties for drift
+
+if (i_comb_drift.ge.1) then
+  call cs_physical_properties_combustion_drift()
+endif
+
 !===============================================================================
 ! 0. Counting the calls
 !===============================================================================

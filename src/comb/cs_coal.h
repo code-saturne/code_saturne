@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,12 +50,18 @@ BEGIN_C_DECLS
 /*! Maximum number of coals */
 #define  CS_COMBUSTION_MAX_COALS  5
 
-/*! Maximum number of coal classes pae coal */
+/*! Maximum number of oxydants */
+#define CS_COMBUSTION_COAL_MAX_OXYDANTS 3
+
+/*! Maximum number of coal classes per coal */
 #define  CS_COMBUSTION_MAX_CLASSES_PER_COAL  20
 
 /*! Maximum total number of coal classes */
 #define  CS_COMBUSTION_COAL_MAX_CLASSES    CS_COMBUSTION_MAX_COALS \
                                          * CS_COMBUSTION_MAX_CLASSES_PER_COAL
+
+/*! Maximum number of elementary gas components */
+#define  CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS  20
 
 /*! Maximum number of tabulation points */
 #define  CS_COMBUSTION_COAL_MAX_TABULATION_POINTS  500
@@ -64,19 +70,91 @@ BEGIN_C_DECLS
 #define  CS_COMBUSTION_COAL_MAX_SOLIDS  CS_COMBUSTION_MAX_COALS * 4
 
 /*============================================================================
- * Local type definitions
+ * Type definitions
  *============================================================================*/
+
+/*! Coal combustion model type */
+/*------------------------------*/
+
+typedef enum {
+
+  CS_COMBUSTION_COAL_NONE = -1,
+
+  CS_COMBUSTION_COAL_STANDARD = 0,
+  CS_COMBUSTION_COAL_WITH_DRYING = 1
+
+} cs_coal_model_type_t;
 
 /*! Coal combustion model parameters structure */
 /*---------------------------------------------*/
 
 typedef struct {
 
+  /* Generic members
+     ---------------
+     (keep aligned with gas combustion, so that we can
+     move to an object inheritance model in the future) */
+
+  int     n_gas_el_comp;             /*!< number of elementary gas components */
+  int     n_gas_species;             /*!< number of global species */
+  int     n_atomic_species;          /*!< number of atomic species */
+
+  int     n_reactions;               /*!< number of global reactions
+                                      *   in gas phase */
+
+  int     n_tab_points;              /*!< number of tabulation points */
+
+  double  pcigas;                    /*!< combustible reaction enthalpy
+                                       (Lower Calorific Value)*/
+  double  xco2;                      /*!< molar coefficient of CO2 */
+  double  xh2o;                      /*!< molar coefficient of H2O */
+
+  /*! molar mass of an elementary gas component */
+  double  wmole[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+
+  /*! composition of oxidants in O2 */
+   double oxyo2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+
+  /*! composition of N2 oxidants */
+  double oxyn2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+
+  /*! composition of H2O oxidants */
+  double oxyh2o[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+
+  /*! composition of CO2 oxidants */
+  double oxyco2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+
+  /*! temperature in K */
+  double th[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
+
+  /* Members specific to the coal combustion model
+     --------------------------------------------- */
+
+  cs_coal_model_type_t  type;  /*!< combustion model type */
+
   int     n_coals;     /*!< number of coal types */
   int     nclacp;      /*!< number of coal classes */
 
   int     nsolim;      /*!< number of solid constituents
                          (reactive coal, coke, ash) */
+
+  int     idrift;      /*!< drift (0: off, 1: on) */
+
+  int     ieqnox;      /*!< NOx model (0: off; 1: on) */
+
+  int     ieqco2;      /*!< kinetic model for CO <=> CO2
+                         - 0  unused (maximal conversion
+                                      in turbulent model)
+                         - 1  transport of CO2 mass fraction
+                         - 2  transport of CO mass fraction  */
+
+  int     ico;         /*!< index of co in wmole */
+  int     io2;         /*!< index of o2 in wmole */
+  int     in2;         /*!< index of n2 in wmole */
+  int     ico2;        /*!< index of co2 in wmole */
+  int     ih2o;        /*!< index of h2o in wmole */
+
+  double  ckabs0;      /*!< absorption coefficient of gas mix */
 
   /*! number of classes per coal */
   int     n_classes_per_coal[CS_COMBUSTION_MAX_COALS];
@@ -141,31 +219,26 @@ typedef struct {
  * Global variables
  *============================================================================*/
 
+/*! Combustion model parameters structure */
+
+extern cs_coal_model_t  *cs_glob_coal_model;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create coal model object.
+ * \brief Activate coal combustion model.
  *
- * \return  pointer to coal model structure.
+ * \return  pointer to coal combustion model structure.
+ *
+ * \param[in]  type  coal combustion model type
  */
 /*----------------------------------------------------------------------------*/
 
 cs_coal_model_t *
-cs_coal_model_create(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Destroy coal model object.
- *
- * \pram[in, out]  cm  pointer to coal model pointer to destroy.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_coal_model_destroy(cs_coal_model_t  **cm);
+cs_coal_model_set_model(cs_coal_model_type_t  type);
 
 /*----------------------------------------------------------------------------*/
 /*!

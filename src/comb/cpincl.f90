@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -49,6 +49,9 @@ module cpincl
 
   !> Number of coals
   integer(c_int), pointer, save :: ncharb
+
+  !> coal with drift (0: without drift (default), 1: with)
+  integer(c_int), pointer, save  ::  i_comb_drift
 
   ! By coal (given quantities)
 
@@ -228,9 +231,9 @@ module cpincl
   !        f2(ch)
 
   integer, save ::          ichx1c(ncharm), ichx2c(ncharm),                  &
-                            ichx1, ichx2, ico
+                            ichx1, ichx2
 
-  integer(c_int), pointer, save :: ico2, ih2o, io2, in2
+  integer(c_int), pointer, save :: ico, ico2, ih2o, io2, in2
 
   double precision, save :: chx1(ncharm), chx2(ncharm),                      &
                             a1(ncharm), b1(ncharm),c1(ncharm),d1(ncharm),    &
@@ -250,6 +253,138 @@ module cpincl
   double precision, save :: thc(npot)
   integer, save ::          npoc
 
+  !--> POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE
+
+  !> \defgroup coal_combustion  Pulverized coal combustion variables
+
+  !> \addtogroup coal_combustion
+  !> \{
+
+  ! ---- Variables transportees
+  !        Phase continue (melange gazeux)
+
+  !> mean value of the tracer 1 representing the light
+  !> volatiles released by the coal \c icha
+  integer, save :: if1m(ncharm)
+
+  !> mean value of the tracer 2 representing the heavy
+  !> volatiles released by the coal \c icha
+  integer, save :: if2m(ncharm)
+
+  !> tracer 4: mass of the oxydant 2 divided by the mass of bulk
+  integer, save :: if4m
+  !> tracer 5: mass of the oxydant 3 divided by the mass of bulk
+  integer, save :: if5m
+  !> tracer 6: water coming from drying
+  integer, save :: if6m
+  !> tracer 7: mass of the carbon from coal oxydized by O2
+  !> divided by the mass of bulk
+  integer, save :: if7m
+  !> tracer 8: mass of the carbon from coal gasified by CO2
+  !> divided by the mass of bulk
+  integer, save :: if8m
+  !> tracer 9: mass of the Carbon from coal gasified by H2O
+  !> divided by the mass of bulk
+  integer, save :: if9m
+
+  !> f1f2 variance
+  integer, save :: ifvp2m
+
+  !        Phase dispersee (classe de particules)
+  !> coke mass fraction related to the class icla
+  integer, save :: ixck(nclcpm)
+
+  !> reactive coal mass fraction related to the class \c icla
+  integer, save :: ixch(nclcpm)
+
+  !> number of particles of the class \c icla per kg of air-coal mixture
+  integer, save :: inp(nclcpm)
+
+  !>  mass enthalpy of the coal of class \c icla, if we are in permeatic conditions
+  integer, save :: ih2(nclcpm)
+
+  ! TODO absent de la doc utilisateur
+  !> transported variable of dispersed phase (particle class)
+  integer, save :: ixwt(nclcpm)
+
+  !> Pointer to Np*age(particles)
+  integer, save :: inagecp(nclcpm)
+
+  !>
+  integer, save :: iv_p_x(nclcpm)
+
+  !>
+  integer, save :: iv_p_y(nclcpm)
+
+  !>
+  integer, save :: iv_p_z(nclcpm)
+
+  ! ---- Variables d'etat
+  !        Phase continue (melange gazeux)
+
+  !> mass fractions:
+  !>  - iym1(1): mass fraction of \f$CH_{X1m}\f$ (light volatiles) in the gas mixture
+  !>  - iym1(2): mass fraction of \f$CH_{X2m}\f$ (heavy volatiles) in the gas mixture
+  !>  - iym1(3): mass fraction of CO in the gas mixture
+  !>  - iym1(4): mass fraction of \f$O_2\f$ in the gas mixture
+  !>  - iym1(5): mass fraction of \f$CO_2\f$ in the gas mixture
+  !>  - iym1(6): mass fraction of \f$H_2O\f$ in the gas mixture
+  !>  - iym1(7): mass fraction of \f$N_2\f$ in the gas mixture
+  integer, save :: iym1(ngazem)
+
+  ! TODO absent de la doc utilisateur
+  !> State variables of continuous phase (gas mixture)
+  integer, save :: irom1
+
+  !>  molar mass of the gas mixture
+  integer, save :: immel
+
+  !        Phase dispersee (classes de particules)
+
+  !> temperature of the particles of the class \c icla
+  integer, save :: itemp2(nclcpm)
+
+  !> density of the particles of the class \c icla
+  integer, save :: irom2(nclcpm)
+
+  !> diameter of the particles of the class \c icla
+  integer, save :: idiam2(nclcpm)
+
+  !>  solid mass fraction of the class \c icla
+  integer, save :: ix2(nclcpm)
+
+  !> disappearance rate of the reactive coal of the class \c icla
+  integer, save :: igmdch(nclcpm)
+
+  !> coke disappearance rate of the coke burnout of the class \c icla
+  integer, save :: igmhet(nclcpm)
+
+  !> Implicite part of the exchanges to the gas by molecular distribution
+  integer, save :: igmtr(nclcpm)
+
+  ! TODO absent de la doc utilisateur
+  !> State variables of dispersed phase (particles class)
+  integer, save :: ighco2(nclcpm)
+
+  !>  mass transfer caused by the release of light volatiles  of the class \c icla
+  integer, save :: igmdv1(nclcpm)
+
+  !>  mass transfer caused by the release of heavy volatiles  of the class \c icla
+  integer, save :: igmdv2(nclcpm)
+
+  ! TODO absent de la doc utilisateur
+  !> State variables of dispersed phase (particles class)
+  integer, save :: igmsec(nclcpm)
+
+  !> Used for bulk balance of Carbon
+  integer, save :: ibcarbone
+  !> Used for bulk balance of Oxygen
+  integer, save :: iboxygen
+  !> Used for bulk balance of Hydrogen
+  integer, save :: ibhydrogen
+
+  !> \}
+
   !=============================================================================
 
   interface
@@ -263,12 +398,12 @@ module cpincl
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_cpincl_comb_get_pointers(p_ico2, p_ih2o, p_io2, p_in2)    &
-      bind(C, name='cs_f_cpincl_comb_get_pointers')
+    subroutine cs_f_cpincl_get_pointers(p_ico, p_ico2, p_ih2o, p_io2, p_in2)    &
+      bind(C, name='cs_f_cpincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_io2, p_in2
-    end subroutine cs_f_cpincl_comb_get_pointers
+      type(c_ptr), intent(out) :: p_ico, p_ico2, p_ih2o, p_io2, p_in2
+    end subroutine cs_f_cpincl_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -276,7 +411,7 @@ module cpincl
     ! global physical model flags
 
     subroutine cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
-                                             p_nclpch,                         &
+                                             p_nclpch, p_idrift,               &
                                              p_ich, p_ick, p_iash, p_iwat,     &
                                              p_ehsoli, p_wmols, p_eh0sol,      &
                                              p_ichcor, p_cp2ch, p_xwatch,      &
@@ -287,7 +422,7 @@ module cpincl
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ncharb, p_nclacp,                          &
-                                  p_nclpch,                                    &
+                                  p_nclpch, p_idrift,                          &
                                   p_ich, p_ick, p_iash, p_iwat,                &
                                   p_ehsoli, p_wmols, p_eh0sol,                 &
                                   p_ichcor, p_cp2ch, p_xwatch,                 &
@@ -313,17 +448,19 @@ contains
   !> \brief Initialize Fortran combustion models properties API.
   !> This maps Fortran pointers to global C variables.
 
-  subroutine cp_models_init
+  subroutine cp_models_init() &
+    bind(C, name='cs_f_cp_models_init')
 
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Local variables
 
-    type(c_ptr) :: p_ico2, p_ih2o, p_io2, p_in2
+    type(c_ptr) :: p_ico, p_ico2, p_ih2o, p_io2, p_in2
 
-    call cs_f_cpincl_comb_get_pointers(p_ico2, p_ih2o, p_io2, p_in2)
+    call cs_f_cpincl_get_pointers(p_ico, p_ico2, p_ih2o, p_io2, p_in2)
 
+    call c_f_pointer(p_ico, ico)
     call c_f_pointer(p_io2, io2)
     call c_f_pointer(p_in2, in2)
     call c_f_pointer(p_ico2, ico2)
@@ -337,14 +474,14 @@ contains
   !> This maps Fortran pointers to global C variables.
 
   subroutine cp_model_map_coal() &
-    bind(C, name='cs_f_coal_model_map')
+    bind(C, name='cs_f_cp_model_map_coal')
 
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Local variables
 
-    type(c_ptr) :: p_ncharb, p_nclacp, p_nclpch,                    &
+    type(c_ptr) :: p_ncharb, p_nclacp, p_nclpch, p_idrift,          &
                    p_ich, p_ick, p_iash, p_iwat,                    &
                    p_ehsoli, p_wmols, p_eh0sol,                     &
                    p_ichcor, p_cp2ch, p_xwatch,                     &
@@ -352,7 +489,7 @@ contains
                    p_xmp0, p_xmash
 
     call cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
-                                       p_nclpch,                         &
+                                       p_nclpch, p_idrift,               &
                                        p_ich, p_ick, p_iash, p_iwat,     &
                                        p_ehsoli, p_wmols, p_eh0sol,      &
                                        p_ichcor, p_cp2ch, p_xwatch,      &
@@ -364,6 +501,8 @@ contains
     call c_f_pointer(p_nclacp, nclacp)
 
     call c_f_pointer(p_nclpch, nclpch, [ncharm])
+
+    call c_f_pointer(p_idrift, i_comb_drift)
 
     call c_f_pointer(p_ich, ich, [ncharm])
     call c_f_pointer(p_ick, ick, [ncharm])

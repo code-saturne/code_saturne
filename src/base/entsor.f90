@@ -61,18 +61,11 @@ module entsor
   !> name of the thermochemical data file for combustion.
   !>
   !> Useful in case of gas combustion.
-  character(len=64), save :: ficfpp, ficrad
+  character(len=64), save :: ficrad
 
   !> logical unit of the thermochemical data file.
   !> Useful in case of gas or pulverized coal combustion or electric arcs;
   integer, save :: impfpp, imprad
-
-  !> use Janaf (=1) or not (=0)
-  integer, save :: indjon = 1
-
-  !> Input files for the atmospheric specific physics
-  !> ficmet is moved to C.
-  !> Get it in Fortran with atmo_get_meteo_file_name
 
   !> \}
 

@@ -168,9 +168,6 @@ module ppincl
   !> - ippmod(icolwc)=-1 module not activated.
   integer ::  icolwc
 
-  ! TODO Modeles propres a la combustion gaz ICO...
-  integer(c_int), pointer, save ::  isoot
-
   !> pointer to specify Joule effect module (Laplace forces not taken into account)
   !> with indicator ippmod(ieljou):
   !> - ippmod(ieljou) = 1 use of a real potential
@@ -265,287 +262,6 @@ module ppincl
   integer(c_int), pointer, save ::  icondv
 
   !> \}
-
-
-  !--> POINTEURS VARIABLES COMBUSTION GAZ
-
-  !> \defgroup gaz_combustion Gaz combustion variables pointers
-
-  !> \addtogroup gaz_combustion
-  !> \{
-
-  ! ---- Variables transportees
-
-  !> pointer to specify the mixing rate in isca(ifm)
-  integer, save :: ifm
-
-  !> pointer to specify the variance of the mixing rate in isca(ifp2m)
-  integer, save :: ifp2m
-
-  !> pointer to specify the second moment of the mixing rate in isca(ifsqm):
-  integer, save :: ifsqm
-
-  !> pointer to specify the transported progress variable ippmod(islfm) >= 2:
-  integer, save :: ipvm
-
-  !> pointer to specify the fresh gas mass fraction in isca(iygfm)
-  integer, save :: iygfm
-
-  !> the intersection computation mode. If its value is:
-  !> - 1 (default), the original algorithm is used. Care should be taken to clip
-  !> the intersection on an extremity.
-  !> - 2, a new intersection algorithm is used. Caution should be used to avoid to clip
-  !> the intersection on an extremity.
-  integer, save :: icm
-
-  ! TODO
-  !> transported variable
-  integer, save :: icp2m
-
-  ! TODO
-  !> transported variable
-  integer, save :: ifpcpm
-
-  ! TODO
-  !> transported variable
-  integer, save :: iyfm
-  ! TODO
-  !> transported variable
-  integer, save :: iyfp2m
-  ! TODO
-  !> transported variable
-  integer, save :: icoyfp
-
-  ! ---- Variables d'etat
-
-  !> mass fractions :
-  !>  - iym(1): is fuel mass fraction
-  !>  - iym(2): oxidiser mass fraction
-  !>  - iym(3): product mass fraction
-  !> ibym() contains the matching field ids at boundary faces
-  integer, save :: iym(ngazgm)
-  integer, save :: ibym(ngazgm)
-
-  !> state variable (temperature)
-  integer, save :: itemp
-  !> state variable
-  integer, save :: ifmin
-  !> state variable
-  integer, save :: ifmax
-
-  !> state variable: Pointer to the reconstructed variance in case of mode_fp2m = 1
-  integer, save :: irecvr
-
-  !> state variable: Pointer to the total scalar dissipation rate
-  integer, save :: itotki
-
-  !> state variable: Pointer to volumetric heat release rate
-  integer, save :: ihrr
-
-  !> state variable: Pointer to enthalpy defect
-  integer, save :: ixr
-
-  !> state variable: Pointer to enthalpy defect
-  integer, save :: iomgc
-
-  !> state variable: absorption coefficient, when the radiation modelling is activated
-  integer, save :: ickabs
-
-  !> state variable:  \f$T^2\f$ term
-  integer, save :: it2m
-  !> state variable:  \f$T^3\f$ term, when the radiation modelling is activated
-  integer, save :: it3m
-  !> state variable:  \f$T^4\f$ term, when the radiation modelling is activated
-  integer, save :: it4m
-
-  ! pointer for source term in combustion
-  ! TODO
-  integer, save :: itsc
-
-  !> pointer for soot precursor number in isca (isoot = 1)
-  integer, save :: inpm
-
-  !> pointer for soot mass fraction in isca (isoot = 1)
-  integer, save :: ifsm
-
-  !> \}
-
-  !--> POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE
-
-  !> \defgroup coal_combustion  Pulverized coal combustion variables
-
-  !> \addtogroup coal_combustion
-  !> \{
-
-  ! ---- Variables transportees
-  !        Phase continue (melange gazeux)
-
-  !> mean value of the tracer 1 representing the light
-  !> volatiles released by the coal \c icha
-  integer, save :: if1m(ncharm)
-
-  !> mean value of the tracer 2 representing the heavy
-  !> volatiles released by the coal \c icha
-  integer, save :: if2m(ncharm)
-
-  !> tracer 4: mass of the oxydant 2 divided by the mass of bulk
-  integer, save :: if4m
-  !> tracer 5: mass of the oxydant 3 divided by the mass of bulk
-  integer, save :: if5m
-  !> tracer 6: water coming from drying
-  integer, save :: if6m
-  !> tracer 7: mass of the carbon from coal oxydized by O2
-  !> divided by the mass of bulk
-  integer, save :: if7m
-  !> tracer 8: mass of the carbon from coal gasified by CO2
-  !> divided by the mass of bulk
-  integer, save :: if8m
-  !> tracer 9: mass of the Carbon from coal gasified by H2O
-  !> divided by the mass of bulk
-  integer, save :: if9m
-
-  !> f1f2 variance
-  integer, save :: ifvp2m
-
-  !        Phase dispersee (classe de particules)
-  !> coke mass fraction related to the class icla
-  integer, save :: ixck(nclcpm)
-
-  !> reactive coal mass fraction related to the class \c icla
-  integer, save :: ixch(nclcpm)
-
-  !> number of particles of the class \c icla per kg of air-coal mixture
-  integer, save :: inp(nclcpm)
-
-  !>  mass enthalpy of the coal of class \c icla, if we are in permeatic conditions
-  integer, save :: ih2(nclcpm)
-
-  ! TODO absent de la doc utilisateur
-  !> transported variable of dispersed phase (particle class)
-  integer, save :: ixwt(nclcpm)
-
-  !> Pointer to Np*age(particles)
-  integer, save :: inagecp(nclcpm)
-
-  !>
-  integer, save :: iv_p_x(nclcpm)
-
-  !>
-  integer, save :: iv_p_y(nclcpm)
-
-  !>
-  integer, save :: iv_p_z(nclcpm)
-
-  ! ---- Variables d'etat
-  !        Phase continue (melange gazeux)
-
-  !> mass fractions:
-  !>  - iym1(1): mass fraction of \f$CH_{X1m}\f$ (light volatiles) in the gas mixture
-  !>  - iym1(2): mass fraction of \f$CH_{X2m}\f$ (heavy volatiles) in the gas mixture
-  !>  - iym1(3): mass fraction of CO in the gas mixture
-  !>  - iym1(4): mass fraction of \f$O_2\f$ in the gas mixture
-  !>  - iym1(5): mass fraction of \f$CO_2\f$ in the gas mixture
-  !>  - iym1(6): mass fraction of \f$H_2O\f$ in the gas mixture
-  !>  - iym1(7): mass fraction of \f$N_2\f$ in the gas mixture
-  integer, save :: iym1(ngazem)
-
-  ! TODO absent de la doc utilisateur
-  !> State variables of continuous phase (gas mixture)
-  integer, save :: irom1
-
-  !>  molar mass of the gas mixture
-  integer, save :: immel
-
-  !        Phase dispersee (classes de particules)
-
-  !> temperature of the particles of the class \c icla
-  integer, save :: itemp2(nclcpm)
-
-  !> density of the particles of the class \c icla
-  integer, save :: irom2(nclcpm)
-
-  !> diameter of the particles of the class \c icla
-  integer, save :: idiam2(nclcpm)
-
-  !>  solid mass fraction of the class \c icla
-  integer, save :: ix2(nclcpm)
-
-  !> disappearance rate of the reactive coal of the class \c icla
-  integer, save :: igmdch(nclcpm)
-
-  !> coke disappearance rate of the coke burnout of the class \c icla
-  integer, save :: igmhet(nclcpm)
-
-  !> Implicite part of the exchanges to the gas by molecular distribution
-  integer, save :: igmtr(nclcpm)
-
-  ! TODO absent de la doc utilisateur
-  !> State variables of dispersed phase (particles class)
-  integer, save :: ighco2(nclcpm)
-
-  !>  mass transfer caused by the release of light volatiles  of the class \c icla
-  integer, save :: igmdv1(nclcpm)
-
-  !>  mass transfer caused by the release of heavy volatiles  of the class \c icla
-  integer, save :: igmdv2(nclcpm)
-
-  ! TODO absent de la doc utilisateur
-  !> State variables of dispersed phase (particles class)
-  integer, save :: igmsec(nclcpm)
-
-  !> Used for bulk balance of Carbon
-  integer, save :: ibcarbone
-  !> Used for bulk balance of Oxygen
-  integer, save :: iboxygen
-  !> Used for bulk balance of Hydrogen
-  integer, save :: ibhydrogen
-
-  !> \}
-
-  !--> POINTEURS VARIABLES COMBUSTION FUEL
-
-  !> \defgroup fuel_combustion Fuel combustion variables
-
-  !> \addtogroup fuel_combustion
-  !> \{
-
-  !        Phase dispersee
-  ! TODO absent de la doc utilisateur
-  !> transported variable of dispersed phase
-  integer, save :: ihlf(nclcpm)
-
-  ! TODO absent de la doc utilisateur
-  !> transported variable of dispersed phase
-  integer, save :: ixkf(nclcpm)
-
-  ! TODO absent de la doc utilisateur
-  !> transported variable of dispersed phase
-  integer, save :: ixfol(nclcpm)
-
-  ! TODO absent de la doc utilisateur
-  !> transported variable of dispersed phase
-  integer, save :: ing(nclcpm)
-
-  ! ---- Variables d'etat
-  !        Phase continue
-
-  ! TODO absent de la doc utilisateur
-  !> state variable of continuous phase
-  integer, save :: iyfol(nclcpm)
-  !        Phase dispersee
-
-  ! TODO absent de la doc utilisateur
-  !> state variable of dispersed phase
-  integer, save :: ih1hlf(nclcpm)
-  ! TODO absent de la doc utilisateur
-  !> state variable of dispersed phase
-  integer, save :: igmhtf(nclcpm)
-  ! TODO absent de la doc utilisateur
-  !> state variable of dispersed phase
-  integer, save :: igmeva(nclcpm)
-
-  !> \}
-
 
   !> \defgroup compressible Compressible models options
 
@@ -697,12 +413,12 @@ module ppincl
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_combustion_model_get_pointers(p_isoot)    &
-      bind(C, name='cs_f_combustion_model_get_pointers')
+    subroutine cs_f_combustion_model_gas_get_pointers(p_isoot)    &
+      bind(C, name='cs_f_combustion_model_gas_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_isoot
-    end subroutine cs_f_combustion_model_get_pointers
+    end subroutine cs_f_combustion_model_gas_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -754,20 +470,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_viscv0, p_ippmod, p_isoot
+    type(c_ptr) :: p_viscv0, p_ippmod
     type(c_ptr) :: p_icondb, p_icondv, p_icondb_model
 
     call cs_f_fluid_properties_pp_get_pointers(p_viscv0)
     call c_f_pointer(p_viscv0, viscv0)
 
     call cs_f_physical_model_get_pointers(p_ippmod)
-    call cs_f_combustion_model_get_pointers(p_isoot)
     call cs_f_wall_condensation_get_model_pointers(p_icondb,  &
                                                    p_icondv,  &
                                                    p_icondb_model)
 
     call c_f_pointer(p_ippmod, ippmod, [nmodmx])
-    call c_f_pointer(p_isoot, isoot)
     call c_f_pointer(p_icondb, icondb)
     call c_f_pointer(p_icondv, icondv)
     call c_f_pointer(p_icondb_model, icondb_model)

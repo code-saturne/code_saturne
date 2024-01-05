@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1009,13 +1009,13 @@ typedef struct {
 
   int         ncharm;  // cpincl
   cs_real_t  *a1ch;   // ncharm
-  cs_real_t  *h02ch;
-  cs_real_t  *e1ch;   //
   cs_real_t  *a2ch;   //
+  cs_real_t  *e1ch;   //
   cs_real_t  *e2ch;   //
   cs_real_t  *y1ch;   //
   cs_real_t  *y2ch;   //
   cs_real_t  *cp2ch;  //
+  cs_real_t  *h02ch;
   cs_real_t  *ahetch; //
   cs_real_t  *ehetch; //
   cs_real_t  *rho0ch; //

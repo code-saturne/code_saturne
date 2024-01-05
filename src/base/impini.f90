@@ -121,7 +121,6 @@ write(nfecra,1000)
 if (ippmod(icod3p).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1020) ippmod(icod3p)
-  write(nfecra,1060) indjon
   write(nfecra,1070) namgas, pcigas
   write(nfecra,1080) trim(nomcog(igfuel(1))), &
   -nreact(igoxy(1)), trim(nomcog(igoxy(1))), trim(nomcog(igprod(1)))
@@ -142,9 +141,7 @@ else if (ippmod(islfm).ne.-1) then
 else if (ippmod(icoebu).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1030) ippmod(icoebu), cebu
-  write(nfecra,1060) indjon
 endif
-
 
 
  1000 format(                                                     &
@@ -173,9 +170,6 @@ endif
  1040 format(                                                     &
 ' --- Diffusion Flame: Steady laminar flamelet model',          /,&
 '       OPTION = ',4x,i10,                                      /)
- 1060 format(                                                     &
-' --- Janaf or not (user tabulation required in this case)',    /,&
-'       INDJON = ',4x,i10,    ' (1: Janaf, 0: user)',           /)
  1070 format(                                                     &
 ' --- Combustible characteristics',                             /,&
 '       Combustible : ',4x,a,                                   /,&

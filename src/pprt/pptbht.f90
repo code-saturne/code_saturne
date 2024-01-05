@@ -125,7 +125,7 @@ do ne = 1 , ncoel
   enddo
 enddo
 
-impjnf = impfpp
+impjnf = 25
 
 call csdatadir(len(pathdatadir), pathdatadir)
 

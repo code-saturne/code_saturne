@@ -43,7 +43,6 @@
     examples provided, code should be placed as follows:
     - \ref cs_f_user_parameters_h_usipsu "usipsu" for numerical and physical options
     - \ref cs_f_user_parameters_h_usipes "usipes" for input-output related options
-    - \ref cs_f_user_parameters_h_usppmo "usppmo" for specific physics options
     - \ref cs_f_user_parameters_h_usipph "usipph" for additional input of parameters
     - \ref cs_f_user_parameters_h_usati1 "usipsu" for calculation options for the atmospheric module
     - \ref cs_f_user_parameters_h_cs_user_combustion "cs_user_combustion" for calculation options for the combustion module
@@ -65,12 +64,6 @@
   all fields are defined.
 
   \snippet cs_user_parameters.f90 usipes
-
-  \section cs_f_user_parameters_h_usppmo Specific physic activation (usppmo)
-
-  The \ref usppmo routine can be found in the \ref cs_user_parameters.f90 file.
-
-  \snippet cs_user_parameters.f90 usppmo
 
   \section cs_f_user_parameters_h_usipph Additional input of parameters (usipph)
 

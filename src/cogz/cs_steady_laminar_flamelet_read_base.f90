@@ -56,8 +56,6 @@ use radiat
 
 implicit none
 
-!========================================================
-
 call init_steady_laminar_flamelet_library
 
 ! Lecture de librairie flamelettes turbulentes
@@ -80,6 +78,44 @@ use entsor
 use coincl
 
 integer ::  ii, jj, mm, nn
+
+character(len=64) :: ficfpp
+integer(c_int) :: c_name_max, c_name_len
+type(c_ptr) :: c_name_p
+character(kind=c_char, len=1), dimension(:), pointer :: c_name
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+  interface
+
+    subroutine cs_f_combustion_gas_get_data_file_name  &
+      (f_name_max, f_name, f_name_len)                 &
+      bind(C, name='cs_f_combustion_gas_get_data_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_name_max
+      type(c_ptr), intent(out)    :: f_name
+      integer(c_int), intent(out) :: f_name_len
+    end subroutine cs_f_combustion_gas_get_data_file_name
+
+  end interface
+
+!========================================================
+
+! Get thermochemistry data file name
+
+c_name_max = len(ficfpp)
+call cs_f_combustion_gas_get_data_file_name(c_name_max, c_name_p, c_name_len)
+call c_f_pointer(c_name_p, c_name, [c_name_len])
+
+do ii = 1, c_name_len
+  ficfpp(ii:ii) = c_name(ii)
+enddo
+do ii = c_name_len + 1, c_name_max
+  ficfpp(ii:ii) = ' '
+enddo
 
 open(unit = impfpp, file = ficfpp, status='old')
 

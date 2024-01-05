@@ -48,7 +48,8 @@
 #include "cs_boundary_zone.h"
 #include "cs_cf_model.h"
 #include "cs_ctwr.h"
-#include "cs_combustion_model.h"
+#include "cs_coal.h"
+#include "cs_combustion_gas.h"
 #include "cs_domain.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -207,7 +208,7 @@ _log_global_model_options(void)
 
   /* Combustion */
 
-  cs_combustion_log_setup();
+  cs_combustion_gas_log_setup();
 
   /* TODO: iroext, etc... */
 

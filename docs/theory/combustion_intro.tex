@@ -56,17 +56,8 @@ combustion modelling. Obviously, the thermodynamical description of gas
 species is similar in every version as close as possible to the JANAF rules.
 
 All models are developed in both adiabatic and unadiabatic (permeatic : heat
-loss, \emph{e.g.} by radiation) version, beyond the standard (\fort{-1, 0, 1}), the rule to call models in \fort{usppmo} is:
-%FIXME
-\begin{eqnarray}
-\fort{ippmod(index ; model)}  &=&     -1   ~~\quad \text{unused}                     \nonumber \\
-\fort{ippmod(index ; model)}  &=& ~~   0  ~~~\quad \text{simplest adiabatic version} \nonumber \\
-\fort{ippmod(index ; model)}  &=& ~~  1  ~~~\quad \text{simplest permeatic version}  \label{Eqs_00A}\\
-\text{and possibly:}\qquad\qquad\qquad\qquad\qquad\qquad\qquad \nonumber & &\\
-\fort{ippmod(index ; model)}  &=&  2.p    \qquad \text{p} ~\text{adiabatic version}  \nonumber \\
-\fort{ippmod(index ; model)}  &=&  2.p+1 ~       \text{p} ~\text{permeatic version}  \nonumber
-\end{eqnarray}
-
+loss, \emph{e.g.} by radiation) version, and may be activated
+using the \fort{cs\_combustion\_gas\_set\_model} function.
 
 Every permeatic version involves the transport of enthalpy (one more variable).
 

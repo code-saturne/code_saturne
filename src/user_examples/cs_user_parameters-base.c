@@ -106,39 +106,35 @@ cs_user_model(void)
    *   2: homogeneous two phase model, 3: by pressure increment */
   cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 3;
 
-  /* Activate Eddy Break Up pre-mixed flame combustion model
-   * -1: not active
-   *  0: adiabatic conditions at constant richness
-   *  1: permeatic conditions at constant richness
-   *  2: adiabatic conditions at variable richness
-   *  3: permeatic conditions at variable richness */
-  cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = -1;
+  /* Activate gas combustion model */
+  cs_combustion_gas_model_t *gcm
+    = cs_combustion_gas_set_model(CS_COMBUSTION_3PT_PERMEATIC);
 
-  /* Activate 3-pointcombustion model
-   * -1: not active, 0: adiabatic, 1: permeatic */
-  cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = -1;
+  /* Soot model for gas combustion
+   *  if = -1   module not activated
+   *  if =  0   constant soot yield
+   *  if =  1   2 equations model of Moss et al. */
+  gcm->isoot = 0;
+  gcm->xsoot = 0.1;    /* (only if isoot = 0 and soot yield is not
+                          defined in the thermochemistry data file) */
+  gcm->rosoot = 2000.; /* kg/m3 */
 
-  /* Activate Libby-Williams pre-mixed flame combustion model
-   * -1: not active
-   *  0: two peak model with: adiabiatic conditions
-   *  1: two peak model with: permeatic conditions
-   *  2: three peak model: with adiabiatic conditions
-   *  3: three peak model: with permeatic conditions
-   *  4: four peak model with: adiabiatic conditions
-   *  5: four peak model with: permeatic conditions*/
-  cs_glob_physical_model_flag[CS_COMBUSTION_LW] = -1;
+  /* Enthalpy-Temperature conversion law */
+  gcm->use_janaf = true;
 
-  /* Activate pulverized coal combustion model
-   * -1: not active
-   *  0: active
-   *  1: with drying */
-  cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 1;
+  if (gcm->use_janaf)
+    cs_combustion_gas_set_thermochemical_data_file("dp_C3P");
+  else
+    cs_combustion_gas_set_thermochemical_data_file("dp_C3PSJ");
 
-  /* Activate the drift (for combustion)
+  /* Activate pulverized coal combustion model */
+  cs_coal_model_set_model(CS_COMBUSTION_COAL_STANDARD);
+
+  /* Activate the drift (for coal combustion)
    * 0 (no activation),
    * 1 (transported particle velocity)
    * 2 (limit drop particle velocity) */
-  cs_glob_combustion_model->idrift = 1;
+  cs_glob_coal_model->idrift = 1;
 
   /* Cooling towers model
    * -1: not active

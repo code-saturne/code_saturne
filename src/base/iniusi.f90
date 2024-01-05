@@ -93,7 +93,7 @@ integer, dimension(:), pointer :: elt_ids
 
 !===============================================================================
 
-procedure() :: varpos, usppmo, uialin, cscpva, usipph, cfnmtd, fldvar, csivis
+procedure() :: varpos, usppmo, uialin, cscpva, usipph, fldvar, csivis
 procedure() :: atini1, solcat, csidtv, csiphy, fldprp, cstime, usipsu
 procedure() :: indsui
 
@@ -116,12 +116,6 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_checkpoint_parameters
-
-  subroutine cs_combustion_initialize()  &
-       bind(C, name='cs_combustion_initialize')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_combustion_initialize
 
   subroutine cs_gui_combustion_ref_values()  &
        bind(C, name='cs_gui_combustion_ref_values')
@@ -267,8 +261,6 @@ call parameters_read_restart_info
 
 call cs_gui_physical_model_select
 
-call cfnmtd(ficfpp, len(ficfpp))
-
 ! Flow model selection through user Fortran subroutine
 
 call usppmo(1)
@@ -316,7 +308,6 @@ call cs_user_model
 
 ! Initialize some model structures if needed
 
-call cs_combustion_initialize
 call cs_gui_combustion_ref_values
 
 ! Set type and order of the turbulence model

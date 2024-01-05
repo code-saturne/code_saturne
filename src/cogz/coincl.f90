@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -189,7 +189,116 @@ module coincl
   !     XSOOT : soot fraction production (isoot = 0)
   !     ROSOOT: soot density
 
-  double precision, pointer, save :: xsoot, rosoot
+  integer(c_int), pointer, save :: isoot
+  real(c_double), pointer, save :: xsoot, rosoot
+
+  ! --- Temperature/Enthalpy conversion
+
+  !> use JANAF or not
+  logical(c_bool), pointer, save :: use_janaf
+
+  !--> POINTEURS VARIABLES COMBUSTION GAZ
+
+  !> \defgroup gas_combustion Gaz combustion variables pointers
+
+  !> \addtogroup gas_combustion
+  !> \{
+
+  ! ---- Variables transportees
+
+  !> pointer to specify the mixing rate in isca(ifm)
+  integer, save :: ifm
+
+  !> pointer to specify the variance of the mixing rate in isca(ifp2m)
+  integer, save :: ifp2m
+
+  !> pointer to specify the second moment of the mixing rate in isca(ifsqm):
+  integer, save :: ifsqm
+
+  !> pointer to specify the transported progress variable ippmod(islfm) >= 2:
+  integer, save :: ipvm
+
+  !> pointer to specify the fresh gas mass fraction in isca(iygfm)
+  integer, save :: iygfm
+
+  !> the intersection computation mode. If its value is:
+  !> - 1 (default), the original algorithm is used. Care should be taken to clip
+  !> the intersection on an extremity.
+  !> - 2, a new intersection algorithm is used. Caution should be used to avoid to clip
+  !> the intersection on an extremity.
+  integer, save :: icm
+
+  ! TODO
+  !> transported variable
+  integer, save :: icp2m
+
+  ! TODO
+  !> transported variable
+  integer, save :: ifpcpm
+
+  ! TODO
+  !> transported variable
+  integer, save :: iyfm
+  ! TODO
+  !> transported variable
+  integer, save :: iyfp2m
+  ! TODO
+  !> transported variable
+  integer, save :: icoyfp
+
+  ! ---- Variables d'etat
+
+  !> mass fractions :
+  !>  - iym(1): is fuel mass fraction
+  !>  - iym(2): oxidiser mass fraction
+  !>  - iym(3): product mass fraction
+  !> ibym() contains the matching field ids at boundary faces
+  integer, save :: iym(ngazgm)
+  integer, save :: ibym(ngazgm)
+
+  !> state variable (temperature)
+  integer, save :: itemp
+  !> state variable
+  integer, save :: ifmin
+  !> state variable
+  integer, save :: ifmax
+
+  !> state variable: Pointer to the reconstructed variance in case of mode_fp2m = 1
+  integer, save :: irecvr
+
+  !> state variable: Pointer to the total scalar dissipation rate
+  integer, save :: itotki
+
+  !> state variable: Pointer to volumetric heat release rate
+  integer, save :: ihrr
+
+  !> state variable: Pointer to enthalpy defect
+  integer, save :: ixr
+
+  !> state variable: Pointer to enthalpy defect
+  integer, save :: iomgc
+
+  !> state variable: absorption coefficient, when the radiation modelling is activated
+  integer, save :: ickabs
+
+  !> state variable:  \f$T^2\f$ term
+  integer, save :: it2m
+  !> state variable:  \f$T^3\f$ term, when the radiation modelling is activated
+  integer, save :: it3m
+  !> state variable:  \f$T^4\f$ term, when the radiation modelling is activated
+  integer, save :: it4m
+
+  ! pointer for source term in combustion
+  ! TODO
+  integer, save :: itsc
+
+  !> pointer for soot precursor number in isca (isoot = 1)
+  integer, save :: inpm
+
+  !> pointer for soot mass fraction in isca (isoot = 1)
+  integer, save :: ifsm
+
+  !> \}
 
   !=============================================================================
 
@@ -206,7 +315,8 @@ module coincl
     ! Interface to C function retrieving pointers to members of the
     ! global combustion model flags
 
-    subroutine cs_f_coincl_get_pointers(p_coefeg, p_compog,   &
+    subroutine cs_f_coincl_get_pointers(p_isoot, p_use_janaf, &
+                                        p_coefeg, p_compog,   &
                                         p_xsoot, p_rosoot,    &
                                         p_hinfue, p_hinoxy,   &
                                         p_pcigas, p_tinfue,   &
@@ -214,6 +324,7 @@ module coincl
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
+      type(c_ptr), intent(out) :: p_isoot, p_use_janaf
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
       type(c_ptr), intent(out) :: p_tinoxy
@@ -251,23 +362,27 @@ contains
   !> \brief Initialize Fortran combustion models properties API.
   !> This maps Fortran pointers to global C variables.
 
-  subroutine co_models_init
+  subroutine co_models_init() &
+    bind(C, name='cs_f_co_models_init')
 
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Local variables
 
-    type(c_ptr) :: c_coefeg, c_compog, c_xsoot,  &
-                   c_rosoot, c_hinfue, c_hinoxy, &
+    type(c_ptr) :: c_isoot, c_use_janaf,                  &
+                   c_coefeg, c_compog, c_xsoot,           &
+                   c_rosoot, c_hinfue, c_hinoxy,          &
                    c_pcigas, c_tinfue, c_tinoxy
 
-    call cs_f_coincl_get_pointers(c_coefeg, c_compog,  &
-                                  c_xsoot,  c_rosoot,  &
-                                  c_hinfue, c_hinoxy,  &
-                                  c_pcigas, c_tinfue,  &
-                                  c_tinoxy)
+    call cs_f_coincl_get_pointers(c_isoot, c_use_janaf,         &
+                                  c_coefeg, c_compog,           &
+                                  c_xsoot,  c_rosoot,           &
+                                  c_hinfue, c_hinoxy,           &
+                                  c_pcigas, c_tinfue, c_tinoxy)
 
+    call c_f_pointer(c_isoot, isoot)
+    call c_f_pointer(c_use_janaf, use_janaf)
     call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
     call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
     call c_f_pointer(c_xsoot, xsoot)
@@ -279,7 +394,6 @@ contains
     call c_f_pointer(c_tinoxy, tinoxy)
 
   end subroutine co_models_init
-
 
   !> \brief Map Fortran physical models boundary condition info.
   !> This maps Fortran pointers to global C variables.

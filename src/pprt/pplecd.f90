@@ -82,16 +82,16 @@ endif
 ! ---> Pulverized coal combustion
 
 if (ippmod(iccoal).ge.0) then
-  call uisofu(iirayo, ncharm, ncharb, nclpch, nclacp,                 &
-              ncpcmx, ichcor, diam20, cch,                            &
+  call uisofu(iirayo, nclpch,                                         &
+              ichcor, diam20, cch,                                    &
               hch, och, nch, sch, ipci, pcich, cp2ch, rho0ch,         &
               thcdch , cck, hck, ock, nck, sck, xashch,               &
               xashsec, xwatch, h0ashc, cpashc,                        &
               iy1ch, y1ch, iy2ch, y2ch, a1ch, a2ch, e1ch, e2ch,       &
               crepn1, crepn2, ahetch, ehetch, iochet, ahetc2,         &
               ehetc2, ioetc2, ahetwt, ehetwt, ioetwt,                 &
-              ieqnox, ieqco2, imdnox, irb, ihtco2, ihth2o, qpr, fn,   &
-              ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2,            &
+              imdnox, irb, ihtco2, ihth2o, qpr, fn,                   &
+              noxyd, oxyo2, oxyn2, oxyh2o, oxyco2,                    &
               repnck, repnle, repnlo)
   call cs_coal_readata
 endif

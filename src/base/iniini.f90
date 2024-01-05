@@ -166,15 +166,12 @@ call init_sizes_pcond()
 
 ! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
 
-! ---> Fichier thermochinie
+! ---> Fichier thermochimie
 !        FPP : utilisateur
-!        JNF : Janaf
 !        Les deux fichiers peuvent partager la meme unite
 !          puisqu'ils sont lus l'un a pres l'autre.
-!      En prime, INDJON (janaf=1 ou non=0)
 
 impfpp = 25
-ficfpp = 'define_ficfpp_in_usppmo'
 
 ! ---> Fichiers module atmospherique
 call atmo_set_meteo_file_name('meteo')

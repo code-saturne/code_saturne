@@ -203,7 +203,8 @@ contains
   !> \brief Initialize Fortran combustion models properties API.
   !> This maps Fortran pointers to global C variables.
 
-  subroutine thch_models_init
+  subroutine thch_models_init() &
+    bind(C, name='cs_f_thch_models_init')
 
     use, intrinsic :: iso_c_binding
     implicit none

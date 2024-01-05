@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,7 @@
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
-#include "cs_combustion_model.h"
+#include "cs_coal.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_gui_util.h"
@@ -1201,7 +1201,7 @@ cs_rad_transfer_solve(int  bc_type[])
   cs_real_3_t *iqpar;
   BFT_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
 
-  cs_coal_model_t *coal = cs_glob_combustion_model->coal;
+  cs_coal_model_t *coal = cs_glob_coal_model;
 
   /* Numer of classes for Coal combustion */
   int n_classes = 0;

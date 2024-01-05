@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -47,6 +47,7 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -78,10 +79,37 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*! Coal combustion model parameters structure */
+
+cs_coal_model_t  *cs_glob_coal_model = NULL;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
+
+void
+cs_f_co_models_init(void);
+
+void
+cs_f_cp_models_init(void);
+
+void
+cs_f_cp_model_map_coal(void);
+
+void
+cs_f_ppcpfu_models_init(void);
+
+void
+cs_f_thch_models_init(void);
 
 void
 cs_f_coal_radst(int         id,
@@ -91,6 +119,20 @@ cs_f_coal_radst(int         id,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize coal model.
+ *
+ * \pram[in, out]  cm  pointer to coal model pointer to destroy.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_coal_model_finalize(void)
+{
+  BFT_FREE(cs_glob_coal_model);
+}
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -126,22 +168,81 @@ cs_f_coal_radst(int         id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create coal model.
+ * \brief Activate coal combustion model.
  *
- * \return  pointer to coal model structure.
+ * \return  pointer to coal combustion model structure.
+ *
+ * \param[in]  type  coal combustion model type
  */
 /*----------------------------------------------------------------------------*/
 
 cs_coal_model_t *
-cs_coal_model_create(void)
+cs_coal_model_set_model(cs_coal_model_type_t  type)
 {
-  cs_coal_model_t *cm;
+  cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = type;
+
+  if (type == CS_COMBUSTION_COAL_NONE) {
+    BFT_FREE(cs_glob_coal_model);
+    return NULL;
+  }
+  else if (cs_glob_coal_model != NULL) {
+    cs_glob_coal_model->type = type;
+    return cs_glob_coal_model;
+  }
+
+  /* Create and initialize model structure */
+
+  cs_coal_model_t *cm = NULL;
 
   BFT_MALLOC(cm, 1, cs_coal_model_t);
+
+  cs_glob_coal_model = cm;
+
+  /* Members also present in gas combustion model */
+
+  cm->n_gas_el_comp = 0;
+  cm->n_gas_species = 0;
+  cm->n_atomic_species = 0;
+  cm->n_reactions = 0;
+  cm->n_tab_points = 0;
+  cm->pcigas = 0;
+  cm->xco2 = 0;
+  cm->xh2o = 0;
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS; i++) {
+    cm->wmole[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_OXYDANTS; i++) {
+    cm->oxyo2[i] = 0;
+    cm->oxyn2[i] = 0;
+    cm->oxyh2o[i] = 0;
+    cm->oxyco2[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_TABULATION_POINTS; i++) {
+    cm->th[i] = 0;
+  }
+
+  /* Members specific to coal combustion model */
+
+  cm->type = type;
 
   cm->n_coals = 0;
   cm->nclacp = 0;
   cm->nsolim = 0;
+  cm->idrift = 0;
+
+  cm->ieqnox = 1;
+  cm->ieqco2 = 1;
+
+  cm->ico = -1;
+  cm->io2 = -1;
+  cm->in2 = -1;
+  cm->ico2 = -1;
+  cm->ih2o = -1;
+
+  cm->ckabs0 = 0;
 
   for (int i = 0; i < CS_COMBUSTION_MAX_COALS; i++) {
     cm->n_classes_per_coal[i] = 0;
@@ -180,25 +281,19 @@ cs_coal_model_create(void)
     cm->xmasch[i] = 0;
   }
 
+  /* Set finalization callback */
+
+  cs_base_at_finalize(_coal_model_finalize);
+
+  /* Set mappings with Fortran */
+
+  cs_f_co_models_init();
+  cs_f_cp_models_init();
+  cs_f_cp_model_map_coal();
+  cs_f_ppcpfu_models_init();
+  cs_f_thch_models_init();
+
   return cm;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Finalize coal model.
- *
- * \pram[in, out]  cm  pointer to coal model pointer to destroy.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_coal_model_destroy(cs_coal_model_t **cm)
-{
-  if (cm != NULL) {
-    cs_coal_model_t *_cm = *cm;
-    BFT_FREE(_cm);
-    *cm = _cm;
-  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1763,8 +1763,8 @@ static void
 _inlet_coal(cs_tree_node_t   *tn_vp,
             const cs_zone_t  *z)
 {
-  const int n_coals = cs_glob_combustion_model->coal->n_coals;
-  const int *nclpch = cs_glob_combustion_model->coal->n_classes_per_coal;
+  const int n_coals = cs_glob_coal_model->n_coals;
+  const int *nclpch = cs_glob_coal_model->n_classes_per_coal;
 
   cs_coal_bc_inlet_t *ci = cs_coal_boundary_conditions_get_inlet(z);
 

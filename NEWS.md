@@ -9,6 +9,22 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Combustion models: change activation mode.
+  * In user-defined functions, gas and coal combustion models should now be
+    activated using `cs_combustion_gas_set_model` and
+    `cs_coal_model_set_model` respectively, and cannot be activated
+    directly by setting values in `cs_glob_physical_model_flag`
+    (or `ippmod` in Fortran), as the activation functions must be called
+    to allocate the required structures.
+  * The name of the thermochemical data file and JANAF indicator can
+    now be set from C, and not from Fortran anymore.
+  * Separate structures (`cs_glob_combustion_gas_model` and
+    (`cs_glob_coal_model`) are used for each combustion type, with
+    no shared member or substructure (compared to the previous
+    `cs_glob_combustion_model` structure).
+  * Some module variables have been moved to different modules, to better
+    align with the models actually using them.
+
 - Combustion models: remove diftl0 keyword. The corresponding value
   should be handled directly using the "diffusivity_ref" keyword
   for the Enthalpy field.

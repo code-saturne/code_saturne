@@ -51,6 +51,8 @@
 #include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_cf_model.h"
+#include "cs_coal.h"
+#include "cs_combustion_gas.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
 #include "cs_mesh.h"
@@ -63,7 +65,6 @@
 #include "cs_physical_constants.h"
 #include "cs_elec_model.h"
 #include "cs_vof.h"
-#include "cs_combustion_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -689,11 +690,7 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
-                                const int    *ncharm,
-                                int          *ncharb,
                                 int          *nclpch,
-                                int          *nclacp,
-                                const int    *ncpcmx,
                                 int          *ichcor,
                                 double       *diam20,
                                 double       *cch,
@@ -735,15 +732,12 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                                 double       *ahetwt,
                                 double       *ehetwt,
                                 int          *ioetwt,
-                                int          *ieqnox,
-                                int          *ieqco2,
                                 int          *imdnox,
                                 int          *irb,
                                 int          *ihtco2,
                                 int          *ihth2o,
                                 double       *qpr,
                                 double       *fn,
-                                double       *ckabs1,
                                 int          *noxyd,
                                 double       *oxyo2,
                                 double       *oxyn2,
@@ -753,9 +747,12 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                                 double       *repnle,
                                 double       *repnlo)
 {
+  cs_coal_model_t *cm = cs_glob_coal_model;
+  assert(cm != NULL);
+
   /* Read gas mix absorption coefficient */
   if (*iirayo > 0)
-    *ckabs1 = _get_absorption_coefficient();
+    cm->ckabs0 = _get_absorption_coefficient();
 
   /* Solid fuel model node */
 
@@ -771,19 +768,19 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
   cs_gui_node_get_child_status_int(tn_sf, "H2O_kinetics", ihth2o);
 
   /* Kinetic model (CO2 or CO transport) */
-  _get_kinetic_model(tn_sf, ieqco2);
+  _get_kinetic_model(tn_sf, &(cm->ieqco2));
 
   /* Solid fuel definitions
      ---------------------- */
 
   /* Number of coals */
-  *ncharb = cs_tree_get_node_count(tn_sf, "solid_fuel");
-  if (*ncharb > *ncharm)
+  cm->n_coals = cs_tree_get_node_count(tn_sf, "solid_fuel");
+  if (cm->n_coals > CS_COMBUSTION_MAX_COALS)
     bft_error(__FILE__, __LINE__, 0,
               _("Coal number is limited to %i\n"
                 "In the parametric file it is %i.\n"
                 "Calculation is interupted. Check the parametric file.\n"),
-              *ncharb, *ncharm);
+              cm->n_coals, CS_COMBUSTION_MAX_COALS);
 
   /* Loop on coal nodes */
   int iclag  = 0;
@@ -797,14 +794,14 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
 
     int itypdp = _get_diameter_type(tn);
     nclpch[icha] = _get_nb_class(tn, itypdp);
-    if (nclpch[icha] > *ncpcmx)
+    if (nclpch[icha] > CS_COMBUSTION_MAX_CLASSES_PER_COAL)
       bft_error(__FILE__, __LINE__, 0,
                 _("class number by coal is limited.\n"
                   "For coal %i it is %i \n in the parametric file \n"),
                   icha, nclpch[icha]);
 
     /* Compute number of classes and fill ICHCOR */
-    *nclacp = *nclacp + nclpch[icha];
+    cm->nclacp = cm->nclacp + nclpch[icha];
 
     for (int iclapc = 0; iclapc < nclpch[icha]; iclapc++) {
       int icla = iclapc + idecal;
@@ -1039,8 +1036,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
        QPR =  % of free nitrogen during devolatilization
             / % of density freed during devolatilization */
 
-    cs_gui_node_get_child_status_int(tn_sf, "NOx_formation", ieqnox);
-    if (*ieqnox) {
+    cs_gui_node_get_child_status_int(tn_sf, "NOx_formation", &(cm->ieqnox));
+    if (cm->ieqnox) {
 
       const char path_nox[] = "nox_formation";
       cs_tree_node_t *tn_nox = cs_tree_get_node(tn, path_nox);
@@ -1058,10 +1055,10 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
 
       crepn1[icha] = _get_solid_fuel_child_real
                        (tn_dv, "HCN_NH3_partitionning_reaction_1");
-      crepn1[*ncharb+icha] = 1-crepn1[icha];
+      crepn1[cm->n_coals+icha] = 1-crepn1[icha];
       crepn2[icha] = _get_solid_fuel_child_real
                        (tn_dv, "HCN_NH3_partitionning_reaction_2");
-      crepn2[*ncharb+icha] = 1-crepn2[icha];
+      crepn2[cm->n_coals+icha] = 1-crepn2[icha];
 
       /* Under "nox_formation" node */
 
@@ -1077,9 +1074,9 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
     }
     else {
       crepn1[icha] = 0.5;
-      crepn1[*ncharb+icha] = 1-crepn1[icha];
+      crepn1[cm->n_coals+icha] = 1-crepn1[icha];
       crepn2[icha] = 0.5;
-      crepn2[*ncharb+icha] = 1-crepn2[icha];
+      crepn2[cm->n_coals+icha] = 1-crepn2[icha];
     }
   }
 
@@ -1124,40 +1121,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
       oxyh2o[ioxy] = oxyh2o[ioxy]/coef;
       oxyco2[ioxy] = oxyco2[ioxy]/coef;
     }
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Copy name of thermophysical data file from C to Fortran
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
-                               int           *len      /* --> String Length  */
-                               CS_ARGF_SUPP_CHAINE)
-{
-  cs_tree_node_t *tn
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/gas_combustion");
-
-  const char *cstr = cs_tree_node_get_child_value_str(tn, "data_file");
-
-  /* Copy string */
-
-  if (cstr != NULL) {
-
-    /* Compute string length (removing start or end blanks) */
-
-    int l = strlen(cstr);
-    if (l > *len)
-      l = *len;
-
-    for (int i = 0; i < l; i++)
-      fstr[i] = cstr[i];
-
-    /* Pad with blanks if necessary */
-
-    for (int i = l; i < *len; i++)
-      fstr[i] = ' ';
-
   }
 }
 
@@ -1255,10 +1218,10 @@ cs_gui_physical_model_select(void)
 
     if (cs_gui_strcmp(model_name, "solid_fuels")) {
       if (cs_gui_strcmp(model_value, "homogeneous_fuel"))
-        cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 0;
+        cs_coal_model_set_model(CS_COMBUSTION_COAL_STANDARD);
       else if (cs_gui_strcmp(model_value,
                              "homogeneous_fuel_moisture"))
-        cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 1;
+        cs_coal_model_set_model(CS_COMBUSTION_COAL_WITH_DRYING);
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Invalid coal model: %s."), model_value);
@@ -1275,33 +1238,35 @@ cs_gui_physical_model_select(void)
       if (model != NULL && !cs_gui_strcmp(model, "off")) {
 
         if (cs_gui_strcmp(model_value, "adiabatic"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = 0;
+          cs_combustion_gas_set_model(CS_COMBUSTION_3PT_ADIABATIC);
         else if (cs_gui_strcmp(model_value, "extended"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = 1;
+          cs_combustion_gas_set_model(CS_COMBUSTION_3PT_PERMEATIC);
         else if (cs_gui_strcmp(model_value, "spalding"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 0;
+          cs_combustion_gas_set_model(CS_COMBUSTION_EBU_CONSTANT_ADIABATIC);
         else if (cs_gui_strcmp(model_value, "enthalpy_st"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 1;
+          cs_combustion_gas_set_model(CS_COMBUSTION_EBU_CONSTANT_PERMEATIC);
         else if (cs_gui_strcmp(model_value, "mixture_st"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 2;
+          cs_combustion_gas_set_model(CS_COMBUSTION_EBU_VARIABLE_ADIABATIC);
         else if (cs_gui_strcmp(model_value, "enthalpy_mixture_st"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 3;
+          cs_combustion_gas_set_model(CS_COMBUSTION_EBU_VARIABLE_PERMEATIC);
         else if (cs_gui_strcmp(model_value, "2-peak_adiabatic"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 0;
+          cs_combustion_gas_set_model(CS_COMBUSTION_LW_2PEAK_ADIABATIC);
         else if (cs_gui_strcmp(model_value, "2-peak_enthalpy"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 1;
+          cs_combustion_gas_set_model(CS_COMBUSTION_LW_2PEAK_PERMEATIC);
         else if (cs_gui_strcmp(model_value, "3-peak_adiabatic"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 2;
+          cs_combustion_gas_set_model(CS_COMBUSTION_LW_3PEAK_ADIABATIC);
         else if (cs_gui_strcmp(model_value, "3-peak_enthalpy"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 3;
+          cs_combustion_gas_set_model(CS_COMBUSTION_LW_3PEAK_PERMEATIC);
         else if (cs_gui_strcmp(model_value, "4-peak_adiabatic"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 4;
+          cs_combustion_gas_set_model(CS_COMBUSTION_LW_4PEAK_ADIABATIC);
         else if (cs_gui_strcmp(model_value, "4-peak_enthalpy"))
-          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 5;
+          cs_combustion_gas_set_model(CS_COMBUSTION_LW_4PEAK_PERMEATIC);
         else
           bft_error(__FILE__, __LINE__, 0,
                     _("Invalid gas combustion flow model: %s."),
                     model_value);
+
+        cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
         /* Read uniform variable thermodynamical pressure (ipthrm) */
         cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
@@ -1309,10 +1274,7 @@ cs_gui_physical_model_select(void)
                                          &(phys_pp->ipthrm));
 
         /* Read the soot model (isoot, rosoot, xsoot) */
-        cs_combustion_model_t   *cm = cs_glob_combustion_model;
-        cs_tree_node_t *tn_soot
-        = cs_tree_get_node(cs_glob_tree,
-                           "thermophysical_models/gas_combustion/soot_model");
+        cs_tree_node_t *tn_soot  = cs_tree_get_node(tn, "soot_model");
 
         const char *model_soot = cs_tree_node_get_child_value_str(tn_soot,
                                                                   "model");
@@ -1321,14 +1283,21 @@ cs_gui_physical_model_select(void)
           if (cs_gui_strcmp(model_soot, "constant_soot_yield")) {
             cm->isoot = 0;
             cs_gui_node_get_child_real(tn_soot, "soot_density",
-                                       &(cm->gas->rosoot));
+                                       &(cm->rosoot));
             cs_gui_node_get_child_real(tn_soot, "soot_fraction",
-                                       &(cm->gas->xsoot));}
+                                       &(cm->xsoot));}
           else if (cs_gui_strcmp(model_soot, "moss")) {
             cm->isoot = 1;
             cs_gui_node_get_child_real(tn_soot, "soot_density",
-                                       &(cm->gas->rosoot));}
+                                       &(cm->rosoot));}
         }
+
+        /* Read name of thermochemistry data file */
+
+        const char *f_name = cs_tree_node_get_child_value_str(tn, "data_file");
+        if (f_name != NULL)
+          cs_combustion_gas_set_thermochemical_data_file(f_name);
+
       }
     }
     else if (cs_gui_strcmp(model_name, "atmospheric_flows")) {
@@ -1660,7 +1629,6 @@ cs_gui_combustion_ref_values(void)
 
   if (combustion) {
     double diftl0;
-    cs_combustion_model_t *cm = cs_glob_combustion_model;
     cs_gui_properties_value("dynamic_diffusion", &diftl0);
 
     cs_field_t *tf = cs_field_by_name_try("enthalpy");
