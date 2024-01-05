@@ -1373,14 +1373,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
 {
   if(scatter){
     #pragma omp target teams distribute parallel for \
-                        map(tofrom: grdpa[0:n_cells_ext]) \
-                        map(to: grad[0:n_cells_ext], \
-                                i_face_cog[0:n_i_faces], \
-                                cell_cen[0:n_cells_ext], \
-                                pvar[0:n_cells_ext], \
-                                i_massflux[0:n_i_faces], \
-                                i_f_face_normal[0:n_i_faces], \
-                                i_face_cells[0:n_i_faces]) schedule(static,1)
+                        schedule(static,1)
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++){
 
       cs_real_t difv[3], djfv[3];
@@ -1422,12 +1415,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
     }
 
     #pragma omp target teams distribute parallel for \
-                      map(tofrom: grdpa[0:n_cells_ext]) \
-                      map(to: b_face_cells[0:n_b_faces], \
-                              coefb[0:n_b_faces], \
-                              coefa[0:n_b_faces], \
-                              grad[0:n_cells_ext]) schedule(static,1) \
-                      if(m->n_b_faces > CS_THR_MIN)
+                    schedule(static,1) if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
       cs_real_t diipbv[3];
@@ -1459,17 +1447,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
   }
   else{
     #pragma omp target teams distribute parallel for \
-                        map(tofrom: grdpa[0:n_cells_ext]) \
-                        map(to: grad[0:n_cells_ext], \
-                                i_face_cog[0:n_i_faces], \
-                                cell_i_faces_sgn[0:n_i_faces], \
-                                cell_i_faces[0:n_i_faces], \
-                                cell_cen[0:n_cells_ext], \
-                                cell_cells_idx[0:n_cells_ext], \
-                                cell_cells[0:n_cells_ext], \
-                                pvar[0:n_cells_ext], \
-                                i_massflux[0:n_i_faces], \
-                                i_f_face_normal[0:n_i_faces]) schedule(static,1)
+                         schedule(static,1)
     for (cs_lnum_t ii = 0; ii < n_cells; ii++){
 
       cs_lnum_t s_id = cell_cells_idx[ii];
@@ -1515,14 +1493,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
     }
 
     #pragma omp target teams distribute parallel for \
-                        map(tofrom: grdpa[0:n_cells_ext]) \
-                        map(to: b_face_cells[0:n_b_faces], \
-                                coefb[0:n_b_faces], \
-                                coefa[0:n_b_faces], \
-                                b_cells[0:n_cells], \
-                                cell_b_faces_idx[0:n_cells+1], \
-                                grad[0:n_cells_ext]) schedule(static,1)\
-                        if(m->n_b_faces > CS_THR_MIN)
+                       schedule(static,1) if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
 
       cs_lnum_t ii = b_cells[c_idx];
@@ -1562,9 +1533,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
     }
   }
 
-  #pragma omp target teams distribute parallel for \
-                      map(tofrom: grdpa[0:n_cells_ext]) \
-                      map(to: cell_vol[0:n_cells_ext])
+  #pragma omp target teams distribute parallel for 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t unsvol = 1./cell_vol[cell_id];
     for (int isou = 0; isou < 3; isou++) {
