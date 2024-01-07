@@ -1053,12 +1053,12 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
 
       /* Under "devotilisation_parameters" node */
 
-      crepn1[icha] = _get_solid_fuel_child_real
+      crepn1[2*icha] = _get_solid_fuel_child_real
                        (tn_dv, "HCN_NH3_partitionning_reaction_1");
-      crepn1[cm->n_coals+icha] = 1-crepn1[icha];
-      crepn2[icha] = _get_solid_fuel_child_real
+      crepn1[2*icha+1] = 1-crepn1[2*icha];
+      crepn2[2*icha] = _get_solid_fuel_child_real
                        (tn_dv, "HCN_NH3_partitionning_reaction_2");
-      crepn2[cm->n_coals+icha] = 1-crepn2[icha];
+      crepn2[2*icha+1] = 1-crepn2[2*icha];
 
       /* Under "nox_formation" node */
 
@@ -1073,10 +1073,10 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
         _get_nox_reburning(tn_nox, irb);
     }
     else {
-      crepn1[icha] = 0.5;
-      crepn1[cm->n_coals+icha] = 1-crepn1[icha];
+      crepn1[2*icha] = 0.5;
+      crepn1[2*icha+1] = 0.5;
       crepn2[icha] = 0.5;
-      crepn2[cm->n_coals+icha] = 1-crepn2[icha];
+      crepn2[2*icha+1] = 0.5;
     }
   }
 
