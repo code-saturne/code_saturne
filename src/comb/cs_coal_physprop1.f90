@@ -226,12 +226,12 @@ endif
 ! 1. Initialization
 !===============================================================================
 
-! Arrays of pointers containing the fields values for each class
+! Arrays of pointers containing the field values for each class
 ! (loop on cells outside loop on classes)
 allocate(cvar_f1m(ncharb), cvar_f2m(ncharb))
 do icha = 1, ncharb
-  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m(icha)%p)
-  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m(icha)%p)
+  call field_get_val_s(if1m(icha), cvar_f1m(icha)%p)
+  call field_get_val_s(if2m(icha), cvar_f2m(icha)%p)
 enddo
 
 ! pointer
@@ -541,11 +541,11 @@ enddo
 
 do icla = 1, nclacp
   icha = ichcor(icla)
-  call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
-  call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-  call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+  call field_get_val_s(ixch(icla), cvar_xchcl)
+  call field_get_val_s(ixck(icla), cvar_xckcl)
+  call field_get_val_s(inp(icla), cvar_xnpcl)
   if ( ippmod(iccoal) .eq. 1 ) then
-    call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+    call field_get_val_s(ixwt(icla), cvar_xwtcl)
   endif
   do iel = 1, ncel
     xch  = cvar_xchcl(iel)

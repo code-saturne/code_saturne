@@ -143,11 +143,11 @@ x2     ( : ) = zero
 x2srho2( : ) = zero
 do icla = 1, nclacp
   call field_get_val_s(irom2(icla),cpro_rom2)
-  call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
-  call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
-  call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
+  call field_get_val_prev_s(ixch(icla), cvara_xchcl)
+  call field_get_val_prev_s(ixck(icla), cvara_xckcl)
+  call field_get_val_prev_s(inp(icla), cvara_xnpcl)
   if ( ippmod(iccoal) .eq. 1 ) then
-    call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
+    call field_get_val_prev_s(ixwt(icla), cvara_xwtcl)
   endif
 
   do iel = 1, ncel
@@ -225,7 +225,7 @@ enddo
 
 call field_get_val_s(icrom, crom)
 do icla = 1, nclacp
-  call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
+  call field_get_val_prev_s(ixch(icla), cvara_xchcl)
   call field_get_val_s(igmdv1(icla),cpro_cgd1)
   call field_get_val_s(igmdv2(icla),cpro_cgd2)
   do iel = 1, ncel
@@ -263,7 +263,7 @@ call field_get_val_s(irom1, cpro_rom1)
 
 do icla = 1, nclacp
 
-  call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
+  call field_get_val_prev_s(inp(icla), cvara_xnpcl)
   call field_get_val_s(idiam2(icla),cpro_diam2)
   call field_get_val_s(igmhet(icla),cpro_cght)
   call field_get_val_s(itemp2(icla),cpro_temp2)
@@ -340,7 +340,7 @@ if ( ihtco2 .eq. 1) then
 
   do icla = 1, nclacp
 
-    call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
+    call field_get_val_prev_s(inp(icla), cvara_xnpcl)
     call field_get_val_s(idiam2(icla),cpro_diam2)
     call field_get_val_s(ighco2(icla),cpro_cght)
     call field_get_val_s(itemp2(icla),cpro_temp2)
@@ -419,7 +419,7 @@ if ( ihth2o .eq. 1) then
 
   do icla = 1, nclacp
 
-    call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
+    call field_get_val_prev_s(inp(icla), cvara_xnpcl)
     call field_get_val_s(idiam2(icla),cpro_diam2)
     call field_get_val_s(ighh2o(icla),cpro_cght)
     call field_get_val_s(itemp2(icla),cpro_temp2)
@@ -566,8 +566,8 @@ if ( ippmod(iccoal) .ge. 1 ) then
     npyv  = 0
     yymax = 0.d0
 
-    call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
-    call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
+    call field_get_val_prev_s(inp(icla), cvara_xnpcl)
+    call field_get_val_prev_s(ixwt(icla), cvara_xwtcl)
 
     do iel = 1, ncel
 

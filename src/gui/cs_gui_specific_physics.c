@@ -63,6 +63,7 @@
 #include "cs_selector.h"
 #include "cs_physical_properties.h"
 #include "cs_physical_constants.h"
+#include "cs_rad_transfer.h"
 #include "cs_elec_model.h"
 #include "cs_vof.h"
 
@@ -689,69 +690,21 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
  * (pulverized solid fuels)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
-                                int          *nclpch,
-                                int          *ichcor,
-                                double       *diam20,
-                                double       *cch,
-                                double       *hch,
-                                double       *och,
-                                double       *nch,
-                                double       *sch,
-                                int          *ipci,
-                                double       *pcich,
-                                double       *cp2ch,
-                                double       *rho0ch,
-                                double       *thcdch,
-                                double       *cck,
-                                double       *hck,
-                                double       *ock,
-                                double       *nck,
-                                double       *sck,
-                                double       *xashch,
-                                double       *xashsec,
-                                double       *xwatch,
-                                double       *h0ashc,
-                                double       *cpashc,
-                                int          *iy1ch,
-                                double       *y1ch,
-                                int          *iy2ch,
-                                double       *y2ch,
-                                double       *a1ch,
-                                double       *a2ch,
-                                double       *e1ch,
-                                double       *e2ch,
-                                double       *crepn1,
-                                double       *crepn2,
-                                double       *ahetch,
-                                double       *ehetch,
-                                int          *iochet,
-                                double       *ahetc2,
-                                double       *ehetc2,
-                                int          *ioetc2,
-                                double       *ahetwt,
-                                double       *ehetwt,
-                                int          *ioetwt,
+void CS_PROCF (uisofu, UISOFU) (double       *thcdch,
                                 int          *imdnox,
                                 int          *irb,
                                 int          *ihtco2,
-                                int          *ihth2o,
-                                double       *qpr,
-                                double       *fn,
                                 int          *noxyd,
                                 double       *oxyo2,
                                 double       *oxyn2,
                                 double       *oxyh2o,
-                                double       *oxyco2,
-                                double       *repnck,
-                                double       *repnle,
-                                double       *repnlo)
+                                double       *oxyco2)
 {
   cs_coal_model_t *cm = cs_glob_coal_model;
   assert(cm != NULL);
 
   /* Read gas mix absorption coefficient */
-  if (*iirayo > 0)
+  if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE)
     cm->ckabs0 = _get_absorption_coefficient();
 
   /* Solid fuel model node */
@@ -765,7 +718,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
 
   /* Heterogeneous combustion options (shrinking sphere model) */
   cs_gui_node_get_child_status_int(tn_sf, "CO2_kinetics", ihtco2);
-  cs_gui_node_get_child_status_int(tn_sf, "H2O_kinetics", ihth2o);
+  cs_gui_node_get_child_status_int(tn_sf, "H2O_kinetics", &(cm->ihth2o));
 
   /* Kinetic model (CO2 or CO transport) */
   _get_kinetic_model(tn_sf, &(cm->ieqco2));
@@ -793,21 +746,21 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
        tn = cs_tree_node_get_next_of_name(tn), icha++) {
 
     int itypdp = _get_diameter_type(tn);
-    nclpch[icha] = _get_nb_class(tn, itypdp);
-    if (nclpch[icha] > CS_COMBUSTION_MAX_CLASSES_PER_COAL)
+    cm->n_classes_per_coal[icha] = _get_nb_class(tn, itypdp);
+    if (cm->n_classes_per_coal[icha] > CS_COMBUSTION_MAX_CLASSES_PER_COAL)
       bft_error(__FILE__, __LINE__, 0,
                 _("class number by coal is limited.\n"
                   "For coal %i it is %i \n in the parametric file \n"),
-                  icha, nclpch[icha]);
+                  icha, cm->n_classes_per_coal[icha]);
 
     /* Compute number of classes and fill ICHCOR */
-    cm->nclacp = cm->nclacp + nclpch[icha];
+    cm->nclacp = cm->nclacp + cm->n_classes_per_coal[icha];
 
-    for (int iclapc = 0; iclapc < nclpch[icha]; iclapc++) {
+    for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++) {
       int icla = iclapc + idecal;
-      ichcor[icla] = icha + 1;
+      cm->ichcor[icla] = icha + 1;
     }
-    idecal += nclpch[icha];
+    idecal += cm->n_classes_per_coal[icha];
 
     /* Diameter type = 1 ---> given
                      = 2 ---> Rosin-Rammler law */
@@ -820,7 +773,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
       for (cs_tree_node_t *tn_d = cs_tree_get_node(tn, "class/diameter");
            tn_d != NULL;
            tn_d = cs_tree_node_get_next_of_name(tn_d), icla++)
-        cs_gui_node_get_real(tn_d, &(diam20[icla + iclag]));
+        cs_gui_node_get_real(tn_d, &(cm->diam20[icla + iclag]));
 
     }
     else if (itypdp == 2) {
@@ -828,9 +781,9 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
       int nbrf = cs_tree_get_node_count(tn, "refusal");
 
       cs_real_t *dprefus, *refus, *pourc;
-      BFT_MALLOC(dprefus, nbrf,         cs_real_t);
-      BFT_MALLOC(refus,   nbrf,         cs_real_t);
-      BFT_MALLOC(pourc,   nclpch[icha], cs_real_t);
+      BFT_MALLOC(dprefus, nbrf, cs_real_t);
+      BFT_MALLOC(refus, nbrf, cs_real_t);
+      BFT_MALLOC(pourc, cm->n_classes_per_coal[icha], cs_real_t);
 
       for (int ii = 0; ii < nbrf; ii++) {
         dprefus[ii] = -1;
@@ -861,10 +814,10 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
       /* split classes */
 
       cs_real_t *rf;
-      BFT_MALLOC(rf, nclpch[icha], cs_real_t);
+      BFT_MALLOC(rf, cm->n_classes_per_coal[icha], cs_real_t);
       rf[0] = pourc[0] / 2.;
 
-      for (int icla = 1; icla < nclpch[icha]; icla++)
+      for (int icla = 1; icla < cm->n_classes_per_coal[icha]; icla++)
         rf[icla] = rf[icla-1] + (pourc[icla] + pourc[icla-1]) / 2.;
 
       cs_real_t kk1 = 0., kk2 = 0., kk3 = 0., kk4 = 0.;
@@ -886,8 +839,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
       cs_real_t var = (kk2 * kk3 - kk1 * kk4) / (nbrf * kk3 - kk1 * kk1);
       cs_real_t xx  = exp(-var / qq);
 
-      for (int icla = iclag; icla < iclag + nclpch[icha]; icla++)
-        diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1.e-6; // metres
+      for (int icla = iclag; icla < iclag + cm->n_classes_per_coal[icha]; icla++)
+        cm->diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1.e-6; // metres
 
       bft_printf("** Rosin-Rammler results for the coal %i **\n"
                  "[ Checking of the Rosin-Rammler law ]\n"
@@ -907,8 +860,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
 
       bft_printf("\nDiameters computed by the Rosin-Rammler law\n");
 
-      for (int icla = iclag; icla <iclag+nclpch[icha]; icla ++)
-        bft_printf("%d     %f \n", icla-iclag, diam20[icla]);
+      for (int icla = iclag; icla < iclag+cm->n_classes_per_coal[icha]; icla ++)
+        bft_printf("%d     %f \n", icla-iclag, cm->diam20[icla]);
 
       BFT_FREE(pourc);
       BFT_FREE(refus);
@@ -921,33 +874,33 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                 _("type diameter value must be equal to 1 or 2."));
     }
 
-    iclag = iclag + nclpch[icha];
+    iclag = iclag + cm->n_classes_per_coal[icha];
 
     /* Elementary composition in C, H , O , N , S on dry (% mass) */
-    cch[icha] = _get_solid_fuel_child_real(tn, "C_composition_on_dry");
-    hch[icha] = _get_solid_fuel_child_real(tn, "H_composition_on_dry");
-    och[icha] = _get_solid_fuel_child_real(tn, "O_composition_on_dry");
-    nch[icha] = _get_solid_fuel_child_real(tn, "N_composition_on_dry");
-    sch[icha] = _get_solid_fuel_child_real(tn, "S_composition_on_dry");
+    cm->cch[icha] = _get_solid_fuel_child_real(tn, "C_composition_on_dry");
+    cm->hch[icha] = _get_solid_fuel_child_real(tn, "H_composition_on_dry");
+    cm->och[icha] = _get_solid_fuel_child_real(tn, "O_composition_on_dry");
+    cm->nch[icha] = _get_solid_fuel_child_real(tn, "N_composition_on_dry");
+    cm->sch[icha] = _get_solid_fuel_child_real(tn, "S_composition_on_dry");
 
     /* Elementary composition in C, H , O , N , S od coke (% mass) */
-    cck[icha] = _get_solid_fuel_child_real(tn, "C_coke_composition_on_dry");
-    hck[icha] = _get_solid_fuel_child_real(tn, "H_coke_composition_on_dry");
-    ock[icha] = _get_solid_fuel_child_real(tn, "O_coke_composition_on_dry");
-    nck[icha] = _get_solid_fuel_child_real(tn, "N_coke_composition_on_dry");
-    sck[icha] = _get_solid_fuel_child_real(tn, "S_coke_composition_on_dry");
+    cm->cck[icha] = _get_solid_fuel_child_real(tn, "C_coke_composition_on_dry");
+    cm->hck[icha] = _get_solid_fuel_child_real(tn, "H_coke_composition_on_dry");
+    cm->ock[icha] = _get_solid_fuel_child_real(tn, "O_coke_composition_on_dry");
+    cm->nck[icha] = _get_solid_fuel_child_real(tn, "N_coke_composition_on_dry");
+    cm->sck[icha] = _get_solid_fuel_child_real(tn, "S_coke_composition_on_dry");
 
     /* PCI on dry or pure coal based on IPCI value */
-    _get_pci_type_and_value(tn, &(ipci[icha]), &(pcich[icha]));
+    _get_pci_type_and_value(tn, &(cm->ipci[icha]), &(cm->pcich[icha]));
 
-    h0ashc[icha] = _get_solid_fuel_child_real(tn, "ashes_enthalpy");
-    cpashc[icha] = _get_solid_fuel_child_real(tn, "ashes_thermal_capacity");
+    cm->h0ashc[icha] = _get_solid_fuel_child_real(tn, "ashes_enthalpy");
+    cm->cpashc[icha] = _get_solid_fuel_child_real(tn, "ashes_thermal_capacity");
 
     /*  ---- CP moyen du charbon sec (J/kg/K) */
-    cp2ch[icha] = _get_solid_fuel_child_real(tn, "specific_heat_average");
+    cm->cp2ch[icha] = _get_solid_fuel_child_real(tn, "specific_heat_average");
 
     /* ---- Masse volumique initiale (kg/m3) */
-    rho0ch[icha] = _get_solid_fuel_child_real(tn, "density");
+    cm->rho0ch[icha] = _get_solid_fuel_child_real(tn, "density");
 
     /* ---- Thermal conductivity of the coal (W/m/K) */
     if (   thcdch != NULL
@@ -960,19 +913,19 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
     /* Ash characteristics */
 
     /* Ash fraction (kg/kg) in % */
-    xashsec[icha] = _get_solid_fuel_child_real(tn, "rate_of_ashes_on_mass");
+    cm->xashsec[icha] = _get_solid_fuel_child_real(tn, "rate_of_ashes_on_mass");
 
     /* Transformation to kg/kg */
-    xashch[icha] = xashsec[icha]/100.;
+    cm->xashch[icha] = cm->xashsec[icha]/100.;
 
     /* Humidity fraction (kg/kg) in % */
-    xwatch[icha] = _get_solid_fuel_child_real(tn, "moisture");
+    cm->xwatch[icha] = _get_solid_fuel_child_real(tn, "moisture");
 
     /* Transformation to kg/kg */
-    xwatch[icha] = xwatch[icha]/100.;
+    cm->xwatch[icha] = cm->xwatch[icha]/100.;
 
     /* Transform ash ratio from dry to humid in kg/kg */
-    xashch[icha] = xashch[icha]*(1.-xwatch[icha]);
+    cm->xashch[icha] = cm->xashch[icha]*(1.-cm->xwatch[icha]);
 
     /* Devolatilisation parameters (Kobayashi's model) */
 
@@ -984,8 +937,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                 path_dv, tn->name);
 
     _get_y1y2_coefficient_values(tn_dv,
-                                 &(iy1ch[icha]), &(iy2ch[icha]),
-                                 &(y1ch[icha]), &(y2ch[icha]));
+                                 &(cm->iy1ch[icha]), &(cm->iy2ch[icha]),
+                                 &(cm->y1ch[icha]), &(cm->y2ch[icha]));
 
 #if _XML_DEBUG_
     /* volatile_matter used by GUI for y1y2 automatic formula (to compute
@@ -995,10 +948,14 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
       = _get_solid_fuel_child_real(tn, "volatile_matter");
 #endif
 
-    a1ch[icha] = _get_solid_fuel_child_real(tn_dv, "A1_pre-exponential_factor");
-    a2ch[icha] = _get_solid_fuel_child_real(tn_dv, "A2_pre-exponential_factor");
-    e1ch[icha] = _get_solid_fuel_child_real(tn_dv, "E1_energy_of_activation");
-    e2ch[icha] = _get_solid_fuel_child_real(tn_dv, "E2_energy_of_activation");
+    cm->a1ch[icha]
+      = _get_solid_fuel_child_real(tn_dv, "A1_pre-exponential_factor");
+    cm->a2ch[icha]
+      = _get_solid_fuel_child_real(tn_dv, "A2_pre-exponential_factor");
+    cm->e1ch[icha]
+      = _get_solid_fuel_child_real(tn_dv, "E1_energy_of_activation");
+    cm->e2ch[icha]
+      = _get_solid_fuel_child_real(tn_dv, "E2_energy_of_activation");
 
     /* Char combustion parameters */
 
@@ -1010,26 +967,28 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                 path_cc, tn->name);
 
     /* Heterogeneous combustion parameters for O2 (shrinking sphere model) */
-    ahetch[icha] = _get_cc_specie_value(tn_cc, "O2", "pre-exponential_constant");
-    ehetch[icha] = _get_cc_specie_value(tn_cc, "O2", "energy_of_activation");
-    iochet[icha] = _get_cc_reaction_order(tn_cc, "O2");
+    cm->ahetch[icha]
+      = _get_cc_specie_value(tn_cc, "O2", "pre-exponential_constant");
+    cm->ehetch[icha]
+      = _get_cc_specie_value(tn_cc, "O2", "energy_of_activation");
+    cm->iochet[icha] = _get_cc_reaction_order(tn_cc, "O2");
 
     /* Heterogeneous combustion parameters for CO2 (shrinking sphere model) */
     if (*ihtco2) {
-      ahetc2[icha] = _get_cc_specie_value(tn_cc,
-                                          "CO2", "pre-exponential_constant");
-      ehetc2[icha] = _get_cc_specie_value(tn_cc,
-                                          "CO2", "energy_of_activation");
-      ioetc2[icha] = _get_cc_reaction_order(tn_cc, "CO2");
+      cm->ahetc2[icha]
+        = _get_cc_specie_value(tn_cc, "CO2", "pre-exponential_constant");
+      cm->ehetc2[icha]
+        = _get_cc_specie_value(tn_cc, "CO2", "energy_of_activation");
+      cm->ioetc2[icha] = _get_cc_reaction_order(tn_cc, "CO2");
     }
 
     /* Heterogeneous combustion parameters for H2O (shrinking sphere model) */
-    if (*ihth2o) {
-      ahetwt[icha] = _get_cc_specie_value(tn_cc,
-                                          "H2O", "pre-exponential_constant");
-      ehetwt[icha] = _get_cc_specie_value(tn_cc,
-                                          "H2O", "energy_of_activation");
-      ioetwt[icha] = _get_cc_reaction_order(tn_cc, "H2O");
+    if (cm->ihth2o) {
+      cm->ahetwt[icha]
+        = _get_cc_specie_value(tn_cc, "H2O", "pre-exponential_constant");
+      cm->ehetwt[icha]
+        = _get_cc_specie_value(tn_cc, "H2O", "energy_of_activation");
+      cm->ioetwt[icha] = _get_cc_reaction_order(tn_cc, "H2O");
     }
 
     /* NOX model parameters
@@ -1046,37 +1005,37 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
         bft_error(__FILE__, __LINE__, 0, _("Missing %s child for node %s."),
                   path_nox, tn->name);
 
-      qpr[icha] = _get_solid_fuel_child_real(tn_nox, "nitrogen_fraction");
-      fn[icha] = _get_solid_fuel_child_real(tn_nox, "nitrogen_concentration");
+      cm->qpr[icha] = _get_solid_fuel_child_real(tn_nox, "nitrogen_fraction");
+      cm->fn[icha] = _get_solid_fuel_child_real(tn_nox, "nitrogen_concentration");
 
       /* Distribution of nitrogen between HCN and NH3 */
 
       /* Under "devotilisation_parameters" node */
 
-      crepn1[2*icha] = _get_solid_fuel_child_real
-                       (tn_dv, "HCN_NH3_partitionning_reaction_1");
-      crepn1[2*icha+1] = 1-crepn1[2*icha];
-      crepn2[2*icha] = _get_solid_fuel_child_real
-                       (tn_dv, "HCN_NH3_partitionning_reaction_2");
-      crepn2[2*icha+1] = 1-crepn2[2*icha];
+      cm->crepn1[icha][0] = _get_solid_fuel_child_real
+                              (tn_dv, "HCN_NH3_partitionning_reaction_1");
+      cm->crepn1[icha][1] = 1 - cm->crepn1[icha][0];
+      cm->crepn2[icha][0] = _get_solid_fuel_child_real
+                              (tn_dv, "HCN_NH3_partitionning_reaction_2");
+      cm->crepn2[icha][1] = 1 - cm->crepn2[icha][0];
 
       /* Under "nox_formation" node */
 
-      repnck[icha] = _get_solid_fuel_child_real
-                       (tn_nox, "percentage_HCN_char_combustion");
-      repnle[icha] = _get_solid_fuel_child_real
-                       (tn_nox, "nitrogen_in_char_at_low_temperatures");
-      repnlo[icha] = _get_solid_fuel_child_real
-                       (tn_nox, "nitrogen_in_char_at_high_temperatures");
+      cm->repnck[icha] = _get_solid_fuel_child_real
+                           (tn_nox, "percentage_HCN_char_combustion");
+      cm->repnle[icha] = _get_solid_fuel_child_real
+                           (tn_nox, "nitrogen_in_char_at_low_temperatures");
+      cm->repnlo[icha] = _get_solid_fuel_child_real
+                          (tn_nox, "nitrogen_in_char_at_high_temperatures");
       cs_gui_node_get_child_status_int(tn_nox, "improved_NOx_model", imdnox);
       if (*imdnox)
         _get_nox_reburning(tn_nox, irb);
     }
     else {
-      crepn1[2*icha] = 0.5;
-      crepn1[2*icha+1] = 0.5;
-      crepn2[icha] = 0.5;
-      crepn2[2*icha+1] = 0.5;
+      cm->crepn1[icha][0] = 0.5;
+      cm->crepn1[icha][1] = 0.5;
+      cm->crepn2[icha][0] = 0.5;
+      cm->crepn2[icha][1] = 0.5;
     }
   }
 

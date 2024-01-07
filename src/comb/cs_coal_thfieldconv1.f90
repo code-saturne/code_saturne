@@ -121,8 +121,8 @@ endif
 allocate(cvar_f1m(ncharb))
 allocate(cvar_f2m(ncharb))
 do icha = 1, ncharb
-  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m(icha)%p)
-  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m(icha)%p)
+  call field_get_val_s(if1m(icha), cvar_f1m(icha)%p)
+  call field_get_val_s(if2m(icha), cvar_f2m(icha)%p)
 enddo
 
 i = npo-1

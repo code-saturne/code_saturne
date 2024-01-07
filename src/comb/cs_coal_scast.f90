@@ -253,10 +253,10 @@ call field_get_val_s_by_name('x_h_c_exp_st',smbrsh1)
 call field_get_val_s_by_name('x_h_c_imp_st',rovsdth1)
 
 if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
-  call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
-  call field_get_val_prev_s(ivarfl(isca(iyno)), cvara_yno)
-  call field_get_val_prev_s(ivarfl(isca(iyhcn)), cvara_yhcn)
-  call field_get_val_prev_s(ivarfl(isca(iynh3)), cvara_ynh3)
+  call field_get_val_s(iyno, cvar_yno)
+  call field_get_val_prev_s(iyno, cvara_yno)
+  call field_get_val_prev_s(iyhcn, cvara_yhcn)
+  call field_get_val_prev_s(iynh3, cvara_ynh3)
 endif
 
 log_active = cs_log_default_is_active()
@@ -286,7 +286,7 @@ call field_get_val_s_by_name('dt', dt)
 
 ! --> Source term for the mass fraction of reactive coal
 
-if (ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp))) then
+if (ivarfl(ivar).ge.ixch(1) .and. ivarfl(ivar).le.ixch(nclacp)) then
 
   if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -316,7 +316,7 @@ endif
 ! 2.1 Source term for the mass fraction of coke
 !===============================================================================
 
-if (ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp))) then
+if (ivarfl(ivar).ge.ixck(1) .and. ivarfl(ivar).le.ixck(nclacp)) then
 
   if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -325,8 +325,8 @@ if (ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp))) then
   ! index of the coal particle class
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
-  call field_get_val_s(ivarfl(isca(ixch(numcla))), cvar_xchcl)
-  call field_get_val_prev_s(ivarfl(isca(ixck(numcla))), cvara_xckcl)
+  call field_get_val_s(ixch(numcla), cvar_xchcl)
+  call field_get_val_prev_s(ixck(numcla), cvara_xckcl)
 
   call field_get_val_s(igmdch(numcla), cpro_cgch)
   call field_get_val_s(igmdv1(numcla), cpro_cgd1)
@@ -381,7 +381,7 @@ endif
 
 if (ippmod(iccoal) .eq. 1) then
 
-  if (ivar.ge.isca(ixwt(1)) .and. ivar.le.isca(ixwt(nclacp))) then
+  if (ivarfl(ivar).ge.ixwt(1) .and. ivarfl(ivar).le.ixwt(nclacp)) then
 
     if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
@@ -428,7 +428,7 @@ if (i_comb_drift.ge.1) then
     ! index of the coal particle class
     call field_get_key_int(ivarfl(ivar), keyccl, icla)
 
-    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+    call field_get_val_s(inp(icla), cvar_xnpcl)
 
     do iel = 1, ncel
       smbrs(iel) = smbrs(iel) + crom(iel) * cell_f_vol(iel)*cvar_xnpcl(iel)
@@ -471,7 +471,7 @@ if (i_comb_drift.eq.1) then
       call field_get_val_s(ighh2o(icla), cpro_ghh2o)
     endif
 
-    call field_get_val_prev_s(ivarfl(isca(ixck(icla))) , cvara_coke)
+    call field_get_val_prev_s(ixck(icla) , cvara_coke)
     ! Taup
     write(name,'(a,i2.2)')'n_p_' ,icla
     call field_get_id('drift_tau_'//trim(name), f_id)
@@ -584,10 +584,10 @@ endif !on icoal drift
 ! 2.5 Source term for the enthalpies
 !===============================================================================
 
-if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
+if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
 
   ! Initialization of the exchange terms for gas enthalpy
-  if (ivar.eq.isca(ih2(1))) then
+  if (ivarfl(ivar).eq.ih2(1)) then
     do iel = 1, ncel
       smbrsh1(iel) = 0.d0
       rovsdth1(iel) = 0.d0
@@ -601,12 +601,12 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
   ! index of the coal particle class
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
-  call field_get_val_s(ivarfl(isca(ixch(numcla))), cvar_xchcl)
-  call field_get_val_s(ivarfl(isca(ixck(numcla))), cvar_xckcl)
-  call field_get_val_prev_s(ivarfl(isca(ixck(numcla))), cvara_xckcl)
+  call field_get_val_s(ixch(numcla), cvar_xchcl)
+  call field_get_val_s(ixck(numcla), cvar_xckcl)
+  call field_get_val_prev_s(ixck(numcla), cvara_xckcl)
   if (ippmod(iccoal) .eq. 1) then
-    call field_get_val_s(ivarfl(isca(ixwt(numcla))), cvar_xwtcl)
-    call field_get_val_prev_s(ivarfl(isca(ixwt(numcla))), cvara_xwtcl)
+    call field_get_val_s(ixwt(numcla), cvar_xwtcl)
+    call field_get_val_prev_s(ixwt(numcla), cvara_xwtcl)
   endif
   numcha = ichcor(numcla)
 
@@ -986,7 +986,7 @@ endif    ! enthalpies des particules
 ! 3. Taking into account source terms for relative variables in the mixture
 !===============================================================================
 
-if (ivar .eq. isca(ihgas)) then
+if (ivarfl(ivar) .eq. ihgas) then
 
   ! source terms from particles (convection and enthalpy drived by mass fluxes)
   do iel = 1, ncel
@@ -998,8 +998,8 @@ if (ivar .eq. isca(ihgas)) then
   ! TODO adapt it to other classes (fuel..)
   do icla = 1, nclacp
     call field_get_val_s(igmtr(icla), cpro_rovsdt2)
-    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_x2h2)
-    call field_get_val_prev_s(ivarfl(isca(ih2(icla))), cvara_x2h2)
+    call field_get_val_s(ih2(icla), cvar_x2h2)
+    call field_get_val_prev_s(ih2(icla), cvara_x2h2)
     do iel = 1, ncel
       smbrs(iel) = smbrs(iel)  &
                  + cpro_rovsdt2(iel)*(cvar_x2h2(iel)-cvara_x2h2(iel))
@@ -1010,7 +1010,7 @@ endif
 
 ! --> Source term for light volatile materials
 
-if (ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb))) then
+if (ivarfl(ivar).ge.if1m(1) .and. ivarfl(ivar).le.if1m(ncharb)) then
 
   if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -1018,13 +1018,13 @@ if (ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb))) then
 
 ! ---- Calculation of GMDEV1 = - Sum (rho.XCH.GMDV1) > 0  --> W1
 
-  numcha = ivar-isca(if1m(1))+1
+  numcha = ivarfl(ivar)-if1m(1)+1
   do iel = 1, ncel
     w1(iel) = zero
   enddo
   do icla = 1, nclacp
     call field_get_val_s(igmdv1(icla), cpro_cgd1)
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(ixch(icla), cvar_xchcl)
     if (ichcor(icla).eq.numcha) then
       do iel = 1, ncel
         w1(iel) = w1(iel) - crom(iel)*cvar_xchcl(iel)    &
@@ -1044,7 +1044,7 @@ endif
 
 ! Source terms for heavy volatil materials
 
-if (ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb))) then
+if (ivarfl(ivar).ge.if2m(1) .and. ivarfl(ivar).le.if2m(ncharb)) then
 
   if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -1052,13 +1052,13 @@ if (ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb))) then
 
   ! Calculation of GMDEV2 = - Sum (rho.XCH.GMDV2) > 0 --> W1
 
-  numcha = ivar-isca(if2m(1))+1
+  numcha = ivarfl(ivar)-if2m(1)+1
   do iel = 1, ncel
     w1(iel) = zero
   enddo
   do icla = 1, nclacp
     call field_get_val_s(igmdv2(icla), cpro_cgd2)
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(ixch(icla), cvar_xchcl)
     if (ichcor(icla).eq.numcha) then
       do iel = 1, ncel
         w1(iel) = w1(iel) - crom(iel)*cvar_xchcl(iel)    &
@@ -1078,7 +1078,7 @@ endif
 
 ! Source term for the tracer 7 (O2) (heterogeneous combustion by C)
 
-if (ivar.eq.isca(if7m)) then
+if (ivarfl(ivar).eq.if7m) then
 
   ! Remark: We take the same source term than for Xck
   !                  to be conservative
@@ -1093,8 +1093,8 @@ if (ivar.eq.isca(if7m)) then
 
   do icla = 1, nclacp
     call field_get_val_s(igmhet(icla),cpro_cght)
-    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-    call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
+    call field_get_val_s(ixck(icla), cvar_xckcl)
+    call field_get_val_prev_s(ixck(icla), cvara_xckcl)
     do iel = 1, ncel
       if (cvara_xckcl(iel) .gt. epsicp) then
         w1(iel) = w1(iel)                                         &
@@ -1117,7 +1117,7 @@ endif
 ! Source term for the tracer 8 (CO2) (heterogeneous combustion by C)
 
 if (ihtco2 .eq. 1) then
-  if (ivar.eq.isca(if8m)) then
+  if (ivarfl(ivar).eq.if8m) then
 
     ! Remark: We take the same source term than for Xck
     !                  to be conservative
@@ -1132,8 +1132,8 @@ if (ihtco2 .eq. 1) then
 
     do icla = 1, nclacp
       call field_get_val_s(ighco2(icla), cpro_ghco2)
-      call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-      call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
+      call field_get_val_s(ixck(icla), cvar_xckcl)
+      call field_get_val_prev_s(ixck(icla), cvara_xckcl)
       do iel = 1, ncel
         if (cvara_xckcl(iel) .gt. epsicp) then
           w1(iel) = w1(iel)                                        &
@@ -1158,7 +1158,7 @@ endif
 ! --> Source term for the tracer 9 (H2O) (heterogeneous combustion by H2O)
 
 if (ihth2o .eq. 1) then
-  if (ivar.eq.isca(if9m)) then
+  if (ivarfl(ivar).eq.if9m) then
 
     ! Remark: We take the same source term than for Xck
     !                  to be conservative
@@ -1173,8 +1173,8 @@ if (ihth2o .eq. 1) then
 
     do icla = 1, nclacp
       call field_get_val_s(ighh2o(icla), cpro_ghh2o)
-      call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-      call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
+      call field_get_val_s(ixck(icla), cvar_xckcl)
+      call field_get_val_prev_s(ixck(icla), cvara_xckcl)
       do iel = 1, ncel
         if (cvara_xckcl(iel) .gt. epsicp) then
           w1(iel) = w1(iel)                                        &
@@ -1198,7 +1198,7 @@ endif
 
 ! --> Source term for the fuel variance
 
-if (ivar.eq.isca(ifvp2m)) then
+if (ivarfl(ivar).eq.ifvp2m) then
 
   if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -1212,8 +1212,7 @@ endif
 
 if (ippmod(iccoal) .eq. 1) then
 
-  if (ivar.eq.isca(if6m)) then
-
+  if (ivarfl(ivar).eq.if6m) then
 
     if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
@@ -1227,8 +1226,8 @@ if (ippmod(iccoal) .eq. 1) then
 
     do icla = 1, nclacp
 
-      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
-      call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
+      call field_get_val_s(ixwt(icla), cvar_xwtcl)
+      call field_get_val_prev_s(ixwt(icla), cvara_xwtcl)
       call field_get_val_s(igmsec(icla),cpro_csec)
       call field_get_val_s(ix2(icla),cpro_x2)
 
@@ -1262,7 +1261,7 @@ endif
 
 if (ieqco2 .eq. 1) then
 
-  if (ivar.eq.isca(iyco2)) then
+  if (ivarfl(ivar).eq.iyco2) then
 
     if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
@@ -1504,7 +1503,7 @@ if (ieqco2 .eq. 1) then
      allocate(cvara_xck(nclacp))
      allocate(cpro_ghco2a(nclacp))
      do icla = 1,nclacp
-       call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
+       call field_get_val_prev_s(ixck(icla), cvara_xck(icla)%p)
        call field_get_val_s(ighco2(icla), cpro_ghco2a(icla)%p)
      enddo
 
@@ -1539,7 +1538,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
   ! Terms on Oxydant enthalpy
 
-  if (ivar .eq. isca(ihox)) then
+  if (ivarfl(ivar) .eq. ihox) then
 
     ! Arrays of pointers containing the fields values for each class
     ! (loop on cells outside loop on classes)
@@ -1559,10 +1558,10 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       allocate(cvar_xwt(nclacp))
     endif
     do icla = 1,nclacp
-      call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xck(icla)%p)
-      call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
-      call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xch(icla)%p)
-      call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnp(icla)%p)
+      call field_get_val_s(ixck(icla), cvar_xck(icla)%p)
+      call field_get_val_prev_s(ixck(icla), cvara_xck(icla)%p)
+      call field_get_val_s(ixch(icla), cvar_xch(icla)%p)
+      call field_get_val_s(inp(icla), cvar_xnp(icla)%p)
       call field_get_val_s(itemp2(icla), cpro_t2(icla)%p)
       call field_get_val_s(igmhet(icla), cpro_gmhet(icla)%p)
       if (ihtco2 .eq. 1) then
@@ -1572,7 +1571,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         call field_get_val_s(ighh2o(icla), cpro_ghh2oa(icla)%p)
       endif
       if (ippmod(iccoal) .eq. 1) then
-        call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwt(icla)%p)
+        call field_get_val_s(ixwt(icla), cvar_xwt(icla)%p)
       endif
     enddo
 
@@ -1807,8 +1806,8 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
         numcha = ichcor(icla)
 
-        call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
-        call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
+        call field_get_val_s(ixwt(icla), cvar_xwtcl)
+        call field_get_val_prev_s(ixwt(icla), cvara_xwtcl)
         call field_get_val_s(igmsec(icla),cpro_csec)
         call field_get_val_s(itemp2(icla),cpro_temp2)
         call field_get_val_s(ix2(icla),cpro_x2)
@@ -1872,7 +1871,7 @@ if (ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 
   ! Source terms on Y_HCN and Y_NO
 
-  if (ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno)) then
+  if (ivarfl(ivar).eq.iyhcn .or. ivarfl(ivar).eq.iyno) then
 
     !  Pointer source terms
     call field_get_val_s(ighcn1,cpro_exp1)
@@ -1885,7 +1884,7 @@ if (ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
     wmno  = 0.030d0
     wmo2  = wmole(io2 )
 
-    if (ivar.eq.isca(iyhcn)) then
+    if (ivarfl(ivar).eq.iyhcn) then
 
     !  Source term HCN
 
@@ -1900,8 +1899,8 @@ if (ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
       allocate(cpro_gmdv1(nclacp), cpro_gmdv2(nclacp))
 
       do icla = 1,nclacp
-        call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
-        call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xch(icla)%p)
+        call field_get_val_prev_s(ixck(icla), cvara_xck(icla)%p)
+        call field_get_val_prev_s(ixch(icla), cvara_xch(icla)%p)
         call field_get_val_s(igmdv1(icla), cpro_gmdv1(icla)%p)
         call field_get_val_s(igmdv2(icla), cpro_gmdv2(icla)%p)
         call field_get_val_s(igmhet(icla), cpro_gmhet(icla)%p)
@@ -1966,7 +1965,7 @@ if (ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 
     endif
 
-    if (ivar.eq.isca(iyno)) then
+    if (ivarfl(ivar).eq.iyno) then
 
       !  Source term NO
 
@@ -2005,7 +2004,7 @@ if (ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
   ! Source terms on Y_HCN and Y_NO
 
-  if (ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) .or. ivar.eq.isca(iynh3)    &
+  if (ivarfl(ivar).eq.iyhcn .or. ivarfl(ivar).eq.iyno .or. ivarfl(ivar).eq.iynh3    &
     ) then
 
     ! Arrays of pointers containing the fields values for each class
@@ -2015,8 +2014,8 @@ if (ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
     allocate(cpro_gmdv1(nclacp),cpro_gmdv2(nclacp))
 
     do icla = 1,nclacp
-      call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
-      call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xch(icla)%p)
+      call field_get_val_prev_s(ixck(icla), cvara_xck(icla)%p)
+      call field_get_val_prev_s(ixch(icla), cvara_xch(icla)%p)
       call field_get_val_s(itemp2(icla), cpro_t2(icla)%p)
       call field_get_val_s(igmhet(icla), cpro_gmhet(icla)%p)
       call field_get_val_s(igmdv1(icla), cpro_gmdv1(icla)%p)
@@ -2055,7 +2054,7 @@ if (ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
     wmno  = 0.030d0
     wmnh3 = wmole(inh3)
 
-    if (ivar.eq.isca(iyhcn)) then
+    if (ivarfl(ivar).eq.iyhcn) then
 
       aux = 0.d0
 
@@ -2332,7 +2331,7 @@ if (ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
     endif
 
-    if (ivar.eq.isca(iynh3)) then
+    if (ivarfl(ivar).eq.iynh3) then
 
       aux = 0.d0
 
@@ -2406,9 +2405,9 @@ if (ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
     endif
 
-    if (ivar.eq.isca(iyno)) then
+    if (ivarfl(ivar).eq.iyno) then
 
-      call field_get_val_s(iym1(in2),cpro_yn2)
+      call field_get_val_s(iym1(in2), cpro_yn2)
 
       do iel = 1, ncel
         cpro_cnorb(iel) = zero

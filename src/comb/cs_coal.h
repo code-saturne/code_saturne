@@ -148,18 +148,175 @@ typedef struct {
                          - 1  transport of CO2 mass fraction
                          - 2  transport of CO mass fraction  */
 
-  int     ico;         /*!< index of co in wmole */
-  int     io2;         /*!< index of o2 in wmole */
-  int     in2;         /*!< index of n2 in wmole */
-  int     ico2;        /*!< index of co2 in wmole */
-  int     ih2o;        /*!< index of h2o in wmole */
-
   double  ckabs0;      /*!< absorption coefficient of gas mix */
 
   /*! number of classes per coal */
   int     n_classes_per_coal[CS_COMBUSTION_MAX_COALS];
 
-  /* Enthalpy of reactive coal, coke, and ash */
+  /* Properties of dry coal
+     ---------------------- */
+
+  /*! elementary composition of coal in C over dry (%) */
+  double cch[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coal in H over dry (%) */
+  double hch[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coal in O over dry (%) */
+  double och[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coal in S over dry (%) */
+  double sch[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coal in N over dry (%) */
+  double nch[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of reactive coal: alpha(c) = hch(c)/cch(c) */
+  double alpha[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of reactive coal: beta (c) = och(c)/cch(c) */
+  double beta[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of reactive coal: teta (c) = sch(c)/cch(c) */
+  double teta[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of reactive coal: omega (c) = nch(c)/cch(c) */
+  double omega[CS_COMBUSTION_MAX_COALS];
+
+  /*! coal pci (J/kg) */
+  double pcich[CS_COMBUSTION_MAX_COALS];
+
+  /*! initial density (kg/m3) */
+  double rho0ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! coal thermal conductivity (W/m/K) */
+  double thcdch[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coke in C over dry (%) */
+  double cck[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coke in H over dry (%) */
+  double hck[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coke in O over dry (%) */
+  double ock[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coke in S over dry (%) */
+  double sck[CS_COMBUSTION_MAX_COALS];
+
+  /*! elementary composition of coke in N over dry (%) */
+  double nck[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of coke: gamma(c) = hck(c)/cck(c) */
+  double gamma[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of coke: delta(c) = ock(c)/cck(c) */
+  double delta[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of coke: kappa(c) = sck(c)/cck(c) */
+  double kappa[CS_COMBUSTION_MAX_COALS];
+
+  /*! composition of coke: zeta(c) = nck(c)/cck(c) */
+  double zeta[CS_COMBUSTION_MAX_COALS];
+
+  /*! coke pci (J/kg) */
+  double pcick[CS_COMBUSTION_MAX_COALS];
+
+  /*! coke density (kg/m3) */
+  double rhock[CS_COMBUSTION_MAX_COALS];
+
+  /*! Cp of ash (J/kg/K) */
+  double cpashc[CS_COMBUSTION_MAX_COALS];
+
+  /*! enthalpy of ash formation (J/kg) */
+  double h0ashc[CS_COMBUSTION_MAX_COALS];
+
+  /*! H0 of coal */
+  double h02ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! Cp of water */
+  double cp2wat[CS_COMBUSTION_MAX_COALS];
+
+  /*! distribution of N2 in HCN and No reaction 1 */
+  double  crepn1[CS_COMBUSTION_MAX_COALS][2];
+
+  /*! distribution of N2 in HCN and No reaction 2 */
+  double  crepn2[CS_COMBUSTION_MAX_COALS][2];
+
+  /*! coal specific heat */
+  double  cp2ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! Ash fraction (kg/kg) in percentage */
+  double xashsec[CS_COMBUSTION_MAX_COALS];
+
+  /*! ashes concentration (kg/kg) */
+  double  xashch[CS_COMBUSTION_MAX_COALS];
+
+  /*! humidity (kg/kg) */
+  double  xwatch[CS_COMBUSTION_MAX_COALS];
+
+  /* Kinetic parameters for devolatilization (Kobayashi's model)
+     ----------------------------------------------------------- */
+
+  /*! Indicator: 0 if MVl = {CH4;CO};  1 if MVl = {CHz;CO} */
+  int iy1ch [CS_COMBUSTION_MAX_COALS];
+
+  /*! Indicator 0 if MVL = {C2H4;CO};  1 if MVL = {CxHy;CO} */
+  int iy2ch [CS_COMBUSTION_MAX_COALS];
+
+  /*! Order of the reaction for heterogeneous coke/O2 combustion
+    (0.5 if 0, 1 if 1) */
+  int iochet [CS_COMBUSTION_MAX_COALS];
+
+  /*! Order of the reaction for heterogeneous coke/CO2 combustion
+    (0.5 if 0, 1 if 1) */
+  int ioetc2[CS_COMBUSTION_MAX_COALS];
+
+  /*! Order of the reaction for heterogeneous coke/H2O combustion
+    (0.5 if 0, 1 if 1) */
+  int ioetwt[CS_COMBUSTION_MAX_COALS];
+
+  /*! stoechiometric coeffficient; computed if iy1ch = 0; given if iy1ch = 1 */
+  double  y1ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! pre-exponetial factor (1/s) */
+  double  a1ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! activation energy (J/mol) */
+  double  e1ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! stoechiometric coeffficient; computed if iy2ch = 0; given if iy2ch = 1 */
+  double  y2ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! pre-exponetial factor (1/s) */
+  double  a2ch[CS_COMBUSTION_MAX_COALS];
+
+  /*! activation energy (J/mol) */
+  double  e2ch[CS_COMBUSTION_MAX_COALS];
+
+  /* Kinetics  of heterogeneous coke combustion (shrinking sphere model)
+     ------------------------------------------------------------------ */
+
+  /*! pre-exponential constant for combustion of coke with O2 (kg/m2/s/atm) */
+  double  ahetch[CS_COMBUSTION_MAX_COALS];
+
+  /*! activation energy for combustion of coke with O2 (kcal/mol) */
+  double  ehetch[CS_COMBUSTION_MAX_COALS];
+
+  /*! pre-exponential constant for combustion of coke with CO2 (kg/m2/s/atm) */
+  double  ahetc2[CS_COMBUSTION_MAX_COALS];
+
+  /*! activation energy for combustion of coke with CO2 (kcal/mol) */
+  double  ehetc2[CS_COMBUSTION_MAX_COALS];
+
+  /*! pre-exponential constant for combustion of coke with H2O (kg/m2/s/atm) */
+  double  ahetwt[CS_COMBUSTION_MAX_COALS];
+
+  /*! activation energy for combustion of coke with H2O (kcal/mol) */
+  double  ehetwt[CS_COMBUSTION_MAX_COALS];
+
+  /* Enthalpy of reactive coal, coke, and ash
+     ---------------------------------------- */
 
   /*! position in ehsoli array for reactive coal */
   int     ich[CS_COMBUSTION_MAX_COALS];
@@ -183,17 +340,11 @@ typedef struct {
   /*! formation enthalpy (J/kg) of solid constituents */
   double  eh0sol[CS_COMBUSTION_COAL_MAX_SOLIDS];
 
+  /* By class (deduced properties)
+     ----------------------------- */
+
   /*! coal id if considered class belongs to coal ich[1, 2, ...] */
   int     ichcor[CS_COMBUSTION_COAL_MAX_CLASSES];
-
-  /*! coal specific heat */
-  double  cp2ch[CS_COMBUSTION_MAX_COALS];
-
-  /*! ashes concentration (kg/kg) */
-  double  xashch[CS_COMBUSTION_MAX_COALS];
-
-  /*! humidity (kg/kg) */
-  double  xwatch[CS_COMBUSTION_MAX_COALS];
 
   /*! initial diameter (m) */
   double  diam20[CS_COMBUSTION_COAL_MAX_CLASSES];
@@ -210,8 +361,126 @@ typedef struct {
   /*! initial particle mass (kg) */
   double  xmp0[CS_COMBUSTION_COAL_MAX_CLASSES];
 
-  /*! particle char mass (kg) */
+  /*! particle ashes mass (kg) */
   double  xmasch[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /* Data relative to combustion of gaseous species
+     ---------------------------------------------- */
+
+  int     ico;         /*!< index of co in wmole */
+  int     io2;         /*!< index of o2 in wmole */
+  int     ih2o;        /*!< index of h2o in wmole */
+  int     in2;         /*!< index of n2 in wmole */
+  int     ico2;        /*!< index of co2 in wmole */
+
+  /*! index of CHx1 in ehgaze and wmole */
+  int ichx1c[CS_COMBUSTION_MAX_COALS];
+
+  /*! index of CHx2 in ehgaze and wmole */
+  int ichx2c[CS_COMBUSTION_MAX_COALS];
+
+  /*! index of CHx1m in ehgaze and wmole */
+  int ichx1;
+
+  /*! index of CHx2m in ehgaze and wmole */
+  int ichx2;
+
+  /*! Composition of hydrocarbon relative to MVl: CH(X1) */
+  double chx1[CS_COMBUSTION_MAX_COALS];
+
+  /*! Composition of hydrocarbon relative to MVl: CH(X2) */
+  double chx2[CS_COMBUSTION_MAX_COALS];
+
+  //@{
+  /*! low T devolatilization molar stoechiometric coefficients */
+  double a1[CS_COMBUSTION_MAX_COALS];
+  double b1[CS_COMBUSTION_MAX_COALS];
+  double c1[CS_COMBUSTION_MAX_COALS];
+  double d1[CS_COMBUSTION_MAX_COALS];
+  double e1[CS_COMBUSTION_MAX_COALS];
+  double f1[CS_COMBUSTION_MAX_COALS];
+  double a2[CS_COMBUSTION_MAX_COALS];
+  double b2[CS_COMBUSTION_MAX_COALS];
+  double c2[CS_COMBUSTION_MAX_COALS];
+  double d2[CS_COMBUSTION_MAX_COALS];
+  double e2[CS_COMBUSTION_MAX_COALS];
+  double f2[CS_COMBUSTION_MAX_COALS];
+  //@}
+
+  /* Complement table
+     ---------------- */
+
+  /*! temperature values in enthalpy/temperature law tabulation */
+  double thc[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
+
+  /*! number of tabulation points for enthalpy/temperature law */
+  int npoc;
+
+  /* Combustion of coke by H2O
+     ------------------------- */
+
+  /*! mass transfer by heterogeneous combustion with H2O */
+  int ihth2o;
+
+  /*! id of field "het_ts_h2o_p_<class>" */
+  int ighh2o[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! PCI computation mode:
+      - 1: dry -> pure (schaff's formula)
+      - 2: raw -> pure
+      - 3: pure -> pure
+      - 4: dry -> pure
+      - 5: raw -> pure
+      - 6: IGT correclation */
+  int ipci[CS_COMBUSTION_MAX_COALS];
+
+  /* NOx model
+     --------- */
+
+  /*! percentage of Nitrogen freed in devolatilization. */
+  double qpr[CS_COMBUSTION_MAX_COALS];
+
+  /*! concentration in Nitrogen relative to pure */
+  double fn[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of HCN in light volatile matters. */
+  double yhcnle[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of HCN in heavy volatile matters. */
+  double yhcnlo[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of NH3 in light volatile matters. */
+  double ynh3le[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of NH3 in heavy volatile matters. */
+  double ynh3lo[CS_COMBUSTION_MAX_COALS];
+
+  /*! Percentage of total N in coal of char1 */
+  double repnle[CS_COMBUSTION_MAX_COALS];
+
+  /*! Percentage of total N in coal of char2 */
+  double repnlo[CS_COMBUSTION_MAX_COALS];
+
+  /*! Percentage of HCN produced by heteorgeneous combustion */
+  double repnck[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of HCN in products of heteorgeneous combustion of char 1 */
+  double yhcnc1[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of NO in products of heteorgeneous combustion of char 1 */
+  double ynoch1[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of HCN in products of heteorgeneous combustion of char 2 */
+  double yhcnc2[CS_COMBUSTION_MAX_COALS];
+
+  /*! mass fraction of NO in products of heteorgeneous combustion of char 2 */
+  double ynoch2[CS_COMBUSTION_MAX_COALS];
+
+  /*! molar mass of CHx1 */
+  double wmchx1;
+
+  /*! molar mass of CHx2 */
+  double wmchx2;
 
 } cs_coal_model_t;
 
@@ -228,7 +497,19 @@ extern cs_coal_model_t  *cs_glob_coal_model;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Return coal combustion model type.
+ *
+ * \return type of active coal combustion model
+ *         (CS_COMBUSTION_COAL_NONE if model not active)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_coal_model_type_t
+cs_coal_model_get_type(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Activate coal combustion model.
  *
  * \return  pointer to coal combustion model structure.
@@ -241,7 +522,7 @@ cs_coal_model_t *
 cs_coal_model_set_model(cs_coal_model_type_t  type);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Take in account the radiative source terms in the particle equation
  *        of a given class for pulverized coal flame.
  *
@@ -257,7 +538,7 @@ cs_coal_rad_transfer_st(const cs_field_t  *f,
                         cs_real_t         *rovsdt);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute gas enthalpy
  *        Function with gas temperature and concentrations
  *
@@ -277,7 +558,7 @@ cs_coal_thconvers1(const double  xesp[],
                    cs_real_t     tp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute particles enthalpy
  *         Function with temperature and concentrations
 

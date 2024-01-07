@@ -130,24 +130,28 @@ ifsm = 0
 ! ---> Initialisation pour la combustion du charbon
 !       Variables transportees
 do icha = 1, ncharm
-  if1m(icha) = 0
-  if2m(icha) = 0
+  if1m(icha) = -1
+  if2m(icha) = -1
 enddo
-if4m   = 0
-if5m   = 0
-if6m   = 0
-if7m   = 0
-if8m   = 0
-if9m   = 0
-ifvp2m = 0
-iyco2  = 0
+if4m   = -1
+if5m   = -1
+if6m   = -1
+if7m   = -1
+if8m   = -1
+if9m   = -1
+ifvp2m = -1
+iyco2  = -1
+iyhcn   = -1
+iynh3   = -1
+iyno    = -1
+itaire  = -1
+
 do icla = 1, nclcpm
-  ixck(icla)   = 0
-  ixch(icla)   = 0
-  inp(icla)    = 0
-  ih2(icla)    = 0
-  ixwt(icla)   = 0
-  inagecp(icla) = 0
+  ixck(icla)   = -1
+  ixch(icla)   = -1
+  inp(icla)    = -1
+  ih2(icla)    = -1
+  ixwt(icla)   = -1
 enddo
 !
 !       Variables algebriques ou d'etat
@@ -165,7 +169,6 @@ do icla = 1, nclcpm
   igmdv2(icla) = 0
   igmhet(icla) = 0
   ighco2(icla) = 0
-  ighh2o(icla) = 0
   igmsec(icla) = 0
 enddo
 do ige = 1, ngazem
@@ -177,15 +180,6 @@ do ige = 1, ngazem
   af8(ige) = 0.d0
   af9(ige) = 0.d0
 enddo
-
-! ---> Initialisation pour la combustion fuel
-!       Variables transportees
-
-iyco2   = 0
-iyhcn   = 0
-iynh3   = 0
-iyno    = 0
-itaire  = 0
 
 !       Variables algebriques ou d'etat
 
@@ -307,7 +301,6 @@ flamelet_hrr   = -1
 flamelet_species(:)  = -1
 flamelet_species_name(:)  = ' '
 
-
 flamelet_c     = -1
 flamelet_omg_c = -1
 
@@ -340,156 +333,6 @@ hmax = zero
 coeff1 = zero
 coeff2 = zero
 coeff3 = zero
-
-!===============================================================================
-! 4. REMPLISSAGE INCLUDE cpincl.h
-!                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A
-!                LA COMBUSTION CP
-!===============================================================================
-
-! ---> Donnees relatives au charbon
-
-do icha = 1, ncharm
-
-  cch(icha)    = zero
-  hch(icha)    = zero
-  och(icha)    = zero
-  sch(icha)    = zero
-  nch(icha)    = zero
-
-  alpha(icha)  = zero
-  beta(icha)   = zero
-  teta (icha)  = zero
-  omega(icha)  = zero
-
-  pcich(icha)  = zero
-  rho0ch(icha) = zero
-  thcdch(icha) = zero
-
-  cck(icha)    = zero
-  hck(icha)    = zero
-  ock(icha)    = zero
-  sck(icha)    = zero
-  nck(icha)    = zero
-
-  rhock(icha)  = zero
-  gamma(icha)  = zero
-  delta(icha)  = zero
-  kappa(icha)  = zero
-  zeta (icha)  = zero
-  pcick(icha)  = zero
-
-  cpashc(icha) = zero
-  h0ashc(icha) = zero
-
-  iy1ch(icha)  = 0
-  y1ch(icha)   = zero
-  a1ch(icha)   = zero
-  e1ch(icha)   = zero
-  crepn1(1,icha) = zero
-  crepn1(2,icha) = zero
-
-  iy2ch(icha)  = 0
-  y2ch(icha)   = zero
-  a2ch(icha)   = zero
-  e2ch(icha)   = zero
-  crepn2(1,icha) = zero
-  crepn2(2,icha) = zero
-
-  ahetch(icha) = zero
-  ehetch(icha) = zero
-  iochet(icha) = 0
-
-  ahetc2(icha) = zero
-  ehetc2(icha) = zero
-  ioetc2(icha) = 0
-
-  ahetwt(icha) = zero
-  ehetwt(icha) = zero
-  ioetwt(icha) = 0
-
-  repnck(icha) = zero
-  repnle(icha) = zero
-  repnlo(icha) = zero
-
-  ychxle(icha) = zero
-  ychxlo(icha) = zero
-  yhcnle(icha) = zero
-  yhcnlo(icha) = zero
-  ynh3le(icha) = zero
-  ynh3lo(icha) = zero
-  ycoch1(icha) = zero
-  yhcnc1(icha) = zero
-  ynoch1(icha) = zero
-  ycoch2(icha) = zero
-  yhcnc2(icha) = zero
-  ynoch2(icha) = zero
-
-  nnch(icha)   = zero
-  nnckle(icha) = zero
-  nhckle(icha) = zero
-  ncckle(icha) = zero
-  nncklo(icha) = zero
-  nhcklo(icha) = zero
-  nccklo(icha) = zero
-
-  wchx1c(icha) = zero
-  wchx2c(icha) = zero
-enddo
-
-wmchx1 = zero
-wmchx2 = zero
-
-! ---> Definition des Pointeurs du tableau TBMCR utilise dans cpphy1.F
-!      et les sous-programmes appeles
-
-  do icha = 1, ncharm
-    if1mc(icha) = 0
-    if2mc(icha) = 0
-  enddo
-  ix1mc   = 0
-  ix2mc   = 0
-  ichx1f1 = 0
-  ichx2f2 = 0
-  icof1   = 0
-  icof2   = 0
-  ih2of1  = 0
-  ih2of2  = 0
-  ih2sf1  = 0
-  ih2sf2  = 0
-  ihcnf1  = 0
-  ihcnf2  = 0
-
-! ---> Donnees relatives a la combustion des especes gazeuses
-
-do icha = 1, ncharm
-  ichx1c(icha) = 0
-  ichx2c(icha) = 0
-enddo
-ichx1 = 0
-ichx2 = 0
-ih2s  = 0
-ih2   = 0
-ihcn  = 0
-iso2  = 0
-inh3  = 0
-
-do icha = 1, ncharm
-  chx1(icha) = zero
-  chx2(icha) = zero
-  a1(icha)   = zero
-  a2(icha)   = zero
-  b1(icha)   = zero
-  b2(icha)   = zero
-  c1(icha)   = zero
-  c2(icha)   = zero
-  d1(icha)   = zero
-  d2(icha)   = zero
-  e1(icha)   = zero
-  e2(icha)   = zero
-  f1(icha)   = zero
-  f2(icha)   = zero
-enddo
 
 !===============================================================================
 ! 6. Global variables for atmospheric flows (module atincl.f90)

@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -27,65 +27,111 @@ module cs_coal_incl
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use ppppar
 
   implicit none
 
   ! Combustion du coke par H2O
 
-  integer, save :: ihth2o , ighh2o(nclcpm), ipci(ncharm)
+  integer(c_int), pointer, save :: ihth2o, ighh2o(:), ipci(:)
 
   ! Modele de NOx
-  ! qpr : % d'azote libere pendant la devol.% de MV libere pendant la devol.
-  ! fn : concentration en azote sur pur
 
-  double precision, save :: qpr(ncharm), fn(ncharm), xashsec(ncharm)
+  real(c_double), pointer, save :: qpr(:), fn(:)
 
   ! Nouveau modele NOx
-  ! ==================
-  ! ychxle   : Fraction massique de CHx1(icha) dans le MV legeres.
-  ! ychxlo   : Fraction massique de CHx1(icha) dans le MV lourdes.
-  ! yhcnle   : Fraction massique de HCN dans le MV legeres.
-  ! yhcnlo   : Fraction massique de HCN dans les MV lourdes.
-  ! ynh3le   : Fraction massique de NH3 dans le MV legeres.
-  ! ynh3lo   : Fraction massique de NH3 dans le MV lourdes.
-  ! ychxmvlo : Fraction massique de CHx2 dans les MV lourdes.
-  ! repnle/lo: Pourcentage de l'azote total du charbon du char1/char2.
-  ! repnck   : Pourcentage du HCN libere lors de la combustion heterogene.
-  ! ycoch1   : Fraction massique de CO dans les produits de la combustion
-  !            heterogene du Char 1.
-  ! yhcnc1   : Fraction massique de HCN dans les produits de la combustion
-  !            heterogene du Char 1.
-  ! ynoch1   : Fraction massique de NO dans les produits de la combustion
-  !            heterogene du Char 1.
-  ! ycoch2   : Fraction massique de CO dans les produits de la combustion
-  !            heterogene du Char 2.
-  ! yhcnc2   : Fraction massique de HCN dans les produits de la combustion
-  !            heterogene du Char 2.
-  ! ynoch2   : Fraction massique de NO dans les produits de la combustion
-  !            heterogene du Char 2.
-  ! nnch     : Fraction massique d'azote dans le charbon.
-  ! nnckle   : Fraction massique d'azote dans le Char 1.
-  ! nhckle   : Fraction massique d'hydrogen dans le Char 1.
-  ! ncckle   : Fraction massique de carbone dans le Char 1.
-  ! nncklo   : Fraction massique d'azote dans le Char 2.
-  ! nhcklo   : Fraction massique d'hydrogen dans le Char 2.
-  ! nccklo   : Fraction massique de carbone dans le Char 2.
-  ! wchx1c   : masse molaire de CHx1 du charbon i
-  ! wchx2c   : masse molaire de Chx2 du charbon i
-  ! wmchx1   : masse molaire des CHx1
-  ! wmchx2   : masse molaire des CHx2
 
-  double precision, save :: repnck(ncharm), repnle(ncharm), repnlo(ncharm)
-  double precision, save :: ychxle(ncharm), ychxlo(ncharm)
-  double precision, save :: yhcnle(ncharm), yhcnlo(ncharm), ynh3le(ncharm),    &
-                            ynh3lo(ncharm)
-  double precision, save :: ycoch1(ncharm), yhcnc1(ncharm), ynoch1(ncharm)
-  double precision, save :: ycoch2(ncharm), yhcnc2(ncharm), ynoch2(ncharm)
-  double precision, save :: nnch(ncharm),   nnckle(ncharm), nhckle(ncharm),    &
-                            ncckle(ncharm)
-  double precision, save :: nncklo(ncharm), nhcklo(ncharm), nccklo(ncharm)
-  double precision, save :: wchx1c(ncharm), wchx2c(ncharm), wmchx1,wmchx2
+  real(c_double), pointer, save :: repnck(:), repnle(:), repnlo(:)
+  real(c_double), pointer, save :: yhcnle(:), yhcnlo(:), ynh3le(:), ynh3lo(:)
+  real(c_double), pointer, save :: yhcnc1(:), ynoch1(:)
+  real(c_double), pointer, save :: yhcnc2(:), ynoch2(:)
+  real(c_double), pointer, save :: wmchx1, wmchx2
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_coal_incl_get_pointers(                                 &
+         p_ihth2o, p_ighh2o, p_ipci, p_qpr, p_fn, p_yhcnle, p_yhcnlo,       &
+         p_ynh3le, p_ynh3lo, p_repnle, p_repnlo, p_repnck,                  &
+         p_yhcnc1, p_ynoch1, p_yhcnc2, p_ynoch2, p_wmchx1, p_wmchx2)        &
+      bind(C, name='cs_f_coal_incl_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) ::                                           &
+         p_ihth2o, p_ighh2o, p_ipci, p_qpr, p_fn, p_yhcnle, p_yhcnlo,       &
+         p_ynh3le, p_ynh3lo, p_repnle, p_repnlo, p_repnck,                  &
+         p_yhcnc1, p_ynoch1, p_yhcnc2, p_ynoch2, p_wmchx1, p_wmchx2
+    end subroutine cs_f_coal_incl_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine cs_f_coal_incl_init() &
+    bind(C, name='cs_f_coal_incl_init')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_ihth2o, p_ighh2o, p_ipci, p_qpr, p_fn,  &
+                   p_yhcnle, p_yhcnlo, p_ynh3le, p_ynh3lo,   &
+                    p_repnle, p_repnlo, p_repnck,            &
+                   p_yhcnc1, p_ynoch1, p_yhcnc2, p_ynoch2,   &
+                   p_wmchx1, p_wmchx2
+
+    call cs_f_coal_incl_get_pointers(                                       &
+         p_ihth2o, p_ighh2o, p_ipci, p_qpr, p_fn, p_yhcnle, p_yhcnlo,       &
+         p_ynh3le, p_ynh3lo, p_repnle, p_repnlo, p_repnck,                  &
+         p_yhcnc1, p_ynoch1, p_yhcnc2, p_ynoch2, p_wmchx1, p_wmchx2)
+
+    call c_f_pointer(p_ihth2o, ihth2o)
+    call c_f_pointer(p_ighh2o, ighh2o, [nclcpm])
+    call c_f_pointer(p_ipci, ipci, [ncharm])
+
+    call c_f_pointer(p_qpr, qpr, [ncharm])
+    call c_f_pointer(p_fn, fn, [ncharm])
+    call c_f_pointer(p_yhcnle, yhcnle, [ncharm])
+    call c_f_pointer(p_yhcnlo, yhcnlo, [ncharm])
+    call c_f_pointer(p_ynh3le, ynh3le, [ncharm])
+    call c_f_pointer(p_ynh3lo, ynh3lo, [ncharm])
+    call c_f_pointer(p_repnle, repnle, [ncharm])
+    call c_f_pointer(p_repnlo, repnlo, [ncharm])
+    call c_f_pointer(p_repnck, repnck, [ncharm])
+    call c_f_pointer(p_yhcnc1, yhcnc1, [ncharm])
+    call c_f_pointer(p_ynoch1, ynoch1, [ncharm])
+    call c_f_pointer(p_yhcnc2, yhcnc2, [ncharm])
+    call c_f_pointer(p_ynoch2, ynoch2, [ncharm])
+    call c_f_pointer(p_wmchx1, wmchx1)
+    call c_f_pointer(p_wmchx2, wmchx2)
+
+  end subroutine cs_f_coal_incl_init
 
   !=============================================================================
 

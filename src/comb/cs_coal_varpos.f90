@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -63,7 +63,7 @@ use field
 
 implicit none
 
-integer          icla,  icha, f_id, iage
+integer          icla,  icha, f_id, iage, scalar_id
 integer          keyccl, keydri, kscmin, kscmax
 integer          iscdri
 integer(c_int) :: n_coals, n_classes
@@ -137,8 +137,9 @@ do icla = 1, nclacp
 
   write(f_name,'(a,i2.2)') 'n_p_', icla
   write(f_label,'(a,i2.2)') 'Np_', icla
-  call add_model_scalar_field(f_name, f_label, inp(icla))
-  f_id = ivarfl(isca(inp(icla)))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  inp(icla) = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -159,8 +160,9 @@ do icla = 1, nclacp
 
   write(f_name,'(a,i2.2)') 'x_p_coal_', icla
   write(f_label,'(a,i2.2)') 'Xp_Ch_', icla
-  call add_model_scalar_field(f_name, f_label, ixch(icla))
-  f_id = ivarfl(isca(ixch(icla)))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  ixch(icla) = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -181,8 +183,9 @@ do icla = 1, nclacp
 
   write(f_name,'(a,i2.2)') 'x_p_char_', icla
   write(f_label,'(a,i2.2)') 'Xp_Ck_', icla
-  call add_model_scalar_field(f_name, f_label, ixck(icla))
-  f_id = ivarfl(isca(ixck(icla)))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  ixck(icla) = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -205,8 +208,9 @@ if (ippmod(iccoal).eq.1) then
 
     write(f_name,'(a,i2.2)') 'x_p_wt_', icla
     write(f_label,'(a,i2.2)') 'Xp_wt_', icla
-    call add_model_scalar_field(f_name, f_label, ixwt(icla))
-    f_id = ivarfl(isca(ixwt(icla)))
+    call add_model_scalar_field(f_name, f_label, scalar_id)
+    f_id = ivarfl(isca(scalar_id))
+    ixwt(icla) = f_id
 
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -231,8 +235,9 @@ do icla = 1, nclacp
 
   write(f_name,'(a,i2.2)') 'x_p_h_', icla
   write(f_label,'(a,i2.2)') 'Xp_Ent_', icla
-  call add_model_scalar_field(f_name, f_label, ih2(icla))
-  f_id = ivarfl(isca(ih2(icla)))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  ih2(icla) = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -255,8 +260,8 @@ if (i_comb_drift.ge.1) then
 
     write(f_name,'(a,i2.2)') 'n_p_age_', icla
     write(f_label,'(a,i2.2)') 'Np_Age_', icla
-    call add_model_scalar_field(f_name, f_label, inagecp(icla))
-    f_id = ivarfl(isca(inagecp(icla)))
+    call add_model_scalar_field(f_name, f_label, scalar_id)
+    f_id = ivarfl(isca(scalar_id))
 
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -277,14 +282,14 @@ if (i_comb_drift.ge.1) then
 
 endif
 
-! Particles velocities (when they are transported)
+! Particle velocities (when they are transported)
 if (i_comb_drift .eq. 1) then
   do icla = 1, nclacp
 
     write(f_name,'(a,i2.2)') 'v_x_p_', icla
     write(f_label,'(a,i2.2)') 'Vp_X_', icla
-    call add_model_scalar_field(f_name, f_label, iv_p_x(icla))
-    f_id = ivarfl(isca(iv_p_x(icla)))
+    call add_model_scalar_field(f_name, f_label, scalar_id)
+    f_id = ivarfl(isca(scalar_id))
 
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -295,8 +300,8 @@ if (i_comb_drift .eq. 1) then
 
     write(f_name,'(a,i2.2)') 'v_y_p_', icla
     write(f_label,'(a,i2.2)') 'Vp_Y_', icla
-    call add_model_scalar_field(f_name, f_label, iv_p_y(icla))
-    f_id = ivarfl(isca(iv_p_y(icla)))
+    call add_model_scalar_field(f_name, f_label, scalar_id)
+    f_id = ivarfl(isca(scalar_id))
 
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -307,8 +312,8 @@ if (i_comb_drift .eq. 1) then
 
     write(f_name,'(a,i2.2)') 'v_z_p_', icla
     write(f_label,'(a,i2.2)') 'Vp_Z_', icla
-    call add_model_scalar_field(f_name, f_label, iv_p_z(icla))
-    f_id = ivarfl(isca(iv_p_z(icla)))
+    call add_model_scalar_field(f_name, f_label, scalar_id)
+    f_id = ivarfl(isca(scalar_id))
 
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -335,8 +340,9 @@ icla = -1
 !  by massic enthalpy of the class).
 f_name = 'x_c_h'
 f_label = 'Xc_Ent'
-call add_model_scalar_field(f_name, f_label, ihgas)
-f_id = ivarfl(isca(ihgas))
+call add_model_scalar_field(f_name, f_label, scalar_id)
+f_id = ivarfl(isca(scalar_id))
+ihgas = f_id
 ! Set the index of the scalar class in the field structure
 call field_set_key_int(f_id, keyccl, icla)
 
@@ -356,8 +362,9 @@ do icha = 1, ncharb
 
   write(f_name,'(a,i2.2)') 'fr_mv1_', icha
   write(f_label,'(a,i2.2)') 'Fr_mv1_', icha
-  call add_model_scalar_field(f_name, f_label, if1m(icha))
-  f_id = ivarfl(isca(if1m(icha)))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  if1m(icha) = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -382,8 +389,9 @@ do icha = 1, ncharb
 
   write(f_name,'(a,i2.2)') 'fr_mv2_', icha
   write(f_label,'(a,i2.2)') 'Fr_mv2_', icha
-  call add_model_scalar_field(f_name, f_label, if2m(icha))
-  f_id = ivarfl(isca(if2m(icha)))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  if2m(icha) = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -406,8 +414,9 @@ if (noxyd .ge. 2) then
 
   f_name = 'fr_oxyd2'
   f_label = 'FR_OXYD2'
-  call add_model_scalar_field(f_name, f_label, if4m)
-  f_id = ivarfl(isca(if4m))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  if4m = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -430,8 +439,9 @@ if (noxyd .ge. 3) then
 
   f_name = 'fr_oxyd3'
   f_label = 'FR_OXYD3'
-  call add_model_scalar_field(f_name, f_label, if5m)
-  f_id = ivarfl(isca(if5m))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  if5m = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -454,8 +464,9 @@ if (ippmod(iccoal).eq.1) then
 
   f_name = 'fr_h2o'
   f_label = 'FR_H2O'
-  call add_model_scalar_field(f_name, f_label, if6m)
-  f_id = ivarfl(isca(if6m))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  if6m = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -476,8 +487,9 @@ endif
 ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 f_name = 'fr_het_o2'
 f_label  = 'FR_HET_O2'
-call add_model_scalar_field(f_name, f_label, if7m)
-f_id = ivarfl(isca(if7m))
+call add_model_scalar_field(f_name, f_label, scalar_id)
+f_id = ivarfl(isca(scalar_id))
+if7m = f_id
 
 ! Set the index of the scalar class in the field structure
 call field_set_key_int(f_id, keyccl, icla)
@@ -498,8 +510,9 @@ if (ihtco2.eq.1) then
 
   f_name = 'fr_het_co2'
   f_label  = 'FR_HET_CO2'
-  call add_model_scalar_field(f_name, f_label, if8m)
-  f_id = ivarfl(isca(if8m))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  if8m = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -522,8 +535,9 @@ if (ihth2o.eq.1) then
 
   f_name = 'fr_het_h2o'
   f_label  = 'FR_HET_H2O'
-  call add_model_scalar_field(f_name, f_label, if9m)
-  f_id = ivarfl(isca(if9m))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  if9m = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -543,8 +557,9 @@ endif
 ! Variance
 f_name = 'f1f2_variance'
 f_label  = 'Var_F1F2'
-call add_model_scalar_field(f_name, f_label, ifvp2m)
-f_id = ivarfl(isca(ifvp2m))
+call add_model_scalar_field(f_name, f_label, scalar_id)
+f_id = ivarfl(isca(scalar_id))
+ifvp2m = f_id
 
 ! Set the index of the scalar class in the field structure
 call field_set_key_int(f_id, keyccl, icla)
@@ -566,8 +581,9 @@ if (ieqco2.ge.1) then
 
   f_name = 'x_c_co2'
   f_label  = 'Xc_CO2'
-  call add_model_scalar_field(f_name, f_label, iyco2)
-  f_id = ivarfl(isca(iyco2))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  iyco2 = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -590,8 +606,9 @@ if (ieqnox.eq.1) then
 
   f_name = 'x_c_hcn'
   f_label = 'Xc_HCN'
-  call add_model_scalar_field(f_name, f_label, iyhcn)
-  f_id = ivarfl(isca(iyhcn))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  iyhcn = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -610,8 +627,9 @@ if (ieqnox.eq.1) then
   ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   f_name =  'x_c_nh3'
   f_label =  'Xc_NH3'
-  call add_model_scalar_field(f_name, f_label, iynh3)
-  f_id = ivarfl(isca(iynh3))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  iynh3 = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -629,8 +647,9 @@ if (ieqnox.eq.1) then
   ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   f_name =  'x_c_no'
   f_label =  'Xc_NO'
-  call add_model_scalar_field(f_name, f_label, iyno)
-  f_id = ivarfl(isca(iyno))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  iyno = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
@@ -649,8 +668,9 @@ if (ieqnox.eq.1) then
   ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   f_name =  'x_c_h_ox'
   f_label =  'Xc_Ent_Ox'
-  call add_model_scalar_field(f_name, f_label, ihox)
-  f_id = ivarfl(isca(ihox))
+  call add_model_scalar_field(f_name, f_label, scalar_id)
+  f_id = ivarfl(isca(scalar_id))
+  ihox = f_id
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)

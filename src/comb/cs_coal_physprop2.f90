@@ -139,11 +139,11 @@ do icla = 1, nclacp
     call field_get_val_s_by_name(name,agecpi)
   endif
 
-  call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-  call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
-  call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+  call field_get_val_s(ixck(icla), cvar_xckcl)
+  call field_get_val_s(ixch(icla), cvar_xchcl)
+  call field_get_val_s(inp(icla), cvar_xnpcl)
   if ( ippmod(iccoal) .ge. 1 ) then
-    call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+    call field_get_val_s(ixwt(icla), cvar_xwtcl)
   endif
 
   call field_get_val_s(ix2(icla),cpro_x2)

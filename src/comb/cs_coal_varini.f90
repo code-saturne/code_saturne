@@ -125,13 +125,13 @@ call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 call field_get_val_s_by_name("x_c_h", cvar_xch)
 
 if (ieqco2.ge.1) then
-  call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+  call field_get_val_s(iyco2, cvar_yco2)
 endif
 if (ieqnox.eq.1) then
-  call field_get_val_s(ivarfl(isca(iyhcn)), cvar_yhcn)
-  call field_get_val_s(ivarfl(isca(iynh3)), cvar_ynh3)
-  call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
-  call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
+  call field_get_val_s(iyhcn, cvar_yhcn)
+  call field_get_val_s(iynh3, cvar_ynh3)
+  call field_get_val_s(iyno, cvar_yno)
+  call field_get_val_s(ihox, cvar_hox)
 endif
 
 !===============================================================================

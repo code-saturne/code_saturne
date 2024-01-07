@@ -158,7 +158,7 @@ logical(kind=c_bool) :: log_active
 !===============================================================================
 
 if (ieqco2.eq.1) then
-  call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+  call field_get_val_s(iyco2, cvar_yco2)
 endif
 
 ! Massic fraction of gas
