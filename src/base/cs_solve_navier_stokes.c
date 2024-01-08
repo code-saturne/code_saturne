@@ -59,6 +59,7 @@
 #include "cs_cf_compute.h"
 #include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
+#include "cs_ctwr_source_terms.h"
 #include "cs_divergence.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"

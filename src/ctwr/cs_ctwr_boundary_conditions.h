@@ -1,8 +1,8 @@
-#ifndef __CS_CTWR_HEADERS_H__
-#define __CS_CTWR_HEADERS_H__
+#ifndef __CS_CTWR_BCOND_H__
+#define __CS_CTWR_BCOND_H__
 
 /*============================================================================
- * Global code_saturne headers file for easier include
+ * Cooling towers functions for boundary conditions
  *============================================================================*/
 
 /*
@@ -25,18 +25,31 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
+/*----------------------------------------------------------------------------*/
+
 /*----------------------------------------------------------------------------
- * Local headers
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_ctwr.h"
-#include "cs_ctwr_boundary_conditions.h"
-#include "cs_ctwr_variables.h"
-#include "cs_ctwr_initialize.h"
-#include "cs_ctwr_source_terms.h"
-#include "cs_ctwr_physical_properties.h"
-#include "cs_air_props.h"
+#include "fvm_nodal.h"
+
+#include "cs_base.h"
+#include "cs_halo.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_CTWR_HEADERS_H__ */
+BEGIN_C_DECLS
+
+/*----------------------------------------------------------------------------
+ * Automatic boundary condition for cooling towers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_bcond(void);
+
+
+END_C_DECLS
+
+#endif /* __CS_CTWR_BCOND_H__ */

@@ -74,6 +74,70 @@ typedef enum {
 
 } cs_ctwr_zone_type_t;
 
+/* Cooling tower exchange zone structure definition */
+/*--------------------------------------------------*/
+
+struct _cs_ctwr_zone_t {
+
+  int                  num;        /* Exchange zone number */
+  char                *criteria;   /* Exchange zone selection criteria */
+  int                  z_id;       /* id of the volume zone */
+  char                *name;       /* Exchange zone name */
+  char                *file_name;  /* Exchange zone budget file name */
+  cs_ctwr_zone_type_t  type;       /* Zone type */
+
+  cs_real_t  hmin;               /* Minimum vertical height of exchange zone */
+  cs_real_t  hmax;               /* Maximum height of exchange zone */
+  cs_real_t  delta_t;            /* Temperature delta required for exchange zone
+                                    if positive */
+  cs_real_t  relax;              /* Relaxation of the imposed temperature */
+
+  cs_real_t  t_l_bc;             /* Water entry temperature */
+  cs_real_t  q_l_bc;             /* Water flow */
+
+  cs_real_t  xap;                /* Exchange law a_0 coefficient */
+  cs_real_t  xnp;                /* Exchange law n exponent */
+
+  cs_real_t  surface_in;         /* Water inlet surface */
+  cs_real_t  surface_out;        /* Water outlet surface */
+  cs_real_t  surface;            /* Total surface */
+
+  cs_real_t  xleak_fac;          /* Leakage factor (ratio of outlet/inlet
+                                    flow rate) */
+  cs_real_t  v_liq_pack;         /* Vertical liquid film velocity in packing */
+
+  cs_lnum_t  n_cells;            /* Number of air cells belonging to the zone */
+  cs_real_t  vol_f;              /* Cooling tower zone total volume */
+
+  int        up_ct_id;           /* Id of upstream exchange zone (if any) */
+
+  cs_lnum_t  n_inlet_faces;      /* Number of inlet faces */
+  cs_lnum_t  n_outlet_faces;     /* Number of outlet faces */
+  cs_lnum_t *inlet_faces_ids;    /* List of inlet faces */
+  cs_lnum_t *outlet_faces_ids;   /* List of outlet faces */
+
+  cs_lnum_t  n_outlet_cells;     /* Number of outlet cells */
+  cs_lnum_t *outlet_cells_ids;   /* List of outlet cells */
+
+  cs_real_t  p_in;            /* Average inlet pressure */
+  cs_real_t  p_out;           /* Average outlet pressure */
+  cs_real_t  q_l_in;          /* Water entry flow */
+  cs_real_t  q_l_out;         /* Water exit flow */
+  cs_real_t  t_l_in;          /* Mean water entry temperature */
+  cs_real_t  t_l_out;         /* Mean water exit temperature */
+  cs_real_t  h_l_in;          /* Mean water entry enthalpy */
+  cs_real_t  h_l_out;         /* Mean water exit enthalpy */
+  cs_real_t  t_h_in;          /* Mean air entry temperature */
+  cs_real_t  t_h_out;         /* Mean air exit temperature */
+  cs_real_t  xair_e;          /* Mean air entry humidity */
+  cs_real_t  xair_s;          /* Mean air exit humidity */
+  cs_real_t  h_h_in;          /* Mean air entry enthalpy */
+  cs_real_t  h_h_out;         /* Mean air exit enthalpy */
+  cs_real_t  q_h_in;          /* Air entry flow */
+  cs_real_t  q_h_out;         /* Air exit flow */
+
+};
+
 typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -92,6 +156,7 @@ typedef struct {
                                           resolution */
 } cs_ctwr_option_t;
 
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -99,44 +164,11 @@ typedef struct {
 /* Pointer to cooling tower model options structure */
 extern const cs_ctwr_option_t  *cs_glob_ctwr_option;
 
+/* Make number of cooling towers zones accessible */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Add variables fields
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_add_variable_fields(void);
-
-/*----------------------------------------------------------------------------
- * Add property fields
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_add_property_fields(void);
-
-/*----------------------------------------------------------------------------
- * Automatic boundary condition for cooling towers
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_bcond(void);
-
-/*----------------------------------------------------------------------------
- * Initialize cooling towers fields, stage 0
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_fields_init0(void);
-
-/*----------------------------------------------------------------------------
- * Initialize cooling towers fields, stage 1
- *----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_fields_init1(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_ctwr_option
@@ -144,6 +176,21 @@ cs_ctwr_fields_init1(void);
 
 cs_ctwr_option_t *
 cs_get_glob_ctwr_option(void);
+
+/*----------------------------------------------------------------------------
+ * Provide access to cs_ctwr_zone
+ *----------------------------------------------------------------------------*/
+
+cs_ctwr_zone_t **
+cs_get_glob_ctwr_zone(void);
+
+/*----------------------------------------------------------------------------
+ * Provide access to number of ct zones
+ *----------------------------------------------------------------------------*/
+
+int *
+cs_get_glob_ctwr_n_zones(void);
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -185,21 +232,6 @@ cs_ctwr_define(const char           zone_criteria[],
 
 void
 cs_ctwr_field_pointer_map(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Phase change mass source term from the evaporating liquid to the
- *        bulk, humid air.
- *
- * Careful, this is different from an injection source term, which would
- * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
- *
- * \param[out]  mass_source     Mass source term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_bulk_mass_source_term(cs_real_t         mass_source[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -245,86 +277,6 @@ cs_ctwr_log_setup(void);
 
 void
 cs_ctwr_log_balance(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize the field variables
- *
- * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
- * \param[in]     p0          Reference pressure
- * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_init_field_vars(cs_real_t  rho0,
-                        cs_real_t  t0,
-                        cs_real_t  p0,
-                        cs_real_t  molmassrat);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Reset the field variables based on the restart values
- *
- * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
- * \param[in]     p0          Reference pressure
- * \param[in]     humidity0   Reference humidity
- * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_restart_field_vars(cs_real_t  rho0,
-                           cs_real_t  t0,
-                           cs_real_t  p0,
-                           cs_real_t  humidity0,
-                           cs_real_t  molmassrat);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize the flow variables relevant to the cooling tower scalars
- * inside the packing zones
- *
- * \param[in,out] liq_mass_flow Liquid mass flow rate
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update the thermo physical properties fields for the humid air and
- *        the liquid
- *
- * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
- * \param[in]     p0          Reference pressure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_phyvar_update(cs_real_t  rho0,
-                      cs_real_t  t0,
-                      cs_real_t  p0);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Phase change source terms - Exchange terms between the injected
- *        liquid and the water vapor phase in the bulk, humid air
- *
- * \param[in]     f_id          field id
- * \param[in,out] exp_st        Explicit source term
- * \param[in,out] imp_st        Implicit source term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_source_term(int              f_id,
-                    cs_real_t        exp_st[],
-                    cs_real_t        imp_st[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

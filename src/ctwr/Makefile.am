@@ -69,13 +69,23 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_ctwr.h \
+cs_ctwr_boundary_conditions.h \
+cs_ctwr_variables.h \
+cs_ctwr_initialize.h \
+cs_ctwr_source_terms.h \
+cs_ctwr_physical_properties.h \
 cs_ctwr_headers.h
 
 # Library source files
 
 noinst_LIBRARIES = libcsctwr.a
 libcsctwr_a_SOURCES = \
-cs_ctwr.c
+cs_ctwr.c \
+cs_ctwr_boundary_conditions.c \
+cs_ctwr_variables.c \
+cs_ctwr_initialize.c \
+cs_ctwr_source_terms.c \
+cs_ctwr_physical_properties.c
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

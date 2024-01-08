@@ -84,11 +84,11 @@ class AtmosphericFlowsModel(Variables, Model):
         self.var_list_humid = [('ym_water', 'TotWater'),
                                ('number_of_droplets', 'TotDrop')]
 
-        self.var_list_ctwr = [('y_p', 'Yp rain'),
-                              ('y_p_t_l', 'Yp.Tp rain'),
+        self.var_list_ctwr = [('y_l_r', 'Yl rain'),
+                              ('yh_l_r', 'Yl.hl rain'),
                               ('y_l_packing', 'Yl packing'),
-                              ('enthalpy_liquid', 'Enthalpy liq packing'),
-                              ('ym_water', 'Ym water bulk')]
+                              ('yh_l_packing', 'Yl.hl packing'),
+                              ('ym_water', 'ym water bulk')]
 
         self.prop_list_dry   = [('real_temperature', 'RealTemp')]
 
@@ -98,9 +98,9 @@ class AtmosphericFlowsModel(Variables, Model):
         self.prop_list_ctwr   = [('humidity', 'Humidity'),
                                  ('x_s', 'Humidity sat'),
                                  ('enthalpy', 'Enthalpy humid air'),
-                                 ('temperature_liquid', 'Temperature liq packing'),
+                                 ('temp_l_packing', 'Temperature liq packing'),
                                  ('vertvel_l', 'Velocity liq packing'),
-                                 ('t_rain', 'Temperature rain'),
+                                 ('temp_l_r', 'Temperature rain'),
                                  ('x_c', 'Gas mass fraction')]
 
 

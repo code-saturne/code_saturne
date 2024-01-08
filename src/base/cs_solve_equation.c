@@ -57,6 +57,7 @@
 #include "cs_coal.h"
 #include "cs_combustion_model.h"
 #include "cs_ctwr.h"
+#include "cs_ctwr_source_terms.h"
 #include "cs_divergence.h"
 #include "cs_drift_convective_flux.h"
 #include "cs_elec_model.h"
