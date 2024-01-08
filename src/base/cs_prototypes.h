@@ -615,6 +615,18 @@ cs_user_initialization(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This function is called at startup and allows overloading the GUI
+ * defined initialization functions.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_initialization_setup(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define internal coupling options.
  *
  * Options are usually defined using cs_internal_coupling_add_entity.

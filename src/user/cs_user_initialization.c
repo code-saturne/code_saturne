@@ -71,6 +71,26 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_initialization.c
  *
+ * \brief Define initialization method for variables.
+ *
+ * This function is called before the beginning of the computation
+ * allowing an overload of the GUI defined initialization.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_initialization_setup
+void
+cs_user_initialization_setup(cs_domain_t *domain)
+{
+  CS_UNUSED(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_initialization.c
+ *
  * \brief Initialize variables.
  *
  * This function is called at beginning of the computation
