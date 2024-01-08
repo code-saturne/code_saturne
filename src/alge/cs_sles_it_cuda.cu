@@ -962,9 +962,14 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   int device_id = cs_get_device_id();
 
+  bool local_stream = false;
   cudaStream_t stream_pf, stream;
   cudaStreamCreate(&stream_pf);
-  cudaStreamCreate(&stream);
+  stream = cs_matrix_spmv_cuda_get_stream();
+  if (stream == 0) {
+    local_stream = true;
+    cudaStreamCreate(&stream);
+  }
 
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
@@ -1029,7 +1034,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   double *sum_block, *res;
   cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
 
-  cs_matrix_spmv_cuda_set_stream(stream);
+  if (local_stream)
+    cs_matrix_spmv_cuda_set_stream(stream);
 
 #if _USE_GRAPH == 1
 
@@ -1114,9 +1120,10 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);
 
-  cs_matrix_spmv_cuda_set_stream(0);
-
-  cudaStreamDestroy(stream);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+    cudaStreamDestroy(stream);
+  }
   cudaStreamDestroy(stream_pf);
 
   return cvg;
@@ -1157,9 +1164,14 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   int device_id = cs_get_device_id();
 
+  bool local_stream = false;
   cudaStream_t stream_pf, stream;
   cudaStreamCreate(&stream_pf);
-  cudaStreamCreate(&stream);
+  stream = cs_matrix_spmv_cuda_get_stream();
+  if (stream == 0) {
+    local_stream = true;
+    cudaStreamCreate(&stream);
+  }
 
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
@@ -1225,7 +1237,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   double *sum_block, *res;
   cs_blas_cuda_get_2_stage_reduce_buffers(n_b_rows, 1, gridsize, sum_block, res);
 
-  cs_matrix_spmv_cuda_set_stream(stream);
+  if (local_stream)
+    cs_matrix_spmv_cuda_set_stream(stream);
 
 #if _USE_GRAPH == 1
 
@@ -1311,9 +1324,10 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);
 
-  cs_matrix_spmv_cuda_set_stream(0);
-
-  cudaStreamDestroy(stream);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+    cudaStreamDestroy(stream);
+  }
   cudaStreamDestroy(stream_pf);
 
   return cvg;
@@ -1357,9 +1371,14 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
   int device_id = cs_get_device_id();
 
+  bool local_stream = false;
   cudaStream_t stream, stream_pf;
   cudaStreamCreate(&stream_pf);
-  cudaStreamCreate(&stream);
+  stream = cs_matrix_spmv_cuda_get_stream();
+  if (stream == 0) {
+    local_stream = true;
+    cudaStreamCreate(&stream);
+  }
 
   assert(c->setup_data != NULL);
 
@@ -1392,7 +1411,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     const size_t n_wa = 5;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-
     if (   aux_vectors == NULL
         || cs_check_device_ptr(aux_vectors) != CS_ALLOC_HOST_DEVICE_SHARED
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
@@ -1419,7 +1437,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   unsigned int gridsize_blas1 = min(gridsize, 640);
 
   cs_blas_cuda_set_stream(stream);
-  cs_matrix_spmv_cuda_set_stream(stream);
+  if (local_stream)
+    cs_matrix_spmv_cuda_set_stream(stream);
 
   /* Initialize iterative calculation */
   /*----------------------------------*/
@@ -1496,9 +1515,10 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     CS_FREE_HD(_aux_vectors);
 
   cs_blas_cuda_set_stream(0);
-  cs_matrix_spmv_cuda_set_stream(0);
-
-  cudaStreamDestroy(stream);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+    cudaStreamDestroy(stream);
+  }
   cudaStreamDestroy(stream_pf);
 
   return cvg;
@@ -1537,9 +1557,14 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 
   int device_id = cs_get_device_id();
 
+  bool local_stream = false;
   cudaStream_t stream, stream_pf;
   cudaStreamCreate(&stream_pf);
-  cudaStreamCreate(&stream);
+  stream = cs_matrix_spmv_cuda_get_stream();
+  if (stream == 0) {
+    local_stream = true;
+    cudaStreamCreate(&stream);
+  }
 
   assert(c->setup_data != NULL);
 
@@ -1624,7 +1649,8 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
 
   cs_blas_cuda_set_stream(stream);
-  cs_matrix_spmv_cuda_set_stream(stream);
+  if (local_stream)
+    cs_matrix_spmv_cuda_set_stream(stream);
 
   /* Current Restart */
 
@@ -1766,9 +1792,10 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   CS_FREE_HD(gkj_inv);
 
   cs_blas_cuda_set_stream(0);
-  cs_matrix_spmv_cuda_set_stream(0);
-
-  cudaStreamDestroy(stream);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+    cudaStreamDestroy(stream);
+  }
   cudaStreamDestroy(stream_pf);
 
   return cvg;
