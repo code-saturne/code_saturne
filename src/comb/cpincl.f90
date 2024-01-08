@@ -414,8 +414,8 @@ module cpincl
                                              p_nclpch, p_idrift,               &
                                              p_ich, p_ick, p_iash, p_iwat,     &
                                              p_ehsoli, p_wmols, p_eh0sol,      &
-                                             p_ichcor, p_cp2ch, p_xwatch,      &
-                                             p_xashch, p_diam20, p_dia2mn,     &
+                                             p_ichcor, p_cp2ch, p_xashch,      &
+                                             p_xwatch, p_diam20, p_dia2mn,     &
                                              p_rho20, p_rho2mn,                &
                                              p_xmp0, p_xmash)                  &
       bind(C, name='cs_f_cpincl_coal_get_pointers')
@@ -425,8 +425,8 @@ module cpincl
                                   p_nclpch, p_idrift,                          &
                                   p_ich, p_ick, p_iash, p_iwat,                &
                                   p_ehsoli, p_wmols, p_eh0sol,                 &
-                                  p_ichcor, p_cp2ch, p_xwatch,                 &
-                                  p_xashch, p_diam20, p_dia2mn,                &
+                                  p_ichcor, p_cp2ch, p_xashch,                 &
+                                  p_xwatch, p_diam20, p_dia2mn,                &
                                   p_rho20, p_rho2mn,                           &
                                   p_xmp0, p_xmash
     end subroutine cs_f_cpincl_coal_get_pointers
@@ -484,16 +484,16 @@ contains
     type(c_ptr) :: p_ncharb, p_nclacp, p_nclpch, p_idrift,          &
                    p_ich, p_ick, p_iash, p_iwat,                    &
                    p_ehsoli, p_wmols, p_eh0sol,                     &
-                   p_ichcor, p_cp2ch, p_xwatch,                     &
-                   p_xashch, p_diam20, p_dia2mn, p_rho20, p_rho2mn, &
+                   p_ichcor, p_cp2ch, p_xashch,                     &
+                   p_xwatch, p_diam20, p_dia2mn, p_rho20, p_rho2mn, &
                    p_xmp0, p_xmash
 
     call cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
                                        p_nclpch, p_idrift,               &
                                        p_ich, p_ick, p_iash, p_iwat,     &
                                        p_ehsoli, p_wmols, p_eh0sol,      &
-                                       p_ichcor, p_cp2ch, p_xwatch,      &
-                                       p_xashch, p_diam20, p_dia2mn,     &
+                                       p_ichcor, p_cp2ch, p_xashch,      &
+                                       p_xwatch, p_diam20, p_dia2mn,     &
                                        p_rho20, p_rho2mn,                &
                                        p_xmp0, p_xmash)
 
