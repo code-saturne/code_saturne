@@ -6863,20 +6863,6 @@ _find_bc_coeffs(const char         *var_name,
  *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
-void cs_math_3_normalize_target(const cs_real_t in[3],
-                                         cs_real_t out[3])
-{
-  cs_real_t norm = sqrt(in[0]*in[0] 
-          + in[1]*in[1]
-          + in[2]*in[2]);
-
-  cs_real_t inverse_norm =  1. / norm;
-
-  out[0] = inverse_norm * in[0];
-  out[1] = inverse_norm * in[1];
-  out[2] = inverse_norm * in[2];
-}
-
 BEGIN_C_DECLS
 #if defined(HAVE_OPENMP_TARGET)
 
@@ -7120,14 +7106,14 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 coefbv[0:n_b_faces], \
                                 b_face_cells[0:n_b_faces], \
                                 pvar[0:n_cells_ext],\
-                                cocg[0:n_cells_ext]) schedule(static,1)
+                                cocg[0:n_cells_ext]) firstprivate(cs_math_zero_threshold) schedule(static,1)
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
       cs_lnum_t c_id1 = b_face_cells[f_id];
 
       cs_real_t n_d_dist[3];
     //  /* Normal is vector 0 if the b_face_normal norm is too small */
-    cs_math_3_normalize_target(b_face_normal[f_id], n_d_dist);
+    cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
 
       cs_real_t d_b_dist = 1. / b_dist[f_id];
 
@@ -7161,7 +7147,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
                                 b_cells[0:n_cells], \
                                 cell_b_faces_idx[0:n_cells+1], \
                                 pvar[0:n_cells_ext],\
-                                cocg[0:n_cells_ext]) schedule(static,1)
+                                cocg[0:n_cells_ext]) firstprivate(cs_math_zero_threshold) schedule(static,1)
     for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
 
       cs_lnum_t c_id = b_cells[c_idx];
@@ -7177,7 +7163,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
         f_id = cell_b_faces[index];
 
-        cs_math_3_normalize_target(b_face_normal[f_id], n_d_dist);
+        cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
 
         cs_real_t d_b_dist = 1. / b_dist[f_id];
 
