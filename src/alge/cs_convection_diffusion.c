@@ -5673,24 +5673,7 @@ res_cpu = !compute_cuda;
                                 _pvar[0:n_cells_ext])
     {
       #pragma omp target teams distribute parallel for reduction(+:n_upwind) \
-                          map(tofrom: rhs[0:n_cells_ext]) \
-                          map(to: i_face_cells[0:n_i_faces], \
-                                i_massflux[0:n_i_faces], \
-                                i_f_face_factor[0:n_i_faces], \
-                                i_face_normal[0:n_i_faces], \
-                                i_visc[0:n_i_faces], \
-                                i_face_cog[0:n_i_faces], \
-                                i_face_surf[0:n_i_faces], \
-                                i_dist[0:n_i_faces], \
-                                weight[0:n_i_faces], \
-                                diipf[0:n_i_faces], \
-                                djjpf[0:n_i_faces], \
-                                i_pvar[0:n_i_faces], \
-                                grad[0:n_cells_ext], \
-                                grdpa[0:n_cells_ext], \
-                                cell_cen[0:n_cells_ext], \
-                                _pvar[0:n_cells_ext]) \
-                                firstprivate(cs_math_zero_threshold, \
+                          firstprivate(cs_math_zero_threshold, \
                                 iconvp, thetap, ischcp, blencp, blend_st, \
                                  imasac, idiffp, ircflp) \
                                 schedule(static,1)
@@ -6263,25 +6246,7 @@ res_cpu = !compute_cuda;
                                 _pvar[0:n_cells_ext])
 {
       #pragma omp target teams distribute parallel for \
-                          map(tofrom: rhs[0:n_cells_ext]) \
-                          map(to: b_face_cells[0:n_b_faces], \
-                                  b_massflux[0:n_b_faces], \
-                                  b_f_face_factor[0:n_b_faces], \
-                                  b_face_normal[0:n_b_faces], \
-                                  bc_type[0:n_b_faces], \
-                                  b_visc[0:n_b_faces], \
-                                  b_face_cells[0:n_b_faces], \
-                                  b_face_surf[0:n_b_faces], \
-                                  coefav[0:n_b_faces], \
-                                  coefbv[0:n_b_faces], \
-                                  cofafv[0:n_b_faces], \
-                                  cofbfv[0:n_b_faces], \
-                                  diipb[0:n_b_faces], \
-                                  b_pvar[0:n_b_faces], \
-                                  grad[0:n_cells_ext], \
-                                  grdpa[0:n_cells_ext], \
-                                  _pvar[0:n_cells_ext]) \
-                                  private(pvar_distant, pvar_local, df_limiter_local) \
+                          private(pvar_distant, pvar_local, df_limiter_local) \
                                   firstprivate(iconvp, thetap, ischcp, blencp, blend_st, \
                                  imasac, idiffp, ircflp, inc, n_local, n_distant) \
                                 schedule(static,1) if(m->n_b_faces > CS_THR_MIN)
