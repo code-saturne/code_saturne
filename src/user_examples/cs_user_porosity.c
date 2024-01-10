@@ -175,10 +175,9 @@ cs_user_porosity(cs_domain_t   *domain)
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_real_t face_porosity =
-        CS_MAX(
-            i_f_face_surf[face_id] / i_face_surf[face_id],
-            cs_math_epzero);
+      cs_real_t face_porosity
+        = cs_math_fmax(i_f_face_surf[face_id] / i_face_surf[face_id],
+                       cs_math_epzero);
 
       mq->i_f_face_factor[face_id][0] = cpro_porosi[ii] / face_porosity;
       mq->i_f_face_factor[face_id][1] = cpro_porosi[jj] / face_porosity;
@@ -187,10 +186,9 @@ cs_user_porosity(cs_domain_t   *domain)
 
   /* Example to automatically compute fluid face surfaces
    * if cs_glob_porous_model = 3
-   * (fluid surface is min between cell porosity)
-   * */
-  cs_porous_model_auto_face_porosity();
+   * (fluid surface is min between cell porosity) */
 
+  cs_porous_model_auto_face_porosity();
 }
 
 /*----------------------------------------------------------------------------*/
