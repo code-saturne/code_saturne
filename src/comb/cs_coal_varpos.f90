@@ -113,6 +113,8 @@ f_id = ivarfl(isca(iscalt))
 call field_set_key_double(f_id, kscmin, -grand)
 call field_set_key_double(f_id, kscmax, grand)
 
+call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, 4.25d-5)
+
 ! Activate the drift: 0 (no activation),
 !                     1 (transported particle velocity)
 !                     2 (limit drop particle velocity)

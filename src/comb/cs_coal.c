@@ -198,6 +198,88 @@ cs_f_cpincl_get_pointers_3(int     **ico,
                            int     **npoc);
 
 void
+cs_f_cpincl_get_pointers_4(int  **ihgas,
+                           int  **if1m,
+                           int  **if2m,
+                           int  **if4m,
+                           int  **if5m,
+                           int  **if6m,
+                           int  **if7m,
+                           int  **if8m,
+                           int  **if9m,
+                           int  **ifvp2m,
+                           int  **ixck,
+                           int  **ixch,
+                           int  **inp,
+                           int  **ih2,
+                           int  **ixwt,
+                           int  **iym1,
+                           int  **irom1,
+                           int  **immel,
+                           int  **itemp2,
+                           int  **irom2,
+                           int  **idiam2,
+                           int  **ix2,
+                           int  **igmdch,
+                           int  **igmhet,
+                           int  **igmtr,
+                           int  **ighco2,
+                           int  **igmdv1,
+                           int  **igmdv2,
+                           int  **igmsec,
+                           int  **ibcarbone,
+                           int  **iboxygen,
+                           int  **ibhydrogen);
+
+void
+cs_f_cpincl_get_pointers_5(double  **af3,
+                           double  **af4,
+                           double  **af5,
+                           double  **af6,
+                           double  **af7,
+                           double  **af8,
+                           double  **af9,
+                           int     **ihy,
+                           int     **ih2s,
+                           int     **iso2,
+                           int     **ihcn,
+                           int     **inh3,
+                           int     **ieqco2,
+                           int     **iyco2,
+                           int     **ihtco2,
+                           int     **ieqnox,
+                           int     **imdnox,
+                           int     **irb,
+                           int     **iyhcn,
+                           int     **iyno,
+                           int     **iynh3,
+                           int     **ihox,
+                           int     **igrb,
+                           int     **noxyd,
+                           int     **ighcn1,
+                           int     **ighcn2,
+                           int     **ignoth,
+                           int     **ignh31,
+                           int     **ignh32,
+                           int     **ifhcnd,
+                           int     **ifhcnc,
+                           int     **ifnh3d,
+                           int     **ifnh3c,
+                           int     **ifnohc,
+                           int     **ifnonh,
+                           int     **ifnoch,
+                           int     **ifnoth,
+                           int     **ifhcnr,
+                           int     **icnohc,
+                           int     **icnonh,
+                           int     **icnorb,
+                           double  **teno,
+                           double  **ka,
+                           double  **kb,
+                           double  **kc,
+                           double  **chi2);
+
+void
 cs_f_coal_incl_get_pointers(int     **ihth2o,
                             int     **ighh2o,
                             int     **ipci,
@@ -219,6 +301,9 @@ cs_f_coal_incl_get_pointers(int     **ihth2o,
 
 void
 cs_f_co_models_init(void);
+
+void
+cs_f_ppincl_combustion_init(void);
 
 void
 cs_f_cp_model_map_coal(void);
@@ -446,7 +531,7 @@ cs_f_cpincl_get_pointers_2(int     **iy1ch,
 }
 
 /*----------------------------------------------------------------------------
- * Get pointers to members of the global compbustion model (cpincl).
+ * Get pointers to members of the global combbustion model (cpincl).
  *
  * This function is intended for use by Fortran wrappers, and
  * enables mapping to Fortran global pointers.
@@ -486,41 +571,119 @@ cs_f_cpincl_get_pointers_3(int     **ico,
                            double  **thc,
                            int     **npoc)
 {
-  if (cs_glob_coal_model != NULL) {
+  if (cs_glob_coal_model == NULL)
+    return;
 
-    cs_coal_model_t  *cm = cs_glob_coal_model;
+  cs_coal_model_t  *cm = cs_glob_coal_model;
 
-    *ico   = &(cm->ico);
-    *io2   = &(cm->io2);
-    *ico2   = &(cm->ico2);
-    *ih2o   = &(cm->ih2o);
-    *in2   = &(cm->in2);
+  *ico   = &(cm->ico);
+  *io2   = &(cm->io2);
+  *ico2   = &(cm->ico2);
+  *ih2o   = &(cm->ih2o);
+  *in2   = &(cm->in2);
 
-    *ichx1c = cm->ichx1c;
-    *ichx2c = cm->ichx2c;
-    *ichx1 = &(cm->ichx1);
-    *ichx2 = &(cm->ichx2);
-    *chx1 = cm->chx1;
-    *chx2 = cm->chx2;
-    *a1 = cm->a1;
-    *b1 = cm->b1;
-    *c1 = cm->c1;
-    *d1 = cm->d1;
-    *e1 = cm->e1;
-    *f1 = cm->f1;
-    *a2 = cm->a2;
-    *b2 = cm->b2;
-    *c2 = cm->c2;
-    *d2 = cm->d2;
-    *e2 = cm->e2;
-    *f2 = cm->f2;
+  *ichx1c = cm->ichx1c;
+  *ichx2c = cm->ichx2c;
+  *ichx1 = &(cm->ichx1);
+  *ichx2 = &(cm->ichx2);
+  *chx1 = cm->chx1;
+  *chx2 = cm->chx2;
+  *a1 = cm->a1;
+  *b1 = cm->b1;
+  *c1 = cm->c1;
+  *d1 = cm->d1;
+  *e1 = cm->e1;
+  *f1 = cm->f1;
+  *a2 = cm->a2;
+  *b2 = cm->b2;
+  *c2 = cm->c2;
+  *d2 = cm->d2;
+  *e2 = cm->e2;
+  *f2 = cm->f2;
 
-    *thc = cm->thc;
-    *npoc = &(cm->npoc);
-
-  }
+  *thc = cm->thc;
+  *npoc = &(cm->npoc);
 }
 
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global combbustion model (cpincl).
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_cpincl_get_pointers_4(int  **ihgas,
+                           int  **if1m,
+                           int  **if2m,
+                           int  **if4m,
+                           int  **if5m,
+                           int  **if6m,
+                           int  **if7m,
+                           int  **if8m,
+                           int  **if9m,
+                           int  **ifvp2m,
+                           int  **ixck,
+                           int  **ixch,
+                           int  **inp,
+                           int  **ih2,
+                           int  **ixwt,
+                           int  **iym1,
+                           int  **irom1,
+                           int  **immel,
+                           int  **itemp2,
+                           int  **irom2,
+                           int  **idiam2,
+                           int  **ix2,
+                           int  **igmdch,
+                           int  **igmhet,
+                           int  **igmtr,
+                           int  **ighco2,
+                           int  **igmdv1,
+                           int  **igmdv2,
+                           int  **igmsec,
+                           int  **ibcarbone,
+                           int  **iboxygen,
+                           int  **ibhydrogen)
+{
+  if (cs_glob_coal_model == NULL)
+    return;
+
+  cs_coal_model_t  *cm = cs_glob_coal_model;
+
+  *ihgas = &(cm->ihgas);
+  *if1m = cm->if1m;
+  *if2m = cm->if2m;
+  *if4m = &(cm->if4m);
+  *if5m = &(cm->if5m);
+  *if6m = &(cm->if6m);
+  *if7m = &(cm->if7m);
+  *if8m = &(cm->if8m);
+  *if9m = &(cm->if9m);
+  *ifvp2m = &(cm->ifvp2m);
+  *ixck = cm->ixck;
+  *ixch = cm->ixch;
+  *inp = cm->inp;
+  *ih2 = cm->ih2;
+  *ixwt = cm->ixwt;
+  *iym1 = cm->iym1;
+  *irom1 = &(cm->irom1);
+  *immel = &(cm->immel);
+  *itemp2 = cm->itemp2;
+  *irom2 = cm->irom2;
+  *idiam2 = cm->idiam2;
+  *ix2 = cm->ix2;
+  *igmdch = cm->igmdch;
+  *igmhet = cm->igmhet;
+  *igmtr = cm->igmtr;
+  *ighco2 = cm->ighco2;
+  *igmdv1 = cm->igmdv1;
+  *igmdv2 = cm->igmdv2;
+  *igmsec = cm->igmsec;
+  *ibcarbone = &(cm->ibcarbone);
+  *iboxygen = &(cm->iboxygen);
+  *ibhydrogen = &(cm->ibhydrogen);
+}
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global compbustion model (cpincl).
@@ -573,6 +736,118 @@ cs_f_coal_incl_get_pointers(int     **ihth2o,
   *ynoch2 = cm->ynoch2;
   *wmchx1 = &(cm->wmchx1);
   *wmchx2 = &(cm->wmchx2);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of combustion model (ppcpfu).
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_cpincl_get_pointers_5(double  **af3,
+                           double  **af4,
+                           double  **af5,
+                           double  **af6,
+                           double  **af7,
+                           double  **af8,
+                           double  **af9,
+                           int     **ihy,
+                           int     **ih2s,
+                           int     **iso2,
+                           int     **ihcn,
+                           int     **inh3,
+                           int     **ihtco2,
+                           int     **ieqco2,
+                           int     **iyco2,
+                           int     **ieqnox,
+                           int     **imdnox,
+                           int     **irb,
+                           int     **iyhcn,
+                           int     **iyno,
+                           int     **iynh3,
+                           int     **ihox,
+                           int     **igrb,
+                           int     **noxyd,
+                           int     **ighcn1,
+                           int     **ighcn2,
+                           int     **ignoth,
+                           int     **ignh31,
+                           int     **ignh32,
+                           int     **ifhcnd,
+                           int     **ifhcnc,
+                           int     **ifnh3d,
+                           int     **ifnh3c,
+                           int     **ifnohc,
+                           int     **ifnonh,
+                           int     **ifnoch,
+                           int     **ifnoth,
+                           int     **ifhcnr,
+                           int     **icnohc,
+                           int     **icnonh,
+                           int     **icnorb,
+                           double  **teno,
+                           double  **ka,
+                           double  **kb,
+                           double  **kc,
+                           double  **chi2)
+{
+  if (cs_glob_coal_model == NULL)
+    return;
+
+  cs_coal_model_t  *cm = cs_glob_coal_model;
+
+  *af3 = cm->af3;
+  *af4 = cm->af4;
+  *af5 = cm->af5;
+  *af6 = cm->af6;
+  *af7 = cm->af7;
+  *af8 = cm->af8;
+  *af9 = cm->af9;
+
+  *ihy = &(cm->ihy);
+  *ih2s = &(cm->ih2s);
+  *iso2 = &(cm->iso2);
+  *ihcn = &(cm->ihcn);
+  *inh3 = &(cm->inh3);
+  *ihtco2 = &(cm->ihtco2);
+  *ieqco2 = &(cm->ieqco2);
+  *iyco2 = &(cm->iyco2);
+  *ieqnox = &(cm->ieqnox);
+  *imdnox = &(cm->imdnox);
+  *irb = &(cm->irb);
+
+  *iyhcn = &(cm->iyhcn);
+  *iyno = &(cm->iyno);
+  *iynh3 = &(cm->iynh3);
+  *ihox = &(cm->ihox);
+  *igrb = &(cm->igrb);
+  *noxyd = &(cm->noxyd);
+
+  *ighcn1 = &(cm->ighcn1);
+  *ighcn2 = &(cm->ighcn2);
+  *ignoth = &(cm->ignoth);
+  *ignh31 = &(cm->ignh31);
+  *ignh32 = &(cm->ignh32);
+  *ifhcnd = &(cm->ifhcnd);
+  *ifhcnc = &(cm->ifhcnc);
+  *ifnh3d = &(cm->ifnh3d);
+  *ifnh3c = &(cm->ifnh3c);
+  *ifnohc = &(cm->ifnohc);
+  *ifnonh = &(cm->ifnonh);
+  *ifnoch = &(cm->ifnoch);
+  *ifnoth = &(cm->ifnoth);
+  *ifhcnr = &(cm->ifhcnr);
+  *icnohc = &(cm->icnohc);
+  *icnonh = &(cm->icnonh);
+  *icnorb = &(cm->icnorb);
+
+  *teno = cm->teno;
+  *ka = cm->ka;
+  *kb = cm->kb;
+  *kc = cm->kc;
+  *chi2 = cm->chi2;
 }
 
 /*----------------------------------------------------------------------------
@@ -670,12 +945,86 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
   for (int i = 0; i < CS_COMBUSTION_COAL_MAX_CLASSES; i++)
     cm->ighh2o[i] = -1;
 
+  cm->ihgas = -1;
+  cm->iyco2 = -1;
+  cm->iyhcn = -1;
+  cm->iynh3 = -1;
+  cm->iyno  = -1;
+
+  cm->ihox  = -1;
+
+  for (int i = 0; i < CS_COMBUSTION_MAX_COALS; i++) {
+    cm->if1m[i] = -1;
+    cm->if2m[i] = -1;
+  }
+
+  cm->if4m = -1;
+  cm->if5m = -1;
+  cm->if6m = -1;
+  cm->if7m = -1;
+  cm->if8m = -1;
+  cm->if9m = -1;
+  cm->ifvp2m = -1;
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_CLASSES; i++) {
+    cm->ixck[i] = -1;
+    cm->ixch[i] = -1;
+    cm->inp[i] = -1;
+    cm->ih2[i] = -1;
+    cm->ixwt[i] = -1;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS; i++)
+    cm->iym1[i] = -1;
+
+  cm->irom1 = -1;
+  cm->immel = -1;
+
+  for (int i = 0; i < CS_COMBUSTION_COAL_MAX_CLASSES; i++) {
+    cm->itemp2[i] = -1;
+    cm->irom2[i] = -1;
+    cm->idiam2[i] = -1;
+    cm->ix2[i] = -1;
+    cm->igmdch[i] = -1;
+    cm->igmhet[i] = -1;
+    cm->igmtr[i] = -1;
+    cm->ighco2[i] = -1;
+    cm->igmdv1[i] = -1;
+    cm->igmdv2[i] = -1;
+    cm->igmsec[i] = -1;
+  }
+
+  cm->ibcarbone = -1;
+  cm->iboxygen = -1;
+  cm->ibhydrogen = -1;
+
+  cm->ighcn1 = -1;
+  cm->ighcn2 = -1;
+  cm->ignoth = -1;
+  cm->ignh31 = -1;
+  cm->ignh32 = -1;
+  cm->ifhcnd = -1;
+  cm->ifhcnc = -1;
+  cm->ifnh3d = -1;
+  cm->ifnh3c = -1;
+  cm->ifnohc = -1;
+  cm->ifnonh = -1;
+  cm->ifnoch = -1;
+  cm->ifnoth = -1;
+  cm->icnohc = -1;
+  cm->icnonh = -1;
+  cm->ifhcnr = -1;
+  cm->icnorb = -1;
+
+  cm->srrom = 0.95;
+
   /* Set finalization callback */
 
   cs_base_at_finalize(_coal_model_finalize);
 
   /* Set mappings with Fortran */
 
+  cs_f_ppincl_combustion_init();
   cs_f_co_models_init();
   cs_f_cp_model_map_coal();
   cs_f_coal_incl_init();

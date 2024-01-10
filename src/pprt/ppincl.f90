@@ -319,18 +319,8 @@ module ppincl
   !> enthalpy, if transported or if deduced
   integer, save :: ihm
 
-  !> \anchor srrom
-  !> with gas combustion, or pulverised coal, \ref srrom
-  !> is the sub-relaxation coefficient for the density, following the formula:
-  !> \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
-  !> hence, with a zero value, there is no sub-relaxation.
-  !> \ref srrom is initialized to \ref cstnum::grand "-grand" and the user must
-  !> specify a proper value through the GUI or the initialization subroutine
-  !> (\ref cs_user_combustion).
-  !> It is automatically used after the second time-step.
-  !>
-  !> Always useful with gas combustion or pulverized coal.
-  double precision, save :: srrom
+  !> sub-relaxation coefficient for the density
+  real(c_double), pointer, save :: srrom
 
   !> \}
 
@@ -413,12 +403,12 @@ module ppincl
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_combustion_model_gas_get_pointers(p_isoot)    &
-      bind(C, name='cs_f_combustion_model_gas_get_pointers')
+    subroutine cs_f_combustion_model_get_pointers(p_srrom)    &
+      bind(C, name='cs_f_combustion_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_isoot
-    end subroutine cs_f_combustion_model_gas_get_pointers
+      type(c_ptr), intent(out) :: p_srrom
+    end subroutine cs_f_combustion_model_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -511,6 +501,27 @@ contains
     call c_f_pointer(p_dh, dh, [nozppm])
 
   end subroutine pp_models_bc_map
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine ppincl_combustion_init() &
+    bind(C, name='cs_f_ppincl_combustion_init')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_srrom
+
+    call cs_f_combustion_model_get_pointers(p_srrom)
+
+    call c_f_pointer(p_srrom, srrom)
+
+  end subroutine ppincl_combustion_init
 
   !=============================================================================
 

@@ -745,7 +745,7 @@ In the case of **gas combustion** or **pulverized coal combustion**, time averag
 \anchor gui_coal_solution_control
 \image html gui_coal_solution_control.png "Calculation control - Volume solution control"
 
-For **gas combustion**, if the GUI is not used for **coal combustion**, the
+For **gas combustion**, the
 \ref cs_user_parameters and \ref cs_user_combustion functions, called at calculation
 start, can be used to:
 

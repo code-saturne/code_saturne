@@ -53,6 +53,9 @@ BEGIN_C_DECLS
 /*! Maximum number of oxydants */
 #define CS_COMBUSTION_COAL_MAX_OXYDANTS 3
 
+/*! Maximum number of global species */
+#define  CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES  25
+
 /*! Maximum number of coal classes per coal */
 #define  CS_COMBUSTION_MAX_CLASSES_PER_COAL  20
 
@@ -112,20 +115,22 @@ typedef struct {
   /*! molar mass of an elementary gas component */
   double  wmole[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
 
+  int     noxyd;                     /*!< number of oxydants */
+
   /*! composition of oxidants in O2 */
-   double oxyo2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+  double  oxyo2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
 
   /*! composition of N2 oxidants */
-  double oxyn2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+  double  oxyn2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
 
   /*! composition of H2O oxidants */
-  double oxyh2o[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+  double  oxyh2o[CS_COMBUSTION_COAL_MAX_OXYDANTS];
 
   /*! composition of CO2 oxidants */
-  double oxyco2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
+  double  oxyco2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
 
   /*! temperature in K */
-  double th[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
+  double  th[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
 
   /* Members specific to the coal combustion model
      --------------------------------------------- */
@@ -140,13 +145,36 @@ typedef struct {
 
   int     idrift;      /*!< drift (0: off, 1: on) */
 
-  int     ieqnox;      /*!< NOx model (0: off; 1: on) */
-
   int     ieqco2;      /*!< kinetic model for CO <=> CO2
                          - 0  unused (maximal conversion
                                       in turbulent model)
                          - 1  transport of CO2 mass fraction
                          - 2  transport of CO mass fraction  */
+
+  int     ihtco2;      /*!< Heterogeneous combustion with CO2 (0: off; 1: on) */
+
+  int     ieqnox;      /*!< NOx model (0: off; 1: on) */
+
+  int     imdnox;      /*!< NOx model features;
+                         - 0: - HCN is the only intermediate nitrogen species
+                                freed during the devolatilisation process.
+                                and during char combustion.
+                              - Constant ratio of the nitrogen mass freed
+                                during devolatilisation and the nitrogen mass
+                                remaining in char.
+                         - 1: - HCN and NH3 are the intermediate nitrogen
+                                species liberated during the devolatilisation
+                                process.
+                              - HCN and NO are the intermediate nitrogen species
+                                freed during char combustion.
+                              - Temperature dependent ratios of the nitrogen
+                                mass freed during devolatilisation and the
+                                nitrogen mass remaining in char. */
+
+  int     irb;         /*!< Reburning model
+                         - : no reburning
+                         - 1 Chen et al.
+                         - 2 Dimitriou et al. */
 
   double  ckabs0;      /*!< absorption coefficient of gas mix */
 
@@ -407,6 +435,34 @@ typedef struct {
   double f2[CS_COMBUSTION_MAX_COALS];
   //@}
 
+  //@{
+  /*! number of moles of I in J */
+  double af3[CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES];
+  double af4[CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES];
+  double af5[CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES];
+  double af6[CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES];
+  double af7[CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES];
+  double af8[CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES];
+  double af9[CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES];
+  //@}
+
+  //@{
+  /*! kinetic constants arrays (Dimitriou's model) */
+  double ka[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS][4];
+  double kb[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS][4];
+  double kc[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS][4];
+  double chi2[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
+  //@}
+
+  /*! temperature array for "Reburning" kinetics */
+  double teno[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
+
+  int  ihy;    /*!< index for H2 */
+  int  ih2s;   /*!< index for H2S */
+  int  iso2;   /*!< index for SO2 */
+  int  ihcn;   /*!< index for HCN */
+  int  inh3;   /*!< index for NH3 */
+
   /* Complement table
      ---------------- */
 
@@ -421,9 +477,6 @@ typedef struct {
 
   /*! mass transfer by heterogeneous combustion with H2O */
   int ihth2o;
-
-  /*! id of field "het_ts_h2o_p_<class>" */
-  int ighh2o[CS_COMBUSTION_COAL_MAX_CLASSES];
 
   /*! PCI computation mode:
       - 1: dry -> pure (schaff's formula)
@@ -481,6 +534,179 @@ typedef struct {
 
   /*! molar mass of CHx2 */
   double wmchx2;
+
+  /* Ids of coal combustion fields
+     ----------------------------- */
+
+  /*! \defgroup coal_combustion_t_var  Pulverized coal combustion \
+    transported variables */
+
+  /*! \defgroup coal_combustion_var_cont  Continuous phase (gas mix)
+    @ingroup coal_combustion_t_var */
+
+  /*! @addtogroup coal_combustion_var_cont
+    @{ */
+
+  int ihgas;   /*!< enthalpy of the gas phase per kg of bulk */
+
+  int iyco2;   /*!< field id of CO2 mass fraction */
+  int iyhcn;   /*!< field id of HCN mass fraction */
+  int iynh3;   /*!< field id of NH3 mass fraction */
+  int iyno;    /*!< field id of NO mass fraction */
+
+  int ihox;    /*!< field_id of "x_c_h_ox" (enthalpy of the oxydizer times
+                 the fraction of gas divided by the mass of bulk */
+
+  /*! mean value representing the light volatiles released by each coal */
+  int if1m[CS_COMBUSTION_MAX_COALS];
+
+  /*! mean value representing the heavy volatiles released by each coal */
+  int if2m[CS_COMBUSTION_MAX_COALS];
+
+  int if4m;    /*!< mass of oxydant 2 divided by the mass of bulk */
+  int if5m;    /*!< mass of oxydant 3 divided by the mass of bulk */
+  int if6m;    /*!< water coming from drying */
+  int if7m;    /*!< mass of carbon from coal oxydized by O2
+                 divided by the mass of bulk */
+  int if8m;    /*!<! mass of carbon from coal gasified by CO2
+                 divided by the mass of bulk */
+  int if9m;    /*!< mass ofcarbon from coal gasified by H2O
+                 divided by the mass of bulk */
+
+  int ifvp2m;  /*!< f1f2 variance */
+
+  /*! @} */
+
+  /*! \defgroup coal_combustion_var_disp  Dispersed phase (particle classes)
+    @ingroup coal_combustion_t_var */
+
+  /*! @addtogroup coal_combustion_var_disp
+    @{ */
+
+  /*! coke mass fraction related to each class */
+  int ixck[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! reactive coal mass fraction related to each class */
+  int ixch[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! number of particles of each class per kg of air-coal mixture */
+  int inp[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! mass enthalpy of the coal of each class, in permeatic conditions */
+  int ih2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! water mass fraction related to each class */
+  int ixwt[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! @} */
+
+  /*! \defgroup coal_combustion_s_var  Pulverized coal combustion \
+    state variables */
+
+  /*! \defgroup coal_combustion_s_var_cont  Continuous phase (gas mix)
+    @ingroup coal_combustion_s_var */
+
+  /*! @addtogroup coal_combustion_s_var_cont
+    @{ */
+
+  /*! mass fractions:
+    - iym1[0]: mass fraction of \f$CH_{X1m}\f$ (light volatiles) in the gas mixture
+    - iym1[1]: mass fraction of \f$CH_{X2m}\f$ (heavy volatiles) in the gas mixture
+    - iym1[2]: mass fraction of CO in the gas mixture
+    - iym1[3]: mass fraction of \f$O_2\f$ in the gas mixture
+    - iym1[4]: mass fraction of \f$CO_2\f$ in the gas mixture
+    - iym1[5]: mass fraction of \f$H_2O\f$ in the gas mixture
+    - iym1[6]: mass fraction of \f$N_2\f$ in the gas mixture */
+  int iym1[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+
+  int irom1;   /*!< gas mixture density */
+  int immel;   /*!< molar mass of the gas mixture */
+
+  int igrb;    /*!< kinetic constant for Chen's model */
+
+  /*! @} */
+
+  /*! \defgroup coal_combustion_var_disp  Dispersed phase (particle classes)
+    @ingroup coal_combustion_s_var */
+
+  /*! @addtogroup coal_combustion_s_var_disp
+    @{ */
+
+  /*! temperature of the particles of each class */
+  int itemp2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! density of the particles of each class */
+  int irom2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! diameter of the particles of each class */
+  int idiam2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! solid mass fraction of each class */
+  int ix2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! disappearance rate of the reactive coal of each class */
+  int igmdch[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! coke disappearance rate of the coke burnout of each class */
+  int igmhet[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! implicit part of the exchanges to the gas by molecular distribution */
+  int igmtr[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! id of field "het_ts_co2_p<class>" */
+  int ighco2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! id of field "het_ts_h2o_p<class>" */
+  int ighh2o[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*!  mass transfer caused by the release of light volatiles  of each class */
+  int igmdv1[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*!  mass transfer caused by the release of heavy volatiles  of each class */
+  int igmdv2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  /*! id of field "dry_ts_p<class>" */
+  int igmsec[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  int ibcarbone;   /*!< used for bulk balance of carbon */
+  int iboxygen;    /*!< used for bulk balance of oxygen */
+  int ibhydrogen;  /*!< used for bulk balance of hydrogen */
+
+  /*! @} */
+
+  /*! \defgroup coal_combustion_a_var  Pulverized coal combustion \
+    algebraic variables */
+
+  /*! @addtogroup coal_combustion_a_var
+    @{ */
+
+  int ighcn1;   /*!< conversion of HCN to NO: exp(-e1/rt) */
+  int ighcn2;   /*!< conversion of HCN to NO: exp(-e2/rt) */
+  int ignoth;   /*!< thermal NO (Zel'dovitch): exp(-e3/rt) */
+  int ignh31;   /*!< conversion of NH3 to NO: exp(-e4/rt) */
+  int ignh32;   /*!< conversion of NH3 to NO: exp(-e5/rt) */
+
+  int ifhcnd;   /*!< release of HCN during devolatilisation */
+  int ifhcnc;   /*!< release o fHCN during heterogeneous combustion */
+  int ifnh3d;   /*!< release of NH3 during devolatilisation */
+  int ifnh3c;   /*!< release of NH3 during  heterogeneous combustion */
+  int ifnohc;   /*!< NO formation by reaction HCN + O2 -> NO + ... */
+  int ifnonh;   /*!< NO formation by reaction NH3 + O2 -> NO + ... */
+  int ifnoch;   /*!< release of NO during  heterogeneous combustion */
+  int ifnoth;   /*!< thermal NO formation */
+  int ifhcnr;   /*!< NO formation by "Reburning" */
+  int icnohc;   /*!< NO consumption by reaction HCN + NO -> products */
+  int icnonh;   /*!< NO consumption by reaction NH3 + NO -> products */
+  int icnorb;   /*!< NO consumption by "Reburning" */
+
+  /*! @} */
+
+  /* Numerical parameters
+     -------------------- */
+
+  double srrom;  /*!< sub-relaxation coefficient for the density:
+                   \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
+                   (hence, with a zero value, there is no sub-relaxation) */
 
 } cs_coal_model_t;
 

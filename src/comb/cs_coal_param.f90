@@ -137,7 +137,6 @@ enddo
 !===============================================================================
 ! 2. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
-! ---> Initialisation
 
 ! ---- Calcul de RO0 a partir de T0 et P0
 !        (loi des gaz parfaits applliquee a l'air)
@@ -162,19 +161,6 @@ irovar = 1
 ivivar = 0
 
 !===============================================================================
-! 3. ON REDONNE LA MAIN A L'UTLISATEUR
-!===============================================================================
-
-! TODO: call cs_gui_combustion_ref_values to read diffusivity from GUI,
-!       but first initialize it to the value below in GUI.
-
-call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, 4.25d-5)
-
-call uicpi1(srrom)
-
-call cs_user_combustion
-
-!===============================================================================
 ! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
 !===============================================================================
 
@@ -193,28 +179,23 @@ endif
 !--------
 
  9998 format(                                                     &
-'                                                             ',/,&
-' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                        (cs_user_combustion).',/)
+'',                                                             /,&
+' No error detecxted during coal data verification.',           /)
  9999 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
+'@',/,&
+'@',                                                           /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@  Verifier cs_user_combustion.'                              ,/,&
-'@                                                            ',/,&
+'@',                                                           /,&
+'@ @@ ATTENTION : stop in setup/data input.',                  /,&
+'@    =========',                                              /,&
+'@  The coal model parameters are incoherent or incomplete.',  /,&
+'@',                                                           /,&
+'@  The computation will not be run (', i10,' errors).',       /,&
+'@',                                                           /,&
+'@  Check messages above for detailed information.',           /,&
+'@',                                                           /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@',                                                           /)
 
 !----
 ! End

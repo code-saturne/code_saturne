@@ -135,12 +135,13 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **tinoxy);
 
 void
-cs_f_ppcpfu_get_pointers(int     **ieqco2,
-                         int     **ieqnox,
-                         double  **oxyo2,
+cs_f_ppcpfu_get_pointers(double  **oxyo2,
                          double  **oxyn2,
                          double  **oxyh2o,
                          double  **oxyco2);
+
+void
+cs_f_combustion_model_get_pointers(double  **srrom);
 
 /*============================================================================
  * Private function definitions
@@ -296,7 +297,6 @@ cs_f_coincl_get_pointers(int     **isoot,
  *
  * parameters:
  *   ieqco2 --> pointer to cm->ieqco2
- *   ieqnox --> pointer to cm->ieqnox
  *   oxyo2  --> pointer to cm->oxyo2
  *   oxyn2  --> pointer to cm->oxyn2
  *   oxyh2o --> pointer to cm->oxyh2o
@@ -304,21 +304,16 @@ cs_f_coincl_get_pointers(int     **isoot,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_ppcpfu_get_pointers(int     **ieqco2,
-                         int     **ieqnox,
-                         double  **oxyo2,
+cs_f_ppcpfu_get_pointers(double  **oxyo2,
                          double  **oxyn2,
                          double  **oxyh2o,
                          double  **oxyco2)
 {
-  *ieqco2 = NULL;
-  *ieqnox = NULL;
-
   if (cs_glob_combustion_gas_model != NULL) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
-    *oxyo2 =  cm->oxyo2;
+    *oxyo2 = NULL;
     *oxyn2 =  cm->oxyn2;
     *oxyh2o = cm->oxyh2o;
     *oxyco2 = cm->oxyco2;
@@ -328,12 +323,36 @@ cs_f_ppcpfu_get_pointers(int     **ieqco2,
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
-    *ieqco2 = &(cm->ieqco2);
-    *ieqnox = &(cm->ieqnox);
     *oxyo2 =  cm->oxyo2;
     *oxyn2 =  cm->oxyn2;
     *oxyh2o = cm->oxyh2o;
     *oxyco2 = cm->oxyco2;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to generic physical model pointers (pincl)
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_combustion_model_get_pointers(double  **srrom)
+{
+  if (cs_glob_combustion_gas_model != NULL) {
+
+    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+    *srrom = &(cm->srrom);
+
+  }
+  else if (cs_glob_coal_model != NULL) {
+
+    cs_coal_model_t  *cm = cs_glob_coal_model;
+
+    *srrom = &(cm->srrom);
 
   }
 }

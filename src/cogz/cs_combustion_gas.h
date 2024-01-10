@@ -161,9 +161,6 @@ typedef struct {
   /*! molar mass of an elementary gas component */
   double  wmole[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
-  /*! composition of oxidants in O2 */
-  double oxyo2[CS_COMBUSTION_GAS_MAX_OXYDANTS];
-
   /*! composition of N2 oxidants */
   double oxyn2[CS_COMBUSTION_GAS_MAX_OXYDANTS];
 
@@ -217,6 +214,14 @@ typedef struct {
       (J/kg/K) of the i-th global species at temperature */
   double cpgazg[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
                [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+
+
+  /* Numerical parameters
+     -------------------- */
+
+  double srrom;  /*!< sub-relaxation coefficient for the density:
+                   \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
+                   (hence, with a zero value, there is no sub-relaxation) */
 
 } cs_combustion_gas_model_t;
 

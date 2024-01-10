@@ -63,7 +63,6 @@ integer         icla, icha, igg, it, ir, ih, if, izone
 integer         ige, iat
 integer         idirac
 
-
 !===============================================================================
 
 ! Mappings to C
@@ -127,93 +126,6 @@ enddo
 inpm = 0
 ifsm = 0
 
-! ---> Initialisation pour la combustion du charbon
-!       Variables transportees
-do icha = 1, ncharm
-  if1m(icha) = -1
-  if2m(icha) = -1
-enddo
-if4m   = -1
-if5m   = -1
-if6m   = -1
-if7m   = -1
-if8m   = -1
-if9m   = -1
-ifvp2m = -1
-iyco2  = -1
-iyhcn   = -1
-iynh3   = -1
-iyno    = -1
-itaire  = -1
-
-do icla = 1, nclcpm
-  ixck(icla)   = -1
-  ixch(icla)   = -1
-  inp(icla)    = -1
-  ih2(icla)    = -1
-  ixwt(icla)   = -1
-enddo
-!
-!       Variables algebriques ou d'etat
-do ige = 1, ngazem
-  iym1(ige) = 0
-enddo
-immel = 0
-do icla = 1, nclcpm
-  ix2(icla)    = 0
-  itemp2(icla) = 0
-  irom2(icla)  = 0
-  idiam2(icla) = 0
-  igmdch(icla) = 0
-  igmdv1(icla) = 0
-  igmdv2(icla) = 0
-  igmhet(icla) = 0
-  ighco2(icla) = 0
-  igmsec(icla) = 0
-enddo
-do ige = 1, ngazem
-  af3(ige) = 0.d0
-  af4(ige) = 0.d0
-  af5(ige) = 0.d0
-  af6(ige) = 0.d0
-  af7(ige) = 0.d0
-  af8(ige) = 0.d0
-  af9(ige) = 0.d0
-enddo
-
-!       Variables algebriques ou d'etat
-
-do ige = 1, ngazem
-  iym1(ige) = 0
-enddo
-
-ighcn1 = 0
-ighcn2 = 0
-ignoth = 0
-
-ignh31 = 0
-ignh32 = 0
-ifhcnd = 0
-ifhcnc = 0
-ifnh3d = 0
-ifnh3c = 0
-ifnohc = 0
-ifnonh = 0
-ifnoch = 0
-ifnoth = 0
-icnohc = 0
-icnonh = 0
-ifhcnr = 0
-icnorb = 0
-igrb   = 0
-
-imdnox = 0
-irb = 0
-
-! ---> Coefficient de relation de la masse volumique
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-srrom = 0.95d0 ! GUI default
-
 ! Initialization for compressible module
 
 ! Standard compressible module scalars
@@ -228,7 +140,6 @@ ifrace = 0
 ! 2. REMPLISSAGE INCLUDE ppthch.h
 !                INCLUDE THERMOCHIMIE POUR LA PHYSIQUE PARTICULIERE
 !===============================================================================
-
 
 ! ---> Initialisation Common / TCHPPR /
 

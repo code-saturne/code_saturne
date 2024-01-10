@@ -109,6 +109,9 @@ void
 cs_f_co_models_init(void);
 
 void
+cs_f_ppincl_combustion_init(void);
+
+void
 cs_f_ppcpfu_models_init(void);
 
 void
@@ -246,7 +249,6 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   }
 
   for (int i = 0; i < CS_COMBUSTION_GAS_MAX_OXYDANTS; i++) {
-    cm->oxyo2[i] = 0;
     cm->oxyn2[i] = 0;
     cm->oxyh2o[i] = 0;
     cm->oxyco2[i] = 0;
@@ -300,12 +302,15 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
     }
   }
 
+  cm->srrom = 0.95;
+
   /* Set finalization callback */
 
   cs_base_at_finalize(_combustion_gas_finalize);
 
   /* Set mappings with Fortran */
 
+  cs_f_ppincl_combustion_init();
   cs_f_co_models_init();
   cs_f_ppcpfu_models_init();
   cs_f_thch_models_init();

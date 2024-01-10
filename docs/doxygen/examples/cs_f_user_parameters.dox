@@ -77,7 +77,7 @@
 
   \snippet cs_user_parameters.f90 usati1
 
-  \section cs_f_user_parameters_h_cs_user_combustion Calculation options for the combustion module (cs_user_combustion)
+  \section cs_f_user_parameters_h_cs_user_combustion Calculation options for the gas combustion module (cs_user_combustion)
 
   The \ref cs_user_combustion routine can be found in the \ref cs_user_parameters.f90 file.
 

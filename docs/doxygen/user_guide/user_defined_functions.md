@@ -191,7 +191,7 @@ functions which will be able to access those elements.
 - \ref cs_user_combustion (in \ref cs_user_parameters.f90)
 
   Allows specifying calculation options specific to the selected
-  combustion model (*gas*, *pulverized coal*, or *heavy fuel*).
+  gas combustion model.
 
 - \ref cs_user_atmospheric_model.f90
 

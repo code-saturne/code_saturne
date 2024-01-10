@@ -113,125 +113,91 @@ module cpincl
   real(c_double), pointer, save :: thc(:)
   integer(c_int), pointer, save :: npoc
 
-  !--> POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE
-
-  !> \defgroup coal_combustion  Pulverized coal combustion variables
-
-  !> \addtogroup coal_combustion
-  !> \{
+  ! POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE
 
   ! ---- Variables transportees
   !        Phase continue (melange gazeux)
 
-  !> mean value of the tracer 1 representing the light
-  !> volatiles released by the coal \c icha
-  integer, save :: if1m(ncharm)
-
-  !> mean value of the tracer 2 representing the heavy
-  !> volatiles released by the coal \c icha
-  integer, save :: if2m(ncharm)
-
-  !> tracer 4: mass of the oxydant 2 divided by the mass of bulk
-  integer, save :: if4m
-  !> tracer 5: mass of the oxydant 3 divided by the mass of bulk
-  integer, save :: if5m
-  !> tracer 6: water coming from drying
-  integer, save :: if6m
-  !> tracer 7: mass of the carbon from coal oxydized by O2
-  !> divided by the mass of bulk
-  integer, save :: if7m
-  !> tracer 8: mass of the carbon from coal gasified by CO2
-  !> divided by the mass of bulk
-  integer, save :: if8m
-  !> tracer 9: mass of the Carbon from coal gasified by H2O
-  !> divided by the mass of bulk
-  integer, save :: if9m
-
-  !> f1f2 variance
-  integer, save :: ifvp2m
-
-  !        Phase dispersee (classe de particules)
-  !> coke mass fraction related to the class icla
-  integer, save :: ixck(nclcpm)
-
-  !> reactive coal mass fraction related to the class \c icla
-  integer, save :: ixch(nclcpm)
-
-  !> number of particles of the class \c icla per kg of air-coal mixture
-  integer, save :: inp(nclcpm)
-
-  !>  mass enthalpy of the coal of class \c icla, if we are in permeatic conditions
-  integer, save :: ih2(nclcpm)
-
-  ! TODO absent de la doc utilisateur
-  !> transported variable of dispersed phase (particle class)
-  integer, save :: ixwt(nclcpm)
+  integer(c_int), pointer, save :: ihgas
+  integer(c_int), pointer, save :: if1m(:)
+  integer(c_int), pointer, save :: if2m(:)
+  integer(c_int), pointer, save :: if4m
+  integer(c_int), pointer, save :: if5m
+  integer(c_int), pointer, save :: if6m
+  integer(c_int), pointer, save :: if7m
+  integer(c_int), pointer, save :: if8m
+  integer(c_int), pointer, save :: if9m
+  integer(c_int), pointer, save :: ifvp2m
+  integer(c_int), pointer, save :: ixck(:)
+  integer(c_int), pointer, save :: ixch(:)
+  integer(c_int), pointer, save :: inp(:)
+  integer(c_int), pointer, save :: ih2(:)
+  integer(c_int), pointer, save :: ixwt(:)
 
   ! ---- Variables d'etat
   !        Phase continue (melange gazeux)
 
-  !> mass fractions:
-  !>  - iym1(1): mass fraction of \f$CH_{X1m}\f$ (light volatiles) in the gas mixture
-  !>  - iym1(2): mass fraction of \f$CH_{X2m}\f$ (heavy volatiles) in the gas mixture
-  !>  - iym1(3): mass fraction of CO in the gas mixture
-  !>  - iym1(4): mass fraction of \f$O_2\f$ in the gas mixture
-  !>  - iym1(5): mass fraction of \f$CO_2\f$ in the gas mixture
-  !>  - iym1(6): mass fraction of \f$H_2O\f$ in the gas mixture
-  !>  - iym1(7): mass fraction of \f$N_2\f$ in the gas mixture
-  integer, save :: iym1(ngazem)
-
-  ! TODO absent de la doc utilisateur
-  !> State variables of continuous phase (gas mixture)
-  integer, save :: irom1
-
-  !>  molar mass of the gas mixture
-  integer, save :: immel
+  integer(c_int), pointer, save :: iym1(:)
+  integer(c_int), pointer, save :: irom1
+  integer(c_int), pointer, save :: immel
 
   !        Phase dispersee (classes de particules)
 
-  !> temperature of the particles of the class \c icla
-  integer, save :: itemp2(nclcpm)
+  integer(c_int), pointer, save :: itemp2(:)
+  integer(c_int), pointer, save :: irom2(:)
+  integer(c_int), pointer, save :: idiam2(:)
+  integer(c_int), pointer, save :: ix2(:)
+  integer(c_int), pointer, save :: igmdch(:)
+  integer(c_int), pointer, save :: igmhet(:)
+  integer(c_int), pointer, save :: igmtr(:)
+  integer(c_int), pointer, save :: ighco2(:)
+  integer(c_int), pointer, save :: igmdv1(:)
+  integer(c_int), pointer, save :: igmdv2(:)
+  integer(c_int), pointer, save :: igmsec(:)
+  integer(c_int), pointer, save :: ibcarbone
+  integer(c_int), pointer, save :: iboxygen
+  integer(c_int), pointer, save :: ibhydrogen
 
-  !> density of the particles of the class \c icla
-  integer, save :: irom2(nclcpm)
+  ! Moved from ppcfu
 
-  !> diameter of the particles of the class \c icla
-  integer, save :: idiam2(nclcpm)
+  ! prise en compte H2  , H2S , SO2 , HCN , NH3
+  integer(c_int), pointer, save :: ihy, ih2s, iso2, ihcn, inh3
 
-  !>  solid mass fraction of the class \c icla
-  integer, save :: ix2(nclcpm)
+  integer(c_int), pointer, save :: noxyd
 
-  !> disappearance rate of the reactive coal of the class \c icla
-  integer, save :: igmdch(nclcpm)
+  ! nb de moles de I dans J
 
-  !> coke disappearance rate of the coke burnout of the class \c icla
-  integer, save :: igmhet(nclcpm)
+  real(c_double), pointer, save :: af3(:),af4(:),af5(:),af6(:)
+  real(c_double), pointer, save :: af7(:),af8(:),af9(:)
 
-  !> Implicite part of the exchanges to the gas by molecular distribution
-  integer, save :: igmtr(nclcpm)
+  ! Equation sur NOX :
+  !
+  integer(c_int), pointer, save :: ieqnox, imdnox, irb
 
-  ! TODO absent de la doc utilisateur
-  !> State variables of dispersed phase (particles class)
-  integer, save :: ighco2(nclcpm)
+  ! Combustion heterogene avec le  CO2
 
-  !>  mass transfer caused by the release of light volatiles  of the class \c icla
-  integer, save :: igmdv1(nclcpm)
+  integer(c_int), pointer, save :: ihtco2, ieqco2, iyco2
 
-  !>  mass transfer caused by the release of heavy volatiles  of the class \c icla
-  integer, save :: igmdv2(nclcpm)
+  !   Scalaires supplementaires : fraction massique de H2, HCN et NO
 
-  ! TODO absent de la doc utilisateur
-  !> State variables of dispersed phase (particles class)
-  integer, save :: igmsec(nclcpm)
+  integer(c_int), pointer, save ::  iyhcn, iyno, iynh3, ihox
 
-  !> Used for bulk balance of Carbon
-  integer, save :: ibcarbone
-  !> Used for bulk balance of Oxygen
-  integer, save :: iboxygen
-  !> Used for bulk balance of Hydrogen
-  integer, save :: ibhydrogen
+  !   Propriétés supplementaires :
+  integer(c_int), pointer, save ::  ighcn1, ighcn2, ignoth, ignh31, ignh32
+  !
+  !   Affichage des termes source:
+  integer(c_int), pointer, save ::  ifhcnd, ifhcnc, ifnh3d, ifnh3c
+  integer(c_int), pointer, save ::  ifnohc, ifnonh, ifnoch, ifnoth, ifhcnr
+  integer(c_int), pointer, save ::  icnohc, icnonh, icnorb
+  !
+  !   Reburning
+  real(c_double), pointer, save :: teno(:)
 
-  !> \}
+  !   Tableau des constantes cinetiques (Model de Dimitriou)
+  real(c_double), pointer, save :: ka(:,:), kb(:,:), kc(:,:), chi2(:)
+  !
+  ! Constante cinetique (Model de Chen)
+  integer(c_int), pointer, save :: igrb
 
   !=============================================================================
 
@@ -325,6 +291,63 @@ module cpincl
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_cpincl_get_pointers_4(                                     &
+         p_ihgas,                                                              &
+         p_if1m, p_if2m, p_if4m, p_if5m, p_if6m, p_if7m, p_if8m, p_if9m,       &
+         p_ifvp2m, p_ixck, p_ixch, p_inp, p_ih2, p_ixwt, p_iym1, p_irom1,      &
+         p_immel, p_itemp2, p_irom2, p_idiam2, p_ix2, p_igmdch, p_igmhet,      &
+         p_igmtr, p_ighco2, p_igmdv1, p_igmdv2, p_igmsec,                      &
+         p_ibcarbone, p_iboxygen, p_ibhydrogen)                                &
+      bind(C, name='cs_f_cpincl_get_pointers_4')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) ::                                              &
+         p_ihgas,                                                              &
+         p_if1m, p_if2m, p_if4m, p_if5m, p_if6m, p_if7m, p_if8m, p_if9m,       &
+         p_ifvp2m, p_ixck, p_ixch, p_inp, p_ih2, p_ixwt, p_iym1, p_irom1,      &
+         p_immel, p_itemp2, p_irom2, p_idiam2, p_ix2, p_igmdch, p_igmhet,      &
+         p_igmtr, p_ighco2, p_igmdv1, p_igmdv2, p_igmsec,                      &
+         p_ibcarbone, p_iboxygen, p_ibhydrogen
+    end subroutine cs_f_cpincl_get_pointers_4
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_cpincl_get_pointers_5(                                     &
+         p_af3, p_af4, p_af5, p_af6, p_af7, p_af8, p_af9,                      &
+         p_ihy, p_ih2s, p_iso2, p_ihcn, p_inh3,                                &
+         p_ihtco2, p_ieqco2, p_iyco2, p_ieqnox, p_imdnox, p_irb,               &
+         p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                    &
+         p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                     &
+         p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                     &
+         p_teno, p_ka, p_kb, p_kc, p_chi2)                                     &
+      bind(C, name='cs_f_cpincl_get_pointers_5')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) ::                                              &
+         p_af3, p_af4, p_af5, p_af6, p_af7, p_af8, p_af9,                      &
+         p_ihy, p_ih2s, p_iso2, p_ihcn, p_inh3,                                &
+         p_ihtco2,  p_ieqco2, p_iyco2, p_ieqnox, p_imdnox, p_irb,              &
+         p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                    &
+         p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                     &
+         p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                     &
+         p_teno, p_ka, p_kb, p_kc, p_chi2
+
+    end subroutine cs_f_cpincl_get_pointers_5
+
+    ! Interface to C function
+    ! Defines the source terms for scalars which are part of
+    ! specific physics models. Source terms are defined over one time step.
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -370,6 +393,24 @@ contains
          p_ico, p_ico2, p_ih2o, p_io2, p_in2, p_ichx1c, p_ichx2c,              &
          p_ichx1, p_ichx2, p_chx1, p_chx2, p_a1, p_b1, p_c1, p_d1, p_e1, p_f1, &
          p_a2, p_b2, p_c2, p_d2, p_e2, p_f2, p_thc, p_npoc
+
+    type(c_ptr) ::                                                             &
+         p_ihgas,                                                              &
+         p_if1m, p_if2m, p_if4m, p_if5m, p_if6m, p_if7m, p_if8m, p_if9m,       &
+         p_ifvp2m, p_ixck, p_ixch, p_inp, p_ih2, p_ixwt, p_iym1, p_irom1,      &
+         p_immel, p_itemp2, p_irom2, p_idiam2, p_ix2, p_igmdch, p_igmhet,      &
+         p_igmtr, p_ighco2, p_igmdv1, p_igmdv2, p_igmsec,                      &
+         p_ibcarbone, p_iboxygen, p_ibhydrogen
+
+    type(c_ptr) ::                                                             &
+         p_af3, p_af4, p_af5, p_af6, p_af7, p_af8, p_af9,                      &
+         p_ihy, p_ih2s, p_iso2, p_ihcn, p_inh3,                                &
+         p_ihtco2,  p_ieqco2, p_iyco2, p_ieqnox, p_imdnox, p_irb,              &
+         p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                    &
+         p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                     &
+         p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                     &
+         p_teno, p_ka, p_kb, p_kc, p_chi2
 
     call cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
                                        p_nclpch, p_idrift,               &
@@ -503,6 +544,110 @@ contains
 
     call c_f_pointer(p_thc, thc, [npot])
     call c_f_pointer(p_npoc, npoc)
+
+    call cs_f_cpincl_get_pointers_4(                                           &
+         p_ihgas,                                                              &
+         p_if1m, p_if2m, p_if4m, p_if5m, p_if6m, p_if7m, p_if8m, p_if9m,       &
+         p_ifvp2m, p_ixck, p_ixch, p_inp, p_ih2, p_ixwt, p_iym1, p_irom1,      &
+         p_immel, p_itemp2, p_irom2, p_idiam2, p_ix2, p_igmdch, p_igmhet,      &
+         p_igmtr, p_ighco2, p_igmdv1, p_igmdv2, p_igmsec,                      &
+         p_ibcarbone, p_iboxygen, p_ibhydrogen)
+
+    call c_f_pointer(p_ihgas, ihgas)
+    call c_f_pointer(p_if1m, if1m, [ncharm])
+    call c_f_pointer(p_if2m, if2m, [ncharm])
+    call c_f_pointer(p_if4m, if4m)
+    call c_f_pointer(p_if5m, if5m)
+    call c_f_pointer(p_if6m, if6m)
+    call c_f_pointer(p_if7m, if7m)
+    call c_f_pointer(p_if8m, if8m)
+    call c_f_pointer(p_if9m, if9m)
+    call c_f_pointer(p_ifvp2m, ifvp2m)
+    call c_f_pointer(p_ixck, ixck, [nclcpm])
+    call c_f_pointer(p_ixch, ixch, [nclcpm])
+    call c_f_pointer(p_inp, inp, [nclcpm])
+    call c_f_pointer(p_ih2, ih2, [nclcpm])
+    call c_f_pointer(p_ixwt, ixwt, [nclcpm])
+    call c_f_pointer(p_iym1, iym1, [ngazem])
+    call c_f_pointer(p_irom1, irom1)
+    call c_f_pointer(p_immel, immel)
+    call c_f_pointer(p_itemp2, itemp2, [nclcpm])
+    call c_f_pointer(p_irom2, irom2, [nclcpm])
+    call c_f_pointer(p_idiam2, idiam2, [nclcpm])
+    call c_f_pointer(p_ix2, ix2, [nclcpm])
+    call c_f_pointer(p_igmdch, igmdch, [nclcpm])
+    call c_f_pointer(p_igmhet, igmhet, [nclcpm])
+    call c_f_pointer(p_igmtr, igmtr, [nclcpm])
+    call c_f_pointer(p_ighco2, ighco2, [nclcpm])
+    call c_f_pointer(p_igmdv1, igmdv1, [nclcpm])
+    call c_f_pointer(p_igmdv2, igmdv2, [nclcpm])
+    call c_f_pointer(p_igmsec, igmsec, [nclcpm])
+    call c_f_pointer(p_ibcarbone, ibcarbone)
+    call c_f_pointer(p_iboxygen, iboxygen)
+    call c_f_pointer(p_ibhydrogen, ibhydrogen)
+
+    call cs_f_cpincl_get_pointers_5(                                          &
+         p_af3, p_af4, p_af5, p_af6, p_af7, p_af8, p_af9,                     &
+         p_ihy, p_ih2s, p_iso2, p_ihcn, p_inh3,                               &
+         p_ihtco2,  p_ieqco2, p_iyco2, p_ieqnox, p_imdnox, p_irb,             &
+         p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                   &
+         p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                    &
+         p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                    &
+         p_teno, p_ka, p_kb, p_kc, p_chi2)
+
+    call c_f_pointer(p_af3, af3, [ngazgm])
+    call c_f_pointer(p_af4, af4, [ngazgm])
+    call c_f_pointer(p_af5, af5, [ngazgm])
+    call c_f_pointer(p_af6, af6, [ngazgm])
+    call c_f_pointer(p_af7, af7, [ngazgm])
+    call c_f_pointer(p_af8, af8, [ngazgm])
+    call c_f_pointer(p_af9, af9, [ngazgm])
+
+    call c_f_pointer(p_ihy, ihy)
+    call c_f_pointer(p_ih2s, ih2s)
+    call c_f_pointer(p_iso2, iso2)
+    call c_f_pointer(p_ihcn, ihcn)
+    call c_f_pointer(p_inh3, inh3)
+
+    call c_f_pointer(p_ihtco2, ihtco2)
+    call c_f_pointer(p_ieqco2, ieqco2)
+    call c_f_pointer(p_iyco2, iyco2)
+
+    call c_f_pointer(p_ieqnox, ieqnox)
+    call c_f_pointer(p_imdnox, imdnox)
+    call c_f_pointer(p_irb, irb)
+
+    call c_f_pointer(p_iyhcn, iyhcn)
+    call c_f_pointer(p_iyno, iyno)
+    call c_f_pointer(p_iynh3, iynh3)
+    call c_f_pointer(p_ihox, ihox)
+    call c_f_pointer(p_igrb, igrb)
+    call c_f_pointer(p_noxyd, noxyd)
+
+    call c_f_pointer(p_ighcn1, ighcn1)
+    call c_f_pointer(p_ighcn2, ighcn2)
+    call c_f_pointer(p_ignoth, ignoth)
+    call c_f_pointer(p_ignh31, ignh31)
+    call c_f_pointer(p_ignh32, ignh32)
+    call c_f_pointer(p_ifhcnd, ifhcnd)
+    call c_f_pointer(p_ifhcnc, ifhcnc)
+    call c_f_pointer(p_ifnh3d, ifnh3d)
+    call c_f_pointer(p_ifnh3c, ifnh3c)
+    call c_f_pointer(p_ifnohc, ifnohc)
+    call c_f_pointer(p_ifnonh, ifnonh)
+    call c_f_pointer(p_ifnoch, ifnoch)
+    call c_f_pointer(p_ifnoth, ifnoth)
+    call c_f_pointer(p_ifhcnr, ifhcnr)
+    call c_f_pointer(p_icnohc, icnohc)
+    call c_f_pointer(p_icnonh, icnonh)
+    call c_f_pointer(p_icnorb, icnorb)
+
+    call c_f_pointer(p_teno, teno, [npot])
+    call c_f_pointer(p_ka, ka, [4, npot])
+    call c_f_pointer(p_kb, kb, [4, npot])
+    call c_f_pointer(p_kc, kc, [4, npot])
+    call c_f_pointer(p_chi2, chi2, [npot])
 
   end subroutine cp_model_map_coal
 

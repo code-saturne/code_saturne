@@ -1674,6 +1674,21 @@ _read_diffusivity(void)
     cs_field_t *tf = cs_thermal_model_field();
     cs_field_set_key_double(tf, kvisls0, visls_0);
 
+    /* Special case/keyword for Enthalpy diffusivity for combustion */
+    for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+         m_type <= CS_COMBUSTION_COAL;
+         m_type++) {
+      if (cs_glob_physical_model_flag[m_type] > -1) {
+        double diftl0;
+        cs_gui_properties_value("dynamic_diffusion", &diftl0);
+#if _XML_DEBUG_
+        bft_printf("==> %s\n", __func__);
+        bft_printf("--diftl0  = %f\n", diftl0);
+#endif
+        cs_field_set_key_double(tf, kvisls0, diftl0);
+        break;
+      }
+    }
   }
 
   /* User scalar

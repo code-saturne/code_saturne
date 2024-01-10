@@ -136,6 +136,12 @@ cs_user_model(void)
    * 2 (limit drop particle velocity) */
   cs_glob_coal_model->idrift = 1;
 
+  /* Kinetic model for CO <=> CO2 (for coal combustion)
+   * 0:  unused (maximal conversion in turbulent model)
+   * 1:  transport of CO2 mass fraction
+   * 2:  transport of CO mass fraction */
+  cs_glob_coal_model->ieqco2 = 0;
+
   /* Cooling towers model
    * -1: not active
    *  1: Poppe's model

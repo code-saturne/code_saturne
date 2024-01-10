@@ -197,17 +197,11 @@ end subroutine usipsu
 !>    a.Dynamic Diffusion Coefficient
 !>    b.Constants of the chosen model (EBU, Libby-Williams, ...)
 !
-!> This routine is called:
-!>
+!> This routine is called for the following models
 !>
 !>  - Eddy Break Up pre-mixed flame
 !>  - Diffusion flame in the framework of ``3 points'' rapid complete chemistry
 !>  - Libby-Williams pre-mixed flame
-!>  - Lagrangian module coupled with pulverized coal:
-!>    Eulerian combustion of pulverized coal and
-!>    Lagrangian transport of coal particles
-!>  - Pulverised coal combustion
-!>  - Fuel (oil) combustion
 !
 !===============================================================================
 
@@ -243,14 +237,6 @@ implicit none
 !===============================================================================
 ! 1. Additional Calculation Options
 !===============================================================================
-
-! --- Kinetic model for CO <=> CO2
-
-!     if = 0  unused (maximal conversion in turbulent model)
-!     if = 1  transport of CO2 mass fraction
-!     if = 2  transport of CO mass fraction (coal and fuel only)
-
-ieqco2 = 0
 
 ! --- Density Relaxation
 !     RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)

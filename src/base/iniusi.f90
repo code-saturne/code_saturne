@@ -117,12 +117,6 @@ interface
     implicit none
   end subroutine cs_gui_checkpoint_parameters
 
-  subroutine cs_gui_combustion_ref_values()  &
-       bind(C, name='cs_gui_combustion_ref_values')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_combustion_ref_values
-
   subroutine cs_gui_mobile_mesh_structures_add()  &
        bind(C, name='cs_gui_mobile_mesh_structures_add')
     use, intrinsic :: iso_c_binding
@@ -306,10 +300,6 @@ call cs_user_radiative_transfer_parameters ! deprecated, kept for compatibility
 ! Flow and other models selection through user C function
 call cs_user_model
 
-! Initialize some model structures if needed
-
-call cs_gui_combustion_ref_values
-
 ! Set type and order of the turbulence model
 call cs_set_type_order_turbulence_model()
 
@@ -472,6 +462,8 @@ call cs_gui_turb_ref_values
 call cs_f_turb_complete_constants(-1)
 
 ! Scamin, scamax, turbulent flux model, diffusivities
+! (may change physical properties for some scalars, so called after
+! cs_gui_physical_properties).
 call cs_gui_scalar_model_settings()
 
 ! Porosity model

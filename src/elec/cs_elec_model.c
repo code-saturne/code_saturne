@@ -705,7 +705,7 @@ CS_PROCF (elthht, ELTHHT) (int       *mode,
   else
     bft_error(__FILE__, __LINE__, 0,
               _("electric module:\n"
-                "bad value for mode (integer equal to -1 or 1 : %i here.\n"),
+                "bad value for mode (integer equal to -1 or 1: %i here.\n"),
               *mode);
 }
 

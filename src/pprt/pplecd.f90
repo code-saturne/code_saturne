@@ -48,7 +48,6 @@ use cstphy
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use ppcpfu
 
@@ -59,6 +58,20 @@ implicit none
 ! Arguments
 
 ! Local variables
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_gui_coal_model()  &
+    bind(C, name='cs_gui_coal_model')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_coal_model
+
+end interface
 
 !===============================================================================
 
@@ -80,8 +93,7 @@ endif
 ! ---> Pulverized coal combustion
 
 if (ippmod(iccoal).ge.0) then
-  call uisofu(thcdch, imdnox, irb, ihtco2,            &
-              noxyd, oxyo2, oxyn2, oxyh2o, oxyco2)
+  call cs_gui_coal_model
   call cs_coal_readata
 endif
 

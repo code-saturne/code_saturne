@@ -46,46 +46,16 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Density under relaxation
- *
- * Fortran Interface:
- *
- * subroutine uicpi1 (srrom)
- * *****************
- * double precision srrom   <--   density relaxation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicpi1, UICPI1) (double *const srrom);
-
-/*----------------------------------------------------------------------------
  * Temperature for D3P Gas Combustion
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICPI2 (SRROM)
- * *****************
- * DOUBLE PRECISION Toxy   <--   Oxydant temperature
- * DOUBLE PRECISION Tfuel  <--   Fuel temperature
+ * Toxy   <--   Oxidant temperature
+ * Tfuel  <--   Fuel temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel);
-
-/*----------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for physical properties of the activated specific physics
- * (pulverized solid fuels)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uisofu, UISOFU) (double       *thcdch,
-                                int          *imdnox,
-                                int          *irb,
-                                int          *ihtco2,
-                                int          *noxyd,
-                                double       *oxyo2,
-                                double       *oxyn2,
-                                double       *oxyh2o,
-                                double       *oxyco2);
 
 /*=============================================================================
  * Public function prototypes
@@ -97,6 +67,22 @@ void CS_PROCF (uisofu, UISOFU) (double       *thcdch,
 
 void
 cs_gui_physical_model_select(void);
+
+/*----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics
+ * (pulverized solid fuels)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_coal_model(void);
+
+/*----------------------------------------------------------------------------
+ * Gas combustion model parameters
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_combustion_gas_model(void);
 
 /*----------------------------------------------------------------------------
  * Electrical model: read parameters
@@ -135,13 +121,6 @@ void
 cs_gui_gwf_model(int  *permeability,
                  int  *unsteady,
                  int  *unsaturated);
-
-/*----------------------------------------------------------------------------
- * Combustion model: read reference values
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_combustion_ref_values(void);
 
 /*----------------------------------------------------------------------------*/
 
