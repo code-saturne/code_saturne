@@ -303,6 +303,26 @@ cs_user_parameters(cs_domain_t    *domain)
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
 
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(mom_eqp);
+
+    /* Set the main parameters for BoomerAMG */
+
+    cs_param_sles_boomeramg(slesp,
+                            CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
+                            CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS,
+                            CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS,
+                            CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
+                            1,  /* n_down_iter */
+                            1); /* n_up_iter */
+
+    /* Set advanced parameters for BoomerAMG */
+
+    cs_param_sles_boomeramg_advanced(slesp,
+                                     0.5, /* strong threshold */
+                                 CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_CC,
+                                     8,   /* Pmax */
+                                     2,   /* n_agg_levels */
+                                     2);  /* n_agg_paths */
 #else  /* PETSc not installed */
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");

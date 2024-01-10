@@ -82,6 +82,9 @@ typedef struct {
 
 } cs_param_sles_cvg_t;
 
+/* MUMPS settings */
+/* ============== */
+
 /*! \enum cs_param_sles_facto_type_t
  *  \brief type of factorization to consider when using the MUMPS solver to
  *  solve a linear system
@@ -233,6 +236,98 @@ typedef struct {
 
 } cs_param_sles_mumps_t;
 
+/* BoomerAMG settings */
+/* ================== */
+
+/*! \enum cs_param_sles_boomeramg_coarsen_algo_t
+ *  \brief Type of algorithm used in boomerAMG to coarsen a level. Only a
+ *  selection of algorithms is available here. Values are those given in HYPRE
+ */
+
+typedef enum {
+
+  CS_PARAM_SLES_BOOMERAMG_COARSEN_FALGOUT = 6,
+  CS_PARAM_SLES_BOOMERAMG_COARSEN_PMIS = 8,
+  CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS = 10, /* (default) */
+  CS_PARAM_SLES_BOOMERAMG_COARSEN_CGC = 21,
+  CS_PARAM_SLES_BOOMERAMG_COARSEN_CGC_E = 22,
+
+  CS_PARAM_SLES_BOOMERAMG_N_COARSEN_ALGOS
+
+} cs_param_sles_boomeramg_coarsen_algo_t;
+
+/*! \enum cs_param_sles_boomeramg_interp_type_t
+ *  \brief Type of algorithm used in boomerAMG to coarsen a level. Only a
+ *  selection of algorithms is available here. Values are those given in HYPRE
+ */
+
+typedef enum {
+
+  CS_PARAM_SLES_BOOMERAMG_INTERP_HYPERBOLIC = 2,
+  CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_CC = 6, /* (default) Also for GPU */
+  CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I = 7,
+  CS_PARAM_SLES_BOOMERAMG_INTERP_FF1 = 13,
+  CS_PARAM_SLES_BOOMERAMG_INTERP_EXTENDED = 14,     /* Also for GPU */
+  CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_MATRIX = 17,
+  CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_E_MATRIX = 18,
+
+  CS_PARAM_SLES_BOOMERAMG_N_INTERP_ALGOS
+
+} cs_param_sles_boomeramg_interp_algo_t;
+
+/*! \enum cs_param_sles_boomeramg_interp_type_t
+ *  \brief Type of algorithm used in boomerAMG to coarsen a level. Only a
+ *  selection of algorithms is available here. Values are those used in HYPRE.
+ */
+
+typedef enum {
+
+  CS_PARAM_SLES_BOOMERAMG_JACOBI = 0,
+  CS_PARAM_SLES_BOOMERAMG_FORWARD_GS = 3,
+  CS_PARAM_SLES_BOOMERAMG_BACKWARD_GS = 4,
+  CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR = 6,
+  CS_PARAM_SLES_BOOMERAMG_L1_SGS = 8,
+  CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM = 9,      /* for the coarsest level only */
+  CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS = 13, /* (default) */
+  CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS = 14,  /* (default) */
+  CS_PARAM_SLES_BOOMERAMG_CG = 15,
+  CS_PARAM_SLES_BOOMERAMG_CHEBYSHEV = 16,
+  CS_PARAM_SLES_BOOMERAMG_FCF_JACOBI = 17,
+  CS_PARAM_SLES_BOOMERAMG_L1_JACOBI = 18,
+
+  CS_PARAM_SLES_BOOMERAMG_N_SMOOTHERS
+
+} cs_param_sles_boomeramg_smoother_t;
+
+/*! \struct cs_param_sles_boomeramg_boomerang_t
+ *  \brief Set of the most influencial parameters to setup the algebraic
+ *   multigrid BoomerAMG belonging to the HYPRE library. These parameters are
+ *   used to define this AMG directly in HYPRE or through the PETSc library
+ *   according to the settings and the installed dependencies. Please refer to
+ *  the HYPRE documentation for more details.
+ */
+
+typedef struct {
+
+  /* Read the function \ref _petsc_pchypre_hook or \ref _hypre_boomeramg_hook
+     for more details and read the HYPRE user guide */
+
+  double                                   strong_threshold;
+  cs_param_sles_boomeramg_coarsen_algo_t   coarsen_algo;
+  cs_param_sles_boomeramg_interp_algo_t    interp_algo;
+  int                                      p_max;
+  int                                      n_agg_levels;
+  int                                      n_agg_paths;
+
+  cs_param_sles_boomeramg_smoother_t       down_smoother;
+  cs_param_sles_boomeramg_smoother_t       up_smoother;
+  cs_param_sles_boomeramg_smoother_t       coarse_solver;
+
+  int                                      n_down_iter;
+  int                                      n_up_iter;
+
+} cs_param_sles_boomeramg_t;
+
 /*!
  * \struct cs_param_sles_t
  * \brief Structure storing all metadata related to the resolution of a linear
@@ -364,29 +459,6 @@ typedef struct {
  *============================================================================*/
 
 /*============================================================================
- * Static inline public function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Find if a MUMPS-related solver is set or not
- *
- * \param[in] solver   type of solver
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_param_sles_is_mumps_set(cs_param_itsol_type_t  solver)
-{
-  if (solver == CS_PARAM_ITSOL_MUMPS)
-    return true;
-  else
-    return false;
-}
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -484,7 +556,56 @@ cs_param_sles_log(cs_param_sles_t   *slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the main memebers of a cs_param_sles_mumps_t structure. This
+ * \brief Set the main members of a cs_param_sles_mumps_t structure. This
+ *        structure is allocated if needed. Other members are kept to their
+ *        values.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      coarsen_algo    type of algoritmh for the coarsening
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      up_smoother     type of smoother for th up cycle
+ * \param[in]      coarse_solver   solver at the coarsest level
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_boomeramg(cs_param_sles_t                          *slesp,
+                        cs_param_sles_boomeramg_coarsen_algo_t    coarsen_algo,
+                        cs_param_sles_boomeramg_smoother_t        down_smoother,
+                        cs_param_sles_boomeramg_smoother_t        up_smoother,
+                        cs_param_sles_boomeramg_smoother_t        coarse_solver,
+                        int                                       n_down_iter,
+                        int                                       n_up_iter);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_sles_boomeramg_t structure used in
+ *        advanced settings. This structure is allocated if needed. Other
+ *        members are kept to their values. Please refer to the HYPRE user
+ *        guide for more details about the following advanced options.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      strong_thr       value of the strong threshold (coarsening)
+ * \param[in]      interp_algo      algorithm used for the interpolation
+ * \param[in]      p_max            max number of elements per row (interp)
+ * \param[in]      n_agg_lv         aggressive coarsening (number of levels)
+ * \param[in]      n_agg_paths      aggressive coarsening (number of paths)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_boomeramg_advanced(cs_param_sles_t                  *slesp,
+                                 double                            strong_thr,
+                             cs_param_sles_boomeramg_interp_algo_t interp_algo,
+                                 int                               p_max,
+                                 int                               n_agg_lv,
+                                 int                               n_agg_paths);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_sles_mumps_t structure. This
  *        structure is allocated if needed. Other members are kept to their
  *        values.
  *
@@ -501,10 +622,10 @@ cs_param_sles_mumps(cs_param_sles_t              *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the main memebers of a cs_param_sles_mumps_t structure. This
- *        structure is allocated if needed. Other members are kept to their
- *        values. Please refer to the MUMPS user guide for more details about
- *        the following advanced options.
+ * \brief Set the members of a cs_param_sles_mumps_t structure used in advanced
+ *        settings. This structure is allocated if needed. Other members are
+ *        kept to their values. Please refer to the MUMPS user guide for more
+ *        details about the following advanced options.
  *
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      analysis_algo    algorithm used for the analysis step
@@ -644,6 +765,53 @@ cs_param_sles_petsc_cmd(bool          use_prefix,
                         const char   *keyword,
                         const char   *keyval);
 #endif
+
+/*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find if a MUMPS-related solver is set or not
+ *
+ * \param[in] solver   type of solver
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_param_sles_is_mumps_set(cs_param_itsol_type_t  solver)
+{
+  if (solver == CS_PARAM_ITSOL_MUMPS)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a default context storing a set of BoomerAMG parameters
+ *
+ * \param[in] slesp     pointer to a cs_sles_param_t structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_param_sles_set_default_boomeramg_context(cs_param_sles_t  *slesp)
+{
+  assert(slesp != NULL);
+  BFT_FREE(slesp->context_param); /* Avoid an issue if the context was
+                                     different */
+
+  cs_param_sles_boomeramg(slesp,
+                          CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
+                          CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR,
+                          CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR,
+                          CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
+                          1,  /* n_down_iter */
+                          1); /* n_up_iter */
+}
 
 /*----------------------------------------------------------------------------*/
 

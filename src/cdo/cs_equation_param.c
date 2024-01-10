@@ -281,27 +281,22 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
       eqp->sles_param->solver_class = ret_class;
 
+      cs_param_sles_set_default_boomeramg_context(eqp->sles_param);
+
     }
     else if (strcmp(keyval, "boomer_w") == 0 || strcmp(keyval, "bamg_w") == 0) {
 
-      cs_param_sles_class_t  ret_class =
-        cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+      cs_param_sles_class_t  wanted_class = CS_PARAM_SLES_CLASS_HYPRE;
+      if (eqp->sles_param->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
+        wanted_class = CS_PARAM_SLES_CLASS_PETSC;
+
+      cs_param_sles_class_t ret_class = cs_param_sles_check_class(wanted_class);
 
       eqp->sles_param->flexible = true;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+      eqp->sles_param->solver_class = ret_class;
 
-      if (ret_class == CS_PARAM_SLES_CLASS_HYPRE) {
-        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
-        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
-      }
-      else if (ret_class == CS_PARAM_SLES_CLASS_PETSC) {
-        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
-        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Eq. %s\n Invalid choice of AMG type.\n"
-                  " HYPRE/PETSc are not available."
-                  " Please check your settings.", __func__, eqname);
+      cs_param_sles_set_default_boomeramg_context(eqp->sles_param);
 
     }
     else if (strcmp(keyval, "gamg") == 0 || strcmp(keyval, "gamg_v") == 0) {
@@ -579,8 +574,6 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
 
-
-
     }
     else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
              strcmp(keyval, "sgs") == 0) {
@@ -768,10 +761,9 @@ _set_key(cs_equation_param_t   *eqp,
       case CS_PARAM_SLES_CLASS_HYPRE:
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
 
-        /* Up to now HYPRE is available only through the PETSc interface.
-           Default when using PETSc */
-
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+
+        cs_param_sles_set_default_boomeramg_context(eqp->sles_param);
         break;
 
       default:
@@ -808,12 +800,17 @@ _set_key(cs_equation_param_t   *eqp,
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         break;
       case CS_PARAM_SLES_CLASS_HYPRE:
-        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
 
-        /* Up to now HYPRE is available only through the PETSc interface.
-           Default when using PETSc */
+        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+        if (cs_param_sles_hypre_from_petsc())
+          eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+        else
+          /* No block is used in this case */
+          eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+
+        cs_param_sles_set_default_boomeramg_context(eqp->sles_param);
         break;
 
       default:
@@ -973,9 +970,12 @@ _set_key(cs_equation_param_t   *eqp,
 
       /* Check that the AMG type is correctly set */
 
-      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG)
-        cs_param_sles_check_amg(eqp->sles_param);
+      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG) {
 
+        cs_param_sles_check_amg(eqp->sles_param);
+        cs_param_sles_set_default_boomeramg_context(eqp->sles_param);
+
+      }
     }
     else if (strcmp(keyval, "mumps") == 0) {
 
