@@ -185,6 +185,12 @@ cs_user_porosity(cs_domain_t   *domain)
     }
   }
 
+  /* Example to automatically compute fluid face surfaces
+   * if cs_glob_porous_model = 3
+   * (fluid surface is min between cell porosity)
+   * */
+  cs_porous_model_auto_face_porosity();
+
 }
 
 /*----------------------------------------------------------------------------*/
