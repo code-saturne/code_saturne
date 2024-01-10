@@ -5591,11 +5591,11 @@ res_cpu = !compute_cuda;
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
   // compute_cuda  = true;
-  // compute_cpu   = true;
+  compute_cpu   = true;
   // res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  // perf        = false;
+  perf        = true;
   // accuracy    = false;
 
 
@@ -7089,7 +7089,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
 
   if(scatter){
     #pragma omp target teams distribute parallel for \
-                               schedule(static,1)
+                              firstprivate(cs_math_zero_threshold) schedule(static,1)
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
       cs_lnum_t c_id1 = b_face_cells[f_id];
@@ -7122,7 +7122,7 @@ _lsq_vector_gradient_target(const cs_mesh_t               *m,
   }
   else{
     #pragma omp target teams distribute parallel for \
-                         schedule(static,1)
+                        firstprivate(cs_math_zero_threshold) schedule(static,1)
     for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
 
       cs_lnum_t c_id = b_cells[c_idx];
@@ -7284,9 +7284,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
   // compute_cuda  = true;
-  // compute_cpu   = true;
+  compute_cpu   = true;
   // res_cpu       = false;
-  // perf        = false;
+  perf        = true;
   // accuracy    = true;
   
 BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
@@ -7325,8 +7325,10 @@ BFT_MALLOC(gradv_target, n_cells_ext, cs_real_33_t);
   } // end if compute_cuda
 #endif
 
-start = std::chrono::high_resolution_clock::now();
 #if defined(HAVE_OPENMP_TARGET)
+if(perf){
+  start = std::chrono::high_resolution_clock::now();
+}
 _lsq_vector_gradient_target(m, 
                             madj, 
                             fvq, 
@@ -7339,10 +7341,12 @@ _lsq_vector_gradient_target(m,
                             gradv_target,
                             cocg,
                             rhs_target);
+if(perf){
+  stop = std::chrono::high_resolution_clock::now();
+  elapsed_target = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  printf("OMP target lsq %ld\n", elapsed_target.count());
+}
 #endif
-stop = std::chrono::high_resolution_clock::now();
-elapsed_target = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-printf("OMP target lsq %ld\n", elapsed_target.count());
 
 if(compute_cpu){
   if(perf){
@@ -8008,23 +8012,23 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 cs_real_t c_norm, ref_norm;
 
 // #if defined(HAVE_CUDA)
-  cs_lsq_vector_gradient_strided_cuda<stride>
-  (
-    m,
-    madj,
-    fvq,
-    halo_type,
-    inc,
-    coefav,
-    coefbv,
-    pvar,
-    c_weight,
-    cocg,
-    cocgb,
-    gradv,
-    rhs,
-    n_c_iter_max,
-    c_eps);
+  // cs_lsq_vector_gradient_strided_cuda<stride>
+  // (
+  //   m,
+  //   madj,
+  //   fvq,
+  //   halo_type,
+  //   inc,
+  //   coefav,
+  //   coefbv,
+  //   pvar,
+  //   c_weight,
+  //   cocg,
+  //   cocgb,
+  //   gradv,
+  //   rhs,
+  //   n_c_iter_max,
+  //   c_eps);
 // #else
   #pragma omp parallel for schedule(dynamic, CS_THR_MIN)
   for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
