@@ -364,13 +364,27 @@ _physical_property_thermal_law(cs_field_t           *c_prop,
   const cs_real_t *thermodynamic_pressure = &_p0;
   const cs_real_t *_thermal_f_val = NULL;
 
+#if 0
   /* For variable density flows with pressure dependent density (idilat > 1)
-   * we use total pressure values insted of the reference pressue P0. */
+     we would like to use total pressure values instead of the
+     reference pressue P0.
+
+     But it seems that basing the density law on a non-constant pressure
+     contradicts the hypothesis of the dilatale model, and in any case,
+     divergence has been observed when doing so with libraries such as
+     EOS or Coolprop.
+
+     TODO: enable using the thermodynamic pressure for library-based
+     density computations with compressible flows (which currenly use
+     their own density laws).
+ */
+
   cs_field_t *p_tot_field = cs_field_by_name_try("total_pressure");
   if (p_tot_field != NULL && cs_glob_velocity_pressure_model->idilat > 1) {
     thermodynamic_pressure = p_tot_field->val;
     thermodynamic_pressure_stride = 1;
   }
+#endif
 
   if (CS_F_(t) != NULL) {
     if (CS_F_(t)->type & CS_FIELD_VARIABLE)
@@ -5637,7 +5651,6 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
 void
 cs_gui_time_tables(void)
 {
-
   cs_tree_node_t *tt_n = cs_tree_get_node(cs_glob_tree,
                                           "physical_properties/time_tables");
 
