@@ -2076,45 +2076,52 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
 
+  if (mumpsp->advanced_optim)
+    mumps->ICNTL(13) = 1; /* Bypass ScaLAPACK excepted for PT-SCOTCH where it
+                             was observed that it delivers worse performances */
+
   /* Set the algorithm for the analysis step: renumbering and graph
      manipulations */
 
   switch (mumpsp->analysis_algo) {
 
   case CS_PARAM_SLES_ANALYSIS_AMD:
-    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 0;
     break;
 
   case CS_PARAM_SLES_ANALYSIS_QAMD:
-    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 6;
     break;
 
   case CS_PARAM_SLES_ANALYSIS_PORD:
-    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 4;
     break;
 
   case CS_PARAM_SLES_ANALYSIS_SCOTCH:
-    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 3;
     mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
   case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
-    mumps->ICNTL(28) = 2;  /* parallel analysis */
+    mumps->ICNTL(28) = 2;  /* Parallel analysis */
     mumps->ICNTL(29) = 1;
-    mumps->ICNTL(58) = 0;   /* No symbolic factorization */
+    mumps->ICNTL(58) = 0;  /* No symbolic factorization */
+
+    /* Usage of ICNTL(13) = 1 brings worse performances */
+    mumps->ICNTL(13) = 0;
     break;
 
   case CS_PARAM_SLES_ANALYSIS_METIS:
-    mumps->ICNTL(28) = 1;  /* sequential analysis */
+    mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 5;
     break;
 
   case CS_PARAM_SLES_ANALYSIS_PARMETIS:
-    mumps->ICNTL(28) = 2;  /* parallel analysis */
+    mumps->ICNTL(28) = 2;  /* Parallel analysis */
     mumps->ICNTL(29) = 2;
     mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
@@ -2162,9 +2169,9 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
     mumps->CNTL(7) = fabs(mumpsp->blr_threshold); /* Compression rate */
 
     if (mumpsp->blr_threshold < 0)
-      mumps->ICNTL(36) = 0; /* Variante de BLR0 */
+      mumps->ICNTL(36) = 0; /* UFSC: Variante 0 du BLR */
     else
-      mumps->ICNTL(36) = 1; /* Variante de BLR1 */
+      mumps->ICNTL(36) = 1; /* UCFS: Variante 1 de BLR (a bit stronger) */
 
     if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CONSTRAINED) {
 

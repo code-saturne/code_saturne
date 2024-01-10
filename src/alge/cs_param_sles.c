@@ -2445,6 +2445,8 @@ _set_hypre_sles(bool                 use_field_id,
  *
  * \param[in] is_single   single-precision or double-precision
  * \param[in] facto_type  type of factorization to consider
+ *
+ * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2479,6 +2481,8 @@ _create_mumps_param(bool                            is_single,
  *        calling MUMPS
  *
  * \param[in] mumpsp   set of mumps parameters
+ *
+ * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 

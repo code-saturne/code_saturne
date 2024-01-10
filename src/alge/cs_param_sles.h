@@ -212,8 +212,8 @@ typedef struct {
 
   bool    is_single;        /*!< Single precision is used, otherwise double */
 
-  bool    advanced_optim;   /*!< Activate advanced optimizations when openMP is
-                                 used */
+  bool    advanced_optim;   /*!< Activate advanced optimizations (very useful
+                                 when openMP is used) */
 
   double  blr_threshold;    /*!< Dropping parameter in the BLR compression. The
                                  value is directly related to the accuracy of
