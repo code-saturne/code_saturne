@@ -455,7 +455,7 @@ _evaluate_distribution(int          n_ranges,
  *   weight       <-- weighting related to each code
  *   order        <-- ordering array
  *   sampling     <-- sampling array
- *   c_freq       <-> pointer to the cumulative frequency array
+ *   cfreq        <-> pointer to the cumulative frequency array
  *   g_distrib    <-> pointer to a distribution array
  *   comm         <-- mpi communicator
  *----------------------------------------------------------------------------*/
@@ -645,8 +645,8 @@ _update_sampling(int      dim,
       }
     }
 
-    /* Find new s such as new_s is equal to target_freq by
-       a linear interpolation */
+    /* Find a value new_sampling by linear interpolation such that new_sampling
+       is equal to target_freq */
 
     f_low = c_freq[next_id-1];
     f_high = c_freq[next_id];

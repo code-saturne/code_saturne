@@ -1061,7 +1061,7 @@ _free_block(cs_cdo_system_block_t   **p_block)
 
 void
 cs_cdo_system_init_sharing(cs_mesh_t           *mesh,
-                                  cs_cdo_connect_t    *connect)
+                           cs_cdo_connect_t    *connect)
 {
   assert(connect != NULL && mesh != NULL); /* Sanity check */
 
