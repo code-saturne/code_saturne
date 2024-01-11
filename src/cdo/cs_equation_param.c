@@ -97,11 +97,11 @@ static const char _err_empty_eqp[] =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if PETSc or HYPRE is available and return the possible
- *        solver class.
+ * \brief Check if PETSc or HYPRE is available and return the possible solver
+ *        class
  *
- * \param[in] slesp      pointer to a \ref cs_param_sles_t structure
- * \param[in] keyname    name of the key to handle
+ * \param[in] slesp              pointer to a \ref cs_param_sles_t structure
+ * \param[in] petsc_mandatory    is PETSc mandatory with this settings
  *
  * \return a solver class
  */
@@ -109,24 +109,32 @@ static const char _err_empty_eqp[] =
 
 static cs_param_sles_class_t
 _get_petsc_or_hypre(const cs_param_sles_t  *slesp,
-                    const char             *keyname)
+                    bool                    petsc_mandatory)
 {
   assert(slesp != NULL);
-
-  /* Either with PETSc or with PETSc/HYPRE using Euclid */
 
   cs_param_sles_class_t  ret_class =
     cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
 
-  if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
+  if (ret_class != CS_PARAM_SLES_CLASS_PETSC && petsc_mandatory)
     bft_error(__FILE__, __LINE__, 0,
-              " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
-              " PETSc is not available with your installation.\n"
+              " %s(): Eq. %s Error detected while setting \"CS_EQKEY_PRECOND\""
+              " key.\n"
+              " PETSc is needed but not available with your installation.\n"
               " Please check your installation settings.\n",
-              __func__, slesp->name, keyname);
+              __func__, slesp->name);
 
   if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE)
     ret_class = cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+
+  if (ret_class != CS_PARAM_SLES_CLASS_HYPRE &&
+      ret_class != CS_PARAM_SLES_CLASS_PETSC)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): Eq. %s Error detected while setting \"CS_EQKEY_PRECOND\""
+              " key.\n"
+              " Neither PETSc nor HYPRE is available with your installation.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
 
   return ret_class;
 }
@@ -654,15 +662,13 @@ _set_key(cs_equation_param_t   *eqp,
       if (eqp->sles_param->pcd_block_type == CS_PARAM_PRECOND_BLOCK_NONE)
         eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
 
-      /* Either with PETSc or with PETSc/HYPRE using Euclid */
+      /* Either with PETSc or with PETSc/HYPRE using Euclid. In both cases,
+         PETSc is mandatory */
 
-      eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
-                                                          "CS_EQKEY_PRECOND");
+      eqp->sles_param->solver_class =
+        _get_petsc_or_hypre(eqp->sles_param, true); /* Is PETSc mandatory ? */
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
-
-      /* Default when using PETSc */
-
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
@@ -718,13 +724,10 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_ILU0;
       eqp->sles_param->flexible = false;
 
-      /* Either with PETSc or with PETSc/HYPRE using Euclid */
+      /* Either with PETSc or with PETSc/HYPRE or HYPRE using Euclid */
 
-      eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
-                                                          "CS_EQKEY_PRECOND");
-
-      /* Default when using PETSc */
-
+      eqp->sles_param->solver_class =
+        _get_petsc_or_hypre(eqp->sles_param, false); /* PETSc mandatory ? */
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
@@ -733,13 +736,10 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_ICC0;
       eqp->sles_param->flexible = false;
 
-      /* Either with PETSc or with PETSc/HYPRE using Euclid */
+      /* Either with PETSc or with PETSc/HYPRE or HYPRE using Euclid */
 
-      eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
-                                                          "CS_EQKEY_PRECOND");
-
-      /* Default when using PETSc */
-
+      eqp->sles_param->solver_class =
+        _get_petsc_or_hypre(eqp->sles_param, false); /* PETSc mandatory ? */
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
