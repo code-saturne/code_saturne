@@ -108,30 +108,6 @@ void CS_PROCF (cslogname, CSLOGNAME)
                                          by many Fortran compilers) */
 );
 
-/*----------------------------------------------------------------------------
- * Get package data path information.
- *
- * The aim of this function is to aviod issues with Fortran array bounds
- * checking when compilers such as icc 11 consider a character array from C
- * as an array of 1-character length strings.
- *
- * Fortran interface
- *
- * subroutine csdatadir (len, dir)
- * ********************
- *
- * integer          len         : <-- : maximum string length
- * character*       dir         : --> : Fortran string
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csdatadir, CSDATADIR)
-(
- const int   *len,
- char        *dir
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

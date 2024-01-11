@@ -77,7 +77,7 @@ module cs_c_bindings
   parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
 
   procedure() :: csexit, dmtmps
-  procedure() :: cslogname, csdatadir
+  procedure() :: cslogname
 
   procedure() :: viscfa
 

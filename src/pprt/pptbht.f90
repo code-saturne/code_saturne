@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine pptbht &
-!================
-
  ( ncoel  ,                                                       &
    nomcel , ehcoel , cpcoel , wmolce )
 
@@ -59,13 +57,6 @@ subroutine pptbht &
 ! Module files
 !===============================================================================
 
-use paramx
-use cstphy
-use entsor
-use ppppar
-use ppthch
-use coincl
-use cpincl
 use ppincl
 
 !===============================================================================
@@ -83,177 +74,53 @@ double precision wmolce (ngazem)
 
 ! Local variables
 
-character(len=256) :: pathdatadir
-character(len=40) :: dummy
-character(len=12) :: nomesp
+integer  ii, jj, kk
+character(len=13, kind=c_char) :: c_name_sp
+character(len=13*ngazem, kind=c_char) :: c_nomcel
 
-integer          ind , iches , indtp , inicff , injcff, impjnf
-integer          ne   , nt  , nc , iok
-integer          icoeff(ngazem)
+integer(c_int) :: c_ncoel, c_ngazem, c_npo
 
-double precision cth  , ctc
+!===============================================================================
+! Interfaces
+!===============================================================================
 
-double precision tlim(3) , wcoeff(2,7) , coeff(ngazem,2,7)
+interface
+
+  subroutine cs_combustion_enthalpy_and_cp_from_janaf &
+    (c_ncoel, c_ngazem, c_npo, c_nomcel, ehcoel, cpcoel, wmolce, th)  &
+    bind(C, name='cs_combustion_enthalpy_and_cp_from_janaf')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: c_ncoel, c_ngazem, c_npo
+    character(kind=c_char, len=1), dimension(*), intent(in) :: c_nomcel
+    real(kind=c_double), dimension(*), intent(in) :: ehcoel, cpcoel, wmolce, th
+  end subroutine cs_combustion_enthalpy_and_cp_from_janaf
+
+end interface
 
 !===============================================================================
 
+! Transform name to C array of names
 
-!===============================================================================
-! 2. LECTURE DU FICHIER DE DONNEES THERMODYNAMIQUES TABLE DE JANAF
-!===============================================================================
-
-! Initialisation
-
-
-do iches= 1, 12
-  nomesp(iches:iches)=' '
+do ii = 1, 13*ngazem
+  c_nomcel(ii:ii) = c_null_char
 enddo
 
-do ne = 1 , ngazem
-  icoeff(ne) = 0
-  do inicff = 1, 2
-    do injcff = 1, 7
-      coeff(ne,inicff,injcff) = 0.d0
-    enddo
+do ii = 1, ncoel
+  c_name_sp = trim(nomcel(ii)) // c_null_char
+  do jj = 1, len(nomcel(ii))
+    kk = (ii-1)*13 + jj
+    c_nomcel(kk:kk) = c_name_sp(jj:jj)
   enddo
 enddo
 
-do ne = 1 , ncoel
-  do nt = 1, npo
-    cpcoel(ne,nt)= 0.d0
-    ehcoel(ne,nt)= 0.d0
-  enddo
-enddo
+! Other variables
 
-impjnf = 25
+c_ncoel = ncoel
+c_ngazem = ngazem
+c_npo = npo
 
-call csdatadir(len(pathdatadir), pathdatadir)
-
-open(unit=impjnf, file=trim(pathdatadir)// '/data/thch/JANAF',  &
-     status='old' , form='formatted')
-
-read(impjnf,'(a)') dummy
-
-! Lecture des domaines de temperature
-
-read (impjnf,*) (tlim(indtp) , indtp=1,3)
-
-! Boucle de lecture des especes chimiques avec stockage partiel
-
- 5    continue
-
-read (impjnf,'(a12,6x,a6)') nomesp, dummy
-
-if (nomesp(1:3).EQ.'END') GOTO 100
-
-read (impjnf,*) (wcoeff(1,injcff), injcff=1,5)
-read (impjnf,*) (wcoeff(1,injcff), injcff=6,7),                   &
-                (wcoeff(2,injcff), injcff=1,3)
-read (impjnf,*) (wcoeff(2,injcff), injcff=4,7)
-
-! On ne stocke les coefficients que si
-!  l'espece consideree fait partie de l'exemple
-
-do ne = 1, ncoel
-  if ( nomcel(ne).eq.nomesp ) then
-    icoeff(ne) = 1
-     do inicff = 1, 2
-       do injcff = 1, 7
-         coeff(ne,inicff,injcff) = wcoeff(inicff,injcff)
-       enddo
-     enddo
-  endif
-enddo
-
-goto 5
-
- 100  continue
-
-! Arret de la lecture si tous les renseignements necessaires ont ete
-! enregistres
-
-close(impjnf)
-
-! Test et stop eventuel
-
-iok = 0
-do ne = 1, ncoel
-  if(icoeff(ne).eq.0) then
-    iok = iok + 1
-    write(nfecra,1000) nomcel(ne)
-  endif
-enddo
-if(iok.ne.0) then
-  write(nfecra,1100) iok
-  call csexit (1)
-  !==========
-endif
-
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PHYSIQUE PARTICULIERE                       ',/,&
-'@    =========                                               ',/,&
-'@    L''ESPECE ',A12     ,' EST INCONNUE DANS JANAF          ',/,&
-'@                                                            ',/,&
-'@                                                            '  )
- 1100 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE                                   ',/,&
-'@                                                            ',/,&
-'@    LE FICHIER PARAMETRIQUE FAIT REFERENCE A ',I10           ,/,&
-'@       ESPECE(S) INCONNUE(S) DANS JANAF (data/thch).        ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-
-!======================================================================================
-! 3. CALCUL DES ENTHALPIES ET DES CP
-!======================================================================================
-
-! Constante des gaz parfaits en J/mol/K
-
-do nt = 1,npo
-
-  ! Determination du jeu de coefficients utilises
-  if (th(nt) .gt. tlim(2)) then
-    ind = 1
-  else
-    ind = 2
-  endif
-
-  do ne = 1, ncoel
-    ehcoel(ne,nt)  = coeff(ne,ind,6) + coeff(ne,ind,1) * th(nt)
-    cpcoel(ne,nt)  =                   coeff(ne,ind,1)
-    cth = th(nt)
-    ctc = 1.d0
-
-    ! Dans la table de Janaf, les COEFF sont adimensionnels (CP/R,H/R)
-    do nc = 2, 5
-      cth = cth * th(nt)
-      ctc = ctc * th(nt)
-      ehcoel(ne,nt) = ehcoel(ne,nt)                               &
-                    + coeff(ne,ind,nc) * cth / dble(nc)
-      cpcoel(ne,nt) = cpcoel(ne,nt) + coeff(ne,ind,nc) * ctc
-    enddo
-
-    ! Calcul du CP et du H pour chaque espece
-    ehcoel(ne,nt) = ehcoel(ne,nt) * cs_physical_constants_r / wmolce(ne)
-    cpcoel(ne,nt) = cpcoel(ne,nt) * cs_physical_constants_r / wmolce(ne)
-  enddo
-
-enddo
-
-return
+call cs_combustion_enthalpy_and_cp_from_janaf &
+  (c_ncoel, c_ngazem, c_npo, c_nomcel, ehcoel, cpcoel, wmolce, th)
 
 end subroutine

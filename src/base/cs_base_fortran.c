@@ -310,46 +310,6 @@ void CS_PROCF (cslogname, CSLOGNAME)
               _("Path passed to cslogname too short for: %s"), name);
 }
 
-/*----------------------------------------------------------------------------
- * Get package data path information.
- *
- * The aim of this function is to aviod issues with Fortran array bounds
- * checking when compilers such as icc 11 consider a character array from C
- * as an array of 1-character length strings.
- *
- * Fortran interface
- *
- * subroutine csdatadir (len, dir)
- * ********************
- *
- * integer          len         : <-- : maximum string length
- * character*       dir         : --> : Fortran string
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csdatadir, CSDATADIR)
-(
- const int        *len,
- char             *dir
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
-{
-  size_t datadir_l;
-  size_t l = *len;
-  const char *datadir = cs_base_get_pkgdatadir();
-
-  datadir_l = strlen(datadir);
-  if (datadir_l <= l) {
-    size_t i;
-    memcpy(dir, datadir, datadir_l);
-    for (i = datadir_l; i < l; i++)
-      dir[i] = ' ';
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("Path passed to csdatadir too short for: %s"), datadir);
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/

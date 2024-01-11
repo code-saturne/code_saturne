@@ -60,6 +60,33 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute Enthalpy and Cp based on the JANAF band.
+ *
+ * \param[in]   ncoel   number of elementary constituents
+ * \param[in]   ngazem  number of elementary constituents
+ * \param[in]   npo     number of interpolation points
+ * \param[in]   nomcel  names of elementary constituants
+ * \param[out]  ehcoel  enthalpy for each elementary species
+ *                      (for point i and species j, ehcoel[i*ngazem + j])
+ * \param[out]  cpcoel  cp for each elementary species
+ *                      (for point i and species j, cpcoel[i*ngazem + j])
+ * \param[in]   wmolce  molar mass of each species
+ * \param[in]   th      temperature in K
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
+                                         int           ngazem,
+                                         int           npo,
+                                         const char    nomcel[][13],
+                                         double        ehcoel[],
+                                         double        cpcoel[],
+                                         const double  wmolce[],
+                                         const double  th[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

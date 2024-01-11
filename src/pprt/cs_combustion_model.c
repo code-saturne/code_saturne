@@ -46,6 +46,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 #include "cs_base.h"
+#include "cs_file.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
@@ -362,6 +363,204 @@ cs_f_combustion_model_get_pointers(double  **srrom)
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute Enthalpy and Cp based on the JANAF band.
+ *
+ * \param[in]   ncoel   number of elementary constituents
+ * \param[in]   ngazem  number of elementary constituents
+ * \param[in]   npo     number of interpolation points
+ * \param[in]   nomcel  names of elementary constituants
+ * \param[out]  ehcoel  enthalpy for each elementary species
+ *                      (for point i and species j, ehcoel[i*ngazem + j])
+ * \param[out]  cpcoel  cp for each elementary species
+ *                      (for point i and species j, cpcoel[i*ngazem + j])
+ * \param[in]   wmolce  molar mass of each species
+ * \param[in]   th      temperature in K
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
+                                         int           ngazem,
+                                         int           npo,
+                                         const char    nomcel[][13],
+                                         double        ehcoel[],
+                                         double        cpcoel[],
+                                         const double  wmolce[],
+                                         const double  th[])
+{
+#  undef MAX_ELEMENTARY_COMPONENTS;
+#  define MAX_ELEMENTARY_COMPONENTS 20
+  if (ngazem > MAX_ELEMENTARY_COMPONENTS)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Maximum number of elmentary components handled is %d,\n"
+                "but %d requested."),
+              __func__, ngazem, MAX_ELEMENTARY_COMPONENTS);
+
+  char nomesp[13] = "";
+
+  int  icoeff[MAX_ELEMENTARY_COMPONENTS];
+  char buf[128];
+
+  double  wcoeff[7][2];
+  double  coeff[7][2][MAX_ELEMENTARY_COMPONENTS];
+
+  /* Read JANAF thermochemical data
+     ------------------------------ */
+
+  const char *datadir = cs_base_get_pkgdatadir();
+  const char sub_path[] = "/data/thch/JANAF";
+
+  char *pathdatadir;
+  BFT_MALLOC(pathdatadir, strlen(datadir) + strlen(sub_path) + 1, char);
+  sprintf(pathdatadir, "%s%s", datadir, sub_path);
+
+#if defined(HAVE_MPI)
+
+  cs_file_t *impjnf = cs_file_open(pathdatadir,
+                                   CS_FILE_MODE_READ,
+                                   CS_FILE_STDIO_SERIAL,
+                                   MPI_INFO_NULL,
+                                   MPI_COMM_NULL,
+                                   MPI_COMM_NULL);
+
+#else
+
+  cs_file_t *impjnf = cs_file_open(pathdatadir,
+                                   CS_FILE_MODE_READ,
+                                   CS_FILE_DEFAULT);
+
+#endif
+
+  BFT_FREE(pathdatadir);
+  int line = 0;
+
+  /* Initialization */
+
+  for (int ne = 0; ne < ngazem; ne++) {
+   icoeff[ne]= 0;
+   for (int inicff = 0; inicff < 2; inicff++) {
+     for (int injcff = 0; injcff < 7; injcff++)
+       coeff[injcff][inicff][ne] = 0;
+   }
+  }
+
+  for (int ne = 0; ne < ncoel; ne++) {
+    for (int nt = 0; nt < npo; nt++) {
+      cpcoel[nt*ngazem + ne] = 0;
+      ehcoel[nt*ngazem + ne] = 0;
+    }
+  }
+
+  char *s = cs_file_gets(buf, 127, impjnf, &line);  /* dummy read for 1st line */
+
+  /* Read temperature data */
+
+  double  tlim[3];
+  s = cs_file_gets(buf, 127, impjnf, &line);
+  sscanf(s, "%lf %lf %lf", tlim, tlim+1, tlim+2);
+
+  /* Read chemical species with partial storage */
+
+  while (true) {
+
+    s = cs_file_gets(buf, 127, impjnf, &line);
+
+    char *p = strtok(s, " \t");
+    strncpy(nomesp, p, 12); nomesp[12] = '\0';
+
+    if (strcmp(nomesp, "END") == 0) break;
+
+    s = cs_file_gets(buf, 127, impjnf, &line);
+    sscanf(s, "%lf %lf %lf %lf %lf",
+           &wcoeff[0][0], &wcoeff[1][0], &wcoeff[2][0],
+           &wcoeff[3][0], &wcoeff[4][0]);
+
+    s = cs_file_gets(buf, 127, impjnf, &line);
+    sscanf(s, "%lf %lf %lf %lf %lf",
+           &wcoeff[5][0], &wcoeff[6][0],
+           &wcoeff[0][1], &wcoeff[1][1], &wcoeff[2][1]);
+
+    s = cs_file_gets(buf, 127, impjnf, &line);
+    sscanf(s, "%lf %lf %lf %lf",
+           &wcoeff[3][1], &wcoeff[4][1],
+           &wcoeff[5][1], &wcoeff[6][1]);
+
+    /* We store the coefficients only if the considered species
+       is part of the example */
+
+    for (int ne = 0; ne < ncoel; ne++) {
+      if (strcmp(nomcel[ne], nomesp) == 0) {
+        icoeff[ne] = 1;
+        for (int inicff = 0; inicff < 2; inicff++) {
+          for (int injcff = 0; injcff < 7; injcff++)
+            coeff[injcff][inicff][ne] = wcoeff[injcff][inicff];
+        }
+      }
+    }
+
+  }  /* end while */
+
+  /* Finish reading if all data has beeen stored */
+
+  impjnf = cs_file_free(impjnf);
+
+  /* Test and possible stop */
+
+  int iok = 0;
+  for (int ne = 0; ne < ncoel; ne++) {
+    if (icoeff[ne] == 0) {
+      iok += 1;
+      bft_printf(_("@@ Error: species \'%s\' not in JANAF\n"), nomcel[ne]);
+    }
+  }
+
+  if (iok != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: combustion data input:\n"
+                " The parametric file references %d species\n"
+                " not in the data/thch/JANAF file\n."
+                "\n"
+                " Check the setup parameters."),
+              __func__, iok);
+
+  /* Compute enthalpies and Cp
+     ------------------------- */
+
+  /* perfect gas constants in J/mol/K */
+
+  for (int nt = 0; nt < npo; nt++) {
+
+    /* Determination of the set of coefficients used */
+    int ind;
+    if (th[nt] > tlim[1])
+      ind = 0;
+    else
+      ind = 1;
+
+    for (int ne = 0; ne < ncoel; ne++) {
+      ehcoel[nt*ngazem + ne]  = coeff[5][ind][ne] + coeff[0][ind][ne] * th[nt];
+      cpcoel[nt*ngazem + ne]  =                     coeff[0][ind][ne];
+      double cth = th[nt];
+      double ctc = 1.;
+
+      /* In the JANAF table, coefficients are adimensional (CP/R,H/R) */
+      for (int nc = 1; nc < 5; nc++) {
+        cth = cth * th[nt];
+        ctc = ctc * th[nt];
+        ehcoel[nt*ngazem + ne] += coeff[nc][ind][ne] * cth / (double)(nc+1);
+        cpcoel[nt*ngazem + ne] += coeff[nc][ind][ne] * ctc;
+      }
+
+      /* Compute CP and H for each species */
+      ehcoel[nt*ngazem + ne] *= cs_physical_constants_r / wmolce[ne];
+      cpcoel[nt*ngazem + ne] *= cs_physical_constants_r / wmolce[ne];
+    }
+
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 
