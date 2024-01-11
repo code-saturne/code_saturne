@@ -1289,6 +1289,10 @@ cs_slope_test_gradient_vector(const int              inc,
 }
 
 #if defined(HAVE_OPENMP_TARGET)
+// #pragma omp declare target
+// const cs_real_t cs_math_zero_threshold = FLT_MIN;
+// #pragma omp end declare target
+
 void
 cs_slope_test_gradient_vector_target(const int              inc,
                               const cs_halo_type_t   halo_type,
@@ -1369,14 +1373,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
 {
   if(scatter){
     #pragma omp target teams distribute parallel for \
-                        map(tofrom: grdpa[0:n_cells_ext]) \
-                        map(to: grad[0:n_cells_ext], \
-                                i_face_cog[0:n_i_faces], \
-                                cell_cen[0:n_cells_ext], \
-                                pvar[0:n_cells_ext], \
-                                i_massflux[0:n_i_faces], \
-                                i_f_face_normal[0:n_i_faces], \
-                                i_face_cells[0:n_i_faces]) schedule(static,1)
+                        schedule(static,1)
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++){
 
       cs_real_t difv[3], djfv[3];
@@ -1418,12 +1415,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
     }
 
     #pragma omp target teams distribute parallel for \
-                      map(tofrom: grdpa[0:n_cells_ext]) \
-                      map(to: b_face_cells[0:n_b_faces], \
-                              coefb[0:n_b_faces], \
-                              coefa[0:n_b_faces], \
-                              grad[0:n_cells_ext]) schedule(static,1) \
-                      if(m->n_b_faces > CS_THR_MIN)
+                    schedule(static,1) if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
       cs_real_t diipbv[3];
@@ -1455,17 +1447,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
   }
   else{
     #pragma omp target teams distribute parallel for \
-                        map(tofrom: grdpa[0:n_cells_ext]) \
-                        map(to: grad[0:n_cells_ext], \
-                                i_face_cog[0:n_i_faces], \
-                                cell_i_faces_sgn[0:n_i_faces], \
-                                cell_i_faces[0:n_i_faces], \
-                                cell_cen[0:n_cells_ext], \
-                                cell_cells_idx[0:n_cells_ext], \
-                                cell_cells[0:n_cells_ext], \
-                                pvar[0:n_cells_ext], \
-                                i_massflux[0:n_i_faces], \
-                                i_f_face_normal[0:n_i_faces]) schedule(static,1)
+                         schedule(static,1)
     for (cs_lnum_t ii = 0; ii < n_cells; ii++){
 
       cs_lnum_t s_id = cell_cells_idx[ii];
@@ -1511,14 +1493,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
     }
 
     #pragma omp target teams distribute parallel for \
-                        map(tofrom: grdpa[0:n_cells_ext]) \
-                        map(to: b_face_cells[0:n_b_faces], \
-                                coefb[0:n_b_faces], \
-                                coefa[0:n_b_faces], \
-                                b_cells[0:n_cells], \
-                                cell_b_faces_idx[0:n_cells+1], \
-                                grad[0:n_cells_ext]) schedule(static,1)\
-                        if(m->n_b_faces > CS_THR_MIN)
+                       schedule(static,1) if(m->n_b_faces > CS_THR_MIN)
     for (cs_lnum_t c_idx = 0; c_idx < n_b_cells; c_idx++) {
 
       cs_lnum_t ii = b_cells[c_idx];
@@ -1558,9 +1533,7 @@ cs_slope_test_gradient_vector_target(const int              inc,
     }
   }
 
-  #pragma omp target teams distribute parallel for \
-                      map(tofrom: grdpa[0:n_cells_ext]) \
-                      map(to: cell_vol[0:n_cells_ext])
+  #pragma omp target teams distribute parallel for 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t unsvol = 1./cell_vol[cell_id];
     for (int isou = 0; isou < 3; isou++) {
@@ -4387,6 +4360,20 @@ cs_face_convection_scalar(int                       idtvar,
   BFT_FREE(courant);
 }
 
+void cs_math_3_normalize_target_cd(const cs_real_t in[3],
+                                         cs_real_t out[3])
+{
+  cs_real_t norm = sqrt(in[0]*in[0] 
+          + in[1]*in[1]
+          + in[2]*in[2]);
+
+  cs_real_t inverse_norm =  1. / norm;
+
+  out[0] = inverse_norm * in[0];
+  out[1] = inverse_norm * in[1];
+  out[2] = inverse_norm * in[2];
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the convection/diffusion terms of a transport
@@ -4498,7 +4485,10 @@ cs_convection_diffusion_vector(int                         idtvar,
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_cells = m->n_b_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_threads = m->b_face_numbering->n_threads;
@@ -4666,8 +4656,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   /* Timing the computation */
 
-  clock_t start, stop;
-  unsigned long elapsed, elapsed_cuda;
+  clock_t start, stop, start_slope, stop_slope;
+  unsigned long elapsed, elapsed_cuda, elapsed_slope;
 
   cs_real_33_t *grad_cpu, *grad_gpu;
   cs_real_33_t *grdpa_cpu, *grdpa_gpu;
@@ -4704,11 +4694,11 @@ res_cpu = !compute_cuda;
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
   // compute_cuda  = true;
-  // compute_cpu   = true;
+  compute_cpu   = true;
   // res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  // perf        = false;
+  perf        = true;
   // accuracy    = false;
 
 #if defined(HAVE_CUDA)
@@ -4866,25 +4856,46 @@ res_cpu = !compute_cuda;
 
     if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-      cs_slope_test_gradient_vector(inc,
-                                    halo_type,
-                                    (const cs_real_33_t *)grad_cpu,
-                                    grdpa_cpu,
-                                    _pvar,
-                                    coefav,
-                                    coefbv,
-                                    i_massflux);
 
-      // #if defined(HAVE_OPENMP_TARGET)
-      // cs_slope_test_gradient_vector_target(inc,
-      //                                     halo_type,
-      //                                     (const cs_real_33_t *)grad_cpu,
-      //                                     grdpa_cpu,
-      //                                     _pvar,
-      //                                     coefav,
-      //                                     coefbv,
-      //                                     i_massflux);
-      // #endif
+      if(compute_cpu){
+        if(perf){
+          start_slope = clock();
+        }
+        cs_slope_test_gradient_vector(inc,
+                                      halo_type,
+                                      (const cs_real_33_t *)grad_cpu,
+                                      grdpa_cpu,
+                                      _pvar,
+                                      coefav,
+                                      coefbv,
+                                      i_massflux);
+      if(perf){
+        stop_slope = clock();
+        elapsed_slope = (stop_slope - start_slope) * 1e6 / CLOCKS_PER_SEC;
+        printf("convection compute Slope time in us: CPU = %ld\n", elapsed_slope);
+      }
+      }
+
+      #if defined(HAVE_OPENMP_TARGET)
+      if(compute_cuda){
+        if(perf){
+          start_slope = clock();
+        }
+        cs_slope_test_gradient_vector_target(inc,
+                                            halo_type,
+                                            (const cs_real_33_t *)grad_cpu,
+                                            grdpa_cpu,
+                                            _pvar,
+                                            coefav,
+                                            coefbv,
+                                            i_massflux);
+        if(perf){
+          stop_slope = clock();
+          elapsed_slope = (stop_slope - start_slope) * 1e6 / CLOCKS_PER_SEC;
+          printf("convection compute Slope time in us: OMP = %ld\n", elapsed_slope);
+        }
+      }
+      #endif
     }
 
     if(perf){
@@ -5537,7 +5548,11 @@ res_cpu = !compute_cuda;
       /* Unsteady */
     }
     else {
-
+      // ---------------OMP and CUDA here ---------------------
+if(compute_cpu){
+  if(perf){
+    start_slope = clock();
+  }
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
@@ -5662,6 +5677,168 @@ res_cpu = !compute_cuda;
           }
         }
       }
+      if(perf){
+        stop_slope = clock();
+        elapsed_slope = (stop_slope - start_slope) * 1e6 / CLOCKS_PER_SEC;
+        printf("idtvar => 0 unsteady i_faces time in us: CPU = %ld\n", elapsed_slope);
+      }
+} //compute_cpu
+
+    #if defined(HAVE_OPENMP_TARGET)
+    if(compute_cuda){
+      if(perf){
+        start_slope = clock();
+      }
+    #pragma omp target data map(tofrom: rhs[0:n_cells_ext]) \
+                            map(to: i_face_cells[0:n_i_faces], \
+                                i_massflux[0:n_i_faces], \
+                                i_f_face_factor[0:n_i_faces], \
+                                i_face_normal[0:n_i_faces], \
+                                i_visc[0:n_i_faces], \
+                                i_face_cog[0:n_i_faces], \
+                                i_face_surf[0:n_i_faces], \
+                                i_dist[0:n_i_faces], \
+                                weight[0:n_i_faces], \
+                                diipf[0:n_i_faces], \
+                                djjpf[0:n_i_faces], \
+                                i_pvar[0:n_i_faces], \
+                                grad[0:n_cells_ext], \
+                                grdpa[0:n_cells_ext], \
+                                cell_cen[0:n_cells_ext], \
+                                _pvar[0:n_cells_ext])
+    {
+      #pragma omp target teams distribute parallel for reduction(+:n_upwind) \
+                          firstprivate(cs_math_zero_threshold, \
+                                iconvp, thetap, ischcp, blencp, blend_st, \
+                                 imasac, idiffp, ircflp) \
+                                schedule(static,1)
+        for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
+
+          cs_real_t fluxi[3], fluxj[3] ;
+          for (int isou =  0; isou < 3; isou++) {
+            fluxi[isou] = 0;
+            fluxj[isou] = 0;
+          }
+          cs_real_3_t pip, pjp;
+          cs_real_3_t pif, pjf;
+          bool upwind_switch = false;
+          cs_real_3_t _pi, _pj;
+
+          for (int i = 0; i < 3; i++) {
+            _pi[i]  = _pvar[ii][i];
+            _pj[i]  = _pvar[jj][i];
+          }
+
+          /* Scaling due to mass balance in porous modelling */
+          if (i_f_face_factor != NULL) {
+            cs_real_3_t n;
+            cs_math_3_normalize(i_face_normal[face_id], n);
+
+            cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
+            cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
+          }
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
+                                  0.);
+
+          cs_i_cd_unsteady_slope_test_vector(&upwind_switch,
+                                              iconvp,
+                                              bldfrp,
+                                              ischcp,
+                                              blencp,
+                                              blend_st,
+                                              weight[face_id],
+                                              i_dist[face_id],
+                                              i_face_surf[face_id],
+                                              cell_cen[ii],
+                                              cell_cen[jj],
+                                              i_face_normal[face_id],
+                                              i_face_cog[face_id],
+                                              diipf[face_id],
+                                              djjpf[face_id],
+                                              i_massflux[face_id],
+                                              grad[ii],
+                                              grad[jj],
+                                              grdpa[ii],
+                                              grdpa[jj],
+                                              _pi,
+                                              _pj,
+                                              pif,
+                                              pjf,
+                                              pip,
+                                              pjp);
+
+          cs_i_conv_flux_vector(iconvp,
+                                thetap,
+                                imasac,
+                                _pvar[ii],
+                                _pvar[jj],
+                                pif,
+                                pif, /* no relaxation */
+                                pjf,
+                                pjf, /* no relaxation */
+                                i_massflux[face_id],
+                                fluxi,
+                                fluxj);
+
+
+          cs_i_diff_flux_vector(idiffp,
+                                thetap,
+                                pip,
+                                pjp,
+                                pip, /* no relaxation */
+                                pjp, /* no relaxation */
+                                i_visc[face_id],
+                                fluxi,
+                                fluxj);
+
+          if (upwind_switch) {
+
+            /* in parallel, face will be counted by one and only one rank */
+            if (ii < n_cells)
+              n_upwind++;
+
+            if (v_slope_test != NULL) {
+              v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+              v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+            }
+          }
+          /* Saving velocity at internal faces, if needed */
+          if (i_pvar != NULL) {
+            if (i_massflux[face_id] >= 0.) {
+              for (cs_lnum_t i = 0; i < 3; i++)
+                i_pvar[face_id][i] += thetap * pif[i];
+            }
+            else {
+              for (cs_lnum_t i = 0; i < 3; i++)
+                i_pvar[face_id][i] += thetap * pjf[i];
+            }
+          }
+
+          for (int isou = 0; isou < 3; isou++) {
+            
+            #pragma omp atomic
+            rhs[ii][isou] -= fluxi[isou];
+            #pragma omp atomic
+            rhs[jj][isou] += fluxj[isou];
+
+          } /* isou */
+
+        }
+      } // target data
+      if(perf){
+        stop_slope = clock();
+        elapsed_slope = (stop_slope - start_slope) * 1e6 / CLOCKS_PER_SEC;
+        printf("idtvar => 0 unsteady i_faces time in us: OMP = %ld\n", elapsed_slope);
+      }
+    } // compute_cuda
+      #endif
 
     } /* idtvar */
 
@@ -5888,7 +6065,11 @@ res_cpu = !compute_cuda;
       /* Unsteady */
     }
     else {
-
+      // ---------------OMP and CUDA here ---------------------
+if(compute_cpu){
+  if(perf){
+    start_slope = clock();
+  }
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[t_id*2];
@@ -6088,6 +6269,246 @@ res_cpu = !compute_cuda;
           BFT_FREE(df_limiter_local);
         }
       }
+  if(perf){
+    stop_slope = clock();
+    elapsed_slope = (stop_slope - start_slope) * 1e6 / CLOCKS_PER_SEC;
+    printf("idtvar => 0 unsteady b_faces time in us: CPU = %ld\n", elapsed_slope);
+  }
+} // compute_cpu
+
+#if defined(HAVE_OPENMP_TARGET)
+if(compute_cuda){
+  if(perf){
+    start_slope = clock();
+  }
+#pragma omp target data map(tofrom: rhs[0:n_cells_ext]) \
+                        map(to: b_face_cells[0:n_b_faces], \
+                                b_massflux[0:n_b_faces], \
+                                b_f_face_factor[0:n_b_faces], \
+                                b_face_normal[0:n_b_faces], \
+                                bc_type[0:n_b_faces], \
+                                b_visc[0:n_b_faces], \
+                                b_face_cells[0:n_b_faces], \
+                                b_face_surf[0:n_b_faces], \
+                                coefav[0:n_b_faces], \
+                                coefbv[0:n_b_faces], \
+                                cofafv[0:n_b_faces], \
+                                cofbfv[0:n_b_faces], \
+                                diipb[0:n_b_faces], \
+                                b_pvar[0:n_b_faces], \
+                                grad[0:n_cells_ext], \
+                                grdpa[0:n_cells_ext], \
+                                _pvar[0:n_cells_ext])
+{
+      #pragma omp target teams distribute parallel for \
+                          private(pvar_distant, pvar_local, df_limiter_local) \
+                                  firstprivate(cs_math_zero_threshold, iconvp, thetap, ischcp, blencp, blend_st, \
+                                 imasac, idiffp, ircflp, inc, n_local, n_distant) \
+                                schedule(static,1) if(m->n_b_faces > CS_THR_MIN)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+          cs_lnum_t ii = b_face_cells[face_id];
+
+          cs_real_t fluxi[3];
+          for (int isou =  0; isou < 3; isou++) {
+            fluxi[isou] = 0;
+          }
+          cs_real_3_t pip;
+          cs_real_3_t _pi;
+          cs_real_t pfac[3];
+
+          for (int i = 0; i < 3; i++) {
+            _pi[i]  = _pvar[ii][i];
+          }
+
+          /* Scaling due to mass balance in porous modelling */
+          if (b_f_face_factor != NULL) {
+            cs_real_3_t n;
+            cs_math_3_normalize(b_face_normal[face_id], n);
+
+            cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
+          }
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = cs_math_fmax(df_limiter[ii], 0.);
+
+          cs_b_cd_unsteady_vector(bldfrp,
+                                  diipb[face_id],
+                                  grad[ii],
+                                  _pi,
+                                  pip);
+          cs_b_upwind_flux_vector(iconvp,
+                                  thetap,
+                                  imasac,
+                                  inc,
+                                  bc_type[face_id],
+                                  _pi,
+                                  _pi, /* no relaxation */
+                                  pip,
+                                  coefav[face_id],
+                                  coefbv[face_id],
+                                  b_massflux[face_id],
+                                  pfac,
+                                  fluxi);
+
+          /* Saving velocity on boundary faces */
+          if (b_pvar != NULL) {
+            if (b_massflux[face_id] >= 0.) {
+              for (cs_lnum_t i = 0; i < 3; i++)
+                b_pvar[face_id][i] += thetap * _pi[i];
+            }
+            else {
+              for (cs_lnum_t i = 0; i < 3; i++) {
+                b_pvar[face_id][i] += thetap * pfac[i];
+              }
+            }
+          }
+
+          cs_b_diff_flux_vector(idiffp,
+                                thetap,
+                                inc,
+                                pip,
+                                cofafv[face_id],
+                                cofbfv[face_id],
+                                b_visc[face_id],
+                                fluxi);
+
+          for(int isou = 0; isou < 3; isou++) {
+            #pragma omp atomic
+            rhs[ii][isou] -= fluxi[isou];
+          }
+
+        }
+      }
+
+      /* The variable is internally coupled and an implicit contribution
+       * is required */
+      if (icoupl > 0) {
+        /* Prepare data for sending */
+        BFT_MALLOC(pvar_distant, n_distant, cs_real_3_t);
+
+        for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+          cs_lnum_t face_id = faces_distant[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+
+          cs_real_3_t pip;
+          cs_real_3_t _pj;
+
+          for (int i = 0; i < 3; i++) {
+            _pj[i]  = _pvar[jj][i];
+          }
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          /* Note: to be treated exactly as a internal face, should be a bending
+           * between the two cells... */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = cs_math_fmax(df_limiter[jj], 0.);
+
+          /* Scaling due to mass balance in porous modelling */
+          if (b_f_face_factor != NULL) {
+            cs_real_3_t n;
+            cs_math_3_normalize(b_face_normal[face_id], n);
+
+            cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
+          }
+
+          cs_b_cd_unsteady_vector(bldfrp,
+                                  diipb[face_id],
+                                  grad[jj],
+                                  _pj,
+                                  pip);
+
+          for (int k = 0; k < 3; k++)
+            pvar_distant[ii][k] = pip[k];
+        }
+
+        /* Receive data */
+        BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+        cs_internal_coupling_exchange_var(cpl,
+                                          3, /* Dimension */
+                                          (cs_real_t *)pvar_distant,
+                                          (cs_real_t *)pvar_local);
+
+        if (df_limiter != NULL) {
+          BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
+          cs_internal_coupling_exchange_var(cpl,
+                                            1, /* Dimension */
+                                            df_limiter,
+                                            df_limiter_local);
+        }
+
+        /* Flux contribution */
+        assert(f != NULL);
+        cs_real_t *hintp = f->bc_coeffs->hint;
+        cs_real_t *hextp = f->bc_coeffs->rcodcl2;
+        for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+          cs_lnum_t face_id = faces_local[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t surf = b_face_surf[face_id];
+          cs_real_t pip[3], pjp[3];
+          cs_real_t fluxi[3] = {0., 0., 0.};
+          cs_real_3_t _pj;
+
+          for (int i = 0; i < 3; i++) {
+            _pj[i]  = _pvar[jj][i];
+          }
+
+          /* Scaling due to mass balance in porous modelling */
+          if (b_f_face_factor != NULL) {
+            cs_real_3_t n;
+            cs_math_3_normalize(b_face_normal[face_id], n);
+
+            cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
+          }
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
+                                               df_limiter[jj]),
+                                  0.);
+
+          cs_b_cd_unsteady_vector(bldfrp,
+                                  diipb[face_id],
+                                  grad[jj],
+                                  _pj,
+                                  pip);
+
+          for (int k = 0; k < 3; k++)
+            pjp[k] = pvar_local[ii][k];
+
+          cs_real_t hint = hintp[face_id];
+          cs_real_t hext = hextp[face_id];
+          cs_real_t heq = _calc_heq(hint, hext)*surf;
+
+          cs_b_diff_flux_coupling_vector(idiffp,
+                                         pip,
+                                         pjp,
+                                         heq,
+                                         fluxi);
+
+          for (int k = 0; k < 3; k++)
+            #pragma omp atomic
+            rhs[jj][k] -= thetap * fluxi[k];
+        }
+
+        BFT_FREE(pvar_local);
+        /* Sending structures are no longer needed */
+        BFT_FREE(pvar_distant);
+        if (df_limiter != NULL) {
+          BFT_FREE(df_limiter_local);
+        }
+      } // target data
+  if(perf){
+    stop_slope = clock();
+    elapsed_slope = (stop_slope - start_slope) * 1e6 / CLOCKS_PER_SEC;
+    printf("idtvar => 0 unsteady b_faces time in us: OMP = %ld\n", elapsed_slope);
+  }
+} // compute_cuda
+#endif
     } /* idtvar */
 
     /* Boundary convective flux imposed at some faces (tags in icvfli array) */
