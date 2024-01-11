@@ -184,35 +184,11 @@ module lagran
 
     ! Interface to C function passing specific physics options
 
-    subroutine  cs_f_lagr_specific_physics(iirayo)             &
-      bind(C, name='cs_f_lagr_specific_physics')
+    subroutine  cs_lagr_map_specific_physics()             &
+      bind(C, name='cs_lagr_map_specific_physics')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int) :: iirayo
-    end subroutine cs_f_lagr_specific_physics
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function passing coal combustion parameters
-
-    subroutine  cs_f_lagr_coal_comb(ncharb, ncharm,                            &
-                                    ih2o, io2, ico, iatc, prefth, trefth,      &
-                                    natom, wmolat, ngazem, wmole, iym1,        &
-                                    a1ch, h02ch, e1ch, a2ch, e2ch,             &
-                                    y1ch, y2ch, cp2ch, ahetch, ehetch,         &
-                                    rho0ch, xwatch, xashch, thcdch)            &
-      bind(C, name='cs_f_lagr_coal_comb')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int) :: ncharb, ncharm
-      integer(c_int) :: ih2o, io2, ico, iatc, natom, ngazem
-      real(c_double) :: prefth, trefth
-      integer(c_int), dimension(ngazem) :: iym1
-      real(c_double), dimension(natom) :: wmole, wmolat
-      real(c_double), dimension(ncharm) :: a1ch, h02ch, e1ch, a2ch, e2ch,      &
-                                           y1ch, y2ch, cp2ch, ahetch, ehetch,  &
-                                           rho0ch, xwatch, xashch, thcdch
-    end subroutine cs_f_lagr_coal_comb
+    end subroutine cs_lagr_map_specific_physics
 
     !---------------------------------------------------------------------------
 
@@ -360,47 +336,11 @@ contains
 
   subroutine lagran_init_map
 
-    use ppincl, only: iccoal, ieljou, ielarc, icoebu, icod3p, icompf
-    use cpincl, only: ncharb, xashch, cp2ch, xwatch, rho0ch, a1ch,             &
-                      a2ch, e1ch, e2ch, io2, ih2o, ico,                        &
-                      ahetch, ehetch, thcdch, y1ch, y2ch, h02ch, iym1
-    use ppppar, only: ncharm
-    use ppthch, only: ngazem, wmole, wmolat, trefth, prefth, iatc, natom, wmolat
-    use radiat, only: iirayo
-
     call init_lagr_dim_pointers
 
     call lagran_pointers
 
-    call cs_f_lagr_specific_physics(iirayo)
-
-    call cs_f_lagr_coal_comb(ncharb, &
-                             ncharm, &
-                             ih2o,   &
-                             io2,    &
-                             ico,    &
-                             iatc,   &
-                             prefth, &
-                             trefth, &
-                             natom,  &
-                             wmolat, &
-                             ngazem, &
-                             wmole,  &
-                             iym1,   &
-                             a1ch,   &
-                             h02ch,  &
-                             e1ch,   &
-                             a2ch,   &
-                             e2ch,   &
-                             y1ch,   &
-                             y2ch,   &
-                             cp2ch,  &
-                             ahetch, &
-                             ehetch, &
-                             rho0ch, &
-                             xwatch, &
-                             xashch, &
-                             thcdch)
+    call cs_lagr_map_specific_physics
 
   end subroutine lagran_init_map
 

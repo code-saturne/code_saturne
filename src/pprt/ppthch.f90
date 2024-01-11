@@ -137,7 +137,7 @@ module ppthch
   real(c_double), pointer, save ::  wmolg(:)
 
   !> molar mass of atoms
-  double precision, save ::  wmolat(natom)
+  real(c_double), pointer, save ::  wmolat(:)
 
   !> Stoichiometry in reaction global species.  Negative for the reactants,
   !> and positive for the products
@@ -174,16 +174,17 @@ module ppthch
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,     &
-                                        p_iic, p_npo, p_wmole, p_wmolg,        &
-                                        p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,  &
-                                        p_cpgazg)      &
+    subroutine cs_f_ppthch_get_pointers(                                       &
+         p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
+         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg)                        &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,    &
-                                  p_wmolg, p_wmole, p_xco2, p_xh2o,            &
-                                  p_ckabs1,  p_fs, p_th, p_npo, p_cpgazg
+      type(c_ptr), intent(out) ::                                              &
+         p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
+         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg
     end subroutine cs_f_ppthch_get_pointers
 
     !---------------------------------------------------------------------------
@@ -211,15 +212,15 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic
-    type(c_ptr) :: p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
-    type(c_ptr) :: p_fs, p_th, p_npo, p_cpgazg
+    type(c_ptr) ::                                                             &
+         p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
+         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg
 
-    call cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,     &
-                                  p_iic,  p_npo,                         &
-                                  p_wmole, p_wmolg,                      &
-                                  p_xco2, p_xh2o, p_ckabs1, p_fs,        &
-                                  p_th, p_cpgazg)
+    call cs_f_ppthch_get_pointers(                                             &
+         p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
+         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg)
 
     call c_f_pointer(p_ngaze, ngaze)
     call c_f_pointer(p_ngazg, ngazg)
@@ -228,6 +229,7 @@ contains
     call c_f_pointer(p_iic, iic)
     call c_f_pointer(p_wmole, wmole, [ngazem])
     call c_f_pointer(p_wmolg, wmolg, [ngazgm])
+    call c_f_pointer(p_wmolat, wmolat, [natom])
     call c_f_pointer(p_xco2, xco2)
     call c_f_pointer(p_xh2o, xh2o)
     call c_f_pointer(p_ckabs1, ckabs1)

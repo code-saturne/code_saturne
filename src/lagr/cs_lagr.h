@@ -987,44 +987,6 @@ typedef struct {
 
 } cs_lagr_extra_module_t;
 
-/*! External data relative to coal combustion */
-/*--------------------------------------------*/
-
-typedef struct {
-
-  int         ih2o;   // cpincl
-  int         io2;    // cpincl
-  int         ico;    // cpincl
-
-  int         iatc;   // ppthch
-  cs_real_t   prefth; // ppthch
-  cs_real_t   trefth; // ppthch
-
-  int         natom;  // = 5;
-  cs_real_t  *wmolat; // dim = natom
-
-  int         ngazem; // = 20;
-  cs_real_t  *wmole;  // ngazem
-  int        *iym1;
-
-  int         ncharm;  // cpincl
-  cs_real_t  *a1ch;   // ncharm
-  cs_real_t  *a2ch;   //
-  cs_real_t  *e1ch;   //
-  cs_real_t  *e2ch;   //
-  cs_real_t  *y1ch;   //
-  cs_real_t  *y2ch;   //
-  cs_real_t  *cp2ch;  //
-  cs_real_t  *h02ch;
-  cs_real_t  *ahetch; //
-  cs_real_t  *ehetch; //
-  cs_real_t  *rho0ch; //
-  cs_real_t  *xwatch; //
-  cs_real_t  *xashch; //
-  cs_real_t  *thcdch; //
-
-} cs_lagr_coal_comb_t;
-
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -1072,7 +1034,6 @@ extern cs_lagr_brownian_t                    *cs_glob_lagr_brownian;
 extern cs_lagr_boundary_interactions_t       *cs_glob_lagr_boundary_interactions;
 
 extern cs_lagr_extra_module_t                *cs_glob_lagr_extra_module;
-extern cs_lagr_coal_comb_t                   *cs_glob_lagr_coal_comb;
 
 extern const cs_lagr_zone_data_t             *cs_glob_lagr_boundary_conditions;
 extern const cs_lagr_zone_data_t             *cs_glob_lagr_volume_conditions;
@@ -1084,6 +1045,15 @@ extern cs_real_33_t  *cs_glob_lagr_b_face_proj;
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map specific phyical model features to Lagrangian structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_map_specific_physics(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -75,6 +75,7 @@
 #include "cs_post.h"
 #include "cs_post_default.h"
 #include "cs_prototypes.h"
+#include "cs_rad_transfer.h"
 
 #include "cs_gui_particles.h"
 #include "cs_gui_util.h"
@@ -370,36 +371,6 @@ static cs_lagr_extra_module_t _lagr_extra_module
 
 cs_lagr_extra_module_t *cs_glob_lagr_extra_module = &_lagr_extra_module;
 
-/* lagr coal combustion structure and associated pointer */
-
-static cs_lagr_coal_comb_t _lagr_coal_comb
-  = {.ih2o = 0,
-     .io2 = 0,
-     .ico = 0,
-     .iatc =0,
-     .prefth = 0.0,
-     .trefth = 0.0,
-     .natom = 0,
-     .wmolat = NULL,
-     .ngazem =0,
-     .wmole = NULL,
-     .iym1 = NULL,
-     .ncharm = 0,
-     .a1ch = NULL,
-     .a2ch = NULL,
-     .e1ch = NULL,
-     .e2ch = NULL,
-     .y1ch = NULL,
-     .y2ch = NULL,
-     .cp2ch = NULL,
-     .h02ch = NULL,
-     .ahetch = NULL,
-     .ehetch = NULL,
-     .rho0ch = NULL,
-     .xwatch = NULL,
-     .xashch = NULL,
-     .thcdch = NULL};
-
 /* boundary and volume condition data */
 
 static cs_lagr_zone_data_t  *_boundary_conditions = NULL;
@@ -422,8 +393,6 @@ const cs_lagr_particle_counter_t  *cs_glob_lagr_particle_counter
 int cs_glob_lagr_log_frequency_n = 1; /* log every frequency_n time steps */
 
 cs_lagr_time_step_t *cs_glob_lagr_time_step = &_cs_glob_lagr_time_step;
-
-cs_lagr_coal_comb_t *cs_glob_lagr_coal_comb = &_lagr_coal_comb;
 
 cs_real_t *bound_stat = NULL;
 
@@ -483,38 +452,6 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
                                 int  **p_itste,
                                 int  **p_itsti,
                                 int  **p_itsmas);
-
-void
-cs_f_lagr_specific_physics(int  *iirayo);
-
-void
-cs_f_lagr_coal_comb(int        *ncharb,
-                    int        *ncharm,
-                    int        *ih2o,
-                    int        *io2,
-                    int        *ico,
-                    int        *iatc,
-                    cs_real_t  *prefth,
-                    cs_real_t  *trefth,
-                    int        *natom,
-                    cs_real_t  *wmolat,
-                    int        *ngazem,
-                    cs_real_t  *wmole,
-                    int        *iym1,
-                    cs_real_t  *a1ch,
-                    cs_real_t  *h02ch,
-                    cs_real_t  *e1ch,
-                    cs_real_t  *a2ch,
-                    cs_real_t  *e2ch,
-                    cs_real_t  *y1ch,
-                    cs_real_t  *y2ch,
-                    cs_real_t  *cp2ch,
-                    cs_real_t  *ahetch,
-                    cs_real_t  *ehetch,
-                    cs_real_t  *rho0ch,
-                    cs_real_t  *xwatch,
-                    cs_real_t  *xashch,
-                    cs_real_t  *thcdch);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -621,90 +558,6 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
   *p_itste  = &cs_glob_lagr_source_terms->itste;
   *p_itsti  = &cs_glob_lagr_source_terms->itsti;
   *p_itsmas = &cs_glob_lagr_source_terms->itsmas;
-}
-
-void
-cs_f_lagr_specific_physics(int *iirayo)
-{
-  cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
-
-  if (turb_model == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Turbulence modelling is not set.", __func__);
-
-  _lagr_extra_module.iturb  = turb_model->iturb;
-  _lagr_extra_module.itytur = turb_model->itytur;
-  _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
-
-  _lagr_extra_module.radiative_model = *iirayo;
-  _lagr_extra_module.cmu    = cs_turb_cmu;
-}
-
-void
-cs_f_lagr_coal_comb(int        *ncharb,
-                    int        *ncharm,
-                    int        *ih2o,
-                    int        *io2,
-                    int        *ico,
-                    int        *iatc,
-                    cs_real_t  *prefth,
-                    cs_real_t  *trefth,
-                    int        *natom,
-                    cs_real_t  *wmolat,
-                    int        *ngazem,
-                    cs_real_t  *wmole,
-                    int        *iym1,
-                    cs_real_t  *a1ch,
-                    cs_real_t  *h02ch,
-                    cs_real_t  *e1ch,
-                    cs_real_t  *a2ch,
-                    cs_real_t  *e2ch,
-                    cs_real_t  *y1ch,
-                    cs_real_t  *y2ch,
-                    cs_real_t  *cp2ch,
-                    cs_real_t  *ahetch,
-                    cs_real_t  *ehetch,
-                    cs_real_t  *rho0ch,
-                    cs_real_t  *xwatch,
-                    cs_real_t  *xashch,
-                    cs_real_t  *thcdch)
-{
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)
-    return;
-
-  _lagr_extra_module.ncharb = *ncharb;
-  _lagr_extra_module.ncharm = *ncharm;
-
-  cs_glob_lagr_coal_comb->ih2o   = *ih2o;
-  cs_glob_lagr_coal_comb->io2    = *io2;
-  cs_glob_lagr_coal_comb->ico    = *ico;
-
-  cs_glob_lagr_coal_comb->iatc   = *iatc;
-  cs_glob_lagr_coal_comb->prefth = *prefth;
-  cs_glob_lagr_coal_comb->trefth = *trefth;
-
-  cs_glob_lagr_coal_comb->natom = *natom;
-  cs_glob_lagr_coal_comb->wmolat = wmolat;
-
-  cs_glob_lagr_coal_comb->ngazem = *ngazem;
-  cs_glob_lagr_coal_comb->wmole  = wmole;
-  cs_glob_lagr_coal_comb->iym1   = iym1;
-
-  cs_glob_lagr_coal_comb->ncharm = *ncharm;
-  cs_glob_lagr_coal_comb->a1ch   = a1ch;
-  cs_glob_lagr_coal_comb->h02ch  = h02ch;
-  cs_glob_lagr_coal_comb->e1ch   = e1ch;
-  cs_glob_lagr_coal_comb->a2ch   = a2ch;
-  cs_glob_lagr_coal_comb->e2ch   = e2ch;
-  cs_glob_lagr_coal_comb->y1ch   = y1ch;
-  cs_glob_lagr_coal_comb->y2ch   = y2ch;
-  cs_glob_lagr_coal_comb->cp2ch  = cp2ch;
-  cs_glob_lagr_coal_comb->ahetch = ahetch;
-  cs_glob_lagr_coal_comb->ehetch = ehetch;
-  cs_glob_lagr_coal_comb->rho0ch = rho0ch;
-  cs_glob_lagr_coal_comb->xwatch = xwatch;
-  cs_glob_lagr_coal_comb->xashch = xashch;
-  cs_glob_lagr_coal_comb->thcdch = thcdch;
 }
 
 /*=============================================================================
@@ -1266,6 +1119,29 @@ cs_lagr_add_fields(void)
                                 true);
     cs_field_set_key_int(f, k_log, 1);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map specific phyical model features to Lagrangian structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_map_specific_physics(void)
+{
+  cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+
+  if (turb_model == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Turbulence modelling is not set.", __func__);
+
+  _lagr_extra_module.iturb  = turb_model->iturb;
+  _lagr_extra_module.itytur = turb_model->itytur;
+  _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
+
+  _lagr_extra_module.radiative_model = cs_glob_rad_transfer_params->type;
+  _lagr_extra_module.cmu    = cs_turb_cmu;
 }
 
 /*----------------------------------------------------------------------------*/

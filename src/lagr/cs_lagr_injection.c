@@ -54,6 +54,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_volume_zone.h"
 
+#include "cs_coal.h"
 #include "cs_ht_convert.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -493,6 +494,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   /* Coal */
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
+    const cs_coal_model_t  *coal_model = cs_glob_coal_model;
     cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
     if (zis->coal_number < 1 && zis->coal_number > extra->ncharb)
@@ -518,10 +520,10 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
 
     /* Composition of coal defined in XML file (DP_FCP) */
 
-    cs_real_t *xashch = cs_glob_lagr_coal_comb->xashch;
-    cs_real_t *cp2ch  = cs_glob_lagr_coal_comb->cp2ch;
-    cs_real_t *xwatch = cs_glob_lagr_coal_comb->xwatch;
-    cs_real_t *rho0ch = cs_glob_lagr_coal_comb->rho0ch;
+    const cs_real_t *xashch = coal_model->xashch;
+    const cs_real_t *cp2ch  = coal_model->cp2ch;
+    const cs_real_t *xwatch = coal_model->xwatch;
+    const cs_real_t *rho0ch = coal_model->rho0ch;
 
     if (   rho0ch[coal_id] < 0.0
         || cp2ch[coal_id]  < 0.0
@@ -631,14 +633,15 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
+  const cs_coal_model_t  *coal_model = cs_glob_coal_model;
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* Non-lagrangian fields */
 
-  const cs_real_t  *xashch = cs_glob_lagr_coal_comb->xashch;
-  const cs_real_t  *cp2ch  = cs_glob_lagr_coal_comb->cp2ch;
-  const cs_real_t  *xwatch = cs_glob_lagr_coal_comb->xwatch;
-  const cs_real_t  *rho0ch = cs_glob_lagr_coal_comb->rho0ch;
+  const cs_real_t  *xashch = coal_model->xashch;
+  const cs_real_t  *cp2ch  = coal_model->cp2ch;
+  const cs_real_t  *xwatch = coal_model->xwatch;
+  const cs_real_t  *rho0ch = coal_model->rho0ch;
 
   const cs_real_t *vela = extra->vel->vals[time_id];
   const cs_real_t *cval_h = NULL, *cval_t = NULL;

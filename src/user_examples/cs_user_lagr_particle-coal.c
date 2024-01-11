@@ -104,12 +104,12 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
 
   /*! [lagr_inj_example_coal] */
 
-  const cs_lagr_coal_comb_t  *lagr_cc = cs_glob_lagr_coal_comb;
+  const cs_coal_model_t  *cm = cs_glob_coal_model;
 
   /* Changes to selected attributes to define coal
      --------------------------------------------- */
 
-  const int        n_layers = cs_glob_lagr_model->n_temperature_layers;
+  const int  n_layers = cs_glob_lagr_model->n_temperature_layers;
 
   int        coal_id = 0;
   cs_real_t  cp = zis->cp;
@@ -136,13 +136,13 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     coal_id = 0;
 
     density
-      =   lagr_cc->xashch[coal_id] * lagr_cc->rho0ch[coal_id]
-        +    (1.0 - lagr_cc->xwatch[coal_id] - lagr_cc->xashch[coal_id])
-           * lagr_cc->rho0ch[coal_id]
-           * (1.0 - (lagr_cc->y1ch[coal_id] + lagr_cc->y2ch[coal_id]) / 2.0);
+      =   cm->xashch[coal_id] * cm->rho0ch[coal_id]
+        +    (1.0 - cm->xwatch[coal_id] - cm->xashch[coal_id])
+           * cm->rho0ch[coal_id]
+           * (1.0 - (cm->y1ch[coal_id] + cm->y2ch[coal_id]) / 2.0);
 
-    cp = lagr_cc->cp2ch[coal_id]; /* specific heat */
-    water_mass_f = 0.0;           /* water mass fraction */
+    cp = cm->cp2ch[coal_id]; /* specific heat */
+    water_mass_f = 0.0;      /* water mass fraction */
 
     for (int l_id = 0; l_id < n_layers; l_id++) {
 
@@ -154,9 +154,9 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
 
       /* coke density after pyrolysis */
       coke_density[l_id]
-        =   (1.0 - lagr_cc->xwatch[coal_id] - lagr_cc->xashch[coal_id])
-          * lagr_cc->rho0ch[coal_id]
-        * (1.0 - (lagr_cc->y1ch[coal_id] + lagr_cc->y2ch[coal_id]) / 2.0);
+        =   (1.0 - cm->xwatch[coal_id] - cm->xashch[coal_id])
+          * cm->rho0ch[coal_id]
+        * (1.0 - (cm->y1ch[coal_id] + cm->y2ch[coal_id]) / 2.0);
 
       /* coke mass fraction */
       coke_mass_fraction[l_id] = coke_density[l_id] / density;

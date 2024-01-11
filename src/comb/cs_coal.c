@@ -89,6 +89,26 @@ BEGIN_C_DECLS
 
 cs_coal_model_t  *cs_glob_coal_model = NULL;
 
+/*!>  molar volume under normal pressure and temperature conditions
+   (1 atmosphere, 0 degres C) in m-3 */
+
+/*! reference temperature for molar volume */
+const double  cs_coal_trefth = 25. + 273.15;
+
+/*! reference pressure for molar volume */
+const double  cs_coal_prefth = 1.01325e5;
+
+/*! molar volume under normal pressure and temperature conditions
+  (1 atmosphere, 0 \f$\text{\degresC}\f$) in \f$m^{-3}\f$ */
+const double  cs_coal_volmol = 22.41e-3;
+
+/* ids for atom types in wmolat */
+const int  cs_coal_atom_id_c = 0;  /*!< id for C in wmolat */
+const int  cs_coal_atom_id_h = 1;  /*!< id for H in wmolat */
+const int  cs_coal_atom_id_o = 2;  /*!< id for O in wmolat */
+const int  cs_coal_atom_id_n = 3;  /*!< id for N in wmolat */
+const int  cs_coal_atom_id_s = 4;  /*!< id for S in wmolat */
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -844,9 +864,9 @@ cs_f_cpincl_get_pointers_5(double  **af3,
   *icnorb = &(cm->icnorb);
 
   *teno = cm->teno;
-  *ka = cm->ka;
-  *kb = cm->kb;
-  *kc = cm->kc;
+  *ka = (double *)cm->ka;
+  *kb = (double *)cm->kb;
+  *kc = (double *)cm->kc;
   *chi2 = cm->chi2;
 }
 

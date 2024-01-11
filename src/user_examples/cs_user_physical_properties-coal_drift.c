@@ -86,7 +86,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
   /* Key id of the coal scalar class */
   const int keyccl = cs_field_key_id("scalar_class");
 
-  const int *iym1 = cs_glob_lagr_coal_comb->iym1;
+  const int *iym1 = cs_glob_coal_model->iym1;
 
   cs_real_t *cpro_ym1_3 = cs_field_by_id(iym1[2])->val;
   cs_real_t *cpro_ym1_5 = cs_field_by_id(iym1[4])->val;

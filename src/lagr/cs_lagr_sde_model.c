@@ -52,6 +52,7 @@
 #include "bft_mem.h"
 
 #include "cs_base.h"
+#include "cs_coal.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
@@ -178,8 +179,6 @@ _lagtmp(cs_lnum_t        npt,
   cs_lagr_particle_set_t   *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
-  const cs_lagr_coal_comb_t *lag_cc = cs_glob_lagr_coal_comb;
-
   cs_real_t dtp = cs_glob_lagr_time_step->dtp;
   int       nor = cs_glob_lagr_time_step->nor;
 
@@ -196,6 +195,8 @@ _lagtmp(cs_lnum_t        npt,
   cs_real_t p_shrink_diam = cs_lagr_particle_get_real(particle, p_am,
                                                       CS_LAGR_SHRINKING_DIAMETER);
   cs_real_t part_cp = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
+
+  const cs_coal_model_t  *coal_model = cs_glob_coal_model;
 
   const cs_real_t *part_temp
     = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_TEMPERATURE);
@@ -237,11 +238,11 @@ _lagtmp(cs_lnum_t        npt,
 
     /* Conduction inside particle  */
 
-    cs_real_t lambda = lag_cc->thcdch[co_id];
+    cs_real_t lambda = coal_model->thcdch[co_id];
 
     cs_real_t diamp2
-      =          lag_cc->xashch[co_id]  * cs_math_sq(p_init_diam)
-        + (1.0 - lag_cc->xashch[co_id]) * cs_math_sq(p_shrink_diam);
+      =          coal_model->xashch[co_id]  * cs_math_sq(p_init_diam)
+        + (1.0 - coal_model->xashch[co_id]) * cs_math_sq(p_shrink_diam);
 
     cs_real_t tpscara = tempct[npt] * diamp2 / dd2;
 
@@ -355,8 +356,9 @@ _lagtmp(cs_lnum_t        npt,
 
   else if (nlayer == 1) {
 
-    cs_real_t diamp2 =          lag_cc->xashch[co_id]  * cs_math_sq(p_init_diam)
-                       + (1.0 - lag_cc->xashch[co_id]) * cs_math_sq(p_shrink_diam);
+    cs_real_t diamp2
+      =          coal_model->xashch[co_id]  * cs_math_sq(p_init_diam)
+        + (1.0 - coal_model->xashch[co_id]) * cs_math_sq(p_shrink_diam);
 
     cs_real_t tpscara = tempct[npt] * diamp2 / dd2;
 
@@ -454,7 +456,9 @@ _lagsec(cs_lnum_t         npt,
       ptsvar = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_TEMPERATURE);
   }
 
-  const cs_lagr_coal_comb_t *lag_cc = cs_glob_lagr_coal_comb;
+  const cs_coal_model_t *coal_model = cs_glob_coal_model;
+
+  const int ih2o = coal_model->ih2o -1;
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
@@ -470,7 +474,7 @@ _lagsec(cs_lnum_t         npt,
   cs_real_t tebl   = 100.0 + _tkelvi;
   cs_real_t tlimit = 302.24;
   cs_real_t tmini  = tlimit * (   1. - tlimit * cs_physical_constants_r
-                               / (lv * lag_cc->wmole[lag_cc->ih2o]));
+                               / (lv * coal_model->wmole[ih2o]));
 
   /* Compute water flux for layer l_id
      --------------------------------- */
@@ -503,8 +507,8 @@ _lagsec(cs_lnum_t         npt,
 
     if (tpk >= tlimit) {
 
-      aux1 = lag_cc->wmole[lag_cc->ih2o] / extra->x_m->val[cell_id];
-      aux2 = aux1 * exp(  lv * lag_cc->wmole[lag_cc->ih2o]
+      aux1 = coal_model->wmole[ih2o] / extra->x_m->val[cell_id];
+      aux2 = aux1 * exp(  lv * coal_model->wmole[ih2o]
                         * (1.0 / tebl - 1.0 / tpk)
                         / cs_physical_constants_r);
 
@@ -514,11 +518,12 @@ _lagsec(cs_lnum_t         npt,
       /* Linearize mass fraction of saturating water between tmini and Tlimit;
        * At Tlimit, the saturating water mass fraction is zero */
 
-      aux1 = lag_cc->wmole[lag_cc->ih2o] / extra->x_m->val[cell_id];
+      aux1 = coal_model->wmole[ih2o] / extra->x_m->val[cell_id];
       aux2 =  aux1
-            * exp(  lv * lag_cc->wmole[lag_cc->ih2o] * (1.0 / tebl - 1.0 / tlimit)
+            * exp(  lv * coal_model->wmole[ih2o]
+                  * (1.0 / tebl - 1.0 / tlimit)
                   / cs_physical_constants_r)
-            * lv * lag_cc->wmole[lag_cc->ih2o]
+            * lv * coal_model->wmole[ih2o]
             / (cs_physical_constants_r * _pow2(tlimit))
             * (tpk - tmini);
 
@@ -586,19 +591,19 @@ _lagsec(cs_lnum_t         npt,
 
   if (extra->x_eau->val[cell_id] > precis) {
 
-    aux1 = lag_cc->wmole[lag_cc->ih2o] / extra->x_m->val[cell_id];
+    aux1 = coal_model->wmole[ih2o] / extra->x_m->val[cell_id];
     tsat = 1 / (  1 / tebl
                 - cs_physical_constants_r
                   * log (extra->x_eau->val[cell_id] / aux1)
-                  / (lv * lag_cc->wmole[lag_cc->ih2o]));
+                  / (lv * coal_model->wmole[ih2o]));
 
     if (tsat < tlimit)
       tsat =  tmini
             + extra->x_eau->val[cell_id]
-              / (aux1 * exp (  lv * lag_cc->wmole[lag_cc->ih2o]
+              / (aux1 * exp (  lv * coal_model->wmole[ih2o]
                              * (1.0 / tebl - 1.0 / tlimit)
                              / cs_physical_constants_r)
-              * (lv * lag_cc->wmole[lag_cc->ih2o])
+              * (lv * coal_model->wmole[ih2o])
               / (cs_physical_constants_r * _pow2(tlimit)));
 
   }
@@ -793,7 +798,7 @@ _lagitp(const cs_real_t  tempct[])
   }
 
   /* ==============================================================================
-   * PRISE EN COMPTE DU RAYONNEMENT S'IL Y A LIEU
+   * Account for radiation of present
    * ============================================================================== */
 
   if (extra->radiative_model > 0) {
@@ -1054,7 +1059,10 @@ _lagich(const cs_real_t   tempct[],
 
   cs_lagr_particle_set_t        *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t *p_am  = p_set->p_am;
-  const cs_lagr_coal_comb_t *lag_cc = cs_glob_lagr_coal_comb;
+  const cs_coal_model_t *coal_model = cs_glob_coal_model;
+
+  const int ico = coal_model->ico - 1;
+  const int io2 = coal_model->io2 - 1;
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
@@ -1191,8 +1199,8 @@ _lagich(const cs_real_t   tempct[],
       radius[l_id] = (init_diam/2.0) * pow(f_l/f_nlayer, d1s3);
     }
 
-    cs_real_t mp0  = dpis6 * _pow3(init_diam) * lag_cc->rho0ch[co_id];
-    cs_real_t mwat_max  = lag_cc->xwatch[co_id] * mp0 / nlayer;
+    cs_real_t mp0  = dpis6 * _pow3(init_diam) * coal_model->rho0ch[co_id];
+    cs_real_t mwat_max  = coal_model->xwatch[co_id] * mp0 / nlayer;
 
     /* Compute water quantity on each layer */
     aux1 = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_WATER_MASS);
@@ -1214,7 +1222,7 @@ _lagich(const cs_real_t   tempct[],
     /* Mass on each layer */
     cs_real_t mlayer[nlayer];
     for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
-      mlayer[l_id] =   lag_cc->xashch[co_id] * mp0 / nlayer
+      mlayer[l_id] =   coal_model->xashch[co_id] * mp0 / nlayer
                      + mwater[l_id]
                      + part_coal_mass[l_id]
                      + part_coke_mass[l_id];
@@ -1237,11 +1245,13 @@ _lagich(const cs_real_t   tempct[],
 
       aux1  = 1.0 / (cs_physical_constants_r * part_temp[l_id]);
 
-      skp1[l_id] = lag_cc->a1ch[co_id] * exp(-lag_cc->e1ch[co_id] * aux1);
-      skp2[l_id] = lag_cc->a2ch[co_id] * exp(-lag_cc->e2ch[co_id] * aux1);
+      skp1[l_id] =   coal_model->a1ch[co_id]
+                   * exp(-coal_model->e1ch[co_id] * aux1);
+      skp2[l_id] =   coal_model->a2ch[co_id]
+                   * exp(-coal_model->e2ch[co_id] * aux1);
 
-      aux1  = skp1[l_id] * lag_cc->y1ch[co_id] * part_coal_mass[l_id];
-      aux2  = skp2[l_id] * lag_cc->y2ch[co_id] * part_coal_mass[l_id];
+      aux1  = skp1[l_id] * coal_model->y1ch[co_id] * part_coal_mass[l_id];
+      aux2  = skp2[l_id] * coal_model->y2ch[co_id] * part_coal_mass[l_id];
 
       /* Thermal return coupling */
 
@@ -1273,9 +1283,9 @@ _lagich(const cs_real_t   tempct[],
     /* Chemical cinetics coeffcient for CO formation, in (kg.m-2.s-1.atm(-n))
        conversion (kcal/mol -> J/mol) */
 
-    aux1 = lag_cc->ehetch[co_id] * 1000.0 * xcal2j;
-    aux2 = lag_cc->ahetch[co_id] * exp (-aux1 / (  cs_physical_constants_r
-                                                 * part_temp[l_id_het]));
+    aux1 = coal_model->ehetch[co_id] * 1000.0 * xcal2j;
+    aux2 = coal_model->ahetch[co_id] * exp (-aux1 / (  cs_physical_constants_r
+                                                     * part_temp[l_id_het]));
 
     /* Diffusion coefficient in (Kg/m2/s/atm) and global reaction constant */
 
@@ -1301,11 +1311,11 @@ _lagich(const cs_real_t   tempct[],
      *                                                      */
     aux1 =   extra->cromf->val[cell_id] * cs_physical_constants_r
            * extra->temperature->val[cell_id]
-           * extra->x_oxyd->val[cell_id] / lag_cc->wmole[lag_cc->io2]
-             / lag_cc->prefth;
+           * extra->x_oxyd->val[cell_id] / coal_model->wmole[coal_model->io2]
+             / cs_coal_prefth;
 
     /* Compute working surface: SE */
-    aux2 =  cs_math_pi * (1.0 - lag_cc->xashch[co_id]) * pow(shrink_diam, 2);
+    aux2 =  cs_math_pi * (1.0 - coal_model->xashch[co_id]) * pow(shrink_diam, 2);
 
     /* No heterogeneous combustion if Mch/Mp >= 1.e-3 */
     cs_real_t gamhet;
@@ -1325,23 +1335,25 @@ _lagich(const cs_real_t   tempct[],
     /* Compute Hc(Tp)-Mco/Mc Hco2(Tp)+0.5Mo2/Mc Ho2(Tf) */
 
     cs_real_t f1mc[nlayer], f2mc[nlayer];
-    cs_real_t coefe[lag_cc->ngazem];
+    cs_real_t coefe[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
 
     /* Compute Hcoke(TP) */
-    aux1  =    lag_cc->h02ch[co_id]
+    aux1  =    coal_model->h02ch[co_id]
             +   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP)
-              * (part_temp[l_id_het] - lag_cc->trefth);
+              * (part_temp[l_id_het] - cs_coal_trefth);
 
     /* Compute MCO/MC HCO(TP)  */
-    for (cs_lnum_t iii = 0; iii < lag_cc->ngazem; iii++)
+    for (cs_lnum_t iii = 0;
+         iii < CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS;
+         iii++)
       coefe[iii] = 0.0;
 
-    coefe[lag_cc->ico] =   lag_cc->wmole[lag_cc->ico]
-                         / lag_cc->wmolat[lag_cc->iatc];
+    coefe[ico] =   coal_model->wmole[ico]
+                 / coal_model->wmolat[cs_coal_atom_id_c];
 
-    for (cs_lnum_t iii = 0; iii < lag_cc->ncharm; iii++) {
-        f1mc[iii] = 0.0;
-        f2mc[iii] = 0.0;
+    for (cs_lnum_t iii = 0; iii < CS_COMBUSTION_MAX_COALS; iii++) {
+      f1mc[iii] = 0.0;
+      f2mc[iii] = 0.0;
     }
 
     int mode = -1;
@@ -1349,15 +1361,17 @@ _lagich(const cs_real_t   tempct[],
                               &part_temp[l_id_het]);
 
     /* Compute MO2/MC/2. HO2(TF)    */
-    for (cs_lnum_t iii = 0; iii < lag_cc->ngazem; iii++)
+    for (cs_lnum_t iii = 0;
+         iii < CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS;
+         iii++)
       coefe[iii]   = 0.0;
 
-    coefe[lag_cc->io2] =   lag_cc->wmole[lag_cc->io2]
-                         / lag_cc->wmolat[lag_cc->iatc] / 2.0;
+    coefe[io2] =   coal_model->wmole[io2]
+                 / coal_model->wmolat[cs_coal_atom_id_c] / 2.0;
 
-    for (int iii = 0; iii < lag_cc->ncharm; iii++) {
-      f1mc[iii]    = 0.0;
-      f2mc[iii]    = 0.0;
+    for (int iii = 0; iii < CS_COMBUSTION_MAX_COALS; iii++) {
+      f1mc[iii] = 0.0;
+      f2mc[iii] = 0.0;
     }
 
     mode = -1;
@@ -1457,8 +1471,8 @@ _lagich(const cs_real_t   tempct[],
       /* Loop on all cells which have reactive coke or coal */
       for (cs_lnum_t l_id = 0; l_id < l_id_het; l_id++) {
 
-        aux1 =  (skp1[l_id] *    (1.0 - lag_cc->y1ch[co_id]) + skp2[l_id]
-                            * (1.0 - lag_cc->y2ch[co_id]))
+        aux1 =  (skp1[l_id] * (1.0 - coal_model->y1ch[co_id]) + skp2[l_id]
+                            * (1.0 - coal_model->y2ch[co_id]))
               / (skp1[l_id] + skp2[l_id]);
         aux2 = exp(-(skp1[l_id] + skp2[l_id]) * dtp);
         aux3 = aux1 * prev_part_coal_mass[l_id] * (1.0 - aux2) / dtp;
@@ -1466,7 +1480,7 @@ _lagich(const cs_real_t   tempct[],
         if (l_id == l_id_het) {
 
           /* Compute equivalent coke mass */
-          aux4 =  dpis6 * (1.00 - lag_cc->xashch[co_id])
+          aux4 =  dpis6 * (1.00 - coal_model->xashch[co_id])
                 * _pow3(shrink_diam)
                 * part_coal_density[l_id];
 
@@ -1537,13 +1551,14 @@ _lagich(const cs_real_t   tempct[],
       if (prev_part_coal_mass[l_id] >= 0.001 * mlayer[l_id]) {
 
         /* mv represents mlayer which left the grain (drying + pyrolysis) */
-        cs_real_t mv =  mp0 * (1 - lag_cc->xashch[co_id]) / nlayer
+        cs_real_t mv =  mp0 * (1 - coal_model->xashch[co_id]) / nlayer
                       - part_coal_mass[l_id] - part_coke_mass[l_id]
                       - (mwater[l_id] - fwat[l_id] * dtp);
 
         /* density of coke only */
-        part_coal_density[l_id] =   lag_cc->rho0ch[co_id] - mv
-                                  / (layer_vol * (1.0 - lag_cc->xashch[co_id]));
+        part_coal_density[l_id]
+          =   coal_model->rho0ch[co_id] - mv
+            / (layer_vol * (1.0 - coal_model->xashch[co_id]));
 
       }
 
@@ -1578,8 +1593,8 @@ _lagich(const cs_real_t   tempct[],
       if (l_id_het == 0) {
 
         aux5 = pow(  d6spi
-                   / (1.0 - lag_cc->xashch[co_id])
-                   * (  part_coal_mass[l_id_het] / lag_cc->rho0ch[co_id]
+                   / (1.0 - coal_model->xashch[co_id])
+                   * (  part_coal_mass[l_id_het] / coal_model->rho0ch[co_id]
                       + part_coke_mass[l_id_het] / part_coal_density[l_id_het]),
                      d1s3);
 
@@ -1596,12 +1611,12 @@ _lagich(const cs_real_t   tempct[],
       }
       else {
 
-        cs_real_t f1 = part_coal_mass[l_id_het] / lag_cc->rho0ch[co_id];
+        cs_real_t f1 = part_coal_mass[l_id_het] / coal_model->rho0ch[co_id];
         cs_real_t f2 = 0;
         if (part_coal_density[l_id_het] > 0.0)
           f2 = part_coke_mass[l_id_het] / part_coal_density[l_id_het];
         aux5 = pow(  cs_math_pow3(2.0 * radius[l_id_het - 1])
-                   + (  d6spi / (1.0 - lag_cc->xashch[co_id])
+                   + (  d6spi / (1.0 - coal_model->xashch[co_id])
                       * (f1 + f2)), d1s3);
 
         /* Clipping   */
@@ -1624,8 +1639,8 @@ _lagich(const cs_real_t   tempct[],
     /* Compute diameter of coal grains
      * ------------------------------- */
 
-    aux5 = sqrt(         lag_cc->xashch[co_id]  * pow(init_diam,2)
-                + (1.0 - lag_cc->xashch[co_id]) * pow(shrink_diam,2));
+    aux5 = sqrt(         coal_model->xashch[co_id]  * cs_math_pow2(init_diam)
+                + (1.0 - coal_model->xashch[co_id]) * cs_math_pow2(shrink_diam));
 
     /* Compute mass of coal grains
      * --------------------------- */
@@ -1638,7 +1653,7 @@ _lagich(const cs_real_t   tempct[],
     cs_real_t mwat = cs_lagr_particle_get_real(particle, p_am,
                                                CS_LAGR_WATER_MASS);
 
-    aux1 += mwat + lag_cc->xashch[co_id] * mp0;
+    aux1 += mwat + coal_model->xashch[co_id] * mp0;
 
     cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, aux1);
 

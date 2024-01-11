@@ -39,10 +39,12 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/comb \
 -I$(top_srcdir)/src/user \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/rayt \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)

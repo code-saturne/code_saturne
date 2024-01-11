@@ -145,9 +145,6 @@ ifrace = 0
 
 ! TODO : passer en c ?
 
-wmolg => null()  ! Associated later if model active
-wmole => null()
-
 do igg = 1, ngazgm
   do it = 1, npot
     ehgazg(igg,it) = zero
@@ -162,10 +159,6 @@ do ige = 1, ngazem
   do it = 1, npot
     ehgaze(ige,it) = zero
   enddo
-enddo
-
-do iat = 1, natom
-  wmolat(iat) = zero
 enddo
 
 !===============================================================================

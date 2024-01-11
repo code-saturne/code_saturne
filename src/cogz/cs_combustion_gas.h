@@ -31,10 +31,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdarg.h>
-
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
@@ -44,12 +42,15 @@
 
 BEGIN_C_DECLS
 
-/*=============================================================================
+/*============================================================================
  * Macro definitions
  *============================================================================*/
 
 /*! Maximum number of global species */
 #define  CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES  25
+
+/*! Maximum number of atomic species */
+#define  CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES  5
 
 /*! Maximum number of oxydants */
 #define CS_COMBUSTION_GAS_MAX_OXYDANTS 3
@@ -160,6 +161,9 @@ typedef struct {
 
   /*! molar mass of an elementary gas component */
   double  wmole[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+
+  /*! molar mass of atomic species */
+  double  wmolat[CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES];
 
   /*! composition of N2 oxidants */
   double oxyn2[CS_COMBUSTION_GAS_MAX_OXYDANTS];

@@ -115,6 +115,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **npo,
                          double  **wmole,
                          double  **wmolg,
+                         double  **wmolat,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
@@ -165,6 +166,7 @@ cs_f_combustion_model_get_pointers(double  **srrom);
  *   iic    --> pointer to rank of C in gas composition
  *   wmole  --> pointer to molar mass of elementary gas components
  *   wmolg  --> pointer to molar mass of global species
+ *   wmolat --> pointer to molar mass of atomic species
  *   xco2   --> pointer to molar coefficient of co2
  *   xh2o   --> pointer to molar coefficient of h2o
  *   ckabs1 --> pointer to absorption coefficient of gas mixture
@@ -180,6 +182,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **npo,
                          double  **wmole,
                          double  **wmolg,
+                         double  **wmolat,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1,
@@ -202,6 +205,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
 
     *wmole  = cm->wmole;
     *wmolg  = cm->wmolg;
+    *wmolat = cm->wmolat;
     *xco2   = &(cm->xco2);
     *xh2o   = &(cm->xh2o);
     *fs     = cm->fs;
@@ -220,6 +224,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
     *npo    = &(cm->n_tab_points);
 
     *wmole  = cm->wmole;
+    *wmolg  = NULL;
+    *wmolat = cm->wmolat;
     *xco2   = &(cm->xco2);
     *xh2o   = &(cm->xh2o);
     *ckabs1 = &(cm->ckabs0);

@@ -36,7 +36,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
-
 #include "cs_field.h"
 
 /*----------------------------------------------------------------------------*/
@@ -55,6 +54,9 @@ BEGIN_C_DECLS
 
 /*! Maximum number of global species */
 #define  CS_COMBUSTION_COAL_MAX_GLOBAL_SPECIES  25
+
+/*! Maximum number of atomic species */
+#define  CS_COMBUSTION_COAL_MAX_ATOMIC_SPECIES  5
 
 /*! Maximum number of coal classes per coal */
 #define  CS_COMBUSTION_MAX_CLASSES_PER_COAL  20
@@ -115,7 +117,8 @@ typedef struct {
   /*! molar mass of an elementary gas component */
   double  wmole[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
 
-  int     noxyd;                     /*!< number of oxydants */
+  /*! molar mass of atomic species */
+  double  wmolat[CS_COMBUSTION_COAL_MAX_ATOMIC_SPECIES];
 
   /*! composition of oxidants in O2 */
   double  oxyo2[CS_COMBUSTION_COAL_MAX_OXYDANTS];
@@ -142,6 +145,8 @@ typedef struct {
 
   int     nsolim;      /*!< number of solid constituents
                          (reactive coal, coke, ash) */
+
+  int     noxyd;       /*!< number of oxydants */
 
   int     idrift;      /*!< drift (0: off, 1: on) */
 
@@ -717,6 +722,20 @@ typedef struct {
 /*! Combustion model parameters structure */
 
 extern cs_coal_model_t  *cs_glob_coal_model;
+
+/* molar volume under normal pressure and temperature conditions
+   (1 atmosphere, 0 degres C) in m-3 */
+
+extern const double  cs_coal_trefth;
+extern const double  cs_coal_prefth;
+extern const double  cs_coal_volmol;
+
+/* ids for atom types in wmolat */
+extern const int  cs_coal_atom_id_c;
+extern const int  cs_coal_atom_id_h;
+extern const int  cs_coal_atom_id_o;
+extern const int  cs_coal_atom_id_n;
+extern const int  cs_coal_atom_id_s;
 
 /*============================================================================
  * Public function prototypes
