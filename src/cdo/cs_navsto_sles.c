@@ -86,11 +86,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #if defined(HAVE_PETSC)
-#if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup advanced parameters for the AMG related to the velocity field
- *         when BoomerAMG from the HYPRE library is used
+ * \brief Setup advanced parameters for the AMG related to the velocity field
+ *        when BoomerAMG from the HYPRE library is used
  */
 /*----------------------------------------------------------------------------*/
 
@@ -141,7 +140,6 @@ _setup_velocity_boomeramg(void)
   PetscOptionsSetValue("-pc_Uz_hypre_boomeramg_no_CF","");
 #endif
 }
-#endif  /* PETSC_HAVE_HYPRE */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -154,7 +152,6 @@ static void
 _setup_velocity_gamg(void)
 {
 #if PETSC_VERSION_GE(3,7,0)
-  //  PetscOptionsSetValue(NULL, "-gamg_est_ksp_type cg"
   PetscOptionsSetValue(NULL, "-Ux_mg_levels_ksp_type", "richardson");
   PetscOptionsSetValue(NULL, "-Ux_mg_levels_pc_type", "sor");
   PetscOptionsSetValue(NULL, "-Ux_mg_levels_ksp_max_it", "1");
@@ -322,11 +319,10 @@ cs_navsto_sles_amg_block_hook(void     *context,
 
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
   case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-    _setup_velocity_boomeramg();
-#else
-    _setup_velocity_gamg();
-#endif
+    if (cs_param_sles_hypre_from_petsc())
+      _setup_velocity_boomeramg();
+    else
+      _setup_velocity_gamg();
     break;
 
   case CS_PARAM_AMG_PETSC_PCMG:
@@ -351,29 +347,39 @@ cs_navsto_sles_amg_block_hook(void     *context,
     switch(slesp->amg_type) {
 
     case CS_PARAM_AMG_HYPRE_BOOMER_V:
-#if defined(PETSC_HAVE_HYPRE)
-      PCSetType(_pc, PCHYPRE);
-      PCHYPRESetType(_pc, "boomeramg");
-      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
-#else
-      PCSetType(_pc, PCGAMG);
-      PCGAMGSetType(_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(_pc, 1);
-      PCMGSetCycleType(_pc, PC_MG_CYCLE_V);
-#endif
+      if (cs_param_sles_hypre_from_petsc()) {
+
+        PCSetType(_pc, PCHYPRE);
+        PCHYPRESetType(_pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "V");
+
+      }
+      else {
+
+        PCSetType(_pc, PCGAMG);
+        PCGAMGSetType(_pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(_pc, 1);
+        PCMGSetCycleType(_pc, PC_MG_CYCLE_V);
+
+      }
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-      PCSetType(_pc, PCHYPRE);
-      PCHYPRESetType(_pc, "boomeramg");
-      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
-#else
-      PCSetType(_pc, PCGAMG);
-      PCGAMGSetType(_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(_pc, 1);
-      PCMGSetCycleType(_pc, PC_MG_CYCLE_W);
-#endif
+      if (cs_param_sles_hypre_from_petsc()) {
+
+        PCSetType(_pc, PCHYPRE);
+        PCHYPRESetType(_pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "W");
+
+      }
+      else {
+
+        PCSetType(_pc, PCGAMG);
+        PCGAMGSetType(_pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(_pc, 1);
+        PCMGSetCycleType(_pc, PC_MG_CYCLE_W);
+
+      }
       break;
 
     case CS_PARAM_AMG_PETSC_PCMG:

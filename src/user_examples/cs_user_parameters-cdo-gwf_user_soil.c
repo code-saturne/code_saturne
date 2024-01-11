@@ -436,11 +436,11 @@ cs_user_parameters(cs_domain_t     *domain)
   cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-#if defined(PETSC_HAVE_HYPRE)
-  cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "boomer");
-#else
-  cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "gamg");
-#endif
+
+  if (cs_param_sles_hypre_from_petsc())
+    cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "boomer");
+  else
+    cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "gamg");
 #else
   cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");

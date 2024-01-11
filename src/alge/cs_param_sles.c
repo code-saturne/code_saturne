@@ -520,13 +520,17 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
   case CS_PARAM_PRECOND_BJACOB_ILU0:
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-#if defined(PETSC_HAVE_HYPRE)
-      PCSetType(pc, PCHYPRE);
-      PCHYPRESetType(pc, "euclid");
-      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
-#else
-      _petsc_bilu0_hook(slesp->name);
-#endif
+
+      if (cs_param_sles_hypre_from_petsc()) {
+
+        PCSetType(pc, PCHYPRE);
+        PCHYPRESetType(pc, "euclid");
+        _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+
+      }
+      else
+        _petsc_bilu0_hook(slesp->name);
+
     }
     else
       _petsc_bilu0_hook(slesp->name);
@@ -577,18 +581,26 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
   case CS_PARAM_PRECOND_ILU0:
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-#if defined(PETSC_HAVE_HYPRE)
-      /* Euclid is a parallel version of the ILU(0) factorisation */
-      PCSetType(pc, PCHYPRE);
-      PCHYPRESetType(pc, "euclid");
-      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
-#else
-      _petsc_bilu0_hook(slesp->name);
-      if (cs_glob_n_ranks > 1)  /* Switch to a block version */
-        slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
-#endif
+
+      if (cs_param_sles_hypre_from_petsc()) {
+
+        /* Euclid is a parallel version of the ILU(0) factorisation */
+        PCSetType(pc, PCHYPRE);
+        PCHYPRESetType(pc, "euclid");
+        _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+
+      }
+      else {
+
+        _petsc_bilu0_hook(slesp->name);
+        if (cs_glob_n_ranks > 1)  /* Switch to a block version */
+          slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+
+      }
+
     }
     else {
+
       _petsc_bilu0_hook(slesp->name);
       if (cs_glob_n_ranks > 1) { /* Switch to a block version */
 
@@ -600,6 +612,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
                       " Switch to a block jacobi preconditioner.\n",
                       __func__, slesp->name);
       }
+
     }
     break;
 
@@ -634,16 +647,19 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
       case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-        _petsc_pchypre_hook(slesp->name, slesp, is_symm, pc);
-#else
-        cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
-                      " available.\n",
-                      __func__, slesp->name);
-        _petsc_pcgamg_hook(slesp->name, slesp, is_symm, pc);
-#endif
+        if (cs_param_sles_hypre_from_petsc())
+          _petsc_pchypre_hook(slesp->name, slesp, is_symm, pc);
+
+        else {
+
+          cs_base_warn(__FILE__, __LINE__);
+          cs_log_printf(CS_LOG_DEFAULT,
+                        "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
+                        " available.\n",
+                        __func__, slesp->name);
+          _petsc_pcgamg_hook(slesp->name, slesp, is_symm, pc);
+
+        }
         break;
 
       default:
@@ -1034,13 +1050,12 @@ _petsc_amg_block_gamg_hook(void     *context,
                                      SIGFPE detection */
 }
 
-#if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of multiplicative AMG block preconditioner for a CG with boomer
- *         as AMG type
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of multiplicative AMG block preconditioner for a CG with boomer
+ *        as AMG type
  *
  * \param[in, out] context     pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct  pointer to PETSc KSP context
@@ -1129,7 +1144,6 @@ _petsc_amg_block_boomer_hook(void     *context,
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1200,15 +1214,17 @@ _petsc_block_hook(void     *context,
     case CS_PARAM_PRECOND_ILU0:
     case CS_PARAM_PRECOND_BJACOB_ILU0:
       if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-#if defined(PETSC_HAVE_HYPRE)
-        _petsc_cmd(true, prefix, "ksp_type", "preonly");
-        _petsc_cmd(true, prefix, "pc_type", "hypre");
-        _petsc_cmd(true, prefix, "pc_hypre_type", "euclid");
-        _petsc_cmd(true, prefix, "pc_hypre_euclid_level", "0");
-#else
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid option: HYPRE is not installed.", __func__);
-#endif
+        if (cs_param_sles_hypre_from_petsc()) {
+
+          _petsc_cmd(true, prefix, "ksp_type", "preonly");
+          _petsc_cmd(true, prefix, "pc_type", "hypre");
+          _petsc_cmd(true, prefix, "pc_hypre_type", "euclid");
+          _petsc_cmd(true, prefix, "pc_hypre_euclid_level", "0");
+
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid option: HYPRE is not installed.", __func__);
       }
       else {
 
@@ -1903,24 +1919,29 @@ _set_petsc_hypre_sles(bool                 use_field_id,
 
       else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
                slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
-#if defined(PETSC_HAVE_HYPRE)
-        cs_sles_petsc_define(slesp->field_id,
-                             sles_name,
-                             MATMPIAIJ,
-                             _petsc_amg_block_boomer_hook,
-                             (void *)slesp);
-#else
-        cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      " %s: System: %s.\n"
-                      " Boomer is not available. Switch to GAMG solver.",
-                      __func__, slesp->name);
-        cs_sles_petsc_define(slesp->field_id,
-                             sles_name,
-                             MATMPIAIJ,
-                             _petsc_amg_block_gamg_hook,
-                             (void *)slesp);
-#endif
+
+        if (cs_param_sles_hypre_from_petsc())
+          cs_sles_petsc_define(slesp->field_id,
+                               sles_name,
+                               MATMPIAIJ,
+                               _petsc_amg_block_boomer_hook,
+                               (void *)slesp);
+
+        else {
+
+          cs_base_warn(__FILE__, __LINE__);
+          cs_log_printf(CS_LOG_DEFAULT,
+                        " %s: System: %s.\n"
+                        " Boomer is not available. Switch to GAMG solver.",
+                        __func__, slesp->name);
+
+          cs_sles_petsc_define(slesp->field_id,
+                               sles_name,
+                               MATMPIAIJ,
+                               _petsc_amg_block_gamg_hook,
+                               (void *)slesp);
+        }
+
       }
       else
         bft_error(__FILE__, __LINE__, 0,
@@ -2687,10 +2708,6 @@ _log_mumps_param(const char                    *name,
                   name, mumpsp->mem_coef);
 }
 
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a cs_param_sles_saddle_t structure and assign a minimalist
@@ -3303,6 +3320,28 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check the availability of Hypre solvers from the PETSc library
+ *
+ * \return return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_sles_hypre_from_petsc(void)
+{
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_HYPRE)
+  return true;
+#else
+  return false;
+#endif
+#else
+  return false;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Retrieve the related solver class from the amg type
  *
  * \param[in]  amg_type    type of AMG to consider
@@ -3356,17 +3395,17 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
     return CS_PARAM_SLES_CLASS_HYPRE;
 #else
 #if defined(HAVE_PETSC)
-#if defined(PETSC_HAVE_HYPRE)
-    return CS_PARAM_SLES_CLASS_HYPRE;
+    if (cs_param_sles_hypre_from_petsc())
+      return CS_PARAM_SLES_CLASS_HYPRE;
+    else {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" Switch to PETSc library since Hypre is not available");
+      return CS_PARAM_SLES_CLASS_PETSC; /* Switch to PETSc */
+    }
 #else
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" Switch to PETSc library since Hypre is not available");
-    return CS_PARAM_SLES_CLASS_PETSC; /* Switch to petsc */
-#endif
-#else
-    return CS_PARAM_SLES_N_CLASSES; /* Neither HYPRE nor PETSc */
-#endif
-#endif
+    return CS_PARAM_SLES_N_CLASSES;     /* Neither HYPRE nor PETSc */
+#endif  /* PETSc */
+#endif  /* HYPRE */
 
   case CS_PARAM_SLES_CLASS_PETSC:
     /* ------------------------- */
@@ -3403,10 +3442,11 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if the setting related to the AMG is consistent with the
- *         solver class.
+ * \brief Check if the setting related to the AMG is consistent with the
+ *        solver class. If an issue is detected, try to solve it whith the
+ *        nearest option.
  *
- * \param[in, out] slesp    pointer to a cs_pparam_sles_t structure
+ * \param[in, out] slesp    pointer to a cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3422,18 +3462,16 @@ cs_param_sles_check_amg(cs_param_sles_t   *slesp)
 
   case CS_PARAM_SLES_CLASS_PETSC:
 #if defined(HAVE_PETSC)
-#if defined(PETSC_HAVE_HYPRE) /* PETSC with HYPRE */
     if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
         slesp->amg_type == CS_PARAM_AMG_HOUSE_K)
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-#else
-    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
-        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V)
-      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-    else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
-#endif
+
+    if (!cs_param_sles_hypre_from_petsc()) {
+      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V)
+        slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+      else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
+        slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
+    }
 #else  /* PETSC is not available */
     bft_error(__FILE__, __LINE__, 0,
               " %s(): System \"%s\" PETSc is not available.\n"
@@ -3452,29 +3490,31 @@ cs_param_sles_check_amg(cs_param_sles_t   *slesp)
     else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
       slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
 #else
- #if defined(HAVE_PETSC)
-  #if defined(PETSC_HAVE_HYPRE) /* PETSC with HYPRE */
-    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
-      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-    else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
-      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
-  #else  /* PETSc without HYPRE */
-    bft_error(__FILE__, __LINE__, 0,
-              " %s(): System \"%s\" HYPRE is not available.\n"
-              " Please check your installation settings.\n",
-              __func__, slesp->name);
+#if defined(HAVE_PETSC)
+    if (cs_param_sles_hypre_from_petsc()) {
 
-  #endif
- #else  /* Neither HYPRE nor PETSC is available */
+      if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+          slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+          slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
+          slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
+        slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+        slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): System \"%s\" HYPRE is not available.\n"
+                " Please check your installation settings.\n",
+                __func__, slesp->name);
+
+#else  /* Neither HYPRE nor PETSC is available */
     bft_error(__FILE__, __LINE__, 0,
-              " %s(): System \"%s\" HYPRE/PETSc is not available.\n"
+              " %s(): System \"%s\" HYPRE and PETSc are not available.\n"
               " Please check your installation settings.\n",
               __func__, slesp->name);
- #endif
-#endif
+#endif  /* PETSc */
+#endif  /* HYPRE */
     break;
 
   case CS_PARAM_SLES_CLASS_CS:

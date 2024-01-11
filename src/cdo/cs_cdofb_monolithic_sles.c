@@ -43,7 +43,6 @@
 #endif
 
 #if defined(HAVE_PETSC)
-#include <petscversion.h>
 #include <petscksp.h>
 #endif
 
@@ -1437,7 +1436,6 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
   _set_residual_normalization(slesp->resnorm_type, ksp);
 }
 
-#if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Setup advanced parameters for the AMG related to the velocity field
@@ -1470,7 +1468,6 @@ _setup_velocity_boomeramg(void)
   PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
 #endif
 }
-#endif  /* PETSC_HAVE_HYPRE */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1620,15 +1617,17 @@ _petsc_get_pc_type(const cs_param_sles_t    *slesp)
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
       case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-        return PCHYPRE;
-#else
-        cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "%s: Switch to MG since BoomerAMG is not available.\n",
-                      __func__);
-        return PCMG;
-#endif
+        if (cs_param_sles_hypre_from_petsc())
+          return PCHYPRE;
+
+        else {
+          cs_base_warn(__FILE__, __LINE__);
+          cs_log_printf(CS_LOG_DEFAULT,
+                        "%s: Switch to MG since BoomerAMG is not available.\n",
+                        __func__);
+          return PCMG;
+        }
+        break;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -1744,29 +1743,39 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_V:
-#if defined(PETSC_HAVE_HYPRE)
-      PCHYPRESetType(u_pc, "boomeramg");
-      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
-      _setup_velocity_boomeramg();
-#else
-      PCGAMGSetType(u_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(u_pc, 1);
-      PCMGSetCycleType(u_pc, PC_MG_CYCLE_V);
-      _setup_velocity_gamg();
-#endif
+      if (cs_param_sles_hypre_from_petsc()) {
+
+        PCHYPRESetType(u_pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
+        _setup_velocity_boomeramg();
+
+      }
+      else {
+
+        PCGAMGSetType(u_pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(u_pc, 1);
+        PCMGSetCycleType(u_pc, PC_MG_CYCLE_V);
+        _setup_velocity_gamg();
+
+      }
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-      PCHYPRESetType(u_pc, "boomeramg");
-      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
-      _setup_velocity_boomeramg();
-#else
-      PCGAMGSetType(u_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(u_pc, 1);
-      PCMGSetCycleType(u_pc, PC_MG_CYCLE_W);
-      _setup_velocity_gamg();
-#endif
+      if (cs_param_sles_hypre_from_petsc()) {
+
+        PCHYPRESetType(u_pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
+        _setup_velocity_boomeramg();
+
+      }
+      else {
+
+        PCGAMGSetType(u_pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(u_pc, 1);
+        PCMGSetCycleType(u_pc, PC_MG_CYCLE_W);
+        _setup_velocity_gamg();
+
+      }
       break;
 
     default:
@@ -2156,23 +2165,25 @@ _notay_solver(cs_param_sles_t         *slesp,
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_V:
-#if defined(PETSC_HAVE_HYPRE)
-      PCHYPRESetType(up_pc, "boomeramg");
-      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
-#else
-      _set_gamg_pc("", system_size, slesp->amg_type,
-                   false, 1); /* is_sym, smooth_lvl */
-#endif
+      if (cs_param_sles_hypre_from_petsc()) {
+        PCHYPRESetType(up_pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "V");
+      }
+      else {
+        _set_gamg_pc("", system_size, slesp->amg_type,
+                     false, 1); /* is_sym, smooth_lvl */
+      }
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-      PCHYPRESetType(up_pc, "boomeramg");
-      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
-#else
-      _set_gamg_pc("", system_size, slesp->amg_type,
-                   false, 1); /* is_sym, smooth_lvl */
-#endif
+      if (cs_param_sles_hypre_from_petsc()) {
+        PCHYPRESetType(up_pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "W");
+      }
+      else {
+        _set_gamg_pc("", system_size, slesp->amg_type,
+                     false, 1); /* is_sym, smooth_lvl */
+      }
       break;
 
     default:
@@ -2279,28 +2290,38 @@ _notay_block_precond(const cs_range_set_t       *rset,
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
-#if defined(PETSC_HAVE_HYPRE)
-        _petsc_cmd(true, prefix[k], "pc_type", "hypre");
-        _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
-        _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","V");
-#else
-        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
-        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
-                     is_sym, smooth_lvl);
-#endif
+        if (cs_param_sles_hypre_from_petsc()) {
+
+          _petsc_cmd(true, prefix[k], "pc_type", "hypre");
+          _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
+          _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","V");
+
+        }
+        else {
+
+          _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+          _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                       is_sym, smooth_lvl);
+
+        }
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
+      if (cs_param_sles_hypre_from_petsc()) {
+
         _petsc_cmd(true, prefix[k], "pc_type", "hypre");
         _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
         _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","W");
-#else
+
+      }
+      else {
+
         _petsc_cmd(true, prefix[k], "pc_type", "gamg");
         _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
                      is_sym, smooth_lvl);
-#endif
-        break;
+
+      }
+      break;
 
       default:
         bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__);
@@ -2468,27 +2489,37 @@ _notay_full_block_precond(const cs_range_set_t          *rset,
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
-#if defined(PETSC_HAVE_HYPRE)
-        _petsc_cmd(true, prefix[k], "pc_type", "hypre");
-        _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
-        _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","V");
-#else
-        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
-        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
-                     is_sym, smooth_lvl);
-#endif
+        if (cs_param_sles_hypre_from_petsc()) {
+
+          _petsc_cmd(true, prefix[k], "pc_type", "hypre");
+          _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
+          _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","V");
+
+        }
+        else {
+
+          _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+          _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                       is_sym, smooth_lvl);
+
+        }
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-        _petsc_cmd(true, prefix[k], "pc_type", "hypre");
-        _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
-        _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","W");
-#else
-        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
-        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
-                     is_sym, smooth_lvl);
-#endif
+        if (cs_param_sles_hypre_from_petsc()) {
+
+          _petsc_cmd(true, prefix[k], "pc_type", "hypre");
+          _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
+          _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","W");
+
+        }
+        else {
+
+          _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+          _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                       is_sym, smooth_lvl);
+
+        }
         break;
 
       default:

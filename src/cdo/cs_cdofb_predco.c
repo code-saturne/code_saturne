@@ -994,11 +994,10 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
 #if defined(HAVE_PETSC)
     if (mom_eqp->sles_param->amg_type == CS_PARAM_AMG_NONE) {
-#if defined(PETSC_HAVE_HYPRE)
-      mom_eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-#else
-      mom_eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-#endif
+      if (cs_param_sles_hypre_from_petsc())
+        mom_eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+      else
+        mom_eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
     }
 
     cs_sles_petsc_init();

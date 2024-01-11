@@ -576,6 +576,17 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check the availability of Hypre solvers from the PETSc library
+ *
+ * \return return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_sles_hypre_from_petsc(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Retrieve the related solver class from the amg type
  *
  * \param[in]  amg_type    type of AMG to consider
@@ -604,10 +615,11 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if the setting related to the AMG is consistent with the
- *         solver class.
+ * \brief Check if the setting related to the AMG is consistent with the
+ *        solver class. If an issue is detected, try to solve it whith the
+ *        nearest option.
  *
- * \param[in, out] slesp    pointer to a cs_pparam_sles_t structure
+ * \param[in, out] slesp    pointer to a cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
