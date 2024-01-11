@@ -3644,10 +3644,6 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
                                         meta_flag,
                                         &ac);
 
-  /* Default setting for quadrature is different in this case */
-
-  cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
-
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
   BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
@@ -3706,10 +3702,6 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
                                         state_flag,
                                         meta_flag,
                                         &context);
-
-  /* Default setting for quadrature is different in this case */
-
-  cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
