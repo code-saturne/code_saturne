@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -81,23 +81,25 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
-static const char _err_empty_nsp[] =
-  N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
-     " Please check your settings.\n");
+static const char _err_empty_nsp[]
+  = N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
+       " Please check your settings.\n");
 
-static const char
-cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
-  { N_("Stokes equations"),
-    N_("Oseen equations"),
-    N_("Incompressible Navier-Stokes equations"),
-  };
+static const char cs_navsto_param_model_name[CS_NAVSTO_N_MODELS]
+                                            [CS_BASE_STRING_LEN]
+  = {
+      N_("Stokes equations"),
+      N_("Oseen equations"),
+      N_("Incompressible Navier-Stokes equations"),
+    };
 
-static const char
-cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
-  { N_("Artificial compressibility algorithm"),
-    N_("Monolithic"),
-    N_("Incremental projection algorithm"),
-  };
+static const char cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS]
+                                               [CS_BASE_STRING_LEN]
+  = {
+      N_("Artificial compressibility algorithm"),
+      N_("Monolithic"),
+      N_("Incremental projection algorithm"),
+    };
 
 /* Keys to transfer settings from cs_param_navsto_t to cs_equation_param_t */
 
@@ -117,15 +119,6 @@ static const char
 _dof_reduction_key[CS_PARAM_N_REDUCTIONS][CS_BASE_STRING_LEN] =
   { "derham",
     "average"
-  };
-
-static const char
-_quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
-  { "none",
-    "bary",
-    "bary_subdiv",
-    "higher",
-    "highest"
   };
 
 /* scaling coefficient used in Notay's transformation devised in
@@ -155,7 +148,7 @@ _check_petsc_strategy(const char         *val,
                       cs_navsto_sles_t    sles_type)
 {
 #if defined(HAVE_PETSC)
-#if PETSC_VERSION_GE(3,11,0)
+#if PETSC_VERSION_GE(3, 11, 0)
   CS_UNUSED(val);
   return sles_type;
 #else
@@ -203,42 +196,6 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
 
   }  /* Switch */
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the \ref cs_equation_param_t structure related to the
- *         momentum equation according to the type of coupling
- *
- * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
- *
- * \return a pointer to the corresponding \ref cs_equation_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_propagate_qtype(cs_navsto_param_t    *nsp)
-{
-  /* Loop on velocity ICs */
-
-  for (int i = 0; i < nsp->n_velocity_ic_defs; i++)
-    cs_xdef_set_quadrature(nsp->velocity_ic_defs[i], nsp->qtype);
-
-  /* Loop on pressure ICs */
-
-  for (int i = 0; i < nsp->n_pressure_ic_defs; i++)
-    cs_xdef_set_quadrature(nsp->pressure_ic_defs[i], nsp->qtype);
-
-  /* Loop on velocity BCs */
-
-  for (int i = 0; i < nsp->n_velocity_bc_defs; i++)
-    cs_xdef_set_quadrature(nsp->velocity_bc_defs[i], nsp->qtype);
-
-  /* Loop on pressure BCs */
-
-  for (int i = 0; i < nsp->n_pressure_bc_defs; i++)
-    cs_xdef_set_quadrature(nsp->pressure_bc_defs[i], nsp->qtype);
-}
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -319,8 +276,8 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   /* Settings for driving the linear algebra related to the Schur complement
      approximation */
 
-  cs_param_sles_t  *schur_slesp = cs_param_sles_create(-1,
-                                                       "schur_approximation");
+  cs_param_sles_t *schur_slesp
+    = cs_param_sles_create(-1, "schur_approximation");
 
   schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
   schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
@@ -630,10 +587,6 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
 
   nsp->n_boussinesq_terms = 0;
   nsp->boussinesq_param = NULL;
-
-  /* Default level of quadrature */
-
-  nsp->qtype = CS_QUADRATURE_BARY;
 
   /* By default, one assumes a linearization of the non-linearities */
 
@@ -960,30 +913,6 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                 __func__);
     break;
 
-  case CS_NSKEY_QUADRATURE:
-    {
-      nsp->qtype = CS_QUADRATURE_NONE;
-
-      if (strcmp(val, "bary") == 0)
-        nsp->qtype = CS_QUADRATURE_BARY;
-      else if (strcmp(val, "bary_subdiv") == 0)
-        nsp->qtype = CS_QUADRATURE_BARY_SUBDIV;
-      else if (strcmp(val, "higher") == 0)
-        nsp->qtype = CS_QUADRATURE_HIGHER;
-      else if (strcmp(val, "highest") == 0)
-        nsp->qtype = CS_QUADRATURE_HIGHEST;
-      else {
-        const char *_val = val;
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
-                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
-                    " and \"highest\"."), __func__, _val);
-      }
-
-      _propagate_qtype(nsp);
-    }
-    break; /* Quadrature */
-
   case CS_NSKEY_SCHUR_STRATEGY:
     if (strcmp(val, "diag_schur") == 0)
       nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_DIAG_INVERSE;
@@ -1143,11 +1072,15 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the numerical settings defined for the Navier-Stokes system
- *         to an equation related to this system.
+ * \brief Apply the numerical settings defined for the Navier-Stokes system to
+ *        an equation related to this system. Be aware that the user-defined
+ *        settings can be modified in this function when a different choice is
+ *        set between the settings for the Navier-Stokes system and the
+ *        settings for the momentum equation. The final choice is given by the
+ *        settings for the Navier-Stokes system.
  *
- * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in, out]  eqp    pointer to a \ref cs_equation_param_t structure
+ * \param[in]      nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] eqp    pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1161,19 +1094,15 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
 
   const char  *ss_key = _space_scheme_key[nsp->space_scheme];
 
-  cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
+  if (nsp->space_scheme != eqp->space_scheme)
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
 
   /*  Set the way DoFs are defined */
 
   const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
 
-  cs_equation_param_set(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
-
-  /*  Set quadratures type */
-
-  const char  *quad_key = _quad_type_key[nsp->qtype];
-
-  cs_equation_param_set(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
+  if (nsp->dof_reduction_mode != eqp->dof_reduction)
+    cs_equation_param_set(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1302,11 +1231,6 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   if (nsp->gd_scale_coef > 0)
     cs_log_printf(CS_LOG_SETUP, "%s Grad-div scaling %e\n",
                   navsto, nsp->gd_scale_coef);
-
-  /* Default quadrature type */
-
-  cs_log_printf(CS_LOG_SETUP, "%s Default quadrature: %s\n",
-                navsto, cs_quadrature_get_type_name(nsp->qtype));
 
   /* Initial conditions for the velocity */
 
@@ -1518,6 +1442,41 @@ cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   nsp->reference_pressure = pref;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the given quadrature rule to all existing definitions under
+ *        the cs_navsto_param_t structure
+ *
+ * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      qtype    type of quadrature to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
+                                      cs_quadrature_type_t  qtype)
+{
+  /* Loop on velocity ICs */
+
+  for (int i = 0; i < nsp->n_velocity_ic_defs; i++)
+    cs_xdef_set_quadrature(nsp->velocity_ic_defs[i], qtype);
+
+  /* Loop on pressure ICs */
+
+  for (int i = 0; i < nsp->n_pressure_ic_defs; i++)
+    cs_xdef_set_quadrature(nsp->pressure_ic_defs[i], qtype);
+
+  /* Loop on velocity BCs */
+
+  for (int i = 0; i < nsp->n_velocity_bc_defs; i++)
+    cs_xdef_set_quadrature(nsp->velocity_bc_defs[i], qtype);
+
+  /* Loop on pressure BCs */
+
+  for (int i = 0; i < nsp->n_pressure_bc_defs; i++)
+    cs_xdef_set_quadrature(nsp->pressure_bc_defs[i], qtype);
 }
 
 /*----------------------------------------------------------------------------*/

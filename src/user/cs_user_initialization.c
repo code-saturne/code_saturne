@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -66,6 +66,26 @@ BEGIN_C_DECLS
 /*============================================================================
  * User function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_initialization.c
+ *
+ * \brief Define initialization method for variables.
+ *
+ * This function is called before the beginning of the computation
+ * allowing an overload of the GUI defined initialization.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_initialization_setup
+void
+cs_user_initialization_setup(cs_domain_t *domain)
+{
+  CS_UNUSED(domain);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

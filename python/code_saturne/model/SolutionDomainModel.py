@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -275,6 +275,17 @@ class SolutionDomainModel(MeshModel, Model):
 
         return defvalue
 
+    def defaultValuesCartesian(self):
+        """
+        Return a dictionary with default values
+        """
+        d = {"ncells": "1",
+             "min": "0.0",
+             "max": "1.0",
+             "prog": "1.0",
+             "law": "constant"}
+
+        return d
 
     def _getMeshNode(self, mesh):
         """
@@ -536,6 +547,18 @@ class SolutionDomainModel(MeshModel, Model):
 
         node['choice'] = choice
 
+        if choice != 'mesh_import':
+            for m in self.getMeshList():
+                self.delMesh(m)
+
+        if choice != 'mesh_input':
+            self.delMeshInput()
+
+        if choice != 'mesh_cartesian':
+            n = self.node_ecs.xmlGetNode('mesh_cartesian')
+            if n:
+                n.xmlRemoveNode()
+
 
 # Methods to manage the cartesian mesh
 #======================================
@@ -550,7 +573,12 @@ class SolutionDomainModel(MeshModel, Model):
         val = None
         if node:
             n = node.xmlGetChildNode(d)
-            val = n[p]
+            if n:
+                if p in n.xmlGetAttributeDictionary():
+                    val = n[p]
+
+        if val is None:
+            val = self.defaultValuesCartesian()[p]
 
         return val
 

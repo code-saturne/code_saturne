@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,8 @@
 !> \brief This subroutine defines the source terms for scalars which are part of
 !> specific physics models. Source terms are defined over one time step.
 !>
-!> Warning: source terms are treated differently from the way they are in ustssc.
+!> Warning: source terms are treated differently from the way they are
+!>          in cs_user_source_terms.
 !> rovsdt*d(var) = smbrs is solved. rovsdt and smbrs already hold possible user
 !> source terms values and thus have to be incremented (and not overwritten).
 !>
@@ -114,12 +115,15 @@ endif
 
 ! Soot model
 
-if (isoot.ge.1) then
-  ivar = isca(iscal)
-  if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
-    ! Scalar f_id
-    f_id = ivarfl(ivar)
-    call cs_soot_production(f_id, smbrs, rovsdt)
+if (     ippmod(icod3p).ge.0 .or. ippmod(icolwc).ge.0  &
+    .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
+  if (isoot.ge.1) then
+    ivar = isca(iscal)
+    if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
+      ! Scalar f_id
+      f_id = ivarfl(ivar)
+      call cs_soot_production(f_id, smbrs, rovsdt)
+    endif
   endif
 endif
 

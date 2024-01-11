@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -84,12 +84,12 @@ cs_user_initialization(cs_domain_t     *domain)
     return;
 
   const cs_lnum_t n_cells = domain->mesh->n_cells;
-  const cs_combustion_model_t *cm = cs_glob_combustion_model;
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
   cs_real_t *cvar_fm = CS_F_(fm)->val;
   cs_real_t *cvar_scalt = cs_thermal_model_field()->val;
 
-  const cs_real_t fs = cm->gas->fs[0];
+  const cs_real_t fs = cm->fs[0];
 
   /* Mean Mixture Fraction */
   cs_array_real_set_scalar(n_cells, fs, cvar_fm);
@@ -98,7 +98,7 @@ cs_user_initialization(cs_domain_t     *domain)
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == 1) {
     const cs_real_t hinoxy = cm->hinoxy;
-    const cs_real_t hinfue = cm->gas->hinfue;
+    const cs_real_t hinfue = cm->hinfue;
 
     cs_real_t h_ini = hinfue*fs + hinoxy*(1.0-fs);
     cs_array_real_set_scalar(n_cells, h_ini, cvar_scalt);

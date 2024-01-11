@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,109 +46,16 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Density under relaxation
- *
- * Fortran Interface:
- *
- * subroutine uicpi1 (srrom)
- * *****************
- * double precision srrom   <--   density relaxation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicpi1, UICPI1) (double *const srrom);
-
-/*----------------------------------------------------------------------------
  * Temperature for D3P Gas Combustion
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICPI2 (SRROM)
- * *****************
- * DOUBLE PRECISION Toxy   <--   Oxydant temperature
- * DOUBLE PRECISION Tfuel  <--   Fuel temperature
+ * Toxy   <--   Oxidant temperature
+ * Tfuel  <--   Fuel temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel);
-
-/*----------------------------------------------------------------------------
- * Indirection between the solver numbering and the XML one
- * for physical properties of the activated specific physics
- * (pulverized solid fuels)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
-                                const int    *ncharm,
-                                int          *ncharb,
-                                int          *nclpch,
-                                int          *nclacp,
-                                const int    *ncpcmx,
-                                int          *ichcor,
-                                double       *diam20,
-                                double       *cch,
-                                double       *hch,
-                                double       *och,
-                                double       *nch,
-                                double       *sch,
-                                int          *ipci,
-                                double       *pcich,
-                                double       *cp2ch,
-                                double       *rho0ch,
-                                double       *thcdch,
-                                double       *cck,
-                                double       *hck,
-                                double       *ock,
-                                double       *nck,
-                                double       *sck,
-                                double       *xashch,
-                                double       *xashsec,
-                                double       *xwatch,
-                                double       *h0ashc,
-                                double       *cpashc,
-                                int          *iy1ch,
-                                double       *y1ch,
-                                int          *iy2ch,
-                                double       *y2ch,
-                                double       *a1ch,
-                                double       *a2ch,
-                                double       *e1ch,
-                                double       *e2ch,
-                                double       *crepn1,
-                                double       *crepn2,
-                                double       *ahetch,
-                                double       *ehetch,
-                                int          *iochet,
-                                double       *ahetc2,
-                                double       *ehetc2,
-                                int          *ioetc2,
-                                double       *ahetwt,
-                                double       *ehetwt,
-                                int          *ioetwt,
-                                int          *ieqnox,
-                                int          *ieqco2,
-                                int          *imdnox,
-                                int          *irb,
-                                int          *ihtco2,
-                                int          *ihth2o,
-                                double       *qpr,
-                                double       *fn,
-                                double       *ckabs1,
-                                int          *noxyd,
-                                double       *oxyo2,
-                                double       *oxyn2,
-                                double       *oxyh2o,
-                                double       *oxyco2,
-                                double       *repnck,
-                                double       *repnle,
-                                double       *repnlo);
-
-/*----------------------------------------------------------------------------
- * Copy name of thermophysical data file from C to Fortran
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
-                               int           *len      /* --> String Length  */
-                               CS_ARGF_SUPP_CHAINE);
 
 /*=============================================================================
  * Public function prototypes
@@ -160,6 +67,22 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
 
 void
 cs_gui_physical_model_select(void);
+
+/*----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics
+ * (pulverized solid fuels)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_coal_model(void);
+
+/*----------------------------------------------------------------------------
+ * Gas combustion model parameters
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_combustion_gas_model(void);
 
 /*----------------------------------------------------------------------------
  * Electrical model: read parameters
@@ -198,13 +121,6 @@ void
 cs_gui_gwf_model(int  *permeability,
                  int  *unsteady,
                  int  *unsaturated);
-
-/*----------------------------------------------------------------------------
- * Combustion model: read reference values
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_combustion_ref_values(void);
 
 /*----------------------------------------------------------------------------*/
 

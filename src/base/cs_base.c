@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1189,7 +1189,7 @@ cs_base_logfile_head(int    argc,
              "                      Version %s\n\n",
              CS_APP_VERSION);
 
-  bft_printf("\n  Copyright (C) 1998-2023 EDF S.A., France\n\n");
+  bft_printf("\n  Copyright (C) 1998-2024 EDF S.A., France\n\n");
 
 #if defined(CS_REVISION)
   if (strlen(CS_REVISION) > 0)
@@ -1202,7 +1202,7 @@ cs_base_logfile_head(int    argc,
 #endif
 
   bft_printf("\n");
-  bft_printf("  The code_saturne CFD tool  is free software;\n"
+  bft_printf("  The code_saturne CFD tool is free software;\n"
              "  you can redistribute it and/or modify it under the terms\n"
              "  of the GNU General Public License as published by the\n"
              "  Free Software Foundation; either version 2 of the License,\n"
@@ -1243,6 +1243,9 @@ cs_base_mpi_init(int    *argc,
   int arg_id = 0, flag = 0;
   int use_mpi = false;
 
+  if (getenv("PMIX_RANK") != NULL)
+    use_mpi = true;
+
 #if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
   /* Cray: assume MPI is always used. */
@@ -1256,11 +1259,12 @@ cs_base_mpi_init(int    *argc,
   if (getenv("PMI_RANK") != NULL)
     use_mpi = true;
 
-  else if (getenv("PCMPI") != NULL) /* Platform MPI */
+  else if (getenv("PCMPI") != NULL) /* IBM Platform MPI */
     use_mpi = true;
 
 #elif defined(OPEN_MPI)
-  if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 + */
+  /* OpenMPI 1.3+ ; 1.4 also defines PMIX_RANK */
+  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */
@@ -1270,9 +1274,8 @@ cs_base_mpi_init(int    *argc,
   if (getenv("SLURM_SRUN_COMM_HOST") != NULL)
     use_mpi = true;
 
-  /* If we have determined from known MPI environment variables
-     of command line arguments that we are running under MPI,
-     initialize MPI */
+  /* If we have determined from known environment variables
+     that we are running under MPI, initialize MPI */
 
   if (use_mpi == true) {
     MPI_Initialized(&flag);
@@ -1438,14 +1441,10 @@ cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
     return MPI_COMM_NULL;
 
   int comm_id = 0;
-  if (_n_step_comms > 0) {
-    while (   _step_ranks[comm_id] != n_ranks
-           && comm_id < _n_step_comms)
-      comm_id++;
+  for (comm_id = 0; comm_id < _n_step_comms; comm_id++) {
+    if (_step_ranks[comm_id] == n_ranks)
+      break;
   }
-
-  printf("get_rank_step_comm_recursive: %d glob id, %d parent, step %d -> id %d\n",
-         cs_glob_rank_id, parent_n_ranks, rank_step, comm_id);
 
   /* Add communicator if required */
 

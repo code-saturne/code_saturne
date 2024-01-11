@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -724,6 +724,39 @@ cs_diff_ulp(T x, T y)
 
 
 /*----------------------------------------------------------------------------
+ * Synchronize strided gradient ghost cell values.
+ *
+ * template parameters:
+ *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   halo_type      <-- halo type (extended or not)
+ *   grad           --> gradient of a variable
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+_sync_strided_gradient_halo(const cs_mesh_t         *m,
+                            cs_halo_type_t           halo_type,
+                            cs_real_t (*restrict grad)[stride][3])
+{
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, stride*3);
+    if (m->have_rotation_perio) {
+      if (stride == 1)
+        cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
+      else if (stride == 3)
+        cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
+      else if (stride == 6)
+        cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                             halo_type,
+                                             (cs_real_t *)grad);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Compute face-based gradient clipping factor based on per-cell factor.
  *
  * parameters:
@@ -741,68 +774,63 @@ _gradient_update_face_clip_factor(const cs_mesh_t              *m,
                                   cs_real_t           *restrict factor,
                                   cs_real_t           *restrict clip_factor)
 {
+  const cs_lnum_t n_cells = m->n_cells;
+  const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+
   const size_t block_size = 128;
+  const size_t n_blocks = cs_parall_block_count(n_cells, block_size);
 
   if (m->halo != NULL) {
     cs_halo_sync_var(m->halo, halo_type, factor);
   }
 
-# pragma omp parallel
-  {
-    cs_lnum_t t_s_id, t_e_id;
-    cs_parall_thread_range(m->n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+# pragma omp parallel for  if  (n_cells > CS_THR_MIN)
+  for (size_t b_id = 0; b_id < n_blocks; b_id++) {
 
-    const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+    cs_lnum_t s_id = b_id*block_size, e_id = (b_id+1)*block_size;
+    if (e_id > n_cells) e_id = n_cells;
 
     /* Remark:
        denum: maximum l2 norm of the variation of the gradient squared
        denom: maximum l2 norm of the variation of the variable squared */
 
-    for (cs_lnum_t s_id = t_s_id; s_id < t_e_id; s_id += block_size) {
+    for (int adj_id = 0; adj_id < n_adj; adj_id++) {
 
-      cs_lnum_t e_id = s_id + block_size;
-      if (e_id > t_e_id)
-        e_id = t_e_id;
+      const cs_lnum_t *restrict cell_cells_idx;
+      const cs_lnum_t *restrict cell_cells;
 
-      for (int adj_id = 0; adj_id < n_adj; adj_id++) {
+      if (adj_id == 0) {
+        cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
+        cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
+      }
+      else if (ma->cell_cells_e_idx != NULL){
+        cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
+        cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+      }
+      else
+        break;
 
-        const cs_lnum_t *restrict cell_cells_idx;
-        const cs_lnum_t *restrict cell_cells;
+      for (cs_lnum_t c_id1 = s_id; c_id1 < e_id; c_id1++) {
 
-        if (adj_id == 0) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
+        cs_real_t l_min_factor = factor[c_id1];
+
+        for (cs_lnum_t cidx = cell_cells_idx[c_id1];
+             cidx < cell_cells_idx[c_id1+1];
+             cidx++) {
+
+          cs_lnum_t c_id2 = cell_cells[cidx];
+
+          l_min_factor = std::min(l_min_factor, factor[c_id2]);
+
         }
-        else if (ma->cell_cells_e_idx != NULL){
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
-        }
-        else
-          break;
 
-        for (cs_lnum_t c_id1 = s_id; c_id1 < e_id; c_id1++) {
+        clip_factor[c_id1] = std::min(clip_factor[c_id1], l_min_factor);
 
-          cs_real_t l_min_factor = factor[c_id1];
+      }  /* End of loop on block elements */
 
-          for (cs_lnum_t cidx = cell_cells_idx[c_id1];
-               cidx < cell_cells_idx[c_id1+1];
-               cidx++) {
+    } /* End of loop on adjacency type */
 
-            cs_lnum_t c_id2 = cell_cells[cidx];
-
-            l_min_factor = std::min(l_min_factor, factor[c_id2]);
-
-          }
-
-          clip_factor[c_id1] = std::min(clip_factor[c_id1], l_min_factor);
-
-        }  /* End of loop on block elements */
-
-      } /* End of loop on adjacency type */
-
-    } /* End of loop on blocks */
-
-  } /* End of OpenMP section */
+  } /* End of (parallel) loop on blocks */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -883,19 +911,21 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
     clip_factor = _clip_factor;
   }
 
+  const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+
   const size_t block_size = 128;
+  const size_t n_blocks = cs_parall_block_count(n_cells, block_size);
 
   /* First clipping Algorithm: based on the cell gradient */
   /*------------------------------------------------------*/
 
   if (clip_mode == CS_GRADIENT_LIMIT_CELL) {
 
-#   pragma omp parallel
-    {
-      cs_lnum_t t_s_id, t_e_id;
-      cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+#   pragma omp parallel for  if  (n_cells > CS_THR_MIN)
+    for (size_t b_id = 0; b_id < n_blocks; b_id++) {
 
-      const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+      cs_lnum_t s_id = b_id*block_size, e_id = (b_id+1)*block_size;
+      if (e_id > n_cells) e_id = n_cells;
 
       /* Remark:
          denum: maximum l2 norm of the variation of the gradient squared
@@ -904,75 +934,67 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
       cs_real_t denum[block_size];
       cs_real_t denom[block_size];
 
-      for (cs_lnum_t s_id = t_s_id; s_id < t_e_id; s_id += block_size) {
+      cs_lnum_t b_e_id = e_id - s_id;
 
-        cs_lnum_t e_id = s_id + block_size;
-        if (e_id > t_e_id)
-          e_id = t_e_id;
+      for (cs_lnum_t i = 0; i < b_e_id; i++) {
+        denum[i] = 0;
+        denom[i] = 0;
+      }
 
-        cs_lnum_t b_e_id = e_id - s_id;
+      for (int adj_id = 0; adj_id < n_adj; adj_id++) {
 
-        for (cs_lnum_t i = 0; i < b_e_id; i++) {
-          denum[i] = 0;
-          denom[i] = 0;
+        const cs_lnum_t *restrict cell_cells_idx;
+        const cs_lnum_t *restrict cell_cells;
+
+        if (adj_id == 0) {
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
         }
-
-        for (int adj_id = 0; adj_id < n_adj; adj_id++) {
-
-          const cs_lnum_t *restrict cell_cells_idx;
-          const cs_lnum_t *restrict cell_cells;
-
-          if (adj_id == 0) {
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
-          }
-          else if (ma->cell_cells_e_idx != NULL){
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
-          }
-          else
-            break;
-
-          for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
-
-            cs_lnum_t c_id1 = i + s_id;
-
-            for (cs_lnum_t cidx = cell_cells_idx[c_id1];
-                 cidx < cell_cells_idx[c_id1+1];
-                 cidx++) {
-
-              cs_lnum_t c_id2 = cell_cells[cidx];
-
-              cs_real_t dist[3];
-
-              for (cs_lnum_t k = 0; k < 3; k++)
-                dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
-
-              cs_real_t dist1 = abs(  dist[0]*grad[c_id1][0]
-                                    + dist[1]*grad[c_id1][1]
-                                    + dist[2]*grad[c_id1][2]);
-              cs_real_t dvar = abs(pvar[c_id1] - pvar[c_id2]);
-
-              denum[i] = std::max(denum[i], dist1);
-              denom[i] = std::max(denom[i], dvar);
-
-            }
-
-          }  /* End of loop on block elements */
-
-        } /* End of loop on adjacency type */
+        else if (ma->cell_cells_e_idx != NULL){
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+        }
+        else
+          break;
 
         for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
-          cs_real_t factor1 = 1.;
-          if (denum[i] > climgp * denom[i])
-            factor1 = climgp * denom[i]/denum[i];
 
-          clip_factor[s_id + i] = factor1;
-        }
+          cs_lnum_t c_id1 = i + s_id;
 
-      } /* End of loop on blocks */
+          for (cs_lnum_t cidx = cell_cells_idx[c_id1];
+               cidx < cell_cells_idx[c_id1+1];
+               cidx++) {
 
-    } /* End of OpenMP section */
+            cs_lnum_t c_id2 = cell_cells[cidx];
+
+            cs_real_t dist[3];
+
+            for (cs_lnum_t k = 0; k < 3; k++)
+              dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
+
+            cs_real_t dist1 = abs(  dist[0]*grad[c_id1][0]
+                                  + dist[1]*grad[c_id1][1]
+                                  + dist[2]*grad[c_id1][2]);
+            cs_real_t dvar = abs(pvar[c_id1] - pvar[c_id2]);
+
+            denum[i] = std::max(denum[i], dist1);
+            denom[i] = std::max(denom[i], dvar);
+
+          }
+
+        }  /* End of loop on block elements */
+
+      } /* End of loop on adjacency type */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_real_t factor1 = 1.;
+        if (denum[i] > climgp * denom[i])
+          factor1 = climgp * denom[i]/denum[i];
+
+        clip_factor[s_id + i] = factor1;
+      }
+
+    } /* End of (parallel) loop on blocks */
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_CELL */
 
@@ -985,12 +1007,11 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
     BFT_MALLOC(factor, n_cells_ext, cs_real_t);
     cs_array_real_set_scalar(n_cells_ext, DBL_MAX, factor);
 
-#   pragma omp parallel
-    {
-      cs_lnum_t t_s_id, t_e_id;
-      cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+#   pragma omp parallel for  if  (n_cells > CS_THR_MIN)
+    for (size_t b_id = 0; b_id < n_blocks; b_id++) {
 
-      const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+      cs_lnum_t s_id = b_id*block_size, e_id = (b_id+1)*block_size;
+      if (e_id > n_cells) e_id = n_cells;
 
       /* Remark:
          denum: maximum l2 norm of the variation of the gradient squared
@@ -999,77 +1020,69 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
       cs_real_t denum[block_size];
       cs_real_t denom[block_size];
 
-      for (cs_lnum_t s_id = t_s_id; s_id < t_e_id; s_id += block_size) {
+      cs_lnum_t b_e_id = e_id - s_id;
 
-        cs_lnum_t e_id = s_id + block_size;
-        if (e_id > t_e_id)
-          e_id = t_e_id;
+      for (cs_lnum_t i = 0; i < b_e_id; i++) {
+        denum[i] = 0;
+        denom[i] = 0;
+        clip_factor[s_id + i] = 1;
+      }
 
-        cs_lnum_t b_e_id = e_id - s_id;
+      for (int adj_id = 0; adj_id < n_adj; adj_id++) {
 
-        for (cs_lnum_t i = 0; i < b_e_id; i++) {
-          denum[i] = 0;
-          denom[i] = 0;
-          clip_factor[s_id + i] = 1;
+        const cs_lnum_t *restrict cell_cells_idx;
+        const cs_lnum_t *restrict cell_cells;
+
+        if (adj_id == 0) {
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
         }
-
-        for (int adj_id = 0; adj_id < n_adj; adj_id++) {
-
-          const cs_lnum_t *restrict cell_cells_idx;
-          const cs_lnum_t *restrict cell_cells;
-
-          if (adj_id == 0) {
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
-          }
-          else if (ma->cell_cells_e_idx != NULL){
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
-          }
-          else
-            break;
-
-          for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
-
-            cs_lnum_t c_id1 = i + s_id;
-
-            for (cs_lnum_t cidx = cell_cells_idx[c_id1];
-                 cidx < cell_cells_idx[c_id1+1];
-                 cidx++) {
-
-              cs_lnum_t c_id2 = cell_cells[cidx];
-
-              cs_real_t dist[3], gradm[3];
-
-              for (cs_lnum_t k = 0; k < 3; k++)
-                dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
-
-              for (cs_lnum_t k = 0; k < 3; k++)
-                gradm[k] = grad[c_id1][k] + grad[c_id2][k];
-
-              cs_real_t dist1 = 0.5 * abs(cs_math_3_dot_product(dist, gradm));
-              cs_real_t dvar = abs(pvar[c_id1] - pvar[c_id2]);
-
-              denum[i] = std::max(denum[i], dist1);
-              denom[i] = std::max(denom[i], dvar);
-
-            }
-
-          }  /* End of loop on block elements */
-
-        } /* End of loop on adjacency type */
+        else if (ma->cell_cells_e_idx != NULL){
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+        }
+        else
+          break;
 
         for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
-          cs_real_t factor1 = 1.;
-          if (denum[i] > climgp * denom[i])
-            factor1 = climgp * denom[i]/denum[i];
 
-          factor[s_id + i] = factor1;
-        }
+          cs_lnum_t c_id1 = i + s_id;
 
-      } /* End of loop on blocks */
+          for (cs_lnum_t cidx = cell_cells_idx[c_id1];
+               cidx < cell_cells_idx[c_id1+1];
+               cidx++) {
 
-    } /* End of OpenMP section */
+            cs_lnum_t c_id2 = cell_cells[cidx];
+
+            cs_real_t dist[3], gradm[3];
+
+            for (cs_lnum_t k = 0; k < 3; k++)
+              dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
+
+            for (cs_lnum_t k = 0; k < 3; k++)
+              gradm[k] = grad[c_id1][k] + grad[c_id2][k];
+
+            cs_real_t dist1 = 0.5 * abs(cs_math_3_dot_product(dist, gradm));
+            cs_real_t dvar = abs(pvar[c_id1] - pvar[c_id2]);
+
+            denum[i] = std::max(denum[i], dist1);
+            denom[i] = std::max(denom[i], dvar);
+
+          }
+
+        }  /* End of loop on block elements */
+
+      } /* End of loop on adjacency type */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_real_t factor1 = 1.;
+        if (denum[i] > climgp * denom[i])
+          factor1 = climgp * denom[i]/denum[i];
+
+        factor[s_id + i] = factor1;
+      }
+
+    } /* End of (parallel) loop on blocks */
 
     /* Now compute clip factor (kenrl common to scalar and strided clases */
 
@@ -4493,7 +4506,6 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
- *   cpl            <-- structure associated with internal coupling, or NULL
  *   w_stride       <-- stride for weighting coefficient
  *   halo_type      <-- halo type (extended or not)
  *   hyd_p_flag     <-- flag for hydrostatic pressure
@@ -4510,7 +4522,6 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
 static void
 _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                               const cs_mesh_quantities_t     *fvq,
-                              const cs_internal_coupling_t   *cpl,
                               int                             w_stride,
                               int                             hyd_p_flag,
                               cs_real_t                       inc,
@@ -4552,14 +4563,6 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
     = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
-
-  cs_lnum_t   cpl_stride = 0;
-  const bool _coupled_faces[1] = {false};
-  const bool  *coupled_faces = _coupled_faces;
-  if (cpl != NULL) {
-    cpl_stride = 1;
-    coupled_faces = (const bool *)cpl->coupled_faces;
-  }
 
   const cs_real_t *c_weight_s = NULL;
   const cs_real_6_t *c_weight_t = NULL;
@@ -4772,11 +4775,6 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
     } /* loop on thread groups */
 
-    /* Contribution from coupled faces */
-    if (cpl != NULL) {
-      assert(0); /* not handled yet */
-    }
-
     /* Contribution from boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
@@ -4787,9 +4785,6 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
         for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
-
-          if (coupled_faces[f_id * cpl_stride])
-            continue;
 
           cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -4852,11 +4847,6 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
     } /* loop on thread groups */
 
-    /* Contribution from coupled faces */
-    if (cpl != NULL) {
-      assert(0); /* not handled yet */
-    }
-
     /* Contribution from boundary faces */
 
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
@@ -4867,9 +4857,6 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
         for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
-
-          if (coupled_faces[f_id * cpl_stride])
-            continue;
 
           cs_lnum_t ii = b_face_cells[f_id];
 
@@ -4985,19 +4972,21 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
     clip_factor = _clip_factor;
   }
 
+  const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+
   const size_t block_size = 128;
+  const size_t n_blocks = cs_parall_block_count(n_cells, block_size);
 
   /* First clipping Algorithm: based on the cell gradient */
   /*------------------------------------------------------*/
 
   if (clip_mode == CS_GRADIENT_LIMIT_CELL) {
 
-#   pragma omp parallel
-    {
-      cs_lnum_t t_s_id, t_e_id;
-      cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+#   pragma omp parallel for  if  (n_cells > CS_THR_MIN)
+    for (size_t b_id = 0; b_id < n_blocks; b_id++) {
 
-      const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+      cs_lnum_t s_id = b_id*block_size, e_id = (b_id+1)*block_size;
+      if (e_id > n_cells) e_id = n_cells;
 
       /* Remark:
          denum: maximum l2 norm of the variation of the gradient squared
@@ -5006,91 +4995,83 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
       cs_real_t denum[block_size];
       cs_real_t denom[block_size];
 
-      for (cs_lnum_t s_id = t_s_id; s_id < t_e_id; s_id += block_size) {
+      cs_lnum_t b_e_id = e_id - s_id;
 
-        cs_lnum_t e_id = s_id + block_size;
-        if (e_id > t_e_id)
-          e_id = t_e_id;
+      for (cs_lnum_t i = 0; i < b_e_id; i++) {
+        denum[i] = 0;
+        denom[i] = 0;
+      }
 
-        cs_lnum_t b_e_id = e_id - s_id;
+      for (int adj_id = 0; adj_id < n_adj; adj_id++) {
 
-        for (cs_lnum_t i = 0; i < b_e_id; i++) {
-          denum[i] = 0;
-          denom[i] = 0;
+        const cs_lnum_t *restrict cell_cells_idx;
+        const cs_lnum_t *restrict cell_cells;
+
+        if (adj_id == 0) {
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
         }
+        else if (ma->cell_cells_e_idx != NULL){
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+        }
+        else
+          break;
 
-        for (int adj_id = 0; adj_id < n_adj; adj_id++) {
+        for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
 
-          const cs_lnum_t *restrict cell_cells_idx;
-          const cs_lnum_t *restrict cell_cells;
+          cs_lnum_t c_id1 = i + s_id;
 
-          if (adj_id == 0) {
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
-          }
-          else if (ma->cell_cells_e_idx != NULL){
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
-          }
-          else
-            break;
+          for (cs_lnum_t cidx = cell_cells_idx[c_id1];
+               cidx < cell_cells_idx[c_id1+1];
+               cidx++) {
 
-          for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+            cs_lnum_t c_id2 = cell_cells[cidx];
 
-            cs_lnum_t c_id1 = i + s_id;
+            cs_real_t dist[3], grad_dist1[stride], var_dist[stride];
 
-            for (cs_lnum_t cidx = cell_cells_idx[c_id1];
-                 cidx < cell_cells_idx[c_id1+1];
-                 cidx++) {
+            for (cs_lnum_t k = 0; k < 3; k++)
+              dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
 
-              cs_lnum_t c_id2 = cell_cells[cidx];
+            for (cs_lnum_t k = 0; k < stride; k++) {
 
-              cs_real_t dist[3], grad_dist1[stride], var_dist[stride];
+              grad_dist1[k] =   grad[c_id1][k][0] * dist[0]
+                              + grad[c_id1][k][1] * dist[1]
+                              + grad[c_id1][k][2] * dist[2];
 
-              for (cs_lnum_t k = 0; k < 3; k++)
-                dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
-
-              for (cs_lnum_t k = 0; k < stride; k++) {
-
-                grad_dist1[k] =   grad[c_id1][k][0] * dist[0]
-                                + grad[c_id1][k][1] * dist[1]
-                                + grad[c_id1][k][2] * dist[2];
-
-                var_dist[k] = pvar[c_id1][k] - pvar[c_id2][k];
-
-              }
-
-              cs_real_t  dvar_sq, dist_sq1;
-
-              if (stride == 3) {
-                dist_sq1 = cs_math_3_square_norm(grad_dist1);
-                dvar_sq = cs_math_3_square_norm(var_dist);
-              }
-              else if (stride == 6) {
-                dist_sq1 = _tensor_norm_2(grad_dist1);
-                dvar_sq = _tensor_norm_2(var_dist);
-              }
-
-              denum[i] = std::max(denum[i], dist_sq1);
-              denom[i] = std::max(denom[i], dvar_sq);
+              var_dist[k] = pvar[c_id1][k] - pvar[c_id2][k];
 
             }
 
-          }  /* End of loop on block elements */
+            cs_real_t  dvar_sq, dist_sq1;
 
-        } /* End of loop on adjacency type */
+            if (stride == 3) {
+              dist_sq1 = cs_math_3_square_norm(grad_dist1);
+              dvar_sq = cs_math_3_square_norm(var_dist);
+            }
+            else if (stride == 6) {
+              dist_sq1 = _tensor_norm_2(grad_dist1);
+              dvar_sq = _tensor_norm_2(var_dist);
+            }
 
-        for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
-          cs_real_t factor1 = 1.;
-          if (denum[i] > clipp_coef_sq * denom[i])
-            factor1 = sqrt(clipp_coef_sq * denom[i]/denum[i]);
+            denum[i] = std::max(denum[i], dist_sq1);
+            denom[i] = std::max(denom[i], dvar_sq);
 
-          clip_factor[s_id + i] = factor1;
-        }
+          }
 
-      } /* End of loop on blocks */
+        }  /* End of loop on block elements */
 
-    } /* End of OpenMP section */
+      } /* End of loop on adjacency type */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_real_t factor1 = 1.;
+        if (denum[i] > clipp_coef_sq * denom[i])
+          factor1 = sqrt(clipp_coef_sq * denom[i]/denum[i]);
+
+        clip_factor[s_id + i] = factor1;
+      }
+
+    } /* End of (parallel) loop on blocks */
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_CELL */
 
@@ -5103,12 +5084,11 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
     BFT_MALLOC(factor, n_cells_ext, cs_real_t);
     cs_array_real_set_scalar(n_cells_ext, DBL_MAX, factor);
 
-#   pragma omp parallel
-    {
-      cs_lnum_t t_s_id, t_e_id;
-      cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+#   pragma omp parallel for  if  (n_cells > CS_THR_MIN)
+    for (size_t b_id = 0; b_id < n_blocks; b_id++) {
 
-      const int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+      cs_lnum_t s_id = b_id*block_size, e_id = (b_id+1)*block_size;
+      if (e_id > n_cells) e_id = n_cells;
 
       /* Remark:
          denum: maximum l2 norm of the variation of the gradient squared
@@ -5117,92 +5097,84 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
       cs_real_t denum[block_size];
       cs_real_t denom[block_size];
 
-      for (cs_lnum_t s_id = t_s_id; s_id < t_e_id; s_id += block_size) {
+      cs_lnum_t b_e_id = e_id - s_id;
 
-        cs_lnum_t e_id = s_id + block_size;
-        if (e_id > t_e_id)
-          e_id = t_e_id;
+      for (cs_lnum_t i = 0; i < b_e_id; i++) {
+        denum[i] = 0;
+        denom[i] = 0;
+        clip_factor[s_id + i] = 1;
+      }
 
-        cs_lnum_t b_e_id = e_id - s_id;
+      for (int adj_id = 0; adj_id < n_adj; adj_id++) {
 
-        for (cs_lnum_t i = 0; i < b_e_id; i++) {
-          denum[i] = 0;
-          denom[i] = 0;
-          clip_factor[s_id + i] = 1;
+        const cs_lnum_t *restrict cell_cells_idx;
+        const cs_lnum_t *restrict cell_cells;
+
+        if (adj_id == 0) {
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
         }
-
-        for (int adj_id = 0; adj_id < n_adj; adj_id++) {
-
-          const cs_lnum_t *restrict cell_cells_idx;
-          const cs_lnum_t *restrict cell_cells;
-
-          if (adj_id == 0) {
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
-          }
-          else if (ma->cell_cells_e_idx != NULL){
-            cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-            cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
-          }
-          else
-            break;
-
-          for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
-
-            cs_lnum_t c_id1 = i + s_id;
-
-            for (cs_lnum_t cidx = cell_cells_idx[c_id1];
-                 cidx < cell_cells_idx[c_id1+1];
-                 cidx++) {
-
-              cs_lnum_t c_id2 = cell_cells[cidx];
-
-              cs_real_t dist[3], grad_dist1[stride], var_dist[stride];
-
-              for (cs_lnum_t k = 0; k < 3; k++)
-                dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
-
-              for (cs_lnum_t k = 0; k < stride; k++) {
-                grad_dist1[k]
-                  = 0.5 * (  (grad[c_id1][k][0] + grad[c_id2][k][0]) * dist[0]
-                           + (grad[c_id1][k][1] + grad[c_id2][k][1]) * dist[1]
-                           + (grad[c_id1][k][2] + grad[c_id2][k][2]) * dist[2]);
-                var_dist[k] = pvar[c_id1][k] - pvar[c_id2][k];
-              }
-
-              cs_real_t dist_sq1, dvar_sq;
-
-              if (stride == 3) {
-                dist_sq1 = cs_math_3_square_norm(grad_dist1);
-                dvar_sq = cs_math_3_square_norm(var_dist);
-              }
-              else if (stride == 6) {
-                dist_sq1 = _tensor_norm_2(grad_dist1);
-                dvar_sq = _tensor_norm_2(var_dist);
-              }
-
-              denum[i] = std::max(denum[i], dist_sq1);
-              denom[i] = std::max(denom[i], dvar_sq);
-
-            }
-
-          }  /* End of loop on block elements */
-
-        } /* End of loop on adjacency type */
+        else if (ma->cell_cells_e_idx != NULL){
+          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+        }
+        else
+          break;
 
         for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
-          cs_real_t factor1 = 1.;
-          if (denum[i] > clipp_coef_sq * denom[i])
-            factor1 = sqrt(clipp_coef_sq * denom[i]/denum[i]);
 
-          factor[s_id + i] = factor1;
-        }
+          cs_lnum_t c_id1 = i + s_id;
 
-      } /* End of loop on blocks */
+          for (cs_lnum_t cidx = cell_cells_idx[c_id1];
+               cidx < cell_cells_idx[c_id1+1];
+               cidx++) {
 
-    } /* End of OpenMP section */
+            cs_lnum_t c_id2 = cell_cells[cidx];
 
-    /* Now compute clip factor (kenrl common to scalar and strided clases */
+            cs_real_t dist[3], grad_dist1[stride], var_dist[stride];
+
+            for (cs_lnum_t k = 0; k < 3; k++)
+              dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
+
+            for (cs_lnum_t k = 0; k < stride; k++) {
+              grad_dist1[k]
+                = 0.5 * (  (grad[c_id1][k][0] + grad[c_id2][k][0]) * dist[0]
+                         + (grad[c_id1][k][1] + grad[c_id2][k][1]) * dist[1]
+                         + (grad[c_id1][k][2] + grad[c_id2][k][2]) * dist[2]);
+              var_dist[k] = pvar[c_id1][k] - pvar[c_id2][k];
+            }
+
+            cs_real_t dist_sq1, dvar_sq;
+
+            if (stride == 3) {
+              dist_sq1 = cs_math_3_square_norm(grad_dist1);
+              dvar_sq = cs_math_3_square_norm(var_dist);
+            }
+            else if (stride == 6) {
+              dist_sq1 = _tensor_norm_2(grad_dist1);
+              dvar_sq = _tensor_norm_2(var_dist);
+            }
+
+            denum[i] = std::max(denum[i], dist_sq1);
+            denom[i] = std::max(denom[i], dvar_sq);
+
+          }
+
+        }  /* End of loop on block elements */
+
+      } /* End of loop on adjacency type */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_real_t factor1 = 1.;
+        if (denum[i] > clipp_coef_sq * denom[i])
+          factor1 = sqrt(clipp_coef_sq * denom[i]/denum[i]);
+
+        factor[s_id + i] = factor1;
+      }
+
+    } /* End of (parallel) loop on blocks */
+
+    /* Now compute clip factor (kernel common to scalar and strided clases */
 
     _gradient_update_face_clip_factor(m, ma, halo_type, factor, clip_factor);
 
@@ -5473,21 +5445,20 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   /* Periodicity and parallelism treatment */
 
-  if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 9);
-    if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
-  }
+  _sync_strided_gradient_halo<3>(m, halo_type, grad);
 }
 
 /*----------------------------------------------------------------------------
- * Reconstruct the gradient of a vector using a given gradient of
- * this vector (typically lsq).
+ * Reconstruct the gradient of a vector or tensor using a given gradient of
+ * this quantity (typically lsq).
+ *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
+ *   madj           <-- pointer to mesh adjacencies structure
  *   fvq            <-- pointer to associated finite volume quantities
- *   cpl            <-- structure associated with internal coupling, or NULL
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
@@ -5497,32 +5468,33 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 static void
-_reconstruct_vector_gradient(const cs_mesh_t              *m,
-                             const cs_mesh_adjacencies_t  *madj,
-                             const cs_mesh_quantities_t   *fvq,
-                             const cs_internal_coupling_t *cpl,
-                             cs_halo_type_t                halo_type,
-                             int                           inc,
-                             const cs_real_3_t   *restrict coefav,
-                             const cs_real_33_t  *restrict coefbv,
-                             const cs_real_3_t   *restrict pvar,
-                             const cs_real_t     *restrict c_weight,
-                             cs_real_33_t        *restrict r_grad,
-                             cs_real_33_t        *restrict grad)
+_reconstruct_strided_gradient(const cs_mesh_t              *m,
+                              const cs_mesh_adjacencies_t  *madj,
+                              const cs_mesh_quantities_t   *fvq,
+                              cs_halo_type_t                halo_type,
+                              int                           inc,
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict pvar)[stride],
+                              const cs_real_t     *restrict c_weight,
+                              cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3])
 {
+  using grad_t  = cs_real_t[stride][3];
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) madj->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) madj->cell_b_faces;
+  const cs_lnum_t n_b_cells = m->n_b_cells;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -5543,21 +5515,15 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   const cs_real_33_t *restrict corr_grad_lin
     = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
 
-  cs_lnum_t   cpl_stride = 0;
-  const bool _coupled_faces[1] = {false};
-  const bool  *coupled_faces = _coupled_faces;
-  if (cpl != NULL) {
-    cpl_stride = 1;
-    coupled_faces = (const bool *)cpl->coupled_faces;
-  }
-
+  /* Initialize gradient */
+  /*---------------------*/
 
   /* Timing the computation */
 
   std::chrono::high_resolution_clock::time_point start, stop;
   std::chrono::microseconds elapsed, elapsed_cuda;
 
-  cs_real_33_t *grad_cpu, *grad_gpu;
+  grad_t *grad_cpu, *grad_gpu;
   
   bool compute_cuda;
   bool compute_cpu;
@@ -5604,28 +5570,25 @@ res_cpu = !compute_cuda;
     if(!res_cpu){
       grad_gpu = grad;
     } else {
-      BFT_MALLOC(grad_gpu, n_cells_ext, cs_real_33_t);
+      BFT_MALLOC(grad_gpu, n_cells_ext, grad_t);
     }
     if(perf){
       start = std::chrono::high_resolution_clock::now();
     }
 
-    cs_reconstruct_vector_gradient_cuda(m,
-                                        madj,
-                                        fvq, 
-                                        cpl, 
-                                        halo_type, 
-                                        inc,
-                                        coefav,
-                                        coefbv,
-                                        pvar,
-                                        c_weight,
-                                        r_grad,
-                                        grad_gpu,
-                                        coupled_faces,
-                                        cpl_stride,
-                                        cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
-                                        perf);
+    // cs_reconstruct_vector_gradient_cuda<stride>(m,
+    //                                     madj,
+    //                                     fvq, 
+    //                                     halo_type, 
+    //                                     inc,
+    //                                     coefav,
+    //                                     coefbv,
+    //                                     pvar,
+    //                                     c_weight,
+    //                                     r_grad,
+    //                                     grad_gpu,
+    //                                     cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
+    //                                     perf);
     if(perf){
       stop = std::chrono::high_resolution_clock::now();
       elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -5637,20 +5600,24 @@ res_cpu = !compute_cuda;
     if(res_cpu){
       grad_cpu = grad;
     } else {
-      BFT_MALLOC(grad_cpu, n_cells_ext, cs_real_33_t);
+      BFT_MALLOC(grad_cpu, n_cells_ext, grad_t);
     }
 
     if(perf){
       start = std::chrono::high_resolution_clock::now();
     }
       /* Initialization */
+
     # pragma omp parallel for
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           for (cs_lnum_t j = 0; j < 3; j++)
             grad_cpu[c_id][i][j] = 0.0;
         }
       }
+  cs_lnum_t n_i_groups, n_i_threads;
+  cs_mesh_i_faces_thread_block_count(m, CS_E2N_SUM_SCATTER, 0,
+                                     &n_i_groups, &n_i_threads);
 
       /* Interior faces contribution */
 
@@ -5658,107 +5625,103 @@ res_cpu = !compute_cuda;
 
     #   pragma omp parallel for
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        
+      cs_lnum_t s_id, e_id;
+      cs_mesh_i_faces_thread_block_range(m, CS_E2N_SUM_SCATTER, g_id, t_id,
+                                         n_i_threads, 0, &s_id, &e_id);
 
-          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-              f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-              f_id++) {
+      for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
 
-            cs_lnum_t c_id1 = i_face_cells[f_id][0];
-            cs_lnum_t c_id2 = i_face_cells[f_id][1];
+        cs_lnum_t c_id1 = i_face_cells[f_id][0];
+        cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-            cs_real_t pond = weight[f_id];
+        cs_real_t pond = weight[f_id];
 
-            cs_real_t ktpond = (c_weight == NULL) ?
-              pond :                    // no cell weighting
-              pond * c_weight[c_id1] // cell weighting active
-                / (      pond * c_weight[c_id1]
-                  + (1.0-pond)* c_weight[c_id2]);
+        cs_real_t ktpond = (c_weight == NULL) ?
+          pond :                    // no cell weighting
+          pond * c_weight[c_id1] // cell weighting active
+            / (      pond * c_weight[c_id1]
+              + (1.0-pond)* c_weight[c_id2]);
 
-            /*
-              Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
-                                        + (1-\alpha_\ij) \varia_\cellj\f$
-                      but for the cell \f$ \celli \f$ we remove
-                      \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                      and for the cell \f$ \cellj \f$ we remove
-                      \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
-            */
+        /*
+          Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                    + (1-\alpha_\ij) \varia_\cellj\f$
+                  but for the cell \f$ \celli \f$ we remove
+                  \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                  and for the cell \f$ \cellj \f$ we remove
+                  \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
 
-            for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
 
-              cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
-              cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
+          cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
+          cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
 
-              /* Reconstruction part */
-              cs_real_t rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
-                                                        + r_grad[c_id2][i][0])
-                                      + dofij[f_id][1]*(  r_grad[c_id1][i][1]
-                                                        + r_grad[c_id2][i][1])
-                                      + dofij[f_id][2]*(  r_grad[c_id1][i][2]
-                                                        + r_grad[c_id2][i][2]));
+          /* Reconstruction part */
+          cs_real_t rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
+                                                    + r_grad[c_id2][i][0])
+                                  + dofij[f_id][1]*(  r_grad[c_id1][i][1]
+                                                    + r_grad[c_id2][i][1])
+                                  + dofij[f_id][2]*(  r_grad[c_id1][i][2]
+                                                    + r_grad[c_id2][i][2]));
 
-              for (cs_lnum_t j = 0; j < 3; j++) {
-                grad_cpu[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
-                grad_cpu[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
-              }
-            }
-
-          } /* End of loop on faces */
-
-        } /* End of loop on threads */
-
-      } /* End of loop on thread groups */
-
-      /* Contribution from coupled faces */
-      // if (cpl != NULL) {
-      //   cs_internal_coupling_initialize_vector_gradient(cpl, c_weight, pvar, grad);
-      //   cs_internal_coupling_reconstruct_vector_gradient(cpl, r_grad, grad);
-      // }
-
-      /* Boundary face treatment */
-
-    # pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (cs_lnum_t f_id = b_group_index[t_id*2];
-            f_id < b_group_index[t_id*2 + 1];
-            f_id++) {
-
-          if (coupled_faces[f_id * cpl_stride])
-            continue;
-
-          cs_lnum_t c_id = b_face_cells[f_id];
-
-          /*
-            Remark: for the cell \f$ \celli \f$ we remove
-                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-          */
-
-          for (cs_lnum_t i = 0; i < 3; i++) {
-
-            cs_real_t pfac = inc*coefav[f_id][i];
-
-            for (cs_lnum_t k = 0; k < 3; k++)
-              pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-
-            pfac -= pvar[c_id][i];
-
-            /* Reconstruction part */
-            cs_real_t rfac = 0.;
-            for (cs_lnum_t k = 0; k < 3; k++) {
-              cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
-                                + r_grad[c_id][k][1] * diipb[f_id][1]
-                                + r_grad[c_id][k][2] * diipb[f_id][2];
-              rfac += coefbv[f_id][i][k] * vecfac;
-            }
-
-            for (cs_lnum_t j = 0; j < 3; j++)
-              grad_cpu[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
-
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            grad_cpu[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
+            grad_cpu[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
           }
+        }
 
-        } /* loop on faces */
+      } /* End of loop on faces */
 
-      } /* loop on threads */
+    } /* End of loop on threads */
+
+  } /* End of loop on thread groups */
+
+  /* Boundary face treatment */
+
+# pragma omp parallel for  if (n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_b_cells; ii++) {
+
+    cs_lnum_t c_id = m->b_cells[ii];
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+    for (cs_lnum_t fidx = s_id; fidx < e_id; fidx++) { /* loop on boundary faces */
+
+      cs_lnum_t f_id = cell_b_faces[fidx];
+
+        /*
+          Remark: for the cell \f$ \celli \f$ we remove
+                  \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
+
+      for (cs_lnum_t i = 0; i < stride; i++) {
+
+        cs_real_t pfac = inc*coefav[f_id][i];
+
+        for (cs_lnum_t k = 0; k < 3; k++)
+          pfac += coefbv[f_id][i][k] * pvar[c_id][k];
+
+        pfac -= pvar[c_id][i];
+
+        /* Reconstruction part */
+        cs_real_t rfac = 0.;
+        for (cs_lnum_t k = 0; k < stride; k++) {
+          cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
+                              + r_grad[c_id][k][1] * diipb[f_id][1]
+                              + r_grad[c_id][k][2] * diipb[f_id][2];
+          rfac += coefbv[f_id][i][k] * vecfac;
+        }
+
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          grad_cpu[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
+        }
+      }
+
+    } /* loop on faces */
+
+  } /* loop on boundary cells */
 
     # pragma omp parallel for
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -5769,14 +5732,14 @@ res_cpu = !compute_cuda;
         else
           dvol = 0.;
 
-        for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           for (cs_lnum_t j = 0; j < 3; j++)
             grad_cpu[c_id][i][j] *= dvol;
         }
 
         if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
           cs_real_t gradpa[3];
-          for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t i = 0; i < stride; i++) {
             for (cs_lnum_t j = 0; j < 3; j++) {
               gradpa[j] = grad_cpu[c_id][i][j];
               grad_cpu[c_id][i][j] = 0.;
@@ -5849,9 +5812,15 @@ res_cpu = !compute_cuda;
     /* Periodicity and parallelism treatment */
 
   if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 9);
-    if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, stride*3);
+    if (cs_glob_mesh->have_rotation_perio) {
+      if (stride == 3)
+        cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
+      else if (stride == 6)
+        cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                             halo_type,
+                                             (cs_real_t *)grad);
+    }
   }
 
 }
@@ -7637,9 +7606,6 @@ _get_c_iter_try(const char  *var_name)
  * template parameters:
  *   e2n           type of assembly algorithm used
  *   stride        3 for vectors, 6 for symmetric tensors
- *   val_t         cs_real_3_t for vectors, cs_real_6_t for tensors
- *   grad_t        cs_real_33_t for vectors, cs_real_63_t for tensors
- *   coefb_t       cs_real_33_t for vectors, cs_real_66_t for tensors
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
@@ -7654,7 +7620,7 @@ _get_c_iter_try(const char  *var_name)
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable, or NULL
  *   b_iter_count   --> iteration count for each face, or NULL (postprocessing)
- *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
+ *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
 template <const cs_e2n_sum_t e2n, cs_lnum_t stride>
@@ -7671,7 +7637,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
                       const cs_real_t (*restrict pvar)[stride],
                       const cs_real_t *restrict c_weight,
                       cs_real_t *restrict b_iter_count,
-                      cs_real_t (*restrict gradv)[stride][3])
+                      cs_real_t (*restrict grad)[stride][3])
 {
   //using val_t   = cs_real_t[stride];
   using grad_t  = cs_real_t[stride][3];
@@ -8005,7 +7971,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
     }
   }
-  memcpy(gradv, gradv_cpu, sizeof(cs_real_t) * n_cells_ext * stride * 3);
+  memcpy(grad, gradv_cpu, sizeof(cs_real_t) * n_cells_ext * stride * 3);
 
   /* Correct gradient on boundary cells */
   /*------------------------------------*/
@@ -8050,7 +8016,7 @@ cs_real_t c_norm, ref_norm;
     ref_norm = 0;
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+        ref_norm += abs(c_grad[kk][ll]);
     }
 
     /* Iterate over boundary condition contributions. */
@@ -8136,7 +8102,7 @@ cs_real_t c_norm, ref_norm;
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
           c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
-          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          c_norm += abs(c_grad[ii][jj] - grad_i[ii][jj]);
           grad_i[ii][jj] = c_grad[ii][jj];
         }
       }
@@ -8187,7 +8153,7 @@ cs_real_t c_norm, ref_norm;
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (int j = 0; j < 3; ++j) {
         auto cpu  = gradv_cpu[c_id][i][j];
-        auto cuda = gradv[c_id][i][j];
+        auto cuda = grad[c_id][i][j];
 
         if (fabs(cpu - cuda) / fmax(fabs(cpu), 1e-6) > 1e-6) {
           printf("lsq_strided DIFFERENCE @%d-%d-%d: CPU = %a\tCUDA = %a\t|CPU - CUDA| = %a\t|CPU - CUDA|ulp = %a\n", c_id, i, j, cpu, cuda, fabs(cpu - cuda), cs_diff_ulp(cpu, cuda));
@@ -8197,24 +8163,13 @@ cs_real_t c_norm, ref_norm;
   }
 
 
-  /* Periodicity and parallelism treatment */
+  /* Synchronize halos */
 
-  if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, stride*3);
-    if (cs_glob_mesh->have_rotation_perio) {
-      if (stride == 3)
-        cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
-      else if (stride == 6)
-        cs_halo_perio_sync_var_sym_tens_grad(m->halo,
-                                             halo_type,
-                                             (cs_real_t *)gradv);
-    }
-  }
+  _sync_strided_gradient_halo<stride>(m, halo_type, grad);
 
   BFT_FREE(rhs);
   BFT_FREE(gradv_cpu);
 }
-
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of a scalar using least-squares reconstruction for
@@ -8292,6 +8247,9 @@ using lsq_strided_gradient_t = void(const cs_mesh_t *,
  * Compute boundary face vector values using least-squares reconstruction
  * for non-orthogonal meshes.
  *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   ma             <-- pointer to mesh adjacencies structure
@@ -8307,52 +8265,71 @@ using lsq_strided_gradient_t = void(const cs_mesh_t *,
  *   b_f_var        --> boundary face value.
  *----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 static void
-_lsq_vector_b_face_val(const cs_mesh_t               *m,
-                       const cs_mesh_quantities_t    *fvq,
-                       const cs_halo_type_t           halo_type,
-                       const int                      inc,
-                       const cs_real_t                bc_coeff_a[][3],
-                       const cs_real_t                bc_coeff_b[][3][3],
-                       const cs_real_t                c_var[][3],
-                       const cs_real_t                c_weight[],
-                       cs_real_t                      b_f_var[restrict][3])
+_lsq_strided_b_face_val(const cs_mesh_t               *m,
+                        const cs_mesh_quantities_t    *fvq,
+                        const cs_halo_type_t           halo_type,
+                        const int                      inc,
+                        const cs_real_t     (*restrict bc_coeff_a)[stride],
+                        const cs_real_t     (*restrict bc_coeff_b)[stride][stride],
+                        const cs_real_t     (*restrict c_var)[stride],
+                        const cs_real_t                c_weight[],
+                        cs_real_t           (*restrict b_f_var)[stride])
 {
+  using var_t = cs_real_t[stride];
+
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  cs_real_3_t  *_bc_coeff_a = NULL;
+  var_t  *_bc_coeff_a = NULL;
 
   if (inc == 0) {
-    BFT_MALLOC(_bc_coeff_a, m->n_b_faces, cs_real_3_t);
+    BFT_MALLOC(_bc_coeff_a, m->n_b_faces, var_t);
     for (cs_lnum_t i = 0; i < m->n_b_faces; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
+      for (cs_lnum_t j = 0; j < stride; j++)
         _bc_coeff_a[i][j] = 0;
     }
-    bc_coeff_a = (const cs_real_3_t*)_bc_coeff_a;
+    bc_coeff_a = (const var_t*)_bc_coeff_a;
   }
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
-  cs_gradient_boundary_iprime_lsq_v(m,
-                                    fvq,
-                                    n_b_faces,
-                                    NULL,
-                                    halo_type,
-                                    -1,
-                                    bc_coeff_a,
-                                    bc_coeff_b,
-                                    c_weight,
-                                    c_var,
-                                    b_f_var);
+  if (stride == 3)
+    cs_gradient_boundary_iprime_lsq_v
+      (m,
+       fvq,
+       n_b_faces,
+       NULL,
+       halo_type,
+       -1,
+       reinterpret_cast<const cs_real_t(*)[3]>(bc_coeff_a),
+       reinterpret_cast<const cs_real_t(*)[3][3]>(bc_coeff_b),
+       c_weight,
+       reinterpret_cast<const cs_real_t(*)[3]>(c_var),
+       reinterpret_cast<cs_real_t(* restrict)[3]>(b_f_var));
+
+  else if (stride == 6)
+    cs_gradient_boundary_iprime_lsq_t
+      (m,
+       fvq,
+       n_b_faces,
+       NULL,
+       halo_type,
+       -1,
+       reinterpret_cast<const cs_real_t(*)[6]>(bc_coeff_a),
+       reinterpret_cast<const cs_real_t(*)[6][6]>(bc_coeff_b),
+       c_weight,
+       reinterpret_cast<const cs_real_t(*)[6]>(c_var),
+       reinterpret_cast<cs_real_t(* restrict)[6]>(b_f_var));
 
   #pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    cs_real_t pip[3];
-    for (cs_lnum_t k = 0; k < 3; k++) {
+    cs_real_t pip[stride];
+    for (cs_lnum_t k = 0; k < stride; k++) {
       pip[k] = b_f_var[f_id][k];
     }
-    for (cs_lnum_t k = 0; k < 3; k++) {
+    for (cs_lnum_t k = 0; k < stride; k++) {
       b_f_var[f_id][k] =   inc * bc_coeff_a[f_id][k]
                          + (  bc_coeff_b[f_id][0][k] * pip[0]
                             + bc_coeff_b[f_id][1][k] * pip[1]
@@ -8368,10 +8345,12 @@ _lsq_vector_b_face_val(const cs_mesh_t               *m,
  * Compute gradient using vertex-based face values for scalar gradient
  * reconstruction.
  *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
- *   cpl            <-- structure associated with internal coupling, or NULL
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
  *   bc_coeff_b     <-- B.C. coefficients for boundary face normals
@@ -8380,17 +8359,19 @@ _lsq_vector_b_face_val(const cs_mesh_t               *m,
  *   grad           --> gradient of c_var (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 static void
-_fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
-                              const cs_mesh_quantities_t    *fvq,
-                              const cs_internal_coupling_t  *cpl,
-                              cs_real_t                      inc,
-                              const cs_real_t                bc_coeff_a[][3],
-                              const cs_real_t                bc_coeff_b[][3][3],
-                              const cs_real_t                c_var[][3],
-                              const cs_real_t                c_weight[],
-                              cs_real_t                      grad[restrict][3][3])
+_fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
+                               const cs_mesh_quantities_t    *fvq,
+                               cs_real_t                      inc,
+                               const cs_real_t (*restrict bc_coeff_a)[stride],
+                               const cs_real_t (*restrict bc_coeff_b)[stride][stride],
+                               const cs_real_t (*restrict c_var)[stride],
+                               const cs_real_t                c_weight[],
+                               cs_real_t (*restrict grad)[stride][3])
 {
+  using var_t = cs_real_t[stride];
+
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
   const int n_i_groups = m->i_face_numbering->n_groups;
@@ -8416,20 +8397,12 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
-  cs_lnum_t   cpl_stride = 0;
-  const bool _coupled_faces[1] = {false};
-  const bool  *coupled_faces = _coupled_faces;
-  if (cpl != NULL) {
-    cpl_stride = 1;
-    coupled_faces = (const bool *)cpl->coupled_faces;
-  }
-
   /* Initialize gradient
      ------------------- */
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t i = 0; i < stride; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         grad[cell_id][i][j] = 0.0;
     }
@@ -8437,28 +8410,28 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
 
   /* Pre-compute gradient at boundary using least squares */
 
-  cs_real_3_t *b_f_var;
-  BFT_MALLOC(b_f_var, m->n_b_faces, cs_real_3_t);
+  var_t *b_f_var;
+  BFT_MALLOC(b_f_var, m->n_b_faces, var_t);
 
-  _lsq_vector_b_face_val(m,
-                         fvq,
-                         CS_HALO_STANDARD,
-                         inc,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         c_var,
-                         c_weight,
-                         b_f_var);
+  _lsq_strided_b_face_val<stride>(m,
+                                  fvq,
+                                  CS_HALO_STANDARD,
+                                  inc,
+                                  bc_coeff_a,
+                                  bc_coeff_b,
+                                  c_var,
+                                  c_weight,
+                                  b_f_var);
 
   /* Compute vertex-based values
      --------------------------- */
 
-  cs_real_3_t *v_var;
-  BFT_MALLOC(v_var, m->n_vertices, cs_real_3_t);
+  var_t *v_var;
+  BFT_MALLOC(v_var, m->n_vertices, var_t);
 
   cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
                     0, /* verbosity */
-                    3, /* var_dim */
+                    stride, /* var_dim */
                     0,
                     c_weight,
                     (const cs_real_t *)c_var,
@@ -8468,14 +8441,14 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
   /* Interpolate to face-based values
      -------------------------------- */
 
-  cs_real_3_t *i_f_var;
-  BFT_MALLOC(i_f_var, m->n_i_faces, cs_real_3_t);
+  var_t *i_f_var;
+  BFT_MALLOC(i_f_var, m->n_i_faces, var_t);
 
   for (int f_t = 0; f_t < 2; f_t++) {
 
     const cs_lnum_t n_faces = (f_t == 0) ? m->n_i_faces : m->n_b_faces;
     const cs_lnum_t *f2v_idx= NULL, *f2v_ids = NULL;
-    cs_real_3_t *f_var = NULL;
+    var_t *f_var = NULL;
 
     if (f_t == 0) {
       f2v_idx = m->i_face_vtx_idx;
@@ -8492,12 +8465,14 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
     for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
       cs_lnum_t s_id = f2v_idx[f_id];
       cs_lnum_t e_id = f2v_idx[f_id+1];
-      cs_real_t s[3] = {0, 0, 0};
+      cs_real_t s[stride];
+      for (cs_lnum_t k = 0; k < stride; k++)
+        s[k] = 0;
       for (cs_lnum_t i = s_id; i < e_id; i++) {
-        for (cs_lnum_t k = 0; k < 3; k++)
+        for (cs_lnum_t k = 0; k < stride; k++)
           s[k] += v_var[f2v_ids[i]][k];
       }
-      for (cs_lnum_t k = 0; k < 3; k++)
+      for (cs_lnum_t k = 0; k < stride; k++)
         f_var[f_id][k] = s[k] / (e_id-s_id);
     }
 
@@ -8521,7 +8496,7 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
 
-        for (cs_lnum_t k = 0; k < 3; k++) {
+        for (cs_lnum_t k = 0; k < stride; k++) {
 
           cs_real_t pfaci = i_f_var[f_id][k] - c_var[ii][k];
           cs_real_t pfacj = i_f_var[f_id][k] - c_var[jj][k];
@@ -8539,11 +8514,6 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
 
   } /* loop on thread groups */
 
-  /* Contribution from coupled faces */
-  if (cpl != NULL) {
-    assert(0); /* not handled yet */
-  }
-
   /* Contribution from boundary faces */
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
@@ -8555,9 +8525,6 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
-        if (coupled_faces[f_id * cpl_stride])
-          continue;
-
         cs_lnum_t ii = b_face_cells[f_id];
 
         /*
@@ -8565,7 +8532,7 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
           \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
         */
 
-        for (cs_lnum_t k = 0; k < 3; k++) {
+        for (cs_lnum_t k = 0; k < stride; k++) {
 
           cs_real_t pfac = b_f_var[f_id][k] - c_var[ii][k];
 
@@ -8592,7 +8559,7 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
     else
       dvol = 0.;
 
-    for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t i = 0; i < stride; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] *= dvol;
     }
@@ -8600,13 +8567,7 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
 
   /* Synchronize halos */
 
-  if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, (cs_real_t *)grad, 9);
-    if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_tens(m->halo,
-                                  CS_HALO_STANDARD,
-                                  (cs_real_t *)grad);
-  }
+  _sync_strided_gradient_halo<stride>(m, CS_HALO_EXTENDED, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -9195,11 +9156,12 @@ _gradient_scalar(const char                    *var_name,
     inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
                  uncoupled faces, and bc_coeff_a used for coupled faces. */
 
+    cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
     cs_internal_coupling_update_bc_coeff_s(bc_coeffs,
                                            cpl,
                                            halo_type,
                                            w_stride,
-                                           clip_coeff,
+                                           _clip_coeff,
                                            _bc_coeff_a,
                                            _bc_coeff_b,
                                            var,
@@ -9380,7 +9342,6 @@ _gradient_scalar(const char                    *var_name,
     case CS_GRADIENT_GREEN_VTX:
       _fv_vtx_based_scalar_gradient(mesh,
                                     fvq,
-                                    cpl,
                                     w_stride,
                                     hyd_p_flag,
                                     inc,
@@ -9457,6 +9418,7 @@ _gradient_vector(const char                     *var_name,
                  cs_real_33_t          *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
@@ -9685,10 +9647,11 @@ res_cpu = !compute_cuda;
     inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
                  uncoupled faces, and bc_coeff_a used for coupled faces. */
 
+    cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
     cs_internal_coupling_update_bc_coeff_v(bc_coeffs,
                                            cpl,
                                            halo_type,
-                                           clip_coeff,
+                                           _clip_coeff,
                                            _bc_coeff_a,
                                            _bc_coeff_b,
                                            var,
@@ -9741,7 +9704,7 @@ res_cpu = !compute_cuda;
 
     if (_use_legacy_strided_lsq_gradient) {
       _lsq_vector_gradient(mesh,
-                           cs_glob_mesh_adjacencies,
+                           madj,
                            fvq,
                            halo_type,
                            inc,
@@ -9760,7 +9723,7 @@ res_cpu = !compute_cuda;
       else
         gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
       gradient_f(mesh,
-                 cs_glob_mesh_adjacencies,
+                 madj,
                  fvq,
                  halo_type,
                  inc,
@@ -9777,14 +9740,13 @@ res_cpu = !compute_cuda;
     break;
 
   case CS_GRADIENT_GREEN_LSQ:
-
     {
       cs_real_33_t *restrict r_gradv;
       BFT_MALLOC(r_gradv, n_cells_ext, cs_real_33_t);
 
       if (_use_legacy_strided_lsq_gradient) {
         _lsq_vector_gradient(mesh,
-                             cs_glob_mesh_adjacencies,
+                             madj,
                              fvq,
                              halo_type,
                              inc,
@@ -9803,7 +9765,7 @@ res_cpu = !compute_cuda;
         else
           gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
         gradient_f(mesh,
-                   cs_glob_mesh_adjacencies,
+                   madj,
                    fvq,
                    halo_type,
                    inc,
@@ -9817,40 +9779,37 @@ res_cpu = !compute_cuda;
                    r_gradv);
       }
 
-      _reconstruct_vector_gradient(mesh,
-                                   cs_glob_mesh_adjacencies,
-                                   fvq,
-                                   cpl,
-                                   halo_type,
-                                   inc,
-                                   bc_coeff_a,
-                                   bc_coeff_b,
-                                   var,
-                                   c_weight,
-                                   r_gradv,
-                                   grad);
+      _reconstruct_strided_gradient<3>(mesh,
+                                       madj,
+                                       fvq,
+                                       halo_type,
+                                       inc,
+                                       bc_coeff_a,
+                                       bc_coeff_b,
+                                       var,
+                                       c_weight,
+                                       r_gradv,
+                                       grad);
 
       BFT_FREE(r_gradv);
     }
     break;
 
   case CS_GRADIENT_GREEN_VTX:
-    _fv_vtx_based_vector_gradient(mesh,
-                                  fvq,
-                                  cpl,
-                                  inc,
-                                  bc_coeff_a,
-                                  bc_coeff_b,
-                                  var,
-                                  c_weight,
-                                  grad);
+    _fv_vtx_based_strided_gradient<3>(mesh,
+                                      fvq,
+                                      inc,
+                                      bc_coeff_a,
+                                      bc_coeff_b,
+                                      var,
+                                      c_weight,
+                                      grad);
     break;
 
-  case CS_GRADIENT_GREEN_R:
+  default:
     bft_error(__FILE__, __LINE__, 0,
               _("%s: gradient type \"%s\" not handled."),
               __func__, cs_gradient_type_name[gradient_type]);
-
   }
 
   BFT_FREE(_bc_coeff_a);
@@ -9858,7 +9817,7 @@ res_cpu = !compute_cuda;
 
   _strided_gradient_clipping<3>(mesh,
                                 fvq,
-                                cs_glob_mesh_adjacencies,
+                                madj,
                                 halo_type,
                                 clip_mode,
                                 verbosity,
@@ -9910,6 +9869,7 @@ _gradient_tensor(const char                *var_name,
                  cs_real_63_t           *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -9977,7 +9937,7 @@ _gradient_tensor(const char                *var_name,
 
     if (_use_legacy_strided_lsq_gradient) {
       _lsq_tensor_gradient(mesh,
-                           cs_glob_mesh_adjacencies,
+                           madj,
                            fvq,
                            halo_type,
                            inc,
@@ -9996,7 +9956,7 @@ _gradient_tensor(const char                *var_name,
       else
         gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
       gradient_f(mesh,
-                 cs_glob_mesh_adjacencies,
+                 madj,
                  fvq,
                  halo_type,
                  inc,
@@ -10012,10 +9972,77 @@ _gradient_tensor(const char                *var_name,
 
     break;
 
-  default:
-    assert(0);  /* Should be set to available options by caller */
+  case CS_GRADIENT_GREEN_LSQ:
+    {
+      cs_real_63_t *restrict r_grad;
+      BFT_MALLOC(r_grad, mesh->n_cells_with_ghosts, cs_real_63_t);
+
+      if (_use_legacy_strided_lsq_gradient) {
+        _lsq_tensor_gradient(mesh,
+                             madj,
+                             fvq,
+                             halo_type,
+                             inc,
+                             bc_coeff_a,
+                             bc_coeff_b,
+                             var,
+                             NULL, /* c_weight */
+                             r_grad);
+      }
+      else {
+        lsq_strided_gradient_t<6> *gradient_f;
+        if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
+          gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER>;
+        else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
+          gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC>;
+        else
+          gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
+        gradient_f(mesh,
+                   madj,
+                   fvq,
+                   halo_type,
+                   inc,
+                   n_r_sweeps,
+                   epsilon,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   var,
+                   NULL, /* c_weight */
+                   _get_c_iter_try(var_name),
+                   r_grad);
+      }
+
+      _reconstruct_strided_gradient<6>(mesh,
+                                       madj,
+                                       fvq,
+                                       halo_type,
+                                       inc,
+                                       bc_coeff_a,
+                                       bc_coeff_b,
+                                       var,
+                                       NULL, /* c_weight */
+                                       r_grad,
+                                       grad);
+
+      BFT_FREE(r_grad);
+    }
     break;
 
+  case CS_GRADIENT_GREEN_VTX:
+    _fv_vtx_based_strided_gradient<6>(mesh,
+                                      fvq,
+                                      inc,
+                                      bc_coeff_a,
+                                      bc_coeff_b,
+                                      var,
+                                      NULL, /* c_weight */
+                                      grad);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: gradient type \"%s\" not handled."),
+              __func__, cs_gradient_type_name[gradient_type]);
   }
 
   BFT_FREE(_bc_coeff_a);
@@ -10023,7 +10050,7 @@ _gradient_tensor(const char                *var_name,
 
   _strided_gradient_clipping<6>(mesh,
                                 fvq,
-                                cs_glob_mesh_adjacencies,
+                                madj,
                                 halo_type,
                                 clip_mode,
                                 verbosity,
@@ -10326,7 +10353,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     cs_real_t ref_norm = 0;
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+        ref_norm += abs(c_grad[kk][ll]);
     }
 
     /* Iterate over boundary condition contributions. */
@@ -10415,7 +10442,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
           c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
-          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          c_norm += abs(c_grad[ii][jj] - grad_i[ii][jj]);
           grad_i[ii][jj] = c_grad[ii][jj];
         }
       }
@@ -10436,9 +10463,9 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     } /* End of loop on iterations */
 
     /* If the last correction was too large, we suspect
-         the the algorithm did not converge at all/diverged,
-         so we simply restore the non-reconstructed value
-         (additional precaution, not encountered in testing). */
+       the the algorithm did not converge at all/diverged,
+       so we simply restore the non-reconstructed value
+       (additional precaution, not encountered in testing). */
 
     if (c_norm > eps_dvg * ref_norm) {
       memcpy(c_grad, grad_0, sizeof(cs_real_t)*stride*3);
@@ -10461,20 +10488,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void
-cs_f_gradient_s(int               f_id,
-                int               imrgra,
-                int               inc,
-                int               n_r_sweeps,
-                int               iwarnp,
-                int               imligp,
-                cs_real_t         epsrgp,
-                cs_real_t         climgp,
-                const cs_real_t   coefap[],
-                const cs_real_t   coefbp[],
-                cs_real_t         pvar[],
-                cs_real_3_t       grad[]);
-
-void
 cs_f_gradient_hn_s(int               f_id,
                    int               imrgra,
                    int               inc,
@@ -10486,44 +10499,25 @@ cs_f_gradient_hn_s(int               f_id,
                    cs_real_t         pvar[],
                    cs_real_3_t       grad[]);
 
-void
-cs_f_gradient_weighted_s(int               f_id,
-                         int               imrgra,
-                         int               inc,
-                         int               n_r_sweeps,
-                         int               iphydp,
-                         int               iwarnp,
-                         int               imligp,
-                         cs_real_t         epsrgp,
-                         cs_real_t         climgp,
-                         cs_real_3_t       f_ext[],
-                         const cs_real_t   coefap[],
-                         const cs_real_t   coefbp[],
-                         cs_real_t         pvar[],
-                         cs_real_t         c_weight[],
-                         cs_real_3_t       grad[]);
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field.
+ * Compute cell gradient of scalar field with homogeneous Neumann BC's.
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_gradient_s(int               f_id,
-                int               imrgra,
-                int               inc,
-                int               n_r_sweeps,
-                int               iwarnp,
-                int               imligp,
-                cs_real_t         epsrgp,
-                cs_real_t         climgp,
-                const cs_real_t   coefap[],
-                const cs_real_t   coefbp[],
-                cs_real_t         pvar[],
-                cs_real_3_t       grad[])
+cs_f_gradient_hn_s(int               f_id,
+                   int               imrgra,
+                   int               inc,
+                   int               n_r_sweeps,
+                   int               iwarnp,
+                   int               imligp,
+                   cs_real_t         epsrgp,
+                   cs_real_t         climgp,
+                   cs_real_t         pvar[],
+                   cs_real_3_t       grad[])
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -10569,113 +10563,10 @@ cs_f_gradient_s(int               f_id,
                      epsrgp,
                      climgp,
                      NULL,          /* f_ext */
-                     coefap,
-                     coefbp,
+                     NULL,  /* coefap */
+                     NULL,  /* coefbp */
                      pvar,
                      NULL,          /* c_weight */
-                     cpl,
-                     grad);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field with homogeneous Neumann BC's.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_gradient_hn_s(int               f_id,
-                   int               imrgra,
-                   int               inc,
-                   int               n_r_sweeps,
-                   int               iwarnp,
-                   int               imligp,
-                   cs_real_t         epsrgp,
-                   cs_real_t         climgp,
-                   cs_real_t         pvar[],
-                   cs_real_3_t       grad[])
-{
-  cs_f_gradient_s(f_id,
-                  imrgra,
-                  inc,
-                  n_r_sweeps,
-                  iwarnp,
-                  imligp,
-                  epsrgp,
-                  climgp,
-                  NULL,  /* coefap */
-                  NULL,  /* coefbp */
-                  pvar,
-                  grad);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of potential-type values.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_gradient_weighted_s(int               f_id,
-                         int               imrgra,
-                         int               inc,
-                         int               n_r_sweeps,
-                         int               iphydp,
-                         int               iwarnp,
-                         int               imligp,
-                         cs_real_t         epsrgp,
-                         cs_real_t         climgp,
-                         cs_real_3_t       f_ext[],
-                         const cs_real_t   coefap[],
-                         const cs_real_t   coefbp[],
-                         cs_real_t         pvar[],
-                         cs_real_t         c_weight[],
-                         cs_real_3_t       grad[])
-{
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-
-  char var_name[32];
-  if (f_id > -1) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name);
-  }
-  else
-    strcpy(var_name, "Work array");
-  var_name[31] = '\0';
-
-  /* Choose gradient type */
-
-  cs_gradient_type_by_imrgra(imrgra,
-                             &gradient_type,
-                             &halo_type);
-
-  /* Check if given field has internal coupling  */
-  cs_internal_coupling_t  *cpl = NULL;
-  if (f_id > -1) {
-    const int key_id = cs_field_key_id_try("coupling_entity");
-    if (key_id > -1) {
-      const cs_field_t *f = cs_field_by_id(f_id);
-      int coupl_id = cs_field_get_key_int(f, key_id);
-      if (coupl_id > -1)
-        cpl = cs_internal_coupling_by_id(coupl_id);
-    }
-  }
-
-  /* Compute gradient */
-
-  cs_gradient_scalar(var_name,
-                     gradient_type,
-                     halo_type,
-                     inc,
-                     n_r_sweeps,
-                     iphydp,
-                     1,             /* w_stride */
-                     iwarnp,
-                     (cs_gradient_limit_t)imligp,
-                     epsrgp,
-                     climgp,
-                     f_ext,
-                     coefap,
-                     coefbp,
-                     pvar,
-                     c_weight,
                      cpl,
                      grad);
 }
@@ -11035,10 +10926,6 @@ cs_gradient_tensor(const char                *var_name,
 
   bool update_stats = true;
 
-  if (   gradient_type == CS_GRADIENT_GREEN_LSQ
-      || gradient_type == CS_GRADIENT_GREEN_VTX)
-    gradient_type = CS_GRADIENT_GREEN_ITER;
-
   t0 = cs_timer_time();
 
   if (update_stats == true) {
@@ -11327,10 +11214,6 @@ cs_gradient_tensor_synced_input(const char                *var_name,
   bool update_stats = true;
 
   t0 = cs_timer_time();
-
-  if (   gradient_type == CS_GRADIENT_GREEN_LSQ
-      || gradient_type == CS_GRADIENT_GREEN_VTX)
-    gradient_type = CS_GRADIENT_GREEN_ITER;
 
   if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);

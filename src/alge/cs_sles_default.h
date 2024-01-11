@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -146,9 +146,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  *   da                     <-- diagonal values (NULL if zero)
  *   xa                     <-- extradiagonal values (NULL if zero)
  *   r_epsilon              <-- precision
- *   r_norm                 <-- residue normalization
+ *   r_norm                 <-- residual normalization
  *   n_iter                 --> number of iterations
- *   residue                --> residue
+ *   residual               --> residual
  *   rhs                    <-- right hand side
  *   vx                     <-> system solution
  *
@@ -167,7 +167,7 @@ cs_sles_solve_native(int                  f_id,
                      double               precision,
                      double               r_norm,
                      int                 *n_iter,
-                     double              *residue,
+                     double              *residual,
                      const cs_real_t     *rhs,
                      cs_real_t           *vx);
 

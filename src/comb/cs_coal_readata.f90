@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -86,6 +86,12 @@ double precision dhvol1,dhvol2,hcoke,hchar,ehvol1,ehvol2
 double precision wmco,wmo2,wmco2,wmh2o,wmn2,wmc
 double precision dmf3,dmf4,dmf5,som1,som2
 double precision sm(8),solu(8),mat(8,8)
+
+double precision :: ychxle(ncharm), ychxlo(ncharm)
+double precision :: ycoch1(ncharm), ycoch2(ncharm)
+double precision :: nnch(ncharm), nnckle(ncharm), nhckle(ncharm), ncckle(ncharm)
+double precision :: nncklo(ncharm), nhcklo(ncharm), nccklo(ncharm)
+double precision :: wchx1c(ncharm), wchx2c(ncharm)
 
 double precision, dimension(:,:), allocatable :: ehcoel
 
@@ -1271,7 +1277,7 @@ do icha = 1, ncharb
   if(cck(icha).eq.0.d0.and.hck(icha).eq.0.d0.and.ock(icha)&
        .eq.0.d0.and.nck(icha).eq.0.d0.and.sck(icha).eq.0.d0) then
 
-    !         Fraction massique d'azote dans le char (en fonction de Y1)
+    !         Fraction massique d'azote dans le char 1 (en fonction de Y1)
     nnckle(icha) = repnle(icha)*nnch(icha)/                             &
          (1.d0-y1ch(icha))
 
@@ -1280,11 +1286,11 @@ do icha = 1, ncharb
          (1.d0-y2ch(icha))
 
     !         En cas de liberation de HCN au cours de la combustion heterogene, la
-    !         fraction massique d'hydrogene dans le char est (en fonction de Y1):
+    !         fraction massique d'hydrogene dans le char 1 est (en fonction de Y1):
     nhckle(icha)  = repnck(icha)*nnckle(icha)*wmolat(iath)/wmolat(iatn)
 
     !         En cas de liberation de HCN au cours de la combustion heterogene, la
-    !         fraction massique d'hydrogene dans le char est (en fonction de Y2):
+    !         fraction massique d'hydrogene dans le char 2 est (en fonction de Y2):
     nhcklo(icha)  = repnck(icha)*nncklo(icha)*wmolat(iath)/wmolat(iatn)
 
     !         Fraction massique de carbone du char (en fonction de Y1)

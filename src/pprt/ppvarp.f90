@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -115,6 +115,16 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_ctwr_add_variable_fields
+
+end interface
+
+interface
+
+  subroutine cs_rad_transfer_add_variable_fields()  &
+    bind(C, name='cs_rad_transfer_add_variable_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_rad_transfer_add_variable_fields
 
 end interface
 
@@ -256,6 +266,9 @@ if (ippmod(igmix).ge.0) then
   ! MAP to C API
   call cs_field_pointer_map_gas_mix
 endif
+
+! Radiative transfer
+call cs_rad_transfer_add_variable_fields()
 
 return
 end subroutine

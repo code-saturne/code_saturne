@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -57,6 +57,8 @@
 #include "cs_internal_coupling.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
+#include "cs_mesh_quantities.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
@@ -178,7 +180,7 @@ _sles_default_native(int                f_id,
     else if (!strcmp(name, "potential_regularisation_sym_tensor")) {
       sles_it_type = CS_SLES_FCG;
     }
-    else if (!strcmp(name, "ITM_diffusion_equation")) { /* cs_vof.c */
+    else if (!strcmp(name, "ITM_diffusion_equation")) { /* cs_vof.cxx */
       sles_it_type = CS_SLES_PCG;
       multigrid = 1;
     }
@@ -415,6 +417,17 @@ _sles_setup_matrix_native(int                  f_id,
                              da,
                              xa);
 
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_matrix_set_mesh_association(a,
+                                 ma->cell_cells_idx,
+                                 ma->cell_i_faces,
+                                 ma->cell_i_faces_sgn,
+                                 (const cs_real_3_t *)mq->cell_cen,
+                                 (const cs_real_t *)mq->cell_vol,
+                                 (const cs_real_3_t *)mq->i_face_normal);
+
   cs_matrix_default_set_tuned(a);
 
   _matrix_setup[setup_id][0] = a;
@@ -469,6 +482,17 @@ _sles_setup_matrix_by_assembler(int               f_id,
                                               eb_size,
                                               da,
                                               xa);
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_matrix_set_mesh_association(a,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 (const cs_real_3_t *)mq->cell_cen,
+                                 (const cs_real_t *)mq->cell_vol,
+                                 NULL);
+
   cs_matrix_default_set_tuned(a);
 
   _matrix_setup[setup_id][0] = a;
@@ -724,9 +748,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \param[in]       da                     diagonal values (NULL if zero)
  * \param[in]       xa                     extradiagonal values (NULL if zero)
  * \param[in]       precision              solver precision
- * \param[in]       r_norm                 residue normalization
+ * \param[in]       r_norm                 residual normalization
  * \param[out]      n_iter                 number of "equivalent" iterations
- * \param[out]      residue                residue
+ * \param[out]      residual               residual
  * \param[in]       rhs                    right hand side
  * \param[in, out]  vx                     system solution
  *
@@ -745,7 +769,7 @@ cs_sles_solve_native(int                  f_id,
                      double               precision,
                      double               r_norm,
                      int                 *n_iter,
-                     double              *residue,
+                     double              *residual,
                      const cs_real_t     *rhs,
                      cs_real_t           *vx)
 {
@@ -854,7 +878,7 @@ cs_sles_solve_native(int                  f_id,
                       precision,
                       r_norm,
                       n_iter,
-                      residue,
+                      residual,
                       rhs_p,
                       _vx,
                       0,

@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -180,5 +180,21 @@ cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
                      cs_real_t (*restrict rhs)[stride][3],
                      cs_lnum_t n_c_iter_max,
                      cs_real_t c_eps);
+
+template <cs_lnum_t stride>
+void
+cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
+                              const cs_mesh_adjacencies_t  *madj,
+                              const cs_mesh_quantities_t   *fvq,
+                              cs_halo_type_t                halo_type,
+                              int                           inc,
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict pvar)[stride],
+                              const cs_real_t     *restrict c_weight,
+                              cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3],
+                              bool                      test_bool,
+                              bool                          perf);
 #endif
 #endif /* __CS_GRADIENT_CUDA_H__ */

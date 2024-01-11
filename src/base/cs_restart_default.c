@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,12 +60,16 @@
 #include "cs_map.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
 #include "cs_random.h"
+#include "cs_physical_model.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_physical_constants.h"
+#include "cs_velocity_pressure.h"
+#include "cs_vof.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
@@ -110,6 +114,12 @@ const char *_coeff_name[] = {"bc_coeffs::a", "bc_coeffs::b",
                              "bc_coeffs::af", "bc_coeffs::bf",
                              "bc_coeffs::ad", "bc_coeffs::bd",
                              "bc_coeffs::ac", "bc_coeffs::bc"};
+
+const char _ntb_prefix[] = "notebook::";
+
+/* Array to keep fields read status during checkpoing import */
+
+static cs_restart_file_t *_fields_read_status = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -1702,6 +1712,34 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
   BFT_FREE(v_tmp);
 }
 
+/*----------------------------------------------------------------------------
+ * Update a field read status given a status indicator.
+ *
+ * parameters:
+ *   f       <-- pointer to given field
+ *   status  <-- status indicator (int)
+ *
+ *----------------------------------------------------------------------------*/
+
+static void
+_restart_set_field_read_status(const cs_field_t *f,
+                               const int         status)
+{
+  if (status != CS_RESTART_SUCCESS) {
+    // Mark failures with invalid id
+    _fields_read_status[f->id] = CS_RESTART_N_RESTART_FILES;
+  }
+  else if (_fields_read_status[f->id] < CS_RESTART_N_RESTART_FILES) {
+    /* We update the status only if the field is not already marked
+     * as failed, which could happen if multiple time values are needed for
+     * example...
+     */
+    const int rfile_kid = cs_field_key_id("restart_file");
+    _fields_read_status[f->id]
+      = (cs_restart_file_t)cs_field_get_key_int(f, rfile_kid);
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -2205,6 +2243,116 @@ cs_restart_write_variables(cs_restart_t  *r,
     BFT_FREE(_write_flag);
 
   bft_printf(_("  Wrote main variables to checkpoint: %s\n"),
+             cs_restart_get_name(r));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read notebook parameters from main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_notebook_variables(cs_restart_t  *r)
+{
+  /* Get total number of notebook variables */
+  const cs_lnum_t nb_var = cs_notebook_nb_var();
+
+  /* Loop on notebook variables */
+  for (int i = 0; i < nb_var; i++) {
+
+    if (cs_notebook_var_is_read_from_checkpoint(i)) {
+
+      const char *name = cs_notebook_name_by_id(i);
+
+      size_t l = strlen(name) + strlen(_ntb_prefix) + 1;
+      char _buf[64];
+      char *buf = _buf;
+
+      if (l > 64)
+        BFT_MALLOC(buf, l, char);
+
+      snprintf(buf, l, "%s%s", _ntb_prefix, name);
+
+      /* Initialisation to the actual value */
+      cs_real_t val_notebook_var = cs_notebook_parameter_value_by_name(name);
+
+      int retcode = cs_restart_read_section(r,
+                                            buf,
+                                            CS_MESH_LOCATION_NONE,
+                                            1,
+                                            CS_TYPE_cs_real_t,
+                                            &val_notebook_var);
+
+      /* If read operation is a success then the notebook variable value is
+       * updated. If update is needed, the variable editable status is
+       * temporarily set to true then reset to its original value.
+       */
+
+      if (retcode == CS_RESTART_SUCCESS) {
+        bool _is_editable = cs_notebook_var_is_editable(i);
+        cs_notebook_var_change_editable(i, true);
+        cs_notebook_parameter_set_value(name, val_notebook_var);
+        cs_notebook_var_change_editable(i, _is_editable);
+      }
+
+      if (buf != _buf)
+        BFT_FREE(buf);
+
+    }
+
+  }
+
+  bft_printf(_("  Read notebook variables from checkpoint: %s\n"),
+             cs_restart_get_name(r));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write notebook parameters to main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_notebook_variables(cs_restart_t  *r)
+{
+  /* Get total number of notebook variables */
+  const cs_lnum_t nb_var = cs_notebook_nb_var();
+
+  /* Loop on notebook variables */
+  for (int i = 0; i < nb_var; i++) {
+
+    const char *name = cs_notebook_name_by_id(i);
+
+    size_t l = strlen(name) + strlen(_ntb_prefix) + 1;
+    char _buf[64];
+    char *buf = _buf;
+
+    if (l > 64)
+      BFT_MALLOC(buf, l, char);
+
+    snprintf(buf, l, "%s%s", _ntb_prefix, name);
+
+    const cs_real_t val_notebook_var
+      = cs_notebook_parameter_value_by_name(name);
+
+    cs_restart_write_section(r,
+                             buf,
+                             CS_MESH_LOCATION_NONE,
+                             1,
+                             CS_TYPE_cs_real_t,
+                             &val_notebook_var);
+
+    if (buf != _buf)
+      BFT_FREE(buf);
+
+  }
+
+  bft_printf(_("  Wrote notebook variables to checkpoint: %s\n"),
              cs_restart_get_name(r));
 }
 
@@ -2915,6 +3063,9 @@ cs_restart_read_field_vals(cs_restart_t  *r,
       BFT_FREE(v_tmp);
   }
 
+  /* Store retcode in read status */
+  _restart_set_field_read_status(f, retcode);
+
   return retcode;
 }
 
@@ -3035,11 +3186,21 @@ cs_restart_write_fields(cs_restart_t        *r,
 {
   int n_fields = cs_field_n_fields();
   const int restart_file_key_id = cs_field_key_id("restart_file");
+  const int key_n_r = cs_field_key_id("restart_n_values");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
+    /* Variables are handled in previous function */
     if (cs_field_get_key_int(f, restart_file_key_id) == r_id) {
-      cs_restart_write_field_vals(r, f_id, 0);
+
+      /* For current field compute number of time values to write by taking
+       * max of the key defined by user and the backward differentiation
+       * scheme order.
+       */
+      int n_vals_to_write = cs_field_get_key_int(f, key_n_r);
+
+      for (int i = 0; i < n_vals_to_write; i++)
+        cs_restart_write_field_vals(r, f_id, i);
     }
   }
 }
@@ -3058,15 +3219,140 @@ void
 cs_restart_read_fields(cs_restart_t       *r,
                        cs_restart_file_t   r_id)
 {
-  int n_fields = cs_field_n_fields();
+  const int n_fields = cs_field_n_fields();
   const int restart_file_key_id = cs_field_key_id("restart_file");
+  const int n_restart_vals_key = cs_field_key_id("restart_n_values");
+
+  int w_count = 0;
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, restart_file_key_id) == r_id) {
-      cs_restart_read_field_vals(r, f_id, 0);
+      const int n_vals_to_reads = cs_field_get_key_int(f, n_restart_vals_key);
+      for (int i = 0; i < n_vals_to_reads; i++) {
+        int retval = cs_restart_read_field_vals(r, f_id, i);
+        if (retval != CS_RESTART_SUCCESS)
+          w_count += 1;
+      }
     }
   }
+
+  if (w_count > 0)
+    bft_printf
+      (_("\n"
+         "  Warning: some field data is missing in the \"%s\" restart file.\n"
+         "           This can occur when some model or parameter settings\n"
+         "           have been changed relative to the previous run;\n"
+         "           default values will be used.\n\n"),
+       cs_restart_get_name(r));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set restart file values for fields when those values cannot
+ *        be determined at field definition time.
+ *
+ * This is needed when the need for restart data depends on various
+ * combinations of settings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_set_auxiliary_field_options(void)
+{
+  /* restart file key id */
+  const int k_r_id = cs_field_key_id("restart_file");
+  const int k_n_id = cs_field_key_id("restart_n_values");
+  const int k_t_ext_id = cs_field_key_id("time_extrapolated");
+
+  /* Cast key value to int to avoid warnings */
+  int i_restart_aux = (int)CS_RESTART_AUXILIARY;
+
+  /* Useful pointer to global variables */
+  cs_fluid_properties_t *f_p = cs_get_glob_fluid_properties();
+  cs_vof_parameters_t *vof_p = cs_get_glob_vof_parameters();
+  cs_velocity_pressure_model_t *vp_p = cs_get_glob_velocity_pressure_model();
+  cs_time_step_options_t *ts_opts = cs_get_glob_time_step_options();
+
+  /* Density when variable of for vof models */
+  if (f_p->irovar == 1 || vof_p->vof_model > 0) {
+    cs_field_set_key_int(CS_F_(rho), k_r_id, i_restart_aux);
+
+    if (vof_p->vof_model > 0 || vp_p->idilat > 3)
+      cs_field_set_key_int(CS_F_(rho), k_n_id, 2);
+
+    cs_field_set_key_int(CS_F_(rho_b), k_r_id, i_restart_aux);
+  }
+
+  /* Molecular viscosity */
+  if ((cs_field_get_key_int(CS_F_(mu), k_t_ext_id) > 0 && f_p->ivivar) ||
+      vof_p->vof_model > 0) {
+    cs_field_set_key_int(CS_F_(mu), k_r_id, i_restart_aux);
+  }
+
+  /* Turbulent viscosity */
+  if (cs_field_get_key_int(CS_F_(mu_t), k_t_ext_id) > 0)
+    cs_field_set_key_int(CS_F_(mu_t), k_r_id, i_restart_aux);
+
+  /* Heat capacity */
+  if (CS_F_(cp) != NULL) {
+    if (cs_field_get_key_int(CS_F_(cp), k_t_ext_id) > 0 ||
+        cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0)
+      cs_field_set_key_int(CS_F_(cp), k_r_id, i_restart_aux);
+  }
+
+  /* time step if steady alogrithm */
+  if (ts_opts->idtvar == CS_TIME_STEP_LOCAL)
+    cs_field_set_key_int(CS_F_(dt), k_r_id, i_restart_aux);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize fields read status array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_initialize_fields_read_status(void)
+{
+  if (_fields_read_status != NULL)
+    return;
+
+  const int n_fields = cs_field_n_fields();
+
+  BFT_MALLOC(_fields_read_status, n_fields, cs_restart_file_t);
+  for (int i = 0; i < n_fields; i++)
+    _fields_read_status[i] = CS_RESTART_DISABLED;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize fields read status array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_finalize_fields_read_status(void)
+{
+  BFT_FREE(_fields_read_status);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get checkpoint read status for a field based on its id
+ *
+ * \param[in] f_id  field id
+ *
+ * \returns 0 if field read action failed, 1 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_get_field_read_status(const int f_id)
+{
+  int retval = (_fields_read_status[f_id] < CS_RESTART_N_RESTART_FILES) ? 1 : 0;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

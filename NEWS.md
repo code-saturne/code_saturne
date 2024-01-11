@@ -1,6 +1,47 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### Numerics:
+
+- Reshape the interface with the MUMPS library (sparse direct solver)
+  to make the usage of common MUMPS options easier. Take benefit from
+  optimizations available in the latest 5.6.2 version.
+
+### User changes:
+
+- Combustion models: change activation mode.
+  * In user-defined functions, gas and coal combustion models should now be
+    activated using `cs_combustion_gas_set_model` and
+    `cs_coal_model_set_model` respectively, and cannot be activated
+    directly by setting values in `cs_glob_physical_model_flag`
+    (or `ippmod` in Fortran), as the activation functions must be called
+    to allocate the required structures.
+  * The name of the thermochemical data file and JANAF indicator can
+    now be set from C, and not from Fortran anymore.
+  * Separate structures (`cs_glob_combustion_gas_model` and
+    (`cs_glob_coal_model`) are used for each combustion type, with
+    no shared member or substructure (compared to the previous
+    `cs_glob_combustion_model` structure).
+  * Some module variables have been moved to different modules, to better
+    align with the models actually using them.
+
+- Combustion models: remove diftl0 keyword. The corresponding value
+  should be handled directly using the "diffusivity_ref" keyword
+  for the Enthalpy field.
+
+- Compressible flows: remove uscfx1 and uscfx2 user-defined functions.
+  Standard functions such as cs_user_parameters can be used instead.
+
+### Studymanager:
+
+- Both options --slurm-batch-wtime=H and --slurm-batch-size=N allow to submit
+  batches of cases using the SLURM resource manager on cluster. New keywork
+  expected_time (HH:MM) can be used in smgr xml file to define expected
+  computation time.
+
+Release 8.1.0 (2023-12-13)
+--------------------------
+
 ### Physical modeling
 
 - Remove obsolete and experimental heavy fuel combustion model
@@ -19,6 +60,11 @@ Master (not on release branches yet)
   existing one related to coal combustion.
 
 ### User changes:
+
+- GUI: add access to various "per variable" equation parameters.
+  * Handling of convection schemes is revamped, allowing selection
+    of "true SOLU" (with upwind gradient), blended, and TVD/NVD schemes.
+  * Most individual gradient options are now available in a new tab.
 
 - Add high-level objects to handle open (inlet/outlet) boundary conditions
   in the general boundary conditions mechanism.
@@ -48,6 +94,12 @@ Master (not on release branches yet)
   on interior faces or interior face centers.
   * The "per cell" and "per vertex" maxima are removed.
 
+- Modifications in the way to set MUMPS solvers using cs_sles_param_t
+  structure. Advanced settings can now be set thanks to the two functions
+  cs_param_sles_mumps() and cs_param_sles_mumps_advanced(). More advanced
+  settings can still be specified using the user-defined function
+  cs_user_sles_mumps_hook
+
 ### Numerics:
 
 - Use local fixed-point algorithm for vector and tensor least-squares
@@ -76,6 +128,10 @@ Master (not on release branches yet)
   but it seems that Star-CCM+ 2022 uses it.
 
 - Preprocessor: fix reading of polygons in MED files, broken in v7.3.
+
+- Fix numerical settings for Navier-Stokes problems with CDO schemes. User
+  modifications may not be taken into account and one remains to the default
+  settings (e.g. Hodge parameters for the viscous term)
 
 Release 8.0.0 (2023-06-30)
 --------------------------

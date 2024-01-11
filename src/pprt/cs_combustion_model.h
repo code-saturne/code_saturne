@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -39,8 +39,6 @@
 
 #include "cs_defs.h"
 
-#include "cs_coal.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -49,120 +47,13 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/*! Maximum number of globals species */
-#define  CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES  25
-
-/*! Maximum number of elementary gas components */
-#define  CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS  20
-
-/*! Maximum number of tabulation points */
-#define  CS_COMBUSTION_MAX_TABULATION_POINTS  500
-
-/*! Maximum number of global reactions in gas phase*/
-#define CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS 1
-
-/*! Maximum number of oxydants */
-#define CS_COMBUSTION_MAX_OXYDANTS 3
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
-/*! Gas combustion model parameters structure */
-/*--------------------------------------------*/
-
-typedef struct {
-
-  int     iic;                     /*!< rank of C in gas composition (base 1) */
-
-  double  hinfue;                  /*! input mass enthalpy for fuel */
-
-  double  xsoot;                   /*!< soot fraction production (isoot = 0) */
-  double  rosoot;                  /*!< soot density */
-
-  /*! molar mass of global species */
-  double  wmolg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
-
-  /*! mass fraction conversion coefficients from global species to
-      elementary species */
-  double  coefeg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES]
-                [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
-
-  /*! mole fraction conversion coefficients from global species to
-      elementary species */
-  double  compog[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES]
-                [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
-
-  /*! Mixing rate at the stoichiometry */
-  double fs[CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS];
-
-} cs_combustion_gas_model_t;
-
-/*! Combustion model parameters structure */
-/*----------------------------------------*/
-
-typedef struct {
-
-  cs_combustion_gas_model_t  *gas;   /*!< gas combustion model parameters */
-  cs_coal_model_t            *coal;  /*!< coal combustion model parameters */
-
-  int     n_gas_el_comp;             /*!< number of elementary gas components */
-  int     n_gas_species;             /*!< number of global species */
-  int     n_atomic_species;          /*!< number of atomic species */
-
-  int     n_reactions;               /*!< number of global reactions
-                                      *   in gas phase */
-
-  int     idrift;                    /*!< drift (0: off, 1: on) */
-
-  int     ieqco2;                    /*!< kinetic model for CO <=> CO2
-                                       - 0  unused (maximal conversion
-                                            in turbulent model)
-                                       - 1  transport of CO2 mass fraction
-                                       - 2  transport of CO mass fraction  */
-
-  int     ieqnox;                    /*!< NOx model (0: off; 1: on) */
-
-  int     isoot;                     /*!< soot production modeling flag */
-
-  int     io2;                       /*!< index of o2 in wmole */
-  int     in2;                       /*!< index of n2 in wmole */
-  int     ico2;                      /*!< index of co2 in wmole */
-  int     ih2o;                      /*!< index of h2o in wmole */
-
-  double  ckabs0;                    /*!< absorption coefficient of gas mix */
-  double  diftl0;                    /*!< molecular diffusivity for the enthalpy
-                                       for gas or coal combustion
-                                       (\ref diffusivity_ref is automatically set
-                                       to \ref diftl0 for the enthalpy). */
-  double  xco2;                      /*!< molar coefficient of CO2 */
-  double  xh2o;                      /*!< molar coefficient of H2O */
-  double  hinoxy;                    /*!< input mass enthalpy for the oxidant */
-
-  /*! molar mass of an elementary gas component */
-  double  wmole[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
-
-  /*! composition of oxidants in O2 */
-   double oxyo2[CS_COMBUSTION_MAX_OXYDANTS];
-
-  /*! composition of N2 oxidants */
-  double oxyn2[CS_COMBUSTION_MAX_OXYDANTS];
-
-  /*! composition of H2O oxidants */
-  double oxyh2o[CS_COMBUSTION_MAX_OXYDANTS];
-
-  /*! composition of CO2 oxidants */
-  double oxyco2[CS_COMBUSTION_MAX_OXYDANTS];
-
-} cs_combustion_model_t;
-
 /*============================================================================
  * Global variables
  *============================================================================*/
-
-/*! Combustion model parameters structure */
-
-extern cs_combustion_model_t  *cs_glob_combustion_model;
 
 /*=============================================================================
  * Public function prototypes
@@ -170,30 +61,30 @@ extern cs_combustion_model_t  *cs_glob_combustion_model;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize combustion model based on active physical models
+ * \brief Compute Enthalpy and Cp based on the JANAF band.
+ *
+ * \param[in]   ncoel   number of elementary constituents
+ * \param[in]   ngazem  number of elementary constituents
+ * \param[in]   npo     number of interpolation points
+ * \param[in]   nomcel  names of elementary constituants
+ * \param[out]  ehcoel  enthalpy for each elementary species
+ *                      (for point i and species j, ehcoel[i*ngazem + j])
+ * \param[out]  cpcoel  cp for each elementary species
+ *                      (for point i and species j, cpcoel[i*ngazem + j])
+ * \param[in]   wmolce  molar mass of each species
+ * \param[in]   th      temperature in K
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_initialize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Finalize combustion model based on active physical models
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_combustion_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print the combustion module options to setup.log.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_combustion_log_setup(void);
+cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
+                                         int           ngazem,
+                                         int           npo,
+                                         const char    nomcel[][13],
+                                         double        ehcoel[],
+                                         double        cpcoel[],
+                                         const double  wmolce[],
+                                         const double  th[]);
 
 /*----------------------------------------------------------------------------*/
 

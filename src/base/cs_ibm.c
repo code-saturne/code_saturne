@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2399,7 +2399,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
       if (comp_cell[c_id] > 0)
         volpor += cell_vol[c_id] * CS_F_(poro)->val[c_id];
 
-    cs_parall_sum(1, CS_DOUBLE, &volpor);
+    cs_parall_sum(1, CS_REAL_TYPE, &volpor);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       if (comp_cell[c_id] > 0)
@@ -2418,8 +2418,8 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
             bb += porloc * cell_vol[c_id];
           }
 
-        cs_parall_sum(1, CS_DOUBLE, &aa);
-        cs_parall_sum(1, CS_DOUBLE, &bb);
+        cs_parall_sum(1, CS_REAL_TYPE, &aa);
+        cs_parall_sum(1, CS_REAL_TYPE, &bb);
 
         cs_real_t beta = (volpor - bb) / cs_math_fmax(aa, 1.e-20);
 
@@ -4689,12 +4689,13 @@ void cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities)
       const char *formula = cs_tree_node_get_child_value_str(tn_zp, "formula");
 
       if (formula != NULL) {
-        cs_field_t *fmeg[1] = {CS_F_(poro)};
+        cs_field_t *f = CS_F_(poro);
         cs_meg_volume_function(z->name,
                                z->n_elts,
                                z->elt_ids,
                                cell_cen,
-                               fmeg);
+                               f->name,
+                               &(f->val));
       }
     }
   }

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -96,27 +96,6 @@ static cs_sys_cpl_t **_sys_couplings   = NULL;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and return a new CFD<-->SYS intersection structre.
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_cfd2sys_intersection_t *
-_create_cfd2sys_intersection(void)
-{
-  cs_cfd2sys_intersection_t *retval = NULL;
-
-  BFT_MALLOC(retval, 1, cs_cfd2sys_intersection_t);
-
-  retval->n_elts       = NULL;
-  retval->elt_ids_val  = NULL;
-  retval->cfd_weight   = NULL;
-  retval->sys_weight   = NULL;
-
-  return retval;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -212,36 +191,6 @@ _create_cs_sys_coupling(const char *sys_name,
   return cpl;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute intersection matrix used for 1D surface CFD<->SYS coupling
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_compute_matrix_weights(cs_cfd2sys_intersection_t *m,
-                        const cs_lnum_t            n_cfd_elts,
-                        const int                  n_sys_elts)
-{
-  assert(m != NULL && n_cfd_elts > 0 && n_sys_elts > 0);
-
-  for (cs_lnum_t e_id = 0; e_id < n_cfd_elts; e_id++)
-    m->cfd_weight[e_id] = 0.;
-
-  for (int e_id = 0; e_id < n_sys_elts; e_id++)
-    m->sys_weight[e_id] = 0.;
-
-  for (cs_lnum_t e_id = 0; e_id < n_cfd_elts; e_id++) {
-    const int              n_elt_intersect = m->n_elts[e_id];
-    const cs_double_int_t *id_val          = m->elt_ids_val[e_id];
-
-    for (int i = 0; i < n_elt_intersect; i++) {
-      m->cfd_weight[e_id] += id_val[i].val;
-      m->sys_weight[id_val[i].id] += id_val[i].val;
-    }
-  }
-}
-
 /*----------------------------------------------------------------------------
  * Initialize communicator for system coupling.
  *
@@ -294,29 +243,6 @@ _init_comm(cs_sys_cpl_t *sys_coupling,
   sys_coupling->sys_root    = distant_range[0];
 
   sys_coupling->cfd_root    = local_range[0];
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Free communicator for System coupling
- *
- * parameters:
- *   sys_coupling  <-> System coupling structure
- *---------------------------------------------------------------------------*/
-
-static void
-_finalize_comm(cs_sys_cpl_t *sys_coupling)
-{
-#if defined(HAVE_MPI)
-
-  if (sys_coupling == NULL)
-    return;
-
-  if (sys_coupling->comm != MPI_COMM_NULL) {
-    MPI_Comm_free(&(sys_coupling->comm));
-    sys_coupling->comm = MPI_COMM_NULL;
-  }
-
 #endif
 }
 

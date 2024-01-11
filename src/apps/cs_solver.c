@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -80,7 +80,6 @@
 #include "cs_io.h"
 #include "cs_ibm.h"
 #include "cs_join.h"
-#include "cs_lagr.h"
 #include "cs_les_inflow.h"
 #include "cs_log.h"
 #include "cs_log_setup.h"
@@ -500,9 +499,6 @@ _run(void)
 
           CS_PROCF(caltri, CALTRI)();
 
-           /* Free ale structure (to integrate in caltri.c in the future) */
-          cs_ale_free();
-
         }
 
       }
@@ -645,8 +641,6 @@ _run(void)
      should be more "generic". */
 
   cs_base_finalize_sequence();
-
-  cs_lagr_finalize();
 
   /* Free main mesh after printing some statistics */
 

@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2023  EDF S.A.
+  Copyright (C) 2005-2024  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,10 @@
 #include <string.h>
 
 #include <time.h>
+
+#if (__STDC_VERSION__ <202311L)
+# include <stdbool.h>
+#endif
 
 #if defined (HAVE_GETTIMEOFDAY)
 #include <sys/time.h>
@@ -308,7 +312,7 @@ static ple_mem_free_t *_ple_mem_free = _ple_mem_free_default;
 
 /* Timer */
 
-static _Bool _ple_timer_initialized = false;
+static bool _ple_timer_initialized = false;
 
 #if defined (HAVE_GETTIMEOFDAY)
 static struct timeval  _ple_timer_wtime_tv_start;

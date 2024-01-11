@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -59,6 +59,7 @@
 #include "cs_physical_model.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
+#include "cs_rad_transfer_fields.h"
 #include "cs_turbulence_model.h"
 #include "cs_time_moment.h"
 #include "cs_thermal_model.h"
@@ -1121,6 +1122,7 @@ cs_parameters_define_field_keys(void)
 
   /* Restart options */
   cs_field_define_key_int("restart_file", CS_RESTART_DISABLED, 0);
+  cs_field_define_key_int("restart_n_values", 1, 0);
 
   /* field units */
   cs_field_define_key_str("units", "", 0);
@@ -1130,7 +1132,7 @@ cs_parameters_define_field_keys(void)
 /*!
  * \brief Read general restart info.
  *
- * This updates the previous time step info.
+ * This updates the previous time step info and notebook varaibles values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1141,6 +1143,7 @@ cs_parameters_read_restart_info(void)
     cs_restart_t *r
       = cs_restart_create("main.csc", "restart", CS_RESTART_MODE_READ);
     cs_restart_read_time_step_info(r);
+    cs_restart_read_notebook_variables(r);
     cs_restart_destroy(&r);
   }
 }
@@ -1516,6 +1519,9 @@ cs_parameters_define_auxiliary_fields(void)
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
   }
+
+  /* Property fields relative to radiative transfer */
+  cs_rad_transfer_add_property_fields();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1825,11 +1831,16 @@ cs_parameters_need_extended_neighborhood(void)
 void
 cs_parameters_global_complete(void)
 {
+  /* Set restart_file key for various fields */
+  cs_restart_set_auxiliary_field_options();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Complete general equation parameter definitions.
+ *
+ * Also set associated field properties such as number of associated
+ * time values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1908,6 +1919,11 @@ cs_parameters_eqp_complete(void)
          diffusion equations */
       if (eqp->iswdyn == -1 && eqp->iconv == 0)
         eqp->iswdyn = 2;
+
+      /* Set previous values for backward n order in time. */
+
+      if (eqp->ibdtso > 1)
+        cs_field_set_n_time_vals(f, eqp->ibdtso + 1);
 
     }  /* end if (f->type & CS_FIELD_VARIABLE) */
   }

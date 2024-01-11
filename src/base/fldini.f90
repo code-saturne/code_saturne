@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -48,6 +48,7 @@ subroutine fldini
 use paramx
 use dimens
 use optcal
+use coincl, only: ibym
 use cstphy
 use numvar
 use entsor
@@ -82,9 +83,10 @@ integer          turb_flux_model, turb_flux_model_type
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
 integer          f_id, kscavr, f_type
-integer          iopchr, ilog
+integer          iopchr, ilog, ischcp
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
+integer          key_restart_id
 integer          idfm, iggafm, nfld
 integer          iflidp, idimf, idimc, n_fans
 integer          f_dim, kiflux, kbflux
@@ -132,6 +134,8 @@ call field_get_key_id("scalar_class", keyccl)
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
 
+! Key id for restart file
+call field_get_key_id("restart_file", key_restart_id)
 ! Number of fields
 call field_get_n_fields(nfld)
 
@@ -185,10 +189,22 @@ if (iphydr.eq.1) then
 
   call field_set_key_int(f_id, keylog, 1)
   call field_set_key_int(f_id, keyvis, 0)
+  call field_set_key_int(f_id, key_restart_id, RESTART_AUXILIARY)
 else if (iphydr.eq.2) then
   call field_find_or_create('hydrostatic_pressure_prd', &
                             itycat, ityloc, idim1, f_id)
+  call field_set_key_int(f_id, key_restart_id, RESTART_AUXILIARY)
 endif
+
+! Hybrid blending field
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+ischcp = vcopt%ischcv
+if (ischcp.eq.3) then
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 1 ! cells
+  call field_find_or_create('hybrid_blend', itycat, ityloc, idim1, f_id)
+end if
 
 ! friction velocity at the wall, in the case of a LES calculation
 ! with van Driest-wall damping (delayed here rather than placed in

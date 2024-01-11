@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -89,17 +89,27 @@ cs_turbulence_ke_clip(int        phase_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Calculation of turbulent viscosity for the K-epsilon model.
+ *
+ * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_mu_t(int  phase_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Calculation of turbulent viscosity for
  *        the non-linear quadratic K-epsilon from
  *        Baglietto et al. (2005)
  *
  * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_q_mu_t(int phase_id);
+cs_turbulence_ke_q_mu_t(int  phase_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -112,7 +122,7 @@ cs_turbulence_ke_q_mu_t(int phase_id);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke_q(int phase_id,
+cs_turbulence_ke_q(int          phase_id,
                    cs_real_6_t  rij[]);
 
 /*----------------------------------------------------------------------------*/

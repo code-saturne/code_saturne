@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -945,10 +945,6 @@ typedef struct {
  * Relative tolerance at which the non-linearity arising from the advection
  * term is resolved
  *
- * \var CS_NSKEY_QUADRATURE
- * Set the type to use in all functions involving quadrature (similar to
- * \ref CS_EQKEY_BC_QUADRATURE)
- *
  * \var CS_NSKEY_SCHUR_STRATEGY
  * Set the way to define the Schur complement approximation
  * (cf. \ref cs_param_schur_approx_t)
@@ -989,7 +985,6 @@ typedef enum {
   CS_NSKEY_NL_ALGO_ATOL,
   CS_NSKEY_NL_ALGO_DTOL,
   CS_NSKEY_NL_ALGO_RTOL,
-  CS_NSKEY_QUADRATURE,
   CS_NSKEY_SCHUR_STRATEGY,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SLES_VERBOSITY,
@@ -1113,11 +1108,15 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply the numerical settings defined for the Navier-Stokes system
- *         to an equation related to this system.
+ * \brief Apply the numerical settings defined for the Navier-Stokes system to
+ *        an equation related to this system. Be aware that the user-defined
+ *        settings can be modified in this function when a different choice is
+ *        set between the settings for the Navier-Stokes system and the
+ *        settings for the momentum equation. The final choice is given by the
+ *        settings for the Navier-Stokes system.
  *
- * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in, out]  eqp    pointer to a \ref cs_equation_param_t structure
+ * \param[in]      nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] eqp    pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1232,6 +1231,20 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling);
 void
 cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
                                  cs_real_t             pref);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the given quadrature rule to all existing definitions under
+ *        the cs_navsto_param_t structure
+ *
+ * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      qtype    type of quadrature to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
+                                      cs_quadrature_type_t  qtype);
 
 /*----------------------------------------------------------------------------*/
 /*!

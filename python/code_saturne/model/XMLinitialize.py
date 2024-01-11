@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -59,6 +59,7 @@ from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.model.SolutionDomainModel import SolutionDomainModel
 
 #-------------------------------------------------------------------------------
 # class BaseXmlInit
@@ -209,6 +210,8 @@ class XMLinit(BaseXmlInit):
                 self.setNewVariable(node, 'hydraulic_head')
             else:
                 self.setNewVariable(node, 'pressure')
+                n = node.xmlGetNode('variable', name='pressure')
+                n['_convect'] = 'no'
             self.setNewVariable(node, 'velocity', dim = '3')
             self.setNewProperty(node, 'total_pressure')
 
@@ -358,6 +361,11 @@ class XMLinit(BaseXmlInit):
                 self.__backwardCompatibilityFrom_7_1()
             if from_vers[:3] < "7.3.0":
                 self.__backwardCompatibilityFrom_7_2()
+            self.__backwardCompatibilityFrom_7_3()
+
+        if from_vers[:3] < "9.0.0":
+            if from_vers[:3] < "8.1.0":
+                self.__backwardCompatibilityFrom_8_0()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -2024,10 +2032,26 @@ class XMLinit(BaseXmlInit):
 
                 n.xmlRemoveNode()
 
+    def __backwardCompatibilityFrom_7_3(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return
+
+    def __backwardCompatibilityFrom_8_0(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return
+
     def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
+        mdl = SolutionDomainModel(self.case)
+        mesh_origin = mdl.getMeshOrigin()
+        mdl.setMeshOrigin(mesh_origin)
+
         return
 
 #-------------------------------------------------------------------------------

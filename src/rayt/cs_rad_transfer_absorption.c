@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 #include "cs_assert.h"
 #include "cs_base.h"
+#include "cs_coal.h"
 #include "cs_combustion_gas.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -132,7 +133,6 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
   const int *pm_flag = cs_glob_physical_model_flag;
 
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
-  cs_combustion_model_t   *cm = cs_glob_combustion_model;
 
   /* Initialization */
 
@@ -157,6 +157,8 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       || pm_flag[CS_COMBUSTION_SLFM] >= 0
       || pm_flag[CS_COMBUSTION_EBU] >= 0) {
 
+    cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
+
     if (rt_params->imodak > 0) {
 
       const int n_gas_e = cm->n_gas_el_comp;
@@ -170,8 +172,8 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       cs_real_t *yi = _w + n_gas_e;
       cs_real_t *yk = _w + (n_gas_e + n_gas_g);
 
-      const cs_real_t xsoot = cm->gas->xsoot;
-      const cs_real_t rosoot = cm->gas->rosoot;
+      const cs_real_t xsoot = cm->xsoot;
+      const cs_real_t rosoot = cm->rosoot;
 
       const cs_real_t *cvar_fsm = NULL;
       if (cm->isoot >= 1)
@@ -188,7 +190,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       const cs_real_t *cpro_ym2 = cs_field_by_name("ym_oxyd")->val;
       const cs_real_t *cpro_ym3 = cs_field_by_name("ym_prod")->val;
 
-      const double *restrict wmolg = cm->gas->wmolg;
+      const double *restrict wmolg = cm->wmolg;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
@@ -201,8 +203,8 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         /* Soot model */
 
         cs_real_t ys;
-        if (cm->isoot == 0 && cm->gas->iic > 0)
-          ys = cpro_ym3[cell_id]*cm->gas->coefeg[2][cm->gas->iic-1];
+        if (cm->isoot == 0 && cm->iic > 0)
+          ys = cpro_ym3[cell_id]*cm->coefeg[2][cm->iic-1];
         else if (cm->isoot == 0)
           ys = xsoot * cpro_ym3[cell_id];
         else if (cm->isoot >= 1)
@@ -249,7 +251,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
     }
   }
 
-  else if (pm_flag[CS_COMBUSTION_COAL] >= 0) {
+  else if (cs_glob_coal_model != NULL) {
+
+    cs_coal_model_t  *cm = cs_glob_coal_model;
 
     cs_real_t *cpro_temp = cs_field_by_name("temperature")->val;
     cs_real_t *cpro_yco2 = cs_field_by_name("ym_co2")->val;
@@ -304,13 +308,15 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   /* Coal combustion */
 
-  if (pm_flag[CS_COMBUSTION_COAL] >=  0) {
+  if (cs_glob_coal_model != NULL) {
 
-    for (int icla = 0; icla < cm->coal->nclacp; icla++) {
+    cs_coal_model_t  *cm = cs_glob_coal_model;
+
+    for (int icla = 0; icla < cm->nclacp; icla++) {
 
       char s[64];
 
-      int icha = cm->coal->ichcor[icla] - 1;
+      int icha = cm->ichcor[icla] - 1;
 
       snprintf(s, 63, "diam_p_%02d", icla+1); s[63] = '\0';
       cs_real_t *cpro_diam2 = cs_field_by_name(s)->val;
@@ -320,8 +326,8 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
       cs_real_t *cpro_cak = CS_FI_(rad_cak, 1 + icla)->val;
 
-      double  c0 = cm->coal->xashch[icha] * cs_math_sq(cm->coal->diam20[icla]);
-      double  c1 = (1 - cm->coal->xashch[icha]);
+      double  c0 = cm->xashch[icha] * cs_math_sq(cm->diam20[icla]);
+      double  c1 = (1 - cm->xashch[icha]);
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
@@ -377,9 +383,11 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     /* Absorption coefficient for a gas/coal particles mix */
 
-    if (pm_flag[CS_COMBUSTION_COAL] >=  0) {
+    if (cs_glob_coal_model != NULL) {
 
-      for (int icla = 0; icla < cm->coal->nclacp; icla++) {
+      cs_coal_model_t  *cm = cs_glob_coal_model;
+
+      for (int icla = 0; icla < cm->nclacp; icla++) {
 
         char s[64];
 

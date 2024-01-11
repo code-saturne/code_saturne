@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -59,20 +59,15 @@ implicit none
 
 ! Local variables
 
-integer         icla, icha, igg, it, ir, ih, if, izone
+integer         igg, it, ir, ih, if, izone
 integer         ige, iat
 integer         idirac
-
 
 !===============================================================================
 
 ! Mappings to C
 
 call pp_models_init
-call thch_models_init
-call co_models_init
-call cp_models_init
-call ppcpfu_models_init
 
 !===============================================================================
 ! 1. REMPLISSAGE INCLUDE ppincl.h
@@ -80,8 +75,6 @@ call ppcpfu_models_init
 !===============================================================================
 
 ihm = 0 ! enthalpy, common to many models
-
-i_comb_drift = 0
 
 !> --- Specific condensation modelling
 !>     (icondb, icondv = -1 : not activated by default)
@@ -133,115 +126,6 @@ enddo
 inpm = 0
 ifsm = 0
 
-! ---> Initialisation pour la combustion du charbon
-!       Variables transportees
-do icha = 1, ncharm
-  if1m(icha) = 0
-  if2m(icha) = 0
-enddo
-if4m   = 0
-if5m   = 0
-if6m   = 0
-if7m   = 0
-if8m   = 0
-if9m   = 0
-ifvp2m = 0
-iyco2  = 0
-do icla = 1, nclcpm
-  ixck(icla)   = 0
-  ixch(icla)   = 0
-  inp(icla)    = 0
-  ih2(icla)    = 0
-  ixwt(icla)   = 0
-  inagecp(icla) = 0
-enddo
-!
-!       Variables algebriques ou d'etat
-do ige = 1, ngazem
-  iym1(ige) = 0
-enddo
-immel = 0
-do icla = 1, nclcpm
-  ix2(icla)    = 0
-  itemp2(icla) = 0
-  irom2(icla)  = 0
-  idiam2(icla) = 0
-  igmdch(icla) = 0
-  igmdv1(icla) = 0
-  igmdv2(icla) = 0
-  igmhet(icla) = 0
-  ighco2(icla) = 0
-  ighh2o(icla) = 0
-  igmsec(icla) = 0
-enddo
-do ige = 1, ngazem
-  af3(ige) = 0.d0
-  af4(ige) = 0.d0
-  af5(ige) = 0.d0
-  af6(ige) = 0.d0
-  af7(ige) = 0.d0
-  af8(ige) = 0.d0
-  af9(ige) = 0.d0
-enddo
-
-! ---> Initialisation pour la combustion fuel
-!       Variables transportees
-
-do icla = 1, nclcpm
-  ing(icla)   = 0
-  iyfol(icla) = 0
-  ihlf (icla) = 0
-enddo
-iyco2   = 0
-iyhcn   = 0
-iynh3   = 0
-iyno    = 0
-itaire  = 0
-
-!       Variables algebriques ou d'etat
-
-do ige = 1, ngazem
-  iym1(ige) = 0
-enddo
-
-do icla=1,nclcpm
-  igmeva(icla) = 0
-  igmhtf(icla) = 0
-enddo
-
-ighcn1 = 0
-ighcn2 = 0
-ignoth = 0
-
-ignh31 = 0
-ignh32 = 0
-ifhcnd = 0
-ifhcnc = 0
-ifnh3d = 0
-ifnh3c = 0
-ifnohc = 0
-ifnonh = 0
-ifnoch = 0
-ifnoth = 0
-icnohc = 0
-icnonh = 0
-ifhcnr = 0
-icnorb = 0
-igrb   = 0
-
-ieqnox = 1
-imdnox = 0
-irb = 0
-
-! Kinetic model
-! solve transport equation of CO2 mass fraction by default
-! (for coal or fuel combustion)
-ieqco2 = 1
-
-! ---> Coefficient de relation de la masse volumique
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-srrom = 0.95d0 ! GUI default
-
 ! Initialization for compressible module
 
 ! Standard compressible module scalars
@@ -257,22 +141,13 @@ ifrace = 0
 !                INCLUDE THERMOCHIMIE POUR LA PHYSIQUE PARTICULIERE
 !===============================================================================
 
-
-! ---> Initialisation Common / TCHPPI /
-
-npo   = 0
-
 ! ---> Initialisation Common / TCHPPR /
 
-do it = 1, npot
-  th(it) = zero
-enddo
-
-do ir = 1, nrgazm
-  fs(ir) = zero
-enddo
-
 ! TODO : passer en c ?
+
+wmolg => null()  ! Associated later if model active
+wmole => null()
+
 do igg = 1, ngazgm
   do it = 1, npot
     ehgazg(igg,it) = zero
@@ -280,25 +155,18 @@ do igg = 1, ngazgm
   do ir = 1, nrgazm
     stoeg(igg,ir) = zero
   enddo
-  wmolg(igg) = zero
   ckabsg(igg)= zero
 enddo
-
-ckabs1 = zero
 
 do ige = 1, ngazem
   do it = 1, npot
     ehgaze(ige,it) = zero
   enddo
-  wmole(ige) = zero
 enddo
 
 do iat = 1, natom
   wmolat(iat) = zero
 enddo
-
-xco2 = zero
-xh2o = zero
 
 !===============================================================================
 ! 3. REMPLISSAGE INCLUDE coincl.h
@@ -308,21 +176,8 @@ xh2o = zero
 
 ! ---> Modele de flamme de diffusion (chimie 3 points)
 
-!if (     ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0          &
-! .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
-!  call co_models_bc_map !necessaire pour mapper ientox et ientfu en C mais il faut call cs_boundary_conditions_create en amont qui alloue ces tabs, or il est appelé après cette routine. Ainsi je commente l'init de ientox sachant qu'il est déja initialisé en C dans cs_bc_create
-  !endif
-
 nmaxh = 0
 nmaxf = 0
-tinoxy = zero
-tinfue = zero
-!do izone = 1, nozppm
-!  ientox(izone) = 0
-!  ientfu(izone) = 0
-!enddo
-hinfue = -grand
-hinoxy = -grand
 hstoea = -grand
 do ih = 1, nmaxhm
   hh(ih) = -grand
@@ -357,7 +212,6 @@ flamelet_hrr   = -1
 flamelet_species(:)  = -1
 flamelet_species_name(:)  = ' '
 
-
 flamelet_c     = -1
 flamelet_omg_c = -1
 
@@ -390,179 +244,6 @@ hmax = zero
 coeff1 = zero
 coeff2 = zero
 coeff3 = zero
-
-!===============================================================================
-! 4. REMPLISSAGE INCLUDE cpincl.h
-!                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A
-!                LA COMBUSTION CP
-!===============================================================================
-
-! ---> Donnees relatives au charbon
-
-do icha = 1, ncharm
-
-  cch(icha)    = zero
-  hch(icha)    = zero
-  och(icha)    = zero
-  sch(icha)    = zero
-  nch(icha)    = zero
-
-  alpha(icha)  = zero
-  beta(icha)   = zero
-  teta (icha)  = zero
-  omega(icha)  = zero
-
-  pcich(icha)  = zero
-  rho0ch(icha) = zero
-  thcdch(icha) = zero
-
-  cck(icha)    = zero
-  hck(icha)    = zero
-  ock(icha)    = zero
-  sck(icha)    = zero
-  nck(icha)    = zero
-
-  rhock(icha)  = zero
-  gamma(icha)  = zero
-  delta(icha)  = zero
-  kappa(icha)  = zero
-  zeta (icha)  = zero
-  pcick(icha)  = zero
-
-  cpashc(icha) = zero
-  h0ashc(icha) = zero
-
-  iy1ch(icha)  = 0
-  y1ch(icha)   = zero
-  a1ch(icha)   = zero
-  e1ch(icha)   = zero
-  crepn1(1,icha) = zero
-  crepn1(2,icha) = zero
-
-  iy2ch(icha)  = 0
-  y2ch(icha)   = zero
-  a2ch(icha)   = zero
-  e2ch(icha)   = zero
-  crepn2(1,icha) = zero
-  crepn2(2,icha) = zero
-
-  ahetch(icha) = zero
-  ehetch(icha) = zero
-  iochet(icha) = 0
-
-  ahetc2(icha) = zero
-  ehetc2(icha) = zero
-  ioetc2(icha) = 0
-
-  ahetwt(icha) = zero
-  ehetwt(icha) = zero
-  ioetwt(icha) = 0
-
-  repnck(icha) = zero
-  repnle(icha) = zero
-  repnlo(icha) = zero
-
-  ychxle(icha) = zero
-  ychxlo(icha) = zero
-  yhcnle(icha) = zero
-  yhcnlo(icha) = zero
-  ynh3le(icha) = zero
-  ynh3lo(icha) = zero
-  ycoch1(icha) = zero
-  yhcnc1(icha) = zero
-  ynoch1(icha) = zero
-  ycoch2(icha) = zero
-  yhcnc2(icha) = zero
-  ynoch2(icha) = zero
-
-  nnch(icha)   = zero
-  nnckle(icha) = zero
-  nhckle(icha) = zero
-  ncckle(icha) = zero
-  nncklo(icha) = zero
-  nhcklo(icha) = zero
-  nccklo(icha) = zero
-
-  wchx1c(icha) = zero
-  wchx2c(icha) = zero
-enddo
-
-wmchx1 = zero
-wmchx2 = zero
-
-! ---> Definition des Pointeurs du tableau TBMCR utilise dans cpphy1.F
-!      et les sous-programmes appeles
-
-  do icha = 1, ncharm
-    if1mc(icha) = 0
-    if2mc(icha) = 0
-  enddo
-  ix1mc   = 0
-  ix2mc   = 0
-  ichx1f1 = 0
-  ichx2f2 = 0
-  icof1   = 0
-  icof2   = 0
-  ih2of1  = 0
-  ih2of2  = 0
-  ih2sf1  = 0
-  ih2sf2  = 0
-  ihcnf1  = 0
-  ihcnf2  = 0
-
-! ---> Donnees relatives a la combustion des especes gazeuses
-
-do icha = 1, ncharm
-  ichx1c(icha) = 0
-  ichx2c(icha) = 0
-enddo
-ichx1 = 0
-ichx2 = 0
-ico   = 0
-ih2s  = 0
-ih2   = 0
-ihcn  = 0
-io2   = 0
-ico2  = 0
-ih2o  = 0
-iso2  = 0
-inh3  = 0
-in2   = 0
-
-xsi   = 3.76d0
-
-do icha = 1, ncharm
-  chx1(icha) = zero
-  chx2(icha) = zero
-  a1(icha)   = zero
-  a2(icha)   = zero
-  b1(icha)   = zero
-  b2(icha)   = zero
-  c1(icha)   = zero
-  c2(icha)   = zero
-  d1(icha)   = zero
-  d2(icha)   = zero
-  e1(icha)   = zero
-  e2(icha)   = zero
-  f1(icha)   = zero
-  f2(icha)   = zero
-enddo
-
-!===============================================================================
-! 5. REMPLISSAGE INCLUDE fuelincl.h
-!                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A
-!                LA COMBUSTION FUEL
-!===============================================================================
-
-! ---> Donnees relatives a la combustion des especes gazeuses
-
-ico   = 0
-io2   = 0
-ico2  = 0
-ih2o  = 0
-in2   = 0
-
-xsi   = 3.76d0
 
 !===============================================================================
 ! 6. Global variables for atmospheric flows (module atincl.f90)

@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -98,8 +98,9 @@ BEGIN_C_DECLS
 
 static void
 _mumps_hook(void     *context,
-            KSP       ksp)
+            void     *ksp_struct)
 {
+  KSP  ksp = ksp_struct;
   cs_equation_system_param_t  *sysp = context;
   cs_param_sles_t  *sys_slesp = sysp->sles_param;
   cs_param_sles_cvg_t  cvgp = sys_slesp->cvg_param;
@@ -163,6 +164,11 @@ cs_equation_system_sles_init(int                            n_eqs,
 
   case CS_EQUATION_SYSTEM_SLES_MUMPS:
     {
+      cs_param_sles_mumps_t  *mumpsp = sys_slesp->context_param;
+
+      if (mumpsp == NULL) /* Define a context by default */
+        cs_param_sles_mumps(sys_slesp, false, CS_PARAM_SLES_FACTO_LU);
+
 #if defined(HAVE_MUMPS)
       /* Propagate the settings to all blocks (only to get a consistent log) */
 
@@ -173,18 +179,18 @@ cs_equation_system_sles_init(int                            n_eqs,
           cs_equation_param_t  *eqp = block->param;
           cs_param_sles_t  *slesp = eqp->sles_param;
 
-          slesp->solver_class = sys_slesp->solver_class;
-          slesp->solver = sys_slesp->solver;
-          slesp->precond = sys_slesp->precond;
-          slesp->amg_type = sys_slesp->amg_type;
-          slesp->pcd_block_type = sys_slesp->pcd_block_type;
+          int  field_id = slesp->field_id;
+
+          cs_param_sles_copy_from(sys_slesp, slesp);
+          slesp->field_id = field_id;
 
           if (i == 0 && j == 0)
             cs_sles_mumps_define(-1,
                                  sysp->name,
-                                 slesp,
+                                 sys_slesp,
                                  cs_user_sles_mumps_hook,
                                  NULL);
+
         }
       }
 #else

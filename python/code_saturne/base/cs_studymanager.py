@@ -5,7 +5,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -176,8 +176,8 @@ def process_cmd_line(argv, pkg):
     parser.add_option("--slurm-batch-size", dest="slurm_batch_size", default=0,
                       type="int", help="number of cases per batch with slurm")
 
-    parser.add_option("--slurm-batch-wtime", dest="slurm_batch_wtime", default=3,
-                      type="int", help="wall time in hours used in slurm batch mode")
+    parser.add_option("--slurm-batch-wtime", dest="slurm_batch_wtime", default=0,
+                      type="int", help="maximum wall time in hours per batch with slurm")
 
     parser.add_option("--slurm-batch-arg", dest="slurm_batch_args",
                       default=None, type=str, action='append',
@@ -314,6 +314,17 @@ def run_studymanager(pkg, options):
 
     dif += " -d"
 
+    # Analyse slurm options
+    slurm_submission = False
+    if (options.slurm_batch_size > 0 or options.slurm_batch_wtime > 0):
+        slurm_submission = True
+        # we impose case analysis with slurm submission
+        options.casestate = True
+        if (options.slurm_batch_size > 0 and options.slurm_batch_wtime < 1):
+            options.slurm_batch_wtime = 12
+        elif (options.slurm_batch_size < 1 and options.slurm_batch_wtime > 0):
+            options.slurm_batch_size = 50
+
     # Read the file of parameters
 
     studies = Studies(pkg, options, exe, dif)
@@ -392,17 +403,17 @@ def run_studymanager(pkg, options):
         print(" run_studymanager() >> Starts running...")
 
     if options.runcase:
-        if options.slurm_batch_size < 1:
-            studies.run()
-        else:
+        if slurm_submission:
             studies.run_slurm_batches()
+        else:
+            studies.run()
 
     if options.debug:
         print(" run_studymanager() >> Exits runs")
 
     # Report state
 
-    if options.casestate:
+    if options.casestate and not slurm_submission:
         studies.report_state()
 
     # Compare checkpoint files

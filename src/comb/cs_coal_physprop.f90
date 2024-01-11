@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -125,7 +125,13 @@ interface
 end interface
 
 !===============================================================================
-!
+
+! Additional properties for drift
+
+if (i_comb_drift.ge.1) then
+  call cs_physical_properties_combustion_drift()
+endif
+
 !===============================================================================
 ! 0. Counting the calls
 !===============================================================================
@@ -143,26 +149,26 @@ call field_get_val_s_by_name("x_c", cpro_x1)
 call field_get_n_fields(nfld)
 
 if ( noxyd .ge. 2 ) then
-  call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
+  call field_get_val_s(if4m, cvar_f4m)
   if ( noxyd .eq. 3 ) then
-    call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
+    call field_get_val_s(if5m, cvar_f5m)
   endif
 endif
 if ( ippmod(iccoal) .ge. 1 ) then
-  call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
+  call field_get_val_s(if6m, cvar_f6m)
 endif
-call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
+call field_get_val_s(if7m, cvar_f7m)
 if ( ihtco2 .eq. 1 ) then
-  call field_get_val_s(ivarfl(isca(if8m)), cvar_f8m)
+  call field_get_val_s(if8m, cvar_f8m)
 endif
 if ( ihth2o .eq. 1 ) then
-  call field_get_val_s(ivarfl(isca(if9m)), cvar_f9m)
+  call field_get_val_s(if9m, cvar_f9m)
 endif
-call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
+call field_get_val_s(ifvp2m, cvar_fvp2m)
 if ( ieqnox .eq. 1 ) then
-  call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
+  call field_get_val_s(ihox, cvar_hox)
 endif
-call field_get_val_s(ivarfl(isca(ihgas)), cvar_hgas)
+call field_get_val_s(ihgas, cvar_hgas)
 
 log_active = cs_log_default_is_active()
 
@@ -252,8 +258,8 @@ if (irangp.ge.0 .or. iperio.eq.1) then
 endif
 
 do icha = 1, ncharb
-  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
-  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
+  call field_get_val_s(if1m(icha), cvar_f1m)
+  call field_get_val_s(if2m(icha), cvar_f2m)
   do iel = 1, ncel
     f1m(iel) =  f1m(iel) + cvar_f1m(iel)
     f2m(iel) =  f2m(iel) + cvar_f2m(iel)

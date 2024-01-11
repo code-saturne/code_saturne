@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -100,12 +100,7 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if (jj .eq. iscalt) then
-    if (diftl0.ge.0d0) then
-      call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
-    endif
-
-  else if (iscavr(jj).le.0) then
+  if (jj .ne. iscalt .and. iscavr(jj).le.0) then
 
     ! En combustion on considere que la viscosite turbulente domine
     ! ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
@@ -142,7 +137,6 @@ enddo
 !===============================================================================
 ! 2. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
-! ---> Initialisation
 
 ! ---- Calcul de RO0 a partir de T0 et P0
 !        (loi des gaz parfaits applliquee a l'air)
@@ -167,19 +161,6 @@ irovar = 1
 ivivar = 0
 
 !===============================================================================
-! 3. ON REDONNE LA MAIN A L'UTLISATEUR
-!===============================================================================
-
-! TODO: call cs_gui_combustion_ref_values to read diftl0 from GUI,
-!       but first initialize it to the value below in GUI.
-
-diftl0 = 4.25d-5
-
-call uicpi1(srrom)
-
-call cs_user_combustion
-
-!===============================================================================
 ! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
 !===============================================================================
 
@@ -198,28 +179,23 @@ endif
 !--------
 
  9998 format(                                                     &
-'                                                             ',/,&
-' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                        (cs_user_combustion).',/)
+'',                                                             /,&
+' No error detecxted during coal data verification.',           /)
  9999 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
+'@',/,&
+'@',                                                           /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@  Verifier cs_user_combustion.'                              ,/,&
-'@                                                            ',/,&
+'@',                                                           /,&
+'@ @@ ATTENTION : stop in setup/data input.',                  /,&
+'@    =========',                                              /,&
+'@  The coal model parameters are incoherent or incomplete.',  /,&
+'@',                                                           /,&
+'@  The computation will not be run (', i10,' errors).',       /,&
+'@',                                                           /,&
+'@  Check messages above for detailed information.',           /,&
+'@',                                                           /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@',                                                           /)
 
 !----
 ! End

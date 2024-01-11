@@ -80,7 +80,7 @@ ldflags_default_prf="-g"
 case "$host_os" in
   darwin*)
     cflags_default_shared="-fPIC -DPIC"
-    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup -undefined error"
+    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup"
     ldflags_default_soname="-install_name @rpath/"
     ;;
   *)

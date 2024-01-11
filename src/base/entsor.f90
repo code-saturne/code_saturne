@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -61,18 +61,11 @@ module entsor
   !> name of the thermochemical data file for combustion.
   !>
   !> Useful in case of gas combustion.
-  character(len=64), save :: ficfpp, ficrad
+  character(len=64), save :: ficrad
 
   !> logical unit of the thermochemical data file.
   !> Useful in case of gas or pulverized coal combustion or electric arcs;
   integer, save :: impfpp, imprad
-
-  !> use Janaf (=1) or not (=0)
-  integer, save :: indjon = 1
-
-  !> Input files for the atmospheric specific physics
-  !> ficmet is moved to C.
-  !> Get it in Fortran with atmo_get_meteo_file_name
 
   !> \}
 

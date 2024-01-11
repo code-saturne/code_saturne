@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -30,16 +30,16 @@
 
   \section radiat_activ Activation of the module
 
-  The module can be activated in the \ref usppmo routine in
-  \ref cs_user_parameters.f90. The corresponding keyword is \c iirayo in the
+  The module can be activated in the \ref cs_user_model function in
+  \ref cs_user_parameters.c. The corresponding keyword is the
+  \ref cs_rad_transfer_params_t::type "type" member of the
   \ref cs_glob_rad_transfer_params structure.
 
   This member can take the values:
-   - \ref radiat::iirayo "iirayo" = 0: module desactivated.
-   - \ref radiat::iirayo "iirayo" = 1: the module is activated and the Discrete
-                                       Ordinates Method is used.
-   - \ref radiat::iirayo "iirayo" = 2: the module is activated and the P1 model
-                                       is used.
+   - \ref CS_RAD_TRANSFER_NONE (module deactivated)
+   - \ref CS_RAD_TRANSFER_DOM  (module activated using Discrete
+                                Ordinates Method)
+   - \ref CS_RAD_TRANSFER_P1   (module activated using P1 model)
 
   \section radiat_param Radiation module specific parameters.
 
@@ -77,9 +77,9 @@ Therefore :
   |------------------------------|------------------:|
   |  polished steel              |       0.06        |
   |  oxidized steel              |       0.80        |
-  |  steel rough                 |       0.94        |
+  |  rough steel                 |       0.94        |
   |  polished aluminium          |       0.04        |
-  |  oxidiezd aluminium (inside) |       0.09        |
+  |  oxidized aluminium (inside) |       0.09        |
   |  oxidized aluminium (wet air)|       0.90        |
   |  brick                       |       0.93        |
   |  concrete                    |       0.93        |

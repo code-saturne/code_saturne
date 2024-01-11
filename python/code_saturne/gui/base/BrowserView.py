@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -509,7 +509,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         elif section == 'Numerical parameters':
             return ['Equation parameters']
         elif section == 'Postprocessing':
-            return ['Additional user arrays', 'Time averages',
+            return ['Calculator', 'Additional user arrays', 'Time averages',
                     'Volume solution control', 'Surface solution control',
                     'Lagrangian solution control', 'Profiles',
                     'Balance by zone']
@@ -798,6 +798,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         """
 
         self.setRowClose(self.tr('Time averages'))
+        self.setRowClose(self.tr('Calculator'))
         self.setRowClose(self.tr('Additional user arrays'))
         self.setRowClose(self.tr('Volume solution control'))
         self.setRowClose(self.tr('Surface solution control'))
@@ -1021,6 +1022,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         self.setRowShow(self.tr('Postprocessing'), True)
         self.setRowShow(self.tr('Time averages'), True)
+        self.setRowShow(self.tr('Calculator'))
         self.setRowShow(self.tr('Additional user arrays'))
         self.setRowShow(self.tr('Volume solution control'), True)
         self.setRowShow(self.tr('Surface solution control'), True)

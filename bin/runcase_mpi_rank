@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -38,14 +38,16 @@
 # Current systems
 # ---------------
 
-# For MPICH (which also provides the mpiexec command)
-if [ "$PMI_RANK" != "" ] ; then
+# For PMIx (shared by most MPI libraries)
+if [ "$PMIX_RANK" != "" ] ; then
+  MPI_RANK="$PMIX_RANK"
+
+# For MPICH
+elif [ "$PMI_RANK" != "" ] ; then
   MPI_RANK="$PMI_RANK"
 
-# For Open MPI (it also provides the mpiexec command)
-elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then # Open MPI 1.2
-  MPI_RANK="$OMPI_MCA_ns_nds_vpid"
-elif [ "$OMPI_COMM_WORLD_RANK" != "" ] ; then # Open MPI 1.3
+# For Open MPI (prefer PMIx, available in current Open MPI versions)
+elif [ "$OMPI_COMM_WORLD_RANK" != "" ] ; then # Since Open MPI 1.3
   MPI_RANK="$OMPI_COMM_WORLD_RANK"
 
 # Otherwise, with SLURM
@@ -54,14 +56,10 @@ elif [ "$PMI_ID" != "" ] ; then
 elif [ "$SLURM_PROCID" != "" ] ; then
   MPI_RANK="$SLURM_PROCID"
 
-# For IBM Platform MPI
-elif [ "$MPI_RANKID" != "" ] ; then
-  MPI_RANK="$MPI_RANKID"
-
 # Current systems for which we have no access (so trust docs)
 # -------------------------------------------
 
-# For IBM PE
+# For IBM PE / IBM Spectrum MPI
 elif [ "$MP_CHILD" != "" ] ; then
   MPI_RANK="$MP_CHILD"
 
@@ -72,9 +70,10 @@ elif [ "$MP_CHILD" != "" ] ; then
 elif [ "$SMPIRUN_RANK" != "" ] ; then
   MPI_RANK="$MPIRUN_RANK"
 
-# On cluster with HP-MPI (has become Platform MPI since)
-elif [ "$MPI_PROC" != "" ] ; then
-  MPI_RANK=`echo $MPI_PROC | cut -f 2 -d,`
+# For IBM Platform MPI (formerly HP-MPI),
+# discontinued 04/2020 in switch to Open MPI.
+elif [ "$MPI_RANKID" != "" ] ; then
+  MPI_RANK="$MPI_RANKID"
 
 # End of known cases
 fi

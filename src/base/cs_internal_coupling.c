@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2127,7 +2127,7 @@ cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
      information are not in the plane tangential to the face and containing II'.
      So we use an iterative process here to initialize BC coefficients with
      a non-reconstructed value and refine them with a reconstructed value.
-     This is actually only necessary whan combining a gradient tangential to the
+     This is actually only necessary when combining a gradient tangential to the
      coupled surface and a non-orthogonal mesh at the wall (not recommended for
      wall law modeling), so we limit this to a single iteration and do not
      provide user setting for this now. */

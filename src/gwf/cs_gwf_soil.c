@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1334,6 +1334,8 @@ cs_gwf_soil_log_setup(void)
           cs_log_printf(CS_LOG_SETUP,
                         "%s C1 exponential joining function for Sl\n", id);
           cs_log_printf(CS_LOG_SETUP, "%s Joining parameters:", id);
+          cs_log_printf(CS_LOG_SETUP, " sle %8.6e pc %5.3e\n",
+                        sp->sle_thres, sp->pc_star);
           break;
 
         default:

@@ -4,7 +4,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -279,73 +279,6 @@ do ilelt = 1, nlelt
 
 enddo
 !< [example_2]
-
-! Definition of a wall for each face of color 51 and 5
-
-!< [example_3]
-call getfbr('51 or 5', nlelt, lstelt)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-  ! Type de condition aux limites pour les variables standard
-  itypfb(ifac)   = iparoi
-
-  ! Zone number (arbitrary number between 1 and n)
-  izone = 4
-
-  ! Allocation of the actual face to the zone
-  izfppp(ifac) = izone
-
-enddo
-!< [example_3]
-
-! Definition of an exit for each face of color 91 and 9
-
-!< [example_4]
-call getfbr('91 or 9', nlelt, lstelt)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-  ! Type de condition aux limites pour les variables standard
-  itypfb(ifac)   = isolib
-
-  ! Zone number (arbitrary number between 1 and n)
-  izone = 5
-
-  ! Allocation of the actual face to the zone 9
-  izfppp(ifac) = izone
-
-enddo
-!< [example_4]
-
-! Definition of symmetric boundary conditions for each
-! face of color 41 and 4.
-
-!< [example_5]
-call getfbr('41 or 4', nlelt, lstelt)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-  ! Type de condition aux limites pour les variables standard
-  itypfb(ifac)   = isymet
-
-  ! Zone number (arbitrary number between 1 and n)
-  izone = 6
-
-  ! Allocation of the actual face to the zonec
-  izfppp(ifac) = izone
-
-enddo
-!< [example_5]
 
 !--------
 ! Formats

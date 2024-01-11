@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,8 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
@@ -77,6 +79,9 @@ libcsalge_hypre_a_CPPFLAGS =\
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
+
+noinst_HEADERS = \
+cs_convection_diffusion_priv.h
 
 # Public header files (to be installed)
 
@@ -159,13 +164,13 @@ $(FCFLAGS_DBG) $(FCFLAGS_HOT) $(FCFLAGS_SHARED)
 libcsalge_a_SOURCES = \
 cs_bad_cells_regularisation.c \
 cs_balance.c \
-cs_balance_by_zone.c \
+cs_balance_by_zone.cxx \
 cs_benchmark.c \
 cs_benchmark_matrix.c \
 cs_blas.c \
 cs_bw_time_diff.c \
 cs_cell_to_vertex.c \
-cs_convection_diffusion.c \
+cs_convection_diffusion.cxx \
 cs_divergence.c \
 cs_face_viscosity.c \
 cs_gradient.cxx \

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,6 +60,7 @@
 #include "cs_boundary_conditions_set_coeffs_symmetry.h"
 #include "cs_boundary_conditions_set_coeffs_turb.h"
 #include "cs_boundary_conditions_type.h"
+#include "cs_cf_boundary_conditions.h"
 #include "cs_coupling.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -151,9 +152,71 @@ cs_f_user_boundary_conditions_wrapper(const cs_lnum_t  itrifb[],
                                       const int        izfppp[],
                                       cs_real_t        dt[]);
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_boundary_conditions_set_coeffs.c
+        Boundary condition management.
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute boundary condition code for radiative transfer
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_condition_rt_type(const cs_mesh_t             *m,
+                            const cs_mesh_quantities_t  *mq,
+                            const bool                  init,
+                            const int                   bc_type[])
+{
+  /* Unfinished function */
+
+  CS_UNUSED(m);
+  CS_UNUSED(mq);
+  CS_UNUSED(init);
+  CS_UNUSED(bc_type);
+
+  const cs_lnum_t n_b_faces =  m->n_b_faces;
+
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+
+  int nwsgg = rt_params->nwsgg;
+
+  /* Initialization
+   * -------------- */
+
+  /* TODO: make a rt_bc_type as ale_bc_type */
+
+  for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
+
+    // cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
+    cs_field_t *f_rad = CS_FI_(radiance, gg_id);
+
+    // int *icodcl_rad = NULL;
+    cs_real_t *rcodcl1_rad = NULL;
+
+    if (f_rad->bc_coeffs != NULL) {
+      // icodcl_rad = f_rad->bc_coeffs->icodcl;
+      rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
+    }
+
+#   pragma omp parallel for  if (n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (rcodcl1_rad[face_id] > cs_math_infinite_r*0.5)
+        rcodcl1_rad[face_id] = 0;
+    }
+
+  }
+
+}
 
 /*----------------------------------------------------------------------------
  * Compute boundary condition code for ALE
@@ -458,6 +521,8 @@ _boundary_condition_ale_type(const cs_mesh_t             *m,
   BFT_FREE(_rcodcl1_mesh_u);
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -603,6 +668,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    *--------------------------------------------------------------------------*/
 
   cs_boundary_conditions_reset();
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >=  0)
+    cs_cf_boundary_conditions_reset();
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1)
     cs_f_ppprcl(bc_type, dt);
@@ -829,6 +897,12 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                    false,
                                    dt,
                                    bc_type);
+
+    if (cs_glob_rad_transfer_params->type != CS_RAD_TRANSFER_NONE)
+      _boundary_condition_rt_type(mesh,
+                                  fvq,
+                                  false,
+                                  bc_type);
 
     if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
       cs_f_mmtycl(bc_type);
@@ -1258,10 +1332,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       }
     }
 
-    if (nt_cur%cs_glob_log_frequency == 0 || eqp_vel->iwarni >= 0) {
+    if (nt_cur%cs_glob_log_frequency == 0 || eqp_vel->verbosity >= 0) {
       cs_gnum_t isocpt[2] = {isoent, isorti};
       cs_parall_sum(2, CS_GNUM_TYPE, isocpt);
-      if (isocpt[1] > 0 && (eqp_vel->iwarni >= 2 || isocpt[0] > 0))
+      if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("Incoming flow detained for %llu out of %llu outlet faces\n"),
@@ -3737,6 +3811,12 @@ cs_boundary_conditions_set_coeffs_init(void)
                                  true,
                                  dt,
                                  bc_type);
+
+  if (cs_glob_rad_transfer_params->type != CS_RAD_TRANSFER_NONE)
+    _boundary_condition_rt_type(mesh,
+                                cs_glob_mesh_quantities,
+                                true,
+                                bc_type);
 
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
     cs_f_mmtycl(bc_type);

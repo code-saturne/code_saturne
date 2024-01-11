@@ -1,14 +1,14 @@
-#ifndef __CS_RAD_TRANSFER_PROPERTY_FIELDS__
-#define __CS_RAD_TRANSFER_PROPERTY_FIELDS__
+#ifndef __CS_CF_BOUNDARY_CONDITIONS_H__
+#define __CS_CF_BOUNDARY_CONDITIONS_H__
 
 /*============================================================================
- * Radiation solver operations.
+ * Compressible flow boundary conditions.
  *============================================================================*/
 
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -27,45 +27,46 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Local Macro definitions
+/*============================================================================
+ * Type definitions
  *============================================================================*/
 
 /*============================================================================
- * Type definition
+ * Static global variables
  *============================================================================*/
 
-/*============================================================================
- *  Global variables
- *============================================================================*/
+/* pointer to global compressible model arrays */
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
+extern int *cs_glob_cf_icvfli;
+extern int *cs_glob_cf_ifbet;
 
 /*=============================================================================
- * Public function prototypes
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create property fields for radiative solver
+ * \brief Prepare (reset) condition coefficients specific to compressible flows.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_prp(void);
+cs_cf_boundary_conditions_reset(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_PROPERTY_FIELDS__ */
+#endif /* __CS_CF_BOUNDARY_CONDITIONS_H__ */

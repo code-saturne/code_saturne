@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -61,15 +61,13 @@
 #include "cs_time_control.h"
 #include "cs_timer.h"
 #include "cs_thermal_model.h"
-#include "cs_gui_output.h"
 
-#include "cs_combustion_model.h"
+#include "cs_coal.h"
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
 
-#include "cs_gui_radiative_transfer.h"
 #include "cs_rad_transfer.h"
-#include "cs_rad_transfer_property_fields.h"
+#include "cs_rad_transfer_fields.h"
 #include "cs_rad_transfer_dir.h"
 
 /*----------------------------------------------------------------------------
@@ -116,12 +114,11 @@ cs_rad_transfer_options(void)
   /* -> nrphas: for pulverized coal and fuel combustion:
    *            nrphas = 1 (gas) + number of classes (particles or droplets) */
 
-  /* -> For pulverized coal and fuel combustion:   */
+  /* -> For pulverized coal combustion:   */
 
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
-    rt_params->nrphas = 1 + cs_glob_combustion_model->coal->nclacp;
-  else
-    rt_params->nrphas = 1;
+  if (cs_glob_coal_model != NULL) {
+    rt_params->nrphas += cs_glob_coal_model->nclacp;
+  }
 
   /* Default initializations
    * ----------------------- */
@@ -140,28 +137,6 @@ cs_rad_transfer_options(void)
                                     true,    /* at start */
                                     false);  /* at end */
 
-  /* ->  Quadrature number and Tn parameter */
-
-  rt_params->i_quadrature = 1;
-  rt_params->ndirec       = 3;
-
-  /* ->  Cell percentage for which it is admitted that optical length
-   *     is greater than one for P-1 model*/
-
-  rt_params->xnp1mx       = 10.0;
-
-  /* -> Wall temperature verbosity */
-
-  rt_params->iimpar       = 1;
-
-  /* -> Number of iterations used to solve the ETR.
-   *    Must at least be one to make the standard models work. */
-
-  /* User parameters  */
-
-  cs_gui_radiative_transfer_parameters();
-  cs_user_radiative_transfer_parameters();
-
   /* ->  Explicit radiative source term computation mode
    *            = 0 => Semi-analytic (mandatory if transparent)
    *            = 1 => Conservative
@@ -179,6 +154,52 @@ cs_rad_transfer_options(void)
 
   if (rt_params->imfsck == 1)
     rt_params->nwsgg = 7;
+
+  /* Add bands for Direct Solar, diFUse solar and InfraRed
+   * and for solar: make the distinction between UV-visible (absorbed by O3)
+   * and Solar IR (SIR) absobed by H2O
+   * if activated */
+  {
+    if (rt_params->atmo_model
+        != CS_RAD_ATMO_3D_NONE)
+      rt_params->nwsgg = 0;
+
+    /* Fields for atmospheric Direct Solar (DR) model
+     * (SIR only if SUV is not activated) */
+    if (rt_params->atmo_model
+        & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
+      rt_params->atmo_dr_id = rt_params->nwsgg;
+      rt_params->nwsgg++;
+    }
+
+    /* Fields for atmospheric Direct Solar (DR) model
+     * (SUV band) */
+    if (rt_params->atmo_model
+        & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND) {
+      rt_params->atmo_dr_o3_id = rt_params->nwsgg;
+      rt_params->nwsgg++;
+    }
+
+    /* Fields for atmospheric diFfuse Solar (DF) model
+     * (SIR only if SUV is activated) */
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
+      rt_params->atmo_df_id = rt_params->nwsgg;
+      rt_params->nwsgg++;
+    }
+
+    /* Fields for atmospheric diFfuse Solar (DF) model
+     * (SUV band) */
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
+      rt_params->atmo_df_o3_id = rt_params->nwsgg;
+      rt_params->nwsgg++;
+    }
+
+    /* Fields for atmospheric infrared absorption model */
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_INFRARED) {
+      rt_params->atmo_ir_id = rt_params->nwsgg;
+      rt_params->nwsgg++;
+    }
+  }
 
   /* In case of imfsck == 2, spectral radiative properties depend on
    * user provided radiation library coupled with flamelet library.
@@ -202,23 +223,9 @@ cs_rad_transfer_options(void)
                                 cs_glob_rad_transfer_params->imodak,
                                 0, 3);
 
-  if (   rt_params->type == CS_RAD_TRANSFER_DOM
-      || rt_params->type == CS_RAD_TRANSFER_P1)
-    cs_parameters_is_in_range_int
-      (CS_ABORT_DELAYED,
-       _("in Radiative module"),
-       _("Thermal model option (cs_glob_thermal model->itherm)"),
-       cs_glob_thermal_model->itherm,
-       CS_THERMAL_MODEL_TEMPERATURE, CS_THERMAL_MODEL_TOTAL_ENERGY);
-
-  cs_parameters_error_barrier();
-
   /* Verifications */
 
   if (rt_params->type > CS_RAD_TRANSFER_NONE) {
-
-    /* Property fields */
-    cs_rad_transfer_prp();
 
     /* --> NFREQR */
 
@@ -275,9 +282,6 @@ cs_rad_transfer_options(void)
 
   cs_rad_transfer_dir();
 
-  /* Postprocessing */
-
-  cs_gui_radiative_transfer_postprocess();
 }
 
 /*----------------------------------------------------------------------------*/

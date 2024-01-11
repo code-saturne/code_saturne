@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2422,11 +2422,10 @@ cs_turbulence_function_k(int              location_id,
   }
   else {
     if (cs_log_default_is_active()) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("%s: cannot simply determine k from other variables\n"
-                   "with turbulence model %s.\n"),
-                 __func__,
-                 _turbulence_model_enum_name(tm->iturb));
+      cs_log_warning(_("%s: cannot simply determine k from other variables\n"
+                       "with turbulence model %s.\n"),
+                     __func__,
+                     _turbulence_model_enum_name(tm->iturb));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -2500,11 +2499,10 @@ cs_turbulence_function_eps(int              location_id,
   }
   else {
     if (cs_log_default_is_active()) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("%s: cannot simply determine k from other variables\n"
-                   "with turbulence model %s.\n"),
-                 __func__,
-                 _turbulence_model_enum_name(tm->iturb));
+      cs_log_warning(_("%s: cannot simply determine k from other variables\n"
+                       "with turbulence model %s.\n"),
+                     __func__,
+                     _turbulence_model_enum_name(tm->iturb));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -2618,11 +2616,10 @@ cs_turbulence_function_rij(int               location_id,
 
   else {
     if (cs_log_default_is_active()) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("%s: cannot simply determine Rij from other variables\n"
-                   "with turbulence model %s.\n"),
-                 __func__,
-                 _turbulence_model_enum_name(tm->iturb));
+      cs_log_warning(_("%s: cannot simply determine Rij from other variables\n"
+                       "with turbulence model %s.\n"),
+                     __func__,
+                     _turbulence_model_enum_name(tm->iturb));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {

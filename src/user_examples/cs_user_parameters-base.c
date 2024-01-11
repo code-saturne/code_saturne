@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -106,39 +106,41 @@ cs_user_model(void)
    *   2: homogeneous two phase model, 3: by pressure increment */
   cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 3;
 
-  /* Activate Eddy Break Up pre-mixed flame combustion model
-   * -1: not active
-   *  0: adiabatic conditions at constant richness
-   *  1: permeatic conditions at constant richness
-   *  2: adiabatic conditions at variable richness
-   *  3: permeatic conditions at variable richness */
-  cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = -1;
+  /* Activate gas combustion model */
+  cs_combustion_gas_model_t *gcm
+    = cs_combustion_gas_set_model(CS_COMBUSTION_3PT_PERMEATIC);
 
-  /* Activate 3-pointcombustion model
-   * -1: not active, 0: adiabatic, 1: permeatic */
-  cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = -1;
+  /* Soot model for gas combustion
+   *  if = -1   module not activated
+   *  if =  0   constant soot yield
+   *  if =  1   2 equations model of Moss et al. */
+  gcm->isoot = 0;
+  gcm->xsoot = 0.1;    /* (only if isoot = 0 and soot yield is not
+                          defined in the thermochemistry data file) */
+  gcm->rosoot = 2000.; /* kg/m3 */
 
-  /* Activate Libby-Williams pre-mixed flame combustion model
-   * -1: not active
-   *  0: two peak model with: adiabiatic conditions
-   *  1: two peak model with: permeatic conditions
-   *  2: three peak model: with adiabiatic conditions
-   *  3: three peak model: with permeatic conditions
-   *  4: four peak model with: adiabiatic conditions
-   *  5: four peak model with: permeatic conditions*/
-  cs_glob_physical_model_flag[CS_COMBUSTION_LW] = -1;
+  /* Enthalpy-Temperature conversion law */
+  gcm->use_janaf = true;
 
-  /* Activate pulverized coal combustion model
-   * -1: not active
-   *  0: active
-   *  1: with drying */
-  cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 1;
+  if (gcm->use_janaf)
+    cs_combustion_gas_set_thermochemical_data_file("dp_C3P");
+  else
+    cs_combustion_gas_set_thermochemical_data_file("dp_C3PSJ");
 
-  /* Activate the drift (for combustion)
+  /* Activate pulverized coal combustion model */
+  cs_coal_model_set_model(CS_COMBUSTION_COAL_STANDARD);
+
+  /* Activate the drift (for coal combustion)
    * 0 (no activation),
    * 1 (transported particle velocity)
    * 2 (limit drop particle velocity) */
-  cs_glob_combustion_model->idrift = 1;
+  cs_glob_coal_model->idrift = 1;
+
+  /* Kinetic model for CO <=> CO2 (for coal combustion)
+   * 0:  unused (maximal conversion in turbulent model)
+   * 1:  transport of CO2 mass fraction
+   * 2:  transport of CO mass fraction */
+  cs_glob_coal_model->ieqco2 = 0;
 
   /* Cooling towers model
    * -1: not active
@@ -717,6 +719,105 @@ cs_user_model(void)
   /* Add some sources from a file
    * The file contains lines with x,y,z (in meters) format */
   cs_ibm_add_sources_by_file_name("sources.csv");
+
+  /* Example: setup options for radiative transfer
+   * --------------------------------------------- */
+
+  /*! [cs_user_radiative_transfer_parameters] */
+
+  /* Local pointer to global parameters, for conciseness */
+
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+
+  /* indicate whether the radiation variables should be
+     initialized (=0) or read from a restart file (=1) */
+
+  rt_params->restart = (cs_restart_present()) ? 1 : 0;
+
+  /* Update period of the radiation module */
+
+  cs_time_control_init_by_time_step
+    (&( rt_params->time_control),
+     - 1,     /* nt_start */
+     -1,      /* nt_end */
+     5,       /* interval */
+     true,    /* at start */
+     false);  /* at end */
+
+  /* Quadrature Sn (n(n+2) directions)
+
+     1: S4 (24 directions)
+     2: S6 (48 directions)
+     3: S8 (80 directions)
+
+     Quadrature Tn (8n^2 directions)
+
+     4: T2 (32 directions)
+     5: T4 (128 directions)
+     6: Tn (8*ndirec^2 directions)
+  */
+
+  rt_params->i_quadrature = 4;
+
+  /* Number of directions, only for Tn quadrature */
+  rt_params->ndirec = 3;
+
+  /* Method used to calculate the radiative source term:
+     - 0: semi-analytic calculation (required with transparent media)
+     - 1: conservative calculation
+     - 2: semi-analytic calculation corrected
+          in order to be globally conservative
+     (If the medium is transparent, the choice has no effect) */
+
+  rt_params->idiver = 2;
+
+  /* Verbosity level in the log concerning the calculation of
+     the wall temperatures (0, 1 or 2) */
+
+  rt_params->iimpar = 1;
+
+  /* Verbosity mode for the radiance (0, 1 or 2) */
+
+  rt_params->verbosity = 1;
+
+  /* Compute the absorption coefficient through a model (if different from 0),
+     or use a constant absorption coefficient (if 0).
+     Useful ONLY when gas or coal combustion is activated
+     - imodak = 1: ADF model with 8 wave length intervals
+     - imodak = 2: Magnussen et al. and Kent and Honnery models */
+
+  rt_params->imodak = 2;
+
+  /* Compute the absorption coefficient via ADF model
+     Useful ONLY when coal combustion is activated
+     imoadf = 0: switch off the ADF model
+     imoadf = 1: switch on the ADF model (with 8 bands ADF08)
+     imoadf = 2: switch on the ADF model (with 50 bands ADF50) */
+
+  rt_params->imoadf = 1;
+
+  /* Compute the absorption coefficient through FSCK model (if 1)
+     Useful ONLY when coal combustion is activated
+     imfsck = 1: activated
+     imfsck = 0: not activated */
+
+  rt_params->imfsck = 1;
+
+  /* Activate  3D radiative models for  atmospheric flows
+       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR: direct solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND: direct solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR: diffuse solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND: diffuse solar
+       atmo_model |=  CS_RAD_ATMO_3D_INFRARED: Infrared
+  */
+
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND;
+  rt_params->atmo_model |= CS_RAD_ATMO_3D_INFRARED;
+
+  /*! [cs_user_radiative_transfer_parameters] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -791,8 +892,7 @@ cs_user_parameters(cs_domain_t *domain)
   /* Example: change Reference fluid properties options */
   /*----------------------------------------------------*/
 
-  /* Members of the structure cs_fluid_properties_t
-   */
+  /* Members of the structure cs_fluid_properties_t */
 
   /*! [param_fluid_properties] */
   {
@@ -1016,6 +1116,45 @@ cs_user_parameters(cs_domain_t *domain)
     cs_field_set_key_int(cs_field_by_name("t_1"), kscacp, 0);
   }
   /*! [param_kscacp] */
+
+  /* Physical properties for compressible flows */
+
+  /*! [param_compressible] */
+  {
+    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+
+    /* Reference molecular thermal conductivity
+       visls0 = lambda0 (molecular thermal conductivity, W/(m K)) */
+
+    const int kvisl0 = cs_field_key_id("diffusivity_ref");
+
+    cs_field_set_key_double(CS_F_(t), kvisl0, 3.e-2);
+
+    /* If the molecular thermal conductivity is variable, its values
+       must be provided in 'cs_user_physical_properties'. */
+
+    /* Reference volumetric molecular viscosity
+       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s)) */
+
+    fp->viscv0 = 0;
+
+    /* If the volumetric molecular viscosity is variable, its values
+       must be provided in 'cs_user_physical_properties' */
+
+    /* Molar mass of the gas (kg/mol)
+       For example with dry air, xmasml is around 28.8d-3 kg/mol */
+
+    fp->xmasmr = 0.028966;
+
+    /* Hydrostatic equilibrium at boundaries
+       Specify if the hydrostatic equilibrium must be accounted for
+       (yes = 1 , no = 0) */
+
+    cs_cf_model_t *cf_model = cs_get_glob_cf_model();
+
+    cf_model->icfgrp = 1;
+  }
+  /*! [param_compressible] */
 
   /* Example: Change options relative to the inner iterations
    * over prediction-correction.
@@ -1626,7 +1765,6 @@ cs_user_parameters(cs_domain_t *domain)
   cs_restart_set_n_max_checkpoints(2);
   /*! [change_nsave_checkpoint_files] */
 
-
   /*-----------------------------------------------------------------*/
 
   /* Cooling tower:
@@ -1648,7 +1786,6 @@ cs_user_parameters(cs_domain_t *domain)
   air_prop->humidity0 = 0.0;
   air_prop->droplet_diam = 0.005;
   /*! [cs_user_cooling_towers] */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1822,14 +1959,13 @@ cs_user_finalize_setup(cs_domain_t     *domain)
     }
   }
 
-  /* Initialize position of each vertical*/
+  /* Initialize position of each vertical */
   for (int i = 0; i < at_opt->rad_1d_nvert; i++) {
     at_opt->rad_1d_xy[0 * at_opt->rad_1d_nvert + i] = 50.; /* X coord */
     at_opt->rad_1d_xy[1 * at_opt->rad_1d_nvert + i] = 50.; /* Y coord */
     at_opt->rad_1d_xy[2 * at_opt->rad_1d_nvert + i] = 1.; /* kmin in case of
-                                                             relief */
+                                                             non-flat terrain */
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

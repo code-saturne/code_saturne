@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -112,6 +112,21 @@ typedef enum {
   CS_ATMO_SOIL_23_CAT = 2,
 
 } cs_atmo_soil_cat_t;
+
+/*----------------------------------------------------------------------------
+ * Atmospheric soil micro-scale options
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  /*! Genuine Force-restore model (bare-soil or equivalent only) */
+  CS_ATMO_SOIL_GENUINE = 0,
+  /*! Force-restore model including photovoltaic layer */
+  CS_ATMO_SOIL_PHOTOVOLTAICS = 1,
+  /*! Force-restore model including vegetation layer */
+  CS_ATMO_SOIL_VEGETATION = 2,
+
+} cs_atmo_soil_meb_model_t;
 
 /*============================================================================
  * Type definitions
@@ -369,6 +384,11 @@ typedef struct {
   cs_atmo_soil_cat_t soil_cat;
   /*! Soil zone id (or -1 if inactive) */
   int soil_zone_id;
+  /*! Solve supplementary heat budget equation (multi energy budget):
+   * - CS_ATMO_SOIL_GENUINE
+   * - CS_ATMO_SOIL_PHOTOVOLTAICS
+   * - CS_ATMO_SOIL_VEGETATION */
+  cs_atmo_soil_meb_model_t soil_meb_model;
 
 } cs_atmo_option_t;
 

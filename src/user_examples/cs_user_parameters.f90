@@ -4,7 +4,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -53,149 +53,6 @@
 !>   These routines are described at the end of this file and will be activated
 !>   when the corresponding option is selected in the usppmo routine.
 !-------------------------------------------------------------------------------
-
-!===============================================================================
-
-!> \brief User subroutine for selection of specific physics module
-
-!> Define the use of a specific physics amongst the following:
-!>   - combustion with gas / coal / heavy fuel oil
-!>   - compressible flows
-!>   - electric arcs
-!>   - atmospheric modelling
-!>   - radiative transfer
-!>   - cooling towers modelling
-!>
-!>    Only one specific physics module can be activated at once.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     ixmlpu        indicates if an XML file from the GUI is used  !
-!______________________________________________________________________________!
-
-subroutine usppmo &
- ( ixmlpu )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use entsor
-use cstphy
-use ppppar
-use ppthch
-use ppincl
-use ppcpfu
-use coincl
-use radiat
-use cs_c_bindings
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer ixmlpu
-
-!< [usppmo]
-
-!===============================================================================
-! 1.  Choice for a specific physics
-!===============================================================================
-
-! --- cod3p: Diffusion flame with complete fast chemistry (3 points)
-! ==========
-
-!        if = -1   module not activated
-!        if =  0   adiabatic model
-!        if =  1   extended model with enthalpy source term
-
-ippmod(icod3p) = -1
-
-! --- coebu: Eddy-Break Up pre-mixed flame
-! ==========
-
-!        if = -1   module not activated
-!        if =  0   reference Spalding model
-!                   (adiabatic, homogeneous mixture fraction)
-!        if =  1   extended model with enthalpy source term
-!                   (homogeneous mixture fraction : perfect premix)
-!        if =  2   extended model with mixture fraction transport
-!                   (adiabatic, no variance of mixture fraction)
-!        if =  3   extended model with enthalpy and mixture fraction transport
-!                   (dilution, thermal losses, etc.)
-
-ippmod(icoebu) = -1
-
-! --- colwc: Libby-Williams pre-mixed flame
-! ==========
-
-!        if = -1   module not activated
-!        if =  0   reference two-peak model with adiabatic condition
-!        if =  1   extended two-peak model with enthapy source terms
-!        if =  2   extended three-peak model, adiabatic
-!        if =  3   extended three-peak model with enthalpy source terms
-!        if =  4   extended four-peak model, adiabatic
-!        if =  5   extended four-peak model with enthalpy source terms
-
-ippmod(icolwc) = -1
-
-! --- Soot model
-! =================
-
-!        if = -1   module not activated
-!        if =  0   constant soot yield
-!        if =  1   2 equations model of Moss et al.
-
-isoot = 0
-
-xsoot  = 0.1d0 ! (if isoot = 0 and only if the soot yield is not
-               !  defined in the thermochemistry data file)
-rosoot = 2000.d0 ! kg/m3
-
-!===============================================================================
-! 2.  Specific options related to herebefore modules
-!===============================================================================
-
-! These options are defined here at the moment, this might change in the future
-
-! --- Enthalpy-Temperature conversion law (for gas combustion modelling)
-
-!       if = 0   user-specified
-!       if = 1   tabulated by JANAF (default)
-
-indjon = 1
-
-!===============================================================================
-! 2.  Data file related to modules above
-!===============================================================================
-
-! Combustion
-
-if (     ippmod(icod3p).ge.0                                          &
-    .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
-
-  if (indjon.eq.1) then
-    ficfpp = 'dp_C3P'
-  else
-    ficfpp = 'dp_C3PSJ'
-  endif
-
-endif
-
-!< [usppmo]
-
-!----
-! End
-!----
-
-return
-end subroutine usppmo
 
 !===============================================================================
 
@@ -340,17 +197,11 @@ end subroutine usipsu
 !>    a.Dynamic Diffusion Coefficient
 !>    b.Constants of the chosen model (EBU, Libby-Williams, ...)
 !
-!> This routine is called:
-!>
+!> This routine is called for the following models
 !>
 !>  - Eddy Break Up pre-mixed flame
 !>  - Diffusion flame in the framework of ``3 points'' rapid complete chemistry
 !>  - Libby-Williams pre-mixed flame
-!>  - Lagrangian module coupled with pulverized coal:
-!>    Eulerian combustion of pulverized coal and
-!>    Lagrangian transport of coal particles
-!>  - Pulverised coal combustion
-!>  - Fuel (oil) combustion
 !
 !===============================================================================
 
@@ -387,14 +238,6 @@ implicit none
 ! 1. Additional Calculation Options
 !===============================================================================
 
-! --- Kinetic model for CO <=> CO2
-
-!     if = 0  unused (maximal conversion in turbulent model)
-!     if = 1  transport of CO2 mass fraction
-!     if = 2  transport of CO mass fraction (coal and fuel only)
-
-ieqco2 = 0
-
 ! --- Density Relaxation
 !     RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 
@@ -404,8 +247,9 @@ srrom = 0.8d0
 ! 2. Physical Constants
 !===============================================================================
 
-! diftl0: Dynamic Diffusion Coefficient (kg/(m s))
-diftl0 = 4.25d-5
+! Dynamic Diffusion Coefficient (kg/(m s))
+! Should rather be set in cs_user_parameters
+call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, 4.25d-5)
 
 ! -----------------------------------------------------------------------------
 ! 2.1 For 3 points combusution model ONLY
@@ -443,183 +287,6 @@ tstar= 0.12d4
 
 return
 end subroutine cs_user_combustion
-
-!===============================================================================
-
-!> \brief User subroutine.
-
-!> Initialize non standard options for the compressible flow scheme such
-!> as the variability of the thermal conductivity and the volume viscosity.
-!> Their values can be given in the subroutine \ref uscfx2 .
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine uscfx1
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use period
-use ppppar
-use ppthch
-use ppincl
-use field
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-
-! Local variables
-
-integer :: ifcvsl
-
-!===============================================================================
-!< [uscfx1]
-
-!===============================================================================
-! 1. Properties options
-!===============================================================================
-
-! --> Molecular thermal conductivity
-!       constant  : ifcvsl = -1
-!       variable  : ifcvsl = 0
-
-ifcvsl = -1
-call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
-
-! --> Volumetric molecular viscosity
-!       iviscv = -1 : uniform  in space and constant in time
-!              =  0 : variable in space and time
-
-iviscv = -1
-
-!< [uscfx1]
-
-!----
-! End
-!----
-
-return
-end subroutine uscfx1
-
-!===============================================================================
-
-
-!> \brief User subroutine.
-!>
-!> Set values for the reference volumic viscosity, the reference
-!> conductivity and the molar mass for compressible flow.
-!>
-!> Initialize non standard options for the compressible flow scheme such
-!> as the hydrostatic equilibrium.
-!>
-!> In addition to options set in the user subroutine \ref uscfx1 (or in
-!> the GUI): this subroutine allows to set a switch to indicate if the
-!> molecular viscosity is constant, its values being given in the user
-!> subroutine \ref usipsu .
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine uscfx2
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use ppppar
-use ppthch
-use ppincl
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-! Local variables
-
-!< [uscfx2]
-
-!===============================================================================
-! 1. Physical properties
-!===============================================================================
-
-! --> Molecular viscosity
-!       constant  : ivivar = 0
-!       variable  : ivivar = 1
-
-ivivar = 0
-
-! --> Reference molecular thermal conductivity
-!       visls0 = lambda0 (molecular thermal conductivity, W/(m K))
-
-!     Reference conductivity must be strictly positive
-!      (set a realistic value here even if conductivity is variable)
-
-call field_set_key_double(ivarfl(isca(itempk)), kvisl0, 3.d-2)
-
-!       If the molecular thermal conductivity is variable, its values
-!         must be provided in the user subroutine 'cs_user_physical_properties'
-
-! --> Volumetric molecular viscosity
-
-!       Reference volumetric molecular viscosity
-
-!       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s))
-
-viscv0 = 0.d0
-
-!       If the volumetric molecular viscosity is variable, its values
-!         must be provided in the user subroutine 'cs_user_physical_properties'
-
-! --> Molar mass of the gas (kg/mol)
-
-!       For example with dry air, xmasml is around 28.8d-3 kg/mol
-
-xmasmr = 0.028966
-
-! --> Hydrostatic equilibrium
-
-!       Specify if the hydrostatic equilibrium must be accounted for
-!         (yes = 1 , no = 0)
-
-icfgrp = 1
-
-!< [uscfx2]
-
-!----
-! End
-!----
-
-return
-end subroutine uscfx2
 
 !===============================================================================
 

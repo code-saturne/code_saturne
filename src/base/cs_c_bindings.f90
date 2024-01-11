@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -77,9 +77,9 @@ module cs_c_bindings
   parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
 
   procedure() :: csexit, dmtmps
-  procedure() :: cslogname, csdatadir
+  procedure() :: cslogname
 
-  procedure() :: divmas, matrix, viscfa
+  procedure() :: viscfa
 
   !-----------------------------------------------------------------------------
 
@@ -145,15 +145,6 @@ module cs_c_bindings
   !=============================================================================
 
   interface
-
-    subroutine beta_limiter_building(f_id, inc, rovsdt) &
-    bind(C, name='cs_beta_limiter_building')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      integer(c_int), value :: inc
-      real(c_double), dimension(*) , intent(in) :: rovsdt
-    end subroutine beta_limiter_building
 
     !---------------------------------------------------------------------------
 
@@ -256,6 +247,32 @@ module cs_c_bindings
       implicit none
       integer(c_int) :: n_fans
     end function cs_fan_n_fans
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Convert enthalpy to temperature for gas combustion.
+
+    function cs_gas_combustion_h_to_t(xespec, enthal) result(temper)  &
+      bind(C, name='cs_gas_combustion_h_to_t')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: xespec
+      real(c_double), value :: enthal
+      real(c_double) :: temper
+    end function cs_gas_combustion_h_to_t
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Convert temperature to enthalpy for gas combustion.
+
+    function cs_gas_combustion_t_to_h(xespec, temper) result(enthal)  &
+      bind(C, name='cs_gas_combustion_t_to_h')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: xespec
+      real(c_double), value :: temper
+      real(c_double) :: enthal
+    end function cs_gas_combustion_t_to_h
 
     !---------------------------------------------------------------------------
 
@@ -1793,6 +1810,38 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function that initializes read status
+
+    subroutine cs_restart_initialize_fields_read_status() &
+      bind(C, name='cs_restart_initialize_fields_read_status')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_restart_initialize_fields_read_status
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function that finalizes read status
+
+    subroutine cs_restart_finalize_fields_read_status() &
+      bind(C, name='cs_restart_finalize_fields_read_status')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_restart_finalize_fields_read_status
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to check field read status from checkpoint file
+
+    function cs_restart_get_field_read_status(f_id) result(retval) &
+      bind(C, name='cs_restart_get_field_read_status')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      integer(c_int)        :: retval
+    end function cs_restart_get_field_read_status
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function writing fields depending on others to a checkpoint
 
     function cs_restart_write_linked_fields(r, key, write_flag) result(n)  &
@@ -2138,6 +2187,16 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_gui_user_arrays
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C user function for user calculator functions
+
+    subroutine cs_gui_calculator_functions()  &
+      bind(C, name='cs_gui_calculator_functions')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_calculator_functions
 
     !---------------------------------------------------------------------------
 
@@ -3333,24 +3392,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for scalar gradient
-
-    subroutine cs_f_gradient_s(f_id, imrgra, inc, n_r_sweeps,                  &
-                               iwarnp, imligp, epsrgp, climgp,                 &
-                               coefap, coefbp, pvar, grad)                     &
-      bind(C, name='cs_f_gradient_s')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id, imrgra, inc, n_r_sweeps
-      integer(c_int), value :: iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, climgp
-      real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
-      real(kind=c_double), dimension(*), intent(inout) :: pvar
-      real(kind=c_double), dimension(*), intent(inout) :: grad
-    end subroutine cs_f_gradient_s
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for scalar gradient with homogeneous Neumann BCs
 
     subroutine cs_f_gradient_hn_s(f_id, imrgra, inc, n_r_sweeps,               &
@@ -3365,26 +3406,6 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: pvar
       real(kind=c_double), dimension(*), intent(inout) :: grad
     end subroutine cs_f_gradient_hn_s
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for scalar gradient with weighting
-
-    subroutine cs_f_gradient_weighted_s(f_id, imrgra, inc, n_r_sweeps,         &
-                                        iphydp,  iwarnp, imligp,               &
-                                        epsrgp, climgp,                        &
-                                        f_ext, coefap, coefbp, pvar, c_weight, &
-                                        grad)                                  &
-      bind(C, name='cs_f_gradient_weighted_s')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id, imrgra, inc, n_r_sweeps
-      integer(c_int), value :: iphydp, iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, climgp
-      real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
-      real(kind=c_double), dimension(*), intent(inout) :: f_ext, pvar
-      real(kind=c_double), dimension(*), intent(inout) :: c_weight, grad
-    end subroutine cs_f_gradient_weighted_s
 
     !---------------------------------------------------------------------------
 
@@ -3502,26 +3523,6 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
       real(kind=c_double), dimension(*), intent(out) :: gapinj
     end subroutine catsma
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function to implicit and explicit sources terms
-    ! from sources mass computation.
-
-    subroutine catsmv(ncesmp, iterns, icetsm, itpsmp,          &
-                      volume, pvara, smcelp, gamma,            &
-                      tsexp, tsimp, gapinj)                    &
-      bind(C, name='cs_f_mass_source_terms_v')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: ncesmp, iterns
-      integer(kind=c_int), dimension(*), intent(in) :: icetsm, itpsmp
-      real(kind=c_double), dimension(*), intent(in) :: volume
-      real(kind=c_double), dimension(*), intent(in) :: pvara
-      real(kind=c_double), dimension(*), intent(in) :: gamma, smcelp
-      real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
-      real(kind=c_double), dimension(*), intent(out) :: gapinj
-    end subroutine catsmv
 
     !---------------------------------------------------------------------------
 
@@ -4117,55 +4118,6 @@ contains
 
   !=============================================================================
 
-  !> \brief  Compute cell gradient
-
-  !> \param[in]       f_id             field id, or -1
-  !> \param[in]       imrgra           gradient computation mode
-  !> \param[in]       inc              0: increment; 1: do not increment
-  !> \param[in]       nswrgp           number of sweeps for reconstruction
-  !> \param[in]       imligp           gradient limitation method:
-  !>                                     < 0 no limitation
-  !>                                     = 0 based on neighboring gradients
-  !>                                     = 1 based on mean gradient
-  !> \param[in]       iwarnp           verbosity
-  !> \param[in]       epsrgp           relative precision for reconstruction
-  !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in, out]  pvar             cell values whose gradient is computed
-  !> \param[in]       coefap           boundary coefap coefficients
-  !> \param[in]       coefbp           boundary coefap coefficients
-  !> \param[out]      grad             resulting gradient
-
-  subroutine gradient_s(f_id, imrgra, inc, nswrgp,                             &
-                        imligp, iwarnp, epsrgp, climgp,                        &
-                        pvar, coefap, coefbp, grad)
-
-    use, intrinsic :: iso_c_binding
-    use paramx
-    use mesh
-    use field
-    use period
-
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: f_id, imrgra, inc, nswrgp
-    integer, intent(in) :: imligp, iwarnp
-    double precision, intent(in) :: epsrgp, climgp
-    real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
-    real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
-
-    ! The gradient of a potential (pressure, ...) is a vector
-
-    call cs_f_gradient_s(f_id, imrgra, inc, nswrgp,                            &
-                         iwarnp, imligp,                                       &
-                         epsrgp, climgp, coefap, coefbp, pvar, grad)
-
-  end subroutine gradient_s
-
-  !=============================================================================
-
   !> \brief  Compute cell gradient for scalar with homegeneous gradient.
 
   !> \param[in]       f_id             field id, or -1
@@ -4209,60 +4161,6 @@ contains
                             epsrgp, climgp, pvar, grad)
 
   end subroutine gradient_hn_s
-
-  !=============================================================================
-
-  !> \brief  Compute cell gradient of a scalar with weighting
-
-  !> \param[in]       f_id             field id, or -1
-  !> \param[in]       imrgra           gradient computation mode
-  !> \param[in]       inc              0: increment; 1: do not increment
-  !> \param[in]       nswrgp           number of sweeps for reconstruction
-  !> \param[in]       imligp           gradient limitation method:
-  !>                                     < 0 no limitation
-  !>                                     = 0 based on neighboring gradients
-  !>                                     = 1 based on mean gradient
-  !> \param[in]       hyd_p_flag       flag for hydrostatic pressure
-  !> \param[in]       iwarnp           verbosity
-  !> \param[in]       epsrgp           relative precision for reconstruction
-  !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in]       f_ext            exterior force generating
-  !>                                   the hydrostatic pressure
-  !> \param[in, out]  pvar             cell values whose gradient is computed
-  !> \param[in, out]  c_weight         cell weighting coefficient
-  !> \param[in]       coefap           boundary coefap coefficients
-  !> \param[in]       coefbp           boundary coefap coefficients
-  !> \param[out]      grad             resulting gradient
-
-  subroutine gradient_weighted_s(f_id, imrgra, inc, nswrgp,                   &
-                                 imligp, hyd_p_flag, iwarnp, epsrgp, climgp,  &
-                                 f_ext, pvar, c_weight, coefap,               &
-                                 coefbp, grad)
-
-    use, intrinsic :: iso_c_binding
-    use paramx
-    use mesh
-    use field
-
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: f_id, imrgra, inc, nswrgp
-    integer, intent(in) :: imligp, hyd_p_flag, iwarnp
-    double precision, intent(in) :: epsrgp, climgp
-    real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
-    real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(:), intent(inout) :: c_weight
-    real(kind=c_double), dimension(:,:), pointer, intent(in) :: f_ext
-    real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
-
-    call cs_f_gradient_weighted_s(f_id, imrgra, inc, nswrgp,                   &
-                                  hyd_p_flag, iwarnp, imligp, epsrgp,          &
-                                  climgp, f_ext, coefap, coefbp,               &
-                                  pvar, c_weight, grad)
-
-  end subroutine gradient_weighted_s
 
   !=============================================================================
 
@@ -4875,6 +4773,56 @@ contains
     ierror = c_retcode
 
   end subroutine restart_read_field_vals
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Initialize fields checkpoint read status array
+
+  subroutine restart_initialize_fields_read_status()
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    call cs_restart_initialize_fields_read_status()
+
+  end subroutine restart_initialize_fields_read_status
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Finalize fields checkpoint read status array
+
+  subroutine restart_finalize_fields_read_status()
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    call cs_restart_finalize_fields_read_status()
+
+  end subroutine restart_finalize_fields_read_status
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Get field checkpoint read status. Returns 1 if field was read, 0
+  !         otherwise.
+
+  !> \param[in]  f_id     field id
+  !> \param[out] retval   return value. 1 f field was read, 0 otherwise
+
+  subroutine restart_get_field_read_status(f_id, retval)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    integer, intent(out) :: retval
+
+    ! Local variables
+    integer(c_int) :: c_f_id, c_retval
+    c_f_id = f_id
+
+    c_retval = cs_restart_get_field_read_status(c_f_id)
+    retval = c_retval
+
+  end subroutine restart_get_field_read_status
 
   !---------------------------------------------------------------------------
 

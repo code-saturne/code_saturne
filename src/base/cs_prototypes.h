@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -119,6 +119,20 @@ extern void CS_PROCF (initi1, INITI1)
  *   f_id <--   field id
  *
  * returns:
+ *   variable number for defined field
+ *----------------------------------------------------------------------------*/
+
+int
+cs_add_variable_field_indexes(int  f_id);
+
+/*----------------------------------------------------------------------------
+ * Add field indexes associated with a new non-user solved variable,
+ * with default options
+ *
+ * parameters:
+ *   f_id <--   field id
+ *
+ * returns:
  *   scalar number for defined field
  *----------------------------------------------------------------------------*/
 
@@ -135,17 +149,6 @@ cs_add_model_field_indexes(int  f_id);
 
 void
 cs_add_model_thermal_field_indexes(int  f_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to automatic face bc flag array.
- *
- * \return  auto_flag  pointer to automatic boundary condition array
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_atmo_get_auto_flag(void);
 
 /*----------------------------------------------------------------------------
  * Computes the explicit chemical source term for atmospheric chemistry in
@@ -198,22 +201,6 @@ cs_cavitation_compute_source_term(const cs_real_t  pressure[],
 
 /*----------------------------------------------------------------------------*/
 /*!
-  * \brief Solves the continuity equation in pressure formulation and then
-  *        updates the density and the mass flux
-  *
-  * \param[in]     iterns        Navier-Stokes iteration number
-  * \param[in]     dt            time step (per cell)
-  * \param[in]     vela          velocity value at time step beginning
-  */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_compressible_convective_mass_flux(int         iterns,
-                                     cs_real_t   dt[],
-                                     cs_real_t   vela[][3]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Convert temperature to enthalpy at boundary for coal combustion.
  *
  * \param[in]   n_faces   number of faces in list
@@ -249,22 +236,33 @@ cs_coal_thfieldconv1(int              location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the modified convective flux for scalars with a drift.
+ * \brief Convert an enthalpy to temperature value for gas combustion.
  *
- * \param[in]     iflid         index of the current drift scalar field
- * \param[in]     dt            time step (per cell)
- * \param[in,out] imasfl        scalar mass flux at interior face centers
- * \param[in,out] bmasfl        scalar mass flux at boundary face centers
- * \param[in,out] divflu        divergence of drift flux
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     h       enthalpy
+ *
+ * \return  temperature
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_drift_convective_flux(int              f_id,
-                         const cs_real_t  dt[],
-                         cs_real_t        imasfl[],
-                         cs_real_t        bmasf[],
-                         cs_real_t        divflu[]);
+cs_real_t
+cs_gas_combustion_h_to_t(const cs_real_t   x_sp[restrict],
+                         cs_real_t         h);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert a temperature to enthalpy value for gas combustion.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     t       temperature at cells
+ *
+ * \return  enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gas_combustion_t_to_h(const cs_real_t   x_sp[restrict],
+                         cs_real_t         t);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -287,21 +285,6 @@ cs_get_cavitation_dgdp_st(void);
 
 cs_real_t *
 cs_get_cavitation_gam(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Computes a hydrostatic pressure \f$ P_{hydro} \f$ solving an
- *        a priori simplified momentum equation:
- *
- * \param[out]    grdphd         the a priori hydrostatic pressure gradient
- *                              \f$ \partial _x (P_{hydro}) \f$
- * \param[in]     iterns        Navier-Stokes iteration number
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
-                                   int        iterns);
 
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.
@@ -405,66 +388,6 @@ void
 cs_sat_coupling_exchange_at_cells(int         f_id,
                                   cs_real_t   st_exp[],
                                   cs_real_t   st_imp[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Computes the secondary viscosity contribution \f$\kappa
- * -\dfrac{2}{3} \mu\f$ in order to compute:
- * \f[
- * \grad\left( (\kappa -\dfrac{2}{3} \mu) \trace( \gradt(\vect{u})) \right)
- * \f]
- * with:
- *   - \f$ \mu = \mu_{laminar} + \mu_{turbulent} \f$
- *   - \f$ \kappa \f$ is the volume viscosity (generally zero)
- *
- * \remark
- * In LES, the tensor
- * \f$\overline{\left(\vect{u}-\overline{\vect{u}}\right)\otimes\left(\vect{u}
- *-\overline{\vect{u}}\right)}\f$
- * is modeled by \f$\mu_t \overline{\tens{S}}\f$
- * and not by
- * \f$\mu_t\overline{\tens{S}}-\dfrac{2}{3}\mu_t
- * \trace\left(\overline{\tens{S}}\right)\tens{1}+\dfrac{2}{3}k\tens{1}\f$
- * so that no term
- * \f$\mu_t \dive \left(\overline{\vect{u}}\right)\f$ is needed.
- *
- * Please refer to the
- * <a href="../../theory.pdf#visecv"><b>visecv</b></a> section
- * of the theory guide for more informations.
- *
- * \param[in,out] secvif        lambda*surface at interior faces
- * \param[in,out] secvib        lambda*surface at boundary faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_secondary_viscosity(cs_real_t  secvif[],
-                       cs_real_t  secvib[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Solve the void fraction \f$ \alpha \f$ for the Volume of Fluid
- *        method (and hence for cavitating flows).
- *
- * This function solves:
- * \f[
- * \dfrac{\alpha^n - \alpha^{n-1}}{\Delta t}
- *     + \divs \left( \alpha^n \vect{u}^n \right)
- *     + \divs \left( \left[ \alpha^n
- *                           \left( 1 - \alpha^{n} \right)
- *                    \right] \vect{u^r}^n \right)
- *     = \dfrac{\Gamma_V \left( \alpha^{n-1}, p^n \right)}{\rho_v}
- * \f]
- * with \f$ \Gamma_V \f$ the eventual vaporization source term (Merkle model) in
- * case the cavitation model is enabled, \f$ \rho_v \f$ the reference gas
- * density and \f$ \vect{u^r} \f$ the drift velocity for the compressed
- * interface.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solve_void_fraction(cs_real_t   dt[],
-                       int         iterns);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -689,6 +612,18 @@ cs_user_head_losses(const cs_zone_t  *zone,
 
 void
 cs_user_initialization(cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at startup and allows overloading the GUI
+ * defined initialization functions.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_initialization_setup(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1006,6 +941,15 @@ void
 cs_user_partition(void);
 
 /*----------------------------------------------------------------------------
+ * User function for input of radiative transfer module options.
+ *
+ * Deprecated Use cs_user_model instead.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_radiative_transfer_parameters(void);
+
+/*----------------------------------------------------------------------------
  * Define sparse matrix tuning options.
  *----------------------------------------------------------------------------*/
 
@@ -1022,13 +966,6 @@ cs_user_matrix_tuning(void);
 
 void
 cs_user_parameters(cs_domain_t *domain);
-
-/*----------------------------------------------------------------------------
- * User function for input of radiative transfer module options.
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_radiative_transfer_parameters(void);
 
 /*-----------------------------------------------------------------------------
  * User subroutine for input of radiative transfer boundary conditions
@@ -1137,10 +1074,6 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 
 void
 cs_user_rad_transfer_net_flux(const int        itypfb[],
-                              const cs_real_t  coefap[],
-                              const cs_real_t  coefbp[],
-                              const cs_real_t  cofafp[],
-                              const cs_real_t  cofbfp[],
                               const cs_real_t  twall[],
                               const cs_real_t  qincid[],
                               const cs_real_t  xlam[],

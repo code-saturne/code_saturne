@@ -26,14 +26,14 @@
 
 
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_i_face_gather_v5(cs_lnum_t            n_cells,
-                          const cs_real_3_t    *pvar,
+                          const cs_real_t (*restrict pvar)[stride],
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight,
-                          const cs_real_33_t        *restrict r_grad,
-                          cs_real_33_t        *restrict grad,
+                          const cs_real_t (*restrict r_grad)[stride][3],
+                          cs_real_t (*restrict grad)[stride][3],
                           const cs_real_3_t *restrict dofij,
                           const cs_real_3_t *restrict i_f_face_normal,
                           const cs_lnum_t *restrict cell_cells_idx,
@@ -54,9 +54,9 @@ _compute_reconstruct_v_i_face_gather_v5(cs_lnum_t            n_cells,
   cs_lnum_t s_id = cell_cells_idx[c_id1];
   cs_lnum_t e_id = cell_cells_idx[c_id1 + 1];
 
-  __shared__ cs_real_t _grad[256][3][3];
+  __shared__ cs_real_t _grad[256][stride][3];
 
-  for(cs_lnum_t i = 0; i < 3; i++){
+  for(cs_lnum_t i = 0; i < stride; i++){
     for(cs_lnum_t j = 0; j < 3; j++){
       _grad[lindex][i][j] = grad[c_id1][i][j];
     }
@@ -83,7 +83,7 @@ _compute_reconstruct_v_i_face_gather_v5(cs_lnum_t            n_cells,
             / (      pond * c_weight[c_id1]
                 + (1.0-pond)* c_weight[c_id2]);
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
         pfaci = (1.0-ktpond) * (_pvar2[i] - _pvar1[i]);
 
         /* Reconstruction part */
@@ -99,23 +99,27 @@ _compute_reconstruct_v_i_face_gather_v5(cs_lnum_t            n_cells,
         }
       }
     }
-  grad[c_id1][0][0] = _grad[lindex][0][0]; grad[c_id1][0][1] = _grad[lindex][0][1]; grad[c_id1][0][2] = _grad[lindex][0][2];
-  grad[c_id1][1][0] = _grad[lindex][1][0]; grad[c_id1][1][1] = _grad[lindex][1][1]; grad[c_id1][1][2] = _grad[lindex][1][2];
-  grad[c_id1][2][0] = _grad[lindex][2][0]; grad[c_id1][2][1] = _grad[lindex][2][1]; grad[c_id1][2][2] = _grad[lindex][2][2];
+
+  for(cs_lnum_t i = 0; i < stride; i++){
+    for(cs_lnum_t j = 0; j < 3; j++){
+      grad[c_id1][i][j] = _grad[lindex][i][j];
+    }
+  }
+
 }
 
 
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_b_face_gather_v5(cs_lnum_t           n_b_cells,
-                              const cs_real_33_t  *restrict coefbv,
-                              const cs_real_3_t   *restrict coefav,
-                              const cs_real_3_t   *restrict pvar,
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict pvar)[stride],
                               int                           inc,
                               const cs_real_3_t *restrict diipb,
-                              const cs_real_33_t        *restrict r_grad,
-                              cs_real_33_t        *restrict grad,
+                              const cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3],
                               const cs_real_3_t *restrict b_f_face_normal,
                               const cs_lnum_t      *restrict b_cells,
                               const cs_lnum_t      *restrict cell_b_faces,
@@ -135,9 +139,9 @@ _compute_reconstruct_v_b_face_gather_v5(cs_lnum_t           n_b_cells,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
 
-  __shared__ cs_real_t _grad[256][3][3];
+  __shared__ cs_real_t _grad[256][stride][3];
 
-  for(cs_lnum_t i = 0; i < 3; i++){
+  for(cs_lnum_t i = 0; i < stride; i++){
     for(cs_lnum_t j = 0; j < 3; j++){
       _grad[lindex][i][j] = grad[c_id][i][j];
     }
@@ -154,7 +158,7 @@ _compute_reconstruct_v_b_face_gather_v5(cs_lnum_t           n_b_cells,
     auto _coefbv = coefbv[f_id];
     auto _b_f_face_normal = b_f_face_normal[f_id];
 
-    for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t i = 0; i < stride; i++) {
 
       pfac = inc*_coefav[i];
 
@@ -166,7 +170,7 @@ _compute_reconstruct_v_b_face_gather_v5(cs_lnum_t           n_b_cells,
 
     //   /* Reconstruction part */
       rfac = 0.;
-      for (cs_lnum_t k = 0; k < 3; k++) {
+      for (cs_lnum_t k = 0; k < stride; k++) {
         vecfac =   _r_grad[k][0] * _diipb[0]
                  + _r_grad[k][1] * _diipb[1]
                  + _r_grad[k][2] * _diipb[2];
@@ -178,7 +182,10 @@ _compute_reconstruct_v_b_face_gather_v5(cs_lnum_t           n_b_cells,
       }
     }
   }
-  grad[c_id][0][0] = _grad[lindex][0][0]; grad[c_id][0][1] = _grad[lindex][0][1]; grad[c_id][0][2] = _grad[lindex][0][2];
-  grad[c_id][1][0] = _grad[lindex][1][0]; grad[c_id][1][1] = _grad[lindex][1][1]; grad[c_id][1][2] = _grad[lindex][1][2];
-  grad[c_id][2][0] = _grad[lindex][2][0]; grad[c_id][2][1] = _grad[lindex][2][1]; grad[c_id][2][2] = _grad[lindex][2][2];
+
+  for(cs_lnum_t i = 0; i < stride; i++){
+    for(cs_lnum_t j = 0; j < 3; j++){
+      grad[c_id1][i][j] = _grad[lindex][i][j];
+    }
+  }
 }

@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -53,6 +53,7 @@ use paramx
 use dimens
 use numvar
 use optcal
+use cfpoin
 use cstphy
 use entsor
 use cstnum
@@ -99,7 +100,7 @@ enddo
 !                                1 : couplage instationnaire)
 !     Uniquement en monophasique et en incompressible
 
-if( ipucou.ne.0 ) then
+if (ipucou.ne.0) then
   write(nfecra,3000) ipucou
   call csexit (1)
 endif
@@ -108,50 +109,16 @@ endif
 ! 3. OPTIONS DE CALCUL PAR DEFAUT
 !===============================================================================
 
-! --> Conditions aux limites prenant en compte l'equilibre hydrostatique
-!     (oui = 1 , non = 0)
-
-icfgrp = 1
-
-
 ! ---> Masse volumique variable (pour les suites)
 irovar = 1
-
-!===============================================================================
-! 4. ON REDONNE LA MAIN A L'UTLISATEUR
-!===============================================================================
-
-call cscfgp(icfgrp)
-
-call uscfx2
-!==========
-
-!===============================================================================
-! 5. OPTIONS DE CALCUL OBLIGATOIRES
-!     qui pourront etre remontees au dessus de uscfx1
-!     selon les developpements
-!===============================================================================
-
-! --> Prise en compte de la pression predite pour resoudre Navier-Stokes
-!     (oui = 1 , non = 0)
-
-igrdpp = 1
-
-! --> Prediction de pression par une equation d'evolution
-
-!     ATTENTION   PAS ENCORE IMPLEMENTE
-!========   LAISSER IPPRED = 0
-
-ippred = 0
-
 
 !===============================================================================
 ! 6. VERIFICATIONS
 !===============================================================================
 
 iok = 0
-if(icfgrp.ne.0.and.icfgrp.ne.1) then
-  write(nfecra,5000)'ICFGRP',icfgrp
+if (icfgrp.ne.0.and.icfgrp.ne.1) then
+  write(nfecra,5000) 'icfgrp', icfgrp
   iok = 1
 endif
 

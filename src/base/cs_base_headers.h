@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_coupling.h"
 #include "cs_defs.h"
+#include "cs_drift_convective_flux.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_fan.h"

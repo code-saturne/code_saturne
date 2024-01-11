@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -610,7 +610,7 @@ cs_lagr_event_set_destroy(cs_lagr_event_set_t  **events)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get data extents for a given particle event attribute.
+ * \brief Get data extents for a given event attribute.
  *
  * For attributes not currently present, the displacement and data
  * size should be -1 and 0 respectively.
@@ -629,13 +629,13 @@ cs_lagr_event_set_destroy(cs_lagr_event_set_t  **events)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_event_get_attr_info(const cs_lagr_event_set_t   *events,
-                            cs_lagr_event_attribute_t    attr,
-                            size_t                      *extents,
-                            size_t                      *size,
-                            ptrdiff_t                   *displ,
-                            cs_datatype_t               *datatype,
-                            int                         *count)
+cs_lagr_event_get_attr_info(const cs_lagr_event_set_t  *events,
+                            cs_lagr_event_attribute_t   attr,
+                            size_t                     *extents,
+                            size_t                     *size,
+                            ptrdiff_t                  *displ,
+                            cs_datatype_t              *datatype,
+                            int                        *count)
 {
   if (extents)
     *extents = events->e_am->extents;

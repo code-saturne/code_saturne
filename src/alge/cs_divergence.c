@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -98,82 +98,6 @@ BEGIN_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_mass_flux
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (inimav, INIMAV)
-(
- const int        *const  f_id,
- const int        *const  itypfl,
- const int        *const  iflmb0,
- const int        *const  init,
- const int        *const  inc,
- const int        *const  imrgra,
- const int        *const  nswrgu,
- const int        *const  imligu,
- const int        *const  iwarnu,
- const cs_real_t  *const  epsrgu,
- const cs_real_t  *const  climgu,
- const cs_real_t          rom[],
- const cs_real_t          romb[],
- const cs_real_3_t        vel[],
- const cs_real_3_t        coefav[],
- const cs_real_33_t       coefbv[],
- cs_real_t                i_massflux[],
- cs_real_t                b_massflux[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  cs_mass_flux(m,
-               fvq,
-               *f_id,
-               *itypfl,
-               *iflmb0,
-               *init,
-               *inc,
-               *imrgra,
-               *nswrgu,
-               *imligu,
-               *iwarnu,
-               *epsrgu,
-               *climgu,
-               rom,
-               romb,
-               vel,
-               coefav,
-               coefbv,
-               i_massflux,
-               b_massflux);
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_divergence
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (divmas, DIVMAS)
-(
- const int       *const init,
- const cs_real_t        i_massflux[],
- const cs_real_t        b_massflux[],
- cs_real_t              diverg[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-
-  cs_divergence(m,
-                *init,
-                i_massflux,
-                b_massflux,
-                diverg);
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -197,7 +121,7 @@ void CS_PROCF (divmas, DIVMAS)
  *
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     f_id          field id (or -1)
+ * \param[in]     f             pointer to field
  * \param[in]     itypfl        indicator (take rho into account or not)
  *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
@@ -1399,18 +1323,19 @@ cs_tensor_divergence(const cs_mesh_t            *m,
         diverg[cell_id][isou] = 0.;
       }
     }
-  } else if (init == 0 && n_cells_ext > n_cells) {
+  }
+  else if (init == 0 && n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
         diverg[cell_id][isou] = 0.;
       }
     }
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
-
 
   /*==========================================================================
     2. Integration on internal faces
@@ -1435,7 +1360,6 @@ cs_tensor_divergence(const cs_mesh_t            *m,
     }
   }
 
-
   /*==========================================================================
     3. Integration on border faces
     ==========================================================================*/
@@ -1453,7 +1377,6 @@ cs_tensor_divergence(const cs_mesh_t            *m,
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

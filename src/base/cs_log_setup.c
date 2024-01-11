@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,8 +46,10 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
+#include "cs_cf_model.h"
 #include "cs_ctwr.h"
-#include "cs_combustion_model.h"
+#include "cs_coal.h"
+#include "cs_combustion_gas.h"
 #include "cs_domain.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -55,6 +57,7 @@
 #include "cs_log.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mobile_structures.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_restart.h"
@@ -152,6 +155,10 @@ _log_global_model_options(void)
 
   cs_mesh_quantities_log_setup();
 
+  /* Notebook parameters */
+
+  cs_notebook_log_setup();
+
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Physical model options\n"
@@ -161,8 +168,6 @@ _log_global_model_options(void)
 
   cs_physical_constants_log_setup();
   cs_fluid_properties_log_setup();
-
-  /* TODO : Add diftl0 printing */
 
   /* Thermal model */
 
@@ -185,6 +190,10 @@ _log_global_model_options(void)
 
   _log_error_estimators();
 
+  /* Compressible model */
+
+  cs_cf_model_log_setup();
+
   /* Atmospheric */
 
   cs_atmo_log_setup();
@@ -199,7 +208,7 @@ _log_global_model_options(void)
 
   /* Combustion */
 
-  cs_combustion_log_setup();
+  cs_combustion_gas_log_setup();
 
   /* TODO: iroext, etc... */
 

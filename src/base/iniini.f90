@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -166,15 +166,12 @@ call init_sizes_pcond()
 
 ! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
 
-! ---> Fichier thermochinie
+! ---> Fichier thermochimie
 !        FPP : utilisateur
-!        JNF : Janaf
 !        Les deux fichiers peuvent partager la meme unite
 !          puisqu'ils sont lus l'un a pres l'autre.
-!      En prime, INDJON (janaf=1 ou non=0)
 
 impfpp = 25
-ficfpp = 'define_ficfpp_in_usppmo'
 
 ! ---> Fichiers module atmospherique
 call atmo_set_meteo_file_name('meteo')

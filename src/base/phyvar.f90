@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -99,21 +99,15 @@ integer          ii, jj, iok, iok1, iok2, iisct, idfm, iggafm, iebdfm
 integer          nn, isou, iz
 integer          mbrom, ifcvsl, iscacp
 integer          idftnp
-integer          iprev , inc
 integer          kturt, turb_flux_model, turb_flux_model_type
 
-double precision xk, xe, xrom, vismax(nscamx), vismin(nscamx)
-double precision xrij(3,3), xnal(3), xnoral
-double precision xfmu, xmu, xmut
-double precision nusa, xi3, fv1, cv13
+double precision vismax(nscamx), vismin(nscamx)
 double precision varmn(4), varmx(4), ttke, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
-double precision alpha3, xrnn
 double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_nusa
-double precision, dimension(:), pointer :: cvar_al
+double precision, dimension(:), pointer :: cvar_k, cvar_ep
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
@@ -123,7 +117,6 @@ double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
 integer, dimension(:), pointer :: ifpt1d
 double precision, dimension(:), pointer :: tppt1d
 double precision, allocatable, dimension(:) :: ttmp
-double precision, allocatable, dimension(:,:) :: grad
 
 integer          ipass
 data             ipass /0/
@@ -164,12 +157,12 @@ interface
     implicit none
   end subroutine cs_les_mu_t_wale
 
-  subroutine cs_turbulence_ke_q_mu_t(phase_id) &
-    bind(C, name='cs_turbulence_ke_q_mu_t')
+  subroutine cs_turbulence_ke_mu_t(phase_id) &
+    bind(C, name='cs_turbulence_ke_mu_t')
     use, intrinsic :: iso_c_binding
     implicit none
     integer(c_int), value :: phase_id
-  end subroutine cs_turbulence_ke_q_mu_t
+  end subroutine cs_turbulence_ke_mu_t
 
   subroutine cs_turbulence_kw_mu_t(phase_id) &
     bind(C, name='cs_turbulence_kw_mu_t')
@@ -177,6 +170,13 @@ interface
     implicit none
     integer(c_int), value :: phase_id
   end subroutine cs_turbulence_kw_mu_t
+
+  subroutine cs_turbulence_rij_mu_t(phase_id) &
+    bind(C, name='cs_turbulence_rij_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: phase_id
+  end subroutine cs_turbulence_rij_mu_t
 
   subroutine cs_turbulence_sa_mu_t() &
     bind(C, name='cs_turbulence_sa_mu_t')
@@ -238,7 +238,7 @@ endif
 ! - Interface code_saturne
 !   ======================
 
-call uiphyv(iviscv)
+call uiphyv()
 
 call usphyv(nvar, nscal, mbrom, dt)
 
@@ -371,114 +371,15 @@ elseif (itytur.eq.2) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
-  if (iturb.eq.22) then
+  if (itytur.eq.2) then
 
-    ! Launder-Sharma
-    ! --------------
-
-    do iel = 1, ncel
-      xk   = cvar_k(iel)
-      xe   = cvar_ep(iel)
-      xrom = crom(iel)
-      xmu  = viscl(iel)
-      xmut = xrom*xk**2/xe
-      xfmu = exp(-3.4d0/(1.d0+xmut/xmu/50.d0)**2.d0)
-      visct(iel) = cmu*xfmu*xmut
-    enddo
-
-  else if (iturb.eq.23) then
-
-    ! Non-linear quadratic Baglietto
-    ! ------------------------------
-
-    call cs_turbulence_ke_q_mu_t(-1)
-
-  else
-
-    ! Standard and Linear Production
-    ! ------------------------------
-
-    do iel = 1, ncel
-      xk = cvar_k(iel)
-      xe = cvar_ep(iel)
-      visct(iel) = crom(iel)*cmu*xk**2/xe
-    enddo
+    call cs_turbulence_ke_mu_t(-1)
 
   endif
 
 elseif (itytur.eq.3) then
 
-! Rij-epsilon
-! ===========
-
-  call field_get_val_s(ivisct, visct)
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-  call field_get_val_v(ivarfl(irij), cvar_rij)
-  ! In case we are in EB-RSM, we compute the normals
-  if (iturb.eq.32) then
-    call field_get_val_s(ivarfl(ial), cvar_al)
-
-    allocate(grad(3,ncelet))
-
-    ! Compute the gradient of Alpha
-    iprev  = 1
-    inc    = 1
-
-    call field_gradient_scalar(ivarfl(ial), iprev, inc, grad)
-  endif
-
-  do iel = 1, ncel
-
-    xrij(1,1) = cvar_rij(1,iel)
-    xrij(2,2) = cvar_rij(2,iel)
-    xrij(3,3) = cvar_rij(3,iel)
-    xrij(1,2) = cvar_rij(4,iel)
-    xrij(2,3) = cvar_rij(5,iel)
-    xrij(1,3) = cvar_rij(6,iel)
-    xrij(2,1) = xrij(1,2)
-    xrij(3,1) = xrij(1,3)
-    xrij(3,2) = xrij(2,3)
-    alpha3 = 1.d0
-    xrnn = 0.d0
-
-    if (iturb.eq.32) then
-      ! Compute the magnitude of the Alpha gradient
-      xnoral = ( grad(1,iel)*grad(1,iel)          &
-             +   grad(2,iel)*grad(2,iel)          &
-             +   grad(3,iel)*grad(3,iel) )
-      xnoral = sqrt(xnoral)
-      ! Compute the unitary vector of Alpha
-      if (xnoral.le.epzero) then
-        xnal(1) = 0.d0
-        xnal(2) = 0.d0
-        xnal(3) = 0.d0
-      else
-        xnal(1) = grad(1,iel)/xnoral
-        xnal(2) = grad(2,iel)/xnoral
-        xnal(3) = grad(3,iel)/xnoral
-      endif
-
-      alpha3 = cvar_al(iel)**3
-
-      ! We compute the normal Reynolds Stresses
-      do ii = 1, 3
-        do jj = 1, 3
-          xrnn = xrnn + xrij(ii,jj)*xnal(ii)*xnal(jj)
-        enddo
-      enddo
-    endif
-
-    xk   = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
-    xrnn = (1.d0-alpha3)*xrnn + alpha3*xk
-    xrnn = max(xrnn, 1.d-12)
-    xe = cvar_ep(iel)
-    visct(iel) = crom(iel)*cmu*xrnn*xk/xe
-  enddo
-
-  if (iturb.eq.32) then
-    deallocate(grad)
-  end if
+  call cs_turbulence_rij_mu_t(-1)
 
 elseif (itytur.eq.4) then
 

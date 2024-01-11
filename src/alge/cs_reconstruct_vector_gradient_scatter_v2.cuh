@@ -133,13 +133,13 @@ _compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
 }
 
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_correction_v2(  cs_lnum_t                       n_cells,
                                     cs_lnum_t                       has_dc,
                                     const int *restrict             c_disable_flag,
                                     const cs_real_t *restrict       cell_f_vol,
-                                    cs_real_33_t        *restrict   grad,
+                                    cs_real_t (*restrict grad)[stride][3],
                                     const cs_real_33_t *restrict    corr_grad_lin,
                                     bool                            test_bool
                                   )

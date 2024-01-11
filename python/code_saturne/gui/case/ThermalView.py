@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -95,10 +95,11 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         # Combo models
 
-        self.modelTSRay  = ComboModel(self.comboBoxTSRay, 3, 1)
+        self.modelTSRay  = ComboModel(self.comboBoxTSRay, 4, 1)
         self.modelPrintT = ComboModel(self.comboBoxPrintT, 3, 1)
         self.modelPrintL = ComboModel(self.comboBoxPrintL, 3, 1)
 
+        self.modelTSRay.addItem('-1', '-1')
         self.modelTSRay.addItem('0', '0')
         self.modelTSRay.addItem('1', '1')
         self.modelTSRay.addItem('2', '2')

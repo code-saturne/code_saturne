@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -153,7 +153,7 @@ typedef struct {
 
   /*! atmo */
   /* atmospheric flows: auto inlet/outlet flag */
-  cs_lnum_t *iautom;
+  int *iautom;
 
   /* atmospheric flows: on/off for profile from data */
   int iprofm[CS_MAX_BC_PM_ZONE_NUM+1];

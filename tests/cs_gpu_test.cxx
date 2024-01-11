@@ -1,7 +1,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -180,7 +180,11 @@ main (int argc, char *argv[])
   /* Allocation tests */
   /*------------------*/
 
+#if defined(HAVE_OPENMP_TARGET)
+
   cs_omp_target_select_default_device();  /* Initialize device id */
+
+#endif
 
   cs_real_t *a0, *a1, *a2;
   CS_MALLOC_HD(a0, 100, cs_real_t, CS_ALLOC_HOST);

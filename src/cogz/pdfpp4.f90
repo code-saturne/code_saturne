@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -101,6 +101,7 @@ use ppthch
 use ppincl
 use coincl
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -120,7 +121,6 @@ double precision coyfp(ncelet)
 !===============================================================================
 
 integer          iel, igg, idirac
-integer          mode
 
 !      INTEGER          IPCKAB, IPT4 , IPT3
 
@@ -345,12 +345,7 @@ coyfpp=coyfp(iel)
 
 ! ---> Calcul de la temperature pour chaque pic
 
-      mode    = 1
-      call cothht                                                 &
-      !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                       &
-        npo    , npot  , th      , ehgazg ,                       &
-        h(idirac)     , teml(idirac)    )
+      teml(idirac) = cs_gas_combustion_h_to_t(coefg, h(idirac))
 
 ! ---> Calcul de la masse volumique pour chaque pic
 
@@ -733,12 +728,7 @@ coyfpp=coyfp(iel)
 
 ! --->Calcul de la temperature pour chaque pic
 
-    mode    = 1
-    call cothht                                                   &
-    !==========
- ( mode   , ngazg , ngazgm  , coefg  ,                            &
-   npo    , npot  , th      , ehgazg ,                            &
-   h(idirac)      , teml(idirac)    )
+    teml(idirac) = cs_gas_combustion_h_to_t(coefg, h(idirac))
 
 ! ---> Calcul de la masse volumique  pour chaque pic
 

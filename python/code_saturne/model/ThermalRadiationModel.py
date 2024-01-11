@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -62,6 +62,7 @@ class ThermalRadiationModel(Variables, Model):
 
         self.radiativeModels = ('off', 'dom', 'p-1')
         self.optionsList = [0, 1, 2]
+        self.optionsListRenorm = [-1, 0, 1, 2]
 
         self.c_prop = {}
         self.b_prop = {}
@@ -394,7 +395,7 @@ class ThermalRadiationModel(Variables, Model):
     @Variables.undoLocal
     def setTrs(self, idiver):
         """ Put value of IDIVER for advanced options """
-        self.isIntInList(idiver, self.optionsList)
+        self.isIntInList(idiver, self.optionsListRenorm)
         self.node_ray.xmlSetData('thermal_radiative_source_term', idiver)
 
 

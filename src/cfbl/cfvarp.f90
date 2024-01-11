@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -89,10 +89,6 @@ if (ippmod(icompf).ge.0) then
   ! Pointer and reference value for diffusivity of total energy scalar
   call field_set_key_int (ivarfl(isca(ienerg)), kivisl, -1)
   call field_set_key_double(ivarfl(isca(ienerg)), kvisl0, epzero)
-
-  ! Pointer for volumetric molecular viscosity
-  ! (constant by default)
-  iviscv = -1
 
   ! Mixture fractions (two-phase homogeneous flows)
   if (ippmod(icompf).eq.2) then

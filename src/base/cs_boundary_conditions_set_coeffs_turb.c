@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -245,7 +245,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   cs_real_t *cofaf_sc = f_sc->bc_coeffs->af;
   cs_real_t *cofbf_sc = f_sc->bc_coeffs->bf;
 
-  cs_real_t *crom = crom = CS_F_(rho)->val;
+  cs_real_t *crom = CS_F_(rho)->val;
 
   const cs_real_t *cpro_cp = NULL, *cpro_cv = NULL;
   if (icp >= 0)
@@ -701,6 +701,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
           /* To approximately respect thermal turbulent
              production with 2 hypothesis */
+          //FIXME should be dynamic rhoughness
           const cs_real_t coef_mom = cs_mo_phim(distbf + rough_t, bdlmo[f_id]);
           const cs_real_t coef_mohh
             = cs_mo_phih (2.0 * distbf + rough_t, bdlmo[f_id]);
@@ -2992,7 +2993,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
            By the way, in this case: iuntur=0 */
         if (yplus > cs_math_epzero && iuntur == 1) { /* FIXME use only iuntur */
           pimp =   distbf * 4 * pow(uk, 5)
-                 / (xkappa * xnuii *xnuii * pow(yplus+2*dplus, 2));
+                 / (xkappa * xnuii *xnuii * cs_math_pow2(yplus+2*dplus));
 
           qimp = - pimp * hint; /* TODO transform it,
                                    it is only to be fully equivalent */
@@ -4112,9 +4113,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("   Friction thermal sca.    tstar : %12.5e %12.5e\n"
-             "   Dim-less thermal sca.    tplus : %12.5e %12.5e\n"
-             "   Inverse Monin-Ob. length dlmo  : %12.5e %12.5e\n"),
-           tetmin, tetmax, tplumn, tplumx, dlmomin, dlmomax);
+             "   Dim-less thermal sca.    tplus : %12.5e %12.5e\n"),
+           tetmin, tetmax, tplumn, tplumx);
+        if (iwalfs == CS_WALL_F_S_MONIN_OBUKHOV)
+          cs_log_printf
+            (CS_LOG_DEFAULT,
+             _("   Inverse Monin-Ob. length dlmo  : %12.5e %12.5e\n"),
+             dlmomin, dlmomax);
       }
 
       cs_log_printf

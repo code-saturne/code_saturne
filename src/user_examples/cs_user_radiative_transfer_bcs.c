@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -109,7 +109,7 @@ BEGIN_C_DECLS
  *
  * \param[in, out]  domain        pointer to a cs_domain_t structure
  * \param[in]       bc_type       boundary face types
- * \param[in]       isothp        boundary face type for radiative transfer
+ * \param[out]      isothp        boundary face type for radiative transfer
  * \param[out]      tmin          min allowed value of the wall temperature
  * \param[out]      tmax          max allowed value of the wall temperature
  * \param[in]       tx            relaxation coefficient (0 < tx < 1)

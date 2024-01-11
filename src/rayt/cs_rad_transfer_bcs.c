@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -974,19 +974,19 @@ cs_rad_transfer_bcs(int bc_type[])
   }
 
   if (ideb == 0)
-    cs_rad_transfer_wall_flux(isothm,
-                              tmin,
-                              tmax,
-                              tx,
-                              twall,
-                              f_bqinci->val,
-                              text,
-                              f_bxlam->val,
-                              f_bepa->val,
-                              f_beps->val,
-                              f_bhconv->val,
-                              f_bfconv->val,
-                              tempk);
+    cs_rad_transfer_compute_wall_t(isothm,
+                                   tmin,
+                                   tmax,
+                                   tx,
+                                   f_bqinci->val,
+                                   text,
+                                   f_bxlam->val,
+                                   f_bepa->val,
+                                   f_beps->val,
+                                   f_bhconv->val,
+                                   f_bfconv->val,
+                                   tempk,
+                                   twall);
 
   /* Change user boundary conditions */
 
@@ -1021,10 +1021,10 @@ cs_rad_transfer_bcs(int bc_type[])
     cs_lnum_t *lstfac;
     BFT_MALLOC(lstfac, n_b_faces, cs_lnum_t);
 
-    cs_real_t *hwall = NULL, *hext = NULL;
-    BFT_MALLOC(hwall, n_b_faces, cs_real_t);
+    cs_real_t *wall_enth = NULL, *ext_enth = NULL;
+    BFT_MALLOC(wall_enth, n_b_faces, cs_real_t);
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      hwall[face_id] = 0.;
+      wall_enth[face_id] = 0.;
 
     cs_lnum_t nlst = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -1039,7 +1039,7 @@ cs_rad_transfer_bcs(int bc_type[])
       }
     }
     if (nlst > 0)
-      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, twall, hwall);
+      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, twall, wall_enth);
 
     nlst = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -1053,24 +1053,24 @@ cs_rad_transfer_bcs(int bc_type[])
     }
 
     if (nlst > 0) {
-      BFT_MALLOC(hext, n_b_faces, cs_real_t);
+      BFT_MALLOC(ext_enth, n_b_faces, cs_real_t);
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        hext[face_id] = 0.;
+        ext_enth[face_id] = 0.;
 
-      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, text, hext);
+      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, text, ext_enth);
     }
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY) {
         if (f_hgas != NULL) {
-          hg_rcodcl1[face_id] = hwall[face_id];
+          hg_rcodcl1[face_id] = wall_enth[face_id];
           hg_rcodcl2[face_id] = cs_math_infinite_r;
           hg_rcodcl3[face_id] = 0.0;
         }
       }
       else if (  isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
               || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
-        /* use twall instead of hwall for thermal scalar
+        /* use twall instead of wall_enth for thermal scalar
          * to avoid extra conversions */
         th_icodcl[face_id] *= -1;
         th_rcodcl1[face_id] = twall[face_id] - xmtk;
@@ -1078,18 +1078,18 @@ cs_rad_transfer_bcs(int bc_type[])
         th_rcodcl3[face_id] = 0.0;
 
         if (f_hgas != NULL) {
-          hg_rcodcl1[face_id] = hwall[face_id];
+          hg_rcodcl1[face_id] = wall_enth[face_id];
           hg_rcodcl2[face_id] = cs_math_infinite_r;
           hg_rcodcl3[face_id] = 0.0;
         }
       }
       else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
-        th_rcodcl1[face_id] = hext[face_id];
+        th_rcodcl1[face_id] = ext_enth[face_id];
         /* hext  */
         th_rcodcl2[face_id] = f_bxlam->val[face_id] / f_bepa->val[face_id];
         th_rcodcl3[face_id] = 0.0;
         if (f_hgas != NULL) {
-          hg_rcodcl1[face_id] = hext[face_id];
+          hg_rcodcl1[face_id] = ext_enth[face_id];
           hg_rcodcl2[face_id] = f_bxlam->val[face_id] / f_bepa->val[face_id];
           hg_rcodcl3[face_id] = 0.0;
         }
@@ -1107,8 +1107,8 @@ cs_rad_transfer_bcs(int bc_type[])
     }
 
     BFT_FREE(lstfac);
-    BFT_FREE(hext);
-    BFT_FREE(hwall);
+    BFT_FREE(ext_enth);
+    BFT_FREE(wall_enth);
   }
 
   /* Update boundary temperature field   */
@@ -1192,13 +1192,17 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
   /* Initialization */
 
   /* Pointer to the spectral flux density field */
-  cs_field_t *f_qinspe = NULL;
+  cs_field_t *f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  /* For ADF model or FSCK model or Atmo */
-  f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
+  cs_real_t *q_incid = NULL;
+  cs_lnum_t stride = 1;
+  if (f_qinspe != NULL) {
+    q_incid = f_qinspe->val;
+    stride = f_qinspe->dim;
+  }
+  else
+    q_incid = cs_field_by_name("rad_incident_flux")->val;
 
-  /* Pointer to the radiative incident flux field */
-  cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
 
   /* Pointer to the wall emissivity field */
   cs_field_t *f_eps = cs_field_by_name("emissivity");
@@ -1230,10 +1234,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       /* Copy the appropriate flux density to the local variable qpatmp*/
 
       /* Value of the flux density at the boundary face */
-      if (f_qinspe != NULL)
-        qpatmp = f_qinspe->val[face_id * f_qinspe->dim + gg_id];
-      else
-        qpatmp = f_qincid->val[face_id];
+      qpatmp = q_incid[face_id * stride + gg_id];
 
       /* Dirichlet Boundary Conditions  */
 
@@ -1443,7 +1444,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       bc_type[face_id] = -CS_ABS(bc_type[face_id]);
   }
 
-  cs_boundary_conditions_error(bc_type, "Luminance BC values");
+  cs_boundary_conditions_error(bc_type, "Radiance BC values");
 }
 
 /*----------------------------------------------------------------------------*/

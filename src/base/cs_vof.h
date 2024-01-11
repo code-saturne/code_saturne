@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -329,6 +329,15 @@ cs_vof_drift_term(int                        imrgra,
 
 cs_cavitation_parameters_t *
 cs_get_glob_cavitation_parameters(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \param[in]     iterns        Navier-Stokes iteration number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_solve_void_fraction(int  iterns);
 
 /*----------------------------------------------------------------------------*/
 

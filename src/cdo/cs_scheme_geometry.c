@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -90,7 +90,7 @@ _add_tria_to_covariance(const cs_real_t     x1[3],
   cs_real_3_t gpts[3], r;
   cs_real_t   gw;
 
-  cs_quadrature_tria_3pts(x1, x2, x3, area,  /* 2nd-ord exact */
+  cs_quadrature_tria_3pts(x1, x2, x3, area,  /* 2nd-order exact */
                           gpts, &gw);
 
   for (short int gp = 0; gp < 3; gp++) {

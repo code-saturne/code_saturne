@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -161,8 +161,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
        every coal is described by n_classes_per_coal[icha] class of particles
        (each of them described by an inlet diameter) */
 
-    cs_combustion_model_t *comb = cs_glob_combustion_model;
-    cs_coal_model_t *coal = comb->coal;
+    cs_coal_model_t *coal = cs_glob_coal_model;
 
     /* Treatment for the first coal */
 

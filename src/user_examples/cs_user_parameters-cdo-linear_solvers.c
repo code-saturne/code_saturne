@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -148,8 +148,26 @@ cs_user_parameters(cs_domain_t    *domain)
     /* Linear algebra settings */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+
 #if defined(HAVE_MUMPS)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+
+    /* More advanced usage */
+
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(mom_eqp);
+
+    cs_param_sles_mumps(slesp,
+                        false,  /* single-precision ? */
+                        CS_PARAM_SLES_FACTO_LU);
+
+    cs_param_sles_mumps_advanced(slesp,
+                                 CS_PARAM_SLES_ANALYSIS_AUTO,
+                                 3,     /* size of the block for analysis */
+                                 -1,    /* pct memory increase < 0 = not used */
+                                 0,    /* BLR compression:  0 = not used */
+                                 0,     /* iterative refinement steps */
+                                 CS_PARAM_SLES_MEMORY_AUTO, /* memory usage */
+                                 true); /* advanced optimizations */
 #else
     bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
 #endif
@@ -552,6 +570,9 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
 
   /*! [sles_mumps_advanced_hook] */
 
+  DMUMPS_STRUC_C  *mumps = pmumps;
+  assert(mumps != NULL);
+
   /* If MUMPS is used in single-precision, one has to modify the declaration as
      follows:
 
@@ -561,70 +582,10 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
      case.
    */
 
-  DMUMPS_STRUC_C  *mumps = pmumps;
-  assert(mumps != NULL);
+  mumps->CNTL(4) = 0.0;    /* Static pivoting */
 
-  int  ir_steps = 0;
-  bool  use_parmetis = false;
-  bool  use_openmp = true;
-  bool  static_pivoting = true;
-  double  blr_rate = -1; /* If <= 0 -> no BLR */
+  mumps->ICNTL(58) = 2;    /* Symbolic factorization {0, 1, or 2}*/
 
-  if (use_parmetis) {
-
-    mumps->ICNTL(28) = 2; /* Parallel analysis */
-    mumps->ICNTL(29) = 2; /* parmetis for the parallel renumbering */
-
-  }
-  else {
-
-    /* Choose the way numbering is performed inside MUMPS.
-     * This option may have a strong effect on the elapsed time
-     * 0: AMD
-     * 3: Scotch (need a MUMPS library compiled with Scotch)
-     * 4: PORD
-     * 5: METIS (need a MUMPS library compiled with METIS)
-     * 6: QAMD
-     * 7: automatic choice done by MUMPS
-     */
-
-     mumps->ICNTL(7) = 6;
-
-  }
-
-  /* Clustering for the analysis (Only for vector-valued system) */
-
-  mumps->ICNTL(15) = -3; /* Number of terms to be clustered */
-
-  /* Advanced settings for openMP */
-
-  if (use_openmp && cs_glob_n_threads > 1) {
-
-    mumps->KEEP(401) = 1; /* Activate agressive openMP (comment when omp=1) */
-    mumps->KEEP(370) = 1; /* Useful for hybrid MPI/openMP */
-    mumps->KEEP(371) = 1; /* Useful for hybrid MPI/openMP */
-
-  }
-
-  /* Iterative refinement */
-
-  if (ir_steps < 0)
-    mumps->ICNTL(10) = ir_steps;
-
-  /* BLR compression */
-
-  if (blr_rate > 0) {
-
-    mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
-    mumps->ICNTL(36) = 1; /* Variante de BLR (0 is also a good choice) */
-    mumps->ICNTL(37) = 0; /* Memory compression (= 1) but time consumming */
-    mumps->ICNTL(40) = 0; /* Memory compression (= 1) mixed precision */
-    mumps->CNTL(7) = blr_rate; /* Compression rate */
-
-  }
-
-  if (static_pivoting)
-    mumps->CNTL(4) = 0.0;
   /*! [sles_mumps_advanced_hook] */
 }
 #endif  /* HAVE_MUMPS */

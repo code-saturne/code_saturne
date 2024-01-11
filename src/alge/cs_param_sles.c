@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #if defined(HAVE_PETSC)
 #include <petsc.h>
@@ -55,6 +56,7 @@
 
 #include "cs_fp_exception.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_multigrid.h"
 #include "cs_sles.h"
 
@@ -109,8 +111,6 @@ _system_should_be_sym(cs_param_itsol_type_t   solver)
   case CS_PARAM_ITSOL_GKB_CG:
   case CS_PARAM_ITSOL_GKB_GMRES:
   case CS_PARAM_ITSOL_MINRES:
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
     return true;
 
   default:
@@ -605,6 +605,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
   case CS_PARAM_PRECOND_LU:
 #if defined(PETSC_HAVE_MUMPS)
+  case CS_PARAM_PRECOND_MUMPS:
     _petsc_cmd(true, slesp->name, "pc_type", "lu");
     _petsc_cmd(true, slesp->name, "pc_factor_mat_solver_type", "mumps");
 #else
@@ -733,8 +734,6 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
     break;
 
   case CS_PARAM_ITSOL_MUMPS:     /* Direct solver (factorization) */
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_SYM:
 #if defined(PETSC_HAVE_MUMPS)
     KSPSetType(ksp, KSPPREONLY);
 #else
@@ -788,30 +787,39 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 
 #if defined(PETSC_HAVE_MUMPS)
   case CS_PARAM_ITSOL_MUMPS:
-  case CS_PARAM_ITSOL_MUMPS_SYM:
     {
-      PC  pc;
-      KSPGetPC(ksp, &pc);
-      PCSetType(pc, PCLU);
-      PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
-    }
-    break;
+      cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+      assert(mumpsp != NULL);
 
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-    {
       PC  pc;
       KSPGetPC(ksp, &pc);
 
-      /* Retrieve the matrices related to this KSP */
+      if (mumpsp->facto_type == CS_PARAM_SLES_FACTO_LU) {
 
-      Mat a, pa;
-      KSPGetOperators(ksp, &a, &pa);
+        PCSetType(pc, PCLU);
+        PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
 
-      MatSetOption(a, MAT_SPD, PETSC_TRUE); /* set MUMPS id%SYM=1 */
-      PCSetType(pc, PCCHOLESKY);
+      }
+      else {
 
-      PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
-      PCFactorSetUpMatSolverType(pc); /* call MatGetFactor() to create F */
+        assert(mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SPD ||
+               mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SYM);
+
+        if (mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SPD) {
+
+          /* Retrieve the matrices related to this KSP */
+
+          Mat a, pa;
+          KSPGetOperators(ksp, &a, &pa);
+          MatSetOption(a, MAT_SPD, PETSC_TRUE); /* set MUMPS id%SYM=1 */
+
+        }
+
+        PCSetType(pc, PCCHOLESKY);
+        PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
+        PCFactorSetUpMatSolverType(pc); /* call MatGetFactor() to create F */
+
+      } /* L.D.Lt factorization */
     }
     break;
 #endif
@@ -1277,7 +1285,7 @@ _petsc_block_hook(void     *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if the settings are consitent. Can apply minor modifications.
+ * \brief Check if the settings are consistent. Can apply minor modifications.
  *
  * \param[in, out]  slesp       pointer to a \ref cs_param_sles_t structure
  */
@@ -1312,6 +1320,7 @@ _check_settings(cs_param_sles_t     *slesp)
   /* Checks related to GCR/GMRES algorithms */
 
   if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
+      slesp->solver == CS_PARAM_ITSOL_FGMRES ||
       slesp->solver == CS_PARAM_ITSOL_GCR)
     if (slesp->restart < 2)
       bft_error(__FILE__, __LINE__, 0,
@@ -1731,12 +1740,12 @@ _set_saturne_sles(bool                 use_field_id,
       break;
 
     case CS_PARAM_PRECOND_MUMPS:
-    case CS_PARAM_PRECOND_MUMPS_FLOAT:
-    case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
-    case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
-    case CS_PARAM_PRECOND_MUMPS_LDLT:
-    case CS_PARAM_PRECOND_MUMPS_SYM:
 #if defined(HAVE_MUMPS)
+      if (slesp->context_param == NULL)
+        cs_param_sles_mumps(slesp,
+                            true, /* single by default in case if precond. */
+                            CS_PARAM_SLES_FACTO_LU);
+
       pc = cs_sles_mumps_pc_create(slesp);
 #else
       bft_error(__FILE__, __LINE__, 0, "%s: MUMPS not available in this build.",
@@ -1777,6 +1786,11 @@ _set_mumps_sles(bool                 use_field_id,
 
   const  char  *sles_name = use_field_id ? NULL : slesp->name;
   assert(slesp->field_id > -1 || sles_name != NULL);
+
+  if (slesp->context_param == NULL) /* Define the context by default */
+    cs_param_sles_mumps(slesp,
+                        false,  /* is single-precision ? */
+                        CS_PARAM_SLES_FACTO_LU);
 
 #if defined(HAVE_MUMPS)
   cs_sles_mumps_define(slesp->field_id,
@@ -2424,6 +2438,192 @@ _set_hypre_sles(bool                 use_field_id,
 }
 #endif /* HAVE_HYPRE */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new structure storing a set of parameters used when calling
+ *        MUMPS. Set a default value for the advanced parameters.
+ *
+ * \param[in] is_single   single-precision or double-precision
+ * \param[in] facto_type  type of factorization to consider
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_sles_mumps_t *
+_create_mumps_param(bool                            is_single,
+                    cs_param_sles_facto_type_t      facto_type)
+{
+  cs_param_sles_mumps_t  *mumpsp = NULL;
+
+  BFT_MALLOC(mumpsp, 1, cs_param_sles_mumps_t);
+
+  mumpsp->is_single = is_single;
+  mumpsp->facto_type = facto_type;
+
+  /* Advanced options (default settings) */
+
+  mumpsp->analysis_algo = CS_PARAM_SLES_ANALYSIS_AUTO;
+  mumpsp->mem_usage = CS_PARAM_SLES_MEMORY_AUTO;
+
+  mumpsp->advanced_optim = false;   /* No advanced MPI/OpenMP optimization */
+  mumpsp->blr_threshold = 0;        /* No BLR */
+  mumpsp->mem_coef = -1;            /* No additional memory range */
+  mumpsp->block_analysis = 0;       /* No clustered analysis */
+  mumpsp->ir_steps = 0;             /* No iterative refinement */
+
+  return mumpsp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy into a new structure the given set of parameters used when
+ *        calling MUMPS
+ *
+ * \param[in] mumpsp   set of mumps parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_sles_mumps_t *
+_copy_mumps_param(const cs_param_sles_mumps_t   *mumpsp)
+{
+  cs_param_sles_mumps_t  *cpy = NULL;
+
+  BFT_MALLOC(cpy, 1, cs_param_sles_mumps_t);
+
+  cpy->analysis_algo = mumpsp->analysis_algo;
+  cpy->facto_type = mumpsp->facto_type;
+
+  cpy->is_single = mumpsp->is_single;
+  cpy->mem_usage = mumpsp->mem_usage;
+  cpy->advanced_optim = mumpsp->advanced_optim;
+  cpy->blr_threshold = mumpsp->blr_threshold;
+  cpy->mem_coef = mumpsp->mem_coef;
+  cpy->block_analysis = mumpsp->block_analysis;
+  cpy->ir_steps = mumpsp->ir_steps;
+
+  return cpy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log a set of parameters used when calling MUMPS
+ *
+ * \param[in] name     name related to the current SLES
+ * \param[in] mumpsp   set of mumps parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_mumps_param(const char                    *name,
+                 const cs_param_sles_mumps_t   *mumpsp)
+{
+  char type = (mumpsp->is_single) ? 's' : 'd';
+  char tag[32];
+
+  switch (mumpsp->facto_type) {
+
+  case CS_PARAM_SLES_FACTO_LU:
+    sprintf(tag, "%cmumps_lu", type);
+    break;
+  case CS_PARAM_SLES_FACTO_LDLT_SYM:
+    sprintf(tag, "%cmumps_ldlt_sym", type);
+    break;
+  case CS_PARAM_SLES_FACTO_LDLT_SPD:
+    sprintf(tag, "%cmumps_ldlt_spd", type);
+    break;
+
+  default:
+    sprintf(tag, "undefined");
+    break;
+
+  }
+
+  cs_log_printf(CS_LOG_SETUP, "  * %s | MUMPS_type:              %s\n",
+                name, tag);
+
+  /* Strategy for the memory usage */
+
+  switch (mumpsp->mem_usage) {
+  case CS_PARAM_SLES_MEMORY_CONSTRAINED:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "constrained");
+    break;
+  case CS_PARAM_SLES_MEMORY_AUTO:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "automatic");
+    break;
+  case CS_PARAM_SLES_MEMORY_CPU_DRIVEN:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "CPU-driven (efficiency first)");
+    break;
+
+  default:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+                  name, "Undefined");
+    break;
+  }
+
+  /* Algorithm used for the analysis step */
+
+  switch (mumpsp->analysis_algo) {
+  case CS_PARAM_SLES_ANALYSIS_AMD:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "AMD");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_QAMD:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "QAMD");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_PORD:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "PORD");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "SCOTCH");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "PT-SCOTCH");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_METIS:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "METIS");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "PARMETIS");
+    break;
+  case CS_PARAM_SLES_ANALYSIS_AUTO:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "automatic choice done by MUMPS");
+    break;
+
+  default:
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+                  name, "Undefined");
+    break;
+  }
+
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Advanced_Optim:          %s\n",
+                name, cs_base_strtf(mumpsp->advanced_optim));
+
+  if (mumpsp->block_analysis > 1)
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Block_Size in analysis:   %d\n",
+                  name, mumpsp->block_analysis);
+
+  if (cs_math_fabs(mumpsp->ir_steps) > 0)
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:     %d\n",
+                  name, mumpsp->ir_steps);
+
+  if (fabs(mumpsp->blr_threshold) > FLT_MIN)
+    cs_log_printf(CS_LOG_SETUP, "  * %s | BLR_threshold:            %e\n",
+                  name, mumpsp->blr_threshold);
+
+  if (mumpsp->mem_coef > 0)
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory pct. increase:    %f\n",
+                  name, mumpsp->mem_coef);
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -2562,8 +2762,8 @@ cs_param_sles_saddle_free(cs_param_sles_saddle_t    **p_saddlep)
  * \brief  Create a \ref cs_param_sles_t structure and assign a default
  *         settings
  *
- * \param[in]  field_id      id related to to the variable field or -1
- * \param[in]  system_name   name of the system to solve or NULL
+ * \param[in] field_id      id related to to the variable field or -1
+ * \param[in] system_name   name of the system to solve or NULL
  *
  * \return a pointer to a cs_param_sles_t stucture
  */
@@ -2604,14 +2804,16 @@ cs_param_sles_create(int          field_id,
     .rtol = 1e-6,        /* relative tolerance */
     .dtol = 1e3 };       /* divergence tolerance */
 
+  slesp->context_param = NULL;
+
   return slesp;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a \ref cs_param_sles_t structure
+ * \brief Free a \ref cs_param_sles_t structure
  *
- * \param[in, out]  slesp    pointer to a \cs_param_sles_t structure to free
+ * \param[in, out] slesp    pointer to a \cs_param_sles_t structure to free
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2627,14 +2829,20 @@ cs_param_sles_free(cs_param_sles_t   **p_slesp)
     return;
 
   BFT_FREE(slesp->name);
+
+  /* One asumes that this context has no pointer to free. This is the case up
+     to now, since this process is totally managed by the code. */
+
+  BFT_FREE(slesp->context_param);
+
   BFT_FREE(slesp);
   slesp = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Log information related to the linear settings stored in the
- *         structure
+ * \brief Log information related to the linear settings stored in the
+ *        structure
  *
  * \param[in] slesp    pointer to a \ref cs_param_sles_log
  */
@@ -2665,47 +2873,63 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Name:        %s\n",
                 slesp->name, cs_param_get_solver_name(slesp->solver));
-  if (slesp->solver == CS_PARAM_ITSOL_AMG)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
-                  slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:     %s\n",
-                slesp->name, cs_param_get_precond_name(slesp->precond));
-  if (slesp->precond == CS_PARAM_PRECOND_AMG)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
-                  slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:      %s\n",
-                slesp->name,
-                cs_param_get_precond_block_name(slesp->pcd_block_type));
+  if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
+    _log_mumps_param(slesp->name, slesp->context_param);
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.max_iter:    %d\n",
-                slesp->name, slesp->cvg_param.n_max_iter);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.rtol:       % -10.6e\n",
-                slesp->name, slesp->cvg_param.rtol);
+  else { /* Iterative solvers */
 
-  if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
-      slesp->solver == CS_PARAM_ITSOL_FGMRES ||
-      slesp->solver == CS_PARAM_ITSOL_GCR)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Restart:     %d\n",
-                  slesp->name, slesp->restart);
+    if (slesp->solver == CS_PARAM_ITSOL_AMG)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
+                    slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Normalization:      ",
-                slesp->name);
-  switch (slesp->resnorm_type) {
-  case CS_PARAM_RESNORM_NORM2_RHS:
-    cs_log_printf(CS_LOG_SETUP, "Euclidean norm of the RHS\n");
-    break;
-  case CS_PARAM_RESNORM_WEIGHTED_RHS:
-    cs_log_printf(CS_LOG_SETUP, "Weighted Euclidean norm of the RHS\n");
-    break;
-  case CS_PARAM_RESNORM_FILTERED_RHS:
-    cs_log_printf(CS_LOG_SETUP, "Filtered Euclidean norm of the RHS\n");
-    break;
-  case CS_PARAM_RESNORM_NONE:
-  default:
-    cs_log_printf(CS_LOG_SETUP, "None\n");
-    break;
-  }
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:     %s\n",
+                  slesp->name, cs_param_get_precond_name(slesp->precond));
+
+    if (slesp->precond == CS_PARAM_PRECOND_AMG)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
+                    slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
+    else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
+      _log_mumps_param(slesp->name, slesp->context_param);
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:      %s\n",
+                  slesp->name,
+                  cs_param_get_precond_block_name(slesp->pcd_block_type));
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.max_iter:    %d\n",
+                  slesp->name, slesp->cvg_param.n_max_iter);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.rtol:       % -10.6e\n",
+                  slesp->name, slesp->cvg_param.rtol);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.atol:       % -10.6e\n",
+                  slesp->name, slesp->cvg_param.atol);
+
+    if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
+        slesp->solver == CS_PARAM_ITSOL_FGMRES ||
+        slesp->solver == CS_PARAM_ITSOL_GCR)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Restart:     %d\n",
+                    slesp->name, slesp->restart);
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Normalization:      ",
+                  slesp->name);
+
+    switch (slesp->resnorm_type) {
+    case CS_PARAM_RESNORM_NORM2_RHS:
+      cs_log_printf(CS_LOG_SETUP, "Euclidean norm of the RHS\n");
+      break;
+    case CS_PARAM_RESNORM_WEIGHTED_RHS:
+      cs_log_printf(CS_LOG_SETUP, "Weighted Euclidean norm of the RHS\n");
+      break;
+    case CS_PARAM_RESNORM_FILTERED_RHS:
+      cs_log_printf(CS_LOG_SETUP, "Filtered Euclidean norm of the RHS\n");
+      break;
+    case CS_PARAM_RESNORM_NONE:
+    default:
+      cs_log_printf(CS_LOG_SETUP, "None\n");
+      break;
+    }
+
+  } /* Iterative solver */
+
   cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
@@ -2719,8 +2943,8 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_copy_from(cs_param_sles_t   *src,
-                        cs_param_sles_t   *dst)
+cs_param_sles_copy_from(const cs_param_sles_t   *src,
+                        cs_param_sles_t         *dst)
 {
   if (src == NULL || dst == NULL)
     return;
@@ -2742,6 +2966,16 @@ cs_param_sles_copy_from(cs_param_sles_t   *src,
   dst->cvg_param.atol = src->cvg_param.atol;
   dst->cvg_param.dtol = src->cvg_param.dtol;
   dst->cvg_param.n_max_iter = src->cvg_param.n_max_iter;
+
+  if (dst->precond == CS_PARAM_PRECOND_MUMPS ||
+      dst->solver == CS_PARAM_ITSOL_MUMPS) {
+
+    if (dst->context_param != NULL)
+      BFT_FREE(dst->context_param);
+
+    dst->context_param = _copy_mumps_param(src->context_param);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2817,6 +3051,88 @@ cs_param_sles_set(bool                 use_field_id,
   }
 
   return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main memebers of a cs_param_sles_mumps_t structure. This
+ *        structure is allocated if needed. Other members are kept to their
+ *        values.
+ *
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ * \param[in]      is_single     single-precision or double-precision
+ * \param[in]      facto_type    type of factorization to consider
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_mumps(cs_param_sles_t              *slesp,
+                    bool                          is_single,
+                    cs_param_sles_facto_type_t    facto_type)
+{
+  if (slesp == NULL)
+    return;
+
+  if (slesp->context_param == NULL)
+    slesp->context_param = _create_mumps_param(is_single, facto_type);
+
+  else {
+
+    /* One assumes that the existing context structure is related to MUMPS */
+
+    cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+
+    mumpsp->is_single = is_single;
+    mumpsp->facto_type = facto_type;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main memebers of a cs_param_sles_mumps_t structure. This
+ *        structure is allocated if needed. Other members are kept to their
+ *        values. Please refer to the MUMPS user guide for more details about
+ *        the following advanced options.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      analysis_algo    algorithm used for the analysis step
+ * \param[in]      block_analysis   > 0: fixed block size; 0: nothing
+ * \param[in]      mem_coef         percentage increase in the memory workspace
+ * \param[in]      blr_threshold    Accuracy in BLR compression (0: not used)
+ * \param[in]      ir_steps         0: No, otherwise number of iterations
+ * \param[in]      mem_usage        strategy to adopt for the memory usage
+ * \param[in]      advanced_optim   activate advanced optimization (MPI/openMP)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
+                             cs_param_sles_analysis_algo_t   analysis_algo,
+                             int                             block_analysis,
+                             double                          mem_coef,
+                             double                          blr_threshold,
+                             int                             ir_steps,
+                             cs_param_sles_memory_usage_t    mem_usage,
+                             bool                            advanced_optim)
+{
+  if (slesp == NULL)
+    return;
+
+  if (slesp->context_param == NULL)
+    slesp->context_param = _create_mumps_param(false, CS_PARAM_SLES_FACTO_LU);
+
+  /* One assumes that the existing context structure is related to MUMPS */
+
+  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+
+  mumpsp->analysis_algo = analysis_algo;
+  mumpsp->block_analysis = block_analysis;
+  mumpsp->mem_coef = mem_coef;
+  mumpsp->blr_threshold = blr_threshold;
+  mumpsp->ir_steps = CS_MAX(ir_steps, -ir_steps);
+  mumpsp->mem_usage = mem_usage;
+  mumpsp->advanced_optim = advanced_optim;
 }
 
 /*----------------------------------------------------------------------------*/

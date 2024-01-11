@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -49,6 +49,9 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_boundary_conditions.h"
+#include "cs_convection_diffusion.h"
+#include "cs_convection_diffusion_priv.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
@@ -59,18 +62,14 @@
 #include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
-
-#include "cs_post.h"
-
 #include "cs_face_viscosity.h"
 #include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
-#include "cs_convection_diffusion.h"
-#include "cs_boundary_conditions.h"
 #include "cs_volume_mass_injection.h"
 
 /*----------------------------------------------------------------------------
@@ -235,104 +234,103 @@ _balance_boundary_faces(const int          icvflf,
  * an internal face.
  *
  * parameters:
- *   iupwin         -->  upwind scheme enabled (1: yes, 0: no)
- *   idtvar         -->  indicator of the temporal scheme
- *   iconvp         -->  convection flag
- *   idiffp         -->  diffusion flag
- *   ircflp         -->  recontruction flag
- *   ischcp         -->  second order convection scheme flag
- *   isstpp         -->  slope test flag
- *   limiter_choice -->  choice of limiter
- *   relaxp         -->  relaxation coefficient
- *   blencp         -->  proportion of centered or SOLU scheme,
- *                       (1-blencp) is the proportion of upwind.
- *   blend_st       -->  proportion of centered or SOLU scheme,
- *                       after slope test
- *                       (1-blend_st) is the proportion of upwind.
- *   weight         -->  geometrical weight
- *   i_dist         -->  distance IJ.Nij
- *   i_face_surf    -->  face surface
- *   cell_ceni      -->  center of gravity coordinates of cell i
- *   cell_cenj      -->  center of gravity coordinates of cell j
- *   cell_cenc      -->  center of gravity coordinates of central cell
- *   cell_cend      -->  center of gravity coordinates of downwind cell
- *   i_face_normal  -->  face normal
- *   i_face_cog     -->  center of gravity coordinates of face ij
- *   hybrid_blend_i -->  blending factor between SOLU and centered
- *   hybrid_blend_j -->  blending factor between SOLU and centered
- *   diipf          -->  distance I'I'
- *   djjpf          -->  distance J'J'
- *   gradi          -->  gradient at cell i
- *   gradj          -->  gradient at cell j
- *   gradc          -->  gradient at central cell
- *   gradupi        -->  upwind gradient at cell i
- *   gradupj        -->  upwind gradient at cell j
- *   gradsti        -->  slope test gradient at cell i
- *   gradstj        -->  slope test gradient at cell j
- *   pi             -->  value at cell i
- *   pj             -->  value at cell j
- *   pc             -->  value at central cell
- *   pd             -->  value at downwind cell
- *   pia            -->  old value at cell i
- *   pja            -->  old value at cell j
- *   i_visc         -->  diffusion coefficient (divided by IJ) at face ij
- *   i_mass_flux    -->  mass flux at face ij
- *   xcppi          -->  specific heat value if the scalar is the temperature,
- *                       1 otherwise at cell i
- *   xcppj          -->  specific heat value if the scalar is the temperature,
+ *   iupwin          -->  upwind scheme enabled (1: yes, 0: no)
+ *   idtvar          -->  indicator of the temporal scheme
+ *   iconvp          -->  convection flag
+ *   idiffp          -->  diffusion flag
+ *   ircflp          -->  recontruction flag
+ *   ischcp          -->  second order convection scheme flag
+ *   isstpp          -->  slope test flag
+ *   limiter_choice  -->  choice of limiter
+ *   relaxp          -->  relaxation coefficient
+ *   blencp          -->  proportion of centered or SOLU scheme,
+ *                        (1-blencp) is the proportion of upwind.
+ *   blend_st        -->  proportion of centered or SOLU scheme,
+ *                        after slope test
+ *                        (1-blend_st) is the proportion of upwind.
+ *   weight          -->  geometrical weight
+ *   i_dist          -->  distance IJ.Nij
+ *   i_face_surf     -->  face surface
+ *   cell_ceni       -->  center of gravity coordinates of cell i
+ *   cell_cenj       -->  center of gravity coordinates of cell j
+ *   cell_cenc       -->  center of gravity coordinates of central cell
+ *   cell_cend       -->  center of gravity coordinates of downwind cell
+ *   i_face_u_normal -->  face unit normal
+ *   i_face_cog      -->  center of gravity coordinates of face ij
+ *   hybrid_blend_i  -->  blending factor between SOLU and centered
+ *   hybrid_blend_j  -->  blending factor between SOLU and centered
+ *   diipf           -->  distance I'I'
+ *   djjpf           -->  distance J'J'
+ *   gradi           -->  gradient at cell i
+ *   gradj           -->  gradient at cell j
+ *   gradc           -->  gradient at central cell
+ *   gradupi         -->  upwind gradient at cell i
+ *   gradupj         -->  upwind gradient at cell j
+ *   gradsti         -->  slope test gradient at cell i
+ *   gradstj         -->  slope test gradient at cell j
+ *   pi              -->  value at cell i
+ *   pj              -->  value at cell j
+ *   pc              -->  value at central cell
+ *   pd              -->  value at downwind cell
+ *   pia             -->  old value at cell i
+ *   pja             -->  old value at cell j
+ *   i_visc          -->  diffusion coefficient (divided by IJ) at face ij
+ *   i_mass_flux     -->  mass flux at face ij
+ *   xcppi           -->  specific heat value if the scalar is the temperature,
+ *                        1 otherwise at cell i
+ *   xcppj           -->  specific heat value if the scalar is the temperature,
  *                       1 otherwise at cell j
- *   local_max      -->  local maximum of variable
- *   local_min      -->  local minimum of variable
- *   courant_c      -->  central cell courant number
- *   bi_bterms      <->  flux contribution
+ *   local_max       -->  local maximum of variable
+ *   local_min       -->  local minimum of variable
+ *   courant_c       -->  central cell courant number
+ *   bi_bterms       <->  flux contribution
  *----------------------------------------------------------------------------*/
 
 inline static void
-_balance_internal_faces(const int         iupwin,
-                        const int         idtvar,
-                        const int         iconvp,
-                        const int         idiffp,
-                        const int         ircflp,
-                        const int         ischcp,
-                        const int         isstpp,
-                        const int         limiter_choice,
-                        const cs_real_t   relaxp,
-                        const cs_real_t   blencp,
-                        const cs_real_t   blend_st,
-                        const cs_real_t   weight,
-                        const cs_real_t   i_dist,
-                        const cs_real_t   i_face_surf,
-                        const cs_real_3_t cell_ceni,
-                        const cs_real_3_t cell_cenj,
-                        const cs_real_3_t cell_cenc,
-                        const cs_real_3_t cell_cend,
-                        const cs_real_3_t i_face_normal,
-                        const cs_real_3_t i_face_cog,
-                        const cs_real_t   hybrid_blend_i,
-                        const cs_real_t   hybrid_blend_j,
-                        const cs_real_3_t diipf,
-                        const cs_real_3_t djjpf,
-                        const cs_real_3_t gradi,
-                        const cs_real_3_t gradj,
-                        const cs_real_3_t gradc,
-                        const cs_real_3_t gradupi,
-                        const cs_real_3_t gradupj,
-                        const cs_real_3_t gradsti,
-                        const cs_real_3_t gradstj,
-                        const cs_real_t   pi,
-                        const cs_real_t   pj,
-                        const cs_real_t   pc,
-                        const cs_real_t   pd,
-                        const cs_real_t   pia,
-                        const cs_real_t   pja,
-                        const cs_real_t   i_visc,
-                        const cs_real_t   i_mass_flux,
-                        const cs_real_t   xcppi,
-                        const cs_real_t   xcppj,
-                        const cs_real_t   local_max,
-                        const cs_real_t   local_min,
-                        const cs_real_t   courant_c,
-                        cs_real_2_t       bi_bterms)
+_balance_internal_faces(int              iupwin,
+                        int              idtvar,
+                        int              iconvp,
+                        int              idiffp,
+                        int              ircflp,
+                        int              ischcp,
+                        int              isstpp,
+                        cs_nvd_type_t    limiter_choice,
+                        cs_real_t        relaxp,
+                        cs_real_t        blencp,
+                        cs_real_t        blend_st,
+                        cs_real_t        weight,
+                        cs_real_t        i_dist,
+                        const cs_real_t  cell_ceni[3],
+                        const cs_real_t  cell_cenj[3],
+                        const cs_real_t  cell_cenc[3],
+                        const cs_real_t  cell_cend[3],
+                        const cs_real_t  i_face_u_normal[3],
+                        const cs_real_t  i_face_cog[3],
+                        cs_real_t        hybrid_blend_i,
+                        cs_real_t        hybrid_blend_j,
+                        const cs_real_t  diipf[3],
+                        const cs_real_t  djjpf[3],
+                        const cs_real_t  gradi[3],
+                        const cs_real_t  gradj[3],
+                        const cs_real_t  gradc[3],
+                        const cs_real_t  gradupi[3],
+                        const cs_real_t  gradupj[3],
+                        const cs_real_t  gradsti[3],
+                        const cs_real_t  gradstj[3],
+                        cs_real_t        pi,
+                        cs_real_t        pj,
+                        cs_real_t        pc,
+                        cs_real_t        pd,
+                        cs_real_t        pia,
+                        cs_real_t        pja,
+                        cs_real_t        i_visc,
+                        cs_real_t        i_mass_flux,
+                        cs_real_t        xcppi,
+                        cs_real_t        xcppj,
+                        cs_real_t        local_max,
+                        cs_real_t        local_min,
+                        cs_real_t        courant_c,
+                        cs_real_t        bi_bterms[2])
 {
   if (iupwin == 1) {
 
@@ -502,7 +500,7 @@ _balance_internal_faces(const int         iupwin,
                              blencp,
                              cell_cenc,
                              cell_cend,
-                             i_face_normal,
+                             i_face_u_normal,
                              i_face_cog,
                              gradc,
                              pc,
@@ -613,10 +611,9 @@ _balance_internal_faces(const int         iupwin,
                                 blend_st,
                                 weight,
                                 i_dist,
-                                i_face_surf,
                                 cell_ceni,
                                 cell_cenj,
-                                i_face_normal,
+                                i_face_u_normal,
                                 i_face_cog,
                                 diipf,
                                 djjpf,
@@ -680,10 +677,9 @@ _balance_internal_faces(const int         iupwin,
                                   blend_st,
                                   weight,
                                   i_dist,
-                                  i_face_surf,
                                   cell_ceni,
                                   cell_cenj,
-                                  i_face_normal,
+                                  i_face_u_normal,
                                   i_face_cog,
                                   diipf,
                                   djjpf,
@@ -735,14 +731,6 @@ _balance_internal_faces(const int         iupwin,
  * Local Macro Definitions
  *============================================================================*/
 
-#undef _CS_MODULE2_2
-
-#define _CS_MODULE2_2(vect) \
-  0.5*(vect[0] * vect[0] + vect[1] * vect[1] + vect[2] * vect[2])
-
-#define _CS_DOT_PRODUCT(vect1, vect2) \
-  (vect1[0] * vect2[0] + vect1[1] * vect2[1] + vect1[2] * vect2[2])
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -793,13 +781,12 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -1544,18 +1531,17 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             bldfrp,
                             ischcp,
                             isstpp,
-                            limiter_choice,
+                            (cs_nvd_type_t)limiter_choice,
                             relaxp,
                             beta,
                             blend_st,
                             weight[f_id_sel],
                             i_dist[f_id_sel],
-                            i_face_surf[f_id_sel],
                             cell_cen[c_id1],
                             cell_cen[c_id2],
                             cell_cen[ic],
                             cell_cen[id],
-                            i_face_normal[f_id_sel],
+                            i_face_u_normal[f_id_sel],
                             i_face_cog[f_id_sel],
                             hybrid_coef_ii,
                             hybrid_coef_jj,
@@ -1814,9 +1800,9 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   const cs_real_t *pressure = f_pres->val;
   const cs_field_t *f_vel = CS_F_(vel);
   const cs_real_3_t *velocity =  (const cs_real_3_t *)f_vel->val;
-  cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
-                         cs_glob_physical_constants->gravity[1],
-                         cs_glob_physical_constants->gravity[2]};
+  const cs_real_t gravity[3] = {cs_glob_physical_constants->gravity[0],
+                                cs_glob_physical_constants->gravity[1],
+                                cs_glob_physical_constants->gravity[2]};
 
   /* Zone cells selection variables*/
   cs_lnum_t n_i_faces_sel = 0;
@@ -2021,8 +2007,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     }
 
     /* Kinematic term */
-    cs_real_t u2 = _CS_MODULE2_2(velocity[c_id]);
-    cs_real_t a_u2 = _CS_MODULE2_2(a_u[f_id_sel]);
+    cs_real_t u2 = 0.5 * cs_math_3_square_norm(velocity[c_id]);
+    cs_real_t a_u2 = 0.5 * cs_math_3_square_norm(a_u[f_id_sel]);
     /* Approximation of u^2 BC */
     cs_real_t b_u2 = 1./6.*( b_u[f_id_sel][0][0] * b_u[f_id_sel][0][0]
                            + b_u[f_id_sel][1][1] * b_u[f_id_sel][1][1]
@@ -2057,7 +2043,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     }
 
     /* Gravity term */
-    cs_real_t gx = - _CS_DOT_PRODUCT(gravity, b_face_cog[f_id_sel]);
+    cs_real_t gx = - cs_math_3_dot_product(gravity, b_face_cog[f_id_sel]);
     /* Trivial BCs */
     cs_real_t a_gx = gx;
     cs_real_t b_gx = 0.;
@@ -2174,8 +2160,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     bi_bterms[0] = 0.;
     bi_bterms[1] = 0.;
 
-    cs_real_t u2_id1 = _CS_MODULE2_2(velocity[c_id1]);
-    cs_real_t u2_id2 = _CS_MODULE2_2(velocity[c_id2]);
+    cs_real_t u2_id1 = 0.5 * cs_math_3_square_norm(velocity[c_id1]);
+    cs_real_t u2_id2 = 0.5 * cs_math_3_square_norm(velocity[c_id2]);
 
     cs_i_cd_unsteady_upwind(ircflp,
                             diipf[f_id_sel],
@@ -2230,8 +2216,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     bi_bterms[0] = 0.;
     bi_bterms[1] = 0.;
 
-    cs_real_t gx_id1 = - _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
-    cs_real_t gx_id2 = - _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
+    cs_real_t gx_id1 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
+    cs_real_t gx_id2 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
 
     cs_i_cd_unsteady_upwind(ircflp,
                             diipf[f_id_sel],
@@ -2449,7 +2435,7 @@ cs_surface_balance(const char       *selection_crit,
 
   /* Recount selected interior faces (parallel test) */
 
-  cs_gnum_t n_sel[2] = {n_b_faces_sel, 0};
+  cs_gnum_t n_sel[2] = {(cs_gnum_t)n_b_faces_sel, 0};
 
   for (cs_lnum_t i = 0; i < n_i_faces_sel; i++) {
     cs_lnum_t f_id = i_face_sel_ids[i];
@@ -2565,7 +2551,6 @@ cs_flux_through_surface(const char         *scalar_name,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
@@ -3081,13 +3066,12 @@ cs_flux_through_surface(const char         *scalar_name,
                             bldfrp,
                             ischcp,
                             isstpp,
-                            limiter_choice,
+                            (cs_nvd_type_t)limiter_choice,
                             relaxp,
                             beta,
                             blend_st,
                             weight[f_id_sel],
                             i_dist[f_id_sel],
-                            i_face_surf[f_id_sel],
                             cell_cen[c_id1],
                             cell_cen[c_id2],
                             cell_cen[ic],

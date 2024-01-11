@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -24,7 +24,7 @@
 ! Purpose:
 ! --------
 
-!> \file addfld.f90
+!> \file ppprop.f90
 !>
 !> \brief Add additional property fields for dedicated modules
 !>
@@ -72,6 +72,18 @@ implicit none
 
 interface
 
+  subroutine cs_cf_set_thermo_options()  &
+    bind(C, name='cs_cf_set_thermo_options')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_cf_set_thermo_options
+
+  subroutine cs_cf_add_property_fields()  &
+    bind(C, name='cs_cf_add_property_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_cf_add_property_fields
+
   subroutine cs_elec_add_property_fields()  &
     bind(C, name='cs_elec_add_property_fields')
     use, intrinsic :: iso_c_binding
@@ -116,7 +128,8 @@ endif
 ! ---> Physique particuliere : Compressible
 
 if (ippmod(icompf).ge.0) then
-  call cfprop
+  call cs_cf_set_thermo_options
+  call cs_cf_add_property_fields
 endif
 
 ! ---> Physique particuliere : Versions electriques

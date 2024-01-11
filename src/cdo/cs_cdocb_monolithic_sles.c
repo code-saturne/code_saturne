@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -280,17 +280,12 @@ cs_cdocb_monolithic_set_sles(cs_equation_param_t   *eqp,
   slesp->field_id = field_id;
 
 #if defined(HAVE_MUMPS)
-  if (slesp->solver != CS_PARAM_ITSOL_MUMPS &&
-      slesp->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
-      slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
-      slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
-    slesp->solver = CS_PARAM_ITSOL_MUMPS;
-
-  cs_sles_mumps_define(field_id,
-                       NULL,
-                       slesp,
-                       cs_user_sles_mumps_hook,
-                       NULL);
+  if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
+    cs_sles_mumps_define(field_id,
+                         NULL,
+                         slesp,
+                         cs_user_sles_mumps_hook,
+                         NULL);
 #endif  /* HAVE_MUMPS */
 
   /* Define the level of verbosity for SLES structure */

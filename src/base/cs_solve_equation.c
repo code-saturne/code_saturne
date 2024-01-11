@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -58,6 +58,7 @@
 #include "cs_combustion_model.h"
 #include "cs_ctwr.h"
 #include "cs_divergence.h"
+#include "cs_drift_convective_flux.h"
 #include "cs_elec_model.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
@@ -1357,8 +1358,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
 
     /* Pulverized coal; order 2 not handled */
-    if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
-      const int nclacp = cs_glob_combustion_model->coal->nclacp;
+    if (cs_glob_coal_model != NULL) {
+      const int nclacp = cs_glob_coal_model->nclacp;
       const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
       const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclacp-1), keyvar);
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
@@ -1649,8 +1650,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cs_real_t *divflu;
     BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
 
-    cs_drift_convective_flux(f->id,
-                             dt,
+    cs_drift_convective_flux(f,
                              imasfl,
                              bmasfl,
                              divflu);
@@ -2272,8 +2272,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     cs_real_t *divflu;
     BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
 
-    cs_drift_convective_flux(f->id,
-                             dt,
+    cs_drift_convective_flux(f,
                              imasfl,
                              bmasfl,
                              divflu);

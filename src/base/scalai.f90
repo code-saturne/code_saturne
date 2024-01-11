@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -31,14 +31,13 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     iterns        Navier-Stokes iteration number
 !> \param[in]     dt            time step (per cell)
 !______________________________________________________________________________
 
 subroutine scalai &
- ( nvar   , nscal  ,                                              &
+ ( nscal  ,                                              &
    iterns , dt     )
 
 !===============================================================================
@@ -73,7 +72,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, nscal, iterns
+integer          nscal, iterns
 double precision dt(ncelet)
 
 ! Local variables
@@ -102,10 +101,18 @@ save             ipass
 !===============================================================================
 
 procedure() :: kinrates, ppinv2, cs_coal_masstransfer
-procedure() :: cfener, set_dirichlet_scalar, max_mid_min_progvar, elflux
+procedure() :: set_dirichlet_scalar, max_mid_min_progvar, elflux
 procedure() :: compute_gaseous_chemistry, elreca
 
 interface
+
+  subroutine cs_cf_energy                            &
+     (field_id)                                      &
+    bind(C, name='cs_cf_energy')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: field_id
+  end subroutine cs_cf_energy
 
    subroutine solve_equation_scalar                   &
      (f_id, ncesmp,                                   &
@@ -245,11 +252,7 @@ if (nscapp.gt.0) then
 ! ---> Enthalpie       : a resoudre
 
       if (ispecf.eq.2) then
-
-        call cfener(nvar, nscal, ncepdc, ncetsm, iscal,           &
-                    icepdc, icetsm, itypsm, dt,                   &
-                    ckupdc, smacel)
-
+         call cs_cf_energy(ivarfl(isca(iscal)))
       endif
 
     endif

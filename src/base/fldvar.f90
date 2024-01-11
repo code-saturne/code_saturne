@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -320,12 +320,7 @@ endif
 
 nscaus = cs_parameters_n_added_variables()
 
-! ---> Lecture donnees thermochimie
-
-call pplecd
-
-! ---> Definition des variables
-
+! Specific physics variables
 call ppvarp
 
 ! Thermal model with no specific physics
@@ -922,7 +917,77 @@ end subroutine add_model_field
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]  f_id           field id
-!> \param[out] iscal          variable number for defined field
+!> \param[out] ivar           variable number for defined field
+!_______________________________________________________________________________
+
+subroutine add_variable_field_indexes &
+ ( f_id, ivar )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+procedure() :: fldvar_check_nvar, init_var_cal_opt
+procedure() :: csexit
+
+! Arguments
+
+integer, intent(in)  :: f_id
+integer, intent(out) :: ivar
+
+! Local variables
+
+integer  dim, ii
+
+integer, save :: keyvar = -1
+
+! Get field dimension
+
+call field_get_dim(f_id, dim)
+
+if (keyvar.lt.0) then
+  call field_get_key_id("variable_id", keyvar)
+endif
+
+ivar = nvar + 1
+nvar = nvar + dim
+
+! Check we have enough slots
+call fldvar_check_nvar
+
+do ii = 1, dim
+  ivarfl(ivar + ii - 1) = f_id
+enddo
+
+call field_set_key_int(f_id, keyvar, ivar)
+call init_var_cal_opt(f_id)
+
+return
+
+end subroutine add_variable_field_indexes
+
+!===============================================================================
+!
+!> \brief add field indexes associated with a new non-user solved
+!>        scalar variable, with default options
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]  f_id           field id
+!> \param[out] iscal          scalar id for defined field
 !_______________________________________________________________________________
 
 subroutine add_model_field_indexes &
@@ -1188,6 +1253,42 @@ end subroutine fldvar_check_nscapp
 !===============================================================================
 ! C bindings (reverse)
 !===============================================================================
+
+!-------------------------------------------------------------------------------
+!> \brief add field indexes associated with a new non-user solved
+!>        variable, with default options
+!
+!> \param[in]  f_id    field id
+
+!> \result             variable number for defined field
+!-------------------------------------------------------------------------------
+
+function cs_add_variable_field_indexes(f_id) result(ivar) &
+  bind(C, name='cs_add_variable_field_indexes')
+
+  use, intrinsic :: iso_c_binding
+  use cs_c_bindings
+
+  implicit none
+
+  procedure() :: add_variable_field_indexes
+
+  ! Arguments
+
+  integer(c_int), value :: f_id
+  integer(c_int) :: ivar
+
+  ! Local variables
+
+  integer f_id0, ivar0
+
+  f_id0 = f_id
+
+  call add_variable_field_indexes(f_id0, ivar0)
+
+  ivar = ivar0
+
+end function cs_add_variable_field_indexes
 
 !-------------------------------------------------------------------------------
 !> \brief add field indexes associated with a new non-user solved

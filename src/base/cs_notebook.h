@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,7 +36,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize the notebook object (based on cs_tree_node_t).
  */
 /*----------------------------------------------------------------------------*/
@@ -45,7 +45,7 @@ void
 cs_notebook_load_from_file(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Check if a parameter value is present.
  *
  * \param[in]   name      name of the parameter
@@ -60,7 +60,7 @@ cs_notebook_parameter_is_present(const char  *name,
                                  int         *editable);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a parameter value (real).
  *
  * The name used is the same as the one in the GUI.
@@ -75,7 +75,7 @@ cs_real_t
 cs_notebook_parameter_value_by_name(const char *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set a parameter value (real) for an editable parameter.
  *
  * The name used is the same as the one in the GUI.
@@ -90,7 +90,7 @@ cs_notebook_parameter_set_value(const char *name,
                                 cs_real_t   val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Indicate whether the parameter is used for a study with openturns.
  *
  * Returns an int flag to indicate whether this paramter is used for an
@@ -109,7 +109,7 @@ int
 cs_notebook_parameter_get_openturns_status(char *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Returns the description of the parameter (GUI defined).
  *
  * \param[in] name  name of the parameter
@@ -122,7 +122,7 @@ const char *
 cs_notebook_parameter_get_description(char *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get id associated with a notebook parameter.
  *
  * \param[in]   name      name of the parameter
@@ -135,7 +135,7 @@ int
 cs_notebook_parameter_get_id(const char  *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get a group of notebook variable values
  *
  * \param[in]   n       number of notebook variables to query
@@ -151,7 +151,7 @@ cs_notebook_get_values(int        n,
                        double     values[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set a group of notebook variable values
  *
  * \param[in]  n       number of notebook variables to set
@@ -167,7 +167,7 @@ cs_notebook_set_values(int           n,
                        const double  values[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy the notebook structure.
  *
  * Destroys the structures related to the notebook.
@@ -178,16 +178,84 @@ void
 cs_notebook_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Output the notebook info to the setup log.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_notebook_log(void);
+cs_notebook_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Number of notebook variables
+ *
+ * \returns number of notebook variables (int)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_notebook_nb_var(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Indicate if the notebook parameter is editable
+ *
+ * Returns a boolean to indicate wheter this parameter is editable
+ *
+ * \param[in]   id   Id of the notebook parameter
+ *
+ * \returns true is variable can be edited, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_notebook_var_is_editable(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Indicate if the notebook parameter is read at restart
+ *
+ * Returns a boolean to indicate wheter this parameter is read at restart
+ *
+ * \param[in]   id   Id of the notebook parameter
+ *
+ * \returns true if variable should be read from checkpoint file, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_notebook_var_is_read_from_checkpoint(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Change the editable property of the notebook parameter
+ *
+ * \param[in]   id   Id of the notebook parameter
+ * \param[in]   val  flag (bool) indicating if the value is set to editable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_var_change_editable(int   id,
+                                bool  val);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Get name of a notebook parameter based on its id
+ *
+ * \param[in]   id    Id of the notebook parameter
+ * \param[out]  name  Name of the notebook parameter
+ *
+ * \returns name of variable (char *)
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_notebook_name_by_id(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Write uncertain values to output file.
  *
  * If input and output uncertain variables are provided, output values

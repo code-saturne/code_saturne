@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -158,7 +158,7 @@ logical(kind=c_bool) :: log_active
 !===============================================================================
 
 if (ieqco2.eq.1) then
-  call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+  call field_get_val_s(iyco2, cvar_yco2)
 endif
 
 ! Massic fraction of gas
