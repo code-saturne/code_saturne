@@ -719,13 +719,6 @@ typedef struct {
   int                                 n_boussinesq_terms;
   cs_navsto_param_boussinesq_t       *boussinesq_param;
 
-  /*! \var qtype
-   *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
-   *  all functions involving quadratures
-   */
-
-  cs_quadrature_type_t           qtype;
-
   /*! \var handle_non_linearities
    *  True if a non-linear algorithm has to be considered
    */

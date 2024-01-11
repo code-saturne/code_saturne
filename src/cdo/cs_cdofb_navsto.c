@@ -688,11 +688,9 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
         switch (red) {
         case CS_PARAM_REDUCTION_DERHAM:
-          cs_xdef_set_quadrature(def, nsp->qtype);
           cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
-          cs_xdef_set_quadrature(def, nsp->qtype);
           cs_evaluate_average_on_cells_by_analytic(def, t_cur, values);
           break;
 
@@ -805,7 +803,6 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
           break;
 
         case CS_PARAM_REDUCTION_AVERAGE:
-          cs_xdef_set_quadrature(def, nsp->qtype);
           cs_evaluate_average_on_faces_by_analytic(def,
                                                    t_cur,
                                                    n_f_selected,

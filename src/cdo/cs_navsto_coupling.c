@@ -291,18 +291,6 @@ cs_navsto_ac_last_setup(const cs_navsto_param_t     *nsp,
 
   if (nsc->zeta->n_definitions == 0)
     cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
-
-  /* Set the quadrature level for BCs, if needed */
-
-  const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
-
-  for (short int i = 0; i < eqp->n_bc_defs; i++) {
-
-    cs_xdef_t *def = eqp->bc_defs[i];
-    if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
-      cs_xdef_set_quadrature(def, nsp->qtype);
-
-  } /* Loop on BC definitions */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -471,17 +459,7 @@ cs_navsto_monolithic_last_setup(const cs_navsto_param_t     *nsp,
 
   assert(nsp != NULL && nsc != NULL);
 
-  /* Set the quadrature level for BCs, if needed */
-
-  const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
-
-  for (short int i = 0; i < eqp->n_bc_defs; i++) {
-
-    cs_xdef_t *def = eqp->bc_defs[i];
-    if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
-      cs_xdef_set_quadrature(def, nsp->qtype);
-
-  } /* Loop on BC definitions */
+  return; /* Nothing to do up to now */
 }
 
 /*----------------------------------------------------------------------------*/
