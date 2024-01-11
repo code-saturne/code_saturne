@@ -96,7 +96,7 @@ double precision eh0 , eh1
 
 if ( mode .eq. 1 ) then
 
-  i = npo
+  i = npoc
 
 ! --- Calcul de l'enthalpie de l'espece gazeuse CHx1m
 !                                            et CHx2m a TH(NPO)
@@ -295,7 +295,7 @@ if ( mode .eq. 1 ) then
 
 else if ( mode .eq. -1 ) then
 
-  i = npo
+  i = npoc
 
 ! --- Calcul en Max
 

@@ -1,8 +1,8 @@
-#ifndef __CS_COMBUSTION_MODEL_H__
-#define __CS_COMBUSTION_MODEL_H__
+#ifndef CS_COAL_READ_DATA_H
+#define CS_COAL_READ_DATA_H
 
 /*============================================================================
- * Combustion model parameters.
+ * Coal combustion model:  setup data from input.
  *============================================================================*/
 
 /*
@@ -31,63 +31,44 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdarg.h>
-
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_coal.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
+/*============================================================================
  * Macro definitions
  *============================================================================*/
 
 /*============================================================================
- * Type definitions
+ * Local type definitions
  *============================================================================*/
 
 /*============================================================================
  * Global variables
  *============================================================================*/
 
-/*=============================================================================
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute Enthalpy and Cp based on the JANAF band.
- *
- * \param[in]   ncoel    number of elementary constituents
- * \param[in]   ngazem   number of elementary constituents
- * \param[in]   npo      number of interpolation points
- * \param[in]   nomcoel  names of elementary constituants
- * \param[out]  ehcoel   enthalpy for each elementary species
- *                       (for point i and species j, ehcoel[i*ngazem + j])
- * \param[out]  cpcoel   cp for each elementary species
- *                       (for point i and species j, cpcoel[i*ngazem + j])
- * \param[in]   wmolce   molar mass of each species
- * \param[in]   th       temperature in K
+ * \brief Setup coal model data based on in input.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
-                                         int           ngazem,
-                                         int           npo,
-                                         const char    nomcoel[][13],
-                                         double        ehcoel[],
-                                         double        cpcoel[],
-                                         const double  wmolce[],
-                                         const double  th[]);
+cs_coal_read_data(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_COMBUSTION_MODEL_H__ */
+#endif /* CS_COAL_READ_DATA_H */

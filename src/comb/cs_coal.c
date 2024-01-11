@@ -109,6 +109,9 @@ const int  cs_coal_atom_id_o = 2;  /*!< id for O in wmolat */
 const int  cs_coal_atom_id_n = 3;  /*!< id for N in wmolat */
 const int  cs_coal_atom_id_s = 4;  /*!< id for S in wmolat */
 
+/* precision for tests */
+const double cs_coal_epsilon = 1.e-8;
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -121,6 +124,7 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
                               int     **nclacp,
                               int     **nclpch,
                               int     **idrift,
+                              int     **nsolid,
                               int     **ich,
                               int     **ick,
                               int     **iash,
@@ -134,7 +138,7 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
                               double  **rho20,
                               double  **rho2mn,
                               double  **xmp0,
-                              double  **xmasch);
+                              double  **xmash);
 
 void
 cs_f_cpincl_get_pointers_1(double  **cch,
@@ -142,10 +146,6 @@ cs_f_cpincl_get_pointers_1(double  **cch,
                            double  **och,
                            double  **sch,
                            double  **nch,
-                           double  **alpha,
-                           double  **beta,
-                           double  **teta,
-                           double  **omega,
                            double  **pcich,
                            double  **rho0ch,
                            double  **thcdch,
@@ -154,16 +154,11 @@ cs_f_cpincl_get_pointers_1(double  **cch,
                            double  **ock,
                            double  **sck,
                            double  **nck,
-                           double  **gamma,
-                           double  **delta,
-                           double  **kappa,
-                           double  **zeta,
                            double  **rhock,
                            double  **pcick,
                            double  **cpashc,
                            double  **h0ashc,
                            double  **h02ch,
-                           double  **cp2wat,
                            double  **crepn1,
                            double  **crepn2,
                            double  **cp2ch,
@@ -188,7 +183,8 @@ cs_f_cpincl_get_pointers_2(int     **iy1ch,
                            double  **ahetc2,
                            double  **ehetc2,
                            double  **ahetwt,
-                           double  **ehetwt);
+                           double  **ehetwt,
+                           double  **ehgaze);
 
 void
 cs_f_cpincl_get_pointers_3(int     **ico,
@@ -376,6 +372,7 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
                               int     **nclacp,
                               int     **nclpch,
                               int     **idrift,
+                              int     **nsolid,
                               int     **ich,
                               int     **ick,
                               int     **iash,
@@ -389,7 +386,7 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
                               double  **rho20,
                               double  **rho2mn,
                               double  **xmp0,
-                              double  **xmasch)
+                              double  **xmash)
 {
   if (cs_glob_coal_model == NULL)
     return;
@@ -400,6 +397,7 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
   *nclacp = &(cm->nclacp);
   *nclpch = cm->n_classes_per_coal;
   *idrift = &(cm->idrift);
+  *nsolid = &(cm->nsolid);
 
   *ich    = cm->ich;
   *ick    = cm->ick;
@@ -415,7 +413,7 @@ cs_f_cpincl_coal_get_pointers(int     **ncharb,
   *rho20  = cm->rho20;
   *rho2mn = cm->rho2mn;
   *xmp0   = cm->xmp0;
-  *xmasch = cm->xmasch;
+  *xmash  = cm->xmash;
 }
 
 /*----------------------------------------------------------------------------
@@ -431,10 +429,6 @@ cs_f_cpincl_get_pointers_1(double  **cch,
                            double  **och,
                            double  **sch,
                            double  **nch,
-                           double  **alpha,
-                           double  **beta,
-                           double  **teta,
-                           double  **omega,
                            double  **pcich,
                            double  **rho0ch,
                            double  **thcdch,
@@ -443,16 +437,11 @@ cs_f_cpincl_get_pointers_1(double  **cch,
                            double  **ock,
                            double  **sck,
                            double  **nck,
-                           double  **gamma,
-                           double  **delta,
-                           double  **kappa,
-                           double  **zeta,
                            double  **rhock,
                            double  **pcick,
                            double  **cpashc,
                            double  **h0ashc,
                            double  **h02ch,
-                           double  **cp2wat,
                            double  **crepn1,
                            double  **crepn2,
                            double  **cp2ch,
@@ -470,10 +459,6 @@ cs_f_cpincl_get_pointers_1(double  **cch,
   *och = cm->och;
   *sch = cm->sch;
   *nch = cm->nch;
-  *alpha = cm->alpha;
-  *beta = cm->beta;
-  *teta = cm->teta;
-  *omega = cm->omega;
   *pcich = cm->pcich;
   *rho0ch = cm->rho0ch;
   *thcdch = cm->thcdch;
@@ -482,16 +467,11 @@ cs_f_cpincl_get_pointers_1(double  **cch,
   *ock = cm->ock;
   *sck = cm->sck;
   *nck = cm->nck;
-  *gamma = cm->gamma;
-  *delta = cm->delta;
-  *kappa = cm->kappa;
-  *zeta = cm->zeta;
   *rhock = cm->rhock;
   *pcick = cm->pcick;
   *cpashc = cm->cpashc;
   *h0ashc = cm->h0ashc;
   *h02ch = cm->h02ch;
-  *cp2wat = cm->cp2wat;
   *crepn1 = (double *)cm->crepn1;
   *crepn2 = (double *)cm->crepn2;
   *cp2ch  = cm->cp2ch;
@@ -524,7 +504,8 @@ cs_f_cpincl_get_pointers_2(int     **iy1ch,
                            double  **ahetc2,
                            double  **ehetc2,
                            double  **ahetwt,
-                           double  **ehetwt)
+                           double  **ehetwt,
+                           double  **ehgaze)
 {
   if (cs_glob_coal_model == NULL)
     return;
@@ -548,6 +529,7 @@ cs_f_cpincl_get_pointers_2(int     **iy1ch,
   *ehetc2 = cm->ehetc2;
   *ahetwt = cm->ahetwt;
   *ehetwt = cm->ehetwt;
+  *ehgaze = (double *)cm->ehgaze;
 }
 
 /*----------------------------------------------------------------------------

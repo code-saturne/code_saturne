@@ -180,7 +180,7 @@ endif
 
  9998 format(                                                     &
 '',                                                             /,&
-' No error detecxted during coal data verification.',           /)
+' No error detected during coal data verification.',            /)
  9999 format(                                                     &
 '@',/,&
 '@',                                                           /,&

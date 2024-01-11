@@ -91,7 +91,7 @@ cs_coal_physprop1.f90 \
 cs_coal_physprop2.f90 \
 cs_coal_physprop.f90 \
 cs_coal_prop.f90 \
-cs_coal_readata.f90 \
+cs_coal_read_data.c \
 cs_coal_scast.f90 \
 cs_coal_thfieldconv1.f90 \
 cs_coal_thfieldconv2.f90 \

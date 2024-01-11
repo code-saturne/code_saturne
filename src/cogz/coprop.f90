@@ -56,7 +56,6 @@ use cstnum
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use radiat
 use cs_c_bindings

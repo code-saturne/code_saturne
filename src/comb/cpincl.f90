@@ -63,12 +63,10 @@ module cpincl
   ! - Proprietes sur charbon sec
 
   real(c_double), pointer, save :: cch(:), hch (:), och(:), sch(:), nch(:),  &
-                                  alpha(:), beta(:), teta(:), omega(:),      &
                                   pcich(:), rho0ch(:), thcdch(:),            &
                                   cck(:), hck(:), ock(:), sck(:), nck(:),    &
-                                  gamma(:), delta(:), kappa(:), zeta(:),     &
                                   rhock(:), pcick(:),                        &
-                                  cpashc(:), h0ashc(:), h02ch(:), cp2wat(:), &
+                                  cpashc(:), h0ashc(:), h02ch(:),            &
                                   crepn1(:,:), crepn2(:,:),                  &
                                   cp2ch(:), xashsec(:), xashch(:), xwatch(:)
 
@@ -83,7 +81,7 @@ module cpincl
   integer    nsolim
   parameter( nsolim = 4*ncharm )
 
-  integer, save ::          nsolid
+  integer(c_int), pointer, save :: nsolid
 
   integer(c_int), pointer, save :: ich(:), ick(:), iash(:), iwat(:)
   real(c_double), pointer, save :: ehsoli(:,:), wmols(:), eh0sol(:)
@@ -158,6 +156,12 @@ module cpincl
   integer(c_int), pointer, save :: iboxygen
   integer(c_int), pointer, save :: ibhydrogen
 
+  ! Moved from ppthch
+
+  !> engaze(ij) is the massic enthalpy (J/kg) of the i-th elementary gas component
+  !> at temperature  th(j)
+  real(c_double), pointer, save ::  ehgaze(:,:)
+
   ! Moved from ppcfu
 
   ! prise en compte H2  , H2S , SO2 , HCN , NH3
@@ -213,7 +217,7 @@ module cpincl
     ! global physical model flags
 
     subroutine cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
-                                             p_nclpch, p_idrift,               &
+                                             p_nclpch, p_idrift, p_nsolid,     &
                                              p_ich, p_ick, p_iash, p_iwat,     &
                                              p_ehsoli, p_wmols, p_eh0sol,      &
                                              p_ichcor, p_diam20, p_dia2mn,     &
@@ -223,7 +227,7 @@ module cpincl
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ncharb, p_nclacp,                          &
-                                  p_nclpch, p_idrift,                          &
+                                  p_nclpch, p_idrift, p_nsolid,                &
                                   p_ich, p_ick, p_iash, p_iwat,                &
                                   p_ehsoli, p_wmols, p_eh0sol,                 &
                                   p_ichcor, p_diam20, p_dia2mn,                &
@@ -237,19 +241,19 @@ module cpincl
     ! global physical model flags
 
     subroutine cs_f_cpincl_get_pointers_1(                                     &
-         p_cch, p_hch, p_och, p_sch, p_nch, p_alpha, p_beta, p_teta, p_omega,  &
+         p_cch, p_hch, p_och, p_sch, p_nch,                                    &
          p_pcich, p_rho0ch, p_thcdch, p_cck, p_hck, p_ock, p_sck, p_nck,       &
-         p_gamma, p_delta, p_kappa, p_zeta, p_rhock, p_pcick, p_cpashc,        &
-         p_h0ashc, p_h02ch, p_cp2wat, p_crepn1, p_crepn2, p_cp2ch,             &
+         p_rhock, p_pcick, p_cpashc,                                           &
+         p_h0ashc, p_h02ch, p_crepn1, p_crepn2, p_cp2ch,                       &
          p_xashsec, p_xashch, p_xwatch)                                        &
       bind(C, name='cs_f_cpincl_get_pointers_1')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) ::                                              &
-         p_cch, p_hch, p_och, p_sch, p_nch, p_alpha, p_beta, p_teta, p_omega,  &
+         p_cch, p_hch, p_och, p_sch, p_nch,                                    &
          p_pcich, p_rho0ch, p_thcdch, p_cck, p_hck, p_ock, p_sck, p_nck,       &
-         p_gamma, p_delta, p_kappa, p_zeta, p_rhock, p_pcick, p_cpashc,        &
-         p_h0ashc, p_h02ch, p_cp2wat, p_crepn1, p_crepn2, p_cp2ch,             &
+         p_rhock, p_pcick, p_cpashc,                                           &
+         p_h0ashc, p_h02ch, p_crepn1, p_crepn2, p_cp2ch,                       &
          p_xashsec, p_xashch, p_xwatch
     end subroutine cs_f_cpincl_get_pointers_1
 
@@ -261,14 +265,14 @@ module cpincl
     subroutine cs_f_cpincl_get_pointers_2(                                     &
          p_iy1ch, p_iy2ch, p_iochet, p_ioetc2, p_ioetwt,                       &
          p_y1ch, p_a1ch, p_e1ch, p_y2ch, p_a2ch, p_e2ch, p_ahetch, p_ehetch,   &
-         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt)                               &
+         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt, p_ehgaze)                     &
       bind(C, name='cs_f_cpincl_get_pointers_2')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) ::                                              &
          p_iy1ch, p_iy2ch, p_iochet, p_ioetc2, p_ioetwt,                       &
          p_y1ch, p_a1ch, p_e1ch, p_y2ch, p_a2ch, p_e2ch, p_ahetch, p_ehetch,   &
-         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt
+         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt, p_ehgaze
     end subroutine cs_f_cpincl_get_pointers_2
 
     !---------------------------------------------------------------------------
@@ -372,22 +376,22 @@ contains
     ! Local variables
 
     type(c_ptr) :: p_ncharb, p_nclacp, p_nclpch, p_idrift,          &
-                   p_ich, p_ick, p_iash, p_iwat,                    &
+                   p_nsolid, p_ich, p_ick, p_iash, p_iwat,          &
                    p_ehsoli, p_wmols, p_eh0sol, p_ichcor,           &
                    p_diam20, p_dia2mn, p_rho20, p_rho2mn,           &
                    p_xmp0, p_xmash
 
     type(c_ptr) ::                                                             &
-         p_cch, p_hch, p_och, p_sch, p_nch, p_alpha, p_beta, p_teta, p_omega,  &
+         p_cch, p_hch, p_och, p_sch, p_nch,                                    &
          p_pcich, p_rho0ch, p_thcdch, p_cck, p_hck, p_ock, p_sck, p_nck,       &
-         p_gamma, p_delta, p_kappa, p_zeta, p_rhock, p_pcick, p_cpashc,        &
-         p_h0ashc, p_h02ch, p_cp2wat, p_crepn1, p_crepn2, p_cp2ch,             &
+         p_rhock, p_pcick, p_cpashc,                                           &
+         p_h0ashc, p_h02ch, p_crepn1, p_crepn2, p_cp2ch,                       &
          p_xashsec, p_xashch, p_xwatch
 
     type(c_ptr)::                                                              &
          p_iy1ch, p_iy2ch, p_iochet, p_ioetc2, p_ioetwt,                       &
          p_y1ch, p_a1ch, p_e1ch, p_y2ch, p_a2ch, p_e2ch, p_ahetch, p_ehetch,   &
-         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt
+         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt, p_ehgaze
 
     type(c_ptr) ::                                                             &
          p_ico, p_ico2, p_ih2o, p_io2, p_in2, p_ichx1c, p_ichx2c,              &
@@ -413,7 +417,7 @@ contains
          p_teno, p_ka, p_kb, p_kc, p_chi2
 
     call cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
-                                       p_nclpch, p_idrift,               &
+                                       p_nclpch, p_idrift, p_nsolid,     &
                                        p_ich, p_ick, p_iash, p_iwat,     &
                                        p_ehsoli, p_wmols, p_eh0sol,      &
                                        p_ichcor, p_diam20, p_dia2mn,     &
@@ -422,6 +426,7 @@ contains
 
     call c_f_pointer(p_ncharb, ncharb)
     call c_f_pointer(p_nclacp, nclacp)
+    call c_f_pointer(p_nsolid, nsolid)
 
     call c_f_pointer(p_nclpch, nclpch, [ncharm])
 
@@ -446,10 +451,10 @@ contains
     call c_f_pointer(p_xmash,  xmash,  [nclcpm])
 
     call cs_f_cpincl_get_pointers_1(                                           &
-         p_cch, p_hch, p_och, p_sch, p_nch, p_alpha, p_beta, p_teta, p_omega,  &
+         p_cch, p_hch, p_och, p_sch, p_nch,                                    &
          p_pcich, p_rho0ch, p_thcdch, p_cck, p_hck, p_ock, p_sck, p_nck,       &
-         p_gamma, p_delta, p_kappa, p_zeta, p_rhock, p_pcick, p_cpashc,        &
-         p_h0ashc, p_h02ch, p_cp2wat, p_crepn1, p_crepn2, p_cp2ch,             &
+         p_rhock, p_pcick, p_cpashc,                                           &
+         p_h0ashc, p_h02ch, p_crepn1, p_crepn2, p_cp2ch,                       &
          p_xashsec, p_xashch, p_xwatch)
 
     call c_f_pointer(p_cch, cch, [ncharm])
@@ -457,10 +462,6 @@ contains
     call c_f_pointer(p_och, och, [ncharm])
     call c_f_pointer(p_sch, sch, [ncharm])
     call c_f_pointer(p_nch, nch, [ncharm])
-    call c_f_pointer(p_alpha, alpha, [ncharm])
-    call c_f_pointer(p_beta, beta, [ncharm])
-    call c_f_pointer(p_teta, teta, [ncharm])
-    call c_f_pointer(p_omega, omega, [ncharm])
     call c_f_pointer(p_pcich, pcich, [ncharm])
     call c_f_pointer(p_rho0ch, rho0ch, [ncharm])
     call c_f_pointer(p_thcdch, thcdch, [ncharm])
@@ -469,16 +470,11 @@ contains
     call c_f_pointer(p_ock, ock, [ncharm])
     call c_f_pointer(p_sck, sck, [ncharm])
     call c_f_pointer(p_nck, nck, [ncharm])
-    call c_f_pointer(p_gamma, gamma, [ncharm])
-    call c_f_pointer(p_delta, delta, [ncharm])
-    call c_f_pointer(p_kappa, kappa, [ncharm])
-    call c_f_pointer(p_zeta, zeta, [ncharm])
     call c_f_pointer(p_pcick, pcick, [ncharm])
     call c_f_pointer(p_rhock, rhock, [ncharm])
     call c_f_pointer(p_cpashc, cpashc, [ncharm])
     call c_f_pointer(p_h0ashc, h0ashc, [ncharm])
     call c_f_pointer(p_h02ch, h02ch, [ncharm])
-    call c_f_pointer(p_cp2wat, cp2wat, [ncharm])
     call c_f_pointer(p_crepn1, crepn1, [2, ncharm])
     call c_f_pointer(p_crepn2, crepn2, [2, ncharm])
     call c_f_pointer(p_cp2ch, cp2ch, [ncharm])
@@ -489,7 +485,7 @@ contains
     call cs_f_cpincl_get_pointers_2(                                           &
          p_iy1ch, p_iy2ch, p_iochet, p_ioetc2, p_ioetwt,                       &
          p_y1ch, p_a1ch, p_e1ch, p_y2ch, p_a2ch, p_e2ch, p_ahetch, p_ehetch,   &
-         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt)
+         p_ahetc2, p_ehetc2, p_ahetwt, p_ehetwt, p_ehgaze)
 
     call c_f_pointer(p_iy1ch, iy1ch, [ncharm])
     call c_f_pointer(p_iy2ch, iy2ch, [ncharm])
@@ -509,6 +505,8 @@ contains
     call c_f_pointer(p_ehetc2, ehetc2, [ncharm])
     call c_f_pointer(p_ahetwt, ahetwt, [ncharm])
     call c_f_pointer(p_ehetwt, ehetwt, [ncharm])
+
+    call c_f_pointer(p_ehgaze, ehgaze, [ngazem, npot])
 
     call cs_f_cpincl_get_pointers_3(                                           &
          p_ico, p_ico2, p_ih2o, p_io2, p_in2, p_ichx1c, p_ichx2c,              &

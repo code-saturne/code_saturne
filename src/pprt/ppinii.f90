@@ -155,12 +155,6 @@ do igg = 1, ngazgm
   ckabsg(igg)= zero
 enddo
 
-do ige = 1, ngazem
-  do it = 1, npot
-    ehgaze(ige,it) = zero
-  enddo
-enddo
-
 !===============================================================================
 ! 3. REMPLISSAGE INCLUDE coincl.h
 !                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A

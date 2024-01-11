@@ -118,11 +118,7 @@ module ppthch
   !> temperature (in K)
   real(c_double), pointer, save :: th(:)
 
-  !> engaze(ij) is the massic enthalpy (J/kg) of the i-th elementary gas component
-  !> at temperature  th(j)
-  double precision, save ::  ehgaze(ngazem,npot)
-
-  !> engazg(ij) is the massic enthalpy (J/kg) of the i-th global secies
+  !> massic enthalpy (J/kg) of the i-th global secies
   !> at temperature  th(j)
   double precision, save ::  ehgazg(ngazgm,npot)
 

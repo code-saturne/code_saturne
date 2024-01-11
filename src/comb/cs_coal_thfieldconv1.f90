@@ -125,7 +125,7 @@ do icha = 1, ncharb
   call field_get_val_s(if2m(icha), cvar_f2m(icha)%p)
 enddo
 
-i = npo-1
+i = npoc-1
 
 do ielt = 1, nelt
 
@@ -275,7 +275,7 @@ do ielt = 1, nelt
 enddo
 
 
-do i = 1, npo-1
+do i = 1, npoc-1
 
   do ielt = 1, nelt
 

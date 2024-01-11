@@ -72,7 +72,6 @@ use period
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use mesh
 use field

@@ -49,7 +49,6 @@ use parall
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use radiat
 use cs_c_bindings
@@ -80,6 +79,8 @@ double precision atgaze(ngazem, natom)
 double precision coefg(ngazgm), tgaz, efgaz(ngazgm)
 double precision mfuel, mreac, epsi, nmolg, bilan
 double precision moxyd
+
+double precision :: ehgaze(ngazem,npot)
 
 double precision, dimension(:,:), allocatable :: aa
 double precision, dimension(:), allocatable :: bb, xx
@@ -122,6 +123,12 @@ mfuel = 0.d0
 moxyd = 0.d0
 
 epsi = 1.d-9
+
+do ige = 1, ngazem
+  do it = 1, npot
+    ehgaze(ige,it) = zero
+  enddo
+enddo
 
 ! Get thermochemistry data file name
 

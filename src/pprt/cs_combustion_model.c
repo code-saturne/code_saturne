@@ -374,16 +374,16 @@ cs_f_combustion_model_get_pointers(double  **srrom)
 /*!
  * \brief Compute Enthalpy and Cp based on the JANAF band.
  *
- * \param[in]   ncoel   number of elementary constituents
- * \param[in]   ngazem  number of elementary constituents
- * \param[in]   npo     number of interpolation points
- * \param[in]   nomcel  names of elementary constituants
- * \param[out]  ehcoel  enthalpy for each elementary species
- *                      (for point i and species j, ehcoel[i*ngazem + j])
- * \param[out]  cpcoel  cp for each elementary species
- *                      (for point i and species j, cpcoel[i*ngazem + j])
- * \param[in]   wmolce  molar mass of each species
- * \param[in]   th      temperature in K
+ * \param[in]   ncoel    number of elementary constituents
+ * \param[in]   ngazem   number of elementary constituents
+ * \param[in]   npo      number of interpolation points
+ * \param[in]   nomcoel  names of elementary constituants
+ * \param[out]  ehcoel   enthalpy for each elementary species
+ *                       (for point i and species j, ehcoel[i*ngazem + j])
+ * \param[out]  cpcoel   cp for each elementary species
+ *                       (for point i and species j, cpcoel[i*ngazem + j])
+ * \param[in]   wmolce   molar mass of each species
+ * \param[in]   th       temperature in K
  */
 /*----------------------------------------------------------------------------*/
 
@@ -391,13 +391,13 @@ void
 cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
                                          int           ngazem,
                                          int           npo,
-                                         const char    nomcel[][13],
+                                         const char    nomcoel[][13],
                                          double        ehcoel[],
                                          double        cpcoel[],
                                          const double  wmolce[],
                                          const double  th[])
 {
-#  undef MAX_ELEMENTARY_COMPONENTS;
+#  undef MAX_ELEMENTARY_COMPONENTS
 #  define MAX_ELEMENTARY_COMPONENTS 20
   if (ngazem > MAX_ELEMENTARY_COMPONENTS)
     bft_error(__FILE__, __LINE__, 0,
@@ -498,7 +498,7 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
        is part of the example */
 
     for (int ne = 0; ne < ncoel; ne++) {
-      if (strcmp(nomcel[ne], nomesp) == 0) {
+      if (strcmp(nomcoel[ne], nomesp) == 0) {
         icoeff[ne] = 1;
         for (int inicff = 0; inicff < 2; inicff++) {
           for (int injcff = 0; injcff < 7; injcff++)
@@ -519,7 +519,7 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
   for (int ne = 0; ne < ncoel; ne++) {
     if (icoeff[ne] == 0) {
       iok += 1;
-      bft_printf(_("@@ Error: species \'%s\' not in JANAF\n"), nomcel[ne]);
+      bft_printf(_("@@ Error: species \'%s\' not in JANAF\n"), nomcoel[ne]);
     }
   }
 

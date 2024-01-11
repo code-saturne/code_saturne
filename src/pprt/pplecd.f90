@@ -71,6 +71,12 @@ interface
     implicit none
   end subroutine cs_gui_coal_model
 
+  subroutine cs_coal_read_data()  &
+    bind(C, name='cs_coal_read_data')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_coal_read_data
+
 end interface
 
 !===============================================================================
@@ -94,7 +100,7 @@ endif
 
 if (ippmod(iccoal).ge.0) then
   call cs_gui_coal_model
-  call cs_coal_readata
+  call cs_coal_read_data
 endif
 
 ! ---> Joule effect, electric arc, or ionic conduction

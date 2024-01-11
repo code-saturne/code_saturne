@@ -60,7 +60,6 @@ use entsor
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use radiat
 use mesh

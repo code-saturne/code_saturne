@@ -135,6 +135,11 @@ typedef struct {
   /*! temperature in K */
   double  th[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
 
+  /*! massic enthalpy (J/kg) of the i-th elementary gas component
+    at temperature  th[j] */
+  double ehgaze[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS]
+               [CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+
   /* Members specific to the coal combustion model
      --------------------------------------------- */
 
@@ -143,7 +148,7 @@ typedef struct {
   int     n_coals;     /*!< number of coal types */
   int     nclacp;      /*!< number of coal classes */
 
-  int     nsolim;      /*!< number of solid constituents
+  int     nsolid;      /*!< number of solid components
                          (reactive coal, coke, ash) */
 
   int     noxyd;       /*!< number of oxydants */
@@ -204,18 +209,6 @@ typedef struct {
   /*! elementary composition of coal in N over dry (%) */
   double nch[CS_COMBUSTION_MAX_COALS];
 
-  /*! composition of reactive coal: alpha(c) = hch(c)/cch(c) */
-  double alpha[CS_COMBUSTION_MAX_COALS];
-
-  /*! composition of reactive coal: beta (c) = och(c)/cch(c) */
-  double beta[CS_COMBUSTION_MAX_COALS];
-
-  /*! composition of reactive coal: teta (c) = sch(c)/cch(c) */
-  double teta[CS_COMBUSTION_MAX_COALS];
-
-  /*! composition of reactive coal: omega (c) = nch(c)/cch(c) */
-  double omega[CS_COMBUSTION_MAX_COALS];
-
   /*! coal pci (J/kg) */
   double pcich[CS_COMBUSTION_MAX_COALS];
 
@@ -240,18 +233,6 @@ typedef struct {
   /*! elementary composition of coke in N over dry (%) */
   double nck[CS_COMBUSTION_MAX_COALS];
 
-  /*! composition of coke: gamma(c) = hck(c)/cck(c) */
-  double gamma[CS_COMBUSTION_MAX_COALS];
-
-  /*! composition of coke: delta(c) = ock(c)/cck(c) */
-  double delta[CS_COMBUSTION_MAX_COALS];
-
-  /*! composition of coke: kappa(c) = sck(c)/cck(c) */
-  double kappa[CS_COMBUSTION_MAX_COALS];
-
-  /*! composition of coke: zeta(c) = nck(c)/cck(c) */
-  double zeta[CS_COMBUSTION_MAX_COALS];
-
   /*! coke pci (J/kg) */
   double pcick[CS_COMBUSTION_MAX_COALS];
 
@@ -266,9 +247,6 @@ typedef struct {
 
   /*! H0 of coal */
   double h02ch[CS_COMBUSTION_MAX_COALS];
-
-  /*! Cp of water */
-  double cp2wat[CS_COMBUSTION_MAX_COALS];
 
   /*! distribution of N2 in HCN and No reaction 1 */
   double  crepn1[CS_COMBUSTION_MAX_COALS][2];
@@ -363,14 +341,14 @@ typedef struct {
   /*! position in ehsoli array for humidity */
   int     iwat[CS_COMBUSTION_MAX_COALS];
 
-  /*! mass enthalpy (J/kg) at temperature T of solid constituent S */
+  /*! mass enthalpy (J/kg) at temperature T of solid component S */
   double  ehsoli[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS]
                 [CS_COMBUSTION_COAL_MAX_SOLIDS];
 
-  /*! molar mass of solid constituents */
+  /*! molar mass of solid components */
   double  wmols[CS_COMBUSTION_COAL_MAX_SOLIDS];
 
-  /*! formation enthalpy (J/kg) of solid constituents */
+  /*! formation enthalpy (J/kg) of solid components */
   double  eh0sol[CS_COMBUSTION_COAL_MAX_SOLIDS];
 
   /* By class (deduced properties)
@@ -395,7 +373,7 @@ typedef struct {
   double  xmp0[CS_COMBUSTION_COAL_MAX_CLASSES];
 
   /*! particle ashes mass (kg) */
-  double  xmasch[CS_COMBUSTION_COAL_MAX_CLASSES];
+  double  xmash[CS_COMBUSTION_COAL_MAX_CLASSES];
 
   /* Data relative to combustion of gaseous species
      ---------------------------------------------- */
@@ -736,6 +714,9 @@ extern const int  cs_coal_atom_id_h;
 extern const int  cs_coal_atom_id_o;
 extern const int  cs_coal_atom_id_n;
 extern const int  cs_coal_atom_id_s;
+
+/* precision for tests */
+extern const double cs_coal_epsilon;
 
 /*============================================================================
  * Public function prototypes

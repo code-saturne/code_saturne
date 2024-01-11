@@ -73,7 +73,7 @@ double precision ychx10 , ychx20 , ehchx1 , ehchx2
 double precision den1   , den2
 double precision eh0 , eh1
 
-i = npo
+i = npoc
 ! --- Calculation at Max
 if ( tp .ge. th(i) ) then
   ehchx1 = zero
@@ -365,7 +365,7 @@ double precision ychx10 , ychx20 , ehchx1 , ehchx2
 double precision den1   , den2
 double precision eh0 , eh1
 
-i = npo
+i = npoc
 
 ! Calculation of enthalpy of the gaseous species CHx1m
 !                                            and CHx2m at TH(NPO)

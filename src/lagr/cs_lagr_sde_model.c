@@ -1066,7 +1066,7 @@ _lagich(const cs_real_t   tempct[],
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
-  cs_real_t xcal2j = 4.1855e0;
+  const cs_real_t xcal2j = 4.1855e0;
 
   /* Small value (for numeric precision) */
   cs_real_t precis = 1e-15;
