@@ -199,26 +199,19 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new structure to store the settings related to the
- *         resolution of the Navier-Stokes (NS) system: linear or non-linear
- *         algorithms
- *
- * \param[in] model           type of model related to the NS system
- * \param[in] model_flag      additional high-level model options
- * \param[in] algo_coupling   algorithm used for solving the NS system
+ * \brief Create a new structure to store the settings related to the
+ *        resolution of the Navier-Stokes (NS) system: linear or non-linear
+ *        algorithms
  *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_navsto_param_sles_t *
-_navsto_param_sles_create(cs_navsto_param_model_t         model,
-                          cs_navsto_param_model_flag_t    model_flag,
-                          cs_navsto_param_coupling_t      algo_coupling)
+_navsto_param_sles_create(void)
 {
-  CS_UNUSED(model_flag);
-
   cs_navsto_param_sles_t  *nslesp = NULL;
+
   BFT_MALLOC(nslesp, 1, cs_navsto_param_sles_t);
 
   /* Set the non-linear algorithm (only useful if advection is implicit and
@@ -564,9 +557,10 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
 
   nsp->handle_non_linearities = false;
 
-  /* Resolution parameters (inner linear system then the non-linear system )*/
+  /* Default settings of how to solve the (inner) linear and non-linear
+     systems */
 
-  nsp->sles_param = _navsto_param_sles_create(model, model_flag, algo_coupling);
+  nsp->sles_param = _navsto_param_sles_create();
 
   /* Management of the outer resolution steps (i.e. the full system including
      the turbulence modelling or the the thermal system) */
