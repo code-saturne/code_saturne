@@ -5586,10 +5586,9 @@ if(compute_cpu){
                             map(to: i_face_cells[0:n_i_faces], \
                                 i_massflux[0:n_i_faces], \
                                 i_f_face_factor[0:n_i_faces], \
-                                i_face_normal[0:n_i_faces], \
+                                i_face_u_normal[0:n_i_faces], \
                                 i_visc[0:n_i_faces], \
                                 i_face_cog[0:n_i_faces], \
-                                i_face_surf[0:n_i_faces], \
                                 i_dist[0:n_i_faces], \
                                 weight[0:n_i_faces], \
                                 diipf[0:n_i_faces], \
@@ -5627,9 +5626,7 @@ if(compute_cpu){
 
           /* Scaling due to mass balance in porous modelling */
           if (i_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(i_face_normal[face_id], n);
-
+            const cs_real_t *n = i_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
           }
@@ -5640,56 +5637,55 @@ if(compute_cpu){
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
-          cs_i_cd_unsteady_slope_test_vector(&upwind_switch,
-                                              iconvp,
-                                              bldfrp,
-                                              ischcp,
-                                              blencp,
-                                              blend_st,
-                                              weight[face_id],
-                                              i_dist[face_id],
-                                              i_face_surf[face_id],
-                                              cell_cen[ii],
-                                              cell_cen[jj],
-                                              i_face_normal[face_id],
-                                              i_face_cog[face_id],
-                                              diipf[face_id],
-                                              djjpf[face_id],
-                                              i_massflux[face_id],
-                                              grad[ii],
-                                              grad[jj],
-                                              grdpa[ii],
-                                              grdpa[jj],
-                                              _pi,
-                                              _pj,
-                                              pif,
-                                              pjf,
-                                              pip,
-                                              pjp);
+          cs_i_cd_unsteady_slope_test_strided<3>(&upwind_switch,
+                                                   iconvp,
+                                                   bldfrp,
+                                                   ischcp,
+                                                   blencp,
+                                                   blend_st,
+                                                   weight[face_id],
+                                                   i_dist[face_id],
+                                                   cell_cen[ii],
+                                                   cell_cen[jj],
+                                                   i_face_u_normal[face_id],
+                                                   i_face_cog[face_id],
+                                                   diipf[face_id],
+                                                   djjpf[face_id],
+                                                   i_massflux[face_id],
+                                                   grad[ii],
+                                                   grad[jj],
+                                                   grdpa[ii],
+                                                   grdpa[jj],
+                                                   _pi,
+                                                   _pj,
+                                                   pif,
+                                                   pjf,
+                                                   pip,
+                                                   pjp);
 
-          cs_i_conv_flux_vector(iconvp,
-                                thetap,
-                                imasac,
-                                _pvar[ii],
-                                _pvar[jj],
-                                pif,
-                                pif, /* no relaxation */
-                                pjf,
-                                pjf, /* no relaxation */
-                                i_massflux[face_id],
-                                fluxi,
-                                fluxj);
+            cs_i_conv_flux_strided<3>(iconvp,
+                                      thetap,
+                                      imasac,
+                                      _pvar[ii],
+                                      _pvar[jj],
+                                      pif,
+                                      pif, /* no relaxation */
+                                      pjf,
+                                      pjf, /* no relaxation */
+                                      i_massflux[face_id],
+                                      fluxi,
+                                      fluxj);
 
 
-          cs_i_diff_flux_vector(idiffp,
-                                thetap,
-                                pip,
-                                pjp,
-                                pip, /* no relaxation */
-                                pjp, /* no relaxation */
-                                i_visc[face_id],
-                                fluxi,
-                                fluxj);
+            cs_i_diff_flux_strided<3>(idiffp,
+                                      thetap,
+                                      pip,
+                                      pjp,
+                                      pip, /* no relaxation */
+                                      pjp, /* no relaxation */
+                                      i_visc[face_id],
+                                      fluxi,
+                                      fluxj);
 
           if (upwind_switch) {
 
@@ -6165,7 +6161,7 @@ if(compute_cuda){
                         map(to: b_face_cells[0:n_b_faces], \
                                 b_massflux[0:n_b_faces], \
                                 b_f_face_factor[0:n_b_faces], \
-                                b_face_normal[0:n_b_faces], \
+                                b_face_u_normal[0:n_b_faces], \
                                 bc_type[0:n_b_faces], \
                                 b_visc[0:n_b_faces], \
                                 b_face_cells[0:n_b_faces], \
@@ -6203,9 +6199,7 @@ if(compute_cuda){
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
           }
 
@@ -6214,24 +6208,24 @@ if(compute_cuda){
           if (df_limiter != NULL && ircflp > 0)
             bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
-          cs_b_cd_unsteady_vector(bldfrp,
-                                  diipb[face_id],
-                                  grad[ii],
-                                  _pi,
-                                  pip);
-          cs_b_upwind_flux_vector(iconvp,
-                                  thetap,
-                                  imasac,
-                                  inc,
-                                  bc_type[face_id],
-                                  _pi,
-                                  _pi, /* no relaxation */
-                                  pip,
-                                  coefav[face_id],
-                                  coefbv[face_id],
-                                  b_massflux[face_id],
-                                  pfac,
-                                  fluxi);
+          cs_b_cd_unsteady_strided<3>(bldfrp,
+                                      diipb[face_id],
+                                      grad[ii],
+                                      _pi,
+                                      pip);
+          cs_b_upwind_flux_strided<3>(iconvp,
+                                      thetap,
+                                      imasac,
+                                      inc,
+                                      bc_type[face_id],
+                                      _pi,
+                                      _pi, /* no relaxation */
+                                      pip,
+                                      coefav[face_id],
+                                      coefbv[face_id],
+                                      b_massflux[face_id],
+                                      pfac,
+                                      fluxi);
 
           /* Saving velocity on boundary faces */
           if (b_pvar != NULL) {
@@ -6246,14 +6240,14 @@ if(compute_cuda){
             }
           }
 
-          cs_b_diff_flux_vector(idiffp,
-                                thetap,
-                                inc,
-                                pip,
-                                cofafv[face_id],
-                                cofbfv[face_id],
-                                b_visc[face_id],
-                                fluxi);
+          cs_b_diff_flux_strided<3>(idiffp,
+                                    thetap,
+                                    inc,
+                                    pip,
+                                    cofafv[face_id],
+                                    cofbfv[face_id],
+                                    b_visc[face_id],
+                                    fluxi);
 
           for(int isou = 0; isou < 3; isou++) {
             #pragma omp atomic
@@ -6289,17 +6283,15 @@ if(compute_cuda){
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
 
-          cs_b_cd_unsteady_vector(bldfrp,
-                                  diipb[face_id],
-                                  grad[jj],
-                                  _pj,
-                                  pip);
+          cs_b_cd_unsteady_strided<3>(bldfrp,
+                                      diipb[face_id],
+                                      grad[jj],
+                                      _pj,
+                                      pip);
 
           for (int k = 0; k < 3; k++)
             pvar_distant[ii][k] = pip[k];
@@ -6338,9 +6330,7 @@ if(compute_cuda){
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
-            cs_real_3_t n;
-            cs_math_3_normalize(b_face_normal[face_id], n);
-
+            const cs_real_t *n = b_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
 
@@ -6351,11 +6341,11 @@ if(compute_cuda){
                                                df_limiter[jj]),
                                   0.);
 
-          cs_b_cd_unsteady_vector(bldfrp,
-                                  diipb[face_id],
-                                  grad[jj],
-                                  _pj,
-                                  pip);
+          cs_b_cd_unsteady_strided<3>(bldfrp,
+                                      diipb[face_id],
+                                      grad[jj],
+                                      _pj,
+                                      pip);
 
           for (int k = 0; k < 3; k++)
             pjp[k] = pvar_local[ii][k];
@@ -6364,11 +6354,11 @@ if(compute_cuda){
           cs_real_t hext = hextp[face_id];
           cs_real_t heq = _calc_heq(hint, hext)*surf;
 
-          cs_b_diff_flux_coupling_vector(idiffp,
-                                         pip,
-                                         pjp,
-                                         heq,
-                                         fluxi);
+          cs_b_diff_flux_coupling_strided<3>(idiffp,
+                                             pip,
+                                             pjp,
+                                             heq,
+                                             fluxi);
 
           for (int k = 0; k < 3; k++)
             #pragma omp atomic

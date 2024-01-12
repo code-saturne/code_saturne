@@ -95,7 +95,7 @@
                               const cs_real_t (*restrict coefbv)[stride][stride], \
                               const cs_real_t (*restrict pvar)[stride], \
                               const cs_real_t     *restrict c_weight, \
-                              cs_real_t (*restrict r_grad)[stride][3], \
+                              const cs_real_t (*restrict r_grad)[stride][3], \
                               cs_real_t (*restrict grad)[stride][3], \
                               bool                      test_bool, \
                               bool                          perf)
@@ -1382,12 +1382,12 @@ cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->diipb);
 
-  _sync_or_copy_real_h2d(pvar, n_cells_ext*stride, device_id, stream,
+  _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream,
                          &pvar_d, &_pvar_d);
 
-  _sync_or_copy_real_h2d(coefav, n_b_faces*stride, device_id, stream,
+  _sync_or_copy_real_h2d(coefav, n_b_faces, device_id, stream,
                          &coefa_d, &_coefa_d);
-  _sync_or_copy_real_h2d(coefbv, n_b_faces*stride*stride, device_id, stream,
+  _sync_or_copy_real_h2d(coefbv, n_b_faces, device_id, stream,
                          &coefb_d, &_coefb_d);
 
   cs_cuda_copy_h2d(grad_d, gradv, sizeof(cs_real_t) * n_cells * stride * 3);
@@ -1530,7 +1530,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                               const cs_real_t (*restrict coefbv)[stride][stride],
                               const cs_real_t (*restrict pvar)[stride],
                               const cs_real_t     *restrict c_weight,
-                              cs_real_t (*restrict r_grad)[stride][3],
+                              const cs_real_t (*restrict r_grad)[stride][3],
                               cs_real_t (*restrict grad)[stride][3],
                               bool                      test_bool,
                               bool                          perf)
@@ -1650,15 +1650,15 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   cs_cuda_copy_h2d(c_disable_flag, (void *)fvq->c_disable_flag, sizeof(int)*n_cells);
 
 
-  _sync_or_copy_real_h2d(pvar, n_cells_ext*stride, device_id, stream,
+  _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream,
     &pvar_d, &_pvar_d);
 
-  // _sync_or_copy_real_h2d(r_grad, n_cells_ext*stride*3, device_id, stream,
-  //   &r_grad_d, &_r_grad_d);
+  _sync_or_copy_real_h2d(r_grad, n_cells_ext, device_id, stream,
+    &r_grad_d, &_r_grad_d);
 
-  _sync_or_copy_real_h2d(coefav, n_b_faces*stride, device_id, stream,
+  _sync_or_copy_real_h2d(coefav, n_b_faces, device_id, stream,
         &coefa_d, &_coefa_d);
-  _sync_or_copy_real_h2d(coefbv, n_b_faces*stride*stride, device_id, stream,
+  _sync_or_copy_real_h2d(coefbv, n_b_faces, device_id, stream,
         &coefb_d, &_coefb_d);
       
 
@@ -1824,9 +1824,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   
   // cs_cuda_copy_h2d(grad_d, grad, n_cells_ext * sizeof(cs_real_33_t));
 
-  // _sync_or_copy_real_h2d(r_grad, n_cells_ext, device_id, stream,
-  //   &r_grad_d, &_r_grad_d);
-
   CS_CUDA_CHECK(cudaEventRecord(b_faces_1, stream));
   
   // ----------------------------Begin of Kernels part 2-------------------------------------------
@@ -1988,7 +1985,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   /* Sync to host */
   if (grad_d != NULL) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
+    size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else

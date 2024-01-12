@@ -192,7 +192,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
                               const cs_real_t (*restrict coefbv)[stride][stride],
                               const cs_real_t (*restrict pvar)[stride],
                               const cs_real_t     *restrict c_weight,
-                              cs_real_t (*restrict r_grad)[stride][3],
+                              const cs_real_t (*restrict r_grad)[stride][3],
                               cs_real_t (*restrict grad)[stride][3],
                               bool                      test_bool,
                               bool                          perf);

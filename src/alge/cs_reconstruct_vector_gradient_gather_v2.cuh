@@ -24,14 +24,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_i_face_gather_v2(cs_lnum_t            n_cells,
-                          const cs_real_3_t    *pvar,
+                          const cs_real_t (*restrict pvar)[stride],
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight,
-                          const cs_real_33_t        *restrict r_grad,
-                          cs_real_33_t        *restrict grad,
+                          const cs_real_t (*restrict r_grad)[stride][3],
+                          cs_real_t (*restrict grad)[stride][3],
                           const cs_real_3_t *restrict dofij,
                           const cs_real_3_t *restrict i_f_face_normal,
                           const cs_lnum_t *restrict cell_cells_idx,
@@ -49,8 +49,8 @@ _compute_reconstruct_v_i_face_gather_v2(cs_lnum_t            n_cells,
   cs_lnum_t c_id2, f_id;
   cs_real_t pond, ktpond, pfaci, pfacj, rfac;
 
-  size_t c_idx = c_id1 / (3*3);
-  size_t i = (c_id1 / 3) % 3;
+  size_t c_idx = c_id1 / (stride*3);
+  size_t i = (c_id1 / 3) % stride;
   size_t j = c_id1 % 3;
 
   cs_lnum_t s_id = cell_cells_idx[c_idx];
@@ -84,16 +84,16 @@ _compute_reconstruct_v_i_face_gather_v2(cs_lnum_t            n_cells,
 
 
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
-                              const cs_real_33_t  *restrict coefbv,
-                              const cs_real_3_t   *restrict coefav,
-                              const cs_real_3_t   *restrict pvar,
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict pvar)[stride],
                               int                           inc,
                               const cs_real_3_t *restrict diipb,
-                              const cs_real_33_t        *restrict r_grad,
-                              cs_real_33_t        *restrict grad,
+                              const cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3],
                               const cs_real_3_t *restrict b_f_face_normal,
                               const cs_lnum_t      *restrict b_cells,
                               const cs_lnum_t      *restrict cell_b_faces,
@@ -106,8 +106,8 @@ _compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
     return;
   }
 
-  size_t c_id1 = c_idx / 3;
-  size_t i = c_idx % 3;
+  size_t c_id1 = c_idx / stride;
+  size_t i = c_idx % stride;
 
   cs_lnum_t c_id = b_cells[c_id1];
   
@@ -129,7 +129,7 @@ _compute_reconstruct_v_b_face_gather_v2(cs_lnum_t           n_b_cells,
 
   //   /* Reconstruction part */
     rfac = 0.;
-    for (cs_lnum_t k = 0; k < 3; k++) {
+    for (cs_lnum_t k = 0; k < stride; k++) {
       vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
                           + r_grad[c_id][k][1] * diipb[f_id][1]
                           + r_grad[c_id][k][2] * diipb[f_id][2];

@@ -26,15 +26,15 @@
 
 
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *i_face_cells,
-                          const cs_real_3_t    *pvar,
+                          const cs_real_t (*restrict pvar)[stride],
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight,
-                          const cs_real_33_t        *restrict r_grad,
-                          cs_real_33_t        *restrict grad,
+                          const cs_real_t (*restrict r_grad)[stride][3],
+                          cs_real_t (*restrict grad)[stride][3],
                           const cs_real_3_t *restrict dofij,
                           const cs_real_3_t *restrict i_f_face_normal)
 {
@@ -44,8 +44,8 @@ _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
     return;
   }
 
-  size_t f_idt = f_id / 3;
-  size_t i = f_id % 3;
+  size_t f_idt = f_id / stride;
+  size_t i = f_id % stride;
 
   cs_lnum_t c_id1, c_id2;
   cs_real_t pond, ktpond, pfaci, pfacj, rfac;
@@ -79,16 +79,16 @@ _compute_reconstruct_v_i_face_v2(cs_lnum_t            n_i_faces,
     
 }
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
-                              const cs_real_33_t  *restrict coefbv,
-                              const cs_real_3_t   *restrict coefav,
-                              const cs_real_3_t   *restrict pvar,
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict pvar)[stride],
                               int                           inc,
                               const cs_real_3_t *restrict diipb,
-                              const cs_real_33_t        *restrict r_grad,
-                              cs_real_33_t        *restrict grad,
+                              const cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3],
                               const cs_real_3_t *restrict b_f_face_normal,
                               const cs_lnum_t *restrict b_face_cells)
 {
@@ -98,8 +98,8 @@ _compute_reconstruct_v_b_face_v2(cs_lnum_t            n_b_faces,
     return;
   }
 
-  size_t f_idt = f_id / 3;
-  size_t i = f_id % 3;
+  size_t f_idt = f_id / stride;
+  size_t i = f_id % stride;
 
   cs_lnum_t c_id;
   cs_real_t pond, ktpond, pfac, rfac, vecfac;
@@ -151,8 +151,8 @@ _compute_reconstruct_correction_v2(  cs_lnum_t                       n_cells,
     return;
   }
   
-  size_t c_idt = c_id / 3;
-  size_t i = c_id % 3;
+  size_t c_idt = c_id / stride;
+  size_t i = c_id % stride;
 
   cs_real_t dvol;
   /* Is the cell disabled (for solid or porous)? Not the case if coupled */

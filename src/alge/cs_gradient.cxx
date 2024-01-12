@@ -5576,19 +5576,19 @@ res_cpu = !compute_cuda;
       start = std::chrono::high_resolution_clock::now();
     }
 
-    // cs_reconstruct_vector_gradient_cuda<stride>(m,
-    //                                     madj,
-    //                                     fvq, 
-    //                                     halo_type, 
-    //                                     inc,
-    //                                     coefav,
-    //                                     coefbv,
-    //                                     pvar,
-    //                                     c_weight,
-    //                                     r_grad,
-    //                                     grad_gpu,
-    //                                     cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
-    //                                     perf);
+    cs_reconstruct_vector_gradient_cuda<stride>(m,
+                                        madj,
+                                        fvq, 
+                                        halo_type, 
+                                        inc,
+                                        coefav,
+                                        coefbv,
+                                        pvar,
+                                        c_weight,
+                                        r_grad,
+                                        grad_gpu,
+                                        cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
+                                        perf);
     if(perf){
       stop = std::chrono::high_resolution_clock::now();
       elapsed_cuda = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);

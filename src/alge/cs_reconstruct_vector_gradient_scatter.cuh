@@ -99,7 +99,7 @@ _compute_reconstruct_v_b_face(cs_lnum_t            n_b_faces,
 
   c_id = b_face_cells[f_id];
 
-  for (cs_lnum_t i = 0; i < 3; i++) {
+  for (cs_lnum_t i = 0; i < stride; i++) {
 
     pfac = inc*coefav[f_id][i];
 
