@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -313,7 +313,7 @@ class GasCombustionModel(Variables, Model):
             for node in self.node_gas.xmlGetChildNodeList('variable'):
                 name = node['name']
                 NPE.setBlendingFactor(name, 0.)
-                NPE.setScheme(name, 'upwind')
+                NPE.setScheme(name, 'centered')
                 NPE.setFluxReconstruction(name, 'off')
 
                 if self.getGasCombustionModel() == "d3p":

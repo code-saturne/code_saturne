@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -144,7 +144,6 @@ end subroutine reftra
 !> \param[in]   romray      air density
 !> \param[in]   preray      pressure
 !> \param[in]   temray      temperature
-!> \param[in]   aeroso      aerosol concentration in micro-g/m3
 !> \param[out]  fos         global downward solar flux at the ground
 !> \param[out]  rayst       flux divergence of solar radiation
 !_______________________________________________________________________________
@@ -153,7 +152,7 @@ subroutine rayso  &
  (ivertc, k1, kmray, heuray, imer1, albe,        &
   qqv, qqqv, qqvinf, zqq,                        &
   zray, qvray, qlray, fneray,                    &
-  romray, preray, temray, aeroso, fos, rayst, ncray)
+  romray, preray, temray, fos, rayst, ncray)
 
 !===============================================================================
 ! Module files
@@ -194,7 +193,6 @@ double precision albe, heuray, fos
 double precision qqv(kmx+1), qqqv(kmx+1), qqvinf, zqq(kmx+1)
 double precision qlray(kmx), fneray(kmx), zray(kmx)
 double precision qvray(kmx), preray(kmx)
-double precision aeroso(kmx)!TODO remove, optical width directly given.
 double precision rayst(kmx), romray(kmx)
 double precision temray(kmx)
 double precision ncray(kmx)

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -53,6 +53,7 @@
 #undef PACKAGE_URL
 #undef PACKAGE_VERSION
 
+#include <HYPRE_config.h>
 #include <HYPRE_krylov.h>
 #include <HYPRE_parcsr_ls.h>
 #include <HYPRE_utilities.h>
@@ -359,8 +360,12 @@ cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
 
   if (_n_hypre_systems == 0) {
     _ensure_mpi_init();
-    HYPRE_Init();  /* Note: ideally, HYPRE should provide a function to
-                      check if it is already initialized or not */
+#if HYPRE_RELEASE_NUMBER < 22900
+    HYPRE_Init();
+#else
+    if (HYPRE_Initialized() == 0)
+      HYPRE_Initialize();
+#endif
   }
   _n_hypre_systems += 1;
 
@@ -958,9 +963,9 @@ cs_sles_hypre_setup(void               *context,
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
@@ -979,7 +984,7 @@ cs_sles_hypre_solve(void                *context,
                     double               precision,
                     double               r_norm,
                     int                 *n_iter,
-                    double              *residue,
+                    double              *residual,
                     const cs_real_t     *rhs,
                     cs_real_t           *vx,
                     size_t               aux_size,
@@ -1209,7 +1214,7 @@ cs_sles_hypre_solve(void                *context,
       cvg = CS_SLES_DIVERGED;
   }
 
-  *residue = res;
+  *residual = res;
   *n_iter = its;
 
   /* Update return values */

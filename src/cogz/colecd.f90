@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -52,6 +52,7 @@ use coincl
 use cpincl
 use ppincl
 use radiat
+use cs_c_bindings
 
 !===============================================================================
 
@@ -64,13 +65,12 @@ implicit none
 character(len=150) :: chain1,chain2,chain3
 character(len=12) :: nomgaz
 
-integer          it, igg, ir, ige, iat, ios, igf, igo, igp, iehc
+integer          ii, it, igg, ir, ige, iat, ios, igf, igo, igp, iehc
 integer          ncgm, nrgm
 integer          inicoe, inicha
 integer          lonch, ichai, ichcoe
 integer          iereac(ngazem)
 integer          ncoel, icoel
-integer          mode
 
 double precision tmin, tmax
 double precision kabse(ngazem)
@@ -84,7 +84,29 @@ double precision moxyd
 double precision, dimension(:,:), allocatable :: aa
 double precision, dimension(:), allocatable :: bb, xx
 
+character(len=64) :: ficfpp
+integer(c_int) :: c_name_max, c_name_len
+type(c_ptr) :: c_name_p
+character(kind=c_char, len=1), dimension(:), pointer :: c_name
+
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+  interface
+
+    subroutine cs_f_combustion_gas_get_data_file_name  &
+      (f_name_max, f_name, f_name_len)                 &
+      bind(C, name='cs_f_combustion_gas_get_data_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_name_max
+      type(c_ptr), intent(out)    :: f_name
+      integer(c_int), intent(out) :: f_name_len
+    end subroutine cs_f_combustion_gas_get_data_file_name
+
+  end interface
+
 !===============================================================================
 ! -0. INITIALISATION et VERIFICATIONS
 !===============================================================================
@@ -101,16 +123,24 @@ moxyd = 0.d0
 
 epsi = 1.d-9
 
-if (indjon.ne.1.and.indjon.ne.0) then
-  write(nfecra, 9900) indjon
-  call csexit(1)
-endif
+! Get thermochemistry data file name
+
+c_name_max = len(ficfpp)
+call cs_f_combustion_gas_get_data_file_name(c_name_max, c_name_p, c_name_len)
+call c_f_pointer(c_name_p, c_name, [c_name_len])
+
+do ii = 1, c_name_len
+  ficfpp(ii:ii) = c_name(ii)
+enddo
+do ii = c_name_len + 1, c_name_max
+  ficfpp(ii:ii) = ' '
+enddo
 
 !===============================================================================
 ! -1. UTILISATION DE JANAF
 !===============================================================================
 
-if (indjon.eq.1) then
+if (use_janaf.eqv..true.) then
 
   ! 1.1 LECTURE DU FICHIER DONNEES SPECIFIQUES
   !===========================================
@@ -596,12 +626,14 @@ if (indjon.eq.1) then
 
   do ige = 1, ngaze
     nomgaz = nomcoe(ige)
-    if (trim(nomgaz).EQ.'C(S)') IIC=IGE
-    if (trim(nomgaz).EQ.'CO'  ) IICO=IGE
-    if (trim(nomgaz).EQ.'O2'  ) IIO2=IGE
-    if (trim(nomgaz).EQ.'CO2' ) IICO2=IGE
-    if (trim(nomgaz).EQ.'H2O' ) IIH2O=IGE
+    if (trim(nomgaz).EQ.'C(S)') iic=ige
+    if (trim(nomgaz).EQ.'CO'  ) iico=ige
+    if (trim(nomgaz).EQ.'O2'  ) iio2=ige
+    if (trim(nomgaz).EQ.'CO2' ) iico2=ige
+    if (trim(nomgaz).EQ.'H2O' ) iih2o=ige
   enddo
+
+  ! Not used in model
 
   xco2 = compog(iico2,3)
   xh2o = compog(iih2o,3)
@@ -660,9 +692,7 @@ if (indjon.eq.1) then
       coefg(igg) = 1.d0
       tgaz      = 300.d0
 
-      mode = -1
-      call cothht(mode, ngazg, ngazgm, coefg,                 &
-                  npo, npot, th, ehgazg, efgaz(igg), tgaz)
+      efgaz(igg) = cs_gas_combustion_t_to_h(coefg, tgaz)
 
       pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
 
@@ -775,12 +805,7 @@ else
       coefg(igg) = 1.d0
       tgaz      = 300.d0
 
-      mode = -1
-      call cothht                                                   &
-      !==========
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          efgaz(igg)      , tgaz   )
+      efgaz(igg) = cs_gas_combustion_t_to_h(coefg, tgaz)
 
       pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
 
@@ -811,21 +836,6 @@ call csexit(1)
 ! Formats
 !--------
 
- 9900 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
-'@    =====',                                                   /,&
-'@             GAS COMBUSTION',                                 /,&
-'@',                                                            /,&
-'@  The INDJON indicator must have value 1 (use Janaf)',        /,&
-'@    or 0 (user tabulation).',                                 /,&
-'@',                                                            /,&
-'@  Its current value is', i10                                  /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  9980 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

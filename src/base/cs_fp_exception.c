@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -136,9 +136,10 @@ cs_fp_exception_disable_trap(void)
 {
 #if defined(CS_FPE_TRAP)
   if (_fenv_save == 0) {
-    if (fegetenv(&_fenv_old) == 0)
+    if (fegetenv(&_fenv_old) == 0) {
       _fenv_save += 1;
-    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+      fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+    }
   }
   else
     _fenv_save += 1;

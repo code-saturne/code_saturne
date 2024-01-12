@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -184,26 +184,28 @@ module lagran
 
     ! Interface to C function passing specific physics options
 
-    subroutine  cs_f_lagr_specific_physics(iirayo, ncharb, ncharm)             &
+    subroutine  cs_f_lagr_specific_physics(iirayo)             &
       bind(C, name='cs_f_lagr_specific_physics')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int) :: iirayo, ncharb, ncharm
+      integer(c_int) :: iirayo
     end subroutine cs_f_lagr_specific_physics
 
     !---------------------------------------------------------------------------
 
     ! Interface to C function passing coal combustion parameters
 
-    subroutine  cs_f_lagr_coal_comb(ih2o, io2, ico, iatc, prefth, trefth,      &
+    subroutine  cs_f_lagr_coal_comb(ncharb, ncharm,                            &
+                                    ih2o, io2, ico, iatc, prefth, trefth,      &
                                     natom, wmolat, ngazem, wmole, iym1,        &
-                                    ncharm, a1ch, h02ch, e1ch, a2ch, e2ch,     &
+                                    a1ch, h02ch, e1ch, a2ch, e2ch,             &
                                     y1ch, y2ch, cp2ch, ahetch, ehetch,         &
                                     rho0ch, xwatch, xashch, thcdch)            &
       bind(C, name='cs_f_lagr_coal_comb')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int) :: ih2o, io2, ico, iatc, natom, ngazem, ncharm
+      integer(c_int) :: ncharb, ncharm
+      integer(c_int) :: ih2o, io2, ico, iatc, natom, ngazem
       real(c_double) :: prefth, trefth
       integer(c_int), dimension(ngazem) :: iym1
       real(c_double), dimension(natom) :: wmole, wmolat
@@ -358,10 +360,10 @@ contains
 
   subroutine lagran_init_map
 
-    use ppincl, only: iccoal, ieljou, ielarc, icoebu, icod3p, iym1, icompf
+    use ppincl, only: iccoal, ieljou, ielarc, icoebu, icod3p, icompf
     use cpincl, only: ncharb, xashch, cp2ch, xwatch, rho0ch, a1ch,             &
                       a2ch, e1ch, e2ch, io2, ih2o, ico,                        &
-                      ahetch, ehetch, thcdch, y1ch, y2ch, h02ch
+                      ahetch, ehetch, thcdch, y1ch, y2ch, h02ch, iym1
     use ppppar, only: ncharm
     use ppthch, only: ngazem, wmole, wmolat, trefth, prefth, iatc, natom, wmolat
     use radiat, only: iirayo
@@ -370,11 +372,11 @@ contains
 
     call lagran_pointers
 
-    call cs_f_lagr_specific_physics(iirayo,         &
-                                    ncharb,         &
-                                    ncharm)
+    call cs_f_lagr_specific_physics(iirayo)
 
-    call cs_f_lagr_coal_comb(ih2o,   &
+    call cs_f_lagr_coal_comb(ncharb, &
+                             ncharm, &
+                             ih2o,   &
                              io2,    &
                              ico,    &
                              iatc,   &
@@ -385,7 +387,6 @@ contains
                              ngazem, &
                              wmole,  &
                              iym1,   &
-                             ncharm, &
                              a1ch,   &
                              h02ch,  &
                              e1ch,   &

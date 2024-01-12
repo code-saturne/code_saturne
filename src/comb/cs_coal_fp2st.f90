@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -158,7 +158,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
      itytur.eq.3 .or. iturb.eq.60      ) then
   inc = 1
 ! A defaut de savoir pour F1M+F2M on prend comme pour F1M(1)
-  call field_get_key_struct_var_cal_opt(ivarfl(isca(if1m(1))), vcopt)
+  call field_get_key_struct_var_cal_opt(if1m(1), vcopt)
   imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
@@ -170,11 +170,11 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
   x1( : ) = 1.d0
   do icla = 1, nclacp
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
-    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+    call field_get_val_s(ixch(icla), cvar_xchcl)
+    call field_get_val_s(ixck(icla), cvar_xckcl)
+    call field_get_val_s(inp(icla), cvar_xnpcl)
     if ( ippmod(iccoal) .ge. 1 ) then
-      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+      call field_get_val_s(ixwt(icla), cvar_xwtcl)
     endif
     do iel = 1, ncel
       x1(iel) =   x1(iel)                                        &
@@ -190,8 +190,8 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 ! --> calcul de F=F1+F2
   f1f2( : ) = zero
   do icha = 1, ncharb
-    call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
-    call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
+    call field_get_val_s(if1m(icha), cvar_f1m)
+    call field_get_val_s(if2m(icha), cvar_f2m)
     do iel = 1, ncel
       f1f2(iel) =  f1f2(iel)                                     &
                  + cvar_f1m(iel)                                 &
@@ -248,8 +248,8 @@ iold = 1
 if ( iold .eq. 1 ) then
 !
   do icla=1,nclacp
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
-    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+    call field_get_val_s(ixch(icla), cvar_xchcl)
+    call field_get_val_s(inp(icla), cvar_xnpcl)
     call field_get_val_s(igmdv1(icla), cpro_cgd1)
     call field_get_val_s(igmdv2(icla), cpro_cgd2)
     do iel = 1, ncel
@@ -283,7 +283,7 @@ if ( iold .eq. 1 ) then
 else
 !
   do icla=1,nclacp
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(ixch(icla), cvar_xchcl)
     call field_get_val_s(igmdv1(icla), cpro_cgd1)
     call field_get_val_s(igmdv2(icla), cpro_cgd2)
     do iel = 1, ncel

@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,7 @@
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
-#include "cs_combustion_model.h"
+#include "cs_coal.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_gui_util.h"
@@ -407,12 +407,12 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   /* Allocate work arrays */
 
-  cs_real_t *rhs0, *dpvar, *radiance, *radiance_prev;
+  cs_real_t *rhs0, *dpvar;
+  cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
+  cs_real_t *radiance_prev = CS_FI_(radiance, gg_id)->val_pre;
   cs_real_t *ck_u_d = NULL;
   BFT_MALLOC(rhs0,  n_cells_ext, cs_real_t);
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
-  BFT_MALLOC(radiance, n_cells_ext, cs_real_t);
-  BFT_MALLOC(radiance_prev, n_cells_ext, cs_real_t);
 
   /* Specific heat capacity of the bulk phase */
   // CAUTION FOR NEPTUNE INTEGRATION HERE
@@ -515,25 +515,11 @@ _cs_rad_transfer_sol(int                        gg_id,
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  cs_var_cal_opt_t vcopt = cs_parameters_var_cal_opt_default();
-
-  vcopt.verbosity =  rt_params->verbosity - 1;
-  vcopt.iconv  =  1; /* Pure convection */
-  vcopt.istat  = -1;
-  vcopt.ndircl = 1;/* There are Dirichlet BCs */
-  vcopt.idiff  =  0; /* no face diffusion */
-  vcopt.idifft = -1;
-  vcopt.isstpc =  0;
-  vcopt.nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
-  vcopt.imrgra =  cs_glob_space_disc->imrgra;
-  vcopt.blencv =  0; /* Pure upwind...*/
-  vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
-
-  if (rt_params->dispersion) {
-    vcopt.idiff  =  1; /* Added face diffusion */
-    vcopt.nswrgr = 20;
-    vcopt.nswrsm =  2;
-  }
+  /* Get a copy of the equation parameter */
+  cs_var_cal_opt_t vcopt;
+  cs_field_get_key_struct(CS_FI_(radiance, gg_id),
+                          cs_field_key_id("var_cal_opt"),
+                          &vcopt);
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -616,10 +602,10 @@ _cs_rad_transfer_sol(int                        gg_id,
              dir_id < rt_params->ndirs && !finished;
              dir_id++) {
 
-          char    cname[80];
+          char sles_name[80];
 
           if (one_dir) {
-            snprintf(cname, 79, "%s", "direct_radiation");
+            snprintf(sles_name, 79, "%s", "direct_radiation");
             finished = true;
           }
           /* Many directions */
@@ -631,7 +617,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
             /* Gloal direction id */
             kdir++;
-            snprintf(cname, 79, "%s%03d", "radiation_", kdir);
+            snprintf(sles_name, 79, "%s%03d", "radiation_", kdir);
           }
 
           /* Update boundary condition coefficients
@@ -747,10 +733,13 @@ _cs_rad_transfer_sol(int                        gg_id,
           /* In case of a theta-scheme, set theta = 1;
              no relaxation in steady case either */
 
+          int f_id = CS_FI_(radiance, gg_id)->id;
+          cs_sles_push(f_id, sles_name);
+
           cs_equation_iterative_solve_scalar(0,   /* idtvar */
                                              1,   /* external sub-iteration */
-                                             -1,  /* f_id */
-                                             cname,
+                                             f_id,
+                                             sles_name,
                                              0,   /* iescap */
                                              0,   /* imucpp */
                                              -1,  /* normp */
@@ -778,6 +767,8 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              dpvar,
                                              NULL,
                                              NULL);
+
+          cs_sles_pop(f_id);
 
           /* Integration of fluxes and source terms
            * Increment absorption and emission for Atmo on the fly */
@@ -942,8 +933,6 @@ _cs_rad_transfer_sol(int                        gg_id,
   BFT_FREE(ck_u_d);
   BFT_FREE(rhs0);
   BFT_FREE(dpvar);
-  BFT_FREE(radiance);
-  BFT_FREE(radiance_prev);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -968,7 +957,6 @@ _cs_rad_transfer_sol(int                        gg_id,
 
 static void
 _compute_net_flux(const int        itypfb[],
-                  const cs_real_t  coefap[],
                   const cs_real_t  twall[],
                   const cs_real_t  qincid[],
                   const cs_real_t  eps[],
@@ -976,6 +964,14 @@ _compute_net_flux(const int        itypfb[],
 {
   const cs_real_t c_stefan = cs_physical_constants_stephan;
   cs_real_t  xmissing = -cs_math_big_r * 0.2;
+
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  int nwsgg = rt_params->nwsgg;
+  /* get BC coeffs for radiance
+   * (explicit part of the last band to be coherent with before)
+   * FIXME this should be updated for multiband and
+   * also for other inlet conditions */
+  cs_real_t *coefap = CS_FI_(radiance, nwsgg-1)->bc_coeffs->a;
 
   /* If the boundary conditions given above have been modified
    *   it is necessary to change the way in which density is calculated from
@@ -1166,12 +1162,8 @@ cs_rad_transfer_solve(int  bc_type[])
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate specific arrays for the radiative transfer module */
-  cs_real_t *tempk, *coefap, *coefbp, *cofafp, *cofbfp, *flurds, *flurdb;
+  cs_real_t *tempk, *flurds, *flurdb;
   BFT_MALLOC(tempk,  n_cells * rt_params->nrphas, cs_real_t);
-  BFT_MALLOC(coefap, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefbp, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofafp, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofbfp, n_b_faces, cs_real_t);
   BFT_MALLOC(flurds, n_i_faces, cs_real_t);
   BFT_MALLOC(flurdb, n_b_faces, cs_real_t);
 
@@ -1209,7 +1201,7 @@ cs_rad_transfer_solve(int  bc_type[])
   cs_real_3_t *iqpar;
   BFT_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
 
-  cs_coal_model_t *coal = cs_glob_combustion_model->coal;
+  cs_coal_model_t *coal = cs_glob_coal_model;
 
   /* Numer of classes for Coal combustion */
   int n_classes = 0;
@@ -1539,6 +1531,12 @@ cs_rad_transfer_solve(int  bc_type[])
      of code_saturne, nwsgg=1 */
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
+
+    /* get BC coeffs Allocate specific arrays for the radiative transfer module */
+    cs_real_t *coefap = CS_FI_(radiance, gg_id)->bc_coeffs->a;
+    cs_real_t *coefbp = CS_FI_(radiance, gg_id)->bc_coeffs->b;
+    cs_real_t *cofafp = CS_FI_(radiance, gg_id)->bc_coeffs->af;
+    cs_real_t *cofbfp = CS_FI_(radiance, gg_id)->bc_coeffs->bf;
 
     /* Use absorption field if existing */
     char f_name[64];
@@ -2023,8 +2021,8 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* Basic definition for net flux */
 
+  //TODO compute net flux per band and global one...
   _compute_net_flux(bc_type,
-                    coefap,
                     twall,
                     f_qinci->val,
                     f_eps->val,
@@ -2043,10 +2041,6 @@ cs_rad_transfer_solve(int  bc_type[])
    */
 
   cs_user_rad_transfer_net_flux(bc_type,
-                                coefap,
-                                coefbp,
-                                cofafp,
-                                cofbfp,
                                 twall,
                                 f_qinci->val,
                                 f_xlam->val,
@@ -2084,7 +2078,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     int izone = b_face_class_id[ifac];
-    flux[izone]  = flux[izone] + f_fnet->val[ifac] * b_face_surf[ifac];
+    flux[izone]  += f_fnet->val[ifac] * b_face_surf[ifac];
     iflux[izone] = 1;
   }
 
@@ -2304,10 +2298,6 @@ cs_rad_transfer_solve(int  bc_type[])
   BFT_FREE(rhs);
   BFT_FREE(rovsdt);
   BFT_FREE(tempk);
-  BFT_FREE(coefap);
-  BFT_FREE(coefbp);
-  BFT_FREE(cofafp);
-  BFT_FREE(cofbfp);
   BFT_FREE(flurds);
   BFT_FREE(flurdb);
   BFT_FREE(int_emi);

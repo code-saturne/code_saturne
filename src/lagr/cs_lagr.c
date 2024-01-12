@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -373,13 +373,32 @@ cs_lagr_extra_module_t *cs_glob_lagr_extra_module = &_lagr_extra_module;
 /* lagr coal combustion structure and associated pointer */
 
 static cs_lagr_coal_comb_t _lagr_coal_comb
-  = {0,    0,    0,
-     0,    0.0 , 0.0,
-     0,    NULL,
-     0,    NULL, NULL,
-     0,    NULL, NULL, NULL, NULL,
-     NULL, NULL, NULL, NULL, NULL,
-     NULL, NULL, NULL, NULL, NULL};
+  = {.ih2o = 0,
+     .io2 = 0,
+     .ico = 0,
+     .iatc =0,
+     .prefth = 0.0,
+     .trefth = 0.0,
+     .natom = 0,
+     .wmolat = NULL,
+     .ngazem =0,
+     .wmole = NULL,
+     .iym1 = NULL,
+     .ncharm = 0,
+     .a1ch = NULL,
+     .a2ch = NULL,
+     .e1ch = NULL,
+     .e2ch = NULL,
+     .y1ch = NULL,
+     .y2ch = NULL,
+     .cp2ch = NULL,
+     .h02ch = NULL,
+     .ahetch = NULL,
+     .ehetch = NULL,
+     .rho0ch = NULL,
+     .xwatch = NULL,
+     .xashch = NULL,
+     .thcdch = NULL};
 
 /* boundary and volume condition data */
 
@@ -466,12 +485,12 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
                                 int  **p_itsmas);
 
 void
-cs_f_lagr_specific_physics(int        *iirayo,
-                           int        *ncharb,
-                           int        *ncharm);
+cs_f_lagr_specific_physics(int  *iirayo);
 
 void
-cs_f_lagr_coal_comb(int        *ih2o,
+cs_f_lagr_coal_comb(int        *ncharb,
+                    int        *ncharm,
+                    int        *ih2o,
                     int        *io2,
                     int        *ico,
                     int        *iatc,
@@ -482,7 +501,6 @@ cs_f_lagr_coal_comb(int        *ih2o,
                     int        *ngazem,
                     cs_real_t  *wmole,
                     int        *iym1,
-                    int        *ncharm,
                     cs_real_t  *a1ch,
                     cs_real_t  *h02ch,
                     cs_real_t  *e1ch,
@@ -606,9 +624,7 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
 }
 
 void
-cs_f_lagr_specific_physics(int        *iirayo,
-                           int        *ncharb,
-                           int        *ncharm)
+cs_f_lagr_specific_physics(int *iirayo)
 {
   cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
@@ -618,10 +634,6 @@ cs_f_lagr_specific_physics(int        *iirayo,
 
   _lagr_extra_module.iturb  = turb_model->iturb;
   _lagr_extra_module.itytur = turb_model->itytur;
-  if (ncharb != NULL)
-    _lagr_extra_module.ncharb = *ncharb;
-  if (ncharm != NULL)
-    _lagr_extra_module.ncharm = *ncharm;
   _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
 
   _lagr_extra_module.radiative_model = *iirayo;
@@ -629,7 +641,9 @@ cs_f_lagr_specific_physics(int        *iirayo,
 }
 
 void
-cs_f_lagr_coal_comb(int        *ih2o,
+cs_f_lagr_coal_comb(int        *ncharb,
+                    int        *ncharm,
+                    int        *ih2o,
                     int        *io2,
                     int        *ico,
                     int        *iatc,
@@ -640,7 +654,6 @@ cs_f_lagr_coal_comb(int        *ih2o,
                     int        *ngazem,
                     cs_real_t  *wmole,
                     int        *iym1,
-                    int        *ncharm,
                     cs_real_t  *a1ch,
                     cs_real_t  *h02ch,
                     cs_real_t  *e1ch,
@@ -656,6 +669,12 @@ cs_f_lagr_coal_comb(int        *ih2o,
                     cs_real_t  *xashch,
                     cs_real_t  *thcdch)
 {
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)
+    return;
+
+  _lagr_extra_module.ncharb = *ncharb;
+  _lagr_extra_module.ncharm = *ncharm;
+
   cs_glob_lagr_coal_comb->ih2o   = *ih2o;
   cs_glob_lagr_coal_comb->io2    = *io2;
   cs_glob_lagr_coal_comb->ico    = *ico;
@@ -723,7 +742,7 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cvar_ep = cs_field_by_name_try("lagr_epsilon");
 
   if (cs_field_by_name_try("velocity_1") != NULL) {
-    /* we are probably using NEPTUNE_CFD */
+    /* we are probably using neptune_cfd */
     _lagr_extra_module.vel         = cs_field_by_name_try("lagr_velocity");
 
     _lagr_extra_module.cvar_omg    = NULL;
@@ -1176,7 +1195,6 @@ cs_lagr_finalize(void)
 
   if (extra->grad_lagr_time != NULL)
     BFT_FREE(extra->grad_lagr_time);
-
 }
 
 /*----------------------------------------------------------------------------*/

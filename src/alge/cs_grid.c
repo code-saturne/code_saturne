@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1140,6 +1140,95 @@ _coarsen_halo(const cs_grid_t   *f,
 
   c_halo->n_send_elts[1] = c_halo->n_send_elts[0];
 
+  /* Prune halo */
+  /*------------*/
+
+  /* Proceed halo section by halo section */
+
+  int domain_count = 0;
+
+  for (domain_id = 0; domain_id < c_halo->n_c_domains; domain_id++) {
+
+    cs_lnum_t recv_size =   c_halo->index[2*domain_id + 2]
+                          - c_halo->index[2*domain_id];
+    cs_lnum_t send_size =   c_halo->send_index[2*domain_id + 2]
+                          - c_halo->send_index[2*domain_id];
+
+    if (recv_size + send_size == 0) {
+      c_halo->c_domain_rank[domain_id] = -1;
+    }
+
+    else {
+      for (int i = 0; i < 2; i++) {
+        c_halo->index[2*domain_count + i]
+          = c_halo->index[2*domain_id + i];
+        c_halo->send_index[2*domain_count + i]
+          = c_halo->send_index[2*domain_id + i];
+      }
+
+      domain_count++;
+    }
+
+  }
+
+  c_halo->index[2*domain_count] = c_halo->index[2*c_halo->n_c_domains];
+  c_halo->send_index[2*domain_count] = c_halo->send_index[2*c_halo->n_c_domains];
+
+  CS_REALLOC_HD(c_halo->index, domain_count*2+1, cs_lnum_t, CS_ALLOC_HOST);
+  CS_REALLOC_HD(c_halo->send_index, domain_count*2+1, cs_lnum_t, CS_ALLOC_HOST);
+
+  if (domain_count < c_halo->n_c_domains && n_sections > 0) {
+
+    const cs_lnum_t  stride_o = 4*c_halo->n_c_domains;
+    const cs_lnum_t  stride_n = 4*domain_count;
+
+    cs_lnum_t *send_perio_lst, *perio_lst;
+    BFT_MALLOC(send_perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
+    BFT_MALLOC(perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
+
+    for (int i = 0; i < c_halo->n_transforms; i++) {
+
+      int j = 0;
+
+      for (int k = 0; k < c_halo->n_c_domains; k++) {
+
+        if (c_halo->c_domain_rank[k] > -1) {
+
+          for (int l = 0; l < 4; l++)
+            send_perio_lst[i*stride_n + 4*j + l]
+              = c_halo->send_perio_lst[i*stride_o + 4*k + l];
+
+          for (int l = 0; l < 4; l++)
+            perio_lst[i*stride_n + 4*j + l]
+              = c_halo->perio_lst[i*stride_o + 4*k + l];
+
+          j += 1;
+
+        }
+
+      }
+
+      assert(j == domain_count);
+
+    }
+
+    BFT_FREE(c_halo->send_perio_lst);
+    BFT_FREE(c_halo->perio_lst);
+    c_halo->send_perio_lst = send_perio_lst;
+    c_halo->perio_lst = perio_lst;
+
+  }
+
+  domain_count = 0;
+  for (int i = 0; i < c_halo->n_c_domains; i++) {
+    if (c_halo->c_domain_rank[i] > -1) {
+      c_halo->c_domain_rank[domain_count] = c_halo->c_domain_rank[i];
+      domain_count++;
+    }
+  }
+  c_halo->n_c_domains = domain_count;
+  BFT_REALLOC(c_halo->c_domain_rank, c_halo->n_c_domains, int);
+
   /* Free memory */
 
   BFT_FREE(coarse_send);
@@ -1250,9 +1339,6 @@ static void
 _rebuild_halo_send_lists(cs_halo_t  *h,
                          cs_lnum_t   new_src_cell_id[])
 {
-  /* As halos are based on interior faces, every domain is both
-     sender and receiver */
-
   cs_lnum_t start, length;
 
   int rank_id, tr_id;
@@ -1425,84 +1511,112 @@ _merge_halo_data(cs_halo_t   *h,
                  cs_lnum_t    new_src_cell_id[],
                  cs_lnum_t    new_halo_cell_id[])
 {
-  int  rank_id, prev_rank_id, tr_id, prev_section_id;
-  cs_lnum_t  ii, ii_0, ii_1, cur_id, section_id, src_id, prev_src_id;
-
-  int   stride = (h->n_transforms > 0) ? 3 : 2;
-  int   n_c_domains_ini = h->n_c_domains;
-
-  cs_lnum_t   n_elts_ini = h->n_elts[0];
-  cs_lnum_t  *order = NULL, *section_idx = NULL;
-  cs_gnum_t  *tmp_num = NULL;
-
+  const int  stride = (h->n_transforms > 0) ? 3 : 2;
+  const int  n_c_domains_ini = h->n_c_domains;
   const int  n_sections = h->n_transforms + 1;
 
-  if (h->n_elts[0] < 1) {
+  cs_lnum_t   n_elts_ini = h->n_elts[0];
+
+  if (h->n_elts[0] + h->n_send_elts[0] < 1) {
     _empty_halo(h);
     return;
   }
 
   /* Order list by rank, transform, and new element number */
 
+  cs_gnum_t  *tmp_num = NULL;
   BFT_MALLOC(tmp_num, n_elts_ini*stride, cs_gnum_t);
 
-  for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
-    for (ii = h->index[rank_id*2];
-         ii < h->index[(rank_id+1)*2];
+  for (int rank_idx = 0; rank_idx < n_c_domains_ini; rank_idx++) {
+    int c_rank_id = h->c_domain_rank[rank_idx];
+    if (c_rank_id == loc_rank_id) {
+      h->c_domain_rank[rank_idx] = -1; /* to appear first */
+      c_rank_id = -1;
+    }
+
+    for (cs_lnum_t ii = h->index[rank_idx*2];
+         ii < h->index[(rank_idx+1)*2];
          ii++)
-      tmp_num[ii*stride] = h->c_domain_rank[rank_id];
+      tmp_num[ii*stride] = c_rank_id + 1;
   }
 
   if (stride == 2) {
-    for (ii = 0; ii < n_elts_ini; ii++)
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++)
       tmp_num[ii*2 + 1] = new_src_cell_id[ii];
   }
   else { /* if (stride == 3) */
 
-    for (ii = 0; ii < n_elts_ini; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
       tmp_num[ii*3 + 1] = 0;
       tmp_num[ii*3 + 2] = new_src_cell_id[ii];
     }
 
-    for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
-      for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-        ii_0 = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
-        ii_1 = ii_0 + h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
-        for (ii = ii_0; ii < ii_1; ii++)
+    for (int rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
+      for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+        cs_lnum_t ii_0 = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
+        cs_lnum_t ii_1 = ii_0 + h->perio_lst[  h->n_c_domains*4*tr_id
+                                             + 4*rank_id + 1];
+        for (cs_lnum_t ii = ii_0; ii < ii_1; ii++)
           tmp_num[ii*3 + 1] = tr_id + 1;
       }
     }
   }
 
-  order = cs_order_gnum_s(NULL, tmp_num, stride, n_elts_ini);
+  /* Rebuild lists and build renumbering.
 
-  /* Rebuild lists and build renumbering */
+     As the send and receive indexes might not contain exactly the same
+     list of distant ranks (at least in case of periodicity), we must be careful
+     not to neighbor information here, so we only remove duplicates in the
+     current list. */
 
-  cur_id = order[0];
-  h->n_c_domains = 0;
-  h->index[0] = 0;
+  {
+    int j = 0;
+    cs_sort_int_shell(0, h->n_c_domains, h->c_domain_rank);
+
+    for (int i = 1; i < h->n_c_domains; i++) {
+      if (h->c_domain_rank[i] != h->c_domain_rank[j]) {
+        j++;
+        h->c_domain_rank[j] = h->c_domain_rank[i];
+      }
+    }
+
+    h->n_c_domains = j+1;
+    BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
+  }
+
+  cs_lnum_t *section_idx = NULL;
+
+  cs_lnum_t *order = cs_order_gnum_s(NULL, tmp_num, stride, n_elts_ini);
+
+  for (int i = 0; i < h->n_c_domains*2 + 1; i++)
+    h->index[i] = 0;
   h->n_elts[0] = 0;
   h->n_elts[1] = 0;
 
-  prev_rank_id = -1;
-  prev_src_id = 0;
+  cs_lnum_t prev_src_id = 0;
 
   if (stride == 2) {
 
-    for (ii = 0; ii < n_elts_ini; ii++) {
+    int prev_rank_id = -1, rank_idx = -1;
+
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
 
       bool is_same = true;
-      cur_id = order[ii];
+      cs_lnum_t cur_id = order[ii];
 
-      rank_id = tmp_num[cur_id*2];
-      src_id = tmp_num[cur_id*2 + 1];
+      int rank_id = tmp_num[cur_id*2] - 1;
+      cs_lnum_t src_id = tmp_num[cur_id*2 + 1];
 
-      if (rank_id != loc_rank_id) {
+      if (rank_id != -1) { /* local rank */
 
         if (rank_id != prev_rank_id) {
-          h->c_domain_rank[h->n_c_domains] = rank_id;
-          h->index[h->n_c_domains*2] = h->n_elts[0];
-          h->n_c_domains += 1;
+          if (rank_idx > -1)
+            h->index[rank_idx*2+1] = h->n_elts[0];
+          rank_idx++;
+          while (   h->c_domain_rank[rank_idx] != rank_id
+                 && rank_idx < h->n_c_domains)
+            rank_idx++;
+          assert(rank_idx < h->n_c_domains);
           is_same = false;
         }
         if (src_id != prev_src_id)
@@ -1519,39 +1633,45 @@ _merge_halo_data(cs_halo_t   *h,
         prev_src_id = src_id;
 
       }
-      else { /* if (rank_id == loc_rank_id) */
+      else { /* local rank */
         new_halo_cell_id[cur_id] = tmp_num[cur_id*2 + 1];
         assert(new_halo_cell_id[cur_id] < n_new_cells);
       }
     }
 
+    if (rank_idx > -1)
+      h->index[rank_idx*2+1] = h->n_elts[0];
+
   }
   else { /* if (stride == 3) */
 
-    int   rank_idx = -1;
+    int prev_rank_id = -2, rank_idx = -1;
     cs_lnum_t section_idx_size = 0;
 
-    prev_section_id = -1;
+    int prev_section_id = -1;
 
     /* Index will be initialized as count */
 
-    for (ii = 0; ii < n_elts_ini; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
 
       bool is_same = true;
-      cur_id = order[ii];
+      cs_lnum_t cur_id = order[ii];
 
-      rank_id = tmp_num[cur_id*3];
-      section_id = tmp_num[cur_id*3 + 1];
-      src_id = tmp_num[cur_id*3 + 2];
+      int rank_id = tmp_num[cur_id*3] - 1;
+      int section_id = tmp_num[cur_id*3 + 1];
+      cs_lnum_t src_id = tmp_num[cur_id*3 + 2];
 
-      if (rank_id != loc_rank_id || tmp_num[cur_id*3 + 1] != 0) {
+      if (rank_id != -1 || tmp_num[cur_id*3 + 1] != 0) {
 
         if (rank_id != prev_rank_id) {
-          h->c_domain_rank[h->n_c_domains] = rank_id;
-          h->index[h->n_c_domains*2] = h->n_elts[0];
-          h->n_c_domains += 1;
+          if (rank_idx > -1)
+            h->index[rank_idx*2+1] = h->n_elts[0];
+          rank_idx++;
+          while (   h->c_domain_rank[rank_idx] != rank_id
+                 && rank_idx < h->n_c_domains)
+            rank_idx++;
+          assert(rank_idx < h->n_c_domains);
           is_same = false;
-          rank_idx += 1;
         }
         if (section_id != prev_section_id)
           is_same = false;
@@ -1581,12 +1701,15 @@ _merge_halo_data(cs_halo_t   *h,
         prev_src_id = src_id;
 
       }
-      else { /* if (rank_id == loc_rank_id && tmp_num[cur_id*3 + 1] == 0) */
+      else { /* if (rank_id == -1 && tmp_num[cur_id*3 + 1] == 0) */
         new_halo_cell_id[cur_id] = tmp_num[cur_id*3 + 2];
         assert(new_halo_cell_id[cur_id] < n_new_cells);
       }
 
     }
+
+    if (rank_idx > -1)
+      h->index[rank_idx*2+1] = h->n_elts[0];
 
     /* Transform count to index */
 
@@ -1595,18 +1718,30 @@ _merge_halo_data(cs_halo_t   *h,
       section_idx[sid] += section_idx[sid - 1];
   }
 
+  BFT_FREE(order);
+  BFT_FREE(tmp_num);
+
+  /* Restore local rank in connected domains list */
+
+  for (int i = 0; i < h->n_c_domains; i++) {
+    if (h->c_domain_rank[i] == -1)
+      (h->c_domain_rank[i] = loc_rank_id);
+  }
+
+  /* Update transforms list */
+
   if (h->n_transforms > 0) {
 
-    for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-      for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-        section_id = rank_id*n_sections + tr_id + 1;
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id]
+    for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+      for (int rank_idx = 0; rank_idx < h->n_c_domains; rank_idx++) {
+        int section_id = rank_idx*n_sections + tr_id + 1;
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx]
           = section_idx[section_id];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1]
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 1]
           = section_idx[section_id + 1] - section_idx[section_id];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 2]
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 2]
           = section_idx[section_id + 1];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 3]
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 3]
           = 0;
       }
     }
@@ -1617,9 +1752,6 @@ _merge_halo_data(cs_halo_t   *h,
 
   /* Free and resize memory */
 
-  BFT_FREE(order);
-  BFT_FREE(tmp_num);
-  BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
   BFT_REALLOC(h->index, h->n_c_domains*2+1, cs_lnum_t);
   if (h->n_transforms > 0)
     BFT_REALLOC(h->perio_lst,
@@ -1628,8 +1760,11 @@ _merge_halo_data(cs_halo_t   *h,
 
   h->n_elts[1] = h->n_elts[0];
   h->index[h->n_c_domains*2] = h->n_elts[0];
-  for (ii = 0; ii < h->n_c_domains; ii++)
-    h->index[ii*2+1] = h->index[ii*2+2];
+  for (int i = 1; i < h->n_c_domains; i++) {
+    if (h->index[i*2+1] == 0)
+      h->index[i*2+1] = h->index[i*2-1];
+    h->index[i*2] = h->index[i*2-1];
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1794,7 +1929,7 @@ _append_halos(cs_grid_t   *g,
     _empty_halo(h);
   }
 
-  /* Cleanup halo and set pointer for coarsening (sub_rooot) ranks*/
+  /* Cleanup halo and set pointer for coarsening (sub_root) ranks*/
 
   if (h != NULL) {
 
@@ -1900,7 +2035,7 @@ _append_cell_data(cs_grid_t  *g)
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
       cs_lnum_t n_recv = (  g->merge_cell_idx[rank_id+1]
-                           - g->merge_cell_idx[rank_id]);
+                          - g->merge_cell_idx[rank_id]);
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
       if (g->relaxation > 0) {
@@ -3852,7 +3987,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                                   cs_grid_t        *coarse_grid,
                                   int               verbosity)
 {
-  cs_lnum_t ic, jc, ii, jj, kk, face_id;
+  cs_lnum_t ii, jj, kk, face_id;
 
   cs_real_t dsigjg, dsxaij, agij;
 
@@ -3963,29 +4098,67 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       c_xa0ij[3*c_face +2] = 0.;
     }
 
-    for (face_id = 0; face_id < f_n_faces; face_id++) {
+    if (f_face_normal != NULL) {
 
-      if (c_coarse_face[face_id] > 0 ) {
-        cs_lnum_t c_face = c_coarse_face[face_id] -1;
+      for (face_id = 0; face_id < f_n_faces; face_id++) {
 
-        c_xa0[c_face] += f_xa0[face_id];
-        c_face_normal[3*c_face]    += f_face_normal[3*face_id];
-        c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
-        c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
-        c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
-        c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
-        c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
+        if (c_coarse_face[face_id] > 0 ) {
+          cs_lnum_t c_face = c_coarse_face[face_id] -1;
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    += f_face_normal[3*face_id];
+          c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
+          c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
+          c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
+        }
+        else if (c_coarse_face[face_id] < 0) {
+          cs_lnum_t c_face = -c_coarse_face[face_id] -1;
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
+          c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
+          c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
+          c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
+        }
+
       }
-      else if (c_coarse_face[face_id] < 0) {
-        cs_lnum_t c_face = -c_coarse_face[face_id] -1;
 
-        c_xa0[c_face] += f_xa0[face_id];
-        c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
-        c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
-        c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
-        c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
-        c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
-        c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
+    }
+    else { /* f_face_normal = NULL */
+
+      for (face_id = 0; face_id < f_n_faces; face_id++) {
+
+        if (c_coarse_face[face_id] > 0 ) {
+          cs_lnum_t c_face = c_coarse_face[face_id] -1;
+          cs_lnum_t ic = c_face_cell[c_face][0];
+          cs_lnum_t jc = c_face_cell[c_face][1];
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    += c_cell_cen[3*jc]   - c_cell_cen[3*ic];
+          c_face_normal[3*c_face +1] += c_cell_cen[3*jc+1] - c_cell_cen[3*ic+1];
+          c_face_normal[3*c_face +2] += c_cell_cen[3*jc+2] - c_cell_cen[3*ic+2];
+          c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
+        }
+        else if (c_coarse_face[face_id] < 0) {
+          cs_lnum_t c_face = -c_coarse_face[face_id] -1;
+          cs_lnum_t ic = c_face_cell[c_face][0];
+          cs_lnum_t jc = c_face_cell[c_face][1];
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    -= c_cell_cen[3*jc]   - c_cell_cen[3*ic];
+          c_face_normal[3*c_face +1] -= c_cell_cen[3*jc+1] - c_cell_cen[3*ic+1];
+          c_face_normal[3*c_face +2] -= c_cell_cen[3*jc+2] - c_cell_cen[3*ic+2];
+          c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
+        }
+
       }
 
     }
@@ -4007,8 +4180,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
     for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
 
-      ic = c_face_cell[c_face][0];
-      jc = c_face_cell[c_face][1];
+      cs_lnum_t ic = c_face_cell[c_face][0];
+      cs_lnum_t jc = c_face_cell[c_face][1];
 
       dsigjg =   (  c_cell_cen[3*jc]
                   - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
@@ -4096,19 +4269,19 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   /* Diagonal term */
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
-  for (ic = 0; ic < c_n_cells_ext*db_stride; ic++)
+  for (cs_lnum_t ic = 0; ic < c_n_cells_ext*db_stride; ic++)
     c_da[ic] = 0.;
 
   if (db_size == 1) {
     for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
+      cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1)
         c_da[ic] += w1[ii];
     }
   }
   else {
     for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
+      cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1) {
         for (jj = 0; jj < db_size; jj++) {
           for (kk = 0; kk < db_size; kk++)
@@ -4120,8 +4293,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   }
 
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
-    ic = c_face_cell[c_face][0];
-    jc = c_face_cell[c_face][1];
+    cs_lnum_t ic = c_face_cell[c_face][0];
+    cs_lnum_t jc = c_face_cell[c_face][1];
     for (kk = 0; kk < db_size; kk++) {
       c_da[ic*db_stride + db_size*kk + kk] -= c_xa[c_face*isym];
       c_da[jc*db_stride + db_size*kk + kk] -= c_xa[(c_face +1)*isym -1];
@@ -4332,8 +4505,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
       ii = f_face_cell[face_id][0];
       jj = f_face_cell[face_id][1];
       for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-        w1[ii*db_stride + db_size*kk + kk] += f_xa_conv[2*face_id]    + f_xa_diff[face_id];
-        w1[jj*db_stride + db_size*kk + kk] += f_xa_conv[2*face_id +1] + f_xa_diff[face_id];
+        w1[ii*db_stride + db_size*kk + kk] +=   f_xa_conv[2*face_id]
+                                              + f_xa_diff[face_id];
+        w1[jj*db_stride + db_size*kk + kk] +=   f_xa_conv[2*face_id +1]
+                                              + f_xa_diff[face_id];
       }
       if (c_coarse_face[face_id] > 0 ) {
         c_face = c_coarse_face[face_id] -1;
@@ -4440,8 +4615,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     ic = c_face_cell[c_face][0];
     jc = c_face_cell[c_face][1];
     for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-      c_da[ic*db_stride + db_size*kk + kk] -= c_xa_conv[2*c_face]    + c_xa_diff[c_face];
-      c_da[jc*db_stride + db_size*kk + kk] -= c_xa_conv[2*c_face +1] + c_xa_diff[c_face];
+      c_da[ic*db_stride + db_size*kk + kk] -=   c_xa_conv[2*c_face]
+                                              + c_xa_diff[c_face];
+      c_da[jc*db_stride + db_size*kk + kk] -=   c_xa_conv[2*c_face +1]
+                                              + c_xa_diff[c_face];
     }
   }
 
@@ -4978,9 +5155,6 @@ _prolong_row_int(const cs_grid_t  *c,
  *   db_size        <-- Block sizes for diagonal
  *   eb_size        <-- Block sizes for diagonal
  *   face_cell      <-- Face -> cells connectivity
- *   cell_cen       <-- Cell center (size: 3.n_cells_ext)
- *   cell_vol       <-- Cell volume (size: n_cells_ext)
- *   face_normal    <-- Internal face normals (size: 3.n_faces)
  *   a              <-- Associated matrix
  *   conv_diff      <-- Convection-diffusion mode
  *
@@ -4993,9 +5167,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            cs_lnum_t              db_size,
                            cs_lnum_t              eb_size,
                            const cs_lnum_2_t     *face_cell,
-                           const cs_real_t       *cell_cen,
-                           const cs_real_t       *cell_vol,
-                           const cs_real_t       *face_normal,
                            const cs_matrix_t     *a,
                            bool                   conv_diff)
 {
@@ -5033,9 +5204,20 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 
   g->relaxation = 0;
 
-  g->cell_cen = cell_cen;
-  g->cell_vol = cell_vol;
-  g->face_normal = face_normal;
+  const cs_real_t *cell_vol;
+  const cs_real_3_t *cell_cen, *face_normal;
+
+  cs_matrix_get_mesh_association(a,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 &cell_cen,
+                                 &cell_vol,
+                                 &face_normal);
+
+  g->cell_cen = (const cs_real_t *)cell_cen;
+  g->cell_vol = (const cs_real_t *)cell_vol;
+  g->face_normal = (const cs_real_t *)face_normal;
 
   g->halo = cs_matrix_get_halo(a);
 
@@ -5058,7 +5240,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
     else if (g->conv_diff) {
       g->xa0  = g->xa;
       g->_xa0 = NULL;
-      g->xa0_diff = g->xa_diff;
     }
     else {
       BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
@@ -5081,6 +5262,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
          negative, with symmetric diffusion and pure upwind convection
          components. This allows separating both parts. */
 
+#     pragma omp parallel for  if(n_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
         if (g->xa[2*face_id] < g->xa[2*face_id+1]) {
           g->xa0_diff[face_id] = g->xa[2*face_id+1];
@@ -5099,8 +5281,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
       cs_lnum_t i1 = face_cell[face_id][1];
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
         g->xa0ij[face_id*3 + kk] =   g_xa0[face_id]
-                                   * (  cell_cen[i1*3 + kk]
-                                      - cell_cen[i0*3 + kk]);
+                                   * (  cell_cen[i1][kk]
+                                      - cell_cen[i0][kk]);
       }
     }
 
@@ -5694,7 +5876,8 @@ cs_grid_coarsen(const cs_grid_t  *f,
           || c->n_g_rows < merge_rows_glob_threshold) {
         _native_from_msr(c);
         _merge_grids(c, merge_stride, verbosity);
-        _msr_from_native(c);
+        if (c->n_rows > 0)
+          _msr_from_native(c);
       }
     }
 #endif
@@ -5845,6 +6028,15 @@ cs_grid_coarsen(const cs_grid_t  *f,
     cs_grid_destroy(&c);
     c = cc;
   }
+
+  if (f->use_faces)
+    cs_matrix_set_mesh_association(c->_matrix,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   (const cs_real_3_t *)c->cell_cen,
+                                   (const cs_real_t *)c->cell_vol,
+                                   (const cs_real_3_t *)c->_face_normal);
 
   /* Optional verification */
 

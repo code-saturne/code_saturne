@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -70,7 +70,7 @@
  * Recompute cocg at boundaries, using saved cocgb
  *----------------------------------------------------------------------------*/
 
-#define INSTANTIATE(name, stride) template void name <stride> (const cs_mesh_t               *m,\
+#define INSTANTIATE(name, stride) template void name <stride> (const cs_mesh_t *m,\
                      const cs_mesh_adjacencies_t   *madj,\
                      const cs_mesh_quantities_t    *fvq,\
                      const cs_halo_type_t           halo_type,\
@@ -85,6 +85,20 @@
                      cs_real_t (*restrict rhs)[stride][3],\
                      cs_lnum_t n_c_iter_max,\
                      cs_real_t c_eps)
+
+#define INSTANTIATE1(name, stride) template void name <stride> (const cs_mesh_t *m, \
+                              const cs_mesh_adjacencies_t  *madj, \
+                              const cs_mesh_quantities_t   *fvq, \
+                              cs_halo_type_t                halo_type, \
+                              int                           inc, \
+                              const cs_real_t (*restrict coefav)[stride], \
+                              const cs_real_t (*restrict coefbv)[stride][stride], \
+                              const cs_real_t (*restrict pvar)[stride], \
+                              const cs_real_t     *restrict c_weight, \
+                              const cs_real_t (*restrict r_grad)[stride][3], \
+                              cs_real_t (*restrict grad)[stride][3], \
+                              bool                      test_bool, \
+                              bool                          perf)
 
 template <typename T>
 __global__ static void
@@ -1368,12 +1382,12 @@ cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->diipb);
 
-  _sync_or_copy_real_h2d(pvar, n_cells_ext*stride, device_id, stream,
+  _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream,
                          &pvar_d, &_pvar_d);
 
-  _sync_or_copy_real_h2d(coefav, n_b_faces*stride, device_id, stream,
+  _sync_or_copy_real_h2d(coefav, n_b_faces, device_id, stream,
                          &coefa_d, &_coefa_d);
-  _sync_or_copy_real_h2d(coefbv, n_b_faces*stride*stride, device_id, stream,
+  _sync_or_copy_real_h2d(coefbv, n_b_faces, device_id, stream,
                          &coefb_d, &_coefb_d);
 
   cs_cuda_copy_h2d(grad_d, gradv, sizeof(cs_real_t) * n_cells * stride * 3);
@@ -1485,7 +1499,6 @@ cs_lsq_vector_gradient_strided_cuda(const cs_mesh_t               *m,
 INSTANTIATE(cs_lsq_vector_gradient_strided_cuda, 1);
 INSTANTIATE(cs_lsq_vector_gradient_strided_cuda, 3);
 INSTANTIATE(cs_lsq_vector_gradient_strided_cuda, 6);
-INSTANTIATE(cs_lsq_vector_gradient_strided_cuda, 9);
 
 
 
@@ -1506,24 +1519,21 @@ INSTANTIATE(cs_lsq_vector_gradient_strided_cuda, 9);
  *   r_grad         --> gradient used for reconstruction
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
-extern "C" void
+template <cs_lnum_t stride>
+void
 cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
-                                    const cs_mesh_adjacencies_t  *madj,
-                                    const cs_mesh_quantities_t   *fvq,
-                                    const cs_internal_coupling_t *cpl,
-                                    cs_halo_type_t                halo_type,
-                                    int                           inc,
-                                    const cs_real_3_t   *restrict coefav,
-                                    const cs_real_33_t  *restrict coefbv,
-                                    const cs_real_3_t   *restrict pvar,
-                                    const cs_real_t     *restrict c_weight,
-                                    const cs_real_33_t  *restrict r_grad,
-                                    cs_real_33_t        *restrict grad,
-                                    const bool                   *coupled_faces,
-                                    cs_lnum_t                     cpl_stride,
-                                    bool                          test_bool,
-                                    bool                          perf
-                                    )
+                              const cs_mesh_adjacencies_t  *madj,
+                              const cs_mesh_quantities_t   *fvq,
+                              cs_halo_type_t                halo_type,
+                              int                           inc,
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict pvar)[stride],
+                              const cs_real_t     *restrict c_weight,
+                              const cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3],
+                              bool                      test_bool,
+                              bool                          perf)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_cells = m->n_b_cells;
@@ -1553,17 +1563,15 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   // Record the start event
   CS_CUDA_CHECK(cudaEventRecord(start, stream));
 
-  cs_real_33_t *grad_d;
-  CS_CUDA_CHECK(cudaMalloc(&grad_d, n_cells_ext * sizeof(cs_real_33_t)));
+  decltype(grad) grad_d;
+  CS_CUDA_CHECK(cudaMalloc(&grad_d, n_cells_ext * sizeof(cs_real_t)*stride*3));
 
   void *_pvar_d = NULL, *_coefa_d = NULL, *_coefb_d = NULL,
   *_cell_cells_idx_d = NULL, *_r_grad_d = NULL;
-  const cs_real_3_t *pvar_d = NULL, *coefa_d = NULL;
-  const cs_real_33_t *coefb_d = NULL, *r_grad_d = NULL;
+  decltype(pvar) pvar_d = NULL, coefa_d = NULL;
+  decltype(coefbv) coefb_d = NULL;
+  decltype(r_grad) r_grad_d = NULL;
   const cs_lnum_t *cell_cells_idx_d = NULL;
-  bool  *coupled_faces_d;
-  CS_CUDA_CHECK(cudaMalloc(&coupled_faces_d, sizeof(bool) * 2));
-  cs_cuda_copy_h2d(coupled_faces_d, coupled_faces, sizeof(bool) * 2);
 
 
   unsigned int blocksize = 256;
@@ -1660,7 +1668,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   /* Initialization */
 
-  cudaMemset(grad_d, 0, n_cells * sizeof(cs_real_33_t));
+  cudaMemset(grad_d, 0, n_cells * sizeof(cs_real_t)*stride*3);
 
   CS_CUDA_CHECK(cudaEventRecord(init, stream));
   
@@ -1668,16 +1676,16 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   /* Interior faces contribution */
 
   /*************************************Kernels Scatter**************************************************/
-  // _compute_reconstruct_v_i_face<<<get_gridsize(n_i_faces, blocksize), blocksize, 0, stream>>>
-  //                               (n_i_faces,
-  //                               i_face_cells,
-  //                               pvar_d,
-  //                               weight,
-  //                               c_weight,
-  //                               r_grad_d,
-  //                               grad_d,
-  //                               dofij,
-  //                               i_f_face_normal);
+  _compute_reconstruct_v_i_face<stride><<<get_gridsize(n_i_faces, blocksize), blocksize, 0, stream>>>
+                                (n_i_faces,
+                                i_face_cells,
+                                pvar_d,
+                                weight,
+                                c_weight,
+                                r_grad_d,
+                                grad_d,
+                                dofij,
+                                i_f_face_normal);
 
   // _compute_reconstruct_v_i_face_v2<<<get_gridsize(n_i_faces, blocksize) * 3, blocksize, 0, stream>>>
   //                               (n_i_faces * 3,
@@ -1779,19 +1787,19 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
 
   /*************************************Kernels Gather shared memory***************************************/
-  _compute_reconstruct_v_i_face_gather_v5<<<get_gridsize(n_cells, blocksize), blocksize, 0, stream>>>
-                                      ( n_cells,
-                                        pvar_d,
-                                        weight,
-                                        c_weight,
-                                        r_grad_d,
-                                        grad_d,
-                                        dofij,
-                                        i_f_face_normal,
-                                        cell_cells_idx,
-                                        cell_cells,
-                                        cell_i_faces,
-                                        cell_i_faces_sgn);
+  // _compute_reconstruct_v_i_face_gather_v5<stride><<<get_gridsize(n_cells, blocksize), blocksize, 0, stream>>>
+  //                                     ( n_cells,
+  //                                       pvar_d,
+  //                                       weight,
+  //                                       c_weight,
+  //                                       r_grad_d,
+  //                                       grad_d,
+  //                                       dofij,
+  //                                       i_f_face_normal,
+  //                                       cell_cells_idx,
+  //                                       cell_cells,
+  //                                       cell_i_faces,
+  //                                       cell_i_faces_sgn);
 
   CS_CUDA_CHECK(cudaEventRecord(i_faces, stream));
   
@@ -1816,26 +1824,23 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   
   // cs_cuda_copy_h2d(grad_d, grad, n_cells_ext * sizeof(cs_real_33_t));
 
-  // _sync_or_copy_real_h2d(r_grad, n_cells_ext, device_id, stream,
-  //   &r_grad_d, &_r_grad_d);
-
   CS_CUDA_CHECK(cudaEventRecord(b_faces_1, stream));
   
   // ----------------------------Begin of Kernels part 2-------------------------------------------
 
 
   /*************************************Kernels Scatter**************************************************/
-  // _compute_reconstruct_v_b_face<<<get_gridsize(n_b_faces, blocksize), blocksize, 0, stream>>>
-  //                             ( n_b_faces,
-  //                               coefb_d,
-  //                               coefa_d,
-  //                               pvar_d,
-  //                               inc,
-  //                               diipb,
-  //                               r_grad_d,
-  //                               grad_d,
-  //                               b_f_face_normal,
-  //                               b_face_cells);
+  _compute_reconstruct_v_b_face<stride><<<get_gridsize(n_b_faces, blocksize), blocksize, 0, stream>>>
+                              ( n_b_faces,
+                                coefb_d,
+                                coefa_d,
+                                pvar_d,
+                                inc,
+                                diipb,
+                                r_grad_d,
+                                grad_d,
+                                b_f_face_normal,
+                                b_face_cells);
 
 
   // _compute_reconstruct_v_b_face_v2<<<get_gridsize(n_b_faces, blocksize) * 3, blocksize, 0, stream>>>
@@ -1938,19 +1943,19 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
 
   /*************************************Kernels Gather shared memory***************************************/
-  _compute_reconstruct_v_b_face_gather_v5<<<get_gridsize(n_b_cells, blocksize), blocksize, 0, stream>>>
-                              ( n_b_cells,
-                                coefb_d,
-                                coefa_d,
-                                pvar_d,
-                                inc,
-                                diipb,
-                                r_grad_d,
-                                grad_d,
-                                b_f_face_normal,
-                                b_cells,
-                                cell_b_faces,
-                                cell_b_faces_idx);
+  // _compute_reconstruct_v_b_face_gather_v5<stride><<<get_gridsize(n_b_cells, blocksize), blocksize, 0, stream>>>
+  //                             ( n_b_cells,
+  //                               coefb_d,
+  //                               coefa_d,
+  //                               pvar_d,
+  //                               inc,
+  //                               diipb,
+  //                               r_grad_d,
+  //                               grad_d,
+  //                               b_f_face_normal,
+  //                               b_cells,
+  //                               cell_b_faces,
+  //                               cell_b_faces_idx);
 
 
   CS_CUDA_CHECK(cudaEventRecord(b_faces_2, stream));
@@ -1965,7 +1970,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   //                               test_bool
   //                             );
 
-  _compute_reconstruct_correction_v2<<<get_gridsize(n_cells, blocksize) * 3, blocksize, 0, stream>>>
+  _compute_reconstruct_correction_v2<stride><<<get_gridsize(n_cells, blocksize) * 3, blocksize, 0, stream>>>
                               ( n_cells * 3,
                                 has_dc,
                                 c_disable_flag,
@@ -1980,7 +1985,7 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
 
   /* Sync to host */
   if (grad_d != NULL) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * 3 * 3;
+    size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
@@ -2051,7 +2056,6 @@ cs_reconstruct_vector_gradient_cuda(const cs_mesh_t              *m,
   CS_CUDA_CHECK(cudaFree(cell_i_faces));
   CS_CUDA_CHECK(cudaFree(cell_i_faces_sgn));
 
-  CS_CUDA_CHECK(cudaFree(coupled_faces_d));
   CS_CUDA_CHECK(cudaFree(i_group_index));
   CS_CUDA_CHECK(cudaFree(b_group_index));
   CS_CUDA_CHECK(cudaFree(cell_f_vol));
@@ -2177,3 +2181,7 @@ _gradient_vector_cuda(const cs_mesh_t    *mesh,
   CS_CUDA_CHECK(cudaFree(_bc_coeff_a_d));
   CS_CUDA_CHECK(cudaFree(_bc_coeff_b_d));
 }
+
+INSTANTIATE1(cs_reconstruct_vector_gradient_cuda, 1);
+INSTANTIATE1(cs_reconstruct_vector_gradient_cuda, 3);
+INSTANTIATE1(cs_reconstruct_vector_gradient_cuda, 6);

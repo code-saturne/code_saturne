@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2023  EDF S.A.
+  Copyright (C) 2005-2024  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -69,6 +69,12 @@ extern "C" {
 #if !defined(HUGE_VAL)
 #define HUGE_VAL 1.0e+30
 #endif
+
+/* Absolute, minimum, and maximum values */
+
+#define _ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
+#define _MIN(a,b)   ((a) > (b) ?  (b) : (a))  /* Minimum of a et b */
+#define _MAX(a,b)   ((a) < (b) ?  (b) : (a))  /* Maximum of a et b */
 
 /* Geometric operation macros*/
 
@@ -402,7 +408,7 @@ _mesh_section_extents(const my_ple_mesh_section_t  *this_section,
       for (j = this_section->face_index[i];
            j < this_section->face_index[i + 1];
            j++) {
-        face_id = PLE_ABS(this_section->face_num[j]) - 1;
+        face_id = _ABS(this_section->face_num[j]) - 1;
         for (k = this_section->vertex_index[face_id];
              k < this_section->vertex_index[face_id + 1];
              k++) {
@@ -619,7 +625,7 @@ _polygon_plane_3d(const int    n_vertices,
     for (i = 0; i < 3; i++)
       coords[j*3 + i] -= face_center[i];
 
-  if (PLE_ABS(face_normal[0]) > 1.e-12 || PLE_ABS(face_normal[1]) > 1.e-12) {
+  if (_ABS(face_normal[0]) > 1.e-12 || _ABS(face_normal[1]) > 1.e-12) {
 
     /* First rotation of axis (Oz) and angle (Ox, normal proj. on Oxy) */
 
@@ -869,7 +875,7 @@ _edge_is_locally_delaunay(const int          edge_vertex_0,
   /* If the triangle is flat, we automatically switch diagonals to
      avoid a division by zero. */
 
-  if (PLE_ABS(delta) < 1.e-12)
+  if (_ABS(delta) < 1.e-12)
     return false;
 
   a =   coords[edge_vertex_1*2    ] * coords[edge_vertex_1*2    ]
@@ -1049,8 +1055,8 @@ _polygon_delaunay_flip(const int          n_vertices,
       i_0 = triangle_vertices[(j*3) +   i      ];
       i_1 = triangle_vertices[(j*3) + ((i+1)%3)];
 
-      i_min = PLE_MIN(i_0, i_1);
-      i_max = PLE_MAX(i_0, i_1);
+      i_min = _MIN(i_0, i_1);
+      i_max = _MAX(i_0, i_1);
 
       edge_id = _EDGE_INDEX(i_min, i_max);
 
@@ -1147,8 +1153,8 @@ _polygon_delaunay_flip(const int          n_vertices,
       if (   edge_locally_delaunay == false
           && convex_quad == true) {
 
-        i_min = PLE_MIN(vertex_flip[0], vertex_flip[1]);
-        i_max = PLE_MAX(vertex_flip[0], vertex_flip[1]);
+        i_min = _MIN(vertex_flip[0], vertex_flip[1]);
+        i_max = _MAX(vertex_flip[0], vertex_flip[1]);
 
         flip_edge_id = _EDGE_INDEX(i_min, i_max);
 
@@ -1179,8 +1185,8 @@ _polygon_delaunay_flip(const int          n_vertices,
             i_0 = triangle_vertices[3*triangle_id_0 + i];
             i_1 = triangle_vertices[3*triangle_id_0 + ((i + 1)%3)];
 
-            i_min = PLE_MIN(i_0, i_1);
-            i_max = PLE_MAX(i_0, i_1);
+            i_min = _MIN(i_0, i_1);
+            i_max = _MAX(i_0, i_1);
 
             current_edge_id = _EDGE_INDEX(i_min, i_max);
 
@@ -1665,7 +1671,7 @@ _locate_by_extents_1d(ple_lnum_t         elt_num,
     elt_coord =   (cur_coord - 0.5*(extents[1] + extents[0]))
                 / (            0.5*(extents[1] - extents[0]));
 
-    elt_coord = PLE_ABS(elt_coord);
+    elt_coord = _ABS(elt_coord);
 
     if (elt_coord > elt_coord_max)
       elt_coord_max = elt_coord;
@@ -1731,7 +1737,7 @@ _locate_in_extents(const ple_lnum_t    elt_num,
       elt_coord =   (cur_coord - 0.5*(extents[k+dim] + extents[k]))
                   / (            0.5*(extents[k+dim] - extents[k]));
 
-      elt_coord = PLE_ABS(elt_coord);
+      elt_coord = _ABS(elt_coord);
 
       if (elt_coord > elt_coord_max)
         elt_coord_max = elt_coord;
@@ -2783,12 +2789,12 @@ _locate_on_triangles_3d(ple_lnum_t           elt_num,
 
     /* epsilon2 is based on maximum edge length (squared) */
 
-    tmp_max = PLE_MAX(vv, ww);
+    tmp_max = _MAX(vv, ww);
 
     if (tolerance < 0.)
       epsilon2 = HUGE_VAL;
     else
-      epsilon2 = PLE_MAX(uu, tmp_max) * tolerance2;
+      epsilon2 = _MAX(uu, tmp_max) * tolerance2;
 
     /* Loop on points resulting from extent query */
 
@@ -2947,7 +2953,7 @@ _locate_on_triangles_2d(ple_lnum_t           elt_num,
 
       for (j = 0; j < 3; j++){
 
-        dist = 2.*PLE_ABS(shapef[j] - 0.5);
+        dist = 2.*_ABS(shapef[j] - 0.5);
 
         if (max_dist < dist)
           max_dist = dist;
@@ -3054,7 +3060,7 @@ _locate_in_tetra(ple_lnum_t         elt_num,
 
     for (j = 0; j < 4; j++){
 
-      dist = 2.*PLE_ABS(shapef[j] - 0.5);
+      dist = 2.*_ABS(shapef[j] - 0.5);
 
       if (max_dist < dist)
         max_dist = dist;
@@ -3093,7 +3099,7 @@ _inverse_3x3(double  m[3][3],
         - m[1][0]*(m[0][1]*m[2][2] - m[2][1]*m[0][2])
         + m[2][0]*(m[0][1]*m[1][2] - m[1][1]*m[0][2]);
 
-  if (PLE_ABS(det) < _epsilon_denom)
+  if (_ABS(det) < _epsilon_denom)
     return 1;
   else
     det_inv = 1./det;
@@ -3420,7 +3426,7 @@ _locate_in_cell_3d(ple_lnum_t          elt_num,
 
           for (j = 0; j < 3; j++){
 
-            dist = 2.*PLE_ABS(uvw[j] - 0.5);
+            dist = 2.*_ABS(uvw[j] - 0.5);
 
             if (max_dist < dist)
               max_dist = dist;
@@ -3436,7 +3442,7 @@ _locate_in_cell_3d(ple_lnum_t          elt_num,
 
           for (j = 0; j < n_vertices; j++){
 
-            dist = 2.*PLE_ABS(shapef[j] - 0.5);
+            dist = 2.*_ABS(shapef[j] - 0.5);
 
           if (max_dist < dist)
             max_dist = dist;
@@ -3543,7 +3549,7 @@ _polyhedra_section_locate(const my_ple_mesh_section_t  *this_section,
     for (j = this_section->face_index[i];
          j < this_section->face_index[i + 1];
          j++) {
-      face_id = PLE_ABS(this_section->face_num[j]) - 1;
+      face_id = _ABS(this_section->face_num[j]) - 1;
       for (k = this_section->vertex_index[face_id];
            k < this_section->vertex_index[face_id + 1];
            k++) {
@@ -3593,7 +3599,7 @@ _polyhedra_section_locate(const my_ple_mesh_section_t  *this_section,
 
       const ple_lnum_t *_vertex_num;
 
-      face_id = PLE_ABS(this_section->face_num[j]) - 1;
+      face_id = _ABS(this_section->face_num[j]) - 1;
 
       n_vertices = (  this_section->vertex_index[face_id + 1]
                     - this_section->vertex_index[face_id]);

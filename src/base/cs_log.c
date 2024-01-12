@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -71,10 +71,11 @@ BEGIN_C_DECLS
 
 static bool  _cs_log_atexit_set = false;
 
-static FILE* _cs_log[] = {NULL, NULL, NULL};
+static FILE* _cs_log[] = {NULL, NULL, NULL, NULL};
 static const char* _cs_log_name[] = {"",
                                      "setup.log",
-                                     "performance.log"};
+                                     "performance.log",
+                                     "warnings.log"};
 
 static bool  _cs_log_default_active = true;
 
@@ -705,6 +706,52 @@ cs_log_timer_array(cs_log_t                   log,
                     "%*s%s %12.3f\n",
                     indent, " ", tmp_s[0], wtime);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print a warning message to the warnings.log file and a copy to the
+ * default log file.
+ *
+ * The format and variable arguments are similar to those of the printf()
+ * type functions.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  format  format string, as printf() and family.
+ * \param[in]  ...     variable arguments based on format string.
+ *
+ * \return number of characters printed, not counting the trailing '\0' used
+ *         to end output strings
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_log_warning(const char *format,
+               ...)
+{
+  int retval = 0;
+  va_list arg_ptr;
+
+  if (cs_glob_rank_id > 0)
+    return 0;
+
+  va_start(arg_ptr, format);
+
+  /* Print to warning log */
+  cs_log_separator(CS_LOG_WARNINGS);
+  retval = cs_log_vprintf(CS_LOG_WARNINGS, format, arg_ptr);
+  cs_log_separator(CS_LOG_WARNINGS);
+  cs_log_printf(CS_LOG_WARNINGS, "\n");
+
+  /* Print copy to main log */
+  cs_log_printf(CS_LOG_DEFAULT, "\nWarning message :\n");
+  cs_log_printf(CS_LOG_DEFAULT, "-----------------\n\n");
+  cs_log_vprintf(CS_LOG_DEFAULT, format, arg_ptr);
+
+  va_end(arg_ptr);
+
+  return retval;
 }
 
 /*-----------------------------------------------------------------------------*/

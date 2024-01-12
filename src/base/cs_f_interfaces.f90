@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -84,32 +84,6 @@ module cs_f_interfaces
       double precision, dimension(nfabor) :: flumab
       double precision, dimension(3, ncelet) :: frcxt
     end subroutine itrmav
-
-    !---------------------------------------------------------------------------
-
-    subroutine matrix &
-      (iconvp, idiffp, ndircp, isym, thetap, imucpp, coefbp, cofbfp,           &
-      rovsdt, i_massflux, b_massflux, i_visc, b_visc, xcpp, da, xa)
-      use mesh
-      integer :: iconvp, idiffp, ndircp, isym, imucpp
-      double precision :: thetap
-      double precision, dimension(ncelet) :: rovsdt, xcpp, da
-      double precision, dimension(nfabor) :: coefbp, cofbfp, b_massflux, b_visc
-      double precision, dimension(nfac) :: i_massflux, i_visc
-      double precision, dimension(2,nfac) :: xa
-    end subroutine matrix
-
-    !---------------------------------------------------------------------------
-
-    subroutine matrdt &
-      (iconvp, idiffp, isym, coefbp, cofbfp,                                   &
-      i_massflux, b_massflux, i_visc, b_visc, da)
-      use mesh
-      integer :: iconvp, idiffp, isym
-      double precision, dimension(ncelet) :: da
-      double precision, dimension(nfabor) :: coefbp, cofbfp, b_massflux, b_visc
-      double precision, dimension(nfac) :: i_massflux, i_visc
-    end subroutine matrdt
 
     !---------------------------------------------------------------------------
 

@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -89,7 +89,7 @@ cs_user_initialization(cs_domain_t     *domain)
   const cs_lnum_t n_cells = domain->mesh->n_cells;
   const cs_fluid_properties_t *fprops = cs_glob_fluid_properties;
 
-  cs_combustion_model_t *cm = cs_glob_combustion_model;
+  cs_coal_model_t *cm = cs_glob_coal_model;
 
   cs_real_t coefe[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
   cs_real_t f1mc[CS_COMBUSTION_MAX_COALS];

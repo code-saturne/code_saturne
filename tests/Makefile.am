@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -195,16 +195,16 @@ cs_geom_test_LDADD    = $(LDADD_CS_TESTS)
 
 if HAVE_ACCEL
 
-cs_gpu_test_sources = $(top_srcdir)/tests/cs_gpu_test.cxx
+cs_gpu_test_SOURCES = $(top_srcdir)/tests/cs_gpu_test.cxx
 if HAVE_CUDA
-  cs_gpu_test_sources += $(top_srcdir)/tests/cs_gpu_cuda_test.cu
+  cs_gpu_test_SOURCES += $(top_srcdir)/tests/cs_gpu_cuda_test.cu
 endif
 
 cs_gpu_test$(EXEEXT): $(top_srcdir)/tests/cs_gpu_test.cxx $(top_srcdir)/tests/cs_gpu_cuda_test.cu
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_gpu_test \
-	${cs_gpu_test_sources}
+	${cs_gpu_test_SOURCES}
 
 endif
 
@@ -218,7 +218,7 @@ cs_map_test_SOURCES  = cs_map_test.c
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_matrix_test$(EXEEXT):
+cs_matrix_test$(EXEEXT): $(top_srcdir)/tests/cs_matrix_test.c
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_matrix_test $(top_srcdir)/tests/cs_matrix_test.c

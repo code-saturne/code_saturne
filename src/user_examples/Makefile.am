@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -190,7 +190,7 @@ cs_user_turbomachinery.c \
 cs_user_zones.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions-atmo.f90 \
-cs_user_boundary_conditions-gas_3ptchem.f90 \
+cs_user_boundary_conditions-gas_3ptchem.c \
 cs_user_boundary_conditions-gas_ebu.f90 \
 cs_user_boundary_conditions-gas_libby_williams.f90 \
 cs_user_initialization-gas_ebu.f90 \

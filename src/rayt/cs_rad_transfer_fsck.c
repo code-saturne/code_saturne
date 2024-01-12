@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1071,7 +1071,8 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 
     int n = cs_glob_rad_transfer_params->nwsgg;
 
-    /* The roots are symmetric in the interval, so we only have to find half of them. */
+    /* The roots are symmetric in the interval,
+       so we only have to find half of them. */
 
     cs_real_t xm = 0.5 * (x2 + x1);
     cs_real_t xl = 0.5 * (x2 - x1);
@@ -1141,8 +1142,10 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     /* Compute the weight and its symmetric counterpart. */
 
     for (int j = 0; j < m; j++) {
-      cs_glob_rad_transfer_params->wq[j] = 2.0 * xl / ((1.0 - pow (z[j], 2.0)) * pow (pp[j], 2.0));
-      cs_glob_rad_transfer_params->wq[n - j + 1] = cs_glob_rad_transfer_params->wq[j];
+      cs_glob_rad_transfer_params->wq[j]
+        = 2.0 * xl / ((1.0 - pow (z[j], 2.0)) * pow (pp[j], 2.0));
+      cs_glob_rad_transfer_params->wq[n - j + 1]
+        = cs_glob_rad_transfer_params->wq[j];
     }
 
     BFT_FREE(p1);

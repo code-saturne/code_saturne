@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -66,6 +66,7 @@ EXTRA_DIST =
 
 pkginclude_HEADERS = \
 cs_meg_prototypes.h \
+cs_meg_xdef_wrapper.h \
 cs_meg_headers.h
 
 # Library source files
@@ -75,10 +76,12 @@ cs_meg_boundary_function.c \
 cs_meg_fsi_struct.c \
 cs_meg_immersed_boundaries_inout.c \
 cs_meg_initialization.c \
+cs_meg_post_calculator.c \
 cs_meg_post_output.c \
 cs_meg_post_profile.c \
 cs_meg_source_terms.c \
-cs_meg_volume_function.c
+cs_meg_volume_function.c \
+cs_meg_xdef_wrapper.c
 
 noinst_LIBRARIES = libcsmeg.a
 libcsmeg_a_SOURCES = $(megfiles)

@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -75,6 +75,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -83,7 +84,7 @@ implicit none
 ! Local variables
 
 character(len=80) :: chaine
-integer          iel, mode, igg, izone
+integer          iel, igg, izone
 integer          iscal, ivar, ii
 double precision hinit, coefg(ngazgm), hair, tinitk
 double precision sommqf, sommqt, sommq, tentm, fmelm
@@ -167,11 +168,7 @@ if ( isuite.eq.0 ) then
       coefg(1) = zero
       coefg(2) = 1.d0
       coefg(3) = zero
-      mode     = -1
-      call cothht                                                 &
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          hair   , tinitk )
+      hair = cs_gas_combustion_t_to_h(coefg, tinitk)
     endif
 
 ! ----- On en profite pour initialiser FRMEL et TGF
@@ -274,11 +271,7 @@ if ( isuite.eq.0 ) then
       coefg(1) = fmelm
       coefg(2) = (1.d0-fmelm)
       coefg(3) = zero
-      mode     = -1
-      call cothht                                                 &
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          hinit  , tentm )
+      hinit = cs_gas_combustion_t_to_h(coefg, tentm)
     endif
 
 ! ----- En periodique et en parallele,

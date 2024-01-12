@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,6 +50,7 @@ typedef enum {
   CS_LOG_DEFAULT,      /* Default (main) log */
   CS_LOG_SETUP,        /* Calculation setup and options log */
   CS_LOG_PERFORMANCE,  /* Performance log */
+  CS_LOG_WARNINGS,     /* Warnings log */
   CS_LOG_N_TYPES       /* Number of log file types */
 
 } cs_log_t;
@@ -296,6 +297,28 @@ cs_log_timer_array(cs_log_t                   log,
                    const char                *line_titles[],
                    const unsigned             calls[],
                    const cs_timer_counter_t   time_count[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print log info to a given log type.
+ *
+ * The format and variable arguments are similar to those of the printf()
+ * type functions.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  log     log file type
+ * \param[in]  format  format string, as printf() and family.
+ * \param[in]  ...     variable arguments based on format string.
+ *
+ * \return number of characters printed, not counting the trailing '\0' used
+ *         to end output strings
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_log_warning(const char *format,
+               ...);
 
 /*----------------------------------------------------------------------------*/
 

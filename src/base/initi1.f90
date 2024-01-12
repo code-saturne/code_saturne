@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -41,6 +41,7 @@ use field
 use lagran
 use cpincl
 use dimens
+use numvar, only : nscaus, nscapp
 use radiat
 use cdomod
 
@@ -145,8 +146,6 @@ call ppini1
 
 call elec_option_init
 
-call cs_rad_transfer_options
-
 if (ippmod(iatmos).ge.0) call cs_at_data_assim_initialize
 
 ! Lagrangian model options
@@ -180,6 +179,8 @@ if (icdo.lt.2) then
 endif
 
 call cs_parameters_eqp_complete
+
+nscal = nscaus + nscapp
 
 !===============================================================================
 ! Time moments called after additionnal creation

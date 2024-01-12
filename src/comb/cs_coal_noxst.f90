@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -277,18 +277,18 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
   allocate(cpro_temp2(nclacp))
 
   do icla = 1, nclacp
-    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl(icla)%p)
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl(icla)%p)
-    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl(icla)%p)
+    call field_get_val_s(ixck(icla), cvar_xckcl(icla)%p)
+    call field_get_val_s(ixch(icla), cvar_xchcl(icla)%p)
+    call field_get_val_s(inp(icla), cvar_xnpcl(icla)%p)
     call field_get_val_s(itemp2(icla), cpro_temp2(icla)%p)
     if (ippmod(iccoal) .eq. 1) then
-      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl(icla)%p)
+      call field_get_val_s(ixwt(icla), cvar_xwtcl(icla)%p)
     endif
   enddo
 
   do numcha = 1, ncharb
-    call field_get_val_s(ivarfl(isca(if1m(numcha))), cvar_f1m(numcha)%p)
-    call field_get_val_s(ivarfl(isca(if2m(numcha))), cvar_f2m(numcha)%p)
+    call field_get_val_s(if1m(numcha), cvar_f1m(numcha)%p)
+    call field_get_val_s(if2m(numcha), cvar_f2m(numcha)%p)
   enddo
 
   inok = 0

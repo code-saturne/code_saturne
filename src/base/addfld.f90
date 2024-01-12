@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,7 @@ subroutine addfld
 
 use atincl, only: compute_z_ground, imeteo
 use paramx
+use coincl, only: ifm
 use dimens
 use optcal
 use cstphy
@@ -92,6 +93,7 @@ integer          n_prev
 integer          t_ext
 integer          kclipp
 integer          key_turb_schmidt, kscavr, key_turb_diff, key_sgs_sca_coef
+integer          key_restart_id
 integer          var_f_id
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
@@ -127,6 +129,9 @@ call field_get_key_id("drift_scalar_model", keydri)
 
 ! Time extrapolation?
 call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+! Restart file key
+call field_get_key_id("restart_file", key_restart_id)
 
 ! Number of fields
 call field_get_n_fields(nfld)
@@ -513,6 +518,7 @@ if (ineedy.eq.1) then
   f_label = 'Wall distance'
   call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
+  call field_set_key_int(iflid, key_restart_id, RESTART_AUXILIARY)
 
   ! Elliptic equation (no convection, no time term)
   call field_get_key_struct_var_cal_opt(iflid, vcopt)

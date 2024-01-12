@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -77,24 +77,6 @@ void CS_PROCF (matrix, MATRIX)
  const cs_real_t   xcpp[],
  cs_real_t         da[],
  cs_real_t         xa[]
-);
-
-/*----------------------------------------------------------------------------
- * Fortran wrapper to cs_matrix_time_step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrdt, MATRDT)
-(
- const int        *const iconvp,
- const int        *const idiffp,
- const int        *const isym,
- const cs_real_t         coefbp[],
- const cs_real_t         cofbfp[],
- const cs_real_t         i_massflux[],
- const cs_real_t         b_massflux[],
- const cs_real_t         i_visc[],
- const cs_real_t         b_visc[],
- cs_real_t               da[]
 );
 
 /*=============================================================================

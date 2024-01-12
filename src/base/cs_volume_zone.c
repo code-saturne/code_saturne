@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,8 +46,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <ple_locator.h>
-
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
@@ -59,7 +57,6 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
-#include "cs_parameters.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1099,13 +1096,7 @@ cs_volume_zone_print_info(void)
       bft_printf(_("    Fluid volume    = %1.5g\n"),
                  z->f_measure);
 
-    if (z->boundary_measure < 0.) {
-      bft_printf(_("    Surface         = -1 (not computed)\n"));
-      /* Only log fluid fluid when different to surface */
-      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
-        bft_printf(_("    Fluid surface   = -1 (not computed)\n"));
-    }
-    else {
+    if (z->boundary_measure >= 0.) {
       bft_printf(_("    Surface         = %1.5g\n"),
                  z->f_boundary_measure);
       /* Only log fluid fluid when different to surface */

@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -122,6 +122,7 @@ BEGIN_C_DECLS
         characteristic length of the domain).
   \var  cs_rad_transfer_params_t::idiver
         Indicates the method used to calculate the radiative source term:
+        - -1: no renormalization
         - 0: semi-analytic calculation (compulsory with transparent media)
         - 1: conservative calculation
         - 2: semi-analytic calculation corrected in order to be globally
@@ -217,17 +218,17 @@ const char *cs_rad_transfer_quadrature_name[] = {
 
 cs_rad_transfer_params_t _rt_params = {
   .type = CS_RAD_TRANSFER_NONE,
-  .nrphas = 0,
-  .iimpar = 0,
+  .nrphas = 1,
+  .iimpar = 1,
   .verbosity = 0,
   .imodak = 0,
   .imoadf = 0,
   .iwrp1t = 0,
   .imfsck = 0,
-  .xnp1mx = 0.,
+  .xnp1mx = 10.,
   .idiver = -1,
-  .i_quadrature = 0,
-  .ndirec = 0,
+  .i_quadrature = 1,
+  .ndirec = 3,
   .ndirs = 0,
   .vect_s = NULL,
   .angsol = NULL,

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -224,6 +224,12 @@ BEGIN_C_DECLS
           treatment IF iphydr=1
         - 0: no treatment (default)
 
+  \var  cs_velocity_pressure_param_t::igrdpp
+        For the compressible algorithm, indicate whether the pressure
+        should be updated after the solution of the acoustic equation.
+        - 1: true (default)
+        - 0: false
+
   \var  cs_velocity_pressure_param_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
@@ -321,6 +327,7 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
   .irecmf = 0,
   .igprij = 0,
   .igpust = 1,
+  .igrdpp = 1,
   .ipucou = 0,
   .itpcol = -1,
   .arak   = 1.0,
@@ -602,7 +609,6 @@ cs_velocity_pressure_model_log_setup(void)
       (CS_LOG_SETUP,
        _("\n"
          "  Pressure correction equation is solved by CDO\n\n"));
-
 }
 
 /*----------------------------------------------------------------------------*/

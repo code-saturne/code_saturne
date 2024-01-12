@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -621,8 +621,9 @@ module optcal
   !> Indicates whether the source terms in transposed gradient
   !> and velocity divergence should be taken into account in the
   !> momentum equation. In the compressible module, these terms
-  !> also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0"
-  !> and \ref ppincl::iviscv "iviscv")
+  !> also account for the volume viscosity
+  !> (cf. \ref cs_fluid_properties_t::viscv0 "viscv0"
+  !> and \ref cs_fluid_properties_t::iviscv "iviscv")
   !> \f$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
   !> +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
   !> - 0: not taken into account,

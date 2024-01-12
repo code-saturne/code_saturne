@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -175,16 +175,20 @@ cs_user_porosity(cs_domain_t   *domain)
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_real_t face_porosity =
-        CS_MAX(
-            i_f_face_surf[face_id] / i_face_surf[face_id],
-            cs_math_epzero);
+      cs_real_t face_porosity
+        = cs_math_fmax(i_f_face_surf[face_id] / i_face_surf[face_id],
+                       cs_math_epzero);
 
       mq->i_f_face_factor[face_id][0] = cpro_porosi[ii] / face_porosity;
       mq->i_f_face_factor[face_id][1] = cpro_porosi[jj] / face_porosity;
     }
   }
 
+  /* Example to automatically compute fluid face surfaces
+   * if cs_glob_porous_model = 3
+   * (fluid surface is min between cell porosity) */
+
+  cs_porous_model_auto_face_porosity();
 }
 
 /*----------------------------------------------------------------------------*/

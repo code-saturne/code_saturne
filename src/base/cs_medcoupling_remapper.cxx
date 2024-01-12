@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -84,6 +84,7 @@
 #include <MEDLoader.hxx>
 
 using namespace MEDCoupling;
+
 #endif
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -131,7 +132,12 @@ struct _cs_medcoupling_remapper_t {
  *============================================================================*/
 
 static int                          _n_remappers = 0;
+
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+
 static cs_medcoupling_remapper_t  **_remapper = NULL;
+
+#endif
 
 /*============================================================================
  * Private function definitions

@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1713,15 +1713,6 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
     KSPSetType(u_ksp, KSPFGMRES);
     break;
 
-  case CS_PARAM_ITSOL_MUMPS_LDLT:     /* Direct solver (factorization) */
-  case CS_PARAM_ITSOL_MUMPS_SYM:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver. Try MUMPS.",
-              __func__);
-    break;
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver.", __func__);
     break;
@@ -2676,11 +2667,6 @@ _notay_hook(void     *context,
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_MUMPS:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_SYM:
 #if defined(PETSC_HAVE_MUMPS)
     {
       KSPSetType(ksp, KSPPREONLY);
@@ -3088,15 +3074,16 @@ _gkb_precond_hook(void     *context,
  *        preconditioner.
  *        Case of MUMPS via PETSc
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context     pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct  pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _mumps_hook(void     *context,
-            KSP       ksp)
+            void     *ksp_struct)
 {
+  KSP  ksp = ksp_struct;
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -3735,6 +3722,14 @@ static cs_sles_convergence_state_t
 _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 {
   cs_iter_algo_t  *algo = gkb->algo;
+
+  /* n = n_algo_iter + 1 since a sum on the square values of zeta is performed
+     to estimate the residual in energy norm and the current number of
+     iterations has not been updated yet (n_algo_iter = 0 after the first
+     resolution done inside _init_gkb_algo()). The number of iterations is
+     incremented at the end of the current function, inside the call to
+     cs_iter_algo_update_cvg_tol_given() */
+
   int  n_algo_iter = cs_iter_algo_get_n_iter(algo);
 
   /* Update the sum of square of zeta values (used for renormalization) */
@@ -3748,18 +3743,18 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
      threshold. The normalization arises from an iterative estimation of the
      initial error in the energy norm */
 
-  int  n = (n_algo_iter < gkb->z_size) ? n_algo_iter : gkb->z_size;
+  int  n = (n_algo_iter < gkb->z_size) ? n_algo_iter + 1: gkb->z_size;
   cs_real_t  err2_energy = 0.;
   for (int i = 0; i < n; i++)
     err2_energy += gkb->zeta_array[i];
 
   double  residual_norm = sqrt(err2_energy);
 
+  /* if n_algo_iter = 0, res0 is automatically set.  For GKB, the first
+   * estimation can be rough that's why an update is made at the second
+   * resolution */
+
   cs_iter_algo_update_residual(algo, residual_norm);
-
-  /* if = 0, res0 is automatically set.  For GKB, the first estimation can be
-   * rough that's why an update is made after the first resolution */
-
   if (n_algo_iter == 1)
     cs_iter_algo_set_initial_residual(algo, residual_norm);
 
@@ -4254,33 +4249,47 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     if (!cs_param_sles_is_mumps_set(mom_slesp->solver))
       mom_slesp->solver = CS_PARAM_ITSOL_MUMPS;
 
+    if (mom_slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS) {
 #if defined(HAVE_MUMPS)
-    cs_sles_mumps_define(field_id,
-                         NULL,
-                         mom_slesp,
-                         cs_user_sles_mumps_hook,
-                         NULL);
+      cs_sles_mumps_define(field_id,
+                           NULL,
+                           mom_slesp,
+                           cs_user_sles_mumps_hook,
+                           NULL);
 #else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " MUMPS is not available.\n",
+                __func__, mom_eqp->name);
+#endif  /* HAVE_MUMPS */
+    }
+    else if (mom_slesp->solver_class == CS_PARAM_SLES_CLASS_PETSC) {
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _mumps_hook,
-                         (void *)mom_eqp);
+      cs_sles_petsc_init();
+      cs_sles_petsc_define(field_id,
+                           NULL,
+                           MATMPIAIJ,
+                           _mumps_hook,
+                           (void *)mom_eqp);
 #else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system \"%s\"\n"
-              " PETSc with MUMPS is required with this option.\n",
-              __func__, mom_eqp->name);
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " Installation of PETSc with MUMPS is required.\n",
+                __func__, mom_eqp->name);
 #endif  /* PETSC_HAVE_MUMPS */
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system \"%s\"\n"
-              " Neither PETSc nor MUMPS is available.\n",
-              __func__, mom_eqp->name);
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " Installation of PETSc with MUMPS is required.\n",
+                __func__, mom_eqp->name);
 #endif  /* HAVE_PETSC */
-#endif  /* HAVE_MUMPS */
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid strategy for solving the linear system \"%s\"\n"
+                " Neither PETSc nor MUMPS is called.\n",
+                __func__, mom_eqp->name);
     break;
 
   default:
@@ -4778,17 +4787,14 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   _transform_gkb_system(matrix, range_set, eqp, nslesp, div_op,
                         slesp, gkb, msles->sles, u_f, b_f, b_c);
 
-  /* Initialization */
+  /* Initialization (A first update of the solution array is done) */
 
   _init_gkb_algo(matrix, range_set, div_op, slesp, gkb, msles->sles, p_c);
 
   /* Main loop */
   /* ========= */
 
-  cs_sles_convergence_state_t
-    cvg_status = cs_iter_algo_get_cvg_status(gkb->algo);
-
-  while (cvg_status == CS_SLES_ITERATING) {
+  while (CS_SLES_ITERATING == _gkb_cvg_test(gkb)) {
 
     /* Compute g (store as an update of d__v), q */
 
@@ -4875,11 +4881,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
       p_c[ip] += -gkb->zeta * gkb->d[ip];
     }
 
-    /* Update error norm and test if one needs one more iteration */
-
-    cvg_status = _gkb_cvg_test(gkb);
-
-  }
+  } /* Main loop on the GKB algorithm */
 
   /* Return to the initial velocity formulation
    * u: = u_tilda + M^-1.(b_f + gamma.N^-1.b_c)

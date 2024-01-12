@@ -9,7 +9,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -306,6 +306,7 @@ typedef struct {
    * --- VOF scheme ---
    * - 10: M-HRIC
    * - 11: M-CICSAM
+   * - 12: M-STACS
    *
    * \var ibdtso
    * Backward differential scheme in time order.
@@ -849,16 +850,22 @@ typedef struct {
  * Specify which type of algebraic multigrid (AMG) to choose.
  * Available choices are:
  * - "none" --> (default) No predefined AMG solver
- * - "boomer"/"boomer_v" --> Boomer AMG V-cycle multigrid from the Hypre library
- * - "boomer_w" --> Boomer AMG W-cycle multigrid from the Hypre library
- * - "gamg"/"gamg_v" --> GAMG V-cycle multigrid from the PETSc library
- * - "gamg_w" --> GAMG W-cycle multigrid from the PETSc library
+ * - "boomer"/"boomer_v"/"bamg" --> Boomer AMG V-cycle multigrid. The HYPRE
+                                    library is needed in this case during the
+                                    installation process.
+ * - "boomer_w"/"bamg_w" --> Boomer AMG W-cycle multigrid. The HYPRE library is
+                                    needed in this case during the installation
+                                    process.
+ * - "gamg"/"gamg_v" --> GAMG V-cycle multigrid. The PETSc library is needed
+                         in this case during the installation process.
+ * - "gamg_w" --> GAMG W-cycle multigrid from the PETSc library. The PETSc
+                  library is needed in this case during the installation
+                  process.
  * - "pcmg" --> MG multigrid as preconditioner from the PETSc library
  * - "v_cycle" --> code_saturne's built-in multigrid with a V-cycle strategy
- * - "k_cycle" --> code_saturne's built-in multigrid with a K-cycle strategy
- * WARNING: When selecting "boomer", "boomer_w" and "gamg"/"gamg_w", one needs
- * to install code_saturne with the PETSc library and PETSc with Hypre if one
- * wants to use boomeramg
+
+ * - "k_cycle"/ "kamg" --> code_saturne's built-in multigrid with a K-cycle
+ *                         strategy (cf. Notay's articles on that subject).
  *
  * \var CS_EQKEY_BC_ENFORCEMENT
  * Set the type of enforcement of the boundary conditions.
@@ -883,16 +890,6 @@ typedef struct {
  * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
  * technique is available up to now.
  *
- * \var CS_EQKEY_BC_QUADRATURE
- * Set the quadrature algorithm used for evaluating integral quantities on
- * faces or volumes. Available choices are:
- * - "bary"    used the barycenter approximation
- * - "higher"  used 4 Gauss points for approximating the integral
- * - "highest" used 5 Gauss points for approximating the integral
- *
- * Remark: "higher" and "highest" implies automatically a subdivision into
- * tetrahedra of each cell.
- *
  * \var CS_EQKEY_BC_STRONG_PENA_COEFF
  * Set the value of the penalization coefficient when "penalization" is
  * activated The default value is 1e12.
@@ -906,9 +903,10 @@ typedef struct {
  *
  * \var CS_EQKEY_DOF_REDUCTION
  * Set how is defined each degree of freedom (DoF).
- * - "de_rham" (default): Evaluation at vertices for potentials, integral
- *   along a line for circulations, integral across the normal component of a
- *   face for fluxes and integral inside a cell for densities
+ * - "de_rham" or "derham" (default): Evaluation at vertices for potentials,
+ *   integral along a line for circulations, integral across the normal
+ *   component of a face for fluxes and integral inside a cell for
+ *   densities. In case of "potential", no quadrature rule is applied.
  * - "average": DoF are defined as the average on the element
  *
  * \var CS_EQKEY_EXTRA_OP
@@ -970,12 +968,13 @@ typedef struct {
  * \var CS_EQKEY_ITSOL
  * Specify the iterative solver for solving the linear system related to an
  * equation. Avalaible choices are:\n
- * - "amg"                         --> Algebraic MultiGrid iterative solver.
- *                                     Good choice for a scalable solver
- *                                     related to symmetric positive definite
- *                                     system.
- * - "jacobi","diag" or "diagonal" --> simpliest iterative solver
- * - "gauss_seidel" or "gs"        --> Gauss-Seidel algorithm
+ * - "amg"           --> Algebraic MultiGrid iterative solver.
+ *                       Good choice for a scalable solver related to symmetric
+ *                       positive definite system.
+ * - "jacobi","diag"
+ *    or "diagonal"  --> Jacobi algorithm: simpliest iterative solver
+ * - "gauss_seidel"
+ *    or "gs"        --> Gauss-Seidel algorithm
  * - "cg"            --> conjuguate gradient algorithm
  * - "cr3"           --> a 3-layer conjugate residual solver (when "cs" is
  *                       chosen as the solver family)
@@ -995,26 +994,10 @@ typedef struct {
  *                       Not the best choice if the system is easy to solve
  * - "minres"        --> Solver of choice for symmetric indefinite systems
  * - "mumps"         --> Direct solver (MUMPS or PETSc)
- *                       LU factorization on general matrices
- * - "mumps_sym"     --> Direct solver (only MUMPS)
- *                       LU factorization on general symmetric matrices
- * - "mumps_ldlt"    --> Direct solver (only MUMPS).
- *                       LDLT factorization for SPD matrices
- * -  "mumps_float"  --> Direct solver (only MUMPS).
- * or "smumps"           LU factorization on general matrices.
- *                       Reduced memory footprint thanks to the usage of float
- *                       instead of double. Well-suited when embedded inside an
- *                       iterative process
- * -  "smumps_ldlt"  --> Direct solver (only MUMPS).
- * or "mumps_float_ldlt" LDLT factorization for SPD matrices
- *                       Reduced memory footprint thanks to the usage of float
- *                       instead of double. Well-suited when embedded inside an
- *                       iterative process
- * -  "smumps_sym"   --> Direct solver (only MUMPS).
- * or "mumps_float_sym"  LU factorization for general symmetric matrices
- *                       Reduced memory footprint thanks to the usage of float
- *                       instead of double. Well-suited when embedded inside an
- *                       iterative process
+ *                       By default, it performs a LU factorization on general
+ *                       matrices. More options are available using the function
+ *                       \ref cs_param_sles_mumps and the function
+ *                       \ref cs_param_sles_mumps_advanced
  * - "sym_gauss_seidel" or "sgs" --> Symmetric Gauss-Seidel algorithm
  * - "user"          --> User-defined iterative solver (rely on the function
  *                       cs_user_sles_it_solver())
@@ -1086,34 +1069,18 @@ typedef struct {
  * - "ilu0": incomplete LU factorization (only with PETSc)
  * - "icc0": incomplete Cholesky factorization (for symmetric matrices and
  *           only with PETSc)
- * - "lu": LU factorization (only with PETSc). It may use MUMPS ig PETSc is
+ * - "lu": LU factorization (only with PETSc). It may use MUMPS if PETSc is
  *         built with MUMPS
  * - "amg": algebraic multigrid technique (see \ref CS_EQKEY_AMG_TYPE for
             additional settings)
  * - "amg_block"/"block_amg: algebraic multigrid by block (useful for
  *                vector-valued equations). By default, a diagonal block
  *                preconditioning is used if nothing else is set.
- * - "mumps"         --> Direct solver (only MUMPS)
- *                       LU factorization on general matrices
- * - "mumps_sym"     --> Direct solver (only MUMPS)
- *                       LU factorization on general symmetric matrices
- * - "mumps_ldlt"    --> Direct solver (only MUMPS).
- *                       LDLT factorization for SPD matrices
- * -  "mumps_float"  --> Direct solver (only MUMPS).
- * or "smumps"           LU factorization on general matrices.
- *                       Reduced memory footprint thanks to the usage of float
- *                       instead of double. Well-suited when embedded inside an
- *                       iterative process
- * -  "smumps_ldlt"  --> Direct solver (only MUMPS).
- * or "mumps_float_ldlt" LDLT factorization for SPD matrices
- *                       Reduced memory footprint thanks to the usage of float
- *                       instead of double. Well-suited when embedded inside an
- *                       iterative process
- * -  "smumps_sym"   --> Direct solver (only MUMPS).
- * or "mumps_float_sym"  LU factorization for general symmetric matrices
- *                       Reduced memory footprint thanks to the usage of float
- *                       instead of double. Well-suited when embedded inside an
- *                       iterative process
+
+ * - "mumps": Direct solver (only MUMPS)
+ *            By default, it performs a LU factorization on general matrices.
+ *            More options are available using the functions
+ *            \ref cs_param_sles_mumps and \ref cs_param_sles_mumps_advanced
  *
  * \var CS_EQKEY_PRECOND_BLOCK_TYPE
  * Specify the type of block preconditioner associated to a preconditioner.
@@ -1217,7 +1184,6 @@ typedef enum {
   CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
-  CS_EQKEY_BC_QUADRATURE,
   CS_EQKEY_BC_STRONG_PENA_COEFF,
   CS_EQKEY_BC_WEAK_PENA_COEFF,
   CS_EQKEY_DO_LUMPING,
@@ -1718,6 +1684,20 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get the pointer to the set of parameters to handle the SLES solver
+ *        associated to this set of equation parameters
+ *
+ * \param[in] eqp      pointer to a \ref cs_equation_param_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_equation_param_get_sles_param(cs_equation_param_t   *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
@@ -1728,6 +1708,22 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 
 void
 cs_equation_param_set_sles(cs_equation_param_t      *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the given quadrature rule to all existing definitions under the
+ *        cs_equation_param_t structure. To get a more detailed control of the
+ *        quadrature rule, please consider the function
+ *        \ref cs_xdef_set_quadrature
+ *
+ * \param[in, out] eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]      qtype   type of quadrature to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_set_quadrature_to_all(cs_equation_param_t   *eqp,
+                                        cs_quadrature_type_t   qtype);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2081,6 +2077,24 @@ cs_equation_find_bc(cs_equation_param_t   *eqp,
 
 void
 cs_equation_remove_bc(cs_equation_param_t   *eqp,
+                      const char            *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove initial condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_ic(cs_equation_param_t   *eqp,
                       const char            *z_name);
 
 /*----------------------------------------------------------------------------*/

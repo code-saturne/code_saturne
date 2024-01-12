@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -149,7 +149,7 @@ cs_soot_production(int        f_id,
                    cs_real_t  smbrs[],
                    cs_real_t  rovsdt[])
 {
-  const cs_combustion_model_t *cm = cs_glob_combustion_model;
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
   const int isoot = cm->isoot;
   const int n_gas_e = cm->n_gas_el_comp;
   const int n_gas_g = cm->n_gas_species;
@@ -209,12 +209,12 @@ cs_soot_production(int        f_id,
       cs_real_t cimp = 0.;
       cs_real_t nn0 = 6.0223e23;
 
-      cs_real_t xm = 1./ (  cvar_ym1[c_id] / cm->gas->wmolg[0]
-                          + cvar_ym2[c_id] / cm->gas->wmolg[1]
-                          + cvar_ym3[c_id] / cm->gas->wmolg[2]);
+      cs_real_t xm = 1./ (  cvar_ym1[c_id] / cm->wmolg[0]
+                          + cvar_ym2[c_id] / cm->wmolg[1]
+                          + cvar_ym3[c_id] / cm->wmolg[2]);
 
       /* Fuel molar fraction */
-      cs_real_t xfu = cvar_ym1[c_id] * xm / cm->gas->wmolg[0];
+      cs_real_t xfu = cvar_ym1[c_id] * xm / cm->wmolg[0];
 
       /* Rate of particule nucleation */
       aa = caa * cs_math_pow2(rho) * sqrt(temp) * xfu * exp(-taa/temp);
@@ -224,7 +224,7 @@ cs_soot_production(int        f_id,
 
       /* Surface growth of soot */
       cc = ccc * rho * sqrt(temp) * xfu * exp(-tcc/temp);
-      po2 = cvar_ym2[c_id] * xm / cm->gas->wmolg[1] * 1./4.76;
+      po2 = cvar_ym2[c_id] * xm / cm->wmolg[1] * 1./4.76;
 
       /* Oxidation */
       ka = 20. * exp(-15098./temp);
@@ -237,7 +237,7 @@ cs_soot_production(int        f_id,
       wox =   1.2e2 * (  (ka * po2 * chi) / (1. + kz * po2)
                        + kb * po2 * (1. - chi));
 
-      dd = pow(36. * acos(-1.) / cs_math_pow2(cm->gas->rosoot), d1s3);
+      dd = pow(36. * acos(-1.) / cs_math_pow2(cm->rosoot), d1s3);
 
       zetas = cvara_ys[c_id];
       zetan = cvara_yp[c_id];
@@ -262,7 +262,7 @@ cs_soot_production(int        f_id,
   }
   else if (isoot == 2) {
 
-    cs_real_t fst = cm->gas->fs[0];
+    cs_real_t fst = cm->fs[0];
     cs_real_t a0 = 120., as = 160.e3, af = 4.e-5;
     cs_real_t gama = 2.25, tact = 2000., yft = 1.;
     cs_real_t lspref = 0.11, lspfuel = 0.16, rcto0 = 0.58;

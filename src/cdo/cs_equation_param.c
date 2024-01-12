@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -253,14 +253,15 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->flexible = true;
 
     }
-    else if (strcmp(keyval, "k_cycle") == 0) {
+    else if (strcmp(keyval, "k_cycle") == 0 || strcmp(keyval, "kamg") == 0) {
 
       eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
       eqp->sles_param->flexible = true;
 
     }
-    else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "boomer_v") == 0) {
+    else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "bamg") == 0 ||
+             strcmp(keyval, "boomer_v") == 0) {
 
       cs_param_sles_class_t  wanted_class = CS_PARAM_SLES_CLASS_HYPRE;
       if (eqp->sles_param->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
@@ -273,7 +274,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->solver_class = ret_class;
 
     }
-    else if (strcmp(keyval, "boomer_w") == 0) {
+    else if (strcmp(keyval, "boomer_w") == 0 || strcmp(keyval, "bamg_w") == 0) {
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
@@ -344,9 +345,11 @@ _set_key(cs_equation_param_t   *eqp,
 
     }
     else {
+
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_AMG_TYPE");
+
     }
     break;
 
@@ -363,30 +366,6 @@ _set_key(cs_equation_param_t   *eqp,
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_BC_ENFORCEMENT");
-    }
-    break;
-
-  case CS_EQKEY_BC_QUADRATURE:
-    {
-      cs_quadrature_type_t  qtype = CS_QUADRATURE_NONE;
-
-      if (strcmp(keyval, "bary") == 0)
-        qtype = CS_QUADRATURE_BARY;
-      else if (strcmp(keyval, "bary_subdiv") == 0)
-        qtype = CS_QUADRATURE_BARY_SUBDIV;
-      else if (strcmp(keyval, "higher") == 0)
-        qtype = CS_QUADRATURE_HIGHER;
-      else if (strcmp(keyval, "highest") == 0)
-        qtype = CS_QUADRATURE_HIGHEST;
-      else {
-        const char *_val = keyval;
-        bft_error(__FILE__, __LINE__, 0,
-                  emsg, __func__, eqname, _val, "CS_EQKEY_BC_QUADRATURE");
-      }
-
-      for (int i = 0; i < eqp->n_bc_defs; i++)
-        cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
-
     }
     break;
 
@@ -418,7 +397,7 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_DOF_REDUCTION:
-    if (strcmp(keyval, "derham") == 0)
+    if (strcmp(keyval, "derham") == 0 || strcmp(keyval, "de_rham") == 0)
       eqp->dof_reduction = CS_PARAM_REDUCTION_DERHAM;
     else if (strcmp(keyval, "average") == 0)
       eqp->dof_reduction = CS_PARAM_REDUCTION_AVERAGE;
@@ -563,15 +542,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_MINRES;
 
-    else if (strcmp(keyval, "mumps") == 0            ||
-             strcmp(keyval, "mumps_float") == 0      ||
-             strcmp(keyval, "mumps_float_ldlt") == 0 ||
-             strcmp(keyval, "mumps_float_sym") == 0  ||
-             strcmp(keyval, "smumps") == 0           ||
-             strcmp(keyval, "smumps_ldlt") == 0      ||
-             strcmp(keyval, "smumps_sym") == 0       ||
-             strcmp(keyval, "mumps_ldlt") == 0       ||
-             strcmp(keyval, "mumps_sym") == 0) {
+    else if (strcmp(keyval, "mumps") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
       eqp->sles_param->flexible = false;
@@ -598,21 +569,9 @@ _set_key(cs_equation_param_t   *eqp,
       assert(eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_CS &&
              eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_HYPRE);
 
-      if (strcmp(keyval, "mumps") == 0)
-        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
-      else if (strcmp(keyval, "mumps_float") == 0 ||
-               strcmp(keyval, "smumps") == 0)
-        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT;
-      else if (strcmp(keyval, "mumps_float_ldlt") == 0 ||
-               strcmp(keyval, "smumps_ldlt") == 0)
-        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT;
-      else if (strcmp(keyval, "mumps_float_sym") == 0 ||
-               strcmp(keyval, "smumps_sym") == 0)
-        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT_SYM;
-      else if (strcmp(keyval, "mumps_ldlt") == 0)
-        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;
-      else if (strcmp(keyval, "mumps_sym") == 0)
-        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_SYM;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
+
+
 
     }
     else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
@@ -865,19 +824,11 @@ _set_key(cs_equation_param_t   *eqp,
       } /* End of switch */
 
     }
-    else if (strcmp(keyval, "mumps") == 0            ||
-             strcmp(keyval, "mumps_float") == 0      ||
-             strcmp(keyval, "mumps_float_ldlt") == 0 ||
-             strcmp(keyval, "mumps_float_sym") == 0  ||
-             strcmp(keyval, "mumps_ldlt") == 0       ||
-             strcmp(keyval, "mumps_sym") == 0        ||
-             strcmp(keyval, "smumps") == 0           ||
-             strcmp(keyval, "smumps_ldlt") == 0      ||
-             strcmp(keyval, "smumps_sym") == 0) {
+    else if (strcmp(keyval, "mumps") == 0) {
 
       eqp->sles_param->flexible = false;
 
-      /* Only MUMPS is a valid choice */
+      /* Only MUMPS is a valid choice in this situation */
 
       if (cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS) !=
           CS_PARAM_SLES_CLASS_MUMPS)
@@ -887,21 +838,7 @@ _set_key(cs_equation_param_t   *eqp,
                   " Please check your installation settings.\n",
                   __func__, eqname, "CS_EQKEY_PRECOND");
 
-      if (strcmp(keyval, "mumps") == 0)
-        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS;
-      else if (strcmp(keyval, "mumps_float") == 0 ||
-               strcmp(keyval, "smumps") == 0)
-        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT;
-      else if (strcmp(keyval, "mumps_float_ldlt") == 0 ||
-               strcmp(keyval, "smumps_ldlt") == 0)
-        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT;
-      else if (strcmp(keyval, "mumps_float_sym") == 0 ||
-               strcmp(keyval, "smumps_sym") == 0)
-        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT_SYM;
-      else if (strcmp(keyval, "mumps_ldlt") == 0)
-        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_LDLT;
-      else if (strcmp(keyval, "mumps_sym") == 0)
-        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_SYM;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS;
 
     }
     else if (strcmp(keyval, "poly1") == 0) {
@@ -988,7 +925,7 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "mumps") == 0) {
       eqp->saddle_param->solver = CS_PARAM_SADDLE_SOLVER_MUMPS;
-      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_SYM;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
     }
     else {
       const char *_val = keyval;
@@ -1152,7 +1089,11 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
       eqp->saddle_param->solver = CS_PARAM_SADDLE_SOLVER_MUMPS;
-      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_SYM;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
+
+      cs_param_sles_mumps(eqp->sles_param,
+                          false, /* is single-precision */
+                          CS_PARAM_SLES_FACTO_LDLT_SYM);
 
     }
     else if (strcmp(keyval, "cdo_eb") == 0 ||
@@ -1852,6 +1793,26 @@ cs_equation_param_set(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get the pointer to the set of parameters to handle the SLES solver
+ *        associated to this set of equation parameters
+ *
+ * \param[in] eqp      pointer to a \ref cs_equation_param_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_equation_param_get_sles_param(cs_equation_param_t   *eqp)
+{
+  if (eqp == NULL)
+    return NULL;
+
+  return eqp->sles_param;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
@@ -1873,6 +1834,51 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
               "%s: The requested class of solvers is not available"
               " for the equation %s\n"
               " Please modify your settings.", __func__, eqp->name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the given quadrature rule to all existing definitions under the
+ *        cs_equation_param_t structure.
+ *
+ *        If the default quadrature has been modified by the code, this
+ *        function set the value of the quadrture to the given parameter
+ *        whatever was the previous value.
+ *
+ *        To get a more detailed control of the quadrature rule, please
+ *        consider the function \ref cs_xdef_set_quadrature
+ *
+ * \param[in, out] eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]      qtype   type of quadrature to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_set_quadrature_to_all(cs_equation_param_t   *eqp,
+                                        cs_quadrature_type_t   qtype)
+{
+  if (eqp == NULL)
+    return;
+
+  /* Apply the quadrature rule to all BC definitions */
+
+  for (int i = 0; i < eqp->n_bc_defs; i++)
+    cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
+
+  /* Apply the quadrature rule to all source term definitions */
+
+  for (int i = 0; i < eqp->n_source_terms; i++)
+    cs_xdef_set_quadrature(eqp->source_terms[i], qtype);
+
+  /* Apply the quadrature rule to all IC definitions */
+
+  for (int i = 0; i < eqp->n_ic_defs; i++)
+    cs_xdef_set_quadrature(eqp->ic_defs[i], qtype);
+
+  /* Apply the quadrature rule to all volume_mass_injections */
+
+  for (int i = 0; i < eqp->n_volume_mass_injections; i++)
+    cs_xdef_set_quadrature(eqp->volume_mass_injections[i], qtype);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2356,6 +2362,16 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
                                         meta_flag,
                                         val);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
+
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
   BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
@@ -2404,6 +2420,16 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
                                         0, /* state flag */
                                         meta_flag,
                                         &quantity);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -2458,6 +2484,16 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
                                         0, /* state flag */
                                         meta_flag,
                                         &ac);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -2516,6 +2552,16 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
                                         0, /* state flag */
                                         meta_flag,
                                         &context);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_ic(eqp, z_name);
+
+  /* Increment list of initial conditions for the equation parameters */
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -2604,6 +2650,16 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
                                           CS_FLAG_STATE_UNIFORM, /* state */
                                           meta_flag,
                                           (void *)values);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -2708,7 +2764,17 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   if (!full_length)
     cs_xdef_array_build_full2subset(d);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
   int  new_id = eqp->n_bc_defs;
+
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
@@ -2779,6 +2845,16 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
                                           state_flag,
                                           meta_flag,
                                           field);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -2870,6 +2946,16 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                           meta_flag,
                                           &ac);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
+
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
@@ -2960,6 +3046,16 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
                                           0, /* state */
                                           meta_flag,
                                           &tfc);
+
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -3054,6 +3150,16 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
                                           meta_flag,
                                           &cx);
 
+  /* Before incrementing the list of definitions, first verify that there
+   * isn't an existing one on the same zone. If so, remove it.
+   * This is done at the end of the function in order to ensure that it was
+   * possible to create the new definition.
+   */
+
+  cs_equation_remove_bc(eqp, z_name);
+
+  /* Increment list of boundary conditions for the equation parameters */
+
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
@@ -3084,9 +3190,11 @@ cs_equation_find_bc(cs_equation_param_t   *eqp,
 
   int z_id = -2;
 
-  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
-  if (z != NULL)
-    z_id = z->id;
+  if (z_name != NULL) {
+    const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+    if (z != NULL)
+      z_id = z->id;
+  }
 
   /* Search for given BC */
 
@@ -3122,9 +3230,11 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
 
   int z_id = -2;
 
-  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
-  if (z != NULL)
-    z_id = z->id;
+  if (z_name != NULL) {
+    const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+    if (z != NULL)
+      z_id = z->id;
+  }
 
   /* Search for given BC */
 
@@ -3145,6 +3255,57 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
     }
     eqp->n_bc_defs -= 1;
     BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove initial condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_ic(cs_equation_param_t   *eqp,
+                      const char            *z_name)
+{
+  if (eqp == NULL)
+    return;
+
+  int z_id = -2;
+
+  if (z_name != NULL) {
+    const cs_zone_t  *z = cs_volume_zone_by_name_try(z_name);
+    if (z != NULL)
+      z_id = z->id;
+  }
+
+  /* Search for given BC */
+
+  int j = -1;
+  for (int i = 0; i < eqp->n_ic_defs; i++) {
+    if (eqp->ic_defs[i]->z_id == z_id) {
+      j = i;
+      break;
+    }
+  }
+
+  /* Remove it if found */
+
+  if (j > -1) {
+    eqp->ic_defs[j] = cs_xdef_free(eqp->ic_defs[j]);
+    for (int i = j+1; i < eqp->n_ic_defs; i++) {
+      eqp->ic_defs[i-1] = eqp->ic_defs[i];
+    }
+    eqp->n_ic_defs -= 1;
+    BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   }
 }
 

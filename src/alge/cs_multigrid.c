@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -231,23 +231,23 @@ typedef struct _cs_multigrid_setup_data_t {
   /* Arrays used only for solving, but maintained until free,
      so as to be usable by convergence error handler. */
 
-  double         exit_initial_residue;  /* Last level initial residue */
-  double         exit_residue;          /* Last residue */
-  int            exit_level;            /* Last level during solve */
-  int            exit_cycle_id;         /* Last cycle id during solve */
+  double         exit_initial_residual;  /* Last level initial residual */
+  double         exit_residual;          /* Last residual */
+  int            exit_level;             /* Last level during solve */
+  int            exit_cycle_id;          /* Last cycle id during solve */
 
-  cs_real_t     *rhs_vx_buf;            /* Coarse grid "right hand sides"
-                                           and corrections buffer */
-  cs_real_t    **rhs_vx;                /* Coarse grid "right hand sides"
-                                           and corrections */
+  cs_real_t     *rhs_vx_buf;             /* Coarse grid "right hand sides"
+                                            and corrections buffer */
+  cs_real_t    **rhs_vx;                 /* Coarse grid "right hand sides"
+                                            and corrections */
 
   /* Options used only when used as a preconditioner */
 
-  char          *pc_name;               /* name of preconditioning system */
+  char          *pc_name;                /* name of preconditioning system */
 
-  int            pc_verbosity;          /* preconditioner verbosity */
+  int            pc_verbosity;           /* preconditioner verbosity */
 
-  cs_real_t     *pc_aux;                /* preconditioner auxiliary array */
+  cs_real_t     *pc_aux;                 /* preconditioner auxiliary array */
 
 
 } cs_multigrid_setup_data_t;
@@ -279,7 +279,7 @@ struct _cs_multigrid_t {
   /* Setting for use as a preconditioner */
 
   double     pc_precision;       /* preconditioner precision */
-  double     pc_r_norm;          /* preconditioner residue normalization */
+  double     pc_r_norm;          /* preconditioner residual normalization */
 
   /* Data for postprocessing callback */
 
@@ -792,8 +792,8 @@ _multigrid_setup_data_create(void)
   mgd->grid_hierarchy = NULL;
   mgd->sles_hierarchy = NULL;
 
-  mgd->exit_initial_residue = -1.;
-  mgd->exit_residue = -1.;
+  mgd->exit_initial_residual = -1.;
+  mgd->exit_residual = -1.;
   mgd->exit_level = -1.;
   mgd->exit_cycle_id = -1.;
 
@@ -1273,12 +1273,12 @@ _multigrid_setup_k_local_smoothe(void               *context,
  * as a preconditioner.
  *
  * The preconditioner is considered to have converged when
- * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
  * parameters:
  *   context       <-> pointer to multigrid context
  *   precision     <-- preconditioner precision
- *   r_norm        <-- residue normalization
+ *   r_norm        <-- residual normalization
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1314,7 +1314,7 @@ _multigrid_pc_apply(void                *context,
                     cs_real_t           *x_out)
 {
   int     n_iter;
-  double  residue;
+  double  residual;
 
   cs_multigrid_t  *mg = context;
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
@@ -1351,7 +1351,7 @@ _multigrid_pc_apply(void                *context,
                                                         mg->pc_precision,
                                                         mg->pc_r_norm,
                                                         &n_iter,
-                                                        &residue,
+                                                        &residual,
                                                         rhs,
                                                         x_out,
                                                         0,
@@ -2539,19 +2539,19 @@ _dot_xu_xv_xw(const cs_multigrid_t  *mg,
  * Test if convergence is attained.
  *
  * parameters:
- *   mg              <-- associated multigrid structure
- *   var_name        <-- variable name
- *   n_f_rows       <-- number of rows on fine mesh
- *   n_max_cycles    <-- maximum number of cycles
- *   cycle_id        <-- number of current cycle
+ *   mg               <-- associated multigrid structure
+ *   var_name         <-- variable name
+ *   n_f_rows         <-- number of rows on fine mesh
+ *   n_max_cycles     <-- maximum number of cycles
+ *   cycle_id         <-- number of current cycle
  *
- *   verbosity       <-- verbosity level
- *   n_iters         <-- number of iterations
- *   precision       <-- precision limit
- *   r_norm          <-- residue normalization
- *   initial_residue <-- initial residue
- *   residue         <-> residue
- *   rhs             <-- right-hand side
+ *   verbosity        <-- verbosity level
+ *   n_iters          <-- number of iterations
+ *   precision        <-- precision limit
+ *   r_norm           <-- residual normalization
+ *   initial_residual <-- initial residual
+ *   residual         <-> residual
+ *   rhs              <-- right-hand side
  *
  * returns:
  *   convergence status
@@ -2567,8 +2567,8 @@ _convergence_test(cs_multigrid_t        *mg,
                   int                    n_iters,
                   double                 precision,
                   double                 r_norm,
-                  double                 initial_residue,
-                  double                *residue,
+                  double                 initial_residual,
+                  double                *residual,
                   const cs_real_t        rhs[])
 {
   const char cycle_h_fmt[]
@@ -2585,17 +2585,17 @@ _convergence_test(cs_multigrid_t        *mg,
     = N_("   N. cycles: %4d; Fine mesh cumulative iter: %5d; "
          "Norm. residual %12.4e\n");
 
-  /* Compute residue */
+  /* Compute residual */
 
-  *residue = sqrt(_dot_xx(mg, n_f_rows, rhs));
+  *residual = sqrt(_dot_xx(mg, n_f_rows, rhs));
 
   if (cycle_id == 1)
-    initial_residue = *residue;
+    initial_residual = *residual;
 
   /* Plot convergence if requested */
 
   if (mg->cycle_plot != NULL) {
-    double vals = *residue;
+    double vals = *residual;
     double wall_time = cs_timer_wtime();
     mg->plot_time_stamp += 1;
     cs_time_plot_vals_write(mg->cycle_plot,
@@ -2605,14 +2605,14 @@ _convergence_test(cs_multigrid_t        *mg,
                             &vals);
   }
 
-  if (*residue < precision*r_norm) {
+  if (*residual < precision*r_norm) {
 
     if (verbosity == 2)
-      bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
+      bft_printf(_(cycle_fmt), cycle_id, n_iters, *residual/r_norm);
     else if (verbosity > 2) {
       bft_printf(_(cycle_h_fmt));
       bft_printf(_(cycle_cv_fmt),
-                 cycle_id, n_iters, *residue/r_norm);
+                 cycle_id, n_iters, *residual/r_norm);
       bft_printf(_(cycle_t_fmt));
     }
     return CS_SLES_CONVERGED;
@@ -2623,10 +2623,10 @@ _convergence_test(cs_multigrid_t        *mg,
     if (  (verbosity > -1 && !(mg->info.is_pc || mg->subtype != CS_MULTIGRID_MAIN))
         || verbosity > 0) {
       if (verbosity == 1)
-        bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
+        bft_printf(_(cycle_fmt), cycle_id, n_iters, *residual/r_norm);
       else if (verbosity > 1) {
         bft_printf(_(cycle_fmt),
-                   cycle_id, n_iters, *residue/r_norm);
+                   cycle_id, n_iters, *residual/r_norm);
         bft_printf(_(cycle_t_fmt));
       }
       bft_printf(_(" @@ Warning: algebraic multigrid for [%s]\n"
@@ -2639,19 +2639,19 @@ _convergence_test(cs_multigrid_t        *mg,
 
   else {
 
-    if (*residue > initial_residue * 10000.0 && *residue > 100.) {
+    if (*residual > initial_residual * 10000.0 && *residual > 100.) {
       if (verbosity > 2)
-        bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
+        bft_printf(_(cycle_fmt), cycle_id, n_iters, *residual/r_norm);
       return CS_SLES_DIVERGED;
     }
     else if (verbosity > 2) {
       if (cycle_id == 1)
         bft_printf(_(cycle_h_fmt));
-      bft_printf(_(cycle_cv_fmt), cycle_id, n_iters, *residue/r_norm);
+      bft_printf(_(cycle_cv_fmt), cycle_id, n_iters, *residual/r_norm);
     }
 
 #if (__STDC_VERSION__ >= 199901L)
-    if (isnan(*residue) || isinf(*residue))
+    if (isnan(*residual) || isinf(*residual))
       return CS_SLES_DIVERGED;
 #endif
   }
@@ -2660,7 +2660,7 @@ _convergence_test(cs_multigrid_t        *mg,
 }
 
 /*----------------------------------------------------------------------------
- * Log residue A.vx - Rhs
+ * Log residual A.vx - Rhs
  *
  * parameters:
  *   mg              <-- pointer to multigrid context info
@@ -2821,20 +2821,20 @@ _level_names_init(const char  *name,
  * Sparse linear system resolution using multigrid.
  *
  * parameters:
- *   mg              <-- multigrid system
- *   lv_names        <-- names of linear systems
- *                       (indexed as mg->setup_data->sles_hierarchy)
- *   verbosity       <-- verbosity level
- *   cycle_id        <-- id of currect cycle
- *   n_equiv_iter    <-> equivalent number of iterations
- *   precision       <-- solver precision
- *   r_norm          <-- residue normalization
- *   initial_residue <-> initial residue
- *   residue         <-> residue
- *   rhs             <-- right hand side
- *   vx              --> system solution
- *   aux_size        <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors     --- optional working area (allocation otherwise)
+ *   mg               <-- multigrid system
+ *   lv_names         <-- names of linear systems
+ *                        (indexed as mg->setup_data->sles_hierarchy)
+ *   verbosity        <-- verbosity level
+ *   cycle_id         <-- id of currect cycle
+ *   n_equiv_iter     <-> equivalent number of iterations
+ *   precision        <-- solver precision
+ *   r_norm           <-- residual normalization
+ *   initial_residual <-> initial residual
+ *   residual         <-> residual
+ *   rhs              <-- right hand side
+ *   vx               --> system solution
+ *   aux_size         <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors      --- optional working area (allocation otherwise)
  *
  * returns:
  *   convergence status
@@ -2848,8 +2848,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                    int                  *n_equiv_iter,
                    double                precision,
                    double                r_norm,
-                   double               *initial_residue,
-                   double               *residue,
+                   double               *initial_residual,
+                   double               *residual,
                    const cs_real_t      *rhs,
                    cs_real_t            *vx,
                    size_t                aux_size,
@@ -2863,8 +2863,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   cs_lnum_t eb_size = 1;
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING, c_cvg = CS_SLES_ITERATING;
   int n_iter = 0;
-  double _residue = -1.;
-  double _initial_residue = 0.;
+  double _residual = -1.;
+  double _initial_residual = 0.;
 
   size_t _aux_r_size = aux_size / sizeof(cs_real_t);
   cs_lnum_t n_rows = 0, n_cols_ext = 0;
@@ -2959,7 +2959,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                 precision*mg->info.precision_mult[0],
                                 r_norm_l,
                                 &n_iter,
-                                &_residue,
+                                &_residual,
                                 rhs_lv,
                                 vx_lv,
                                 _aux_r_size*sizeof(cs_real_t),
@@ -2969,13 +2969,13 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       mg->plot_time_stamp += n_iter+1;
 
     if (mg_sles->solve_func == cs_sles_it_solve)
-      _initial_residue
-        = cs_sles_it_get_last_initial_residue(mg_sles->context);
+      _initial_residual
+        = cs_sles_it_get_last_initial_residual(mg_sles->context);
     else
-      _initial_residue = HUGE_VAL;
+      _initial_residual = HUGE_VAL;
 
     if (level == 0 && cycle_id == 1)
-      *initial_residue = _initial_residue;
+      *initial_residual = _initial_residual;
 
     if (verbosity > 1)
       _log_residual(mg, cycle_id, lv_names[level*2],
@@ -2986,10 +2986,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       break;
     }
 
-    /* Restrict residue
-       TODO: get residue from cs_sles_solve(). This optimisation would
+    /* Restrict residual
+       TODO: get residual from cs_sles_solve(). This optimisation would
        require adding an argument and exercising caution to ensure the
-       correct sign and meaning of the residue
+       correct sign and meaning of the residual
        (regarding timing, this stage is part of the descent smoother) */
 
     cs_matrix_vector_multiply(_matrix, vx_lv, wr);
@@ -3012,8 +3012,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                               lv_info->n_it_ds_smoothe[3],
                               precision,
                               r_norm,
-                              *initial_residue,
-                              residue,
+                              *initial_residual,
+                              residual,
                               wr);
 
       /* If converged or cycle limit reached, break from descent loop */
@@ -3085,7 +3085,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
 
-    _initial_residue = _residue;
+    _initial_residual = _residual;
 
     lv_info = mg->lv_info + level;
 
@@ -3098,7 +3098,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                 precision*mg->info.precision_mult[2],
                                 r_norm_l,
                                 &n_iter,
-                                &_residue,
+                                &_residual,
                                 rhs_lv,
                                 vx_lv,
                                 _aux_r_size*sizeof(cs_real_t),
@@ -3110,10 +3110,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
 
     if (mg_sles->solve_func == cs_sles_it_solve)
-      _initial_residue
-        = cs_sles_it_get_last_initial_residue(mg_sles->context);
+      _initial_residual
+        = cs_sles_it_get_last_initial_residual(mg_sles->context);
     else
-      _initial_residue = HUGE_VAL;
+      _initial_residual = HUGE_VAL;
 
     *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
@@ -3186,7 +3186,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                     precision*mg->info.precision_mult[1],
                                     r_norm_l,
                                     &n_iter,
-                                    &_residue,
+                                    &_residual,
                                     rhs_lv,
                                     vx_lv,
                                     _aux_r_size*sizeof(cs_real_t),
@@ -3198,10 +3198,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
         _lv_info_update_stage_iter(lv_info->n_it_as_smoothe, n_iter);
 
         if (mg_sles->solve_func == cs_sles_it_solve)
-          _initial_residue
-            = cs_sles_it_get_last_initial_residue(mg_sles->context);
+          _initial_residual
+            = cs_sles_it_get_last_initial_residual(mg_sles->context);
         else
-          _initial_residue = HUGE_VAL;
+          _initial_residual = HUGE_VAL;
 
         *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
@@ -3218,11 +3218,11 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   } /* End of tests on end_cycle */
 
   mgd->exit_level = level;
-  mgd->exit_residue = _residue;
+  mgd->exit_residual = _residual;
   if (level == 0)
-    mgd->exit_initial_residue = *initial_residue;
+    mgd->exit_initial_residual = *initial_residual;
   else
-    mgd->exit_initial_residue = _initial_residue;
+    mgd->exit_initial_residual = _initial_residual;
   mgd->exit_cycle_id = cycle_id;
 
   /* Free memory */
@@ -3246,21 +3246,21 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
  * symmetric for the IPCG to converge.
  *
  * parameters:
- *   mg              <-- multigrid system
- *   level           <-- level on which we apply the cycle
- *   lv_names        <-- names of linear systems
- *                       (indexed as mg->setup_data->sles_hierarchy)
- *   verbosity       <-- verbosity level
- *   cycle_id        <-- id of currect cycle
- *   n_equiv_iter    <-> equivalent number of iterations
- *   precision       <-- solver precision
- *   r_norm          <-- residue normalization
- *   initial_residue <-> initial residue
- *   residue         <-> residue
- *   rhs             <-- right hand side
- *   vx              --> system solution
- *   aux_size        <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors     --- optional working area (allocation otherwise)
+ *   mg               <-- multigrid system
+ *   level            <-- level on which we apply the cycle
+ *   lv_names         <-- names of linear systems
+ *                        (indexed as mg->setup_data->sles_hierarchy)
+ *   verbosity        <-- verbosity level
+ *   cycle_id         <-- id of currect cycle
+ *   n_equiv_iter     <-> equivalent number of iterations
+ *   precision        <-- solver precision
+ *   r_norm           <-- residual normalization
+ *   initial_residual <-> initial residual
+ *   residual         <-> residual
+ *   rhs              <-- right hand side
+ *   vx               --> system solution
+ *   aux_size         <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors      --- optional working area (allocation otherwise)
  *
  * returns:
  *   convergence status
@@ -3275,8 +3275,8 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                    int                  *n_equiv_iter,
                    double                precision,
                    double                r_norm,
-                   double               *initial_residue,
-                   double               *residue,
+                   double               *initial_residual,
+                   double               *residual,
                    const cs_real_t      *rhs,
                    cs_real_t            *vx,
                    size_t                aux_size,
@@ -3287,7 +3287,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   bool end_cycle = false;
   cs_sles_convergence_state_t c_cvg = CS_SLES_ITERATING, cvg = CS_SLES_ITERATING;
   int n_iter = 0;
-  double _residue = -1.;
+  double _residual = -1.;
   cs_real_t r_norm_l = r_norm;
 
   size_t _aux_r_size = aux_size / sizeof(cs_real_t);
@@ -3359,14 +3359,14 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               precision*mg->info.precision_mult[0],
                               r_norm_l,
                               &n_iter,
-                              &_residue,
+                              &_residual,
                               rhs_lv,
                               vx_lv,
                               _aux_r_size*sizeof(cs_real_t),
                               aux_vectors);
 
-  if (initial_residue != NULL && cycle_id == 1)
-    *initial_residue = HUGE_VAL;
+  if (initial_residual != NULL && cycle_id == 1)
+    *initial_residual = HUGE_VAL;
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[2]), &t0, &t1);
@@ -3399,8 +3399,8 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               lv_info->n_it_ds_smoothe[3],
                               precision,
                               r_norm,
-                              *initial_residue,
-                              residue,
+                              *initial_residual,
+                              residual,
                               rt_lv);
     else
       cvg = c_cvg;
@@ -3454,7 +3454,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               precision*mg->info.precision_mult[2],
                               r_norm_l,
                               &n_iter,
-                              residue,
+                              residual,
                               rhs_lv1,
                               vx_lv1,
                               _aux_r_size*sizeof(cs_real_t),
@@ -3486,7 +3486,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                                precision,
                                r_norm,
                                NULL,
-                               residue,
+                               residual,
                                rhs_lv1,
                                vx_lv1,
                                aux_size,
@@ -3548,8 +3548,8 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                                  &n_iter,
                                  precision,
                                  r_norm,
-                                 initial_residue,
-                                 residue,
+                                 initial_residual,
+                                 residual,
                                  rt_lv1,
                                  vx2_lv1,
                                  aux_size,
@@ -3629,7 +3629,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                             precision*mg->info.precision_mult[1],
                             r_norm_l,
                             &n_iter,
-                            &_residue,
+                            &_residual,
                             rb_lv,
                             z2_lv,
                             _aux_r_size*sizeof(cs_real_t),
@@ -4185,7 +4185,6 @@ cs_multigrid_setup_conv_diff(void               *context,
   cs_multigrid_t  *mg = context;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
   /* Destroy previous hierarchy if necessary */
 
@@ -4218,9 +4217,6 @@ cs_multigrid_setup_conv_diff(void               *context,
                                  diag_block_size,
                                  extra_diag_block_size,
                                  (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                 mq->cell_cen,
-                                 mq->cell_vol,
-                                 mq->i_face_normal,
                                  a,
                                  conv_diff);
 
@@ -4248,9 +4244,9 @@ cs_multigrid_setup_conv_diff(void               *context,
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       size of aux_vectors (in bytes)
@@ -4269,7 +4265,7 @@ cs_multigrid_solve(void                *context,
                    double               precision,
                    double               r_norm,
                    int                 *n_iter,
-                   double              *residue,
+                   double              *residual,
                    const cs_real_t     *rhs,
                    cs_real_t           *vx,
                    size_t               aux_size,
@@ -4287,7 +4283,7 @@ cs_multigrid_solve(void                *context,
 
   cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
 
-  /* Initialize number of equivalent iterations and residue,
+  /* Initialize number of equivalent iterations and residual,
      check for immediate return,
      solve sparse linear system using multigrid algorithm. */
 
@@ -4327,12 +4323,12 @@ cs_multigrid_solve(void                *context,
   if (verbosity == 2) /* More detailed headers later if > 2 */
     bft_printf(_("Multigrid [%s]:\n"), name);
 
-  /* Initial residue should be improved, but this is consistent
+  /* Initial residual should be improved, but this is consistent
      with the legacy (by increment) case */
 
-  double initial_residue = -1;
+  double initial_residual = -1;
 
-  *residue = initial_residue; /* not known yet, so be safe */
+  *residual = initial_residual; /* not known yet, so be safe */
 
   /* Cycle to solution */
 
@@ -4346,8 +4342,8 @@ cs_multigrid_solve(void                *context,
                                n_iter,
                                precision,
                                r_norm,
-                               &initial_residue,
-                               residue,
+                               &initial_residual,
+                               residual,
                                rhs,
                                vx,
                                _aux_size - lv_names_size,
@@ -4368,8 +4364,8 @@ cs_multigrid_solve(void                *context,
                                n_iter,
                                precision,
                                r_norm,
-                               &initial_residue,
-                               residue,
+                               &initial_residual,
+                               residual,
                                rhs,
                                vx,
                                _aux_size - lv_names_size,
@@ -4709,7 +4705,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
               _("algebraic multigrid [%s]: %s after %d cycles:\n"
                 "  initial residual: %11.4e; current residual: %11.4e"),
               name, _(error_type[err_id]), mgd->exit_cycle_id,
-              mgd->exit_initial_residue, mgd->exit_residue);
+              mgd->exit_initial_residual, mgd->exit_residual);
   else
     bft_error(__FILE__, __LINE__, 0,
               _("algebraic multigrid [%s]: %s after %d cycles\n"
@@ -4717,7 +4713,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                 "  initial residual: %11.4e; current residual: %11.4e"),
               name, _(error_type[err_id]),
               mgd->exit_cycle_id, level,
-              mgd->exit_initial_residue, mgd->exit_residue);
+              mgd->exit_initial_residual, mgd->exit_residual);
 
   return false;
 }
@@ -4749,7 +4745,7 @@ cs_multigrid_set_plot_options(cs_multigrid_t  *mg,
       cs_file_mkdir_default("monitoring");
       const char *probe_names[] = {base_name};
       mg->cycle_plot = cs_time_plot_init_probe(base_name,
-                                               "monitoring/residue_",
+                                               "monitoring/residual_",
                                                CS_TIME_PLOT_CSV,
                                                use_iteration,
                                                -1.,      /* force flush */

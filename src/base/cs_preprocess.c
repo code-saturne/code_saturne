@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -323,6 +323,8 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
     need_save = true;
 
   if (need_partition) {
+    cs_mesh_quantities_free_all(mq);
+
     if (need_save) {
       cs_mesh_save(m, cs_glob_mesh_builder, NULL, "mesh_output.csm");
       need_save = false;
@@ -506,11 +508,6 @@ cs_preprocess_mesh_update_fortran(void)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  int64_t n_g_cells = m->n_g_cells;
-  int64_t n_g_i_faces = m->n_g_i_faces;
-  int64_t n_g_b_faces = m->n_g_b_faces;
-  int64_t n_g_vertices = m->n_g_vertices;
 
   cs_f_majgeo(&(m->n_cells),
               &(m->n_cells_with_ghosts),

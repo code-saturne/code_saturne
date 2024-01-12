@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -47,7 +47,7 @@ subroutine ecrava
 use, intrinsic :: iso_c_binding
 
 use paramx
-use dimens, only: nvar, nscal
+use dimens, only: nvar
 use numvar
 use cstphy
 use entsor
@@ -82,18 +82,16 @@ implicit none
 character        rubriq*64,car2*2,car54*54
 character        cindfc*2,cindfl*4
 character        ficsui*32
-integer          f_id, t_id, ivar, iscal
+integer          f_id, t_id, ivar
 integer          icha
 integer          ii    , ivers
 integer          itysup, nbval
-integer          ipcefj, ipcla
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          ilecec, iecr
 integer          ifac
 integer          iz, kk
 integer          ival(1)
-integer          key_t_ext_id, icpext
-integer          iviext
+integer          key_t_ext_id
 double precision rval(1)
 
 type(c_ptr) :: rp
@@ -123,6 +121,15 @@ interface
     implicit none
     type(c_ptr), value :: r
   end subroutine cs_mobile_structures_restart_write
+
+  ! Interface to C function writing notebook variables
+
+  subroutine cs_restart_write_notebook_variables(r)  &
+    bind(C, name='cs_restart_write_notebook_variables')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: r
+  end subroutine cs_restart_write_notebook_variables
 
 end interface
 
@@ -289,6 +296,11 @@ enddo
 
 call restart_write_fields(rp, RESTART_MAIN)
 
+! 3.3 Notebook variables
+!================================
+
+call cs_restart_write_notebook_variables(rp)
+
 !===============================================================================
 ! 4. FERMETURE FICHIER SUITE DE BASE
 !===============================================================================
@@ -385,64 +397,6 @@ if (iecaux.eq.1) then
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
   endif
 
-  !     Masse volumique si elle est variable uniquement
-  !     La masse volumique est egalement ecrite pour l'algo. VOF
-  if (irovar.eq.1.or.ivofmt.gt.0) then
-    ! Masse volumique - cellules
-    call restart_write_field_vals(rp, icrom, 0)
-
-    ! Masse volumique du pdt precedent - cellules
-    ! only for VOF algo. and dilatable models (idilat = 4, 5)
-    if (ivofmt.gt.0.or.idilat.ge.4) then
-      call restart_write_field_vals(rp, icrom, 1)
-    endif
-
-    ! Masse volumique - faces de bord
-    call restart_write_field_vals(rp, ibrom, 0)
-
-    ! Scalar source terms for dilatable model (idilat = 4, 5)
-    if (idilat.ge.4) then
-      do iscal = 1, nscal
-        f_id = iustdy(iscal)
-        call restart_write_field_vals(rp, f_id, 0)
-      enddo
-    endif
-
-  endif
-
-  !     On n'ecrit les proprietes physiques que si on les extrapole ou
-  !     pour le modele de cavitation
-  !       On pourrait les ecrire a tous les coups en prevision d'une
-  !       suite avec extrapolation, mais
-  !          - c'est rare
-  !          - si on demarre un calcul a l'ordre deux a partir d'un calcul
-  !            a l'ordre 1, on peut estimer que les premiers pas de temps
-  !            sont a jeter de toute facon.
-  !       Une exception : on ecrit egalement Cp en effet joule pour
-  !         pouvoir calculer la temperature H/Cp en debut de calcul
-
-  call field_get_key_int(iviscl, key_t_ext_id, iviext)
-  if (iviext.gt.0.or.ivofmt.gt.0) then
-    ! Molecular viscosity
-    if (ivivar.eq.1.or.ivofmt.gt.0) then
-      call restart_write_field_vals(rp, iviscl, 0)
-    endif
-  endif
-
-  call field_get_key_int(ivisct, key_t_ext_id, iviext)
-  if (iviext.gt.0) then
-    ! Turbulent viscosity
-    call restart_write_field_vals(rp, ivisct, 0)
-  endif
-
-  if (icp.ge.0) then
-    call field_get_key_int(icp, key_t_ext_id, icpext)
-    if (icpext.gt.0.or.ippmod(ieljou).ge.1)  then
-      ! Specific heat
-      call restart_write_field_vals(rp, icp, 0)
-    endif
-  endif
-
   call restart_write_linked_fields(rp, "diffusivity_id", iecr)
 
   car54 =' End writing the physical properties                  '
@@ -451,9 +405,7 @@ if (iecaux.eq.1) then
 ! ---> Pas de temps
 
   call field_get_id('dt', f_id)
-  if (idtvar.eq.2) then
-    call restart_write_field_vals(rp, f_id, 0)
-  elseif (idtvar.eq.1) then
+  if (idtvar.eq.1) then
     call field_get_val_s(f_id, dt_s)
     rubriq = 'dt_variable_temps'
     itysup = 0
@@ -496,28 +448,9 @@ if (iecaux.eq.1) then
 
   iecr = 0
 
-  if (ineedy.eq.1) then
-    call field_get_id('wall_distance', f_id)
-    call restart_write_field_vals(rp, f_id, 0)
-  endif
-
   if (iecr.ne.0) then
     car54=' End writing the wall distance                        '
     write(nfecra,1110)car54
-  endif
-
-! ---> External forces
-
-  if (iphydr.eq.1) then
-    call field_get_id('volume_forces', f_id)
-    call restart_write_field_vals(rp, f_id, 0)
-  endif
-
-! ---> Predicted hydrostatic pressure
-
-  if (iphydr.eq.2) then
-    call field_get_id('hydrostatic_pressure_prd', f_id)
-    call restart_write_field_vals(rp, f_id, 0)
   endif
 
 !----------------------------------------------------------------
@@ -685,9 +618,6 @@ if (iecaux.eq.1) then
     nbval  = nozppm
     rubriq = 'ientox_zone_bord_slfm'
     call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientox)
-
-!       Traceur de progress variable
-    call restart_write_field_vals(rp, iym(ngazgm), 0)
 
     car54=' End writing combustion information (SLFM)         '
     write(nfecra,1110)car54
@@ -869,27 +799,6 @@ if (iecaux.eq.1) then
       rval(1) = elcou
       call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
     endif
-  endif
-
-!     Termes sources des versions electriques
-
-  if ( ippmod(ieljou).ge.1 .or.                                   &
-       ippmod(ielarc).ge.1       ) then
-
-    call field_get_id('joule_power', ipcefj)
-    iecr   = 1
-
-    call restart_write_field_vals(rp, ipcefj, 0)
-
-  endif
-
-  if (ippmod(ielarc).ge.1) then
-
-    iecr   = 1
-    call field_get_id('laplace_force', ipcla)
-
-    call restart_write_field_vals(rp, ipcla, 0)
-
   endif
 
   if (iecr.ne.0) then

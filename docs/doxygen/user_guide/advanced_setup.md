@@ -1,7 +1,7 @@
 <!--
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -606,7 +606,7 @@ for some examples)
 time.*
 
 In the framework of the gas combustion modeling, users may impose
-their own enthalpy-temperature tabulation (conversion law). The `indjon`
+their own enthalpy-temperature tabulation (conversion law). The `use_janaf`
 indicator must be set to 0 in this case (the default value being 1) and the name
 of the tabulation file defined through the **ficfpp** variable (see
 [Specific physical model activation (usppmo) examples](@ref cs_f_user_parameters_h_usppmo)).
@@ -617,12 +617,12 @@ Thermo-chemical data files
 --------------------------
 
 The user must not forget to place in the `DATA` directory  the
-thermochemical file `dp_C3P` (**indjon = 1**), `dp_C3PSJ` or `dp_ELE`
+thermochemical file `dp_C3P` (**use_janaf = 1**), `dp_C3PSJ` or `dp_ELE`
 (depending on the selected module) Such files can be copied to the
 `DATA` directory of a study case using the GUI (see the Tools menu).
 Their content is described below.
 
-For example, using gas combustion if (indjon=1) we can directly copy the
+For example, using gas combustion with (use_janaf=1) we can directly copy the
 `dp_C3P` file from the GUI.
 
 \anchor gui_dp_C3P_gas_combustion
@@ -745,13 +745,13 @@ In the case of **gas combustion** or **pulverized coal combustion**, time averag
 \anchor gui_coal_solution_control
 \image html gui_coal_solution_control.png "Calculation control - Volume solution control"
 
-For **gas combustion**, if the GUI is not used for **coal combustion**, the
+For **gas combustion**, the
 \ref cs_user_parameters and \ref cs_user_combustion functions, called at calculation
 start, can be used to:
 
 - set the relaxation coefficient of the density \ref srrom.
 
-- set the dynamic viscosity \ref diftl0.
+- set the dynamic viscosity of Enthaly.
 
 - set the value of the constant \ref cebu of the Eddy Break Up model (only in
 \ref cs_user_combustion).

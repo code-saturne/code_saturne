@@ -24,14 +24,15 @@
 
 /*----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_i_face_cf(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *i_face_cells,
-                          const cs_real_3_t    *pvar,
+                          const cs_real_t (*restrict pvar)[stride],
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight,
-                          const cs_real_33_t        *restrict r_grad,
-                          cs_real_33_t        *restrict grad,
+                          const cs_real_t (*restrict r_grad)[stride][3],
+                          cs_real_t (*restrict grad)[stride][3],
                           const cs_real_3_t *restrict dofij,
                           const cs_real_3_t *restrict i_f_face_normal)
 {
@@ -54,11 +55,11 @@ _compute_reconstruct_v_i_face_cf(cs_lnum_t            n_i_faces,
             + (1.0-pond)* c_weight[c_id2]);
 
 
-  using Cell = AtomicCell<cs_real_t, 3, 3>;
+  using Cell = AtomicCell<cs_real_t, stride, 3>;
   Cell grad_cf1, grad_cf2;
 
 
-  for (cs_lnum_t i = 0; i < 3; i++) {
+  for (cs_lnum_t i = 0; i < stride; i++) {
     pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
     pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
 
@@ -80,16 +81,16 @@ _compute_reconstruct_v_i_face_cf(cs_lnum_t            n_i_faces,
 
 }
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_b_face_cf(cs_lnum_t            n_b_faces,
-                              const cs_real_33_t  *restrict coefbv,
-                              const cs_real_3_t   *restrict coefav,
-                              const cs_real_3_t   *restrict pvar,
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict pvar)[stride],
                               int                           inc,
                               const cs_real_3_t *restrict diipb,
-                              const cs_real_33_t        *restrict r_grad,
-                              cs_real_33_t        *restrict grad,
+                              const cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3],
                               const cs_real_3_t *restrict b_f_face_normal,
                               const cs_lnum_t *restrict b_face_cells)
 {
@@ -103,10 +104,10 @@ _compute_reconstruct_v_b_face_cf(cs_lnum_t            n_b_faces,
 
   c_id = b_face_cells[f_id];
 
-  using Cell = AtomicCell<cs_real_t, 3, 3>;
+  using Cell = AtomicCell<cs_real_t, stride, 3>;
   Cell grad_cf;
 
-  for (cs_lnum_t i = 0; i < 3; i++) {
+  for (cs_lnum_t i = 0; i < stride; i++) {
 
     pfac = inc*coefav[f_id][i];
 
@@ -118,7 +119,7 @@ _compute_reconstruct_v_b_face_cf(cs_lnum_t            n_b_faces,
 
   //   /* Reconstruction part */
     rfac = 0.;
-    for (cs_lnum_t k = 0; k < 3; k++) {
+    for (cs_lnum_t k = 0; k < stride; k++) {
       vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
                           + r_grad[c_id][k][1] * diipb[f_id][1]
                           + r_grad[c_id][k][2] * diipb[f_id][2];

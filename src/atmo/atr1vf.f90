@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -450,10 +450,10 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
                foir, rayi(:,ii), ncray)
 
     ! --- Short-wave: Sun
-    call rayso(ii, k1, kmray, heuray, imer1, albedo,                     &
-               tauzq, tauz, tausup, zq,                                  &
-               zray,                                                     &
-               qvray, qlray, fneray, romray, preray, temray, aeroso,     &
+    call rayso(ii, k1, kmray, heuray, imer1, albedo,              &
+               tauzq, tauz, tausup, zq,                           &
+               zray,                                              &
+               qvray, qlray, fneray, romray, preray, temray,      &
                fos, rayst(:,ii), ncray)
 
   enddo

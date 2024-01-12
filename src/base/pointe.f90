@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -175,9 +175,6 @@ module pointe
   !> See \c iicesm and the \c cs_equation_add_volume_mass_injection_* functions
   integer, allocatable, dimension(:), target :: icetsm
 
-  !> zone where a mass source term is imposed.
-  integer, allocatable, dimension(:) :: izctsm
-
   !> \anchor itypsm
   !> type of mass source term for each variable
   !> - 0 for an injection at ambient value,
@@ -300,7 +297,6 @@ contains
   subroutine finalize_aux_arrays
 
     deallocate(itrifb)
-    if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
 
   end subroutine finalize_aux_arrays

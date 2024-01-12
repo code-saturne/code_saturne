@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -155,7 +155,7 @@ _qm_from_oxidant(int               location_id,
 
   cs_real_t  *vals = (cs_real_t *)vals_p;
 
-  cs_coal_model_t *coal = cs_glob_combustion_model->coal;
+  cs_coal_model_t *coal = cs_glob_coal_model;
 
   if (ci->qm_air_func != NULL) {
     cs_real_t qm_air[1] = {0};
@@ -184,10 +184,9 @@ _recompute_inlet_state(void)
 {
   /* Initialization */
 
-  cs_combustion_model_t *cm = cs_glob_combustion_model;
-  cs_coal_model_t *coal = cm->coal;
+  cs_coal_model_t *cm = cs_glob_coal_model;
 
-  const int n_coals = coal->n_coals;
+  const int n_coals = cm->n_coals;
 
   /* Loop on coal inlet boundaries */
 
@@ -216,7 +215,7 @@ _recompute_inlet_state(void)
 
       for (int icha = 0; icha < n_coals; icha++) {
 
-        for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++) {
+        for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++) {
 
           int icla = iclapc + i_shift;
 
@@ -231,7 +230,7 @@ _recompute_inlet_state(void)
 
         }
 
-        i_shift += coal->n_classes_per_coal[icha];
+        i_shift += cm->n_classes_per_coal[icha];
 
       }
 
@@ -389,10 +388,9 @@ cs_coal_boundary_conditions(int  bc_type[])
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  cs_combustion_model_t *cm = cs_glob_combustion_model;
-  cs_coal_model_t *coal = cm->coal;
+  cs_coal_model_t *cm = cs_glob_coal_model;
 
-  const int n_coals = coal->n_coals;
+  const int n_coals = cm->n_coals;
 
   cs_field_t *f = NULL;
 
@@ -404,9 +402,9 @@ cs_coal_boundary_conditions(int  bc_type[])
     const cs_field_t *f_bulk_age = cs_field_by_name_try("age");
 
     if (f_bulk_age != NULL) {
-      BFT_MALLOC(age_rcodcl1, coal->nclacp, cs_real_t *);
+      BFT_MALLOC(age_rcodcl1, cm->nclacp, cs_real_t *);
 
-      for (int icla = 0; icla < coal->nclacp; icla++) {
+      for (int icla = 0; icla < cm->nclacp; icla++) {
         char name[16];
         snprintf(name, 15, "n_p_age_%02d", icla+1);
         name[15] = '\0';
@@ -503,7 +501,7 @@ cs_coal_boundary_conditions(int  bc_type[])
       xsolid[isol] = 0.;
 
     cs_real_t h1 = 0, h2[CS_COMBUSTION_MAX_CLASSES_PER_COAL];
-    cs_real_t coefe[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t coefe[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
     cs_real_t f1mc[CS_COMBUSTION_MAX_COALS];
     cs_real_t f2mc[CS_COMBUSTION_MAX_COALS];
 
@@ -525,7 +523,7 @@ cs_coal_boundary_conditions(int  bc_type[])
     if (ci->ientcp == 1) {
       for (int icha = 0; icha < n_coals; icha++) {
         cs_real_t totcp = 0;
-        for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++)
+        for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++)
           totcp += ci->distch[icha][iclapc];
         if (fabs(totcp - 100) > cs_math_epzero) {
           cs_parameters_error_header(CS_ABORT_DELAYED,
@@ -536,7 +534,7 @@ cs_coal_boundary_conditions(int  bc_type[])
                           "  zone: %s\n"
                           "  coal: %d\n"
                           "  distribution (in percentage):\n"), z->name, icha);
-          for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++)
+          for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++)
             cs_log_printf(log,
                           _("    class %02d: %e12.5\n\n"),
                           iclapc+1, ci->distch[icha][iclapc]);
@@ -560,7 +558,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
       for (int icha = 0; icha < n_coals; icha++) {
 
-        for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++) {
+        for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++) {
 
           int icla = iclapc + i_shift;
 
@@ -579,21 +577,21 @@ cs_coal_boundary_conditions(int  bc_type[])
 
           cs_real_t t2;
 
-          int ch_id = coal->ich[icha] - 1;
-          int ck_id = coal->ick[icha] - 1;
-          int ash_id = coal->iash[icha] - 1;
-          int wat_id = coal->iwat[icha] - 1;
+          int ch_id = cm->ich[icha] - 1;
+          int ck_id = cm->ick[icha] - 1;
+          int ash_id = cm->iash[icha] - 1;
+          int wat_id = cm->iwat[icha] - 1;
 
           if (ci->ientcp == 1) {
             t2 = ci->timpcp[icha];
-            xsolid[ch_id] = 1.0 - coal->xashch[icha];
+            xsolid[ch_id] = 1.0 - cm->xashch[icha];
             xsolid[ck_id] = 0;
-            xsolid[ash_id] = coal->xashch[icha];
+            xsolid[ash_id] = cm->xashch[icha];
 
             /* Taking into account humidity */
             if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] == 1) {
-              xsolid[ch_id] -= coal->xwatch[icha];
-              xsolid[wat_id] = coal->xwatch[icha];
+              xsolid[ch_id] -= cm->xwatch[icha];
+              xsolid[wat_id] = cm->xwatch[icha];
             }
             else
               xsolid[wat_id] = 0.;
@@ -601,10 +599,10 @@ cs_coal_boundary_conditions(int  bc_type[])
           else {
             t2 = ci->t_air;
 
-            xsolid[ch_id] = 1.0 - coal->xashch[icha] - coal->xwatch[icha];
+            xsolid[ch_id] = 1.0 - cm->xashch[icha] - cm->xwatch[icha];
             xsolid[ck_id] = 0;
-            xsolid[ash_id] = coal->xashch[icha];
-            xsolid[wat_id] = coal->xwatch[icha];
+            xsolid[ash_id] = cm->xashch[icha];
+            xsolid[wat_id] = cm->xwatch[icha];
           }
 
           h2[icla] = cs_coal_thconvers2(icla, xsolid, t2);
@@ -612,12 +610,14 @@ cs_coal_boundary_conditions(int  bc_type[])
 
         }
 
-        i_shift += coal->n_classes_per_coal[icha];
+        i_shift += cm->n_classes_per_coal[icha];
 
       }
 
       /* Compute H1 */
-      for (int ige = 0; ige < CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS; ige++)
+      for (int ige = 0;
+           ige < CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS;
+           ige++)
         coefe[ige] = 0.;
 
       int ioxy = ci->inmoxy - 1;
@@ -649,7 +649,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
       char f_name[32];
 
-      for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++) {
+      for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++) {
 
         int icla = iclapc + i_shift;
 
@@ -658,12 +658,12 @@ cs_coal_boundary_conditions(int  bc_type[])
         snprintf(f_name, 31, "x_p_coal_%02d", icla+1); f_name[31] = '\0';
         cs_real_t *rcodcl1_xch = cs_field_by_name(f_name)->bc_coeffs->rcodcl1;
         cs_real_t xch_in =   ci->state->x20[icla]
-                           * (1. - coal->xashch[icha]);
+                           * (1. - cm->xashch[icha]);
 
         /* Taking into account humidity */
         if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] == 1) {
           xch_in =   ci->state->x20[icla]
-                   * (1. - coal->xashch[icha]- coal->xwatch[icha]);
+                   * (1. - cm->xashch[icha]- cm->xwatch[icha]);
         }
 
         /* Boundary conditions for Xck of class icla */
@@ -676,7 +676,7 @@ cs_coal_boundary_conditions(int  bc_type[])
         snprintf(f_name, 31, "n_p_%02d", icla+1); f_name[31] = '\0';
         cs_real_t *rcodcl1_inp = cs_field_by_name(f_name)->bc_coeffs->rcodcl1;
 
-        cs_real_t inp_in = ci->state->x20[icla] / coal->xmp0[icla];
+        cs_real_t inp_in = ci->state->x20[icla] / cm->xmp0[icla];
 
         /* Boundary conditions for Xwater of class icla */
 
@@ -685,7 +685,7 @@ cs_coal_boundary_conditions(int  bc_type[])
         if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] == 1) {
           snprintf(f_name, 31, "x_p_wt_%02d", icla+1); f_name[31] = '\0';
           rcodcl1_xwt = cs_field_by_name(f_name)->bc_coeffs->rcodcl1;
-          xwt = ci->state->x20[icla] * coal->xwatch[icha];
+          xwt = ci->state->x20[icla] * cm->xwatch[icha];
         }
 
         /* Boundary conditions for H2 of class icla */
@@ -741,7 +741,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
       } /* loop on coal classes */
 
-      i_shift += coal->n_classes_per_coal[icha];
+      i_shift += cm->n_classes_per_coal[icha];
 
       /* Boundary conditions for x1f1m and x1f2m from coal icha */
 
@@ -853,7 +853,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
     for (int icha = 0; icha < n_coals; icha++) {
 
-      for (int iclapc = 0; iclapc < coal->n_classes_per_coal[icha]; iclapc++) {
+      for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++) {
 
         int *icodcl_v_p_x = NULL;
         int *icodcl_v_p_y = NULL;
@@ -923,8 +923,7 @@ cs_coal_boundary_conditions_inlet_density(void)
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
-  cs_combustion_model_t *cm = cs_glob_combustion_model;
-  cs_coal_model_t *coal = cm->coal;
+  cs_coal_model_t *cm = cs_glob_coal_model;
 
   const cs_real_t p0 = cs_glob_fluid_properties->p0;
 
@@ -981,8 +980,8 @@ cs_coal_boundary_conditions_inlet_density(void)
 
     cs_real_t x20t = 0, x20drho20 = 0;
 
-    for (int iclapc = 0; iclapc < coal->nclacp; iclapc++) {
-      x20drho20 += ci->state->x20[iclapc] / coal->rho20[iclapc];
+    for (int iclapc = 0; iclapc < cm->nclacp; iclapc++) {
+      x20drho20 += ci->state->x20[iclapc] / cm->rho20[iclapc];
       x20t      += ci->state->x20[iclapc];
     }
 

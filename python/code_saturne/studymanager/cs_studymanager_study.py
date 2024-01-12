@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -34,6 +34,7 @@ import string
 import time
 import logging
 import fnmatch
+import math
 from collections import OrderedDict
 
 #-------------------------------------------------------------------------------
@@ -174,40 +175,41 @@ class Case(object):
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
         """
-        self.__log_file  = rlog
-        self.__diff      = diff
-        self.__parser    = parser
-        self.__data      = data
-        self.__repo      = repo
-        self.__dest      = dest
+        self.__log_file    = rlog
+        self.__diff        = diff
+        self.__parser      = parser
+        self.__data        = data
+        self.__repo        = repo
+        self.__dest        = dest
 
-        self.pkg         = pkg
-        self.study       = study
+        self.pkg           = pkg
+        self.study         = study
 
-        self.node        = data['node']
-        self.label       = data['label']
-        self.compute     = data['compute']
-        self.plot        = data['post']
-        self.run_id      = data['run_id']
-        self.compare     = data['compare']
-        self.n_procs     = data['n_procs']
-        self.depends     = data['depends']
+        self.node          = data['node']
+        self.label         = data['label']
+        self.compute       = data['compute']
+        self.plot          = data['post']
+        self.run_id        = data['run_id']
+        self.compare       = data['compare']
+        self.n_procs       = data['n_procs']
+        self.depends       = data['depends']
+        self.expected_time = data['expected_time']
 
-        self.parametric  = data['parametric']
-        self.notebook    = data['notebook']
-        self.kw_args     = data['kw_args']
+        self.parametric    = data['parametric']
+        self.notebook      = data['notebook']
+        self.kw_args       = data['kw_args']
 
-        self.is_compiled = "not done"
-        self.is_run      = "not done"
-        self.is_time     = None
-        self.is_plot     = "not done"
-        self.is_compare  = "not done"
-        self.disabled    = False
-        self.threshold   = "default"
-        self.diff_value  = [] # list of differences (in case of comparison)
-        self.m_size_eq   = True # mesh sizes equal (in case of comparison)
-        self.subdomains  = None
-        self.level       = None # level of the node in the dependency graph
+        self.is_compiled   = "not done"
+        self.is_run        = "not done"
+        self.is_time       = None
+        self.is_plot       = "not done"
+        self.is_compare    = "not done"
+        self.disabled      = False
+        self.threshold     = "default"
+        self.diff_value    = [] # list of differences (in case of comparison)
+        self.m_size_eq     = True # mesh sizes equal (in case of comparison)
+        self.subdomains    = None
+        self.level         = None # level of the node in the dependency graph
 
         # Run_dir and Title are based on study, label and run_id
         self.resu = "RESU"
@@ -1114,12 +1116,15 @@ class Studies(object):
         # Store options
 
         self.__pkg               = pkg
+        self.__exe               = exe
+        self.__filename          = options.filename
         self.__create_xml        = options.create_xml
         self.__update_smgr       = options.update_smgr
         self.__update_setup      = options.update_setup
         self.__force_rm          = options.remove_existing
         self.__disable_ow        = options.disable_overwrite
         self.__debug             = options.debug
+        self.__state             = options.casestate
         self.__n_procs           = options.n_procs
         self.__filter_level      = options.filter_level
         self.__filter_n_procs    = options.filter_n_procs
@@ -1132,8 +1137,10 @@ class Studies(object):
         self.__ref               = options.reference
         self.__postpro           = options.post
         self.__slurm_batch_size  = options.slurm_batch_size
-        self.__slurm_batch_wtime = options.slurm_batch_wtime
+        # Convert in minutes
+        self.__slurm_batch_wtime = options.slurm_batch_wtime * 60.
         self.__slurm_batch_args  = options.slurm_batch_args
+        self.__slurm_time_factor = 1.15
         self.__sheet             = options.sheet
         self.__default_fmt       = options.default_fmt
         # do not use tex in matpl(built-in mathtext is used instead)
@@ -1174,6 +1181,7 @@ class Studies(object):
             if filename is None:
                 studyd = os.path.basename(studyp)
                 filename = "smgr.xml"
+                options.filename = filename
 
             filepath = os.path.join(studyp, filename)
             smgr, error = create_base_xml_file(filepath, self.__pkg)
@@ -1784,15 +1792,17 @@ class Studies(object):
     def run_slurm_batches(self):
         """
         Run all cases in slurm batch mode.
-        Number of case per batch and maximum wall time are given by smgr options.
+        The number of case per batch is limited by a maximum number and a maximum
+        wall time given by smgr options. Expected times are used to compute wall
+        time.
         """
 
         slurm_batch_template = """#!/bin/sh
 #SBATCH --ntasks={0}
-#SBATCH --time={1}:00:00
-#SBATCH --output=vnv_{2}
-#SBATCH --error=vnv_{2}
-#SBATCH --job-name=saturne_vnv_{2}
+#SBATCH --time={1}:{2}:00
+#SBATCH --output=vnv_{3}
+#SBATCH --error=vnv_{3}
+#SBATCH --job-name=saturne_vnv_{3}
 """
         cur_batch_id = 0
         job_id_list = []
@@ -1810,6 +1820,7 @@ class Studies(object):
 
                 batch_cmd = ""
                 cur_batch_size = 0
+                batch_total_time = 0
 
                 # loop on cases of the sub graph
                 for case in self.graph.extract_sub_graph(level,nproc+1).graph_dict:
@@ -1821,19 +1832,32 @@ class Studies(object):
                             if self.__n_iter is not None:
                                 case.add_control_file(self.__n_iter)
 
-                            # append content of batch command with run of the case
-                            batch_cmd += case.build_run_batch()
-                            cur_batch_size += 1
+                            # check future submission total time and submit previous batch if not empty
+                            submit_prev = False
+                            if (cur_batch_size == 0) or (batch_total_time + \
+                               self.__slurm_time_factor * float(case.expected_time) < \
+                               self.__slurm_batch_wtime):
+                                # append content of batch command with run of the case
+                                batch_cmd += case.build_run_batch()
+                                cur_batch_size += 1
+                                # multiply by time factor to prevent failure
+                                batch_total_time += self.__slurm_time_factor * \
+                                                    float(case.expected_time)
+                            else:
+                                submit_prev = True
 
-                            # submit once batch size is reached
-                            if cur_batch_size >= self.__slurm_batch_size:
+                            # submit once batch size or wall time is reached
+                            if cur_batch_size >= self.__slurm_batch_size or submit_prev or \
+                               batch_total_time >= self.__slurm_batch_wtime:
                                 slurm_batch_name = "slurm_batch_file_" + \
                                                    str(cur_batch_id) + ".sh"
                                 slurm_batch_file = open(slurm_batch_name, mode='w')
 
                                 # fill file with template
+                                hh, mm = divmod(batch_total_time, 60.)
                                 cmd = slurm_batch_template.format(nproc+1,
-                                                                  self.__slurm_batch_wtime,
+                                                                  math.ceil(hh),
+                                                                  math.ceil(mm),
                                                                   cur_batch_id)
 
                                 # add exclusive option to batch template for
@@ -1882,7 +1906,16 @@ class Studies(object):
                                 batch_cmd = ""
                                 cur_batch_id += 1
                                 cur_batch_size = 0
+                                batch_total_time = 0
                                 slurm_batch_file.close()
+
+                            # complete batch info as previous one was submitted
+                            if submit_prev:
+                                # append content of batch command with run of the case
+                                batch_cmd += case.build_run_batch()
+                                cur_batch_size += 1
+                                # multiply by time factor to prevent failure
+                                batch_total_time += self.__slurm_time_factor * float(case.expected_time)
 
                 if cur_batch_size > 0:
                     slurm_batch_name = "slurm_batch_file_" + \
@@ -1890,9 +1923,10 @@ class Studies(object):
                     slurm_batch_file = open(slurm_batch_name, mode='w')
 
                     # fill file with template
-                    cmd = slurm_batch_template.format(nproc+1,
-                                                      self.__slurm_batch_wtime,
-                                                      cur_batch_id)
+                    hh, mm = divmod(batch_total_time, 60.)
+                    cmd = slurm_batch_template.format(nproc+1, math.ceil(hh),
+                                                      math.ceil(mm), cur_batch_id)
+
                     # add exclusive option to batch template for
                     # computation with at least 6 processors
                     if nproc+1 > 5:
@@ -1939,11 +1973,78 @@ class Studies(object):
                     batch_cmd = ""
                     cur_batch_id += 1
                     cur_batch_size = 0
+                    batch_total_time = 0
                     slurm_batch_file.close()
 
             job_id_list = cur_job_id_list
 
+        # final submission to analyse all run cases
+        if self.__state:
+
+            slurm_batch_name = "slurm_batch_file_" + str(cur_batch_id) + ".sh"
+            slurm_batch_file = open(slurm_batch_name, mode='w')
+
+            # fill file with template
+            cmd = slurm_batch_template.format(nproc+1, 0, 10, cur_batch_id)
+
+            cmd += "\n"
+            slurm_batch_file.write(cmd)
+
+            # fill file with batch command for state analysis
+            batch_cmd += self.build_state_batch()
+            slurm_batch_file.write(batch_cmd)
+            slurm_batch_file.flush()
+
+            # list of dependency id should be in the
+            # :id1:id2:id3 format
+            list_id = ""
+            for item in job_id_list:
+                list_id += ":" + str(item)
+            if len(list_id) > 0:
+                output = subprocess.check_output(['sbatch',"--dependency=afterany"
+                       + list_id, slurm_batch_name])
+            else:
+                # empty list can occur with existing runs in study
+                output = subprocess.check_output(['sbatch', slurm_batch_name])
+
         self.reporting('')
+
+    #---------------------------------------------------------------------------
+
+    def build_state_batch(self):
+        """
+        Launch state option in DESTINATION
+        """
+        run_cmd_state = "cd " + self.__dest + os.linesep
+
+        run_cmd_state += self.build_state_cmd()
+
+        return run_cmd_state
+
+    #---------------------------------------------------------------------------
+
+    def build_state_cmd(self):
+        """
+        Define run command with specified options.
+        """
+
+        e = os.path.join(self.__pkg.get_dir('bindir'), self.__exe)
+
+        # final analysis after all run_cases are finished
+        state_cmd = e + " smgr --state" \
+                  + " -f " + self.__filename \
+                  + " --repo " + self.__repo \
+                  + " --dest " + self.__dest
+
+        # add tags options
+        if self.__with_tags:
+            tags = ','.join(str(n) for n in self.__with_tags)
+            state_cmd += " --with-tags " + '"' + tags + '"'
+        if self.__without_tags:
+            tags = ','.join(str(n) for n in self.__without_tags)
+            state_cmd += " --without-tags " + '"' + tags + '"'
+
+        return state_cmd
 
     #---------------------------------------------------------------------------
 

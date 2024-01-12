@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -194,9 +194,8 @@ _clip_v2f(cs_lnum_t  n_cells,
   cs_parall_counter(nclp, 2);
 
   if (nclp[1] > 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  _("Warning: variable phi, maximum physical value of 2 "
-                    "exceeded for, %llu cells"),
+    cs_log_warning(_("Warning: variable phi, maximum physical value of 2 "
+                     "exceeded for, %llu cells"),
                   (unsigned long long)nclp[1]);
 
   cs_lnum_t nclpmn[1] = {nclp[0]}, nclpmx[1] = {nclp[1]};

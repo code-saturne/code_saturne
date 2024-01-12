@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2023  EDF S.A.
+  Copyright (C) 2005-2024  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -55,6 +55,12 @@ extern "C" {
 } /* Fake brace to force back Emacs auto-indentation back to column 0 */
 #endif
 #endif /* __cplusplus */
+
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+#define _ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
 
 /*============================================================================
  * Static global variables
@@ -245,7 +251,7 @@ _transfer_to_section(ple_lnum_t        n_elements,
     for (i = 0;
          i < this_section->face_index[this_section->n_elements];
          i++) {
-      _face_num = PLE_ABS(this_section->face_num[i]);
+      _face_num = _ABS(this_section->face_num[i]);
       if (_face_num > this_section->n_faces)
         this_section->n_faces = _face_num;
     }
@@ -320,7 +326,7 @@ _map_to_section(ple_lnum_t         n_elements,
     for (i = 0;
          i < this_section->face_index[this_section->n_elements];
          i++) {
-      _face_num = PLE_ABS(this_section->face_num[i]);
+      _face_num = _ABS(this_section->face_num[i]);
       if (_face_num > this_section->n_faces)
         this_section->n_faces = _face_num;
     }

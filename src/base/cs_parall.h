@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -648,6 +648,24 @@ cs_parall_thread_range_upper(cs_lnum_t    n,
   *s_id = 0;
   *e_id = n;
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute number of blocks needed for a given array and block sizes.
+ *
+ * \param[in]  n           size of array
+ * \param[in]  block_size  block size for sub-loops
+ *
+ * \return  number of required blocks
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline size_t
+cs_parall_block_count(size_t  n,
+                      size_t  block_size)
+{
+  return (n % block_size) ?  n/block_size + 1 : n/block_size;
 }
 
 /*----------------------------------------------------------------------------*/

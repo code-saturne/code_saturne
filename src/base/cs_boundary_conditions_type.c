@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -423,7 +423,8 @@ cs_boundary_conditions_type(bool  init,
 
   /* ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
      (or closest free inlet)
-     itbslb = max of ifrslb on all ranks, standard outlet face presence indicator */
+     itbslb = max of ifrslb on all ranks,
+     standard outlet face presence indicator */
 
   /* Even when the user has not chosen xyzp0 (and it is thus at the
      origin), we choose the face whose center is closest to it, so
@@ -1280,7 +1281,7 @@ cs_boundary_conditions_type(bool  init,
            _("Error: incorrect or incomplete boundary conditions\n"
              "======\n\n"
              "At least one open boundary face declared as inlet (or outlet)\n"
-             "with prescribed velocity for which the velocity value of \"%s\"\n"
+             "with prescribed velocity for which the value of \"%s\"\n"
              "has not been specified (Dirichlet condition).\n"),
            cs_field_by_id(err_flags[1])->name);
 

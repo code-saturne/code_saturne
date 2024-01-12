@@ -24,14 +24,15 @@
 
 /*----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_i_face(cs_lnum_t            n_i_faces,
                           const cs_lnum_2_t      *i_face_cells,
-                          const cs_real_3_t    *pvar,
+                          const cs_real_t (*restrict pvar)[stride],
                           const cs_real_t         *weight,
                           const cs_real_t      *c_weight,
-                          const cs_real_33_t        *restrict r_grad,
-                          cs_real_33_t        *restrict grad,
+                          const cs_real_t (*restrict r_grad)[stride][3],
+                          cs_real_t (*restrict grad)[stride][3],
                           const cs_real_3_t *restrict dofij,
                           const cs_real_3_t *restrict i_f_face_normal)
 {
@@ -54,7 +55,7 @@ _compute_reconstruct_v_i_face(cs_lnum_t            n_i_faces,
             + (1.0-pond)* c_weight[c_id2]);
 
 
-  for (cs_lnum_t i = 0; i < 3; i++) {
+  for (cs_lnum_t i = 0; i < stride; i++) {
     pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
     pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
 
@@ -75,16 +76,16 @@ _compute_reconstruct_v_i_face(cs_lnum_t            n_i_faces,
 
 }
 
-
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_v_b_face(cs_lnum_t            n_b_faces,
-                              const cs_real_33_t  *restrict coefbv,
-                              const cs_real_3_t   *restrict coefav,
-                              const cs_real_3_t   *restrict pvar,
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict pvar)[stride],
                               int                           inc,
                               const cs_real_3_t *restrict diipb,
-                              const cs_real_33_t        *restrict r_grad,
-                              cs_real_33_t        *restrict grad,
+                              const cs_real_t (*restrict r_grad)[stride][3],
+                              cs_real_t (*restrict grad)[stride][3],
                               const cs_real_3_t *restrict b_f_face_normal,
                               const cs_lnum_t *restrict b_face_cells)
 {
@@ -98,7 +99,7 @@ _compute_reconstruct_v_b_face(cs_lnum_t            n_b_faces,
 
   c_id = b_face_cells[f_id];
 
-  for (cs_lnum_t i = 0; i < 3; i++) {
+  for (cs_lnum_t i = 0; i < stride; i++) {
 
     pfac = inc*coefav[f_id][i];
 
@@ -123,12 +124,13 @@ _compute_reconstruct_v_b_face(cs_lnum_t            n_b_faces,
   }
 }
 
+template <cs_lnum_t stride>
 __global__ static void
 _compute_reconstruct_correction(cs_lnum_t            n_cells,
                                cs_lnum_t            has_dc,
                                const int *restrict c_disable_flag,
                                const cs_real_t *restrict cell_f_vol,
-                               cs_real_33_t        *restrict grad,
+                               cs_real_t (*restrict grad)[stride][3],
                                const cs_real_33_t *restrict corr_grad_lin,
                                bool                         test_bool
                               )
@@ -155,7 +157,7 @@ _compute_reconstruct_correction(cs_lnum_t            n_cells,
   if (test_bool) {
     cs_real_t gradpa[3];
     // printf("dvol = %.17lg\n", dvol);
-    for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t i = 0; i < stride; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         gradpa[j] = grad[c_id][i][j];
         grad[c_id][i][j] = 0.;

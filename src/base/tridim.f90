@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------------------
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -156,11 +156,37 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 ! Interfaces
 !===============================================================================
 
-procedure() :: atr1vf, cou1do, debvtl, distpr, distpr2, distyp, diffst
-procedure() :: dttvar, cs_compute_courant_fourier, cs_tagmro
+procedure() :: atr1vf, cou1do, debvtl, distpr2, diffst
+procedure() :: cs_tagmro
 procedure() :: phyvar, pthrbm, schtmp, scalai
 
 interface
+
+  subroutine cs_wall_distance_yplus(visvdr)  &
+    bind(C, name='cs_wall_distance_yplus')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: visvdr
+  end subroutine cs_wall_distance_yplus
+
+  subroutine cs_wall_distance(iterns)  &
+    bind(C, name='cs_wall_distance')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: iterns
+  end subroutine cs_wall_distance
+
+  subroutine cs_courant_fourier_compute()  &
+    bind(C, name='cs_courant_fourier_compute')
+    use, intrinsic :: iso_c_binding
+  end subroutine cs_courant_fourier_compute
+
+  subroutine cs_local_time_step_compute(itrale)  &
+    bind(C, name='cs_local_time_step_compute')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: itrale
+  end subroutine cs_local_time_step_compute
 
   subroutine cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale,    &
                                                italim, itrfin, ineefl, itrfup, &
@@ -652,7 +678,7 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1020)
 endif
 
-call dttvar(itrale, vcopt_u%iwarni, dt)
+call cs_local_time_step_compute(itrale)
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
@@ -769,9 +795,9 @@ do while (iterns.le.nterup)
   c_hbord  = C_NULL_PTR
   c_theipb = C_NULL_PTR
 
-  if (associated(visvdr)) c_visvdr = c_loc(visvdr)
-  if (associated(hbord)) c_hbord = c_loc(hbord)
-  if (associated(theipb)) c_theipb = c_loc(theipb)
+  if (associated(visvdr)) c_visvdr = c_loc(visvdr(1))
+  if (associated(hbord) .and. nfabor.gt.0) c_hbord = c_loc(hbord(1))
+  if (associated(theipb) .and. nfabor.gt.0) c_theipb = c_loc(theipb(1))
 
   ! Calls user BCs and computes BC coefficients
   call cs_boundary_conditions_set_coeffs(nvar, iterns, isvhb, itrale, italim,  &
@@ -875,7 +901,7 @@ do while (iterns.le.nterup)
     if (imajdy.eq.0 .and. ineedy.eq.1) then
 
       if (abs(icdpar).eq.1) then
-        call distpr(itypfb, iterns)
+        call cs_wall_distance(iterns)
       ! Deprecated algorithm
       else if (abs(icdpar).eq.2) then
         call distpr2(itypfb)
@@ -884,12 +910,12 @@ do while (iterns.le.nterup)
       if (iale.eq.0) imajdy = 1
     endif
 
-  endif
+ endif
 
   ! Compute y+ if needed
   ! and Van Driest "amortissement"
   if (itytur.eq.4 .and. idries.eq.1) then
-    call distyp(itypfb, visvdr)
+    call cs_wall_distance_yplus(c_visvdr)
   endif
 
 !===============================================================================
@@ -963,7 +989,7 @@ do while (iterns.le.nterup)
       if (fluid_solid) call cs_porous_model_set_has_disable_flag(0)
 
       ! Update buoyant scalar(s)
-      call scalai(nvar, nscal , iterns , dt)
+      call scalai(nscal , iterns , dt)
 
       ! Diffusion terms for weakly compressible algorithm
       if (idilat.ge.4) then
@@ -1093,7 +1119,7 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1021)
 endif
 
-call cs_compute_courant_fourier()
+call cs_courant_fourier_compute()
 
 ! Free memory
 if (associated(hbord)) deallocate(hbord)
@@ -1273,7 +1299,7 @@ if (nscal.ge.1) then
 
   ! Update non-buoyant scalar(s)
   iterns = -1
-  call scalai(nvar, nscal, iterns, dt)
+  call scalai(nscal, iterns, dt)
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then

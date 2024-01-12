@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -65,6 +65,8 @@ typedef struct {
   int           icp;          /* property index of the isobaric specific heat */
   int           icv;          /* property index of the isochoric specific
                                  heat */
+  int           iviscv;       /* property field id for volume viscosity
+                                 (for compressible model) */
   int           irovar;       /* variable density field */
   int           ivivar;       /* variable viscosity field */
   int           ivsuth;       /* Sutherland law for laminar viscosity and
@@ -100,6 +102,8 @@ typedef struct {
                                  step */
   double        pthermax;     /* thermodynamic maximum pressure for user
                                  clipping, used to model a venting effect */
+  double        eint0;        /* reference internal energy for the barotropic
+                                 compressible module. */
   double        sleak;        /* leak surface */
   double        kleak;        /* leak head loss (2.9 by default, from Idelcick) */
   double        roref;        /* Initial reference density */

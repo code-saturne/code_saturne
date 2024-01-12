@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -59,25 +59,25 @@ BEGIN_C_DECLS
  *        a given boundary zone. The mathematical expression is defined in the
  *        GUI.
  *
- * \param[in] zone_name    name of a boundary zone
- * \param[in] n_elts       number of elements related to the zone
- * \param[in] elt_ids      list of element ids related to the zone
- * \param[in] xyz          list of coordinates related to the zone
- * \param[in] field_name   name of the variable field
- * \param[in] condition    condition type defined as a string
- *
- * \return a pointer to an array of cs_real_t values
+ * \param[in]  zone_name    name of a boundary zone
+ * \param[in]  n_elts       number of elements related to the zone
+ * \param[in]  elt_ids      list of element ids related to the zone
+ * \param[in]  xyz          list of coordinates related to the zone
+ * \param[in]  field_name   name of the variable field
+ * \param[in]  condition    condition type defined as a string
+ * \param[out] retvals      array of computed values
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_meg_boundary_function
-cs_real_t *
+void
 cs_meg_boundary_function(const char       *zone_name,
                          const cs_lnum_t   n_elts,
                          const cs_lnum_t  *elt_ids,
                          const cs_real_t   xyz[][3],
                          const char       *field_name,
-                         const char       *condition)
+                         const char       *condition,
+                         cs_real_t        *retvals)
 {
   CS_NO_WARN_IF_UNUSED(zone_name);
   CS_NO_WARN_IF_UNUSED(elt_ids);
@@ -85,8 +85,6 @@ cs_meg_boundary_function(const char       *zone_name,
   CS_NO_WARN_IF_UNUSED(xyz);
   CS_NO_WARN_IF_UNUSED(field_name);
   CS_NO_WARN_IF_UNUSED(condition);
-
-  return NULL; /* avoid a compiler warning */
 }
 
 /*----------------------------------------------------------------------------*/

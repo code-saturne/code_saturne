@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -297,15 +297,6 @@ class VolumicZone(Zone):
         dico = Zone.defaultValues(self)
         dico['label'] = 'Zone_'
         dico['nature'] = {}
-        dico['nature']['initialization'] = "off"
-        dico['nature']['head_losses'] = "off"
-        dico['nature']['porosity'] = "off"
-        dico['nature']['momentum_source_term'] = "off"
-        dico['nature']['thermal_source_term'] = "off"
-        dico['nature']['scalar_source_term'] = "off"
-        dico['nature']['groundwater_law'] = "off"
-        dico['nature']['physical_properties'] = "off"
-        dico['nature']['solid'] = "off"
         return dico
 
     def isNatureActivated(self, text):
@@ -680,8 +671,11 @@ class VolumicLocalizationModel(LocalizationModel):
         node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'id', label = label)
         nature = {}
         for option in self.__natureOptions:
-            if node[option] == 'on':
-                nature[option] = 'on'
+            if option in node.xmlGetAttributeDictionary():
+                if node[option] == 'on':
+                    nature[option] = 'on'
+                else:
+                    nature[option] = 'off'
             else:
                 nature[option] = 'off'
         return nature
@@ -701,6 +695,8 @@ class VolumicLocalizationModel(LocalizationModel):
                     nature[option] = 'off'
             for k,v in list(nature.items()):
                 node[k] = v
+                if node[k] == 'off':
+                    del(node[k])
 
 
     @Variables.undoGlobal
@@ -717,6 +713,8 @@ class VolumicLocalizationModel(LocalizationModel):
 
         for k, v in list(newZone.getNature().items()):
             node[k] = v
+            if node[k] == 'off':
+                del(node[k])
 
         node.xmlSetTextNode(newZone.getLocalization())
 
@@ -741,6 +739,10 @@ class VolumicLocalizationModel(LocalizationModel):
         node.xmlSetTextNode(newLocal)
         for k, v in list(new_zone.getNature().items()):
             node[k] = v
+
+        for k in node.xmlGetAttributeDictionary():
+            if node[k] == 'off':
+                del(node[k])
 
         # update data in the entire case
         lst = self.__natureOptions
@@ -1123,7 +1125,7 @@ def runTest1():
     runner.run(suite1())
 
 #-------------------------------------------------------------------------------
-# LocalizationModel test case for boundaries conditions
+# LocalizationModel test case for boundary conditions
 #-------------------------------------------------------------------------------
 
 class LocalizationSurfacicTestCase(ModelTest):

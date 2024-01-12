@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -178,9 +178,6 @@ int diffusivity_id;
   is computed automatically.\n
   With the compressible module, \ref diffusivity_ref (given in \ref uscfx2)
   is directly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n
-  With gas or coal combustion, the molecular diffusivity of the enthalpy
-  (\f$kg.m^{-1}.s^{-1}\f$) must be specified by the user in the variable
-  ppthch::diftl0 "diftl0"(\ref cs_user_combustion).\n
   With the electric module, for the Joule effect, the diffusivity is
   specified by the user in \ref cs_user_physical_properties.c (even if
   it is constant). For the electric arcs, it is calculated from the

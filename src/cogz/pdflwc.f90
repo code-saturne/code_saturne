@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -95,6 +95,8 @@ use coincl
 use cpincl
 use ppincl
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -109,7 +111,6 @@ double precision yfm(ncelet)  , yfp2m(ncelet)
 ! Local variables
 
 integer          iel, igg, idirac
-integer          mode
 
 double precision coefg(ngazgm), epsi
 double precision yfuel
@@ -268,12 +269,7 @@ do iel = 1, ncel
 
 ! ------ temperature computation for peak 1 and 2
 
-      mode    = 1
-      call cothht                                                 &
-      !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                       &
-        npo    , npot  , th      , ehgazg ,                       &
-        h(idirac)     , teml(idirac)    )
+      teml(idirac) = cs_gas_combustion_h_to_t(coefg, h(idirac))
 
 ! ---> density computation in 1 and 2
 
@@ -668,12 +664,7 @@ do iel = 1, ncel
 
 ! ------ computation of temperature for peaks 1 and 2
 
-      mode    = 1
-      call cothht                                                 &
-      !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                       &
-        npo    , npot  , th      , ehgazg ,                       &
-        h(idirac)     , teml(idirac)    )
+      teml(idirac) = cs_gas_combustion_h_to_t(coefg, h(idirac))
 
 ! ---> computation of density in 1 and 2
 

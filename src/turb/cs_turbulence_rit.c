@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -64,6 +64,7 @@
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
+#include "cs_solid_zone.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
@@ -427,8 +428,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
     /* Turbulent time-scale (constant in AFM) */
     const cs_real_t xtt = xk/xe;
     cs_real_t alpha_theta = 0, xpk = 0., xgk = 0;
-
-    cs_real_t eta_ebafm, xi_ebafm, gamma_eb;
+    cs_real_t eta_ebafm = 0, xi_ebafm = 0, gamma_eb = 0;
 
     if ((turb_flux_model == 11) || (turb_flux_model == 21)) {
 
@@ -469,8 +469,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
       /* Constants for EB-AFM */
       if (turb_flux_model == 21) {
-        eta_ebafm   = 1.0 - alpha_theta*0.6;
-        xi_ebafm    = 1.0 - alpha_theta*0.3;
+        eta_ebafm = 1.0 - alpha_theta*0.6;
+        xi_ebafm  = 1.0 - alpha_theta*0.3;
       }
 
     }
@@ -501,7 +501,9 @@ _thermal_flux_and_diff(cs_field_t         *f,
       }
 
       /* EB-AFM model
-       *  "-C_theta*k/eps*(xi*uT'.Gradu+eta*beta*g_i*T'^2 + eps/k gamma uT' ni nj)" */
+       *  "-C_theta*k/eps*(  xi*uT'.Gradu+eta*beta*g_i*T'^2
+       *                   + eps/k gamma uT' ni nj )"
+       */
       if (turb_flux_model == 21) {
         if ((cvara_tt != NULL) && (cpro_beta != NULL))
           temp[ii] -=   ctheta * xtt * eta_ebafm
@@ -607,6 +609,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
     }
 
   } /* End loop on cells */
+
+  cs_solid_zone_set_zero_on_cells(3, (cs_real_t *)xut);
 
   /* FIXME the line below would reproduce the previous behavior, which
      is incorrect (see issue #387). Either we should consider

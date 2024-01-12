@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,6 +60,7 @@
 #include "cs_meg_prototypes.h"
 #include "cs_mesh.h"
 #include "cs_mobile_structures.h"
+#include "cs_parameters.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"
 #include "cs_volume_zone.h"
@@ -187,12 +188,15 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
               cs_gui_node_get_tag(tn_w, "label"));
 
   /* Evaluate formula using meg */
-  cs_real_t *bc_vals = cs_meg_boundary_function(z->name,
-                                                z->n_elts,
-                                                z->elt_ids,
-                                                face_cen,
-                                                "mesh_velocity",
-                                                "fixed_displacement");
+  cs_real_t *bc_vals = NULL;
+  BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
+  cs_meg_boundary_function(z->name,
+                           z->n_elts,
+                           z->elt_ids,
+                           face_cen,
+                           "mesh_velocity",
+                           "fixed_displacement",
+                           bc_vals);
 
   /* Loop over boundary faces */
   for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
@@ -244,12 +248,15 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
               cs_gui_node_get_tag(tn_w, "label"));
 
   /* Evaluate formula using meg */
-  cs_real_t *bc_vals = cs_meg_boundary_function(z->name,
-                                                z->n_elts,
-                                                z->elt_ids,
-                                                face_cen,
-                                                "mesh_velocity",
-                                                "fixed_velocity");
+  cs_real_t *bc_vals = NULL;
+  BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
+  cs_meg_boundary_function(z->name,
+                           z->n_elts,
+                           z->elt_ids,
+                           face_cen,
+                           "mesh_velocity",
+                           "fixed_velocity",
+                           bc_vals);
 
   /* mesh_velocity rcodcl values handled through dof_function */
 
@@ -634,12 +641,13 @@ cs_gui_mesh_viscosity(void)
   const cs_real_3_t *cell_cen =
     (const cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
   const cs_zone_t *z_all = cs_volume_zone_by_name("all_cells");
-  cs_field_t *fmeg[1] = {CS_F_(vism)};
+  cs_field_t *f = CS_F_(vism);
   cs_meg_volume_function(z_all->name,
                          z_all->n_elts,
                          z_all->elt_ids,
                          cell_cen,
-                         fmeg);
+                         f->name,
+                         &(f->val));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -768,12 +776,16 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
       const cs_zone_t *bz = cs_boundary_zone_by_name(label);
 
       /* Evaluate formula using meg */
-      return cs_meg_boundary_function(bz->name,
-                                      bz->n_elts,
-                                      bz->elt_ids,
-                                      face_cen,
-                                      "mesh_velocity",
-                                      "fixed_velocity");
+      cs_real_t *retvals = NULL;
+      BFT_MALLOC(retvals, 3 * bz->n_elts, cs_real_t);
+      cs_meg_boundary_function(bz->name,
+                               bz->n_elts,
+                               bz->elt_ids,
+                               face_cen,
+                               "mesh_velocity",
+                               "fixed_velocity",
+                               retvals);
+      return retvals;
 
     }
   }

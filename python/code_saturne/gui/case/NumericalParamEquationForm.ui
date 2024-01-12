@@ -47,7 +47,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="tab_solver">
       <attribute name="title">
        <string>Solver</string>
       </attribute>
@@ -82,7 +82,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="tab_scheme">
       <attribute name="title">
        <string>Scheme</string>
       </attribute>
@@ -111,9 +111,19 @@
           </size>
          </property>
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the scheme options for each variable:&lt;br/&gt;- Name of the variable,&lt;br/&gt;- Scheme: choose between two second-order convective schemes (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Centered&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; or &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SOLU&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;) and one first-order convective scheme (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Upwind&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;br/&gt;- Blending factor: indicate the proportion of second-order convective scheme (0 corresponds to an upwind convective scheme). &lt;br/&gt;- Slope test: indicate whether a slope test should be used to switch from a second-order to an upwind convective scheme under certain conditions, to ensure stability. The use of the slope test stabilizes the calculation but may bring the space order to decrease quickly.&lt;br/&gt;- Flux reconstruction: indicate whether the convective and diffusive fluxes at the faces should be reconstructed. It is only useful for non-orthogonal meshes. Deactivating the reconstruction of the fluxes can have a stabilizing effect on the calculation. It is sometimes useful with the k−ε model, if the mesh is strongly non-orthogonal in the near-wall region, where the gradients of k and ε are strong.&lt;br/&gt;- RHS Sweep Reconstruction: indicate the number of iterations for the reconstruction of the right-hand sides of the equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string/>
          </property>
         </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_gradient">
+      <attribute name="title">
+       <string>Gradient</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QTableView" name="tableViewGradient"/>
        </item>
       </layout>
      </widget>

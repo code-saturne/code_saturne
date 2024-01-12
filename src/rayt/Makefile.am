@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -73,7 +73,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_rad_transfer_absorption.h \
 cs_rad_transfer_dir.h \
-cs_rad_transfer_property_fields.h \
+cs_rad_transfer_fields.h \
 cs_rad_transfer_options.h \
 cs_rad_transfer_wall_flux.h \
 cs_rad_transfer_bcs.h \
@@ -94,7 +94,7 @@ libcsrayt_a_SOURCES = \
 cs_rad_transfer_absorption.c \
 cs_rad_transfer.c \
 cs_rad_transfer_dir.c \
-cs_rad_transfer_property_fields.c \
+cs_rad_transfer_fields.c \
 cs_rad_transfer_options.c \
 cs_rad_transfer_bcs.c \
 cs_rad_transfer_wall_flux.c \

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -88,6 +88,8 @@ typedef struct {
 
   bool        editable;   /* Can the value be modified */
 
+  bool        restart;    /* Can the value be read at restart */
+
 } _cs_notebook_entry_t;
 
 /*============================================================================
@@ -144,6 +146,7 @@ _entry_by_name(const char *name)
  * \param[in] name       name of the entry
  * \param[in] uncertain  flag (int) indicating if it is an uncertain input/output
  * \param[in] editable   flag (bool) indicating if the value can be modified
+ * \param[in] restart    flag (bool) indicating if the value is read at restart
  *
  * \return a _cs_notebook_entry_t pointer
  */
@@ -152,7 +155,8 @@ _entry_by_name(const char *name)
 static _cs_notebook_entry_t *
 _entry_create(const char  *name,
               int          uncertain,
-              bool         editable)
+              bool         editable,
+              bool         restart)
 {
   size_t l = strlen(name);
 
@@ -215,6 +219,7 @@ _entry_create(const char  *name,
     _n_uncertain_outputs += 1;
 
   e->editable  = editable;
+  e->restart   = restart;
 
   return e;
 }
@@ -289,6 +294,7 @@ cs_notebook_load_from_file(void)
     const char *d      = cs_tree_node_get_tag(n, "description");
     const char *c_val  = cs_tree_node_get_tag(n, "value");
     const char *c_edit = cs_tree_node_get_tag(n, "editable");
+    const char *c_read = cs_tree_node_get_tag(n, "restart");
 
     if (d == NULL)
       d = na;
@@ -311,6 +317,11 @@ cs_notebook_load_from_file(void)
       if (strcmp(c_edit, "Yes") == 0)
         editable = true;
 
+    bool restart = true;
+    if (c_read != NULL)
+      if (strcmp(c_read, "No") == 0)
+        restart = false;
+
     /* If the variable is uncertain then :
      * - an input cannot be modifed, hence editable = false
      * - an output has to be modified by the code, hence editable=true
@@ -326,14 +337,13 @@ cs_notebook_load_from_file(void)
       editable = uncertain;
     }
 
-    _cs_notebook_entry_t *e = _entry_create(name, uncertain, editable);
+    _cs_notebook_entry_t *e = _entry_create(name, uncertain, editable, restart);
 
     _entry_set_description(e, d);
     cs_real_t val = atof(c_val);
     _entry_set_value(e, val);
 
   }
-  cs_notebook_log();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -563,14 +573,14 @@ cs_notebook_destroy_all(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_notebook_log(void)
+cs_notebook_log_setup(void)
 {
   if (_n_entries == 0)
     return;
 
   cs_log_t l = CS_LOG_SETUP;
 
-  cs_log_printf(l, _("Notebook:\n"
+  cs_log_printf(l, _("\nNotebook:\n"
                      "---------\n"));
   for (int i = 0; i < _n_entries; i++)
     cs_log_printf(l, _("\n"
@@ -579,16 +589,113 @@ cs_notebook_log(void)
                        "    description:  %s\n"
                        "    uncertain:    %d\n"
                        "    editable:     %d\n"
+                       "    restart:      %d\n"
                        "    value:        %f\n"),
                   i,
                   _entries[i]->name,
                   _entries[i]->description,
                   _entries[i]->uncertain,
                   _entries[i]->editable,
+                  _entries[i]->restart,
                   _entries[i]->val);
 
   cs_log_printf(l, "\n");
   cs_log_separator(l);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Number of notebook variables
+ *
+ * \returns number of notebook variables (int)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_notebook_nb_var(void)
+{
+  return _n_entries;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if the notebook parameter is editable
+ *
+ * Returns a boolean to indicate wheter this parameter is editable
+ *
+ * \param[in]   id   Id of the notebook parameter
+ *
+ * \returns true is variable can be edited, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_notebook_var_is_editable(const int id)
+{
+  if (_n_entries == 0)
+    return false;
+
+  return _entries[id]->editable;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if the notebook parameter is read at restart
+ *
+ * Returns a boolean to indicate wheter this parameter is read at restart
+ *
+ * \param[in]   id   Id of the notebook parameter
+ *
+ * \returns true if variable should be read from checkpoint file, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_notebook_var_is_read_from_checkpoint(const int id)
+{
+  if (_n_entries == 0)
+    return false;
+
+  return _entries[id]->restart;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Change the editable property of the notebook parameter
+ *
+ * \param[in]   id    Id of the notebook parameter
+ * \param[in]   val   flag (bool) indicating if the value is set to editable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_var_change_editable(int    id,
+                                const  bool val)
+{
+  if (_n_entries == 0)
+    return;
+
+  _entries[id]->editable = val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get name of a notebook parameter based on its id
+ *
+ * \param[in]   id    Id of the notebook parameter
+ * \param[out]  name  Name of the notebook parameter
+ *
+ * \returns name of variable (char *)
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_notebook_name_by_id(int  id)
+{
+  if (_n_entries == 0)
+    return NULL;
+
+  return _entries[id]->name;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -52,24 +52,24 @@ BEGIN_C_DECLS
  *        a given boundary zone. The mathematical expression is defined in the
  *        GUI.
  *
- * \param[in] zone_name    name of a boundary zone
- * \param[in] n_elts       number of elements related to the zone
- * \param[in] elt_ids      list of element ids related to the zone
- * \param[in] xyz          list of coordinates related to the zone
- * \param[in] field_name   name of the variable field
- * \param[in] condition    condition type defined as a string
- *
- * \return a pointer to an array of cs_real_t values
+ * \param[in]  zone_name    name of a boundary zone
+ * \param[in]  n_elts       number of elements related to the zone
+ * \param[in]  elt_ids      list of element ids related to the zone
+ * \param[in]  xyz          list of coordinates related to the zone
+ * \param[in]  field_name   name of the variable field
+ * \param[in]  condition    condition type defined as a string
+ * \param[out] retvals      array of computed values
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_meg_boundary_function(const char       *zone_name,
                          const cs_lnum_t   n_elts,
                          const cs_lnum_t  *elt_ids,
                          const cs_real_t   xyz[][3],
                          const char       *field_name,
-                         const char       *condition);
+                         const char       *condition,
+                         cs_real_t        *retvals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -92,7 +92,8 @@ cs_meg_volume_function(const char        *zone_name,
                        const cs_lnum_t    n_elts,
                        const cs_lnum_t   *elt_ids,
                        const cs_real_t    xyz[][3],
-                       cs_field_t        *f[]);
+                       const char        *fields_names,
+                       cs_real_t         *fvals[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -103,22 +104,23 @@ cs_meg_volume_function(const char        *zone_name,
  *
  * The caller is responsible for freeing the associated array.
  *
- * \param[in] zone_name    name of a volume zone
- * \param[in] n_elts       number of elements related to the zone
- * \param[in] elt_ids      list of element ids related to the zone
- * \param[in] xyz          list of coordinates related to the zone
- * \param[in] field_name   associated variable field name
+ * \param[in]  zone_name    name of a volume zone
+ * \param[in]  n_elts       number of elements related to the zone
+ * \param[in]  elt_ids      list of element ids related to the zone
+ * \param[in]  xyz          list of coordinates related to the zone
+ * \param[in]  field_name   associated variable field name
+ * \param[out] retvals      array of computed values
  *
- * \return a pointer to allocated initialization values.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_meg_initialization(const char       *zone_name,
                       const cs_lnum_t   n_elts,
                       const cs_lnum_t  *elt_ids,
                       const cs_real_t   xyz[][3],
-                      const char       *field_name);
+                      const char       *field_name,
+                      cs_real_t        *retvals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -129,24 +131,25 @@ cs_meg_initialization(const char       *zone_name,
  *
  * The caller is responsible for freeing the returned array.
  *
- * \param[in] zone_name     name of a volume zone
- * \param[in] n_elts        number of elements related to the zone
- * \param[in] elt_ids       list of element ids related to the zone
- * \param[in] xyz           list of coordinates related to the zone
- * \param[in] field_name    variable field name
- * \param[in] source_type   source term type
+ * \param[in]  zone_name     name of a volume zone
+ * \param[in]  n_elts        number of elements related to the zone
+ * \param[in]  elt_ids       list of element ids related to the zone
+ * \param[in]  xyz           list of coordinates related to the zone
+ * \param[in]  field_name    variable field name
+ * \param[in]  source_type   source term type
+ * \param[out] retvals      array of computed values
  *
- * \returns a cs_real_t pointer containing the computed values
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_meg_source_terms(const char       *zone_name,
                     const cs_lnum_t   n_elts,
                     const cs_lnum_t  *elt_ids,
                     const cs_real_t   xyz[][3],
                     const char       *name,
-                    const char       *source_type);
+                    const char       *source_type,
+                    cs_real_t        *retvals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -210,6 +213,25 @@ cs_meg_post_profiles(const char   *name,
                      int           n_coords,
                      cs_real_t     coords[][3]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to compute user defined calculator formulae.
+ *        The mathematical expression is defined in the GUI.
+ *
+ * \param[in]  field_name   function name
+ * \param[in]  n_elts       number of elements related to the zone
+ * \param[in]  elt_ids      list of element ids related to the zone
+ * \param[in]  xyz          list of coordinates related to the zone
+ * \param[out] retvals      array of computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_post_calculator(const char       *name,
+                       const cs_lnum_t   n_elts,
+                       const cs_lnum_t  *elt_ids,
+                       const cs_real_t   xyz[][3],
+                       cs_real_t        *retvals);
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

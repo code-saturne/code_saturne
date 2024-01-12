@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -266,8 +266,8 @@ module paramx
              cs_user_atmo_soil, cs_user_physical_properties_smagorinsky_c
 
 
-  integer :: usalcl, usatdv, usati1, usatph, usatsoil, ushist,        &
-             usporo, ussmag, usstr1, usstr2, ustsnv, ustsvv, usthht,  &
-             usvosy, usvpst, usvist
+  integer :: usalcl, usatdv, usati1, usatph, usatsoil, uscfx1,        &
+             uscfx2, ushist, usporo, ussmag, usstr1, usstr2, ustsnv,  &
+             ustsvv, usthht, usvosy, usvpst, usvist
 
 end module paramx

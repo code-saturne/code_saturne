@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -266,9 +266,9 @@ cs_lagr_event_attr_in_range(int  attr);
 /*----------------------------------------------------------------------------*/
 
 inline static void *
-cs_lagr_events_attr(cs_lagr_event_set_t        *event_set,
-                    cs_lnum_t                   event_id,
-                    cs_lagr_event_attribute_t   attr)
+cs_lagr_events_attr(cs_lagr_event_set_t  *event_set,
+                    cs_lnum_t             event_id,
+                    int                   attr)
 {
   assert(event_set->e_am->count[attr] > 0);
 
@@ -293,7 +293,7 @@ cs_lagr_events_attr(cs_lagr_event_set_t        *event_set,
 inline static const void *
 cs_lagr_events_attr_const(const cs_lagr_event_set_t  *event_set,
                           cs_lnum_t                   event_id,
-                          cs_lagr_event_attribute_t   attr)
+                          int                         attr)
 {
   assert(event_set->e_am->count[attr] > 0);
 
@@ -317,7 +317,7 @@ cs_lagr_events_attr_const(const cs_lagr_event_set_t  *event_set,
 inline static cs_lnum_t
 cs_lagr_events_get_lnum(const cs_lagr_event_set_t  *event_set,
                         cs_lnum_t                   event_id,
-                        cs_lagr_event_attribute_t   attr)
+                        int                         attr)
 {
   assert(event_set->e_am->count[attr] > 0);
 
@@ -340,7 +340,7 @@ cs_lagr_events_get_lnum(const cs_lagr_event_set_t  *event_set,
 inline static void
 cs_lagr_events_set_lnum(cs_lagr_event_set_t        *event_set,
                         cs_lnum_t                   event_id,
-                        cs_lagr_event_attribute_t   attr,
+                        int                         attr,
                         cs_lnum_t                   value)
 {
   assert(event_set->e_am->count[attr] > 0);
@@ -365,7 +365,7 @@ cs_lagr_events_set_lnum(cs_lagr_event_set_t        *event_set,
 inline static cs_real_t
 cs_lagr_events_get_real(const cs_lagr_event_set_t  *event_set,
                         cs_lnum_t                   event_id,
-                        cs_lagr_event_attribute_t   attr)
+                        int                         attr)
 {
   assert(event_set->e_am->count[attr] > 0);
 
@@ -386,10 +386,10 @@ cs_lagr_events_get_real(const cs_lagr_event_set_t  *event_set,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_lagr_events_set_real(cs_lagr_event_set_t         *event_set,
-                        cs_lnum_t                    event_id,
-                        cs_lagr_event_attribute_t    attr,
-                        cs_real_t                    value)
+cs_lagr_events_set_real(cs_lagr_event_set_t  *event_set,
+                        cs_lnum_t             event_id,
+                        int                   attr,
+                        cs_real_t             value)
 {
   assert(event_set->e_am->count[attr] > 0);
 

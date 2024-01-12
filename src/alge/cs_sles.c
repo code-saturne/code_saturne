@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -149,16 +149,16 @@ BEGIN_C_DECLS
   solves.
 
   The system is considered to have converged when
-  residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+  residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
 
   \param[in, out]  context        pointer to solver context
   \param[in]       name           pointer to name of linear system
   \param[in]       a              matrix
   \param[in]       verbosity      associated verbosity
   \param[in]       precision      solver precision
-  \param[in]       r_norm         residue normalization
+  \param[in]       r_norm         residual normalization
   \param[out]      n_iter         number of "equivalent" iterations
-  \param[out]      residue        residue
+  \param[out]      residual       residual
   \param[in]       rhs            right hand side
   \param[out]      vx             system solution
   \param[in]       aux_size       number of elements in aux_vectors
@@ -655,21 +655,21 @@ _residual(cs_lnum_t            n_vals,
  * Test if a general sparse linear system needs solving or if the right-hand
  * side is already zero within convergence criteria.
  *
- * The computed residue is also updated;
+ * The computed residual is also updated;
  *
  * parameters:
  *   name      <-- name of the associated system
  *   a         <-- pointer to matrix
  *   verbosity <-- verbosity level
  *   precision <-- solver precision
- *   r_norm    <-- residue normalization
- *   residue   <-> residue
+ *   r_norm    <-- residual normalization
+ *   residual  <-> residual
  *   vx        <-- initial solution
  *   rhs       <-- right hand side
  *
  * returns:
  *   1 if solving is required, 0 if the rhs is already zero within tolerance
- *   criteria (precision of residue normalization)
+ *   criteria (precision of residual normalization)
  *----------------------------------------------------------------------------*/
 
 static int
@@ -678,13 +678,13 @@ _needs_solving(const  char        *name,
                int                 verbosity,
                double              precision,
                double              r_norm,
-               double             *residue,
+               double             *residual,
                const cs_real_t    *vx,
                const cs_real_t    *rhs)
 {
   int retval = 1;
 
-  /* Initialize residue, check for immediate return */
+  /* Initialize residual, check for immediate return */
 
   const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
@@ -703,21 +703,21 @@ _needs_solving(const  char        *name,
     double _precision = CS_MIN(_cs_sles_epzero, /* prefer to err on the side */
                                precision);      /* of caution... */
 
-    *residue = sqrt(r[0]);
+    *residual = sqrt(r[0]);
 
     if (r_norm <= _cs_sles_epzero)
       retval = 0;
-    else if (*residue/r_norm <= _precision)
+    else if (*residual/r_norm <= _precision)
       retval = 0;
 
     if (retval == 0 && verbosity > 1)
       bft_printf(_("[%s]:\n"
                    "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
-                 name, r_norm, *residue);
+                 name, r_norm, *residual);
 
   }
   else
-    *residue = HUGE_VAL; /* actually unknown, since we did not multiply
+    *residual = HUGE_VAL; /* actually unknown, since we did not multiply
                             by A (we might as well enter the solver,
                             and expect to have vx = 0 most of the time) */
 
@@ -1257,13 +1257,11 @@ cs_sles_find_or_add(int          f_id,
  * to \ref cs_sles_setup, \ref cs_sles_solve, \ref cs_sles_free, and other
  * operations involving access through a field id.
  *
- * \deprecated This function is provided to allow some peculiar
- * calling sequences, in which \ref cs_equation_iterative_solve_scalar is
- * called with a nonzero \c ivar value, but specific solver options
- * must still be set.
- * In the future, a more consistent mechanism (using a zero \c ivar
- * value or designing a cleaner method to handle those exceptional cases)
- * is preferred. As such, only a stack depth of 1 is allowed.
+ * This function is provided to allow some peculiar calling sequences,
+ * in which \ref cs_equation_iterative_solve_scalar is called with a given
+ * field id, but specific solver options must still be set.
+ * In the future, a cleaner method to handle those exceptional cases
+ * would be preferred. As such, only a stack depth of 1 is allowed.
  *
  * \param[in]  f_id  associated field id, or < 0
  * \param[in]  name  associated name if f_id < 0, or NULL
@@ -1675,14 +1673,14 @@ cs_sles_setup(cs_sles_t          *sles,
  * over multiple solutions.
  *
  * The system is considered to have converged when
- * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       a              matrix
  * \param[in]       precision      solver precision
- * \param[in]       r_norm         residue normalization
+ * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residue        residue
+ * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       size of aux_vectors (in bytes)
@@ -1699,7 +1697,7 @@ cs_sles_solve(cs_sles_t           *sles,
               double               precision,
               double               r_norm,
               int                 *n_iter,
-              double              *residue,
+              double              *residual,
               const cs_real_t     *rhs,
               cs_real_t           *vx,
               size_t               aux_size,
@@ -1727,7 +1725,7 @@ cs_sles_solve(cs_sles_t           *sles,
   bool do_solve = true;
 
   /* Even if we normally require at least entering the linear equation solver,
-     if the residue normalization is really zero, we probably have zero initial
+     if the residual normalization is really zero, we probably have zero initial
      solution and RHS already, so check for that case, rather than enter
      solvers whose convergence test may fail in these conditions. */
 
@@ -1737,7 +1735,7 @@ cs_sles_solve(cs_sles_t           *sles,
                               sles->verbosity,
                               precision,
                               r_norm,
-                              residue,
+                              residual,
                               vx,
                               rhs);
 
@@ -1757,7 +1755,7 @@ cs_sles_solve(cs_sles_t           *sles,
                              precision,
                              r_norm,
                              n_iter,
-                             residue,
+                             residual,
                              rhs,
                              vx,
                              aux_size,
@@ -1801,7 +1799,7 @@ cs_sles_solve(cs_sles_t           *sles,
     cs_real_t rsd = sqrt(cs_gdot(n_vals, resr, resr));
 
     bft_printf
-      ("# residue[%s] = %g (%g * required, precision %g, normalization %g)\n",
+      ("# residual[%s] = %g (%g * required, precision %g, normalization %g)\n",
        sles_name, rsd, rsd/(precision*r_norm), precision, r_norm);
 
     BFT_FREE(resr);

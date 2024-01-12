@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -93,9 +93,9 @@ integer, dimension(:), pointer :: elt_ids
 
 !===============================================================================
 
-procedure() :: varpos, usppmo, uialin, cscpva, usipph, cfnmtd, fldvar, csivis
+procedure() :: varpos, usppmo, uialin, cscpva, usipph, fldvar, csivis
 procedure() :: atini1, solcat, csidtv, csiphy, fldprp, cstime, usipsu
-procedure() :: indsui, uscfx2
+procedure() :: indsui
 
 interface
 
@@ -116,18 +116,6 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_checkpoint_parameters
-
-  subroutine cs_combustion_initialize()  &
-       bind(C, name='cs_combustion_initialize')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_combustion_initialize
-
-  subroutine cs_gui_combustion_ref_values()  &
-       bind(C, name='cs_gui_combustion_ref_values')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_combustion_ref_values
 
   subroutine cs_gui_mobile_mesh_structures_add()  &
        bind(C, name='cs_gui_mobile_mesh_structures_add')
@@ -227,6 +215,12 @@ interface
     real(c_double), value :: value
   end subroutine cs_runaway_check_define_field_max
 
+  subroutine cs_user_radiative_transfer_parameters()  &
+       bind(C, name='cs_user_radiative_transfer_parameters')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_user_radiative_transfer_parameters
+
   ! Interface to C function to initialize CDO model structures
 
   subroutine cs_f_domain_setup_init_model_context()  &
@@ -249,7 +243,7 @@ end interface
 
 elt_ids => null()
 
-! Check for restart and read matching time steps
+! Check for restart and read matching time steps and notebook values
 
 call parameters_read_restart_info
 
@@ -277,8 +271,8 @@ call cs_gui_thermal_model
 ! turbulence model choice
 call cs_gui_turb_model
 
-! constant or variable specific heat
-call cscpva
+! constant or variable specific heat, volume viscosity, ...
+call csfpva
 
 ! Other models selection through user Fortran subroutine
 
@@ -295,13 +289,16 @@ call csiphy()
 ! before property fields are created).
 call cs_gui_physical_constants
 
+! Activate radiative transfer model
+
+! This module must be activated early so as to reserve the associated
+! variables in some physical models.
+
+call cs_gui_radiative_transfer_parameters
+call cs_user_radiative_transfer_parameters ! deprecated, kept for compatibility
+
 ! Flow and other models selection through user C function
 call cs_user_model
-
-! Initialize some model structures if needed
-
-call cs_combustion_initialize
-call cs_gui_combustion_ref_values
 
 ! Set type and order of the turbulence model
 call cs_set_type_order_turbulence_model()
@@ -321,10 +318,14 @@ if (iale.ge.1) then
   call cs_gui_mobile_mesh_structures_add
 endif
 
+! Read thermochemical data for specific physics
+call pplecd
+
 ! Other model parameters, including user-defined scalars
 
 call cs_gui_user_variables
 call cs_gui_user_arrays
+call cs_gui_calculator_functions
 
 ! Solid zones
 
@@ -334,18 +335,7 @@ call cs_velocity_pressure_set_solid
 ! 2. Initialize parameters for specific physics
 !===============================================================================
 
-call cfnmtd(ficfpp, len(ficfpp))
-
-! --- Activation du module transferts radiatifs
-
-!     Il est necessaire de connaitre l'activation du module transferts
-!     radiatifs tres tot de maniere a pouvoir reserver les variables
-!     necessaires dans certaines physiques particuliere
-
-!   - Interface code_saturne
-!     ======================
-
-call cs_gui_radiative_transfer_parameters
+call cs_rad_transfer_options
 
 ! Define fields for variables, check and build iscapp
 ! and computes the number of user scalars (nscaus)
@@ -376,6 +366,7 @@ if (ippmod(iatmos).ge.0) then
 endif
 
 ! Compressible
+call cscfgp
 call field_get_id_try('velocity', f_id)
 if (f_id .ge. 0) then
   if (ippmod(icompf).ge.0) then
@@ -471,6 +462,8 @@ call cs_gui_turb_ref_values
 call cs_f_turb_complete_constants(-1)
 
 ! Scamin, scamax, turbulent flux model, diffusivities
+! (may change physical properties for some scalars, so called after
+! cs_gui_physical_properties).
 call cs_gui_scalar_model_settings()
 
 ! Porosity model
@@ -508,12 +501,6 @@ if (ippmod(icompf).ge.0) then
   ! The variability of the thermal conductivity
   ! (diffusivity_id for itempk) and the volume viscosity (iviscv) has
   ! been set in fldprp.
-
-  ! Here call to uscfx2 to get visls_0(itempk), viscv0, xmasmr, ivivar and
-  ! psginf, gammasg, cv0 in stiffened gas thermodynamic.
-  ! With GUI, visls_0(itempk), viscv0, xmasmr and ivivar have already been read
-  ! above in the call to csphys.
-  call uscfx2
 
   ! Compute cv0 according to chosen EOS.
   l_size = 1

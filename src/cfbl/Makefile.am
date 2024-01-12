@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -33,10 +33,12 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -64,30 +66,30 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_cf_boundary_conditions.h \
+cs_cf_compute.h \
+cs_cf_energy.h \
 cs_cf_model.h \
 cs_cf_thermo.h \
+cs_cfbl_headers.h \
 cs_hgn_thermo.h \
 cs_hgn_phase_thermo.h \
-cs_hgn_source_terms_step.h \
-cs_cfbl_headers.h
+cs_hgn_source_terms_step.h
 
 # Library source files
 
 noinst_LIBRARIES = libcscfbl.a
 libcscfbl_a_SOURCES = \
-cfdivs.f90 \
-cfdttv.f90 \
-cfener.f90 \
 cfini1.f90 \
 cfiniv.f90 \
 cfphyv.f90 \
-cfprop.f90 \
 cfrusb.f90 \
 cffana.f90 \
 cfvarp.f90 \
 cfxtcl.f90 \
-cfmspr.f90 \
-cfmsfp.f90 \
+cs_cf_boundary_conditions.c \
+cs_cf_compute.c \
+cs_cf_energy.c \
 cs_cf_model.c \
 cs_cf_thermo.c \
 cs_hgn_thermo.c \

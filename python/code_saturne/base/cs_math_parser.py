@@ -5,7 +5,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -726,24 +726,29 @@ class cs_math_parser:
         tokens, comments = self.tokenize(segments)
 
         for t in tokens:
-            tk = t[0]
-            if tk not in known_symbols:
-                # We use a double if and not if/else because some symbols
-                # may be present in both lists
-                if tk in glob_tokens.keys():
-                    usr_defs.append(glob_tokens[tk] + '\n')
-                    known_symbols.append(tk)
-                if tk in loop_tokens.keys():
-                    usr_code.append(loop_tokens[tk] + '\n')
-                    if tk not in known_symbols:
-                        known_symbols.append(tk)
+            # In the case of components, ensure the main field is added
+            tklist = [t[0]]
+            if (bool(re.search('\[[0-9]\]', t[0]))):
+                tklist.append(re.sub('\[[0-9]\]', '', t[0]))
 
-                    # For momentum source terms, check for velocity
-                    if func_type == "src" and tk in ['u','v','w']:
-                        if 'velocity' not in known_symbols:
-                            if 'velocity' in glob_tokens:
-                                known_symbols.append('velocity')
-                                usr_defs.append(glob_tokens['velocity']+'\n')
+            for tk in tklist:
+                if tk not in known_symbols:
+                    # We use a double if and not if/else because some symbols
+                    # may be present in both lists
+                    if tk in glob_tokens.keys():
+                        usr_defs.append(glob_tokens[tk] + '\n')
+                        known_symbols.append(tk)
+                    if tk in loop_tokens.keys():
+                        usr_code.append(loop_tokens[tk] + '\n')
+                        if tk not in known_symbols:
+                            known_symbols.append(tk)
+
+                        # For momentum source terms, check for velocity
+                        if func_type == "src" and tk in ['u','v','w']:
+                            if 'velocity' not in known_symbols:
+                                if 'velocity' in glob_tokens:
+                                    known_symbols.append('velocity')
+                                    usr_defs.append(glob_tokens['velocity']+'\n')
 
         #-------------------------
 
@@ -774,26 +779,33 @@ class cs_math_parser:
                         raise Exception("Uknown field: %s" %(tk))
 
                     if fcomp < 0:
-                        new_v = new_v = 'f[%d]->val[c_id]' % (fid)
+                        new_v = new_v = 'fvals[%d][c_id]' % (fid)
                     else:
-                        new_v = 'f[%d]->val[c_id*%d + %d]' % (fid, fdim, fcomp)
+                        new_v = 'fvals[%d][c_id*%d + %d]' % (fid, fdim, fcomp)
 
                 elif func_type == 'bnd':
                     ir = req.index(tk)
                     if need_for_loop:
-                        new_v = 'new_vals[%d * n_elts + e_id]' % (ir)
+                        new_v = 'retvals[%d * n_elts + e_id]' % (ir)
                     else:
-                        new_v = 'new_vals[%d]' % (ir)
+                        new_v = 'retvals[%d]' % (ir)
 
                 elif func_type in ['src', 'ini']:
                     if nreq > 1:
                         ir = req.index(tk)
-                        new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
+                        new_v = 'retvals[%d * e_id + %d]' % (nreq, ir)
                     else:
-                        new_v = 'new_vals[e_id]'
+                        new_v = 'retvals[e_id]'
 
                 elif func_type == 'ibm':
                     new_v = '*ipenal'
+
+                elif func_type == 'pca':
+                    if nreq > 1:
+                        ir = req.index(tk)
+                        new_v = 'retvals[%d * e_id + %d]' % (nreq, ir)
+                    else:
+                        new_v = 'retvals[e_id]'
 
                 if tk in req_to_replace:
                     req_to_replace.remove(tk)

@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -86,7 +86,8 @@ cs_mesh_to_builder.h \
 cs_mesh_warping.h \
 cs_mesh_smoother.h \
 cs_partition.h \
-cs_stl.h
+cs_stl.h \
+cs_symmetry_faces_filter.h
 
 # Library source files
 
@@ -129,7 +130,8 @@ cs_mesh_save.c \
 cs_mesh_to_builder.c \
 cs_mesh_warping.c \
 cs_mesh_smoother.c \
-cs_stl.c
+cs_stl.c \
+cs_symmetry_faces_filter.c
 
 # Partitioner (may require extra headers)
 

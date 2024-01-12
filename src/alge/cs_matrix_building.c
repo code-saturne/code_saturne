@@ -4,7 +4,7 @@
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -97,86 +97,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Fortran wrapper to cs_matrix_scalar (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrix, MATRIX)
-(
- const int        *iconvp,
- const int        *idiffp,
- const int        *ndircp,
- const int        *isym,
- const cs_real_t  *thetap,
- const int        *imucpp,
- const cs_real_t   coefbp[],
- const cs_real_t   cofbfp[],
- const cs_real_t   rovsdt[],
- const cs_real_t   i_massflux[],
- const cs_real_t   b_massflux[],
- const cs_real_t   i_visc[],
- const cs_real_t   b_visc[],
- const cs_real_t   xcpp[],
- cs_real_t         da[],
- cs_real_t         xa[]
-)
-{
-  cs_matrix_wrapper_scalar(*iconvp,
-                           *idiffp,
-                           *ndircp,
-                           *isym,
-                           *thetap,
-                           *imucpp,
-                           coefbp,
-                           cofbfp,
-                           rovsdt,
-                           i_massflux,
-                           b_massflux,
-                           i_visc,
-                           b_visc,
-                           xcpp,
-                           da,
-                           xa);
-}
-
-/*----------------------------------------------------------------------------
- * Fortran wrapper to cs_matrix_time_step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrdt, MATRDT)
-(
- const int       *const   iconvp,
- const int       *const   idiffp,
- const int       *const   isym,
- const cs_real_t          coefbp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_t                da[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-
-  cs_matrix_time_step(m,
-                      *iconvp,
-                      *idiffp,
-                      *isym,
-                      coefbp,
-                      cofbfp,
-                      i_massflux,
-                      b_massflux,
-                      i_visc,
-                      b_visc,
-                      da);
-}
 
 /*============================================================================
  * Public function definitions

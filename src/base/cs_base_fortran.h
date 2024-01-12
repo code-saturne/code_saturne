@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -101,30 +101,6 @@ void CS_PROCF (dmtmps, DMTMPS)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cslogname, CSLOGNAME)
-(
- const int   *len,
- char        *dir
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Get package data path information.
- *
- * The aim of this function is to aviod issues with Fortran array bounds
- * checking when compilers such as icc 11 consider a character array from C
- * as an array of 1-character length strings.
- *
- * Fortran interface
- *
- * subroutine csdatadir (len, dir)
- * ********************
- *
- * integer          len         : <-- : maximum string length
- * character*       dir         : --> : Fortran string
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csdatadir, CSDATADIR)
 (
  const int   *len,
  char        *dir

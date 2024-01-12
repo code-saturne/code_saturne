@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -122,7 +122,7 @@ if ( ihflt2.eq.0 ) then
 ! --> H2 linear function of T2
 
   do icla = 1, nclacp
-    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
+    call field_get_val_s(ih2(icla), cvar_h2cl)
     call field_get_val_s(itemp2(icla),cpro_temp2)
     icha = ichcor(icla)
     do iel = 1, ncel
@@ -138,13 +138,13 @@ else
 
   do icla = 1, nclacp
 
-    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
-    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
-    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+    call field_get_val_s(ixch(icla), cvar_xchcl)
+    call field_get_val_s(ixck(icla), cvar_xckcl)
+    call field_get_val_s(inp(icla), cvar_xnpcl)
     if ( ippmod(iccoal) .eq. 1 ) then
-      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+      call field_get_val_s(ixwt(icla), cvar_xwtcl)
     endif
-    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
+    call field_get_val_s(ih2(icla), cvar_h2cl)
     call field_get_val_s(itemp2(icla),cpro_temp2)
 
     i = npoc-1

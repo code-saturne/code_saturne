@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -116,6 +116,14 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_boundary_conditions_set_coeffs_init
+
+  !=============================================================================
+
+  subroutine cs_field_map_and_init_bcs()  &
+    bind(C, name='cs_field_map_and_init_bcs')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_field_map_and_init_bcs
 
   !=============================================================================
 
@@ -257,12 +265,12 @@ interface
 
   !=============================================================================
 
-  subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm) &
+  subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm) &
     bind(C, name='cs_volume_mass_injection_build_lists')
     use, intrinsic :: iso_c_binding
     implicit none
     integer(kind=c_int), value :: ncetsm
-    integer(kind=c_int), dimension(*), intent(out) :: icetsm, izctsm
+    integer(kind=c_int), dimension(*), intent(out) :: icetsm
   end subroutine cs_volume_mass_injection_build_lists
 
   !=============================================================================
@@ -273,14 +281,6 @@ interface
     implicit none
     integer(c_int) :: ierr
   end function cs_runaway_check
-
-  !=============================================================================
-
-  subroutine fldtri() &
-    bind(C, name='cs_field_map_and_init_bcs')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine fldtri
 
   !=============================================================================
 
@@ -328,9 +328,6 @@ iappel = 1
 ! Zone definition for head-loss, mass sources term,
 !   condensation sources term and 1D-wall module
 !===============================================================================
-
-! Allocate temporary arrays for zones definition
-allocate(izctsm(ncel))
 
 ! -----------------
 ! Mass source terms
@@ -385,7 +382,6 @@ endif
 call cs_1d_wall_thermal_check(iappel, isuit1)
 
 ! Free memory if relevant
-if (nctsmt.eq.0) deallocate(izctsm)
 if (nfpt1t.eq.0) call cs_1d_wall_thermal_finalize
 
 ! Formats
@@ -464,7 +460,7 @@ endif
 ! Default initializations
 !===============================================================================
 
-call fldtri
+call cs_field_map_and_init_bcs
 
 call field_allocate_or_map_all
 
@@ -591,6 +587,8 @@ restart_stats_id = timer_stats_id_by_name("checkpoint_restart_stage")
 post_stats_id = timer_stats_id_by_name("postprocessing_stage")
 
 if (isuite.eq.1) then
+
+  call restart_initialize_fields_read_status
 
   call timer_stats_start(restart_stats_id)
 
@@ -727,7 +725,7 @@ call cs_boundary_conditions_set_coeffs_init()
 ! This is a collective call for consistency and in case the user requires it.
 
 if (nctsmt.gt.0) then
-  call cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm)
+  call cs_volume_mass_injection_build_lists(ncetsm, icetsm)
 endif
 
 ! ALE mobile structures
@@ -1103,6 +1101,8 @@ if (nfpt1d.gt.0) then
 endif
 
 ! Free main arrays
+
+call restart_finalize_fields_read_status
 
 call radiat_finalize
 

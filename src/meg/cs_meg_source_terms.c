@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,25 +60,26 @@ BEGIN_C_DECLS
  *
  * The caller is responsible for freeing the returned array.
  *
- * \param[in] zone_name     name of a volume zone
- * \param[in] n_elts        number of elements related to the zone
- * \param[in] elt_ids       list of element ids related to the zone
- * \param[in] xyz           list of coordinates related to the zone
- * \param[in] field_name    variable field name
- * \param[in] source_type   source term type
+ * \param[in]  zone_name     name of a volume zone
+ * \param[in]  n_elts        number of elements related to the zone
+ * \param[in]  elt_ids       list of element ids related to the zone
+ * \param[in]  xyz           list of coordinates related to the zone
+ * \param[in]  field_name    variable field name
+ * \param[in]  source_type   source term type
+ * \param[out] retvals      array of computed values
  *
- * \returns a cs_real_t pointer containing the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_meg_source_terms
-cs_real_t *
+void
 cs_meg_source_terms(const char       *zone_name,
                     const cs_lnum_t   n_elts,
                     const cs_lnum_t  *elt_ids,
                     const cs_real_t   xyz[][3],
                     const char       *field_name,
-                    const char       *source_type)
+                    const char       *source_type,
+                    cs_real_t        *retvals)
 
 
 {
@@ -88,8 +89,6 @@ cs_meg_source_terms(const char       *zone_name,
   CS_NO_WARN_IF_UNUSED(xyz);
   CS_NO_WARN_IF_UNUSED(field_name);
   CS_NO_WARN_IF_UNUSED(source_type);
-
-  return NULL; /* avoid a compiler warning */
 }
 
 /*----------------------------------------------------------------------------*/

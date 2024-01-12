@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2023  EDF S.A.
+  Copyright (C) 2005-2024  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -43,11 +43,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if (__STDC_VERSION__ <202311L)
+# include <stdbool.h>
+#endif
+
 #if defined(PLE_HAVE_MPI)
 #include <mpi.h>
-#if !defined(MPI_VERSION) /* Defined in up-to-date MPI versions */
-#  define MPI_VERSION 1
-#endif
 #endif
 
 /*----------------------------------------------------------------------------
@@ -548,13 +549,13 @@ _order_comm_ranks(int        rank_id,
  *   true if extents intersect, false otherwise
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _intersect_extents(int           dim,
                    const double  extents_1[],
                    const double  extents_2[])
 {
   int i;
-  _Bool retval = true;
+  bool retval = true;
 
   for (i = 0; i < dim; i++) {
     if (   (extents_1[i] > extents_2[i + dim])
@@ -581,13 +582,13 @@ _intersect_extents(int           dim,
  *   true if point lies within extents, false otherwise
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _within_extents(int                dim,
                 const ple_coord_t  coords[],
                 const double       extents[])
 {
   int i;
-  _Bool retval = true;
+  bool retval = true;
 
   for (i = 0; i < dim; i++) {
     if (   (coords[i] < extents[i])
@@ -2125,8 +2126,8 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
                             const ple_lnum_t  *local_list,
                             MPI_Datatype       datatype,
                             size_t             stride,
-                            _Bool              reverse,
-                            _Bool              interior)
+                            bool               reverse,
+                            bool               interior)
 {
   int dist_v_count, loc_v_count, size;
   int dist_rank;
@@ -2143,11 +2144,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
   /* Check extent of datatype */
 
-#if (MPI_VERSION >= 2)
   MPI_Type_get_extent(datatype, &lb, &extent);
-#else
-  MPI_Type_extent(datatype, &extent);
-#endif
   MPI_Type_size(datatype, &size);
 
   if (extent != size)
@@ -2382,8 +2379,8 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
                                  const ple_lnum_t  *local_list,
                                  MPI_Datatype       datatype,
                                  size_t             stride,
-                                 _Bool              reverse,
-                                 _Bool              interior)
+                                 bool               reverse,
+                                 bool               interior)
 {
   int dist_v_count, loc_v_count, size;
   int dist_rank;
@@ -2401,11 +2398,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   /* Check extent of datatype */
 
-#if (MPI_VERSION >= 2)
   MPI_Type_get_extent(datatype, &lb, &extent);
-#else
-  MPI_Type_extent(datatype, &extent);
-#endif
   MPI_Type_size(datatype, &size);
 
   if (extent != size)
@@ -2767,7 +2760,7 @@ _exchange_point_var_local(ple_locator_t     *this_locator,
                           const ple_lnum_t  *local_list,
                           size_t             type_size,
                           size_t             stride,
-                          _Bool              reverse)
+                          bool               reverse)
 {
   ple_lnum_t i;
   size_t j;
@@ -2849,7 +2842,7 @@ _exchange_point_var_local_incomplete(ple_locator_t     *this_locator,
                                      const ple_lnum_t  *local_list,
                                      size_t             type_size,
                                      size_t             stride,
-                                     _Bool              reverse)
+                                     bool               reverse)
 {
   const size_t nbytes = stride*type_size;
 
@@ -2959,12 +2952,12 @@ _exchange_point_var(ple_locator_t     *this_locator,
                     size_t             type_size,
                     size_t             stride,
                     int                reverse,
-                    _Bool              interior)
+                    bool               interior)
 {
   double w_start, w_end, cpu_start, cpu_end;
 
   int mpi_flag = 0;
-  _Bool _reverse = reverse;
+  bool _reverse = reverse;
 
   /* Initialize timing */
 

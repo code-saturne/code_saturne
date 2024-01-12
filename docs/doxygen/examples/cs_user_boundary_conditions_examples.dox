@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,7 @@
 
   - \subpage base_examples
   - \subpage note_book
+  - \subpage time_table
   - \subpage base_examples_legacy
   - \subpage channel_inlet_mapped
   - \subpage channel_inlet_auto
@@ -238,7 +239,7 @@
   a callback function of the type  of type \ref cs_dof_func_t can be defined,
   such as the following (for a time table named "inlet_temperature"):
 
-  \snippet cs_user_boundary_conditions-time_table.c timetabe_dof_func
+  \snippet cs_user_boundary_conditions-time_table.c time_table_dof_func
 
   Note that accessing the time table value in the function above is done
   through the call to \ref cs_time_table_compute_time_value.
@@ -247,7 +248,7 @@
   for variable "scalar1" in the usual way
   (in \ref cs_user_boundary_conditions_setup):
 
-  \snippet cs_boundary_conditions-time_table.c time_table_dof_inlet
+  \snippet cs_user_boundary_conditions-time_table.c time_table_dof_inlet
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -794,45 +795,57 @@
 
 /*-----------------------------------------------------------------------------*/
 /*!
-  \page gas_3ptchem_examples Gas 3 PTCHEM examples
+  \page gas_3ptchem_examples Gas 3 PTCHEM example
 
-  \section advanced_loc_var_ptchem Local variables to be added
+  The following sections illustrate subsets of a same example,
+  combining high-level definitions (which are preferred), and lower-level
+  setings where necessary.
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.f90 loc_var_dec
+  This is assumed to be combined with the GUI or settings not specific
+  to gas combustion, so wall and symmetry conditions are not shown here.
 
-  \section base_init_ptchem Initialization and finalization
+  \section def_setup Definitions for the setup stage
 
-  Initialization and finalization is similar to that of the base examples
+  Using a fixed mass-flow rate, the main inlet conditions can be defined
+  in \ref cs_user_boundary_conditions_setup, as follows for a zone
+  named "inlet":
 
-  \section gas_3ptchem_ex_1 Example 1
+  \snippet cs_user_boundary_conditions-gas_3ptchem.c setup_inlet
 
-  Definition of a fuel flow inlet for each face of colour 11
+  Note that we have used a notebook variable here, allowing parametrization
+  of the computation, but the mass flow should be fixed. For a variable
+  mass flow rate, use \ref cs_boundary_conditions_open_set_mass_flow_rate_by_func
+  instead.
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.f90 example_1
+  \section def_compute Definitions for the compute stage
 
-  \section gas_3ptchem_ex_2 Example 2
+  Not all definitions can yet be handled at the setup stage, so
+  additional settings are needed in \ref cs_user_boundary_conditions.
 
-  Definition of an air flow inlet for each face of colour 21
+  \subsection advanced_loc_var_ptchem Local variables to be added
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.f90 example_2
+  The following aliases (for conciseness of the downstream code)
+  and initializations are used here:
 
-  \section gas_3ptchem_ex_3 Example 3
+  \snippet cs_user_boundary_conditions-gas_3ptchem.c loc_var_dec
 
-  Definition of a wall for each face of colour 51 up to 59
+  \subsection advanced_inlet_ptchem Inlet definitions
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.f90 example_3
+  Based on the inlet defined at the setup stage, the following additional
+  settings can be used. Note that the inlet temperature is global to
+  the module, but matches an inlet, so we choose to (re)set it here.
+  These settings will be handled in the setup stage in a future version.
 
-  \section gas_3ptchem_ex_4 Example 4
+  \snippet cs_user_boundary_conditions-gas_3ptchem.c inlet
 
-  Definition of an exit for each face of colour 91
+  \subsection advanced_open_bc_ptchem Open boundary definition
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.f90 example_4
+  Since it is not yet possible to handle open boundary conditions
+  with backflow conditions with the high level API (i.e. at the
+  setup stage), the following example illustrates have this can
+  be managed, on an example zone named "open":
 
-  \section gas_3ptchem_ex_5 Example 5
-
-  Definition of symmetric boundary conditions for each face of colour 41 and 4.
-
-  \snippet cs_user_boundary_conditions-gas_3ptchem.f90 example_5
+  \snippet cs_user_boundary_conditions-gas_3ptchem.c open
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -849,33 +862,15 @@
 
   \section gas_ebu_ex_1 Example 1
 
-  Definition of a burned gas inlet (pilot flame) for each face of colour 11
+  Definition of a burned gas inlet (pilot flame) for each face of color 11
 
   \snippet cs_user_boundary_conditions-gas_ebu.f90 example_1
 
   \section gas_ebu_ex_2 Example 2
 
-  Definition of an unburned gas inlet for each face of colour 12
+  Definition of an unburned gas inlet for each face of color 12
 
   \snippet cs_user_boundary_conditions-gas_ebu.f90 example_2
-
-  \section gas_ebu_ex_3 Example 3
-
-  Definition of a wall for each face of colour 51 and 5
-
-  \snippet cs_user_boundary_conditions-gas_ebu.f90 example_3
-
-  \section gas_ebu_ex_4 Example 4
-
-  Definition of an exit for each face of colour 91 and 9
-
-  \snippet cs_user_boundary_conditions-gas_ebu.f90 example_4
-
-  \section gas_ebu_ex_5 Example 5
-
-  Definition of symmetric boundary conditions for each face of colour 41 and 4.
-
-  \snippet cs_user_boundary_conditions-gas_ebu.f90 example_5
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -892,33 +887,15 @@
 
   \section gas_libby_williams_ex_1 Example 1
 
-  Definition of a burned gas inlet (pilot flame) for each face of colour 11
+  Definition of a burned gas inlet (pilot flame) for each face of color 11
 
   \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_1
 
   \section gas_libby_williams_ex_2 Example 2
 
-  Definition of an unburned gas inlet for each face of colour 12
+  Definition of an unburned gas inlet for each face of color 12
 
   \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_2
-
-  \section gas_libby_williams_ex_3 Example 3
-
-  Definition of a wall for each face of colour 51 and 5
-
-  \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_3
-
-  \section gas_libby_williams_ex_4 Example 4
-
-  Definition of an exit for each face of colour 91 and 9
-
-  \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_4
-
-  \section gas_libby_williams_ex_5 Example 5
-
-  Definition of symmetric boundary conditions for each face of colour 41 and 4.
-
-  \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_5
 */
 
 /*-----------------------------------------------------------------------------*/

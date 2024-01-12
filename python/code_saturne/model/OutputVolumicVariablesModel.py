@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -127,7 +127,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         and possibly postprocessing fields).
         """
 
-        tags = ['variable', 'property', 'scalar']
+        tags = ['variable', 'property']
         if time_averages:
             tags.append('time_average')
 
@@ -185,12 +185,14 @@ class OutputVolumicVariablesModel(Variables, Model):
 
             # Check that we wish to show the field
             if not (node['support'] and node['support'] == "boundary"):
-                # Add main field. "-1" is used as default since for
-                # vectors/tensors it yields all components
-                dicoLabel2Name[label] = (name, str(-1))
 
                 # Check if we want to also get components
                 dim = node['dimension']
+
+                # Add main field. "-1" is used as default since for
+                # vectors/tensors it yields all components
+                dicoLabel2Name[label] = (name, str(-1), str(dim))
+
                 if dim and int(dim) > 1 and get_components:
                     # If we consider the Rij tensor, the user will see
                     # R11, R22, ... in the GUI instead of Rij[0], Rij[1], ...

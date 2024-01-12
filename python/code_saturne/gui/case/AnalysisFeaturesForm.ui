@@ -228,7 +228,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Take into account heat and mass tranfer between phases.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Activate phase change heat and mass transfer terms</string>
+         <string>Activate gas/liquid heat and mass transfer terms</string>
         </property>
        </widget>
       </item>

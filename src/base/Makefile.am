@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2023 EDF S.A.
+# Copyright (C) 1998-2024 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -108,10 +108,12 @@ cs_boundary_conditions_set_coeffs_turb.h \
 cs_boundary_conditions_type.h \
 cs_boundary_zone.h \
 cs_calcium.h \
+cs_time_step_compute.h \
 cs_control.h \
 cs_coupling.h \
 cs_crystal_router.h \
 cs_defs.h \
+cs_drift_convective_flux.h \
 cs_equation_iterative_solve.h \
 cs_ext_library_info.h \
 cs_ext_neighborhood.h \
@@ -180,6 +182,7 @@ cs_sat_coupling.h \
 cs_scalar_clipping.h \
 cs_search.h \
 cs_selector.h \
+cs_solid_zone.h \
 cs_solve_equation.h \
 cs_solve_navier_stokes.h \
 cs_sort.h \
@@ -204,6 +207,7 @@ cs_volume_zone.h \
 cs_volume_mass_injection.h \
 cs_wall_condensation.h \
 cs_wall_condensation_1d_thermal.h \
+cs_wall_distance.h \
 cs_wall_functions.h \
 cs_xdef_eval_at_zone.h \
 cs_zone.h \
@@ -311,8 +315,10 @@ cscpfb.f90 \
 csinit.f90 \
 csopli.f90 \
 csprnt.f90 \
+cs_time_step_compute.c \
 cs_control.c \
 cs_coupling.c \
+cs_drift_convective_flux.c \
 cs_ext_library_info.c \
 cs_ext_neighborhood.c \
 cs_equation_iterative_solve.c \
@@ -370,6 +376,7 @@ cs_scalar_clipping.c\
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
+cs_solid_zone.c \
 cs_solve_equation.c \
 cs_solve_navier_stokes.c \
 cs_sort.c \
@@ -388,22 +395,18 @@ cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_utilities.c \
 cs_velocity_pressure.c \
-cs_vof.c \
+cs_vof.cxx \
 cs_volume_mass_injection.c \
 cs_volume_zone.c \
+cs_wall_distance.c \
 cs_wall_functions.c \
 cs_xdef_eval_at_zone.c \
 diffst.f90 \
-distpr.f90 \
 distpr2.f90 \
-distyp.f90 \
-driflu.f90 \
-dttvar.f90 \
 ecrava.f90 \
 ecrlis.f90 \
 findpt.f90 \
 fldini.f90 \
-fldtri.f90 \
 fldvar.f90 \
 fldprp.f90 \
 idrbla.f90 \
@@ -421,16 +424,13 @@ majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \
 phyvar.f90 \
-prehyd.f90 \
 pthrbm.f90 \
-resvoi.f90 \
 scalai.f90 \
 schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \
 varpos.f90 \
-verini.f90 \
-visecv.f90
+verini.f90
 
 libcsbase_a_LIBADD =
 local_libraries_add =

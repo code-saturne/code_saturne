@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -39,10 +39,11 @@
   Several functions are present in the file, each destined to defined
     specific parameters.
 
-  \section cs_user_parameters_h_cs_user_model  Base model related options
+  \section cs_user_parameters_h_cs_user_model  Base model related options (cs_user_model)
 
   Definition of user variables or properties as well as choices of physical
-  models should be done here, if not already done through the GUI.
+  models should be done in the \ref cs_user_model function,
+  if not already done through the GUI.
   Gravity and reference frame rotation (for Coriolis) can also
   be (re)-defined here.
 
@@ -85,7 +86,8 @@
 
   \snippet cs_user_parameters-base.c scalars_variance_addition
 
-  Add a user property defined on a mesh location (cells, interior faces, boundary faces or vertices).
+  Add a user property defined on a mesh location
+  (cells, interior faces, boundary faces or vertices).
 
   \snippet cs_user_parameters-base.c user_property_addition
 
@@ -98,7 +100,9 @@
 
   \snippet cs_user_parameters-base.c user_model_coriolis
 
-  \section cs_user_parameters_h_cs_user_parameters_general General options
+  \section cs_user_parameters_h_cs_user_parameters_general General options (cs_user_parameters)
+
+  Most settings can be specified in \ref cs_user_parameters
 
   Choose a time step option
 
@@ -257,6 +261,11 @@
   The logic is similar to that of variable diffusivity fields above:
 
   \snippet cs_user_parameters-base.c param_density_id
+
+  For compressible flows, specific physical property settings may be
+  defined if needed:
+
+  \snippet cs_user_parameters-base.c param_compressible
 
   By default, the auxiliary restart file is read if present, but it may be
   useful to deactivate its use when restarting after a preprocessing stage
@@ -490,7 +499,8 @@
   \ref cs_multigrid_create, \ref cs_multigrid_set_coarsening_options,
   and \ref cs_multigrid_set_solver_options.
 
-  Simple options may be set using the GUI, but for more advanced settings
+  Simple options may be set using the GUI, but more advanced settings,
+  possible using the \ref cs_user_linear_solvers function
   are described in this section. It is also recommended to read
   the documentation of \ref cs_sles.c (which is a solver definition
   "container"), \ref cs_sles_it.c (iterative solvers, with available

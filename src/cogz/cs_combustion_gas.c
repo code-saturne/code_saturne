@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,7 +46,11 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_base.h"
 #include "cs_combustion_model.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
+#include "cs_log.h"
 #include "cs_math.h"
 
 /*----------------------------------------------------------------------------
@@ -90,6 +94,10 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/*! Combustion model parameters structure */
+
+cs_combustion_gas_model_t  *cs_glob_combustion_gas_model = NULL;
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -97,19 +105,243 @@ BEGIN_C_DECLS
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
+void
+cs_f_co_models_init(void);
+
+void
+cs_f_ppincl_combustion_init(void);
+
+void
+cs_f_ppcpfu_models_init(void);
+
+void
+cs_f_thch_models_init(void);
+
+void
+cs_f_combustion_gas_get_data_file_name(int           name_max,
+                                       const char  **name,
+                                       int          *name_len);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize gas combustion model.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_combustion_gas_finalize(void)
+{
+  if (cs_glob_combustion_gas_model != NULL) {
+
+    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+    BFT_FREE(cm->data_file_name);
+    BFT_FREE(cm);
+
+    cs_glob_combustion_gas_model = cm;
+
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return the name of the data file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_combustion_gas_get_data_file_name(int           name_max,
+                                       const char  **name,
+                                       int          *name_len)
+{
+  assert(cs_glob_combustion_gas_model != NULL);
+
+  *name = cs_glob_combustion_gas_model->data_file_name;
+  *name_len = strlen(*name);
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving thermochemistry data file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for current length %d."),
+       *name, name_max, *name_len);
+  }
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate gas combustion model.
+ *
+ * \param[in]  type  gas combustion model type
+ *
+ * \return  pointer to gas combustion model structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_combustion_gas_model_t  *
+cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
+{
+  cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = -1;
+  cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] = -1;
+  cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = -1;
+  cs_glob_physical_model_flag[CS_COMBUSTION_LW] = -1;
+
+  if (type == CS_COMBUSTION_GAS_NONE) {
+    BFT_FREE(cs_glob_combustion_gas_model);
+    return NULL;
+  }
+
+  int macro_type = type / 100;
+  int sub_type = type % 100;
+  if (macro_type == 1)
+    cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = sub_type;
+  else if (macro_type == 2)
+    cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] = sub_type;
+  else if (macro_type == 3)
+    cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = sub_type;
+  else if (macro_type == 4)
+    cs_glob_physical_model_flag[CS_COMBUSTION_LW] = sub_type;
+
+  if (cs_glob_combustion_gas_model != NULL) {
+    cs_glob_combustion_gas_model->type = type;
+    return cs_glob_combustion_gas_model;
+  }
+
+  /* Create and initialize model structure */
+
+  cs_combustion_gas_model_t  *cm;
+
+  BFT_MALLOC(cm, 1, cs_combustion_gas_model_t);
+
+  cs_glob_combustion_gas_model = cm;
+
+  /* Members also present in coal combustion model */
+
+  cm->n_gas_el_comp = 0;
+  cm->n_gas_species = 0;
+  cm->n_atomic_species = 0;
+  cm->n_reactions = 0;
+  cm->n_tab_points = 0;
+  cm->pcigas = 0;
+  cm->xco2 = 0;
+  cm->xh2o = 0;
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS; i++) {
+    cm->wmole[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_OXYDANTS; i++) {
+    cm->oxyn2[i] = 0;
+    cm->oxyh2o[i] = 0;
+    cm->oxyco2[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_TABULATION_POINTS; i++) {
+    cm->th[i] = 0;
+  }
+
+  /* Members specific to gas combustion model */
+
+  cm->type = type;
+
+  cm->data_file_name = NULL;
+
+  cm->use_janaf = true;
+
+  cm->iic = 0;
+  cm->isoot = -1;
+  cm->hinfue = cs_math_big_r;
+  cm->tinfue = 0;
+  cm->tinoxy = 0;
+  cm->hinoxy = cs_math_big_r;
+
+  cm->xsoot = 0.;
+  cm->rosoot = 0.;
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
+    cm->wmolg[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
+    for (int j = 0; j < CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS; j++) {
+      cm->coefeg[i][j] = 0;
+    }
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
+    for (int j = 0; j < CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS; j++) {
+      cm->compog[i][j] = 0;
+    }
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS; i++) {
+    cm->fs[i] = 0;
+  }
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_TABULATION_POINTS; i++) {
+    for (int j = 0; j < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; j++) {
+      cm->cpgazg[i][j] = 0;
+    }
+  }
+
+  cm->srrom = 0.95;
+
+  /* Set finalization callback */
+
+  cs_base_at_finalize(_combustion_gas_finalize);
+
+  /* Set mappings with Fortran */
+
+  cs_f_ppincl_combustion_init();
+  cs_f_co_models_init();
+  cs_f_ppcpfu_models_init();
+  cs_f_thch_models_init();
+
+  return cm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the thermochemical data file name.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_set_thermochemical_data_file(const char  *file_name)
+{
+  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  if (cm == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: gas combustion model not active."), __func__);
+
+  BFT_FREE(cm->data_file_name);
+  if (file_name != NULL) {
+    size_t l = strlen(file_name)+1;
+    BFT_REALLOC(cm->data_file_name, l, char);
+    strncpy(cm->data_file_name, file_name, l);
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Compute molar and mass fractions of
@@ -127,7 +359,7 @@ cs_combustion_gas_yg2xye(const cs_real_t  yg[],
                          cs_real_t        ye[],
                          cs_real_t        xe[])
 {
-  const cs_combustion_model_t *cm = cs_glob_combustion_model;
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
   const int n_gas_e = cm->n_gas_el_comp;
   const int n_gas_g = cm->n_gas_species;
 
@@ -136,7 +368,7 @@ cs_combustion_gas_yg2xye(const cs_real_t  yg[],
   for (int i = 0; i < n_gas_e; i++) {
     ye[i] = 0;
     for (int j = 0; j < n_gas_g; j++)
-      ye[i] += cm->gas->coefeg[j][i] * yg[j];
+      ye[i] += cm->coefeg[j][i] * yg[j];
   }
 
   /* Verification */
@@ -164,6 +396,81 @@ cs_combustion_gas_yg2xye(const cs_real_t  yg[],
   for (int i = 0; i < n_gas_e; i++) {
     xe[i] = ye[i] * mm / cm->wmole[i];
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the gas combustion module options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_log_setup(void)
+{
+  if (cs_glob_combustion_gas_model == NULL)
+    return;
+
+  cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Combustion module options\n"
+                    "-------------------------\n\n"));
+
+  const char *janaf_value_str[]
+    = {N_("false (user enthalpy/temperature tabulation)"),
+       N_("true (JANAF table)")};
+
+  int janaf_msg_id = (cm->use_janaf) ? 1 : 0;
+  const char _null_string[] = "<null>";
+  const char *data_file = (cm->data_file_name != NULL) ?
+    cm->data_file_name : _null_string;
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Thermochemical data:\n"
+                  "    data_file: %s\n"
+                  "    use_janaf: %s\n\n"),
+                data_file,
+                janaf_value_str[janaf_msg_id]);
+
+  switch(cm->isoot) {
+  case -1:
+    /* No Soot model */
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    isoot:    -1 (No Soot model)\n\n"));
+    break;
+  case 0:
+    /* constant fraction of product Xsoot */
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    isoot:     0 (Constant soot yield)\n\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Parameters for the soot model:\n"
+                    "    xsoot:  %14.5e (Fraction of product - Used only\n"
+                    "            if the soot yield is not defined in the\n"
+                    "            thermochemistry data file)\n"
+                    "    rosoot: %14.5e (Soot density)\n\n"),
+                  cm->xsoot,
+                  cm->rosoot);
+    break;
+  case 1:
+    /* 2 equations model of Moss et al. */
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    isoot:     1 (2 equations model of Moss et al.)\n\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Parameter for the soot model:\n"
+                    "    rosoot: %14.5e (Soot density)\n\n"),
+                  cm->rosoot);
+    break;
+  default:
+    break;
+  }
+
+  const char *ipthrm_value_str[] = {N_("0 (no mean pressure computation)"),
+                                    N_("1 (mean pressure computation)")};
+  cs_log_printf(CS_LOG_SETUP,
+                _("    ipthrm:    %s\n\n"),
+                _(ipthrm_value_str[cs_glob_fluid_properties->ipthrm]));
 }
 
 /*----------------------------------------------------------------------------*/

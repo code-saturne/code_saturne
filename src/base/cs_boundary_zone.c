@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1141,13 +1141,7 @@ cs_boundary_zone_print_info(void)
       bft_printf(_("    Fluid surface   = %1.5g\n"),
                  z->f_measure);
 
-    if (z->boundary_measure < 0.) {
-      bft_printf(_("    Perimeter       = -1 (not computed)\n"));
-      /* Only log fluid fluid when different to surface */
-      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
-        bft_printf(_("    Fluid perimeter = -1 (not computed)\n"));
-    }
-    else {
+    if (z->boundary_measure >= 0.) {
       bft_printf(_("    Perimeter       = %1.5g\n"),
                  z->boundary_measure);
       /* Only log fluid fluid when different to surface */

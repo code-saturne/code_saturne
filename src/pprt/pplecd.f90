@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2023 EDF S.A.
+! Copyright (C) 1998-2024 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -48,11 +48,8 @@ use cstphy
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
-use cs_coal_incl
 use ppcpfu
-use radiat
 
 !===============================================================================
 
@@ -61,6 +58,20 @@ implicit none
 ! Arguments
 
 ! Local variables
+
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_gui_coal_model()  &
+    bind(C, name='cs_gui_coal_model')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_coal_model
+
+end interface
 
 !===============================================================================
 
@@ -82,17 +93,7 @@ endif
 ! ---> Pulverized coal combustion
 
 if (ippmod(iccoal).ge.0) then
-  call uisofu(iirayo, ncharm, ncharb, nclpch, nclacp,                 &
-              ncpcmx, ichcor, diam20, cch,                            &
-              hch, och, nch, sch, ipci, pcich, cp2ch, rho0ch,         &
-              thcdch , cck, hck, ock, nck, sck, xashch,               &
-              xashsec, xwatch, h0ashc, cpashc,                        &
-              iy1ch, y1ch, iy2ch, y2ch, a1ch, a2ch, e1ch, e2ch,       &
-              crepn1, crepn2, ahetch, ehetch, iochet, ahetc2,         &
-              ehetc2, ioetc2, ahetwt, ehetwt, ioetwt,                 &
-              ieqnox, ieqco2, imdnox, irb, ihtco2, ihth2o, qpr, fn,   &
-              ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2,            &
-              repnck, repnle, repnlo)
+  call cs_gui_coal_model
   call cs_coal_readata
 endif
 

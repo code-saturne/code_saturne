@@ -280,10 +280,12 @@ cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
   if (_coefb_d != NULL)
     CS_CUDA_CHECK(cudaFree(_coefb_d));
     
+  CS_CUDA_CHECK(cudaFree(grad_d));
   CS_CUDA_CHECK(cudaFree(grdpa_d));
   CS_CUDA_CHECK(cudaFree(i_massflux_d));
   CS_CUDA_CHECK(cudaFree(i_f_face_normal));
   CS_CUDA_CHECK(cudaFree(cell_vol));
   CS_CUDA_CHECK(cudaFree(cell_i_faces));
   CS_CUDA_CHECK(cudaFree(cell_i_faces_sgn));
+  CS_CUDA_CHECK(cudaFree(i_face_cog));
 }

@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -131,6 +131,28 @@ void
 cs_restart_write_variables(cs_restart_t  *r,
                            int            t_id_flag,
                            int            write_flag[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read notebook parameters from main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_notebook_variables(cs_restart_t  *r);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write notebook parameters to main checkpoint.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_notebook_variables(cs_restart_t  *r);
 
 /*----------------------------------------------------------------------------
  * Read fields depending on others from checkpoint.
@@ -267,6 +289,50 @@ cs_restart_write_fields(cs_restart_t        *r,
 void
 cs_restart_read_fields(cs_restart_t       *r,
                        cs_restart_file_t   r_id);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set restart file values for fields when those values cannot
+ *        be determined at field definition time.
+ *
+ * This is needed when the need for restart data depends on various
+ * combinations of settings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_set_auxiliary_field_options(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Initialize fields read status array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_initialize_fields_read_status(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Finalize fields read status array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_finalize_fields_read_status(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Get checkpoint read status for a field based on its id
+ *
+ * \param[in] f_id  field id
+ *
+ * \returns 0 if field read action failed, 1 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_get_field_read_status(const int f_id);
 
 /*----------------------------------------------------------------------------*/
 

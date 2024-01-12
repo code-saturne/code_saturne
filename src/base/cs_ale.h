@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -97,14 +97,6 @@ extern int cs_glob_ale_need_init; /*!< Indicate whether an iteration to
 /*----------------------------------------------------------------------------*/
 
 void cs_ale_allocate(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free ALE boundary condition mappings.
- */
-/*----------------------------------------------------------------------------*/
-
-void cs_ale_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
