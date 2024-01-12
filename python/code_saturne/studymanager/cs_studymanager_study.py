@@ -1807,6 +1807,12 @@ class Studies(object):
         cur_batch_id = 0
         job_id_list = []
 
+        # create folder in destination
+        slurm_file_dir = os.path.join(self.__dest, "slurm_files")
+        if not os.path.isdir(slurm_file_dir):
+          os.makedirs(slurm_file_dir)
+        os.chdir(slurm_file_dir)
+
         self.reporting("  o Run all cases in slurm batch mode")
 
         # loop on level (0 means without dependency)
@@ -2006,6 +2012,8 @@ class Studies(object):
             else:
                 # empty list can occur with existing runs in study
                 output = subprocess.check_output(['sbatch', slurm_batch_name])
+
+        os.chdir(self.__dest)
 
         self.reporting('')
 
