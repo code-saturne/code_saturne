@@ -5557,11 +5557,11 @@ res_cpu = !compute_cuda;
   // Pour l'instant ces lignes sont pour moi
   // Elles seront à enlever
   // compute_cuda  = true;
-  compute_cpu   = true;
+  // compute_cpu   = true;
   // res_cpu       = false;
 
   // A ne pas garder dans la version finale
-  perf        = true;
+  // perf        = false;
   // accuracy    = false;
 
 
@@ -5777,7 +5777,7 @@ res_cpu = !compute_cuda;
       if(compute_cuda){
         if(compute_cpu){
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-            for (cs_lnum_t i = 0; i < 3; i++) {
+            for (cs_lnum_t i = 0; i < stride; i++) {
               for (int j  =0; j < 3; ++j) {
                 auto cpu = grad_cpu[c_id][i][j];
                 auto cuda = grad_gpu[c_id][i][j];

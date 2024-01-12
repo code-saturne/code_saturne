@@ -166,7 +166,7 @@ _compute_reconstruct_v_b_face_gather_v3(cs_lnum_t           n_b_cells,
   }
   for(cs_lnum_t i = 0; i < stride; i++){
     for(cs_lnum_t j = 0; j < 3; j++){
-      grad[c_id1][i][j] = _grad[i][j];
+      grad[c_id][i][j] = _grad[i][j];
     }
   }
   
