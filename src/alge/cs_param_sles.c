@@ -3074,6 +3074,9 @@ static void
 _log_mumps_param(const char                    *name,
                  const cs_param_sles_mumps_t   *mumpsp)
 {
+  if (mumpsp == NULL)
+    return;
+
   char type = (mumpsp->is_single) ? 's' : 'd';
   char tag[32];
 

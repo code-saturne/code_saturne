@@ -792,6 +792,7 @@ _set_key(cs_equation_param_t   *eqp,
       case CS_PARAM_SLES_CLASS_CS:
         eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
         break;
+
       case CS_PARAM_SLES_CLASS_PETSC:
         eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
 
@@ -799,8 +800,8 @@ _set_key(cs_equation_param_t   *eqp,
 
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         break;
-      case CS_PARAM_SLES_CLASS_HYPRE:
 
+      case CS_PARAM_SLES_CLASS_HYPRE:
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
         if (cs_param_sles_hypre_from_petsc())
           eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;

@@ -824,6 +824,7 @@ typedef struct {
   /* \var boundaries
    * Pointer to a \ref cs_boundary_t structure shared with the domain
    */
+
   const cs_boundary_t   *boundaries;
 
   /*! \var velocity_bc_is_owner
