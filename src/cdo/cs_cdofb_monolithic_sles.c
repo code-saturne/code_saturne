@@ -1761,39 +1761,29 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_V:
-      if (cs_param_sles_hypre_from_petsc()) {
-
-        PCHYPRESetType(u_pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
-        _setup_velocity_boomeramg();
-
-      }
-      else {
-
-        PCGAMGSetType(u_pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(u_pc, 1);
-        PCMGSetCycleType(u_pc, PC_MG_CYCLE_V);
-        _setup_velocity_gamg();
-
-      }
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(u_pc, "boomeramg");
+      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
+      _setup_velocity_boomeramg();
+#else
+      PCGAMGSetType(u_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(u_pc, 1);
+      PCMGSetCycleType(u_pc, PC_MG_CYCLE_V);
+      _setup_velocity_gamg();
+#endif
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_W:
-      if (cs_param_sles_hypre_from_petsc()) {
-
-        PCHYPRESetType(u_pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
-        _setup_velocity_boomeramg();
-
-      }
-      else {
-
-        PCGAMGSetType(u_pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(u_pc, 1);
-        PCMGSetCycleType(u_pc, PC_MG_CYCLE_W);
-        _setup_velocity_gamg();
-
-      }
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(u_pc, "boomeramg");
+      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
+      _setup_velocity_boomeramg();
+#else
+      PCGAMGSetType(u_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(u_pc, 1);
+      PCMGSetCycleType(u_pc, PC_MG_CYCLE_W);
+      _setup_velocity_gamg();
+#endif
       break;
 
     default:
@@ -2183,25 +2173,23 @@ _notay_solver(cs_param_sles_t         *slesp,
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_V:
-      if (cs_param_sles_hypre_from_petsc()) {
-        PCHYPRESetType(up_pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "V");
-      }
-      else {
-        _set_gamg_pc("", system_size, slesp->amg_type,
-                     false, 1); /* is_sym, smooth_lvl */
-      }
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(up_pc, "boomeramg");
+      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "V");
+#else
+      _set_gamg_pc("", system_size, slesp->amg_type,
+                   false, 1); /* is_sym, smooth_lvl */
+#endif
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_W:
-      if (cs_param_sles_hypre_from_petsc()) {
-        PCHYPRESetType(up_pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "W");
-      }
-      else {
-        _set_gamg_pc("", system_size, slesp->amg_type,
-                     false, 1); /* is_sym, smooth_lvl */
-      }
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(up_pc, "boomeramg");
+      PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type", "W");
+#else
+      _set_gamg_pc("", system_size, slesp->amg_type,
+                   false, 1); /* is_sym, smooth_lvl */
+#endif
       break;
 
     default:

@@ -388,12 +388,14 @@ _petsc_pcgamg_hook(const char              *prefix,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _petsc_pchypre_hook(const char              *prefix,
                     const cs_param_sles_t   *slesp,
                     bool                     is_symm,
                     PC                       pc)
 {
+#if defined(PETSC_HAVE_HYPRE)
+
   CS_UNUSED(is_symm);
 
   assert(prefix != NULL);
@@ -486,6 +488,8 @@ _petsc_pchypre_hook(const char              *prefix,
 
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_strong_threshold","0.5");
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_no_CF","");
+
+#endif /* defined(PETSC_HAVE_HYPRE) */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -520,17 +524,13 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
   case CS_PARAM_PRECOND_BJACOB_ILU0:
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-
-      if (cs_param_sles_hypre_from_petsc()) {
-
-        PCSetType(pc, PCHYPRE);
-        PCHYPRESetType(pc, "euclid");
-        _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
-
-      }
-      else
-        _petsc_bilu0_hook(slesp->name);
-
+#if defined(PETSC_HAVE_HYPRE)
+      PCSetType(pc, PCHYPRE);
+      PCHYPRESetType(pc, "euclid");
+      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+#else
+      _petsc_bilu0_hook(slesp->name);
+#endif
     }
     else
       _petsc_bilu0_hook(slesp->name);
@@ -582,21 +582,20 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
   case CS_PARAM_PRECOND_ILU0:
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
 
-      if (cs_param_sles_hypre_from_petsc()) {
+#if defined(PETSC_HAVE_HYPRE)
 
-        /* Euclid is a parallel version of the ILU(0) factorisation */
-        PCSetType(pc, PCHYPRE);
-        PCHYPRESetType(pc, "euclid");
-        _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+      /* Euclid is a parallel version of the ILU(0) factorisation */
+      PCSetType(pc, PCHYPRE);
+      PCHYPRESetType(pc, "euclid");
+      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
 
-      }
-      else {
+#else
 
-        _petsc_bilu0_hook(slesp->name);
-        if (cs_glob_n_ranks > 1)  /* Switch to a block version */
-          slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+      _petsc_bilu0_hook(slesp->name);
+      if (cs_glob_n_ranks > 1)  /* Switch to a block version */
+        slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
 
-      }
+#endif
 
     }
     else {
