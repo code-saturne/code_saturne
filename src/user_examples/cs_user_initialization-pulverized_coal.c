@@ -142,7 +142,8 @@ cs_user_initialization(cs_domain_t     *domain)
   /* Computation of h1init and t1init */
 
   cs_real_t t1init = fprops->t0;
-  cs_real_t h1init = cs_coal_thconvers1(coefe, f1mc, f2mc, t1init);
+  cs_real_t h1init
+    = cs_coal_ht_convert_h_to_t_gas_by_yi(t1init, coefe, f1mc, f2mc);
 
   cs_real_t *cvar_h = CS_F_(h)->val;
 

@@ -204,15 +204,27 @@ logical(kind=c_bool) :: log_active
 
 interface
 
-  function cs_coal_thconvers1(xesp, f1mc, f2mc, tp)  result(eh) &
-    bind(C, name='cs_coal_thconvers1')
+  function cs_coal_ht_convert_t_to_h_gas_by_yi  &
+   (tp, xesp, f1mc, f2mc)  result(eh) &
+    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi')
     use, intrinsic :: iso_c_binding
     implicit none
+    real(c_double), value :: tp
     real(c_double), dimension(*) :: xesp
     real(c_double), dimension(*) :: f1mc, f2mc
-    real(c_double), value :: tp
     real(c_double) :: eh
-  end function cs_coal_thconvers1
+  end function cs_coal_ht_convert_t_to_h_gas_by_yi
+
+  function cs_coal_ht_convert_h_to_t_gas_by_yi   &
+    (eh, xesp, f1mc, f2mc)  result(tp) &
+    bind(C, name='cs_coal_ht_convert_h_to_t_gas_by_yi')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), value :: eh
+    real(c_double), dimension(*) :: xesp
+    real(c_double), dimension(*) :: f1mc, f2mc
+    real(c_double) :: tp
+  end function cs_coal_ht_convert_h_to_t_gas_by_yi
 
 end interface
 
@@ -719,7 +731,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
     enddo
     f1mc(numcha) = 1.d0
 
-    xhdev1 = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+    xhdev1 = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
     !        H(mv2,T2)
 
@@ -743,7 +755,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
     enddo
     f2mc(numcha) = 1.d0
 
-    xhdev2 = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+    xhdev2 = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
     !         Contribution to explicit and implicit balances
 
@@ -768,7 +780,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
     enddo
 
     t2        = cpro_temp2(iel)
-    xhco      = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+    xhco      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
     !        Calculation of HO2(T1)
 
@@ -782,7 +794,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
     enddo
 
     t1        = cpro_temp(iel)
-    xho2      = cs_coal_thconvers1(coefe, f1mc, f2mc, t1)
+    xho2      = cs_coal_ht_convert_t_to_h_gas_by_yi(t1, coefe, f1mc, f2mc)
 
     !         Contribution to explicit and implicit balances
 
@@ -821,7 +833,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
       enddo
 
       t2        = cpro_temp2(iel)
-      xhco      = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+      xhco      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
       !        Calculation of HCO2(T1)
 
@@ -835,7 +847,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
       enddo
 
       t1        = cpro_temp(iel)
-      xhco2     = cs_coal_thconvers1(coefe, f1mc, f2mc, t1)
+      xhco2     = cs_coal_ht_convert_t_to_h_gas_by_yi(t1, coefe, f1mc, f2mc)
 
       !         Contribution to explicit and implicit balances
 
@@ -877,7 +889,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
       enddo
 
       t2        = cpro_temp2(iel)
-      xhco      = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+      xhco      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
       !        Calculation of HH2(T2)
 
@@ -891,7 +903,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
       enddo
 
       t2        = cpro_temp2(iel)
-      xhh2      = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+      xhh2      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
       !        Calculation of HH2O(T1)
 
@@ -905,7 +917,7 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
       enddo
 
       t1        = cpro_temp(iel)
-      xhh2o     = cs_coal_thconvers1(coefe, f1mc, f2mc, t1)
+      xhh2o     = cs_coal_ht_convert_t_to_h_gas_by_yi(t1, coefe, f1mc, f2mc)
 
       !         Contribution to explicit and implicit balances
 
@@ -1643,7 +1655,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         f2mc(icha) = zero
       enddo
       t2        = tfuel(iel)
-      xhco      = cs_coal_thconvers1(coefe, f1mc, f2mc,  t2)
+      xhco      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
       !  Calculation of HO2(T1)
 
@@ -1656,7 +1668,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         f2mc(icha) = zero
       enddo
       t1        = cpro_temp(iel)
-      xho2      = cs_coal_thconvers1(coefe, f1mc, f2mc, t1)
+      xho2      = cs_coal_ht_convert_t_to_h_gas_by_yi(t1, coefe, f1mc, f2mc)
 
       do icla=1,nclacp
         if (cvara_xck(icla)%p(iel) .gt. epsicp) then
@@ -1694,7 +1706,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         enddo
 
         t2        = tfuel(iel)
-        xhco      = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+        xhco      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
         !  Calculation of HCO2(T1)
 
@@ -1707,7 +1719,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           f2mc(icha) = zero
         enddo
         t1        = cpro_temp(iel)
-        xhco2     = cs_coal_thconvers1(coefe, f1mc, f2mc, t1)
+        xhco2     = cs_coal_ht_convert_t_to_h_gas_by_yi(t1, coefe, f1mc, f2mc)
 
         do icla=1,nclacp
           if (cvara_xck(icla)%p(iel) .gt. epsicp) then
@@ -1748,7 +1760,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         enddo
 
         t2        = tfuel(iel)
-        xhco      = cs_coal_thconvers1(coefe, f1mc, f2mc,  t2)
+        xhco      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
         !      Calculation of HH2(T2)
 
@@ -1762,7 +1774,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         enddo
 
         t2        = tfuel(iel)
-        xhh2      = cs_coal_thconvers1(coefe, f1mc, f2mc, t2)
+        xhh2      = cs_coal_ht_convert_t_to_h_gas_by_yi(t2, coefe, f1mc, f2mc)
 
         !       Calculation of HH2O(T1)
 
@@ -1775,7 +1787,7 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           f2mc(icha) = zero
         enddo
         t1        = cpro_temp(iel)
-        xhh2o     = cs_coal_thconvers1(coefe, f1mc, f2mc, t1)
+        xhh2o     = cs_coal_ht_convert_t_to_h_gas_by_yi(t1, coefe, f1mc, f2mc)
 
         do icla=1,nclacp
           if (cvara_xck(icla)%p(iel) .gt. epsicp) then

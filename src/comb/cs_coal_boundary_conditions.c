@@ -47,6 +47,7 @@
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
 #include "cs_coal.h"
+#include "cs_coal_ht_convert.h"
 #include "cs_combustion_model.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -405,9 +406,9 @@ cs_coal_boundary_conditions(int  bc_type[])
       BFT_MALLOC(age_rcodcl1, cm->nclacp, cs_real_t *);
 
       for (int icla = 0; icla < cm->nclacp; icla++) {
-        char name[16];
-        snprintf(name, 15, "n_p_age_%02d", icla+1);
-        name[15] = '\0';
+        char name[20];
+        snprintf(name, 19, "n_p_age_%02d", icla+1);
+        name[19] = '\0';
         cs_field_t *f_p_age = cs_field_by_name(name);
         age_rcodcl1[icla] = f_p_age->bc_coeffs->rcodcl1;
       }
@@ -636,7 +637,7 @@ cs_coal_boundary_conditions(int  bc_type[])
         f2mc[icha] = 0;
       }
 
-      h1 = cs_coal_thconvers1(coefe, f1mc, f2mc, ci->t_air);
+      h1 = cs_coal_ht_convert_t_to_h_gas_by_yi(ci->t_air, coefe, f1mc, f2mc);
 
     }
 

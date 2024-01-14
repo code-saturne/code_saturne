@@ -765,26 +765,6 @@ cs_coal_rad_transfer_st(const cs_field_t  *f,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute gas enthalpy
- *        Function with gas temperature and concentrations
- *
- * \param[in] xesp      mass fraction of species
- * \param[in] f1mc      average f1
- * \param[in] f2mc      average f2
- * \param[in] tp        gas temperature (in kelvin)
- *
- * \return   gas enthalpy (in \f$ j . kg^{-1}) \f$ of mixed gas
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_coal_thconvers1(const double  xesp[],
-                   const double  f1mc[],
-                   const double  f2mc[],
-                   cs_real_t     tp);
-
-/*----------------------------------------------------------------------------*/
-/*
  * \brief Compute particles enthalpy
  *         Function with temperature and concentrations
 

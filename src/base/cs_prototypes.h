@@ -219,23 +219,6 @@ cs_coal_bt2h(cs_lnum_t        n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Calculation of the gas temperature
- *        Function with the gas enthalpy and concentrations
- *
- * \param[in]      location_id   mesh location id (cells or boundary faces)
- * \param[in]      eh            gas enthalpy
- *                               (\f$ j . kg \f$ of gaseous mixture)
- * \param[in, out] tp            gas temperature (in kelvin)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_coal_thfieldconv1(int              location_id,
-                     const cs_real_t  eh[],
-                     cs_real_t        tp[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Convert an enthalpy to temperature value for gas combustion.
  *
  * \param[in]     x_sp    mass fraction of constituents

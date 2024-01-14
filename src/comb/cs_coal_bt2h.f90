@@ -100,15 +100,16 @@ type(pmapper_double_r1), dimension(:), allocatable :: cpro_x2, cpro_ym1
 
 interface
 
-  function cs_coal_thconvers1(xesp, f1mc, f2mc, tp)  result(eh) &
-    bind(C, name='cs_coal_thconvers1')
+  function cs_coal_ht_convert_t_to_h_gas_by_yi  &
+   (tp, xesp, f1mc, f2mc)  result(eh) &
+    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi')
     use, intrinsic :: iso_c_binding
     implicit none
+    real(c_double), value :: tp
     real(c_double), dimension(*) :: xesp
     real(c_double), dimension(*) :: f1mc, f2mc
-    real(c_double), value :: tp
     real(c_double) :: eh
-  end function cs_coal_thconvers1
+  end function cs_coal_ht_convert_t_to_h_gas_by_yi
 
   function cs_coal_thconvers2(class_id, xsolid, temper) result(enthal) &
     bind(C, name='cs_coal_thconvers2')
@@ -209,7 +210,7 @@ do ilst = 1, n_faces
     coefe(ige) = cpro_ym1(ige)%p(iel)
   enddo
 
-  hf = cs_coal_thconvers1(coefe, f1mc, f2mc, tbl)
+  hf = cs_coal_ht_convert_t_to_h_gas_by_yi(tbl, coefe, f1mc, f2mc)
 
   h_b(ifac) = (1.d0-x2t)*hf+x2h2
 

@@ -1,5 +1,5 @@
 /*============================================================================
- * Enthaly to and from temperature conversion.
+ * Coal combustion model: enthaly to and from temperature conversion.
  *============================================================================*/
 
 /*
@@ -44,10 +44,11 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 
-#include "cs_elec_model.h"
+#include "cs_coal.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
@@ -58,7 +59,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_ht_convert.h"
+#include "cs_coal_ht_convert.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,16 +70,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_ht_convert.c
-        Enthalpy to and from temperature conversion.
-
-        Other fields may be involved in the conversion.
-
-        TODO: when possible (based on calling functions's conversion to C)
-              a function pointer-based logic would allow migrating this
-              functionnality to cs_physical_properties, without adding
-              high level physical model dependencies (i.e. cs_physical_model.h)
-              to that lower-level API.
+  \file cs_coal ht_convert.c
+        Enthalpy to and from temperature conversion for coal combustion.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -86,20 +79,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Prototypes for Fortran subroutines
  *============================================================================*/
-
-extern void CS_PROCF(coh2tb, COH2TB)
-(
-  const cs_real_t  *h,
-  cs_real_t        *t
-);
-
-extern void CS_PROCF(cot2hb, COT2HB)
-(
-  const cs_lnum_t  *n_faces,
-  const cs_lnum_t  *face_ids,
-  const cs_real_t  *t,
-  cs_real_t        *h
-);
 
 /*=============================================================================
  * Local macro definitions
@@ -121,538 +100,412 @@ extern void CS_PROCF(cot2hb, COT2HB)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Convert enthalpy to temperature at all cells.
+ * \brief Calculation of the gas temperature from gas enthalpy and
+ *        concentrations at cells for coal combustion.
  *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
- *
- * \param[in]   h   enthalpy values
- * \param[out]  t   temperature values
+ * \param[in]   location_id     mesh location id (cells or boundary faces)
+ * \param[in]   eh              gas enthalpy (j/kg of gaseous mixture)
+ * \param[out]  tp              gas temperature in kelvin
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
-                           cs_real_t        t[])
+cs_coal_ht_convert_h_to_t_gas(int              location_id,
+                              const cs_real_t  eh[],
+                              cs_real_t        tp[])
 {
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
 
-  const int *pm_flag = cs_glob_physical_model_flag;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  bool need_solid_default = (mq->has_disable_flag) ? true : false;
+  const cs_coal_model_t  *cm = cs_glob_coal_model;
 
-  cs_real_t *cpro_t = NULL;
-
-  /* Gas combustion: premixed or diffusion flame */
-  if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0
-      || pm_flag[CS_COMBUSTION_SLFM]>= 0)
-    cpro_t = CS_F_(t)->val;
-
-  /* Pulverized coal combustion */
-  else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cpro_t = CS_F_(t)->val;
-
-  /* Electric arcs */
-  else if (   pm_flag[CS_JOULE_EFFECT] >= 1
-           || pm_flag[CS_ELECTRIC_ARCS] >= 1)
-    cpro_t = CS_F_(t)->val;
-
-  /* When temperature maintained by model is available
-     ------------------------------------------------- */
-
-  if (cpro_t != NULL) {
-
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      t[i] = cpro_t[i];
-
-  }
-
-  /* Default for other cases
-     ----------------------- */
-
+  cs_lnum_t n_elts = 0;
+  if (location_id == CS_MESH_LOCATION_CELLS)
+    n_elts = mesh->n_cells;
+  else if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+    n_elts = mesh->n_b_faces;
   else {
-
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_cells; i++)
-        t[i] = h[i] / cpro_cp[i];
-    }
-    else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_cells; i++)
-        t[i] = h[i] / cp0;
-    }
-
-    need_solid_default = false;
-
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _(" %s: called for mesh location %d but only handles locations:\n"
+         "   CS_MESH_LOCATION_CELLS:\n"
+         "   CS_MESH_LOCATION_BOUNDARY_FACES."), __func__, location_id);
   }
 
-  /* Handle solid zones */
+  int ichx1 = cm->ichx1 -1;
+  int ichx2 = cm->ichx2 -1;
+  int ico = cm->ico -1;
+  int ih2s = cm->ih2s -1;
+  int ihy =cm->ihy -1;
+  int ihcn = cm->ihcn -1;
+  int inh3 = cm->inh3 -1;
+  int io2 = cm->io2 -1;
+  int ico2 = cm->ico2 -1;
+  int ih2o = cm->ih2o -1;
+  int iso2 = cm->iso2 -1;
+  int in2 = cm->in2 -1;
 
-  if (need_solid_default) {
+  const cs_real_t *fuel1 = cs_field_by_id(cm->iym1[ichx1])->val;
+  const cs_real_t *fuel2 = cs_field_by_id(cm->iym1[ichx2])->val;
+  const cs_real_t *fuel3 = cs_field_by_id(cm->iym1[ico])->val;
+  const cs_real_t *fuel4 = cs_field_by_id(cm->iym1[ih2s])->val;
+  const cs_real_t *fuel5 = cs_field_by_id(cm->iym1[ihy])->val;
+  const cs_real_t *fuel6 = cs_field_by_id(cm->iym1[ihcn])->val;
+  const cs_real_t *fuel7 = cs_field_by_id(cm->iym1[inh3])->val;
+  const cs_real_t *oxyd = cs_field_by_id(cm->iym1[io2])->val;
+  const cs_real_t *prod1 = cs_field_by_id(cm->iym1[ico2])->val;
+  const cs_real_t *prod2 = cs_field_by_id(cm->iym1[ih2o])->val;
+  const cs_real_t *prod3 = cs_field_by_id(cm->iym1[iso2])->val;
+  const cs_real_t *xiner = cs_field_by_id(cm->iym1[in2])->val;
 
-    const int *disable_flag = mq->c_disable_flag;
+  // Mass fraction of gas
+  const cs_real_t *x1 = cs_field_by_name("x_c")->val;
 
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        if (disable_flag[i])
-          t[i] = h[i] / cpro_cp[i];
-      }
-    }
-    else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        if (disable_flag[i])
-          t[i] = h[i] / cp0;
-      }
-    }
+  const cs_real_t *cvar_f1m[CS_COMBUSTION_MAX_COALS];
+  const cs_real_t *cvar_f2m[CS_COMBUSTION_MAX_COALS];
 
+  for (int icha = 0; icha < cm->n_coals; icha++) {
+    cvar_f1m[icha] = cs_field_by_id(cm->if1m[icha])->val;
+    cvar_f2m[icha] = cs_field_by_id(cm->if1m[icha])->val;
   }
 
-  /* Allow user functions */
+  # pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
 
-  int n_zones = cs_volume_zone_n_zones();
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+    cs_real_t f1mc[CS_COMBUSTION_MAX_COALS];
+    cs_real_t f2mc[CS_COMBUSTION_MAX_COALS];
+    cs_real_t xesp[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
 
-    /* Note: we could restrict this to
-       z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES
-       but the user can also easily handle this */
+    cs_lnum_t elt_id = elt_idx;
+    if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+      elt_id = b_face_cells[elt_idx];
 
-    cs_user_physical_properties_h_to_t(cs_glob_domain,
-                                       z,
-                                       false,  /* z_local */
-                                       h,
-                                       t);
+    /* Precompute quantities independent of interpolation point */
 
-  }
+    xesp[ichx1] = fuel1[elt_id];
+    xesp[ichx2] = fuel2[elt_id];
+    xesp[ico]   = fuel3[elt_id];
+    xesp[ih2s]  = fuel4[elt_id];
+    xesp[ihy]   = fuel5[elt_id];
+    xesp[ihcn]  = fuel6[elt_id];
+    xesp[inh3]  = fuel7[elt_id];
+    xesp[io2]   = oxyd[elt_id];
+    xesp[ico2]  = prod1[elt_id];
+    xesp[ih2o]  = prod2[elt_id];
+    xesp[iso2]  = prod3[elt_id];
+    xesp[in2]   = xiner[elt_id];
+
+    for (int icha = 0; icha < cm->n_coals; icha++) {
+      f1mc[icha] = cvar_f1m[icha][elt_id] / x1[elt_id];
+      f2mc[icha] = cvar_f2m[icha][elt_id] / x1[elt_id];
+    }
+
+    /* Now interpolate values */
+
+    tp[elt_idx]
+      = cs_coal_ht_convert_h_to_t_gas_by_yi(eh[elt_idx], xesp, f1mc, f2mc);
+
+  } /* Loop on cells */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Convert enthalpy to temperature at solid cells only.
+ * \brief Calculation of the gas temperature from gas enthalpy and
+ *        given mass fractions for coal combustion.
  *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
+ * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
+ *
+ * \return  gas temperature (in kelvin)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_ht_convert_h_to_t_cells_solid(void)
+cs_real_t
+cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
+                                    const cs_real_t  xesp[],
+                                    const cs_real_t  f1mc[],
+                                    const cs_real_t  f2mc[])
 {
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  if (mq->has_disable_flag == 0 || CS_F_(h) == NULL || CS_F_(t) == NULL)
-    return;
+  cs_real_t  tp = -HUGE_VAL;
 
-  const cs_real_t *h = CS_F_(h)->val;
-  cs_real_t *t = CS_F_(t)->val;
+  const cs_coal_model_t  *cm = cs_glob_coal_model;
 
-  int n_zones = cs_volume_zone_n_zones();
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+  int ichx1 = cm->ichx1 -1;
+  int ichx2 = cm->ichx2 -1;
+  int ico = cm->ico -1;
+  int ih2s = cm->ih2s -1;
+  int ihy = cm->ihy -1;
+  int ihcn = cm->ihcn -1;
+  int inh3 = cm->inh3 -1;
+  int io2 = cm->io2 -1;
+  int ico2 = cm->ico2 -1;
+  int ih2o = cm->ih2o -1;
+  int iso2 = cm->iso2 -1;
+  int in2 = cm->in2 -1;
 
-    if (   z->type & CS_VOLUME_ZONE_SOLID
-        && z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+  cs_real_t den1[CS_COMBUSTION_MAX_COALS];
+  cs_real_t den2[CS_COMBUSTION_MAX_COALS];
 
-      const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-      if (f_cp != NULL) {
-        const cs_real_t *cpro_cp = f_cp->val;
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          cs_lnum_t c_id = z->elt_ids[i];
-          t[c_id] = h[c_id] / cpro_cp[c_id];
-        }
+  cs_real_t ychx10 = 0, ychx20 = 0;
+
+  /* Precompute quantities independent of interpolation point */
+
+  for (int icha = 0; icha < cm->n_coals; icha++) {
+
+    int ichx1c_icha = cm->ichx1c[icha] -1;
+    int ichx2c_icha = cm->ichx2c[icha] -1;
+
+    den1[icha] = 1. / (  cm->a1[icha]*cm->wmole[ichx1c_icha]
+                       + cm->b1[icha]*cm->wmole[ico]
+                       + cm->c1[icha]*cm->wmole[ih2o]
+                       + cm->d1[icha]*cm->wmole[ih2s]
+                       + cm->e1[icha]*cm->wmole[ihcn]
+                       + cm->f1[icha]*cm->wmole[inh3]);
+
+    ychx10 += den1[icha]*(f1mc[icha]*cm->a1[icha]*cm->wmole[ichx1c_icha]);
+
+    den2[icha] = 1. / (  cm->a2[icha]*cm->wmole[ichx2c_icha]
+                       + cm->b2[icha]*cm->wmole[ico]
+                       + cm->c2[icha]*cm->wmole[ih2o]
+                       + cm->d2[icha]*cm->wmole[ih2s]
+                       + cm->e2[icha]*cm->wmole[ihcn]
+                       + cm->f2[icha]*cm->wmole[inh3]);
+
+    ychx20 += den2[icha]*(f2mc[icha]*cm->a2[icha]*cm->wmole[ichx2c_icha]);
+
+  }
+
+  /* Calculation of enthalpy of the gaseous species CHx1m
+   *                                            and CHx2m at */
+
+  cs_real_t eh0 = -HUGE_VAL;
+
+  for (int i = 0; i < cm->n_tab_points && tp <= -HUGE_VAL; i++) {
+
+    cs_real_t ehchx1 = 0, ehchx2 = 0;
+
+    if (ychx10 > cs_math_epzero) {
+      for (int icha = 0; icha < cm->n_coals; icha++) {
+        int ichx1c_icha = cm->ichx1c[icha] -1;
+        ehchx1 +=   den1[icha]
+                  * (  cm->ehgaze[i][ichx1c_icha]
+                     * f1mc[icha]
+                     * cm->a1[icha]
+                     * cm->wmole[ichx1c_icha]);
+      }
+      ehchx1 /= ychx10;
+    }
+    else
+      ehchx1 = cm->ehgaze[i][ichx1];
+
+    if (ychx20 > cs_math_epzero) {
+      for (int icha = 0; icha < cm->n_coals; icha++) {
+        int ichx2c_icha = cm->ichx2c[icha] -1;
+        ehchx2 +=   den2[icha]
+                  * (  cm->ehgaze[i][ichx2c_icha]
+                     * f2mc[icha]
+                     * cm->a2[icha]
+                     * cm->wmole[ichx2c_icha]);
+      }
+      ehchx2 /= ychx20;
+    }
+    else
+      ehchx2 = cm->ehgaze[i][ichx2];
+
+    cs_real_t eh1 =   xesp[ichx1]*ehchx1
+                    + xesp[ichx2]*ehchx2
+                    + xesp[ico]  *cm->ehgaze[i][ico ]
+                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
+                    + xesp[ihy]  *cm->ehgaze[i][ihy]
+                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
+                    + xesp[inh3] *cm->ehgaze[i][inh3]
+                    + xesp[io2]  *cm->ehgaze[i][io2]
+                    + xesp[ico2] *cm->ehgaze[i][ico2]
+                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
+                    + xesp[iso2] *cm->ehgaze[i][iso2]
+                    + xesp[in2]  *cm->ehgaze[i][in2];
+
+    /* Interpolate, with clipping at bounds */
+
+    if (eh <= eh1) {
+      if (i == 0)
+        tp = cm->th[0];
+      else {
+        assert(eh >= eh0);
+        tp = cm->th[i-1] + (eh-eh0) * (cm->th[i]-cm->th[i-1]) / (eh1-eh0);
+      }
+    }
+    else if (i == cm->n_tab_points-1) {
+      tp = cm->th[i];
+    }
+
+    eh0 = eh1;
+
+  } /* loop on interpolation points */
+
+  return tp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the gas temperature from gas enthalpy and
+ *        given mass fractions for coal combustion.
+ *
+ * \param[in]  tp            gas temperature (in kelvin)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
+ *
+ * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
+                                    const cs_real_t  xesp[],
+                                    const cs_real_t  f1mc[],
+                                    const cs_real_t  f2mc[])
+{
+  cs_real_t  eh = -HUGE_VAL;
+
+  const cs_coal_model_t  *cm = cs_glob_coal_model;
+
+  int ichx1 = cm->ichx1 -1;
+  int ichx2 = cm->ichx2 -1;
+  int ico = cm->ico -1;
+  int ih2s = cm->ih2s -1;
+  int ihy = cm->ihy -1;
+  int ihcn = cm->ihcn -1;
+  int inh3 = cm->inh3 -1;
+  int io2 = cm->io2 -1;
+  int ico2 = cm->ico2 -1;
+  int ih2o = cm->ih2o -1;
+  int iso2 = cm->iso2 -1;
+  int in2 = cm->in2 -1;
+
+  cs_real_t den1[CS_COMBUSTION_MAX_COALS];
+  cs_real_t den2[CS_COMBUSTION_MAX_COALS];
+
+  cs_real_t ychx10 = 0, ychx20 = 0;
+
+  /* Precompute quantities independent of interpolation point */
+
+  for (int icha = 0; icha < cm->n_coals; icha++) {
+
+    int ichx1c_icha = cm->ichx1c[icha] -1;
+    int ichx2c_icha = cm->ichx2c[icha] -1;
+
+    den1[icha] = 1. / (  cm->a1[icha]*cm->wmole[ichx1c_icha]
+                       + cm->b1[icha]*cm->wmole[ico]
+                       + cm->c1[icha]*cm->wmole[ih2o]
+                       + cm->d1[icha]*cm->wmole[ih2s]
+                       + cm->e1[icha]*cm->wmole[ihcn]
+                       + cm->f1[icha]*cm->wmole[inh3]);
+
+    ychx10 += den1[icha]*(f1mc[icha]*cm->a1[icha]*cm->wmole[ichx1c_icha]);
+
+    den2[icha] = 1. / (  cm->a2[icha]*cm->wmole[ichx2c_icha]
+                       + cm->b2[icha]*cm->wmole[ico]
+                       + cm->c2[icha]*cm->wmole[ih2o]
+                       + cm->d2[icha]*cm->wmole[ih2s]
+                       + cm->e2[icha]*cm->wmole[ihcn]
+                       + cm->f2[icha]*cm->wmole[inh3]);
+
+    ychx20 += den2[icha]*(f2mc[icha]*cm->a2[icha]*cm->wmole[ichx2c_icha]);
+
+  }
+
+  /* Calculation of enthalpy of the gaseous species CHx1m
+   *                                            and CHx2m at */
+
+  cs_real_t eh0 = -HUGE_VAL;
+
+  int s_id = 0, e_id = cm->n_tab_points;
+
+  if (tp <= cm->th[0])
+    e_id = 1;
+  else if (tp >= cm->th[cm->n_tab_points - 1])
+    s_id = cm->n_tab_points - 1;
+  else {
+    for (int i = 1; i < cm->n_tab_points; i++) {
+      if (tp <= cm->th[i]) {
+        s_id = i-1;
+        e_id = i+1;
+        break;
+      }
+    }
+  }
+
+  for (int i = s_id; i < e_id && eh <= -HUGE_VAL; i++) {
+
+    cs_real_t ehchx1 = 0, ehchx2 = 0;
+
+    if (ychx10 > cs_math_epzero) {
+      for (int icha = 0; icha < cm->n_coals; icha++) {
+        int ichx1c_icha = cm->ichx1c[icha] -1;
+        ehchx1 +=   den1[icha]
+                  * (  cm->ehgaze[i][ichx1c_icha]
+                     * f1mc[icha]
+                     * cm->a1[icha]
+                     * cm->wmole[ichx1c_icha]);
+      }
+      ehchx1 /= ychx10;
+    }
+    else
+      ehchx1 = cm->ehgaze[i][ichx1];
+
+    if (ychx20 > cs_math_epzero) {
+      for (int icha = 0; icha < cm->n_coals; icha++) {
+        int ichx2c_icha = cm->ichx2c[icha] -1;
+        ehchx2 +=   den2[icha]
+                  * (  cm->ehgaze[i][ichx2c_icha]
+                     * f2mc[icha]
+                     * cm->a2[icha]
+                     * cm->wmole[ichx2c_icha]);
+      }
+      ehchx2 /= ychx20;
+    }
+    else
+      ehchx2 = cm->ehgaze[i][ichx2];
+
+    cs_real_t eh1 =   xesp[ichx1]*ehchx1
+                    + xesp[ichx2]*ehchx2
+                    + xesp[ico]  *cm->ehgaze[i][ico ]
+                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
+                    + xesp[ihy]  *cm->ehgaze[i][ihy]
+                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
+                    + xesp[inh3] *cm->ehgaze[i][inh3]
+                    + xesp[io2]  *cm->ehgaze[i][io2]
+                    + xesp[ico2] *cm->ehgaze[i][ico2]
+                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
+                    + xesp[iso2] *cm->ehgaze[i][iso2]
+                    + xesp[in2]  *cm->ehgaze[i][in2];
+
+    /* Interpolate, with clipping at bounds */
+
+    /* Linear interpolation */
+    if (e_id - s_id == 2) {
+      if (i == s_id) {
+        /* First pass: prepare for second */
+        eh0 = eh1;
       }
       else {
-        const double cp0 = cs_glob_fluid_properties->cp0;
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          cs_lnum_t c_id = z->elt_ids[i];
-          t[c_id] = h[c_id] / cp0;
-        }
-      }
-
-      cs_user_physical_properties_h_to_t(cs_glob_domain,
-                                         z,
-                                         false,  /* z_local */
-                                         h,
-                                         t);
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert enthalpy to temperature at all boundary faces.
- *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
- *
- * \param[in]   h   enthalpy values
- * \param[out]  t   temperature values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ht_convert_h_to_t_faces(const cs_real_t  h[],
-                           cs_real_t        t[])
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t has_dc = mq->has_disable_flag;
-
-  bool need_solid_default = (has_dc) ? true : false;
-
-  const int *pm_flag = cs_glob_physical_model_flag;
-
-  /* Gas combustion: premixed or diffusion flame */
-  if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0
-      || pm_flag[CS_COMBUSTION_SLFM]>= 0)
-    CS_PROCF(coh2tb, COH2TB)(h, t);
-
-  /* Pulverized coal combustion */
-  else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_thfieldconv1(CS_MESH_LOCATION_BOUNDARY_FACES, h, t);
-
-  /* Electric arcs */
-  else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
-    cs_elec_convert_h_to_t_faces(h, t);
-
-  /* Default for other cases
-     ----------------------- */
-
-  else {
-
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-        cs_lnum_t c_id = b_face_cells[i];
-        t[i] = h[i] / cpro_cp[c_id];
+        /* Second pass: compute value */
+        eh = eh0 + (eh1-eh0) * (tp-cm->th[i-1]) / (cm->th[i]-cm->th[i-1]);
       }
     }
+
+    /* Clipping at lower or upper bound */
     else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_b_faces; i++)
-        t[i] = h[i] / cp0;
+      assert(e_id - s_id == 1);
+      eh = eh1;
     }
 
-    need_solid_default = false;
+  } /* loop on interpolation points */
 
-  }
-
-  /* Default for solid zones
-     ----------------------- */
-
-  if (need_solid_default) {
-
-    assert(has_dc == 1);
-    const int *disable_flag = mq->c_disable_flag;
-
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-        cs_lnum_t c_id = b_face_cells[i];
-        if (disable_flag[c_id])
-          t[i] = h[i] / cpro_cp[c_id];
-      }
-    }
-    else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-        cs_lnum_t c_id = b_face_cells[i];
-        if (disable_flag[c_id])
-          t[i] = h[i] / cp0;
-      }
-    }
-
-  }
-
-  /* Allow user functions */
-
-  int n_zones = cs_boundary_zone_n_zones();
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
-
-    cs_user_physical_properties_h_to_t(cs_glob_domain,
-                                       z,
-                                       false,  /* z_local */
-                                       h,
-                                       t);
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert temperature to enthalpy at selected boundary faces.
- *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
- *
- * \param[in]   n_faces   number of selected boundary faces
- * \param[in]   face_ids  list of associated face ids
- * \param[in]   t         temperature values
- * \param[out]  h         enthalpy values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
-                             const cs_lnum_t  face_ids[],
-                             const cs_real_t  t[],
-                             cs_real_t        h[])
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t has_dc = mq->has_disable_flag;
-
-  const int *pm_flag = cs_glob_physical_model_flag;
-
-  bool need_solid_default = (has_dc) ? true : false;
-
-  /* Gas combustion: premixed or diffusion flame */
-  if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0
-      || pm_flag[CS_COMBUSTION_SLFM] >= 0)
-    CS_PROCF(cot2hb, COT2HB)(&n_faces, face_ids, t, h);
-
-  /* Pulverized coal combustion */
-  else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_bt2h(n_faces, face_ids, t, h);
-
-  /* Electric arcs */
-  else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
-    cs_elec_convert_t_to_h_faces(n_faces,  face_ids, t, h);
-
-  /* Default for other cases
-     ----------------------- */
-
-  else {
-
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        cs_lnum_t f_id = face_ids[i];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        h[f_id] = t[f_id] * cpro_cp[c_id];
-      }
-    }
-    else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        cs_lnum_t f_id = face_ids[i];
-        h[f_id] = t[f_id] * cp0;
-      }
-    }
-
-    need_solid_default = false;
-
-  }
-
-  /* Default for solid zones
-     ----------------------- */
-
-  if (need_solid_default) {
-
-    assert(has_dc == 1);
-    const int *disable_flag = mq->c_disable_flag;
-
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        cs_lnum_t f_id = face_ids[i];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        if (disable_flag[c_id])
-          h[f_id] = t[f_id] * cpro_cp[c_id];
-      }
-    }
-    else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        cs_lnum_t f_id = face_ids[i];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        if (disable_flag[c_id])
-          h[f_id] = t[f_id] * cp0;
-      }
-    }
-
-  }
-
-  /* Allow user functions */
-
-  cs_real_t *h_f;
-  BFT_MALLOC(h_f, n_b_faces, cs_real_t);
-  for (cs_lnum_t i = 0; i < n_b_faces; i++)
-    h_f[i] = h[i];
-
-  int n_zones = cs_boundary_zone_n_zones();
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
-
-    cs_user_physical_properties_t_to_h(cs_glob_domain,
-                                       z,
-                                       false,  /* z_local */
-                                       t,
-                                       h_f);
-  }
-
-  for (cs_lnum_t i = 0; i < n_faces; i++) {
-    cs_lnum_t f_id = face_ids[i];
-    h[f_id] = h_f[f_id];
-  }
-
-  BFT_FREE(h_f);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert temperature to enthalpy for a given boundary zone,
- *        using dense storage for temperature and enthalpy arrays.
- *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
- *
- * \param[in]   z  pointer to selected zone.
- * \param[in]   t  temperature values
- * \param[out]  h  enthalpy values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
-                             const cs_real_t  t[],
-                             cs_real_t        h[])
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-  const cs_lnum_t has_dc = mq->has_disable_flag;
-
-  const cs_lnum_t  n_faces = z->n_elts;
-  const cs_lnum_t  *face_ids = z->elt_ids;
-
-  const int *pm_flag = cs_glob_physical_model_flag;
-
-  bool need_solid_default = (has_dc) ? true : false;
-
-  cs_real_t *t_b = NULL, *h_b = NULL;
-
-  if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0
-      || pm_flag[CS_COMBUSTION_SLFM] >= 0
-      || pm_flag[CS_COMBUSTION_COAL] >= 0
-      || (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)) {
-
-    BFT_MALLOC(t_b, m->n_b_faces, cs_real_t);
-    BFT_MALLOC(h_b, m->n_b_faces, cs_real_t);
-
-    for (cs_lnum_t i = 0; i < n_faces; i++) {
-      cs_lnum_t f_id = face_ids[i];
-      t_b[f_id] = t[i];
-    }
-  }
-
-  /* Gas combustion: premixed or diffusion flame */
-  if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0
-      || pm_flag[CS_COMBUSTION_SLFM] >= 0)
-    CS_PROCF(cot2hb, COT2HB)(&n_faces, face_ids, t_b, h_b);
-
-  /* Pulverized coal combustion */
-  else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_bt2h(n_faces, face_ids, t_b, h_b);
-
-  /* Electric arcs */
-  else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
-    cs_elec_convert_t_to_h_faces(n_faces,  face_ids, t_b, h_b);
-
-  /* Default for other cases
-     ----------------------- */
-
-  else {
-
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        cs_lnum_t f_id = face_ids[i];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        h[i] = t[i] * cpro_cp[c_id];
-      }
-    }
-    else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        h[i] = t[i] * cp0;
-      }
-    }
-
-    need_solid_default = false;
-
-  }
-
-  /* Gather values if scattered */
-
-  if (h_b != NULL) {
-    for (cs_lnum_t i = 0; i < n_faces; i++) {
-      cs_lnum_t f_id = face_ids[i];
-      h[i] = h_b[f_id];
-    }
-
-    BFT_FREE(t_b);
-    BFT_FREE(h_b);
-  }
-
-  /* Default for solid zones
-     ----------------------- */
-
-  if (need_solid_default) {
-
-    assert(has_dc == 1);
-    const int *disable_flag = mq->c_disable_flag;
-
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    if (f_cp != NULL) {
-      const cs_real_t *cpro_cp = f_cp->val;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        cs_lnum_t f_id = face_ids[i];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        if (disable_flag[c_id])
-          h[i] = t[i] * cpro_cp[c_id];
-      }
-    }
-    else {
-      const double cp0 = cs_glob_fluid_properties->cp0;
-      for (cs_lnum_t i = 0; i < n_faces; i++) {
-        cs_lnum_t f_id = face_ids[i];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        if (disable_flag[c_id])
-          h[i] = t[i] * cp0;
-      }
-    }
-
-  }
-
-  /* Allow user functions */
-
-  cs_user_physical_properties_t_to_h(cs_glob_domain,
-                                     z,
-                                     true,  /* z_local */
-                                     t,
-                                     h);
+  return eh;
 }
 
 /*----------------------------------------------------------------------------*/

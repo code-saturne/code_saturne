@@ -1,8 +1,8 @@
-#ifndef __CS_HT_CONVERT_H__
-#define __CS_HT_CONVERT_H__
+#ifndef CS_COAL_HT_CONVERT_H
+#define CS_COAL_HT_CONVERT_H
 
 /*============================================================================
- * Enthaly to and from temperature conversion.
+ * Coal combustion model: enthaly to and from temperature conversion.
  *============================================================================*/
 
 /*
@@ -48,89 +48,62 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Convert enthalpy to temperature at all cells.
+ * \brief Calculation of the gas temperature from gas enthalpy and
+ *        concentrations at cells for coal combustion.
  *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
- *
- * \param[in]   h   enthalpy values
- * \param[out]  t   temperature values
+ * \param[in]       location_id     mesh location id (cells or boundary faces)
+ * \param[in]       eh              gas enthalpy (j/kg of gaseous mixture)
+ * \param[in, out]  tp              gas temperature in kelvin
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
-                           cs_real_t        t[]);
+cs_coal_ht_convert_h_to_t_gas(int              location_id,
+                              const cs_real_t  eh[],
+                              cs_real_t        tp[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert enthalpy to temperature at solid cells only.
+/*
+ * \brief Calculation of the gas temperature from gas enthalpy and
+ *        given mass fractions for coal combustion.
  *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
+ * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
+ *
+ * \return  gas temperature (in kelvin)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_ht_convert_h_to_t_cells_solid(void);
+cs_real_t
+cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
+                                    const cs_real_t  xesp[],
+                                    const cs_real_t  f1mc[],
+                                    const cs_real_t  f2mc[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert enthalpy to temperature at all boundary faces.
+/*
+ * \brief Calculation of the gas temperature from gas enthalpy and
+ *        given mass fractions for coal combustion.
  *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
+ * \param[in]  tp            gas temperature (in kelvin)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
  *
- * \param[in]   h   enthalpy values
- * \param[out]  t   temperature values
+ * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_ht_convert_h_to_t_faces(const cs_real_t  h[],
-                           cs_real_t        t[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert temperature to enthalpy at selected boundary faces.
- *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
- *
- * \param[in]   n_faces   number of selected boundary faces
- * \param[in]   face_ids  list of associated face ids
- * \param[in]   t         temperature values
- * \param[out]  h         enthalpy values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
-                             const cs_lnum_t  face_ids[],
-                             const cs_real_t  t[],
-                             cs_real_t        h[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert temperature to enthalpy for a given boundary zone,
- *        using dense storage for temperature and enthalpy arrays.
- *
- * This handles both user and model enthalpy conversions, so can be used
- * safely whenever conversion is needed.
- *
- * \param[in]   z  pointer to selected zone.
- * \param[in]   t  temperature values
- * \param[out]  h  enthalpy values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
-                             const cs_real_t  t[],
-                             cs_real_t        h[]);
+cs_real_t
+cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
+                                    const cs_real_t  xesp[],
+                                    const cs_real_t  f1mc[],
+                                    const cs_real_t  f2mc[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_HT_CONVERT_H__ */
+#endif /* CS_COAL_HT_CONVERT_H */

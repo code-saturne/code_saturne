@@ -44,6 +44,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 
+#include "cs_coal_ht_convert.h"
 #include "cs_elec_model.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -319,7 +320,7 @@ cs_ht_convert_h_to_t_faces(const cs_real_t  h[],
 
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_thfieldconv1(CS_MESH_LOCATION_BOUNDARY_FACES, h, t);
+    cs_coal_ht_convert_h_to_t_gas(CS_MESH_LOCATION_BOUNDARY_FACES, h, t);
 
   /* Electric arcs */
   else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)

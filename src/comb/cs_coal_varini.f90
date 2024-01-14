@@ -101,15 +101,16 @@ double precision, dimension(:), pointer :: cpro_x1, bpro_x1
 
 interface
 
-  function cs_coal_thconvers1(xesp, f1mc, f2mc, tp)  result(eh) &
-    bind(C, name='cs_coal_thconvers1')
+  function cs_coal_ht_convert_t_to_h_gas_by_yi   &
+    (tp, xesp, f1mc, f2mc)  result(eh) &
+    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi')
     use, intrinsic :: iso_c_binding
     implicit none
+    real(c_double), value :: tp
     real(c_double), dimension(*) :: xesp
     real(c_double), dimension(*) :: f1mc, f2mc
-    real(c_double), value :: tp
     real(c_double) :: eh
-  end function cs_coal_thconvers1
+  end function cs_coal_ht_convert_t_to_h_gas_by_yi
 
 end interface
 
@@ -172,7 +173,7 @@ if (isuite.eq.0) then
     f2mc(icha) = zero
   enddo
 
-  h1init = cs_coal_thconvers1(coefe, f1mc, f2mc, t1init)
+  h1init = cs_coal_ht_convert_t_to_h_gas_by_yi(t1init, coefe, f1mc, f2mc)
 
   do iel = 1, ncel
     cvar_scalt(iel) = h1init

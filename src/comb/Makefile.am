@@ -71,6 +71,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_coal.h \
 cs_coal_boundary_conditions.h \
+cs_coal_ht_convert.h \
 cs_comb_headers.h
 
 # Library source files
@@ -82,8 +83,8 @@ cs_coal.c \
 cs_coal_boundary_conditions.c \
 cs_coal_bt2h.f90 \
 cs_coal_fp2st.f90 \
-cs_coal_htconvers1.f90 \
 cs_coal_htconvers2.f90 \
+cs_coal_ht_convert.c \
 cs_coal_masstransfer.f90 \
 cs_coal_noxst.f90 \
 cs_coal_param.f90 \
@@ -93,7 +94,6 @@ cs_coal_physprop.f90 \
 cs_coal_prop.f90 \
 cs_coal_read_data.c \
 cs_coal_scast.f90 \
-cs_coal_thfieldconv1.f90 \
 cs_coal_thfieldconv2.f90 \
 cs_coal_varini.f90 \
 cs_coal_varpos.f90 \

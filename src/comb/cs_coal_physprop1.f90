@@ -173,14 +173,14 @@ data ipass / 0 /
 
 interface
 
-  subroutine cs_coal_thfieldconv1(location_id, eh, tp) &
-    bind(C, name='cs_coal_thfieldconv1')
+  subroutine cs_coal_ht_convert_h_to_t_gas(location_id, eh, tp) &
+    bind(C, name='cs_coal_ht_convert_h_to_t_gas')
 
     use, intrinsic :: iso_c_binding
     implicit none
     integer(c_int), value :: location_id
     real(kind=c_double), dimension(*) :: eh, tp
-  end subroutine cs_coal_thfieldconv1
+  end subroutine cs_coal_ht_convert_h_to_t_gas
 
 end interface
 
@@ -420,7 +420,7 @@ enddo
 call field_get_val_s(itemp,cpro_temp)
 call field_get_val_s(immel,cpro_mmel)
 
-call cs_coal_thfieldconv1(MESH_LOCATION_CELLS, enth, cpro_temp)
+call cs_coal_ht_convert_h_to_t_gas(MESH_LOCATION_CELLS, enth, cpro_temp)
 
 do iel = 1, ncel
   wmolme = cpro_cyf1(iel)/wmchx1(iel)                         &
