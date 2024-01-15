@@ -53,6 +53,10 @@
 #include "cs_sles_it_priv.h"
 #include "cs_multigrid_smoother.h"
 
+#if (HAVE_CUDA)
+#include "cs_sles_it_cuda.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -1961,6 +1965,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
     break;
 
   case CS_SLES_PCG:
+  case CS_SLES_FCG:
     if (poly_degree < 0)
       c->_pc = cs_sles_pc_none_create();
     else if (poly_degree == 0)
@@ -2046,6 +2051,11 @@ cs_multigrid_smoother_setup(void               *context,
 {
   cs_sles_it_t  *c = context;
 
+#if defined(HAVE_ACCEL)
+  bool on_device = (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST) ?
+    true : false;
+#endif
+
   const int diag_block_size = cs_matrix_get_diag_block_size(a);
 
   if (verbosity > 1) {
@@ -2112,6 +2122,16 @@ cs_multigrid_smoother_setup(void               *context,
           c->solve = _conjugate_gradient_npc_sr;
       }
     }
+    break;
+
+  case CS_SLES_FCG:
+    c->solve = _conjugate_gradient;
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_cuda_fcg;
+    }
+#endif
     break;
 
   case CS_SLES_PCR3:
