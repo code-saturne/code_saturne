@@ -118,7 +118,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("-l", "--log", dest="log_file", default="studymanager.log",
                       type="string",
-                      help="name of studymanager log file (default value is 'studymanager.log'")
+                      help="name of studymanager log file (default value is 'studymanager.log')")
 
     parser.add_option("-z", "--disable-tex",
                       action="store_true", dest="disable_tex", default=False,
@@ -174,10 +174,10 @@ def process_cmd_line(argv, pkg):
                       help="use resource settings based on given name")
 
     parser.add_option("--slurm-batch-size", dest="slurm_batch_size", default=0,
-                      type="int", help="number of cases per batch with slurm")
+                      type="int", help="maximum number of cases per batch with SLURM batch mode")
 
     parser.add_option("--slurm-batch-wtime", dest="slurm_batch_wtime", default=0,
-                      type="int", help="maximum wall time in hours per batch with slurm")
+                      type="int", help="maximum wall time in hours per batch with SLURM batch mode")
 
     parser.add_option("--slurm-batch-arg", dest="slurm_batch_args",
                       default=None, type=str, action='append',

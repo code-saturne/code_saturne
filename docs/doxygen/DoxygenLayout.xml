@@ -35,7 +35,9 @@
       <tab type="user" visible="yes" url="@ref advanced_solidification" title="Solidification module"/>
     </tab>
     </tab>
-    <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>
+    <tab type="usergroup" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool">
+      <tab type="user" visible="yes" url="@ref cs_ug_smgr_slurm" title="How to submit cases on cluster"/>
+    </tab>
     <tab type="usergroup" visible="yes" url="@ref cs_dg_developer_guide" title="Developer guide">
       <tab type="user" visible="yes" url="@ref cs_dg_coding_style" title="Coding style guidelines"/>
       <tab type="user" visible="yes" url="@ref cs_dg_common_constructs" title="Common constructs"/>

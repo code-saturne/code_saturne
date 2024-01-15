@@ -69,7 +69,7 @@ A complete and up-to-date list of command-line options may be obtained by runnin
 
 `code_saturne smgr -h`
 
-Majors command-line options are detailed here:
+Most command-line options are detailed here:
 
 - `-h, --help`: show the help message and exit
 - `-f FILE, --file=FILE`: give the parameters file for SMGR.
@@ -81,6 +81,9 @@ Majors command-line options are detailed here:
   **repository**
 - `-t, --test-compile`: compile all cases in the **repository**
 - `-r, --run`: create and run all cases in **destination**
+- `--state`: analyze state for all cases
+- `--n-procs=N_PROCS`: Optional number of processors requested for the
+  computations
 - `-n N_ITER, --n-iterations=N_ITER`: maximum number of iterations for cases of
   the study
 - `-c, --compare`: compare results files between **repository** and
@@ -88,9 +91,19 @@ Majors command-line options are detailed here:
 - `-d REFERENCE, --ref-dir=REFERENCE`: absolute reference directory to compare
   dest with
 - `-p, --post`: postprocess results of computations
+- `--report`: generate V&V description report
 - `-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...`: addresses for
   sending the reports
+- `-l LOG_FILE, --log=LOG_FILE`: name of studymanager log file (default value is
+  'studymanager.log')
+- `-z, --disable-tex`: disable text rendering with LaTex in Matplotlib (use
+  Mathtext)
 - `--rm`: remove all existing run directories in **destination**
+- `--dow`: disable overwriting files in DATA, SRC, MESH and POST directories in
+  **destination**
+- `-s, --skip-pdflatex`: disable tex reports compilation with pdflatex
+- `--fmt=DEFAULT_FMT`: set the global format for exporting matplotlib figure
+  (default is pdf)
 - `--repo=REPO_PATH`: force the path to the **repository**
 - `--dest=DEST_PATH`: force the path to the **destination**
 - `-g, --debug`: activate debugging mode
@@ -99,10 +112,13 @@ Majors command-line options are detailed here:
 - `--without-tags=WITHOUT_TAGS`: exclude any run with one of specified
   tags (separated by commas)
 - `--create-xml`: create xml from study (current directory has to be a study)
-- `--slurm-batch-size=SIZE`: submit batch of cases (number is SIZE) using slurm.
-  Cases are sorted by number of processors and level of dependency.
-- `--slurm-batch-wtime=M` specify the wall time limit in hours in slurm batch
-  mode (3 hours by default)
+- `--with-resource=RESOURCE_NAME`: use resource settings based on given name
+- `--slurm-batch-size=SIZE`: maximum number of cases per batch in SLURM batch
+  mode (50 by default)
+- `--slurm-batch-wtime=TIME`: maximum computation time in hours per batch in
+  SLURM batch mode (12 hours by default)
+- `--slurm-batch-arg=SLURM_BATCH_ARGS`: additional sbatch arguments (use
+  --slurm-batch-arg=<arg> to handle -- in argument)
 - `--report` generate description report
 
 Examples
@@ -147,10 +163,9 @@ Examples
   $ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr
   --dest=../RUNS/RIBS --repo=..
   ```
-- submit "coarse" cases on cluster per block of 4 using slurm:
+- submit "coarse" cases on cluster per block of 4 using SLURM batch mode:
   ```
-  $ code_saturne smgr -f smgr.xml -r --with-tags=coarse
-  --slurm-batch-size=4
+  $ code_saturne smgr -f smgr.xml -r --with-tags=coarse --slurm-batch-size=4
   ```
 
 ### Note
@@ -231,7 +246,10 @@ The attributes for the cases are:
   the case;
 - `tags`: possible tags distinguishing the run from the others in the same SMGR
   parameter file (ex.: `tags="fine,high-reynolds"`). They are added to the study
-  tags if they exist.
+  tags if they exist;
+- `n_procs`: number of processors requested for the run;
+- `expected_time`: expected computation time in hours (only required for SLURM
+   batch mode).
 
 Only the attributes `label`, `status`, `compute`, and `post` are mandatory.
 
@@ -357,61 +375,28 @@ cs_user_scripts.py.
 Submission on cluster using SLURM
 ---------------------------------
 
-On a cluster using the SLURM resource manager, SMGR can be configured to
-submit batches of cases rather than running them in succession.
-All cases are automatically sorted by number of processors and level of dependency,
-and grouped by blocks of _N_ cases of similar characteristics (to avoid submitting
-too many small jobs).
+On a cluster using the SLURM resource manager, SMGR can be configured to submit
+batches of cases rather than running them in succession. All cases are
+automatically sorted by number of processors and level of dependency, and
+grouped by blocks of cases of similar characteristics (to avoid submitting too
+many small jobs).
+
 Job-dependencies are defined automatically such that blocks of dependency level
 `M` will wait until all blocks of level `M-1` are successfully finished.
 
-This is activated by defining `N > 0` using the following command-line option:
-`--slurm-batch-size=N`
-`--slurm-batch-wtime=M` can also be used to specify the wall time limit in hours
-of submissions (3 hours by default).
-Additional slurm batch (SBATCH) parameters can be also specified at run time
-using the `--slurm-batch-arg` option.
-This option only takes into account only one argument at a time.
-For example, to add the "exclusive" and send an e-mail notification use the
-following command-line option:
-`--slurm-batch-arg=--exclusive --slurm-batch-arg=--mail-user=name.last@email.com`
+This is activated by defining `N > 0` or `M > 0` using the following command-line
+options:
+- `--slurm-batch-size=N`
+- `--slurm-batch-wtime=M`
+
+A more detailled explanation of the SLURM batch mode is given in the dedicated
+page : \subpage cs_ug_smgr_slurm
 
 \warning
 For EDF users, the `wckey` argument should be defined. It can be done
 by either using `--slurm-batch-arg=--wckey=<key>` during run time, or
 by setting an environnement variable with the following
 command: `export SBATCH_WCKEY=<key>`.
-
-### Definition of dependencies
-
-Three methods are available to define a dependency between cases:
-- Set a restart in the data settings of a case using the graphical user
-  interface of code_saturne;
-- Add a restart in parametric options of a SMGR parameter file using
-  `-r` or `--restart` argument
-```{.xml}
-  <study label='STUDY' status='on'>
-      <case label='CASE1' status='on' compute="on" post="on">
-          <parametric args="-r run_id"/>
-      </case>
-  </study>
-```
-- Add a `<depends>` node to a case in SMGR parameter file :
-```{.xml}
-  <study label='STUDY' status='on'>
-      <case label='CASE1' status='on' compute="on" post="on">
-          <depends args="STUDY/CASE/RESU/run_id"/>
-      </case>
-  </study>
-```
-
-Dependencies defined using a `<depends>` node has priority over those deduced
-from parametric arguments. They both have priority over restarts in code_saturne
-data settings.
-
-In the rare cases where dependencies are not related to restarts, the `<depends>`
-approach allow fine-grained control. In other cases, dependencies are deduced from
-restart definitions, so no additional user settings are needed.
 
 Compare checkpoint files
 ------------------------
@@ -442,7 +427,7 @@ The attributes for the comparison are:
   * If the id is not known already because the case has not yet run, just leave
     the attribute empty `dest=""`, and the value will be updated after the run
     step in the **destination** directory (see section about [restart](@ref
-    sec_smgr_restart));
+    sec_smgr_output));
   * if SMGR is restarted without the run step (with the command line
     `code_saturne smgr -f sample.xml -c` for example), the id of the results
     directory in the **destination** must be given (for example
@@ -470,7 +455,7 @@ Several comparisons with different options are permitted:
 ```
 
 Comparison of results will be summarized in a table in the file `report_detailed.pdf`
-(see [output](@ref sec_smgr_restart) section):
+(see [output](@ref sec_smgr_output) section):
 
 <table>
 <tr><th> Variable Name <th> Diff. Max <th> Diff. Mean <th> Threshold
@@ -514,7 +499,7 @@ The attributes are:
   **destination**;
   * If the id is not known already because the case has not yet run, just leave
     the attribute empty (`dest=""`), and the value will be updated after the run
-    step in the **destination** directory (see [output](@ref sec_smgr_restart)
+    step in the **destination** directory (see [output](@ref sec_smgr_output)
     section).
   * If there is a single results directory in the `RESU` directory (either in
     the **repository** or in the **destination**) of the case, the id can be
@@ -654,7 +639,7 @@ In the parameters file, curves are defined with two markups:
     - If the id is not known already because the case has not yet run, just
       leave the attribute empty, with `dest=""`, and the value will be updated
       after the run step in the **destination** directory (see [output](@ref
-      sec_smgr_restart) section).
+      sec_smgr_output) section).
     - If there is a single results directory in the `RESU` directory (either in
       the **repository** or in the **destination**) of the case, the id can be
       omitted: `repo=""` or `dest=""`, and it will be completed automatically.
@@ -843,7 +828,7 @@ The attributes are:
   * If the id is not known already because the case has not yet run, just leave
     the attribute empty, with `dest=""`, and the value will be updated after the
     run step in the **destination** directory (see [output](@ref
-    sec_smgr_restart) section).
+    sec_smgr_output) section).
   * If SMGR is restarted without the run step (with the command line
     `code_saturne smgr -f sample.xml -c` for example), the id of the results
     directory in the **destination** must be given (for example
@@ -922,7 +907,7 @@ The attributes of `<input>` are:
   in the **destination**;
   * If the id is not known already because the case has not yet run, just leave
     the attribute empty, with `dest=""`; the value will be updated after the run
-    step in the **destination** directory (see [output](@ref sec_smgr_restart)
+    step in the **destination** directory (see [output](@ref sec_smgr_output)
     section).
   * If there is a single results directory in the `RESU` directory (either in
     the **repository** or in the **destination**) of the case, the id can be
@@ -931,8 +916,8 @@ The attributes of `<input>` are:
 The `file` attribute is mandatory, and either `repo` or `dest` must be present
 (but not both) even if it is empty.
 
-Output and restart {#sec_smgr_restart}
-==================
+Output files {#sec_smgr_output}
+============
 
 SMGR produces several files in the **destination** directory:
 
@@ -950,6 +935,9 @@ Only available with option`-p, --post`:
 - `make_pdf.log` and `report_figures.tex/.log/.aux` can be found in case of
   error during generation of `report_figures.pdf`.
 
+Only available with option`--report`:
+- `write-up.pdf` : description report file in `STUDY/REPORT`
+
 SMGR can produce or modify several files in the **repository** directory:
 
 - `smgr_<name>.xml`: update file with `-u, --update-smgr` option;
@@ -960,9 +948,7 @@ SMGR can produce or modify several files in the **repository** directory:
 
 After the computation of a case, if no error occurs, the attribute `compute` is
 set to `"off"` in the copy of the parameters file in the **destination**. It
-allows a restart of SMGR without re-run successful previous computations. In the
-same manner, all empty attributes `repo=""` and `dest=""` are completed in the
-updated parameters file.
+allows a restart of SMGR without re-run successful previous computations.
 
 Tricks {#sec_smgr_tricks}
 ======
