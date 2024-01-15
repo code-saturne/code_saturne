@@ -351,7 +351,7 @@ typedef struct {
 
   /*! \var pcd_block_type
    *  type of block preconditioner to use (only meaningful for vector-valued
-   *  systems or more complex systems */
+   *  systems or more complex systems) */
 
   cs_param_precond_block_t    pcd_block_type;
 
@@ -377,83 +377,6 @@ typedef struct {
 
 } cs_param_sles_t;
 
-/*!
- * \struct cs_param_sles_saddle_t
- * \brief Structure storing all metadata related to the resolution of a
- *        saddle-point linear system
- */
-
-typedef struct {
-
-  /*!
-    * \var verbosity
-    * verbosity (level of information displayed)
-    */
-
-  int                         verbosity;
-
-  /*!
-   * @name Main parameter settings
-   *
-   * Set of parameters to drive the resolution of a saddle-point system
-   */
-  /*! @{ */
-
-  /*!
-   * \var solver
-   *  Type of solver to solve the saddle-point system
-   *  If solver is set to CS_PARAM_SADDLE_N_SOLVERS, then there is no need to
-   *  solve a saddle-point system.
-   */
-
-  cs_param_saddle_solver_t    solver;
-
-  /*! \var precond
-   *  Type of preconditioner for the saddle-point system which is viewed as a
-   *  2x2 block matrix.
-   */
-
-  cs_param_saddle_precond_t   precond;
-
-  /*! \var cvg_param
-   *  Structure storing the parameters to know if an iterative process has to
-   *  stop (convergence or divergence). These criteria are related the
-   *  iterative algorithm used to solve the saddle-point system. This is the
-   *  case for instance with an Uzawa or GKB algorithm.
-   */
-
-  cs_param_sles_cvg_t         cvg_param;
-
-  /*! @} */
-
-  /*!
-   * @name Schur complement approximation
-   *
-   * Set of parameters to drive the resolution of the pressure-related
-   * block. This is often a Schur complement approximation to B.A^-1.Bt
-   */
-  /*! @{ */
-
-  /*!
-   * \var schur_approximation
-   *
-   * \var schur_approximation
-   * Choice of the way of preconditioning the schur approximation
-   */
-
-  cs_param_schur_approx_t     schur_approximation;
-
-  /*! \var schur_sles_param
-   * Set of paremeters used to solve the Schur complement if needed. This
-   * depends on the type of Schur approximation which has been cosen.
-   */
-
-  cs_param_sles_t            *schur_sles_param;
-
-  /*! @} */
-
-} cs_param_sles_saddle_t;
-
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -461,59 +384,6 @@ typedef struct {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Create a cs_param_sles_saddle_t structure and assign a minimalist
- *        default settings
- *
- * \return a pointer to the new cs_param_sles_saddle_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_sles_saddle_t *
-cs_param_sles_saddle_create(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize a \ref cs_param_sles_t structure for the Schur
- *        approximation nested inside a ref cs_param_sles_saddle_t
- *        structure. By default, this member is not allocated. Do nothing if
- *        the related structure is already allocated.
- *
- * \param[in]      basename   prefix for the naming of the Schur system
- * \param[in, out] saddlep    pointer to the structure to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_saddle_init_schur(const char                *basename,
-                                cs_param_sles_saddle_t    *saddlep);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy a cs_param_sles_saddle_t structure from ref to dest
- *
- * \param[in]      ref     reference structure to be copied
- * \param[in, out] dest    destination structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_saddle_copy(const cs_param_sles_saddle_t   *ref,
-                          cs_param_sles_saddle_t         *dest);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the structure storing the parameter settings for a saddle-point
- *        system
- *
- * \param[in, out] p_saddlep    double pointer to the structure to free
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_saddle_free(cs_param_sles_saddle_t    **p_saddlep);
 
 /*----------------------------------------------------------------------------*/
 /*!

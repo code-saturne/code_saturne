@@ -35,6 +35,7 @@
 #include "cs_hodge.h"
 #include "cs_iter_algo.h"
 #include "cs_param_cdo.h"
+#include "cs_param_saddle.h"
 #include "cs_param_sles.h"
 #include "cs_property.h"
 #include "cs_xdef.h"
@@ -761,7 +762,7 @@ typedef struct {
    *  - tolerance...
    *
    * \var saddle_param
-   * Set of parameters to specify how to to solve a saddle-point system.
+   * Set of parameters to specify how to solve a saddle-point system.
    * Up to now, only CDO cell-based schemes yield this type of problem. Other
    * saddle-point problems arise when dealing with Stokes or Navier-Stokes
    * equations with a monolithic velocity/pressure coupling. In the latter
@@ -785,7 +786,7 @@ typedef struct {
    */
 
   cs_param_sles_t            *sles_param;
-  cs_param_sles_saddle_t     *saddle_param;
+  cs_param_saddle_t          *saddle_param;
 
   cs_param_nl_algo_t          incremental_algo_type;
   cs_param_sles_cvg_t         incremental_algo_cvg;
@@ -1545,8 +1546,8 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
  *        (degrees of freedom) enforcement from one \ref cs_equation_param_t
  *        structure to another one.
  *
- * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
  */
 /*----------------------------------------------------------------------------*/
 

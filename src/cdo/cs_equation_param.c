@@ -1385,7 +1385,7 @@ cs_equation_param_create(const char            *name,
 
   eqp->sles_param = cs_param_sles_create(-1, name); /* field_id, system_name */
 
-  eqp->saddle_param = cs_param_sles_saddle_create();
+  eqp->saddle_param = cs_param_saddle_create(eqp->sles_param);
 
   /* By default, there is no incremental solving */
 
@@ -1581,7 +1581,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
   }
 
-  cs_param_sles_saddle_copy(ref->saddle_param, dst->saddle_param);
+  cs_param_saddle_copy(ref->saddle_param, dst->saddle_param);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1590,8 +1590,8 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
  *        (degrees of freedom) enforcement from one \ref cs_equation_param_t
  *        structure to another one.
  *
- * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1726,7 +1726,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   /* Information related to the linear algebra settings */
 
   cs_param_sles_free(&(eqp->sles_param));
-  BFT_FREE(eqp->saddle_param);
+  cs_param_saddle_free(&(eqp->saddle_param));
 
   BFT_FREE(eqp->name);
 }
@@ -2118,6 +2118,8 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     }
   }
 
+  /* Time settings */
+
   if (unsteady) {
 
     cs_log_printf(CS_LOG_SETUP, "\n### %s | Time settings\n", eqname);
@@ -2292,8 +2294,9 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
   } /* There is an incremental resolution */
 
-  /* Iterative solver information */
+  /* SLES information */
 
+  cs_param_saddle_log(eqp->saddle_param);
   cs_param_sles_log(eqp->sles_param);
 }
 

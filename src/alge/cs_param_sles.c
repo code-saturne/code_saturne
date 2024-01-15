@@ -82,6 +82,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -3185,134 +3187,11 @@ _log_mumps_param(const char                    *name,
                   name, mumpsp->mem_coef);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Create a cs_param_sles_saddle_t structure and assign a minimalist
- *        default settings
- *
- * \return a pointer to the new cs_param_sles_saddle_t structure
- */
-/*----------------------------------------------------------------------------*/
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-cs_param_sles_saddle_t *
-cs_param_sles_saddle_create(void)
-{
-  cs_param_sles_saddle_t  *saddlep = NULL;
-
-  BFT_MALLOC(saddlep, 1, cs_param_sles_saddle_t);
-
-  saddlep->verbosity = 0;
-  saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;  /* Not used */
-  saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
-  saddlep->schur_approximation = CS_PARAM_SCHUR_NONE;
-
-  saddlep->cvg_param =  (cs_param_sles_cvg_t) {
-    .n_max_iter = 50,
-    .atol = 1e-12,       /* absolute tolerance */
-    .rtol = 1e-6,        /* relative tolerance */
-    .dtol = 1e3 };       /* divergence tolerance */
-
-  saddlep->schur_sles_param = NULL;
-
-  return saddlep;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize a \ref cs_param_sles_t structure for the Schur
- *        approximation nested inside a ref cs_param_sles_saddle_t
- *        structure. By default, this member is not allocated. Do nothing if
- *        the related structure is already allocated.
- *
- * \param[in]      basename   prefix for the naming of the Schur system
- * \param[in, out] saddlep    pointer to the structure to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_saddle_init_schur(const char                *basename,
-                                cs_param_sles_saddle_t    *saddlep)
-{
-  if (saddlep == NULL)
-    return;
-
-  if (saddlep->schur_sles_param != NULL)
-    return; /* Initialization has already been performed */
-
-  char  *schur_name = NULL;
-  size_t  len = sizeof(basename) + sizeof("_schur_system");
-
-  BFT_MALLOC(schur_name, len + 1, char);
-  sprintf(schur_name, "%s_schur_system", basename);
-
-  cs_param_sles_t  *schur_slesp = cs_param_sles_create(-1, schur_name);
-
-  schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
-  schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
-  schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;  /* no predefined AMG type */
-  schur_slesp->cvg_param.rtol = 1e-4;            /* relative tolerance to stop
-                                                    the iterative solver */
-
-  BFT_FREE(schur_name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy a cs_param_sles_saddle_t structure from ref to dest
- *
- * \param[in]      ref     reference structure to be copied
- * \param[in, out] dest    destination structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_saddle_copy(const cs_param_sles_saddle_t   *ref,
-                          cs_param_sles_saddle_t         *dest)
-{
-  if (ref == NULL)
-    return;
-
-  dest->solver = ref->solver;
-  dest->precond = ref->precond;
-  dest->schur_approximation = ref->schur_approximation;
-
-  dest->cvg_param.rtol = ref->cvg_param.rtol;
-  dest->cvg_param.atol = ref->cvg_param.atol;
-  dest->cvg_param.dtol = ref->cvg_param.dtol;
-  dest->cvg_param.n_max_iter = ref->cvg_param.n_max_iter;
-
-  if (ref->schur_sles_param != NULL) {
-
-    if (dest->schur_sles_param == NULL)
-      cs_param_sles_saddle_init_schur("automatic", dest);
-
-    cs_param_sles_copy_from(ref->schur_sles_param, dest->schur_sles_param);
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the structure storing the parameter settings for a saddle-point
- *        system
- *
- * \param[in, out] p_saddlep    double pointer to the structure to free
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_saddle_free(cs_param_sles_saddle_t    **p_saddlep)
-{
-  if (p_saddlep == NULL)
-    return;
-
-  cs_param_sles_saddle_t  *saddlep = *p_saddlep;
-
-  cs_param_sles_free(&(saddlep->schur_sles_param));
-
-  BFT_FREE(saddlep);
-  *p_saddlep = NULL;
-}
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
