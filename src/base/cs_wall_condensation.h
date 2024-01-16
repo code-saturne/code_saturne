@@ -63,6 +63,9 @@ typedef struct {
   int icondb; // Switch used to activate wall condensation (0 : activated)
   int icondv; /* Switch used to activate wall condensation
                  with metal structures(0 : activated) */
+  int nztag1d; //Indicate if the thermal 1D model of severe accident is used.
+               // 1 a 1D thermal equation is used, 0 user defined dirichlet
+
   // Model type
   cs_wall_cond_natural_conv_model_t natural_conv_model;
   cs_wall_cond_forced_conv_model_t  forced_conv_model;

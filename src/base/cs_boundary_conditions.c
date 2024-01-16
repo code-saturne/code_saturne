@@ -190,7 +190,9 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
                                              int     **ientgf,
                                              double  **tkent,
                                              double  **fment,
-                                             double  **qimp);
+                                             double  **qimp,
+                                             double  **tgf,
+                                             double  **frmel);
 
 void
 cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
@@ -1724,7 +1726,9 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
                                              int     **ientgf,
                                              double  **tkent,
                                              double  **fment,
-                                             double  **qimp)
+                                             double  **qimp,
+                                             double  **tgf,
+                                             double  **frmel)
 {
   /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
 
@@ -1735,6 +1739,9 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
   *tkent  = cs_glob_bc_pm_info->tkent  + 1;
   *fment  = cs_glob_bc_pm_info->fment  + 1;
   *qimp   = cs_glob_bc_pm_info->qimp   + 1;
+
+  *tgf    = &(cs_glob_bc_pm_info->tgf);
+  *frmel  = &(cs_glob_bc_pm_info->frmel);
 }
 
 void
@@ -2372,6 +2379,10 @@ cs_boundary_conditions_create_legacy_zone_data(void)
     /* atmospheric flows */
     bc_pm_info->iprofm[i] = 0;
   }
+
+  /* Initialization for tgf and frmel */
+  bc_pm_info->tgf   = 300.;
+  bc_pm_info->frmel = 0.;
 
   bc_pm_info->iautom = NULL;
 }

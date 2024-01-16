@@ -502,6 +502,12 @@ static cs_time_scheme_t  _time_scheme =
 
 const cs_time_scheme_t  *cs_glob_time_scheme = &_time_scheme;
 
+/* Flags used for re-initializing rho, cp and mu during restart if needed */
+
+static int _initvi = 0;
+static int _initro = 0;
+static int _initcp = 0;
+
 /* Auxiliary checkpoint/restart file parameters */
 
 static cs_restart_auxiliary_t  _restart_auxiliary =
@@ -556,7 +562,10 @@ cs_f_time_scheme_get_pointers(int     **ischtp,
                               double  **thetst,
                               double  **thetvi,
                               double  **thetcp,
-                              int     **iccvfg);
+                              int     **iccvfg,
+                              int     **initvi,
+                              int     **initro,
+                              int     **initcp);
 
 void
 cs_f_restart_auxiliary_get_pointers(int  **ileaux,
@@ -788,7 +797,10 @@ cs_f_time_scheme_get_pointers(int     **ischtp,
                               double  **thetst,
                               double  **thetvi,
                               double  **thetcp,
-                              int     **iccvfg)
+                              int     **iccvfg,
+                              int     **initvi,
+                              int     **initro,
+                              int     **initcp)
 {
   *ischtp = &(_time_scheme.time_order);
   *istmpf = &(_time_scheme.istmpf);
@@ -799,6 +811,10 @@ cs_f_time_scheme_get_pointers(int     **ischtp,
   *thetvi = &(_time_scheme.thetvi);
   *thetcp = &(_time_scheme.thetcp);
   *iccvfg = &(_time_scheme.iccvfg);
+
+  *initvi = &_initvi;
+  *initro = &_initro;
+  *initcp = &_initcp;
 }
 
 /*----------------------------------------------------------------------------
@@ -967,6 +983,28 @@ cs_time_scheme_t *
 cs_get_glob_time_scheme(void)
 {
   return &_time_scheme;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set init state to 1. This is necessary for fortran mapping and
+ * should be changed in the future.
+ *
+ * \param[in] idx id of variable. 0 is viscosity, 1 density, 2 heat capacity.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_set_init_state_on(int idx)
+{
+  assert(idx >= 0 && idx < 3);
+
+  if (idx == 0)
+    _initvi = 1;
+  else if (idx == 1)
+    _initro = 1;
+  else if (idx == 2)
+    _initcp = 1;
 }
 
 /*----------------------------------------------------------------------------*/

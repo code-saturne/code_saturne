@@ -88,13 +88,58 @@ static bool _initialized = false;
 
 static cs_lnum_t n_wall = 0;
 
+/* Fortran mapping int values for wall distance. These should eventually
+ * be removed in the future.
+ */
+
+static cs_wall_distance_options_t _wall_distance_options = {
+  .need_compute = 0,
+  .is_up_to_date = 0,
+  .method = -999
+};
+
+const cs_wall_distance_options_t *cs_glob_wall_distance_options
+= &_wall_distance_options;
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_wall_distance_get_pointers(int **ineedy,
+                                int **imajdy,
+                                int **icdpar);
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Get pointers to int indicators concerning wall distance computation.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_wall_distance_get_pointers(int **ineedy,
+                                int **imajdy,
+                                int **icdpar)
+{
+  *ineedy = &(_wall_distance_options.need_compute);
+  *imajdy = &(_wall_distance_options.is_up_to_date);
+  *icdpar = &(_wall_distance_options.method);
+}
+
 
 /*============================================================================
  * Public function definitions
@@ -1004,6 +1049,20 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   BFT_FREE(b_visc);
   BFT_FREE(viscap);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide read/write access to cs_glob_wall_distance
+ *
+ * \return pointer to global wall distance structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_wall_distance_options_t *
+cs_get_glob_wall_distance_options(void)
+{
+  return &_wall_distance_options;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -721,6 +721,26 @@ cs_atmo_compute_solar_angles(cs_real_t xlat,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Deactivate chemistry initialization procedure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_initialization_deactivate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the chemistry module needs initialization
+ *
+ * \return int value : 1 if needed, 0 if not
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_atmo_chemistry_need_initialization(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the atmospheric module options to setup.log.
  */
 /*----------------------------------------------------------------------------*/

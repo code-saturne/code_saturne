@@ -70,13 +70,13 @@ module optcal
   integer(c_int), pointer, save :: isto2t
 
   !> initvi : =1 if total viscosity read from checkpoint file
-  integer, save :: initvi = 0
+  integer(c_int), pointer, save :: initvi
 
   !> initro : =1 if density read from checkpoint file
-  integer, save :: initro = 0
+  integer(c_int), pointer, save :: initro
 
   !> initcp : =1 if specific heat read from checkpoint file
-  integer, save :: initcp = 0
+  integer(c_int), pointer, save :: initcp
 
   !> Value of \f$theta_S\f$ (see \ref cs_time_scheme_t::thetsn).
   real(c_double), pointer, save :: thetsn
@@ -832,11 +832,11 @@ module optcal
 
   !> - 1, the wall distance must be computed,
   !> - 0, the wall distance computation is not necessary.
-  integer, save :: ineedy = 0
+  integer(c_int), pointer, save :: ineedy
 
   !> - 1, the wall distance is up to date,
   !> - 0, the wall distance has not been updated.
-  integer, save :: imajdy = 0
+  integer(c_int), pointer, save :: imajdy
 
   !> Specifies the method used to calculate the distance to the wall y
   !> and the non-dimensional distance \f$ y+ \f$ for all the cells of
@@ -877,7 +877,7 @@ module optcal
   !> is made at the most> once for all at the beginning of the calculation; it
   !> is therefore not compatible with moving walls. Please contact the
   !> development team if you need to override this limitation.
-  integer, save :: icdpar = -999
+  integer(c_int), pointer, save :: icdpar
 
   !> \}
 
@@ -1165,13 +1165,24 @@ module optcal
 
     subroutine cs_f_time_scheme_get_pointers(ischtp, istmpf, isno2t, isto2t, &
                                              thetsn, thetst, thetvi, thetcp, &
-                                             iccvfg)                         &
+                                             iccvfg, initvi, initro, initcp) &
       bind(C, name='cs_f_time_scheme_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ischtp, istmpf, isno2t, isto2t
       type(c_ptr), intent(out) :: thetsn, thetst, thetvi, thetcp, iccvfg
+      type(c_ptr), intent(out) :: initvi, initro, initcp
     end subroutine cs_f_time_scheme_get_pointers
+
+    ! Interface to C function retrieving pointers wall distance computation
+    ! indicators
+
+    subroutine cs_f_wall_distance_get_pointers(ineedy, imajdy, icdpar) &
+      bind(C, name='cs_f_wall_distance_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ineedy, imajdy, icdpar
+    end subroutine cs_f_wall_distance_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global restart_auxiliary options structure
@@ -1560,10 +1571,11 @@ contains
 
     type(c_ptr) :: c_ischtp, c_istmpf, c_isno2t, c_isto2t
     type(c_ptr) :: c_thetsn, c_thetst, c_thetvi, c_thetcp, c_iccvfg
+    type(c_ptr) :: c_initvi, c_initro, c_initcp
 
     call cs_f_time_scheme_get_pointers(c_ischtp, c_istmpf, c_isno2t, c_isto2t, &
                                        c_thetsn, c_thetst, c_thetvi, c_thetcp, &
-                                       c_iccvfg)
+                                       c_iccvfg, c_initvi, c_initro, c_initcp)
 
     call c_f_pointer(c_ischtp, ischtp)
     call c_f_pointer(c_istmpf, istmpf)
@@ -1574,8 +1586,31 @@ contains
     call c_f_pointer(c_thetvi, thetvi)
     call c_f_pointer(c_thetcp, thetcp)
     call c_f_pointer(c_iccvfg, iccvfg)
+    call c_f_pointer(c_initvi, initvi)
+    call c_f_pointer(c_initro, initro)
+    call c_f_pointer(c_initcp, initcp)
 
   end subroutine time_scheme_options_init
+
+  !> \Interface to C function retrieving pointers wall distance computation
+  !> indicators
+
+  subroutine wall_distance_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ineedy, c_imajdy, c_icdpar
+
+    call cs_f_wall_distance_get_pointers(c_ineedy, c_imajdy, c_icdpar)
+
+    call c_f_pointer(c_ineedy, ineedy)
+    call c_f_pointer(c_imajdy, imajdy)
+    call c_f_pointer(c_icdpar, icdpar)
+
+  end subroutine
 
   !> \brief Initialize Fortran auxiliary options API.
   !> This maps Fortran pointers to global C structure members.

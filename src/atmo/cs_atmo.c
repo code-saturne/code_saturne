@@ -273,6 +273,8 @@ static const char *cs_atmo_aerosol_type_name[]
   = {N_("No atmospheric aerosol"),
      N_("Atmospheric aerosol using external code SSH-aerosol")};
 
+static int _init_atmo_chemistry = 1;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
@@ -3922,6 +3924,31 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 #endif
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Deactivate chemistry initialization procedure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_initialization_deactivate(void)
+{
+  _init_atmo_chemistry = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the chemistry module needs initialization
+ *
+ * \return int value : 1 if needed, 0 if not
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_atmo_chemistry_need_initialization(void)
+{
+  return _init_atmo_chemistry;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print the atmospheric module options to setup.log.

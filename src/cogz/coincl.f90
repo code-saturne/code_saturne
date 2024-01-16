@@ -157,7 +157,8 @@ module coincl
   integer(c_int), pointer, save :: ientgf(:), ientgb(:)
   real(c_double), pointer, save :: qimp(:), fment(:), tkent(:)
   !double precision, save :: fment(nozppm), tkent(nozppm)
-  double precision, save :: frmel, tgf, cebu, hgf, tgbad
+  real(c_double), pointer, save :: frmel, tgf
+  double precision, save :: cebu, hgf, tgbad
 
   !--> MODELE DE FLAMME DE PREMELANGE LWC
 
@@ -181,7 +182,7 @@ module coincl
   integer, save :: imaml(ndracm), ihhhh(ndracm), imam
 
   double precision, save :: vref, lref, ta, tstar
-  double precision, save :: fmin, fmax, hmin, hmax
+  real(c_double), pointer, save :: fmin, fmax, hmin, hmax
   double precision, save :: coeff1, coeff2, coeff3
 
   ! --- Soot model
@@ -320,7 +321,9 @@ module coincl
                                         p_xsoot, p_rosoot,    &
                                         p_hinfue, p_hinoxy,   &
                                         p_pcigas, p_tinfue,   &
-                                        p_tinoxy)             &
+                                        p_tinoxy,             &
+                                        p_fmin, p_fmax,       &
+                                        p_hmin, p_hmax)       &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -328,6 +331,7 @@ module coincl
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
       type(c_ptr), intent(out) :: p_tinoxy
+      type(c_ptr), intent(out) :: p_fmin, p_fmax, p_hmin, p_hmax
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -337,12 +341,14 @@ module coincl
     subroutine cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
                                                             p_ientgb, p_ientgf, &
                                                             p_tkent,  p_fment,  &
-                                                            p_qimp) &
+                                                            p_qimp, &
+                                                            p_tgf, p_frmel ) &
       bind(C, name='cs_f_boundary_conditions_get_coincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
       type(c_ptr), intent(out) :: p_tkent,  p_fment, p_qimp
+      type(c_ptr), intent(out) :: p_tgf, p_frmel
     end subroutine cs_f_boundary_conditions_get_coincl_pointers
 
     !---------------------------------------------------------------------------
@@ -373,13 +379,15 @@ contains
     type(c_ptr) :: c_isoot, c_use_janaf,                  &
                    c_coefeg, c_compog, c_xsoot,           &
                    c_rosoot, c_hinfue, c_hinoxy,          &
-                   c_pcigas, c_tinfue, c_tinoxy
+                   c_pcigas, c_tinfue, c_tinoxy,          &
+                   c_fmin, c_fmax, c_hmin, c_hmax
 
     call cs_f_coincl_get_pointers(c_isoot, c_use_janaf,         &
                                   c_coefeg, c_compog,           &
                                   c_xsoot,  c_rosoot,           &
                                   c_hinfue, c_hinoxy,           &
-                                  c_pcigas, c_tinfue, c_tinoxy)
+                                  c_pcigas, c_tinfue, c_tinoxy, &
+                                  c_fmin, c_fmax, c_hmin, c_hmax)
 
     call c_f_pointer(c_isoot, isoot)
     call c_f_pointer(c_use_janaf, use_janaf)
@@ -392,6 +400,10 @@ contains
     call c_f_pointer(c_pcigas, pcigas)
     call c_f_pointer(c_tinfue, tinfue)
     call c_f_pointer(c_tinoxy, tinoxy)
+    call c_f_pointer(c_fmin, fmin)
+    call c_f_pointer(c_fmax, fmax)
+    call c_f_pointer(c_hmin, hmin)
+    call c_f_pointer(c_hmax, hmax)
 
   end subroutine co_models_init
 
@@ -407,11 +419,13 @@ contains
 
     type(c_ptr) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
     type(c_ptr) :: p_tkent,  p_fment,  p_qimp
+    type(c_ptr) :: p_tgf, p_frmel
 
     call cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
                                                       p_ientgb, p_ientgf, &
                                                       p_tkent,  p_fment,  &
-                                                      p_qimp)
+                                                      p_qimp, &
+                                                      p_tgf, p_frmel)
     call c_f_pointer(p_ientfu, ientfu, [nozppm])
     call c_f_pointer(p_ientox, ientox, [nozppm])
     call c_f_pointer(p_ientgb, ientgb, [nozppm])
@@ -419,6 +433,8 @@ contains
     call c_f_pointer(p_tkent,  tkent,  [nozppm])
     call c_f_pointer(p_fment,  fment,  [nozppm])
     call c_f_pointer(p_qimp,   qimp,   [nozppm])
+    call c_f_pointer(p_tgf, tgf);
+    call c_f_pointer(p_frmel, frmel);
 
   end subroutine co_models_bc_map
 

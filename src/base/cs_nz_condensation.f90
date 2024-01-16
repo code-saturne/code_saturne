@@ -146,7 +146,7 @@ module cs_nz_condensation
   !>         with implicit numerical scheme
   !>    - 0: the wall temperature is imposed as constant by the user (default)
   !>         exchange coefficient evaluated by the copain correlation
-  integer, save :: nztag1d
+  integer(c_int), pointer, save :: nztag1d
 
   !> Constant value of the wall temperature given by the user when
   !> the thermal 1D model is not activated for the condensation model with
@@ -235,11 +235,12 @@ interface
   !---------------------------------------------------------------------------
 
   subroutine cs_f_wall_condensation_get_size_pointers(nfbpcd, nzones, &
-                                                      ncmast, nvolumes) &
+                                                      ncmast, nvolumes, &
+                                                      nztag1d) &
     bind(C, name='cs_f_wall_condensation_get_size_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: nfbpcd, nzones, ncmast, nvolumes
+    type(c_ptr), intent(out) :: nfbpcd, nzones, ncmast, nvolumes, nztag1d
   end subroutine cs_f_wall_condensation_get_size_pointers
 
   !---------------------------------------------------------------------------
@@ -272,14 +273,16 @@ contains
   subroutine init_sizes_pcond()
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr) :: c_nfbpcd, c_nzones, c_ncmast, c_nvolumes
+    type(c_ptr) :: c_nfbpcd, c_nzones, c_ncmast, c_nvolumes, c_nztag1d
 
     call cs_f_wall_condensation_get_size_pointers(c_nfbpcd, c_nzones, &
-                                                  c_ncmast, c_nvolumes)
+                                                  c_ncmast, c_nvolumes, &
+                                                  c_nztag1d)
     call c_f_pointer(c_nfbpcd, nfbpcd)
     call c_f_pointer(c_nzones, nzones)
     call c_f_pointer(c_ncmast, ncmast)
     call c_f_pointer(c_nvolumes, nvolumes)
+    call c_f_pointer(c_nztag1d, nztag1d)
 
   end subroutine init_sizes_pcond
 

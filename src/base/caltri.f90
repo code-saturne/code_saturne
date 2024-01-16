@@ -104,8 +104,8 @@ double precision, pointer, dimension(:) :: porosi => null()
 !===============================================================================
 
 procedure() :: armtps, atmsol, cplact, cplsyn, cscini
-procedure() :: cs_f_user_extra_operations, ecrava, ecrlis, iniva0, inivar
-procedure() :: lecamo, reqsui, phyvar, stusui, trbsui, uiexop, uiporo
+procedure() :: cs_f_user_extra_operations, ecrlis, iniva0, inivar
+procedure() :: reqsui, phyvar, stusui, trbsui, uiexop, uiporo
 
 interface
 
@@ -594,7 +594,7 @@ if (isuite.eq.1) then
 
   call cs_restart_map_build
 
-  call lecamo
+  call restart_read_main_aux_checkpoint
 
   ! Radiative module restart */
   if (iirayo.gt.0) then
@@ -985,7 +985,7 @@ if (iisuit.eq.1) then
     write(nfecra,3021) ntcabs,ttcabs
   endif
 
-  call ecrava
+  call restart_write_main_aux_checkpoint
 
   if (iturbo.eq.2 .and. iecaux.eq.1) then
     call trbsui

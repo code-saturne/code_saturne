@@ -639,6 +639,30 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function which writes the main checkpoint file (main.csc)
+
+    ! \brief Writes main.csc checkpoint file
+
+    subroutine restart_write_main_aux_checkpoint() &
+      bind(C, name='cs_restart_write_main_aux_checkpoint')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine restart_write_main_aux_checkpoint
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function which reads the main checkpoint file (main.csc)
+
+    ! \brief Reads main.csc checkpoint file
+
+    subroutine restart_read_main_aux_checkpoint() &
+      bind(C, name='cs_restart_read_main_aux_checkpoint')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine restart_read_main_aux_checkpoint
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function returning number of SYRTHES couplingsg.
 
     function cs_syr_coupling_n_couplings() result(n_couplings) &

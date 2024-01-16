@@ -219,13 +219,18 @@ typedef struct {
   double cpgazg[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
                [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
 
-
   /* Numerical parameters
      -------------------- */
 
   double srrom;  /*!< sub-relaxation coefficient for the density:
                    \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
                    (hence, with a zero value, there is no sub-relaxation) */
+
+  /*! Libby Williams parameters */
+  double fmin_lwc;
+  double fmax_lwc;
+  double hmin_lwc;
+  double hmax_lwc;
 
 } cs_combustion_gas_model_t;
 

@@ -134,7 +134,11 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **hinoxy,
                          double  **pcigas,
                          double  **tinfue,
-                         double  **tinoxy);
+                         double  **tinoxy,
+                         double  **fmin_lwc,
+                         double  **fmax_lwc,
+                         double  **hmin_lwc,
+                         double  **hmax_lwc);
 
 void
 cs_f_ppcpfu_get_pointers(double  **oxyo2,
@@ -256,7 +260,11 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **hinoxy,
                          double  **pcigas,
                          double  **tinfue,
-                         double  **tinoxy)
+                         double  **tinoxy,
+                         double  **fmin_lwc,
+                         double  **fmax_lwc,
+                         double  **hmin_lwc,
+                         double  **hmax_lwc)
 {
   *isoot  = NULL;
   *use_janaf = NULL;
@@ -269,6 +277,10 @@ cs_f_coincl_get_pointers(int     **isoot,
   *hinoxy = NULL;
   *tinoxy = NULL;
   *pcigas = NULL;
+  *fmin_lwc = NULL;
+  *fmax_lwc = NULL;
+  *hmin_lwc = NULL;
+  *hmax_lwc = NULL;
 
   if (cs_glob_combustion_gas_model != NULL) {
 
@@ -285,6 +297,10 @@ cs_f_coincl_get_pointers(int     **isoot,
     *hinoxy = &(cm->hinoxy);
     *tinoxy = &(cm->tinoxy);
     *pcigas = &(cm->pcigas);
+    *fmin_lwc = &(cm->fmin_lwc);
+    *fmax_lwc = &(cm->fmax_lwc);
+    *hmin_lwc = &(cm->hmin_lwc);
+    *hmax_lwc = &(cm->hmax_lwc);
 
   }
   else if (cs_glob_coal_model != NULL) {

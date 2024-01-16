@@ -178,7 +178,8 @@ void
 cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
                                          cs_lnum_t **nzones,
                                          cs_lnum_t **ncmast,
-                                         cs_lnum_t **nvolumes);
+                                         cs_lnum_t **nvolumes,
+                                         int       **nztag1d);
 
 void
 cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
@@ -810,12 +811,14 @@ void
 cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
                                          cs_lnum_t **nzones,
                                          cs_lnum_t **ncmast,
-                                         cs_lnum_t **nvolumes)
+                                         cs_lnum_t **nvolumes,
+                                         int       **nztag1d)
 {
   *nfbpcd = &(_wall_cond.nfbpcd);
   *nzones = &(_wall_cond.nzones);
   *ncmast = &(_wall_cond.ncmast);
   *nvolumes = &(_wall_cond.nvolumes);
+  *nztag1d  = &(_wall_cond.nztag1d);
 }
 
 void

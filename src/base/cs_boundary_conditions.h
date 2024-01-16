@@ -151,6 +151,11 @@ typedef struct {
   /*! Mean Mixture Fraction at Inlet (gas combustion) */
   double fment[CS_MAX_BC_PM_ZONE_NUM+1];
 
+  /*! EBU combustion model parameters (legacy) */
+  double tgf;
+
+  double frmel;
+
   /*! atmo */
   /* atmospheric flows: auto inlet/outlet flag */
   int *iautom;

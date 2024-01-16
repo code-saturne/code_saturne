@@ -145,6 +145,7 @@ call porosity_from_scan_init
 call fluid_properties_init
 call space_disc_options_init
 call time_scheme_options_init
+call wall_distance_options_init
 call velocity_pressure_options_init
 call restart_auxiliary_options_init
 call turb_reference_values_init

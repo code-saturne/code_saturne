@@ -42,6 +42,27 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct {
+  int need_compute;  /* Is the wall distance needs to be computed */
+
+  int is_up_to_date; /* Is the wall distance up to date */
+
+  int method;        /* Computation method for the wall distance */
+
+} cs_wall_distance_options_t;
+
+/*=============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Pointer to main time step structure */
+
+extern const cs_wall_distance_options_t *cs_glob_wall_distance_options;
+
+/*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -70,6 +91,17 @@ cs_wall_distance(int  iterns);
 
 void
 cs_wall_distance_yplus(cs_real_t  visvdr[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide read/write access to cs_glob_wall_distance
+ *
+ * \return pointer to global wall distance structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_wall_distance_options_t *
+cs_get_glob_wall_distance_options(void);
 
 /*----------------------------------------------------------------------------*/
 

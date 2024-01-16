@@ -174,6 +174,7 @@ cs_range_set.h \
 cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
+cs_restart_checkpoint_io.h \
 cs_restart_default.h \
 cs_restart_map.h \
 cs_rotation.h \
@@ -367,6 +368,7 @@ cs_random.c \
 cs_range_set.c \
 cs_resource.c \
 cs_restart.c \
+cs_restart_checkpoint_io.c \
 cs_restart_default.c \
 cs_restart_map.c \
 cs_rotation.c \
@@ -403,7 +405,6 @@ cs_wall_functions.c \
 cs_xdef_eval_at_zone.c \
 diffst.f90 \
 distpr2.f90 \
-ecrava.f90 \
 ecrlis.f90 \
 findpt.f90 \
 fldini.f90 \
@@ -417,9 +418,6 @@ iniusi.f90 \
 iniva0.f90 \
 inivar.f90 \
 iprbla.f90 \
-lecamo.f90 \
-lecamp.f90 \
-lecamx.f90 \
 majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \

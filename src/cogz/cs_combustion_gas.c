@@ -304,6 +304,12 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cm->srrom = 0.95;
 
+  /* Libby Williams model */
+  cm->fmin_lwc = 0.;
+  cm->fmax_lwc = 1.;
+  cm->hmin_lwc = 0.;
+  cm->hmax_lwc = 0.;
+
   /* Set finalization callback */
 
   cs_base_at_finalize(_combustion_gas_finalize);
