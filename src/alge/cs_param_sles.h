@@ -257,6 +257,18 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and initialize a new context structure for the MUMPS
+ *        settings.
+ *
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_mumps_reset(cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the main members of a cs_param_mumps_t structure. This structure
  *        is allocated and initialized with default settings if needed. If the
  *        structure exists already, then advanced members are kept to their

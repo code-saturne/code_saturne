@@ -167,7 +167,7 @@ cs_equation_system_sles_init(int                            n_eqs,
       cs_param_mumps_t  *mumpsp = sys_slesp->context_param;
 
       if (mumpsp == NULL) /* Define a context by default */
-        cs_param_sles_mumps(sys_slesp, false, CS_PARAM_MUMPS_FACTO_LU);
+        cs_param_sles_mumps_reset(sys_slesp);
 
 #if defined(HAVE_MUMPS)
       /* Propagate the settings to all blocks (only to get a consistent log) */

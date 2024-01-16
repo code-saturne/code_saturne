@@ -424,6 +424,30 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and initialize a new context structure for the MUMPS
+ *        settings.
+ *
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_mumps_reset(cs_param_sles_t  *slesp)
+{
+  if (slesp == NULL)
+    return;
+
+  if (slesp->context_param != NULL)
+    BFT_FREE(slesp->context_param);  /* Up to now the context structures have
+                                        no allocation inside */
+
+  /* Allocate and initialize a structure to store the MUMPS settings */
+
+  slesp->context_param = cs_param_mumps_create();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the main members of a cs_param_mumps_t structure. This structure
  *        is allocated and initialized with default settings if needed. If the
  *        structure exists already, then advanced members are kept to their
@@ -443,13 +467,7 @@ cs_param_sles_mumps(cs_param_sles_t             *slesp,
   if (slesp == NULL)
     return;
 
-  if (slesp->context_param != NULL)
-    BFT_FREE(slesp->context_param);  /* Up to now the context structures have
-                                        no allocation inside */
-
-  /* Allocate and initialize a structure to store the MUMPS settings */
-
-  slesp->context_param = cs_param_mumps_create();
+  cs_param_sles_mumps_reset(slesp->context_param);
 
   cs_param_mumps_t  *mumpsp = slesp->context_param;
 

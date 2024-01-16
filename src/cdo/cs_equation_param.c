@@ -591,9 +591,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
 
-      cs_param_sles_mumps(eqp->sles_param,
-                          false,  /* single-precision ? */
-                          CS_PARAM_MUMPS_FACTO_LU);
+      cs_param_sles_mumps_reset(eqp->sles_param);
 
     }
     else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
