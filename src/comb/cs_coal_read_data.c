@@ -665,8 +665,8 @@ cs_coal_read_data(void)
     /* PCI(raw) ---> PCI(pure) */
     else if (cm->ipci[icha] == 2) {
       pcibrut = cm->pcich[icha] / 1000. /xcal2j;
-      pcipur =   ( pcibrut + 5.95d*( xwatpc+(1.-fcor)
-                                    *cm->xashsec[icha])) *100.
+      pcipur =   ( pcibrut + 5.95*( xwatpc+(1.-fcor)
+                                   *cm->xashsec[icha])) *100.
                /  (100. - xwatpc -fcor*cm->xashsec[icha]);
       pcipur = pcipur * 1000. * xcal2j;  // kcal/kg to J/kg
       cm->pcich[icha] = pcipur;
