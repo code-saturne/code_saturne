@@ -106,7 +106,7 @@ character(len=80) :: chaine, fname, name
 integer          ivar , iel
 integer          numcla , numcha , icla
 integer          ifcvsl
-integer          mode, ige
+integer          ige
 integer          icha , ii, jj
 integer          itermx,nbpauv,nbrich,nbepau,nberic
 integer          iterch,nbpass,nbarre,nbimax
@@ -214,6 +214,17 @@ interface
     real(c_double), dimension(*) :: f1mc, f2mc
     real(c_double) :: eh
   end function cs_coal_ht_convert_t_to_h_gas_by_yi
+
+  function cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying  &
+   (tp, xesp, f1mc, f2mc)  result(eh) &
+    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), value :: tp
+    real(c_double), dimension(*) :: xesp
+    real(c_double), dimension(*) :: f1mc, f2mc
+    real(c_double) :: eh
+  end function cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying
 
   function cs_coal_ht_convert_h_to_t_gas_by_yi   &
     (eh, xesp, f1mc, f2mc)  result(tp) &
@@ -968,9 +979,9 @@ if (ivarfl(ivar).ge.ih2(1) .and. ivarfl(ivar).le.ih2(nclacp)) then
       if (t2 .gt. 100.d0+tkelvi) then
         t2 = 100.d0+tkelvi
       endif
-      mode      = -1
 
-      call cpthp1(mode, hh2ov, coefe, f1mc, f2mc, t2)
+      hh2ov = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(t2, coefe, &
+                                                              f1mc, f2mc)
 
       ! Contribution to explicit balance
 
@@ -1838,8 +1849,8 @@ if (ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           enddo
 
           t2 = cpro_temp2(iel)
-          mode      = -1
-          call cpthp1(mode, hh2ov, coefe, f1mc, f2mc, t2)
+          hh2ov = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(t2, coefe, &
+                                                                  f1mc, f2mc)
 
           !  Contribution to explicit balance
 

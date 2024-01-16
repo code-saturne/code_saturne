@@ -764,24 +764,6 @@ cs_coal_rad_transfer_st(const cs_field_t  *f,
                         cs_real_t         *rovsdt);
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief Compute particles enthalpy
- *         Function with temperature and concentrations
-
- * \param[in]     class_id      class id
- * \param[in]     xsolid        mass fraction of components
- * \param[in,out] temper        temperature (in kelvin)
-
- * \return   mass enthalpy (in \f$ j . kg^{-1}) \f$
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_coal_thconvers2(int           class_id,
-                   const double  xsolid[],
-                   cs_real_t     temper);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

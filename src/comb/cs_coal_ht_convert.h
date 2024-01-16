@@ -84,7 +84,7 @@ cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Calculation of the gas temperature from gas enthalpy and
+ * \brief Calculation of the gas enthalpy from gas temperature and
  *        given mass fractions for coal combustion.
  *
  * \param[in]  tp            gas temperature (in kelvin)
@@ -101,6 +101,99 @@ cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
                                     const cs_real_t  xesp[],
                                     const cs_real_t  f1mc[],
                                     const cs_real_t  f2mc[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of the gas temperature from gas enthalpy and
+ *        given mass fractions for coal combustion with drying.
+ *
+ * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
+ *
+ * \return  gas temperature (in kelvin)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
+                                                const cs_real_t  xesp[],
+                                                const cs_real_t  f1mc[],
+                                                const cs_real_t  f2mc[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of the gas enthalpy from gas temperature and
+ *        given mass fractions for coal combustion with drying.
+ *
+ * \param[in]  tp            gas temperature (in kelvin)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
+ *
+ * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(cs_real_t        tp,
+                                                const cs_real_t  xesp[],
+                                                const cs_real_t  f1mc[],
+                                                const cs_real_t  f2mc[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of the particles temperature from particles enthalpy and
+ *        concentrations at cells for coal combustion.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_ht_convert_h_to_t_particles(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of the particles temperature from particles enthalpy and
+ *        given mass fractions for coal combustion.
+ *
+ * \remark  Function not called in code, so should probably be removed,
+ *          unless useful for advanced postprocessing.
+ *
+ * \param[in]  enthal     mass enthalpy (\f$ j . kg^{-1} \f$)
+ * \param[in]  class_id   class id (0 to n-1)
+ * \param[in]  xesp       mass fraction of components
+ *                        (size: cm->nsolid)
+ * \param[in]  t1         coal inlet/boundary temperature
+ *
+ * \return   temperature (in kelvin)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_h_to_t_particles_by_yi(cs_real_t        enthal,
+                                          int              class_id,
+                                          const cs_real_t  xsolid[],
+                                          cs_real_t        t1);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of the particles from particles temperature and
+ *        given mass fractions for coal combustion.
+ *
+ * \param[in]  temper        temperature (in kelvin)
+ * \param[in]  class_id      class id (0 to n-1)
+ * \param[in]  xesp          mass fraction of components
+ *                           (size: cm->nsolid)
+ *
+ * \return  mass enthalpy (\f$ j . kg^{-1} \f$)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_t_to_h_particles_by_yi(cs_real_t        temper,
+                                          int              class_id,
+                                          const cs_real_t  xsolid[]);
 
 /*----------------------------------------------------------------------------*/
 

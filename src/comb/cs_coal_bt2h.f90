@@ -111,15 +111,16 @@ interface
     real(c_double) :: eh
   end function cs_coal_ht_convert_t_to_h_gas_by_yi
 
-  function cs_coal_thconvers2(class_id, xsolid, temper) result(enthal) &
-    bind(C, name='cs_coal_thconvers2')
+  function cs_coal_ht_convert_t_to_h_particles_by_yi  &
+   (temper, class_id, xsolid)  result(enthal) &
+    bind(C, name='cs_coal_ht_convert_t_to_h_particles_by_yi')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(kind=c_int), value :: class_id
-    real(kind=c_double), dimension(*) :: xsolid
-    real(kind=c_double), value :: temper
-    real(kind=c_double) :: enthal
-  end function cs_coal_thconvers2
+    real(c_double), value :: temper
+    integer(c_int), value :: class_id
+    real(c_double), dimension(*) :: xsolid
+    real(c_double) :: enthal
+  end function cs_coal_ht_convert_t_to_h_particles_by_yi
 
 end interface
 
@@ -189,7 +190,7 @@ do ilst = 1, n_faces
       iii = icla
       t1 = tbl
 
-      h2 = cs_coal_thconvers2(iii-1, xsolid, tbl)
+      h2 = cs_coal_ht_convert_t_to_h_particles_by_yi(tbl, iii-1, xsolid)
 
     endif
     x2h2 = x2h2 + cpro_x2(icla)%p(iel)*h2

@@ -606,7 +606,7 @@ cs_coal_boundary_conditions(int  bc_type[])
             xsolid[wat_id] = cm->xwatch[icha];
           }
 
-          h2[icla] = cs_coal_thconvers2(icla, xsolid, t2);
+          h2[icla] = cs_coal_ht_convert_t_to_h_particles_by_yi(t2, icla, xsolid);
           x2h20t += ci->state->x20[icla] * h2[icla];
 
         }

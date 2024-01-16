@@ -122,6 +122,12 @@ interface
     implicit none
   end subroutine cs_coal_boundary_conditions_inlet_density
 
+  subroutine cs_coal_ht_convert_h_to_t_particles() &
+    bind(C, name='cs_coal_ht_convert_h_to_t_particles')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_coal_ht_convert_h_to_t_particles
+
 end interface
 
 !===============================================================================
@@ -370,7 +376,7 @@ call cs_coal_physprop1 &
 
 ! --- Transport of H2
 
-call  cs_coal_thfieldconv2(ncel)
+call cs_coal_ht_convert_h_to_t_particles
 
 !===============================================================================
 ! 5. Calculation of the physical properties of the mixture

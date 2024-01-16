@@ -53,6 +53,7 @@
 
 #include "cs_base.h"
 #include "cs_coal.h"
+#include "cs_coal_ht_convert.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
@@ -1356,9 +1357,10 @@ _lagich(const cs_real_t   tempct[],
       f2mc[iii] = 0.0;
     }
 
-    int mode = -1;
-    CS_PROCF(cpthp1, CPTHP1) (&mode, &aux2, coefe, f1mc, f2mc,
-                              &part_temp[l_id_het]);
+    aux2 = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(part_temp[l_id_het],
+                                                           coefe,
+                                                           f1mc,
+                                                           f2mc);
 
     /* Compute MO2/MC/2. HO2(TF)    */
     for (cs_lnum_t iii = 0;
@@ -1374,10 +1376,13 @@ _lagich(const cs_real_t   tempct[],
       f2mc[iii] = 0.0;
     }
 
-    mode = -1;
     aux3 = cs_lagr_particle_get_real(particle, p_am,
                                      CS_LAGR_FLUID_TEMPERATURE) + _tkelvi;
-    CS_PROCF(cpthp1, CPTHP1) (&mode, &aux4, coefe, f1mc, f2mc, &aux3);
+
+    aux4 = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(aux3,
+                                                           coefe,
+                                                           f1mc,
+                                                           f2mc);
 
     cs_real_t deltah = aux2 - aux4 - aux1;
 

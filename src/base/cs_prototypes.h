@@ -63,20 +63,6 @@ extern void CS_PROCF (caltri, CALTRI)
 );
 
 /*----------------------------------------------------------------------------
- * Convert gas temperature to and from enthalpy based on concentrations
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (cpthp1, CPTHP1)
-(
- const int        *mode,    /* <-- 1: h to t, 2: t to h */
- cs_real_t        *eh,      /* <-> enthalpy of gas mix */
- cs_real_t        *xesp,    /* <-- mas fraction of species */
- cs_real_t        *f1mc,    /* <-- mean f1 */
- cs_real_t        *f2mc,    /* <-- mean f2 */
- cs_real_t        *tp       /* <-- gas temperature (K) */
-);
-
-/*----------------------------------------------------------------------------
  * Initialize Fortran base common block values
  *----------------------------------------------------------------------------*/
 
