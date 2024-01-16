@@ -562,7 +562,9 @@ typedef enum {
  * @}
  * @name Settings for the linear solvers or SLES (Sparse Linear Equation Solver)
  * @{
- *
+ */
+
+/*!
  * \enum cs_param_sles_class_t
  * \brief Class of iterative solvers to consider for solver the linear system
  *
@@ -594,27 +596,6 @@ typedef enum {
 
 } cs_param_sles_class_t;
 
-/*!
- * \enum cs_param_amg_type_t
- * Type of AMG (Algebraic MultiGrid) algorithm to use (either as a
- * preconditioner with or a solver). There are different choices of
- * implementation and of type of cycle
- */
-
-typedef enum {
-
-  CS_PARAM_AMG_NONE,            /*!< No specified algorithm */
-  CS_PARAM_AMG_HYPRE_BOOMER_V,  /*!< V-cycle Boomer algorithm (Hypre lib.) */
-  CS_PARAM_AMG_HYPRE_BOOMER_W,  /*!< W-cycle Boomer algorithm (Hypre lib.) */
-  CS_PARAM_AMG_PETSC_GAMG_V,    /*!< V-cycle GAMG algorithm (PETSc lib.) */
-  CS_PARAM_AMG_PETSC_GAMG_W,    /*!< W-cycle GAMG algorithm (PETSc lib.) */
-  CS_PARAM_AMG_PETSC_PCMG,      /*!< preconditioned MG algorithm from PETSc */
-  CS_PARAM_AMG_HOUSE_V,         /*!< In-house algorithm with V-cycle */
-  CS_PARAM_AMG_HOUSE_K,         /*!< In-house algorithm with K-cycle */
-
-  CS_PARAM_N_AMG_TYPES
-
-} cs_param_amg_type_t;
 
 /*! \enum cs_param_schur_approx_t
  *
@@ -1183,19 +1164,6 @@ cs_param_get_precond_block_name(cs_param_precond_block_t   type);
 
 const char *
 cs_param_get_schur_approx_name(cs_param_schur_approx_t   type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the type of algebraic multigrid (AMG)
- *
- * \param[in] type     type of AMG
- *
- * \return the associated type name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_amg_type_name(cs_param_amg_type_t   type);
 
 /*----------------------------------------------------------------------------*/
 

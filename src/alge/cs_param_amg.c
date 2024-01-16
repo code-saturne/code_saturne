@@ -1,0 +1,417 @@
+/*============================================================================
+ * Routines to handle the set of parameters for algebraic multigrids (AMG)
+ *============================================================================*/
+
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2024 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include <bft_error.h>
+#include <bft_mem.h>
+
+#include "cs_base.h"
+#include "cs_log.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_param_amg.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Local private variables
+ *============================================================================*/
+
+/*============================================================================
+ * Private function prototypes
+ *============================================================================*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the name of the type of algebraic multigrid (AMG)
+ *
+ * \param[in] type     type of AMG
+ *
+ * \return the associated type name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_amg_get_type_name(cs_param_amg_type_t  type)
+{
+  switch (type) {
+
+  case CS_PARAM_AMG_NONE:
+    return  "None";
+    break;
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+    return  "Boomer V-cycle (Hypre)";
+    break;
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    return  "Boomer W-cycle (Hypre)";
+    break;
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+    return  "GAMG V-cycle (PETSc)";
+    break;
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+    return  "GAMG W-cycle (PETSc)";
+    break;
+  case CS_PARAM_AMG_PETSC_PCMG:
+    return  "PCMG (PETSc)";
+    break;
+  case CS_PARAM_AMG_HOUSE_V:
+    return  "In-house (V-cycle)";
+    break;
+  case CS_PARAM_AMG_HOUSE_K:
+    return  "In-house (K-cycle)";
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of AMG. Stop execution.", __func__);
+  }
+
+  return "";
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the related solver class from the amg type
+ *
+ * \param[in] amg_type    type of AMG to consider
+ *
+ * \return the related solver class or CS_PARAM_SLES_CLASS_CS
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_class_t
+cs_param_amg_get_class(cs_param_amg_type_t  amg_type)
+{
+  switch (amg_type) {
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    return CS_PARAM_SLES_CLASS_HYPRE;
+
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+  case CS_PARAM_AMG_PETSC_PCMG:
+    return CS_PARAM_SLES_CLASS_PETSC;
+
+  default:
+    return CS_PARAM_SLES_CLASS_CS;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new structure storing a set of parameters used when calling
+ *        boomerAMG. Set default values for all parameters.
+ *
+ * \return a pointer to a new set of boomerAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_boomer_t *
+cs_param_amg_boomer_create(void)
+{
+  cs_param_amg_boomer_t  *bamgp = NULL;
+
+  BFT_MALLOC(bamgp, 1, cs_param_amg_boomer_t);
+
+  /* Main options */
+
+  bamgp->coarsen_algo = CS_PARAM_AMG_BOOMER_COARSEN_HMIS;
+  bamgp->coarse_solver = CS_PARAM_AMG_BOOMER_GAUSS_ELIM;
+
+  /* From the HYPRE documentation: "There are further parameter choices for the
+   * individual smoothers, which are described in the reference manual. The
+   * default relaxation type is l1-Gauss-Seidel, using a forward solve on the
+   * down cycle and a backward solve on the up-cycle, to keep symmetry. Note
+   * that if BoomerAMG is used as a preconditioner for conjugate gradient, it
+   * is necessary to use a symmetric smoother. Other symmetric options are
+   * weighted Jacobi or hybrid symmetric Gauss-Seidel."
+   */
+
+  bamgp->n_down_iter = 1;
+  bamgp->down_smoother = CS_PARAM_AMG_BOOMER_FORWARD_L1_GS;
+  /* CS_PARAM_AMG_BOOMER_HYBRID_SSOR is also a good choice */
+
+  bamgp->n_up_iter = 1;
+  bamgp->up_smoother = CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS;
+  /* CS_PARAM_AMG_BOOMER_HYBRID_SSOR is also a good choice */
+
+  /* Advanced options */
+
+  /* For best performance, it might be necessary to set certain parameters,
+   * which will affect both coarsening and interpolation. One important
+   * parameter is the strong threshold.  The default value is 0.25, which
+   * appears to be a good choice for 2-dimensional problems and the low
+   * complexity coarsening algorithms. For 3-dimensional problems a better
+   * choice appears to be 0.5, when using the default coarsening
+   * algorithm. However, the choice of the strength threshold is problem
+   * dependent.
+   */
+
+  bamgp->strong_threshold = 0.5;
+  bamgp->interp_algo = CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC;
+  bamgp->p_max = 8;
+  bamgp->n_agg_levels = 2;
+  bamgp->n_agg_paths = 2;  /* HYPRE default is 1 */
+
+  return bamgp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy the given set of parameters used when calling boomerAMG into a
+ *        new structure
+ *
+ * \param[in] bamgp   reference set of boomerAMG parameters
+ *
+ * \return a pointer to a new set of boomerAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_boomer_t *
+cs_param_amg_boomer_copy(const cs_param_amg_boomer_t  *bamgp)
+{
+  cs_param_amg_boomer_t  *cpy = cs_param_amg_boomer_create();
+
+  cpy->coarsen_algo = bamgp->coarsen_algo;
+  cpy->coarse_solver = bamgp->coarse_solver;
+
+  cpy->n_down_iter = bamgp->n_down_iter;
+  cpy->down_smoother = bamgp->down_smoother;
+
+  cpy->n_up_iter = bamgp->n_up_iter;
+  cpy->up_smoother = bamgp->up_smoother;
+
+  cpy->strong_threshold = bamgp->strong_threshold;
+  cpy->interp_algo = bamgp->interp_algo;
+  cpy->p_max = bamgp->p_max;
+  cpy->n_agg_levels = bamgp->n_agg_levels;
+  cpy->n_agg_paths = bamgp->n_agg_paths;
+
+  return cpy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the name of the smoother used with BoomerAMG (HYPRE library)
+ *
+ * \param[in] smoother  smoother type
+ *
+ * \return name of the given smoother type
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_amg_get_boomer_smoother_name(cs_param_amg_boomer_smoother_t  smoother)
+{
+  switch (smoother) {
+
+  case CS_PARAM_AMG_BOOMER_JACOBI:
+    return "Jacobi (0)";
+  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
+    return "Forward Gauss-Seidel (3)";
+  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
+    return "Backward Gauss-Seidel (4)";
+  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
+    return "Hybrid symmetric SOR (6)";
+  case CS_PARAM_AMG_BOOMER_L1_SGS:
+    return "L1 symmetric Gauss-Seidel (8)";
+  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
+    return "Gauss elimination (9)";
+  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
+    return "Backward l1 Gauss-Seidel (13)";
+  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
+    return "Forward l1 Gauss-Seidel (14)";
+  case CS_PARAM_AMG_BOOMER_CG:
+    return "Conjugate Gradient (15)";
+  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
+    return "Chebyshev (16)";
+  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
+    return "FCF Jacobi (17)";
+  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
+    return "L1 Jacobi (18)";
+
+  default:
+    return "Undefined";
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the set of parameters used for setting BoomerAMG
+ *
+ * \param[in] name      name related to the current SLES
+ * \param[in] bamgp     set of boomerAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_amg_boomer_log(const char                  *name,
+                       const cs_param_amg_boomer_t  *bamgp)
+{
+  if (bamgp == NULL)
+    return;
+
+  char  *prefix = NULL;
+  int  len = strlen(name) + strlen("  *  |") + 1;
+  BFT_MALLOC(prefix, len, char);
+  sprintf(prefix, "  * %s |", name);
+
+  cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_down_smoothing: %1d it.| %s\n",
+                prefix, bamgp->n_down_iter,
+                cs_param_amg_get_boomer_smoother_name(bamgp->down_smoother));
+  cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_up_smoothing:   %1d it.| %s\n",
+                prefix, bamgp->n_up_iter,
+                cs_param_amg_get_boomer_smoother_name(bamgp->up_smoother));
+  cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarse_solver:  %s\n",
+                prefix,
+                cs_param_amg_get_boomer_smoother_name(bamgp->coarse_solver));
+
+  switch (bamgp->coarsen_algo) {
+
+  case CS_PARAM_AMG_BOOMER_COARSEN_FALGOUT:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:   %s\n",
+                  prefix, "Falgout (6)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_COARSEN_PMIS:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+                  prefix, "PMIS (8)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_COARSEN_HMIS:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+                  prefix, "HMIS (10)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_COARSEN_CGC:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+                  prefix, "CGC (21)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_COARSEN_CGC_E:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+                  prefix, "CGC-E (22)");
+    break;
+
+  default:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+                  prefix, "Unknown");
+    break;
+
+  } /* Coarsening algorithm */
+
+  /* Advanced parameters */
+
+  cs_log_printf(CS_LOG_SETUP, "%s   strong_threshold:       %f\n",
+                prefix, bamgp->strong_threshold);
+
+  cs_log_printf(CS_LOG_SETUP,
+                "%s   aggressive_coarsening:  %d lv. | %d paths\n",
+                prefix, bamgp->n_agg_levels, bamgp->n_agg_paths);
+
+  cs_log_printf(CS_LOG_SETUP, "%s   Pmax set:               %d\n",
+                prefix, bamgp->p_max);
+
+  switch (bamgp->interp_algo) {
+
+  case CS_PARAM_AMG_BOOMER_INTERP_HYPERBOLIC:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "For hyperbolic PDEs (2)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "extended+i (common C neighbor) (6)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "extended+i (no common C neighbor) (7)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_INTERP_FF1:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "FF1 (13)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_INTERP_EXTENDED:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "extended (14)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_MATRIX:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "extended+i (matrix form) (17)");
+    break;
+
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_E_MATRIX:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "extended+e (matrix form) (18)");
+    break;
+
+  default:
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+                  prefix, "Unknown");
+    break;
+
+  } /* Interpolation algorithm */
+
+  BFT_FREE(prefix);
+}
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

@@ -113,6 +113,7 @@ cs_matrix_tuning.h \
 cs_matrix_util.h \
 cs_multigrid.h \
 cs_multigrid_smoother.h \
+cs_param_amg.h \
 cs_param_mumps.h \
 cs_param_saddle.h \
 cs_param_sles.h \
@@ -190,6 +191,7 @@ cs_matrix_tuning.c \
 cs_matrix_util.c \
 cs_multigrid.c \
 cs_multigrid_smoother.c \
+cs_param_amg.c \
 cs_param_mumps.c \
 cs_param_saddle.c \
 cs_sles.c \

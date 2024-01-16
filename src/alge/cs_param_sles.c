@@ -92,23 +92,6 @@ BEGIN_C_DECLS
  * Local private variables
  *============================================================================*/
 
-static const char
-cs_param_sles_boomeramg_smoother_name[CS_PARAM_SLES_BOOMERAMG_N_SMOOTHERS]
-                                     [CS_BASE_STRING_LEN] =
-  { N_("Jacobi (0)"),
-    N_("Forward Gauss-Seidel (3)"),
-    N_("Backward Gauss-Seidel (4)"),
-    N_("Hybrid symmetric SOR (6)"),
-    N_("L1 symmetric Gauss-Seidel (8)"),
-    N_("Gauss elimination (9)"),
-    N_("Backward l1 Gauss-Seidel (13)"),
-    N_("Forward l1 Gauss-Seidel (14)"),
-    N_("Conjugate Gradient (15)"),
-    N_("Chebyshev (16)"),
-    N_("FCF Jacobi (17)"),
-    N_("L1 Jacobi (18)"),
-  };
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -421,7 +404,7 @@ _petsc_pchypre_hook(const char              *prefix,
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
 
-  cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
   assert(bamgp != NULL);
 
   PCSetType(pc, PCHYPRE);
@@ -463,18 +446,18 @@ _petsc_pchypre_hook(const char              *prefix,
 
   switch (bamgp->coarsen_algo) {
 
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_FALGOUT:
+  case CS_PARAM_AMG_BOOMER_COARSEN_FALGOUT:
     sprintf(option, "%s", "Falgout");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_PMIS:
+  case CS_PARAM_AMG_BOOMER_COARSEN_PMIS:
     sprintf(option, "%s", "PMIS");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS:
+  case CS_PARAM_AMG_BOOMER_COARSEN_HMIS:
     sprintf(option, "%s", "HMIS");
     break;
 
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_CGC:
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_CGC_E:
+  case CS_PARAM_AMG_BOOMER_COARSEN_CGC:
+  case CS_PARAM_AMG_BOOMER_COARSEN_CGC_E:
     bft_error(__FILE__, __LINE__, 0, "%s: Not available from PETSc.", __func__);
     break;
 
@@ -492,27 +475,27 @@ _petsc_pchypre_hook(const char              *prefix,
 
   switch (bamgp->interp_algo) {
 
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_HYPERBOLIC:
+  case CS_PARAM_AMG_BOOMER_INTERP_HYPERBOLIC:
     bft_error(__FILE__, __LINE__, 0, "%s: Not available from PETSc.", __func__);
     break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_CC:
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC:
     sprintf(option, "%s", "ext+i");  /* Strange but the file
                                         cf. src/ksp/pc/impls/hypre/hypre.c */
     break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I:
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I:
     sprintf(option, "%s", "ext+i-cc"); /* Strange but the file
                                           cf. src/ksp/pc/impls/hypre/hypre.c */
     break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_FF1:
+  case CS_PARAM_AMG_BOOMER_INTERP_FF1:
     sprintf(option, "%s", "FF1");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXTENDED:
+  case CS_PARAM_AMG_BOOMER_INTERP_EXTENDED:
     sprintf(option, "%s", "ext");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_MATRIX:
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_MATRIX:
     sprintf(option, "%s", "ext+i-mm");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_E_MATRIX:
+  case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_E_MATRIX:
     sprintf(option, "%s", "ext+e-mm");
     break;
 
@@ -564,40 +547,40 @@ _petsc_pchypre_hook(const char              *prefix,
 
   switch (bamgp->down_smoother) {
 
-  case CS_PARAM_SLES_BOOMERAMG_JACOBI:
+  case CS_PARAM_AMG_BOOMER_JACOBI:
     sprintf(option, "%s", "Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FORWARD_GS:
+  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
     sprintf(option, "%s", "SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_BACKWARD_GS:
+  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
     sprintf(option, "%s", "backward-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR:
+  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
     sprintf(option, "%s", "symmetric-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_L1_SGS:
+  case CS_PARAM_AMG_BOOMER_L1_SGS:
     sprintf(option, "%s", "l1scaled-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM:
+  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
     sprintf(option, "%s", "Gaussian-elimination");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS:
+  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
     sprintf(option, "%s", "l1-Gauss-Seidel");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS:
+  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
     sprintf(option, "%s", "backward-l1-Gauss-Seidel");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_CG:
+  case CS_PARAM_AMG_BOOMER_CG:
     sprintf(option, "%s", "CG");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_CHEBYSHEV:
+  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
     sprintf(option, "%s", "Chebyshev");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FCF_JACOBI:
+  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
     sprintf(option, "%s", "FCF-Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_L1_JACOBI:
+  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
     sprintf(option, "%s", "l1scaled-Jacobi");
     break;
 
@@ -614,40 +597,40 @@ _petsc_pchypre_hook(const char              *prefix,
 
   switch (bamgp->up_smoother) {
 
-  case CS_PARAM_SLES_BOOMERAMG_JACOBI:
+  case CS_PARAM_AMG_BOOMER_JACOBI:
     sprintf(option, "%s", "Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FORWARD_GS:
+  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
     sprintf(option, "%s", "SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_BACKWARD_GS:
+  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
     sprintf(option, "%s", "backward-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR:
+  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
     sprintf(option, "%s", "symmetric-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_L1_SGS:
+  case CS_PARAM_AMG_BOOMER_L1_SGS:
     sprintf(option, "%s", "l1scaled-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM:
+  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
     sprintf(option, "%s", "Gaussian-elimination");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS:
+  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
     sprintf(option, "%s", "l1-Gauss-Seidel");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS:
+  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
     sprintf(option, "%s", "backward-l1-Gauss-Seidel");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_CG:
+  case CS_PARAM_AMG_BOOMER_CG:
     sprintf(option, "%s", "CG");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_CHEBYSHEV:
+  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
     sprintf(option, "%s", "Chebyshev");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FCF_JACOBI:
+  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
     sprintf(option, "%s", "FCF-Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_L1_JACOBI:
+  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
     sprintf(option, "%s", "l1scaled-Jacobi");
     break;
 
@@ -664,40 +647,40 @@ _petsc_pchypre_hook(const char              *prefix,
 
   switch (bamgp->coarse_solver) {
 
-  case CS_PARAM_SLES_BOOMERAMG_JACOBI:
+  case CS_PARAM_AMG_BOOMER_JACOBI:
     sprintf(option, "%s", "Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FORWARD_GS:
+  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
     sprintf(option, "%s", "SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_BACKWARD_GS:
+  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
     sprintf(option, "%s", "backward-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR:
+  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
     sprintf(option, "%s", "symmetric-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_L1_SGS:
+  case CS_PARAM_AMG_BOOMER_L1_SGS:
     sprintf(option, "%s", "l1scaled-SOR/Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM:
+  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
     sprintf(option, "%s", "Gaussian-elimination");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS:
+  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
     sprintf(option, "%s", "l1-Gauss-Seidel");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS:
+  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
     sprintf(option, "%s", "backward-l1-Gauss-Seidel");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_CG:
+  case CS_PARAM_AMG_BOOMER_CG:
     sprintf(option, "%s", "CG");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_CHEBYSHEV:
+  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
     sprintf(option, "%s", "Chebyshev");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_FCF_JACOBI:
+  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
     sprintf(option, "%s", "FCF-Jacobi");
     break;
-  case CS_PARAM_SLES_BOOMERAMG_L1_JACOBI:
+  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
     sprintf(option, "%s", "l1scaled-Jacobi");
     break;
 
@@ -2182,16 +2165,10 @@ _set_petsc_hypre_sles(bool                 use_field_id,
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
           slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
 
-        cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
 
         if (bamgp == NULL) /* Define a default set of parameters */
-          cs_param_sles_boomeramg(slesp,
-                                  CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
-                                  CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
-                                  1,  /* n_down_iter */
-                                  1); /* n_up_iter */
+          cs_param_sles_boomeramg_reset(slesp);
 
       }
     }
@@ -2303,7 +2280,7 @@ _hypre_boomeramg_hook(int     verbosity,
                       void   *solver_p)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
-  cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
   HYPRE_Solver  hs = solver_p;
   HYPRE_Solver  amg = _set_hypre_solver(slesp, hs);
   bool  amg_as_precond = (slesp->solver == CS_PARAM_ITSOL_AMG) ? false : true;
@@ -2553,16 +2530,10 @@ _set_hypre_sles(bool                 use_field_id,
 
   case CS_PARAM_ITSOL_AMG:
     {
-      cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+      cs_param_amg_boomer_t  *bamgp = slesp->context_param;
 
       if (bamgp == NULL) /* Define a default set of parameters */
-        cs_param_sles_boomeramg(slesp,
-                                CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
-                                CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR,
-                                CS_PARAM_SLES_BOOMERAMG_HYBRID_SSOR,
-                                CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
-                                1,  /* n_down_iter */
-                                1); /* n_up_iter */
+        cs_param_sles_boomeramg_reset(slesp);
 
       cs_sles_hypre_define(slesp->field_id,
                            sles_name,
@@ -2579,16 +2550,10 @@ _set_hypre_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       {
-        cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
 
         if (bamgp == NULL) /* Define a default set of parameters */
-          cs_param_sles_boomeramg(slesp,
-                                  CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
-                                  CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
-                                  1,  /* n_down_iter */
-                                  1); /* n_up_iter */
+          cs_param_sles_boomeramg_reset(slesp);
 
         cs_sles_hypre_define(slesp->field_id,
                              sles_name,
@@ -2686,16 +2651,10 @@ _set_hypre_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       {
-        cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
 
         if (bamgp == NULL) /* Define a default set of parameters */
-          cs_param_sles_boomeramg(slesp,
-                                  CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
-                                  CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
-                                  1,  /* n_down_iter */
-                                  1); /* n_up_iter */
+          cs_param_sles_boomeramg_reset(slesp);
 
         cs_sles_hypre_define(slesp->field_id,
                              sles_name,
@@ -2746,16 +2705,10 @@ _set_hypre_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       {
-        cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
 
         if (bamgp == NULL) /* Define a default set of parameters */
-          cs_param_sles_boomeramg(slesp,
-                                  CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
-                                  CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS,
-                                  CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
-                                  1,  /* n_down_iter */
-                                  1); /* n_up_iter */
+          cs_param_sles_boomeramg_reset(slesp);
 
         cs_sles_hypre_define(slesp->field_id,
                              sles_name,
@@ -2810,189 +2763,6 @@ _set_hypre_sles(bool                 use_field_id,
   } /* Switch on solver */
 }
 #endif /* HAVE_HYPRE */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Create a new structure storing a set of parameters used when calling
- *        boomerAMG. Set a default value for the advanced parameters.
- *
- * \param[in] coarsen_algo     type of algorithm for the coarsening
- * \param[in] down_smoother    type of smoother for the down cycle
- * \param[in] up_smoother      type of smoother for th up cycle
- * \param[in] coarse_solver    solver at the coarsest level
- * \param[in] n_down_iter      number of smoothing steps for the down cycle
- * \param[in] n_up_iter        number of smoothing steps for the up cycle
- *
- * \return a pointer to a new set of boomerAMG parameters
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_param_sles_boomeramg_t *
-_create_boomeramg_param(cs_param_sles_boomeramg_coarsen_algo_t    coarsen_algo,
-                        cs_param_sles_boomeramg_smoother_t        down_smoother,
-                        cs_param_sles_boomeramg_smoother_t        up_smoother,
-                        cs_param_sles_boomeramg_smoother_t        coarse_solver,
-                        int                                       n_down_iter,
-                        int                                       n_up_iter)
-{
-  cs_param_sles_boomeramg_t  *bamgp = NULL;
-
-  BFT_MALLOC(bamgp, 1, cs_param_sles_boomeramg_t);
-
-  bamgp->coarsen_algo = coarsen_algo;
-  bamgp->coarse_solver = coarse_solver;
-
-  bamgp->n_down_iter = n_down_iter;
-  bamgp->down_smoother = down_smoother;
-
-  bamgp->n_up_iter = n_up_iter;
-  bamgp->up_smoother = up_smoother;
-
-  /* Advanced options (default settings) */
-
-  bamgp->strong_threshold = 0.5;
-  bamgp->interp_algo = CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_CC;
-  bamgp->p_max = 8;
-  bamgp->n_agg_levels = 2;
-  bamgp->n_agg_paths = 2;  /* HYPRE default is 1 */
-
-  return bamgp;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy into a new structure the given set of parameters used when
- *        calling boomerAMG
- *
- * \param[in] bamgp   reference set of boomerAMG parameters
- *
- * \return a pointer to a new set of boomerAMG parameters
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_param_sles_boomeramg_t *
-_copy_boomeramg_param(const cs_param_sles_boomeramg_t   *bamgp)
-{
-  cs_param_sles_boomeramg_t  *cpy = NULL;
-
-  BFT_MALLOC(cpy, 1, cs_param_sles_boomeramg_t);
-
-  cpy->coarsen_algo = bamgp->coarsen_algo;
-  cpy->coarse_solver = bamgp->coarse_solver;
-
-  cpy->n_down_iter = bamgp->n_down_iter;
-  cpy->down_smoother = bamgp->down_smoother;
-
-  cpy->n_up_iter = bamgp->n_up_iter;
-  cpy->up_smoother = bamgp->up_smoother;
-
-  cpy->strong_threshold = bamgp->strong_threshold;
-  cpy->interp_algo = bamgp->interp_algo;
-  cpy->p_max = bamgp->p_max;
-  cpy->n_agg_levels = bamgp->n_agg_levels;
-  cpy->n_agg_paths = bamgp->n_agg_paths;
-
-  return cpy;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Log the set of parameters used when calling BoomerAMG
- *
- * \param[in] name      name related to the current SLES
- * \param[in] bamgp     set of boomerAMG parameters
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_log_boomeramg_param(const char                        *name,
-                     const cs_param_sles_boomeramg_t   *bamgp)
-{
-  if (bamgp == NULL)
-    return;
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_DownSmoothing: %1d it.| %s\n",
-                name, bamgp->n_down_iter,
-                cs_param_sles_boomeramg_smoother_name[bamgp->down_smoother]);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_UpSmoothing:   %1d it.| %s\n",
-                name, bamgp->n_up_iter,
-                cs_param_sles_boomeramg_smoother_name[bamgp->up_smoother]);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_CoarseSolver:  %s\n",
-                name,
-                cs_param_sles_boomeramg_smoother_name[bamgp->coarse_solver]);
-
-  switch (bamgp->coarsen_algo) {
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_FALGOUT:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_coarsening:    %s\n",
-                name, "Falgout (6)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_PMIS:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_coarsening:    %s\n",
-                name, "PMIS (8)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_coarsening:    %s\n",
-                name, "HMIS (10)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_CGC:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_coarsening:    %s\n",
-                name, "CGC (21)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_COARSEN_CGC_E:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_coarsening:    %s\n",
-                name, "CGC-E (22)");
-    break;
-
-  default:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_coarsening:    %s\n",
-                name, "Unknown");
-    break;
-  }
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | StrongThreshold:         %f\n",
-                name, bamgp->strong_threshold);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Aggressive_coarsening:"
-                "%d lv. | %d paths\n",
-                name, bamgp->n_agg_levels, bamgp->n_agg_paths);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Pmax set:                %d\n",
-                name, bamgp->p_max);
-
-  switch (bamgp->interp_algo) {
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_HYPERBOLIC:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "For hyperbolic PDEs (2)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_CC:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "extended+i (common C neighbor) (6)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "extended+i (no common C neighbor) (7)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_FF1:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "FF1 (13)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXTENDED:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "extended (14)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_MATRIX:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "extended+i (matrix form) (17)");
-    break;
-  case CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_E_MATRIX:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "extended+e (matrix form) (18)");
-    break;
-
-  default:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BoomerAMG_interpolation: %s\n",
-                name, "Unknown");
-    break;
-  }
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -3125,11 +2895,11 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
     if (slesp->solver == CS_PARAM_ITSOL_AMG) {
 
       cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
-                    slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
+                    slesp->name, cs_param_amg_get_type_name(slesp->amg_type));
 
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
           slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-        _log_boomeramg_param(slesp->name, slesp->context_param);
+        cs_param_amg_boomer_log(slesp->name, slesp->context_param);
 
     }
 
@@ -3139,11 +2909,11 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
 
       cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
-                    slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
+                    slesp->name, cs_param_amg_get_type_name(slesp->amg_type));
 
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
           slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-        _log_boomeramg_param(slesp->name, slesp->context_param);
+        cs_param_amg_boomer_log(slesp->name, slesp->context_param);
 
     }
     else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
@@ -3231,15 +3001,10 @@ cs_param_sles_copy_from(const cs_param_sles_t   *src,
       dst->solver == CS_PARAM_ITSOL_MUMPS)
     dst->context_param = cs_param_mumps_copy(src->context_param);
 
-  else if (dst->precond == CS_PARAM_PRECOND_AMG &&
-           (dst->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
-            dst->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W))
-    dst->context_param = _copy_boomeramg_param(src->context_param);
-
-  else if (dst->solver == CS_PARAM_ITSOL_AMG &&
-           (dst->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
-            dst->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W))
-    dst->context_param = _copy_boomeramg_param(src->context_param);
+  else if (cs_param_amg_boomer_is_needed(dst->solver,
+                                        dst->precond,
+                                        dst->amg_type))
+    dst->context_param = cs_param_amg_boomer_copy(src->context_param);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3319,65 +3084,74 @@ cs_param_sles_set(bool                 use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the main members of a cs_param_mumps_t structure. This
- *        structure is allocated if needed. Other members are kept to their
- *        values.
+ * \brief Allocate and initialize a new context structure for the boomerAMG
+ *        settings.
  *
- * \param[in, out] slesp           pointer to a cs_param_sles_t structure
- * \param[in]      coarsen_algo    type of algoritmh for the coarsening
- * \param[in]      down_smoother   type of smoother for the down cycle
- * \param[in]      up_smoother     type of smoother for th up cycle
- * \param[in]      coarse_solver   solver at the coarsest level
- * \param[in]      n_down_iter     number of smoothing steps for the down cycle
- * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in, out] slesp        pointer to a cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_boomeramg(cs_param_sles_t                          *slesp,
-                        cs_param_sles_boomeramg_coarsen_algo_t    coarsen_algo,
-                        cs_param_sles_boomeramg_smoother_t        down_smoother,
-                        cs_param_sles_boomeramg_smoother_t        up_smoother,
-                        cs_param_sles_boomeramg_smoother_t        coarse_solver,
-                        int                                       n_down_iter,
-                        int                                       n_up_iter)
+cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp)
 {
   if (slesp == NULL)
     return;
 
-  if (slesp->context_param == NULL)
-    slesp->context_param = _create_boomeramg_param(coarsen_algo,
-                                                   down_smoother,
-                                                   up_smoother,
-                                                   coarse_solver,
-                                                   n_down_iter,
-                                                   n_up_iter);
+  if (slesp->context_param != NULL)
+    BFT_FREE(slesp->context_param);
 
-  else {
-
-    /* One assumes that the existing context structure is related to
-       boomeramg */
-
-    cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
-
-    bamgp->coarsen_algo = coarsen_algo;
-    bamgp->coarse_solver = coarse_solver;
-
-    bamgp->n_down_iter = n_down_iter;
-    bamgp->down_smoother = down_smoother;
-
-    bamgp->n_up_iter = n_up_iter;
-    bamgp->up_smoother = up_smoother;
-
-  }
+  slesp->context_param = cs_param_amg_boomer_create();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the members of a cs_param_sles_boomeramg_t structure used in
+ * \brief Set the main members of a cs_param_amg_boomer_t structure. This
+ *        structure is allocated and initialized and then one sets the main
+ *        given parameters. Please refer to the HYPRE user guide for more
+ *        details about the following options.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in]      up_smoother     type of smoother for th up cycle
+ * \param[in]      coarse_solver   solver at the coarsest level
+ * \param[in]      coarsen_algo    type of algoritmh for the coarsening
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_boomeramg(cs_param_sles_t                    *slesp,
+                        int                                 n_down_iter,
+                        cs_param_amg_boomer_smoother_t      down_smoother,
+                        int                                 n_up_iter,
+                        cs_param_amg_boomer_smoother_t      up_smoother,
+                        cs_param_amg_boomer_smoother_t      coarse_solver,
+                        cs_param_amg_boomer_coarsen_algo_t  coarsen_algo)
+{
+  if (slesp == NULL)
+    return;
+
+  cs_param_sles_boomeramg_reset(slesp);
+
+  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
+
+  bamgp->n_down_iter = n_down_iter;
+  bamgp->down_smoother = down_smoother;
+
+  bamgp->n_up_iter = n_up_iter;
+  bamgp->up_smoother = up_smoother;
+
+  bamgp->coarse_solver = coarse_solver;
+  bamgp->coarsen_algo = coarsen_algo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_amg_boomer_t structure used in
  *        advanced settings. This structure is allocated if needed. Other
  *        members are kept to their values. Please refer to the HYPRE user
- *        guide for more details about the following advanced options.
+ *        guide for more details about the following options.
  *
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      strong_thr       value of the strong threshold (coarsening)
@@ -3391,7 +3165,7 @@ cs_param_sles_boomeramg(cs_param_sles_t                          *slesp,
 void
 cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
                                  double                             strong_thr,
-                             cs_param_sles_boomeramg_interp_algo_t  interp_algo,
+                                 cs_param_amg_boomer_interp_algo_t  interp_algo,
                                  int                                p_max,
                                  int                                n_agg_lv,
                                  int                                n_agg_paths)
@@ -3400,17 +3174,11 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
     return;
 
   if (slesp->context_param == NULL)
-    slesp->context_param =
-      _create_boomeramg_param(CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
-                              CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS,
-                              CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS,
-                              CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
-                              1,
-                              1);
+    slesp->context_param = cs_param_amg_boomer_create();
 
   /* One assumes that the existing context structure is related to boomeramg */
 
-  cs_param_sles_boomeramg_t  *bamgp = slesp->context_param;
+  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
 
   bamgp->strong_threshold = strong_thr;
   bamgp->interp_algo = interp_algo;
@@ -3624,35 +3392,6 @@ cs_param_sles_hypre_from_petsc(void)
 #else
   return false;
 #endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Retrieve the related solver class from the amg type
- *
- * \param[in]  amg_type    type of AMG to consider
- *
- * \return the related solver class or CS_PARAM_SLES_CLASS_CS
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_sles_class_t
-cs_param_sles_get_class_from_amg(cs_param_amg_type_t   amg_type)
-{
-  switch (amg_type) {
-
-  case CS_PARAM_AMG_HYPRE_BOOMER_V:
-  case CS_PARAM_AMG_HYPRE_BOOMER_W:
-    return CS_PARAM_SLES_CLASS_HYPRE;
-
-  case CS_PARAM_AMG_PETSC_GAMG_V:
-  case CS_PARAM_AMG_PETSC_GAMG_W:
-  case CS_PARAM_AMG_PETSC_PCMG:
-    return CS_PARAM_SLES_CLASS_PETSC;
-
-  default:
-    return CS_PARAM_SLES_CLASS_CS;
-  }
 }
 
 /*----------------------------------------------------------------------------*/

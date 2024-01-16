@@ -3942,7 +3942,7 @@ _set_schur_sles(cs_param_sles_t   *schur_slesp)
     else {
 
       cs_param_sles_class_t  ret_class =
-        cs_param_sles_get_class_from_amg(schur_slesp->amg_type);
+        cs_param_amg_get_class(schur_slesp->amg_type);
 
       /* Modify the default settings if needed */
 

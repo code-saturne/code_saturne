@@ -308,18 +308,18 @@ cs_user_parameters(cs_domain_t    *domain)
     /* Set the main parameters for BoomerAMG */
 
     cs_param_sles_boomeramg(slesp,
-                            CS_PARAM_SLES_BOOMERAMG_COARSEN_HMIS,
-                            CS_PARAM_SLES_BOOMERAMG_FORWARD_L1_GS,
-                            CS_PARAM_SLES_BOOMERAMG_BACKWARD_L1_GS,
-                            CS_PARAM_SLES_BOOMERAMG_GAUSS_ELIM,
                             1,  /* n_down_iter */
-                            1); /* n_up_iter */
+                            CS_PARAM_AMG_BOOMER_FORWARD_L1_GS,
+                            1,  /* n_up_iter */
+                            CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS,
+                            CS_PARAM_AMG_BOOMER_GAUSS_ELIM,
+                            CS_PARAM_AMG_BOOMER_COARSEN_HMIS);
 
     /* Set advanced parameters for BoomerAMG */
 
     cs_param_sles_boomeramg_advanced(slesp,
                                      0.5, /* strong threshold */
-                                 CS_PARAM_SLES_BOOMERAMG_INTERP_EXT_PLUS_I_CC,
+                                     CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC,
                                      8,   /* Pmax */
                                      2,   /* n_agg_levels */
                                      2);  /* n_agg_paths */
