@@ -45,6 +45,10 @@ module cpincl
   double precision epsicp
   parameter ( epsicp = 1.d-8 )
 
+  !> maximal number of tabulation points
+  integer    npotcp
+  parameter( npotcp = 8 )
+
   ! Data relative to coal
 
   !> Number of coals
@@ -106,11 +110,6 @@ module cpincl
                                    a1(:), b1(:),c1(:),d1(:), e1(:), f1(:),   &
                                    a2(:), b2(:),c2(:),d2(:), e2(:), f2(:)
 
-  ! Complement Table
-
-  real(c_double), pointer, save :: thc(:)
-  integer(c_int), pointer, save :: npoc
-
   ! POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE
 
   ! ---- Variables transportees
@@ -159,7 +158,7 @@ module cpincl
   ! Moved from ppthch
 
   !> engaze(ij) is the massic enthalpy (J/kg) of the i-th elementary gas component
-  !> at temperature  th(j)
+  !> at temperature  th[j]
   real(c_double), pointer, save ::  ehgaze(:,:)
 
   ! Moved from ppcfu
@@ -283,14 +282,14 @@ module cpincl
     subroutine cs_f_cpincl_get_pointers_3(                                     &
          p_ico, p_ico2, p_ih2o, p_io2, p_in2, p_ichx1c, p_ichx2c,              &
          p_ichx1, p_ichx2, p_chx1, p_chx2, p_a1, p_b1, p_c1, p_d1, p_e1, p_f1, &
-         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2, p_thc, p_npoc)                    &
+         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2)                                   &
       bind(C, name='cs_f_cpincl_get_pointers_3')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) ::                                              &
          p_ico, p_ico2, p_ih2o, p_io2, p_in2, p_ichx1c, p_ichx2c,              &
          p_ichx1, p_ichx2, p_chx1, p_chx2, p_a1, p_b1, p_c1, p_d1, p_e1, p_f1, &
-         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2, p_thc, p_npoc
+         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2
     end subroutine cs_f_cpincl_get_pointers_3
 
     !---------------------------------------------------------------------------
@@ -396,7 +395,7 @@ contains
     type(c_ptr) ::                                                             &
          p_ico, p_ico2, p_ih2o, p_io2, p_in2, p_ichx1c, p_ichx2c,              &
          p_ichx1, p_ichx2, p_chx1, p_chx2, p_a1, p_b1, p_c1, p_d1, p_e1, p_f1, &
-         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2, p_thc, p_npoc
+         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2
 
     type(c_ptr) ::                                                             &
          p_ihgas,                                                              &
@@ -436,7 +435,7 @@ contains
     call c_f_pointer(p_ick, ick, [ncharm])
     call c_f_pointer(p_iash, iash, [ncharm])
     call c_f_pointer(p_iwat, iwat, [ncharm])
-    call c_f_pointer(p_ehsoli, ehsoli, [nsolim, npot])
+    call c_f_pointer(p_ehsoli, ehsoli, [nsolim, npotcp])
     call c_f_pointer(p_wmols, wmols, [nsolim])
     call c_f_pointer(p_eh0sol, eh0sol, [nsolim])
     call c_f_pointer(p_eh0sol, eh0sol, [nsolim])
@@ -506,12 +505,12 @@ contains
     call c_f_pointer(p_ahetwt, ahetwt, [ncharm])
     call c_f_pointer(p_ehetwt, ehetwt, [ncharm])
 
-    call c_f_pointer(p_ehgaze, ehgaze, [ngazem, npot])
+    call c_f_pointer(p_ehgaze, ehgaze, [ngazem, npotcp])
 
     call cs_f_cpincl_get_pointers_3(                                           &
          p_ico, p_ico2, p_ih2o, p_io2, p_in2, p_ichx1c, p_ichx2c,              &
          p_ichx1, p_ichx2, p_chx1, p_chx2, p_a1, p_b1, p_c1, p_d1, p_e1, p_f1, &
-         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2, p_thc, p_npoc)
+         p_a2, p_b2, p_c2, p_d2, p_e2, p_f2)
 
     call c_f_pointer(p_ico, ico)
     call c_f_pointer(p_ico2, ico2)
@@ -539,9 +538,6 @@ contains
     call c_f_pointer(p_d2, d2, [ncharm])
     call c_f_pointer(p_e2, e2, [ncharm])
     call c_f_pointer(p_f2, f2, [ncharm])
-
-    call c_f_pointer(p_thc, thc, [npot])
-    call c_f_pointer(p_npoc, npoc)
 
     call cs_f_cpincl_get_pointers_4(                                           &
          p_ihgas,                                                              &
@@ -641,11 +637,11 @@ contains
     call c_f_pointer(p_icnonh, icnonh)
     call c_f_pointer(p_icnorb, icnorb)
 
-    call c_f_pointer(p_teno, teno, [npot])
-    call c_f_pointer(p_ka, ka, [4, npot])
-    call c_f_pointer(p_kb, kb, [4, npot])
-    call c_f_pointer(p_kc, kc, [4, npot])
-    call c_f_pointer(p_chi2, chi2, [npot])
+    call c_f_pointer(p_teno, teno, [npotcp])
+    call c_f_pointer(p_ka, ka, [4, npotcp])
+    call c_f_pointer(p_kb, kb, [4, npotcp])
+    call c_f_pointer(p_kc, kc, [4, npotcp])
+    call c_f_pointer(p_chi2, chi2, [npotcp])
 
   end subroutine cp_model_map_coal
 

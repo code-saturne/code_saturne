@@ -118,7 +118,6 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **wmolat,
                          double  **xco2,
                          double  **xh2o,
-                         double  **ckabs1,
                          double  **fs,
                          double  **th,
                          double  **cpgazg);
@@ -173,7 +172,6 @@ cs_f_combustion_model_get_pointers(double  **srrom);
  *   wmolat --> pointer to molar mass of atomic species
  *   xco2   --> pointer to molar coefficient of co2
  *   xh2o   --> pointer to molar coefficient of h2o
- *   ckabs1 --> pointer to absorption coefficient of gas mixture
  *   fs     --> pointer to mixing rate at the stoichiometry
  *----------------------------------------------------------------------------*/
 
@@ -189,12 +187,14 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **wmolat,
                          double  **xco2,
                          double  **xh2o,
-                         double  **ckabs1,
                          double  **fs,
                          double  **th,
                          double  **cpgazg)
 {
-  *ckabs1 = NULL;
+  *npo = NULL;
+  *wmolg  = NULL;
+  *th = NULL;
+  *cpgazg = NULL;
 
   if (cs_glob_combustion_gas_model != NULL) {
 
@@ -225,15 +225,11 @@ cs_f_ppthch_get_pointers(int     **ngaze,
     *ngazg  = &(cm->n_gas_species);
     *nato   = &(cm->n_atomic_species);
     *nrgaz  = &(cm->n_reactions);
-    *npo    = &(cm->n_tab_points);
 
     *wmole  = cm->wmole;
-    *wmolg  = NULL;
     *wmolat = cm->wmolat;
     *xco2   = &(cm->xco2);
     *xh2o   = &(cm->xh2o);
-    *ckabs1 = &(cm->ckabs0);
-    *th     = cm->th;
 
   }
 }

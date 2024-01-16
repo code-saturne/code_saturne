@@ -60,7 +60,6 @@ implicit none
 ! Local variables
 
 integer         igg, it, ir, ih, if, izone
-integer         ige, iat
 integer         idirac
 
 !===============================================================================

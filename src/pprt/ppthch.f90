@@ -72,7 +72,7 @@ module ppthch
   integer    nrgazm
 
   parameter( ngazgm = 25 , ngazem = 20 ,                                     &
-             npot  = 500 , natom  = 5   , nrgazm = 1 )
+             npot  = 50 , natom  = 5   , nrgazm = 1 )
   integer    iatc, iath, iato, iatn , iats
   parameter( iatc = 1, iath = 2, iato = 3, iatn = 4 , iats = 5 )
 
@@ -145,9 +145,6 @@ module ppthch
   !> Absorption coefficient of global species
   double precision, save ::  ckabsg(ngazgm)
 
-  !> Absorption coefficient of gas mixture
-  real(c_double), pointer, save ::  ckabs1
-
   !> Molar coefficient of CO2
   real(c_double), pointer, save ::  xco2
   !> Molar coefficient of H2O
@@ -173,14 +170,14 @@ module ppthch
     subroutine cs_f_ppthch_get_pointers(                                       &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
-         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg)                        &
+         p_xco2, p_xh2o, p_fs, p_th,p_cpgazg)                                  &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) ::                                              &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
-         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg
+         p_xco2, p_xh2o, p_fs, p_th,p_cpgazg
     end subroutine cs_f_ppthch_get_pointers
 
     !---------------------------------------------------------------------------
@@ -211,12 +208,12 @@ contains
     type(c_ptr) ::                                                             &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
-         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg
+         p_xco2, p_xh2o, p_fs, p_th,p_cpgazg
 
     call cs_f_ppthch_get_pointers(                                             &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
-         p_xco2, p_xh2o, p_ckabs1, p_fs, p_th,p_cpgazg)
+         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg)
 
     call c_f_pointer(p_ngaze, ngaze)
     call c_f_pointer(p_ngazg, ngazg)
@@ -228,7 +225,6 @@ contains
     call c_f_pointer(p_wmolat, wmolat, [natom])
     call c_f_pointer(p_xco2, xco2)
     call c_f_pointer(p_xh2o, xh2o)
-    call c_f_pointer(p_ckabs1, ckabs1)
     call c_f_pointer(p_fs, fs, [nrgazm])
     call c_f_pointer(p_th, th, [npot])
     call c_f_pointer(p_npo, npo)

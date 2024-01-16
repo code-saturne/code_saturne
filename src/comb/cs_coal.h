@@ -69,7 +69,7 @@ BEGIN_C_DECLS
 #define  CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS  20
 
 /*! Maximum number of tabulation points */
-#define  CS_COMBUSTION_COAL_MAX_TABULATION_POINTS  500
+#define  CS_COMBUSTION_COAL_MAX_TABULATION_POINTS  8
 
 /*! Maximum number of solid constituants */
 #define  CS_COMBUSTION_COAL_MAX_SOLIDS  CS_COMBUSTION_MAX_COALS * 4

@@ -62,7 +62,7 @@ BEGIN_C_DECLS
 #define CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS 1
 
 /*! Maximum number of tabulation points */
-#define  CS_COMBUSTION_GAS_MAX_TABULATION_POINTS  500
+#define  CS_COMBUSTION_GAS_MAX_TABULATION_POINTS  50
 
 /*============================================================================
  * Type definitions

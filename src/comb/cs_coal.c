@@ -209,9 +209,7 @@ cs_f_cpincl_get_pointers_3(int     **ico,
                            double  **c2,
                            double  **d2,
                            double  **e2,
-                           double  **f2,
-                           double  **thc,
-                           int     **npoc);
+                           double  **f2);
 
 void
 cs_f_cpincl_get_pointers_4(int  **ihgas,
@@ -569,9 +567,7 @@ cs_f_cpincl_get_pointers_3(int     **ico,
                            double  **c2,
                            double  **d2,
                            double  **e2,
-                           double  **f2,
-                           double  **thc,
-                           int     **npoc)
+                           double  **f2)
 {
   if (cs_glob_coal_model == NULL)
     return;
@@ -602,9 +598,6 @@ cs_f_cpincl_get_pointers_3(int     **ico,
   *d2 = cm->d2;
   *e2 = cm->e2;
   *f2 = cm->f2;
-
-  *thc = cm->thc;
-  *npoc = &(cm->npoc);
 }
 
 /*----------------------------------------------------------------------------
