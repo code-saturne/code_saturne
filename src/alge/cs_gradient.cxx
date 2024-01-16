@@ -5579,7 +5579,7 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
 
         cs_real_t pfac = inc*coefav[f_id][i];
 
-        for (cs_lnum_t k = 0; k < 3; k++)
+        for (cs_lnum_t k = 0; k < stride; k++)
           pfac += coefbv[f_id][i][k] * pvar[c_id][k];
 
         pfac -= pvar[c_id][i];
@@ -8959,16 +8959,16 @@ _gradient_vector(const char                     *var_name,
   BFT_FREE(_bc_coeff_a);
   BFT_FREE(_bc_coeff_b);
 
-  _strided_gradient_clipping<3>(mesh,
-                                fvq,
-                                madj,
-                                halo_type,
-                                clip_mode,
-                                verbosity,
-                                clip_coeff,
-                                var_name,
-                                (const cs_real_3_t *)var,
-                                grad);
+  _strided_gradient_clipping(mesh,
+                             fvq,
+                             madj,
+                             halo_type,
+                             clip_mode,
+                             verbosity,
+                             clip_coeff,
+                             var_name,
+                             var,
+                             grad);
 
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
     cs_bad_cells_regularisation_tensor((cs_real_9_t *)grad, 0);
@@ -9192,16 +9192,16 @@ _gradient_tensor(const char                *var_name,
   BFT_FREE(_bc_coeff_a);
   BFT_FREE(_bc_coeff_b);
 
-  _strided_gradient_clipping<6>(mesh,
-                                fvq,
-                                madj,
-                                halo_type,
-                                clip_mode,
-                                verbosity,
-                                clip_coeff,
-                                var_name,
-                                (const cs_real_6_t *)var,
-                                grad);
+  _strided_gradient_clipping(mesh,
+                             fvq,
+                             madj,
+                             halo_type,
+                             clip_mode,
+                             verbosity,
+                             clip_coeff,
+                             var_name,
+                             (const cs_real_6_t *)var,
+                             grad);
 }
 
 /*----------------------------------------------------------------------------*/
