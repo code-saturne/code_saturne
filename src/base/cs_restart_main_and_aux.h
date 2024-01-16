@@ -1,5 +1,5 @@
-#ifndef __CS_RESTART_CHECKPOINT_IO_H__
-#define __CS_RESTART_CHECKPOINT_IO_H__
+#ifndef __CS_RESTART_MAIN_AND_AUX_H__
+#define __CS_RESTART_MAIN_AND_AUX_H__
 
 /*============================================================================
  * Checkpoint/restart handling for default application.
@@ -43,22 +43,24 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Write main and auxiliary checkpoint files
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_write_main_aux_checkpoint(void);
+cs_restart_main_and_aux_write(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Read main and auxiliary checkpoint files
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_read_main_aux_checkpoint(void);
+cs_restart_main_and_aux_read(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_RESTART_DEFAULT_H__ */
+#endif /* __CS_RESTART_MAIN_AND_AUX_H__ */

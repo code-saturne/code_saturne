@@ -594,7 +594,7 @@ if (isuite.eq.1) then
 
   call cs_restart_map_build
 
-  call restart_read_main_aux_checkpoint
+  call restart_main_and_aux_read
 
   ! Radiative module restart */
   if (iirayo.gt.0) then
@@ -985,7 +985,7 @@ if (iisuit.eq.1) then
     write(nfecra,3021) ntcabs,ttcabs
   endif
 
-  call restart_write_main_aux_checkpoint
+  call restart_main_and_aux_write
 
   if (iturbo.eq.2 .and. iecaux.eq.1) then
     call trbsui

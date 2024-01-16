@@ -76,7 +76,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_restart_checkpoint_io.h"
+#include "cs_restart_main_and_aux.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -214,12 +214,13 @@ _read_main_checkpoint(void)
 
   /* Check restart file */
 
-  int retval = cs_restart_read_section_compat(r,
-                                              "code_saturne:checkpoint:main:version",
-                                              "version_fichier_suite_principal",
-                                              0, 1,
-                                              CS_TYPE_int,
-                                              &dummy_real);
+  int retval
+    = cs_restart_read_section_compat(r,
+                                     "code_saturne:checkpoint:main:version",
+                                     "version_fichier_suite_principal",
+                                     0, 1,
+                                     CS_TYPE_int,
+                                     &dummy_real);
 
   if (retval != CS_RESTART_SUCCESS) {
     retval = cs_restart_check_if_restart_from_ncfd(r);
@@ -398,8 +399,8 @@ _read_main_checkpoint(void)
     if (cs_glob_vof_parameters->vof_model & CS_VOF_ENABLED)
       cs_log_warning(_("WARNING : ERROR AT THE MAIN RESTART FILE READING\n"
                        "=========\n\n"
-                       "  ERROR AT READING THE INDICATOR OF THE VOLUME OF FLUID\n"
-                       "                                                  METHOD\n\n"
+                       "  ERROR AT READING THE INDICATOR OF THE \n"
+                       "  VOLUME OF FLUID METHOD\n\n"
                        "The read restart file might come from a previous\n"
                        "  version of Code Saturne, without VOF.\n"
                        "The calculation will be executed but\n"
@@ -461,6 +462,7 @@ _read_main_checkpoint(void)
 
   return old_field_map;
 }
+
 /*----------------------------------------------------------------------------
  * Write auxiliary checkpoint file
  *----------------------------------------------------------------------------*/
@@ -659,7 +661,8 @@ _write_auxiliary_checkpoint(void)
                              CS_TYPE_int,
                              cs_glob_bc_pm_info->ientox + 1);
 
-    cs_log_printf(CS_LOG_DEFAULT, " End writing combustion information (COD3P)\n");
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " End writing combustion information (COD3P)\n");
   }
 
   /* SLFM model */
@@ -703,7 +706,8 @@ _write_auxiliary_checkpoint(void)
                              CS_TYPE_int,
                              cs_glob_bc_pm_info->ientox + 1);
 
-    cs_log_printf(CS_LOG_DEFAULT, " End writing combustion information (SLFM)\n");
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " End writing combustion information (SLFM)\n");
   }
 
   /* EBU model */
@@ -755,7 +759,8 @@ _write_auxiliary_checkpoint(void)
                              CS_TYPE_int,
                              cs_glob_bc_pm_info->tkent + 1);
 
-    cs_log_printf(CS_LOG_DEFAULT, " End writing the combustion information (EBU)\n");
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " End writing the combustion information (EBU)\n");
   }
 
   /* LWC model */
@@ -892,12 +897,13 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   /* Check restart file */
   cs_real_t dummy_real = -99999.;
 
-  int retval = cs_restart_read_section_compat(r,
-                                              "code_saturne:checkpoint:auxiliary:version",
-                                              "version_fichier_suite_auxiliaire",
-                                              0, 1,
-                                              CS_TYPE_int,
-                                              &dummy_real);
+  int retval
+    = cs_restart_read_section_compat(r,
+                                     "code_saturne:checkpoint:auxiliary:version",
+                                     "version_fichier_suite_auxiliaire",
+                                     0, 1,
+                                     CS_TYPE_int,
+                                     &dummy_real);
 
   if (retval != CS_RESTART_SUCCESS) {
     cs_log_warning(_("WARNING : STOP WHILE READING THE AUXILIARY RESTART FILE\n"
@@ -1025,7 +1031,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     if (retval == CS_RESTART_SUCCESS) {
       cgfp->ixyzp0 = 1;
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("   Apdatation of the reference point for the total pressure\n"
+                    _("   Apdatation of the reference point for the"
+                      " total pressure\n"
                       "       by reading the restart file\n"
                       "    XYZP0 = %14.5e, %14.5e, %14.5e \n"),
                     cgfp->xyzp0[0],
@@ -1139,8 +1146,10 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   if (match_i_face || match_b_face) {
     /* Read fluxes */
-    cs_restart_read_linked_fields(r, old_field_map, "inner_mass_flux_id", NULL);
-    cs_restart_read_linked_fields(r, old_field_map, "boundary_mass_flux_id", NULL);
+    cs_restart_read_linked_fields(r, old_field_map,
+                                  "inner_mass_flux_id", NULL);
+    cs_restart_read_linked_fields(r, old_field_map,
+                                  "boundary_mass_flux_id", NULL);
 
     /* Initiliaze void fraction if needed */
     if (cs_glob_vof_parameters->vof_model & CS_VOF_ENABLED && vof_aux_id < 0) {
@@ -1588,11 +1597,12 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Write main and auxiliary checkpoint files
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_write_main_aux_checkpoint(void)
+cs_restart_main_and_aux_write(void)
 {
   /* Write main checkpoint file */
   _write_main_checkpoint();
@@ -1604,11 +1614,12 @@ cs_restart_write_main_aux_checkpoint(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Read main and auxiliary checkpoint files
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_read_main_aux_checkpoint(void)
+cs_restart_main_and_aux_read(void)
 {
   /* Read main checkpoint file */
   cs_map_name_to_id_t *old_field_map = _read_main_checkpoint();

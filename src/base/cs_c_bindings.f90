@@ -643,11 +643,11 @@ module cs_c_bindings
 
     ! \brief Writes main.csc checkpoint file
 
-    subroutine restart_write_main_aux_checkpoint() &
-      bind(C, name='cs_restart_write_main_aux_checkpoint')
+    subroutine restart_main_and_aux_write() &
+      bind(C, name='cs_restart_main_and_aux_write')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine restart_write_main_aux_checkpoint
+    end subroutine restart_main_and_aux_write
 
     !---------------------------------------------------------------------------
 
@@ -655,11 +655,11 @@ module cs_c_bindings
 
     ! \brief Reads main.csc checkpoint file
 
-    subroutine restart_read_main_aux_checkpoint() &
-      bind(C, name='cs_restart_read_main_aux_checkpoint')
+    subroutine restart_main_and_aux_read() &
+      bind(C, name='cs_restart_main_and_aux_read')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine restart_read_main_aux_checkpoint
+    end subroutine restart_main_and_aux_read
 
     !---------------------------------------------------------------------------
 

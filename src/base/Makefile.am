@@ -174,8 +174,8 @@ cs_range_set.h \
 cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
-cs_restart_checkpoint_io.h \
 cs_restart_default.h \
+cs_restart_main_and_aux.h \
 cs_restart_map.h \
 cs_rotation.h \
 cs_runaway_check.h \
@@ -368,8 +368,8 @@ cs_random.c \
 cs_range_set.c \
 cs_resource.c \
 cs_restart.c \
-cs_restart_checkpoint_io.c \
 cs_restart_default.c \
+cs_restart_main_and_aux.c \
 cs_restart_map.c \
 cs_rotation.c \
 cs_runaway_check.c \
