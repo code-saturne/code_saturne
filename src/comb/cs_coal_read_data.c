@@ -646,7 +646,7 @@ cs_coal_read_data(void)
 
   for (int icha = 0; icha < n_coals; icha++) {
 
-    double pcisec, pcipur, pcibrut, xwatpc, pcspur, pcssec;
+    double pcisec, pcipur, pcibrut, xwatpc, pcspur;
 
     xwatpc = cm->xwatch[icha] * 100.;
 
@@ -674,11 +674,12 @@ cs_coal_read_data(void)
 
     else if (cm->ipci[icha] >= 3) {
 
-      double pcsbrut;
+      double pcsbrut, pcssec;
 
       if (cm->ipci[icha] == 3) {   /* PCS(pure) ---> PCI(pure) */
         pcspur = cm->pcich[icha] / 1000.;  // J/kg to KJ/kg
         pcssec = pcspur * (100.-cm->xashsec[icha]) / 100.;
+        pcisec = pcssec -226. * cm->hch[icha];
       }
 
       else if (cm->ipci[icha] == 4) {   /* PCS(dry) ---> PCI(pure) */
@@ -687,6 +688,7 @@ cs_coal_read_data(void)
       else if (cm->ipci[icha] == 5) {   /* PCS(raw)---> PCI(pure) */
         pcsbrut = cm->pcich[icha] / 1000.; // J/kg to KJ/kg
         pcssec = pcsbrut*100. / (100.-xwatpc);
+        pcisec = pcssec -226. * cm->hch[icha];
       }
       else if (cm->ipci[icha] == 6) {   /* IGT correlation */
         // Compute PCS(dry) in KJ/kg
@@ -695,11 +697,11 @@ cs_coal_read_data(void)
                  + 68.3844 * cm->sch[icha]
                  - 119.86  * (cm->och[icha] + cm->nch[icha])
                  - 15.305  * cm->xashsec[icha];
+        pcisec = pcssec -226. * cm->hch[icha];
       }
 
       // Compute PCI(dry) from PCS(dry)
 
-      pcisec = pcssec -226. * cm->hch[icha];
       pcisec = pcisec / xcal2j;  // KJ/kg to kcal/kg
 
       // Compute PCI over pure
