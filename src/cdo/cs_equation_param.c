@@ -508,39 +508,55 @@ _set_key(cs_equation_param_t   *eqp,
   case CS_EQKEY_ITSOL:
     if (strcmp(keyval, "amg") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_AMG;
+
     else if (strcmp(keyval, "bicg") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_BICG;
+
     else if (strcmp(keyval, "bicgstab2") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_BICGSTAB2;
+
     else if (strcmp(keyval, "cg") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_CG;
+
     else if (strcmp(keyval, "cr3") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_CR3;
+
     else if (strcmp(keyval, "fcg") == 0) {
+
       eqp->sles_param->solver = CS_PARAM_ITSOL_FCG;
       eqp->sles_param->flexible = true;
+
     }
     else if (strcmp(keyval, "gauss_seidel") == 0 ||
              strcmp(keyval, "gs") == 0) {
+
       eqp->sles_param->solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
+
     }
     else if (strcmp(keyval, "gcr") == 0) {
+
       eqp->sles_param->solver = CS_PARAM_ITSOL_GCR;
       eqp->sles_param->flexible = true;
+
     }
     else if (strcmp(keyval, "gmres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_GMRES;
 
     else if (strcmp(keyval, "fgmres") == 0) {
+
       eqp->sles_param->solver = CS_PARAM_ITSOL_FGMRES;
       eqp->sles_param->flexible = true;
+
     }
-    else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0 ||
+    else if (strcmp(keyval, "jacobi") == 0 ||
+             strcmp(keyval, "diag") == 0 ||
              strcmp(keyval, "diagonal") == 0) {
+
       eqp->sles_param->solver = CS_PARAM_ITSOL_JACOBI;
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
       eqp->sles_param->flexible = false;
+
     }
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_MINRES;
@@ -550,7 +566,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
       eqp->sles_param->flexible = false;
 
-      /* Modify the default and check availability of MUMPS solvers */
+      /* Modify the default class and check availability of MUMPS solvers */
 
       if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
@@ -574,17 +590,25 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
 
+      cs_param_sles_mumps(eqp->sles_param,
+                          false,  /* single-precision ? */
+                          CS_PARAM_MUMPS_FACTO_LU);
+
     }
     else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
              strcmp(keyval, "sgs") == 0) {
+
       eqp->sles_param->solver = CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL;
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
       eqp->sles_param->flexible = true;
+
     }
     else if (strcmp(keyval, "user") == 0) {
+
       eqp->sles_param->solver = CS_PARAM_ITSOL_USER_DEFINED;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
       eqp->sles_param->flexible = true;
+
     }
     else if (strcmp(keyval, "none") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_NONE;
@@ -1094,7 +1118,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       cs_param_sles_mumps(eqp->sles_param,
                           false, /* is single-precision */
-                          CS_PARAM_SLES_FACTO_LDLT_SYM);
+                          CS_PARAM_MUMPS_FACTO_LDLT_SYM);
 
     }
     else if (strcmp(keyval, "cdo_eb") == 0 ||

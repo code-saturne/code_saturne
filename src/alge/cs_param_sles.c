@@ -722,7 +722,7 @@ static void
 _petsc_set_pc_type(cs_param_sles_t   *slesp,
                    KSP                ksp)
 {
-  if (cs_param_sles_is_mumps_set(slesp->solver))
+  if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
     return; /* Direct solver: Nothing to do at this stage */
 
   PC  pc;
@@ -1019,13 +1019,13 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 #if defined(PETSC_HAVE_MUMPS)
   case CS_PARAM_ITSOL_MUMPS:
     {
-      cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+      cs_param_mumps_t  *mumpsp = slesp->context_param;
       assert(mumpsp != NULL);
 
       PC  pc;
       KSPGetPC(ksp, &pc);
 
-      if (mumpsp->facto_type == CS_PARAM_SLES_FACTO_LU) {
+      if (mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LU) {
 
         PCSetType(pc, PCLU);
         PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
@@ -1033,10 +1033,10 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
       }
       else {
 
-        assert(mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SPD ||
-               mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SYM);
+        assert(mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LDLT_SPD ||
+               mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LDLT_SYM);
 
-        if (mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SPD) {
+        if (mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LDLT_SPD) {
 
           /* Retrieve the matrices related to this KSP */
 
@@ -1462,9 +1462,9 @@ _petsc_block_hook(void     *context,
         assert(slesp != NULL);
         assert(slesp->context_param != NULL);
 
-        cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+        cs_param_mumps_t  *mumpsp = slesp->context_param;
 
-        if (mumpsp->facto_type == CS_PARAM_SLES_FACTO_LDLT_SPD)
+        if (mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LDLT_SPD)
           _petsc_cmd(true, prefix, "pc_type", "cholesky");
         else
           _petsc_cmd(true, prefix, "pc_type", "lu");
@@ -1473,45 +1473,45 @@ _petsc_block_hook(void     *context,
 
         switch (mumpsp->analysis_algo) {
 
-        case CS_PARAM_SLES_ANALYSIS_AMD:
+        case CS_PARAM_MUMPS_ANALYSIS_AMD:
           _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "0");
           break;
 
-        case CS_PARAM_SLES_ANALYSIS_QAMD:
+        case CS_PARAM_MUMPS_ANALYSIS_QAMD:
           _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "6");
           break;
 
-        case CS_PARAM_SLES_ANALYSIS_PORD:
+        case CS_PARAM_MUMPS_ANALYSIS_PORD:
           _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "4");
           break;
 
-        case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+        case CS_PARAM_MUMPS_ANALYSIS_SCOTCH:
           _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "3");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_58", "2");
           break;
 
-        case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+        case CS_PARAM_MUMPS_ANALYSIS_PTSCOTCH:
           _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "2");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_29", "1");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_58", "0");
           break;
 
-        case CS_PARAM_SLES_ANALYSIS_METIS:
+        case CS_PARAM_MUMPS_ANALYSIS_METIS:
           _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "1");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "5");
           break;
 
-        case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+        case CS_PARAM_MUMPS_ANALYSIS_PARMETIS:
           _petsc_cmd(true, prefix, "mat_mumps_icntl_28", "2");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_29", "2");
           _petsc_cmd(true, prefix, "mat_mumps_icntl_58", "2");
           break;
 
-        default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
+        default: /* CS_PARAM_MUMPS_ANALYSIS_AUTO: */
           _petsc_cmd(true, prefix, "mat_mumps_icntl_7", "7");
           break;
 
@@ -1584,7 +1584,7 @@ _petsc_block_hook(void     *context,
 static void
 _check_settings(cs_param_sles_t     *slesp)
 {
-  if (cs_param_sles_is_mumps_set(slesp->solver)) { /* Checks related to MUMPS */
+  if (slesp->solver == CS_PARAM_ITSOL_MUMPS) { /* Checks related to MUMPS */
 
     cs_param_sles_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS);
@@ -2034,7 +2034,7 @@ _set_saturne_sles(bool                 use_field_id,
       if (slesp->context_param == NULL)
         cs_param_sles_mumps(slesp,
                             true, /* single by default in case if precond. */
-                            CS_PARAM_SLES_FACTO_LU);
+                            CS_PARAM_MUMPS_FACTO_LU);
 
       pc = cs_sles_mumps_pc_create(slesp);
 #else
@@ -2080,7 +2080,7 @@ _set_mumps_sles(bool                 use_field_id,
   if (slesp->context_param == NULL) /* Define the context by default */
     cs_param_sles_mumps(slesp,
                         false,  /* is single-precision ? */
-                        CS_PARAM_SLES_FACTO_LU);
+                        CS_PARAM_MUMPS_FACTO_LU);
 
 #if defined(HAVE_MUMPS)
   cs_sles_mumps_define(slesp->field_id,
@@ -2994,199 +2994,6 @@ _log_boomeramg_param(const char                        *name,
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Create a new structure storing a set of parameters used when calling
- *        MUMPS. Set a default value for the advanced parameters.
- *
- * \param[in] is_single   single-precision or double-precision
- * \param[in] facto_type  type of factorization to consider
- *
- * \return a pointer to a new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_param_sles_mumps_t *
-_create_mumps_param(bool                            is_single,
-                    cs_param_sles_facto_type_t      facto_type)
-{
-  cs_param_sles_mumps_t  *mumpsp = NULL;
-
-  BFT_MALLOC(mumpsp, 1, cs_param_sles_mumps_t);
-
-  mumpsp->is_single = is_single;
-  mumpsp->facto_type = facto_type;
-
-  /* Advanced options (default settings) */
-
-  mumpsp->analysis_algo = CS_PARAM_SLES_ANALYSIS_AUTO;
-  mumpsp->mem_usage = CS_PARAM_SLES_MEMORY_AUTO;
-
-  mumpsp->advanced_optim = false;   /* No advanced MPI/OpenMP optimization */
-  mumpsp->blr_threshold = 0;        /* No BLR */
-  mumpsp->mem_coef = -1;            /* No additional memory range */
-  mumpsp->block_analysis = 0;       /* No clustered analysis */
-  mumpsp->ir_steps = 0;             /* No iterative refinement */
-
-  return mumpsp;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy into a new structure the given set of parameters used when
- *        calling MUMPS
- *
- * \param[in] mumpsp   set of mumps parameters
- *
- * \return a pointer to a new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_param_sles_mumps_t *
-_copy_mumps_param(const cs_param_sles_mumps_t   *mumpsp)
-{
-  cs_param_sles_mumps_t  *cpy = NULL;
-
-  BFT_MALLOC(cpy, 1, cs_param_sles_mumps_t);
-
-  cpy->analysis_algo = mumpsp->analysis_algo;
-  cpy->facto_type = mumpsp->facto_type;
-
-  cpy->is_single = mumpsp->is_single;
-  cpy->mem_usage = mumpsp->mem_usage;
-  cpy->advanced_optim = mumpsp->advanced_optim;
-  cpy->blr_threshold = mumpsp->blr_threshold;
-  cpy->mem_coef = mumpsp->mem_coef;
-  cpy->block_analysis = mumpsp->block_analysis;
-  cpy->ir_steps = mumpsp->ir_steps;
-
-  return cpy;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Log a set of parameters used when calling MUMPS
- *
- * \param[in] name     name related to the current SLES
- * \param[in] mumpsp   set of mumps parameters
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_log_mumps_param(const char                    *name,
-                 const cs_param_sles_mumps_t   *mumpsp)
-{
-  if (mumpsp == NULL)
-    return;
-
-  char type = (mumpsp->is_single) ? 's' : 'd';
-  char tag[32];
-
-  switch (mumpsp->facto_type) {
-
-  case CS_PARAM_SLES_FACTO_LU:
-    sprintf(tag, "%cmumps_lu", type);
-    break;
-  case CS_PARAM_SLES_FACTO_LDLT_SYM:
-    sprintf(tag, "%cmumps_ldlt_sym", type);
-    break;
-  case CS_PARAM_SLES_FACTO_LDLT_SPD:
-    sprintf(tag, "%cmumps_ldlt_spd", type);
-    break;
-
-  default:
-    sprintf(tag, "undefined");
-    break;
-
-  }
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | MUMPS_type:              %s\n",
-                name, tag);
-
-  /* Strategy for the memory usage */
-
-  switch (mumpsp->mem_usage) {
-  case CS_PARAM_SLES_MEMORY_CONSTRAINED:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
-                  name, "constrained");
-    break;
-  case CS_PARAM_SLES_MEMORY_AUTO:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
-                  name, "automatic");
-    break;
-  case CS_PARAM_SLES_MEMORY_CPU_DRIVEN:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
-                  name, "CPU-driven (efficiency first)");
-    break;
-
-  default:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
-                  name, "Undefined");
-    break;
-  }
-
-  /* Algorithm used for the analysis step */
-
-  switch (mumpsp->analysis_algo) {
-  case CS_PARAM_SLES_ANALYSIS_AMD:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "AMD");
-    break;
-  case CS_PARAM_SLES_ANALYSIS_QAMD:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "QAMD");
-    break;
-  case CS_PARAM_SLES_ANALYSIS_PORD:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "PORD");
-    break;
-  case CS_PARAM_SLES_ANALYSIS_SCOTCH:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "SCOTCH");
-    break;
-  case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "PT-SCOTCH");
-    break;
-  case CS_PARAM_SLES_ANALYSIS_METIS:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "METIS");
-    break;
-  case CS_PARAM_SLES_ANALYSIS_PARMETIS:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "PARMETIS");
-    break;
-  case CS_PARAM_SLES_ANALYSIS_AUTO:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "automatic choice done by MUMPS");
-    break;
-
-  default:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
-                  name, "Undefined");
-    break;
-  }
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Advanced_Optim:          %s\n",
-                name, cs_base_strtf(mumpsp->advanced_optim));
-
-  if (mumpsp->block_analysis > 1)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Block_Size in analysis:   %d\n",
-                  name, mumpsp->block_analysis);
-
-  if (cs_math_fabs(mumpsp->ir_steps) > 0)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:     %d\n",
-                  name, mumpsp->ir_steps);
-
-  if (fabs(mumpsp->blr_threshold) > FLT_MIN)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BLR_threshold:            %e\n",
-                  name, mumpsp->blr_threshold);
-
-  if (mumpsp->mem_coef > 0)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory pct. increase:    %f\n",
-                  name, mumpsp->mem_coef);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -3311,7 +3118,7 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
                 slesp->name, cs_param_get_solver_name(slesp->solver));
 
   if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
-    _log_mumps_param(slesp->name, slesp->context_param);
+    cs_param_mumps_log(slesp->name, slesp->context_param);
 
   else { /* Iterative solvers */
 
@@ -3340,7 +3147,7 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
     }
     else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
-      _log_mumps_param(slesp->name, slesp->context_param);
+      cs_param_mumps_log(slesp->name, slesp->context_param);
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:      %s\n",
                   slesp->name,
@@ -3422,7 +3229,7 @@ cs_param_sles_copy_from(const cs_param_sles_t   *src,
 
   if (dst->precond == CS_PARAM_PRECOND_MUMPS ||
       dst->solver == CS_PARAM_ITSOL_MUMPS)
-    dst->context_param = _copy_mumps_param(src->context_param);
+    dst->context_param = cs_param_mumps_copy(src->context_param);
 
   else if (dst->precond == CS_PARAM_PRECOND_AMG &&
            (dst->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
@@ -3512,7 +3319,7 @@ cs_param_sles_set(bool                 use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the main members of a cs_param_sles_mumps_t structure. This
+ * \brief Set the main members of a cs_param_mumps_t structure. This
  *        structure is allocated if needed. Other members are kept to their
  *        values.
  *
@@ -3614,8 +3421,9 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the main members of a cs_param_sles_mumps_t structure. This
- *        structure is allocated if needed. Other members are kept to their
+ * \brief Set the main members of a cs_param_mumps_t structure. This structure
+ *        is allocated and initialized with default settings if needed. If the
+ *        structure exists already, then advanced members are kept to their
  *        values.
  *
  * \param[in, out] slesp         pointer to a cs_param_sles_t structure
@@ -3625,41 +3433,40 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_mumps(cs_param_sles_t              *slesp,
-                    bool                          is_single,
-                    cs_param_sles_facto_type_t    facto_type)
+cs_param_sles_mumps(cs_param_sles_t             *slesp,
+                    bool                         is_single,
+                    cs_param_mumps_facto_type_t  facto_type)
 {
   if (slesp == NULL)
     return;
 
-  if (slesp->context_param == NULL)
-    slesp->context_param = _create_mumps_param(is_single, facto_type);
+  if (slesp->context_param != NULL)
+    BFT_FREE(slesp->context_param);  /* Up to now the context structures have
+                                        no allocation inside */
 
-  else {
+  /* Allocate and initialize a structure to store the MUMPS settings */
 
-    /* One assumes that the existing context structure is related to MUMPS */
+  slesp->context_param = cs_param_mumps_create();
 
-    cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t  *mumpsp = slesp->context_param;
 
-    mumpsp->is_single = is_single;
-    mumpsp->facto_type = facto_type;
-
-  }
+  mumpsp->is_single = is_single;
+  mumpsp->facto_type = facto_type;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the members of a cs_param_sles_mumps_t structure used in advanced
- *        settings. This structure is allocated if needed. Other members are
- *        kept to their values. Please refer to the MUMPS user guide for more
- *        details about the following advanced options.
+ * \brief Set the members related to an advanced settings of a cs_param_mumps_t
+ *        structure. This structure is allocated and initialized if
+ *        needed. Please refer to the MUMPS user guide for more details about
+ *        the following advanced options.
  *
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      analysis_algo    algorithm used for the analysis step
- * \param[in]      block_analysis   > 0: fixed block size; 0: nothing
+ * \param[in]      block_analysis   > 1: fixed block size; otherwise do nothing
  * \param[in]      mem_coef         percentage increase in the memory workspace
  * \param[in]      blr_threshold    Accuracy in BLR compression (0: not used)
- * \param[in]      ir_steps         0: No, otherwise number of iterations
+ * \param[in]      ir_steps         0: No, otherwise the number of iterations
  * \param[in]      mem_usage        strategy to adopt for the memory usage
  * \param[in]      advanced_optim   activate advanced optimization (MPI/openMP)
  */
@@ -3667,23 +3474,23 @@ cs_param_sles_mumps(cs_param_sles_t              *slesp,
 
 void
 cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
-                             cs_param_sles_analysis_algo_t   analysis_algo,
+                             cs_param_mumps_analysis_algo_t  analysis_algo,
                              int                             block_analysis,
                              double                          mem_coef,
                              double                          blr_threshold,
                              int                             ir_steps,
-                             cs_param_sles_memory_usage_t    mem_usage,
+                             cs_param_mumps_memory_usage_t   mem_usage,
                              bool                            advanced_optim)
 {
   if (slesp == NULL)
     return;
 
   if (slesp->context_param == NULL)
-    slesp->context_param = _create_mumps_param(false, CS_PARAM_SLES_FACTO_LU);
+    slesp->context_param = cs_param_mumps_create();
 
   /* One assumes that the existing context structure is related to MUMPS */
 
-  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t  *mumpsp = slesp->context_param;
 
   mumpsp->analysis_algo = analysis_algo;
   mumpsp->block_analysis = block_analysis;

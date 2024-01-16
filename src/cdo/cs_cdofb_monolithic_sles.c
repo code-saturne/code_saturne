@@ -1736,7 +1736,7 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
 
   } /* Switch on solver */
 
-  if (!cs_param_sles_is_mumps_set(slesp->solver))
+  if (slesp->solver != CS_PARAM_ITSOL_MUMPS)
     PCSetType(u_pc, pc_type);
 
   /* Additional settings for the preconditioner */
@@ -4286,7 +4286,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 #endif  /* HAVE_PETSC */
 
   case CS_NAVSTO_SLES_MUMPS:
-    if (!cs_param_sles_is_mumps_set(mom_slesp->solver))
+    if (mom_slesp->solver != CS_PARAM_ITSOL_MUMPS)
       mom_slesp->solver = CS_PARAM_ITSOL_MUMPS;
 
     if (mom_slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS) {

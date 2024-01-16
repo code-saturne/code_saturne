@@ -158,16 +158,16 @@ cs_equation_system_sles_init(int                            n_eqs,
   CS_UNUSED(n_eqs);
   assert(sysp != NULL);
 
-  const cs_param_sles_t  *sys_slesp = sysp->sles_param;
+  cs_param_sles_t  *sys_slesp = sysp->sles_param;
 
   switch (sysp->sles_strategy) {
 
   case CS_EQUATION_SYSTEM_SLES_MUMPS:
     {
-      cs_param_sles_mumps_t  *mumpsp = sys_slesp->context_param;
+      cs_param_mumps_t  *mumpsp = sys_slesp->context_param;
 
       if (mumpsp == NULL) /* Define a context by default */
-        cs_param_sles_mumps(sys_slesp, false, CS_PARAM_SLES_FACTO_LU);
+        cs_param_sles_mumps(sys_slesp, false, CS_PARAM_MUMPS_FACTO_LU);
 
 #if defined(HAVE_MUMPS)
       /* Propagate the settings to all blocks (only to get a consistent log) */

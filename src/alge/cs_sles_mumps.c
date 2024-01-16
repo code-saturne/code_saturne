@@ -67,12 +67,12 @@
 #include "cs_matrix_default.h"
 #include "cs_parall.h"
 #include "cs_timer.h"
+#include "cs_sles.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles.h"
 #include "cs_sles_mumps.h"
 
 /*----------------------------------------------------------------------------*/
@@ -237,17 +237,17 @@ _set_type(const cs_param_sles_t  *slesp)
   assert(slesp != NULL);
   assert(slesp->context_param != NULL);
 
-  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t  *mumpsp = slesp->context_param;
 
   if (mumpsp->is_single) {
 
     switch(mumpsp->facto_type) {
 
-    case CS_PARAM_SLES_FACTO_LU:
+    case CS_PARAM_MUMPS_FACTO_LU:
       return CS_SLES_MUMPS_SINGLE_LU;
-    case CS_PARAM_SLES_FACTO_LDLT_SYM:
+    case CS_PARAM_MUMPS_FACTO_LDLT_SYM:
       return CS_SLES_MUMPS_SINGLE_LDLT_SYM;
-    case CS_PARAM_SLES_FACTO_LDLT_SPD:
+    case CS_PARAM_MUMPS_FACTO_LDLT_SPD:
       return CS_SLES_MUMPS_SINGLE_LDLT_SPD;
 
     default:
@@ -259,11 +259,11 @@ _set_type(const cs_param_sles_t  *slesp)
 
     switch(mumpsp->facto_type) {
 
-    case CS_PARAM_SLES_FACTO_LU:
+    case CS_PARAM_MUMPS_FACTO_LU:
       return CS_SLES_MUMPS_DOUBLE_LU;
-    case CS_PARAM_SLES_FACTO_LDLT_SYM:
+    case CS_PARAM_MUMPS_FACTO_LDLT_SYM:
       return CS_SLES_MUMPS_DOUBLE_LDLT_SYM;
-    case CS_PARAM_SLES_FACTO_LDLT_SPD:
+    case CS_PARAM_MUMPS_FACTO_LDLT_SPD:
       return CS_SLES_MUMPS_DOUBLE_LDLT_SPD;
 
     default:
@@ -2074,7 +2074,7 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 {
   CS_NO_WARN_IF_UNUSED(type);
 
-  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t  *mumpsp = slesp->context_param;
 
   if (mumpsp->advanced_optim)
     mumps->ICNTL(13) = 1; /* Bypass ScaLAPACK excepted for PT-SCOTCH where it
@@ -2085,28 +2085,28 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   switch (mumpsp->analysis_algo) {
 
-  case CS_PARAM_SLES_ANALYSIS_AMD:
+  case CS_PARAM_MUMPS_ANALYSIS_AMD:
     mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 0;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_QAMD:
+  case CS_PARAM_MUMPS_ANALYSIS_QAMD:
     mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 6;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_PORD:
+  case CS_PARAM_MUMPS_ANALYSIS_PORD:
     mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 4;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+  case CS_PARAM_MUMPS_ANALYSIS_SCOTCH:
     mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 3;
     mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+  case CS_PARAM_MUMPS_ANALYSIS_PTSCOTCH:
     mumps->ICNTL(28) = 2;  /* Parallel analysis */
     mumps->ICNTL(29) = 1;
     mumps->ICNTL(58) = 0;  /* No symbolic factorization */
@@ -2115,18 +2115,18 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
     mumps->ICNTL(13) = 0;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_METIS:
+  case CS_PARAM_MUMPS_ANALYSIS_METIS:
     mumps->ICNTL(28) = 1;  /* Sequential analysis */
     mumps->ICNTL(7) = 5;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+  case CS_PARAM_MUMPS_ANALYSIS_PARMETIS:
     mumps->ICNTL(28) = 2;  /* Parallel analysis */
     mumps->ICNTL(29) = 2;
     mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
-  default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
+  default: /* CS_PARAM_MUMPS_ANALYSIS_AUTO: */
     mumps->ICNTL(7) = 7;
     break;
 
@@ -2173,7 +2173,7 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
     else
       mumps->ICNTL(36) = 1; /* UCFS: Variante 1 de BLR (a bit stronger) */
 
-    if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CONSTRAINED) {
+    if (mumpsp->mem_usage == CS_PARAM_MUMPS_MEMORY_CONSTRAINED) {
 
       mumps->ICNTL(37) = 1; /* Memory compression but time consumming */
       mumps->ICNTL(40) = 1; /* Memory compression mixed precision */
@@ -2212,9 +2212,9 @@ static void
 _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
                                         DMUMPS_STRUC_C          *mumps)
 {
-  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t  *mumpsp = slesp->context_param;
 
-  if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CPU_DRIVEN) {
+  if (mumpsp->mem_usage == CS_PARAM_MUMPS_MEMORY_CPU_DRIVEN) {
 
     unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
     if (mumps->ICNTL(35) > 1) /* BLR activated */
@@ -2343,52 +2343,52 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 {
   CS_NO_WARN_IF_UNUSED(type);
 
-  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t  *mumpsp = slesp->context_param;
 
   /* Set the algorithm for the analysis step: renumbering and graph
      manipulations */
 
   switch (mumpsp->analysis_algo) {
 
-  case CS_PARAM_SLES_ANALYSIS_AMD:
+  case CS_PARAM_MUMPS_ANALYSIS_AMD:
     mumps->ICNTL(28) = 1;  /* sequential analysis */
     mumps->ICNTL(7) = 0;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_QAMD:
+  case CS_PARAM_MUMPS_ANALYSIS_QAMD:
     mumps->ICNTL(28) = 1;  /* sequential analysis */
     mumps->ICNTL(7) = 6;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_PORD:
+  case CS_PARAM_MUMPS_ANALYSIS_PORD:
     mumps->ICNTL(28) = 1;  /* sequential analysis */
     mumps->ICNTL(7) = 4;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_SCOTCH:
+  case CS_PARAM_MUMPS_ANALYSIS_SCOTCH:
     mumps->ICNTL(28) = 1;  /* sequential analysis */
     mumps->ICNTL(7) = 3;
     mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_PTSCOTCH:
+  case CS_PARAM_MUMPS_ANALYSIS_PTSCOTCH:
     mumps->ICNTL(28) = 2;  /* parallel analysis */
     mumps->ICNTL(29) = 1;
     mumps->ICNTL(58) = 0;  /* No symbolic factorization */
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_METIS:
+  case CS_PARAM_MUMPS_ANALYSIS_METIS:
     mumps->ICNTL(28) = 1;  /* sequential analysis */
     mumps->ICNTL(7) = 5;
     break;
 
-  case CS_PARAM_SLES_ANALYSIS_PARMETIS:
+  case CS_PARAM_MUMPS_ANALYSIS_PARMETIS:
     mumps->ICNTL(28) = 2;  /* parallel analysis */
     mumps->ICNTL(29) = 2;
     mumps->ICNTL(58) = 2;  /* Acceleration of the symbolic factorization */
     break;
 
-  default: /* CS_PARAM_SLES_ANALYSIS_AUTO: */
+  default: /* CS_PARAM_MUMPS_ANALYSIS_AUTO: */
     mumps->ICNTL(7) = 7;
     break;
 
@@ -2435,7 +2435,7 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
     else
       mumps->ICNTL(36) = 1; /* Variante de BLR1 */
 
-    if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CONSTRAINED) {
+    if (mumpsp->mem_usage == CS_PARAM_MUMPS_MEMORY_CONSTRAINED) {
 
       mumps->ICNTL(37) = 1; /* Memory compression but time consumming */
       mumps->ICNTL(40) = 1; /* Memory compression mixed precision */
@@ -2474,9 +2474,9 @@ static void
 _automatic_smumps_settings_before_facto(const cs_param_sles_t   *slesp,
                                         SMUMPS_STRUC_C          *mumps)
 {
-  cs_param_sles_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t  *mumpsp = slesp->context_param;
 
-  if (mumpsp->mem_usage == CS_PARAM_SLES_MEMORY_CPU_DRIVEN) {
+  if (mumpsp->mem_usage == CS_PARAM_MUMPS_MEMORY_CPU_DRIVEN) {
 
     unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
     if (mumps->ICNTL(35) > 1) /* BLR activated */

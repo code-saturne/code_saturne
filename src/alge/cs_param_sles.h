@@ -31,6 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_param_mumps.h"
 #include "cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
@@ -81,160 +82,6 @@ typedef struct {
   int                  n_max_iter;
 
 } cs_param_sles_cvg_t;
-
-/* MUMPS settings */
-/* ============== */
-
-/*! \enum cs_param_sles_facto_type_t
- *  \brief type of factorization to consider when using the MUMPS solver to
- *  solve a linear system
- *
- * \var CS_PARAM_SLES_FACTO_LU
- * \brief LU factorization is the most generic factorization available with
- * MUMPS. It can handle general matrices (block and/or unsymmetric matrices)
- *
- * \var CS_PARAM_SLES_FACTO_LDLT_SYM
- * \brief This factorization is a Cholesky factorization (L.D.Lt) for general
- * symmetric matrices
- *
- * \var CS_PARAM_SLES_FACTO_LDLT_SPD
- * \brief This factorization is devoted to SPD matrices and corresponds to a
- * Cholesky factorization. This is more specific and thus more efficient than
- * \ref CS_PARAM_SLES_FACTO_LDLT_SYM
- */
-
-typedef enum {
-
-  CS_PARAM_SLES_FACTO_LU,
-  CS_PARAM_SLES_FACTO_LDLT_SYM,
-  CS_PARAM_SLES_FACTO_LDLT_SPD,
-
-  CS_PARAM_SLES_N_FACTO_TYPES
-
-} cs_param_sles_facto_type_t;
-
-/*! \enum cs_param_sles_analysis_algo_t
- *  \brief Type of algorithm to consider when using the MUMPS solver to perform
- *  the analysis step (renumbering and graph manipulation). Please refer to the
- *  MUMPS user guide for more details about the following algorithms. AMD, QAMD
- *  and PORD are available with MUMPS without any prerequesite.
- *
- * \var CS_PARAM_SLES_ANALYSIS_AMD
- * AMD is a sequential algorithm which is well-suited for 2D problem (for 3D
- * problems it induces a higher memeory consumption).
- *
- * \var CS_PARAM_SLES_ANALYSIS_QAMD
- * QAMD is a sequential algorithm which is well-suited for 2D problem (for 3D
- * problems it induces a higher memeory consumption).
- *
- * \var CS_PARAM_SLES_ANALYSIS_PORD
- * PORD is a sequential algorithm which is a good trade-off when MUMPS is
- * installed with no prerequisite such as METIS or Scotch.
- *
- * \var CS_PARAM_SLES_ANALYSIS_SCOTCH
- * SCOTCH is a sequential algorithm which delivers the very good performance
- * with 3D meshes, generally, better than PORD and not as good as METIS
- *
- * \var CS_PARAM_SLES_ANALYSIS_PTSCOTCH
- * PTSCOTCH is a parallel version of the sequential SCOTCH algorithm
- *
- * \var CS_PARAM_SLES_ANALYSIS_METIS
- * METIS is a sequential algorithm which delivers the best performance in case
- * of 2D meshes.
- *
- * \var CS_PARAM_SLES_ANALYSIS_PARMETIS
- * PARMETIS is a parallel version of the sequential METIS algorithm
- *
- * \var CS_PARAM_SLES_ANALYSIS_AUTO
- * MUMPS decides what is the best choice among available algorithms. This is
- * the default choice.
- */
-
-typedef enum {
-
-  CS_PARAM_SLES_ANALYSIS_AMD,
-  CS_PARAM_SLES_ANALYSIS_QAMD,
-  CS_PARAM_SLES_ANALYSIS_PORD,
-  CS_PARAM_SLES_ANALYSIS_SCOTCH,
-  CS_PARAM_SLES_ANALYSIS_PTSCOTCH,
-  CS_PARAM_SLES_ANALYSIS_METIS,
-  CS_PARAM_SLES_ANALYSIS_PARMETIS,
-
-  CS_PARAM_SLES_ANALYSIS_AUTO,
-
-  CS_PARAM_SLES_N_ANALYSIS_ALGOS
-
-} cs_param_sles_analysis_algo_t;
-
-
-/*! \enum cs_param_sles_memory_usage_t
- *  \brief Strategy for the memory usage inside MUMPS
- *
- * \var CS_PARAM_SLES_MEMORY_CONSTRAINED
- * Strategy aiming at limiting the memory usage
- *
- * \var CS_PARAM_SLES_MEMORY_AUTO
- * Strategy relying on the default settings
- *
- * \var CS_PARAM_SLES_MEMORY_CPU_DRIVEN
- * Strategy aiming at the best CPU time
- */
-
-typedef enum {
-
-  CS_PARAM_SLES_MEMORY_CONSTRAINED,
-  CS_PARAM_SLES_MEMORY_AUTO,
-  CS_PARAM_SLES_MEMORY_CPU_DRIVEN,
-
-  CS_PARAM_SLES_N_MEMORY_USAGES
-
-} cs_param_sles_memory_usage_t;
-
-/*! \struct cs_param_sles_mumps_t
- *  \brief Set of parameters to specify additional options to MUMPS
- *  For more advanced settings, one has to use the \ref cs_user_sles_mumps_hook
- *  function. Please also refer to the MUMPS user guide for more details.
- */
-
-typedef struct {
-
-  /* \var analysis_algo
-   * Choice of the algorithm used to perform the analysis step
-   *
-   * \var facto_type
-   * Type of factorization to consider. This choice depends on the type of
-   * matrix to handle
-   *
-   * \var mem_usage
-   * Type of strategy to consider for the memory usage.
-   */
-
-  cs_param_sles_analysis_algo_t   analysis_algo;
-  cs_param_sles_facto_type_t      facto_type;
-  cs_param_sles_memory_usage_t    mem_usage;
-
-  bool    is_single;        /*!< Single precision is used, otherwise double */
-
-  bool    advanced_optim;   /*!< Activate advanced optimizations (very useful
-                                 when openMP is used) */
-
-  double  blr_threshold;    /*!< Dropping parameter in the BLR compression. The
-                                 value is directly related to the accuracy of
-                                 the compression (0: not used). A positive
-                                 value implies a usage of the predefined
-                                 algorithm. A negative value implies the usage
-                                 of an alternative algorithm. */
-
-  double  mem_coef;         /*!< Percentage of increase of the
-                                 automatically-defined memory workspace. Really
-                                 useful for 2D cases. (Not used if < 0) */
-
-  int     block_analysis;   /*!< Analysis is performed by block. Value of the
-                                 block size. Not used if < 1 */
-
-  int     ir_steps;         /*!< Number of steps for the Iterative Refinement */
-
-} cs_param_sles_mumps_t;
 
 /* BoomerAMG settings */
 /* ================== */
@@ -426,7 +273,36 @@ cs_param_sles_log(cs_param_sles_t   *slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the main members of a cs_param_sles_mumps_t structure. This
+ * \brief   Copy a cs_param_sles_t structure from src to dst
+ *
+ * \param[in]      src    reference cs_param_sles_t structure to copy
+ * \param[in, out] dst    copy of the reference at exit
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_copy_from(const cs_param_sles_t   *src,
+                        cs_param_sles_t         *dst);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define cs_sles_t structure in accordance with the settings of a
+ *        cs_param_sles_t structure (SLES = Sparse Linear Equation Solver)
+ *
+ * \param[in]       use_field_id  if false use system name to define a SLES
+ * \param[in, out]  slesp         pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (-1 if a problem is encountered, 0 otherwise)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set(bool                 use_field_id,
+                  cs_param_sles_t     *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_mumps_t structure. This
  *        structure is allocated if needed. Other members are kept to their
  *        values.
  *
@@ -475,8 +351,9 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                  *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the main members of a cs_param_sles_mumps_t structure. This
- *        structure is allocated if needed. Other members are kept to their
+ * \brief Set the main members of a cs_param_mumps_t structure. This structure
+ *        is allocated and initialized with default settings if needed. If the
+ *        structure exists already, then advanced members are kept to their
  *        values.
  *
  * \param[in, out] slesp         pointer to a cs_param_sles_t structure
@@ -486,23 +363,23 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                  *slesp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_mumps(cs_param_sles_t              *slesp,
-                    bool                          is_single,
-                    cs_param_sles_facto_type_t    facto_type);
+cs_param_sles_mumps(cs_param_sles_t             *slesp,
+                    bool                         is_single,
+                    cs_param_mumps_facto_type_t  facto_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the members of a cs_param_sles_mumps_t structure used in advanced
- *        settings. This structure is allocated if needed. Other members are
- *        kept to their values. Please refer to the MUMPS user guide for more
- *        details about the following advanced options.
+ * \brief Set the members related to an advanced settings of a cs_param_mumps_t
+ *        structure. This structure is allocated and initialized if
+ *        needed. Please refer to the MUMPS user guide for more details about
+ *        the following advanced options.
  *
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      analysis_algo    algorithm used for the analysis step
- * \param[in]      block_analysis   > 0: fixed block size; 0: nothing
+ * \param[in]      block_analysis   > 1: fixed block size; otherwise do nothing
  * \param[in]      mem_coef         percentage increase in the memory workspace
  * \param[in]      blr_threshold    Accuracy in BLR compression (0: not used)
- * \param[in]      ir_steps         0: No, otherwise number of iterations
+ * \param[in]      ir_steps         0: No, otherwise the number of iterations
  * \param[in]      mem_usage        strategy to adopt for the memory usage
  * \param[in]      advanced_optim   activate advanced optimization (MPI/openMP)
  */
@@ -510,42 +387,13 @@ cs_param_sles_mumps(cs_param_sles_t              *slesp,
 
 void
 cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
-                             cs_param_sles_analysis_algo_t   analysis_algo,
+                             cs_param_mumps_analysis_algo_t  analysis_algo,
                              int                             block_analysis,
                              double                          mem_coef,
                              double                          blr_threshold,
                              int                             ir_steps,
-                             cs_param_sles_memory_usage_t    mem_usage,
+                             cs_param_mumps_memory_usage_t   mem_usage,
                              bool                            advanced_optim);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Copy a cs_param_sles_t structure from src to dst
- *
- * \param[in]      src    reference cs_param_sles_t structure to copy
- * \param[in, out] dst    copy of the reference at exit
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_copy_from(const cs_param_sles_t   *src,
-                        cs_param_sles_t         *dst);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define cs_sles_t structure in accordance with the settings of a
- *        cs_param_sles_t structure (SLES = Sparse Linear Equation Solver)
- *
- * \param[in]      use_field_id  if false use system name to define a SLES
- * \param[in, out] slesp         pointer to a cs_param_sles_t structure
- *
- * \return an error code (-1 if a problem is encountered, 0 otherwise)
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_param_sles_set(bool                 use_field_id,
-                  cs_param_sles_t     *slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -639,25 +487,6 @@ cs_param_sles_petsc_cmd(bool          use_prefix,
 /*============================================================================
  * Static inline public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Find if a MUMPS-related solver is set or not
- *
- * \param[in] solver   type of solver
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_param_sles_is_mumps_set(cs_param_itsol_type_t  solver)
-{
-  if (solver == CS_PARAM_ITSOL_MUMPS)
-    return true;
-  else
-    return false;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
