@@ -117,6 +117,7 @@ cs_param_amg.h \
 cs_param_mumps.h \
 cs_param_saddle.h \
 cs_param_sles.h \
+cs_param_sles_setup.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h \
@@ -219,8 +220,11 @@ libcsalge_extension_a_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 $(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) $(AMGX_CPPFLAGS) $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
-libcsalge_extension_a_SOURCES = cs_param_sles.c
+libcsalge_extension_a_SOURCES = \
+cs_param_sles.c \
+cs_param_sles_setup.c
 libcsalge_a_LIBADD += libcsalge_extension_a-cs_param_sles.$(OBJEXT)
+libcsalge_a_LIBADD += libcsalge_extension_a-cs_param_sles_setup.$(OBJEXT)
 
 if HAVE_PETSC
 noinst_LIBRARIES += libcsalge_petsc.a

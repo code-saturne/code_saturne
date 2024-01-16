@@ -65,6 +65,7 @@
 #include "cs_matrix_default.h"
 #include "cs_navsto_sles.h"
 #include "cs_parall.h"
+#include "cs_param_sles_setup.h"
 #include "cs_saddle_itsol.h"
 #include "cs_timer.h"
 
@@ -124,7 +125,7 @@ BEGIN_C_DECLS
 
 /* Redefined the name of functions from cs_param_sles to get shorter names */
 
-#define _petsc_cmd  cs_param_sles_petsc_cmd
+#define _petsc_cmd  cs_param_sles_setup_petsc_cmd
 
 /* This structure follow notations given in the article entitled
  * "An iterative generalized Golub-Kahan algorithm for problems in structural
@@ -878,7 +879,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   slesp->cvg_param.rtol = 1e-2;  /* Only a coarse approximation is needed */
   slesp->cvg_param.n_max_iter = 10;
 
-  cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
+  cs_param_sles_setup_cvg_param(true, slesp); /* use the field id */
 
   n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
                                       slesp,
@@ -898,7 +899,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   slesp->cvg_param.rtol = init_eps;
   slesp->cvg_param.n_max_iter = init_max_iter;
 
-  cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
+  cs_param_sles_setup_cvg_param(true, slesp); /* use the field id */
 
   /* Partial memory free */
 
@@ -3956,7 +3957,7 @@ _set_schur_sles(cs_param_sles_t   *schur_slesp)
 
   } /* Check AMG settings */
 
-  int ier = cs_param_sles_set(false, schur_slesp);
+  int ier = cs_param_sles_setup(false, schur_slesp);
 
   if (ier == -1)
     bft_error(__FILE__, __LINE__, 0,
@@ -5064,7 +5065,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                     0.5*nslesp->il_algo_cvg.rtol));
   slesp->cvg_param.n_max_iter = CS_MAX(100, init_max_iter);
 
-  cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
+  cs_param_sles_setup_cvg_param(true, slesp); /* use the field id */
 
   _n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
                                        slesp,
@@ -5084,7 +5085,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   slesp->cvg_param.rtol = init_eps;
   slesp->cvg_param.n_max_iter = init_max_iter;
 
-  cs_param_sles_update_cvg_settings(true, slesp);
+  cs_param_sles_setup_cvg_param(true, slesp);
 
   /* Partial memory free */
 

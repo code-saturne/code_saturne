@@ -195,22 +195,6 @@ cs_param_sles_copy_from(const cs_param_sles_t   *src,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define cs_sles_t structure in accordance with the settings of a
- *        cs_param_sles_t structure (SLES = Sparse Linear Equation Solver)
- *
- * \param[in]       use_field_id  if false use system name to define a SLES
- * \param[in, out]  slesp         pointer to a cs_param_sles_t structure
- *
- * \return an error code (-1 if a problem is encountered, 0 otherwise)
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_param_sles_set(bool                 use_field_id,
-                  cs_param_sles_t     *slesp);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Allocate and initialize a new context structure for the boomerAMG
  *        settings.
  *
@@ -319,24 +303,6 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update the settings associated to a cs_sles_t structure and apply
- *        those defined in the given cs_param_sles_t structure.
- *        This function is used only when a first setup has been performed.
- *
- *        One modifies only some specific options like the max. number of
- *        iterations or the relative tolerance
- *
- * \param[in] use_field_id  if false use a name to retrieve the cs_sles_t struc.
- * \param[in] slesp         pointer to a cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_update_cvg_settings(bool                     use_field_id,
-                                  const cs_param_sles_t   *slesp);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Check the availability of Hypre solvers from the PETSc library
  *
  * \return return true or false
@@ -373,25 +339,6 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class);
 
 void
 cs_param_sles_check_amg(cs_param_sles_t   *slesp);
-
-#if defined(HAVE_PETSC)
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the command line option for PETSc
- *
- * \param[in]      use_prefix    need a prefix
- * \param[in]      prefix        optional prefix
- * \param[in]      keyword       command keyword
- * \param[in]      keyval        command value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_petsc_cmd(bool          use_prefix,
-                        const char   *prefix,
-                        const char   *keyword,
-                        const char   *keyval);
-#endif
 
 /*----------------------------------------------------------------------------*/
 

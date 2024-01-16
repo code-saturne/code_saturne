@@ -50,6 +50,7 @@
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
+#include "cs_param_sles_setup.h"
 #include "cs_sles.h"
 #include "cs_source_term.h"
 #include "cs_volume_zone.h"
@@ -1853,7 +1854,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
   /* Define a cs_sles_t structure using the field_id related to the variable
    * field associated to this equation */
 
-  int  ierr = cs_param_sles_set(true, eqp->sles_param);
+  int  ierr = cs_param_sles_setup(true, eqp->sles_param);
 
   if (ierr == -1)
     bft_error(__FILE__, __LINE__, 0,
