@@ -418,13 +418,13 @@ def run_studymanager(pkg, options):
 
     # Compare checkpoint files
 
-    if options.compare:
+    if options.compare and not slurm_submission:
         studies.check_compare()
         studies.compare()
 
     # Postprocess results and probes
 
-    if options.post:
+    if options.post and not slurm_submission:
         checked_scripts = studies.check_script()
         if checked_scripts:
             studies.scripts()
@@ -434,7 +434,7 @@ def run_studymanager(pkg, options):
 
     # Reporting - attached files are either pdf or
     # raw tex files if pdflatex is disabled
-    if options.post:
+    if options.post and not slurm_submission:
         attached_file = studies.build_reports("report_figures")
 
     if options.sheet:

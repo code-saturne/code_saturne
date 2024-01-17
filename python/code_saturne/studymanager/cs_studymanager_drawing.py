@@ -684,6 +684,8 @@ class Plotter(object):
         for sp in missing_sps:
             print("    ERROR: subplot " + str(sp) + " referenced but not defined.")
 
+        self.figures = []
+
         # Build the list of figures to handle
         for node in self.parser.getFigures(study_label):
             self.figures.append(Figure(node,
