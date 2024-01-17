@@ -77,4 +77,4 @@ cs_gwf_uspf.c
 libcsgwf_a_LIBADD =
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
+	-rm -rf .deps

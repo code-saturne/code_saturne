@@ -131,3 +131,6 @@ cs_lagr_sde.c \
 cs_lagr_sde_model.c \
 cs_lagr_stat.c \
 cs_lagr_tracking.c
+
+clean-local:
+	-rm -rf .deps

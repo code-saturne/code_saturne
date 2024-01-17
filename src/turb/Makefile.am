@@ -95,3 +95,5 @@ cs_turbulence_sa.c \
 cs_turbulence_v2f.c \
 cs_turbulence_htles.c
 
+clean-local:
+	-rm -rf .deps

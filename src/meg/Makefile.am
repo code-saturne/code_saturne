@@ -85,3 +85,6 @@ cs_meg_xdef_wrapper.c
 
 noinst_LIBRARIES = libcsmeg.a
 libcsmeg_a_SOURCES = $(megfiles)
+
+clean-local:
+	-rm -rf .deps

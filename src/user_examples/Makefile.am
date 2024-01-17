@@ -208,6 +208,7 @@ example_DATA = $(examplefiles)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod
+	-rm -rf .deps
 
 # Finish example files installation
 # - tag with the package version number

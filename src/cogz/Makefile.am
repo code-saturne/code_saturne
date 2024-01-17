@@ -111,3 +111,4 @@ cs_steady_laminar_flamelet_read_base.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod
+	-rm -rf .deps

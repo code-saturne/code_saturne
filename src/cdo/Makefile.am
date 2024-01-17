@@ -238,4 +238,4 @@ libcscdo_extension_a-cs_navsto_sles.$(OBJEXT) \
 libcscdo_extension_a-cs_cdocb_monolithic_sles.$(OBJEXT)
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
+	-rm -rf .deps

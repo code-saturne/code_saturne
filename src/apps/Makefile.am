@@ -261,6 +261,7 @@ clean-local:
 	    rm -f $$p; \
 	  else :; fi; \
 	done
+	-rm -rf .deps
 
 uninstall-local:
 	rm $(pkglibexecdir)/cs_solver$(EXEEXT)

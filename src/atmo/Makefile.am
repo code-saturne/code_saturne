@@ -114,3 +114,4 @@ solmoy.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+	-rm -rf .deps

@@ -247,7 +247,7 @@ libcsalge_a_LIBADD += libcsalge_amgx_a-cs_sles_amgx.$(OBJEXT)
 endif
 
 clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
+	-rm -rf .deps
 
 .cu.$(OBJEXT):
 	$(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<

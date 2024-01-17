@@ -100,3 +100,4 @@ cs_physical_properties_combustion_drift.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod
+	-rm -rf .deps

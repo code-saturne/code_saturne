@@ -51,3 +51,6 @@ bft_mem_usage.c \
 bft_printf.c
 
 libbft_a_LIBADD =
+
+clean-local:
+	-rm -rf .deps

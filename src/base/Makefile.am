@@ -587,6 +587,7 @@ clean-local:
 	    rm -f $$p; \
 	  else :; fi; \
 	done
+	-rm -rf .deps
 
 # Remark:
 # When installing shared libraries, remove library then copy it, rather than

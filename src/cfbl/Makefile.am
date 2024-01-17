@@ -98,3 +98,4 @@ cs_hgn_source_terms_step.c
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+	-rm -rf .deps

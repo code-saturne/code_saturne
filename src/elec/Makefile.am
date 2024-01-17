@@ -62,4 +62,4 @@ libcselec_a_SOURCES = \
 cs_elec_model.c
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
+	-rm -f .deps

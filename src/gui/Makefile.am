@@ -90,3 +90,6 @@ cs_gui_radiative_transfer.c \
 cs_gui_specific_physics.c \
 cs_gui_util.c \
 cs_tree_xml.c
+
+clean-local:
+	-rm -rf .deps

@@ -167,6 +167,7 @@ cs_user_source_terms.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+	-rm -rf .deps
 
 # Finish user files installation
 # - tag with the package version number

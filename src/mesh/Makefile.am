@@ -138,3 +138,6 @@ cs_symmetry_faces_filter.c
 libcspartition_a_CPPFLAGS = $(AM_CPPFLAGS) \
 $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
 libcspartition_a_SOURCES = cs_partition.c
+
+clean-local:
+	-rm -rf .deps
