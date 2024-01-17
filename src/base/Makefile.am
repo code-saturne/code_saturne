@@ -222,6 +222,7 @@ if HAVE_CUDA
 pkginclude_HEADERS += \
 cs_base_cuda.h \
 cs_halo_cuda.h \
+cs_math_cuda.cuh \
 cs_cuda_contrib.h
 endif
 

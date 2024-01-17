@@ -29,6 +29,8 @@
 
 #include "cs_defs.h"
 
+#if defined(HAVE_CUDA)
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -39,6 +41,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_base_accel.h"
 #include "cs_log.h"
 
 /*=============================================================================
@@ -95,8 +98,6 @@ extern int  cs_glob_cuda_n_mp;  /* Number of multiprocessors */
  * host-device memory management functions from cs_base_accel.c, and
  * not directly by the user.
  *============================================================================*/
-
-#if defined(HAVE_CUDA)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -213,7 +214,7 @@ cs_cuda_mem_free(void         *p,
  *
  * A safety check is added.
  *
-$ * \param [in]  p          pointer to device memory
+ * \param [in]  p          pointer to device memory
  * \param [in]  var_name   allocated variable name string
  * \param [in]  file_name  name of calling source file
  * \param [in]  line_num   line number in calling source file
@@ -391,10 +392,8 @@ cs_cuda_copy_d2d(void        *dst,
 void *
 cs_cuda_get_host_ptr(const void  *ptr);
 
-#endif
-
 /*=============================================================================
- * Inline static function prototypes
+ * Inline function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -419,11 +418,63 @@ cs_cuda_grid_size(cs_lnum_t     n,
   return (n % block_size) ?  n/block_size + 1 : n/block_size;
 }
 
+END_C_DECLS
+
+#if defined(__CUDACC__)
+
+/*----------------------------------------------------------------------------
+ * Synchronize of copy a cs_real_t type array from the host to a device.
+ *
+ * parameters:
+ *   val_h          <-- pointer to host data
+ *   n_vals         <-- number of data values
+ *   device_id      <-- associated device id
+ *   stream         <-- associated stream (for async prefetch only)
+ *   val_d          --> matching pointer on device
+ *   buf_d          --> matching allocation pointer on device (should be freed
+ *                      after use if non-NULL)
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_sync_or_copy_h2d(const T        *val_h,
+                    cs_lnum_t       n_vals,
+                    int             device_id,
+                    cudaStream_t    stream,
+                    const T       **val_d,
+                    void          **buf_d)
+{
+  const T  *_val_d = NULL;
+  void     *_buf_d = NULL;
+
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
+  size_t size = n_vals * sizeof(T);
+
+  if (alloc_mode == CS_ALLOC_HOST) {
+    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
+    cs_cuda_copy_h2d(_buf_d, val_h, size);
+    _val_d = (const T *)_buf_d;
+  }
+  else {
+    _val_d = (const T *)cs_get_device_ptr((void *)val_h);
+
+    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
+      cudaMemPrefetchAsync(val_h, size, device_id, stream);
+    else
+      cs_sync_h2d(val_h);
+  }
+
+  *val_d = _val_d;
+  *buf_d = _buf_d;
+}
+
+#endif /* defined(__CUDACC__) */
+
+BEGIN_C_DECLS
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-#if defined(HAVE_CUDA)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -483,7 +534,7 @@ cs_base_cuda_select_default_device(void);
 int
 cs_base_cuda_get_device(void);
 
-#endif
+#endif  /* CS_HAVE_CUDA */
 
 /*----------------------------------------------------------------------------*/
 

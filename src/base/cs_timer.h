@@ -86,6 +86,15 @@ typedef struct {
 #define CS_TIMER_COUNTER_ADD(_res, _c0, _c1)  \
   (_res.nsec = _c0.nsec + _c1.nsec)
 
+/*=============================================================================
+ * Global variable definitions
+ *=============================================================================*/
+
+/* Activate timings for low-level operators (useful to globally activate
+   various timings in low-level operators) */
+
+extern int cs_glob_timer_kernels_flag;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

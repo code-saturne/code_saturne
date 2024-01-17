@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 
 #include <assert.h>
 #include <errno.h>
@@ -2797,12 +2798,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   bool accel = false;
 #endif
 
-  _get_cell_cocg_lsq(m,
-                     halo_type,
-                     accel,
-                     fvq,
-                     &cocg,
-                     &cocgb);
+  _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb);
 
 #if defined(HAVE_CUDA)
 
@@ -5449,6 +5445,8 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
                               cs_real_t (*restrict r_grad)[stride][3],
                               cs_real_t (*restrict grad)[stride][3])
 {
+  // using grad_t  = cs_real_t[stride][3];
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -6832,6 +6830,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   /* Compute gradient */
   /*------------------*/
 
+  #pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       gradv[c_id][i][0] =   rhs[c_id][i][0] * cocg[c_id][0]
@@ -6948,8 +6947,8 @@ _get_c_iter_try(const char  *var_name)
 }
 
 /*----------------------------------------------------------------------------
- * Compute cell gradient of a vector using least-squares reconstruction for
- * non-orthogonal meshes (n_r_sweeps > 1).
+ * Compute cell gradient of a vector or tensor using least-squares
+ * reconstruction for non-orthogonal meshes.
  *
  * template parameters:
  *   e2n           type of assembly algorithm used
@@ -7015,22 +7014,60 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
-  /* Initialize RHS
-     (note this could be done locally in the gather variants */
+  std::chrono::high_resolution_clock::time_point t_start, t_init, t_i_faces, \
+    t_ext_n, t_b_faces, t_gradient, t_b_correction, t_halo, t_stop;
 
-  grad_t *rhs;
-  BFT_MALLOC(rhs, n_cells_ext, grad_t);
-  cs_array_real_fill_zero(n_cells_ext*stride*3, (cs_real_t *)rhs);
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+#if defined(HAVE_CUDA)
+  bool accel = (cs_get_device_id() > -1) ? true : false;
+#else
+  bool accel = false;
+#endif
 
   cs_cocg_6_t *restrict cocgb = NULL;
   cs_cocg_6_t *restrict cocg = NULL;
 
-  _get_cell_cocg_lsq(m, halo_type, false, fvq, &cocg, &cocgb);
+  _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb);
+
+#if defined(HAVE_CUDA)
+
+  if (accel) {
+    cs_gradient_strided_lsq_cuda(m,
+                                 madj,
+                                 fvq,
+                                 halo_type,
+                                 inc,
+                                 n_c_iter_max,
+                                 c_eps,
+                                 coefav,
+                                 coefbv,
+                                 pvar,
+                                 c_weight,
+                                 cocgb,
+                                 cocg,
+                                 grad);
+    return;
+  }
+
+#endif
+
+  /* Initialize RHS
+     (note this could be done locally in the gather variants */
+
+  grad_t *rhs;
+  CS_MALLOC_HD(rhs, n_cells_ext, grad_t, cs_alloc_mode);
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_init = std::chrono::high_resolution_clock::now();
 
   /* Contribution from interior faces
      -------------------------------- */
 
   if (e2n != CS_E2N_SUM_GATHER) {
+
+    cs_array_real_fill_zero(n_cells_ext*stride*3, (cs_real_t *)rhs);
 
     cs_lnum_t n_i_groups, n_i_threads;
     cs_mesh_i_faces_thread_block_count(m, e2n, 0, &n_i_groups, &n_i_threads);
@@ -7143,6 +7180,11 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
         const cs_real_t w_ii = c_weight[ii];
 
+        for (cs_lnum_t k = 0; k < stride; k++) {
+          for (cs_lnum_t l = 0; l < 3; l++)
+            rhs[ii][k][l] = 0.;
+        }
+
         for (cs_lnum_t i = s_id; i < e_id; i++) {
           const cs_lnum_t jj = c2c[i];
           const cs_lnum_t f_id = c2f[i];
@@ -7182,6 +7224,11 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
         const cs_lnum_t s_id = c2c_idx[ii];
         const cs_lnum_t e_id = c2c_idx[ii+1];
 
+        for (cs_lnum_t k = 0; k < stride; k++) {
+          for (cs_lnum_t l = 0; l < 3; l++)
+            rhs[ii][k][l] = 0.;
+        }
+
         for (cs_lnum_t i = s_id; i < e_id; i++) {
           const cs_lnum_t jj = c2c[i];
 
@@ -7205,6 +7252,9 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     }
 
   } /* (e2n == CS_E2N_SUM_GATHER) */
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_i_faces = std::chrono::high_resolution_clock::now();
 
   /* Contribution from extended neighborhood */
 
@@ -7237,6 +7287,9 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     }
 
   } /* End for extended neighborhood */
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_ext_n = std::chrono::high_resolution_clock::now();
 
   /* Contribution from boundary faces */
 
@@ -7289,6 +7342,9 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
   } /* loop on boundary cells */
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_b_faces = std::chrono::high_resolution_clock::now();
+
   /* Compute gradient */
   /*------------------*/
 
@@ -7309,6 +7365,9 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
     }
   }
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_gradient = std::chrono::high_resolution_clock::now();
 
   /* Correct gradient on boundary cells */
   /*------------------------------------*/
@@ -7465,11 +7524,56 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
   } /* End of correction for BC coeffs */
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_b_correction = std::chrono::high_resolution_clock::now();
+
   /* Synchronize halos */
 
   _sync_strided_gradient_halo<stride>(m, halo_type, grad);
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_halo = std::chrono::high_resolution_clock::now();
+
   BFT_FREE(rhs);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s<%d>", cs_glob_rank_id, __func__, stride);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_init - t_start);
+    printf(", init = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_i_faces - t_init);
+    printf(", i_faces = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_ext_n - t_i_faces);
+    printf(", ext_n = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_b_faces - t_ext_n);
+    printf(", b_faces = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_gradient - t_b_faces);
+    printf(", gradient = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_b_correction - t_gradient);
+    printf(", b_correction = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_halo - t_b_correction);
+    printf(", halo = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -8424,13 +8528,13 @@ _gradient_scalar(const char                    *var_name,
   cs_real_t *_bc_coeff_b = NULL;
 
   if (bc_coeff_a == NULL) {
-    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(_bc_coeff_a, n_b_faces, cs_real_t, cs_alloc_mode);
     for (cs_lnum_t i = 0; i < n_b_faces; i++)
       _bc_coeff_a[i] = 0;
     bc_coeff_a = _bc_coeff_a;
   }
   if (bc_coeff_b == NULL) {
-    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(_bc_coeff_b, n_b_faces, cs_real_t, cs_alloc_mode);
     for (cs_lnum_t i = 0; i < n_b_faces; i++)
       _bc_coeff_b[i] = 1;
     bc_coeff_b = _bc_coeff_b;
@@ -8442,13 +8546,13 @@ _gradient_scalar(const char                    *var_name,
       && gradient_type != CS_GRADIENT_GREEN_ITER) {
 
     if (_bc_coeff_a == NULL) { /* If not already initialized by default above */
-      BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_t);
+      CS_MALLOC_HD(_bc_coeff_a, n_b_faces, cs_real_t, cs_alloc_mode);
       for (cs_lnum_t i = 0; i < n_b_faces; i++)
         _bc_coeff_a[i] = inc * bc_coeff_a[i];
       bc_coeff_a = _bc_coeff_a;
     }
     if (_bc_coeff_b == NULL) { /* If not already initialized by default above */
-      BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_t);
+      CS_MALLOC_HD(_bc_coeff_b, n_b_faces, cs_real_t, cs_alloc_mode);
       for (cs_lnum_t i = 0; i < n_b_faces; i++)
         _bc_coeff_b[i] = bc_coeff_b[i];
       bc_coeff_b = _bc_coeff_b;
@@ -8656,8 +8760,8 @@ _gradient_scalar(const char                    *var_name,
 
   }
 
-  BFT_FREE(_bc_coeff_a);
-  BFT_FREE(_bc_coeff_b);
+  CS_FREE_HD(_bc_coeff_a);
+  CS_FREE_HD(_bc_coeff_b);
 
   _scalar_gradient_clipping(mesh,
                             fvq,

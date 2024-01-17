@@ -43,6 +43,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
+#include <stdlib.h>
 #include <time.h>
 
 #if defined (HAVE_GETTIMEOFDAY)
@@ -201,6 +202,15 @@ static clock_t _cs_timer_clock_start;
 
 static cs_timer_t  _cs_timer_start = {.sec = 0, .nsec = 0};
 static cs_timer_t  _cs_timer_cpu_start = {.sec = 0, .nsec = 0};
+
+/*-----------------------------------------------------------------------------
+ * Global variable definitions
+ *-----------------------------------------------------------------------------*/
+
+/*! Activate timings for low-level kernels (useful to globally activate
+  various timings in low-level operators) */
+
+int cs_glob_timer_kernels_flag = 0;
 
 /*============================================================================
  * Private function definitions
@@ -374,6 +384,9 @@ _cs_timer_cpu_stdc_clock(cs_timer_t  *timer)
 static void
 _cs_timer_initialize(void)
 {
+  if (getenv("CS_TIME_KERNELS") != NULL)
+    cs_glob_timer_kernels_flag = atoi(getenv("CS_TIME_KERNELS"));
+
   _cs_timer_start.sec = 0;
   _cs_timer_start.nsec = 0;
 

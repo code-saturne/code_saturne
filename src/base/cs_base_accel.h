@@ -502,6 +502,24 @@ cs_get_device_ptr_const_pf(const void  *ptr)
 
 #endif
 
+END_C_DECLS
+
+#if defined(__cplusplus) && defined(HAVE_ACCEL)
+
+template <class T>
+inline const T *restrict
+cs_get_device_ptr_const_pf(const T *ptr)
+{
+  const void *ptr_v
+    = cs_get_device_ptr_const_pf(reinterpret_cast<const void *>(ptr));
+
+  return (const T *restrict)ptr_v;
+}
+
+#endif // __cplusplus && HAVE_ACCEL
+
+BEGIN_C_DECLS
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if a pointer is associated with a device.

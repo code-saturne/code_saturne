@@ -95,7 +95,7 @@ static const cs_real_33_t cs_math_33_identity = {{1., 0., 0.,},
 static const cs_real_6_t cs_math_sym_33_identity  = {1., 1., 1., 0. ,0., 0.};
 
 /*=============================================================================
- * Inline static function prototypes
+ * Inline static functions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -135,7 +135,7 @@ cs_math_binom(int  n,
  *
  * \param[in]  x  value
  *
- * \return the real of the given value
+ * \return absolute value of the given value
  */
 /*----------------------------------------------------------------------------*/
 

@@ -1883,6 +1883,51 @@ cs_halo_sync(const cs_halo_t  *halo,
   cs_halo_sync_wait(halo, val, NULL);
 }
 
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update array of values on device in case of parallelism
+ *        or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \param[in]   halo        pointer to halo structure
+ * \param[in]   sync_mode   synchronization mode (standard or extended)
+ * \param[in]   data_type   data type
+ * \param[in]   stride      number of (interlaced) values by entity
+ * \param[in]   val         pointer to variable value array (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_d(const cs_halo_t  *halo,
+               cs_halo_type_t    sync_mode,
+               cs_datatype_t     data_type,
+               int               stride,
+               void             *val)
+{
+  if (halo == NULL)
+    return;
+
+  cs_halo_state_t  *hs = _halo_state;
+
+  cs_halo_sync_pack_d(halo,
+                      sync_mode,
+                      data_type,
+                      stride,
+                      val,
+                      NULL,
+                      hs);
+
+  cs_halo_sync_start(halo, val, hs);
+  cs_halo_sync_wait(halo, val, hs);
+}
+
+#endif /* defined(HAVE_ACCEL) */
+
 /*----------------------------------------------------------------------------
  * Update array of any type of halo values in case of parallelism or
  * periodicity.

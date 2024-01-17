@@ -1,5 +1,4 @@
-#ifndef __CS_GRADIENT_CUDA_H__
-#define __CS_GRADIENT_CUDA_H__
+#pragma once
 
 /*============================================================================
  * Private functions for gradient reconstruction.
@@ -34,13 +33,10 @@
 #include "cs_base.h"
 #include "cs_base_accel.h"
 #include "cs_halo.h"
-#include "cs_internal_coupling.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -67,6 +63,49 @@ typedef cs_real_t  cs_cocg_33_t[3][3];
  * Semi-private function prototypes
  *============================================================================*/
 
+#if defined(__cplusplus)
+
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------
+ * Synchronize strided gradient ghost cell values on accelerator device.
+ *
+ * template parameters:
+ *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   halo_type      <-- halo type (extended or not)
+ *   grad           --> gradient of a variable
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
+                                cs_halo_type_t           halo_type,
+                                cs_real_t (*restrict grad)[stride][3])
+{
+  if (m->halo != NULL) {
+    cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, stride*3,
+                   (cs_real_t *)grad);
+
+    if (m->have_rotation_perio) {
+      cs_sync_d2h((void  *)grad);
+      if (stride == 1)
+        cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
+      else if (stride == 3)
+        cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
+      else if (stride == 6)
+        cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                             halo_type,
+                                             (cs_real_t *)grad);
+      cs_sync_h2d((void  *)grad);
+    }
+  }
+}
+
+#endif /* defined(HAVE_ACCEL) */
+
 #if defined(HAVE_CUDA)
 
 /*----------------------------------------------------------------------------
@@ -89,8 +128,8 @@ typedef cs_real_t  cs_cocg_33_t[3][3];
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable,
  *                      or NULL
+ *   cocgb          <-- saved boundary cell covariance array (on device)
  *   cocg           <-> associated cell covariance array (on device)
- *   cocgb          <-> saved boundary cell covariance array (on device)
  *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
@@ -105,16 +144,57 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_real_t               coefbp[],
                             const cs_real_t               pvar[],
                             const cs_real_t     *restrict c_weight,
-                            cs_cocg_6_t         *restrict cocg,
                             cs_cocg_6_t         *restrict cocgb,
+                            cs_cocg_6_t         *restrict cocg,
                             cs_real_3_t         *restrict grad);
 
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of a vector or tensor using least-squares
+ * reconstruction for non-orthogonal meshes.
+ *
+ * template parameters:
+ *   e2n           type of assembly algorithm used
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   madj           <-- pointer to mesh adjacencies structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   n_c_iter_max   <-- maximum number of iterations for boundary correction
+ *   c_eps          <-- relative tolerance for boundary correction
+ *   coefav         <-- B.C. coefficients for boundary face normals
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable, or NULL
+ *   cocgb          <-- saved boundary cell covariance array (on device)
+ *   cocg           <-> cocg covariance matrix for given cell
+ *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
+                             const cs_mesh_adjacencies_t   *madj,
+                             const cs_mesh_quantities_t    *fvq,
+                             const cs_halo_type_t           halo_type,
+                             int                            inc,
+                             int                            n_c_iter_max,
+                             cs_real_t                      c_eps,
+                             const cs_real_t (*restrict coefav)[stride],
+                             const cs_real_t (*restrict coefbv)[stride][stride],
+                             const cs_real_t (*restrict pvar)[stride],
+                             const cs_real_t      *restrict c_weight,
+                             const cs_cocg_6_t    *restrict cocgb,
+                             cs_cocg_6_t          *restrict cocg,
+                             cs_real_t (*restrict gradv)[stride][3]);
+
 #endif /* defined(HAVE_CUDA) */
+
+#endif /* defined(__cplusplus) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_GRADIENT_CUDA_H__ */
