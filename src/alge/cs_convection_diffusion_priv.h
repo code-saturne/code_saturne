@@ -27,6 +27,35 @@
 
 /*----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_base.h"
+#include "cs_base_accel.h"
+#include "cs_halo.h"
+#include "cs_internal_coupling.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*=============================================================================
+ * Local type definitions
+ *============================================================================*/
+
+/* Type for symmetric least-squares covariance matrices
+   as they are adimensional, single-precision should be usable here */
+
+
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
@@ -49,6 +78,37 @@
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+/*=============================================================================
+ * Semi-private function prototypes
+ *============================================================================*/
+
+#if defined(HAVE_CUDA)
+
+void
+cs_convection_diffusion_vector_cuda(const cs_mesh_t             *mesh,
+                                    const cs_mesh_adjacencies_t *madj,
+                                    const cs_mesh_quantities_t  *fvq,
+                                    const cs_real_3_t  *restrict pvar,
+                                    const cs_real_t              i_massflux[],
+                                    const cs_real_33_t          *grad,
+                                    cs_real_33_t                *grdpa,
+                                    const cs_real_3_t  *restrict coefav,
+                                    const cs_real_33_t *restrict coefbv,
+                                    const int                    inc,
+                                    const bool                   flag1,
+                                    const bool                   flag2,
+                                    const bool                   perf);
+
+#endif
+
+/* defined(HAVE_CUDA) */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 /*============================================================================
  * Public inlined function

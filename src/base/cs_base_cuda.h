@@ -286,9 +286,13 @@ cs_cuda_copy_h2d_async(void        *dst,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_copy_d2h(void        *dst,
+_cs_cuda_copy_d2h(void        *dst,
                  const void  *src,
-                 size_t       size);
+                 size_t       size,
+                 const char* filename,
+                 long line);
+
+#define cs_cuda_copy_d2h(dst, src, size) _cs_cuda_copy_d2h(dst, src, size, __FILE__, __LINE__)
 
 /*----------------------------------------------------------------------------*/
 /*!
