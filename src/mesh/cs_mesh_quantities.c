@@ -3414,6 +3414,12 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   BFT_MALLOC(_i_f_surf, m->n_i_faces, cs_real_t);
   cs_array_real_set_scalar(m->n_i_faces, DBL_MAX, _i_f_surf);
 
+  cs_real_3_t *i_face_cog_loc;
+  BFT_MALLOC(i_face_cog_loc, m->n_i_faces, cs_real_3_t);
+  cs_array_real_copy(3*m->n_i_faces,
+                     (const cs_real_t *)i_face_cog,
+                     (cs_real_t *)i_face_cog_loc);
+
   cs_lnum_t w_vtx_s_id = 0;
 
   /* ib cell number */
@@ -3487,11 +3493,9 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
           && mq->cell_f_vol[c_id] < DBL_MIN)
         n_s_face_vertices = n_face_vertices;
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        if (n_s_face_vertices < n_face_vertices) {
-          i_f_face_cog[cidx][i] = i_face_cog[face_id][i];
-        }
-
+      if (n_s_face_vertices < n_face_vertices) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          i_f_face_cog[cidx][i] = i_face_cog_loc[face_id][i];
       }
 
       /* Fluid face from one side */
@@ -4058,6 +4062,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   } /* End loop on cells */
 
+  BFT_FREE(i_face_cog_loc);
   BFT_FREE(sum_surf);
   BFT_FREE(v_w_ref);
   BFT_FREE(flag_id);
