@@ -121,7 +121,7 @@ cs_param_sles_create(int          field_id,
   slesp->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
   slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
 
-  slesp->cvg_param =  (cs_param_sles_cvg_t) {
+  slesp->cvg_param =  (cs_param_convergence_t) {
     .n_max_iter = 10000, /* max. number of iterations */
     .atol = 1e-15,       /* absolute tolerance */
     .rtol = 1e-6,        /* relative tolerance */

@@ -529,6 +529,35 @@ typedef enum {
 
 } cs_param_bc_enforce_t;
 
+/*! \struct cs_param_convergence_t
+ *  \brief Set of parameters to check the convergence (or the divergence) of an
+ *         iterative process (tolerances or max. number of iterations)
+ */
+
+typedef struct {
+
+/*!
+ * \var atol
+ * Absolute tolerance under which the iterative process is stopped
+ *
+ * \var rtol
+ * Relative tolerance under which the iterative process is stopped
+ *
+ * \var dtol
+ * Tolerance above which the iterative process is stated as "diverged".
+ * Not used if < 0
+ *
+ * \var n_max_iter
+ * Maximal number of iterations before stopping the iterative process
+ */
+
+  double               atol;
+  double               rtol;
+  double               dtol;
+  int                  n_max_iter;
+
+} cs_param_convergence_t;
+
 /*!
  * @}
  * @name Settings for non-linear algorithms

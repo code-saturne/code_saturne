@@ -3411,7 +3411,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       /* Non-linear algorithm */
 
-      cs_param_sles_cvg_t  nl_cvg_param = {
+      cs_param_convergence_t  nl_cvg_param = {
         .n_max_iter = 15,   /* n_max iter. */
         .atol = 1e-6,       /* absolute tolerance */
         .rtol = 1e-2,       /* relative tolerance */

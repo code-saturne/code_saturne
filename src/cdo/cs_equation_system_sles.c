@@ -103,7 +103,7 @@ _mumps_hook(void     *context,
   KSP  ksp = ksp_struct;
   cs_equation_system_param_t  *sysp = context;
   cs_param_sles_t  *sys_slesp = sysp->sles_param;
-  cs_param_sles_cvg_t  cvgp = sys_slesp->cvg_param;
+  cs_param_convergence_t  cvgp = sys_slesp->cvg_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */

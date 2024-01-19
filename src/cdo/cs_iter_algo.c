@@ -480,9 +480,9 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_t *
-cs_iter_algo_create_with_settings(cs_iter_algo_type_t    type,
-                                  int                    verbosity,
-                                  cs_param_sles_cvg_t    cvg_param)
+cs_iter_algo_create_with_settings(cs_iter_algo_type_t     type,
+                                  int                     verbosity,
+                                  cs_param_convergence_t  cvg_param)
 {
   cs_iter_algo_t  *algo = cs_iter_algo_create(type);
 
@@ -610,15 +610,15 @@ cs_iter_algo_set_verbosity(cs_iter_algo_t     *algo,
  * \brief Define the criteria related the convergence of the given iterative
  *        algorithm
  *
- * \param[in, out] algo       pointer to the structure to update
- * \param[in]      param      set of parameters driving the convergence of the
- *                            iterative algorithm
+ * \param[in, out] algo     pointer to the structure to update
+ * \param[in]      param    set of parameters driving the convergence of the
+ *                          iterative algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_set_cvg_param(cs_iter_algo_t        *algo,
-                           cs_param_sles_cvg_t    cvg_param)
+cs_iter_algo_set_cvg_param(cs_iter_algo_t         *algo,
+                           cs_param_convergence_t  cvg_param)
 {
   if (algo == NULL)
     return;

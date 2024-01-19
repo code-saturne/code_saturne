@@ -96,7 +96,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 cs_param_saddle_t *
-cs_param_saddle_create(const cs_param_sles_t   *block11_slesp)
+cs_param_saddle_create(const cs_param_sles_t  *block11_slesp)
 {
   cs_param_saddle_t  *saddlep = NULL;
 
@@ -108,7 +108,7 @@ cs_param_saddle_create(const cs_param_sles_t   *block11_slesp)
   saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;  /* Not used by default */
   saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
 
-  saddlep->cvg_param =  (cs_param_sles_cvg_t) {
+  saddlep->cvg_param = (cs_param_convergence_t) {
     .n_max_iter = 100,
     .atol = 1e-12,       /* absolute tolerance */
     .rtol = 1e-6,        /* relative tolerance */

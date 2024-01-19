@@ -202,7 +202,7 @@ typedef struct {
    *  case for instance with an Uzawa or GKB algorithm.
    */
 
-  cs_param_sles_cvg_t         cvg_param;
+  cs_param_convergence_t      cvg_param;
 
   /*! @} */
 
@@ -260,7 +260,7 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 cs_param_saddle_t *
-cs_param_saddle_create(const cs_param_sles_t   *block11_slesp);
+cs_param_saddle_create(const cs_param_sles_t  *block11_slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!

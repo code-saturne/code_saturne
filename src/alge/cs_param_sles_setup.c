@@ -2874,7 +2874,7 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
   if (sles == NULL)
     return;
 
-  cs_param_sles_cvg_t  cvgp = slesp->cvg_param;
+  cs_param_convergence_t  cvgp = slesp->cvg_param;
 
   switch (slesp->solver_class) {
 

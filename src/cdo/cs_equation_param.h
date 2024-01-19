@@ -789,7 +789,7 @@ typedef struct {
   cs_param_saddle_t          *saddle_param;
 
   cs_param_nl_algo_t          incremental_algo_type;
-  cs_param_sles_cvg_t         incremental_algo_cvg;
+  cs_param_convergence_t      incremental_algo_cvg;
   cs_real_t                   incremental_relax_factor;
   cs_iter_algo_param_aac_t    incremental_anderson_param;
 

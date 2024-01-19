@@ -55,35 +55,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \struct cs_param_sles_cvg_t
- *  \brief Set of parameters to check the convergence (or the divergence) of an
- *         iterative process (tolerances or max. number of iterations)
- */
-
-typedef struct {
-
-/*!
- * \var atol
- * Absolute tolerance under which the iterative process is stopped
- *
- * \var rtol
- * Relative tolerance under which the iterative process is stopped
- *
- * \var dtol
- * Tolerance above which the iterative process is stated as "diverged".
- * Not used if < 0
- *
- * \var n_max_iter
- * Maximal number of iterations before stopping the iterative process
- */
-
-  double               atol;
-  double               rtol;
-  double               dtol;
-  int                  n_max_iter;
-
-} cs_param_sles_cvg_t;
-
 /*!
  * \struct cs_param_sles_t
  * \brief Structure storing all metadata related to the resolution of a linear
@@ -122,7 +93,7 @@ typedef struct {
    *  stop (convergence or divergence).
    */
 
-  cs_param_sles_cvg_t         cvg_param;
+  cs_param_convergence_t      cvg_param;
 
   /*! \var context_param
    *  Pointer to a structure cast on-the-fly storing specific parameters

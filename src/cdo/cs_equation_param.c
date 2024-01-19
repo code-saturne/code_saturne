@@ -1414,7 +1414,7 @@ cs_equation_param_create(const char            *name,
   /* By default, there is no incremental solving */
 
   eqp->incremental_algo_type = CS_PARAM_NL_ALGO_NONE;
-  eqp->incremental_algo_cvg = (cs_param_sles_cvg_t) {
+  eqp->incremental_algo_cvg = (cs_param_convergence_t) {
     .atol = 1e-6,           /* absolute tolerance */
     .rtol = 1e-2,           /* relative tolerance */
     .dtol = 1e3,            /* divergence tolerance */

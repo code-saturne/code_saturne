@@ -644,7 +644,7 @@ typedef struct {
   cs_param_nl_algo_t             nl_algo_type;
   int                            nl_algo_verbosity;
   cs_real_t                      nl_relax_factor;
-  cs_param_sles_cvg_t            nl_cvg_param;
+  cs_param_convergence_t         nl_cvg_param;
   cs_iter_algo_param_aac_t       anderson_param;
 
   cs_iter_algo_t                *nl_algo;

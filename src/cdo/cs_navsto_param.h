@@ -507,7 +507,7 @@ typedef struct {
    *  the case of Navier--Stokes equations.
    */
 
-  cs_param_sles_cvg_t           il_algo_cvg;
+  cs_param_convergence_t        il_algo_cvg;
 
   /*! \var il_algo_restart
    *  Number of iterations before restarting the iterative solver associated to
@@ -537,7 +537,7 @@ typedef struct {
    *  Navier-Stokes when the advection term is implicit and non linearized.
    */
 
-  cs_param_sles_cvg_t           nl_cvg_param;
+  cs_param_convergence_t        nl_cvg_param;
 
   /*! \var anderson_param
    * Set of parameters to drive the Anderson acceleration (useful if the type
