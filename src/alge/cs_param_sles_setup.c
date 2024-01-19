@@ -235,7 +235,7 @@ _petsc_bssor_hook(const char              *prefix)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _petsc_pcgamg_hook(const char              *prefix,
                    const cs_param_sles_t   *slesp,
                    bool                     is_symm,
@@ -693,17 +693,17 @@ _petsc_pchypre_hook(const char              *prefix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set command line options for PC according to the kind of
- *        preconditionner
+ * \brief Set the command line options for PC according to the kind of
+ *        preconditioner to apply
  *
- * \param[in, out] slesp    set of parameters for the linear algebra
- * \param[in, out] ksp      PETSc solver structure
+ * \param[in, out] slesp  set of parameters for the linear algebra
+ * \param[in, out] ksp    PETSc solver structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_set_pc_type(cs_param_sles_t   *slesp,
-                   KSP                ksp)
+_petsc_set_pc_type(cs_param_sles_t  *slesp,
+                   KSP               ksp)
 {
   if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
     return; /* Direct solver: Nothing to do at this stage */
@@ -722,7 +722,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
     break;
 
   case CS_PARAM_PRECOND_BJACOB_ILU0:
-    if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+    if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_HYPRE) {
 #if defined(PETSC_HAVE_HYPRE)
       PCSetType(pc, PCHYPRE);
       PCHYPRESetType(pc, "euclid");
@@ -779,7 +779,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
     break;
 
   case CS_PARAM_PRECOND_ILU0:
-    if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+    if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_HYPRE) {
 
 #if defined(PETSC_HAVE_HYPRE)
 
@@ -804,7 +804,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
         slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
         cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_DEFAULT,
+        cs_log_printf(CS_LOG_WARNINGS,
                       " %s: System %s: Modify the requested preconditioner to"
                       " enable a parallel computation with PETSC.\n"
                       " Switch to a block jacobi preconditioner.\n",
@@ -832,43 +832,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
     break;
 
   case CS_PARAM_PRECOND_AMG:
-    {
-      bool  is_symm = _system_should_be_sym(slesp->solver);
-
-      switch (slesp->amg_type) {
-
-      case CS_PARAM_AMG_PETSC_GAMG_V:
-      case CS_PARAM_AMG_PETSC_GAMG_W:
-      case CS_PARAM_AMG_PETSC_PCMG:
-        _petsc_pcgamg_hook(slesp->name, slesp, is_symm, pc);
-        break;
-
-      case CS_PARAM_AMG_HYPRE_BOOMER_V:
-      case CS_PARAM_AMG_HYPRE_BOOMER_W:
-        if (cs_param_sles_hypre_from_petsc())
-          _petsc_pchypre_hook(slesp->name, slesp, is_symm, pc);
-
-        else {
-
-          cs_base_warn(__FILE__, __LINE__);
-          cs_log_printf(CS_LOG_DEFAULT,
-                        "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
-                        " available.\n",
-                        __func__, slesp->name);
-          _petsc_pcgamg_hook(slesp->name, slesp, is_symm, pc);
-
-        }
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Eq. %s: Invalid AMG type for the PETSc library.",
-                  __func__, slesp->name);
-        break;
-
-      } /* End of switch on the AMG type */
-
-    } /* AMG as preconditioner */
+    cs_param_sles_setup_petsc_pc_amg(slesp->name, slesp, pc);
     break;
 
   default:
@@ -890,14 +854,14 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 /*!
  * \brief Set PETSc solver
  *
- * \param[in]      slesp    pointer to SLES parameters
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in]      slesp  pointer to SLES parameters
+ * \param[in, out] ksp    pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_set_krylov_solver(cs_param_sles_t    *slesp,
-                         KSP                 ksp)
+_petsc_set_krylov_solver(cs_param_sles_t  *slesp,
+                         KSP               ksp)
 {
   /* No choice otherwise PETSc yields an error */
 
@@ -990,7 +954,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 
   switch (slesp->solver) {
 
-  case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
+  case CS_PARAM_ITSOL_GMRES:  /* Preconditioned GMRES */
   case CS_PARAM_ITSOL_FGMRES: /* Flexible GMRES */
     KSPGMRESSetRestart(ksp, slesp->restart);
     break;
@@ -999,8 +963,8 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
     KSPGCRSetRestart(ksp, slesp->restart);
     break;
 
-#if defined(PETSC_HAVE_MUMPS)
   case CS_PARAM_ITSOL_MUMPS:
+#if defined(PETSC_HAVE_MUMPS)
     {
       cs_param_mumps_t  *mumpsp = slesp->context_param;
       assert(mumpsp != NULL);
@@ -1035,8 +999,13 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 
       } /* L.D.Lt factorization */
     }
-    break;
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: MUMPS inside PETSc is not available.\n",
+              " Please check your settings or your installation.", __func__);
 #endif
+    break;
+
 
   default:
     break; /* Nothing else to do */
@@ -1064,8 +1033,8 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_setup_hook(void    *context,
-                  void    *ksp_struct)
+_petsc_setup_hook(void  *context,
+                  void  *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t  *)context;
   KSP  ksp = ksp_struct;
@@ -1073,33 +1042,7 @@ _petsc_setup_hook(void    *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  int len = strlen(slesp->name) + 1;
-  char  *prefix = NULL;
-  BFT_MALLOC(prefix, len + 1, char);
-  sprintf(prefix, "%s_", slesp->name);
-  prefix[len] = '\0';
-  KSPSetOptionsPrefix(ksp, prefix);
-  BFT_FREE(prefix);
-
-  /* 1) Set the solver */
-
-  _petsc_set_krylov_solver(slesp, ksp);
-
-  /* 2) Set the preconditioner */
-
-  _petsc_set_pc_type(slesp, ksp);
-
-  /* 3) User function for additional settings */
-
-  cs_user_sles_petsc_hook((void *)slesp, ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-
-  if (!slesp->setup_done) {
-    KSPSetUp(ksp);
-    cs_sles_petsc_log_setup(ksp);
-    slesp->setup_done = true;
-  }
+  cs_param_sles_setup_petsc_ksp(slesp->name, slesp, ksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1126,18 +1069,14 @@ _petsc_common_block_hook(const cs_param_sles_t    *slesp,
   switch (slesp->pcd_block_type) {
   case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
   case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
-  case CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR:
-  case CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR:
     PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
     break;
 
   case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
-  case CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL:
     PCFieldSplitSetType(pc, PC_COMPOSITE_SYMMETRIC_MULTIPLICATIVE);
     break;
 
   case CS_PARAM_PRECOND_BLOCK_DIAG:
-  case CS_PARAM_PRECOND_BLOCK_FULL_DIAG:
   default:
     PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
     break;
@@ -1157,10 +1096,10 @@ _petsc_common_block_hook(const cs_param_sles_t    *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of multiplicative AMG block preconditioner for a CG with GAMG
- *         as AMG type
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        preconditioner.
+ *        Case of multiplicative AMG block preconditioner for a CG with GAMG
+ *        as AMG type
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
@@ -1168,8 +1107,8 @@ _petsc_common_block_hook(const cs_param_sles_t    *slesp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_amg_block_gamg_hook(void     *context,
-                           void     *ksp_struct)
+_petsc_amg_block_gamg_hook(void  *context,
+                           void  *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
   KSP  ksp = ksp_struct;
@@ -1235,14 +1174,6 @@ _petsc_amg_block_gamg_hook(void     *context,
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-
-  if (!slesp->setup_done) {
-    KSPSetUp(ksp);
-    cs_sles_petsc_log_setup(ksp);
-    slesp->setup_done = true;
-  }
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1324,20 +1255,8 @@ _petsc_amg_block_boomer_hook(void     *context,
   BFT_FREE(prefix);
   PetscFree(xyz_subksp);
 
-  /* User function for additional settings */
-
-  cs_user_sles_petsc_hook(context, ksp);
-
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-
-  if (!slesp->setup_done) {
-    KSPSetUp(ksp);
-    cs_sles_petsc_log_setup(ksp);
-    slesp->setup_done = true;
-  }
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1411,7 +1330,7 @@ _petsc_block_hook(void     *context,
 
     case CS_PARAM_PRECOND_ILU0:
     case CS_PARAM_PRECOND_BJACOB_ILU0:
-      if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+      if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_HYPRE) {
         if (cs_param_sles_hypre_from_petsc()) {
 
           _petsc_cmd(true, prefix, "ksp_type", "preonly");
@@ -1536,20 +1455,8 @@ _petsc_block_hook(void     *context,
   BFT_FREE(prefix);
   PetscFree(xyz_subksp);
 
-  /* User function for additional settings */
-
-  cs_user_sles_petsc_hook(context, ksp);
-
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-
-  if (!slesp->setup_done) {
-    KSPSetUp(ksp);
-    cs_sles_petsc_log_setup(ksp);
-    slesp->setup_done = true;
-  }
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1569,9 +1476,9 @@ _check_settings(cs_param_sles_t     *slesp)
 {
   if (slesp->solver == CS_PARAM_ITSOL_MUMPS) { /* Checks related to MUMPS */
 
-    cs_param_sles_class_t  ret_class =
-      cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS);
-    if (ret_class == CS_PARAM_SLES_N_CLASSES)
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_MUMPS);
+    if (ret_class == CS_PARAM_N_SOLVER_CLASSES)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected while setting the SLES \"%s\"\n"
                 " MUMPS is not available with your installation.\n"
@@ -1582,7 +1489,7 @@ _check_settings(cs_param_sles_t     *slesp)
 
   }
   else {
-    if (slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS)
+    if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_MUMPS)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected while setting the SLES \"%s\"\n"
                 " MUMPS class is not consistent with your settings.\n"
@@ -1656,22 +1563,16 @@ _set_saturne_sles(bool                 use_field_id,
 
   /* Retrieve the sles structure for this equation */
 
-  cs_sles_t  *sles = cs_sles_find(slesp->field_id, sles_name);
+  cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, sles_name);
+  cs_sles_it_t  *itsol = cs_sles_get_context(sles);
 
-  if (sles != NULL) {
-    if (slesp->field_id > -1) {
-      /* Solver settings already forced */
-      return;
-    }
-  }
-  else
-    sles = cs_sles_find_or_add(slesp->field_id, sles_name);
+  if (itsol != NULL && slesp->field_id > -1)
+    return; /* Solver settings already forced */
 
   int  poly_degree = _get_poly_degree(slesp);
 
   /* Retrieve associated context structures */
 
-  cs_sles_it_t  *itsol = cs_sles_get_context(sles);
   cs_sles_pc_t  *pc = cs_sles_it_get_pc(itsol);
   cs_multigrid_t  *mg = NULL;
 
@@ -1801,7 +1702,9 @@ _set_saturne_sles(bool                 use_field_id,
 
     case CS_PARAM_ITSOL_FGMRES:  /* Not available --> close to GCR */
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" Switch to the GCR implementation of code_saturne\n");
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: Switch to the GCR implementation of code_saturne\n",
+                    __func__);
       /* No break (wanted behavior) */
     case CS_PARAM_ITSOL_GKB_GMRES:
     case CS_PARAM_ITSOL_GCR:
@@ -2794,25 +2697,25 @@ cs_param_sles_setup(bool              use_field_id,
 
   switch (slesp->solver_class) {
 
-  case CS_PARAM_SLES_CLASS_CS: /* code_saturne's solvers */
+  case CS_PARAM_SOLVER_CLASS_CS: /* code_saturne's solvers */
     _set_saturne_sles(use_field_id, slesp);
     break;
 
-  case CS_PARAM_SLES_CLASS_MUMPS: /* MUMPS sparse direct solvers */
+  case CS_PARAM_SOLVER_CLASS_MUMPS: /* MUMPS sparse direct solvers */
     _set_mumps_sles(use_field_id, slesp);
     break;
 
 #if defined(HAVE_HYPRE)
-  case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc or not */
+  case CS_PARAM_SOLVER_CLASS_HYPRE: /* HYPRE solvers through PETSc or not */
     _set_hypre_sles(use_field_id, slesp);
     break;
 
-  case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
+  case CS_PARAM_SOLVER_CLASS_PETSC: /* PETSc solvers */
     _set_petsc_hypre_sles(use_field_id, slesp);
     break;
 #else
-  case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc */
-  case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
+  case CS_PARAM_SOLVER_CLASS_HYPRE: /* HYPRE solvers through PETSc */
+  case CS_PARAM_SOLVER_CLASS_PETSC: /* PETSc solvers */
     _set_petsc_hypre_sles(use_field_id, slesp);
     break;
 #endif
@@ -2878,7 +2781,7 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
 
   switch (slesp->solver_class) {
 
-  case CS_PARAM_SLES_CLASS_CS: /* code_saturne's own solvers */
+  case CS_PARAM_SOLVER_CLASS_CS: /* code_saturne's own solvers */
     {
       switch (slesp->solver) {
 
@@ -2917,7 +2820,7 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
     break;
 
 #if defined(HAVE_PETSC)
-  case CS_PARAM_SLES_CLASS_PETSC:
+  case CS_PARAM_SOLVER_CLASS_PETSC:
     {
       cs_sles_petsc_t  *petsc_ctx = cs_sles_get_context(sles);
       assert(petsc_ctx);
@@ -2930,7 +2833,7 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
 #endif
 
 #if defined(HAVE_HYPRE)
-  case CS_PARAM_SLES_CLASS_HYPRE:
+  case CS_PARAM_SOLVER_CLASS_HYPRE:
     {
       cs_sles_hypre_t  *hypre_ctx = cs_sles_get_context(sles);
       assert(hypre_ctx);
@@ -2941,7 +2844,7 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
 #endif
 
   default:
-    /* CS_PARAM_SLES_CLASS_MUMPS => Nothing to do */
+    /* CS_PARAM_SOLVER_CLASS_MUMPS => Nothing to do */
     break;
   }
 }
@@ -2965,6 +2868,94 @@ cs_param_sles_setup_petsc_cmd(bool         use_prefix,
                               const char  *keyval)
 {
   _petsc_cmd(use_prefix, prefix, keyword, keyval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a couple (preconditioner, solver) in PETSc
+ *
+ * \param[in]      label  label to identify this (part of) system
+ * \param[in, out] slesp  pointer to a set of SLES parameters
+ * \param[in, out] p_ksp  solver structure for PETSc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_setup_petsc_ksp(const char       *label,
+                              cs_param_sles_t  *slesp,
+                              void             *p_ksp)
+{
+  KSP  ksp = p_ksp;
+  assert(ksp != NULL);
+
+  int len = strlen(label) + 1;
+  char  *prefix = NULL;
+  BFT_MALLOC(prefix, len + 1, char);
+  sprintf(prefix, "%s_", slesp->name);
+  prefix[len] = '\0';
+  KSPSetOptionsPrefix(ksp, prefix);
+  BFT_FREE(prefix);
+
+  /* 1) Set the solver */
+
+  _petsc_set_krylov_solver(slesp, ksp);
+
+  /* 2) Set the preconditioner */
+
+  _petsc_set_pc_type(slesp, ksp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set an AMG preconditioner in PETSc
+ *
+ * \param[in]      prefix  label to identify this (part of) system
+ * \param[in]      slesp   pointer to a set of SLES parameters
+ * \param[in, out] p_pc    preconditioner structure for PETsc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
+                                 cs_param_sles_t  *slesp,
+                                 void             *p_pc)
+{
+  PC  pc = p_pc;
+  assert(pc != NULL);
+  bool  is_symm = _system_should_be_sym(slesp->solver);
+
+  switch (slesp->amg_type) {
+
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+  case CS_PARAM_AMG_PETSC_PCMG:
+    _petsc_pcgamg_hook(prefix, slesp, is_symm, pc);
+    break;
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    if (cs_param_sles_hypre_from_petsc())
+      _petsc_pchypre_hook(prefix, slesp, is_symm, pc);
+
+    else {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: prefix=\"%s\": Switch to GAMG since BoomerAMG is not"
+                    " available.\n",
+                    __func__, prefix);
+      _petsc_pcgamg_hook(prefix, slesp, is_symm, pc);
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: prefix=\"%s\": Invalid AMG type for the PETSc library.",
+              __func__, prefix);
+    break;
+
+  } /* End of switch on the AMG type */
 }
 #endif
 

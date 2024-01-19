@@ -63,6 +63,7 @@
 #include "cs_post.h"
 #include "cs_pressure_correction.h"
 #include "cs_prototypes.h"
+#include "cs_saddle_solver_setup.h"
 #include "cs_solid_selection.h"
 #include "cs_solidification.h"
 #include "cs_thermal_system.h"
@@ -860,11 +861,10 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
    *  the scheme context and system helper structures.
    */
 
+  cs_saddle_solver_setup_sles();
   cs_equation_system_set_sles(); /* Must be done before cs_equation_set_sles */
-  cs_equation_set_sles();
 
-  if (cs_navsto_system_is_activated())
-    cs_navsto_system_set_sles();
+  cs_equation_set_sles();
 
   /* Setup linear solvers (second call since the first call can have no effect
      on some low-level settings which require a call to *_set_sles() functions
@@ -941,14 +941,6 @@ cs_cdo_finalize(cs_domain_t    *domain)
                                domain->cdo_context->vcb_scheme_flag,
                                domain->cdo_context->hho_scheme_flag);
 
-  /* Free the memory related to equations */
-
-  cs_equation_destroy_all();
-
-  /* Free the memory related to systems of equations */
-
-  cs_equation_system_destroy_all();
-
   /* Free memory related to advection fields */
 
   cs_advection_field_destroy_all();
@@ -980,13 +972,22 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   cs_navsto_system_destroy();
 
-  /* CDO resolved Pressure correction coupled with FV*/
+  /* CDO resolved Pressure correction coupled with FV */
 
   cs_pressure_correction_cdo_destroy_all();
 
   /* Solidification module */
 
   cs_solidification_destroy_all();
+
+  /* Free the memory related to systems of equations */
+
+  cs_equation_system_destroy_all();
+  cs_saddle_solver_destroy_all();
+
+  /* Free the memory related to equations */
+
+  cs_equation_destroy_all();
 
   /* Free the memory related to "low-level" structures shared among schemes */
   /* ---------------------------------------------------------------------- */

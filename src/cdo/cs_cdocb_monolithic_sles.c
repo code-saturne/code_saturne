@@ -66,7 +66,7 @@
 #include "cs_fp_exception.h"
 #include "cs_matrix_default.h"
 #include "cs_parall.h"
-#include "cs_saddle_itsol.h"
+#include "cs_saddle_solver.h"
 #include "cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)

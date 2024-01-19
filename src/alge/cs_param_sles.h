@@ -67,9 +67,8 @@ typedef struct {
   int     field_id;    /*!< Field id related to a SLES. By default, this is set
                          to -1 */
   int     verbosity;   /*!< SLES verbosity */
-  bool    setup_done;  /*!< SLES setup step has been done */
 
-  cs_param_sles_class_t      solver_class; /*!< class of SLES to consider  */
+  cs_param_solver_class_t    solver_class; /*!< class of SLES to consider  */
   cs_param_precond_type_t    precond;      /*!< type of preconditioner */
   cs_param_itsol_type_t      solver;       /*!< type of solver */
   bool                       flexible;     /*!< need a flexible variant ? */
@@ -153,7 +152,7 @@ cs_param_sles_log(cs_param_sles_t   *slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Copy a cs_param_sles_t structure from src to dst
+ * \brief Copy a cs_param_sles_t structure from src to dst
  *
  * \param[in]      src    reference cs_param_sles_t structure to copy
  * \param[in, out] dst    copy of the reference at exit
@@ -161,8 +160,8 @@ cs_param_sles_log(cs_param_sles_t   *slesp);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_copy_from(const cs_param_sles_t   *src,
-                        cs_param_sles_t         *dst);
+cs_param_sles_copy_from(const cs_param_sles_t  *src,
+                        cs_param_sles_t        *dst);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -298,17 +297,17 @@ cs_param_sles_hypre_from_petsc(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check the availability of a solver library and return the requested
- *        one if this is possible or an alternative or CS_PARAM_SLES_N_CLASSES
+ *        one if this is possible or an alternative or CS_PARAM_N_SOLVER_CLASSES
  *        if no alternative is available.
  *
- * \param[in]       wanted_class  requested class of solvers
+ * \param[in] wanted_class  requested class of solvers
  *
  * \return the available solver class related to the requested class
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_sles_class_t
-cs_param_sles_check_class(cs_param_sles_class_t   wanted_class);
+cs_param_solver_class_t
+cs_param_sles_check_class(cs_param_solver_class_t  wanted_class);
 
 /*----------------------------------------------------------------------------*/
 /*!

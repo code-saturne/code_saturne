@@ -111,6 +111,36 @@ cs_param_sles_setup_petsc_cmd(bool         use_prefix,
                               const char  *prefix,
                               const char  *keyword,
                               const char  *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a couple (preconditioner, solver) in PETSc
+ *
+ * \param[in]      label  label to identify this (part of) system
+ * \param[in, out] slesp  pointer to a set of SLES parameters
+ * \param[in, out] p_ksp  solver structure for PETSc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_setup_petsc_ksp(const char       *label,
+                              cs_param_sles_t  *slesp,
+                              void             *p_ksp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set an AMG preconditioner in PETSc
+ *
+ * \param[in]      prefix  label to identify this (part of) system
+ * \param[in]      slesp   pointer to a set of SLES parameters
+ * \param[in, out] p_pc    preconditioner structure for PETsc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
+                                 cs_param_sles_t  *slesp,
+                                 void             *p_pc);
 #endif
 
 /*----------------------------------------------------------------------------*/

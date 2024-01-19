@@ -113,18 +113,14 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [cdo_sles_navsto_full_mumps] */
   {
-    /* Parameters related to the Navier-Stokes settings. General strategy. */
-
-    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
-
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "mumps");
-
     cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
 
     /* Linear algebra settings */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+
 #if defined(HAVE_MUMPS)
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "mumps");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
 #else
     bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
@@ -134,20 +130,15 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [cdo_sles_navsto_alu_mumps] */
   {
-    /* Parameters related to the Navier-Stokes settings. General strategy. */
-
-    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
-
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "alu");
-    cs_navsto_param_set(nsp, CS_NSKEY_GD_SCALE_COEF, "5e3");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RTOL, "1e-8");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_ATOL, "1e-14");
-
     cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
 
     /* Linear algebra settings */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "alu");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_AUGMENT_SCALING, "1e3");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_RTOL, "1e-8");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
 
 #if defined(HAVE_MUMPS)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
@@ -176,20 +167,18 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [cdo_sles_navsto_gkb_mumps] */
   {
-    /* Parameters related to the Navier-Stokes settings. General strategy. */
-
-    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
-
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "gkb");
-    cs_navsto_param_set(nsp, CS_NSKEY_GD_SCALE_COEF, "1e3");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RTOL, "1e-8");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_ATOL, "1e-14");
-
     cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
 
-    /* Linear algebra settings */
+    /* Linear algebra settings for the saddle-point system */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "gkb");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_AUGMENT_SCALING, "10");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_RTOL, "1e-8");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
+
+    /* Linear algebra settings for the (1,1) block */
+
 #if defined(HAVE_MUMPS)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
 #else
@@ -200,49 +189,37 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [cdo_sles_navsto_gkb_kcycle] */
   {
-    /* Parameters related to the Navier-Stokes settings. General strategy. */
-
-    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
-
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "gkb");
-    cs_navsto_param_set(nsp, CS_NSKEY_GD_SCALE_COEF, "0");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RTOL, "1e-8");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_ATOL, "1e-14");
-
     cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
 
-    /* Linear algebra settings */
+    /* Linear algebra settings for the saddle-point system */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "gkb");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_AUGMENT_SCALING, "0");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_RTOL, "1e-8");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
+
+    /* Linear algebra settings for the (1,1)-block */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "none");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-
-    /* Tolerance for the inner solver */
-
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-5");
   }
   /*! [cdo_sles_navsto_gkb_kcycle] */
 
   /*! [cdo_sles_navsto_uzacg] */
   {
-    /* Parameters related to the Navier-Stokes settings. General strategy. */
-
-    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
-
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "uzawa_cg");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RTOL, "1e-6");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_ATOL, "1e-14");
-
     cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
 
-    /* Linear algebra settings */
+    /* Linear algebra settings for the saddle-point system */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "uzawa_cg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_RTOL, "1e-6");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
 
-    /* Set the inner solver for the velocity block */
+    /* Linear algebra settings for the (1,1)-block */
 
 #if defined(HAVE_HYPRE)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fgmres");
@@ -256,45 +233,32 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
 #endif
 
-  /*===============================
-    Set the Schur complement solver
-    =============================== */
+    /* Linear algebra settings for the Schur complement approximation */
 
-    /* Available approximations are:
-     *
-     *  CS_PARAM_SCHUR_DIAG_INVERSE,
-     *  CS_PARAM_SCHUR_LUMPED_INVERSE,
-     *  CS_PARAM_SCHUR_MASS_SCALED,
-     */
-
-    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_MASS_SCALED;
-
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled");
   }
   /*! [cdo_sles_navsto_uzacg] */
 
   /*! [cdo_sles_navsto_minres] */
   {
-    /* Parameters related to the Stokes settings.
-       MINRES is not possible with a non-symmetric saddle-point system
-       General strategy. */
-
-    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
-
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "minres");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RTOL, "1e-9");
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_ATOL, "1e-14");
-
     cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
 
-    /* Linear algebra settings */
+    /* Parameters related to the Stokes settings.
+       MINRES is not possible with a non-symmetric saddle-point system */
+
+    /* Linear algebra settings for the saddle-point system */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "minres");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_RTOL, "1e-9");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
+
+    /* Linear algebra settings for the (1,1)-block */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
 
-#if defined(HAVE_PETSC)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "diag");
+#if defined(HAVE_PETSC) /* One assumes that PETSc is installed with Hypre */
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
 
@@ -302,17 +266,21 @@ cs_user_parameters(cs_domain_t    *domain)
        able to use a block preconditioning for the velocity block */
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "diag");
 
     cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(mom_eqp);
 
-    /* Set the main parameters for BoomerAMG */
+    /* Set the main parameters for BoomerAMG (Please refer to the Hypre
+       documentation for more details) */
 
     cs_param_sles_boomeramg(slesp,
-                            1,  /* n_down_iter */
-                            CS_PARAM_AMG_BOOMER_FORWARD_L1_GS,
-                            1,  /* n_up_iter */
-                            CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS,
+                            /* n_down_iter, down smoother */
+                            1, CS_PARAM_AMG_BOOMER_FORWARD_L1_GS,
+                            /* n_up_iter, up smoother */
+                            1, CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS,
+                            /* coarse solver */
                             CS_PARAM_AMG_BOOMER_GAUSS_ELIM,
+                            /* coarsening algorithm */
                             CS_PARAM_AMG_BOOMER_COARSEN_HMIS);
 
     /* Set advanced parameters for BoomerAMG */
@@ -328,18 +296,9 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
 #endif
 
-  /*===============================
-    Set the Schur complement solver
-    =============================== */
+    /* Linear algebra settings for the Schur complement approximation */
 
-    /* Available approximations are:
-     *
-     *  CS_PARAM_SCHUR_DIAG_INVERSE,
-     *  CS_PARAM_SCHUR_LUMPED_INVERSE,
-     *  CS_PARAM_SCHUR_MASS_SCALED  --> Good choice for the Stokes eq.
-     */
-
-    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_MASS_SCALED;
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled");
   }
   /*! [cdo_sles_navsto_minres] */
 }

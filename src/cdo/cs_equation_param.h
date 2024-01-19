@@ -1094,46 +1094,96 @@ typedef struct {
  * - "lower": lower triangular (multiplicative) block preconditioner
  * - "upper": upper triangular (multiplicative) block preconditioner
  * - "symm": symmetric Gauss-Seidel block preconditioner
- * - "full_diag": full diagonal (or additive) block preconditoner.
- * - "full_lower": full lower triangular (multiplicative) block preconditioner
- * - "full_upper": upper triangular (multiplicative) block preconditioner
- * - "full_symm": symmetric Gauss-Seidel block preconditioner
+ *
+ * \var CS_EQKEY_SADDLE_ATOL
+ * Absolute tolerance under which the iterative process stops when solving a
+ * saddle-point problem related to this equation. Read the description of the
+ * structure \ref cs_param_saddle_t for more details.
+ * - Example: "1e-12"
+ *
+ * \var CS_EQKEY_SADDLE_AUGMENT_SCALING
+ * Value of the scaling coefficient for the augmentation when solving a
+ * saddle-point problem. The initial system can namely be augmented with an
+ * operator for instance the grad-div operator when using an Augmented
+ * Lagrangian approach or the GKB solver.
+ * - Example: "1e2"
+ *
+ * \var CS_EQKEY_SADDLE_DTOL
+ * Divergence tolerance above which the iterative process stops when solving a
+ * saddle-point problem related to this equation. This triggers an error for
+ * divergence of the solver when detected. Read the description of the
+ * structure \ref cs_param_saddle_t for more details.
+ * - Example: "1e3"
+ *
+ * \var CS_EQKEY_SADDLE_MAX_ITER
+ * Max. number of iterations before stopping the "saddle-point" solver when
+ * solving a saddle-point problem related to this equation. This is different
+ * from \ref CS_EQKEY_ITSOL_MAX_ITER This latter key is dedicated to the
+ * preconditioning of the (1,1)-block when a saddle-point system has to be
+ * solved. Read the description of the structure \ref cs_param_saddle_t for
+ * more details.
+ * - Example: "1000"
  *
  * \var CS_EQKEY_SADDLE_PRECOND
- * Preconditioner used to solve a saddle-point system.\n
+ * Block preconditioner used to solve a saddle-point system.\n
  * Please refer to \ref cs_param_saddle_precond_t for more details.\n
  * Available choices are:\n
  * - "none" No preconditioner is used (default)
- * - "diag"
- * - "lower"
- * - "upper"
+ * - "diag",
+ * - "lower",
+ * - "upper",
+ * - "sgs" (symmetric Gauss-Seidel)
  *
  * \var CS_EQKEY_SADDLE_RTOL
- * Relative tolerance under which the iterative process stops
- * - Example: "1e-7"
+ * Relative tolerance under which the iterative process stops when solving a
+ * saddle-point problem related to this equation. Read the description of the
+ * structure \ref cs_param_saddle_t for more details.
+ * - Example: "1e-6"
  *
- * \var CS_EQKEY_SADDLE_SOLVER
- * Strategy/solver used to solve a saddle-point system.\n
+ * \var CS_EQKEY_SADDLE_SCHUR_APPROX
+ * Choice of the approximation of the Schur complement when solving a
+ * saddle-point problem. Not useful when there is no saddle-point problem to be
+ * solved. Some solvers or choices of preconditioner/solver may not need an
+ * approximation of the schur complement (ALU or GKB for instance). Please
+ * refer to \ref cs_param_saddle_schur_approx_t for more details.\n
  * Available choices are:
- * - "none" No solver (default --> no saddle-point system)
- * - "gcr"  GCR iterative solver
- * - "mumps" MUMPS sparse direct solver (external library)
- * - "minres" MINRES iterative solver
- *
- * \var CS_EQKEY_SADDLE_VERBOSITY
- * Level of details displayed for the resolution of a saddle-point system
- * - Examples: "0", "1", "2" or higher
- *
- * \var CS_EQKEY_SCHUR_APPROX
- * Choice of apprixmation of the Schur complement. Only useful when a
- * saddle-point problem has to be solved. Some solvers or choices of
- * preconditioner/solver may not need an approximation of the schur complement.
- * Please refer to \ref cs_param_schur_approx_t for more details.\n
- * Available choices are:
- * "none" no Schur approximation --> the identity is used
+ * "none" or "identity"  no Schur approximation --> the identity is used
  * "diag_inv" use the inverse of the (1,1)-block diagonal
  * "lumped_inv" use the inverse of the (1,1)-block after lumping
  * "mass" use a scaled mass matrix for the space related to the (2,2)-block
+ * "mass+diag_inv" for a combination of "mass" and "diag_inv"
+ * "mass+lumped_inv" for a combination of "mass" and "lumped_inv"
+ *
+ * \var CS_EQKEY_SADDLE_SOLVER
+ * Strategy/solver used to solve a saddle-point system.\n Read the description
+ * of the structure \ref cs_param_saddle_t for more details.
+ * Available choices are:
+ * - "none" No solver (default --> no saddle-point system)
+ * - "alu" Augmented Lagrangien Uzawa
+ * - "fgmres"  Flexible GMRES iterative solver (external library)
+ * - "gcr"  GCR iterative solver
+ * - "gkb" Golub-Kahan bidiagonalization
+ * - "minres" MINRES iterative solver
+ * - "mumps" MUMPS sparse direct solver (external library)
+ * - "notay" Notay's transformation of saddle-point
+ * - "uzawa_cg"  Uzawa algorithm accelerated by a CG-like technique.
+ *
+ * \var CS_EQKEY_SADDLE_SOLVER_CLASS
+ * Strategy/solver used to solve a saddle-point system.\n
+ * Available choices are:
+ * "cs" or "saturne" for "in-house" solver
+ * "petsc" or "mumps" for external libraries
+ *
+ * \var CS_EQKEY_SADDLE_SOLVER_RESTART
+ * Number of iterations before restarting a Krylov solver used as the main
+ * solver for a saddle-point problem. This key is useful when the main solver
+ * is a GMRES, a flexible GMRES or a GCR. Read the description of the structure
+ * \ref cs_param_saddle_t for more details.
+ * - Example: "30"
+ *
+ * \var CS_EQKEY_SADDLE_VERBOSITY
+ * Level of details displayed for the resolution of a saddle-point system
+ * - Examples: "0", "1", "2"
  *
  * \var CS_EQKEY_SLES_VERBOSITY
  * Level of details written by the code for the resolution of the linear system
@@ -1197,7 +1247,7 @@ typedef enum {
   CS_EQKEY_ITSOL,
   CS_EQKEY_ITSOL_ATOL,
   CS_EQKEY_ITSOL_DTOL,
-  CS_EQKEY_ITSOL_EPS,
+  CS_EQKEY_ITSOL_EPS,           /* deprecated */
   CS_EQKEY_ITSOL_MAX_ITER,
   CS_EQKEY_ITSOL_RESNORM_TYPE,
   CS_EQKEY_ITSOL_RESTART,
@@ -1205,11 +1255,17 @@ typedef enum {
   CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_PRECOND_BLOCK_TYPE,
+  CS_EQKEY_SADDLE_ATOL,
+  CS_EQKEY_SADDLE_AUGMENT_SCALING,
+  CS_EQKEY_SADDLE_DTOL,
+  CS_EQKEY_SADDLE_MAX_ITER,
   CS_EQKEY_SADDLE_PRECOND,
   CS_EQKEY_SADDLE_RTOL,
+  CS_EQKEY_SADDLE_SCHUR_APPROX,
   CS_EQKEY_SADDLE_SOLVER,
+  CS_EQKEY_SADDLE_SOLVER_CLASS,
+  CS_EQKEY_SADDLE_SOLVER_RESTART,
   CS_EQKEY_SADDLE_VERBOSITY,
-  CS_EQKEY_SCHUR_APPROX,
   CS_EQKEY_SLES_VERBOSITY,
   CS_EQKEY_SOLVER_FAMILY,
   CS_EQKEY_SPACE_SCHEME,
@@ -1670,6 +1726,38 @@ cs_equation_param_get_sles_param(cs_equation_param_t  *eqp);
 
 cs_param_saddle_t *
 cs_equation_param_get_saddle_param(cs_equation_param_t  *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to the approximation of the Schur complement. This is
+ *        only useful for solving a saddle-point problem relying on an
+ *        elaborated approximation of the Schur complement.
+ *
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_equation_param_get_schur_sles_param(cs_equation_param_t  *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to an extra-operation specific to a saddle-point solver
+ *        This is only useful when using ALU, GKB or Krylov solver with
+ *        elaborated Schur complement approximation.
+ *
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_equation_param_get_xtra_sles_param(cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!

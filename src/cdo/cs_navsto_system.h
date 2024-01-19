@@ -512,15 +512,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the settings for SLES related to the Navier-Stokes system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_system_set_sles(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Initialize the scheme context structure used to build the algebraic
  *         system. This is done after the setup step.
  *

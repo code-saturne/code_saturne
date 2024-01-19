@@ -174,27 +174,27 @@ cs_param_mumps_log(const char              *name,
 
   }
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | MUMPS_type:              %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  * %s | MUMPS_type:               %s\n",
                 name, tag);
 
   /* Strategy for the memory usage */
 
   switch (mumpsp->mem_usage) {
   case CS_PARAM_MUMPS_MEMORY_CONSTRAINED:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:             %s\n",
                   name, "constrained");
     break;
   case CS_PARAM_MUMPS_MEMORY_AUTO:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:             %s\n",
                   name, "automatic");
     break;
   case CS_PARAM_MUMPS_MEMORY_CPU_DRIVEN:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:             %s\n",
                   name, "CPU-driven (efficiency first)");
     break;
 
   default:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:            %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory_usage:             %s\n",
                   name, "Undefined");
     break;
   }
@@ -203,45 +203,45 @@ cs_param_mumps_log(const char              *name,
 
   switch (mumpsp->analysis_algo) {
   case CS_PARAM_MUMPS_ANALYSIS_AMD:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "AMD");
     break;
   case CS_PARAM_MUMPS_ANALYSIS_QAMD:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "QAMD");
     break;
   case CS_PARAM_MUMPS_ANALYSIS_PORD:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "PORD");
     break;
   case CS_PARAM_MUMPS_ANALYSIS_SCOTCH:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "SCOTCH");
     break;
   case CS_PARAM_MUMPS_ANALYSIS_PTSCOTCH:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "PT-SCOTCH");
     break;
   case CS_PARAM_MUMPS_ANALYSIS_METIS:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "METIS");
     break;
   case CS_PARAM_MUMPS_ANALYSIS_PARMETIS:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "PARMETIS");
     break;
   case CS_PARAM_MUMPS_ANALYSIS_AUTO:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "automatic choice done by MUMPS");
     break;
 
   default:
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:           %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Analysis_algo:            %s\n",
                   name, "Undefined");
     break;
   }
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Advanced_Optim:          %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Advanced_Optim:           %s\n",
                 name, cs_base_strtf(mumpsp->advanced_optim));
 
   if (mumpsp->block_analysis > 1)
@@ -249,15 +249,15 @@ cs_param_mumps_log(const char              *name,
                   name, mumpsp->block_analysis);
 
   if (mumpsp->ir_steps != 0)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:     %d\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:      %d\n",
                   name, CS_ABS(mumpsp->ir_steps));
 
   if (fabs(mumpsp->blr_threshold) > FLT_MIN)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | BLR_threshold:            %e\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | BLR_threshold:             %e\n",
                   name, mumpsp->blr_threshold);
 
   if (mumpsp->mem_coef > 0)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory pct. increase:    %f\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Memory pct. increase:     %f\n",
                   name, mumpsp->mem_coef);
 }
 

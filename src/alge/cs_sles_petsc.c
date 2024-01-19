@@ -158,6 +158,7 @@ struct _cs_sles_petsc_t {
 
   void                        *hook_context;   /* Optional user context */
   cs_sles_petsc_setup_hook_t  *setup_hook;     /* Post setup function */
+  bool                         log_setup;      /* PETSc setup log to do */
 
   char     *matype_r;                      /* requested PETSc matrix type */
   MatType   matype;                        /* actual PETSc matrix type */
@@ -641,6 +642,7 @@ cs_sles_petsc_create(const char                  *matrix_type,
 
   c->hook_context = context;
   c->setup_hook = setup_hook;
+  c->log_setup = true;
 
   /* Setup data */
 
@@ -1074,6 +1076,11 @@ cs_sles_petsc_setup(void               *context,
      end of the setup hook. */
 
   /* KSPSetUp(sd->ksp); */
+
+  if (c->log_setup) { /* PETSc log of the setup (more detailed) */
+    cs_sles_petsc_log_setup(sd->ksp);
+    c->log_setup = false;
+  }
 
   if (verbosity > 0)
     KSPView(sd->ksp, PETSC_VIEWER_STDOUT_WORLD);

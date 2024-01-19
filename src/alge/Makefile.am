@@ -50,6 +50,16 @@ AM_LDFLAGS =
 
 # Conditionally compiled extensions
 
+libcsalge_extension_a_CPPFLAGS =\
+-I$(top_srcdir)/src/bft  \
+-I$(top_srcdir)/src/fvm  \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/cdo \
+$(CPPFLAGS_PLE) \
+$(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) $(HYPRE_CPPFLAGS) \
+$(MPI_CPPFLAGS)
+
 libcsalge_petsc_a_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
@@ -118,6 +128,8 @@ cs_param_mumps.h \
 cs_param_saddle.h \
 cs_param_sles.h \
 cs_param_sles_setup.h \
+cs_saddle_solver.h \
+cs_saddle_solver_setup.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h \
@@ -195,6 +207,7 @@ cs_multigrid_smoother.c \
 cs_param_amg.c \
 cs_param_mumps.c \
 cs_param_saddle.c \
+cs_saddle_solver.c \
 cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \
@@ -214,17 +227,14 @@ cs_sles_pc_cuda.cu
 endif
 
 noinst_LIBRARIES += libcsalge_extension.a
-libcsalge_extension_a_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
-$(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) $(AMGX_CPPFLAGS) $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
 libcsalge_extension_a_SOURCES = \
 cs_param_sles.c \
-cs_param_sles_setup.c
-libcsalge_a_LIBADD += libcsalge_extension_a-cs_param_sles.$(OBJEXT)
-libcsalge_a_LIBADD += libcsalge_extension_a-cs_param_sles_setup.$(OBJEXT)
+cs_param_sles_setup.c \
+cs_saddle_solver_setup.c
+libcsalge_a_LIBADD += \
+libcsalge_extension_a-cs_param_sles.$(OBJEXT) \
+libcsalge_extension_a-cs_param_sles_setup.$(OBJEXT) \
+libcsalge_extension_a-cs_saddle_solver_setup.$(OBJEXT)
 
 if HAVE_PETSC
 noinst_LIBRARIES += libcsalge_petsc.a

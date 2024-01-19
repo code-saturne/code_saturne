@@ -121,13 +121,6 @@ _mumps_hook(void     *context,
                    cvgp.dtol,             /* divergence tolerance */
                    cvgp.n_max_algo_iter); /* max number of iterations */
 
-  /* Dump the setup related to PETSc in a specific file */
-
-  if (!sys_slesp->setup_done) {
-    cs_sles_petsc_log_setup(ksp);
-    sys_slesp->setup_done = true;
-  }
-
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 }
@@ -235,8 +228,6 @@ cs_equation_system_sles_init(int                            n_eqs,
     cs_sles_set_verbosity(sles, sys_slesp->verbosity);
 
   }
-
-  sysp->sles_param->setup_done = true;
 }
 
 /*----------------------------------------------------------------------------*/

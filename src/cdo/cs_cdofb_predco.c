@@ -62,7 +62,6 @@
 #include "cs_evaluate.h"
 #include "cs_log.h"
 #include "cs_math.h"
-#include "cs_navsto_sles.h"
 #include "cs_post.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
@@ -958,75 +957,6 @@ cs_cdofb_predco_free_scheme_context(void   *scheme_context)
   BFT_FREE(sc);
 
   return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when a projection
- *         algorithm is used to couple the system.
- *         No mesh information is available at this stage
- *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context   pointer to a context structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
-                         void                       *context)
-{
-  cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->prediction);
-  int  field_id = cs_equation_get_field_id(nsc->prediction);
-
-  mom_eqp->sles_param->field_id = field_id;
-
-  switch (nslesp->strategy) {
-
-  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
-    cs_equation_param_set_sles(mom_eqp);
-    break;
-
-  case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
-#if defined(HAVE_PETSC)
-    if (mom_eqp->sles_param->amg_type == CS_PARAM_AMG_NONE) {
-      if (cs_param_sles_hypre_from_petsc())
-        mom_eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-      else
-        mom_eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-    }
-
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         cs_navsto_sles_amg_block_hook,
-                         (void *)nsp);
-#else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
-              " PETSc is required with this option.\n"
-              " Please build a version of code_saturne with the PETSc support.",
-              __func__, mom_eqp->name);
-#endif /* HAVE_PETSC */
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n",
-              __func__, mom_eqp->name);
-  }
-
-  /* For the correction step, use the generic way to setup the SLES */
-
-  cs_equation_param_t  *corr_eqp = cs_equation_get_param(nsc->correction);
-
-  corr_eqp->sles_param->field_id = cs_equation_get_field_id(nsc->correction);
-  cs_equation_param_set_sles(corr_eqp);
 }
 
 /*----------------------------------------------------------------------------*/

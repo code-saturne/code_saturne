@@ -291,8 +291,17 @@ cs_navsto_ac_last_setup(const cs_navsto_param_t     *nsp,
 
   /* Avoid no definition of the zeta coefficient */
 
-  if (nsc->zeta->n_definitions == 0)
-    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
+  if (nsc->zeta->n_definitions == 0) {
+
+    cs_property_def_iso_by_value(nsc->zeta, NULL, 1);
+
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Add a unitary scaling for the grad-div term.\n"
+                  "%s: No definition given.",
+                  __func__, __func__);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -357,24 +366,36 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
     mom_eqp->time_scheme = CS_TIME_SCHEME_STEADY;
 
+  /* Set the name of the saddle-point problem to solve */
+
+  cs_param_saddle_set_name("NavSto", mom_eqp->saddle_param);
+
+  /* Associate the cs_param_sles_t structure related to the (1,1)-block */
+
+  cs_param_saddle_set_block11_sles_param(mom_eqp->saddle_param,
+                                         mom_eqp->sles_param);
+
   /* Solver settings: Only the linear algebra settings related to the momentum
-  *  equation.  The strategy is set in _navsto_param_sles_create() */
+   * equation. */
 
   if (nsp->model ==  CS_NAVSTO_MODEL_STOKES) {
 
     /* The linear system to solve should be symmetric */
 
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "sgs_schur_gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_PRECOND, "sgs");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER_RESTART, "40");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_MAX_ITER, "100");
 
-    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RESTART, "40");
-    cs_navsto_param_set(nsp, CS_NSKEY_MAX_IL_ALGO_ITER, "100");
-
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_MAX_ITER, "50");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
 
 #if defined(HAVE_PETSC)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "block_amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "diag");
 
     if (cs_param_sles_hypre_from_petsc())
       cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
@@ -382,49 +403,37 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
       cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "gamg");
 #else   /* Not HAVE_PETSC */
 #if defined(HAVE_HYPRE)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
 #else  /* Neither HYPRE or PETSc */
-    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
 #endif  /* HAVE_HYPRE */
 #endif  /* HAVE_PETSC */
-
-    /* Set the way to approximate the Schur complement */
-
-    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_MASS_SCALED;
 
   }
   else {
 
 #if defined(HAVE_MUMPS)
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "alu");
-    cs_navsto_param_set(nsp, CS_NSKEY_GD_SCALE_COEF, "100");
-
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "alu");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_AUGMENT_SCALING, "100");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+
+    /* Set the solver for the transformation system (copy from the main one) */
+
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(mom_eqp);
+    cs_param_saddle_t  *saddlep = cs_equation_param_get_saddle_param(mom_eqp);
+
+    cs_param_sles_copy_from(slesp, saddlep->xtra_sles_param);
 #else
-    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "sgs_schur_gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_PRECOND, "sgs");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, "lumped_inv");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER_RESTART, "40");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_MAX_ITER, "100");
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_MAX_ITER, "50");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
-
-    /* Settings for driving the linear algebra related to the Schur complement
-       approximation */
-
-    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_LUMPED_INVERSE;
-
-    cs_param_sles_t *schur_slesp = cs_param_sles_create(-1,
-                                                        "schur_approximation");
-
-    schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
-    schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
-    schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;  /* no predefined AMG type */
-    schur_slesp->cvg_param.rtol = 1e-4;            /* relative tolerance to stop
-                                                      an iterative solver */
-
-    nsp->sles_param->schur_sles_param = schur_slesp;
 #endif
 
   }

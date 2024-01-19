@@ -6,6 +6,14 @@ Master (not on release branches yet)
 - Reshape the interface with the MUMPS library (sparse direct solver)
   to make the usage of common MUMPS options easier. Take benefit from
   optimizations available in the latest 5.6.2 version.
+- Reshape the way to set the strategy and the related options to solve
+  a saddle-point problem. This induces also many modifications in the
+  way to set linear solvers inside the CDO/HHO framework. This is a
+  preparatory step to mutualize saddle-point solvers between CDO
+  cell-based schemes for scalar-valued equation and CDO face-based
+  schemes for the monolothic coupling of the Navier-Stokes
+  equations. The user-defined settings related to the linear algebra
+  have to be modified.
 
 ### User changes:
 

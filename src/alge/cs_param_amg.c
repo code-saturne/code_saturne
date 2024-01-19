@@ -127,26 +127,26 @@ cs_param_amg_get_type_name(cs_param_amg_type_t  type)
  *
  * \param[in] amg_type    type of AMG to consider
  *
- * \return the related solver class or CS_PARAM_SLES_CLASS_CS
+ * \return the related solver class or CS_PARAM_SOLVER_CLASS_CS
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_sles_class_t
+cs_param_solver_class_t
 cs_param_amg_get_class(cs_param_amg_type_t  amg_type)
 {
   switch (amg_type) {
 
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
   case CS_PARAM_AMG_HYPRE_BOOMER_W:
-    return CS_PARAM_SLES_CLASS_HYPRE;
+    return CS_PARAM_SOLVER_CLASS_HYPRE;
 
   case CS_PARAM_AMG_PETSC_GAMG_V:
   case CS_PARAM_AMG_PETSC_GAMG_W:
   case CS_PARAM_AMG_PETSC_PCMG:
-    return CS_PARAM_SLES_CLASS_PETSC;
+    return CS_PARAM_SOLVER_CLASS_PETSC;
 
   default:
-    return CS_PARAM_SLES_CLASS_CS;
+    return CS_PARAM_SOLVER_CLASS_CS;
   }
 }
 
@@ -322,32 +322,32 @@ cs_param_amg_boomer_log(const char                  *name,
   switch (bamgp->coarsen_algo) {
 
   case CS_PARAM_AMG_BOOMER_COARSEN_FALGOUT:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:   %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
                   prefix, "Falgout (6)");
     break;
 
   case CS_PARAM_AMG_BOOMER_COARSEN_PMIS:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:     %s\n",
                   prefix, "PMIS (8)");
     break;
 
   case CS_PARAM_AMG_BOOMER_COARSEN_HMIS:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:     %s\n",
                   prefix, "HMIS (10)");
     break;
 
   case CS_PARAM_AMG_BOOMER_COARSEN_CGC:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:     %s\n",
                   prefix, "CGC (21)");
     break;
 
   case CS_PARAM_AMG_BOOMER_COARSEN_CGC_E:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:     %s\n",
                   prefix, "CGC-E (22)");
     break;
 
   default:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:    %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_coarsening:     %s\n",
                   prefix, "Unknown");
     break;
 
@@ -368,42 +368,42 @@ cs_param_amg_boomer_log(const char                  *name,
   switch (bamgp->interp_algo) {
 
   case CS_PARAM_AMG_BOOMER_INTERP_HYPERBOLIC:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "For hyperbolic PDEs (2)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "extended+i (common C neighbor) (6)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "extended+i (no common C neighbor) (7)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_FF1:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "FF1 (13)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXTENDED:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "extended (14)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_MATRIX:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "extended+i (matrix form) (17)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_E_MATRIX:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "extended+e (matrix form) (18)");
     break;
 
   default:
-    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
                   prefix, "Unknown");
     break;
 

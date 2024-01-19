@@ -232,11 +232,11 @@ cs_param_amg_get_type_name(cs_param_amg_type_t  type);
  *
  * \param[in] amg_type    type of AMG to consider
  *
- * \return the related solver class or CS_PARAM_SLES_CLASS_CS
+ * \return the related solver class or CS_PARAM_SOLVER_CLASS_CS
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_sles_class_t
+cs_param_solver_class_t
 cs_param_amg_get_class(cs_param_amg_type_t  amg_type);
 
 /*----------------------------------------------------------------------------*/

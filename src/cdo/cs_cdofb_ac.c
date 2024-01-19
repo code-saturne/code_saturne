@@ -66,7 +66,6 @@
 #include "cs_iter_algo.h"
 #include "cs_log.h"
 #include "cs_math.h"
-#include "cs_navsto_sles.h"
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_sles.h"
@@ -1033,27 +1032,25 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   /* Iterative algorithm to handle the non-linearity (Picard by default) */
 
-  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
-
   cs_iter_algo_type_t  type = CS_ITER_ALGO_TWO_LEVEL;
 
-  if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_PICARD) {
+  if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_PICARD) {
 
     type |= CS_ITER_ALGO_DEFAULT;
     sc->nl_algo = cs_iter_algo_create_with_settings(type,
-                                                    nslesp->verbosity,
-                                                    nslesp->nl_cvg_param);
+                                                    nsp->verbosity,
+                                                    nsp->nl_cvg_param);
 
   }
-  else if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+  else if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
     type |= CS_ITER_ALGO_ANDERSON;
     sc->nl_algo = cs_iter_algo_create_with_settings(type,
-                                                    nslesp->verbosity,
-                                                    nslesp->nl_cvg_param);
+                                                    nsp->verbosity,
+                                                    nsp->nl_cvg_param);
 
     cs_iter_algo_set_anderson_param(sc->nl_algo,
-                                    nslesp->anderson_param,
+                                    nsp->anderson_param,
                                     cs_shared_quant->n_faces);
 
   }
@@ -1096,68 +1093,6 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context)
   BFT_FREE(sc);
 
   return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when an AC algorithm
- *         is used to couple the system.
- *         No mesh information is available at this stage
- *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
-                     void                       *context)
-{
-  cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
-  int  field_id = cs_equation_get_field_id(nsc->momentum);
-
-  mom_eqp->sles_param->field_id = field_id;
-
-  switch (nslesp->strategy) {
-
-  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
-    cs_equation_param_set_sles(mom_eqp);
-    break;
-
-  case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
-#if defined(HAVE_PETSC)
-    if (mom_eqp->sles_param->amg_type == CS_PARAM_AMG_NONE) {
-      if (cs_param_sles_hypre_from_petsc())
-        mom_eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-      else
-        mom_eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-    }
-
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         cs_navsto_sles_amg_block_hook,
-                         (void *)nsp);
-#else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
-              " PETSc is required with this option.\n"
-              " Please build a version of code_saturne with the PETSc support.",
-              __func__, mom_eqp->name);
-#endif /* HAVE_PETSC */
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n",
-              __func__, mom_eqp->name);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1349,7 +1284,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
   cs_cdo_system_helper_t  *mom_sh = mom_eqb->system_helper;
   cs_iter_algo_t  *nl_algo = sc->nl_algo;
-  cs_param_nl_algo_t  nl_algo_type = nsp->sles_param->nl_algo_type;
+  cs_param_nl_algo_t  nl_algo_type = nsp->nl_algo_type;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START

@@ -36,7 +36,6 @@
 #include <float.h>
 
 #if defined(HAVE_PETSC)
-#include <petsc.h>
 #include <petscconf.h> /* Useful to know if HYPRE is accessible through PETSc */
 #endif
 
@@ -109,9 +108,8 @@ cs_param_sles_create(int          field_id,
 
   slesp->field_id = field_id;                   /* associated field id */
   slesp->verbosity = 0;                         /* SLES verbosity */
-  slesp->setup_done = false;
 
-  slesp->solver_class = CS_PARAM_SLES_CLASS_CS; /* solver family */
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; /* solver family */
   slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
   slesp->solver = CS_PARAM_ITSOL_GCR;           /* iterative solver */
   slesp->flexible = false;                      /* not the flexible variant */
@@ -180,21 +178,21 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
   cs_log_printf(CS_LOG_SETUP, "\n### %s | Linear algebra settings\n",
                 slesp->name);
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Family:", slesp->name);
-  if (slesp->solver_class == CS_PARAM_SLES_CLASS_CS)
-    cs_log_printf(CS_LOG_SETUP, "             code_saturne\n");
-  else if (slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS)
-    cs_log_printf(CS_LOG_SETUP, "             MUMPS\n");
-  else if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE)
-    cs_log_printf(CS_LOG_SETUP, "             HYPRE\n");
-  else if (slesp->solver_class == CS_PARAM_SLES_CLASS_PETSC)
-    cs_log_printf(CS_LOG_SETUP, "             PETSc\n");
+  if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_CS)
+    cs_log_printf(CS_LOG_SETUP, "              code_saturne\n");
+  else if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_MUMPS)
+    cs_log_printf(CS_LOG_SETUP, "              MUMPS\n");
+  else if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_HYPRE)
+    cs_log_printf(CS_LOG_SETUP, "              HYPRE\n");
+  else if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_PETSC)
+    cs_log_printf(CS_LOG_SETUP, "              PETSc\n");
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Verbosity:          %d\n",
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Verbosity:           %d\n",
                 slesp->name, slesp->verbosity);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Field id:           %d\n",
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Field id:            %d\n",
                 slesp->name, slesp->field_id);
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Name:        %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Name:         %s\n",
                 slesp->name, cs_param_get_solver_name(slesp->solver));
 
   if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
@@ -204,7 +202,7 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
     if (slesp->solver == CS_PARAM_ITSOL_AMG) {
 
-      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
+      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:            %s\n",
                     slesp->name, cs_param_amg_get_type_name(slesp->amg_type));
 
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
@@ -213,12 +211,12 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
     }
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:     %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:      %s\n",
                   slesp->name, cs_param_get_precond_name(slesp->precond));
 
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
 
-      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
+      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:            %s\n",
                     slesp->name, cs_param_amg_get_type_name(slesp->amg_type));
 
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
@@ -229,24 +227,24 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
     else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
       cs_param_mumps_log(slesp->name, slesp->context_param);
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:      %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:       %s\n",
                   slesp->name,
                   cs_param_get_precond_block_name(slesp->pcd_block_type));
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.max_iter:    %d\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.max_iter:     %d\n",
                   slesp->name, slesp->cvg_param.n_max_iter);
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.rtol:       % -10.6e\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.rtol:        % -10.6e\n",
                   slesp->name, slesp->cvg_param.rtol);
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.atol:       % -10.6e\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.atol:        % -10.6e\n",
                   slesp->name, slesp->cvg_param.atol);
 
     if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
         slesp->solver == CS_PARAM_ITSOL_FGMRES ||
         slesp->solver == CS_PARAM_ITSOL_GCR)
-      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Restart:     %d\n",
+      cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Restart:      %d\n",
                     slesp->name, slesp->restart);
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Normalization:      ",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Normalization:       ",
                   slesp->name);
 
     switch (slesp->resnorm_type) {
@@ -272,23 +270,22 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Copy a cs_param_sles_t structure from src to dst
+ * \brief Copy a cs_param_sles_t structure from src to dst
  *
- * \param[in]       src    reference cs_param_sles_t structure to copy
- * \param[in, out]  dst    copy of the reference at exit
+ * \param[in]      src    reference cs_param_sles_t structure to copy
+ * \param[in, out] dst    copy of the reference at exit
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_copy_from(const cs_param_sles_t   *src,
-                        cs_param_sles_t         *dst)
+cs_param_sles_copy_from(const cs_param_sles_t  *src,
+                        cs_param_sles_t        *dst)
 {
   if (src == NULL || dst == NULL)
     return;
 
   /* Remark: name is managed at the creation of the structure */
 
-  dst->setup_done = src->setup_done;
   dst->verbosity = src->verbosity;
   dst->field_id = src->field_id;
 
@@ -312,8 +309,8 @@ cs_param_sles_copy_from(const cs_param_sles_t   *src,
     dst->context_param = cs_param_mumps_copy(src->context_param);
 
   else if (cs_param_amg_boomer_is_needed(dst->solver,
-                                        dst->precond,
-                                        dst->amg_type))
+                                         dst->precond,
+                                         dst->amg_type))
     dst->context_param = cs_param_amg_boomer_copy(src->context_param);
 }
 
@@ -467,7 +464,7 @@ cs_param_sles_mumps(cs_param_sles_t             *slesp,
   if (slesp == NULL)
     return;
 
-  cs_param_sles_mumps_reset(slesp->context_param);
+  cs_param_sles_mumps_reset(slesp);
 
   cs_param_mumps_t  *mumpsp = slesp->context_param;
 
@@ -547,71 +544,74 @@ cs_param_sles_hypre_from_petsc(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check the availability of a solver library and return the requested
- *        one if this is possible or an alternative or CS_PARAM_SLES_N_CLASSES
+ *        one if this is possible or an alternative or CS_PARAM_N_SOLVER_CLASSES
  *        if no alternative is available.
  *
- * \param[in]       wanted_class  requested class of solvers
+ * \param[in] wanted_class  requested class of solvers
  *
  * \return the available solver class related to the requested class
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_sles_class_t
-cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
+cs_param_solver_class_t
+cs_param_sles_check_class(cs_param_solver_class_t  wanted_class)
 {
   switch (wanted_class) {
 
-  case CS_PARAM_SLES_CLASS_CS:  /* No issue */
-    return CS_PARAM_SLES_CLASS_CS;
+  case CS_PARAM_SOLVER_CLASS_CS:  /* No issue */
+    return CS_PARAM_SOLVER_CLASS_CS;
 
-  case CS_PARAM_SLES_CLASS_HYPRE:
+  case CS_PARAM_SOLVER_CLASS_HYPRE:
     /* ------------------------- */
 #if defined(HAVE_HYPRE)
-    return CS_PARAM_SLES_CLASS_HYPRE;
+    return CS_PARAM_SOLVER_CLASS_HYPRE;
 #else
 #if defined(HAVE_PETSC)
     if (cs_param_sles_hypre_from_petsc())
-      return CS_PARAM_SLES_CLASS_HYPRE;
+      return CS_PARAM_SOLVER_CLASS_HYPRE;
     else {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" Switch to PETSc library since Hypre is not available");
-      return CS_PARAM_SLES_CLASS_PETSC; /* Switch to PETSc */
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: Switch to PETSc library since Hypre is not available",
+                    __func__);
+      return CS_PARAM_SOLVER_CLASS_PETSC; /* Switch to PETSc */
     }
 #else
-    return CS_PARAM_SLES_N_CLASSES;     /* Neither HYPRE nor PETSc */
+    return CS_PARAM_N_SOLVER_CLASSES;     /* Neither HYPRE nor PETSc */
 #endif  /* PETSc */
 #endif  /* HYPRE */
 
-  case CS_PARAM_SLES_CLASS_PETSC:
+  case CS_PARAM_SOLVER_CLASS_PETSC:
     /* ------------------------- */
 #if defined(HAVE_PETSC)
-    return CS_PARAM_SLES_CLASS_PETSC;
+    return CS_PARAM_SOLVER_CLASS_PETSC;
 #else
-    return CS_PARAM_SLES_N_CLASSES;
+    return CS_PARAM_N_SOLVER_CLASSES;
 #endif
 
-  case CS_PARAM_SLES_CLASS_MUMPS:
+  case CS_PARAM_SOLVER_CLASS_MUMPS:
     /* ------------------------- */
 #if defined(HAVE_MUMPS)
-    return CS_PARAM_SLES_CLASS_MUMPS;
+    return CS_PARAM_SOLVER_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" Switch to PETSc library since MUMPS is not available as"
-               " a stand-alone library\n");
-    return CS_PARAM_SLES_CLASS_PETSC;
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Switch to PETSc library since MUMPS is not available as"
+                  " a stand-alone library\n", __func__);
+    return CS_PARAM_SOLVER_CLASS_PETSC;
 #else
-    return CS_PARAM_SLES_N_CLASSES;
+    return CS_PARAM_N_SOLVER_CLASSES;
 #endif  /* PETSC_HAVE_MUMPS */
 #else
-    return CS_PARAM_SLES_N_CLASSES; /* PETSc without MUMPS  */
+    return CS_PARAM_N_SOLVER_CLASSES; /* PETSc without MUMPS  */
 #endif  /* HAVE_PETSC */
-    return CS_PARAM_SLES_N_CLASSES; /* Neither MUMPS nor PETSc */
+    return CS_PARAM_N_SOLVER_CLASSES; /* Neither MUMPS nor PETSc */
 #endif
 
   default:
-    return CS_PARAM_SLES_N_CLASSES;
+    return CS_PARAM_N_SOLVER_CLASSES;
   }
 }
 
@@ -635,7 +635,7 @@ cs_param_sles_check_amg(cs_param_sles_t   *slesp)
 
   switch (slesp->solver_class) {
 
-  case CS_PARAM_SLES_CLASS_PETSC:
+  case CS_PARAM_SOLVER_CLASS_PETSC:
 #if defined(HAVE_PETSC)
     if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
         slesp->amg_type == CS_PARAM_AMG_HOUSE_K)
@@ -655,7 +655,7 @@ cs_param_sles_check_amg(cs_param_sles_t   *slesp)
 #endif
     break;
 
-  case CS_PARAM_SLES_CLASS_HYPRE:
+  case CS_PARAM_SOLVER_CLASS_HYPRE:
 #if defined(HAVE_HYPRE)
     if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
         slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
@@ -692,7 +692,7 @@ cs_param_sles_check_amg(cs_param_sles_t   *slesp)
 #endif  /* HYPRE */
     break;
 
-  case CS_PARAM_SLES_CLASS_CS:
+  case CS_PARAM_SOLVER_CLASS_CS:
     if (slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
         slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
         slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||

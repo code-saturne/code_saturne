@@ -84,7 +84,7 @@
 #include "cs_quadrature.h"
 #include "cs_reco.h"
 #include "cs_reco_cw.h"
-#include "cs_saddle_itsol.h"
+#include "cs_saddle_solver.h"
 #include "cs_scheme_geometry.h"
 #include "cs_sdm.h"
 #include "cs_solid_selection.h"

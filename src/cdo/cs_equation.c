@@ -1898,10 +1898,11 @@ cs_equation_set_sles(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
 
-    /* Initialize cs_sles_t structure */
+    /* Initialize all cs_sles_t structures related to an equation. In general,
+     * there is one cs_sles_t by equation but for saddle-point problem for
+     * instance, this is different. */
 
-    if (eqp->type != CS_EQUATION_TYPE_NAVSTO)
-      cs_equation_param_set_sles(eqp);
+    cs_equation_param_set_sles(eqp);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

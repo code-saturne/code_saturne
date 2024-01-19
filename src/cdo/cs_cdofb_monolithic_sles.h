@@ -58,43 +58,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create an empty cs_cdofb_monolithic_sles_t structure
- *
- * \param[in] n_faces     number of faces (interior + border)
- * \param[in] n_cells     number of cells
- *
- * \return a pointer to a newly allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdofb_monolithic_sles_t *
-cs_cdofb_monolithic_sles_create(cs_lnum_t    n_faces,
-                                cs_lnum_t    n_cells);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free a part of the structure
- *
- * \param[in, out] msles   pointer to the structure to clean
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_monolithic_sles_clean(cs_cdofb_monolithic_sles_t   *msles);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free memory related to cs_cdofb_monolithic_sles_t structure
- *
- * \param[in, out] p_msles  double pointer to the structure to free
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_monolithic_sles_free(cs_cdofb_monolithic_sles_t   **p_msles);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Set pointers to shared structures
  *
  * \param[in] mesh     pointer to the mesh structure
@@ -110,13 +73,35 @@ cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free if needed structure(s) associated CDO face-based schemes with
- *        a monolithic velocity-pressure coupling
+ * \brief Define the system helper for a CDO-Fb scheme solving the
+ *        Navier-Stokes equation using a monolithic approach for the
+ *        velocity-pressure coupling
+ *
+ * \param[in]      nsp      Navier-Stokes paremeters
+ * \param[in]      saddlep  parameters for solving a saddle-point problem
+ * \param[in, out] sc       pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_finalize(void);
+cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
+                                            const cs_param_saddle_t  *saddlep,
+                                            cs_cdofb_monolithic_t    *sc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the saddle solver and its context for a CDO-Fb scheme solving
+ *        the Navier-Stokes equation using a monolithic approach for the
+ *        velocity-pressure coupling
+ *
+ * \param[in]      saddlep  parameters for solving a saddle-point problem
+ * \param[in, out] sc       pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_sles_init_solver(const cs_param_saddle_t  *saddlep,
+                                     cs_cdofb_monolithic_t    *sc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -138,124 +123,139 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Solve a linear system arising from the discretization of the
- *        Navier-Stokes equation with a CDO face-based approach.
- *        The full system is treated as one block and solved as it is.
- *        In this situation, PETSc or MUMPS are usually considered.
+ *        Navier-Stokes equation using a monolithic velocity-pressure coupling
+ *        with a CDO face-based approach.
+ *        Solve this system using the Augmented Lagrangian-Uzawa algorithm.
  *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
  *
  * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
-                          const cs_equation_param_t     *eqp,
-                          const cs_cdo_system_helper_t  *sh,
-                          cs_param_sles_t               *slesp,
-                          cs_cdofb_monolithic_sles_t    *msles);
+cs_cdofb_monolithic_sles_alu(const cs_navsto_param_t  *nsp,
+                             cs_saddle_solver_t       *solver,
+                             cs_real_t                *u_f,
+                             cs_real_t                *p_c);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Solve a linear system arising from the discretization of the
  *        Navier-Stokes equation with a CDO face-based approach. The system is
- *        split into blocks to enable more efficient preconditioning
- *        techniques. The main iterative solver is a Krylov solver such as GCR,
- *        or MINRES
+ *        split into a velocity block and the (unassembled) divergence operator
+ *        Block preconditioning using a Schur approximation on a Krylov solver
+ *        such as the GCR or MINRES is available.
  *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a saddle-point solver
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
  *
  * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_block_krylov(const cs_navsto_param_t       *nsp,
-                                 const cs_equation_param_t     *eqp,
-                                 const cs_cdo_system_helper_t  *sh,
-                                 cs_param_sles_t               *slesp,
-                                 cs_cdofb_monolithic_sles_t    *msles);
+cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
+                                      cs_saddle_solver_t       *solver,
+                                      cs_real_t                *u_f,
+                                      cs_real_t                *p_c);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Use the GKB algorithm to solve the saddle-point problem arising
- *        from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
- *        coupling
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation using a monolithic velocity-pressure coupling
+ *        with a CDO face-based approach.
+ *        Solve this system using the Golub-Kahan Bidiagonalization algorithm.
+ *        In-house implementation. The PETSc implementation is also available
+ *        but appears less efficient in our tests.
  *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
  *
- * \return the cumulated number of iterations of the solver
+ * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
-                              const cs_equation_param_t     *eqp,
-                              const cs_cdo_system_helper_t  *sh,
-                              cs_param_sles_t               *slesp,
-                              cs_cdofb_monolithic_sles_t    *msles);
+cs_cdofb_monolithic_sles_gkb_inhouse(const cs_navsto_param_t  *nsp,
+                                     cs_saddle_solver_t       *solver,
+                                     cs_real_t                *u_f,
+                                     cs_real_t                *p_c);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
- *        problem arising from CDO-Fb schemes for Stokes, Oseen and
- *        Navier-Stokes with a monolithic coupling.
- *        This algorithm is based on Koko's paper "Uzawa conjugate gradient
- *        method for the Stokes problem: Matlab implementation with P1-iso-P2/
- *        P1 finite element"
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation with a CDO face-based approach.
+ *        The full system is treated as one block and solved as it is.
+ *        In this situation, PETSc or MUMPS are usually considered.
  *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a saddle-point solver
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
  *
- * \return the cumulated number of iterations of the solver
+ * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
-                                   const cs_equation_param_t     *eqp,
-                                   const cs_cdo_system_helper_t  *sh,
-                                   cs_param_sles_t               *slesp,
-                                   cs_cdofb_monolithic_sles_t    *msles);
+cs_cdofb_monolithic_sles_full_system(const cs_navsto_param_t  *nsp,
+                                     cs_saddle_solver_t       *solver,
+                                     cs_real_t                *u_f,
+                                     cs_real_t                *p_c);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Use the Uzawa algorithm with an Augmented Lagrangian (ALU) technique
- *        in an incremental way to solve the saddle-point problem arising from
- *        CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
- *        coupling
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation using a monolithic velocity-pressure coupling
+ *        with a CDO face-based approach.
+ *        Solve this system using the Notay's algebraic transformation.
+ *        The full system is treated as one block and solved as it is.
+ *        In this situation, PETSc or MUMPS are usually considered.
  *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
  *
- * \return the cumulated number of iterations of the solver
+ * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
-                                        const cs_equation_param_t     *eqp,
-                                        const cs_cdo_system_helper_t  *sh,
-                                        cs_param_sles_t               *slesp,
-                                        cs_cdofb_monolithic_sles_t    *msles);
+cs_cdofb_monolithic_sles_notay(const cs_navsto_param_t  *nsp,
+                               cs_saddle_solver_t       *solver,
+                               cs_real_t                *u_f,
+                               cs_real_t                *p_c);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation using a monolithic velocity-pressure coupling
+ *        with a CDO face-based approach.
+ *        Solve this system using the Uzawa-CG algorithm.
+ *
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
+ *
+ * \return the (cumulated) number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
+                                  cs_saddle_solver_t       *solver,
+                                  cs_real_t                *u_f,
+                                  cs_real_t                *p_c);
 
 /*----------------------------------------------------------------------------*/
 

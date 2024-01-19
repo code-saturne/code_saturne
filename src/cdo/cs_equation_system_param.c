@@ -126,7 +126,7 @@ cs_equation_system_param_create(const char       *name,
 
   slesp->solver = CS_PARAM_ITSOL_MUMPS;
   slesp->precond = CS_PARAM_PRECOND_NONE;
-  slesp->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
@@ -134,7 +134,7 @@ cs_equation_system_param_create(const char       *name,
 
   slesp->solver = CS_PARAM_ITSOL_MUMPS;
   slesp->precond = CS_PARAM_PRECOND_NONE;
-  slesp->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
 #else
   bft_error(__FILE__, __LINE__, 0,
             " %s: System of eq. \"%s\"\n"

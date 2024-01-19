@@ -442,15 +442,15 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 static inline cs_cdo_system_matrix_class_t
-cs_cdo_system_get_matrix_class(cs_param_sles_class_t    solver_class)
+cs_cdo_system_get_matrix_class(cs_param_solver_class_t    solver_class)
 {
   switch (solver_class) {
 
-  case CS_PARAM_SLES_CLASS_CS:
+  case CS_PARAM_SOLVER_CLASS_CS:
     return CS_CDO_SYSTEM_MATRIX_CS;
     break;
 
-  case CS_PARAM_SLES_CLASS_HYPRE:
+  case CS_PARAM_SOLVER_CLASS_HYPRE:
 #if defined(HAVE_HYPRE)
     return CS_CDO_SYSTEM_MATRIX_HYPRE;
 #else

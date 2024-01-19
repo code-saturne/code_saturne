@@ -725,14 +725,14 @@ cs_iter_algo_set_normalization(cs_iter_algo_t   *algo,
 /*!
  * \brief Set the convergence status of the given structure
  *
- * \param[in, out] algo     pointer to the structure to update
- * \param[in]      value    normalization to apply
+ * \param[in, out] algo   pointer to the structure to update
+ * \param[in]      value  normalization to apply
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_set_cvg_status(cs_iter_algo_t                  *algo,
-                            cs_sles_convergence_state_t      cvg_status)
+cs_iter_algo_set_cvg_status(cs_iter_algo_t               *algo,
+                            cs_sles_convergence_state_t   cvg_status)
 {
   if (algo == NULL)
     return;

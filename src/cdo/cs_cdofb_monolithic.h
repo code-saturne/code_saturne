@@ -86,37 +86,35 @@ cs_cdofb_monolithic_get_face_velocity(bool     previous)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers from the main domain members
+ * \brief Set shared pointers from the main domain members
  *
- * \param[in]  nsp         pointer to NavSto parameter settings
- * \param[in]  mesh        pointer to a cs_mesh_t structure
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a \ref cs_time_step_t structure
+ * \param[in] mom_eqp    equation parameter settings
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] quant      additional mesh quantities struct.
+ * \param[in] connect    pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in] time_step  pointer to a \ref cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_init_sharing(const cs_navsto_param_t       *nsp,
-                                 const cs_mesh_t               *mesh,
-                                 const cs_cdo_quantities_t     *quant,
-                                 const cs_cdo_connect_t        *connect,
-                                 const cs_time_step_t          *time_step);
+cs_cdofb_monolithic_init_sharing(const cs_equation_param_t  *mom_eqp,
+                                 const cs_mesh_t            *mesh,
+                                 const cs_cdo_quantities_t  *quant,
+                                 const cs_cdo_connect_t     *connect,
+                                 const cs_time_step_t       *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free shared pointers with lifecycle dedicated to this file
- *
- * \param[in]  nsp         pointer to NavSto parameter settings
+ * \brief Free shared pointers with lifecycle dedicated to this file
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_finalize_common(const cs_navsto_param_t       *nsp);
+cs_cdofb_monolithic_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a \ref cs_cdofb_monolithic_t structure
+ * \brief Initialize a \ref cs_cdofb_monolithic_t structure
  *
  * \param[in] nsp          pointer to a \ref cs_navsto_param_t structure
  * \param[in] adv_field    pointer to \ref cs_adv_field_t structure
@@ -139,7 +137,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a \ref cs_cdofb_monolithic_t structure
+ * \brief Destroy a \ref cs_cdofb_monolithic_t structure
  *
  * \param[in] scheme_context   pointer to a scheme context structure to free
  *
@@ -152,8 +150,8 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
- *         using a monolithic approach.
+ * \brief Solve the steady Navier-Stokes system with a CDO face-based scheme
+ *        using a monolithic approach.
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
  * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
@@ -168,9 +166,9 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
- *         using a monolithic approach and Picard iterations to solve the
- *         non-linearities arising from the advection term
+ * \brief Solve the steady Navier-Stokes system with a CDO face-based scheme
+ *        using a monolithic approach and Picard iterations to solve the
+ *        non-linearities arising from the advection term
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
@@ -185,10 +183,10 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a monolithic approach.
- *         According to the settings, this function can handle either an
- *         implicit Euler time scheme or more generally a theta time scheme.
+ * \brief Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ *        using a monolithic approach.
+ *        According to the settings, this function can handle either an
+ *        implicit Euler time scheme or more generally a theta time scheme.
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
  * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
@@ -203,12 +201,12 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a monolithic approach.
- *         According to the settings, this function can handle either an
- *         implicit Euler time scheme or more generally a theta time scheme.
- *         Rely on Picard iterations to solve the non-linearities arising from
- *         the advection term
+ * \brief Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ *        using a monolithic approach.
+ *        According to the settings, this function can handle either an
+ *        implicit Euler time scheme or more generally a theta time scheme.
+ *        Rely on Picard iterations to solve the non-linearities arising from
+ *        the advection term
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure

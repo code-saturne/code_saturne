@@ -124,14 +124,12 @@ cs_maxwell.h \
 cs_mesh_deform.h \
 cs_navsto_coupling.h \
 cs_navsto_param.h \
-cs_navsto_sles.h \
 cs_navsto_system.h \
 cs_param_cdo.h \
 cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
 cs_reco_cw.h \
-cs_saddle_itsol.h \
 cs_scheme_geometry.h \
 cs_sdm.h \
 cs_solid_selection.h \
@@ -166,8 +164,11 @@ cs_cdo_system.c \
 cs_cdo_toolbox.c \
 cs_cdo_turbulence.c \
 cs_cdoeb_vecteq.c \
+cs_cdofb_ac.c \
 cs_cdofb_monolithic.c \
+cs_cdofb_monolithic_sles.c \
 cs_cdofb_navsto.c \
+cs_cdofb_predco.c \
 cs_cdofb_scaleq.c \
 cs_cdofb_vecteq.c \
 cs_cdofb_priv.c \
@@ -198,13 +199,13 @@ cs_iter_algo.c \
 cs_maxwell.c \
 cs_mesh_deform.c \
 cs_navsto_coupling.c \
+cs_navsto_param.c \
 cs_navsto_system.c \
 cs_param_cdo.c \
 cs_property.c \
 cs_quadrature.c \
 cs_reco.c \
 cs_reco_cw.c \
-cs_saddle_itsol.c \
 cs_scheme_geometry.c \
 cs_sdm.c \
 cs_solid_selection.c \
@@ -221,20 +222,10 @@ libcscdo_a_LIBADD =
 
 noinst_LIBRARIES += libcscdo_extension.a
 libcscdo_extension_a_SOURCES = \
-cs_cdofb_ac.c \
-cs_cdofb_monolithic_sles.c \
-cs_cdofb_predco.c \
 cs_equation_system_sles.c \
-cs_navsto_param.c \
-cs_navsto_sles.c \
 cs_cdocb_monolithic_sles.c
 libcscdo_a_LIBADD += \
-libcscdo_extension_a-cs_cdofb_ac.$(OBJEXT) \
-libcscdo_extension_a-cs_cdofb_monolithic_sles.$(OBJEXT) \
-libcscdo_extension_a-cs_cdofb_predco.$(OBJEXT) \
 libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT) \
-libcscdo_extension_a-cs_navsto_param.$(OBJEXT) \
-libcscdo_extension_a-cs_navsto_sles.$(OBJEXT) \
 libcscdo_extension_a-cs_cdocb_monolithic_sles.$(OBJEXT)
 
 clean-local:

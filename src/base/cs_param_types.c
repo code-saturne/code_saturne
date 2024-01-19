@@ -172,24 +172,9 @@ static const char
 cs_param_precond_block_name[CS_PARAM_N_PCD_BLOCK_TYPES][CS_BASE_STRING_LEN] =
   { N_("No block preconditioner"),
     N_("Diagonal block preconditioner"),
-    N_("Full diagonal block preconditioner"),
-    N_("Full lower triangular block preconditioner"),
-    N_("Full symmetric Gauss-Seidel block preconditioner"),
-    N_("Full upper triangular block preconditioner"),
     N_("Lower triangular block preconditioner"),
     N_("Symmetric Gauss-Seidel block preconditioner"),
-    N_("Upper triangular block preconditioner"),
-    N_("Uzawa block preconditioner") };
-
-static const char
-cs_param_schur_approx_name[CS_PARAM_N_SCHUR_APPROX][CS_BASE_STRING_LEN] =
-  { N_("None"),
-    N_("Based on the diagonal"),
-    N_("Identity matrix"),
-    N_("Lumped inverse"),
-    N_("Scaled mass matrix"),
-    N_("Based on the diagonal + mass scaling"),
-    N_("Lumped inverse + mass scaling") };
+    N_("Upper triangular block preconditioner") };
 
 static const char
 cs_param_dotprod_name[CS_PARAM_N_DOTPROD_TYPES][CS_BASE_STRING_LEN] =
@@ -676,43 +661,10 @@ cs_param_get_precond_block_name(cs_param_precond_block_t   type)
   switch (type) {
   case CS_PARAM_PRECOND_BLOCK_NONE:
   case CS_PARAM_PRECOND_BLOCK_DIAG:
-  case CS_PARAM_PRECOND_BLOCK_FULL_DIAG:
-  case CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR:
-  case CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL:
-  case CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR:
   case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
   case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
   case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
-  case CS_PARAM_PRECOND_BLOCK_UZAWA:
     return cs_param_precond_block_name[type];
-
-  default:
-    return NULL;
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the type of Schur complement approximation
- *
- * \param[in] type     type of Schur complement approximation
- *
- * \return the associated type name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_schur_approx_name(cs_param_schur_approx_t   type)
-{
-  switch (type) {
-  case CS_PARAM_SCHUR_NONE:
-  case CS_PARAM_SCHUR_IDENTITY:
-  case CS_PARAM_SCHUR_MASS_SCALED:
-  case CS_PARAM_SCHUR_DIAG_INVERSE:
-  case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
-  case CS_PARAM_SCHUR_LUMPED_INVERSE:
-  case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-    return cs_param_schur_approx_name[type];
 
   default:
     return NULL;

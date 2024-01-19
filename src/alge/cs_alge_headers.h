@@ -55,6 +55,8 @@
 #include "cs_param_saddle.h"
 #include "cs_param_sles.h"
 #include "cs_param_sles_setup.h"
+#include "cs_saddle_solver.h"
+#include "cs_saddle_solver_setup.h"
 #include "cs_sles_default.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"

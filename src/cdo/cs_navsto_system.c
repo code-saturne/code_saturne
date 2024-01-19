@@ -142,39 +142,39 @@ _has_symmetry(const cs_navsto_param_t    *nsp)
 /*!
  * \brief Check if one has to handle non-linearities
  *
- * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in] mom_eqp   pointer to a \ref cs_equation_param_t structure related
- *                      to the momentum equation
- *
- * \return true or false
+ * \param[in]      mom_eqp  set of parameters for the settings of the momentum
+ *                          equation
+ * \param[in, out] nsp      set of parameters related to the Navier-Stokes eq.
  */
 /*----------------------------------------------------------------------------*/
 
-static inline bool
-_handle_non_linearities(const cs_navsto_param_t    *nsp,
-                        const cs_equation_param_t  *mom_eqp)
+static void
+_handle_non_linearities_settings(const cs_equation_param_t  *mom_eqp,
+                                 cs_navsto_param_t          *nsp)
 {
-  if (nsp == NULL)
-    return false;
+  if (nsp == NULL || mom_eqp == NULL)
+    return;
 
   switch (nsp->model) {
 
-  case CS_NAVSTO_MODEL_OSEEN:
-  case CS_NAVSTO_MODEL_STOKES:
-    return false;
-
   case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
-    if (mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL)
-      return true;
+    if (mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL) {
+      if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+        nsp->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
+    }
     else {
       assert(mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED ||
              mom_eqp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
-      return false;
+      nsp->nl_algo_type = CS_PARAM_NL_ALGO_NONE;
     }
     break;
 
   default:
-    return true;
+    /*  case CS_NAVSTO_MODEL_OSEEN:
+     *  case CS_NAVSTO_MODEL_STOKES:
+     */
+    nsp->nl_algo_type = CS_PARAM_NL_ALGO_NONE;
+    break;
 
   } /* Model */
 }
@@ -449,7 +449,6 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
 
     /* This is for post-processing purpose, so, there is no need to have
@@ -516,9 +515,9 @@ cs_navsto_system_destroy(void)
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     navsto->coupling_context =
       cs_navsto_monolithic_free_context(navsto->coupling_context);
+
     if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
-      cs_cdofb_monolithic_finalize_common(nsp);
-      cs_cdofb_monolithic_sles_finalize();
+      cs_cdofb_monolithic_finalize_common();
     }
     break;
 
@@ -918,11 +917,11 @@ cs_navsto_system_init_setup(void)
 
   } /* monitoring */
 
-  /* Check if on has to handle non-linearities */
+  /* Handle the settings for non-linearities */
 
-  cs_equation_param_t  *mom_eqp =
-    cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
-  nsp->handle_non_linearities = _handle_non_linearities(nsp, mom_eqp);
+  cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
+  assert(mom_eq != NULL);
+  _handle_non_linearities_settings(mom_eq->param, nsp);
 
   /* Setup data according to the type of coupling (add the advection field in
      case of Navier-Stokes equations) */
@@ -951,67 +950,7 @@ cs_navsto_system_init_setup(void)
 
   /* Initialize the turbulence modelling */
 
-  cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
   cs_turbulence_init_setup(ns->turbulence, mom_eq);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define the settings for SLES related to the Navier-Stokes system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_system_set_sles(void)
-{
-  cs_navsto_system_t  *ns = cs_navsto_system;
-
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
-
-  cs_navsto_param_t *nsp = ns->param;
-
-  switch (nsp->space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO_P0:
-    switch (nsp->coupling) {
-
-    case CS_NAVSTO_COUPLING_MONOLITHIC:
-      cs_cdofb_monolithic_set_sles(nsp, ns->scheme_context);
-      break;
-
-    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-      cs_cdofb_ac_set_sles(nsp, ns->coupling_context);
-      break;
-
-    case CS_NAVSTO_COUPLING_PROJECTION:
-      cs_cdofb_predco_set_sles(nsp, ns->coupling_context);
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-      break;
-
-    } /* Switch algo. for coupling velocity/pressure */
-    break; /* Face-based scheme family */
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space discretization scheme.", __func__);
-
-  } /* Switch space scheme */
-
-  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
-
-    cs_equation_param_t  *eqp = cs_equation_get_param(ns->stream_function_eq);
-    assert(eqp != NULL);
-
-    /* Equation related to Navier-Stokes do not follow the classical setup
-       stage */
-
-    cs_equation_param_set_sles(eqp);
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1148,10 +1087,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       switch (mom_eqp->time_scheme) {
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
-        if (nsp->handle_non_linearities)
-          ns->compute = cs_cdofb_ac_compute_implicit_nl;
-        else
+        if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
           ns->compute = cs_cdofb_ac_compute_implicit;
+        else
+          ns->compute = cs_cdofb_ac_compute_implicit_nl;
         break;
 
       case CS_TIME_SCHEME_THETA:
@@ -1181,10 +1120,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->init_velocity = NULL;
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
 
-      if (nsp->handle_non_linearities)
-        ns->compute_steady = cs_cdofb_monolithic_steady_nl;
-      else
+      if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
         ns->compute_steady = cs_cdofb_monolithic_steady;
+      else
+        ns->compute_steady = cs_cdofb_monolithic_steady_nl;
 
       /* When a weak enforcement is used and also an augmentation of the linear
          system, one scales the weak penalization coefficient by the
@@ -1193,31 +1132,34 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       if (_has_weak_bc(nsp, mom_eqp)) {
 
-        cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
+        const cs_param_saddle_t  *saddlep = mom_eqp->saddle_param;
+        const double  gamma =
+          cs_param_saddle_get_augmentation_coef(saddlep);
 
-        if (nslesp->strategy == CS_NAVSTO_SLES_GKB_GMRES   ||
-            nslesp->strategy == CS_NAVSTO_SLES_GKB_SATURNE ||
-            nslesp->strategy == CS_NAVSTO_SLES_UZAWA_AL)
-          mom_eqp->weak_pena_bc_coeff *= nsp->gd_scale_coef;
+        if (gamma > 1) {
+          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU ||
+              saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
+            mom_eqp->weak_pena_bc_coeff *= gamma;
+        }
 
       }
 
       switch (mom_eqp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
-        if (nsp->handle_non_linearities)
-          ns->compute = cs_cdofb_monolithic_steady_nl;
-        else
+        if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
           ns->compute = cs_cdofb_monolithic_steady;
+        else
+          ns->compute = cs_cdofb_monolithic_steady_nl;
         break; /* Nothing to set */
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
-        if (nsp->handle_non_linearities)
-          ns->compute = cs_cdofb_monolithic_nl;
-        else
+        if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
           ns->compute = cs_cdofb_monolithic;
+        else
+          ns->compute = cs_cdofb_monolithic_nl;
         break;
 
       case CS_TIME_SCHEME_BDF2:
@@ -1229,7 +1171,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       } /* Switch */
 
-      cs_cdofb_monolithic_init_sharing(nsp, mesh, quant, connect, time_step);
+      cs_cdofb_monolithic_init_sharing(mom_eqp,
+                                       mesh, quant, connect, time_step);
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
@@ -1241,7 +1184,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
       ns->compute_steady = NULL;
 
-      if (nsp->handle_non_linearities)
+      if (nsp->nl_algo_type != CS_PARAM_NL_ALGO_NONE)
         bft_error(__FILE__, __LINE__, 0,
                   "%s: The projection coupling algorithm "
                   "can not be used with a non-linear algorithm", __func__);

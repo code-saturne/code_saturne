@@ -594,95 +594,36 @@ typedef enum {
  */
 
 /*!
- * \enum cs_param_sles_class_t
+ * \enum cs_param_solver_class_t
  * \brief Class of iterative solvers to consider for solver the linear system
  *
- * \var CS_PARAM_SLES_CLASS_CS
+ * \var CS_PARAM_SOLVER_CLASS_CS
  * Iterative solvers available in code_saturne
  *
- * \var CS_PARAM_SLES_CLASS_HYPRE
+ * \var CS_PARAM_SOLVER_CLASS_HYPRE
  * Solvers available in HYPRE through the PETSc library
  *
- * \var CS_PARAM_SLES_CLASS_MUMPS
+ * \var CS_PARAM_SOLVER_CLASS_MUMPS
  * Solvers available with MUMPS (without the PETSc interface)
  *
- * \var CS_PARAM_SLES_CLASS_PETSC
+ * \var CS_PARAM_SOLVER_CLASS_PETSC
  * Solvers available in PETSc. Please notice that
  * the MUMPS solver can be handled within PETSc if the installation of PETSc
  * includes the MUMPS library
  *
- * \var CS_PARAM_SLES_N_CLASSES
+ * \var CS_PARAM_N_SOLVER_CLASSES
  */
 
 typedef enum {
 
-  CS_PARAM_SLES_CLASS_CS,
-  CS_PARAM_SLES_CLASS_HYPRE,
-  CS_PARAM_SLES_CLASS_MUMPS,
-  CS_PARAM_SLES_CLASS_PETSC,
+  CS_PARAM_SOLVER_CLASS_CS,
+  CS_PARAM_SOLVER_CLASS_HYPRE,
+  CS_PARAM_SOLVER_CLASS_MUMPS,
+  CS_PARAM_SOLVER_CLASS_PETSC,
 
-  CS_PARAM_SLES_N_CLASSES
+  CS_PARAM_N_SOLVER_CLASSES
 
-} cs_param_sles_class_t;
-
-
-/*! \enum cs_param_schur_approx_t
- *
- *  \brief Strategy to build the Schur complement approximation. This appears
- *         in block preconditioning or Uzawa algorithms when a fully coupled
- *         (also called monolithic) approach) is used.
- *  \f[ \begin{bmatrix} A&B^t\\ B&O  \end{bmatrix}\f]
- *  The exact Schur complement is then
- * \f[ S = -B \cdot A^{-1} \cdot B \f]
- *
- *  \var CS_PARAM_SCHUR_NONE
- *  There is no Schur complement approximation.
- *
- *  \var CS_PARAM_SCHUR_DIAG_INVERSE
- *  The Schur complement approximation is defined as
- *  \f[ S \approx -B \cdot diag(A)^{-1} \cdot B^t \f]
- *
- *  \var CS_PARAM_SCHUR_IDENTITY
- *  The Schur complement approximation is simply the identity matrix
- *
- *  \var CS_PARAM_SCHUR_LUMPED_INVERSE
- *  The Schur complement approximation is defined as
- * \f[ B \cdot lumped(A^{-1}) \cdot B^t \f]
- *  where \f$x=lumped(A^{-1})\f$ results from \f$A.x = \bf{1}\f$ (\f$\bf{1}\f$
- *  is the array fills with 1 in each entry)
- *
- *  \var CS_PARAM_SCHUR_MASS_SCALED
- *  The Schur complement approximation is simply a scaled **diagonal** mass
- *  matrix related to the (2,2)-block
- *
- *  \var CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE
- *  The Schur complement approximation is defined as
- *  \f[ S \approx \alpha M_{22} + \frac{1}{dt} B.diag(A)^{-1}.B^t \f]
- *  where \f$M_{22}\f$ is the mass matrix related to the (2,2)-block
- *
- *  \var CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE
- *  The Schur complement approximation is defined as
- *  \f[ S \approx \alpha \cdot M_{22} + \frac{1}{dt} B\cdot lumped(A^{-1})
- *  \cdot B^t \f]
- *  where \f$ M_{22} \f$ is the mass matrix related to the (2,2) block and where
- *  \f$x=lumped(A^{-1})\f$ results from \f$A.x = \bf{1}\f$ (\f$\bf{1}\f$
- *  is the array fills with 1 in each entry)
- */
-
-typedef enum {
-
-  CS_PARAM_SCHUR_NONE,
-
-  CS_PARAM_SCHUR_DIAG_INVERSE,
-  CS_PARAM_SCHUR_IDENTITY,
-  CS_PARAM_SCHUR_LUMPED_INVERSE,
-  CS_PARAM_SCHUR_MASS_SCALED,
-  CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE,
-  CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE,
-
-  CS_PARAM_N_SCHUR_APPROX
-
-} cs_param_schur_approx_t;
+} cs_param_solver_class_t;
 
 /*!
  * \enum cs_param_precond_block_t
@@ -693,30 +634,6 @@ typedef enum {
  *
  * \var CS_PARAM_PRECOND_BLOCK_DIAG
  * Only the diagonal blocks are considered in the preconditioner
- *
- * \var CS_PARAM_PRECOND_BLOCK_FULL_DIAG
- * Only the diagonal blocks are considered in the preconditioner.
- * All possible blocks are considered. With simple cases, this is equivalent to
- * \ref CS_PARAM_PRECOND_BLOCK_DIAG
- *
- * \var CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR
- * The diagonal blocks and the lower blocks are considered in the
- * preconditioner.
- * All possible blocks are considered. With simple cases, this is equivalent to
- * \ref CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR
- *
- * \var CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL
- * A symmetric Gauss-Seidel block preconditioning is considered
- * (cf. Y. Notay, "A new analysis of block preconditioners for saddle-point
- * problems" (2014), SIAM J. Matrix. Anal. Appl.)
- * All possible blocks are considered. With simple cases, this is equivalent to
- * \ref CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL
- *
- * \var CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR
- * The diagonal blocks and the upper blocks are considered in the
- * preconditioner
- * All possible blocks are considered. With simple cases, this is equivalent to
- * \ref CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR
  *
  * \var CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR
  * The diagonal blocks and the lower blocks are considered in the
@@ -730,23 +647,15 @@ typedef enum {
  * \var CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR
  * The diagonal blocks and the upper blocks are considered in the
  * preconditioner
- *
- * \var CS_PARAM_PRECOND_BLOCK_UZAWA
- * One iteration of block Uzawa is performed as preconditioner
  */
 
 typedef enum {
 
   CS_PARAM_PRECOND_BLOCK_NONE,
   CS_PARAM_PRECOND_BLOCK_DIAG,
-  CS_PARAM_PRECOND_BLOCK_FULL_DIAG,
-  CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR,
-  CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL,
-  CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR,
   CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR,
   CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL,
   CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR,
-  CS_PARAM_PRECOND_BLOCK_UZAWA,
 
   CS_PARAM_N_PCD_BLOCK_TYPES
 
@@ -1180,19 +1089,6 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond);
 
 const char *
 cs_param_get_precond_block_name(cs_param_precond_block_t   type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the type of Schur complement approximation
- *
- * \param[in] type     type of Schur complement approximation
- *
- * \return the associated type name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_schur_approx_name(cs_param_schur_approx_t   type);
 
 /*----------------------------------------------------------------------------*/
 

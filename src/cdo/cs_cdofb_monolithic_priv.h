@@ -52,6 +52,7 @@
 #include "cs_iter_algo.h"
 #include "cs_navsto_coupling.h"
 #include "cs_navsto_param.h"
+#include "cs_saddle_solver.h"
 #include "cs_sles.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
@@ -72,33 +73,6 @@ BEGIN_C_DECLS
  *        monolithic approach
  */
 
-/* Context related to the resolution of a saddle point problem */
-
-typedef struct {
-
-  cs_real_t     *div_op;    /* Block related to the -divergence (block
-                               A_{10}) */
-
-  /* Arrays split according to the block shape. U is interlaced or not
-   * according to the SLES strategy */
-
-  cs_lnum_t      n_faces;       /* local number of DoFs for each component
-                                 * of the velocity */
-  cs_lnum_t      n_cells;       /* local number of DoFs for the pressure */
-
-  cs_real_t     *u_f;           /* velocity values at faces */
-  cs_real_t     *p_c;           /* pressure values at cells */
-
-  cs_sles_t     *sles;          /* main SLES structure */
-  cs_sles_t     *schur_sles;    /* auxiliary SLES for the Schur complement
-                                 * May be NULL */
-
-  cs_real_t      graddiv_coef;  /* value of the grad-div coefficient in case
-                                 * of augmented system */
-
-} cs_cdofb_monolithic_sles_t;
-
-
 typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -109,15 +83,15 @@ typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform the assembly stage for a vector-valued system obtained
- *         with CDO-Fb schemes
+ * \brief Perform the assembly stage for a vector-valued system obtained with
+ *        CDO-Fb schemes
  *
- * \param[in]       csys              pointer to a cs_cell_sys_t structure
- * \param[in]       cm                pointer to a cs_cell_mesh_t structure
- * \param[in]       nsb               pointer to a navsto builder structure
- * \param[in, out]  sc                pointer to scheme context structure
- * \param[in, out]  eqc               context structure for a vector-valued Fb
- * \param[in, out]  asb               pointer to cs_cdo_assembly_t
+ * \param[in]      csys  pointer to a cs_cell_sys_t structure
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb   pointer to a navsto builder structure
+ * \param[in, out] sc    pointer to scheme context structure
+ * \param[in, out] eqc   context structure for a vector-valued Fb
+ * \param[in, out] asb   pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -156,26 +130,25 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the GKB algorithm to solve the saddle-point problem arising
- *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
- *         coupling
+ * \brief Generic function prototype to solve the linear system arising from
+ *        the discretization of the Navier-Stokes equation with a CDO
+ *        face-based approach and using a monolithic (strongly coupled) velocity-
+ *        pressure approach.
  *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
  *
- * \return the cumulated number of iterations of the solver
+ * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
 typedef int
-(cs_cdofb_monolithic_solve_t)(const cs_navsto_param_t        *nsp,
-                              const cs_equation_param_t      *eqp,
-                              const cs_cdo_system_helper_t   *sh,
-                              cs_param_sles_t                *slesp,
-                              cs_cdofb_monolithic_sles_t     *msles);
+(cs_cdofb_monolithic_solve_t)(const cs_navsto_param_t  *nsp,
+                              cs_saddle_solver_t       *saddle,
+                              cs_real_t                *u_f,
+                              cs_real_t                *p_c);
 
 /*=============================================================================
  * Structure definitions
@@ -232,16 +205,19 @@ struct _cdofb_monolithic_t {
    *  \var adv_field
    *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
    */
+
   cs_adv_field_t           *adv_field;
 
   /*! \var mass_flux_array
    *  Current values of the mass flux at primal faces (Shared)
    */
+
   cs_real_t                *mass_flux_array;
 
   /*! \var mass_flux_array_pre
    *  Previous values of the mass flux at primal faces (Shared)
    */
+
   cs_real_t                *mass_flux_array_pre;
 
   /*!
@@ -319,6 +295,13 @@ struct _cdofb_monolithic_t {
 
   cs_cdofb_monolithic_assemble_t     *assemble;
 
+  /* \var block21_op
+   * Unassembled (2,1)-block (related to the divergence). Not always
+   * allocated. It depends on the solver for the saddle-point system.
+   */
+
+  cs_real_t                          *block21_op;
+
   /* \var system_helper
    * Set of structure to handle the saddle-point matrix and its rhs
    */
@@ -332,20 +315,18 @@ struct _cdofb_monolithic_t {
    * @{
    *
    * \var solve
-   * Function dedicated to the resolution of the linear system
+   * Function dedicated to the resolution of the saddle-point system
    */
 
-  cs_cdofb_monolithic_solve_t        *solve;
+  cs_cdofb_monolithic_solve_t       *solve;
 
-  /* \var msles
+  /* \var saddle_solver
    * Set of pointers to enable the resolution of saddle-point system
    * with various algorithms. This structure allows us to unify the prototype
    * of "solve" functions
-   * Some members of this structure are allocated only if a specific algorithm
-   * is requested.
    */
 
-  cs_cdofb_monolithic_sles_t         *msles;
+  cs_saddle_solver_t                *saddle_solver;
 
   /*!
    * \var nl_algo
@@ -365,6 +346,7 @@ struct _cdofb_monolithic_t {
   /*! \var timer
    *  Cumulated elapsed time for building and solving the Navier--Stokes system
    */
+
   cs_timer_counter_t  timer;
 
   /*! @} */

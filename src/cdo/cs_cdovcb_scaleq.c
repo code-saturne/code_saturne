@@ -1286,11 +1286,11 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   switch (eqp->sles_param->solver_class) {
 
-  case CS_PARAM_SLES_CLASS_CS:
+  case CS_PARAM_SOLVER_CLASS_CS:
     matclass = CS_CDO_SYSTEM_MATRIX_CS;
     break;
 
-  case CS_PARAM_SLES_CLASS_HYPRE:
+  case CS_PARAM_SOLVER_CLASS_HYPRE:
 #if defined(HAVE_HYPRE)
     matclass = CS_CDO_SYSTEM_MATRIX_HYPRE;
 #else

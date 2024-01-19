@@ -200,279 +200,6 @@ typedef enum {
 
 } cs_navsto_param_post_bit_t;
 
-/*! \enum cs_navsto_sles_t
- *
- *  \brief High-level information about the way of settings the SLES for solving
- *  the Navier-Stokes system. When the system is treated as a saddle-point
- *  problem (monolithic approach in what follows), then one uses these
- *  notations: A_{00} is the upper-left block and A_{11} (should be 0 but the
- *  preconditioner may have entries for the approximation of the inverse of the
- *  Schur complement).
- *
- *
- * \var CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
- * Associated keyword: "additive_gmres"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The
- * Navier-Stokes system of equations is solved an additive preconditioner
- * (block diagonal matrix where the block 00 is A_{00}) and the block 11 is set
- * to the identity.  Preconditioner/solver for the block 00 is set using the
- * momentum equation.  This option is only available with the support to the
- * PETSc library up to now.
- *
- *
- * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
- * Associated keyword: "block_amg_cg"
- *
- * The Navier-Stokes system of equations is solved using a multigrid on each
- * diagonal block as a preconditioner and applying a conjugate gradient as
- * solver. Use this strategy when the saddle-point problem has been reformulated
- * into a "classical" linear system. For instance when a Uzawa or an Artificial
- * Compressibility coupling algorithm is used. (i.e. with the parameter
- * \ref CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY is set as coupling
- * algorithm). This option is only available with the support to the PETSc
- * library up to now.
- *
- *
- * \var CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
- * Associated keyword: "diag_schur_gmres"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
- * Navier-Stokes system of equations is solved using a block diagonal
- * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
- * iteration and the block 11 is an approximation of the Schur complement
- * preconditioned with one multigrid iteration. The main iterative solver is a
- * flexible GMRES. This option is only available with the support to the PETSc
- * library up to now.
- *
- *
- * \var CS_NAVSTO_SLES_DIAG_SCHUR_GCR
- * Associated keyword: "diag_schur_gcr"
- *
- * The Stokes or Navier-Stokes system is solved using a GCR algorithm with a
- * block diagonal preconditioner using a Schur approximation for the pressure
- * block (the block 22). The system is stored using a hybrid
- * assembled/unassembled blocks. The velocity block is assembled (with
- * potentially sub-blocks for each component) and the velocity
- * divergence/pressure gradient operators are unassembled.
- *
- *
- * \var CS_NAVSTO_SLES_DIAG_SCHUR_MINRES
- * Associated keyword: "diag_schur_minres"
- *
- * The Stokes or Navier-Stokes system with an explicit advection is solved
- * using a MINRES algorithm with a block diagonal preconditioner using a Schur
- * approximation for the pressure block (the block 22). The system is stored
- * using a hybrid assembled/unassembled blocks. The velocity block is assembled
- * (with potentially sub-blocks for each component) and the velocity
- * divergence/pressure gradient operators are unassembled.
- *
- *
- * \var CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
- * Associated keyword: "no_block"
- *
- * Use the same mechanism as for a stand-alone equation. In this case, the
- * setting relies on the function \ref cs_equation_set_sles and the different
- * options for solving a linear system such as the choice of the iterative
- * solver or the choice of the preconditioner or the type of residual
- * normalization
- *
- *
- * \var CS_NAVSTO_SLES_GCR
- * Associated keyword: "gcr"
- *
- * The Stokes or Navier-Stokes system is solved using a GCR algorithm without
- * preconditioning. The system is stored using a hybrid assembled/unassembled
- * blocks. The velocity block is assembled (with potentially sub-blocks for
- * each component) and the velocity divergence/pressure gradient operators are
- * unassembled.
- *
- *
- * \var CS_NAVSTO_SLES_GKB_PETSC
- * Associated keyword: "gkb_petsc"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
- * Navier-Stokes system of equations is solved using a Golub-Kahan
- * bi-diagonalization. One assumes that the saddle-point system is symmetric.
- * By default, the block A_{00} may be augmented (this is not the default
- * choice) and is solved with a conjugate gradient algorithm preconditioned
- * with a multigrid. The residual is computed in the energy norm. This option is
- * only available with the support to the PETSc library up to now.
- *
- * * \var CS_NAVSTO_SLES_GKB_GMRES
- * Associated keyword: "gkb_gmres"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
- * Navier-Stokes system of equations is solved using a Golub-Kahan
- * bi-diagonalization (GKB) as preconditioner of a flexible GMRES solver. The
- * GKB algorithm is solved with a reduced tolerance as well as the CG+Multigrid
- * used as an inner solver in the GKB algorithm. One assumes that the
- * saddle-point system is symmetric. The residual for the GKB part is computed
- * in the energy norm. This option is only available with the support to the
- * PETSc library up to now.
- *
- * \var CS_NAVSTO_SLES_GKB_SATURNE
- * Associated keyword: "gkb" or "gkb_saturne"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
- * Navier-Stokes system of equations is solved using a Golub-Kahan
- * bi-diagonalization.
- * By default, the block A_{00} may be augmented (this is not the default
- * choice) and is solved with the SLES settings given to the momentum equation
- * A conjugate gradient algorithm preconditioned
- * with a multigrid for Stokes for instance.
- * The residual is computed in the energy norm.
- *
- *
- * \var CS_NAVSTO_SLES_LOWER_SCHUR_GCR
- * Associated keyword: "lower_schur_gcr"
- *
- * The Stokes or Navier-Stokes system is solved using a GCR algorithm with an
- * lower triangular block preconditioner using a Schur approximation for the
- * pressure block (the block 22). The system is stored using a hybrid
- * assembled/unassembled blocks. The velocity block is assembled (with
- * potentially sub-blocks for each component) and the velocity
- * divergence/pressure gradient operators are unassembled.
- *
- *
- * \var CS_NAVSTO_SLES_MINRES
- * Associated keyword: "minres"
- *
- * The Stokes or Navier-Stokes system with an explicit advection is solved
- * using a MINRES algorithm without preconditioning. The system is stored using
- * a hybrid assembled/unassembled blocks. The velocity block is assembled (with
- * potentially sub-blocks for each component) and the velocity
- * divergence/pressure gradient operators are unassembled.
- *
- *
- * \var CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
- * Associated keyword: "multiplicative_gmres"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
- * system of equations is solved a multiplicative preconditioner (block diagonal
- * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
- * Block 01 is also considered in the block preconditioner.
- * Preconditioner/solver for the block 00 is set using the momentum equation.
- * This option is only available with the support to the PETSc library up to
- * now.
- *
- * \var CS_NAVSTO_SLES_MUMPS
- * Associated keyword: "mumps"
- *
- * Direct solver to solve the full (saddle-point) system arising from the
- * discretization of the Navier-Stokes equations
- *
- * \var CS_NAVSTO_SLES_NOTAY_TRANSFORM
- * Associated keyword: "notay"
- *
- * Transform the saddle-point problem into an equivalent system without a zero
- * block for the (2,2) block. This transformation allows one to consider
- * standard preconditionner and iterative Krylow solver.
- *
- * \var CS_NAVSTO_SLES_SGS_SCHUR_GCR
- * Associated keyword: "sgs_schur_gcr"
- *
- * The Stokes or Navier-Stokes system is solved using a GCR algorithm with a
- * symmetric Gauss-Seidel block preconditioner using a Schur approximation for
- * the pressure block (the block 22). The system is stored using a hybrid
- * assembled/unassembled blocks. The velocity block is assembled (with
- * potentially sub-blocks for each component) and the velocity
- * divergence/pressure gradient operators are unassembled.
- *
- *
- * \var CS_NAVSTO_SLES_UPPER_SCHUR_GCR
- * Associated keyword: "upper_schur_gcr"
- *
- * The Stokes or Navier-Stokes system is solved using a GCR algorithm with an
- * upper triangular block preconditioner using a Schur approximation for the
- * pressure block (the block 22). The system is stored using a hybrid
- * assembled/unassembled blocks. The velocity block is assembled (with
- * potentially sub-blocks for each component) and the velocity
- * divergence/pressure gradient operators are unassembled.
- *
- *
- * \var CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
- * Associated keyword: "upper_schur_gmres"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
- * Navier-Stokes system of equations is solved using a upper triangular block
- * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
- * iteration and the block 11 is an approximation of the Schur complement
- * preconditioned with a minres. The main iterative solver is a flexible
- * GMRES. This option is only available with the support to the PETSc
- * library up to now.
- *
- * \var CS_NAVSTO_SLES_USER
- * Associated keyword: "user"
- *
- * Resolution using a user-defined function. This function fulfills a
- * pre-defined prototype
- *
- * \var CS_NAVSTO_SLES_UZAWA_AL
- * Associated keyword: "uzawa_al"
- *
- * Resolution using an uzawa algorithm with an Augmented Lagrangian approach
- *
- * \var CS_NAVSTO_SLES_UZAWA_CG
- * Associated keyword: "uzawa_cg"
- *
- * Resolution using an uzawa algorithm optimized using a conjugate gradient
- * reformulation. Two systems are solved at each iteration (one related to the
- * velocity block, one related to the Schur complement approximation - size of
- * the pressure space).
- *
- * \var CS_NAVSTO_SLES_UZAWA_SCHUR_GCR
- * Associated keyword: "uza_schur_gcr"
- *
- * The Stokes or Navier-Stokes system is solved using a GCR algorithm with an
- * Uzawa algorithm tuned for block preconditioning and using a Schur
- * approximation for the pressure block (the block 22). The system is stored
- * using a hybrid assembled/unassembled blocks. The velocity block is assembled
- * (with potentially sub-blocks for each component) and the velocity
- * divergence/pressure gradient operators are unassembled.
- */
-
-typedef enum {
-
-  CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
-  CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
-  CS_NAVSTO_SLES_BY_BLOCKS,
-  CS_NAVSTO_SLES_DIAG_SCHUR_GCR,
-  CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
-  CS_NAVSTO_SLES_DIAG_SCHUR_MINRES,
-  CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
-  CS_NAVSTO_SLES_GCR,
-  CS_NAVSTO_SLES_GKB_PETSC,
-  CS_NAVSTO_SLES_GKB_GMRES,
-  CS_NAVSTO_SLES_GKB_SATURNE,
-  CS_NAVSTO_SLES_LOWER_SCHUR_GCR,
-  CS_NAVSTO_SLES_MINRES,
-  CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
-  CS_NAVSTO_SLES_MUMPS,
-  CS_NAVSTO_SLES_NOTAY_TRANSFORM, /* experimental */
-  CS_NAVSTO_SLES_SGS_SCHUR_GCR,
-  CS_NAVSTO_SLES_UPPER_SCHUR_GCR,
-  CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
-  CS_NAVSTO_SLES_USER,
-  CS_NAVSTO_SLES_UZAWA_SCHUR_GCR,
-  CS_NAVSTO_SLES_UZAWA_AL,
-  CS_NAVSTO_SLES_UZAWA_CG,
-
-  CS_NAVSTO_SLES_N_TYPES
-
-} cs_navsto_sles_t;
-
-/*! \struct cs_navsto_param_sles_t
- *  \brief Structure storing the parameters for solving the Navier-Stokes system
- */
-
 typedef struct {
 
   /*! \var verbosity
@@ -481,82 +208,6 @@ typedef struct {
 
   int                           verbosity;
 
-  /*! \var strategy
-   *  Choice of strategy for solving the Navier--Stokes system
-   */
-
-  cs_navsto_sles_t              strategy;
-
-  /*! \var schur_approximation
-   *  Choice of the way of preconditioning the schur approximation
-   */
-
-  cs_param_schur_approx_t       schur_approximation;
-
-  /*!
-   * @name Inner and linear algorithm
-   * Set of parameters to drive the resolution of the (inner) linear system
-   * @{
-   */
-
-  /*! \var il_algo_cvg
-   *  Structure storing several tolerances and metadata to drive the
-   *  convergence of the inner (linear) iterative algorithm used to solve
-   *  either the Oseen or the Stokes system. This algorithm is for instance an
-   *  Uzawa or GKB algorithm. This is incorporated in a non-linear process in
-   *  the case of Navier--Stokes equations.
-   */
-
-  cs_param_convergence_t        il_algo_cvg;
-
-  /*! \var il_algo_restart
-   *  Number of iterations before restarting the iterative solver associated to
-   *  the inner linear system
-   */
-
-  int                           il_algo_restart;
-
-  /*!
-   * @}
-   * @name Non-linear algorithm
-   * Set of parameters to drive the resolution of the non-linearity arising from
-   * the Navier--Stokes system
-   * @{
-   */
-
-  /*! \var nl_algo_type
-   *  Type of algorithm used to tackle the non-linearity arising from the
-   *  advection term
-   */
-
-  cs_param_nl_algo_t            nl_algo_type;
-
-  /*! \var nl_cvg_param
-   *  Structure storing several tolerances and metadata to drive the
-   *  convergence of the non-linear iterative algorithm used to solve te
-   *  Navier-Stokes when the advection term is implicit and non linearized.
-   */
-
-  cs_param_convergence_t        nl_cvg_param;
-
-  /*! \var anderson_param
-   * Set of parameters to drive the Anderson acceleration (useful if the type
-   * of non-linear algorithm is set to Anderson acceleration).
-   */
-
-  cs_iter_algo_param_aac_t      anderson_param;
-
-  /*!
-   * @}
-   * @name Block preconditioning or Schur complement approximation
-   * Set of parameters to drive the resolution of the pressure-related
-   * block. This is often a Schur complement approximation to B.A^-1.Bt
-   * @{
-   */
-
-  cs_param_sles_t              *schur_sles_param;
-
-  /*! @} */
 
 } cs_navsto_param_sles_t;
 
@@ -688,14 +339,6 @@ typedef struct {
 
   cs_navsto_param_coupling_t     coupling;
 
-  /*! \var gd_scale_coef
-   *  Default value to set the scaling of the grad-div term when an
-   *  artificial compressibility algorithm or an Uzawa-Augmented Lagrangian
-   *  method is used
-   */
-
-  cs_real_t                      gd_scale_coef;
-
   /*! \var space_scheme
    * Discretization scheme for space
    */
@@ -719,17 +362,37 @@ typedef struct {
   int                                 n_boussinesq_terms;
   cs_navsto_param_boussinesq_t       *boussinesq_param;
 
-  /*! \var handle_non_linearities
-   *  True if a non-linear algorithm has to be considered
+  /*!
+   * @}
+   * @name Non-linear algorithm
+   * Set of parameters to drive the resolution of the non-linearity arising from
+   * the Navier--Stokes system
+   * @{
    */
 
-  bool                           handle_non_linearities;
-
-  /*! \var sles_param
-   * Set of choices to control the resolution of the Navier--Stokes system
+  /*! \var nl_algo_type
+   *  Type of algorithm used to tackle the non-linearity arising from the
+   *  advection term
    */
 
-  cs_navsto_param_sles_t        *sles_param;
+  cs_param_nl_algo_t            nl_algo_type;
+
+  /*! \var nl_cvg_param
+   *  Structure storing several tolerances and metadata to drive the
+   *  convergence of the non-linear iterative algorithm used to solve te
+   *  Navier-Stokes when the advection term is implicit and non linearized.
+   */
+
+  cs_param_convergence_t        nl_cvg_param;
+
+  /*! \var anderson_param
+   * Set of parameters to drive the Anderson acceleration (useful if the type
+   * of non-linear algorithm is set to Anderson acceleration).
+   */
+
+  cs_iter_algo_param_aac_t      anderson_param;
+
+  /*! @} */
 
   /*! \var delta_thermal_tolerance
    * Value under which one considers that the thermal equation is converged
@@ -887,43 +550,6 @@ typedef struct {
  * Set how the DoFs are defined (similar to \ref CS_EQKEY_DOF_REDUCTION)
  * Enable to set this type of DoFs definition for all related equations
  *
- * \var CS_NSKEY_GD_SCALE_COEF
- * Set the scaling of the grad-div term when an artificial compressibility
- * algorithm or an Uzawa-Augmented Lagrangian method is used
- *
- * \var CS_NSKEY_IL_ALGO_ATOL
- * Absolute tolerance at which the Oseen or Stokes system is resolved. These
- * systems corresponds to an inner linear system to solve when considering the
- * Navier-Stokes system since one has to handle the non-linearity in addition as
- * an outer process.
- *
- * \var CS_NSKEY_IL_ALGO_DTOL
- * Divergence tolerance at which the Oseen or Stokes system is resolved. These
- * systems corresponds to an inner linear system to solve when considering the
- * Navier-Stokes system since one has to handle the non-linearity in addition as
- * an outer process.
- *
- * \var CS_NSKEY_IL_ALGO_RTOL
- * Relative tolerance at which the Oseen or Stokes system is resolved. These
- * systems corresponds to an inner linear system to solve when considering the
- * Navier-Stokes system since one has to handle the non-linearity in addition as
- * an outer process.
- *
- * \var CS_NSKEY_IL_ALGO_RESTART
- * Number of iterations before restarting a Krylov solver as the main solver
- * (useful if the strategy implied a GMRES, flexible GMRES or GCR)
- *
- * \var CS_NSKEY_MAX_IL_ALGO_ITER
- * Set the maximal number of iteration for solving the inner linear system.
- *
- * \var CS_NSKEY_MAX_NL_ALGO_ITER
- * Set the maximal number of iterations for solving the non-linearity
- * arising from the advection form
- *
- * \var CS_NSKEY_MAX_OUTER_ITER
- * Set the maximal number of outer iterations for solving the full system
- * including the turbulence modelling or the thermal system for instance
- *
  * \var CS_NSKEY_NL_ALGO
  * Type of algorithm to consider to solve the non-linearity arising from the
  * Navier-Stokes system (Picard or Anderson)
@@ -935,21 +561,13 @@ typedef struct {
  * \var CS_NSKEY_NL_ALGO_DTOL
  * Threshold at which the non-linear algorithm is set as diverged
  *
+ * \var CS_NSKEY_NL_ALGO_MAX_ITER
+ * Set the maximal number of iterations for solving the non-linearity
+ * arising from the advection form
+ *
  * \var CS_NSKEY_NL_ALGO_RTOL
  * Relative tolerance at which the non-linearity arising from the advection
  * term is resolved
- *
- * \var CS_NSKEY_SCHUR_STRATEGY
- * Set the way to define the Schur complement approximation
- * (cf. \ref cs_param_schur_approx_t)
- *
- * \var CS_NSKEY_SLES_STRATEGY
- * Strategy for solving the SLES arising from the discretization of the
- * Navier-Stokes system
- *
- * \var CS_NSKEY_SLES_VERBOSITY
- * Level of verbosity related to the resolution step (inner linear and
- * non-linear algoritms according to the settings)
  *
  * \var CS_NSKEY_SPACE_SCHEME
  * Numerical scheme for the space discretization. Available choices are:
@@ -967,21 +585,11 @@ typedef struct {
 typedef enum {
 
   CS_NSKEY_DOF_REDUCTION,
-  CS_NSKEY_GD_SCALE_COEF,
-  CS_NSKEY_IL_ALGO_ATOL,
-  CS_NSKEY_IL_ALGO_DTOL,
-  CS_NSKEY_IL_ALGO_RTOL,
-  CS_NSKEY_IL_ALGO_RESTART,
-  CS_NSKEY_MAX_IL_ALGO_ITER,
-  CS_NSKEY_MAX_NL_ALGO_ITER,
-  CS_NSKEY_MAX_OUTER_ITER,
   CS_NSKEY_NL_ALGO,
   CS_NSKEY_NL_ALGO_ATOL,
   CS_NSKEY_NL_ALGO_DTOL,
+  CS_NSKEY_NL_ALGO_MAX_ITER,
   CS_NSKEY_NL_ALGO_RTOL,
-  CS_NSKEY_SCHUR_STRATEGY,
-  CS_NSKEY_SLES_STRATEGY,
-  CS_NSKEY_SLES_VERBOSITY,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,
   CS_NSKEY_VERBOSITY,
@@ -1020,34 +628,6 @@ cs_navsto_param_is_steady(const cs_navsto_param_t       *nsp)
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the scaling coefficient used in the Notay's transformation
- *         devised in "Algebraic multigrid for Stokes equations" SIAM
- *         J. Sci. Comput. Vol. 39 (5), 2017
- *         In this article, this scaling is denoted by alpha
- *
- * \return the value of the scaling coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_navsto_param_get_notay_scaling(void);
-
- /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the scaling coefficient used in the Notay's transformation
- *         devised in "Algebraic multigrid for Stokes equations" SIAM
- *         J. Sci. Comput. Vol. 39 (5), 2017
- *         In this article, this scaling is denoted by alpha
- *
- * \param[in]  scaling_coef   valued of the scaling coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_param_set_notay_scaling(double  scaling_coef);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1166,20 +746,6 @@ cs_navsto_param_set_boussinesq_array(cs_navsto_param_boussinesq_t   *bp,
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
  *
- * \return a pointer to the set of SLES parameters
- */
-/*----------------------------------------------------------------------------*/
-
-cs_navsto_param_sles_t *
-cs_navsto_param_get_sles_param(const cs_navsto_param_t    *nsp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the \ref cs_equation_param_t structure related to the
- *         velocity equation (momentum equation in most of the cases)
- *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
- *
  * \return a pointer to the set of parameters related to the momentum equation
  */
 /*----------------------------------------------------------------------------*/
@@ -1215,19 +781,6 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the value to consider for the reference pressure
- *
- * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]  pref      value of the reference pressure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
-                                 cs_real_t             pref);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Apply the given quadrature rule to all existing definitions under
  *        the cs_navsto_param_t structure
  *
@@ -1239,6 +792,19 @@ cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
 void
 cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
                                       cs_quadrature_type_t  qtype);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the value to consider for the reference pressure
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  pref      value of the reference pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
+                                 cs_real_t             pref);
 
 /*----------------------------------------------------------------------------*/
 /*!
