@@ -106,6 +106,22 @@ real(c_double) :: smbrs(ncelet), rovsdt(ncelet)
 integer           ivar, f_id
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_coal_source_terms_scalar(fld_id, smbrs, rovsdt) &
+    bind(C, name='cs_coal_source_terms_scalar')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: fld_id
+    real(c_double), dimension(*) :: smbrs, rovsdt
+  end subroutine cs_coal_source_terms_scalar
+
+end interface
+
+!===============================================================================
 
 ! Modele de la flamme de diffusion: steady laminar flamelet
 
@@ -147,7 +163,7 @@ endif
 ! ---> Flamme charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
-  call cs_coal_scast(iscal, smbrs, rovsdt)
+  call cs_coal_source_terms_scalar(ivarfl(isca(iscal)), smbrs, rovsdt)
 endif
 
 ! ---> Atmospheric version
