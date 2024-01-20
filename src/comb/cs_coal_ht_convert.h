@@ -47,7 +47,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Calculation of the gas temperature from gas enthalpy and
  *        concentrations at cells for coal combustion.
  *
@@ -65,6 +65,46 @@ cs_coal_ht_convert_h_to_t_gas(int              location_id,
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Calculation of the gas temperature from gas enthalpy and
+ *        given mass fractions and average f1/f2 for coal combustion.
+ *
+ * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
+ *
+ * \return  gas temperature (in kelvin)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_h_to_t_gas_by_yi_f1f2(cs_real_t        eh,
+                                         const cs_real_t  xesp[],
+                                         const cs_real_t  f1mc[],
+                                         const cs_real_t  f2mc[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of the gas enthalpy from gas temperature and
+ *        given mass fractions and average f1/f2 for coal combustion.
+ *
+ * \param[in]  tp            gas temperature (in kelvin)
+ * \param[in]  xesp          mass fraction (yi) of species
+ * \param[in]  f1mc          average f1 per coal
+ * \param[in]  f2mc          average f2 per coal
+ *
+ * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(cs_real_t        tp,
+                                         const cs_real_t  xesp[],
+                                         const cs_real_t  f1mc[],
+                                         const cs_real_t  f2mc[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Calculation of the gas temperature from gas enthalpy and
  *        given mass fractions for coal combustion.
  *
  * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
@@ -78,19 +118,15 @@ cs_coal_ht_convert_h_to_t_gas(int              location_id,
 
 cs_real_t
 cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
-                                    const cs_real_t  xesp[],
-                                    const cs_real_t  f1mc[],
-                                    const cs_real_t  f2mc[]);
+                                    const cs_real_t  xesp[]);
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Calculation of the gas enthalpy from gas temperature and
- *        given mass fractions for coal combustion.
+ *        given mass fractions for coal combustion and 0 f1 and f2 values
  *
  * \param[in]  tp            gas temperature (in kelvin)
  * \param[in]  xesp          mass fraction (yi) of species
- * \param[in]  f1mc          average f1 per coal
- * \param[in]  f2mc          average f2 per coal
  *
  * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
  */
@@ -98,9 +134,7 @@ cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
 
 cs_real_t
 cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
-                                    const cs_real_t  xesp[],
-                                    const cs_real_t  f1mc[],
-                                    const cs_real_t  f2mc[]);
+                                    const cs_real_t  xesp[]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -109,8 +143,6 @@ cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
  *
  * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
  * \param[in]  xesp          mass fraction (yi) of species
- * \param[in]  f1mc          average f1 per coal
- * \param[in]  f2mc          average f2 per coal
  *
  * \return  gas temperature (in kelvin)
  */
@@ -118,9 +150,7 @@ cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
 
 cs_real_t
 cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
-                                                const cs_real_t  xesp[],
-                                                const cs_real_t  f1mc[],
-                                                const cs_real_t  f2mc[]);
+                                                const cs_real_t  xesp[]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -129,8 +159,6 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
  *
  * \param[in]  tp            gas temperature (in kelvin)
  * \param[in]  xesp          mass fraction (yi) of species
- * \param[in]  f1mc          average f1 per coal
- * \param[in]  f2mc          average f2 per coal
  *
  * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
  */
@@ -138,9 +166,7 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
 
 cs_real_t
 cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(cs_real_t        tp,
-                                                const cs_real_t  xesp[],
-                                                const cs_real_t  f1mc[],
-                                                const cs_real_t  f2mc[]);
+                                                const cs_real_t  xesp[]);
 
 /*----------------------------------------------------------------------------*/
 /*

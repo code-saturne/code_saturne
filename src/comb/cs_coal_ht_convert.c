@@ -202,7 +202,7 @@ cs_coal_ht_convert_h_to_t_gas(int              location_id,
     /* Now interpolate values */
 
     tp[elt_idx]
-      = cs_coal_ht_convert_h_to_t_gas_by_yi(eh[elt_idx], xesp, f1mc, f2mc);
+      = cs_coal_ht_convert_h_to_t_gas_by_yi_f1f2(eh[elt_idx], xesp, f1mc, f2mc);
 
   } /* Loop on cells */
 }
@@ -210,7 +210,7 @@ cs_coal_ht_convert_h_to_t_gas(int              location_id,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of the gas temperature from gas enthalpy and
- *        given mass fractions for coal combustion.
+ *        given mass fractions and average f1/f2 for coal combustion.
  *
  * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
  * \param[in]  xesp          mass fraction (yi) of species
@@ -222,10 +222,10 @@ cs_coal_ht_convert_h_to_t_gas(int              location_id,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
-                                    const cs_real_t  xesp[],
-                                    const cs_real_t  f1mc[],
-                                    const cs_real_t  f2mc[])
+cs_coal_ht_convert_h_to_t_gas_by_yi_f1f2(cs_real_t        eh,
+                                         const cs_real_t  xesp[],
+                                         const cs_real_t  f1mc[],
+                                         const cs_real_t  f2mc[])
 {
   cs_real_t  tp = -HUGE_VAL;
 
@@ -350,7 +350,7 @@ cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of the gas enthalpy from gas temperature and
- *        given mass fractions for coal combustion.
+ *        given mass fractions and average f1/f2 for coal combustion.
  *
  * \param[in]  tp            gas temperature (in kelvin)
  * \param[in]  xesp          mass fraction (yi) of species
@@ -362,10 +362,10 @@ cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
-                                    const cs_real_t  xesp[],
-                                    const cs_real_t  f1mc[],
-                                    const cs_real_t  f2mc[])
+cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(cs_real_t        tp,
+                                         const cs_real_t  xesp[],
+                                         const cs_real_t  f1mc[],
+                                         const cs_real_t  f2mc[])
 {
   cs_real_t  eh = -HUGE_VAL;
 
@@ -510,12 +510,184 @@ cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of the gas temperature from gas enthalpy and
+ *        given mass fractions for coal combustion.
+ *
+ * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ * \param[in]  xesp          mass fraction (yi) of species
+ *
+ * \return  gas temperature (in kelvin)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
+                                    const cs_real_t  xesp[])
+{
+  cs_real_t  tp = -HUGE_VAL;
+
+  const cs_coal_model_t  *cm = cs_glob_coal_model;
+
+  int ichx1 = cm->ichx1 -1;
+  int ichx2 = cm->ichx2 -1;
+  int ico = cm->ico -1;
+  int ih2s = cm->ih2s -1;
+  int ihy = cm->ihy -1;
+  int ihcn = cm->ihcn -1;
+  int inh3 = cm->inh3 -1;
+  int io2 = cm->io2 -1;
+  int ico2 = cm->ico2 -1;
+  int ih2o = cm->ih2o -1;
+  int iso2 = cm->iso2 -1;
+  int in2 = cm->in2 -1;
+
+  /* Calculation of enthalpy of the gaseous species CHx1m
+   *                                            and CHx2m at */
+
+  cs_real_t eh0 = -HUGE_VAL;
+
+  for (int i = 0; i < cm->n_tab_points && tp <= -HUGE_VAL; i++) {
+
+    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
+    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
+
+    cs_real_t eh1 =   xesp[ichx1]*ehchx1
+                    + xesp[ichx2]*ehchx2
+                    + xesp[ico]  *cm->ehgaze[i][ico]
+                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
+                    + xesp[ihy]  *cm->ehgaze[i][ihy]
+                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
+                    + xesp[inh3] *cm->ehgaze[i][inh3]
+                    + xesp[io2]  *cm->ehgaze[i][io2]
+                    + xesp[ico2] *cm->ehgaze[i][ico2]
+                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
+                    + xesp[iso2] *cm->ehgaze[i][iso2]
+                    + xesp[in2]  *cm->ehgaze[i][in2];
+
+    /* Interpolate, with clipping at bounds */
+
+    if (eh <= eh1) {
+      if (i == 0)
+        tp = cm->th[0];
+      else {
+        assert(eh >= eh0);
+        tp = cm->th[i-1] + (eh-eh0) * (cm->th[i]-cm->th[i-1]) / (eh1-eh0);
+      }
+    }
+    else if (i == cm->n_tab_points-1) {
+      tp = cm->th[i];
+    }
+
+    eh0 = eh1;
+
+  } /* loop on interpolation points */
+
+  return tp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the gas enthalpy from gas temperature and
+ *        given mass fractions for coal combustion.
+ *
+ * \param[in]  tp            gas temperature (in kelvin)
+ * \param[in]  xesp          mass fraction (yi) of species
+ *
+ * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
+                                    const cs_real_t  xesp[])
+{
+  cs_real_t  eh = -HUGE_VAL;
+
+  const cs_coal_model_t  *cm = cs_glob_coal_model;
+
+  int ichx1 = cm->ichx1 -1;
+  int ichx2 = cm->ichx2 -1;
+  int ico = cm->ico -1;
+  int ih2s = cm->ih2s -1;
+  int ihy = cm->ihy -1;
+  int ihcn = cm->ihcn -1;
+  int inh3 = cm->inh3 -1;
+  int io2 = cm->io2 -1;
+  int ico2 = cm->ico2 -1;
+  int ih2o = cm->ih2o -1;
+  int iso2 = cm->iso2 -1;
+  int in2 = cm->in2 -1;
+
+  /* Calculation of enthalpy of the gaseous species CHx1m
+   *                                            and CHx2m at */
+
+  cs_real_t eh0 = -HUGE_VAL;
+
+  int s_id = 0, e_id = cm->n_tab_points;
+
+  if (tp <= cm->th[0])
+    e_id = 1;
+  else if (tp >= cm->th[cm->n_tab_points - 1])
+    s_id = cm->n_tab_points - 1;
+  else {
+    for (int i = 1; i < cm->n_tab_points; i++) {
+      if (tp <= cm->th[i]) {
+        s_id = i-1;
+        e_id = i+1;
+        break;
+      }
+    }
+  }
+
+  for (int i = s_id; i < e_id && eh <= -HUGE_VAL; i++) {
+
+    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
+    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
+
+    cs_real_t eh1 =   xesp[ichx1]*ehchx1
+                    + xesp[ichx2]*ehchx2
+                    + xesp[ico]  *cm->ehgaze[i][ico]
+                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
+                    + xesp[ihy]  *cm->ehgaze[i][ihy]
+                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
+                    + xesp[inh3] *cm->ehgaze[i][inh3]
+                    + xesp[io2]  *cm->ehgaze[i][io2]
+                    + xesp[ico2] *cm->ehgaze[i][ico2]
+                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
+                    + xesp[iso2] *cm->ehgaze[i][iso2]
+                    + xesp[in2]  *cm->ehgaze[i][in2];
+
+    /* Interpolate, with clipping at bounds */
+
+    /* Linear interpolation */
+    if (e_id - s_id == 2) {
+      if (i == s_id) {
+        /* First pass: prepare for second */
+        eh0 = eh1;
+      }
+      else {
+        /* Second pass: compute value */
+        eh = eh0 + (eh1-eh0) * (tp-cm->th[i-1]) / (cm->th[i]-cm->th[i-1]);
+      }
+    }
+
+    /* Clipping at lower or upper bound */
+    else {
+      assert(e_id - s_id == 1);
+      eh = eh1;
+    }
+
+  } /* loop on interpolation points */
+
+  return eh;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the gas temperature from gas enthalpy and
  *        given mass fractions for coal combustion with drying.
  *
  * \param[in]  eh            gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
  * \param[in]  xesp          mass fraction (yi) of species
- * \param[in]  f1mc          average f1 per coal
- * \param[in]  f2mc          average f2 per coal
  *
  * \return  gas temperature (in kelvin)
  */
@@ -523,9 +695,7 @@ cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
 
 cs_real_t
 cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
-                                                const cs_real_t  xesp[],
-                                                const cs_real_t  f1mc[],
-                                                const cs_real_t  f2mc[])
+                                                const cs_real_t  xesp[])
 {
   /* Remark: this function is very similar to the main (non-drying)
      variant. With the correct combination of values in xesp, and
@@ -547,30 +717,6 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
   int ih2o = cm->ih2o -1;
   int in2 = cm->in2 -1;
 
-  cs_real_t den1[CS_COMBUSTION_MAX_COALS];
-  cs_real_t den2[CS_COMBUSTION_MAX_COALS];
-
-  cs_real_t ychx10 = 0, ychx20 = 0;
-
-  /* Precompute quantities independent of interpolation point */
-
-  for (int icha = 0; icha < cm->n_coals; icha++) {
-
-    int ichx1c_icha = cm->ichx1c[icha] -1;
-    int ichx2c_icha = cm->ichx2c[icha] -1;
-
-    den1[icha] = 1. / (  cm->a1[icha]*cm->wmole[ichx1c_icha]
-                       + cm->b1[icha]*cm->wmole[ico]);
-
-    ychx10 += den1[icha]*(f1mc[icha]*cm->a1[icha]*cm->wmole[ichx1c_icha]);
-
-    den2[icha] = 1. / (  cm->a2[icha]*cm->wmole[ichx2c_icha]
-                       + cm->b2[icha]*cm->wmole[ico]);
-
-    ychx20 += den2[icha]*(f2mc[icha]*cm->a2[icha]*cm->wmole[ichx2c_icha]);
-
-  }
-
   /* Calculation of enthalpy of the gaseous species CHx1m
    *                                            and CHx2m at */
 
@@ -578,35 +724,8 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
 
   for (int i = 0; i < cm->n_tab_points && tp <= -HUGE_VAL; i++) {
 
-    cs_real_t ehchx1 = 0, ehchx2 = 0;
-
-    if (ychx10 > cs_math_epzero) {
-      for (int icha = 0; icha < cm->n_coals; icha++) {
-        int ichx1c_icha = cm->ichx1c[icha] -1;
-        ehchx1 +=   den1[icha]
-                  * (  cm->ehgaze[i][ichx1c_icha]
-                     * f1mc[icha]
-                     * cm->a1[icha]
-                     * cm->wmole[ichx1c_icha]);
-      }
-      ehchx1 /= ychx10;
-    }
-    else
-      ehchx1 = cm->ehgaze[i][ichx1];
-
-    if (ychx20 > cs_math_epzero) {
-      for (int icha = 0; icha < cm->n_coals; icha++) {
-        int ichx2c_icha = cm->ichx2c[icha] -1;
-        ehchx2 +=   den2[icha]
-                  * (  cm->ehgaze[i][ichx2c_icha]
-                     * f2mc[icha]
-                     * cm->a2[icha]
-                     * cm->wmole[ichx2c_icha]);
-      }
-      ehchx2 /= ychx20;
-    }
-    else
-      ehchx2 = cm->ehgaze[i][ichx2];
+    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
+    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2
@@ -644,8 +763,6 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
  *
  * \param[in]  tp            gas temperature (in kelvin)
  * \param[in]  xesp          mass fraction (yi) of species
- * \param[in]  f1mc          average f1 per coal
- * \param[in]  f2mc          average f2 per coal
  *
  * \return  gas enthalpy (\f$ j . kg^{-1} \f$ of mixed gas)
  */
@@ -653,9 +770,7 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
 
 cs_real_t
 cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(cs_real_t        tp,
-                                                const cs_real_t  xesp[],
-                                                const cs_real_t  f1mc[],
-                                                const cs_real_t  f2mc[])
+                                                const cs_real_t  xesp[])
 {
   /* Remark: this function is very similar to the main (non-drying)
      variant. With the correct combination of values in xesp, and
@@ -676,30 +791,6 @@ cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(cs_real_t        tp,
   int ico2 = cm->ico2 -1;
   int ih2o = cm->ih2o -1;
   int in2 = cm->in2 -1;
-
-  cs_real_t den1[CS_COMBUSTION_MAX_COALS];
-  cs_real_t den2[CS_COMBUSTION_MAX_COALS];
-
-  cs_real_t ychx10 = 0, ychx20 = 0;
-
-  /* Precompute quantities independent of interpolation point */
-
-  for (int icha = 0; icha < cm->n_coals; icha++) {
-
-    int ichx1c_icha = cm->ichx1c[icha] -1;
-    int ichx2c_icha = cm->ichx2c[icha] -1;
-
-    den1[icha] = 1. / (  cm->a1[icha]*cm->wmole[ichx1c_icha]
-                       + cm->b1[icha]*cm->wmole[ico]);
-
-    ychx10 += den1[icha]*(f1mc[icha]*cm->a1[icha]*cm->wmole[ichx1c_icha]);
-
-    den2[icha] = 1. / (  cm->a2[icha]*cm->wmole[ichx2c_icha]
-                       + cm->b2[icha]*cm->wmole[ico]);
-
-    ychx20 += den2[icha]*(f2mc[icha]*cm->a2[icha]*cm->wmole[ichx2c_icha]);
-
-  }
 
   /* Calculation of enthalpy of the gaseous species CHx1m
    *                                            and CHx2m at */
@@ -724,35 +815,8 @@ cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(cs_real_t        tp,
 
   for (int i = s_id; i < e_id && eh <= -HUGE_VAL; i++) {
 
-    cs_real_t ehchx1 = 0, ehchx2 = 0;
-
-    if (ychx10 > cs_math_epzero) {
-      for (int icha = 0; icha < cm->n_coals; icha++) {
-        int ichx1c_icha = cm->ichx1c[icha] -1;
-        ehchx1 +=   den1[icha]
-                  * (  cm->ehgaze[i][ichx1c_icha]
-                     * f1mc[icha]
-                     * cm->a1[icha]
-                     * cm->wmole[ichx1c_icha]);
-      }
-      ehchx1 /= ychx10;
-    }
-    else
-      ehchx1 = cm->ehgaze[i][ichx1];
-
-    if (ychx20 > cs_math_epzero) {
-      for (int icha = 0; icha < cm->n_coals; icha++) {
-        int ichx2c_icha = cm->ichx2c[icha] -1;
-        ehchx2 +=   den2[icha]
-                  * (  cm->ehgaze[i][ichx2c_icha]
-                     * f2mc[icha]
-                     * cm->a2[icha]
-                     * cm->wmole[ichx2c_icha]);
-      }
-      ehchx2 /= ychx20;
-    }
-    else
-      ehchx2 = cm->ehgaze[i][ichx2];
+    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
+    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2

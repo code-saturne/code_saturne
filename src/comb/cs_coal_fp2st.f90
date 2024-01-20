@@ -20,11 +20,10 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_coal_fp2st &
-!=======================
-
+subroutine cs_coal_fp2st                                           &
  ( iscal  ,                                                        &
-   smbrs  , rovsdt )
+   smbrs  , rovsdt )                                               &
+  bind(C, name='cs_coal_fp2st')
 
 !===============================================================================
 ! FONCTION :
@@ -71,6 +70,7 @@ use cs_coal_incl
 use mesh
 use field
 use cs_c_bindings
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 
@@ -78,9 +78,8 @@ implicit none
 
 ! Arguments
 
-integer          iscal
-
-double precision smbrs(ncelet), rovsdt(ncelet)
+integer(c_int), value :: iscal
+real(c_double), dimension(*) :: smbrs, rovsdt
 
 ! Local variables
 

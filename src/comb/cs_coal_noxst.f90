@@ -150,25 +150,24 @@ logical(kind=c_bool) :: log_active
 
 interface
 
-  function cs_coal_ht_convert_t_to_h_gas_by_yi  &
+  function cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2  &
    (tp, xesp, f1mc, f2mc)  result(eh) &
-    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi')
+    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2')
     use, intrinsic :: iso_c_binding
     implicit none
     real(c_double), value :: tp
     real(c_double), dimension(*) :: xesp
     real(c_double), dimension(*) :: f1mc, f2mc
     real(c_double) :: eh
-  end function cs_coal_ht_convert_t_to_h_gas_by_yi
+  end function cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2
 
   function cs_coal_ht_convert_h_to_t_gas_by_yi   &
-    (eh, xesp, f1mc, f2mc)  result(tp) &
+    (eh, xesp)  result(tp) &
     bind(C, name='cs_coal_ht_convert_h_to_t_gas_by_yi')
     use, intrinsic :: iso_c_binding
     implicit none
     real(c_double), value :: eh
     real(c_double), dimension(*) :: xesp
-    real(c_double), dimension(*) :: f1mc, f2mc
     real(c_double) :: tp
   end function cs_coal_ht_convert_h_to_t_gas_by_yi
 
@@ -513,12 +512,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
       coefe(ico) = coefe(ico) /som
       coefe(ihy) = coefe(ihy) /som
 
-      do icha = 1, ncharm
-        f1mc(icha) = zero
-        f2mc(icha) = zero
-      enddo
-
-      toxyd = cs_coal_ht_convert_h_to_t_gas_by_yi(hoxyd, coefe, f1mc, f2mc)
+      toxyd = cs_coal_ht_convert_h_to_t_gas_by_yi(hoxyd, coefe)
 
       toxmin = min(toxmin,toxyd)
       toxmax = max(toxmax,toxyd)
@@ -598,7 +592,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
         enddo
         f1mc(numcha) = 1.d0
 
-        xhf1 = cs_coal_ht_convert_t_to_h_gas_by_yi(tfuel, coefe, f1mc, f2mc)
+        xhf1 = cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(tfuel, coefe, f1mc, f2mc)
 
         ! H(mv2, TFUEL)
 
@@ -621,7 +615,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
         enddo
         f2mc(numcha) = 1.d0
 
-        xhf2 = cs_coal_ht_convert_t_to_h_gas_by_yi(tfuel, coefe, f1mc, f2mc)
+        xhf2 = cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(tfuel, coefe, f1mc, f2mc)
 
         xxf = xxf + cvar_f1m(numcha)%p(iel)                   &
                   + cvar_f2m(numcha)%p(iel)
@@ -643,12 +637,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
           coefe(ige) = yfs4no(iel,ige)
         enddo
 
-        do icha = 1, ncharm
-          f1mc(icha) = zero
-          f2mc(icha) = zero
-        enddo
-
-        tfs4ad = cs_coal_ht_convert_h_to_t_gas_by_yi(hfs4ad, coefe, f1mc, f2mc)
+        tfs4ad = cs_coal_ht_convert_h_to_t_gas_by_yi(hfs4ad, coefe)
         ! Calcul pour affichage
 
         ts4min = min(ts4min,ts4)

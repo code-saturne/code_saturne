@@ -100,16 +100,16 @@ type(pmapper_double_r1), dimension(:), allocatable :: cpro_x2, cpro_ym1
 
 interface
 
-  function cs_coal_ht_convert_t_to_h_gas_by_yi  &
+  function cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2  &
    (tp, xesp, f1mc, f2mc)  result(eh) &
-    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi')
+    bind(C, name='cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2')
     use, intrinsic :: iso_c_binding
     implicit none
     real(c_double), value :: tp
     real(c_double), dimension(*) :: xesp
     real(c_double), dimension(*) :: f1mc, f2mc
     real(c_double) :: eh
-  end function cs_coal_ht_convert_t_to_h_gas_by_yi
+  end function cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2
 
   function cs_coal_ht_convert_t_to_h_particles_by_yi  &
    (temper, class_id, xsolid)  result(enthal) &
@@ -211,7 +211,7 @@ do ilst = 1, n_faces
     coefe(ige) = cpro_ym1(ige)%p(iel)
   enddo
 
-  hf = cs_coal_ht_convert_t_to_h_gas_by_yi(tbl, coefe, f1mc, f2mc)
+  hf = cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(tbl, coefe, f1mc, f2mc)
 
   h_b(ifac) = (1.d0-x2t)*hf+x2h2
 

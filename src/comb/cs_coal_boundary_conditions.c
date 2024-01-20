@@ -503,8 +503,6 @@ cs_coal_boundary_conditions(int  bc_type[])
 
     cs_real_t h1 = 0, h2[CS_COMBUSTION_MAX_CLASSES_PER_COAL];
     cs_real_t coefe[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
-    cs_real_t f1mc[CS_COMBUSTION_MAX_COALS];
-    cs_real_t f2mc[CS_COMBUSTION_MAX_COALS];
 
     const int ico2 = cm->ico2 - 1;
     const int ih2o = cm->ih2o - 1;
@@ -632,12 +630,7 @@ cs_coal_boundary_conditions(int  bc_type[])
       coefe[ico2] = cm->wmole[ico2] * cm->oxyco2[ioxy]/dmas;
       coefe[in2]  = cm->wmole[in2]  * cm->oxyn2[ioxy ]/dmas;
 
-      for (int icha = 0; icha < CS_COMBUSTION_MAX_COALS; icha++) {
-        f1mc[icha] = 0;
-        f2mc[icha] = 0;
-      }
-
-      h1 = cs_coal_ht_convert_t_to_h_gas_by_yi(ci->t_air, coefe, f1mc, f2mc);
+      h1 = cs_coal_ht_convert_t_to_h_gas_by_yi(ci->t_air, coefe);
 
     }
 

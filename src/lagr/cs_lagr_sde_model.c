@@ -1335,7 +1335,6 @@ _lagich(const cs_real_t   tempct[],
 
     /* Compute Hc(Tp)-Mco/Mc Hco2(Tp)+0.5Mo2/Mc Ho2(Tf) */
 
-    cs_real_t f1mc[nlayer], f2mc[nlayer];
     cs_real_t coefe[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
 
     /* Compute Hcoke(TP) */
@@ -1352,15 +1351,8 @@ _lagich(const cs_real_t   tempct[],
     coefe[ico] =   coal_model->wmole[ico]
                  / coal_model->wmolat[cs_coal_atom_id_c];
 
-    for (cs_lnum_t iii = 0; iii < CS_COMBUSTION_MAX_COALS; iii++) {
-      f1mc[iii] = 0.0;
-      f2mc[iii] = 0.0;
-    }
-
     aux2 = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(part_temp[l_id_het],
-                                                           coefe,
-                                                           f1mc,
-                                                           f2mc);
+                                                           coefe);
 
     /* Compute MO2/MC/2. HO2(TF)    */
     for (cs_lnum_t iii = 0;
@@ -1371,18 +1363,10 @@ _lagich(const cs_real_t   tempct[],
     coefe[io2] =   coal_model->wmole[io2]
                  / coal_model->wmolat[cs_coal_atom_id_c] / 2.0;
 
-    for (int iii = 0; iii < CS_COMBUSTION_MAX_COALS; iii++) {
-      f1mc[iii] = 0.0;
-      f2mc[iii] = 0.0;
-    }
-
     aux3 = cs_lagr_particle_get_real(particle, p_am,
                                      CS_LAGR_FLUID_TEMPERATURE) + _tkelvi;
 
-    aux4 = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(aux3,
-                                                           coefe,
-                                                           f1mc,
-                                                           f2mc);
+    aux4 = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(aux3, coefe);
 
     cs_real_t deltah = aux2 - aux4 - aux1;
 

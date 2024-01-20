@@ -92,8 +92,6 @@ cs_user_initialization(cs_domain_t     *domain)
   cs_coal_model_t *cm = cs_glob_coal_model;
 
   cs_real_t coefe[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
-  cs_real_t f1mc[CS_COMBUSTION_MAX_COALS];
-  cs_real_t f2mc[CS_COMBUSTION_MAX_COALS];
   /*! [loc_var_dec] */
 
   /*! [init] */
@@ -134,16 +132,11 @@ cs_user_initialization(cs_domain_t     *domain)
   coefe[ico2] = cm->wmole[ico2] * cm->oxyco2[ioxy]/dmas;
   coefe[in2]  = cm->wmole[in2]  * cm->oxyn2[ioxy ]/dmas;
 
-  for (int icha = 0; icha < CS_COMBUSTION_MAX_COALS; icha++) {
-    f1mc[icha] = 0;
-    f2mc[icha] = 0;
-  }
-
   /* Computation of h1init and t1init */
 
   cs_real_t t1init = fprops->t0;
   cs_real_t h1init
-    = cs_coal_ht_convert_h_to_t_gas_by_yi(t1init, coefe, f1mc, f2mc);
+    = cs_coal_ht_convert_h_to_t_gas_by_yi(t1init, coefe);
 
   cs_real_t *cvar_h = CS_F_(h)->val;
 
