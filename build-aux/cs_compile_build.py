@@ -422,11 +422,23 @@ if __name__ == '__main__':
             t = os.path.split(top_builddir)
             top_builddir = os.path.abspath(t[0])
 
+    # Determine executable name
+
+    exec_name=options.out_file
+    if not exec_name:
+        exec_name = 'cs_solver'
+        if os.path.basename(sys.argv[0]) == 'neptune_cfd':
+            exec_name = 'nc_solver'
+
     # Retrieve package information (name, version, installation dirs, ...)
 
     from cs_package import package
 
-    pkg = package(config_file=config_file, install_mode=True)
+    if exec_name == 'code_saturne':
+        pkg = package(config_file=config_file, install_mode=True)
+    else:
+        pkg = package(config_file=config_file, install_mode=True, \
+                name='neptune_cfd')
 
     src_dir = None
     if src_files:
@@ -438,14 +450,6 @@ if __name__ == '__main__':
         else:
             print(get_dynamic_lib_dep_flags(pkg, top_builddir=top_builddir))
         sys.exit(0)
-
-    # Determine executable name
-
-    exec_name=options.out_file
-    if not exec_name:
-        exec_name = 'cs_solver'
-        if os.path.basename(sys.argv[0]) == 'neptune_cfd':
-            exec_name = 'nc_solver'
 
     if options.mode == 'install':
         c = compile_install(pkg, src_dir, destdir=options.dest_dir)
@@ -459,7 +463,6 @@ if __name__ == '__main__':
         retcode, o_files = c.compile_src(src_list=src_files)
 
     if retcode == 0:
-        print("Linking executable: " + exec_name)
         retcode = c.link_obj(exec_name, o_files)
 
     sys.exit(retcode)
