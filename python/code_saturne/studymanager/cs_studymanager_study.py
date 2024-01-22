@@ -1140,7 +1140,6 @@ class Studies(object):
         # Convert in minutes
         self.__slurm_batch_wtime = options.slurm_batch_wtime * 60.
         self.__slurm_batch_args  = options.slurm_batch_args
-        self.__slurm_time_factor = 1.15
         self.__sheet             = options.sheet
         self.__default_fmt       = options.default_fmt
         # do not use tex in matpl(built-in mathtext is used instead)
@@ -1841,14 +1840,11 @@ class Studies(object):
                             # check future submission total time and submit previous batch if not empty
                             submit_prev = False
                             if (cur_batch_size == 0) or (batch_total_time + \
-                               self.__slurm_time_factor * float(case.expected_time) < \
-                               self.__slurm_batch_wtime):
+                               float(case.expected_time) < self.__slurm_batch_wtime):
                                 # append content of batch command with run of the case
                                 batch_cmd += case.build_run_batch()
                                 cur_batch_size += 1
-                                # multiply by time factor to prevent failure
-                                batch_total_time += self.__slurm_time_factor * \
-                                                    float(case.expected_time)
+                                batch_total_time += float(case.expected_time)
                             else:
                                 submit_prev = True
 
@@ -1920,8 +1916,7 @@ class Studies(object):
                                 # append content of batch command with run of the case
                                 batch_cmd += case.build_run_batch()
                                 cur_batch_size += 1
-                                # multiply by time factor to prevent failure
-                                batch_total_time += self.__slurm_time_factor * float(case.expected_time)
+                                batch_total_time += float(case.expected_time)
 
                 if cur_batch_size > 0:
                     slurm_batch_name = "slurm_batch_file_" + \
