@@ -188,7 +188,7 @@ class config:
         self.exec_include = {'nc_solver' + self.exeext: "neptune_cfd"}
 
         self.exec_libs = {'cs_solver' + self.exeext: "-lcs_solver",
-                          'nc_solver' + self.exeext: "-lneptune"}
+                          'nc_solver' + self.exeext: "-lnc_solver"}
 
         # Python-related information
 

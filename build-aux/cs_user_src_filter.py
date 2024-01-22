@@ -45,9 +45,13 @@ if __name__ == '__main__':
 
     cmd = ''
     version = 'VERS'
+    solver  = 'code_saturne'
 
     if len(sys.argv) > 1:
         version = sys.argv[1]
+
+    if len(sys.argv) > 2:
+        solver = sys.argv[2]
 
     lines = sys.stdin.readlines()
 
@@ -84,7 +88,7 @@ if __name__ == '__main__':
         else:
             # Version header
             if l_s == "/* VERS */":
-                l = "/* code_saturne version " + version + " */"
+                l = "/* {s} version {v} */".format(s=solver, v=version)
 
             # All lines
             p_skip = False
