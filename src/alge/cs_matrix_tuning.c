@@ -183,6 +183,12 @@ _matrix_tune_test(const cs_matrix_t     *m,
         memcpy(&m_t, m, sizeof(cs_matrix_t));
 
         m_t.vector_multiply[m->fill_type][op_type] = vector_multiply;
+#if defined(HAVE_ACCEL)
+        if (v->vector_multiply_xy_hd[0] == 'd')
+          m_t.vector_multiply_d[m->fill_type][op_type] = vector_multiply;
+        else
+          m_t.vector_multiply_h[m->fill_type][op_type] = vector_multiply;
+#endif
 
         wt0 = cs_timer_wtime(), wt1 = wt0;
         run_id = 0, n_runs = (n_measure > 0) ? n_measure : 1;

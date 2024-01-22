@@ -987,11 +987,12 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
   }
 
-  const cs_real_t  *restrict ad;
-  {
-    void *d_val_p = const_cast<cs_real_t *>(cs_matrix_get_diagonal(a));
-    ad = (const cs_real_t  *restrict)cs_get_device_ptr(d_val_p);
-  }
+  const cs_real_t  *restrict ad
+    =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
+  const cs_real_t *restrict ad_inv
+    = cs_get_device_ptr_const(c->setup_data->ad_inv);
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   double residual = -1.;
 
@@ -999,9 +1000,6 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
      --------------------------- */
 
   assert(c->setup_data != NULL);
-
-  const cs_real_t *restrict ad_inv = c->setup_data->ad_inv;
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   cs_real_t *_aux_vectors = NULL;
   {
@@ -1185,17 +1183,12 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
     cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
-  else if (amode_rhs == CS_ALLOC_HOST) {
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
-  }
 
-  const cs_real_t  *restrict ad;
-  {
-    void *d_val_p = const_cast<cs_real_t *>(cs_matrix_get_diagonal(a));
-    ad = (const cs_real_t  *restrict)cs_get_device_ptr(d_val_p);
-  }
+  const cs_real_t  *restrict ad
+    =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
+  const cs_real_t *restrict ad_inv
+    = cs_get_device_ptr_const(c->setup_data->ad_inv);
 
-  const cs_real_t *restrict ad_inv = c->setup_data->ad_inv;
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   double residual;

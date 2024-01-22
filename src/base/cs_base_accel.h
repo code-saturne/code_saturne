@@ -403,6 +403,24 @@ cs_get_device_ptr(void  *ptr)
 
 #endif
 
+END_C_DECLS
+
+#if defined(__cplusplus) && defined(HAVE_ACCEL)
+
+template <class T>
+inline T *restrict
+cs_get_device_ptr_const(T *ptr)
+{
+  const void *ptr_v
+    = cs_get_device_ptr(reinterpret_cast<void *>(ptr));
+
+  return (const T *restrict)ptr_v;
+}
+
+#endif // __cplusplus && HAVE_ACCEL
+
+BEGIN_C_DECLS
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return matching device pointer for a given constant pointer.
@@ -433,6 +451,24 @@ cs_get_device_ptr_const(const void  *ptr)
 }
 
 #endif
+
+END_C_DECLS
+
+#if defined(__cplusplus) && defined(HAVE_ACCEL)
+
+template <class T>
+inline const T *restrict
+cs_get_device_ptr_const(const T *ptr)
+{
+  const void *ptr_v
+    = cs_get_device_ptr_const(reinterpret_cast<const void *>(ptr));
+
+  return (const T *restrict)ptr_v;
+}
+
+#endif // __cplusplus && HAVE_ACCEL
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!

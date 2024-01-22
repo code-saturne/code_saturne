@@ -4517,16 +4517,20 @@ cs_sles_it_solve(void                *context,
         CS_MALLOC_HD(_vx, v_size, cs_real_t, CS_ALLOC_DEVICE);
         cs_copy_h2d(_vx, vx, v_size*sizeof(cs_real_t));
       }
-      else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED)
-        cs_sync_h2d(_vx);
+      else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED) {
+        cs_sync_h2d(vx);
+        _vx = cs_get_device_ptr(vx);
+      }
 
       if (amode_rhs == CS_ALLOC_HOST) {
         CS_MALLOC_HD(_rhs_w, v_size, cs_real_t, CS_ALLOC_DEVICE);
         cs_copy_h2d(_rhs_w, rhs, v_size*sizeof(cs_real_t));
         _rhs = _rhs_w;
       }
-      else if (amode_rhs < CS_ALLOC_HOST_DEVICE_SHARED)
-        cs_sync_h2d(_rhs);
+      else if (amode_rhs < CS_ALLOC_HOST_DEVICE_SHARED) {
+        cs_sync_h2d(rhs);
+        _rhs = cs_get_device_ptr(rhs);
+      }
     }
 
 #endif
