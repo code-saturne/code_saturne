@@ -5412,8 +5412,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 }
 
 /*----------------------------------------------------------------------------
- * Reconstruct the gradient of a vector or tensor using a given gradient of
- * this quantity (typically lsq).
+ * Green-Gauss reconstruction of the gradient of a vector or tensor using
+ * an initial gradient of this quantity (typically lsq).
  *
  * template parameters:
  *   stride        3 for vectors, 6 for symmetric tensors
@@ -5422,12 +5422,13 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
  *   m              <-- pointer to associated mesh structure
  *   madj           <-- pointer to mesh adjacencies structure
  *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable
- *   r_grad         --> gradient used for reconstruction
+ *   r_grad         <-- gradient used for reconstruction
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
