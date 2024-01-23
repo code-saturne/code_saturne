@@ -205,7 +205,8 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   if (fvq->corr_grad_lin_det == NULL)
     BFT_MALLOC(fvq->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
   if (fvq->corr_grad_lin == NULL)
-    BFT_MALLOC(fvq->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t);
+    CS_MALLOC_HD(fvq->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t,
+                 cs_alloc_mode);
 
   cs_real_t    *restrict corr_grad_lin_det = fvq->corr_grad_lin_det;
   cs_real_33_t *restrict corr_grad_lin     = fvq->corr_grad_lin;
@@ -3073,10 +3074,10 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
     CS_MALLOC_HD(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t, cs_alloc_mode);
 
   if (mq->cell_vol == NULL)
-    BFT_MALLOC(mq->cell_vol, n_cells_with_ghosts, cs_real_t);
+    CS_MALLOC_HD(mq->cell_vol, n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   if (mq->i_face_normal == NULL)
-    BFT_MALLOC(mq->i_face_normal, n_i_faces*3, cs_real_t);
+    CS_MALLOC_HD(mq->i_face_normal, n_i_faces*3, cs_real_t, cs_alloc_mode);
 
   if (mq->b_face_normal == NULL)
     CS_MALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, cs_alloc_mode);
@@ -4479,12 +4480,12 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   if (mq->c_disable_flag == NULL) {
     if (mq->has_disable_flag == 1) {
       cs_lnum_t n_cells_ext = n_cells_with_ghosts;
-      BFT_MALLOC(mq->c_disable_flag, n_cells_ext, int);
+      CS_MALLOC_HD(mq->c_disable_flag, n_cells_ext, int, cs_alloc_mode);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
         mq->c_disable_flag[cell_id] = 0;
     }
     else {
-      BFT_MALLOC(mq->c_disable_flag, 1, int);
+      CS_MALLOC_HD(mq->c_disable_flag, 1, int, cs_alloc_mode);
       mq->c_disable_flag[0] = 0;
     }
   }
@@ -4512,7 +4513,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
     CS_MALLOC_HD(mq->diipb, n_b_faces*dim, cs_real_t, cs_alloc_mode);
 
   if (mq->dofij == NULL)
-    BFT_MALLOC(mq->dofij, n_i_faces*dim, cs_real_t);
+    CS_MALLOC_HD(mq->dofij, n_i_faces*dim, cs_real_t, cs_alloc_mode);
 
   if (mq->diipf == NULL)
     BFT_MALLOC(mq->diipf, n_i_faces*dim, cs_real_t);

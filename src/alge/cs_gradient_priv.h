@@ -56,11 +56,11 @@ typedef cs_real_t  cs_cocg_6_t[6];
 typedef cs_real_t  cs_cocg_33_t[3][3];
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
 /*=============================================================================
- * Semi-private function prototypes
+ * Semi-private inline functions
  *============================================================================*/
 
 #if defined(__cplusplus)
@@ -105,6 +105,10 @@ cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
 }
 
 #endif /* defined(HAVE_ACCEL) */
+
+/*=============================================================================
+ * Semi-private function prototypes
+ *============================================================================*/
 
 #if defined(HAVE_CUDA)
 
@@ -189,6 +193,41 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
                              const cs_cocg_6_t    *restrict cocgb,
                              cs_cocg_6_t          *restrict cocg,
                              cs_real_t (*restrict gradv)[stride][3]);
+
+/*----------------------------------------------------------------------------
+ * Green-Gauss reconstruction of the gradient of a vector or tensor using
+ * an initial gradient of this quantity (typically lsq).
+ *
+ * parameters:
+ *   m                 <-- pointer to associated mesh structure
+ *   fvq               <-- pointer to associated finite volume quantities
+ *   cpl               <-- structure associated with internal coupling, or NULL
+ *   inc               <-- if 0, solve on increment; 1 otherwise
+ *   porous_model      <-- type of porous model used
+ *   warped_correction <-- apply warped faces correction ?
+ *   coefav            <-- B.C. coefficients for boundary face normals
+ *   coefbv            <-- B.C. coefficients for boundary face normals
+ *   pvar              <-- variable
+ *   c_weight          <-- weighted gradient coefficient variable
+ *   r_grad            <-- gradient used for reconstruction
+ *   grad              --> gradient of pvar (du_i/dx_j : grad[][i][j])
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
+                              const cs_mesh_adjacencies_t  *madj,
+                              const cs_mesh_quantities_t   *fvq,
+                              cs_halo_type_t                halo_type,
+                              int                           inc,
+                              int                           porous_model,
+                              bool                          warped_correction,
+                              const cs_real_t (*restrict coefav)[stride],
+                              const cs_real_t (*restrict coefbv)[stride][stride],
+                              const cs_real_t (*restrict pvar)[stride],
+                              const cs_real_t     *restrict c_weight,
+                              const cs_real_t    (*restrict r_grad)[stride][3],
+                              cs_real_t          (*restrict grad)[stride][3]);
 
 #endif /* defined(HAVE_CUDA) */
 

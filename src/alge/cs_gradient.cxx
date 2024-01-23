@@ -5451,6 +5451,9 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
+  bool warped_correction = (  cs_glob_mesh_quantities_flag
+                            & CS_BAD_CELLS_WARPED_CORRECTION) ? true : false;
+
   const cs_lnum_t *restrict cell_b_faces_idx
     = (const cs_lnum_t *restrict) madj->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_b_faces
@@ -5478,6 +5481,28 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->dofij;
   const cs_real_33_t *restrict corr_grad_lin
     = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
+
+#if defined(HAVE_CUDA)
+  bool accel = (cs_get_device_id() > -1) ? true : false;
+
+  if (accel) {
+    cs_gradient_strided_gg_r_cuda(m,
+                                  madj,
+                                  fvq,
+                                  halo_type,
+                                  inc,
+                                  cs_glob_porous_model,
+                                  warped_correction,
+                                  coefav,
+                                  coefbv,
+                                  pvar,
+                                  c_weight,
+                                  r_grad,
+                                  grad);
+
+    return;
+  }
+#endif
 
   /* Initialize gradient */
   /*---------------------*/
@@ -5615,7 +5640,7 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
         grad[c_id][i][j] *= dvol;
     }
 
-    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
+    if (warped_correction) {
       cs_real_t gradpa[3];
       for (cs_lnum_t i = 0; i < stride; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
