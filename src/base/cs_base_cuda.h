@@ -447,21 +447,25 @@ cs_sync_or_copy_h2d(const T        *val_h,
   const T  *_val_d = NULL;
   void     *_buf_d = NULL;
 
-  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
-  size_t size = n_vals * sizeof(T);
+  if (val_h != NULL) {
 
-  if (alloc_mode == CS_ALLOC_HOST) {
-    CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
-    cs_cuda_copy_h2d(_buf_d, val_h, size);
-    _val_d = (const T *)_buf_d;
-  }
-  else {
-    _val_d = (const T *)cs_get_device_ptr((void *)val_h);
+    cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
+    size_t size = n_vals * sizeof(T);
 
-    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cudaMemPrefetchAsync(val_h, size, device_id, stream);
-    else
-      cs_sync_h2d(val_h);
+    if (alloc_mode == CS_ALLOC_HOST) {
+      CS_CUDA_CHECK(cudaMalloc(&_buf_d, size));
+      cs_cuda_copy_h2d(_buf_d, val_h, size);
+      _val_d = (const T *)_buf_d;
+    }
+    else {
+      _val_d = (const T *)cs_get_device_ptr((void *)val_h);
+
+      if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
+        cudaMemPrefetchAsync(val_h, size, device_id, stream);
+      else
+        cs_sync_h2d(val_h);
+    }
+
   }
 
   *val_d = _val_d;

@@ -1255,12 +1255,12 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
 
   using real_3_t = cs_real_t[3];
 
-  cs_sync_or_copy_h2d(pvar, n_cells_ext*stride, device_id, stream,
+  cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream,
                       &pvar_d, &_pvar_d);
 
-  cs_sync_or_copy_h2d(coefav, n_b_faces*stride, device_id, stream,
+  cs_sync_or_copy_h2d(coefav, n_b_faces, device_id, stream,
                       &coefa_d, &_coefa_d);
-  cs_sync_or_copy_h2d(coefbv, n_b_faces*stride*stride, device_id, stream,
+  cs_sync_or_copy_h2d(coefbv, n_b_faces, device_id, stream,
                       &coefb_d, &_coefb_d);
 
   const cs_lnum_t *restrict b_face_cells
