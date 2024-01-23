@@ -649,7 +649,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
             if (i_mass_flux[face_id] >= 0.0)
               c_id_up = i_face_cells[face_id][0];
 
-            i_mass_flux_gas[face_id] += -x2[c_id_up] * i_mass_flux[face_id];
+            i_mass_flux_gas[face_id] -= x2[c_id_up] * i_mass_flux[face_id];
 
           }
 
@@ -660,7 +660,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                other transport equations
                !if (bmasfl[face_id]>=0.d0) */
             cs_lnum_t c_id_up = b_face_cells[face_id];
-            b_mass_flux_gas[face_id] += -x2[c_id_up] * b_mass_flux[face_id];
+            b_mass_flux_gas[face_id] -= x2[c_id_up] * b_mass_flux[face_id];
 
           }
         }
