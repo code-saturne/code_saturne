@@ -286,12 +286,7 @@ cs_f_cpincl_get_pointers_5(double  **af3,
                            int     **ifhcnr,
                            int     **icnohc,
                            int     **icnonh,
-                           int     **icnorb,
-                           double  **teno,
-                           double  **ka,
-                           double  **kb,
-                           double  **kc,
-                           double  **chi2);
+                           int     **icnorb);
 
 void
 cs_f_coal_incl_get_pointers(int     **ihth2o,
@@ -781,12 +776,7 @@ cs_f_cpincl_get_pointers_5(double  **af3,
                            int     **ifhcnr,
                            int     **icnohc,
                            int     **icnonh,
-                           int     **icnorb,
-                           double  **teno,
-                           double  **ka,
-                           double  **kb,
-                           double  **kc,
-                           double  **chi2)
+                           int     **icnorb)
 {
   if (cs_glob_coal_model == NULL)
     return;
@@ -837,12 +827,6 @@ cs_f_cpincl_get_pointers_5(double  **af3,
   *icnohc = &(cm->icnohc);
   *icnonh = &(cm->icnonh);
   *icnorb = &(cm->icnorb);
-
-  *teno = cm->teno;
-  *ka = (double *)cm->ka;
-  *kb = (double *)cm->kb;
-  *kc = (double *)cm->kc;
-  *chi2 = cm->chi2;
 }
 
 /*----------------------------------------------------------------------------

@@ -193,12 +193,6 @@ module cpincl
   integer(c_int), pointer, save ::  ifnohc, ifnonh, ifnoch, ifnoth, ifhcnr
   integer(c_int), pointer, save ::  icnohc, icnonh, icnorb
   !
-  !   Reburning
-  real(c_double), pointer, save :: teno(:)
-
-  !   Tableau des constantes cinetiques (Model de Dimitriou)
-  real(c_double), pointer, save :: ka(:,:), kb(:,:), kc(:,:), chi2(:)
-  !
   ! Constante cinetique (Model de Chen)
   integer(c_int), pointer, save :: igrb
 
@@ -328,8 +322,7 @@ module cpincl
          p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                    &
          p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                     &
          p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
-         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                     &
-         p_teno, p_ka, p_kb, p_kc, p_chi2)                                     &
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb)                                     &
       bind(C, name='cs_f_cpincl_get_pointers_5')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -340,8 +333,7 @@ module cpincl
          p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                    &
          p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                     &
          p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
-         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                     &
-         p_teno, p_ka, p_kb, p_kc, p_chi2
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb
 
     end subroutine cs_f_cpincl_get_pointers_5
 
@@ -412,8 +404,7 @@ contains
          p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                    &
          p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                     &
          p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
-         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                     &
-         p_teno, p_ka, p_kb, p_kc, p_chi2
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb
 
     call cs_f_cpincl_coal_get_pointers(p_ncharb, p_nclacp,               &
                                        p_nclpch, p_idrift, p_nsolid,     &
@@ -587,8 +578,7 @@ contains
          p_iyhcn, p_iyno, p_iynh3, p_ihox, p_igrb, p_noxyd,                   &
          p_ighcn1, p_ighcn2, p_ignoth, p_ignh31, p_ignh32,                    &
          p_ifhcnd, p_ifhcnc, p_ifnh3d, p_ifnh3c, p_ifnohc, p_ifnonh, p_ifnoch, &
-         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb,                    &
-         p_teno, p_ka, p_kb, p_kc, p_chi2)
+         p_ifnoth, p_ifhcnr, p_icnohc, p_icnonh, p_icnorb)
 
     call c_f_pointer(p_af3, af3, [ngazgm])
     call c_f_pointer(p_af4, af4, [ngazgm])
@@ -636,12 +626,6 @@ contains
     call c_f_pointer(p_icnohc, icnohc)
     call c_f_pointer(p_icnonh, icnonh)
     call c_f_pointer(p_icnorb, icnorb)
-
-    call c_f_pointer(p_teno, teno, [npotcp])
-    call c_f_pointer(p_ka, ka, [4, npotcp])
-    call c_f_pointer(p_kb, kb, [4, npotcp])
-    call c_f_pointer(p_kc, kc, [4, npotcp])
-    call c_f_pointer(p_chi2, chi2, [npotcp])
 
   end subroutine cp_model_map_coal
 
