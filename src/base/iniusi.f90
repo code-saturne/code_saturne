@@ -93,7 +93,7 @@ integer, dimension(:), pointer :: elt_ids
 
 !===============================================================================
 
-procedure() :: varpos, usppmo, uialin, cscpva, usipph, fldvar, csivis
+procedure() :: varpos, usppmo, uialin, usipph, fldvar, csivis
 procedure() :: atini1, solcat, csidtv, csiphy, fldprp, cstime, usipsu
 procedure() :: indsui
 
