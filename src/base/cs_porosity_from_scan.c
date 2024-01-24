@@ -115,7 +115,8 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .nb_sources = 0,
   .sources = NULL,
   .source_c_ids = NULL,
-  .threshold = 4
+  .threshold = 4,
+  .porosity_threshold = 1e-12
 };
 
 /*============================================================================
@@ -1331,7 +1332,7 @@ cs_compute_porosity_from_scan(void)
   // Porosity
   for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
     cs_real_t porosity = f->val[c_id];
-    if (porosity < cs_math_epzero) {
+    if (porosity < _porosity_from_scan_opt.porosity_threshold) {
       f->val[c_id] = 0.;
       mq->c_disable_flag[c_id] = 1;
     }

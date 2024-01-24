@@ -51,6 +51,7 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_porosity_from_scan.h"
 #include "cs_preprocess.h"
 
 /*----------------------------------------------------------------------------
@@ -297,6 +298,8 @@ cs_f_mesh_quantities_solid_compute(void)
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_porosity_from_scan_opt_t *poro_from_scan = cs_glob_porosity_from_scan_opt;
+  cs_real_t poro_threshold = poro_from_scan->porosity_threshold;
 
   cs_real_3_t *cen_points = NULL;
   cs_field_t *f = cs_field_by_name_try("cell_scan_points_cog");
@@ -315,7 +318,7 @@ cs_f_mesh_quantities_solid_compute(void)
       porosity = 1.;
 
     f_poro->val[c_id] = porosity;
-    if (porosity > cs_math_epzero)
+    if (porosity > poro_threshold)
       mq->c_disable_flag[c_id] = 0;
 
   }
