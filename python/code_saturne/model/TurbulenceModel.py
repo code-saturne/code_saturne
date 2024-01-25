@@ -294,7 +294,7 @@ class TurbulenceModel(Variables, Model):
                 else:
                     self.setNewVariable(self.node_turb, v, label=v)
                 if v == 'alpha':
-                    v_n = node.xmlGetNode('variable', name=v)
+                    v_n = self.node_turb.xmlGetNode('variable', name=v)
                     v_n['_convect'] = 'no'
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
