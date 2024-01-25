@@ -14,10 +14,11 @@ Release 8.1.1 (unreleased)
 
 - Fix error in boundary temperature computation for compressible model.
 
-- GUI: fix crash when visiting base volume zone settings if the
-  compressible model is activated.
-
-- GUI: fix crash when activating reactive flows.
+- GUI:
+  * Fix crash when selecting Rij-EBRSM turbulence model.
+  * Fix crash when visiting base volume zone settings if the
+    compressible model is activated.
+  * Fix crash when activating reactive flows.
 
 ### Architectural changes:
 
