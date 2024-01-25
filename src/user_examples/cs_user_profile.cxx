@@ -2295,12 +2295,26 @@ user_create_profile(const char  *name,
   // Initialize and allocate memory for profile
   BFT_MALLOC(profile, 1, user_profile_t);
 
-  profile->name            = name;
-  profile->field           = field;
-  profile->criteria        = criteria;
+  char *_dummy = (char *)profile->name;
+  strncpy(_dummy, name, strlen(name));
+  _dummy[strlen(name)] = '\0';
+
+  _dummy = (char *)profile->field;
+  strncpy(_dummy, field, strlen(field));
+  _dummy[strlen(field)] = '\0';
+
+  _dummy = (char *)profile->criteria;
+  strncpy(_dummy, criteria, strlen(criteria));
+  _dummy[strlen(criteria)] = '\0';
+
   profile->n_layers        = n_layers;
-  profile->progression_law = progression_law;
+
+  _dummy = (char *)profile->progression_law;
+  strncpy(_dummy, progression_law, strlen(progression_law));
+  _dummy[strlen(progression_law)] = '\0';
+
   profile->progression     = progression;
+
   for (int k = 0; k < 3; k++)
     profile->dir_v[k] = dir[k];
 
@@ -2312,7 +2326,10 @@ user_create_profile(const char  *name,
               _("Error: Weigthed param must be MASS, VOLUME or NO for '%s'\n"),
               __func__);
 
-  profile->weighted = weighted;
+
+  _dummy = (char *)profile->weighted;
+  strncpy(_dummy, weighted, strlen(weighted));
+  _dummy[strlen(weighted)] = '\0';
 
   /* In case of Medcoupling method, check CS has been compiled with
    * MEDCouppling*/
@@ -2326,7 +2343,9 @@ user_create_profile(const char  *name,
                 "MEDCoupling support.\n"));
 #endif
   }
-  profile->intersect_method = intersect_method;
+  _dummy = (char *)profile->intersect_method;
+  strncpy(_dummy, intersect_method, strlen(intersect_method));
+  _dummy[strlen(intersect_method)] = '\0';
 
   BFT_MALLOC(profile->l_thick, n_layers, cs_real_t);
   BFT_MALLOC(profile->pos, n_layers, cs_real_t);

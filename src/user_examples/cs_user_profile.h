@@ -76,14 +76,14 @@ typedef struct {
 
 typedef struct {
 
-  const char *name;             // name of the profile
-  const char *field;            // field name
-  const char *criteria;         // cell selection criteria for profile
-  const char *intersect_method; // Method used for intersaction : "Basic",
+  const char name[512];             // name of the profile
+  const char field[512];            // field name
+  const char criteria[512];         // cell selection criteria for profile
+  const char intersect_method[512]; // Method used for intersaction : "Basic",
                                 // "STL", "MEDCOUPLING"
-  const char *progression_law;  // progression law for layer thickness :
+  const char progression_law[512];  // progression law for layer thickness :
                                 // CONSTANT, GEOMETRIC, PARABOLIC
-  const char *weighted; // MASS, VOLUME, NO
+  const char weighted[512]; // MASS, VOLUME, NO
   cs_real_t   dir_v[3]; // profile direction
   cs_real_t   min_dir;  // minimum distance along direction (from origin)
   cs_real_t   max_dir;  // maximum distance along direction (from origin)
