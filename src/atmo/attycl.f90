@@ -393,7 +393,7 @@ do ifac = 1, nfabor
     endif
 
     if (ippmod(iatmos).ge.1) then
-      if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
+      if (rcodcl(ifac,isca(iscalt),1).lt.rinfin*0.5d0) then
         tpent = rcodcl(ifac,isca(iscalt),1)
       else if(imbrication_flag .and.cressman_theta) then
         tpent = theta_bord(ifac)
