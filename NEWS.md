@@ -3,6 +3,8 @@ Release 8.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix slices orientation, order of vectors in basis computation was wrong.
+
 - Mesh refinement: fix occasional syncronization of face refinement
   type on parallel boundaries.
 
