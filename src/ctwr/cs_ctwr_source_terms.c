@@ -109,7 +109,7 @@ BEGIN_C_DECLS
  *   x_s_tl      <-- Saturation humidity at the temperature of the liquid
  *
  * returns:
- *   xlew        --> Lewis factor
+ *   le_f        --> Lewis factor
  *----------------------------------------------------------------------------*/
 
 static cs_real_t
@@ -120,20 +120,20 @@ _lewis_factor(const int        evap_model,
 {
   /* Merkel Model
      Hypothesis of unity Lewis factor */
-  cs_real_t xlew = 1.;
+  cs_real_t le_f = 1.;
 
   if (evap_model == CS_CTWR_POPPE) {
     /* Poppe evaporation model
        Compute Lewis factor using Bosnjakovic hypothesis
-       NB: clippings ensuring xi > 1 and xlew > 0 */
+       NB: clippings ensuring xi > 1 and le_f > 0 */
     cs_real_t xi = (molmassrat + x_s_tl)/(molmassrat + CS_MIN(x, x_s_tl));
     if ((xi - 1.) < 1.e-15)
-      xlew = pow(0.866,(2./3.));
+      le_f = pow(0.866,(2./3.));
     else
-      xlew = pow(0.866,(2./3.))*(xi-1.)/log(xi);
+      le_f = pow(0.866,(2./3.))*(xi-1.)/log(xi);
   }
 
-  return xlew;
+  return le_f;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -321,29 +321,38 @@ cs_ctwr_source_term(int              f_id,
 
         /* Liquid mass flux */
         cs_real_t mass_flux_l = rho_h[cell_id] * y_l_p[cell_id] * vel_l[cell_id];
+        cs_real_t mass_flux_l_oy = rho_h[cell_id] * vel_l[cell_id];
 
         /* Evaporation coefficient 'Beta_x' (kg/m2/s) times exchange surface
          * per unit of volume 'ai' (m2/m3)*/
         cs_real_t beta_x_ai = 0.;
+        cs_real_t beta_x_ai_oy = 0.;
 
         /* There is evaporation only if we have an injected liquid flow */
         if (mass_flux_l > 0.){
-          beta_x_ai = a_0*mass_flux_l*pow((mass_flux_h/mass_flux_l), xnp);
+          beta_x_ai = a_0 * mass_flux_l * pow((mass_flux_h/mass_flux_l), xnp);
+          beta_x_ai_oy = a_0 * mass_flux_l_oy * pow((mass_flux_h/mass_flux_l), xnp);
         }
 
         /* Source terms for the different equations */
 
         /* Humid air mass source term */
         cs_real_t mass_source = 0.0;
+        cs_real_t mass_source_oy = 0.0;
+
         if (x[cell_id] <= x_s_th) {
-          mass_source = beta_x_ai*(x_s_tl - x[cell_id]);
+          mass_source = beta_x_ai * (x_s_tl - x[cell_id]);
+          mass_source_oy = beta_x_ai_oy * (x_s_tl - x[cell_id]);
         }
         else {
-          mass_source = beta_x_ai*(x_s_tl - x_s_th);
+          mass_source = beta_x_ai * (x_s_tl - x_s_th);
+          mass_source_oy = beta_x_ai_oy * (x_s_tl - x_s_th);
         }
         mass_source = CS_MAX(mass_source, 0.);
+        mass_source_oy = CS_MAX(mass_source_oy, 0.);
 
         cs_real_t vol_mass_source = mass_source * cell_f_vol[cell_id];
+        cs_real_t vol_mass_source_oy = mass_source_oy * cell_f_vol[cell_id];
         cs_real_t vol_beta_x_ai = beta_x_ai * cell_f_vol[cell_id];
 
         /* Humid air thermal source term */
@@ -369,8 +378,8 @@ cs_ctwr_source_term(int              f_id,
 
         /* Injected liquid mass equation (solve in drift model form) */
         else if (f_id == (CS_F_(y_l_pack)->id)) {
-          exp_st[cell_id] -= vol_mass_source * y_l_p[cell_id];
-          imp_st[cell_id] += vol_mass_source;
+          exp_st[cell_id] -= vol_mass_source_oy * y_l_p[cell_id];
+          imp_st[cell_id] += vol_mass_source_oy;
         }
 
         /* Humid air temperature equation */
@@ -379,17 +388,17 @@ cs_ctwr_source_term(int              f_id,
           /* Because the writing is in a non-conservative form */
           cs_real_t l_imp_st = vol_mass_source * cp_h;
           cs_real_t l_exp_st = 0.;
-          cs_real_t xlew = _lewis_factor(evap_model, molmassrat,
+          cs_real_t le_f = _lewis_factor(evap_model, molmassrat,
                                          x[cell_id], x_s_tl);
           if (x[cell_id] <= x_s_th) {
             /* Implicit term */
-            l_imp_st += vol_beta_x_ai * (xlew * cp_h
+            l_imp_st += vol_beta_x_ai * (le_f * cp_h
                                           + (x_s_tl - x[cell_id]) * cp_v
                                             / (1. + x[cell_id]));
             l_exp_st = l_imp_st * (t_l_p[cell_id] - f_var[cell_id]);
           }
           else {
-            cs_real_t coeft = xlew * cp_h;
+            cs_real_t coeft = le_f * cp_h;
             /* Implicit term */
             l_imp_st += vol_beta_x_ai * (coeft + (x_s_tl - x_s_th) * cp_l
                                                  / (1. + x[cell_id]));
@@ -412,10 +421,15 @@ cs_ctwr_source_term(int              f_id,
           cs_real_t t_l_k = t_l_p[cell_id]
                             + cs_physical_constants_celsius_to_kelvin;
           cs_real_t l_exp_st = 0.;
+
+          /* Note: the solved variable is yl_p.hl_p so the source term associated
+           * to evaporation is: Gamma/y_lp * (yl_p.h_lp) */
           /* Implicit term */
-          cs_real_t l_imp_st = vol_mass_source;
+          cs_real_t l_imp_st = vol_mass_source_oy;
+
           l_exp_st -= l_imp_st * f_var[cell_id];
-          cs_real_t xlew = _lewis_factor(evap_model,
+
+          cs_real_t le_f = _lewis_factor(evap_model,
                                          molmassrat,
                                          x[cell_id],
                                          x_s_tl);
@@ -424,12 +438,12 @@ cs_ctwr_source_term(int              f_id,
             /* Explicit term */
             l_exp_st -= vol_beta_x_ai * ((x_s_tl - x[cell_id])
                                          * (cp_v * t_l_k + hv0)
-                                         + xlew * cp_h
+                                         + le_f * cp_h
                                            * (t_l_p[cell_id] - t_h[cell_id]));
           }
           /* Over saturated */
           else {
-            cs_real_t coefh = xlew * cp_h;
+            cs_real_t coefh = le_f * cp_h;
             /* Explicit term */
             l_exp_st += vol_beta_x_ai * (coefh * (t_h[cell_id] - t_l_p[cell_id])
                                          + (x_s_tl - x_s_th) / (1. + x[cell_id])
@@ -472,10 +486,13 @@ cs_ctwr_source_term(int              f_id,
           cs_real_3_t *drift_vel_rain
             = (cs_real_3_t *restrict)(cfld_drift_vel->val);
           cs_real_t drift_vel_mag = cs_math_3_norm(drift_vel_rain[cell_id]);
-          cs_real_t xlew = _lewis_factor(evap_model,
+
+          /* Lewis factor computation */
+          cs_real_t le_f = _lewis_factor(evap_model,
                                          molmassrat,
                                          x[cell_id],
                                          x_s_tl);
+
           cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
 
           /* Rain droplets Reynolds number */
@@ -486,17 +503,17 @@ cs_ctwr_source_term(int              f_id,
 
           /* Nusselt number correlations */
           /* Ranz-Marshall or Hughmark when rey <= 776.06 && pr <= 250. */
-          cs_real_t nusselt = 2.+0.6*sqrt(rey)*pow(pr,(1./3.));
+          cs_real_t nusselt = 2. + 0.6 * sqrt(rey) * pow(pr,(1./3.));
           /* Hughmark when rey > 776.06 && pr <= 250. */
           if (rey > 776.06 && pr <= 250.) {
-            nusselt = 2. + 0.27*pow(rey, 0.62)*pow(pr,(1./3.));
+            nusselt = 2. + 0.27 * pow(rey, 0.62) * pow(pr,(1./3.));
           }
 
           /* Convective exchange coefficient 'a_c' */
           cs_real_t a_c = (nusselt * lambda_h) / droplet_diam;
 
           /* beta_x coefficient */
-          cs_real_t beta_x = a_c / (xlew * cp_h);
+          cs_real_t beta_x = a_c / (le_f * cp_h);
 
           /* Exchange surface area per unit volume based on the total droplets
            * surface in the cell
@@ -509,47 +526,40 @@ cs_ctwr_source_term(int              f_id,
            * - this kills transfer when there is only one phase (pure humid air
            *   or pure rain) */
           cs_real_t vol_frac_rain = y_rain[cell_id] * rho_h[cell_id] / rho_l;
+          cs_real_t vol_frac_rain_oy = rho_h[cell_id] / rho_l;
+
           if (vol_frac_rain >= 1.0)
             vol_frac_rain = 1.0;
           cs_real_t a_i =  6.0 * vol_frac_rain * (1.0 - vol_frac_rain)
                            / droplet_diam;
+          cs_real_t a_i_oy = 6.0 * vol_frac_rain_oy * (1.0 - vol_frac_rain)
+                           / droplet_diam;
 
           /* Evaporation coefficient 'Beta_x' times exchange surface 'ai' */
           cs_real_t beta_x_ai = beta_x * a_i;
+          cs_real_t beta_x_ai_oy = beta_x * a_i_oy;
 
           /* Source terms for the different equations */
 
           /* Humid air mass source term */
           cs_real_t mass_source = 0.0;
+          cs_real_t mass_source_oy = 0.0;
+
           if (x[cell_id] <= x_s_th) {
             mass_source = beta_x_ai * (x_s_tl - x[cell_id]);
+            mass_source_oy = beta_x_ai_oy * (x_s_tl - x[cell_id]);
           }
           else {
             mass_source = beta_x_ai * (x_s_tl - x_s_th);
+            mass_source_oy = beta_x_ai_oy * (x_s_tl - x_s_th);
           }
           mass_source = CS_MAX(mass_source, 0.);
+          mass_source_oy = CS_MAX(mass_source_oy, 0.);
 
           cs_real_t vol_mass_source = mass_source * cell_f_vol[cell_id];
+          cs_real_t vol_mass_source_oy = mass_source_oy * cell_f_vol[cell_id];
 
           cs_real_t vol_beta_x_ai = beta_x_ai * cell_f_vol[cell_id];
-
-          /* Humid air thermal source term */
-          cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
-          cs_real_t le_f = _lewis_factor(evap_model, molmassrat,
-                                         x[cell_id], x_s_tl);
-          cs_real_t st_th = 0.;
-          if (x[cell_id] <= x_s_th){
-            st_th = beta_x_ai * ((x_s_tl - x[cell_id]) / (1 + x[cell_id])
-                                 * (cp_v * t_l_r[cell_id] + hv0)
-                           + le_f * cp_h * (t_l_r[cell_id] - t_h[cell_id]));
-          }
-          else{
-            st_th = beta_x_ai * ((x_s_tl - x_s_th) / (1 + x[cell_id])
-                                 * (cp_v * t_l_r[cell_id] + hv0)
-                            + le_f * cp_h * (t_l_r[cell_id] - t_h[cell_id]))
-                                 + le_f * (x[cell_id] - x_s_th)
-                                   * ((cp_l - cp_v) * t_l_r[cell_id] + hv0);
-          }
 
           /* Global mass source term for continuity (pressure) equation
            * Note that if rain were already considered in the bulk, then inner
@@ -570,14 +580,14 @@ cs_ctwr_source_term(int              f_id,
           /* Water (vapor + condensate) in gas mass fraction equation
              except rain */
           else if (f_id == (CS_F_(ym_w)->id)) {
-            exp_st[cell_id] += vol_mass_source*(1. - f_var[cell_id]);
+            exp_st[cell_id] += vol_mass_source * (1. - f_var[cell_id]);
             imp_st[cell_id] += vol_mass_source;
           }
 
           /* Rain drop mass equation (solve in drift model form) */
           else if (f_id == cfld_yp->id) {
-            exp_st[cell_id] -= vol_mass_source * y_rain[cell_id];
-            imp_st[cell_id] += vol_mass_source;
+            exp_st[cell_id] -= vol_mass_source_oy * y_rain[cell_id];
+            imp_st[cell_id] += vol_mass_source_oy;
           }
 
           /* Humid air temperature equation */
@@ -587,14 +597,14 @@ cs_ctwr_source_term(int              f_id,
             cs_real_t l_exp_st = 0.;
             if (x[cell_id] <= x_s_th) {
               /* Implicit term */
-              l_imp_st += vol_beta_x_ai * (xlew * cp_h
+              l_imp_st += vol_beta_x_ai * (le_f * cp_h
                                            + (x_s_tl - x[cell_id]) * cp_v
                                              / (1. + x[cell_id]));
               /* Explicit term */
               l_exp_st = l_imp_st * (t_l_r[cell_id] - f_var[cell_id]);
             }
             else {
-              cs_real_t coeft = xlew * cp_h;
+              cs_real_t coeft = le_f * cp_h;
               /* Implicit term */
               l_imp_st += vol_beta_x_ai * (coeft + (x_s_tl - x_s_th)
                                                    * cp_l / (1. + x[cell_id]));
@@ -613,25 +623,27 @@ cs_ctwr_source_term(int              f_id,
           /* Liquid temperature in Kelvin */
           cs_real_t t_l_k = t_l_r[cell_id]
                             + cs_physical_constants_celsius_to_kelvin;
+
           cs_real_t l_exp_st = 0.;
+
+          /* Note: the solved variable is yl_r.hl_r so the source term associated
+           * to evaporation is: Gamma/y_lr * (yl_r.h_lr) */
           /* Implicit term */
-          cs_real_t l_imp_st = vol_mass_source;
+          cs_real_t l_imp_st = vol_mass_source_oy;
+
           l_exp_st -= l_imp_st * f_var[cell_id];
-          //cs_real_t xlew = _lewis_factor(evap_model,
-          //                               molmassrat,
-          //                               x[cell_id],
-          //                               x_s_tl);
+
           /* Under saturated */
           if (x[cell_id] <= x_s_th) {
             /* Explicit term */
             l_exp_st -= vol_beta_x_ai * ((x_s_tl - x[cell_id])
                                          * (cp_v * t_l_k + hv0)
-                                         + xlew * cp_h
+                                         + le_f * cp_h
                                            * (t_l_r[cell_id] - t_h[cell_id]));
           }
           /* Over saturated */
           else {
-            cs_real_t coefh = xlew * cp_h;
+            cs_real_t coefh = le_f * cp_h;
             /* Explicit term */
             l_exp_st += vol_beta_x_ai * (coefh * (t_h[cell_id] - t_l_r[cell_id])
                                          + (x_s_tl - x_s_th) / (1. + x[cell_id])
@@ -644,7 +656,8 @@ cs_ctwr_source_term(int              f_id,
 
             /* Saving thermal power for post-processing */
             if (t_l_r[cell_id] > 0.){
-              thermal_power_rain[cell_id] = st_th;
+              thermal_power_rain[cell_id] = -(l_exp_st + l_imp_st * f_var[cell_id])
+                                             / cell_f_vol[cell_id];
             }
           }
 
