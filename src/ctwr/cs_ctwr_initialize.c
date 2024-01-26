@@ -476,7 +476,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     packing_cell[cell_id] = -1;
 
   /* Cooling tower zones */
-  const cs_ctwr_zone_t **_ct_zone = cs_get_glob_ctwr_zone();
+  cs_ctwr_zone_t **_ct_zone = cs_get_glob_ctwr_zone();
   const int *_n_ct_zones = cs_get_glob_ctwr_n_zones();
 
   /* Loop over Cooling tower zones */

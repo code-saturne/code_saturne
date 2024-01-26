@@ -183,7 +183,6 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t *t_l_p = cs_field_by_name("temp_l_packing")->val;
   cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
   cs_real_t *y_l_p = CS_F_(y_l_pack)->val_pre;
-  cs_real_t *yh_l_p = CS_F_(yh_l_pack)->val_pre;
 
   /* Variable and properties for rain drops */
   cs_field_t *cfld_yp = cs_field_by_name("y_l_r");     /* Rain mass fraction */
@@ -203,7 +202,7 @@ cs_ctwr_source_term(int              f_id,
 
 
   /* Cooling tower zones */
-  const cs_ctwr_zone_t **_ct_zone = cs_get_glob_ctwr_zone();
+  cs_ctwr_zone_t **_ct_zone = cs_get_glob_ctwr_zone();
   const int *_n_ct_zones = cs_get_glob_ctwr_n_zones();
 
   /* Need to cook up the cell value of the liquid mass flux
@@ -764,14 +763,11 @@ cs_ctwr_source_term(int              f_id,
             exp_st[cell_id] += vol_mass_source * (1. - f_var[cell_id]);
             imp_st[cell_id] += vol_mass_source;
           }
-          /* Rain temperature */
+          /* Rain enthalpy */
           else if (f_id == cfld_yh_rain->id) {
             // FIXME: There should be a y_p factor in there so that
             // mass and enthalpy are compatible
-            /* The transported variable is y_rain * T_rain */
-            /* Since it is treated as a scalar, no multiplication by cp_l is
-             * required */
-            /* For temperature equation of the rain */
+            /* The transported variable is y_rain * h_rain */
             cs_real_t h_inj = cs_liq_t_to_h(t_inj);
             exp_st[cell_id] += vol_mass_source * (h_inj - f_var[cell_id]);
             imp_st[cell_id] += vol_mass_source;
@@ -780,9 +776,6 @@ cs_ctwr_source_term(int              f_id,
       }
     } /* End of loop through the packing zones */
 
-    cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
-    cs_real_t *t_l_r = (cs_real_t *)cs_field_by_name("temp_l_r")->val;
-
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
       cs_lnum_t cell_id_0 = i_face_cells[face_id][0];
       cs_lnum_t cell_id_1 = i_face_cells[face_id][1];
@@ -790,30 +783,27 @@ cs_ctwr_source_term(int              f_id,
       /* one of neigh. cells is in packing */
       if (packing_cell[cell_id_0] != -1 || packing_cell[cell_id_1] != -1) {
 
-        int ct_id = CS_MAX(packing_cell[cell_id_0], packing_cell[cell_id_1]);
-        cs_ctwr_zone_t *ct = _ct_zone[ct_id];
-
         /* Rain sink term in packing zones */
         //TODO : Add rain leak portion inside packing
         if (f_id == cfld_yp->id) {
           if (packing_cell[cell_id_0] != -1) {
-            //imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-            //exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
+            imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
+            exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
           }
           if (packing_cell[cell_id_1] != -1) {
-            //imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-            //exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
+            imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
+            exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
           }
         }
 
         if (f_id == cfld_yh_rain->id) {
           if (packing_cell[cell_id_0] != -1) {
-            //imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-            //exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
+            imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
+            exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
           }
           if (packing_cell[cell_id_1] != -1) {
-            //imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-            //exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
+            imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
+            exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
           }
         }
 
@@ -821,25 +811,23 @@ cs_ctwr_source_term(int              f_id,
         if (f_id == CS_F_(y_l_pack)->id) {
           if (packing_cell[cell_id_0] != -1)
           {
-            //exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0) * cfld_yp->val[cell_id_0];
+            exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0) * cfld_yp->val[cell_id_0];
           }
           if (packing_cell[cell_id_1] != -1)
           {
-            //exp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id],0) * cfld_yp->val[cell_id_1];
+            exp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id],0) * cfld_yp->val[cell_id_1];
           }
         }
 
         if (f_id == CS_F_(yh_l_pack)->id) {
           if (packing_cell[cell_id_0] != -1) {
-           //exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0)
-           //                      * cfld_yp->val[cell_id_0]
-           //                      * cs_liq_t_to_h(t_l_r[cell_id_0]);
+           exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0)
+                                 * cfld_yh_rain->val[cell_id_0];
           }
 
           if (packing_cell[cell_id_1] != -1) {
-           //exp_st[cell_id_1] += CS_MAX(imasfl_r[face_id],0)
-           //                     * cfld_yp->val[cell_id_1]
-           //                      * cs_liq_t_to_h(t_l_r[cell_id_1]);
+           exp_st[cell_id_1] += CS_MAX(imasfl_r[face_id],0)
+                                * cfld_yh_rain->val[cell_id_1];
           }
         }
       }
