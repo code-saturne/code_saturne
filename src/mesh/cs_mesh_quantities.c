@@ -52,6 +52,7 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
+#include "cs_porosity_from_scan.h"
 #include "cs_post.h"
 
 #include "fvm_nodal_from_desc.h"
@@ -3289,10 +3290,10 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 /*!
  * \brief  Compute cell and faces quantities needed at the immersed boundaries.
  *
- * \param[in]       m              pointer to mesh structure
- * \param[in]       cen_points     point belonging to the immersed solid plane
- *                                 for each cell (or NULL)
- * \param[in, out]  mq             pointer to mesh quantities structures.
+ * \param[in]       m               pointer to mesh structure
+ * \param[in]       cen_points      point belonging to the immersed solid plane
+ *                                  for each cell (or NULL)
+ * \param[in, out]  mq              pointer to mesh quantities structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3301,8 +3302,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                  const cs_real_3_t     *cen_points,
                                  cs_mesh_quantities_t  *mq)
 {
-  const cs_lnum_t * b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
   const cs_lnum_t * i_face_vtx_idx
     = (const cs_lnum_t *)m->i_face_vtx_idx;
   const cs_lnum_t * b_face_vtx_idx
@@ -4243,8 +4242,14 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                            0.,
                            (cs_real_t *)c_w_face_normal);
 
+  cs_real_t *nb_scan = cs_field_by_name("nb_scan_points")->val;
+  cs_porosity_from_scan_opt_t *poro_from_scan = cs_glob_porosity_from_scan_opt;
+  cs_real_t threshold = poro_from_scan->threshold;
+
   /* Interior faces */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    bool is_active_cell = false;
 
     /* Interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
@@ -4255,6 +4260,10 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       const cs_lnum_t f_id = cell_i_faces[cidx];
       const short int sign = cell_i_faces_sgn[cidx];
 
+      const cs_real_t face_norm = cs_math_3_norm(i_f_face_normal[f_id]);
+      if (face_norm > 0.0)
+        is_active_cell = true;
+
       for (cs_lnum_t i = 0; i < 3; i++) {
 
         c_w_face_normal[c_id][i] -= sign*i_f_face_normal[f_id][i];
@@ -4262,31 +4271,44 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         const cs_real_t xfmxc
           = (mq->i_face_cog[3*f_id+i] - mq->cell_f_cen[3*c_id+i]);
 
-        for (cs_lnum_t j = 0; j < 3; j++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
           xpsn[c_id][i][j] += sign*xfmxc*i_f_face_normal[f_id][j];
-        }
       }
     } /* End loop on adjacent cells */
 
-  } /* End loop on cells */
+    /* Penalizes IBM cell when its neighbors have zero fluid surfaces */
+    if (!(is_active_cell) && nb_scan[c_id] > threshold) {
 
-  /* Boundary faces */
+      mq->c_disable_flag[c_id] = 1;
 
-  for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+      /* Forced porosity to 0 */
+      mq->cell_f_vol[c_id] = 0.0;
 
-    const cs_lnum_t c_id = b_face_cells[f_id];
-
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      c_w_face_normal[c_id][i] -= b_f_face_normal[f_id][i];
-
-      const cs_real_t xfmxc
-        = (mq->b_f_face_cog[3*f_id+i] - mq->cell_f_cen[3*c_id+i]);
-
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        xpsn[c_id][i][j] += xfmxc*b_f_face_normal[f_id][j];
-      }
+      /* If no internal contribution, the cell is isolated and we
+         skip the boundary contribution */
+      continue;
     }
-  }
+
+    /* Boundary faces */
+    const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+    const cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
+
+    /* Loop on boundary faces of cell c_id */
+    for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+      const cs_lnum_t f_id = cell_b_faces[cidx];
+
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        c_w_face_normal[c_id][i] -= b_f_face_normal[f_id][i];
+
+        const cs_real_t xfmxc
+          = (mq->b_f_face_cog[3*f_id+i] - mq->cell_f_cen[3*c_id+i]);
+
+        for (cs_lnum_t j = 0; j < 3; j++)
+          xpsn[c_id][i][j] += xfmxc*b_f_face_normal[f_id][j];
+      }
+    } /* End loop on boundary cells */
+
+  } /* End loop on cells */
 
   /* Correction of solid face center and distance to the immersed wall */
 
@@ -4302,11 +4324,12 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                                        c_w_face_normal[c_id]);
     cs_real_t vol_min = cs_math_epzero*mq->cell_f_vol[c_id];
 
+    c_w_face_surf[c_id] = cs_math_3_norm(c_w_face_normal[c_id]);
+
     /* Compare the volume of the pyramid (xw - xc).Sw to the fluid
      *  volume */
     if (pyr_vol > vol_min) {
 
-      c_w_face_surf[c_id] = cs_math_3_norm(c_w_face_normal[c_id]);
       cs_real_t vc_w_f_cen[3];
       cs_real_t c_w_normal_unit[3];
       cs_math_3_normalize(c_w_face_normal[c_id], c_w_normal_unit);

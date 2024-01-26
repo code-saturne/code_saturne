@@ -335,7 +335,7 @@ cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
  * \param[in]       m              pointer to mesh structure
  * \param[in]       cen_points     point belonging to the immersed solid plane
  *                                 for each cell
- * \param[in, out]  mq             pointer to mesh quantities structures.
+ * \param[in, out]  mq             pointer to mesh quantities structure
  */
 /*----------------------------------------------------------------------------*/
 
