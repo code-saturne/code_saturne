@@ -638,6 +638,9 @@ class Plotter(object):
                                 iok = True
                                 break
 
+                        if iok:
+                            break
+
                     if not iok:
                         print("\n\nThis file does not exist: %s\n"
                               "(last call with path: %s)\n" % (file_name, f))
