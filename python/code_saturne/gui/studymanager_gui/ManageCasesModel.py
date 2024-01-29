@@ -75,6 +75,8 @@ class ManageCasesModel(Model):
         default['prepro_status']  = "off"
         default['post_status']    = "off"
         default['compare_status'] = "off"
+        default['expected_time']  = "03:00" # 3h
+        default['n_procs']        = "1"
 
         return default
 
@@ -209,6 +211,14 @@ class ManageCasesModel(Model):
         tags  = node['tags']
         if tags:
             new_node['tags'] = tags
+
+        exp_time  = node['expected_time']
+        if exp_time:
+            new_node['expected_time'] = exp_time
+
+        n_procs  = node['n_procs']
+        if n_procs:
+            new_node['n_procs'] = n_procs
 
         self.list_case = self.case.xmlGetNodeList("case")
 
@@ -393,6 +403,52 @@ class ManageCasesModel(Model):
         if tags == "":
             del(node['tags'])
 
+    def getExpTime(self, study_name, idx):
+        """
+        Get expected time from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNodeByIdx("case", idx)
+        exp_time = node['expected_time']
+        if not exp_time:
+            exp_time = self._defaultValues()['expected_time']
+        return exp_time
+
+
+    def setExpTime(self, study_name, idx, exp_time):
+        """
+        Put expected time from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNodeByIdx("case", idx)
+        if exp_time == "":
+            exp_time = self._defaultValues()['expected_time']
+        node['expected_time'] = exp_time
+
+    def getNProcs(self, study_name, idx):
+        """
+        Get number of procs from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNodeByIdx("case", idx)
+        n_procs = node['n_procs']
+        if not n_procs:
+            n_procs = self._defaultValues()['n_procs']
+        return n_procs
+
+    def setNProcs(self, study_name, idx, n_procs):
+        """
+        Put number of procs from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNodeByIdx("case", idx)
+        if n_procs == "":
+            n_procs = self._defaultValues()['n_procs']
+        node['n_procs'] = n_procs
 
     def getCompareStatus(self, study_name, idx):
         """

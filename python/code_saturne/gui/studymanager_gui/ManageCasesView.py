@@ -67,19 +67,23 @@ class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, idx, name, compute, post, status, run_id, tags):
-        self.index   = idx
-        self.name    = name
-        self.compute = compute
-        self.post    = post
-        self.status  = status
-        self.run_id  = run_id
-        self.tags    = tags
+    def __init__(self, idx, name, compute, post, status, run_id, tags, exp_time,
+                 n_procs):
+        self.index    = idx
+        self.name     = name
+        self.compute  = compute
+        self.post     = post
+        self.status   = status
+        self.run_id   = run_id
+        self.tags     = tags
+        self.exp_time = exp_time
+        self.n_procs  = n_procs
 
     def __repr__(self):
-        return "case : %s // compute : %s // post %s // status %s // run_id %s // tags %s"\
-            % (self.name, self.compute, self.post, self.status, self.run_id,
-               self.tags)
+        return "case : %s // compute : %s // post %s // status %s // run_id %s"\
+             + " // tags %s // expected_time %s // nb procs %s"\
+             % (self.name, self.compute, self.post, self.status, self.run_id,
+               self.tags, self.exp_time, self.n_procs)
 
 #-------------------------------------------------------------------------------
 # Treeitem class
@@ -110,7 +114,7 @@ class TreeItem(object):
 
 
     def columnCount(self):
-        return 6
+        return 8
 
 
     def data(self, column, role):
@@ -144,6 +148,10 @@ class TreeItem(object):
                 return self.item.run_id
             elif column == 5 and role == Qt.DisplayRole:
                 return self.item.tags
+            elif column == 6 and role == Qt.DisplayRole:
+                return self.item.exp_time
+            elif column == 7 and role == Qt.DisplayRole:
+                return self.item.n_procs
         return None
 
 
@@ -171,7 +179,7 @@ class LabelDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
+        rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}|^$"
         self.regExp = QRegExp(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
@@ -183,6 +191,7 @@ class LabelDelegate(QItemDelegate):
         v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.p_value = str(v)
         editor.setText(v)
+
 
     def setModelData(self, editor, model, index):
         if not editor.isModified():
@@ -202,7 +211,58 @@ class TagsDelegate(LabelDelegate):
     """
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
+        rx = "[\-_,A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}|^$"
+        self.regExp = QRegExp(rx)
+        v =  RegExpValidator(editor, self.regExp)
+        editor.setValidator(v)
         return editor
+
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+        p_value = str(editor.text())
+        model.setData(index, p_value, Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+class ExpTimeDelegate(LabelDelegate):
+    """
+    """
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        rx = "^([0-3]?[0-9]|4[0-8]):[0-5][0-9]$"
+        self.regExp = QRegExp(rx)
+        v =  RegExpValidator(editor, self.regExp)
+        editor.setValidator(v)
+        return editor
+
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+        p_value = str(editor.text())
+        model.setData(index, p_value, Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+class NProcsDelegate(LabelDelegate):
+    """
+    """
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        rx = "^([0-2]?[0-9]?[0-9])$"
+        self.regExp = QRegExp(rx)
+        v =  RegExpValidator(editor, self.regExp)
+        editor.setValidator(v)
+        return editor
+
 
     def setModelData(self, editor, model, index):
         if not editor.isModified():
@@ -274,7 +334,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         if parent and parent.isValid():
             return parent.internalPointer().columnCount()
         else:
-            return 6
+            return 8
 
 
     def data(self, index, role):
@@ -301,6 +361,10 @@ class CaseStandardItemModel(QAbstractItemModel):
                 return self.tr("Run_id")
             elif index.column() == 5:
                 return self.tr("Tags")
+            elif index.column() == 6:
+                return self.tr("Expected time (HH:MM)")
+            elif index.column() == 7:
+                return self.tr("Number of processes")
 
         # Display
         if role == Qt.DisplayRole:
@@ -315,11 +379,12 @@ class CaseStandardItemModel(QAbstractItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
 
-        # disable item
-        if (index.row(), index.column()) in self.disabledItem:
-            return Qt.ItemIsEnabled
+        item = index.internalPointer()
 
-        itm = index.internalPointer()
+        # disable item
+        if (item.item.index, index.row(), index.column()) in self.disabledItem:
+            return Qt.NoItemFlags
+
         if index.column() == 1 or index.column() == 2 or index.column() == 3:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         elif index.column() == 0:
@@ -339,9 +404,13 @@ class CaseStandardItemModel(QAbstractItemModel):
             elif section == 3:
                 return self.tr("Post-\nprocessing")
             elif section == 4:
-                return self.tr("run_id")
+                return self.tr("Run_id")
             elif section == 5:
                 return self.tr("Tags")
+            elif section == 6:
+                return self.tr("Expected time\n(HH:MM)")
+            elif section == 7:
+                return self.tr("Number of\nprocesses")
         return None
 
 
@@ -396,22 +465,28 @@ class CaseStandardItemModel(QAbstractItemModel):
             row = self.rowCount()
             status  = self.mdl.getStudyStatus(name)
             tags    = self.mdl.getStudyTags(name)
-            item = item_class(-1, name, "off", "off", status, "", tags)
+            item = item_class(-1, name, "off", "off", status, "", tags, "", "")
             newparent = TreeItem(item, name, self.rootItem)
             self.rootItem.appendChild(newparent)
             self.noderoot[name] = newparent
 
+            # disabled compute, post, run_id, expected_time and n_procs for study
+            for column in [2, 3, 4, 6, 7]:
+                self.disabledItem.append((-1, 0, column))
+
         for name in self.prtlist:
             for idx in self.mdl.getCaseList(name):
                 parentItem = self.noderoot[name]
-                cname = self.mdl.getCaseName(name, idx)
-                compute = self.mdl.getComputeStatus(name, idx)
-                post    = self.mdl.getPostStatus(name, idx)
-                status  = self.mdl.getStatus(name, idx)
-                run_id  = self.mdl.getRunId(name, idx)
-                tags    = self.mdl.getTags(name, idx)
+                cname    = self.mdl.getCaseName(name, idx)
+                compute  = self.mdl.getComputeStatus(name, idx)
+                post     = self.mdl.getPostStatus(name, idx)
+                status   = self.mdl.getStatus(name, idx)
+                run_id   = self.mdl.getRunId(name, idx)
+                tags     = self.mdl.getTags(name, idx)
+                exp_time = self.mdl.getExpTime(name, idx)
+                n_procs  = self.mdl.getNProcs(name, idx)
                 item = item_class(idx, cname, compute, post, status,
-                                  run_id, tags)
+                                  run_id, tags, exp_time, n_procs)
                 new_item = TreeItem(item, "", parentItem)
                 parentItem.appendChild(new_item)
 
@@ -468,7 +543,7 @@ class CaseStandardItemModel(QAbstractItemModel):
             atags = str(tags).replace(",", " ").split()
             if len(atags) > 1:
                 tags = ",".join(atags)
-            elif len(atags) > 1:
+            elif len(atags) > 0:
                 tags = atags[0]
             else:
                 tags = ""
@@ -478,6 +553,24 @@ class CaseStandardItemModel(QAbstractItemModel):
                 self.mdl.setTags(itm.item.name, item.item.index, item.item.tags)
             else:
                 self.mdl.setStudyTags(item.item.name, item.item.tags)
+
+        elif index.column() == 6:
+            exp_time = str(from_qvariant(value, to_text_string))
+            if item not in self.noderoot.values():
+                itm = item.parentItem
+                item.item.exp_time = exp_time
+                # Return default value if exp_time not in (HH:MM)
+                self.mdl.setExpTime(itm.item.name, item.item.index,
+                                    item.item.exp_time)
+
+        elif index.column() == 7:
+            n_procs = str(from_qvariant(value, to_text_string))
+            if item not in self.noderoot.values():
+                itm = item.parentItem
+                item.item.n_procs = n_procs
+                # Return default value if n_procs not an integer
+                self.mdl.setNProcs(itm.item.name, item.item.index,
+                                   item.item.n_procs)
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
 
@@ -662,6 +755,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         tagsDelegate = TagsDelegate(self.treeViewCases)
         self.treeViewCases.setItemDelegateForColumn(5, tagsDelegate)
 
+        exptimeDelegate = ExpTimeDelegate(self.treeViewCases)
+        self.treeViewCases.setItemDelegateForColumn(6, exptimeDelegate)
+
+        nprocsDelegate = NProcsDelegate(self.treeViewCases)
+        self.treeViewCases.setItemDelegateForColumn(7, nprocsDelegate)
+
         self.treeViewCases.resizeColumnToContents(0)
 
         self.pushButtonAdd.clicked.connect(self.slotAddCase)
@@ -710,8 +809,6 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.pushButtonRemoveInput.setEnabled(False)
 
         self.listInputClickOn = 0
-
-    #TODO add self.disabledItem.append((row, 3)) for study nodes
 
 
     def __get_study_and_case_idx__(self):
