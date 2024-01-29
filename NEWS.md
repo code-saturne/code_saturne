@@ -15,6 +15,7 @@ Release 8.1.1 (unreleased)
 - Fix error in boundary temperature computation for compressible model.
 
 - GUI:
+  * Fix handling of non-fixed ALE conditions for non-wall boundaries.
   * Fix crash when selecting Rij-EBRSM turbulence model.
   * Fix crash when visiting base volume zone settings if the
     compressible model is activated.
