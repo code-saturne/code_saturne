@@ -287,6 +287,47 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
 
         self.expressionDoc = self.textEditExpression.document()
 
+        # ------------------
+        # Calculator Buttons
+        # ------------------
+
+        # numbers
+        for i in range(10):
+            _button = getattr(self, "pushButton_" + str(i))
+            _button.clicked.connect(lambda state, v=i: self._addOperator(str(v)))
+
+        # functions :
+        l_ = ['exp', 'sqrt', 'log', 'abs', 'cos', 'sin', 'tan', 'acos', 'asin', \
+              'atan', 'sinh', 'cosh', 'tanh', 'min', 'max']
+        for o_ in l_:
+            _button = getattr(self, "pushButton_" + o_)
+            _button.clicked.connect(lambda state, v=" {}() ".format(o_) : self._addOperator(v))
+
+        # operators
+        self.pushButton_plus.clicked.connect(lambda :self._addOperator(" + "))
+        self.pushButton_minus.clicked.connect(lambda :self._addOperator(" - "))
+        self.pushButton_mult.clicked.connect(lambda :self._addOperator(" * "))
+        self.pushButton_divide.clicked.connect(lambda :self._addOperator(" / "))
+        self.pushButton_eq.clicked.connect(lambda :self._addOperator(" = "))
+        self.pushButton_dot.clicked.connect(lambda :self._addOperator("."))
+        self.pushButton_comma.clicked.connect(lambda :self._addOperator(", "))
+        self.pushButton_semi_col.clicked.connect(lambda :self._addOperator(";\n"))
+
+        self.pushButton_lt.clicked.connect(lambda :self._addOperator(" < "))
+        self.pushButton_gt.clicked.connect(lambda :self._addOperator(" > "))
+        self.pushButton_leq.clicked.connect(lambda :self._addOperator(" <= "))
+        self.pushButton_geq.clicked.connect(lambda :self._addOperator(" >= "))
+
+        self.pushButton_par_open.clicked.connect(lambda :self._addOperator("("))
+        self.pushButton_par_close.clicked.connect(lambda :self._addOperator(")"))
+        self.pushButton_curl_open.clicked.connect(lambda :self._addOperator("{"))
+        self.pushButton_curl_close.clicked.connect(lambda :self._addOperator("}"))
+
+        self.pushButton_power.clicked.connect(lambda :self._addOperator("^"))
+        self.pushButton_pi.clicked.connect(lambda :self._addOperator("Pi"))
+
+        self.pushButton_if.clicked.connect(lambda :self._addOperator("if ()"))
+
     @pyqtSlot()
     def slotClearBackground(self):
         """
@@ -303,6 +344,9 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
             block_format.clearBackground()
             cursor.setBlockFormat(block_format)
 
+    @pyqtSlot()
+    def _addOperator(self, _operator):
+        self.textEditExpression.textCursor().insertText(_operator)
 
     def accept(self):
         """
