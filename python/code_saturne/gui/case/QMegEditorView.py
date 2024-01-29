@@ -47,6 +47,7 @@ import logging
 from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
+from code_saturne.gui.base.QtPage import ComboModel
 from code_saturne.gui.base.CompletionTextEditor import *
 
 #-------------------------------------------------------------------------------
@@ -328,6 +329,13 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
 
         self.pushButton_if.clicked.connect(lambda :self._addOperator("if ()"))
 
+        # ComboModel for known symbols
+        self.known_symbols_box = ComboModel(self.comboBox_Insert, 1, 1)
+        for p, q in symbols:
+            self.known_symbols_box.addItem(self.tr(p,p))
+
+        self.comboBox_Insert.activated[str].connect(self._addOperator)
+
     @pyqtSlot()
     def slotClearBackground(self):
         """
@@ -344,7 +352,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
             block_format.clearBackground()
             cursor.setBlockFormat(block_format)
 
-    @pyqtSlot()
+    @pyqtSlot(str)
     def _addOperator(self, _operator):
         self.textEditExpression.textCursor().insertText(_operator)
 
