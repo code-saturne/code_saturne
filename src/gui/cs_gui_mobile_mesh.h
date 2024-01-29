@@ -51,11 +51,10 @@ BEGIN_C_DECLS
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIALIN()
+ * subroutine uialin()
  * *****************
  *
- * nalinf  <->   number of subiterations of initialization of
- *               fluid
+ * nalinf  <->   number of subiterations of initialization of fluid
  * nalimx  <->   max number of iterations of implicitation of
  *               the displacement of the structures
  * epalim  <->   relative precision of implicitation of
@@ -66,25 +65,6 @@ BEGIN_C_DECLS
 void CS_PROCF (uialin, UIALIN) (int    *nalinf,
                                 int    *nalimx,
                                 double *epalim);
-
-/*-----------------------------------------------------------------------------
- * uialcl
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIALCL
- * *****************
- *
- * parameters:
- *   ialtyb       --> ialtyb
- *   impale       --> uialcl_fixed_displacement
- *   disale       --> See uialcl_fixed_displacement
- *----------------------------------------------------------------------------*/
-
-void cs_gui_mobile_mesh_boundary_conditions(int         *const  ialtyb,
-                                            int         *const  impale,
-                                            cs_real_3_t        *disale);
-
 
 /*-----------------------------------------------------------------------------
  * Retrieve data for external coupling
@@ -126,7 +106,7 @@ void
 cs_gui_mesh_viscosity(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Translate the user settings for the domain boundaries into a
  *         structure storing the ALE boundaries (New mechanism used in CDO)
  *
@@ -138,7 +118,22 @@ void
 cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Set mobile mesh boundary conditions based on setup.
+ *
+ * \param[in]    ialtyb  ALE BC type, per boundary face
+ * \param[in]    impale  fixed displacement indicator
+ * \param[out]   disale  fixed displacement, where indicated
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_boundary_conditions(int          *const ialtyb,
+                                       int          *const impale,
+                                       cs_real_3_t        *disale);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Return the fixed velocity for a boundary
  *
  * \param[in]  label boundary condition label
@@ -151,7 +146,7 @@ cs_real_t *
 cs_gui_mobile_mesh_get_fixed_velocity(const char  *label);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add mobile structures based on GUI BC definitions.
  */
 /*----------------------------------------------------------------------------*/

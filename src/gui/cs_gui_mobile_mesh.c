@@ -441,11 +441,10 @@ _get_uistr2_data(const char   *label,
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIALIN
+ * subroutine uialin
  * *****************
  *
- * nalinf  <->  number of sub iteration of initialization
- *              of fluid
+ * nalinf  <->  number of sub iteration of initialization of fluid
  * nalimx  <->  max number of iterations of implicitation of
  *              the displacement of the structures
  * epalim  <->  relative precision of implicitation of
@@ -494,76 +493,6 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
     bft_printf("--epalim = %g\n", *epalim);
   }
 #endif
-}
-
-/*-----------------------------------------------------------------------------
- * uialcl
- *
- * parameters:
- *   ialtyb       <-- ialtyb
- *   impale       <-- uialcl_fixed_displacement
- *   disale       <-- See uialcl_fixed_displacement
- *----------------------------------------------------------------------------*/
-void cs_gui_mobile_mesh_boundary_conditions(int         *const  ialtyb,
-                                            int         *const  impale,
-                                            cs_real_3_t        *disale)
-{
-  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
-
-  /* Loop on boundary zones */
-
-  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
-       tn_bndy != NULL;
-       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
-
-    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
-
-    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
-      continue;
-
-    cs_lnum_t n_faces = z->n_elts;
-    const cs_lnum_t *faces_list = z->elt_ids;
-
-    /* Get ALE nature and get sibling tn */
-    enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_bndy);
-
-    if (nature == ale_boundary_nature_none)
-      continue;
-
-    /* get the matching BC node */
-    const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
-    cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
-    tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
-
-    if (nature ==  ale_boundary_nature_fixed_wall) {
-      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac];
-        ialtyb[ifbr] = CS_BOUNDARY_ALE_FIXED;
-      }
-    }
-    else if (nature ==  ale_boundary_nature_sliding_wall) {
-      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac];
-        ialtyb[ifbr] = CS_BOUNDARY_ALE_SLIDING;
-      }
-    }
-    else if (nature ==  ale_boundary_nature_free_surface) {
-      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac];
-        ialtyb[ifbr] = CS_BOUNDARY_ALE_FREE_SURFACE;
-      }
-    }
-    else if (nature == ale_boundary_nature_fixed_displacement) {
-      _uialcl_fixed_displacement(tn_bc,
-                                 z,
-                                 impale,
-                                 disale);
-    }
-    else if (nature == ale_boundary_nature_fixed_velocity) {
-      _uialcl_fixed_velocity(tn_bc, z, ialtyb);
-    }
-  }
 }
 
 /*============================================================================
@@ -729,6 +658,79 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
     }
 
   } /* Loop on mobile_boundary zones */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set mobile mesh boundary conditions based on setup.
+ *
+ * \param[in]    ialtyb  ALE BC type, per boundary face
+ * \param[in]    impale  fixed displacement indicator
+ * \param[out]   disale  fixed displacement, where indicated
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_boundary_conditions(int          *const ialtyb,
+                                       int          *const impale,
+                                       cs_real_3_t        *disale)
+{
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  /* Loop on boundary zones */
+
+  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
+       tn_bndy != NULL;
+       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
+
+    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
+
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      continue;
+
+    cs_lnum_t n_faces = z->n_elts;
+    const cs_lnum_t *faces_list = z->elt_ids;
+
+    /* Get ALE nature and get sibling tn */
+    enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_bndy);
+
+    if (nature == ale_boundary_nature_none)
+      continue;
+
+    /* get the matching BC node */
+    const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
+    cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
+    tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
+
+    if (nature ==  ale_boundary_nature_fixed_wall) {
+      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        ialtyb[ifbr] = CS_BOUNDARY_ALE_FIXED;
+      }
+    }
+    else if (nature ==  ale_boundary_nature_sliding_wall) {
+      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        ialtyb[ifbr] = CS_BOUNDARY_ALE_SLIDING;
+      }
+    }
+    else if (nature ==  ale_boundary_nature_free_surface) {
+      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        ialtyb[ifbr] = CS_BOUNDARY_ALE_FREE_SURFACE;
+      }
+    }
+    else if (nature == ale_boundary_nature_fixed_displacement) {
+      _uialcl_fixed_displacement(tn_bc,
+                                 z,
+                                 impale,
+                                 disale);
+    }
+    else if (nature == ale_boundary_nature_fixed_velocity) {
+      _uialcl_fixed_velocity(tn_bc, z, ialtyb);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
