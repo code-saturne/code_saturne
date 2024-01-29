@@ -455,10 +455,10 @@ class BoundaryConditionsMobileMeshView(QWidget,
         self.__comboModel = ComboModel(self.comboMobilBoundary, 6, 1)
         self.__comboModel.addItem(self.tr("Fixed boundary"), "fixed_boundary")
         self.__comboModel.addItem(self.tr("Sliding boundary"), "sliding_boundary")
-        self.__comboModel.addItem(self.tr("Internal coupling"), "internal_coupling")
-        self.__comboModel.addItem(self.tr("External coupling"), "external_coupling")
         self.__comboModel.addItem(self.tr("Fixed velocity"), "fixed_velocity")
         self.__comboModel.addItem(self.tr("Fixed displacement"), "fixed_displacement")
+        self.__comboModel.addItem(self.tr("Internal coupling"), "internal_coupling")
+        self.__comboModel.addItem(self.tr("External coupling"), "external_coupling")
         self.comboMobilBoundary.activated[str].connect(self.__slotCombo)
         self.pushButtonMobilBoundary.clicked.connect(self.__slotFormula)
 
@@ -571,12 +571,20 @@ class BoundaryConditionsMobileMeshView(QWidget,
         Show the widget
         """
         if self.__model.getMethod() != "off":
-            boundary = Boundary("coupling_mobile_boundary",
-                                b.getLabel(), self.case)
-            self.__boundary = boundary
             modelData = b.getALEChoice()
+            if b.getNature() == "wall":
+                self.__comboModel.enableItem(str_model="internal_coupling")
+                self.__comboModel.enableItem(str_model="external_coupling")
+            else:
+                self.__comboModel.disableItem(str_model="internal_coupling")
+                self.__comboModel.disableItem(str_model="external_coupling")
             if modelData == 'internal_coupling':
+                boundary = Boundary("coupling_mobile_boundary",
+                                    b.getLabel(), self.case)
+                self.__boundary = boundary
                 self.__couplingManager.setBoundary(boundary)
+            else:
+                self.__boundary = b
             self.update_view(modelData)
             self.show()
         else:

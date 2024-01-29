@@ -12,8 +12,10 @@ Release 8.0.3 (unreleased)
 
 - Fix error in boundary temperature computation for compressible model.
 
-- GUI: fix crash when visiting base volume zone settings if the
-  compressible model is activated.
+- GUI:
+  * Fix handling of non-fixed ALE conditions for non-wall boundaries.
+- * Fix crash when visiting base volume zone settings if the
+    compressible model is activated.
 
 - Internal coupling for conjugate heat transfer: fix spurious velocity
   in solid zone with RSM models.
