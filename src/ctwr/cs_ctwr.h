@@ -154,6 +154,8 @@ typedef struct {
   bool             has_rain;
   bool             solve_rain_velocity; /*!< Activate drift velocity
                                           resolution */
+  bool             rain_to_packing; /*!< Activate liquid water transfer
+                                         from rain to packing */
 } cs_ctwr_option_t;
 
 

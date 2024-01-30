@@ -107,7 +107,8 @@ BEGIN_C_DECLS
 static cs_ctwr_option_t  _ctwr_option = {
   .evap_model = CS_CTWR_NONE,
   .has_rain = false,
-  .solve_rain_velocity = false};
+  .solve_rain_velocity = false,
+  .rain_to_packing = false};
 
 const cs_ctwr_option_t *cs_glob_ctwr_option = &_ctwr_option;
 

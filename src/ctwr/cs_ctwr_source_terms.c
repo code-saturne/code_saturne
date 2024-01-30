@@ -776,58 +776,68 @@ cs_ctwr_source_term(int              f_id,
       }
     } /* End of loop through the packing zones */
 
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      cs_lnum_t cell_id_0 = i_face_cells[face_id][0];
-      cs_lnum_t cell_id_1 = i_face_cells[face_id][1];
+    /* Rain - packing interaction
+     * ========================== */
 
-      /* one of neigh. cells is in packing */
-      if (packing_cell[cell_id_0] != -1 || packing_cell[cell_id_1] != -1) {
+    /* Boolean rain_to_packing ctwr model option enables rain liquid water to
+     * become liquid water film when it reaches a packing zone */
 
-        /* Rain sink term in packing zones */
-        //TODO : Add rain leak portion inside packing
-        if (f_id == cfld_yp->id) {
-          if (packing_cell[cell_id_0] != -1) {
-            imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-            exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
-          }
-          if (packing_cell[cell_id_1] != -1) {
-            imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-            exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
-          }
-        }
+    /* FIXME: Corrections needed to ensure mass and energy conservation,
+     * better not use it for the moment */
+    if  (ct_opt->rain_to_packing) {
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+        cs_lnum_t cell_id_0 = i_face_cells[face_id][0];
+        cs_lnum_t cell_id_1 = i_face_cells[face_id][1];
 
-        if (f_id == cfld_yh_rain->id) {
-          if (packing_cell[cell_id_0] != -1) {
-            imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-            exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
-          }
-          if (packing_cell[cell_id_1] != -1) {
-            imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-            exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
-          }
-        }
+        /* one of neigh. cells is in packing */
+        if (packing_cell[cell_id_0] != -1 || packing_cell[cell_id_1] != -1) {
 
-        /* Liquid source term in packing zones from rain */
-        if (f_id == CS_F_(y_l_pack)->id) {
-          if (packing_cell[cell_id_0] != -1)
-          {
-            exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0) * cfld_yp->val[cell_id_0];
-          }
-          if (packing_cell[cell_id_1] != -1)
-          {
-            exp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id],0) * cfld_yp->val[cell_id_1];
-          }
-        }
-
-        if (f_id == CS_F_(yh_l_pack)->id) {
-          if (packing_cell[cell_id_0] != -1) {
-           exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0)
-                                 * cfld_yh_rain->val[cell_id_0];
+          /* Rain sink term in packing zones */
+          //TODO : Add rain leak portion inside packing
+          if (f_id == cfld_yp->id) {
+            if (packing_cell[cell_id_0] != -1) {
+              imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
+              exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
+            }
+            if (packing_cell[cell_id_1] != -1) {
+              imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
+              exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
+            }
           }
 
-          if (packing_cell[cell_id_1] != -1) {
-           exp_st[cell_id_1] += CS_MAX(imasfl_r[face_id],0)
-                                * cfld_yh_rain->val[cell_id_1];
+          if (f_id == cfld_yh_rain->id) {
+            if (packing_cell[cell_id_0] != -1) {
+              imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
+              exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
+            }
+            if (packing_cell[cell_id_1] != -1) {
+              imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
+              exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
+            }
+          }
+
+          /* Liquid source term in packing zones from rain */
+          if (f_id == CS_F_(y_l_pack)->id) {
+            if (packing_cell[cell_id_0] != -1)
+            {
+              exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0) * cfld_yp->val[cell_id_0];
+            }
+            if (packing_cell[cell_id_1] != -1)
+            {
+              exp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id],0) * cfld_yp->val[cell_id_1];
+            }
+          }
+
+          if (f_id == CS_F_(yh_l_pack)->id) {
+            if (packing_cell[cell_id_0] != -1) {
+              exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0)
+                * cfld_yh_rain->val[cell_id_0];
+            }
+
+            if (packing_cell[cell_id_1] != -1) {
+              exp_st[cell_id_1] += CS_MAX(imasfl_r[face_id],0)
+                * cfld_yh_rain->val[cell_id_1];
+            }
           }
         }
       }
