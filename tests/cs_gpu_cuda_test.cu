@@ -566,8 +566,8 @@ _dot_products_1(double   t_measure,
 
     test_sum = test_sum - floor(test_sum);
 
-    const cs_real_t *x_d = (const cs_real_t *)cs_get_device_ptr_const(x);
-    const cs_real_t *y_d = (const cs_real_t *)cs_get_device_ptr_const(y);
+    const cs_real_t *x_d = cs_get_device_ptr_const((const cs_real_t *)x);
+    const cs_real_t *y_d = cs_get_device_ptr_const((const cs_real_t *)y);
     cs_real_t *r_d = (cs_real_t *)cs_get_device_ptr(r);
 
 #if (CUDART_VERSION >= 11000)
