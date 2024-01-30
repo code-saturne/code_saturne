@@ -472,7 +472,6 @@ cs_math_3_square_norm(const cs_real_t v[3])
 /*----------------------------------------------------------------------------*/
 
 static inline void
-__attribute__((deprecated))
 cs_math_3_normalise(const cs_real_t  vin[3],
                     cs_real_t        vout[3])
 {
