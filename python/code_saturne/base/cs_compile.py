@@ -544,10 +544,6 @@ class cs_compile(object):
 
         p_libs = self.get_flags('libs')
 
-        # If neptune_cfd, add missing library
-        if os.path.basename(exec_name) == 'nc_solver':
-            p_libs.insert(0, '-lneptune')
-
         # Special handling for some linkers (such as Mac OS X), for which
         # no multiple definitions are allowable in static mode;
         # in this case, extract archive, then overwrite with user files.
@@ -586,7 +582,7 @@ class cs_compile(object):
             cmd += o_files
 
         if os.path.basename(exec_name) in self.pkg.config.exec_libs:
-            cmd += [self.pkg.config.exec_libs[os.path.basename(exec_name)]]
+            cmd += self.pkg.config.exec_libs[os.path.basename(exec_name)]
 
         if opt_libs != None:
             if len(opt_libs) > 0:
