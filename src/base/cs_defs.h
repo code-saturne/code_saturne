@@ -152,6 +152,16 @@ extern "C" {
 
 #endif /* __cplusplus */
 
+/* Definition of a DEPRECATED decoratro which may be called in the code */
+
+#if defined(__GNUC__) || defined(__clang__)
+#  define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#  define DEPRECATED __declspec(deprecated)
+#else
+#  define DEPRECATED
+#endif
+
 /*============================================================================
  * Definitions that may not always be provided directly by the system
  *============================================================================*/
