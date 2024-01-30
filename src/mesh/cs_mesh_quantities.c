@@ -4352,7 +4352,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         vc_w_f_cen[i] *= d_w;
 
       for (cs_lnum_t i = 0; i < 3; i++)
-          c_w_face_cog[c_id][i] = vc_w_f_cen[i] + mq->cell_f_cen[c_id*3+i];
+        c_w_face_cog[c_id][i] = vc_w_f_cen[i] + mq->cell_f_cen[c_id*3+i];
 
       /* Distance to the immersed wall */
 

@@ -3969,7 +3969,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     bdplus[f_id] = dplus;
     bpro_ustar[f_id] = uet;
 
-    /* FIXME note taken into account yet in hturbp cfnns */
+    /* FIXME note taken into account yet in cs_wall_functions_scalar, cfnns */
     bcfnns[f_id] = (icodcl_vel[f_id] == 5) ? 1.0 : cfnns;
     bdlmo[f_id] = dlmo;
     bpro_uk[f_id] = uk;
