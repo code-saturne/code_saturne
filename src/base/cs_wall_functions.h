@@ -976,17 +976,8 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
   *cofimp = 0.;
   *iuntur = 0;
 
-  if (*yplus <= ypluli) {
-
-    /* Disable the wall funcion count the cell in the viscous sub-layer */
-    *nsubla += 1;
-
-  } else {
-
-    /* Count the cell as if it was in the viscous sub-layer */
-    *nsubla += 1;
-
-  }
+  /* Count the cell as if it was in the viscous sub-layer */
+  *nsubla += 1;
 }
 
 /*----------------------------------------------------------------------------*/

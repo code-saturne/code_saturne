@@ -300,6 +300,22 @@ cs_f_mesh_quantities_solid_compute(void)
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   cs_porosity_from_scan_opt_t *poro_from_scan = cs_glob_porosity_from_scan_opt;
   cs_real_t poro_threshold = poro_from_scan->porosity_threshold;
+  cs_real_t threshold = poro_from_scan->threshold;
+  
+  cs_real_3_t *restrict c_w_face_normal
+    = (cs_real_3_t *restrict)mq->c_w_face_normal;
+  cs_real_3_t *restrict i_f_face_normal
+    = (cs_real_3_t *restrict)mq->i_f_face_normal;
+  cs_real_3_t *restrict b_f_face_normal
+    = (cs_real_3_t *restrict)mq->b_f_face_normal;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  cs_mesh_adjacencies_update_cell_i_faces();
+
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+  const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
 
   cs_real_3_t *cen_points = NULL;
   cs_field_t *f = cs_field_by_name_try("cell_scan_points_cog");
@@ -310,6 +326,7 @@ cs_f_mesh_quantities_solid_compute(void)
 
   /* Update the cell porosity field value */
   cs_field_t *f_poro = cs_field_by_name("porosity");
+  cs_real_t *nb_scan = cs_field_by_name("nb_scan_points")->val;
 
   /* Reactivate cells at the interface between fluid and solid */
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -320,8 +337,47 @@ cs_f_mesh_quantities_solid_compute(void)
     f_poro->val[c_id] = porosity;
     if (porosity > poro_threshold)
       mq->c_disable_flag[c_id] = 0;
+    
+    /* Penalize ibm cells with small porosity */
+    else if (porosity < poro_threshold && nb_scan[c_id] > threshold) {
 
+      mq->c_disable_flag[c_id] = 1;
+      
+      f_poro->val[c_id] = 0.;
+      mq->cell_f_vol[c_id] = 0.0;
+      mq->c_w_face_surf[c_id] = 0.0;
+      
+      for (cs_lnum_t i = 0; i < 3; i++)
+	c_w_face_normal[c_id][i] = 0.0;
+
+      /* Interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[c_id];
+      const cs_lnum_t e_id_i = c2c_idx[c_id+1];
+
+      /* Loop on interior faces of cell c_id */
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+	const cs_lnum_t face_id = cell_i_faces[cidx];
+
+	i_f_face_normal[face_id][0] = 0.;
+	i_f_face_normal[face_id][1] = 0.;
+	i_f_face_normal[face_id][2] = 0.;
+	mq->i_f_face_surf[face_id] = 0.;
+      }
+
+      /* Boundary faces */
+      const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+      const cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
+    
+      for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+	const cs_lnum_t face_id = cell_b_faces[cidx];
+
+	b_f_face_normal[face_id][0] = 0.;
+	b_f_face_normal[face_id][1] = 0.;
+	b_f_face_normal[face_id][2] = 0.;
+      }
+    }
   }
+  
   /* synchronize for use in fluid face factor calculation */
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_poro->val);
 }

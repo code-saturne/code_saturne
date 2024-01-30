@@ -4360,6 +4360,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         d_dist = 1./d_dist;
 
       c_w_dist_inv[c_id] = d_dist;
+
+      /* else c_w_dist_inv = 0 by default as it is a field */
     }
   }
 

@@ -666,16 +666,18 @@ cs_immersed_boundary_wall_functions(int         f_id,
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      //Geometric quantities
-      cs_real_t solid_surf = c_w_face_surf[c_id];
+      /* Geometric quantities */
+      const cs_real_t solid_surf = c_w_face_surf[c_id];
 
-      if (solid_surf > cs_math_epzero*pow(cell_f_vol[c_id], 2./3.)) {
+      const cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
+                                    0.:
+                                    1. / c_w_dist_inv[c_id];
 
-        cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
-                                0.:
-                                1. / c_w_dist_inv[c_id];
+      const cs_real_t pyr_vol = wall_dist * solid_surf;      
+      
+      if (pyr_vol > cs_math_epzero*cell_f_vol[c_id]) {
 
-        /* 1. Velocity components on the solid surface */
+        /* Velocity components on the solid surface */
 
         // Unit normal
         cs_real_3_t nw;
@@ -691,7 +693,7 @@ cs_immersed_boundary_wall_functions(int         f_id,
         // Unit tangent
         cs_math_3_normalize(nt, nt);
 
-        /* 2. Friction velocities */
+        /* Friction velocities */
 
         if (utau <= cs_math_epzero) utau = cs_math_epzero;
 
@@ -713,13 +715,13 @@ cs_immersed_boundary_wall_functions(int         f_id,
         if (cpro_roughness != NULL)
           w_roughness = cpro_roughness[c_id];
 
-        int iuntur;
-        cs_real_t ustar;
-        cs_real_t uk;
-        cs_real_t yplus;
-        cs_real_t ypup;
-        cs_real_t cofimp;
-        cs_real_t dplus;
+        int iuntur = 0;
+        cs_real_t ustar = 0.0;
+        cs_real_t uk = 0.;
+        cs_real_t yplus = 0.;
+        cs_real_t ypup = 1.0;
+        cs_real_t cofimp = 0.;
+        cs_real_t dplus = 0.0;
 
         /* If the cell is a solid cell, disable wall functions */
 
@@ -729,23 +731,24 @@ cs_immersed_boundary_wall_functions(int         f_id,
             iwallf_loc = CS_WALL_F_DISABLED;
         }
 
-        cs_wall_functions_velocity(iwallf_loc,
-                                   l_visc,
-                                   t_visc,
-                                   utau,
-                                   wall_dist,
-                                   w_roughness,
-                                   rnnb,
-                                   ek,
-                                   &iuntur,
-                                   &nsubla,
-                                   &nlogla,
-                                   &ustar,
-                                   &uk,
-                                   &yplus,
-                                   &ypup,
-                                   &cofimp,
-                                   &dplus);
+	if (wall_dist > DBL_MIN)
+	  cs_wall_functions_velocity(iwallf_loc,
+				     l_visc,
+				     t_visc,
+				     utau,
+				     wall_dist,
+				     w_roughness,
+				     rnnb,
+				     ek,
+				     &iuntur,
+				     &nsubla,
+				     &nlogla,
+				     &ustar,
+				     &uk,
+				     &yplus,
+				     &ypup,
+				     &cofimp,
+				     &dplus);
 
         if (ib_uk != NULL)
           ib_uk->val[c_id] = uk;
