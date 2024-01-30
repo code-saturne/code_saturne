@@ -723,9 +723,9 @@ cs_ctwr_source_term(int              f_id,
              (solve in drift model form) */
           if (f_id == cfld_yp->id) {
             /* Because we deal with an increment */
-            exp_st[cell_id_rain] += vol_mass_source;
-                                    //* (1. - f_var[cell_id_rain]);
-            //imp_st[cell_id_rain] += vol_mass_source;
+            exp_st[cell_id_rain] += vol_mass_source
+                                    * (1. - f_var[cell_id_rain]);
+            imp_st[cell_id_rain] += vol_mass_source;
           }
           /* Rain enthalpy */
           else if (f_id == cfld_yh_rain->id) {
@@ -735,9 +735,9 @@ cs_ctwr_source_term(int              f_id,
             /* Since it is treated as a scalar, no multiplication by cp_l is
              * required */
             /* For temperature equation of the rain */
-            exp_st[cell_id_rain] += vol_mass_source * h_l_p[cell_id_leak];
-                                    //- f_var[cell_id_rain];
-            //imp_st[cell_id_rain] += vol_mass_source;
+            exp_st[cell_id_rain] += vol_mass_source * (h_l_p[cell_id_leak]
+                                    - f_var[cell_id_rain]);
+            imp_st[cell_id_rain] += vol_mass_source;
           }
 
         } /* End of loop through outlet cells of the packing zone */
