@@ -3,6 +3,8 @@ Release 8.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Build: fix issue with unit tests observed on system using autoconf 15.
+
 - Mesh refinement: fix occasional syncronization of face refinement
   type on parallel boundaries.
 
