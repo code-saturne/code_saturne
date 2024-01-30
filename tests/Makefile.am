@@ -195,16 +195,18 @@ cs_geom_test_LDADD    = $(LDADD_CS_TESTS)
 
 if HAVE_ACCEL
 
-cs_gpu_test_SOURCES = $(top_srcdir)/tests/cs_gpu_test.cxx
+cs_gpu_test_SOURCES = cs_gpu_test.cxx
 if HAVE_CUDA
-  cs_gpu_test_SOURCES += $(top_srcdir)/tests/cs_gpu_cuda_test.cu
+  cs_gpu_test_SOURCES += cs_gpu_cuda_test.cu
 endif
 
 cs_gpu_test$(EXEEXT):
+	@list=; for p in ${cs_gpu_test_SOURCES}; do \
+	  list="$$list $(top_srcdir)/tests/$$p"; \
+	done; \
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-	-o cs_gpu_test \
-	${cs_gpu_test_SOURCES}
+	-o cs_gpu_test $$list
 
 endif
 
@@ -265,7 +267,6 @@ cs_tree_test_LDADD    = $(LDADD_CS_TESTS)
 # added to distribution.
 
 EXTRA_DIST = \
-cs_gpu_cuda_test.cu \
 unittests.py \
 $(top_srcdir)/tests/graphics
 
