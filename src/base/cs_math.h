@@ -472,6 +472,7 @@ cs_math_3_square_norm(const cs_real_t v[3])
 /*----------------------------------------------------------------------------*/
 
 static inline void
+__attribute__((deprecated))
 cs_math_3_normalise(const cs_real_t  vin[3],
                     cs_real_t        vout[3])
 {
@@ -502,6 +503,33 @@ cs_math_3_normalize(const cs_real_t  vin[3],
   cs_real_t norm = cs_math_3_norm(vin);
 
   cs_real_t inv_norm = ((norm > cs_math_zero_threshold) ?  1. / norm : 0);
+
+  vout[0] = inv_norm * vin[0];
+  vout[1] = inv_norm * vin[1];
+  vout[2] = inv_norm * vin[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Normalise a vector of 3 real values and clip the norm using a
+ * threshold value.
+ *
+ * To normalize in-place, \p vin and \p vout may point to the same array.
+ *
+ * \param[in]     vin           vector
+ * \param[in]     thres         threshold for normalization
+ * \param[out]    vout          normalized vector
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_3_normalize_threshold(const cs_real_t vin[3],
+                              const cs_real_t thres,
+                              cs_real_t       vout[3])
+{
+  cs_real_t norm = cs_math_3_norm(vin);
+
+  cs_real_t inv_norm = ((norm > thres) ? 1. / norm : 1. / thres);
 
   vout[0] = inv_norm * vin[0];
   vout[1] = inv_norm * vin[1];
