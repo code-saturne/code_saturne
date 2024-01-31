@@ -167,8 +167,7 @@ def define_domain_parameters(domain):
     domain.compile_fcflags = None
     domain.compile_libs = None
 
-    # import pprint
-    # pprint.pprint(domain.__dict__)
+    # print(domain)
 
     return
 

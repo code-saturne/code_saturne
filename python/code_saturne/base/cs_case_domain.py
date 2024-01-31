@@ -167,6 +167,38 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
+    def __str__(self):
+
+        """
+        User-readable string representation of domain object.
+        """
+
+        from pprint import pformat
+        from inspect import getmembers
+        from types import FunctionType
+
+        fixed_member_names = []
+        for name, value in getmembers(type(self)):
+            if isinstance(value, FunctionType) and name[:7] != 'domain_':
+                fixed_member_names.append(name)
+
+        a = {}
+        for name in dir(self):
+            if name[0] == '_' or name in fixed_member_names: continue
+            if name == 'user_locals':
+                s = getattr(self, name)
+                r = {}
+                for k in s:
+                    if k[0] != '_' and k != 'self':
+                        r[k] = s[k]
+                a[name] = r
+            elif  hasattr(self, name):
+                a[name] = getattr(self, name)
+
+        return pformat(a)
+
+    #---------------------------------------------------------------------------
+
     def __input_path_abs_dir__(self, path):
 
         """
