@@ -710,6 +710,17 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                  da,
                                  xa);
 
+      const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+      const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+      cs_matrix_set_mesh_association(a,
+                                     ma->cell_cells_idx,
+                                     ma->cell_i_faces,
+                                     ma->cell_i_faces_sgn,
+                                     (const cs_real_3_t *)mq->cell_cen,
+                                     (const cs_real_t *)mq->cell_vol,
+                                     (const cs_real_3_t *)mq->i_face_normal);
+
     }
 
     _sles_setup[setup_id] = sc;
