@@ -310,34 +310,6 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
-    def getStudyExpTime(self, studyNode):
-        """
-        Read:
-            <study label='STUDY' status='on' expected_time='HH:MM'>
-                <case label='CASE' status='on' compute="on" post="on"/>
-            </study>
-
-        @type studyNode: C{DOM Element}
-        @param studyNode: node of the current study
-        @rtype: C{List} of C{String}
-        @return: ExpTime Expected computation per case in minutes
-        """
-        if str(studyNode.attributes["status"].value) != "on":
-            raise ValueError("Error: the getStudyTags method is used with the "\
-                             "study %s turned off " % l)
-
-        try:
-            # convert HH:MM in minutes
-            tmp = str(studyNode.attributes["expected_time"].value)
-            ind = tmp.find(":")
-            ExpTime = float(tmp[:ind]) * 60. + float(tmp[-2:])
-        except:
-            ExpTime = None
-
-        return ExpTime
-
-    #---------------------------------------------------------------------------
-
     def getStatusOnCasesLabels(self, l, attr=None):
         """
         Read:
@@ -442,10 +414,6 @@ class Parser(object):
                 except:
                     # default value in minutes
                     d['expected_time'] = 180.
-                # overwritten with value of the study if given
-                expected_time = self.getStudyExpTime(self.getStudyNode(l))
-                if expected_time:
-                    d['expected_time'] = expected_time
 
                 for k in setup_filter_keys:
                     d[k] = None
