@@ -108,9 +108,8 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
                                        'cell_center_opposite_with_boundary')
         self.modelExtNeighbors.addItem(self.tr("Full (all vertex adjacent)"), 'complete')
 
-        if str(self.model.getExtendedNeighborType()) == 'non_ortho_max':
-            self.modelExtNeighbors.addItem(self.tr("Non-orthogonal faces threshold (legacy)"),
-                                           'non_ortho_max')
+        self.modelExtNeighbors.addItem(self.tr("Non-orthogonal faces threshold (legacy)"),
+                                       'non_ortho_max')
 
         self.modelDensityVar = ComboModel(self.comboBoxDensityVar, 6, 1)
         self.modelDensityVar.addItem(self.tr("Automatic"), 'default')
