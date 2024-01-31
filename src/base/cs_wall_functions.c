@@ -673,8 +673,8 @@ cs_immersed_boundary_wall_functions(int         f_id,
                                     0.:
                                     1. / c_w_dist_inv[c_id];
 
-      const cs_real_t pyr_vol = wall_dist * solid_surf;      
-      
+      const cs_real_t pyr_vol = wall_dist * solid_surf;
+
       if (pyr_vol > cs_math_epzero*cell_f_vol[c_id]) {
 
         /* Velocity components on the solid surface */
@@ -731,24 +731,24 @@ cs_immersed_boundary_wall_functions(int         f_id,
             iwallf_loc = CS_WALL_F_DISABLED;
         }
 
-	if (wall_dist > DBL_MIN)
-	  cs_wall_functions_velocity(iwallf_loc,
-				     l_visc,
-				     t_visc,
-				     utau,
-				     wall_dist,
-				     w_roughness,
-				     rnnb,
-				     ek,
-				     &iuntur,
-				     &nsubla,
-				     &nlogla,
-				     &ustar,
-				     &uk,
-				     &yplus,
-				     &ypup,
-				     &cofimp,
-				     &dplus);
+        if (wall_dist > DBL_MIN)
+          cs_wall_functions_velocity(iwallf_loc,
+                                     l_visc,
+                                     t_visc,
+                                     utau,
+                                     wall_dist,
+                                     w_roughness,
+                                     rnnb,
+                                     ek,
+                                     &iuntur,
+                                     &nsubla,
+                                     &nlogla,
+                                     &ustar,
+                                     &uk,
+                                     &yplus,
+                                     &ypup,
+                                     &cofimp,
+                                     &dplus);
 
         if (ib_uk != NULL)
           ib_uk->val[c_id] = uk;
@@ -800,20 +800,20 @@ cs_immersed_boundary_wall_functions(int         f_id,
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      //Geometric quantities
-      cs_real_t solid_surf = c_w_face_surf[c_id];
+      /* Geometric quantities */
+      const cs_real_t solid_surf = c_w_face_surf[c_id];
 
-      /* TODO loop over selection only */
-      if (solid_surf > cs_math_epzero*pow(cell_f_vol[c_id], 2./3.) || true) {
+      const cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
+                                    0.:
+                                    1. / c_w_dist_inv[c_id];
 
+      const cs_real_t pyr_vol = wall_dist * solid_surf;
 
+      if (pyr_vol > cs_math_epzero*cell_f_vol[c_id]) {
+        
         cs_real_t hint = ( cpro_mu[c_id]
                          + cpro_mut[c_id]/cpro_sigmae[c_id*sigmae_step])
                          * c_w_dist_inv[c_id];
-
-        cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
-                                0.:
-                                1. / c_w_dist_inv[c_id];
 
         /* Target imposed value at the wall */
         cs_real_t pimp = 0.;

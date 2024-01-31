@@ -301,7 +301,7 @@ cs_f_mesh_quantities_solid_compute(void)
   cs_porosity_from_scan_opt_t *poro_from_scan = cs_glob_porosity_from_scan_opt;
   cs_real_t poro_threshold = poro_from_scan->porosity_threshold;
   cs_real_t threshold = poro_from_scan->threshold;
-  
+
   cs_real_3_t *restrict c_w_face_normal
     = (cs_real_3_t *restrict)mq->c_w_face_normal;
   cs_real_3_t *restrict i_f_face_normal
@@ -337,18 +337,18 @@ cs_f_mesh_quantities_solid_compute(void)
     f_poro->val[c_id] = porosity;
     if (porosity > poro_threshold)
       mq->c_disable_flag[c_id] = 0;
-    
+
     /* Penalize ibm cells with small porosity */
     else if (porosity < poro_threshold && nb_scan[c_id] > threshold) {
 
       mq->c_disable_flag[c_id] = 1;
-      
+
       f_poro->val[c_id] = 0.;
       mq->cell_f_vol[c_id] = 0.0;
       mq->c_w_face_surf[c_id] = 0.0;
-      
+
       for (cs_lnum_t i = 0; i < 3; i++)
-	c_w_face_normal[c_id][i] = 0.0;
+        c_w_face_normal[c_id][i] = 0.0;
 
       /* Interior faces */
       const cs_lnum_t s_id_i = c2c_idx[c_id];
@@ -356,28 +356,28 @@ cs_f_mesh_quantities_solid_compute(void)
 
       /* Loop on interior faces of cell c_id */
       for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
-	const cs_lnum_t face_id = cell_i_faces[cidx];
+        const cs_lnum_t face_id = cell_i_faces[cidx];
 
-	i_f_face_normal[face_id][0] = 0.;
-	i_f_face_normal[face_id][1] = 0.;
-	i_f_face_normal[face_id][2] = 0.;
-	mq->i_f_face_surf[face_id] = 0.;
+        i_f_face_normal[face_id][0] = 0.;
+        i_f_face_normal[face_id][1] = 0.;
+        i_f_face_normal[face_id][2] = 0.;
+        mq->i_f_face_surf[face_id] = 0.;
       }
 
       /* Boundary faces */
       const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
       const cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
-    
-      for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
-	const cs_lnum_t face_id = cell_b_faces[cidx];
 
-	b_f_face_normal[face_id][0] = 0.;
-	b_f_face_normal[face_id][1] = 0.;
-	b_f_face_normal[face_id][2] = 0.;
+      for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+        const cs_lnum_t face_id = cell_b_faces[cidx];
+
+        b_f_face_normal[face_id][0] = 0.;
+        b_f_face_normal[face_id][1] = 0.;
+        b_f_face_normal[face_id][2] = 0.;
       }
     }
   }
-  
+
   /* synchronize for use in fluid face factor calculation */
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_poro->val);
 }
