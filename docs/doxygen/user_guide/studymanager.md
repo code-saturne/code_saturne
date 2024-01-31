@@ -82,7 +82,7 @@ Most command-line options are detailed here:
 - `-t, --test-compile`: compile all cases in the **repository**
 - `-r, --run`: create and run all cases in **destination**
 - `--state`: analyze state for all cases
-- `--n-procs=N_PROCS`: Optional number of processors requested for the
+- `--n-procs=N_PROCS`: Optional number of processes requested for the
   computations
 - `-n N_ITER, --n-iterations=N_ITER`: maximum number of iterations for cases of
   the study
@@ -247,7 +247,7 @@ The attributes for the cases are:
 - `tags`: possible tags distinguishing the run from the others in the same SMGR
   parameter file (ex.: `tags="fine,high-reynolds"`). They are added to the study
   tags if they exist;
-- `n_procs`: number of processors requested for the run;
+- `n_procs`: number of processes requested for the run;
 - `expected_time`: expected computation time in hours (only required for SLURM
    batch mode).
 
@@ -377,7 +377,7 @@ Submission on cluster using SLURM
 
 On a cluster using the SLURM resource manager, SMGR can be configured to submit
 batches of cases rather than running them in succession. All cases are
-automatically sorted by number of processors and level of dependency, and
+automatically sorted by number of processes and level of dependency, and
 grouped by blocks of cases of similar characteristics (to avoid submitting too
 many small jobs).
 

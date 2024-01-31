@@ -71,12 +71,12 @@ SLURM batch mode.
 #SBATCH --job-name=saturne_vnv_6
 ```
 
-- ntasks : number of cores required for the computation.
-  * All cases are automatically sorted by number of required cores so that the
-    number of tasks per batch is the same.
+- ntasks : number of processes required for the computation.
+  * All cases are automatically sorted by number of required processes so that
+    the number of tasks per batch is the same.
 - time : sum of the computation times of the cases in the batch
 
-Batch cases which require 5 or more cores will be executed in exclusive mode
+Batch cases which require 6 or more processes will be executed in exclusive mode
 (i.e. no other submission will run on the node).
 
 Additional SLURM batch parameters can be also specified at run time using the 
@@ -147,9 +147,9 @@ $ code_saturne smgr -f smgr.xml -rp --slurm-batch-size=2 --slurm-batch-wtime=5
 
 Here are some explanations on cases allocation per batch :
 - In level 0, batch 1 is limited by the number of cases with the same number of
-  cores. Batch 2 is limited to one case (CASE1/run3) as the maximum time in this
-  batch would have exceeded 5 hours including the next case (CASE2/run1). Batch
-  3 only includes the last case at level 0. 
+  processes. Batch 2 is limited to one case (CASE1/run3) as the maximum time in
+  this batch would have exceeded 5 hours including the next case (CASE2/run1).
+  Batch 3 only includes the last case at level 0. 
 - In level 1, batch 4 is limited by the maximum number of cases per batch (2).
   Batch 5 only includes the last case at level 1. Batches 4 and 5 depends on all
   batches from level 0.

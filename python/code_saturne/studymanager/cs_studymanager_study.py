@@ -949,7 +949,7 @@ class Study(object):
         @type dif: C{String}
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         @n_procs: C{int}
-        @param n_procs: number of requested processors
+        @param n_procs: number of requested processes
         @type with_tags: C{List}
         @param with_tags: list of tags given at the command line
         @type without_tags: C{List}
@@ -1820,7 +1820,7 @@ class Studies(object):
             # job id list for the current level
             cur_job_id_list = []
 
-            # loop on number of processor
+            # loop on number of processes
             for nproc in range(self.graph.max_proc):
 
                 batch_cmd = ""
@@ -1863,7 +1863,7 @@ class Studies(object):
                                                                   cur_batch_id)
 
                                 # add exclusive option to batch template for
-                                # computation with at least 6 processors
+                                # computation with at least 6 processes
                                 if nproc+1 > 5:
                                     cmd += "#SBATCH --exclusive\n"
 
@@ -1929,7 +1929,7 @@ class Studies(object):
                                                       math.ceil(mm), cur_batch_id)
 
                     # add exclusive option to batch template for
-                    # computation with at least 6 processors
+                    # computation with at least 6 processes
                     if nproc+1 > 5:
                         cmd += "#SBATCH --exclusive\n"
 
