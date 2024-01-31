@@ -300,7 +300,6 @@ cs_f_mesh_quantities_solid_compute(void)
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   cs_porosity_from_scan_opt_t *poro_from_scan = cs_glob_porosity_from_scan_opt;
   cs_real_t poro_threshold = poro_from_scan->porosity_threshold;
-  cs_real_t threshold = poro_from_scan->threshold;
 
   cs_real_3_t *restrict c_w_face_normal
     = (cs_real_3_t *restrict)mq->c_w_face_normal;
@@ -326,7 +325,6 @@ cs_f_mesh_quantities_solid_compute(void)
 
   /* Update the cell porosity field value */
   cs_field_t *f_poro = cs_field_by_name("porosity");
-  cs_real_t *nb_scan = cs_field_by_name("nb_scan_points")->val;
 
   /* Reactivate cells at the interface between fluid and solid */
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -339,7 +337,7 @@ cs_f_mesh_quantities_solid_compute(void)
       mq->c_disable_flag[c_id] = 0;
 
     /* Penalize ibm cells with small porosity */
-    else if (porosity < poro_threshold && nb_scan[c_id] > threshold) {
+    else if (porosity < poro_threshold && porosity > cs_math_epzero) {
 
       mq->c_disable_flag[c_id] = 1;
 

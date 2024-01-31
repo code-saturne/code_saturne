@@ -810,7 +810,7 @@ cs_immersed_boundary_wall_functions(int         f_id,
       const cs_real_t pyr_vol = wall_dist * solid_surf;
 
       if (pyr_vol > cs_math_epzero*cell_f_vol[c_id]) {
-        
+
         cs_real_t hint = ( cpro_mu[c_id]
                          + cpro_mut[c_id]/cpro_sigmae[c_id*sigmae_step])
                          * c_w_dist_inv[c_id];
