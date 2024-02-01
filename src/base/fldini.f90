@@ -276,6 +276,17 @@ if (irijnu.eq.2) then
   call field_create('b_rusanov_diff', itycat, ityloc, idim1, inoprv, f_id)
 endif
 
+! Godunov scheme flux
+if (irijnu.eq.3) then
+  ityloc = 2 ! inner faces
+  call field_create('i_velocity', itycat, ityloc, idim3, inoprv, f_id)
+  call field_create('i_reynolds_stress', itycat, ityloc, idim6, inoprv, f_id)
+
+  ityloc = 3 ! boundary faces
+  call field_create('b_velocity', itycat, ityloc, idim3, inoprv, f_id)
+  call field_create('b_reynolds_stress', itycat, ityloc, idim6, inoprv, f_id)
+endif
+
 ! Boundary Mass flux field
 !-------------------------
 

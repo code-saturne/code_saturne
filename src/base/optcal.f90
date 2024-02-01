@@ -516,6 +516,8 @@ module optcal
   !> for unsteady flows, the parameter \ref nswrsm should be
   !> increased.\n Useful if and only if \ref iturb = 30 or 31
   !> (\f$R_{ij}-\epsilon\f$ model).
+  !>    - 2: Rusanov scheme on the system momentum + Rij
+  !>    - 3: Godunov scheme on the system momentum + Rij
   integer(c_int), pointer, save :: irijnu
 
   !> accurate treatment of \f$ \tens{R} \f$ at the boundary
