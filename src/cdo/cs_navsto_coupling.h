@@ -2,9 +2,11 @@
 #define __CS_NAVSTO_COUPLING_H__
 
 /*============================================================================
- * Functions to handle structures used as a context when solving the
- * Navier-Stokes equations. Structures are cast on-the-fly according to the
- * type of coupling.
+ * Functions and structures to handle the settings of different
+ * velocity/pressure coupling algorithms
+ *  - Artificial Compressibility algorithm
+ *  - Monolithic algorithm
+ *  - Projection algorithm
  *============================================================================*/
 
 /*
@@ -65,9 +67,11 @@ typedef struct {
    *  Coefficient for the artificial compressibility attached to the grad-div
    *  stabilization term
    */
+
   cs_property_t   *zeta;
 
 } cs_navsto_ac_t;
+
 
 /*! \struct cs_navsto_monolithic_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
@@ -76,9 +80,10 @@ typedef struct {
 
 typedef struct {
 
-  cs_equation_t   *momentum; /*!< Momentum equation (vector-valued) */
+  cs_equation_t   *momentum;  /*!< Momentum equation (vector-valued) */
 
 } cs_navsto_monolithic_t;
+
 
 /*! \struct cs_navsto_projection_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
@@ -96,18 +101,23 @@ typedef struct {
 
   /*! \var div_st
    * Source term on the correction step stemming from the divergence of the
-   * predicted velocity */
+   * predicted velocity
+   */
+
   cs_real_t      *div_st;
 
   /*! \var bdy_pressure_incr
    * Pressure increment at the boundary. Used as an array to set the boundary
-   * condition arising from a Dirichlet on the pressure. */
+   * condition arising from a Dirichlet on the pressure.
+   */
+
   cs_real_t      *bdy_pressure_incr;
 
   /*! \var predicted_velocity
    * Predicted velocity field (value of the velocity at cells after the
    * prediction step). This values may not be divergence-free.
    */
+
   cs_field_t     *predicted_velocity;
 
 } cs_navsto_projection_t;

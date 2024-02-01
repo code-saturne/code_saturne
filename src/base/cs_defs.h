@@ -327,6 +327,7 @@ typedef enum {
 #endif
 
 /* Other types */
+
 typedef double            cs_coord_t;  /* Real number (coordinate value) */
 
 typedef double              cs_real_t;   /* Fortran double precision */
@@ -382,6 +383,7 @@ typedef struct {
 
 /* Vector-valued quantity stored using its measure (i.e. length) and
    its direction given by a unitary vector */
+
 typedef struct {
 
   double  meas;

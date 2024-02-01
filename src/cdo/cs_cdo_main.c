@@ -861,7 +861,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   /* Setup linear solvers (second call since the first call can have no effect
      on some low-level settings which require a call to *_set_sles() functions
-     to be realyy taken into account). */
+     to be really taken into account). */
 
   cs_user_linear_solvers();
 

@@ -1,7 +1,8 @@
 /*============================================================================
- * Functions to handle the settings of coupling algorithms
+ * Functions and structures to handle the settings of different
+ * velocity/pressure coupling algorithms
  *  - Artificial Compressibility algorithm
- *  - Its variant VVP (Vector Projection Penalty) algorithm
+ *  - Monolithic algorithm
  *  - Projection algorithm
  *============================================================================*/
 
