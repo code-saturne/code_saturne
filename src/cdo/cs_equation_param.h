@@ -1648,14 +1648,28 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  * \brief Get the pointer to the set of parameters to handle the SLES solver
  *        associated to this set of equation parameters
  *
- * \param[in] eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
  *
  * \return a pointer to a cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_param_sles_t *
-cs_equation_param_get_sles_param(cs_equation_param_t   *eqp);
+cs_equation_param_get_sles_param(cs_equation_param_t  *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle the SLES solver
+ *        associated to this set of equation parameters
+ *
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
+ *
+ * \return a pointer to a cs_param_saddle_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_saddle_t *
+cs_equation_param_get_saddle_param(cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1663,12 +1677,12 @@ cs_equation_param_get_sles_param(cs_equation_param_t   *eqp);
  *        resolution of the linear system.
  *        Settings are related to this equation.
  *
- * \param[in, out] eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqp  pointer to a cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_sles(cs_equation_param_t      *eqp);
+cs_equation_param_set_sles(cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
