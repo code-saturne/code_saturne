@@ -1094,7 +1094,6 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
     for (int jsou = 0; jsou < 3; jsou++)
       b[isou][jsou] = 0.0;
 
-
     /* Flux BCs */
     af[isou] = qimpv[isou];
     for (int jsou = 0; jsou < 3; jsou++)

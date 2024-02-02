@@ -468,7 +468,7 @@ _cs_rad_transfer_sol(int                        gg_id,
       + (cs_real_t)cs_glob_atmo_option->smin / 60.
       + (cs_real_t)cs_glob_atmo_option->ssec / 3600.;
 
-    if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
+    if (   cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
         || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE)
       utc += cs_glob_time_step->t_cur / 3600.;
 
@@ -485,8 +485,8 @@ _cs_rad_transfer_sol(int                        gg_id,
                                  &fo);
 
     /* For direct solar radiation */
-    if ((gg_id == rt_params->atmo_dr_id)
-      || (gg_id == rt_params->atmo_dr_o3_id)) {
+    if (   (gg_id == rt_params->atmo_dr_id)
+        || (gg_id == rt_params->atmo_dr_o3_id)) {
       /* Zenithal angle:
        * muzero is almost cos(za),
        * but take earth curvature into account */

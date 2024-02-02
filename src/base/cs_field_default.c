@@ -532,7 +532,7 @@ cs_field_map_and_init_bcs(void)
     bc_flags[cs_field_by_name("total_energy")->id * 4 + 2] = true;
   }
 
-  /* BC coeffs also used for some fields which are not direclty
+  /* BC coeffs also used for some fields which are not directly
      saved variables (to shave values between various computation
      stages). */
 
