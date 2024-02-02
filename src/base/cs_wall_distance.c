@@ -168,7 +168,7 @@ cs_wall_distance(int iterns)
 {
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells     = mesh->n_cells;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces   = mesh->n_i_faces;
@@ -176,8 +176,8 @@ cs_wall_distance(int iterns)
 
   const int *bc_type = cs_glob_bc_type;
   const cs_halo_t *halo = mesh->halo;
-  const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *b_dist = mq->b_dist;
+  const cs_real_t *cell_f_vol = mq->cell_f_vol;
 
   /* Initialization
      -------------- */
@@ -196,6 +196,18 @@ cs_wall_distance(int iterns)
   cs_real_t *wall_dist_pre = (f_w_dist_aux_pre != NULL) ?
                               f_w_dist_aux_pre->val:
                               f_w_dist->val_pre;
+
+  cs_real_t *dpvar, *smbrp, *rovsdt;
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  BFT_MALLOC(smbrp, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+
+  /* RHS */
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    rovsdt[c_id] = 0.0;
+    smbrp[c_id] = cell_f_vol[c_id];
+  }
 
   /* Boundary conditions
      ------------------- */
@@ -249,6 +261,23 @@ cs_wall_distance(int iterns)
     }
   }
 
+  /* Immersed boundaries */
+  const cs_real_t *c_w_face_surf
+    = (const cs_real_t *restrict)mq->c_w_face_surf;
+  const cs_real_t *c_w_dist_inv
+    = (const cs_real_t *restrict)mq->c_w_dist_inv;
+
+  if (c_w_face_surf != NULL && c_w_dist_inv != NULL) {
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t ibm_imp = c_w_dist_inv[c_id] * c_w_face_surf[c_id];
+      rovsdt[c_id] = ibm_imp;
+
+      if (ibm_imp > DBL_MIN)
+        ndircp++;
+    }
+  }
+
   if (cs_glob_rank_id > -1)
     cs_parall_sum(1, CS_LNUM_TYPE, &ndircp);
 
@@ -268,11 +297,6 @@ cs_wall_distance(int iterns)
   BFT_MALLOC(i_mass_flux, n_i_faces, cs_real_t);
   BFT_MALLOC(b_mass_flux, n_b_faces, cs_real_t);
 
-  cs_real_t *dpvar, *smbrp, *rovsdt;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
-  BFT_MALLOC(smbrp, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
-
   /* Allocate work arrays */
   cs_real_t *w1;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
@@ -284,12 +308,11 @@ cs_wall_distance(int iterns)
 
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    rovsdt[c_id] = 0.0; /* Diagonal */
     w1[c_id] = 1.0; /* Diffusion at faces */
   }
 
   cs_face_viscosity(mesh,
-                    fvq,
+                    mq,
                     eqp_wd->imvisf,
                     w1,
                     i_visc,
@@ -317,13 +340,6 @@ cs_wall_distance(int iterns)
   eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
 
   cs_array_real_fill_zero(n_cells_ext, dpvar);
-
-  /* RHS */
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    rovsdt[c_id] = 0.0;
-    smbrp[c_id] = cell_f_vol[c_id];
-  }
 
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      iterns,
@@ -601,16 +617,16 @@ void
 cs_wall_distance_yplus(cs_real_t visvdr[])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells     = mesh->n_cells;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces   = mesh->n_i_faces;
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
-  const cs_real_t *b_dist = fvq->b_dist;
+  const cs_real_t *b_dist = mq->b_dist;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const cs_real_t *b_face_surf = fvq->b_face_surf;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
 
   const cs_halo_t *halo = mesh->halo;
   const int *bc_type = cs_glob_bc_type;
@@ -783,7 +799,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_array_real_set_scalar(n_cells_ext, 1.0, viscap);
 
   cs_face_viscosity(mesh,
-                    fvq,
+                    mq,
                     eqp_yp->imvisf,
                     viscap,
                     i_visc,
@@ -800,7 +816,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   cs_face_diffusion_potential(f_wall_dist->id,
                               mesh,
-                              fvq,
+                              mq,
                               1, /* Default initilization at 0 */
                               inc,
                               eqp_yp->imrgra,
@@ -929,7 +945,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
     wall_surf = sum[1];
   }
 
-  xnorm0 = sqrt(xnorm0 / wall_surf) * fvq->tot_vol;
+  xnorm0 = sqrt(xnorm0 / wall_surf) * mq->tot_vol;
 
   if (cs_glob_rank_id > -1 || mesh->periodicity != NULL)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, dvarp);
