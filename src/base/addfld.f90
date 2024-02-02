@@ -728,6 +728,28 @@ endif
 
 ! Fields used to save postprocessing data
 
+! Boundary efforts postprocessing for immersed boundaries, create field
+if (iporos.eq.3) then
+  ityloc = 1 ! variables defined on cells
+  itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
+  call field_create('immersed_pressure_force', itycat, ityloc, idim3, inoprv, &
+                    iflid )
+
+  if (iturb.ne.0) then
+    call field_create('immersed_boundary_uk', itycat, ityloc, idim1, inoprv, &
+                      iflid)
+    call field_set_key_int(iflid, keyvis, 1)
+    call field_create('immersed_boundary_yplus', itycat, ityloc, idim1, inoprv, &
+                      iflid)
+    !call field_set_key_int(iflid, keyvis, 1)
+    call field_set_key_int(iflid, keyvis, POST_ON_LOCATION)
+    call field_set_key_int(iflid, keylog, 1)
+    call field_create('immersed_boundary_dplus', itycat, ityloc, idim1, inoprv, &
+                      iflid)
+    call field_set_key_int(iflid, keyvis, 1)
+  endif
+endif
+
 ityloc = 3 ! boundary faces
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
@@ -740,23 +762,6 @@ if (iale.ge.1) then
   itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
   call field_find_or_create('boundary_forces', itycat, ityloc, idim3, &
                             iforbr)
-endif
-
-! Boundary efforts postprocessing for immersed boundaries, create field
-
-if (iporos.eq.3) then
-  itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
-  call field_create('immersed_pressure_force', itycat, ityloc, idim3, inoprv, &
-                    iflid )
-
-  if (iturb.ne.0) then
-    call field_create('immersed_boundary_uk', itycat, ityloc, idim1, inoprv, &
-                      iflid)
-    call field_create('immersed_boundary_yplus', itycat, ityloc, idim1, inoprv, &
-                      iflid)
-    call field_create('immersed_boundary_dplus', itycat, ityloc, idim1, inoprv, &
-                      iflid)
-  endif
 endif
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
