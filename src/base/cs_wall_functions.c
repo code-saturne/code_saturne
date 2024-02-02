@@ -738,6 +738,61 @@ cs_immersed_boundary_wall_functions(int         f_id,
     }
   }
 
+  if (f == CS_F_(omg)) {
+
+    /*Running a loop over cells*/
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      /* Geometric quantities */
+      const cs_real_t solid_surf = c_w_face_surf[c_id];
+
+      const cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
+                                    0.:
+                                    1. / c_w_dist_inv[c_id];
+
+      const cs_real_t pyr_vol = wall_dist * solid_surf;
+
+      if (pyr_vol > cs_math_epzero*cell_f_vol[c_id]) {
+
+        const cs_real_t hint = (cpro_mu[c_id] + cpro_mut[c_id] /
+            cs_turb_ckwsw2)*c_w_dist_inv[c_id];
+
+        /* Target imposed value at the wall (declaring arrays) */
+        cs_real_t pimp_lam = 0.;
+        cs_real_t pimp_turb = 0.;
+        cs_real_t pimp = 0.;
+        cs_real_t gamma_weight = 0.;
+
+        /*Assigning the values*/
+        cs_real_t uk = ib_uk->val[c_id];
+        cs_real_t yplus = ib_yplus->val[c_id];
+        cs_real_t dplus = ib_dplus->val[c_id];
+
+        const double ypluli = cs_glob_wall_functions->ypluli;
+
+        if (yplus > ypluli){
+          pimp_lam =   60. * cpro_mu[c_id] /
+            (rho[c_id] * cs_turb_ckwbt1 * cs_math_pow2(wall_dist));
+
+          pimp_turb = 5. * cs_math_pow2(uk) * rho[c_id] / (sqrt(cs_turb_cmu) *
+              cs_turb_xkappa * cpro_mu[c_id] * (yplus + 2.*dplus));
+
+          gamma_weight = - 0.01 * cs_math_pow4(yplus + 2.*dplus) /
+            (1.0 + 5.0 * (yplus + 2.*dplus));
+
+          pimp = pimp_lam * exp(gamma_weight) +
+            exp(1.0/gamma_weight) * pimp_turb;
+
+          }
+        else
+          pimp =   60. * cpro_mu[c_id] /
+            (rho[c_id] * cs_turb_ckwbt1 * cs_math_pow2(wall_dist));
+
+        st_exp[c_id] =  hint * solid_surf * pimp;
+        st_imp[c_id] = -hint * solid_surf;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
