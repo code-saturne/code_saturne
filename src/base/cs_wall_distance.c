@@ -32,6 +32,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <float.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
