@@ -1992,6 +1992,8 @@ cs_restart_read_variables(cs_restart_t               *r,
                           int                         read_flag[])
 {
   const int n_fields = cs_field_n_fields();
+  const int restart_file_key_id = cs_field_key_id("restart_file");
+  const int key_n_r = cs_field_key_id("restart_n_values");
 
   /* Initialization */
 
@@ -2017,8 +2019,21 @@ cs_restart_read_variables(cs_restart_t               *r,
 
     const cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
+
+      if (cs_field_is_key_set(f, restart_file_key_id)) {
+        if (cs_field_get_key_int(f, restart_file_key_id) != CS_RESTART_MAIN)
+          continue;
+      }
+
       int t_id_s = 0;
       int t_id_e = f->n_time_vals;
+
+      if (cs_field_is_key_set(f, key_n_r)) {
+        t_id_e = cs_field_get_key_int(f, key_n_r);
+        if (t_id_e > f->n_time_vals)
+          t_id_e = f->n_time_vals;
+      }
+
       if (t_id_flag == 0)
         t_id_e = 1;
       else if (t_id_flag > 0)
@@ -2090,8 +2105,13 @@ cs_restart_read_variables(cs_restart_t               *r,
     for (int f_id = 0; f_id < n_fields; f_id++) {
       const cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
-        if (!(_read_flag[f_id] & 1))
+        if (!(_read_flag[f_id] & 1)) {
+          if (cs_field_is_key_set(f, restart_file_key_id)) {
+            if (cs_field_get_key_int(f, restart_file_key_id) != CS_RESTART_MAIN)
+              continue;
+          }
           n_missing++;
+        }
       }
     }
 
@@ -2140,7 +2160,9 @@ cs_restart_write_variables(cs_restart_t  *r,
                            int            t_id_flag,
                            int            write_flag[])
 {
-  int n_fields = cs_field_n_fields();
+  const int n_fields = cs_field_n_fields();
+  const int restart_file_key_id = cs_field_key_id("restart_file");
+  const int key_n_r = cs_field_key_id("restart_n_values");
 
   /* Initialization */
 
@@ -2202,12 +2224,26 @@ cs_restart_write_variables(cs_restart_t  *r,
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
-    /* Base fields */
+    /* Base fields.
+       All variables written to main checkpoint unless otherwise specified. */
 
     const cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
+
+      if (cs_field_is_key_set(f, restart_file_key_id)) {
+        if (cs_field_get_key_int(f, restart_file_key_id) != CS_RESTART_MAIN)
+          continue;
+      }
+
       int t_id_s = 0;
       int t_id_e = f->n_time_vals;
+
+      if (cs_field_is_key_set(f, key_n_r)) {
+        t_id_e = cs_field_get_key_int(f, key_n_r);
+        if (t_id_e > f->n_time_vals)
+          t_id_e = f->n_time_vals;
+      }
+
       if (t_id_flag == 0)
         t_id_e = 1;
       else if (t_id_flag > 0)
@@ -3184,7 +3220,7 @@ void
 cs_restart_write_fields(cs_restart_t        *r,
                         cs_restart_file_t    r_id)
 {
-  int n_fields = cs_field_n_fields();
+  const int n_fields = cs_field_n_fields();
   const int restart_file_key_id = cs_field_key_id("restart_file");
   const int key_n_r = cs_field_key_id("restart_n_values");
 
