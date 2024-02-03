@@ -58,7 +58,7 @@ implicit none
 ! Local variables
 
 integer          f_id, f_id_d
-integer          ii, jj, iok, ikw
+integer          ii, jj, iok
 integer          nbccou
 integer          nscacp, iscal
 integer          iclvfl, kclvfl
@@ -624,21 +624,6 @@ if (icalhy.ne.-1.and.icalhy.ne.0.and.icalhy.ne.1) then
   iok = iok + 1
 endif
 
-! ---> ICDPAR
-!      Calcul de la distance a la paroi. En standard, on met ICDPAR a -1, au cas
-!      ou les faces de bord auraient change de type d'un calcul a l'autre. En k-omega,
-!      il faut la distance a la paroi pour une suite propre, donc on initialise a 1 et
-!      on avertit (dans verini).
-ikw = 0
-if (iturb.eq.60) ikw = 1
-if (icdpar.eq.-999) then
-  icdpar = -1
-  if (ikw.eq.1) icdpar = 1
-  if (isuite.eq.1 .and. ikw.eq.1) write(nfecra,2000)
-endif
-if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
-  write(nfecra,2001)
-
 ! ---> IKECOU
 !      If the fluid_solid option is enabled, we force ikecou to 0.
 if (fluid_solid) then
@@ -923,43 +908,6 @@ endif
 '@    must not be set:',                                        /,&
 '@    it is automatically set equal to the scalar',             /,&
 '@    diffusivity ', i10,   ' i.e. ',e14.5,                     /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
-'@    ========',                                                /,&
-'@',                                                            /,&
-'@  The k-omega turbulence model has been chosen. In order to', /,&
-'@    have a correct calculation restart, the ICDPAR indicator',/,&
-'@    has been set to 1 (read the wall distance in the restart',/,&
-'@    file).',                                                  /,&
-'@  If this initialization raises any issue (modification of,'  /,&
-'@    the number and position of the wall faces since the',     /,&
-'@    previous calcuation), force ICDPAR=1 (there might be,'    /,&
-'@    a small shift in the turbulent viscosity at the,'         /,&
-'@    first time-step).,'                                       /,&
-'@',                                                            /,&
-'@  The calculation will be run.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2001 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
-'@    ========',                                                /,&
-'@',                                                            /,&
-'@  The k-omega turbulence model has been chosen, with the,'    /,&
-'@    option for a re-calculation of the wall distance',        /,&
-'@    (ICDPAR=-1). There might be a small shift in the',        /,&
-'@    turbulent viscosity at the first time-step.',             /,&
-'@',                                                            /,&
-'@  The calculation will be run.',                              /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

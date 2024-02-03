@@ -900,10 +900,10 @@ do while (iterns.le.nterup)
     ! In case there is no wall, distance is a big value.
     if (imajdy.eq.0 .and. ineedy.eq.1) then
 
-      if (abs(icdpar).eq.1) then
+      if (icdpar.ne.2) then
         call cs_wall_distance(iterns)
       ! Deprecated algorithm
-      else if (abs(icdpar).eq.2) then
+      else if (icdpar.eq.2) then
         call distpr2(itypfb)
       endif
       ! Wall distance is not updated except if ALE is switched on

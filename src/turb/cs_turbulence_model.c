@@ -312,7 +312,8 @@ BEGIN_C_DECLS
         distance to the nearest wall for each cell
         in the domain. Refer to keyword \ref optcal::icdpar "icdpar"
         for potential limitations.\n
-        Useful if and only if \ref iturb = 40 or 41
+        Useful if and only if \ref iturb = CS_TURB_LES_SMAGO_CONST
+        or CS_TURB_LES_SMAGO_DYN.
 */
 
 /*----------------------------------------------------------------------------*/

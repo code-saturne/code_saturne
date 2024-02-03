@@ -72,6 +72,7 @@
 #include "cs_convection_diffusion.h"
 #include "cs_thermal_model.h"
 #include "cs_velocity_pressure.h"
+#include "cs_wall_distance.h"
 #include "cs_vof.h"
 
 /*----------------------------------------------------------------------------
@@ -2374,6 +2375,20 @@ cs_parameters_check(void)
                                   3);
 
     BFT_FREE(f_desc);
+  }
+
+  /* Wall distance
+     ------------- */
+
+  {
+    const cs_wall_distance_options_t *wdo = cs_glob_wall_distance_options;
+    if (wdo->need_compute)
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _("while reading input data"),
+                                    "cs_glob_wall_distance_options->method",
+                                    wdo->method,
+                                    1,
+                                    3);
   }
 
   /* Check the consistency of the restart_file key */

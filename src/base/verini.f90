@@ -482,17 +482,6 @@ if (itytur.eq.3) then
   endif
 endif
 
-! --- Distance a la paroi
-
-if (ineedy.eq.1) then
-
-  if (abs(icdpar).ne.1 .and. abs(icdpar).ne.2) then
-    write(nfecra,2700) icdpar
-    iok = iok + 1
-  endif
-
-endif
-
 !===============================================================================
 ! 2. TABLEAUX DE cstphy : formats 4000
 !===============================================================================
@@ -581,14 +570,12 @@ endif
 
 ! --- periodicite incompatible avec le mode de calcul
 !       direct de la distance a la paroi
-if (iperio.eq.1.and.ineedy.eq.1.and.abs(icdpar).eq.2) then
+if (iperio.eq.1.and.ineedy.eq.1.and.icdpar.eq.2) then
   write(nfecra,5005)iperio, icdpar
   iok = iok + 1
 endif
 
-
 ! --- periodicite de rotation incompatible avec le rayonnement DOM
-!if (iperio.gt.0.and.iirayo.gt.0) then ! de translation aussi ?
 if (iperot.gt.0.and.iirayo.gt.0) then
   if (iirayo.eq.1) then
     write(nfecra,5008) iperio,  iirayo
@@ -602,7 +589,7 @@ endif
 
 ! --- parallelisme incompatible avec le mode de calcul
 !       direct de la distance a la paroi
-if (irangp.ge.0.and.ineedy.eq.1.and.abs(icdpar).eq.2) then
+if (irangp.ge.0.and.ineedy.eq.1.and.icdpar.eq.2) then
   write(nfecra,6005)irangp, icdpar
   iok = iok + 1
 endif
@@ -1104,23 +1091,6 @@ endif
 '@    Check that density is variable.',                         /,&
 '@     other than via temperature',                             /,&
 '@  this could be by user defined density.',                    /,&
-'@',                                                            /,&
-'@ Check the input data.',                                      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2700 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    Choice of method for computing distance to the wall',     /,&
-'@',                                                            /,&
-'@  ICDPAR MUST BE AN INTEGER  EQUAL TO -2, -1, 1 or 2',        /,&
-'@  IL IS EQUAL',  i10,                                         /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@ Check the input data.',                                      /,&
 '@',                                                            /,&

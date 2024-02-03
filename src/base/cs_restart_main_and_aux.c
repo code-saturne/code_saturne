@@ -70,7 +70,6 @@
 #include "cs_vof.h"
 #include "cs_wall_condensation.h"
 #include "cs_wall_condensation_1d_thermal.h"
-#include "cs_wall_distance.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1210,25 +1209,11 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   cs_time_moment_restart_read(r);
 
-  /* ------------- */
-  /* Wall distance */
-  /* ------------- */
-
-  cs_wall_distance_options_t *wdo = cs_get_glob_wall_distance_options();
-  if (wdo->need_compute == 1) {
-    if (wdo->method > 0) {
-      if (match_b_face) {
-        if (cs_glob_ale == CS_ALE_NONE)
-          wdo->is_up_to_date = 1;
-      }
-    }
-  }
-
-
   /* -------------------------------------------------------------------- */
   /* Wall temperature associated to the condensation model with or without
    * the 1D thermal model tag1D */
   /* -------------------------------------------------------------------- */
+
   cs_wall_condensation_t *wco = cs_get_glob_wall_condensation();
   if (wco->icondb == 0 ) {
     cs_real_t *tmp =  NULL;

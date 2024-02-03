@@ -359,7 +359,7 @@ write(nfecra,9900)
 
 ! --- Calcul de la distance a la paroi
 
-if(ineedy.eq.1) then
+if (ineedy.eq.1) then
 
   write(nfecra,4950) icdpar
   write(nfecra,9900)
@@ -371,10 +371,8 @@ endif
 ' ** WALL DISTANCE COMPUTATION',                                /,&
 '    -------------------------',                                /,&
                                                                 /,&
-'       ICDPAR = ',4x,i10,    ' ( 1: std, reread if restart',   /,&
-'                               (-1: std, recomputed if restrt',/,&
-'                               ( 2: old, reread if restart',   /,&
-'                               (-2: old, recomputed if restrt',/)
+'       ICDPAR = ',4x,i10,    ' ( 1: std)',                     /,&
+'                               ( 2: old)',                     /)
 
 !===============================================================================
 ! 5. SCALAIRES

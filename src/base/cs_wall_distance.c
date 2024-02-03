@@ -50,6 +50,7 @@
 
 #include "bft_printf.h"
 #include "cs_array.h"
+#include "cs_blas.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_convection_diffusion.h"
@@ -96,7 +97,7 @@ static cs_lnum_t n_wall = 0;
 static cs_wall_distance_options_t _wall_distance_options = {
   .need_compute = 0,
   .is_up_to_date = 0,
-  .method = -999
+  .method = 1
 };
 
 const cs_wall_distance_options_t *cs_glob_wall_distance_options
@@ -198,8 +199,7 @@ cs_wall_distance(int iterns)
                               f_w_dist_aux_pre->val:
                               f_w_dist->val_pre;
 
-  cs_real_t *dpvar, *smbrp, *rovsdt;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  cs_real_t *smbrp, *rovsdt;
   BFT_MALLOC(smbrp, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
@@ -214,51 +214,82 @@ cs_wall_distance(int iterns)
      ------------------- */
 
   /* Boundary conditions for the resolved scalar T
-     Dirichlet to 0 at paroi
+     Dirichlet to 0 at wall
      Neumann hmg elsewhere
      We also test for the presence of a Dirichlet */
 
-  int ndircp = 0;
+  cs_lnum_t ndircp = 0;
+  cs_lnum_t have_diff = 1;
 
   cs_real_t *coefa_wd = f_w_dist->bc_coeffs->a;
   cs_real_t *coefb_wd = f_w_dist->bc_coeffs->b;
   cs_real_t *cofaf_wd = f_w_dist->bc_coeffs->af;
   cs_real_t *cofbf_wd = f_w_dist->bc_coeffs->bf;
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
+  /* Fixed mesh: update only if BC's have changed (i.e. in restart) */
 
-      /* Dirichlet boundary condition
-         ---------------------------- */
+  if (mesh->time_dep == CS_MESH_FIXED) {
 
-      const cs_real_t hint = 1.0 / b_dist[f_id];
-      const cs_real_t pimp = 0.0;
+    have_diff = 0;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_wd[f_id],
-                                                  &cofaf_wd[f_id],
-                                                  &coefb_wd[f_id],
-                                                  &cofbf_wd[f_id],
-                                                  pimp,
-                                                  hint,
-                                                  cs_math_infinite_r);
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+
+      cs_real_t a_prev = coefa_wd[f_id];
+      cs_real_t b_prev = coefb_wd[f_id];
+
+      if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
+
+        const cs_real_t hint = 1.0 / b_dist[f_id];
+        const cs_real_t pimp = 0.0;
+
+        cs_boundary_conditions_set_dirichlet_scalar(&coefa_wd[f_id],
+                                                    &cofaf_wd[f_id],
+                                                    &coefb_wd[f_id],
+                                                    &cofbf_wd[f_id],
+                                                    pimp,
+                                                    hint,
+                                                    cs_math_infinite_r);
 
 
-      ndircp = ndircp + 1;
+        ndircp = ndircp + 1;
+      }
+      else
+        cs_boundary_conditions_set_neumann_scalar_hmg(&coefa_wd[f_id],
+                                                      &cofaf_wd[f_id],
+                                                      &coefb_wd[f_id],
+                                                      &cofbf_wd[f_id]);
+
+      cs_real_t d =   cs_math_fabs(a_prev - coefa_wd[f_id])
+                    + cs_math_fabs(b_prev - coefb_wd[f_id]);
+
+      if (d > 1e-12)
+        have_diff = 1;
     }
-    else {
 
-      /* Neumann Boundary Conditions
-         --------------------------- */
+    cs_parall_max(1, CS_INT_TYPE, &have_diff);
+  }
 
-      const cs_real_t hint = 1.0 / b_dist[f_id];
-      const cs_real_t qimp = 0.0;
+  /* Time evolving mesh: always update */
 
-      cs_boundary_conditions_set_neumann_scalar(&coefa_wd[f_id],
-                                                &cofaf_wd[f_id],
-                                                &coefb_wd[f_id],
-                                                &cofbf_wd[f_id],
-                                                qimp,
-                                                hint);
+  else {
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
+        const cs_real_t hint = 1.0 / b_dist[f_id];
+        const cs_real_t pimp = 0.0;
+        cs_boundary_conditions_set_dirichlet_scalar(&coefa_wd[f_id],
+                                                    &cofaf_wd[f_id],
+                                                    &coefb_wd[f_id],
+                                                    &cofbf_wd[f_id],
+                                                    pimp,
+                                                    hint,
+                                                    cs_math_infinite_r);
+        ndircp = ndircp + 1;
+      }
+      else
+        cs_boundary_conditions_set_neumann_scalar_hmg(&coefa_wd[f_id],
+                                                      &cofaf_wd[f_id],
+                                                      &coefb_wd[f_id],
+                                                      &cofbf_wd[f_id]);
     }
   }
 
@@ -269,7 +300,9 @@ cs_wall_distance(int iterns)
     = (const cs_real_t *restrict)mq->c_w_dist_inv;
 
   if (c_w_face_surf != NULL && c_w_dist_inv != NULL) {
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+    have_diff = 0;
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t ibm_imp = c_w_dist_inv[c_id] * c_w_face_surf[c_id];
       rovsdt[c_id] = ibm_imp;
@@ -279,12 +312,30 @@ cs_wall_distance(int iterns)
     }
   }
 
-  if (cs_glob_rank_id > -1)
-    cs_parall_sum(1, CS_LNUM_TYPE, &ndircp);
+  /* Check that wall distance if initialized/read if no diff in BC's (for
+     the strange case where BC's would be read but nut the wall distance) */
+  if (have_diff == 0) {
+    double d = cs_dot_xx(n_cells, wall_dist);
+    if (d <= 0)
+      have_diff = 1;
+  }
 
-  /* If no wall initialization to a big value */
-  if (ndircp == 0) {
-    cs_array_real_set_scalar(n_cells, cs_math_big_r, wall_dist);
+  cs_lnum_t c[2] = {ndircp, have_diff};
+  cs_parall_sum(2, CS_LNUM_TYPE, c);
+  ndircp = c[0];
+  have_diff = c[1];
+
+  /* Without wall or if value already computed (i.e. same BC's), return */
+
+  if (ndircp == 0 || have_diff == 0) {
+
+    /* If no wall, initialization to a big value */
+    if (ndircp == 0)
+      cs_array_real_set_scalar(n_cells, cs_math_big_r, wall_dist);
+
+    BFT_FREE(smbrp);
+    BFT_FREE(rovsdt);
+
     return;
   }
 
@@ -292,7 +343,8 @@ cs_wall_distance(int iterns)
      ----------------------- */
 
   /* Allocate temporary arrays for the species resolution */
-  cs_real_t *i_visc, *b_visc, *i_mass_flux, *b_mass_flux;
+  cs_real_t *dpvar, *i_visc, *b_visc, *i_mass_flux, *b_mass_flux;
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
   BFT_MALLOC(i_mass_flux, n_i_faces, cs_real_t);
@@ -307,7 +359,7 @@ cs_wall_distance(int iterns)
   cs_array_real_fill_zero(n_i_faces, i_mass_flux);
   cs_array_real_fill_zero(n_b_faces, b_mass_flux);
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     w1[c_id] = 1.0; /* Diffusion at faces */
   }
@@ -416,7 +468,7 @@ cs_wall_distance(int iterns)
         cs_array_real_fill_zero(n_cells_ext, dpvar);
 
         /* RHS */
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           rovsdt[c_id] = 0.0;
           smbrp[c_id] = cell_f_vol[c_id];
