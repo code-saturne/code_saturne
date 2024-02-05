@@ -9,6 +9,9 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Add postprocessing functions to allow users to easily visualize intersection
+  between postprocessing slices and the mesh.
+
 - Combustion models: change activation mode.
   * In user-defined functions, gas and coal combustion models should now be
     activated using `cs_combustion_gas_set_model` and

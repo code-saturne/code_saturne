@@ -472,6 +472,8 @@
 
   \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_init_3
 
+  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_activate_postprocessing
+
   \section cs_user_extra_operations_examples_medcoupling_slice_integral Compute the integral of a scalar
 
   \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_integral

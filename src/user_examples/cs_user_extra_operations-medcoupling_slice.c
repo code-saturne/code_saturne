@@ -119,6 +119,14 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
   }
 
   {
+    /*!(medcpl_slice_activate_postprocessing]*/
+    /* Activate intersection flag and surface postprocessing functions.
+     */
+    cs_medcoupling_slice_activate_postprocess("slice_OZ");
+    /*!(medcpl_slice_activate_postprocessing]*/
+  }
+
+  {
     /*![medcpl_slice_init_2]*/
     /* Add a disc slice intersecting the origin (0,0,0) with a normal
      * along the Z axis (0,0,1), and a radius of 0.5m.
