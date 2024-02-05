@@ -26,6 +26,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <vector>
 #include <string>
 
 /*----------------------------------------------------------------------------
@@ -38,6 +39,7 @@
 
 #include "cs_array.h"
 #include "cs_defs.h"
+#include "cs_function.h"
 #include "cs_halo.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -45,6 +47,7 @@
 
 #include "cs_medcoupling_utils.h"
 #include "cs_medcoupling_mesh.hxx"
+#include "cs_post.h"
 
 #if defined(HAVE_MEDCOUPLING)
 #include <MEDCoupling_version.h>
@@ -94,6 +97,8 @@ struct _medcoupling_slice_t {
 static int _n_slices = 0; /* Number of defined intersections */
 static cs_medcoupling_slice_t **_slices = NULL;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private functions
  *============================================================================*/
@@ -105,14 +110,14 @@ static cs_medcoupling_slice_t **_slices = NULL;
 /*!
  * \brief Get a slice by name. Returns NULL if not found.
  *
- * \param[in] name  name of the searched intersection
- *
  * \return pointer to slice structure. NULL if not found.
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_medcoupling_slice_t *
-_get_slice_try(const char *name)
+static inline cs_medcoupling_slice_t * _get_slice_try
+(
+  const char *name /*!<[in] Name of the slice */
+)
 {
   cs_medcoupling_slice_t *retval = NULL;
 
@@ -136,8 +141,9 @@ _get_slice_try(const char *name)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_medcoupling_slice_t *
-_allocate_new_slice()
+static inline cs_medcoupling_slice_t * _allocate_new_slice
+(
+)
 {
   cs_medcoupling_slice_t *_si = NULL;
   BFT_MALLOC(_si, 1, cs_medcoupling_slice_t);
@@ -163,20 +169,17 @@ _allocate_new_slice()
 /*!
  * \brief Add a new slice.
  *
- * \param[in] name               Name of the new intersection
- * \param[in] selection_criteria Selection criteria for cells to intersect
- * \param[in] origin             Origin point of the surface
- * \param[in] normal             Normal vector of the surface
- *
  * \return pointer to newly created slice
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_medcoupling_slice_t *
-_add_slice(const char      *name,
-           const char      *selection_criteria,
-           const cs_real_t  origin[],
-           const cs_real_t  normal[])
+static inline cs_medcoupling_slice_t * _add_slice
+(
+  const char      *name,               /*!<[in] Name of the new slice */
+  const char      *selection_criteria, /*!<[in] Selection criteria for cells to intersect */
+  const cs_real_t  origin[],           /*!<[in] Origin point of the surface */
+  const cs_real_t  normal[]            /*!<[in] Normal vector of the surface */
+)
 {
 
   cs_medcoupling_slice_t *_si =
@@ -219,15 +222,14 @@ _add_slice(const char      *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute intersected surface
- *
- * \param[in] si Slice
- * \param[in] m  Pointer to MEDCouplingUMesh representing the slice
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
-_compute_slice(cs_medcoupling_slice_t *si,
-               MEDCouplingUMesh       *m)
+static inline void _compute_slice
+(
+  cs_medcoupling_slice_t *si, /*!<[in] Pointer to slice structure */
+  MEDCouplingUMesh       *m   /*!<[in] Pointer to MEDCouplingUMesh structure */
+)
 {
   /* We can only intersect the elements which match the selection criteria */
   si->n_elts = si->csm->n_elts;
@@ -336,24 +338,19 @@ _compute_slice(cs_medcoupling_slice_t *si,
 /*!
  * \brief Compute the local integral contribution. Parallel sum needs to be done
  *        in another call.
- *
- * \param[in] si        Slice pointer
- * \param[in] scalar    Scalar array (size on n_cells)
- * \param[in] weight_s  Scalar weight array (size n_cells)
- * \param[in] weight_v  Vector weight array (size n_cells) in cs_real_3_t *
- * \param[out] int_l     Local integral value
- * \param[out] w_l       Local integrated weight value (if normalization is used)
  */
 /*----------------------------------------------------------------------------*/
 
 template <const cs_medcoupling_int_weight_t iw_type>
-void
-_compute_scalar_integral_l(cs_medcoupling_slice_t *si,
-                           const cs_real_t        *scalar,
-                           const cs_real_t        *weight_s,
-                           const cs_real_3_t      *weight_v,
-                           cs_real_t              *int_l,
-                           cs_real_t              *w_l)
+void _compute_scalar_integral_l
+(
+  cs_medcoupling_slice_t *si,       /*!<[in] Pointer to slice structure */
+  const cs_real_t        *scalar,   /*!<[in] Scalar array (size on n_cells */
+  const cs_real_t        *weight_s, /*!<[in] Scalar weight array (size n_cells) */
+  const cs_real_3_t      *weight_v, /*!<[in] Vector weight array (size n_cells) */
+  cs_real_t              *int_l,    /*!<[in] Local integral value */
+  cs_real_t              *w_l       /*!<[in] Local integrated weight value */
+)
 {
   assert(si != NULL);
   assert(scalar != NULL);
@@ -424,7 +421,141 @@ _compute_scalar_integral_l(cs_medcoupling_slice_t *si,
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function to tag cells intersected by a slice (cs_function_t)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void _tag_slice_cells
+(
+  int              location_id, /*!<[in] base associated mesh location id */
+  cs_lnum_t        n_elts,      /*!<[in] number of associated elements */
+  const cs_lnum_t *elt_ids,     /*!<[in] ids of associated elements, or null if
+                                         no filtering is required */
+  void            *input,       /*!<[in] pointer to slice structure */
+  void            *vals         /*!<[in, out] pointer to output values */
+)
+{
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  cs_medcoupling_slice_t *s = (cs_medcoupling_slice_t *)input;
+
+  cs_real_t *_vals = (cs_real_t *)vals;
+
+  /* Compute flag */
+  std::vector<cs_real_t> _flag(cs_glob_mesh->n_cells, 0.);
+  for (cs_lnum_t e_id = 0; e_id < s->n_elts; e_id++) {
+    if (s->surface[e_id] > cs_math_epzero) {
+      _flag[s->elt_ids[e_id]] = 1.;
+    }
+  }
+
+  /* Copy necessary values */
+  cs_array_real_copy_subset(n_elts, 1, elt_ids,
+                            CS_ARRAY_SUBSET_IN,
+                            &_flag[0],
+                            _vals);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function to postprocess slice's intersection surfaces (cs_function_t)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void _get_slice_cells_surface
+(
+  int              location_id, /*!<[in] base associated mesh location id */
+  cs_lnum_t        n_elts,      /*!<[in] number of associated elements */
+  const cs_lnum_t *elt_ids,     /*!<[in] ids of associated elements, or null if
+                                         no filtering is required */
+  void            *input,       /*!<[in] pointer to slice structure */
+  void            *vals         /*!<[in, out] pointer to output values */
+)
+{
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  cs_medcoupling_slice_t *s = (cs_medcoupling_slice_t *)input;
+
+  cs_real_t *_vals = (cs_real_t *)vals;
+
+  /* Compute flag */
+  std::vector<cs_real_t> _surf(cs_glob_mesh->n_cells, 0.);
+  for (cs_lnum_t e_id = 0; e_id < s->n_elts; e_id++) {
+    if (s->surface[e_id] > cs_math_epzero) {
+      _surf[s->elt_ids[e_id]] = s->surface[e_id];
+    }
+  }
+
+  /* Copy necessary values */
+  cs_array_real_copy_subset(n_elts, 1, elt_ids,
+                            CS_ARRAY_SUBSET_IN,
+                            &_surf[0],
+                            _vals);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate the postprocessing functions for a given slice
+ */
+/*----------------------------------------------------------------------------*/
+
+static void _activate_slice_postprocessing
+(
+  cs_medcoupling_slice_t *slice /*!<[in] pointer to slice structure */
+)
+{
+  assert(slice != NULL);
+
+  /* Flagged cells */
+  {
+    std::string _name = std::string("intersected_cells::")
+                      + std::string(slice->name);
+
+    cs_function_t *f
+      = cs_function_define_by_func(_name.c_str(),
+                                   CS_MESH_LOCATION_CELLS,
+                                   1,
+                                   true,
+                                   CS_REAL_TYPE,
+                                   _tag_slice_cells,
+                                   slice);
+
+    size_t _len = strlen(_name.c_str()) + 1;
+    BFT_MALLOC(f->label, _len, char);
+    strcpy(f->label, _name.c_str());
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+
+  /* surface */
+  {
+    std::string _name = std::string("intersected_surface::")
+                      + std::string(slice->name);
+
+    cs_function_t *f
+      = cs_function_define_by_func(_name.c_str(),
+                                   CS_MESH_LOCATION_CELLS,
+                                   1,
+                                   true,
+                                   CS_REAL_TYPE,
+                                   _get_slice_cells_surface,
+                                   slice);
+
+    size_t _len = strlen(_name.c_str()) + 1;
+    BFT_MALLOC(f->label, _len, char);
+    strcpy(f->label, _name.c_str());
+
+    f->type = CS_FUNCTION_INTENSIVE;
+    f->post_vis = CS_POST_ON_LOCATION;
+  }
+}
+
 BEGIN_C_DECLS
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions
@@ -434,15 +565,15 @@ BEGIN_C_DECLS
 /*!
  * \brief Get pointer to a slice based on id
  *
- * \param[in] id index of slice
- *
  * \return pointer to slice. Raises an error if index is out of
  * bounds.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_slice_t *
-cs_medcoupling_slice_by_id(int  id)
+cs_medcoupling_slice_t * cs_medcoupling_slice_by_id
+(
+  int  id /*!<[in] index of the slice */
+)
 {
   if (id < 0 || id >= _n_slices)
     bft_error(__FILE__, __LINE__, 0,
@@ -456,14 +587,14 @@ cs_medcoupling_slice_by_id(int  id)
  * \brief Get pointer to slice based on name, raises an error
  * if not found.
  *
- * \param[in] name  Name of the slice structure
- *
  * \return pointer to slice, raises error if not found.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_slice_t *
-cs_medcoupling_slice_by_name(const char  *name)
+cs_medcoupling_slice_t * cs_medcoupling_slice_by_name
+(
+  const char  *name /*!<[in] name of the slice */
+)
 {
   cs_medcoupling_slice_t *retval = cs_medcoupling_slice_by_name_try(name);
 
@@ -480,14 +611,14 @@ cs_medcoupling_slice_by_name(const char  *name)
  * \brief Get pointer to slice based on name. Returns NULL if
  * not found.
  *
- * \param[in] name  Name of the slice structure
- *
  * \return pointer to slice, NULL if not found.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_medcoupling_slice_t *
-cs_medcoupling_slice_by_name_try(const char  *name)
+cs_medcoupling_slice_t * cs_medcoupling_slice_by_name_try
+(
+  const char  *name /*!<[in] name of the slice */
+)
 {
   if (name == NULL || strcmp(name, "") == 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -508,23 +639,18 @@ cs_medcoupling_slice_by_name_try(const char  *name)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add a slice based on a plane.
- *
- * \param[in] name                Name of the slice
- * \param[in] selection_criteria  Selection criteria for cells to intersect
- * \param[in] origin              Coordinates of origin point of slice
- * \param[in] normal              Normal vector of the slice
- * \param[in] length1             Length along the first axis of the plane
- * \param[in] length2             Length along the second axis of the plane
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_medcoupling_postprocess_add_plane_slice(const char  *name,
-                                           const char  *selection_criteria,
-                                           const cs_real_t  origin[],
-                                           const cs_real_t  normal[],
-                                           const cs_real_t  length1,
-                                           const cs_real_t  length2)
+void cs_medcoupling_postprocess_add_plane_slice
+(
+  const char  *name,               /*!<[in] name of the slice */
+  const char  *selection_criteria, /*!<[in] selection criteria for cells */
+  const cs_real_t  origin[],       /*!<[in] coordinates of slice's origin point */
+  const cs_real_t  normal[],       /*!<[in] normal vector of the slice */
+  const cs_real_t  length1,        /*!<[in] length along the plane's first axis */
+  const cs_real_t  length2         /*!<[in] length along the plane's second axis */
+)
 {
 #if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
@@ -565,13 +691,17 @@ cs_medcoupling_postprocess_add_plane_slice(const char  *name,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_medcoupling_postprocess_add_disc_slice(const char  *name,
-                                          const char  *selection_criteria,
-                                          const cs_real_t  origin[],
-                                          const cs_real_t  normal[],
-                                          const cs_real_t  radius,
-                                          const int        n_sectors)
+void cs_medcoupling_postprocess_add_disc_slice
+(
+  const char  *name,               /*!<[in] name of the slice */
+  const char  *selection_criteria, /*!<[in] selection criteria for cells */
+  const cs_real_t  origin[],       /*!<[in] coordinates of slice's origin point */
+  const cs_real_t  normal[],       /*!<[in] normal vector of the slice */
+  const cs_real_t  radius,         /*!<[in] disc's radius */
+  const int        n_sectors       /*!<[in] number of sectors for discretization.
+                                            if negative, default value (36)
+                                            is used. */
+)
 {
 #if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
@@ -601,26 +731,21 @@ cs_medcoupling_postprocess_add_disc_slice(const char  *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add a slice based on an annulus
- *
- * \param[in] name                Name of the slice
- * \param[in] selection_criteria  Selection criteria for cells to intersect
- * \param[in] origin              Coordinates of origin point of slice
- * \param[in] normal              Normal vector of the slice
- * \param[in] radius1             Inner radius of the annulus (hole)
- * \param[in] radius2             Outer radius of the annulus
- * \param[in] n_sectors           Number of sectors for discretization.
- *                                If negative, default value (36) is used.
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_medcoupling_postprocess_add_annulus_slice(const char  *name,
-                                             const char  *selection_criteria,
-                                             const cs_real_t  origin[],
-                                             const cs_real_t  normal[],
-                                             const cs_real_t  radius1,
-                                             const cs_real_t  radius2,
-                                             const int        n_sectors)
+void cs_medcoupling_postprocess_add_annulus_slice
+(
+  const char  *name,               /*!<[in] name of the slice */
+  const char  *selection_criteria, /*!<[in] selection criteria for cells */
+  const cs_real_t  origin[],       /*!<[in] coordinates of slice's origin point */
+  const cs_real_t  normal[],       /*!<[in] normal vector of the slice */
+  const cs_real_t  radius1,        /*!<[in] inner disc's radius */
+  const cs_real_t  radius2,        /*!<[in] outer disc's radius */
+  const int        n_sectors       /*!<[in] number of sectors for discretization.
+                                            if negative, default value (36)
+                                            is used. */
+)
 {
 #if !defined(HAVE_MEDCOUPLING)
   CS_NO_WARN_IF_UNUSED(name);
@@ -653,14 +778,14 @@ cs_medcoupling_postprocess_add_annulus_slice(const char  *name,
 /*!
  * \brief Get number cells that may be intersected by the slice.
  *
- * \param[in] name  Name of the slice
- *
  * \return Number of elements
  */
 /*----------------------------------------------------------------------------*/
 
-cs_lnum_t
-cs_medcoupling_slice_get_n_elts(const char  *name)
+cs_lnum_t cs_medcoupling_slice_get_n_elts
+(
+  const char  *name  /*!<[in] name of the slice */
+)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -672,14 +797,14 @@ cs_medcoupling_slice_get_n_elts(const char  *name)
 /*!
  * \brief Get list of ids of the elements which may be intersected.
  *
- * \param[in] name  Name of the slice
- *
  * \return Pointer to list of ids (cs_lnum_t *). Do not deallocate!
  */
 /*----------------------------------------------------------------------------*/
 
-cs_lnum_t *
-cs_medcoupling_slice_get_elt_ids(const char  *name)
+cs_lnum_t * cs_medcoupling_slice_get_elt_ids
+(
+  const char  *name  /*!<[in] name of the slice */
+)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -691,14 +816,14 @@ cs_medcoupling_slice_get_elt_ids(const char  *name)
 /*!
  * \brief Get list of intersection surfaces for each cell intersected.
  *
- * \param[in] name  Name of the slice
- *
  * \return Pointer to list of intersection surfaces (cs_real_t *)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_medcoupling_slice_get_surfaces(const char  *name)
+cs_real_t * cs_medcoupling_slice_get_surfaces
+(
+  const char  *name  /*!<[in] name of the slice */
+)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -710,14 +835,14 @@ cs_medcoupling_slice_get_surfaces(const char  *name)
 /*!
  * \brief Get total intersection surface between a slice and volume mesh
  *
- * \param[in] name  Name of the slice
- *
  * \return Value of total intersection surface
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_medcoupling_slice_get_total_surface(const char  *name)
+cs_real_t cs_medcoupling_slice_get_total_surface
+(
+  const char  *name  /*!<[in] name of the slice */
+)
 {
   cs_medcoupling_slice_t *si =
     cs_medcoupling_slice_by_name(name);
@@ -725,21 +850,36 @@ cs_medcoupling_slice_get_total_surface(const char  *name)
   return si->total_surface;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate postprocessing of intersected cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_medcoupling_slice_activate_postprocess
+(
+  const char *name  /*!<[in] Name of the slice */
+)
+{
+  cs_medcoupling_slice_t *si =
+    cs_medcoupling_slice_by_name(name);
+
+  _activate_slice_postprocessing(si);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute integral of a scalar over a slice.
  *
- * \param[in] name    Name of the slice
- * \param[in] scalar  Array of scalar values (size n_cells)
- *
  * \return Global integrated value. A cs_parall_sum is used.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_medcoupling_slice_scalar_integral(const char       *name,
-                                     const cs_real_t  *scalar)
+cs_real_t cs_medcoupling_slice_scalar_integral
+(
+  const char       *name,   /*!<[in] name of the slice */
+  const cs_real_t  *scalar  /*!<[in] array of scalar values (size n_cells) */
+)
 {
   cs_real_t retval = 0.;
 #if !defined(HAVE_MEDCOUPLING)
@@ -764,16 +904,15 @@ cs_medcoupling_slice_scalar_integral(const char       *name,
 /*!
  * \brief Compute mean value of a scalar over a slice.
  *
- * \param[in] name    Name of the slice
- * \param[in] scalar  Array of scalar values (size n_cells)
- *
  * \return Global integrated value. A cs_parall_sum is used.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_medcoupling_slice_scalar_mean(const char       *name,
-                                 const cs_real_t  *scalar)
+cs_real_t cs_medcoupling_slice_scalar_mean
+(
+  const char       *name,   /*!<[in] name of the slice */
+  const cs_real_t  *scalar  /*!<[in] array of scalar values (size n_cells) */
+)
 {
   cs_real_t _s   = cs_medcoupling_slice_get_total_surface(name);
   cs_real_t _int = cs_medcoupling_slice_scalar_integral(name, scalar);
@@ -789,20 +928,17 @@ cs_medcoupling_slice_scalar_mean(const char       *name,
  *        and/or vectorial weights. If NULL is provided for both weights,
  *        the non-weighted function is called.
  *
- * \param[in] name      Name of the slice
- * \param[in] scalar    Array of scalar values (size n_cells)
- * \param[in] weight_s  Scalar weight array (size n_cells)
- * \param[in] weight_v  Vectorial weight array (size n_cells)
- *
  * \return Computed integral value over entire slice (parallel)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_medcoupling_slice_scalar_integral_weighted(const char        *name,
-                                              const cs_real_t   *scalar,
-                                              const cs_real_t   *weight_s,
-                                              const cs_real_3_t *weight_v)
+cs_real_t cs_medcoupling_slice_scalar_integral_weighted
+(
+  const char        *name,     /*!<[in] name of the slice */
+  const cs_real_t   *scalar,   /*!<[in] array of scalar values (size n_cells) */
+  const cs_real_t   *weight_s, /*!<[in] scalar weight array (n_cells) */
+  const cs_real_3_t *weight_v  /*!<[in] vectorial weight array (n_cells) */
+)
 {
   cs_real_t retval = 0.;
 
@@ -855,20 +991,17 @@ cs_medcoupling_slice_scalar_integral_weighted(const char        *name,
  *        weights. If NULL is provided for both weights, the non-weighted
  *        function is called.
  *
- * \param[in] name      Name of the slice
- * \param[in] scalar    Array of scalar values (size n_cells)
- * \param[in] weight_s  Scalar weight array (size n_cells)
- * \param[in] weight_v  Vectorial weight array (size n_cells), cs_real_3_t pointer
- *
  * \return Computed mean value over entire slice (parallel)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_medcoupling_slice_scalar_mean_weighted(const char        *name,
-                                          const cs_real_t   *scalar,
-                                          const cs_real_t   *weight_s,
-                                          const cs_real_3_t *weight_v)
+cs_real_t cs_medcoupling_slice_scalar_mean_weighted
+(
+  const char        *name,     /*!<[in] name of the slice */
+  const cs_real_t   *scalar,   /*!<[in] array of scalar values (size n_cells) */
+  const cs_real_t   *weight_s, /*!<[in] scalar weight array (n_cells) */
+  const cs_real_3_t *weight_v  /*!<[in] vectorial weight array (n_cells) */
+)
 {
   cs_real_t retval = 0.;
 
@@ -925,8 +1058,10 @@ cs_medcoupling_slice_scalar_mean_weighted(const char        *name,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_medcoupling_slice_destroy_all(void)
+void cs_medcoupling_slice_destroy_all
+(
+  void
+)
 {
 
   for (int i = 0; i < _n_slices; i++) {
