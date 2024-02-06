@@ -360,6 +360,14 @@ cs_user_parameters(cs_domain_t   *domain)
    *
    * ─────────────────────────────────────────────────────────────────────────*/
 
+  /*! [param_cdo_post_equation] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
+
+    cs_equation_param_set(eqp, CS_EQKEY_EXTRA_OP, "peclet");
+  }
+  /*! [param_cdo_post_equation] */
+
   /*! [param_cdo_numerics] */
   {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
