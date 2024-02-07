@@ -134,7 +134,7 @@ BEGIN_C_DECLS
  *
  *  Here are set \f$ rovsdt \f$ and \f$ smbrs \f$ containning \f$ \rho \Omega \f$
  *   - \f$ smbrs \f$ in \f$ kg_a.s^{-1} \f$ (ex: for velocity:
- *     \f$ kg.m.s^{-2} \f$, for temperature: \f$ kg.°C.s^{-1} \f$,
+ *     \f$ kg.m.s^{-2} \f$, for temperature: \f$ kg.C.s^{-1} \f$,
  *     for enthalpy: \f$ J.s^{-1} \f$)
  *   - \f$ rovsdt \f$ en \f$ kg.s^{-1} \f$
  *
