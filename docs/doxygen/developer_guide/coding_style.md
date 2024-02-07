@@ -477,9 +477,9 @@ Documentation of the main code is based on the
 may be found on its web site.
 
 Additional pages for the documentation may be found in the source tree,
-under `docs/doxygen`. Files containing mostly examaples may use the `.h` or
+under `docs/doxygen`. Files containing mostly examples may use the `.h` or
 `.dox` extension (with `.dox` preferred for easier identification), and
-pages which describe general aspects instead of code are preferrably
+pages which describe general aspects instead of code are preferably
 written in Doxygen Markdown (`.md` extension), as this allows better
 readability and interoperation with some editors (such as preview,
 syntax highlighting, ...).
@@ -492,10 +492,29 @@ When modifying arguments to a function or modifying structures, make sure
 the special Doxygen comments are kept up to date. In C code, comments may
 appear both in the C and Fortran parts of the code. Using Doxygen
 comments in the C code and simplified comments in the headers
-(see \ref cs_field.c and \ref cs_field.h for example) is recommended, but as this
+(see \ref cs_medcoupling_postprocess.cxx and \ref cs_medcoupling_postprocess.h for example)
+is recommended, but as this
 adds to the coding effort, duplicating the headers from the reference
-C code to the headers is allowed. Recent versions of Doxygen do complain
-about this, so avoiding duplicates is still desirable.
+C code to the headers is not recommended since recent versions of Doxygen complain
+about this, so avoiding duplicates is the preferred way.
+For inlined functions or structures the documentation should be available in the
+.h files since that is where the function or structure are defined.
+
+For functions the following structure is advised (example extracted from
+\ref cs_medcoupling_postprocess.cxx):
+```
+cs_real_t
+cs_medcoupling_slice_scalar_mean_weighted
+(
+  const char        *name,     /*!<[in] name of the slice */
+  const cs_real_t   *scalar,   /*!<[in] array of scalar values (size n_cells) */
+  const cs_real_t   *weight_s, /*!<[in] scalar weight array (n_cells) */
+  const cs_real_3_t *weight_v  /*!<[in] vectorial weight array (n_cells) */
+)
+{
+  <Function code>
+}
+```
 
 Private functions or structures should not appear in the documentation
 (though their arguments should be documented in the source code),
