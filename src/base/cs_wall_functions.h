@@ -965,8 +965,6 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
   CS_UNUSED(nlogla);
   CS_UNUSED(dplus);
 
-  const double ypluli = cs_glob_wall_functions->ypluli;
-
   /* Compute the friction velocity ustar */
 
   *ustar = sqrt(vel * l_visc / y);
@@ -1210,7 +1208,8 @@ cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
   cs_real_t shift_temp = -log(1. + hp);
 
   if (yplus > ypluli) {
-    cs_real_t tplus = prt * ((log(yplus+dplus) + shift_temp)/cs_turb_xkappa + cs_turb_cstlog);
+    cs_real_t tplus = prt * (  (log(yplus+dplus) + shift_temp)/cs_turb_xkappa
+                             + cs_turb_cstlog);
     (*htur) = prl * yplus / tplus;
   }
 }
