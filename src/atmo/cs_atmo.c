@@ -2314,8 +2314,8 @@ cs_soil_model(void)
     cs_air_fluid_props_t *ct_prop = cs_glob_air_props;
 
     /* Update previous values */
-    cs_field_current_to_previous(cs_field_by_name("soil_pot_temperature"));
-    cs_field_current_to_previous(cs_field_by_name("soil_total_water"));
+    cs_field_current_to_previous(soil_pot_temperature);
+    cs_field_current_to_previous(soil_total_water);
 
     /* In case of multi energy balance (MEB) models including PV */
     cs_field_t *cover_geometry_ratio = cs_field_by_name_try("cover_geometry_ratio");
@@ -2331,14 +2331,15 @@ cs_soil_model(void)
       cs_real_t premem = 0.;
       cs_real_t pphy = 0.;
       cs_real_t dum = 0.;
-      cs_real_t qvs_plus = 0.;
+      cs_real_t qvs_new = 0.;
       cs_real_t w1_min = 0.;
       cs_real_t w1_max = 1.;
       cs_real_t w2_min = 0.;
       cs_real_t w2_max = 1.;
       cs_real_t precip = 0.;
       cs_real_t tseuil = 16. + cs_physical_constants_celsius_to_kelvin;
-      cs_real_t ts_plus = 0.;
+      cs_real_t ts_new = 0.;
+      cs_real_t ts_c_new = 0.; /* in Celsius */
       cs_real_t cpvcpa = ct_prop->cp_v / ct_prop->cp_a;
       cs_real_t rvsra = phys_pro->rvsra;
       cs_real_t clatev = phys_pro->clatev;
@@ -2427,12 +2428,12 @@ cs_soil_model(void)
       if (soil_percentages->val[cat_id] > 50.) {
         /* NB: soil_temperature in °C */
         esat = cs_air_pwv_sat(soil_temperature->val[soil_id]);
-        qvs_plus = esat / ( rvsra * pphy
+        qvs_new = esat / ( rvsra * pphy
           + esat * (1.0 - rvsra));
         /* Constant temperature at the moment
          * TODO integrate the lake model GLM to match with LNHE models */
-        ts_plus = soil_temperature->val[soil_id]
-          + cs_physical_constants_celsius_to_kelvin;
+        ts_c_new = soil_temperature->val[soil_id];
+        ts_new = ts_c_new + cs_physical_constants_celsius_to_kelvin;
       }
       else {
 
@@ -2467,20 +2468,20 @@ cs_soil_model(void)
           / (tau_1 + soil_water_ratio->val[soil_id] * dtref);
       cs_real_t w1_den = 1.
         + 1. / (tau_1/dtref + soil_water_ratio->val[soil_id]);
-      cs_real_t w1_plus = w1_num / w1_den;
-      w1_plus = CS_MAX(w1_plus, w1_min);
-      w1_plus = CS_MIN(w1_plus, w1_max);
+      cs_real_t w1_new = w1_num / w1_den;
+      w1_new = CS_MAX(w1_new, w1_min);
+      w1_new = CS_MIN(w1_new, w1_max);
       cs_real_t w2_num = soil_w2->val[soil_id] * tau_1
-        + w1_plus * dtref * soil_water_ratio->val[soil_id];
+        + w1_new * dtref * soil_water_ratio->val[soil_id];
       cs_real_t w2_den = tau_1 + dtref * soil_water_ratio->val[soil_id];
-      cs_real_t w2_plus = w2_num / w2_den;
-      w2_plus = CS_MAX(w2_plus, w2_min);
-      w2_plus = CS_MIN(w2_plus, w2_max);
+      cs_real_t w2_new = w2_num / w2_den;
+      w2_new = CS_MAX(w2_new, w2_min);
+      w2_new = CS_MIN(w2_new, w2_max);
 
-      soil_w1->val[soil_id] = w1_plus;
-      soil_w2->val[soil_id] = w2_plus;
+      soil_w1->val[soil_id] = w1_new;
+      soil_w2->val[soil_id] = w2_new;
 
-      cs_real_t hu = 0.5 * (1. - cos(cs_math_pi * w1_plus));
+      cs_real_t hu = 0.5 * (1. - cos(cs_math_pi * w1_new));
 
       /* ============================
        * Compute saturated pressure and DL1
@@ -2552,12 +2553,14 @@ cs_soil_model(void)
        * Compute new soil variables
        * ============================ */
 
-      ts_plus = (soil_temperature->val[soil_id]
+      ts_new = (soil_temperature->val[soil_id]
         + cs_physical_constants_celsius_to_kelvin + dtref * secmem )
         / ( 1. + dtref * premem );
+      ts_c_new = (soil_temperature->val[soil_id]
+        + dtref * (secmem - cs_physical_constants_celsius_to_kelvin * premem))
+        / ( 1. + dtref * premem );
 
-      qvs_plus = hu * ( qsat + dqsat * ( ts_plus
-        - cs_physical_constants_celsius_to_kelvin
+      qvs_new = hu * ( qsat + dqsat * ( ts_c_new
         - soil_temperature->val[soil_id] ))
         + boundary_vegetation->val[soil_id] * atm_total_water->val[cell_id]
         * ( 1. - hu );
@@ -2567,16 +2570,16 @@ cs_soil_model(void)
        * At the moment the allocation is performed ONLY for ""soil model""  */
 
       if (soil_latent_heat != NULL)
-        soil_latent_heat->val[soil_id] = chq * (qvs_plus
+        soil_latent_heat->val[soil_id] = chq * (qvs_new
             - atm_total_water->val[cell_id]);
       if (soil_sensible_heat != NULL)
-        soil_sensible_heat->val[soil_id] = cht * ((ts_plus
+        soil_sensible_heat->val[soil_id] = cht * ((ts_new
               * (pow(ps/pphy,(rair/cp0)
-                  * (1. + (rvsra - cpvcpa) * qvs_plus ))))
+                  * (1. + (rvsra - cpvcpa) * qvs_new ))))
             - atm_temp->val[cell_id]);
       if (soil_thermal_rad_upward != NULL)
         soil_thermal_rad_upward->val[soil_id] = stephn * emi
-          * cs_math_pow4(ts_plus);
+          * cs_math_pow4(ts_new);
       if (soil_thermal_rad_downward != NULL)
         soil_thermal_rad_downward->val[soil_id] = emi * foir;
       if (soil_visible_rad_absorbed != NULL)
@@ -2589,13 +2592,12 @@ cs_soil_model(void)
        * Update new soil variables
        * ============================ */
 
-      soil_temperature->val[soil_id] = ts_plus
-        - cs_physical_constants_celsius_to_kelvin;
+      soil_temperature->val[soil_id] = ts_c_new;
 
-      soil_pot_temperature->val[soil_id] = ts_plus
+      soil_pot_temperature->val[soil_id] = ts_new
         * (pow(ps/pphy,(rair/cp0)
-        * (1. + (rvsra - cpvcpa) * qvs_plus )));
-      soil_total_water->val[soil_id] = qvs_plus;
+        * (1. + (rvsra - cpvcpa) * qvs_new )));
+      soil_total_water->val[soil_id] = qvs_new;
     }
   }
   else {
