@@ -247,6 +247,9 @@ class Case(object):
             self.run_dir = os.path.join(self.__dest, self.label, self.resu,
                                         self.run_id)
 
+            self.title = study + "/" + self.label + "/" +  self.resu + "/" \
+                   + self.run_id
+
         self.exe = os.path.join(pkg.get_dir('bindir'),
                                 pkg.name + pkg.config.shext)
 
@@ -1487,14 +1490,14 @@ class Studies(object):
                     case_list.append(case_name)
                     # Build short path to RESU dir. such as 'CASE1/RESU'
                     _dest_resu_dir = os.path.join(self.__dest, case.study,
-                                                  case.label, 'RESU')
+                                                  case.label, case.resu)
                     if os.path.isdir(_dest_resu_dir):
                         if os.listdir(_dest_resu_dir):
                             shutil.rmtree(_dest_resu_dir)
                             os.makedirs(_dest_resu_dir)
-                            self.reporting("  All earlier results in case %s/RESU "
+                            self.reporting("  All earlier results in case %s/%s "
                                            "are removed (option --rm activated)"
-                                           %case.label)
+                                           %(case.label, case.resu))
 
                 # thrid step: prepare run folder
                 log_lines = case.prepare_run_folder()
@@ -2373,11 +2376,11 @@ class Studies(object):
                             cmd += " " + args[i]
                             if repo[i]:
                                 r = os.path.join(self.__repo,  l, case.label,
-                                                 "RESU", repo[i])
+                                                 case.resu, repo[i])
                                 cmd += " -r " + r
                             if dest[i]:
                                 d = os.path.join(self.__dest, l, case.label,
-                                                 "RESU", dest[i])
+                                                 case.resu, dest[i])
                                 cmd += " -d " + d
 
                             retcode, t = run_studymanager_command(cmd,
@@ -2555,7 +2558,7 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def report_input(self, doc, i_nodes, s_label, c_label=None):
+    def report_input(self, doc, i_nodes, s_label, c_label=None, r_label="RESU"):
         """
         Add input to report detailed.
         """
@@ -2574,7 +2577,7 @@ class Studies(object):
                 dd = ""
 
             if c_label:
-                fd = os.path.join(dd, s_label, c_label, 'RESU')
+                fd = os.path.join(dd, s_label, c_label, r_label)
             else:
                 fd = os.path.join(dd, s_label, 'POST')
 
@@ -2598,13 +2601,13 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def copy_input(self, i_nodes, s_label, c_label):
+    def copy_input(self, i_nodes, s_label, c_label, r_label="RESU"):
         """
         Copy input in POST for later description report generation
         """
         for i_node in i_nodes:
             fig_name, run_id, repo, tex = self.__parser.getInput(i_node)
-            fig = os.path.join(self.__dest, s_label, c_label, 'RESU', run_id,
+            fig = os.path.join(self.__dest, s_label, c_label, r_label, run_id,
                                fig_name)
 
             # Figure copied in POST/"CURRENT"/CASE/run_id folder
@@ -2658,7 +2661,7 @@ class Studies(object):
                     if nodes:
                         doc.appendLine("\\subsection{Results for "
                                        "case %s}" % case.label)
-                        self.report_input(doc, nodes, l, case.label)
+                        self.report_input(doc, nodes, l, case.label, case.resu)
                         # copy input in POST
                         self.copy_input(nodes, l, case.label)
 
