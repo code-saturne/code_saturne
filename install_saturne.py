@@ -279,7 +279,11 @@ class Package:
             tar = tarfile.open(self.archive)
 
             first_member = tar.next()
-            relative_source_dir = first_member.name.split(os.path.sep)[0]
+            path = first_member.name.split(os.path.sep)
+            if path[0] == '.':
+                relative_source_dir = path[1]
+            else:
+                relative_source_dir = path[0]
             self.source_dir = os.path.abspath(relative_source_dir)
 
             try:
@@ -637,17 +641,17 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="7.0.3",
-                    archive="scotch_7.0.3.tar.gz",
-                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.3/%s")
+                    version="7.0.4",
+                    archive="scotch_7.0.4.tar.gz",
+                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.4/%s")
 
     #---------------------------------------------------------------------------
 
     def setup_defaults(self):
 
-        self.cc = find_executable(['cc', 'gcc', 'icc', 'xlc', 'clang'], 'CC')
-        self.fc = find_executable(['f95', 'gfortran', 'ifort'], 'FC')
-        self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++', 'clang++'], 'CXX')
+        self.cc = find_executable(['cc', 'gcc', 'icx', 'icc', 'xlc', 'clang'], 'CC')
+        self.fc = find_executable(['f95', 'gfortran', 'ifx', 'ifort'], 'FC')
+        self.cxx = find_executable(['c++', 'g++', 'icpx', 'icpc', 'xlc++', 'clang++'], 'CXX')
         self.mpicc = find_executable(['mpicc', 'mpicc.openmpi', 'mpicc.mpich'])
         self.mpicxx = find_executable(['mpicxx', 'mpicxx.openmpi', 'mpicxx.mpich'])
         self.python = find_executable(['python3'], 'PYTHON')
