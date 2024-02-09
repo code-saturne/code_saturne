@@ -754,7 +754,7 @@ cs_turbulence_kw(int              phase_id,
                                  &halo_type);
 
       cs_field_bc_coeffs_t bc_coeffs_loc;
-      cs_field_bc_coeffs_create(&bc_coeffs_loc);
+      cs_field_bc_coeffs_init(&bc_coeffs_loc);
       bc_coeffs_loc.a = bromo;
       bc_coeffs_loc.b = viscb;
 

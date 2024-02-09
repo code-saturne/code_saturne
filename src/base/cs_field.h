@@ -208,7 +208,7 @@ extern const char *cs_glob_field_comp_name_9[];
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_bc_coeffs_create(cs_field_bc_coeffs_t  *bc_coeffs);
+cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs);
 
 /*----------------------------------------------------------------------------
  * Shallow copy of boundary condition coefficients.

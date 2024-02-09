@@ -205,7 +205,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   const cs_real_t *croma = CS_F_(rho)->val_pre;
 
   cs_field_bc_coeffs_t bc_coeffs_pot;
-  cs_field_bc_coeffs_create(&bc_coeffs_pot);
+  cs_field_bc_coeffs_init(&bc_coeffs_pot);
   BFT_MALLOC(bc_coeffs_pot.a, n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_pot.b, n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_pot.af, n_b_faces, cs_real_t);
@@ -857,7 +857,7 @@ _div_rij(const cs_mesh_t     *m,
     BFT_MALLOC(rij, n_cells_ext, cs_real_6_t);
 
     cs_field_bc_coeffs_t bc_coeffs_loc;
-    cs_field_bc_coeffs_create(&bc_coeffs_loc);
+    cs_field_bc_coeffs_init(&bc_coeffs_loc);
     BFT_MALLOC(bc_coeffs_loc.a, 6*n_b_faces, cs_real_t);
     BFT_MALLOC(bc_coeffs_loc.b, 36*n_b_faces, cs_real_t);
     cs_real_6_t  *coefat = (cs_real_6_t  *)bc_coeffs_loc.a;
@@ -3337,7 +3337,7 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
 
   /* Boundary conditions for delta P */
   cs_field_bc_coeffs_t bc_coeffs_dp;
-  cs_field_bc_coeffs_create(&bc_coeffs_dp);
+  cs_field_bc_coeffs_init(&bc_coeffs_dp);
   BFT_MALLOC(bc_coeffs_dp.a,  n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_dp.af, n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_dp.b,  n_b_faces, cs_real_t);

@@ -985,7 +985,7 @@ cs_turbulence_ke(int              phase_id,
                                  &halo_type);
 
       cs_field_bc_coeffs_t bc_coeffs_loc;
-      cs_field_bc_coeffs_create(&bc_coeffs_loc);
+      cs_field_bc_coeffs_init(&bc_coeffs_loc);
       bc_coeffs_loc.a = bromo;
       bc_coeffs_loc.b = viscb;
 
@@ -1229,7 +1229,7 @@ cs_turbulence_ke(int              phase_id,
        --------------------------------------- */
 
     cs_field_bc_coeffs_t bc_coeffs_sqs_loc;
-    cs_field_bc_coeffs_create(&bc_coeffs_sqs_loc);
+    cs_field_bc_coeffs_init(&bc_coeffs_sqs_loc);
 
     BFT_MALLOC(bc_coeffs_sqs_loc.a, n_b_faces, cs_real_t);
     BFT_MALLOC(bc_coeffs_sqs_loc.b, n_b_faces, cs_real_t);

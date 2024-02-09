@@ -219,7 +219,7 @@ _lageqp(cs_real_t   *vitessel,
   /* Allocate temporary arrays */
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
   BFT_MALLOC(bc_coeffs_v_loc.a, 3*nfabor, cs_real_t);
   BFT_MALLOC(bc_coeffs_v_loc.b, 9*nfabor, cs_real_t);
 
@@ -257,7 +257,7 @@ _lageqp(cs_real_t   *vitessel,
   /* Allocate temporary arrays */
 
   cs_field_bc_coeffs_t bc_coeffs_phi_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_phi_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_phi_loc);
 
   BFT_MALLOC(bc_coeffs_phi_loc.a,  nfabor, cs_real_t);
   BFT_MALLOC(bc_coeffs_phi_loc.b,  nfabor, cs_real_t);
@@ -438,7 +438,7 @@ cs_lagr_poisson(const int  itypfb[])
   BFT_MALLOC(grad, ncelet, cs_real_3_t);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_loc);
 
   BFT_MALLOC(bc_coeffs_loc.a,  nfabor, cs_real_t);
   BFT_MALLOC(bc_coeffs_loc.b,  nfabor, cs_real_t);

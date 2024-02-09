@@ -1498,7 +1498,7 @@ cs_f_field_get_label(int           f_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_bc_coeffs_create(cs_field_bc_coeffs_t  *bc_coeffs)
+cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
 {
   bc_coeffs->location_id = 0.0;
 

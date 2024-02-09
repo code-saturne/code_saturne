@@ -270,7 +270,7 @@ cs_interpolate_from_location_p1(void                *input,
       int bf_id = cs_field_get_key_int(f, kbf);
       if (bf_id > -1) {
         BFT_MALLOC(bc_coeffs, 1, cs_field_bc_coeffs_t);
-        cs_field_bc_coeffs_create(bc_coeffs);
+        cs_field_bc_coeffs_init(bc_coeffs);
 
         BFT_MALLOC(bc_coeffs->a, m->n_b_faces, cs_real_t);
         const cs_field_t *bf = cs_field_by_id(bf_id);

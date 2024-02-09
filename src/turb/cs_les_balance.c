@@ -339,7 +339,7 @@ _les_balance_laplacian(cs_real_t   *wa,
   const int *bc_type = cs_glob_bc_type;
 
   cs_field_bc_coeffs_t bc_coeffs_loc; // a voir ci dessous (a=af,b=bf)
-  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_loc);
   BFT_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
@@ -468,7 +468,7 @@ _les_balance_laplacian(cs_real_t   *wa,
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
   BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
 
@@ -2959,7 +2959,7 @@ cs_les_balance_compute_rij(void)
   cs_real_3_t *w1, *w3;
 
   cs_field_bc_coeffs_t bc_coeffs;
-  cs_field_bc_coeffs_create(&bc_coeffs);
+  cs_field_bc_coeffs_init(&bc_coeffs);
   BFT_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
 
@@ -3362,7 +3362,7 @@ cs_les_balance_compute_tui(void)
   BFT_MALLOC(lapl  , n_cells_ext, cs_real_t);
 
   cs_field_bc_coeffs_t bc_coeffs;
-  cs_field_bc_coeffs_create(&bc_coeffs);
+  cs_field_bc_coeffs_init(&bc_coeffs);
   BFT_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
 

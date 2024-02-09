@@ -8524,7 +8524,7 @@ _gradient_scalar(const char                    *var_name,
 
   if (bc_coeffs == NULL) {
     BFT_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_create(bc_coeffs_loc);
+    cs_field_bc_coeffs_init(bc_coeffs_loc);
 
     BFT_MALLOC(bc_coeffs_loc->a, n_b_faces, cs_real_t);
     BFT_MALLOC(bc_coeffs_loc->b, n_b_faces, cs_real_t);
@@ -8834,7 +8834,7 @@ _gradient_vector(const char                     *var_name,
 
   if (bc_coeffs_v == NULL) {
     BFT_MALLOC(bc_coeffs_v_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_create(bc_coeffs_v_loc);
+    cs_field_bc_coeffs_init(bc_coeffs_v_loc);
 
     BFT_MALLOC(bc_coeffs_v_loc->a, 3*n_b_faces, cs_real_t);
     BFT_MALLOC(bc_coeffs_v_loc->b, 9*n_b_faces, cs_real_t);
@@ -9117,7 +9117,7 @@ _gradient_tensor(const char                 *var_name,
 
   if (bc_coeffs_ts == NULL) {
     BFT_MALLOC(bc_coeffs_ts_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_create(bc_coeffs_ts_loc);
+    cs_field_bc_coeffs_init(bc_coeffs_ts_loc);
 
     BFT_MALLOC(bc_coeffs_ts_loc->a, 6*n_b_faces, cs_real_t);
     BFT_MALLOC(bc_coeffs_ts_loc->b, 36*n_b_faces, cs_real_t);

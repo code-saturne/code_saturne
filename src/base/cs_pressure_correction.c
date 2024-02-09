@@ -2500,7 +2500,7 @@ _pressure_correction_fv(int                   iterns,
        ----------------------------------- */
 
     cs_field_bc_coeffs_t bc_coeffs_rho_loc;
-    cs_field_bc_coeffs_create(&bc_coeffs_rho_loc);
+    cs_field_bc_coeffs_init(&bc_coeffs_rho_loc);
     BFT_MALLOC(bc_coeffs_rho_loc.a, n_b_faces, cs_real_t);
     BFT_MALLOC(bc_coeffs_rho_loc.b, n_b_faces, cs_real_t);
 

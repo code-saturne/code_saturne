@@ -957,14 +957,14 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   /* Boundary condition */
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_loc);
   BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
   cs_real_t *coefa = bc_coeffs_loc.a;
   cs_real_t *coefb = bc_coeffs_loc.b;
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
   BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
   cs_real_3_t  *coefa_vec = (cs_real_3_t  *)bc_coeffs_v_loc.a;
@@ -1326,7 +1326,7 @@ cs_vof_drift_term(int                        imrgra,
     cs_real_t *cpro_bdriftf = bdriftflux->val;
 
     cs_field_bc_coeffs_t bc_coeffs_v_loc;
-    cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+    cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
     BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
     BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 

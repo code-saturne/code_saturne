@@ -314,7 +314,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   const cs_real_t *coefbp = f_fm->bc_coeffs->b;
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_loc);
   BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
 

@@ -619,7 +619,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
   /* cs_field_set_key_double(f, kctheta, ctheta); */
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
-  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
   BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
   BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 
@@ -1153,7 +1153,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
      * the thermal transport equation */
 
     cs_field_bc_coeffs_t bc_coeffs;
-    cs_field_bc_coeffs_create(&bc_coeffs);
+    cs_field_bc_coeffs_init(&bc_coeffs);
 
     bc_coeffs.a = f_ut->bc_coeffs->ad;
     bc_coeffs.b = f_ut->bc_coeffs->bd;
