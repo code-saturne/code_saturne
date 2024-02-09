@@ -60,8 +60,8 @@ BEGIN_C_DECLS
  * Prototypes for Fortran functions and variables.
  *============================================================================*/
 
-extern int *cs_glob_cf_icvfli = NULL;
-extern int *cs_glob_cf_ifbet = NULL;
+extern int *cs_glob_cf_icvfli;
+extern int *cs_glob_cf_ifbet;
 
 /*=============================================================================
  * Additional doxygen documentation
