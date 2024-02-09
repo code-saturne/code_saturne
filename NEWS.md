@@ -1,4 +1,4 @@
-Release 8.0.3 (unreleased)
+Release 8.0.3 (2024-03-09)
 --------------------------
 
 ### Bug fixes:
