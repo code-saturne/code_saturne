@@ -125,7 +125,8 @@ cs_ctwr_bcond(void)
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET) {
+    if (bc_type[face_id] == CS_INLET || bc_type[face_id] == CS_FREE_INLET
+        || bc_type[face_id] == CS_CONVECTIVE_INLET) {
 
       /* The turbulence BC values are calculated upstream using the base
          mechanism, so nothing specific is needed here. */
