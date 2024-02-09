@@ -2118,7 +2118,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       cs_real_t *tempct = NULL;
       if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
               && cs_glob_lagr_specific_physics->itpvar == 1)
-          || lagr_model->physical_model == CS_LAGR_PHYS_COAL)
+          || lagr_model->physical_model == CS_LAGR_PHYS_COAL
+          || lagr_model->physical_model == CS_LAGR_PHYS_CTWR )
         BFT_MALLOC(tempct, p_set->n_particles * 2, cs_real_t);
 
       cs_real_t *terbru = NULL;
@@ -2232,7 +2233,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* Integration of SDE related to physical models */
 
       if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          || lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
+          || lagr_model->physical_model == CS_LAGR_PHYS_COAL
+          || lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
         if (cs_glob_lagr_time_step->nor == 1)
           /* Use fields at previous time step    */

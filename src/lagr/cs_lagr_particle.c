@@ -903,6 +903,23 @@ cs_lagr_particle_attr_initialize(void)
 
   }
 
+  if (lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+      attr_keys[CS_LAGR_CP][0] = CS_LAGR_P_RVAR;
+      attr_keys[CS_LAGR_CP][1] = ++loc_count;
+
+      attr_keys[CS_LAGR_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
+      attr_keys[CS_LAGR_TEMPERATURE][1] = ++loc_count;
+
+      attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
+      attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
+
+// FIXME: accounting for droplet radiation will be done later
+/*      if (extra->radiative_model > 0)
+        attr_keys[CS_LAGR_EMISSIVITY][1] = ++loc_count;*/
+
+  }
+
   if (lagr_model->n_stat_classes > 0) {
     attr_keys[CS_LAGR_STAT_CLASS][0] = CS_LAGR_P_IPRP;
     attr_keys[CS_LAGR_STAT_CLASS][1] = ++loc_count;

@@ -374,7 +374,8 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
   if (    cs_glob_lagr_source_terms->ltsmas == 1
       && (   cs_glob_lagr_specific_physics->impvar == 1
-          || cs_glob_lagr_specific_physics->idpvar == 1)) {
+          || cs_glob_lagr_specific_physics->idpvar == 1
+          || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
 
     for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
@@ -498,6 +499,41 @@ cs_lagr_coupling(const cs_real_t  taup[],
             += tempct[nbpart + npt] * p_stat_w;
 
         }
+
+      }
+
+    }
+    else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+      for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+
+        unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+
+        cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+                                                   CS_LAGR_CELL_ID);
+
+        cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                        CS_LAGR_MASS);
+        cs_real_t  p_tmp = cs_lagr_particle_get_real(particle, p_am,
+                                                     CS_LAGR_TEMPERATURE);
+        cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                      CS_LAGR_CP);
+
+        cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n
+                                   (particle, p_am, 1, CS_LAGR_MASS);
+        cs_real_t  prev_p_tmp  = cs_lagr_particle_get_real_n
+                                   (particle, p_am, 1, CS_LAGR_TEMPERATURE);
+        cs_real_t  prev_p_cp   = cs_lagr_particle_get_real_n
+                                   (particle, p_am, 1, CS_LAGR_CP);
+
+        cs_real_t  p_stat_w = cs_lagr_particle_get_real
+                                (particle, p_am, CS_LAGR_STAT_WEIGHT);
+
+        tslag[iel + (lag_st->itste-1) * ncelet]
+          += - (  p_mass * p_tmp * p_cp
+             - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
+        tslag[iel + (lag_st->itsti-1) * ncelet]
+          += tempct[nbpart + npt] * p_stat_w;
 
       }
 

@@ -644,7 +644,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
   const cs_real_t  *rho0ch = coal_model->rho0ch;
 
   const cs_real_t *vela = extra->vel->vals[time_id];
-  const cs_real_t *cval_h = NULL, *cval_t = NULL;
+  const cs_real_t *cval_h = NULL, *cval_t = NULL, *cval_t_l = NULL;
   cs_real_t *_cval_t = NULL;
 
   cs_real_t tscl_shift = 0;
@@ -653,7 +653,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
   if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           && cs_glob_lagr_specific_physics->itpvar == 1)
-      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
+      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
     const cs_field_t *f = cs_field_by_name_try("temperature");
     if (f != NULL)
@@ -663,6 +664,10 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
     if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
       tscl_shift = - cs_physical_constants_celsius_to_kelvin;
+  }
+
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+    cval_t_l = cs_field_by_name("temperature_liquid")->val;
   }
 
   const cs_real_t pis6 = cs_math_pi / 6.0;
@@ -1076,6 +1081,23 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
              ilayer++)
           particle_coal_density[ilayer] = rho0ch[coal_id];
 
+      }
+
+      /*Cooling tower model*/
+      if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
+                                  zis->density * pis6 * d3
+                                  );
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
+                                    zis->cp);
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
+                                  cval_t_l[face_id]);
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+                                  cval_t[face_id]+tscl_shift);
       }
 
       /* statistical weight */

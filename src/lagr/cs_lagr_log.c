@@ -287,6 +287,11 @@ _log_setup_injection(cs_log_t  log)
                         zis->coal_number);
         }
 
+        else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+          cs_log_printf(log,
+                        _("    temperature is calculated automatically\n"));
+        }
+
         cs_log_printf(log, "\n");
       }
 
@@ -340,7 +345,8 @@ cs_lagr_log_setup(void)
   const char *physical_model_value_str[]
     = {N_("  0 (no additional equations)"),
        N_("  1 (equations on Dp Tp Mp)"),
-       N_("  2 (coal particles)")};
+       N_("  2 (coal particles)"),
+       N_("  3 (cooling tower model)")};
   cs_log_printf(CS_LOG_SETUP,
                 _("    iilagr:    %s\n"),
                 _(iilagr_value_str[cs_glob_lagr_time_scheme->iilagr]));

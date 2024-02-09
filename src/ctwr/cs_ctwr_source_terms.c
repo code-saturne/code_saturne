@@ -67,6 +67,7 @@
 #include "cs_field_pointer.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
+#include "cs_lagr.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -844,6 +845,49 @@ cs_ctwr_source_term(int              f_id,
     }
 
   } /* End of test on whether to generate rain */
+
+  /*  Adding Lagrangian source terms when twoway_coupling is activated
+      ================================================================ */
+
+  /* General comment: Since all lagrangian source terms have been calculated
+     using the values of the current and previous time step (see the
+     cs_lagr_coupling.c subroutine), only explicit source terms have to be
+     accounted for in the corresponding transport equations ?! */
+
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
+
+    if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+      cs_lnum_t ncelet  = cs_glob_mesh->n_cells_with_ghosts;
+      cs_lnum_t ncel    = cs_glob_mesh->n_cells;
+      cs_real_t *st_val = cs_glob_lagr_source_terms->st_val;
+      cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
+
+      /* verifying if a mass source term is activated in the lagrangian module*/
+      if (cs_glob_lagr_source_terms->ltsmas == 1) {
+        for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
+          /* Since there is only evaporation accounting for a mass transfer liquid - gasphase,
+             the transferred must be water vapour -> ym_w*/
+          if (f_id == (CS_F_(ym_w)->id)) {
+            /* Since THETSS = 0, the explicit source could only be a function of ym_w(n).
+               However, this dependency has already been accounted for in the cs_lagr_sde_model.c
+               subroutine, since the mass transfer rate has been calculated as
+               a function of the local humidity (and thus ym_w)*/
+            exp_st[cell_id] += st_val[cell_id + (lag_st->itsmas-1) * ncelet];
+          }
+        }
+      }
+      /* verifying if the heat transfer is activated in the lagrangian module */
+      if (cs_glob_lagr_source_terms->ltsthe == 1) {
+        for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
+          if (f_id == (CS_F_(t)->id)) {
+            cs_real_t cp_h     = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
+          }
+        }
+      }
+    }
+  }
+
 
   /* Source terms for rain drops velocity
    * ==================================== */

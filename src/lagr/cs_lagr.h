@@ -148,7 +148,8 @@ typedef enum {
 enum {
   CS_LAGR_PHYS_OFF = 0,
   CS_LAGR_PHYS_HEAT = 1,
-  CS_LAGR_PHYS_COAL = 2
+  CS_LAGR_PHYS_COAL = 2,
+  CS_LAGR_PHYS_CTWR = 3
 };
 
 /*! Fixed maximum sizes */
@@ -270,7 +271,9 @@ typedef struct {
       Evolution equations on temperature (in degree Celsius), mass of
       reactive coal, mass of char and diameter of the shrinking core are
       associated with the particles. This option is available only if the
-      continuous phase represents a pulverised coal flame. */
+      continuous phase represents a pulverised coal flame.
+    - CS_LAGR_PHYS_CTWR: cooling tower model in the context
+      of an Lagrangian formulation.*/
   int  physical_model;
   int  n_temperature_layers;
 
@@ -709,6 +712,9 @@ typedef struct {
 
   /*! source term values */
   cs_real_t     *st_val;
+
+  /* source term for humid air of the cooling tower model */
+  int itshum;
 
 } cs_lagr_source_terms_t;
 

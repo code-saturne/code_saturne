@@ -341,7 +341,7 @@ cs_lagr_options_definition(int         isuite,
                                 _("in Lagrangian module"),
                                 "cs_glob_lagr_model->physical_model",
                                 lagr_model->physical_model,
-                                0, 3);
+                                0, 4);
 
   cs_parameters_error_barrier();
 
@@ -503,7 +503,7 @@ cs_lagr_options_definition(int         isuite,
                                 _("in Lagrangian module"),
                                 "lagr_model->physical_model",
                                 lagr_model->physical_model,
-                                0, 3);
+                                0, 4);
 
   cs_parameters_error_barrier();
 
@@ -609,12 +609,31 @@ cs_lagr_options_definition(int         isuite,
                                     cs_glob_lagr_source_terms->ltsmas,
                                     0, 2);
     }
+
+    else if (lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _("in Lagrangian module"),
+                                    "cs_glob_lagr_source_terms->ltsmas",
+                                    cs_glob_lagr_source_terms->ltsmas,
+                                    0, 2);
+
+    }
     else
       cs_glob_lagr_source_terms->ltsmas = 0;
 
     if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1)
         || lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
+
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _("in Lagrangian module"),
+                                    "cs_glob_lagr_source_terms->ltsthe",
+                                    cs_glob_lagr_source_terms->ltsthe,
+                                    0, 2);
+
+    }
+
+    else if (   lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
@@ -858,6 +877,7 @@ cs_lagr_options_definition(int         isuite,
   cs_glob_lagr_source_terms->itsmas = 0;
   cs_glob_lagr_source_terms->itste  = 0;
   cs_glob_lagr_source_terms->itsti  = 0;
+  cs_glob_lagr_source_terms->itshum = 0;
 
   /* Dynamics: velocity + turbulence */
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
@@ -940,6 +960,14 @@ cs_lagr_options_definition(int         isuite,
       cs_glob_lagr_source_terms->itsti
         = cs_glob_lagr_source_terms->itste + 1;
 
+      irf = cs_glob_lagr_source_terms->itsti;
+
+    }
+    else if (lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+      lagdim->ntersl += 2;
+      cs_glob_lagr_source_terms->itste = irf + 1;
+      cs_glob_lagr_source_terms->itsti = cs_glob_lagr_source_terms->itste + 1;
       irf = cs_glob_lagr_source_terms->itsti;
 
     }

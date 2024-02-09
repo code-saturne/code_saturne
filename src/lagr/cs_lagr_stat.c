@@ -1986,6 +1986,12 @@ _init_vars_attribute(void)
     cs_lagr_stat_activate_attr(CS_LAGR_COKE_MASS);
     cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
   }
+
+  else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+    cs_lagr_stat_activate_attr(CS_LAGR_MASS);
+    cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
+  }
+
 }
 
 /*----------------------------------------------------------------------------

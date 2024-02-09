@@ -613,6 +613,13 @@ cs_restart_lagrangian_checkpoint_read(void)
 
           }
 
+          else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+            sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
+                    "terme_source_thermique_explicite");
+            sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
+                    "terme_source_thermique_implicite");
+          }
+
         }
 
         /* Old style return coupling terms */
@@ -1376,6 +1383,13 @@ cs_restart_lagrangian_checkpoint_write(void)
                   "terme_source_thermique_implicite");
         }
         else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
+                  "terme_source_thermique_explicite");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
+                  "terme_source_thermique_implicite");
+        }
+
+        else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
           sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
                   "terme_source_thermique_explicite");
           sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
