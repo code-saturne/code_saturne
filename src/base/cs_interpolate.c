@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_field_default.h"
 #include "cs_gradient.h"
 #include "cs_halo.h"
@@ -259,8 +260,7 @@ cs_interpolate_from_location_p1(void                *input,
     = (m->cell_cells_idx != NULL) ? CS_HALO_EXTENDED : CS_HALO_STANDARD;
 
   cs_field_t *f = NULL;
-  const cs_real_t *bc_coeff_a = NULL;
-  const cs_real_t *bc_coeff_b = NULL;
+  cs_field_bc_coeffs_t *bc_coeffs = NULL;
 
   if (input != NULL) {
     const char *name = input;
@@ -269,20 +269,23 @@ cs_interpolate_from_location_p1(void                *input,
       int kbf = cs_field_key_id_try("boundary_value_id");
       int bf_id = cs_field_get_key_int(f, kbf);
       if (bf_id > -1) {
+        BFT_MALLOC(bc_coeffs, 1, cs_field_bc_coeffs_t);
+        cs_field_bc_coeffs_create(bc_coeffs);
+
+        BFT_MALLOC(bc_coeffs->a, m->n_b_faces, cs_real_t);
         const cs_field_t *bf = cs_field_by_id(bf_id);
-        bc_coeff_a = bf->val;
+        cs_array_real_copy(m->n_b_faces, bf->val, bc_coeffs->a);
+        bc_coeffs->b = NULL;
       }
       else if (f->bc_coeffs != NULL) {
-        bc_coeff_a = f->bc_coeffs->a;
-        bc_coeff_b = f->bc_coeffs->b;
+        bc_coeffs = f->bc_coeffs;
         if (f->dim > 1 && f->type & CS_FIELD_VARIABLE) {
           int coupled = 0;
           int coupled_key_id = cs_field_key_id_try("coupled");
           if (coupled_key_id > -1)
             coupled = cs_field_get_key_int(f, coupled_key_id);
           if (coupled == 0) {   /* not handled in this case */
-            bc_coeff_a = NULL;
-            bc_coeff_b = NULL;
+            bc_coeffs = NULL;
           }
         }
       }
@@ -311,8 +314,7 @@ cs_interpolate_from_location_p1(void                *input,
                                   fvq,
                                   c_id,
                                   halo_type,
-                                  bc_coeff_a,
-                                  bc_coeff_b,
+                                  bc_coeffs,
                                   c_vals,
                                   NULL,
                                   grad);
@@ -345,8 +347,7 @@ cs_interpolate_from_location_p1(void                *input,
                                   fvq,
                                   c_id,
                                   halo_type,
-                                  (const cs_real_3_t *)bc_coeff_a,
-                                  (const cs_real_33_t *)bc_coeff_b,
+                                  bc_coeffs,
                                   c_vals,
                                   NULL,
                                   grad);
@@ -382,8 +383,7 @@ cs_interpolate_from_location_p1(void                *input,
                                   fvq,
                                   c_id,
                                   halo_type,
-                                  (const cs_real_6_t *)bc_coeff_a,
-                                  (const cs_real_66_t *)bc_coeff_b,
+                                  bc_coeffs,
                                   c_vals,
                                   NULL,
                                   grad);
@@ -408,6 +408,12 @@ cs_interpolate_from_location_p1(void                *input,
 
   default:
     assert(0);
+  }
+
+  if (bc_coeffs != NULL && bc_coeffs != f->bc_coeffs) {
+    BFT_FREE(bc_coeffs->a);
+    BFT_FREE(bc_coeffs->b);
+    BFT_FREE(bc_coeffs);
   }
 }
 

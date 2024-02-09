@@ -89,22 +89,21 @@ void CS_PROCF (matrix, MATRIX)
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_wrapper_scalar(int               iconvp,
-                         int               idiffp,
-                         int               ndircp,
-                         int               isym,
-                         double            thetap,
-                         int               imucpp,
-                         const cs_real_t   coefbp[],
-                         const cs_real_t   cofbfp[],
-                         const cs_real_t   rovsdt[],
-                         const cs_real_t   i_massflux[],
-                         const cs_real_t   b_massflux[],
-                         const cs_real_t   i_visc[],
-                         const cs_real_t   b_visc[],
-                         const cs_real_t   xcpp[],
-                         cs_real_t         da[],
-                         cs_real_t         xa[]);
+cs_matrix_wrapper_scalar(int                         iconvp,
+                         int                         idiffp,
+                         int                         ndircp,
+                         int                         isym,
+                         double                      thetap,
+                         int                         imucpp,
+                         const cs_field_bc_coeffs_t *bc_coeffs,
+                         const cs_real_t             rovsdt[],
+                         const cs_real_t             i_massflux[],
+                         const cs_real_t             b_massflux[],
+                         const cs_real_t             i_visc[],
+                         const cs_real_t             b_visc[],
+                         const cs_real_t             xcpp[],
+                         cs_real_t                   da[],
+                         cs_real_t                   xa[]);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_vector (or its counterpart for
@@ -112,22 +111,21 @@ cs_matrix_wrapper_scalar(int               iconvp,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_wrapper_vector(int                  iconvp,
-                         int                  idiffp,
-                         int                  tensorial_diffusion,
-                         int                  ndircp,
-                         int                  isym,
-                         cs_lnum_t            eb_size,
-                         double               thetap,
-                         const cs_real_33_t   coefbu[],
-                         const cs_real_33_t   cofbfu[],
-                         const cs_real_33_t   fimp[],
-                         const cs_real_t      i_massflux[],
-                         const cs_real_t      b_massflux[],
-                         const cs_real_t      i_visc[],
-                         const cs_real_t      b_visc[],
-                         cs_real_33_t         da[],
-                         cs_real_t            xa[]);
+cs_matrix_wrapper_vector(int                         iconvp,
+                         int                         idiffp,
+                         int                         tensorial_diffusion,
+                         int                         ndircp,
+                         int                         isym,
+                         cs_lnum_t                   eb_size,
+                         double                      thetap,
+                         const cs_field_bc_coeffs_t *bc_coeffs_v,
+                         const cs_real_33_t          fimp[],
+                         const cs_real_t             i_massflux[],
+                         const cs_real_t             b_massflux[],
+                         const cs_real_t             i_visc[],
+                         const cs_real_t             b_visc[],
+                         cs_real_33_t                da[],
+                         cs_real_t                   xa[]);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_tensor (or its counterpart for
@@ -135,21 +133,20 @@ cs_matrix_wrapper_vector(int                  iconvp,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_wrapper_tensor(int                  iconvp,
-                         int                  idiffp,
-                         int                  tensorial_diffusion,
-                         int                  ndircp,
-                         int                  isym,
-                         double               thetap,
-                         const cs_real_66_t   coefbts[],
-                         const cs_real_66_t   cofbfts[],
-                         const cs_real_66_t   fimp[],
-                         const cs_real_t      i_massflux[],
-                         const cs_real_t      b_massflux[],
-                         const cs_real_t      i_visc[],
-                         const cs_real_t      b_visc[],
-                         cs_real_66_t         da[],
-                         cs_real_t            xa[]);
+cs_matrix_wrapper_tensor(int                         iconvp,
+                         int                         idiffp,
+                         int                         tensorial_diffusion,
+                         int                         ndircp,
+                         int                         isym,
+                         double                      thetap,
+                         const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                         const cs_real_66_t          fimp[],
+                         const cs_real_t             i_massflux[],
+                         const cs_real_t             b_massflux[],
+                         const cs_real_t             i_visc[],
+                         const cs_real_t             b_visc[],
+                         cs_real_66_t                da[],
+                         cs_real_t                   xa[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -171,7 +168,7 @@ cs_matrix_wrapper_tensor(int                  iconvp,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     cofbfp        boundary condition array for the variable flux
+ * \param[in]     bc_coeffs     boundary condition array for the variable flux
  *                               (implicit part)
  * \param[in]     rovsdt        working array
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -184,15 +181,15 @@ cs_matrix_wrapper_tensor(int                  iconvp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sym_matrix_scalar(const cs_mesh_t          *m,
-                     int                       idiffp,
-                     double                    thetap,
-                     const cs_real_t           cofbfp[],
-                     const cs_real_t           rovsdt[],
-                     const cs_real_t           i_visc[],
-                     const cs_real_t           b_visc[],
-                     cs_real_t       *restrict da,
-                     cs_real_t       *restrict xa);
+cs_sym_matrix_scalar(const cs_mesh_t            *m,
+                     int                         idiffp,
+                     double                      thetap,
+                     const cs_field_bc_coeffs_t *bc_coeffs,
+                     const cs_real_t             rovsdt[],
+                     const cs_real_t             i_visc[],
+                     const cs_real_t             b_visc[],
+                     cs_real_t         *restrict da,
+                     cs_real_t         *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -214,7 +211,7 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     cofbfts        boundary condition array for the variable flux
+ * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  *                               (Implicit part - 6x6 tensor array)
  * \param[in]     fimp          part of the diagonal
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -227,15 +224,15 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sym_matrix_tensor(const cs_mesh_t          *m,
-                     int                       idiffp,
-                     double                    thetap,
-                     const cs_real_66_t        cofbfts[],
-                     const cs_real_66_t        fimp[],
-                     const cs_real_t           i_visc[],
-                     const cs_real_t           b_visc[],
-                     cs_real_66_t              *restrict da,
-                     cs_real_t                 *restrict xa);
+cs_sym_matrix_tensor(const cs_mesh_t            *m,
+                     int                         idiffp,
+                     double                      thetap,
+                     const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                     const cs_real_66_t          fimp[],
+                     const cs_real_t             i_visc[],
+                     const cs_real_t             b_visc[],
+                     cs_real_66_t      *restrict da,
+                     cs_real_t         *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -260,7 +257,7 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbts        boundary condition array for the variable
+ * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  *                               (Implicit part - 6x6 tensor array)
  * \param[in]     cofbfts        boundary condition array for the variable flux
  *                               (Implicit part - 6x6 tensor array)
@@ -277,19 +274,18 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_tensor(const cs_mesh_t          *m,
-                 int                       iconvp,
-                 int                       idiffp,
-                 double                    thetap,
-                 const cs_real_66_t        coefbts[],
-                 const cs_real_66_t        cofbfts[],
-                 const cs_real_66_t        fimp[],
-                 const cs_real_t           i_massflux[],
-                 const cs_real_t           b_massflux[],
-                 const cs_real_t           i_visc[],
-                 const cs_real_t           b_visc[],
-                 cs_real_66_t              *restrict da,
-                 cs_real_2_t               *restrict xa);
+cs_matrix_tensor(const cs_mesh_t            *m,
+                 int                         iconvp,
+                 int                         idiffp,
+                 double                      thetap,
+                 const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                 const cs_real_66_t          fimp[],
+                 const cs_real_t             i_massflux[],
+                 const cs_real_t             b_massflux[],
+                 const cs_real_t             i_visc[],
+                 const cs_real_t             b_visc[],
+                 cs_real_66_t      *restrict da,
+                 cs_real_2_t       *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -316,10 +312,7 @@ cs_matrix_tensor(const cs_mesh_t          *m,
  * \param[in]     imucpp        indicator
  *                               - 0 do not multiply the convective term by Cp
  *                               - 1 do multiply the convective term by Cp
- * \param[in]     coefbp        boundary condition array for the variable
- *                               (implicit part)
- * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (implicit part)
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     rovsdt        working array
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -334,21 +327,20 @@ cs_matrix_tensor(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_scalar(const cs_mesh_t          *m,
-                 int                       iconvp,
-                 int                       idiffp,
-                 double                    thetap,
-                 int                       imucpp,
-                 const cs_real_t           coefbp[],
-                 const cs_real_t           cofbfp[],
-                 const cs_real_t           rovsdt[],
-                 const cs_real_t           i_massflux[],
-                 const cs_real_t           b_massflux[],
-                 const cs_real_t           i_visc[],
-                 const cs_real_t           b_visc[],
-                 const cs_real_t           xcpp[],
-                 cs_real_t       *restrict da,
-                 cs_real_2_t     *restrict xa);
+cs_matrix_scalar(const cs_mesh_t            *m,
+                 int                         iconvp,
+                 int                         idiffp,
+                 double                      thetap,
+                 int                         imucpp,
+                 const cs_field_bc_coeffs_t *bc_coeffs,
+                 const cs_real_t             rovsdt[],
+                 const cs_real_t             i_massflux[],
+                 const cs_real_t             b_massflux[],
+                 const cs_real_t             i_visc[],
+                 const cs_real_t             b_visc[],
+                 const cs_real_t             xcpp[],
+                 cs_real_t         *restrict da,
+                 cs_real_2_t       *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -370,7 +362,7 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     cofbfu        boundary condition array for the variable flux
+ * \param[in]     bc_coeffs_v   boundary condition structure for the variable
  *                               (implicit part - 3x3 tensor array)
  * \param[in]     fimp          part of the diagonal
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -383,15 +375,15 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sym_matrix_vector(const cs_mesh_t          *m,
-                     int                       idiffp,
-                     double                    thetap,
-                     const cs_real_33_t        cofbfu[],
-                     const cs_real_33_t        fimp[],
-                     const cs_real_t           i_visc[],
-                     const cs_real_t           b_visc[],
-                     cs_real_33_t    *restrict da,
-                     cs_real_t       *restrict xa);
+cs_sym_matrix_vector(const cs_mesh_t            *m,
+                     int                         idiffp,
+                     double                      thetap,
+                     const cs_field_bc_coeffs_t *bc_coeffs_v,
+                     const cs_real_33_t          fimp[],
+                     const cs_real_t             i_visc[],
+                     const cs_real_t             b_visc[],
+                     cs_real_33_t      *restrict da,
+                     cs_real_t         *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -420,10 +412,7 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbu        boundary condition array for the variable
- *                               (implicit part - 3x3 tensor array)
- * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (implicit part - 3x3 tensor array)
+ * \param[in]     bc_coeffs_v   boundary condition structure for the variable
  * \param[in]     fimp          part of the diagonal
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -443,8 +432,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
                  int                         idiffp,
                  cs_lnum_t                   eb_size,
                  double                      thetap,
-                 const cs_real_33_t          coefbu[],
-                 const cs_real_33_t          cofbfu[],
+                 const cs_field_bc_coeffs_t *bc_coeffs_v,
                  const cs_real_33_t          fimp[],
                  const cs_real_t             i_massflux[],
                  const cs_real_t             b_massflux[],
@@ -468,10 +456,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
  * \param[in]     isym          indicator
  *                               - 1 symmetric matrix
  *                               - 2 non symmmetric matrix
- * \param[in]     coefbp        boundary condition array for the variable
- *                               (implicit part)
- * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (implicit part)
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -483,17 +468,16 @@ cs_matrix_vector(const cs_mesh_t            *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_time_step(const cs_mesh_t          *m,
-                    int                       iconvp,
-                    int                       idiffp,
-                    int                       isym,
-                    const cs_real_t           coefbp[],
-                    const cs_real_t           cofbfp[],
-                    const cs_real_t           i_massflux[],
-                    const cs_real_t           b_massflux[],
-                    const cs_real_t           i_visc[],
-                    const cs_real_t           b_visc[],
-                    cs_real_t       *restrict da);
+cs_matrix_time_step(const cs_mesh_t            *m,
+                    int                         iconvp,
+                    int                         idiffp,
+                    int                         isym,
+                    const cs_field_bc_coeffs_t *bc_coeffs,
+                    const cs_real_t             i_massflux[],
+                    const cs_real_t             b_massflux[],
+                    const cs_real_t             i_visc[],
+                    const cs_real_t             b_visc[],
+                    cs_real_t         *restrict da);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -519,10 +503,7 @@ cs_matrix_time_step(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbu        boundary condition array for the variable
- *                               (implicit part - 3x3 tensor array)
- * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (implicit part - 3x3 tensor array)
+ * \param[in]     bc_coeffs_v   boundary condition structure for the variable
  * \param[in]     fimp
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -541,8 +522,7 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
                                 int                         iconvp,
                                 int                         idiffp,
                                 double                      thetap,
-                                const cs_real_33_t          coefbu[],
-                                const cs_real_33_t          cofbfu[],
+                                const cs_field_bc_coeffs_t *bc_coeffs_v,
                                 const cs_real_33_t          fimp[],
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
@@ -574,10 +554,7 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbu        boundary condition array for the variable
- *                               (implicit part - 3x3 tensor array)
- * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (implicit part - 3x3 tensor array)
+ * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  * \param[in]     fimp          part of the diagonal
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -591,19 +568,18 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
-                                       int                       iconvp,
-                                       int                       idiffp,
-                                       double                    thetap,
-                                       const cs_real_66_t        coefbu[],
-                                       const cs_real_66_t        cofbfu[],
-                                       const cs_real_66_t        fimp[],
-                                       const cs_real_t           i_massflux[],
-                                       const cs_real_t           b_massflux[],
-                                       const cs_real_66_t        i_visc[],
-                                       const cs_real_t           b_visc[],
-                                       cs_real_66_t    *restrict da,
-                                       cs_real_662_t   *restrict xa);
+cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t            *m,
+                                       int                         iconvp,
+                                       int                         idiffp,
+                                       double                      thetap,
+                                       const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                                       const cs_real_66_t          fimp[],
+                                       const cs_real_t             i_massflux[],
+                                       const cs_real_t             b_massflux[],
+                                       const cs_real_66_t          i_visc[],
+                                       const cs_real_t             b_visc[],
+                                       cs_real_66_t      *restrict da,
+                                       cs_real_662_t     *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -624,8 +600,7 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (implicit part - 3x3 tensor array)
+ * \param[in]     bc_coeffs_v   boundary condition structure for the variable
  * \param[in]     fimp
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
@@ -637,15 +612,15 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
-                                    int                       idiffp,
-                                    double                    thetap,
-                                    const cs_real_33_t        cofbfu[],
-                                    const cs_real_33_t        fimp[],
-                                    const cs_real_33_t        i_visc[],
-                                    const cs_real_t           b_visc[],
-                                    cs_real_33_t    *restrict da,
-                                    cs_real_33_t    *restrict xa);
+cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t             *m,
+                                    int                         idiffp,
+                                    double                      thetap,
+                                    const cs_field_bc_coeffs_t *bc_coeffs_v,
+                                    const cs_real_33_t          fimp[],
+                                    const cs_real_33_t          i_visc[],
+                                    const cs_real_t             b_visc[],
+                                    cs_real_33_t      *restrict da,
+                                    cs_real_33_t      *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -680,15 +655,16 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
-                                           int                       idiffp,
-                                           double                    thetap,
-                                           const cs_real_66_t        cofbfu[],
-                                           const cs_real_66_t        fimp[],
-                                           const cs_real_66_t        i_visc[],
-                                           const cs_real_t           b_visc[],
-                                           cs_real_66_t    *restrict da,
-                                           cs_real_66_t    *restrict xa);
+cs_sym_matrix_anisotropic_diffusion_tensor
+(const cs_mesh_t            *m,
+ int                         idiffp,
+ double                      thetap,
+ const cs_field_bc_coeffs_t *bc_coeffs_ts,
+ const cs_real_66_t          fimp[],
+ const cs_real_66_t          i_visc[],
+ const cs_real_t             b_visc[],
+ cs_real_66_t      *restrict da,
+ cs_real_66_t      *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 

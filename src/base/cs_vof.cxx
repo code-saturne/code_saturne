@@ -392,19 +392,17 @@ cs_f_cavitation_get_pointers(double **presat,
  * \brief Smoothing a variable after several double-projections
  * cells->faces->cells.
  *
- * \param[in]     m        pointer to mesh structure
- * \param[in]     mq       pointer to mesh quantities structure
- * \param[in]     coefa    boundary condition array for the variable
- * \param[in]     coefb    boundary condition array for the variable
- * \param[in,out] pvar     diffused variable
+ * \param[in]     m          pointer to mesh structure
+ * \param[in]     mq         pointer to mesh quantities structure
+ * \param[in]     bc_coeffs  boundary condition structure for the variable
+ * \param[in,out] pvar       diffused variable
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _smoothe(const cs_mesh_t              *m,
          const cs_mesh_quantities_t   *mq,
-         cs_real_t                    *restrict coefa,
-         cs_real_t                    *restrict coefb,
+         const cs_field_bc_coeffs_t   *bc_coeffs,
          cs_real_t                    *restrict pvar)
 {
   int n_cells_ext = m->n_cells_with_ghosts;
@@ -483,8 +481,7 @@ _smoothe(const cs_mesh_t              *m,
                      eqp_volf->epsrgr,
                      eqp_volf->climgr,
                      NULL,
-                     coefa,
-                     coefb,
+                     bc_coeffs,
                      pvar,
                      gweight,
                      NULL, /* internal coupling */
@@ -951,18 +948,27 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
 
-  cs_real_t *curv, *coefa, *coefb, *pvar;
-  cs_real_3_t *coefa_vec;
-  cs_real_33_t *coefb_vec;
-
   const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
 
+  cs_real_t *curv, *pvar;
   BFT_MALLOC(curv, n_cells_ext, cs_real_t);
   BFT_MALLOC(pvar, n_cells_ext, cs_real_t);
-  BFT_MALLOC(coefa, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefb, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefa_vec, n_b_faces, cs_real_3_t);
-  BFT_MALLOC(coefb_vec, n_b_faces, cs_real_33_t);
+
+  /* Boundary condition */
+
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  cs_real_t *coefa = bc_coeffs_loc.a;
+  cs_real_t *coefb = bc_coeffs_loc.b;
+
+  cs_field_bc_coeffs_t bc_coeffs_v_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+  cs_real_3_t  *coefa_vec = (cs_real_3_t  *)bc_coeffs_v_loc.a;
+  cs_real_33_t *coefb_vec = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     coefa[face_id] = 0.;
@@ -987,7 +993,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   /* Void fraction diffusion solving */
   int ncycles = 5;
   for (int i = 0; i < ncycles; i++) {
-    _smoothe(m, mq, coefa, coefb, pvar);
+    _smoothe(m, mq, &bc_coeffs_loc, pvar);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       pvar[c_id] = (pvar[c_id] <= 0.001) ? 0. : pvar[c_id];
       pvar[c_id] = (pvar[c_id] >= 0.999) ? 1. : pvar[c_id];
@@ -1029,8 +1035,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      eqp_volf->epsrgr,
                      eqp_volf->climgr,
                      NULL,
-                     coefa,
-                     coefb,
+                     &bc_coeffs_loc,
                      pvar,
                      gweight,
                      NULL, /* internal coupling */
@@ -1061,8 +1066,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      (cs_gradient_limit_t)eqp_volf->imligr,
                      eqp_volf->epsrgr,
                      eqp_volf->climgr,
-                     (const cs_real_3_t *)coefa_vec,
-                     (const cs_real_33_t *)coefb_vec,
+                     &bc_coeffs_v_loc,
                      surfxyz_norm,
                      gweight,
                      NULL,
@@ -1313,9 +1317,6 @@ cs_vof_drift_term(int                        imrgra,
     const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
     int f_id, itypfl, iflmb0, init, inc;
 
-    cs_real_3_t *coefav;
-    cs_real_33_t *coefbv;
-
     /* Check if field exist */
     if (idriftflux == NULL)
       bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
@@ -1324,8 +1325,13 @@ cs_vof_drift_term(int                        imrgra,
     cs_real_t *cpro_idriftf = idriftflux->val;
     cs_real_t *cpro_bdriftf = bdriftflux->val;
 
-    BFT_MALLOC(coefav, n_b_faces, cs_real_3_t);
-    BFT_MALLOC(coefbv, n_b_faces, cs_real_33_t);
+    cs_field_bc_coeffs_t bc_coeffs_v_loc;
+    cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+    BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+
+    cs_real_3_t *coefav = (cs_real_3_t *)bc_coeffs_v_loc.a;
+    cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
     f_id = -1;
     itypfl = 0;
@@ -1360,14 +1366,12 @@ cs_vof_drift_term(int                        imrgra,
                  NULL, /* rom */
                  NULL, /* romb */
                  (const cs_real_3_t *)cpro_vr,
-                 (const cs_real_3_t *)coefav,
-                 (const cs_real_33_t *)coefbv,
+                 &bc_coeffs_v_loc,
                  cpro_idriftf,
                  cpro_bdriftf);
 
     BFT_FREE(coefav);
     BFT_FREE(coefbv);
-
   }
 
   /*======================================================================
@@ -1524,11 +1528,7 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
   /* Boundary conditions */
-
-  cs_real_t *coefa_vol = volf2->bc_coeffs->a;
-  cs_real_t *coefb_vol = volf2->bc_coeffs->b;
-  cs_real_t *cofaf_vol = volf2->bc_coeffs->af;
-  cs_real_t *cofbf_vol = volf2->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_vof = volf2->bc_coeffs;
 
   /* Physical quantities */
 
@@ -1753,8 +1753,7 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
                                      &eqp_loc,
                                      cvara_voidf,
                                      cvara_voidf,
-                                     coefa_vol, coefb_vol,
-                                     cofaf_vol, cofbf_vol,
+                                     bc_coeffs_vof,
                                      i_mass_flux_volf, b_mass_flux_volf,
                                      i_visc, b_visc,
                                      i_visc, b_visc,

@@ -1198,8 +1198,7 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   coefap         <-- B.C. coefficients for boundary face normals
- *   coefbp         <-- B.C. coefficients for boundary face normals
+ *   bc_coeffs      <-- B.C. structure for boundary face normals
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable,
  *                      or NULL
@@ -1215,14 +1214,16 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             cs_halo_type_t                halo_type,
                             bool                          recompute_cocg,
                             cs_real_t                     inc,
-                            const cs_real_t              *coefap,
-                            const cs_real_t              *coefbp,
+                            const cs_field_bc_coeffs_t   *bc_coeffs,
                             const cs_real_t              *pvar,
                             const cs_real_t     *restrict c_weight,
                             cs_cocg_6_t         *restrict cocg,
                             cs_cocg_6_t         *restrict cocgb,
                             cs_real_3_t         *restrict grad)
 {
+  const cs_real_t *coefap = (const cs_real_t *)bc_coeffs->a;
+  const cs_real_t *coefbp = (const cs_real_t *)bc_coeffs->b;
+
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
   const cs_lnum_t n_cells     = m->n_cells;

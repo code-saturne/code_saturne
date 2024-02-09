@@ -139,8 +139,7 @@ cs_gradient_free_quantities(void);
  * \param[in]       clip_coeff     clipping coefficient
  * \param[in]       f_ext          exterior force generating the
  *                                 hydrostatic pressure
- * \param[in]       bc_coeff_a     boundary condition term a
- * \param[in]       bc_coeff_b     boundary condition term b
+ * \param[in]       bc_coeffs      boundary condition structure
  * \param[in, out]  var            gradient's base variable
  * \param[in, out]  c_weight       cell variable weight, or NULL
  * \param[in]       cpl            associated internal coupling, or NULL
@@ -161,8 +160,7 @@ cs_gradient_scalar(const char                    *var_name,
                    double                         epsilon,
                    double                         clip_coeff,
                    cs_real_3_t                    f_ext[],
-                   const cs_real_t                bc_coeff_a[],
-                   const cs_real_t                bc_coeff_b[],
+                   const cs_field_bc_coeffs_t    *bc_coeffs,
                    cs_real_t                      var[restrict],
                    cs_real_t            *restrict c_weight,
                    const cs_internal_coupling_t  *cpl,
@@ -182,8 +180,7 @@ cs_gradient_scalar(const char                    *var_name,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeff_a      boundary condition term a
- * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in]       bc_coeffs_v     boundary condition structure
  * \param[in, out]  var             gradient's base variable
  * \param[in, out]  c_weight        cell variable weight, or NULL
  * \param[in]       cpl             associated internal coupling, or NULL
@@ -202,8 +199,7 @@ cs_gradient_vector(const char                    *var_name,
                    cs_gradient_limit_t            clip_mode,
                    double                         epsilon,
                    double                         clip_coeff,
-                   const cs_real_t                bc_coeff_a[][3],
-                   const cs_real_t                bc_coeff_b[][3][3],
+                   const cs_field_bc_coeffs_t    *bc_coeffs_v,
                    cs_real_t                      var[restrict][3],
                    cs_real_t        *restrict     c_weight,
                    const cs_internal_coupling_t  *cpl,
@@ -223,8 +219,7 @@ cs_gradient_vector(const char                    *var_name,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeff_a      boundary condition term a
- * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in]       bc_coeffs_ts    boundary condition structure
  * \param[in, out]  var             gradient's base variable
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
@@ -232,19 +227,18 @@ cs_gradient_vector(const char                    *var_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_tensor(const char                *var_name,
-                   cs_gradient_type_t         gradient_type,
-                   cs_halo_type_t             halo_type,
-                   int                        inc,
-                   int                        n_r_sweeps,
-                   int                        verbosity,
-                   cs_gradient_limit_t        clip_mode,
-                   double                     epsilon,
-                   double                     clip_coeff,
-                   const cs_real_6_t          bc_coeff_a[],
-                   const cs_real_66_t         bc_coeff_b[],
-                   cs_real_6_t      *restrict var,
-                   cs_real_63_t     *restrict grad);
+cs_gradient_tensor(const char                 *var_name,
+                   cs_gradient_type_t          gradient_type,
+                   cs_halo_type_t              halo_type,
+                   int                         inc,
+                   int                         n_r_sweeps,
+                   int                         verbosity,
+                   cs_gradient_limit_t         clip_mode,
+                   double                      epsilon,
+                   double                      clip_coeff,
+                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                   cs_real_6_t       *restrict var,
+                   cs_real_63_t      *restrict grad);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -269,8 +263,7 @@ cs_gradient_tensor(const char                *var_name,
  * \param[in]   clip_coeff      clipping coefficient
  * \param[in]   f_ext           exterior force generating the
  *                              hydrostatic pressure
- * \param[in]   bc_coeff_a      boundary condition term a
- * \param[in]   bc_coeff_b      boundary condition term b
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   cpl             associated internal coupling, or NULL
@@ -291,8 +284,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 double                      epsilon,
                                 double                      clip_coeff,
                                 cs_real_t                   f_ext[][3],
-                                const cs_real_t             bc_coeff_a[],
-                                const cs_real_t             bc_coeff_b[],
+                                const cs_field_bc_coeffs_t *bc_coeffs,
                                 const cs_real_t             var[restrict],
                                 const cs_real_t             c_weight[restrict],
                                 const cs_internal_coupling_t  *cpl,
@@ -316,8 +308,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   clip_mode       clipping mode
  * \param[in]   epsilon         precision for iterative gradient calculation
  * \param[in]   clip_coeff      clipping coefficient
- * \param[in]   bc_coeff_a      boundary condition term a
- * \param[in]   bc_coeff_b      boundary condition term b
+ * \param[in]   bc_coeffs_v     boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   cpl             associated internal coupling, or NULL
@@ -336,8 +327,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
                                 cs_gradient_limit_t        clip_mode,
                                 double                     epsilon,
                                 double                     clip_coeff,
-                                const cs_real_t            bc_coeff_a[][3],
-                                const cs_real_t            bc_coeff_b[][3][3],
+                                const cs_field_bc_coeffs_t    *bc_coeffs_v,
                                 const cs_real_t            var[restrict][3],
                                 const cs_real_t            c_weight[restrict],
                                 const cs_internal_coupling_t  *cpl,
@@ -361,8 +351,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeff_a      boundary condition term a
- * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in]       bc_coeffs_ts    boundary condition structure
  * \param[in, out]  var             gradient's base variable
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
@@ -370,19 +359,18 @@ cs_gradient_vector_synced_input(const char                *var_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_tensor_synced_input(const char                *var_name,
-                                cs_gradient_type_t         gradient_type,
-                                cs_halo_type_t             halo_type,
-                                int                        inc,
-                                int                        n_r_sweeps,
-                                int                        verbosity,
-                                cs_gradient_limit_t        clip_mode,
-                                double                     epsilon,
-                                double                     clip_coeff,
-                                const cs_real_t            bc_coeff_a[][6],
-                                const cs_real_t            bc_coeff_b[][6][6],
-                                const cs_real_t            var[restrict][6],
-                                cs_real_63_t     *restrict grad);
+cs_gradient_tensor_synced_input(const char                 *var_name,
+                                cs_gradient_type_t          gradient_type,
+                                cs_halo_type_t              halo_type,
+                                int                         inc,
+                                int                         n_r_sweeps,
+                                int                         verbosity,
+                                cs_gradient_limit_t         clip_mode,
+                                double                      epsilon,
+                                double                      clip_coeff,
+                                const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                                const cs_real_t             var[restrict][6],
+                                cs_real_63_t      *restrict grad);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -401,8 +389,7 @@ cs_gradient_tensor_synced_input(const char                *var_name,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[out]  grad            gradient
@@ -414,8 +401,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *fvq,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
-                        const cs_real_t              bc_coeff_a[],
-                        const cs_real_t              bc_coeff_b[],
+                        const cs_field_bc_coeffs_t  *bc_coeffs,
                         const cs_real_t              var[],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[3]);
@@ -437,8 +423,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[out]  grad            gradient
@@ -450,8 +435,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *fvq,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
-                        const cs_real_t              bc_coeff_a[][3],
-                        const cs_real_t              bc_coeff_b[][3][3],
+                        const cs_field_bc_coeffs_t  *bc_coeffs_v,
                         const cs_real_t              var[restrict][3],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[3][3]);
@@ -473,8 +457,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   bc_coeffs_ts    boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[out]  grad            gradient
@@ -486,8 +469,7 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *fvq,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
-                        const cs_real_t              bc_coeff_a[][6],
-                        const cs_real_t              bc_coeff_b[][6][6],
+                        const cs_field_bc_coeffs_t  *bc_coeffs_ts,
                         const cs_real_t              var[restrict][6],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[6][3]);

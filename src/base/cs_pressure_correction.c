@@ -185,10 +185,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   if (iterns < 2)
     sinfo->n_it = 0;
 
-  cs_real_t *coefap = f->bc_coeffs->a;
-  cs_real_t *coefbp = f->bc_coeffs->b;
-  cs_real_t *cofafp = f->bc_coeffs->af;
-  cs_real_t *cofbfp = f->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_hp = f->bc_coeffs;
+  cs_real_t *cofbfp = bc_coeffs_hp->bf;
 
   /* Check for variation of the hydrostatic pressure at outlet
    *
@@ -238,10 +236,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     const cs_real_t qimp = 0;
     const cs_real_t hint = 1.0/distb[face_id];
-    cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
-                                              &cofafp[face_id],
-                                              &coefbp[face_id],
-                                              &cofbfp[face_id],
+    cs_boundary_conditions_set_neumann_scalar(face_id,
+                                              bc_coeffs_hp,
                                               qimp,
                                               hint);
   }
@@ -267,8 +263,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                            1,
                            eqp_pr->thetav,
                            0,
-                           coefbp,
-                           cofbfp,
+                           bc_coeffs_hp,
                            rovsdt,
                            iflux,
                            bflux,
@@ -332,10 +327,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                            eqp_pr->climgr,
                            next_fext,
                            cvar_hydro_pres,
-                           coefap,
-                           coefbp,
-                           cofafp,
-                           cofbfp,
+                           bc_coeffs_hp,
                            i_visc,
                            b_visc,
                            viscce,
@@ -436,56 +428,51 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
  * <a href="../../theory.pdf#resopv"><b>resopv</b></a>
  * section of the theory guide for more information.
  *
- * \param[in]       iterns    Navier-Stokes iteration number
- * \param[in]       nfbpcd    number of faces with condensation source term
- * \param[in]       ncmast    number of cells with condensation source terms
- * \param[in]       ifbpcd    index of faces with condensation source term
- * \param[in]       ltmast    list of cells with condensation source terms
- *                            (1 to n numbering)
- * \param[in]       isostd    indicator of standard outlet and index
- *                            of the reference outlet face
- * \param[in]       vel       velocity
- * \param[in, out]  da_uu     velocity matrix
- * \param[in]       coefav    boundary condition array for the variable
- *                            (explicit part)
- * \param[in]       coefbv    boundary condition array for the variable
- *                            (implicit part)
- * \param[in]       coefa_dp  boundary conditions for the pressure increment
- * \param[in]       coefb_dp  boundary conditions for the pressure increment
- * \param[in]       spcond    variable value associated to the condensation
- *                            source term (for ivar=ipr, spcond is the
- *                            flow rate
- *                            \f$ \Gamma_{s,cond}^n \f$)
- * \param[in]       svcond    variable value associated to the condensation
- *                            source term (for ivar=ipr, svcond is the flow rate
- *                            \f$ \Gamma_{v, cond}^n \f$)
- * \param[in]       frcxt     external forces making hydrostatic pressure
- * \param[in]       dfrcxt    variation of the external forces
- *                            composing the hydrostatic pressure
- * \param[in]       i_visc    visc*surface/dist aux faces internes
- * \param[in]       b_visc    visc*surface/dist aux faces de bord
+ * \param[in]       iterns        Navier-Stokes iteration number
+ * \param[in]       nfbpcd        number of faces with condensation source term
+ * \param[in]       ncmast        number of cells with condensation source terms
+ * \param[in]       ifbpcd        index of faces with condensation source term
+ * \param[in]       ltmast        list of cells with condensation source terms
+ *                                (1 to n numbering)
+ * \param[in]       isostd        indicator of standard outlet and index
+ *                                of the reference outlet face
+ * \param[in]       vel           velocity
+ * \param[in, out]  da_uu         velocity matrix
+ * \param[in]       bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]       bc_coeffs_dp  boundary conditions structure for the
+ *                                pressure increment
+ * \param[in]       spcond        variable value associated to the condensation
+ *                                source term (for ivar=ipr, spcond is the
+ *                                flow rate
+ *                                \f$ \Gamma_{s,cond}^n \f$)
+ * \param[in]       svcond        variable value associated to the condensation
+ *                                source term (for ivar=ipr, svcond is the flow rate
+ *                                \f$ \Gamma_{v, cond}^n \f$)
+ * \param[in]       frcxt         external forces making hydrostatic pressure
+ * \param[in]       dfrcxt        variation of the external forces
+ *                                composing the hydrostatic pressure
+ * \param[in]       i_visc        visc*surface/dist aux faces internes
+ * \param[in]       b_visc        visc*surface/dist aux faces de bord
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_pressure_correction_fv(int        iterns,
-                        cs_lnum_t  nfbpcd,
-                        cs_lnum_t  ncmast,
-                        cs_lnum_t  ifbpcd[],
-                        cs_lnum_t  ltmast[],
-                        const int  isostd[],
-                        cs_real_t  vel[restrict][3],
-                        cs_real_t  da_uu[restrict][6],
-                        cs_real_t  coefav[restrict][3],
-                        cs_real_t  coefbv[restrict][3][3],
-                        cs_real_t  coefa_dp[restrict],
-                        cs_real_t  coefb_dp[restrict],
-                        cs_real_t  spcond[restrict],
-                        cs_real_t  svcond[restrict],
-                        cs_real_t  frcxt[restrict][3],
-                        cs_real_t  dfrcxt[restrict][3],
-                        cs_real_t  i_visc[restrict],
-                        cs_real_t  b_visc[restrict])
+_pressure_correction_fv(int                   iterns,
+                        cs_lnum_t             nfbpcd,
+                        cs_lnum_t             ncmast,
+                        cs_lnum_t             ifbpcd[],
+                        cs_lnum_t             ltmast[],
+                        const int             isostd[],
+                        cs_real_t             vel[restrict][3],
+                        cs_real_t             da_uu[restrict][6],
+                        cs_field_bc_coeffs_t *bc_coeffs_v,
+                        cs_field_bc_coeffs_t *bc_coeffs_dp,
+                        cs_real_t             spcond[restrict],
+                        cs_real_t             svcond[restrict],
+                        cs_real_t             frcxt[restrict][3],
+                        cs_real_t             dfrcxt[restrict][3],
+                        cs_real_t             i_visc[restrict],
+                        cs_real_t             b_visc[restrict])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -513,6 +500,9 @@ _pressure_correction_fv(int        iterns,
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
 
   const int *bc_type = cs_glob_bc_type;
+
+  cs_real_t *coefa_dp = bc_coeffs_dp->a;
+  cs_real_t *coefb_dp = bc_coeffs_dp->b;
 
   cs_field_t *f_p = CS_F_(p);
   const cs_field_t *f_vel = CS_F_(vel);
@@ -616,10 +606,11 @@ _pressure_correction_fv(int        iterns,
 
   /* Boundary conditions */
 
-  cs_real_t *coefa_p = f_p->bc_coeffs->a;
-  cs_real_t *coefb_p = f_p->bc_coeffs->b;
-  cs_real_t *coefaf_p = f_p->bc_coeffs->af;
-  cs_real_t *coefbf_p = f_p->bc_coeffs->bf;
+  const cs_field_bc_coeffs_t *bc_coeffs_p = f_p->bc_coeffs;
+  cs_real_t *coefa_p = bc_coeffs_p->a;
+  cs_real_t *coefb_p = bc_coeffs_p->b;
+  cs_real_t *coefaf_p = bc_coeffs_p->af;
+  cs_real_t *coefbf_p = bc_coeffs_p->bf;
 
   /* Physical quantities */
 
@@ -961,9 +952,7 @@ _pressure_correction_fv(int        iterns,
                                  / cs_math_pow2(b_face_surf[f_id]);
 
               cs_boundary_conditions_set_convective_outlet_scalar
-                (&(coefa_dp[f_id]), &(coefaf_dp[f_id]),
-                 &(coefb_dp[f_id]), &(coefbf_dp[f_id]),
-                 pimp, cfl, hint);
+                (f_id, bc_coeffs_dp, pimp, cfl, hint);
 
             }
 
@@ -1184,7 +1173,7 @@ _pressure_correction_fv(int        iterns,
                            isym,
                            1.0, /* thetap */
                            0,   /* imucpp */
-                           coefb_dp, coefbf_dp, rovsdt,
+                           bc_coeffs_dp, rovsdt,
                            imasfl, bmasfl, i_visc, b_visc,
                            NULL, dam, xam);
 
@@ -1319,7 +1308,7 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->climgr,
                  crom, brom,
                  wrk,
-                 coefav, coefbv,
+                 bc_coeffs_v,
                  imasfl, bmasfl);
   }
 
@@ -1384,9 +1373,7 @@ _pressure_correction_fv(int        iterns,
         cs_real_t hint = taub[f_id] / b_dist[f_id];
 
         cs_boundary_conditions_set_neumann_scalar
-          (&(coefa_dp[f_id]), &(coefaf_dp[f_id]),
-           &(coefb_dp[f_id]), &(coefbf_dp[f_id]),
-           dimp, hint);
+          (f_id, bc_coeffs_dp, dimp, hint);
       }
     }
 
@@ -1486,8 +1473,7 @@ _pressure_correction_fv(int        iterns,
                                   eqp_p->climgr,
                                   frcxt,
                                   cvar_pr,
-                                  coefa_p, coefb_p,
-                                  coefaf_p, coefbf_p,
+                                  bc_coeffs_p,
                                   ipro_visc, bpro_visc, cpro_visc,
                                   imasfl, bmasfl);
 
@@ -1569,8 +1555,7 @@ _pressure_correction_fv(int        iterns,
                                               eqp_p->climgr,
                                               frcxt,
                                               cvar_pr,
-                                              coefa_p, coefb_p,
-                                              coefaf_p, coefbf_p,
+                                              bc_coeffs_p,
                                               ipro_visc, bpro_visc, cpro_vitenp,
                                               weighftp, weighbtp,
                                               imasfl, bmasfl);
@@ -1687,7 +1672,7 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->climgr,
                  crom, brom,
                  vel,
-                 coefav, coefbv,
+                 bc_coeffs_v,
                  velflx, velflb);
 
     cs_divergence(m, init, velflx, velflb, res);
@@ -1733,7 +1718,7 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->climgr,
                  crom, brom,
                  vel,
-                 coefav, coefbv,
+                 bc_coeffs_v,
                  imasfl, bmasfl);
 
   }
@@ -1894,7 +1879,7 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->climgr,
                  crom, brom,
                  wrk,
-                 coefav, coefbv,
+                 bc_coeffs_v,
                  iflux, bflux);
 
     cs_divergence(m, 1, iflux, bflux, res);
@@ -1969,8 +1954,7 @@ _pressure_correction_fv(int        iterns,
                              eqp_p->climgr,
                              dfrcxt,
                              phi,
-                             coefa_dp, coefb_dp,
-                             coefaf_dp, coefbf_dp,
+                             bc_coeffs_dp,
                              i_visc, b_visc,
                              c_visc,
                              rhs);
@@ -1992,8 +1976,7 @@ _pressure_correction_fv(int        iterns,
                                          eqp_p->climgr,
                                          dfrcxt,
                                          phi,
-                                         coefa_dp, coefb_dp,
-                                         coefaf_dp, coefbf_dp,
+                                         bc_coeffs_dp,
                                          i_visc, b_visc,
                                          vitenp,
                                          weighf, weighb,
@@ -2110,8 +2093,7 @@ _pressure_correction_fv(int        iterns,
                                eqp_p->climgr,
                                dfrcxt,
                                dphi,
-                               coefa_dp, coefb_dp,
-                               coefaf_dp, coefbf_dp,
+                               bc_coeffs_dp,
                                i_visc, b_visc,
                                c_visc,
                                adxk);
@@ -2133,8 +2115,7 @@ _pressure_correction_fv(int        iterns,
                                            eqp_p->climgr,
                                            dfrcxt,
                                            dphi,
-                                           coefa_dp, coefb_dp,
-                                           coefaf_dp, coefbf_dp,
+                                           bc_coeffs_dp,
                                            i_visc, b_visc,
                                            vitenp,
                                            weighf, weighb,
@@ -2266,8 +2247,7 @@ _pressure_correction_fv(int        iterns,
                                eqp_p->climgr,
                                dfrcxt,
                                phi,
-                               coefa_dp, coefb_dp,
-                               coefaf_dp, coefbf_dp,
+                               bc_coeffs_dp,
                                i_visc, b_visc,
                                c_visc,
                                rhs);
@@ -2289,8 +2269,7 @@ _pressure_correction_fv(int        iterns,
                                            eqp_p->climgr,
                                            dfrcxt,
                                            phi,
-                                           coefa_dp, coefb_dp,
-                                           coefaf_dp, coefbf_dp,
+                                           bc_coeffs_dp,
                                            i_visc, b_visc,
                                            vitenp,
                                            weighf, weighb,
@@ -2401,8 +2380,7 @@ _pressure_correction_fv(int        iterns,
                                   eqp_p->climgr,
                                   dfrcxt,
                                   phia,
-                                  coefa_dp, coefb_dp,
-                                  coefaf_dp, coefbf_dp,
+                                  bc_coeffs_dp,
                                   i_visc, b_visc, c_visc,
                                   imasfl, bmasfl);
 
@@ -2423,8 +2401,7 @@ _pressure_correction_fv(int        iterns,
                                               eqp_p->climgr,
                                               dfrcxt,
                                               phia,
-                                              coefa_dp, coefb_dp,
-                                              coefaf_dp, coefbf_dp,
+                                              bc_coeffs_dp,
                                               i_visc, b_visc,
                                               vitenp,
                                               weighf, weighb,
@@ -2450,8 +2427,7 @@ _pressure_correction_fv(int        iterns,
                                   eqp_p->climgr,
                                   dfrcxt,
                                   dphi,
-                                  coefa_dp, coefb_dp,
-                                  coefaf_dp, coefbf_dp,
+                                  bc_coeffs_dp,
                                   i_visc, b_visc, c_visc,
                                   imasfl, bmasfl);
 
@@ -2472,8 +2448,7 @@ _pressure_correction_fv(int        iterns,
                                               eqp_p->climgr,
                                               dfrcxt,
                                               dphi,
-                                              coefa_dp, coefb_dp,
-                                              coefaf_dp, coefbf_dp,
+                                              bc_coeffs_dp,
                                               i_visc, b_visc,
                                               vitenp,
                                               weighf, weighb,
@@ -2506,22 +2481,31 @@ _pressure_correction_fv(int        iterns,
   if (idilat == 5) {
 
     cs_real_t *ddphi;
-    cs_real_3_t *coefar, *cofafr;
-    cs_real_33_t *coefbr, *cofbfr;
     CS_MALLOC_HD(ddphi, n_cells_ext, cs_real_t, cs_alloc_mode);
-    BFT_MALLOC(coefar, n_b_faces, cs_real_3_t);
-    BFT_MALLOC(cofafr, n_b_faces, cs_real_3_t);
-    BFT_MALLOC(coefbr, n_b_faces, cs_real_33_t);
-    BFT_MALLOC(cofbfr, n_b_faces, cs_real_33_t);
+
+    cs_field_bc_coeffs_t bc_coeffs_loc;
+    BFT_MALLOC(bc_coeffs_loc.a,  3*n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_loc.af, 3*n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_loc.b,  9*n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_loc.bf, 9*n_b_faces, cs_real_t);
+
+    cs_real_3_t  *coefar = (cs_real_3_t  *)bc_coeffs_loc.a;
+    cs_real_3_t  *cofafr = (cs_real_3_t  *)bc_coeffs_loc.af;
+    cs_real_33_t *coefbr = (cs_real_33_t *)bc_coeffs_loc.b;
+    cs_real_33_t *cofbfr = (cs_real_33_t *)bc_coeffs_loc.bf;
 
     /* Convective flux: dt/rho grad(rho) */
 
     /* Dirichlet Boundary Condition on rho
        ----------------------------------- */
 
-    cs_real_t *coefa_rho, *coefb_rho;
-    BFT_MALLOC(coefa_rho, n_b_faces, cs_real_t);
-    BFT_MALLOC(coefb_rho, n_b_faces, cs_real_t);
+    cs_field_bc_coeffs_t bc_coeffs_rho_loc;
+    cs_field_bc_coeffs_create(&bc_coeffs_rho_loc);
+    BFT_MALLOC(bc_coeffs_rho_loc.a, n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_rho_loc.b, n_b_faces, cs_real_t);
+
+    cs_real_t *coefa_rho = bc_coeffs_rho_loc.a;
+    cs_real_t *coefb_rho = bc_coeffs_rho_loc.b;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       coefa_rho[f_id] = brom[f_id];
@@ -2546,7 +2530,7 @@ _pressure_correction_fv(int        iterns,
                        eqp_u->epsrgr,
                        eqp_u->climgr,
                        NULL,          /* f_ext */
-                       coefa_rho, coefb_rho,
+                       &bc_coeffs_rho_loc,
                        crom,
                        NULL,         /* c_weight */
                        NULL,         /* cpl */
@@ -2582,9 +2566,7 @@ _pressure_correction_fv(int        iterns,
         cs_real_t hint = dt[c_id] / b_dist[f_id];
 
         cs_boundary_conditions_set_neumann_vector
-          (coefar[f_id], cofafr[f_id],
-           coefbr[f_id], cofbfr[f_id],
-           qimpv, hint);
+          (f_id, &bc_coeffs_loc, qimpv, hint);
       }
 
     }
@@ -2637,9 +2619,7 @@ _pressure_correction_fv(int        iterns,
         cs_real_t hint = viscis/b_face_surf[f_id]/fikis;
 
         cs_boundary_conditions_set_neumann_vector
-          (coefar[f_id], cofafr[f_id],
-           coefbr[f_id], cofbfr[f_id],
-           qimpv, hint);
+          (f_id, &bc_coeffs_loc, qimpv, hint);
 
       }
 
@@ -2662,16 +2642,21 @@ _pressure_correction_fv(int        iterns,
                  eqp_u->climgr,
                  crom, brom,
                  wrk,
-                 coefar, coefbr,
+                 &bc_coeffs_loc,
                  velflx, velflb);
 
     /* Boundary condition for the pressure increment
        coefb, coefbf are those of the pressure */
 
-    cs_real_t *coefa_dp2, *coefaf_dp2;
-    BFT_MALLOC(coefa_dp2, n_b_faces, cs_real_t);
-    BFT_MALLOC(coefaf_dp2, n_b_faces, cs_real_t);
+    cs_field_bc_coeffs_t bc_coeffs_dp2;
+    cs_field_bc_coeffs_shallow_copy(bc_coeffs_p, &bc_coeffs_dp2);
+    BFT_MALLOC(bc_coeffs_dp2.a,  n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_dp2.af, n_b_faces, cs_real_t);
 
+    cs_real_t *coefa_dp2  = bc_coeffs_dp2.a;
+    cs_real_t *coefaf_dp2 = bc_coeffs_dp2.af;
+
+#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       coefa_dp2[f_id] = 0.;
       coefaf_dp2[f_id] = 0.;
@@ -2707,8 +2692,7 @@ _pressure_correction_fv(int        iterns,
                       1,     /* inc */
                       &eqp_loc,
                       phi, phi,
-                      coefa_dp2, coefb_p,
-                      coefaf_dp2, coefbf_p,
+                      &bc_coeffs_dp2,
                       velflx, velflb,
                       i_visc, b_visc,
                       NULL,  /* viscel */
@@ -2753,8 +2737,7 @@ _pressure_correction_fv(int        iterns,
                                        -1,     /* normp */
                                        &eqp_loc,
                                        dphi, dphi,
-                                       coefa_dp2, coefb_p,
-                                       coefaf_dp2, coefbf_p,
+                                       &bc_coeffs_dp2,
                                        velflx, velflb,
                                        i_visc, b_visc,
                                        i_visc, b_visc,
@@ -2796,8 +2779,7 @@ _pressure_correction_fv(int        iterns,
                                   eqp_p->climgr,
                                   dfrcxt,
                                   dphi,
-                                  coefa_dp2, coefb_p,
-                                  coefaf_dp2, coefbf_p,
+                                  &bc_coeffs_dp2,
                                   i_visc, b_visc,
                                   dt,
                                   imasfl, bmasfl);
@@ -2819,8 +2801,7 @@ _pressure_correction_fv(int        iterns,
                                               eqp_p->climgr,
                                               dfrcxt,
                                               dphi,
-                                              coefa_dp2, coefb_p,
-                                              coefaf_dp2, coefbf_p,
+                                              &bc_coeffs_dp2,
                                               i_visc, b_visc,
                                               vitenp,
                                               weighf, weighb,
@@ -2846,8 +2827,7 @@ _pressure_correction_fv(int        iterns,
                                   eqp_p->climgr,
                                   dfrcxt,
                                   ddphi,
-                                  coefa_dp2, coefb_p,
-                                  coefaf_dp2,coefbf_p,
+                                  &bc_coeffs_dp2,
                                   i_visc, b_visc,
                                   dt,
                                   imasfl, bmasfl);
@@ -2869,8 +2849,7 @@ _pressure_correction_fv(int        iterns,
                                               eqp_p->climgr,
                                               dfrcxt,
                                               ddphi,
-                                              coefa_dp2, coefb_p,
-                                              coefaf_dp2, coefbf_p,
+                                              &bc_coeffs_dp2,
                                               i_visc, b_visc,
                                               vitenp,
                                               weighf, weighb,
@@ -2878,12 +2857,14 @@ _pressure_correction_fv(int        iterns,
 
     /* Free memory */
     CS_FREE_HD(ddphi);
-    BFT_FREE(coefa_dp2);
-    BFT_FREE(coefaf_dp2);
     BFT_FREE(coefar);
     BFT_FREE(coefbr);
     BFT_FREE(cofafr);
     BFT_FREE(cofbfr);
+
+    coefa_dp2 = NULL;
+    coefaf_dp2 = NULL;
+    cs_field_bc_coeffs_free_copy(bc_coeffs_p, &bc_coeffs_dp2);
 
   } /* End if weaky compressible algorithm (idilat = 5) */
 
@@ -3061,9 +3042,8 @@ _pressure_correction_fv(int        iterns,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pressure_correction_cdo(cs_real_t  vel[restrict][3],
-                         cs_real_t  coefav[restrict][3],
-                         cs_real_t  coefbv[restrict][3][3])
+_pressure_correction_cdo(cs_real_t             vel[restrict][3],
+                         cs_field_bc_coeffs_t *bc_coeffs_v)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -3187,7 +3167,7 @@ _pressure_correction_cdo(cs_real_t  vel[restrict][3],
                  eqp_u->climgr,
                  crom, brom,
                  wrk,
-                 coefav, coefbv,
+                 bc_coeffs_v,
                  imasfl, bmasfl);
   }
 
@@ -3674,83 +3654,77 @@ cs_pressure_correction_cdo_destroy_all(void)
  * <a href="../../theory.pdf#resopv"><b>resopv</b></a>
  * section of the theory guide for more information.
  *
- * \param[in]       iterns    Navier-Stokes iteration number
- * \param[in]       nfbpcd    number of faces with condensation source term
- * \param[in]       ncmast    number of cells with condensation source terms
- * \param[in]       ifbpcd    index of faces with condensation source term
- * \param[in]       ltmast    list of cells with condensation source terms
- *                            (1 to n numbering)
- * \param[in]       isostd    indicator of standard outlet and index
- *                            of the reference outlet face
- * \param[in]       vel       velocity
- * \param[in, out]  da_uu     velocity matrix
- * \param[in]       coefav    boundary condition array for the variable
- *                            (explicit part)
- * \param[in]       coefbv    boundary condition array for the variable
- *                            (implicit part)
- * \param[in]       coefa_dp  boundary conditions for the pressure increment
- * \param[in]       coefb_dp  boundary conditions for the pressure increment
- * \param[in]       spcond    variable value associated to the condensation
- *                            source term (for ivar=ipr, spcond is the
- *                            flow rate
- *                            \f$ \Gamma_{s,cond}^n \f$)
- * \param[in]       svcond    variable value associated to the condensation
- *                            source term (for ivar=ipr, svcond is the flow rate
- *                            \f$ \Gamma_{v, cond}^n \f$)
- * \param[in]       frcxt     external forces making hydrostatic pressure
- * \param[in]       dfrcxt    variation of the external forces
- *                            composing the hydrostatic pressure
- * \param[in]       i_visc    visc*surface/dist aux faces internes
- * \param[in]       b_visc    visc*surface/dist aux faces de bord
+ * \param[in]       iterns        Navier-Stokes iteration number
+ * \param[in]       nfbpcd        number of faces with condensation source term
+ * \param[in]       ncmast        number of cells with condensation source terms
+ * \param[in]       ifbpcd        index of faces with condensation source term
+ * \param[in]       ltmast        list of cells with condensation source terms
+ *                                (1 to n numbering)
+ * \param[in]       isostd        indicator of standard outlet and index
+ *                                of the reference outlet face
+ * \param[in]       vel           velocity
+ * \param[in, out]  da_uu         velocity matrix
+ * \param[in]       bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]       bc_coeffs_dp  boundary conditions structure for the
+ *                                pressure increment
+ * \param[in]       spcond        variable value associated to the condensation
+ *                                source term (for ivar=ipr, spcond is the
+ *                                flow rate
+ *                                \f$ \Gamma_{s,cond}^n \f$)
+ * \param[in]       svcond        variable value associated to the condensation
+ *                                source term (for ivar=ipr, svcond is the flow rate
+ *                                \f$ \Gamma_{v, cond}^n \f$)
+ * \param[in]       frcxt         external forces making hydrostatic pressure
+ * \param[in]       dfrcxt        variation of the external forces
+ *                                composing the hydrostatic pressure
+ * \param[in]       i_visc        visc*surface/dist aux faces internes
+ * \param[in]       b_visc        visc*surface/dist aux faces de bord
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_pressure_correction(int        iterns,
-                       cs_lnum_t  nfbpcd,
-                       cs_lnum_t  ncmast,
-                       cs_lnum_t  ifbpcd[],
-                       cs_lnum_t  ltmast[],
-                       const int  isostd[],
-                       cs_real_t  vel[restrict][3],
-                       cs_real_t  da_uu[restrict][6],
-                       cs_real_t  coefav[restrict][3],
-                       cs_real_t  coefbv[restrict][3][3],
-                       cs_real_t  coefa_dp[restrict],
-                       cs_real_t  coefb_dp[restrict],
-                       cs_real_t  spcond[restrict],
-                       cs_real_t  svcond[restrict],
-                       cs_real_t  frcxt[restrict][3],
-                       cs_real_t  dfrcxt[restrict][3],
-                       cs_real_t  i_visc[restrict],
-                       cs_real_t  b_visc[restrict])
+cs_pressure_correction(int                   iterns,
+                       cs_lnum_t             nfbpcd,
+                       cs_lnum_t             ncmast,
+                       cs_lnum_t             ifbpcd[],
+                       cs_lnum_t             ltmast[],
+                       const int             isostd[],
+                       cs_real_t             vel[restrict][3],
+                       cs_real_t             da_uu[restrict][6],
+                       cs_field_bc_coeffs_t *bc_coeffs_v,
+                       cs_field_bc_coeffs_t *bc_coeffs_dp,
+                       cs_real_t             spcond[restrict],
+                       cs_real_t             svcond[restrict],
+                       cs_real_t             frcxt[restrict][3],
+                       cs_real_t             dfrcxt[restrict][3],
+                       cs_real_t             i_visc[restrict],
+                       cs_real_t             b_visc[restrict])
 {
- const cs_velocity_pressure_model_t  *vp_model
+  /* Pointers to BC coefficients */
+
+  const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;
 
- if (vp_model->iprcdo == 0)
-   _pressure_correction_fv(iterns,
-                           nfbpcd,
-                           ncmast,
-                           ifbpcd,
-                           ltmast,
-                           isostd,
-                           vel,
-                           da_uu,
-                           coefav,
-                           coefbv,
-                           coefa_dp,
-                           coefb_dp,
-                           spcond,
-                           svcond,
-                           frcxt,
-                           dfrcxt,
-                           i_visc,
-                           b_visc);
- else
-   _pressure_correction_cdo(vel,
-                            coefav,
-                            coefbv);
+  if (vp_model->iprcdo == 0)
+    _pressure_correction_fv(iterns,
+                            nfbpcd,
+                            ncmast,
+                            ifbpcd,
+                            ltmast,
+                            isostd,
+                            vel,
+                            da_uu,
+                            bc_coeffs_v,
+                            bc_coeffs_dp,
+                            spcond,
+                            svcond,
+                            frcxt,
+                            dfrcxt,
+                            i_visc,
+                            b_visc);
+  else
+    _pressure_correction_cdo(vel,
+                             bc_coeffs_v);
 }
 
 /*----------------------------------------------------------------------------*/

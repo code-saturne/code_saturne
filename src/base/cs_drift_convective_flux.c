@@ -229,16 +229,25 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   BFT_MALLOC(viscce, n_cells_ext, cs_real_t);
   BFT_MALLOC(dudt, n_cells_ext, cs_real_3_t);
 
-  cs_real_t *coefap, *coefbp, *cofafp, *cofbfp;
-  cs_real_3_t *coefa1;
-  cs_real_33_t *coefb1;
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
 
-  BFT_MALLOC(coefap, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefbp, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofafp, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofbfp, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefa1, n_b_faces, cs_real_3_t);
-  BFT_MALLOC(coefb1, n_b_faces, cs_real_33_t);
+  cs_real_t *coefap = bc_coeffs_loc.a;
+  cs_real_t *coefbp = bc_coeffs_loc.b;
+  cs_real_t *cofafp = bc_coeffs_loc.af;
+  cs_real_t *cofbfp = bc_coeffs_loc.bf;
+
+  cs_field_bc_coeffs_t bc_coeffs1_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs1_loc);
+  BFT_MALLOC(bc_coeffs1_loc.a, 3*n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs1_loc.b, 9*n_b_faces, cs_real_t);
+
+  cs_real_3_t  *coefa1 = (cs_real_3_t  *)bc_coeffs1_loc.a;
+  cs_real_33_t *coefb1 = (cs_real_33_t *)bc_coeffs1_loc.b;
 
   cs_real_t *i_visc, *flumas;
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
@@ -418,10 +427,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       /* Homogeneous Neumann BC */
 #     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        cs_boundary_conditions_set_neumann_scalar_hmg(&coefap[face_id],
-                                                      &cofafp[face_id],
-                                                      &coefbp[face_id],
-                                                      &cofbfp[face_id]);
+        cs_boundary_conditions_set_neumann_scalar_hmg(face_id,
+                                                      &bc_coeffs_loc);
 
       /* The computed convective flux has the dimension of rho*velocity */
 
@@ -440,8 +447,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                                   eqp_sc->climgr,
                                   NULL, /* frcxt */
                                   viscce,
-                                  coefap, coefbp,
-                                  cofafp, cofbfp,
+                                  &bc_coeffs_loc,
                                   i_visc, b_visc,
                                   w1,
                                   flumas, flumab);
@@ -469,10 +475,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       cs_array_real_fill_zero(n_b_faces, b_visc);
 
       /* Get Boundary conditions of the velocity */
-      cs_real_3_t  *coefa_vel = (cs_real_3_t  *)f_vel->bc_coeffs->a;
-      cs_real_33_t *coefb_vel = (cs_real_33_t *)f_vel->bc_coeffs->b;
-      cs_real_3_t  *cofaf_vel = (cs_real_3_t  *)f_vel->bc_coeffs->af;
-      cs_real_33_t *cofbf_vel = (cs_real_33_t *)f_vel->bc_coeffs->bf;
+      cs_field_bc_coeffs_t *bc_coeffs_vel = f_vel->bc_coeffs;
 
       /* The added convective scalar mass flux is:
          (thetap*Y_\face-imasac*Y_\celli)*mf.
@@ -499,8 +502,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         0, /* ivisep */
                         &eqp_loc,
                         vel, vel,
-                        coefa_vel, coefb_vel,
-                        cofaf_vel, cofbf_vel,
+                        bc_coeffs_vel,
                         i_mass_flux_mix, b_mass_flux_mix,
                         i_visc, b_visc,
                         NULL, NULL, /* secvif, secvib */
@@ -609,7 +611,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                    eqp_sc->climgr,
                    crom, brom,
                    cpro_drift,
-                   coefa1, coefb1,
+                   &bc_coeffs1_loc,
                    flumas, flumab);
 
       /* Update the convective flux, exception for the Gas "class" */
@@ -743,10 +745,12 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   BFT_FREE(b_visc);
   BFT_FREE(flumas);
   BFT_FREE(flumab);
+
   BFT_FREE(coefap);
   BFT_FREE(coefbp);
   BFT_FREE(cofafp);
   BFT_FREE(cofbfp);
+
   BFT_FREE(coefa1);
   BFT_FREE(coefb1);
 }

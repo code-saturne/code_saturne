@@ -338,33 +338,60 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   const int *bc_type = cs_glob_bc_type;
 
-  cs_real_t *coefaf, *coefbf;
-  BFT_MALLOC(coefaf, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefbf, n_b_faces, cs_real_t);
+  cs_field_bc_coeffs_t bc_coeffs_loc; // a voir ci dessous (a=af,b=bf)
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
 
-  const cs_real_t visc = 1., pimp = 0., qimp = 0., hext = -1;
-  cs_real_t a, b;
+  cs_real_t *coefa = bc_coeffs_loc.a;
+  cs_real_t *coefb = bc_coeffs_loc.b;
+  cs_real_t *coefaf = bc_coeffs_loc.af;
+  cs_real_t *coefbf = bc_coeffs_loc.bf;
+
+  const cs_real_t visc = 1., pimp = 0., qimp = 0.; // hext = -1;
+  //cs_real_t a, b;
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     cs_real_t hint = visc / fvq->b_dist[face_id];
 
     if (   type == 0
         && (   bc_type[face_id] == CS_SMOOTHWALL
-            || bc_type[face_id] == CS_ROUGHWALL) )
-      cs_boundary_conditions_set_dirichlet_scalar(&a,
+            || bc_type[face_id] == CS_ROUGHWALL) ) {
+      /*cs_boundary_conditions_set_dirichlet_scalar(&a,
                                                   &coefaf[face_id],
                                                   &b,
                                                   &coefbf[face_id],
                                                   pimp,
                                                   hint,
                                                   hext);
-    else
+      */
+
+      coefaf[face_id] = -hint*pimp;
+      coefbf[face_id] =  hint;
+
+      coefa[face_id] = coefaf[face_id];
+      coefb[face_id] = coefbf[face_id];
+
+    }
+    else {
+      /*
       cs_boundary_conditions_set_neumann_scalar(&a,
                                                 &coefaf[face_id],
                                                 &b,
                                                 &coefbf[face_id],
                                                 qimp,
                                                 hint);
+      */
+
+      coefaf[face_id] = qimp;
+      coefbf[face_id] = 0.;
+
+      coefa[face_id] = coefaf[face_id];
+      coefb[face_id] = coefbf[face_id];
+
+    }
   }
 
   cs_real_t *c_visc, *i_visc, *b_visc;
@@ -387,27 +414,27 @@ _les_balance_laplacian(cs_real_t   *wa,
   _eqp.iconv = 0; /* only diffusion */
   _eqp.thetav = 1.;
 
-  cs_convection_diffusion_scalar(0,           /* idtvar */
-                                 -1,          /* f_id */
+  cs_convection_diffusion_scalar(0,              /* idtvar */
+                                 -1,             /* f_id */
                                  _eqp,
-                                 0,           /* icvflb (not used) */
-                                 1,           /* inc */
-                                 1,           /* imasac (not used) */
-                                 wa,          /* pvar */
-                                 NULL,        /* pvara (not used) */
-                                 0,           /* icvfli (not used) */
-                                 coefaf,      /* coefa (not used) */
-                                 coefbf,      /* coefb (not used) */
-                                 coefaf,
-                                 coefbf,
-                                 i_visc,      /* mass flux (not used) */
-                                 b_visc,      /* mass flux (not used) */
+                                 0,              /* icvflb (not used) */
+                                 1,              /* inc */
+                                 1,              /* imasac (not used) */
+                                 wa,             /* pvar */
+                                 NULL,           /* pvara (not used) */
+                                 0,              /* icvfli (not used) */
+                                 &bc_coeffs_loc, /* coefa & b not used */
+                                 i_visc,         /* mass flux (not used) */
+                                 b_visc,         /* mass flux (not used) */
                                  i_visc,
                                  b_visc,
                                  res);
 
+  BFT_FREE(coefa);
+  BFT_FREE(coefb);
   BFT_FREE(coefaf);
   BFT_FREE(coefbf);
+
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
 
@@ -437,13 +464,17 @@ _les_balance_laplacian(cs_real_t   *wa,
   int f_id, itypfl, iflmb0, init, inc;
 
   cs_real_t *i_massflux, *b_massflux;
-  cs_real_3_t *coefav;
-  cs_real_33_t *coefbv;
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
-  BFT_MALLOC(coefbv, n_b_faces, cs_real_33_t);
-  BFT_MALLOC(coefav, n_b_faces, cs_real_3_t);
+  cs_field_bc_coeffs_t bc_coeffs_v_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+
+  cs_real_3_t  *coefav = (cs_real_3_t  *)bc_coeffs_v_loc.a;
+  cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
+
   BFT_MALLOC(i_massflux, n_i_faces, cs_real_t);
   BFT_MALLOC(b_massflux, n_b_faces, cs_real_t);
 
@@ -483,8 +514,7 @@ _les_balance_laplacian(cs_real_t   *wa,
                NULL,
                NULL,
                (const cs_real_3_t *)wa,
-               (const cs_real_3_t *)coefav,
-               (const cs_real_33_t *)coefbv,
+               &bc_coeffs_v_loc,
                i_massflux,
                b_massflux);
 
@@ -496,6 +526,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   BFT_FREE(coefav);
   BFT_FREE(coefbv);
+
   BFT_FREE(i_massflux);
   BFT_FREE(b_massflux);
 }
@@ -510,8 +541,6 @@ _les_balance_compute_gradients(void)
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const int *bc_type = cs_glob_bc_type;
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
-
-  cs_real_t *coefas, *coefbs;
 
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
@@ -534,8 +563,12 @@ _les_balance_compute_gradients(void)
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL ||
       _les_balance.type & CS_LES_BALANCE_TUI_FULL) {
 
-    BFT_MALLOC(coefas, n_b_faces, cs_real_t);
-    BFT_MALLOC(coefbs, n_b_faces, cs_real_t);
+    cs_field_bc_coeffs_t bc_coeffs_loc;
+    BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+
+    cs_real_t *coefas = bc_coeffs_loc.a;
+    cs_real_t *coefbs = bc_coeffs_loc.b;
 
     /* Bc coeffs */
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
@@ -559,8 +592,7 @@ _les_balance_compute_gradients(void)
                        eqp->epsrgr,
                        eqp->climgr,
                        NULL,
-                       coefas,
-                       coefbs,
+                       &bc_coeffs_loc,
                        CS_F_(mu_t)->val,
                        NULL,
                        NULL,
@@ -2924,8 +2956,14 @@ cs_les_balance_compute_rij(void)
 
   /* Working arrays */
   cs_real_t *diverg, *w2, *lapl;
-  cs_real_t *coefas, *coefbs;
   cs_real_3_t *w1, *w3;
+
+  cs_field_bc_coeffs_t bc_coeffs;
+  cs_field_bc_coeffs_create(&bc_coeffs);
+  BFT_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
+
+  cs_real_t *coefas = bc_coeffs.a, *coefbs = bc_coeffs.b;
 
   cs_real_t dtref = cs_glob_time_step->dt_ref;
   cs_real_t ro0 = cs_glob_fluid_properties->ro0;
@@ -2944,8 +2982,6 @@ cs_les_balance_compute_rij(void)
   BFT_MALLOC(w1, n_cells, cs_real_3_t);
   BFT_MALLOC(w2, n_cells_ext, cs_real_t);
   BFT_MALLOC(w3, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(coefbs, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefas, n_b_faces, cs_real_t);
   BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
   BFT_MALLOC(lapl, n_cells_ext, cs_real_t);
 
@@ -3160,8 +3196,7 @@ cs_les_balance_compute_rij(void)
                        eqp->epsrgr,
                        eqp->climgr,
                        NULL,
-                       coefas,
-                       coefbs,
+                       &bc_coeffs,
                        nut,
                        NULL,
                        NULL,
@@ -3256,10 +3291,11 @@ cs_les_balance_compute_rij(void)
   BFT_FREE(w1);
   BFT_FREE(w2);
   BFT_FREE(w3);
-  BFT_FREE(coefas);
-  BFT_FREE(coefbs);
   BFT_FREE(diverg);
   BFT_FREE(lapl);
+
+  BFT_FREE(coefas);
+  BFT_FREE(coefbs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3318,15 +3354,19 @@ cs_les_balance_compute_tui(void)
 
   /* Working local arrays */
   cs_real_t *diverg, *lapl, *w2;
-  cs_real_t *coefas, *coefbs;
   cs_real_3_t *w1;
 
   BFT_MALLOC(w1    , n_cells_ext, cs_real_3_t);
   BFT_MALLOC(w2    , n_cells_ext, cs_real_t);
   BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
   BFT_MALLOC(lapl  , n_cells_ext, cs_real_t);
-  BFT_MALLOC(coefbs, n_b_faces  , cs_real_t);
-  BFT_MALLOC(coefas, n_b_faces  , cs_real_t);
+
+  cs_field_bc_coeffs_t bc_coeffs;
+  cs_field_bc_coeffs_create(&bc_coeffs);
+  BFT_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
+
+ cs_real_t *coefas = bc_coeffs.a, *coefbs = bc_coeffs.b;
 
   /* For each scalar */
   for (int isca = 0; isca < nscal; isca++) {
@@ -3658,8 +3698,7 @@ cs_les_balance_compute_tui(void)
                          eqp->epsrgr,
                          eqp->climgr,
                          NULL,
-                         coefas,
-                         coefbs,
+                         &bc_coeffs,
                          nut,
                          NULL,
                          NULL,

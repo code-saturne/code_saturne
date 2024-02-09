@@ -699,8 +699,7 @@ cs_cf_energy(int f_sc_id)
                        eqp_vel->epsrgr,
                        eqp_vel->climgr,
                        NULL,          /* f_ext */
-                       NULL,          /* coefap */
-                       NULL,          /* coefbp */
+                       NULL,          /* bc_coeffs */
                        w7,
                        NULL,          /* c_weight */
                        NULL,          /* cpl */
@@ -1075,10 +1074,7 @@ cs_cf_energy(int f_sc_id)
   /* Impose boundary convective at some faces (face indicator icvfli) */
   int icvflb = 1;
 
-  cs_real_t *coefa_sc = f_sc->bc_coeffs->a;
-  cs_real_t *coefb_sc = f_sc->bc_coeffs->b;
-  cs_real_t *cofaf_sc = f_sc->bc_coeffs->af;
-  cs_real_t *cofbf_sc = f_sc->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_sc = f_sc->bc_coeffs;
 
   cs_equation_param_t eqp_loc = *eqp_e;
 
@@ -1099,8 +1095,7 @@ cs_cf_energy(int f_sc_id)
                                      -1.0,   /* normp */
                                      &eqp_loc,
                                      energy_pre, energy_pre,
-                                     coefa_sc, coefb_sc,
-                                     cofaf_sc, cofbf_sc,
+                                     bc_coeffs_sc,
                                      i_mass_flux, b_mass_flux,
                                      i_visc, b_visc,
                                      i_visc, b_visc,

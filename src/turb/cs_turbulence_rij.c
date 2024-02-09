@@ -2517,10 +2517,7 @@ _solve_epsilon(int              phase_id,
 
   /* Get boundary conditions coefficients */
 
-  cs_real_t *coefap = f_eps->bc_coeffs->a;
-  cs_real_t *coefbp = f_eps->bc_coeffs->b;
-  cs_real_t *cofafp = f_eps->bc_coeffs->af;
-  cs_real_t *cofbfp = f_eps->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_eps = f_eps->bc_coeffs;
 
   cs_equation_param_t eqp_loc = *eqp;
 
@@ -2544,10 +2541,7 @@ _solve_epsilon(int              phase_id,
                                      &eqp_loc,
                                      cvara_ep,
                                      cvara_ep,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     bc_coeffs_eps,
                                      imasfl,
                                      bmasfl,
                                      viscf,
@@ -3006,6 +3000,11 @@ cs_turbulence_rij(int          phase_id,
                                    &gradient_type,
                                    &halo_type);
 
+        cs_field_bc_coeffs_t bc_coeffs_loc;
+        cs_field_bc_coeffs_create(&bc_coeffs_loc);
+        bc_coeffs_loc.a = bromo;
+        bc_coeffs_loc.b = viscb;
+
         cs_gradient_scalar("density",
                            gradient_type,
                            halo_type,
@@ -3018,8 +3017,7 @@ cs_turbulence_rij(int          phase_id,
                            eqp->epsrgr,
                            eqp->climgr,
                            NULL,          /* f_ext */
-                           bromo,
-                           viscb,
+                           &bc_coeffs_loc,
                            cromo,
                            NULL,         /* c_weight */
                            NULL,         /* cpl */
@@ -3197,7 +3195,6 @@ cs_turbulence_rij(int          phase_id,
    }
 
    cs_real_6_t  *coefap = (cs_real_6_t *)f_rij->bc_coeffs->a;
-   cs_real_66_t *coefbp = (cs_real_66_t *)f_rij->bc_coeffs->b;
    cs_real_6_t  *cofafp = (cs_real_6_t *)f_rij->bc_coeffs->af;
    cs_real_66_t *cofbfp = (cs_real_66_t *)f_rij->bc_coeffs->bf;
 
@@ -3272,10 +3269,7 @@ cs_turbulence_rij(int          phase_id,
                                       &eqp_loc,
                                       cvara_rij,
                                       cvara_rij,
-                                      coefap,
-                                      coefbp,
-                                      cofafp,
-                                      cofbfp,
+                                      f_rij->bc_coeffs,
                                       imasfl,
                                       bmasfl,
                                       viscf,
@@ -3510,10 +3504,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   /* Effective resolution of the equation of alpha
      ============================================= */
 
-  const cs_real_t *coefap = cs_field_by_id(f_id)->bc_coeffs->a;
-  const cs_real_t *coefbp = cs_field_by_id(f_id)->bc_coeffs->b;
-  const cs_real_t *cofafp = cs_field_by_id(f_id)->bc_coeffs->af;
-  const cs_real_t *cofbfp = cs_field_by_id(f_id)->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs = cs_field_by_id(f_id)->bc_coeffs;
 
   cs_equation_param_t eqp_loc = *eqp;
 
@@ -3537,10 +3528,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                      &eqp_loc,
                                      cvara_al,
                                      cvara_al,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     bc_coeffs,
                                      imasfl,
                                      bmasfl,
                                      viscf,

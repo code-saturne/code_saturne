@@ -486,18 +486,6 @@ cs_turbulence_kw(int              phase_id,
        Computation of max(|grad k|^2 /k^2 , |grad w|^2/w^2 )
        and div(grad (U) ) */
 
-    const cs_real_3_t *coefav
-      = (const cs_real_3_t *)f_vel->bc_coeffs->a;
-
-    const cs_real_33_t *coefbv
-      = (const cs_real_33_t *)f_vel->bc_coeffs->b;
-
-    const cs_real_3_t *cofafv
-      = (const cs_real_3_t *)f_vel->bc_coeffs->af;
-
-    const cs_real_33_t *cofbfv
-      = (const cs_real_33_t *)f_vel->bc_coeffs->bf;
-
     cs_real_3_t *cvar_vel = (cs_real_3_t *)f_vel->val;
     const cs_real_3_t *cvar_vela = (const cs_real_3_t *)f_vel->val_pre;
 
@@ -541,10 +529,7 @@ cs_turbulence_kw(int              phase_id,
                       &eqp_u_loc,
                       cvar_vel,
                       cvar_vela,
-                      coefav,
-                      coefbv,
-                      cofafv,
-                      cofbfv,
+                      f_vel->bc_coeffs,
                       i_massflux,
                       b_massflux,
                       viscf,
@@ -768,6 +753,11 @@ cs_turbulence_kw(int              phase_id,
                                  &gradient_type,
                                  &halo_type);
 
+      cs_field_bc_coeffs_t bc_coeffs_loc;
+      cs_field_bc_coeffs_create(&bc_coeffs_loc);
+      bc_coeffs_loc.a = bromo;
+      bc_coeffs_loc.b = viscb;
+
       cs_gradient_scalar("cromo_grad",
                          gradient_type,
                          halo_type,
@@ -780,8 +770,7 @@ cs_turbulence_kw(int              phase_id,
                          eqp_k->epsrgr,
                          eqp_k->climgr,
                          NULL,
-                         bromo,
-                         viscb,
+                         &bc_coeffs_loc,
                          cromo,
                          NULL,
                          NULL, /* internal coupling */
@@ -1239,10 +1228,7 @@ cs_turbulence_kw(int              phase_id,
                       &eqp_k_loc,
                       cvara_k,
                       cvara_k,
-                      coefa_k,
-                      coefb_k,
-                      coefaf_k,
-                      coefbf_k,
+                      f_k->bc_coeffs,
                       i_massflux,
                       b_massflux,
                       viscf,
@@ -1295,10 +1281,7 @@ cs_turbulence_kw(int              phase_id,
                       &eqp_w_loc,
                       cvara_omg ,
                       cvara_omg ,
-                      coefa_o,
-                      coefb_o,
-                      coefaf_o,
-                      coefbf_o,
+                      f_omg->bc_coeffs,
                       i_massflux,
                       b_massflux,
                       viscf,
@@ -1437,10 +1420,7 @@ cs_turbulence_kw(int              phase_id,
                                      &eqp_k_loc,
                                      cvara_k,
                                      cvara_k,
-                                     coefa_k,
-                                     coefb_k,
-                                     coefaf_k,
-                                     coefbf_k,
+                                     f_k->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
                                      viscf,
@@ -1496,10 +1476,7 @@ cs_turbulence_kw(int              phase_id,
                                      &eqp_w_loc,
                                      cvara_omg,
                                      cvara_omg,
-                                     coefa_o,
-                                     coefb_o,
-                                     coefaf_o,
-                                     coefbf_o,
+                                     f_omg->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
                                      viscf,

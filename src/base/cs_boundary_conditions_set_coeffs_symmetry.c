@@ -256,10 +256,6 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
       if (turb_flux_model == 11 || turb_flux_model == 21 || turb_flux_model == 31) {
 
         cs_field_t *f_al = cs_field_by_composite_name(f_sc->name, "alpha");
-        cs_real_t *coefa_al = f_al->bc_coeffs->a;
-        cs_real_t *coefb_al = f_al->bc_coeffs->b;
-        cs_real_t *cofaf_al = f_al->bc_coeffs->af;
-        cs_real_t *cofbf_al = f_al->bc_coeffs->bf;
 
         /* Dirichlet Boundary Condition
            ---------------------------- */
@@ -268,10 +264,8 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
         const cs_real_t hint = 1.0 / distbf;
 
-        cs_boundary_conditions_set_neumann_scalar(&coefa_al[f_id],
-                                                  &cofaf_al[f_id],
-                                                  &coefb_al[f_id],
-                                                  &cofbf_al[f_id],
+        cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                  f_al->bc_coeffs,
                                                   qimp,
                                                   hint);
 

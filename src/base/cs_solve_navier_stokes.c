@@ -204,11 +204,17 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   const cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *croma = CS_F_(rho)->val_pre;
 
-  cs_real_t *clapot, *clbpot, *cfapot, *cfbpot;
-  BFT_MALLOC(clapot, n_b_faces, cs_real_t);
-  BFT_MALLOC(clbpot, n_b_faces, cs_real_t);
-  BFT_MALLOC(cfapot, n_b_faces, cs_real_t);
-  BFT_MALLOC(cfbpot, n_b_faces, cs_real_t);
+  cs_field_bc_coeffs_t bc_coeffs_pot;
+  cs_field_bc_coeffs_create(&bc_coeffs_pot);
+  BFT_MALLOC(bc_coeffs_pot.a, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_pot.b, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_pot.af, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_pot.bf, n_b_faces, cs_real_t);
+
+  cs_real_t *clapot = bc_coeffs_pot.a;
+  cs_real_t *clbpot = bc_coeffs_pot.b;
+  cs_real_t *cfapot = bc_coeffs_pot.af;
+  cs_real_t *cfbpot = bc_coeffs_pot.bf;
 
   /* Mass fluxes */
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
@@ -221,10 +227,8 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /* Boundary conditions on the potential (homogenous Neumann) */
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    cs_boundary_conditions_set_neumann_scalar_hmg(&clapot[face_id],
-                                                  &cfapot[face_id],
-                                                  &clbpot[face_id],
-                                                  &cfbpot[face_id]);
+    cs_boundary_conditions_set_neumann_scalar_hmg(face_id,
+                                                  &bc_coeffs_pot);
   }
 
   cs_real_t *divu;
@@ -315,8 +319,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                            1,   /* isym */
                            1.,  /* thetap */
                            0.,  /* imucpp */
-                           clbpot,
-                           cfbpot,
+                           &bc_coeffs_pot,
                            pot,
                            imasfl,
                            bmasfl,
@@ -410,8 +413,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                              eqp->climgr,
                              NULL,
                              pot,
-                             clapot, clbpot,
-                             cfapot, cfbpot,
+                             &bc_coeffs_pot,
                              i_visc, b_visc,
                              dt,
                              rhs);
@@ -462,8 +464,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                               eqp->climgr,
                               NULL,
                               pota,
-                              clapot, clbpot,
-                              cfapot, cfbpot,
+                              &bc_coeffs_pot,
                               i_visc,
                               b_visc,
                               dt,
@@ -488,8 +489,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                               eqp->climgr,
                               NULL,
                               pota,
-                              clapot, clbpot,
-                              cfapot, cfbpot,
+                              &bc_coeffs_pot,
                               i_visc,
                               b_visc,
                               dt,
@@ -829,6 +829,12 @@ _div_rij(const cs_mesh_t     *m,
     const cs_field_t *f_rij = CS_F_(rij);
     eqp = cs_field_get_equation_param_const(f_rij);
 
+    cs_field_bc_coeffs_t bc_coeffs_ts_loc;
+    cs_field_bc_coeffs_shallow_copy(f_rij->bc_coeffs, &bc_coeffs_ts_loc);
+
+    bc_coeffs_ts_loc.a = f_rij->bc_coeffs->ad;
+    bc_coeffs_ts_loc.b = f_rij->bc_coeffs->bd;
+
     cs_tensor_face_flux(m, mq,
                         -1, 1, 0, 1, 1,
                         eqp->imrgra, eqp->nswrgr,
@@ -836,21 +842,26 @@ _div_rij(const cs_mesh_t     *m,
                         eqp->epsrgr, eqp->climgr,
                         crom, brom,
                         (const cs_real_6_t *)f_rij->val,
-                        (const cs_real_6_t *)f_rij->bc_coeffs->ad,
-                        (const cs_real_66_t *)f_rij->bc_coeffs->bd,
+                        &bc_coeffs_ts_loc,
                         tflmas, tflmab);
 
+    bc_coeffs_ts_loc.a = NULL;
+    bc_coeffs_ts_loc.b = NULL;
+    cs_field_bc_coeffs_free_copy(f_rij->bc_coeffs, &bc_coeffs_ts_loc);
   }
 
   /* Baglietto et al. quadratic k-epislon model */
   else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
 
-    cs_real_6_t *rij = NULL, *coefat = NULL;
-    cs_real_66_t *coefbt = NULL;
-
+    cs_real_6_t *rij = NULL;
     BFT_MALLOC(rij, n_cells_ext, cs_real_6_t);
-    BFT_MALLOC(coefat, n_b_faces, cs_real_6_t);
-    BFT_MALLOC(coefbt, n_b_faces, cs_real_66_t);
+
+    cs_field_bc_coeffs_t bc_coeffs_loc;
+    cs_field_bc_coeffs_create(&bc_coeffs_loc);
+    BFT_MALLOC(bc_coeffs_loc.a, 6*n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_loc.b, 36*n_b_faces, cs_real_t);
+    cs_real_6_t  *coefat = (cs_real_6_t  *)bc_coeffs_loc.a;
+    cs_real_66_t *coefbt = (cs_real_66_t *)bc_coeffs_loc.b;
 
     eqp = cs_field_get_equation_param_const(CS_F_(k));
 
@@ -876,11 +887,11 @@ _div_rij(const cs_mesh_t     *m,
                         eqp->epsrgr, eqp->climgr,
                         crom, brom,
                         rij,
-                        coefat, coefbt,
+                        &bc_coeffs_loc,
                         tflmas, tflmab);
     BFT_FREE(rij);
-    BFT_FREE(coefat);
-    BFT_FREE(coefbt);
+    BFT_FREE(bc_coeffs_loc.a);
+    BFT_FREE(bc_coeffs_loc.b);
 
   }
 
@@ -975,10 +986,7 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
     BFT_MALLOC(intflx, n_i_faces, cs_real_t);
     BFT_MALLOC(bouflx, n_b_faces, cs_real_t);
 
-    const cs_real_3_t *claale
-      = (const cs_real_3_t *)CS_F_(mesh_u)->bc_coeffs->a;
-    const cs_real_33_t *clbale
-      = (const cs_real_33_t *)CS_F_(mesh_u)->bc_coeffs->b;
+    cs_field_bc_coeffs_t *bc_coeffs_ale = CS_F_(mesh_u)->bc_coeffs;
 
     const cs_equation_param_t *eqp_mesh
       = cs_field_get_equation_param_const(CS_F_(mesh_u));
@@ -998,7 +1006,7 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
                  eqp_mesh->climgr,
                  crom, brom,
                  mshvel,
-                 claale, clbale,
+                 bc_coeffs_ale,
                  intflx, bouflx);
 
     cs_axpy(n_b_faces, -1, bouflx, bmasfl);
@@ -1885,14 +1893,7 @@ _resize_non_interleaved_cell_arrays(const cs_mesh_t    *m,
   * \param[in]       vela          velocity at the previous time step
   * \param[in]       velk          velocity at the previous sub iteration (or vela)
   * \param[in,out]   da_uu         velocity matrix
-  * \param[in]       coefav        boundary condition array for the variable
-  *                                (explicit part)
-  * \param[in]       coefbv        boundary condition array for the variable
-  *                                (implicit part)
-  * \param[in]       cofafv        boundary condition array for the diffusion
-  *                                of the variable (explicit part)
-  * \param[in]       cofbfv        boundary condition array for the diffusion
-  *                                of the variable (implicit part)
+  * \param[in]       bc_coeffs_v   boundary condition structure for the variable
   * \param[in]       frcxt         external forces making hydrostatic pressure
   * \param[in]       trava         working array for the velocity-pressure coupling
   * \param[out]      dfrcxt        variation of the external forces
@@ -1923,10 +1924,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                      cs_real_t                    vela[][3],
                      cs_real_t                    velk[][3],
                      cs_real_t                    da_uu[][6],
-                     cs_real_t                    coefav[][3],
-                     cs_real_t                    coefbv[][3][3],
-                     cs_real_t                    cofafv[][3],
-                     cs_real_t                    cofbfv[][3][3],
+                     cs_field_bc_coeffs_t        *bc_coeffs_v,
                      cs_real_t                    frcxt[][3],
                      cs_real_t                    grdphd[][3],
                      cs_real_t                    trava[][3],
@@ -1940,6 +1938,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                      cs_real_t                    secvif[],
                      cs_real_t                    secvib[])
 {
+  cs_real_33_t *cofbfv = (cs_real_33_t *)bc_coeffs_v->bf;
   cs_lnum_t n_cells = m->n_cells;
   cs_lnum_t n_i_faces = m->n_i_faces;
   cs_lnum_t n_b_faces = m->n_b_faces;
@@ -3060,10 +3059,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                                        &eqp_loc,
                                        vela,
                                        velk,
-                                       coefav,
-                                       coefbv,
-                                       cofafv,
-                                       cofbfv,
+                                       bc_coeffs_v,
                                        imasfl,
                                        bmasfl,
                                        viscfi,
@@ -3146,10 +3142,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                                          &eqp_loc,
                                          vect,
                                          vect,
-                                         coefav,
-                                         coefbv,
-                                         cofafv,
-                                         cofbfv,
+                                         bc_coeffs_v,
                                          imasfl,
                                          bmasfl,
                                          viscfi,
@@ -3224,10 +3217,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                       &eqp_loc,
                       vel,
                       vel,
-                      coefav,
-                      coefbv,
-                      cofafv,
-                      cofbfv,
+                      bc_coeffs_v,
                       imasfl,
                       bmasfl,
                       viscf,
@@ -3346,11 +3336,17 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
   /* Boundary conditions for delta P */
-  cs_real_t *coefap, *cofafp, *coefbp, *cofbfp;
-  BFT_MALLOC(coefap, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofafp, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefbp, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofbfp, n_b_faces, cs_real_t);
+  cs_field_bc_coeffs_t bc_coeffs_dp;
+  cs_field_bc_coeffs_create(&bc_coeffs_dp);
+  BFT_MALLOC(bc_coeffs_dp.a,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_dp.af, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_dp.b,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_dp.bf, n_b_faces, cs_real_t);
+
+  cs_real_t *coefap = bc_coeffs_dp.a;
+  cs_real_t *cofafp = bc_coeffs_dp.af;
+  cs_real_t *coefbp = bc_coeffs_dp.b;
+  cs_real_t *cofbfp = bc_coeffs_dp.bf;
 
   /*
    * Solve a diffusion equation with source term to obtain
@@ -3398,10 +3394,9 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
     cs_real_t hint = 1. / (crom[c_id] * distb[f_id]);
     cs_real_t qimp = - cs_math_3_dot_product(b_face_u_normal[f_id],
                                              gxyz);
-    cs_boundary_conditions_set_neumann_scalar(&coefap[f_id],
-                                              &cofafp[f_id],
-                                              &coefbp[f_id],
-                                              &cofbfp[f_id],
+
+    cs_boundary_conditions_set_neumann_scalar(f_id,
+                                              &bc_coeffs_dp,
                                               qimp,
                                               hint);
   }
@@ -3444,8 +3439,7 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
                                      -1,     /* normp */
                                      &eqp_loc,
                                      prhyd, prhyd,
-                                     coefap, coefbp,
-                                     cofafp, cofbfp,
+                                     &bc_coeffs_dp,
                                      imasfl, bmasfl,
                                      viscf, viscb,
                                      viscf, viscb,
@@ -3481,8 +3475,7 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
                      eqp_loc.epsrgr,
                      eqp_loc.climgr,
                      NULL, /* f_ext */
-                     coefap,
-                     coefbp,
+                     &bc_coeffs_dp,
                      prhyd,
                      xinvro,
                      NULL,
@@ -3902,10 +3895,9 @@ cs_solve_navier_stokes(const int   iterns,
     frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
 
   /* Pointers to BC coefficients */
+  cs_field_bc_coeffs_t *bc_coeffs_vel = CS_F_(vel)->bc_coeffs;
   cs_real_3_t *coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
   cs_real_3_t *cofafu = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->af;
-  cs_real_33_t *coefbu = (cs_real_33_t *)CS_F_(vel)->bc_coeffs->b;
-  cs_real_33_t *cofbfu  = (cs_real_33_t *)CS_F_(vel)->bc_coeffs->bf;
 
   if (vp_param->staggered == 0)
     _velocity_prediction(m,
@@ -3917,10 +3909,7 @@ cs_solve_navier_stokes(const int   iterns,
                          vela,
                          velk,
                          da_uu,
-                         coefau,
-                         coefbu,
-                         cofafu,
-                         cofbfu,
+                         bc_coeffs_vel,
                          frcxt,
                          grdphd,
                          trava,
@@ -3984,7 +3973,7 @@ cs_solve_navier_stokes(const int   iterns,
                  eqp_u->climgr,
                  crom, brom,
                  vel,
-                 coefau, coefbu,
+                 bc_coeffs_vel,
                  imasfl, bmasfl);
 
     /* In the ALE framework, we add the mesh velocity */
@@ -4279,11 +4268,9 @@ cs_solve_navier_stokes(const int   iterns,
     bft_printf("** SOLVING CONTINUITY PRESSURE\n");
 
   cs_real_t *coefa_dp = cs_field_by_name("pressure_increment")->bc_coeffs->a;
-  cs_real_t *coefb_dp = cs_field_by_name("pressure_increment")->bc_coeffs->b;
 
   /* Pointers to BC coefficients */
   coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
-  coefbu = (cs_real_33_t *)CS_F_(vel)->bc_coeffs->b;
 
   /* Pressure correction step */
   if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0
@@ -4296,10 +4283,8 @@ cs_solve_navier_stokes(const int   iterns,
                            isostd,
                            vel,
                            da_uu,
-                           coefau,
-                           coefbu,
-                           coefa_dp,
-                           coefb_dp,
+                           CS_F_(vel)->bc_coeffs,
+                           cs_field_by_name("pressure_increment")->bc_coeffs,
                            w_condensation->spcond,
                            w_condensation->svcond,
                            frcxt,
@@ -4479,7 +4464,7 @@ cs_solve_navier_stokes(const int   iterns,
                  eqp_u->climgr,
                  crom, brom,
                  vel,
-                 coefau, coefbu,
+                 bc_coeffs_vel,
                  esflum , esflub );
 
     /* Correction estimator: div(rom * U(n + 1)) - gamma */
@@ -4528,10 +4513,7 @@ cs_solve_navier_stokes(const int   iterns,
                              vel,
                              velk,
                              da_uu,
-                             coefau,
-                             coefbu,
-                             (cs_real_3_t *)(CS_F_(vel)->bc_coeffs->af),
-                             (cs_real_33_t *)(CS_F_(vel)->bc_coeffs->bf),
+                             bc_coeffs_vel,
                              frcxt,
                              grdphd,
                              trava,

@@ -515,20 +515,16 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     cs_real_t qimp = 0.;
     if ((b_face_cog[face_id][2] - min_z) < 0.005) {//FIXME dimensionless value
       cs_real_t pimp = p_ground;
-      cs_boundary_conditions_set_dirichlet_scalar(&(f->bc_coeffs->a[face_id]),
-                                                  &(f->bc_coeffs->af[face_id]),
-                                                  &(f->bc_coeffs->b[face_id]),
-                                                  &(f->bc_coeffs->bf[face_id]),
+      cs_boundary_conditions_set_dirichlet_scalar(face_id,
+                                                  f->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_big_r);
       eqp_p->ndircl = 1;
     }
     else {
-      cs_boundary_conditions_set_neumann_scalar(&(f->bc_coeffs->a[face_id]),
-                                                &(f->bc_coeffs->af[face_id]),
-                                                &(f->bc_coeffs->b[face_id]),
-                                                &(f->bc_coeffs->bf[face_id]),
+      cs_boundary_conditions_set_neumann_scalar(face_id,
+                                                f->bc_coeffs,
                                                 qimp,
                                                 hint);
     }
@@ -556,8 +552,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                            isym,
                            eqp_p->thetav,
                            0,
-                           f->bc_coeffs->b,
-                           f->bc_coeffs->bf,
+                           f->bc_coeffs,
                            rovsdt,
                            i_massflux,
                            b_massflux,
@@ -617,10 +612,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          eqp_p->climgr,
                          next_fext,
                          pvar,
-                         f->bc_coeffs->a,
-                         f->bc_coeffs->b,
-                         f->bc_coeffs->af,
-                         f->bc_coeffs->bf,
+                         f->bc_coeffs,
                          i_viscm,
                          b_viscm,
                          c_visc,
@@ -676,10 +668,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                            eqp_p->climgr,
                            next_fext,
                            pvar,
-                           f->bc_coeffs->a,
-                           f->bc_coeffs->b,
-                           f->bc_coeffs->af,
-                           f->bc_coeffs->bf,
+                           f->bc_coeffs,
                            i_viscm,
                            b_viscm,
                            c_visc,
@@ -2252,10 +2241,7 @@ cs_soil_model(void)
   int z_id = cs_glob_atmo_option->soil_zone_id;
   if (z_id > -1) {
     int micro_scale_option = cs_glob_atmo_option->soil_meb_model;
-    const cs_equation_param_t *eqp
-      = cs_field_get_equation_param_const(CS_F_(t));
 
-    const cs_domain_t *domain = cs_glob_domain;
     cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
     const cs_real_t stephn = cs_physical_constants_stephan;
@@ -3198,10 +3184,8 @@ cs_atmo_z_ground_compute(void)
       cs_real_t hint = 1. / mq->b_dist[face_id];
       cs_real_t pimp = cs_math_3_dot_product(b_face_cog[face_id], normal);
 
-      cs_boundary_conditions_set_dirichlet_scalar(&(f->bc_coeffs->a[face_id]),
-                                                  &(f->bc_coeffs->af[face_id]),
-                                                  &(f->bc_coeffs->b[face_id]),
-                                                  &(f->bc_coeffs->bf[face_id]),
+      cs_boundary_conditions_set_dirichlet_scalar(face_id,
+                                                  f->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3214,10 +3198,8 @@ cs_atmo_z_ground_compute(void)
       cs_real_t hint = 1. / mq->b_dist[face_id];
       cs_real_t qimp = 0.;
 
-      cs_boundary_conditions_set_neumann_scalar(&(f->bc_coeffs->a[face_id]),
-                                                &(f->bc_coeffs->af[face_id]),
-                                                &(f->bc_coeffs->b[face_id]),
-                                                &(f->bc_coeffs->bf[face_id]),
+      cs_boundary_conditions_set_neumann_scalar(face_id,
+                                                f->bc_coeffs,
                                                 qimp,
                                                 hint);
 
@@ -3282,10 +3264,7 @@ cs_atmo_z_ground_compute(void)
                                        eqp_p,
                                        f->val_pre,
                                        f->val,
-                                       f->bc_coeffs->a,
-                                       f->bc_coeffs->b,
-                                       f->bc_coeffs->af,
-                                       f->bc_coeffs->bf,
+                                       f->bc_coeffs,
                                        i_massflux,
                                        b_massflux,
                                        i_massflux, /* viscosity, not used */

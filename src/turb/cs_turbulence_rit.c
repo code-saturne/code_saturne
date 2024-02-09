@@ -618,11 +618,13 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
   /* cs_field_set_key_double(f, kctheta, ctheta); */
 
-  cs_real_3_t *coefat;
-  cs_real_33_t *coefbt;
+  cs_field_bc_coeffs_t bc_coeffs_v_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 
-  BFT_MALLOC(coefat, n_b_faces, cs_real_3_t);
-  BFT_MALLOC(coefbt, n_b_faces, cs_real_33_t);
+  cs_real_3_t  *coefat = (cs_real_3_t  *)bc_coeffs_v_loc.a;
+  cs_real_33_t *coefbt = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
   cs_array_real_fill_zero(3*n_b_faces, (cs_real_t *)coefat);
 
@@ -655,8 +657,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
                crom,
                brom,
                w1,
-               coefat,
-               coefbt,
+               &bc_coeffs_v_loc,
                thflxf,
                thflxb);
 
@@ -904,11 +905,6 @@ _solve_rit(const cs_field_t     *f,
     cs_array_set_value_real(n_b_faces, 1, 0., viscb);
   }
 
-  cs_real_3_t  *coefap = (cs_real_3_t *)f_ut->bc_coeffs->a;
-  cs_real_33_t *coefbp = (cs_real_33_t *)f_ut->bc_coeffs->b;
-  cs_real_3_t  *cofafp = (cs_real_3_t *)f_ut->bc_coeffs->af;
-  cs_real_33_t *cofbfp = (cs_real_33_t *)f_ut->bc_coeffs->bf;
-
   /* Add Rusanov fluxes */
   if (cs_glob_turb_rans_model->irijnu == 2) {
      cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
@@ -920,6 +916,8 @@ _solve_rit(const cs_field_t     *f,
        = (const cs_real_3_t *restrict)fvq->b_face_normal;
      cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
 
+     //cs_real_3_t *coefap = (cs_real_3_t *)f_ut->bc_coeffs->a;
+     cs_real_33_t *cofbfp = (cs_real_33_t *)f_ut->bc_coeffs->bf;
      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
        cs_real_t n[3];
        cs_math_3_normalize(b_face_normal[face_id], n); /* Warning: normalized here */
@@ -962,10 +960,7 @@ _solve_rit(const cs_field_t     *f,
                                      &eqp_loc,
                                      xuta,
                                      xuta,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     f_ut->bc_coeffs,
                                      imasfl,
                                      bmasfl,
                                      viscf,
@@ -1156,8 +1151,12 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
     /* Boundary Conditions on T'u' for the divergence term of
      * the thermal transport equation */
-    const cs_real_3_t *cofarut  = (const cs_real_3_t *)f_ut->bc_coeffs->ad;
-    const cs_real_33_t *cofbrut = (const cs_real_33_t *)f_ut->bc_coeffs->bd;
+
+    cs_field_bc_coeffs_t bc_coeffs;
+    cs_field_bc_coeffs_create(&bc_coeffs);
+
+    bc_coeffs.a = f_ut->bc_coeffs->ad;
+    bc_coeffs.b = f_ut->bc_coeffs->bd;
 
     const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
@@ -1177,8 +1176,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
                  crom,
                  brom,
                  w1,
-                 cofarut,
-                 cofbrut,
+                 &bc_coeffs,
                  thflxf,
                  thflxb);
 

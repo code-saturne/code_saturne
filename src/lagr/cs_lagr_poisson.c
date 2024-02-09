@@ -80,15 +80,14 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* -------------------------------------------------------
- *        CALCUL DE LA DIVERGENCE D'UN VECTEUR
- *    (On ne s'embete pas, on appelle 3 fois le gradient)
+ *        COMPUTE THE DIVERGENCE OF A VECTEUR
+ *       (Simply call the gradient three times)
  * ------------------------------------------------------- */
 
 static void
-diverv (cs_real_t    *diverg,
-        cs_real_3_t  *u,
-        cs_real_3_t  *coefa,
-        cs_real_33_t *coefb)
+diverv (cs_real_t                  *diverg,
+        cs_real_3_t                *u,
+        const cs_field_bc_coeffs_t *bc_coeffs_v)
 {
 
   /* ====================================================================
@@ -121,8 +120,7 @@ diverv (cs_real_t    *diverg,
                      -1,     /* imligp */
                      1e-8,   /* epsrgp */
                      1.5,    /* climgp */
-                     (const cs_real_3_t *)coefa,
-                     (const cs_real_33_t *)coefb,
+                     bc_coeffs_v,
                      u,
                      NULL, /* weighted gradient */
                      NULL, /* cpl */
@@ -219,11 +217,14 @@ _lageqp(cs_real_t   *vitessel,
   /* --> Calcul du gradient de W1   */
   /*     ========================   */
   /* Allocate temporary arrays */
-  cs_real_3_t *coefaw;
-  cs_real_33_t *coefbw;
 
-  BFT_MALLOC(coefaw, nfabor, cs_real_3_t);
-  BFT_MALLOC(coefbw, nfabor, cs_real_33_t);
+  cs_field_bc_coeffs_t bc_coeffs_v_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_v_loc);
+  BFT_MALLOC(bc_coeffs_v_loc.a, 3*nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_v_loc.b, 9*nfabor, cs_real_t);
+
+  cs_real_3_t  *coefaw = (cs_real_3_t  *)bc_coeffs_v_loc.a;
+  cs_real_33_t *coefbw = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
   for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
 
@@ -239,27 +240,34 @@ _lageqp(cs_real_t   *vitessel,
     for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
-        coefbw[jsou][isou][ifac]  = 0.0;
+        coefbw[jsou][isou][ifac] = 0.0;
 
     }
 
   }
 
-  diverv(smbrs, w, coefaw, coefbw);
+  diverv(smbrs, w, &bc_coeffs_v_loc);
 
-  /* Free memory     */
-  BFT_FREE (coefaw);
-  BFT_FREE (coefbw);
+  /* Free memory */
+  BFT_FREE(coefaw);
+  BFT_FREE(coefbw);
 
-  /* --> Conditions aux limites sur PHI  */
+  /* --> Boundary condition for PHI  */
   /*     ==============================  */
   /* Allocate temporary arrays */
-  cs_real_t *coefap, *coefbp;
-  cs_real_t *cofafp, *cofbfp;
-  BFT_MALLOC(coefap, nfabor, cs_real_t);
-  BFT_MALLOC(coefbp, nfabor, cs_real_t);
-  BFT_MALLOC(cofafp, nfabor, cs_real_t);
-  BFT_MALLOC(cofbfp, nfabor, cs_real_t);
+
+  cs_field_bc_coeffs_t bc_coeffs_phi_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_phi_loc);
+
+  BFT_MALLOC(bc_coeffs_phi_loc.a,  nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_phi_loc.b,  nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_phi_loc.af, nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_phi_loc.bf, nfabor, cs_real_t);
+
+  cs_real_t *coefap = bc_coeffs_phi_loc.a;
+  cs_real_t *coefbp = bc_coeffs_phi_loc.b;
+  cs_real_t *cofafp = bc_coeffs_phi_loc.af;
+  cs_real_t *cofbfp = bc_coeffs_phi_loc.bf;
 
   for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
 
@@ -273,24 +281,20 @@ _lageqp(cs_real_t   *vitessel,
 
       /* Neumann Boundary Conditions    */
 
-      cs_boundary_conditions_set_neumann_scalar(&coefap[ifac],
-                                                &cofafp[ifac],
-                                                &coefbp[ifac],
-                                                &cofbfp[ifac],
+      cs_boundary_conditions_set_neumann_scalar(ifac,
+                                                &bc_coeffs_phi_loc,
                                                 0.0,
                                                 hint);
-      coefap[ifac]      = 0.0;
-      coefbp[ifac]      = 1.0;
+      coefap[ifac] = 0.0;
+      coefbp[ifac] = 1.0;
 
     }
     else if (itypfb[ifac] == CS_OUTLET) {
 
       /* Dirichlet Boundary Condition   */
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefap[ifac],
-                                                  &cofafp[ifac],
-                                                  &coefbp[ifac],
-                                                  &cofbfp[ifac],
+      cs_boundary_conditions_set_dirichlet_scalar(ifac,
+                                                  &bc_coeffs_phi_loc,
                                                   phia[iel],
                                                   hint,
                                                   -1);
@@ -341,8 +345,7 @@ _lageqp(cs_real_t   *vitessel,
                                      -1,           /* normp */
                                      &var_cal_opt,
                                      phia, phia,
-                                     coefap, coefbp,
-                                     cofafp, cofbfp,
+                                     &bc_coeffs_phi_loc,
                                      fmala, fmalb,
                                      viscf, viscb,
                                      viscf, viscb,
@@ -366,13 +369,14 @@ _lageqp(cs_real_t   *vitessel,
   BFT_FREE(rovsdt);
   BFT_FREE(fmala);
   BFT_FREE(fmalb);
+  BFT_FREE(phia);
+  BFT_FREE(w);
+  BFT_FREE(dpvar);
+
   BFT_FREE(coefap);
   BFT_FREE(coefbp);
   BFT_FREE(cofafp);
   BFT_FREE(cofbfp);
-  BFT_FREE(phia);
-  BFT_FREE(w);
-  BFT_FREE(dpvar);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -431,13 +435,15 @@ cs_lagr_poisson(const int  itypfb[])
   /* Compute gradient of phi corrector */
 
   cs_real_3_t *grad;
-
   BFT_MALLOC(grad, ncelet, cs_real_3_t);
 
-  cs_real_t *coefap, *coefbp;
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
 
-  BFT_MALLOC(coefap, nfabor, cs_real_t);
-  BFT_MALLOC(coefbp, nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.a,  nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.b,  nfabor, cs_real_t);
+  cs_real_t *coefap = bc_coeffs_loc.a;
+  cs_real_t *coefbp = bc_coeffs_loc.b;
 
   for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
     cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
@@ -464,8 +470,7 @@ cs_lagr_poisson(const int  itypfb[])
                      1e-8,            /* epsrgp */
                      1.5,             /* climgp */
                      NULL,            /* f_ext */
-                     coefap,
-                     coefbp,
+                     &bc_coeffs_loc,
                      phil,
                      NULL,            /* c_weight */
                      NULL, /* internal coupling */

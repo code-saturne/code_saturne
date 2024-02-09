@@ -320,7 +320,6 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
                      epsrgp,
                      climgp,
                      NULL,   /* Use default Neumann BC */
-                     NULL,
                      strain,
                      grdsij);
 

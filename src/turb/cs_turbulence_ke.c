@@ -393,8 +393,6 @@ cs_turbulence_ke(int              phase_id,
 
   cs_real_t *prdtke = NULL, *prdeps = NULL, *sqrt_k = NULL, *strain = NULL;
   cs_real_3_t *grad_sqk = NULL, *grad_s = NULL;
-  cs_real_t *coefa_sqk = NULL, *coefb_sqk = NULL;
-  cs_real_t *coefa_sqs = NULL, *coefb_sqs = NULL;
   cs_real_t *w10 = NULL, *w11 = NULL;
 
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON) {
@@ -406,10 +404,6 @@ cs_turbulence_ke(int              phase_id,
     BFT_MALLOC(strain, n_cells_ext, cs_real_t);
     BFT_MALLOC(grad_sqk, n_cells_ext, cs_real_3_t);
     BFT_MALLOC(grad_s, n_cells_ext, cs_real_3_t);
-    BFT_MALLOC(coefa_sqk, n_b_faces, cs_real_t);
-    BFT_MALLOC(coefb_sqk, n_b_faces, cs_real_t);
-    BFT_MALLOC(coefa_sqs, n_b_faces, cs_real_t);
-    BFT_MALLOC(coefb_sqs, n_b_faces, cs_real_t);
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
     BFT_MALLOC(w10, n_cells_ext, cs_real_t);
@@ -990,6 +984,11 @@ cs_turbulence_ke(int              phase_id,
                                  &gradient_type,
                                  &halo_type);
 
+      cs_field_bc_coeffs_t bc_coeffs_loc;
+      cs_field_bc_coeffs_create(&bc_coeffs_loc);
+      bc_coeffs_loc.a = bromo;
+      bc_coeffs_loc.b = viscb;
+
       cs_gradient_scalar("cromo_grad",
                          gradient_type,
                          halo_type,
@@ -1002,8 +1001,7 @@ cs_turbulence_ke(int              phase_id,
                          eqp_k->epsrgr,
                          eqp_k->climgr,
                          NULL,
-                         bromo,
-                         viscb,
+                         &bc_coeffs_loc,
                          cromo,
                          NULL,
                          NULL, /* internal coupling */
@@ -1114,10 +1112,7 @@ cs_turbulence_ke(int              phase_id,
                            eqp_k->climgr,
                            NULL,
                            cvara_k,
-                           coefap,
-                           coefbp,
-                           cofafp,
-                           cofbfp,
+                           f_k->bc_coeffs,
                            viscf,
                            viscb,
                            w3,
@@ -1194,9 +1189,12 @@ cs_turbulence_ke(int              phase_id,
        - coefa for sqrt(k) is the sqrt of the coefa for k,
        - coefb is the same as for k */
 
+    cs_field_bc_coeffs_t bc_coeffs_sqk_loc;
+    cs_field_bc_coeffs_shallow_copy(f_k->bc_coeffs, &bc_coeffs_sqk_loc);
+    BFT_MALLOC(bc_coeffs_sqk_loc.a, n_b_faces, cs_real_t);
+
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      coefa_sqk[face_id] = sqrt(coefap[face_id]);
-      coefb_sqk[face_id] = coefbp[face_id];
+      bc_coeffs_sqk_loc.a[face_id] = sqrt(coefap[face_id]);
     }
 
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -1218,19 +1216,27 @@ cs_turbulence_ke(int              phase_id,
                        eqp_k->epsrgr,
                        eqp_k->climgr,
                        NULL,
-                       coefa_sqk,
-                       coefb_sqk,
+                       &bc_coeffs_sqk_loc,
                        sqrt_k,
                        NULL,
                        NULL,  /* internal coupling */
                        grad_sqk);
 
+    bc_coeffs_sqk_loc.a = NULL;
+    cs_field_bc_coeffs_free_copy(f_k->bc_coeffs, &bc_coeffs_sqk_loc);
+
     /* Gradient of the Strain (grad S)
        --------------------------------------- */
 
+    cs_field_bc_coeffs_t bc_coeffs_sqs_loc;
+    cs_field_bc_coeffs_create(&bc_coeffs_sqs_loc);
+
+    BFT_MALLOC(bc_coeffs_sqs_loc.a, n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_sqs_loc.b, n_b_faces, cs_real_t);
+
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      coefa_sqs[face_id] = 0.;
-      coefb_sqs[face_id] = 1.;
+      bc_coeffs_sqs_loc.a[face_id] = 0.;
+      bc_coeffs_sqs_loc.b[face_id] = 1.;
     }
 
     cs_gradient_type_by_imrgra(eqp_k->imrgra,
@@ -1249,12 +1255,14 @@ cs_turbulence_ke(int              phase_id,
                        eqp_k->epsrgr,
                        eqp_k->climgr,
                        NULL,
-                       coefa_sqs,
-                       coefb_sqs,
+                       &bc_coeffs_sqs_loc,
                        strain,
                        NULL,
                        NULL, /* internal coupling */
                        grad_s);
+
+    BFT_FREE(bc_coeffs_sqs_loc.a);
+    BFT_FREE(bc_coeffs_sqs_loc.b);
 
   }
 
@@ -1726,10 +1734,7 @@ cs_turbulence_ke(int              phase_id,
                       &eqp_k_loc,
                       cvara_k,
                       cvara_k,
-                      coefap,
-                      coefbp,
-                      cofafp,
-                      cofbfp,
+                      f_k->bc_coeffs,
                       imasfl,
                       bmasfl,
                       viscf,
@@ -1794,10 +1799,7 @@ cs_turbulence_ke(int              phase_id,
                       &eqp_eps_loc,
                       cvara_ep,
                       cvara_ep,
-                      coefap,
-                      coefbp,
-                      cofafp,
-                      cofbfp,
+                      f_eps->bc_coeffs,
                       imasfl,
                       bmasfl,
                       viscf,
@@ -1967,10 +1969,7 @@ cs_turbulence_ke(int              phase_id,
                                      &eqp_k_loc,
                                      cvara_k,
                                      cvara_k,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     f_k->bc_coeffs,
                                      imasfl,
                                      bmasfl,
                                      viscf,
@@ -2046,10 +2045,7 @@ cs_turbulence_ke(int              phase_id,
                                      &eqp_eps_loc,
                                      cvara_ep,
                                      cvara_ep,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     f_eps->bc_coeffs,
                                      imasfl,
                                      bmasfl,
                                      viscf,
@@ -2112,10 +2108,6 @@ cs_turbulence_ke(int              phase_id,
     BFT_FREE(strain);
     BFT_FREE(grad_sqk);
     BFT_FREE(grad_s);
-    BFT_FREE(coefa_sqk);
-    BFT_FREE(coefb_sqk);
-    BFT_FREE(coefa_sqs);
-    BFT_FREE(coefb_sqs);
   }
 }
 

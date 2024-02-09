@@ -1190,10 +1190,8 @@ cs_compute_porosity_from_scan(void)
        cs_real_t hint = 1. / mq->b_dist[face_id];
        cs_real_t pimp = 0.;
 
-       cs_boundary_conditions_set_dirichlet_scalar(&(f->bc_coeffs->a[face_id]),
-                                                   &(f->bc_coeffs->af[face_id]),
-                                                   &(f->bc_coeffs->b[face_id]),
-                                                   &(f->bc_coeffs->bf[face_id]),
+       cs_boundary_conditions_set_dirichlet_scalar(face_id,
+                                                   f->bc_coeffs,
                                                    pimp,
                                                    hint,
                                                    cs_math_infinite_r);
@@ -1203,10 +1201,8 @@ cs_compute_porosity_from_scan(void)
         cs_real_t hint = 1. / mq->b_dist[face_id];
         cs_real_t qimp = 0.;
 
-        cs_boundary_conditions_set_neumann_scalar(&(f->bc_coeffs->a[face_id]),
-                                                  &(f->bc_coeffs->af[face_id]),
-                                                  &(f->bc_coeffs->b[face_id]),
-                                                  &(f->bc_coeffs->bf[face_id]),
+        cs_boundary_conditions_set_neumann_scalar(face_id,
+                                                  f->bc_coeffs,
                                                   qimp,
                                                   hint);
 
@@ -1262,10 +1258,7 @@ cs_compute_porosity_from_scan(void)
                                        &vcopt,
                                        f->val_pre,
                                        f->val,
-                                       f->bc_coeffs->a,
-                                       f->bc_coeffs->b,
-                                       f->bc_coeffs->af,
-                                       f->bc_coeffs->bf,
+                                       f->bc_coeffs,
                                        i_massflux,
                                        b_massflux,
                                        i_massflux, /* viscosity, not used */

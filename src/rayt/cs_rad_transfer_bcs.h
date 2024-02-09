@@ -95,24 +95,19 @@ cs_rad_transfer_bcs(int bc_type[]);
  * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
  * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
  * \param[in]  gg_id           number of the i-th grey gas
- * \param[out] coefap          boundary conditions for intensity or P-1 model
- * \param[out] coefbp          boundary conditions for intensity or P-1 model
- * \param[out] cofafp          boundary conditions for intensity or P-1 model
- * \param[out] cofbfp          boundary conditions for intensity or P-1 model
+ * \param[out] bc_coeffs       boundary conditions structure for
+ *                             intensity or P-1 model
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bc_coeffs(int        bc_type[],
-                          cs_real_t  vect_s[3],
-                          cs_real_t  ckmel[],
-                          cs_real_t  bpro_eps[],
-                          cs_real_t  w_gg[],
-                          int        gg_id,
-                          cs_real_t  coefap[],
-                          cs_real_t  coefbp[],
-                          cs_real_t  cofafp[],
-                          cs_real_t  cofbfp[]);
+cs_rad_transfer_bc_coeffs(int                    bc_type[],
+                          cs_real_t              vect_s[3],
+                          cs_real_t              ckmel[],
+                          cs_real_t              bpro_eps[],
+                          cs_real_t              w_gg[],
+                          int                    gg_id,
+                          cs_field_bc_coeffs_t  *bc_coeffs);
 
 /*----------------------------------------------------------------------------*/
 

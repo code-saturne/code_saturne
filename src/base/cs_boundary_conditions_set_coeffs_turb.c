@@ -792,10 +792,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     if (turb_flux_model_type == 3) {
 
-      cs_real_3_t  *coefa_tf = (cs_real_3_t  *)f_tf->bc_coeffs->a;
-      cs_real_33_t *coefb_tf = (cs_real_33_t *)f_tf->bc_coeffs->b;
-      cs_real_3_t  *cofaf_tf = (cs_real_3_t  *)f_tf->bc_coeffs->af;
-      cs_real_33_t *cofbf_tf = (cs_real_33_t *)f_tf->bc_coeffs->bf;
       cs_real_3_t  *cofar_tf = (cs_real_3_t  *)f_tf->bc_coeffs->ad;
       cs_real_33_t *cofbr_tf = (cs_real_33_t *)f_tf->bc_coeffs->bd;
 
@@ -853,9 +849,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       /* Turbulent flux */
       cs_boundary_conditions_set_dirichlet_vector_aniso
-        (coefa_tf[f_id], cofaf_tf[f_id],
-         coefb_tf[f_id], cofbf_tf[f_id],
-         pimpv, hintt, rinfiv);
+        (f_id, f_tf->bc_coeffs, pimpv, hintt, rinfiv);
 
       /* Boundary conditions used in the temperature equation */
       for (int isou = 0; isou < 3; isou++) {
@@ -870,21 +864,14 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     if (f_al != NULL && icodcl_vel[f_id] == 5) {
 
-      cs_real_t *coefa_al = f_al->bc_coeffs->a;
-      cs_real_t *coefb_al = f_al->bc_coeffs->b;
-      cs_real_t *cofaf_al = f_al->bc_coeffs->af;
-      cs_real_t *cofbf_al = f_al->bc_coeffs->bf;
-
       /* Dirichlet Boundary Condition
          ---------------------------- */
 
       const cs_real_t pimp_al = 0.;
       const cs_real_t hint_al = 1.0 / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_al[f_id],
-                                                  &cofaf_al[f_id],
-                                                  &coefb_al[f_id],
-                                                  &cofbf_al[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_al->bc_coeffs,
                                                   pimp_al,
                                                   hint_al,
                                                   cs_math_infinite_r);
@@ -2742,16 +2729,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       if (iturb == CS_TURB_K_EPSILON_LS && icodcl_vel[f_id] == 5) {
 
-        cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
-        cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
-        cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
-        cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
-
-        cs_real_t *coefa_k = f_k->bc_coeffs->a;
-        cs_real_t *coefb_k = f_k->bc_coeffs->b;
-        cs_real_t *cofaf_k = f_k->bc_coeffs->af;
-        cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
-
         /* Dirichlet Boundary Condition on k
            --------------------------------- */
 
@@ -2766,10 +2743,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         pimp = pimp * cfnnk;
         hint = (visclc + visctc / sigmak) / distbf;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_k[f_id],
-                                                    &cofaf_k[f_id],
-                                                    &coefb_k[f_id],
-                                                    &cofbf_k[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_k->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -2806,10 +2781,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         hint = (visclc+visctc/sigmae)/distbf;
         pimp = pimp * cfnne;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_ep[f_id],
-                                                    &cofaf_ep[f_id],
-                                                    &coefb_ep[f_id],
-                                                    &cofbf_ep[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_eps->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -2817,11 +2790,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* if defined set Dirichlet condition for the Lagrangian time scale */
 
         if (f_tlag != NULL) {
-
-          cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-          cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-          cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-          cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
 
           if (cs_glob_wall_functions->iwallf == 0) {
             /* No wall functions forced by user */
@@ -2836,10 +2804,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
               pimp = 0.;
           }
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                      &cofaf_tlag[f_id],
-                                                      &coefb_tlag[f_id],
-                                                      &cofbf_tlag[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      f_tlag->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -2852,18 +2818,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       else if (iturb == CS_TURB_K_EPSILON_QUAD && icodcl_vel[f_id] == 5) {
 
-        cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
-        cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
-        cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
-        cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
-
-        cs_real_t *coefa_k = f_k->bc_coeffs->a;
-        cs_real_t *coefb_k = f_k->bc_coeffs->b;
-        cs_real_t *cofaf_k = f_k->bc_coeffs->af;
-        cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
-
         /* Dirichlet Boundary Condition on k
-           ---------------------------------- */
+           --------------------------------- */
 
         cs_real_t pimp = 0.0, hint = 0.0;
         if (cs_glob_wall_functions->iwallf == 0)
@@ -2876,10 +2832,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         hint = (visclc + visctc / sigmak) / distbf;
         pimp = pimp * cfnnk;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_k[f_id],
-                                                    &cofaf_k[f_id],
-                                                    &coefb_k[f_id],
-                                                    &cofbf_k[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_k->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -2909,10 +2863,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         pimp = pimp * cfnne;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_ep[f_id],
-                                                    &cofaf_ep[f_id],
-                                                    &coefb_ep[f_id],
-                                                    &cofbf_ep[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_eps->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -2920,11 +2872,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* if defined set Dirichlet condition for the Lagrangian time scale */
 
         if (f_tlag != NULL) {
-
-          cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-          cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-          cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-          cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
 
           if (cs_glob_wall_functions->iwallf == 0)
             /* No wall functions forced by user*/
@@ -2938,10 +2885,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
               pimp = 0.;
           }
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                      &cofaf_tlag[f_id],
-                                                      &coefb_tlag[f_id],
-                                                      &cofbf_tlag[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      f_tlag->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -2957,26 +2902,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Dirichlet Boundary Condition on k
            --------------------------------- */
 
-        cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
-        cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
-        cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
-        cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
-
-        cs_real_t *coefa_k = f_k->bc_coeffs->a;
-        cs_real_t *coefb_k = f_k->bc_coeffs->b;
-        cs_real_t *cofaf_k = f_k->bc_coeffs->af;
-        cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
-
         cs_real_t qimp = 0.0;
         cs_real_t pimp = (iuntur == 1 || icodcl_vel[f_id] == 6) ?
                          uk*uk*cfnnk/sqrcmu : 0.0;
 
         cs_real_t hint = (visclc + visctc / sigmak) / distbf;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_k[f_id],
-                                                    &cofaf_k[f_id],
-                                                    &coefb_k[f_id],
-                                                    &cofbf_k[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_k->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -3012,21 +2945,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         }
 
-        cs_boundary_conditions_set_neumann_scalar(&coefa_ep[f_id],
-                                                  &cofaf_ep[f_id],
-                                                  &coefb_ep[f_id],
-                                                  &cofbf_ep[f_id],
+        cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                  f_eps->bc_coeffs,
                                                   qimp,
                                                   hint);
 
         /* If defined set Dirichlet condition for the Lagrangian time scale */
 
         if (f_tlag != NULL) {
-
-          cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-          cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-          cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-          cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
 
           if (cs_glob_wall_functions->iwallf == 0)
             /* No wall functions forced by user */
@@ -3048,10 +2974,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             }
           }
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                      &cofaf_tlag[f_id],
-                                                      &coefb_tlag[f_id],
-                                                      &cofbf_tlag[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      f_tlag->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -3068,11 +2992,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     else if (itytur == 3) {
 
       cs_real_t visci[3][3], dist[3], hint = 0.0;
-
-      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
-      cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
-      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
-      cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
 
       cs_real_6_t  *coefa_rij = (cs_real_6_t  *)f_rij->bc_coeffs->a;
       cs_real_66_t *coefb_rij = (cs_real_66_t *)f_rij->bc_coeffs->b;
@@ -3342,10 +3261,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             qimp = - pimp * hint;
           }
 
-          cs_boundary_conditions_set_neumann_scalar(&coefa_ep[f_id],
-                                                    &cofaf_ep[f_id],
-                                                    &coefb_ep[f_id],
-                                                    &cofbf_ep[f_id],
+          cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                    f_eps->bc_coeffs,
                                                     qimp,
                                                     hint);
 
@@ -3361,10 +3278,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           pimp = pimp + cvar_ep[c_id];
           pimp = pimp * cfnne;
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_ep[f_id],
-                                                      &cofaf_ep[f_id],
-                                                      &coefb_ep[f_id],
-                                                      &cofbf_ep[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      f_eps->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -3374,11 +3289,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* If defined set Dirichlet condition for the Lagrangian time scale */
 
         if (f_tlag != NULL) {
-
-          cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-          cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-          cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-          cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
 
           if (cs_glob_wall_functions->iwallf == 0) {
             /* No wall functions forced by user */
@@ -3409,10 +3319,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
               pimp = 0.;
           }
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                      &cofaf_tlag[f_id],
-                                                      &coefb_tlag[f_id],
-                                                      &cofbf_tlag[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      f_tlag->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -3456,10 +3364,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         pimp = pimp * cfnne;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_ep[f_id],
-                                                    &cofaf_ep[f_id],
-                                                    &coefb_ep[f_id],
-                                                    &cofbf_ep[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_eps->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -3467,11 +3373,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* If defined set Dirichlet condition for the Lagrangian time scale */
 
         if (f_tlag != NULL) {
-
-          cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-          cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-          cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-          cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
 
           if (cs_glob_wall_functions->iwallf == 0) {
             /* No wall functions forced by user */
@@ -3489,10 +3390,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
               pimp = 0.;
           }
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                      &cofaf_tlag[f_id],
-                                                      &coefb_tlag[f_id],
-                                                      &cofbf_tlag[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      f_tlag->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -3500,11 +3399,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         }
 
         /* Alpha */
-
-        cs_real_t *coefa_al = f_alpha->bc_coeffs->a;
-        cs_real_t *coefb_al = f_alpha->bc_coeffs->b;
-        cs_real_t *cofaf_al = f_alpha->bc_coeffs->af;
-        cs_real_t *cofbf_al = f_alpha->bc_coeffs->bf;
 
         /* Dirichlet Boundary Condition
            ---------------------------- */
@@ -3534,10 +3428,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         hint = 1.0 / distbf;
         pimp = pimp * cfnne;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_al[f_id],
-                                                    &cofaf_al[f_id],
-                                                    &coefb_al[f_id],
-                                                    &cofbf_al[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_alpha->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -3554,36 +3446,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     else if (iturb == CS_TURB_V2F_PHI) {
 
-      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
-      cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
-      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
-      cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
-
-      cs_real_t *coefa_phi = f_phi->bc_coeffs->a;
-      cs_real_t *coefb_phi = f_phi->bc_coeffs->b;
-      cs_real_t *cofaf_phi = f_phi->bc_coeffs->af;
-      cs_real_t *cofbf_phi = f_phi->bc_coeffs->bf;
-
-      cs_real_t *coefa_fb = f_f_bar->bc_coeffs->a;
-      cs_real_t *coefb_fb = f_f_bar->bc_coeffs->b;
-      cs_real_t *cofaf_fb = f_f_bar->bc_coeffs->af;
-      cs_real_t *cofbf_fb = f_f_bar->bc_coeffs->bf;
-
-      cs_real_t *coefa_k = f_k->bc_coeffs->a;
-      cs_real_t *coefb_k = f_k->bc_coeffs->b;
-      cs_real_t *cofaf_k = f_k->bc_coeffs->af;
-      cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
-
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
 
       cs_real_t pimp = 0.;
       cs_real_t hint = (visclc + visctc / sigmak) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_k[f_id],
-                                                  &cofaf_k[f_id],
-                                                  &coefb_k[f_id],
-                                                  &cofbf_k[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_k->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3591,13 +3461,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Dirichlet Boundary Condition on epsilon
          --------------------------------------- */
 
-      pimp = 2 * visclc / romc * cvar_k[c_id] / (distbf * distbf);
+      pimp = 2. * visclc / romc * cvar_k[c_id] / (distbf * distbf);
       hint = (visclc + visctc / sigmae) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_ep[f_id],
-                                                  &cofaf_ep[f_id],
-                                                  &coefb_ep[f_id],
-                                                  &cofbf_ep[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_eps->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3607,18 +3475,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       if (f_tlag != NULL) {
 
-        cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-        cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-        cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-        cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
-
         pimp = 0.;
         hint = (visclc + visctc / sigmak) / distbf;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                    &cofaf_tlag[f_id],
-                                                    &coefb_tlag[f_id],
-                                                    &cofbf_tlag[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_tlag->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -3631,10 +3492,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       pimp = 0.;
       hint = (visclc + visctc / sigmak) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_phi[f_id],
-                                                  &cofaf_phi[f_id],
-                                                  &coefb_phi[f_id],
-                                                  &cofbf_phi[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_phi->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3645,10 +3504,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       pimp = 0.;
       hint = 1./distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_fb[f_id],
-                                                  &cofaf_fb[f_id],
-                                                  &coefb_fb[f_id],
-                                                  &cofbf_fb[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_f_bar->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3659,36 +3516,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     else if (iturb == CS_TURB_V2F_BL_V2K) {
 
-      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
-      cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
-      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
-      cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
-
-      cs_real_t *coefa_phi = f_phi->bc_coeffs->a;
-      cs_real_t *coefb_phi = f_phi->bc_coeffs->b;
-      cs_real_t *cofaf_phi = f_phi->bc_coeffs->af;
-      cs_real_t *cofbf_phi = f_phi->bc_coeffs->bf;
-
-      cs_real_t *coefa_al = f_alpha->bc_coeffs->a;
-      cs_real_t *coefb_al = f_alpha->bc_coeffs->b;
-      cs_real_t *cofaf_al = f_alpha->bc_coeffs->af;
-      cs_real_t *cofbf_al = f_alpha->bc_coeffs->bf;
-
-      cs_real_t *coefa_k = f_k->bc_coeffs->a;
-      cs_real_t *coefb_k = f_k->bc_coeffs->b;
-      cs_real_t *cofaf_k = f_k->bc_coeffs->af;
-      cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
-
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
 
       cs_real_t pimp = 0.;
       cs_real_t hint = (visclc + visctc / sigmak) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_k[f_id],
-                                                  &cofaf_k[f_id],
-                                                  &coefb_k[f_id],
-                                                  &cofbf_k[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_k->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3699,10 +3534,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       pimp = visclc / romc * cvar_k[c_id] / (distbf * distbf);
       hint = (visclc + visctc / sigmae) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_ep[f_id],
-                                                  &cofaf_ep[f_id],
-                                                  &coefb_ep[f_id],
-                                                  &cofbf_ep[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_eps->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3712,18 +3545,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       if (f_tlag != NULL) {
 
-        cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-        cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-        cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-        cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
-
         pimp = 0.;
         hint = (visclc + visctc / sigmak) / distbf;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                    &cofaf_tlag[f_id],
-                                                    &coefb_tlag[f_id],
-                                                    &cofbf_tlag[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_tlag->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -3736,10 +3562,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       pimp = 0.;
       hint = (visclc + visctc / sigmak) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_phi[f_id],
-                                                  &cofaf_phi[f_id],
-                                                  &coefb_phi[f_id],
-                                                  &cofbf_phi[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_phi->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3750,10 +3574,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       pimp = 0.;
       hint = 1.0 / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_al[f_id],
-                                                  &cofaf_al[f_id],
-                                                  &coefb_al[f_id],
-                                                  &cofbf_al[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_alpha->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3764,16 +3586,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
        ================================== */
 
     else if (iturb == CS_TURB_K_OMEGA) {
-
-      cs_real_t *coefa_omg = f_omg->bc_coeffs->a;
-      cs_real_t *coefb_omg = f_omg->bc_coeffs->b;
-      cs_real_t *cofaf_omg = f_omg->bc_coeffs->af;
-      cs_real_t *cofbf_omg = f_omg->bc_coeffs->bf;
-
-      cs_real_t *coefa_k = f_k->bc_coeffs->a;
-      cs_real_t *coefb_k = f_k->bc_coeffs->b;
-      cs_real_t *cofaf_k = f_k->bc_coeffs->af;
-      cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
@@ -3788,10 +3600,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
          see cs_turbulence_kw.c */
       cs_real_t hint = (visclc + visctc / cs_turb_ckwsk2) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_k[f_id],
-                                                  &cofaf_k[f_id],
-                                                  &coefb_k[f_id],
-                                                  &cofbf_k[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_k->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -3826,10 +3636,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         else
           pimp = pimp_lam;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_omg[f_id],
-                                                    &cofaf_omg[f_id],
-                                                    &coefb_omg[f_id],
-                                                    &cofbf_omg[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_omg->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -3869,10 +3677,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* TODO transform it, it is only to be fully equivalent */
         const cs_real_t qimp = - pimp * hint;
 
-        cs_boundary_conditions_set_neumann_scalar(&coefa_omg[f_id],
-                                                  &cofaf_omg[f_id],
-                                                  &coefb_omg[f_id],
-                                                  &cofbf_omg[f_id],
+        cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                  f_omg->bc_coeffs,
                                                   qimp,
                                                   hint);
 
@@ -3881,11 +3687,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* If defined set Dirichlet condition for the Lagrangian time scale */
 
       if (f_tlag != NULL) {
-
-        cs_real_t *coefa_tlag = f_tlag->bc_coeffs->a;
-        cs_real_t *coefb_tlag = f_tlag->bc_coeffs->b;
-        cs_real_t *cofaf_tlag = f_tlag->bc_coeffs->af;
-        cs_real_t *cofbf_tlag = f_tlag->bc_coeffs->af;
 
         if (cs_glob_wall_functions->iwallf == 0)
           /* No wall functions forced by user */
@@ -3905,10 +3706,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             pimp = 0.;
         }
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_tlag[f_id],
-                                                    &cofaf_tlag[f_id],
-                                                    &coefb_tlag[f_id],
-                                                    &cofbf_tlag[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_tlag->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -3933,10 +3732,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Note: nusa is zero at the wall */
         cs_real_t hint = visclc / distbf / cs_turb_csasig;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_nusa[f_id],
-                                                    &cofaf_nusa[f_id],
-                                                    &coefb_nusa[f_id],
-                                                    &cofbf_nusa[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    f_nusa->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);

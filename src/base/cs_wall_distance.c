@@ -221,10 +221,9 @@ cs_wall_distance(int iterns)
   cs_lnum_t ndircp = 0;
   cs_lnum_t have_diff = 1;
 
-  cs_real_t *coefa_wd = f_w_dist->bc_coeffs->a;
-  cs_real_t *coefb_wd = f_w_dist->bc_coeffs->b;
-  cs_real_t *cofaf_wd = f_w_dist->bc_coeffs->af;
-  cs_real_t *cofbf_wd = f_w_dist->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_wd = f_w_dist->bc_coeffs;
+  cs_real_t *coefa_wd = bc_coeffs_wd->a;
+  cs_real_t *coefb_wd = bc_coeffs_wd->b;
 
   /* Fixed mesh: update only if BC's have changed (i.e. in restart) */
 
@@ -242,10 +241,8 @@ cs_wall_distance(int iterns)
         const cs_real_t hint = 1.0 / b_dist[f_id];
         const cs_real_t pimp = 0.0;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_wd[f_id],
-                                                    &cofaf_wd[f_id],
-                                                    &coefb_wd[f_id],
-                                                    &cofbf_wd[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    bc_coeffs_wd,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -254,10 +251,8 @@ cs_wall_distance(int iterns)
         ndircp = ndircp + 1;
       }
       else
-        cs_boundary_conditions_set_neumann_scalar_hmg(&coefa_wd[f_id],
-                                                      &cofaf_wd[f_id],
-                                                      &coefb_wd[f_id],
-                                                      &cofbf_wd[f_id]);
+        cs_boundary_conditions_set_neumann_scalar_hmg(f_id,
+                                                      bc_coeffs_wd);
 
       cs_real_t d =   cs_math_fabs(a_prev - coefa_wd[f_id])
                     + cs_math_fabs(b_prev - coefb_wd[f_id]);
@@ -276,20 +271,16 @@ cs_wall_distance(int iterns)
       if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
         const cs_real_t hint = 1.0 / b_dist[f_id];
         const cs_real_t pimp = 0.0;
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_wd[f_id],
-                                                    &cofaf_wd[f_id],
-                                                    &coefb_wd[f_id],
-                                                    &cofbf_wd[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    bc_coeffs_wd,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
         ndircp = ndircp + 1;
       }
       else
-        cs_boundary_conditions_set_neumann_scalar_hmg(&coefa_wd[f_id],
-                                                      &cofaf_wd[f_id],
-                                                      &coefb_wd[f_id],
-                                                      &cofbf_wd[f_id]);
+        cs_boundary_conditions_set_neumann_scalar_hmg(f_id,
+                                                      bc_coeffs_wd);
     }
   }
 
@@ -403,8 +394,7 @@ cs_wall_distance(int iterns)
                                      normp,
                                      &eqp_loc,
                                      wall_dist_pre, wall_dist_pre,
-                                     coefa_wd, coefb_wd,
-                                     cofaf_wd, cofbf_wd,
+                                     bc_coeffs_wd,
                                      i_mass_flux, b_mass_flux,
                                      i_visc, b_visc,
                                      i_visc, b_visc,
@@ -483,8 +473,7 @@ cs_wall_distance(int iterns)
                                            normp,
                                            &eqp_loc,
                                            wall_dist_pre, wall_dist_pre,
-                                           coefa_wd, coefb_wd,
-                                           cofaf_wd, cofbf_wd,
+                                           bc_coeffs_wd,
                                            i_mass_flux, b_mass_flux,
                                            i_visc, b_visc,
                                            i_visc, b_visc,
@@ -699,19 +688,12 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_field_t *f_wall_dist = cs_field_by_name("wall_distance");
   cs_real_t *w_dist = f_wall_dist->val;
 
-  cs_real_t *coefa_wd = f_wall_dist->bc_coeffs->a;
-  cs_real_t *coefb_wd = f_wall_dist->bc_coeffs->b;
-  cs_real_t *cofaf_wd = f_wall_dist->bc_coeffs->af;
-  cs_real_t *cofbf_wd = f_wall_dist->bc_coeffs->bf;
-
   cs_field_t *f_yplus = cs_field_by_name("wall_yplus");
   cs_equation_param_t *eqp_yp = cs_field_get_equation_param(f_yplus);
   cs_real_t *yplus = f_yplus->val;
 
-  cs_real_t *coefa_yp = f_yplus->bc_coeffs->a;
-  cs_real_t *coefb_yp = f_yplus->bc_coeffs->b;
-  cs_real_t *cofaf_yp = f_yplus->bc_coeffs->af;
-  cs_real_t *cofbf_yp = f_yplus->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_yp = f_yplus->bc_coeffs;
+  cs_real_t *coefa_yp = bc_coeffs_yp->a;
 
   int iflmas = cs_field_get_key_int(f_yplus,
                                     cs_field_key_id("inner_mass_flux_id"));
@@ -793,10 +775,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
       const cs_real_t hint = 1.0 / b_dist[f_id];
       const cs_real_t pimp = b_uet[f_id] * crom[c_id] / viscl[c_id];
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_yp[f_id],
-                                                  &cofaf_yp[f_id],
-                                                  &coefb_yp[f_id],
-                                                  &cofbf_yp[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_yplus->bc_coeffs,
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -805,10 +785,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
       const cs_real_t pimp_wd = 0.0;
 
-      cs_boundary_conditions_set_dirichlet_scalar(&coefa_wd[f_id],
-                                                  &cofaf_wd[f_id],
-                                                  &coefb_wd[f_id],
-                                                  &cofbf_wd[f_id],
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                  f_wall_dist->bc_coeffs,
                                                   pimp_wd,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -821,19 +799,15 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
       const cs_real_t hint = 1.0 / b_dist[f_id];
       const cs_real_t qimp = 0.0;
 
-      cs_boundary_conditions_set_neumann_scalar(&coefa_yp[f_id],
-                                                &cofaf_yp[f_id],
-                                                &coefb_yp[f_id],
-                                                &cofbf_yp[f_id],
+      cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                f_yplus->bc_coeffs,
                                                 qimp,
                                                 hint);
 
       /* Neumann Boundary Conditions */
 
-      cs_boundary_conditions_set_neumann_scalar(&coefa_wd[f_id],
-                                                &cofaf_wd[f_id],
-                                                &coefb_wd[f_id],
-                                                &cofbf_wd[f_id],
+      cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                f_wall_dist->bc_coeffs,
                                                 qimp,
                                                 hint);
 
@@ -882,8 +856,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               eqp_yp->climgr,
                               NULL,
                               w_dist,
-                              coefa_wd, coefb_wd,
-                              cofaf_wd, cofbf_wd,
+                              f_wall_dist->bc_coeffs,
                               i_visc, b_visc,
                               viscap,
                               i_mass_flux, b_mass_flux);
@@ -1039,8 +1012,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                                      &eqp_loc,
                                      dvarp,
                                      dvarp,
-                                     coefa_yp, coefb_yp,
-                                     cofaf_yp, cofbf_yp,
+                                     bc_coeffs_yp,
                                      i_mass_flux, b_mass_flux,
                                      i_mass_flux, b_mass_flux,
                                      i_mass_flux, b_mass_flux,

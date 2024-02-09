@@ -127,8 +127,7 @@ cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   coefap         <-- B.C. coefficients for boundary face normals
- *   coefbp         <-- B.C. coefficients for boundary face normals
+ *   bc_coeffs      <-- B.C. structure for boundary face normals
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable,
  *                      or NULL
@@ -144,8 +143,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             cs_halo_type_t                halo_type,
                             bool                          recompute_cocg,
                             cs_real_t                     inc,
-                            const cs_real_t               coefap[],
-                            const cs_real_t               coefbp[],
+                            const cs_field_bc_coeffs_t   *bc_coeffs,
                             const cs_real_t               pvar[],
                             const cs_real_t     *restrict c_weight,
                             cs_cocg_6_t         *restrict cocgb,

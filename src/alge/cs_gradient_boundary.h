@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -88,8 +89,7 @@ BEGIN_C_DECLS
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure, or NULL
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
@@ -103,8 +103,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                                   const cs_lnum_t               *face_ids,
                                   cs_halo_type_t                 halo_type,
                                   double                         clip_coeff,
-                                  const cs_real_t               *bc_coeff_a,
-                                  const cs_real_t               *bc_coeff_b,
+                                  const cs_field_bc_coeffs_t    *bc_coeffs,
                                   const cs_real_t                c_weight[],
                                   const cs_real_t                var[],
                                   cs_real_t           *restrict  var_iprime);
@@ -129,8 +128,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
  *                              values, or NULL for all
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure, or NULL
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
@@ -143,8 +141,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
                                       cs_lnum_t                   n_faces,
                                       const cs_lnum_t            *face_ids,
                                       double                      clip_coeff,
-                                      const cs_real_t            *bc_coeff_a,
-                                      const cs_real_t            *bc_coeff_b,
+                                      const cs_field_bc_coeffs_t *bc_coeffs,
                                       const cs_real_t             c_weight[][6],
                                       const cs_real_t             var[],
                                       cs_real_t        *restrict  var_iprime);
@@ -181,8 +178,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   bc_coeffs_v     boundary condition structure, or NULL
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
@@ -190,17 +186,16 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t     *m,
-                                  const cs_mesh_quantities_t    *fvq,
-                                  cs_lnum_t            n_faces,
-                                  const cs_lnum_t     *face_ids,
-                                  cs_halo_type_t       halo_type,
-                                  double               clip_coeff,
-                                  const cs_real_t      bc_coeff_a[][3],
-                                  const cs_real_t      bc_coeff_b[][3][3],
-                                  const cs_real_t      c_weight[],
-                                  const cs_real_t      var[][3],
-                                  cs_real_t            var_iprime[restrict][3]);
+cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t            *m,
+                                  const cs_mesh_quantities_t *fvq,
+                                  cs_lnum_t                   n_faces,
+                                  const cs_lnum_t            *face_ids,
+                                  cs_halo_type_t              halo_type,
+                                  double                      clip_coeff,
+                                  const cs_field_bc_coeffs_t *bc_coeffs_v,
+                                  const cs_real_t             c_weight[],
+                                  const cs_real_t             var[][3],
+                                  cs_real_t    var_iprime[restrict][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -234,8 +229,7 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t     *m,
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   bc_coeffs_ts    boundary condition structure, or NULL
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
@@ -243,17 +237,16 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t     *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t     *m,
-                                  const cs_mesh_quantities_t    *fvq,
-                                  cs_lnum_t            n_faces,
-                                  const cs_lnum_t     *face_ids,
-                                  cs_halo_type_t       halo_type,
-                                  double               clip_coeff,
-                                  const cs_real_t      bc_coeff_a[][6],
-                                  const cs_real_t      bc_coeff_b[][6][6],
-                                  const cs_real_t      c_weight[],
-                                  const cs_real_t      var[][6],
-                                  cs_real_t            var_iprime[restrict][6]);
+cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t            *m,
+                                  const cs_mesh_quantities_t *fvq,
+                                  cs_lnum_t                   n_faces,
+                                  const cs_lnum_t            *face_ids,
+                                  cs_halo_type_t              halo_type,
+                                  double                      clip_coeff,
+                                  const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                                  const cs_real_t             c_weight[],
+                                  const cs_real_t             var[][6],
+                                  cs_real_t    var_iprime[restrict][6]);
 
 /*----------------------------------------------------------------------------*/
 

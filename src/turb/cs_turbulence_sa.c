@@ -645,10 +645,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
 
   /* Solving */
 
-  const cs_real_t *coefap = CS_F_(nusa)->bc_coeffs->a;
-  const cs_real_t *coefbp = CS_F_(nusa)->bc_coeffs->b;
-  const cs_real_t *cofafp = CS_F_(nusa)->bc_coeffs->af;
-  const cs_real_t *cofbfp = CS_F_(nusa)->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_nusa = CS_F_(nusa)->bc_coeffs;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -672,10 +669,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
                                      &_eqp_nusa,
                                      cvara_nusa,
                                      cvara_nusa,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     bc_coeffs_nusa,
                                      imasfl,
                                      bmasfl,
                                      viscf,

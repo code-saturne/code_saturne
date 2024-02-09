@@ -109,14 +109,7 @@ BEGIN_C_DECLS
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               pvara (usually pvar=pvara)
- * \param[in]     coefap        boundary condition array for the variable
- *                               (explicit part)
- * \param[in]     coefbp        boundary condition array for the variable
- *                               (implicit part)
- * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (explicit part)
- * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (implicit part)
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -159,10 +152,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    cs_var_cal_opt_t     *var_cal_opt,
                                    const cs_real_t       pvara[],
                                    const cs_real_t       pvark[],
-                                   const cs_real_t       coefap[],
-                                   const cs_real_t       coefbp[],
-                                   const cs_real_t       cofafp[],
-                                   const cs_real_t       cofbfp[],
+                                   const cs_field_bc_coeffs_t *bc_coeffs,
                                    const cs_real_t       i_massflux[],
                                    const cs_real_t       b_massflux[],
                                    const cs_real_t       i_viscm[],
@@ -245,14 +235,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               \c pvara (usually \c pvar= \c pvara)
- * \param[in]      coefav        boundary condition array for the variable
- *                               (explicit part)
- * \param[in]      coefbv        boundary condition array for the variable
- *                               (implicit part)
- * \param[in]      cofafv        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
- * \param[in]      cofbfv        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ * \param[in]      bc_coeffs_v   boundary condition structure for the variable
  * \param[in]      i_massflux    mass flux at interior faces
  * \param[in]      b_massflux    mass flux at boundary faces
  * \param[in]      i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -294,10 +277,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    cs_var_cal_opt_t     *var_cal_opt,
                                    const cs_real_3_t     pvara[],
                                    const cs_real_3_t     pvark[],
-                                   const cs_real_3_t     coefav[],
-                                   const cs_real_33_t    coefbv[],
-                                   const cs_real_3_t     cofafv[],
-                                   const cs_real_33_t    cofbfv[],
+                                   const cs_field_bc_coeffs_t *bc_coeffs_v,
                                    const cs_real_t       i_massflux[],
                                    const cs_real_t       b_massflux[],
                                    cs_real_t             i_viscm[],
@@ -374,14 +354,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               pvara (usually pvar=pvara)
- * \param[in]     coefats       boundary condition array for the variable
- *                               (Explicit part)
- * \param[in]     coefbts       boundary condition array for the variable
- *                               (Impplicit part)
- * \param[in]     cofafts       boundary condition array for the diffusion
- *                               of the variable (Explicit part)
- * \param[in]     cofbfts       boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -410,30 +383,27 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_iterative_solve_tensor(int                   idtvar,
-                                   int                   f_id,
-                                   const char           *name,
-                                   cs_var_cal_opt_t     *var_cal_opt,
-                                   const cs_real_6_t     pvara[],
-                                   const cs_real_6_t     pvark[],
-                                   const cs_real_6_t     coefats[],
-                                   const cs_real_66_t    coefbts[],
-                                   const cs_real_6_t     cofafts[],
-                                   const cs_real_66_t    cofbfts[],
-                                   const cs_real_t       i_massflux[],
-                                   const cs_real_t       b_massflux[],
-                                   const cs_real_t       i_viscm[],
-                                   const cs_real_t       b_viscm[],
-                                   const cs_real_t       i_visc[],
-                                   const cs_real_t       b_visc[],
-                                   cs_real_6_t           viscel[],
-                                   const cs_real_2_t     weighf[],
-                                   const cs_real_t       weighb[],
-                                   int                   icvflb,
-                                   const int             icvfli[],
-                                   const cs_real_66_t    fimp[],
-                                   cs_real_6_t           smbrp[],
-                                   cs_real_6_t           pvar[]);
+cs_equation_iterative_solve_tensor(int                         idtvar,
+                                   int                         f_id,
+                                   const char                 *name,
+                                   cs_var_cal_opt_t           *var_cal_opt,
+                                   const cs_real_6_t           pvara[],
+                                   const cs_real_6_t           pvark[],
+                                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                                   const cs_real_t             i_massflux[],
+                                   const cs_real_t             b_massflux[],
+                                   const cs_real_t             i_viscm[],
+                                   const cs_real_t             b_viscm[],
+                                   const cs_real_t             i_visc[],
+                                   const cs_real_t             b_visc[],
+                                   cs_real_6_t                 viscel[],
+                                   const cs_real_2_t           weighf[],
+                                   const cs_real_t             weighb[],
+                                   int                         icvflb,
+                                   const int                   icvfli[],
+                                   const cs_real_66_t          fimp[],
+                                   cs_real_6_t                 smbrp[],
+                                   cs_real_6_t                 pvar[]);
 
 END_C_DECLS
 

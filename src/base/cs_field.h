@@ -202,6 +202,37 @@ extern const char *cs_glob_field_comp_name_9[];
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Create bc_coeffs structure.
+ *
+ * \param[in]     bc_coeffs   bc coefficients
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_create(cs_field_bc_coeffs_t  *bc_coeffs);
+
+/*----------------------------------------------------------------------------
+ * Shallow copy of boundary condition coefficients.
+ *
+ * \param[in]     ref   source bc coefficients
+ * \param[inout]  copy  shallow copy of bc coefficients
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
+                                cs_field_bc_coeffs_t        *copy);
+
+/*----------------------------------------------------------------------------
+ * \brief  Free copy of boundary condition coefficients.
+ *
+ * \param[in]     ref   reference bc coefficients
+ * \param[inout]  copy  shallow copy of bc coefficients
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
+                             cs_field_bc_coeffs_t        *copy);
+
+/*----------------------------------------------------------------------------
  * Return the number of defined fields.
  *
  * returns:

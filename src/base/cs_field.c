@@ -1492,6 +1492,97 @@ cs_f_field_get_label(int           f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * Create bc_coeffs structure.
+ *
+ * \param[inout]  bc_coeffs   bc coefficients
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_create(cs_field_bc_coeffs_t  *bc_coeffs)
+{
+  bc_coeffs->location_id = 0.0;
+
+  bc_coeffs->icodcl = NULL;
+  bc_coeffs->rcodcl1 = NULL;
+  bc_coeffs->rcodcl2 = NULL;
+  bc_coeffs->rcodcl3 = NULL;
+
+  bc_coeffs->a = NULL;
+  bc_coeffs->b = NULL;
+  bc_coeffs->af = NULL;
+  bc_coeffs->bf = NULL;
+  bc_coeffs->ad = NULL;
+  bc_coeffs->bd = NULL;
+  bc_coeffs->ac = NULL;
+  bc_coeffs->bc = NULL;
+
+  bc_coeffs->hint = NULL;
+  bc_coeffs->_hext = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Shallow copy of boundary condition coefficients.
+ *
+ * \param[in]     ref   source bc coefficients
+ * \param[inout]  copy  shallow copy of bc coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
+                                cs_field_bc_coeffs_t        *copy)
+{
+  memcpy(copy, ref, sizeof(cs_field_bc_coeffs_t));
+
+  copy->icodcl  = NULL;
+  copy->rcodcl1 = NULL;
+  //copy->rcodcl2 = NULL;
+  copy->rcodcl3 = NULL;
+
+  copy->_hext = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free copy of boundary condition coefficients.
+ *
+ * \param[in]     ref   reference bc coefficients
+ * \param[inout]  copy  shallow copy of bc coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
+                             cs_field_bc_coeffs_t        *copy)
+{
+  if (copy->a != ref->a)
+    BFT_FREE(copy->a);
+  if (copy->b != ref->b)
+    BFT_FREE(copy->b);
+  if (copy->af != ref->af)
+    BFT_FREE(copy->af);
+  if (copy->bf != ref->bf)
+    BFT_FREE(copy->bf);
+
+  if (copy->ad != ref->ad)
+    BFT_FREE(copy->ad);
+  if (copy->bd != ref->bd)
+    BFT_FREE(copy->bd);
+  if (copy->ac != ref->ac)
+    BFT_FREE(copy->ac);
+  if (copy->bc != ref->bc)
+    BFT_FREE(copy->bc);
+
+  if (copy->hint != ref->hint)
+    BFT_FREE(copy->hint);
+
+  if (copy->rcodcl2 != ref->rcodcl2)
+    BFT_FREE(copy->rcodcl2);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the number of defined fields.
  *
  * \return  number of defined fields.

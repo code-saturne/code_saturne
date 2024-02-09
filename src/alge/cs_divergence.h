@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -103,10 +104,7 @@ BEGIN_C_DECLS
  * \param[in]     rom           cell density
  * \param[in]     romb          density at boundary faces
  * \param[in]     vel           vector variable
- * \param[in]     coefav        boundary condition array for the variable
- *                               (explicit part - vector array )
- * \param[in]     coefbv        boundary condition array for the variable
- *                               (implicit part - 3x3 tensor array)
+ * \param[in]     bc_coeff_v    BC structure for the vector variable
  * \param[in,out] i_massflux    mass flux at interior faces \f$ \dot{m}_\fij \f$
  * \param[in,out] b_massflux    mass flux at boundary faces \f$ \dot{m}_\fib \f$
  */
@@ -129,8 +127,7 @@ cs_mass_flux(const cs_mesh_t             *m,
              const cs_real_t              rom[],
              const cs_real_t              romb[],
              const cs_real_3_t            vel[],
-             const cs_real_3_t            coefav[],
-             const cs_real_33_t           coefbv[],
+             cs_field_bc_coeffs_t        *bc_coeffs_v,
              cs_real_t          *restrict i_massflux,
              cs_real_t          *restrict b_massflux);
 
@@ -306,10 +303,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
  * \param[in]     c_rho         cell density
  * \param[in]     b_rho         density at boundary faces
  * \param[in]     c_var         variable
- * \param[in]     coefav        boundary condition array for the variable
- *                               (explicit part - symmetric tensor array)
- * \param[in]     coefbv        boundary condition array for the variable
- *                               (implicit part - 6x6 symmetric tensor array)
+ * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  * \param[in,out] i_massflux    mass flux at interior faces \f$ \dot{m}_\fij \f$
  * \param[in,out] b_massflux    mass flux at boundary faces \f$ \dot{m}_\fib \f$
  */
@@ -332,8 +326,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                     const cs_real_t              c_rho[],
                     const cs_real_t              b_rho[],
                     const cs_real_6_t            c_var[],
-                    const cs_real_6_t            coefav[],
-                    const cs_real_66_t           coefbv[],
+                    const cs_field_bc_coeffs_t  *bc_coeffs_ts,
                     cs_real_3_t        *restrict i_massflux,
                     cs_real_3_t        *restrict b_massflux);
 

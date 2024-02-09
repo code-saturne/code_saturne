@@ -147,20 +147,16 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   cs_field_t *vel = CS_F_(vel);
   cs_real_3_t *vela = (cs_real_3_t *)vel->val_pre;
 
-  cs_real_3_t  *coefa_vel = (cs_real_3_t  *)vel->bc_coeffs->a;
-  cs_real_33_t *coefb_vel = (cs_real_33_t *)vel->bc_coeffs->b;
-  cs_real_3_t  *cofaf_vel = (cs_real_3_t  *)vel->bc_coeffs->af;
-  cs_real_33_t *cofbf_vel = (cs_real_33_t *)vel->bc_coeffs->bf;
+  cs_field_bc_coeffs_t *bc_coeffs_vel = vel->bc_coeffs;
 
   /* Allocate work arrays */
   cs_real_t *w1;
   cs_real_3_t *tsexp, *gavinj, *vel0;
-  cs_real_33_t *coefbv, *tsimp;
+  cs_real_33_t *tsimp;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
   BFT_MALLOC(tsexp, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(vel0, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(coefbv, n_b_faces, cs_real_33_t);
   BFT_MALLOC(tsimp, n_cells_ext, cs_real_33_t);
 
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
@@ -248,8 +244,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                  crom,
                  brom,
                  vela,
-                 coefa_vel,
-                 coefb_vel,
+                 bc_coeffs_vel,
                  i_mass_flux,
                  b_mass_flux);
 
@@ -335,10 +330,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                       &eqp_vel_loc,
                       vela,
                       (const cs_real_3_t *)vela,
-                      coefa_vel,
-                      coefb_vel,
-                      cofaf_vel,
-                      cofbf_vel,
+                      bc_coeffs_vel,
                       i_mass_flux,
                       b_mass_flux,
                       i_visc,
@@ -422,7 +414,12 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
      Volumic flux part based on dt*f^n */
 
   /* No contribution of f to the boundary mass flux */
-  cs_array_real_set_scalar(9*n_b_faces, 0.0, (cs_real_t *)coefbv);
+  cs_field_bc_coeffs_t bc_coeffs_v_loc;
+  cs_field_bc_coeffs_shallow_copy(bc_coeffs_vel, &bc_coeffs_v_loc);
+  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+
+  cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
+  cs_array_real_fill_zero(9*n_b_faces, (cs_real_t *)coefbv);
 
   cs_mass_flux(mesh,
                fvq,
@@ -440,8 +437,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                crom,
                brom,
                tsexp,
-               coefa_vel,
-               coefbv,
+               &bc_coeffs_v_loc,
                i_mass_flux,
                b_mass_flux);
 
@@ -464,8 +460,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                crom,
                brom,
                vela,
-               coefa_vel,
-               coefb_vel,
+               bc_coeffs_vel,
                i_mass_flux,
                b_mass_flux);
 
@@ -479,8 +474,10 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   BFT_FREE(secvif);
   BFT_FREE(secvib);
   BFT_FREE(viscce);
-  BFT_FREE(coefbv);
   BFT_FREE(vel0);
+
+  coefbv = NULL;
+  cs_field_bc_coeffs_free_copy(bc_coeffs_vel, &bc_coeffs_v_loc);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -532,12 +529,10 @@ cs_cf_convective_mass_flux(int  iterns)
   BFT_MALLOC(wflmas, n_i_faces, cs_real_t);
   BFT_MALLOC(ivolfl, n_i_faces, cs_real_t);
 
-  cs_real_t *b_visc, *wflmab, *bvolfl, *wbfa, *wbfb;
+  cs_real_t *b_visc, *wflmab, *bvolfl;
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
   BFT_MALLOC(wflmab, n_b_faces, cs_real_t);
   BFT_MALLOC(bvolfl, n_b_faces, cs_real_t);
-  BFT_MALLOC(wbfa, n_b_faces, cs_real_t);
-  BFT_MALLOC(wbfb, n_b_faces, cs_real_t);
 
   cs_real_t *smbrs, *rovsdt;
   BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
@@ -591,8 +586,14 @@ cs_cf_convective_mass_flux(int  iterns)
        _(" ** RESOLUTION FOR THE PRESSURE VARIABLE\n"
          "    ------------------------------------\n"));
 
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_shallow_copy(f_p->bc_coeffs, &bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+
+  cs_real_t *wbfa  = bc_coeffs_loc.a;
+  cs_real_t *wbfb  = bc_coeffs_loc.b;
   cs_real_t *cofaf_p = f_p->bc_coeffs->af;
-  cs_real_t *cofbf_p = f_p->bc_coeffs->bf;
 
   const int icp = fluid_props->icp;
   const int icv = fluid_props->icv;
@@ -614,20 +615,12 @@ cs_cf_convective_mass_flux(int  iterns)
 
     /* TODO check this: cofaf_p both input and output here...
        alternative:
-
-       const cs_real_t qimp = coefaf_p[f_id];
-       wbfa[f_id] = -qimp / cs_math_fmax(hint, 1e-300);
-       wbfb[f_id] = 1.0;
     */
 
-    cs_real_t bf_unused[1];
+    const cs_real_t qimp = cofaf_p[f_id];
+    wbfa[f_id] = -qimp / cs_math_fmax(hint, 1e-300);
+    wbfb[f_id] = 1.0;
 
-    cs_boundary_conditions_set_neumann_scalar(&wbfa[f_id],
-                                              &cofaf_p[f_id],
-                                              &wbfb[f_id],
-                                              bf_unused,
-                                              cofaf_p[f_id],
-                                              hint);
   }
 
   /* Source terms
@@ -656,7 +649,7 @@ cs_cf_convective_mass_flux(int  iterns)
                                         &icetsm,
                                         &itpsm_p,
                                         &smcel_p,
-                                        NULL); // sinon mettre gamma
+                                        NULL);
 
     for (cs_lnum_t ii = 0; ii < ncesmp; ii++) {
       const cs_lnum_t c_id = icetsm[ii];
@@ -759,8 +752,7 @@ cs_cf_convective_mass_flux(int  iterns)
                                      -1.0,   /* normp */
                                      &eqp_p_loc,
                                      cvar_pr_pre, cvar_pr_pre,
-                                     wbfa, wbfb,
-                                     cofaf_p, cofbf_p,
+                                     &bc_coeffs_loc,
                                      wflmas, wflmab,
                                      i_visc, b_visc,
                                      i_visc, b_visc,
@@ -831,8 +823,7 @@ cs_cf_convective_mass_flux(int  iterns)
                               eqp_p->climgr,
                               NULL, /* frcxt */
                               cvar_pr,
-                              wbfa, wbfb,
-                              cofaf_p, cofbf_p,
+                              &bc_coeffs_loc,
                               i_visc, b_visc,
                               dt,
                               i_mass_flux_e, b_mass_flux_e);
@@ -888,8 +879,10 @@ cs_cf_convective_mass_flux(int  iterns)
   BFT_FREE(w9);
   BFT_FREE(w10);
   BFT_FREE(dpvar);
-  BFT_FREE(wbfa);
-  BFT_FREE(wbfb);
+
+  wbfa = NULL;
+  wbfb = NULL;
+  cs_field_bc_coeffs_free_copy(f_p->bc_coeffs, &bc_coeffs_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -941,11 +934,16 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
   BFT_MALLOC(i_mass_flux, n_i_faces, cs_real_t);
 
-  cs_real_t *coefbt, *cofbft, *b_mass_flux, *b_visc;
-  BFT_MALLOC(coefbt, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofbft, n_b_faces, cs_real_t);
+  cs_real_t *b_mass_flux, *b_visc;
   BFT_MALLOC(b_mass_flux, n_b_faces, cs_real_t);
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  cs_real_t *coefbt = bc_coeffs_loc.b;
+  cs_real_t *cofbft = bc_coeffs_loc.bf;
 
   /* Allocate work arrays */
   cs_real_t *w1;
@@ -985,8 +983,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
                       iconvp,
                       idiffp,
                       isym,
-                      coefbt,
-                      cofbft,
+                      &bc_coeffs_loc,
                       i_mass_flux,
                       b_mass_flux,
                       i_visc,

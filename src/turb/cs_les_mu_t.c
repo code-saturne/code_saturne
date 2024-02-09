@@ -539,8 +539,7 @@ cs_les_mu_t_smago_dyn(void)
       BFT_MALLOC(grads, n_cells_ext, cs_real_3_t);
       BFT_MALLOC(gradsf, n_cells_ext, cs_real_3_t);
 
-      cs_real_t *coefas = fld->bc_coeffs->a;
-      cs_real_t *coefbs = fld->bc_coeffs->b;
+      const cs_field_bc_coeffs_t *bc_coeffs = fld->bc_coeffs;
 
       cs_real_t *cvar_sca = fld->val;
       cs_field_gradient_scalar(fld,
@@ -581,8 +580,7 @@ cs_les_mu_t_smago_dyn(void)
                          eqp_fld->epsrgr,
                          eqp_fld->climgr,
                          NULL,
-                         coefas,
-                         coefbs,
+                         bc_coeffs,
                          w4,
                          NULL,
                          NULL, /* internal coupling */

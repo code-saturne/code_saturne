@@ -327,30 +327,23 @@ _order_by_direction(void)
  *       ->                            / S.N >0
  *       N fluid to wall normal
  *
- * \param[in]       gg_id     number of the i-th gray gas
- * \param[in]       w_gg      Weights of the i-th gray gas at boundaries
- * \param[in]       tempk     temperature in Kelvin
- * \param[in]       ckg       gas mix absorption coefficient
- * \param[in]       bc_type   boundary face types
- * \param[in, out]  coefap    boundary condition work array for the radiance
- *                             (explicit part)
- * \param[in, out]  coefbp    boundary condition work array for the radiance
- *                             (implicit part)
- * \param[in, out]  cofafp    boundary condition work array for the diffusion
- *                             of the radiance (explicit part)
- * \param[in, out]  cofbfp    boundary condition work array for the diffusion
- *                             of the radiance (implicit part)
- * \param[in, out]  flurds    pseudo mass flux work array (interior faces)
- * \param[in, out]  flurdb    pseudo mass flux work array (boundary faces)
- * \param[in, out]  viscf     visc*surface/dist work array at interior faces
- * \param[in, out]  viscb     visc*surface/dist work array at boundary faces
- * \param[in, out]  rhs       work array for RHS
- * \param[in, out]  rovsdt    work array for unsteady term
- * \param[out]      q         explicit flux density vector
- * \param[out]      int_rad_domega integral of I dOmega
- * \param[out]      int_abso  work array for absorption
- * \param[out]      int_emi   work array for emission
- * \param[out]      int_rad_ist work array for implicit source term
+ * \param[in]     gg_id          number of the i-th gray gas
+ * \param[in]     w_gg           Weights of the i-th gray gas at boundaries
+ * \param[in]     tempk          temperature in Kelvin
+ * \param[in]     ckg            gas mix absorption coefficient
+ * \param[in]     bc_type        boundary face types
+ * \param[inout]  bc_coeffs_rad  boundary condition work array for the radiance
+ * \param[inout]  flurds         pseudo mass flux work array (interior faces)
+ * \param[inout]  flurdb         pseudo mass flux work array (boundary faces)
+ * \param[inout]  viscf          visc*surface/dist work array at interior faces
+ * \param[inout]  viscb          visc*surface/dist work array at boundary faces
+ * \param[inout]  rhs            work array for RHS
+ * \param[inout]  rovsdt         work array for unsteady term
+ * \param[out]    q              explicit flux density vector
+ * \param[out]    int_rad_domega integral of I dOmega
+ * \param[out]    int_abso       work array for absorption
+ * \param[out]    int_emi        work array for emission
+ * \param[out]    int_rad_ist    work array for implicit source term
  */
 /*----------------------------------------------------------------------------*/
 
@@ -360,10 +353,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                      const cs_real_t            tempk[restrict],
                      const cs_real_t            ckg[restrict],
                      int                        bc_type[],
-                     cs_real_t        *restrict coefap,
-                     cs_real_t        *restrict coefbp,
-                     cs_real_t        *restrict cofafp,
-                     cs_real_t        *restrict cofbfp,
+                     cs_field_bc_coeffs_t      *bc_coeffs_rad,
                      cs_real_t        *restrict flurds,
                      cs_real_t        *restrict flurdb,
                      cs_real_t        *restrict viscf,
@@ -392,6 +382,9 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   const cs_real_t c_stefan = cs_physical_constants_stephan;
   const cs_real_t onedpi  = 1.0 / cs_math_pi;
+
+  cs_real_t *coefap = bc_coeffs_rad->a;
+  cs_real_t *cofafp = bc_coeffs_rad->af;
 
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
@@ -635,8 +628,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                       bpro_eps,
                                       w_gg,
                                       gg_id,
-                                      coefap, coefbp,
-                                      cofafp, cofbfp);
+                                      bc_coeffs_rad);
 
           /* Spatial discretization */
 
@@ -746,10 +738,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              &vcopt,
                                              radiance_prev,
                                              radiance_prev,
-                                             coefap,
-                                             coefbp,
-                                             cofafp,
-                                             cofbfp,
+                                             bc_coeffs_rad,
                                              flurds,
                                              flurdb,
                                              viscf,
@@ -1533,10 +1522,7 @@ cs_rad_transfer_solve(int  bc_type[])
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
     /* get BC coeffs Allocate specific arrays for the radiative transfer module */
-    cs_real_t *coefap = CS_FI_(radiance, gg_id)->bc_coeffs->a;
-    cs_real_t *coefbp = CS_FI_(radiance, gg_id)->bc_coeffs->b;
-    cs_real_t *cofafp = CS_FI_(radiance, gg_id)->bc_coeffs->af;
-    cs_real_t *cofbfp = CS_FI_(radiance, gg_id)->bc_coeffs->bf;
+    cs_field_bc_coeffs_t *bc_coeffs_rad = CS_FI_(radiance, gg_id)->bc_coeffs;
 
     /* Use absorption field if existing */
     char f_name[64];
@@ -1705,13 +1691,11 @@ cs_rad_transfer_solve(int  bc_type[])
                                 ckmix,
                                 cs_field_by_name("emissivity")->val,
                                 w_gg,   gg_id,
-                                coefap, coefbp,
-                                cofafp, cofbfp);
+                                bc_coeffs_rad);
       /* Solving */
       cs_rad_transfer_pun(gg_id,
                           bc_type,
-                          coefap, coefbp,
-                          cofafp, cofbfp,
+                          bc_coeffs_rad,
                           flurds, flurdb,
                           viscf, viscb,
                           rhs, rovsdt,
@@ -1856,8 +1840,7 @@ cs_rad_transfer_solve(int  bc_type[])
                                 ckmix,
                                 cs_field_by_name("emissivity")->val,
                                 w_gg  , gg_id,
-                                coefap, coefbp,
-                                cofafp, cofbfp);
+                                bc_coeffs_rad);
 
       /* Solving */
       _cs_rad_transfer_sol(gg_id,
@@ -1865,8 +1848,7 @@ cs_rad_transfer_solve(int  bc_type[])
                            tempk,
                            ckg,
                            bc_type,
-                           coefap, coefbp,
-                           cofafp, cofbfp,
+                           bc_coeffs_rad,
                            flurds, flurdb,
                            viscf, viscb,
                            rhs, rovsdt,
@@ -2160,21 +2142,22 @@ cs_rad_transfer_solve(int  bc_type[])
   if (idiver == 1 || idiver == 2) {
 
     /* Allocate temporary arrays for gradient computation */
-    cs_real_3_t *coefaq;
-    BFT_MALLOC(coefaq, n_b_faces, cs_real_3_t);
-    cs_real_33_t *coefbq;
-    BFT_MALLOC(coefbq, n_b_faces, cs_real_33_t);
+
+    cs_field_bc_coeffs_t bc_coeffs_loc;
+    cs_field_bc_coeffs_create(&bc_coeffs_loc);
+    BFT_MALLOC(bc_coeffs_loc.a, 3*n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_coeffs_loc.b, 9*n_b_faces, cs_real_t);
+
+    cs_real_3_t  *coefaq = (cs_real_3_t  *)bc_coeffs_loc.a;
+    cs_real_33_t *coefbq = (cs_real_33_t *)bc_coeffs_loc.b;
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t i = 0; i < 3; i++) {
         coefaq[ifac][i]
           = f_fnet->val[ifac] * b_face_normal[ifac][i] / b_face_surf[ifac];
-    }
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        for (cs_lnum_t i = 0; i < 3; i++)
-          coefbq[ifac][j][i] = 0.;
+        for (cs_lnum_t j = 0; j < 3; j++)
+          coefbq[ifac][i][j] = 0.;
       }
     }
 
@@ -2199,8 +2182,7 @@ cs_rad_transfer_solve(int  bc_type[])
                        -1,     /* imligp */
                        1e-8,   /* epsrgp */
                        1.5,    /* climgp */
-                       (const cs_real_3_t *)coefaq,
-                       (const cs_real_33_t *)coefbq,
+                       &bc_coeffs_loc,
                        cpro_q,
                        NULL, /* weighted gradient */
                        NULL, /* coupling */

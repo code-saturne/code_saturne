@@ -2083,8 +2083,6 @@ cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
  * \param[in]     halo_type        halo type
  * \param[in]     w_stride         stride for weighting coefficient
  * \param[in]     clip_coeff       clipping coefficient
- * \param[out]    bc_coeff_a       boundary condition term a
- * \param[out]    bc_coeff_b       boundary condition term b
  * \param[in]     var              gradient's base variable
  * \param[in]     c_weight         weighted gradient coefficient variable,
  *                                 or NULL
@@ -2092,13 +2090,11 @@ cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
+cs_internal_coupling_update_bc_coeff_s(const cs_field_bc_coeffs_t    *bc_coeffs,
                                        const cs_internal_coupling_t  *cpl,
                                        cs_halo_type_t                 halo_type,
                                        int                            w_stride,
                                        double                         clip_coeff,
-                                       cs_real_t                     *bc_coeff_a,
-                                       cs_real_t                     *bc_coeff_b,
                                        const cs_real_t               *var,
                                        const cs_real_t               *c_weight)
 {
@@ -2143,8 +2139,7 @@ cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
                                           faces_distant,
                                           halo_type,
                                           clip_coeff,
-                                          bc_coeff_a,
-                                          bc_coeff_b,
+                                          bc_coeffs,
                                           c_weight,
                                           var,
                                           var_distant);
@@ -2155,8 +2150,7 @@ cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
                                               n_distant,
                                               faces_distant,
                                               clip_coeff,
-                                              bc_coeff_a,
-                                              bc_coeff_b,
+                                              bc_coeffs,
                                               (const cs_real_6_t *)c_weight,
                                               var,
                                               var_distant);
@@ -2178,6 +2172,9 @@ cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
                                       (cs_real_t *)var_ext);
 
     /* For internal coupling, update BC coeffs */
+
+    cs_real_t *bc_coeff_a = bc_coeffs->a;
+    cs_real_t *bc_coeff_b = bc_coeffs->b;
 
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       cs_lnum_t face_id = faces_local[ii];
@@ -2202,8 +2199,7 @@ cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
  * \param[in]     cpl              structure associated with internal coupling
  * \param[in]     halo_type        halo type
  * \param[in]     clip_coeff       clipping coefficient
- * \param[out]    bc_coeff_a       boundary condition term a
- * \param[out]    bc_coeff_b       boundary condition term b
+ * \param[out]    bc_coeffs_v      boundary condition structure
  * \param[in]     var              gradient's base variable
  * \param[in]     c_weight         weighted gradient coefficient variable,
  *                                 or NULL
@@ -2211,22 +2207,20 @@ cs_internal_coupling_update_bc_coeff_s(cs_field_bc_coeffs_t          *bc_coeffs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_update_bc_coeff_v(cs_field_bc_coeffs_t          *bc_coeffs,
+cs_internal_coupling_update_bc_coeff_v(const cs_field_bc_coeffs_t    *bc_coeffs_v,
                                        const cs_internal_coupling_t  *cpl,
                                        cs_halo_type_t                 halo_type,
                                        double                         clip_coeff,
-                                       cs_real_t             bc_coeff_a[][3],
-                                       cs_real_t             bc_coeff_b[][3][3],
-                                       const cs_real_3_t    *var,
-                                       const cs_real_t      *c_weight)
+                                       const cs_real_3_t             *var,
+                                       const cs_real_t               *c_weight)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   /* For internal coupling, exchange local variable
      with its associated distant value */
 
-  cs_real_t *hintp = bc_coeffs->hint;
-  cs_real_t *rcodcl2p = bc_coeffs->rcodcl2;
+  cs_real_t *hintp = bc_coeffs_v->hint;
+  cs_real_t *rcodcl2p = bc_coeffs_v->rcodcl2;
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t n_distant = cpl->n_distant;
@@ -2261,8 +2255,7 @@ cs_internal_coupling_update_bc_coeff_v(cs_field_bc_coeffs_t          *bc_coeffs,
                                         faces_distant,
                                         halo_type,
                                         clip_coeff,
-                                        (const cs_real_3_t *)bc_coeff_a,
-                                        (const cs_real_33_t *)bc_coeff_b,
+                                        bc_coeffs_v,
                                         c_weight,
                                         var,
                                         var_distant);
@@ -2284,6 +2277,9 @@ cs_internal_coupling_update_bc_coeff_v(cs_field_bc_coeffs_t          *bc_coeffs,
                                       (cs_real_t *)var_ext);
 
     /* For internal coupling, update BC coeffs */
+
+    cs_real_3_t  *bc_coeff_a = (cs_real_3_t  *)bc_coeffs_v->a;
+    cs_real_33_t *bc_coeff_b = (cs_real_33_t *)bc_coeffs_v->b;
 
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       cs_lnum_t face_id = faces_local[ii];

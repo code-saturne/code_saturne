@@ -1163,25 +1163,22 @@ cs_rad_transfer_bcs(int bc_type[])
  * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
  * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
  * \param[in]  gg_id           number of the i-th grey gas
- * \param[out] coefap          boundary conditions for intensity or P-1 model
- * \param[out] coefbp          boundary conditions for intensity or P-1 model
- * \param[out] cofafp          boundary conditions for intensity or P-1 model
- * \param[out] cofbfp          boundary conditions for intensity or P-1 model
+ * \param[out] bc_coeffs       boundary conditions structure for
+ *                             intensity or P-1 model
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bc_coeffs(int        bc_type[],
-                          cs_real_t  vect_s[3],
-                          cs_real_t  ckmel[],
-                          cs_real_t  bpro_eps[],
-                          cs_real_t  w_gg[],
-                          int        gg_id,
-                          cs_real_t  coefap[],
-                          cs_real_t  coefbp[],
-                          cs_real_t  cofafp[],
-                          cs_real_t  cofbfp[])
+cs_rad_transfer_bc_coeffs(int                   bc_type[],
+                          cs_real_t             vect_s[3],
+                          cs_real_t             ckmel[],
+                          cs_real_t             bpro_eps[],
+                          cs_real_t             w_gg[],
+                          int                   gg_id,
+                          cs_field_bc_coeffs_t *bc_coeffs)
 {
+  cs_real_t *coefap = bc_coeffs->a;
+
   cs_real_t stephn = cs_physical_constants_stephan;
   cs_real_t onedpi  = 1.0 / cs_math_pi;
 
@@ -1264,10 +1261,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           else
             pimp  = cs_math_epzero;
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
-                                                      &cofafp[face_id],
-                                                      &coefbp[face_id],
-                                                      &cofbfp[face_id],
+          cs_boundary_conditions_set_dirichlet_scalar(face_id,
+                                                      bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -1306,10 +1301,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           cs_real_t qimp  = 0.;
           hint = 1.;
 
-          cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
-                                                    &cofafp[face_id],
-                                                    &coefbp[face_id],
-                                                    &cofbfp[face_id],
+          cs_boundary_conditions_set_neumann_scalar(face_id,
+                                                    bc_coeffs,
                                                     qimp,
                                                     hint);
         }
@@ -1318,10 +1311,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
            * for atmospheric, get the one computed by the 1D model */
           cs_real_t pimp = qpatmp * onedpi;
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
-                                                      &cofafp[face_id],
-                                                      &coefbp[face_id],
-                                                      &cofbfp[face_id],
+          cs_boundary_conditions_set_dirichlet_scalar(face_id,
+                                                      bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -1347,10 +1338,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
         else
           pimp = qpatmp * onedpi;
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
-                                                    &cofafp[face_id],
-                                                    &coefbp[face_id],
-                                                    &cofbfp[face_id],
+        cs_boundary_conditions_set_dirichlet_scalar(face_id,
+                                                    bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
@@ -1382,10 +1371,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
                   || bc_type[face_id] == CS_ROUGHWALL)
               && bpro_eps[face_id] <= 0.0) ) {
         cs_real_t qimp = 0.;
-        cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
-                                                  &cofafp[face_id],
-                                                  &coefbp[face_id],
-                                                  &cofbfp[face_id],
+        cs_boundary_conditions_set_neumann_scalar(face_id,
+                                                  bc_coeffs,
                                                   qimp,
                                                   hint);
       }
@@ -1397,10 +1384,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
                || bc_type[face_id] == CS_OUTLET
                || bc_type[face_id] == CS_FREE_INLET) {
         cs_real_t qimp = 0.;
-        cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
-                                                  &cofafp[face_id],
-                                                  &coefbp[face_id],
-                                                  &cofbfp[face_id],
+        cs_boundary_conditions_set_neumann_scalar(face_id,
+                                                  bc_coeffs,
                                                   qimp,
                                                   hint);
       }
@@ -1415,10 +1400,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
         cs_real_t cfl = 1.0 / xit;
         cs_real_t pimp =   cs_math_pow4(twall)
                          * w_gg[face_id + gg_id * n_b_faces];
-        cs_boundary_conditions_set_convective_outlet_scalar(&coefap[face_id],
-                                                            &cofafp[face_id],
-                                                            &coefbp[face_id],
-                                                            &cofbfp[face_id],
+        cs_boundary_conditions_set_convective_outlet_scalar(face_id,
+                                                            bc_coeffs,
                                                             pimp,
                                                             cfl,
                                                             hint);

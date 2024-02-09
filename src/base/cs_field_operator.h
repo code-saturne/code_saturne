@@ -86,20 +86,18 @@ cs_field_gradient_scalar(const cs_field_t          *f,
  *
  * \param[in]       f_id           associated field id
  * \param[in]       inc            if 0, solve on increment; 1 otherwise
- * \param[in]       bc_coeff_a     boundary condition term a
- * \param[in]       bc_coeff_b     boundary condition term b
+ * \param[in]       bc_coeffs      boundary condition structure
  * \param[in, out]  var            gradient's base variable
  * \param[out]      grad           gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_gradient_scalar_array(int               f_id,
-                               int               inc,
-                               const cs_real_t   bc_coeff_a[],
-                               const cs_real_t   bc_coeff_b[],
-                               cs_real_t         var[],
-                               cs_real_3_t       grad[]);
+cs_field_gradient_scalar_array(int                         f_id,
+                               int                         inc,
+                               const cs_field_bc_coeffs_t *bc_coeffs,
+                               cs_real_t                   var[],
+                               cs_real_3_t                 grad[]);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of scalar field or component of vector or

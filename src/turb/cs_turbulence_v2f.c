@@ -467,10 +467,7 @@ _solve_eq_fbr_al(const int         istprv,
                          eqp_phi->climgr,
                          NULL,
                          CS_F_(phi)->val_pre,
-                         coefap,
-                         coefbp,
-                         cofafp,
-                         cofbfp,
+                         CS_F_(phi)->bc_coeffs,
                          viscf,
                          viscb,
                          visel,
@@ -590,11 +587,6 @@ _solve_eq_fbr_al(const int         istprv,
   /* Effective resolution in the equation of f_bar or alpha
      ------------------------------------------------------ */
 
-  coefap = f->bc_coeffs->a;
-  coefbp = f->bc_coeffs->b;
-  cofafp = f->bc_coeffs->af;
-  cofbfp = f->bc_coeffs->bf;
-
   /* Solve current variable */
 
   cs_equation_param_t eqp_loc = *eqp;
@@ -616,10 +608,7 @@ _solve_eq_fbr_al(const int         istprv,
                                      &eqp_loc,
                                      cvara_var,
                                      cvara_var,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     f->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
                                      viscf,
@@ -1039,11 +1028,6 @@ _solve_eq_phi(const int           istprv,
     }
   }
 
-  coefap = f_phi->bc_coeffs->a;
-  coefbp = f_phi->bc_coeffs->b;
-  cofafp = f_phi->bc_coeffs->af;
-  cofbfp = f_phi->bc_coeffs->bf;
-
   cs_equation_param_t eqp_loc = *eqp;
 
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
@@ -1056,10 +1040,7 @@ _solve_eq_phi(const int           istprv,
                                      &eqp_loc,
                                      cvara_phi,
                                      cvara_phi,
-                                     coefap,
-                                     coefbp,
-                                     cofafp,
-                                     cofbfp,
+                                     f_phi->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
                                      viscf,

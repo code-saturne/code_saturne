@@ -313,9 +313,13 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   const cs_real_t *coefap = f_fm->bc_coeffs->a;
   const cs_real_t *coefbp = f_fm->bc_coeffs->b;
 
-  cs_real_t *coefa_p, *coefb_p;
-  BFT_MALLOC(coefa_p, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefb_p, n_b_faces, cs_real_t);
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+
+  cs_real_t *coefa_p = bc_coeffs_loc.a;
+  cs_real_t *coefb_p = bc_coeffs_loc.b;
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     coefa_p[face_id] = coefap[face_id];
@@ -331,8 +335,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
   cs_field_gradient_scalar_array(f_fm->id,
                                  1,     /* inc */
-                                 coefa_p,
-                                 coefb_p,
+                                 &bc_coeffs_loc,
                                  cvara_var_fm,
                                  grad);
 
@@ -1704,10 +1707,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      eqp,
                                      cvara_var,
                                      cvark_var,
-                                     f->bc_coeffs->a,
-                                     f->bc_coeffs->b,
-                                     f->bc_coeffs->af,
-                                     f->bc_coeffs->bf,
+                                     f->bc_coeffs,
                                      imasfl,
                                      bmasfl,
                                      viscf,
@@ -2309,10 +2309,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                                      eqp,
                                      cvara_var,
                                      cvara_var,
-                                     (const cs_real_3_t *)f->bc_coeffs->a,
-                                     (const cs_real_33_t *)f->bc_coeffs->b,
-                                     (const cs_real_3_t *)f->bc_coeffs->af,
-                                     (const cs_real_33_t *)f->bc_coeffs->bf,
+                                     f->bc_coeffs,
                                      imasfl,
                                      bmasfl,
                                      viscf,

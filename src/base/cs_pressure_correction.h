@@ -192,56 +192,51 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
  * <a href="../../theory.pdf#resopv"><b>resopv</b></a>
  * section of the theory guide for more information.
  *
- * \param[in]       iterns    Navier-Stokes iteration number
- * \param[in]       nfbpcd    number of faces with condensation source term
- * \param[in]       ncmast    number of cells with condensation source terms
- * \param[in]       ifbpcd    index of faces with condensation source term
- * \param[in]       ltmast    list of cells with condensation source terms
- *                            (1 to n numbering)
- * \param[in]       isostd    indicator of standard outlet and index
- *                            of the reference outlet face
- * \param[in]       vel       velocity
- * \param[in, out]  da_uu     velocity matrix
- * \param[in]       coefav    boundary condition array for the variable
- *                            (explicit part)
- * \param[in]       coefbv    boundary condition array for the variable
- *                            (implicit part)
- * \param[in]       coefa_dp  boundary conditions for the pressure increment
- * \param[in]       coefb_dp  boundary conditions for the pressure increment
- * \param[in]       spcond    variable value associated to the condensation
- *                            source term (for ivar=ipr, spcond is the
- *                            flow rate
- *                            \f$ \Gamma_{s,cond}^n \f$)
- * \param[in]       svcond    variable value associated to the condensation
- *                            source term (for ivar=ipr, svcond is the flow rate
- *                            \f$ \Gamma_{v, cond}^n \f$)
- * \param[in]       frcxt     external forces making hydrostatic pressure
- * \param[in]       dfrcxt    variation of the external forces
- *                            composing the hydrostatic pressure
- * \param[in]       i_visc    visc*surface/dist aux faces internes
- * \param[in]       b_visc    visc*surface/dist aux faces de bord
+ * \param[in]       iterns        Navier-Stokes iteration number
+ * \param[in]       nfbpcd        number of faces with condensation source term
+ * \param[in]       ncmast        number of cells with condensation source terms
+ * \param[in]       ifbpcd        index of faces with condensation source term
+ * \param[in]       ltmast        list of cells with condensation source terms
+ *                                (1 to n numbering)
+ * \param[in]       isostd        indicator of standard outlet and index
+ *                                of the reference outlet face
+ * \param[in]       vel           velocity
+ * \param[in, out]  da_uu         velocity matrix
+ * \param[in]       bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]       bc_coeffs_dp  boundary conditions structure for the
+ *                                pressure increment
+ * \param[in]       spcond        variable value associated to the condensation
+ *                                source term (for ivar=ipr, spcond is the
+ *                                flow rate
+ *                                \f$ \Gamma_{s,cond}^n \f$)
+ * \param[in]       svcond        variable value associated to the condensation
+ *                                source term (for ivar=ipr, svcond is the flow rate
+ *                                \f$ \Gamma_{v, cond}^n \f$)
+ * \param[in]       frcxt         external forces making hydrostatic pressure
+ * \param[in]       dfrcxt        variation of the external forces
+ *                                composing the hydrostatic pressure
+ * \param[in]       i_visc        visc*surface/dist aux faces internes
+ * \param[in]       b_visc        visc*surface/dist aux faces de bord
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_pressure_correction(int        iterns,
-                       cs_lnum_t  nfbpcd,
-                       cs_lnum_t  ncmast,
-                       cs_lnum_t  ifbpcd[],
-                       cs_lnum_t  ltmast[],
-                       const int  isostd[],
-                       cs_real_t  vel[restrict][3],
-                       cs_real_t  da_uu[restrict][6],
-                       cs_real_t  coefav[restrict][3],
-                       cs_real_t  coefbv[restrict][3][3],
-                       cs_real_t  coefa_dp[restrict],
-                       cs_real_t  coefb_dp[restrict],
-                       cs_real_t  spcond[restrict],
-                       cs_real_t  svcond[restrict],
-                       cs_real_t  frcxt[restrict][3],
-                       cs_real_t  dfrcxt[restrict][3],
-                       cs_real_t  i_visc[restrict],
-                       cs_real_t  b_visc[restrict]);
+cs_pressure_correction(int                   iterns,
+                       cs_lnum_t             nfbpcd,
+                       cs_lnum_t             ncmast,
+                       cs_lnum_t             ifbpcd[],
+                       cs_lnum_t             ltmast[],
+                       const int             isostd[],
+                       cs_real_t             vel[restrict][3],
+                       cs_real_t             da_uu[restrict][6],
+                       cs_field_bc_coeffs_t *bc_coeffs_v,
+                       cs_field_bc_coeffs_t *bc_coeffs_dp,
+                       cs_real_t             spcond[restrict],
+                       cs_real_t             svcond[restrict],
+                       cs_real_t             frcxt[restrict][3],
+                       cs_real_t             dfrcxt[restrict][3],
+                       cs_real_t             i_visc[restrict],
+                       cs_real_t             b_visc[restrict]);
 
 /*----------------------------------------------------------------------------*/
 

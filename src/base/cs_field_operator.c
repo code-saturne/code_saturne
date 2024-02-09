@@ -536,10 +536,9 @@ cs_field_gradient_scalar(const cs_field_t          *f,
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  const cs_real_t *bc_coeff_a = NULL, *bc_coeff_b = NULL;
+  cs_field_bc_coeffs_t *bc_coeffs = NULL;
   if (f->bc_coeffs != NULL) {
-    bc_coeff_a = f->bc_coeffs->a;
-    bc_coeff_b = f->bc_coeffs->b;
+    bc_coeffs = f->bc_coeffs;
   }
 
   cs_gradient_scalar(f->name,
@@ -554,8 +553,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      eqp->epsrgr,
                      eqp->climgr,
                      NULL, /* f_ext */
-                     bc_coeff_a,
-                     bc_coeff_b,
+                     bc_coeffs,
                      var,
                      c_weight,
                      cpl, /* internal coupling */
@@ -569,20 +567,18 @@ cs_field_gradient_scalar(const cs_field_t          *f,
  *
  * \param[in]       f_id           associated field id
  * \param[in]       inc            if 0, solve on increment; 1 otherwise
- * \param[in]       bc_coeff_a     boundary condition term a
- * \param[in]       bc_coeff_b     boundary condition term b
+ * \param[in]       bc_coeffs      boundary condition structure
  * \param[in, out]  var            gradient's base variable
  * \param[out]      grad           gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_gradient_scalar_array(int               f_id,
-                               int               inc,
-                               const cs_real_t   bc_coeff_a[],
-                               const cs_real_t   bc_coeff_b[],
-                               cs_real_t         var[],
-                               cs_real_3_t       grad[])
+cs_field_gradient_scalar_array(int                         f_id,
+                               int                         inc,
+                               const cs_field_bc_coeffs_t *bc_coeffs,
+                               cs_real_t                   var[],
+                               cs_real_3_t                 grad[])
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_LSQ;
@@ -621,8 +617,7 @@ cs_field_gradient_scalar_array(int               f_id,
                      eqp->epsrgr,
                      eqp->climgr,
                      NULL,          /* f_ext */
-                     bc_coeff_a,
-                     bc_coeff_b,
+                     bc_coeffs,
                      var,
                      NULL,          /* c_weight */
                      cpl,
@@ -716,10 +711,9 @@ cs_field_gradient_potential(const cs_field_t          *f,
 
   }
 
-  const cs_real_t *bc_coeff_a = NULL, *bc_coeff_b = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs = NULL;
   if (f->bc_coeffs != NULL) {
-    bc_coeff_a = f->bc_coeffs->a;
-    bc_coeff_b = f->bc_coeffs->b;
+    bc_coeffs = f->bc_coeffs;
   }
 
   if (hyd_p_flag == 2)
@@ -737,8 +731,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      eqp->epsrgr,
                      eqp->climgr,
                      f_ext,
-                     bc_coeff_a,
-                     bc_coeff_b,
+                     bc_coeffs,
                      var,
                      c_weight,
                      cpl, /* internal coupling */
@@ -814,16 +807,14 @@ cs_field_gradient_vector(const cs_field_t          *f,
   cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
                                       : (cs_real_3_t *)(f->val);
 
-  const cs_real_3_t *bc_coeff_a = NULL;
-  const cs_real_33_t *bc_coeff_b = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs = NULL;
 
   if (f->bc_coeffs != NULL) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
-        bc_coeff_a = (const cs_real_3_t *)f->bc_coeffs->a;
-        bc_coeff_b = (const cs_real_33_t *)f->bc_coeffs->b;
+        bc_coeffs = f->bc_coeffs;
       }
     }
   }
@@ -837,8 +828,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      eqp->imligr,
                      eqp->epsrgr,
                      eqp->climgr,
-                     bc_coeff_a,
-                     bc_coeff_b,
+                     bc_coeffs,
                      var,
                      c_weight,
                      cpl,
@@ -890,14 +880,12 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   cs_real_6_t *var = (use_previous_t) ? (cs_real_6_t *)(f->val_pre)
                                       : (cs_real_6_t *)(f->val);
 
-  const cs_real_6_t *bc_coeff_a = NULL;
-  const cs_real_66_t *bc_coeff_b = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs_ts;
   if (f->bc_coeffs != NULL) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
-        bc_coeff_a = (const cs_real_6_t *)f->bc_coeffs->a;
-        bc_coeff_b = (const cs_real_66_t *)f->bc_coeffs->b;
+        bc_coeffs_ts = f->bc_coeffs;
       }
     }
   }
@@ -911,8 +899,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      eqp->imligr,
                      eqp->epsrgr,
                      eqp->climgr,
-                     bc_coeff_a,
-                     bc_coeff_b,
+                     bc_coeffs_ts,
                      var,
                      grad);
 }
@@ -1003,10 +990,9 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  const cs_real_t *bc_coeff_a = NULL, *bc_coeff_b = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs = NULL;
   if (f->bc_coeffs != NULL) {
-    bc_coeff_a = f->bc_coeffs->a;
-    bc_coeff_b = f->bc_coeffs->b;
+    bc_coeffs = f->bc_coeffs;
   }
 
   /* With least-squares gradient, we can use a cheaper, boundary-only
@@ -1022,8 +1008,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                                       face_ids,
                                       halo_type,
                                       climgr,
-                                      bc_coeff_a,
-                                      bc_coeff_b,
+                                      bc_coeffs,
                                       c_weight,
                                       var,
                                       var_iprime);
@@ -1052,8 +1037,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                        eqp->epsrgr,
                        eqp->climgr,
                        NULL, /* f_ext */
-                       bc_coeff_a,
-                       bc_coeff_b,
+                       bc_coeffs,
                        var,
                        c_weight,
                        cpl, /* internal coupling */
@@ -1159,16 +1143,14 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                 "so \"use_previous_t\" can not be handled."),
               __func__, f->name);
 
-  const cs_real_3_t *bc_coeff_a = NULL;
-  const cs_real_33_t *bc_coeff_b = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs_v = NULL;
 
   if (f->bc_coeffs != NULL) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
-        bc_coeff_a = (const cs_real_3_t *)f->bc_coeffs->a;
-        bc_coeff_b = (const cs_real_33_t *)f->bc_coeffs->b;
+        bc_coeffs_v = f->bc_coeffs;
       }
     }
   }
@@ -1190,8 +1172,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                                       face_ids,
                                       halo_type,
                                       climgr,
-                                      bc_coeff_a,
-                                      bc_coeff_b,
+                                      bc_coeffs_v,
                                       c_weight,
                                       var,
                                       var_iprime);
@@ -1221,8 +1202,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                        eqp->imligr,
                        eqp->epsrgr,
                        eqp->climgr,
-                       bc_coeff_a,
-                       bc_coeff_b,
+                       bc_coeffs_v,
                        var,
                        c_weight,
                        cpl, /* internal coupling */
@@ -1306,16 +1286,14 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                 "so \"use_previous_t\" can not be handled."),
               __func__, f->name);
 
-  const cs_real_6_t *bc_coeff_a = NULL;
-  const cs_real_66_t *bc_coeff_b = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs_ts = NULL;
 
   if (f->bc_coeffs != NULL) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
-        bc_coeff_a = (const cs_real_6_t *)f->bc_coeffs->a;
-        bc_coeff_b = (const cs_real_66_t *)f->bc_coeffs->b;
+        bc_coeffs_ts = f->bc_coeffs;
       }
     }
   }
@@ -1337,8 +1315,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                                       face_ids,
                                       halo_type,
                                       climgr,
-                                      bc_coeff_a,
-                                      bc_coeff_b,
+                                      bc_coeffs_ts,
                                       NULL,
                                       var,
                                       var_iprime);
@@ -1368,8 +1345,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                        eqp->imligr,
                        eqp->epsrgr,
                        eqp->climgr,
-                       bc_coeff_a,
-                       bc_coeff_b,
+                       bc_coeffs_ts,
                        var,
                        grad);
 

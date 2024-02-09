@@ -1539,8 +1539,7 @@ _standard_turbulence_bcs(void)
                                     mq,
                                     b_face_cells[face_id],
                                     halo_type,
-                                    w_dist->bc_coeffs->a,
-                                    w_dist->bc_coeffs->b,
+                                    w_dist->bc_coeffs,
                                     w_dist->val,
                                     NULL,  /* c_weight */
                                     _shear_dir);

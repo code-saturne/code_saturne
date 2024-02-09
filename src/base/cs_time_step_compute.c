@@ -180,12 +180,18 @@ cs_local_time_step_compute(int  itrale)
 
   /* Allocate temporary arrays for the time-step resolution */
 
-  cs_real_t *i_visc, *b_visc, *dam, *cofbft, *coefbt;
+  cs_real_t *i_visc, *b_visc, *dam;
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
-  BFT_MALLOC(cofbft, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefbt, n_b_faces, cs_real_t);
+
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+
+  cs_real_t *coefbt = bc_coeffs_loc.b;
+  cs_real_t *cofbft = bc_coeffs_loc.bf;
 
   /* Allocate other arrays, depending on user options */
   cs_real_t *wcf = NULL;
@@ -202,7 +208,6 @@ cs_local_time_step_compute(int  itrale)
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
   cs_real_t *crom = CS_F_(rho)->val;
-  const cs_real_t *brom = CS_F_(rho_b)->val;
 
   /* Compute CFL like condition on the time step for
      positive density for the compressible module
@@ -278,7 +283,7 @@ cs_local_time_step_compute(int  itrale)
 
   if (idtvar >= 0) {
 
-    /* Variable time step from imposed Courant and Fourie */
+    /* Variable time step from imposed Courant and Fourier */
 
     /* We compute the max thermal time step
        (also when IDTVAR=0, for display)
@@ -290,9 +295,14 @@ cs_local_time_step_compute(int  itrale)
       cs_real_3_t *grad;
       BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-      cs_real_t *coefbr;
-      BFT_MALLOC(coefbr, n_b_faces, cs_real_t);
+      cs_field_bc_coeffs_t bc_coeffs_rho;
+      cs_field_bc_coeffs_create(&bc_coeffs_rho);
+
+      BFT_MALLOC(bc_coeffs_rho.b, n_b_faces, cs_real_t);
+      cs_real_t *coefbr = bc_coeffs_rho.b;
       cs_array_real_set_scalar(n_b_faces, 0.0, coefbr);
+
+      bc_coeffs_rho.a = CS_F_(rho_b)->val;
 
       int imrgrp = eqp_p->imrgra;
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -315,8 +325,7 @@ cs_local_time_step_compute(int  itrale)
                          eqp_p->epsrgr,
                          eqp_p->climgr,
                          NULL,          /* f_ext */
-                         brom,          /* coefa */
-                         coefbr,        /* coefb */
+                         &bc_coeffs_rho,
                          crom,          /* pvar */
                          NULL,          /* c_weight */
                          NULL,          /* cpl */
@@ -351,8 +360,7 @@ cs_local_time_step_compute(int  itrale)
                             eqp_vel->iconv,
                             0, /* Construction of U/DX (COURANT) = W1 */
                             2, /* Non symmetric matrix */
-                            coefbt,
-                            cofbft,
+                            &bc_coeffs_loc,
                             i_mass_flux_vel,
                             b_mass_flux_vel,
                             i_visc,
@@ -373,8 +381,7 @@ cs_local_time_step_compute(int  itrale)
                               eqp_vel->iconv,
                               0,
                               2,
-                              coefbt,
-                              cofbft,
+                              &bc_coeffs_loc,
                               i_mass_flux_volf,
                               b_mass_flux_volf,
                               i_visc,
@@ -433,8 +440,7 @@ cs_local_time_step_compute(int  itrale)
                             0, /*iconv0 */
                             eqp_vel->idiff,
                             1, /* Symmetric matrix */
-                            coefbt,
-                            cofbft,
+                            &bc_coeffs_loc,
                             i_mass_flux_vel,
                             b_mass_flux_vel,
                             i_visc,
@@ -809,8 +815,7 @@ cs_local_time_step_compute(int  itrale)
                         eqp_vel->iconv,
                         eqp_vel->idiff,
                         isym,
-                        coefbt,
-                        cofbft,
+                        &bc_coeffs_loc,
                         i_mass_flux_vel,
                         b_mass_flux_vel,
                         i_visc,
@@ -830,12 +835,13 @@ cs_local_time_step_compute(int  itrale)
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
   BFT_FREE(dam);
-  BFT_FREE(coefbt);
-  BFT_FREE(cofbft);
   BFT_FREE(wcf);
   BFT_FREE(w1);
   BFT_FREE(w2);
   BFT_FREE(w3);
+
+  BFT_FREE(bc_coeffs_loc.b);
+  BFT_FREE(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -914,12 +920,18 @@ cs_courant_fourier_compute(void)
   }
 
   /* Allocate temporary arrays for the time-step resolution */
-  cs_real_t *i_visc, *b_visc, *dam, *cofbft, *coefbt;
+  cs_real_t *i_visc, *b_visc, *dam;
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
-  BFT_MALLOC(cofbft, n_b_faces, cs_real_t);
-  BFT_MALLOC(coefbt, n_b_faces, cs_real_t);
+
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_create(&bc_coeffs_loc);
+  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+
+  cs_real_t *coefbt = bc_coeffs_loc.b;
+  cs_real_t *cofbft = bc_coeffs_loc.bf;
 
   /* Allocate work arrays */
   cs_real_t *w1;
@@ -1046,8 +1058,7 @@ cs_courant_fourier_compute(void)
                         iconv[i],
                         idiff[i],
                         isym[i], /* 1 -> symmetric matrix, 2 not */
-                        coefbt,
-                        cofbft,
+                        &bc_coeffs_loc,
                         i_mass_flux,
                         b_mass_flux,
                         i_visc,
@@ -1147,8 +1158,8 @@ cs_courant_fourier_compute(void)
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
   BFT_FREE(dam);
-  BFT_FREE(cofbft);
-  BFT_FREE(coefbt);
+  BFT_FREE(bc_coeffs_loc.b);
+  BFT_FREE(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/

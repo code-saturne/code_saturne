@@ -1266,11 +1266,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     cs_lnum_t isoent = 0;
     cs_lnum_t isorti = 0;
 
-    cs_real_3_t  *coefa_vel = (cs_real_3_t  *)vel->bc_coeffs->a;
-    cs_real_33_t *coefb_vel = (cs_real_33_t *)vel->bc_coeffs->b;
-    cs_real_3_t  *cofaf_vel = (cs_real_3_t  *)vel->bc_coeffs->af;
-    cs_real_33_t *cofbf_vel = (cs_real_33_t *)vel->bc_coeffs->bf;
-
     for (int f_id = 0; f_id < n_b_faces; f_id++) {
 
       if (icodcl_vel[f_id] == 9) {
@@ -1302,10 +1297,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           /* coupled solving of the velocity components */
 
-          cs_boundary_conditions_set_dirichlet_vector(coefa_vel[f_id],
-                                                      cofaf_vel[f_id],
-                                                      coefb_vel[f_id],
-                                                      cofbf_vel[f_id],
+          cs_boundary_conditions_set_dirichlet_vector(f_id,
+                                                      vel->bc_coeffs,
                                                       pimpv,
                                                       hint,
                                                       rinfiv);
@@ -1321,10 +1314,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           /* coupled solving of the velocity components */
 
-          cs_boundary_conditions_set_neumann_vector(coefa_vel[f_id],
-                                                    cofaf_vel[f_id],
-                                                    coefb_vel[f_id],
-                                                    cofbf_vel[f_id],
+          cs_boundary_conditions_set_neumann_vector(f_id,
+                                                    vel->bc_coeffs,
                                                     qimpv,
                                                     hint);
 
@@ -1382,10 +1373,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         for (cs_lnum_t k = 0; k < 3; k++)
           hextv[k] = rcodcl2_vel[n_b_faces*k + f_id];
 
-        cs_boundary_conditions_set_dirichlet_vector(coefa_vel[f_id],
-                                                    cofaf_vel[f_id],
-                                                    coefb_vel[f_id],
-                                                    cofbf_vel[f_id],
+        cs_boundary_conditions_set_dirichlet_vector(f_id,
+                                                    vel->bc_coeffs,
                                                     pimpv,
                                                     hint,
                                                     hextv);
@@ -1402,10 +1391,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         for (cs_lnum_t k = 0; k < 3; k++)
           qimpv[k] = rcodcl3_vel[n_b_faces*k + f_id];
 
-        cs_boundary_conditions_set_neumann_vector(coefa_vel[f_id],
-                                                  cofaf_vel[f_id],
-                                                  coefb_vel[f_id],
-                                                  cofbf_vel[f_id],
+        cs_boundary_conditions_set_neumann_vector(f_id,
+                                                  vel->bc_coeffs,
                                                   qimpv,
                                                   hint);
       }
@@ -1422,10 +1409,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         for (cs_lnum_t k = 0; k < 3; k++)
           cflv[k] = rcodcl2_vel[n_b_faces*k + f_id];
 
-        cs_boundary_conditions_set_convective_outlet_vector(coefa_vel[f_id],
-                                                            cofaf_vel[f_id],
-                                                            coefb_vel[f_id],
-                                                            cofbf_vel[f_id],
+        cs_boundary_conditions_set_convective_outlet_vector(f_id,
+                                                            vel->bc_coeffs,
                                                             pimpv,
                                                             cflv,
                                                             hint);
@@ -1443,9 +1428,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           qimpv[k] = rcodcl3_vel[n_b_faces*k + f_id];
 
         cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
-          (coefa_vel[f_id], cofaf_vel[f_id],
-           coefb_vel[f_id], cofbf_vel[f_id],
-           pimpv, qimpv);
+          (f_id, vel->bc_coeffs, pimpv, qimpv);
 
       }
 
@@ -1463,10 +1446,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         /* Coupled solving of the velocity components */
 
-        cs_boundary_conditions_set_generalized_sym_vector(coefa_vel[f_id],
-                                                          cofaf_vel[f_id],
-                                                          coefb_vel[f_id],
-                                                          cofbf_vel[f_id],
+        cs_boundary_conditions_set_generalized_sym_vector(f_id,
+                                                          vel->bc_coeffs,
                                                           pimpv,
                                                           qimpv,
                                                           hint,
@@ -1489,9 +1470,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         /* coupled solving of the velocity components */
 
         cs_boundary_conditions_set_generalized_dirichlet_vector
-          (coefa_vel[f_id], cofaf_vel[f_id],
-           coefb_vel[f_id], cofbf_vel[f_id],
-           pimpv, qimpv, hint, b_face_u_normal[f_id]);
+          (f_id, vel->bc_coeffs, pimpv,
+           qimpv, hint, b_face_u_normal[f_id]);
       }
     }
   }
@@ -1502,11 +1482,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   {
     cs_field_t *p = CS_F_(p);
-
-    cs_real_t *coefa_p = p->bc_coeffs->a;
-    cs_real_t *coefb_p = p->bc_coeffs->b;
-    cs_real_t *cofaf_p = p->bc_coeffs->af;
-    cs_real_t *cofbf_p = p->bc_coeffs->bf;
 
     const int *icodcl_p = (const int *)p->bc_coeffs->icodcl;
     const cs_real_t *rcodcl1_p = (const cs_real_t *)p->bc_coeffs->rcodcl1;
@@ -1604,10 +1579,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t hext = rcodcl2_p[f_id];
         const cs_real_t pimp = rcodcl1_p[f_id];
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_p[f_id],
-                                                    &cofaf_p[f_id],
-                                                    &coefb_p[f_id],
-                                                    &cofbf_p[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    p->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     hext);
@@ -1620,10 +1593,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         const cs_real_t dimp = rcodcl3_p[f_id];
 
-        cs_boundary_conditions_set_neumann_scalar(&coefa_p[f_id],
-                                                  &cofaf_p[f_id],
-                                                  &coefb_p[f_id],
-                                                  &cofbf_p[f_id],
+        cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                  p->bc_coeffs,
                                                   dimp,
                                                   hint);
       }
@@ -1636,10 +1607,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t pimp = rcodcl1_p[f_id];
         const cs_real_t cfl  = rcodcl2_p[f_id];
 
-        cs_boundary_conditions_set_convective_outlet_scalar(&coefa_p[f_id],
-                                                            &cofaf_p[f_id],
-                                                            &coefb_p[f_id],
-                                                            &cofbf_p[f_id],
+        cs_boundary_conditions_set_convective_outlet_scalar(f_id,
+                                                            p->bc_coeffs,
                                                             pimp,
                                                             cfl,
                                                             hint);
@@ -1654,10 +1623,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t pinf  = rcodcl1_p[f_id];
         const cs_real_t ratio = rcodcl2_p[f_id];
 
-        cs_boundary_conditions_set_affine_function_scalar(&coefa_p[f_id],
-                                                          &cofaf_p[f_id],
-                                                          &coefb_p[f_id],
-                                                          &cofbf_p[f_id],
+        cs_boundary_conditions_set_affine_function_scalar(f_id,
+                                                          p->bc_coeffs,
                                                           pinf,
                                                           ratio,
                                                           hint);
@@ -1674,9 +1641,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t dimp  = rcodcl3_p[f_id];
 
         cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
-          (&coefa_p[f_id], &cofaf_p[f_id],
-           &coefb_p[f_id], &cofbf_p[f_id],
-           pinf, ratio, dimp);
+          (f_id, p->bc_coeffs, pinf, ratio, dimp);
       }
 
       /* Imposed value for the convection operator, imposed flux for diffusion
@@ -1688,9 +1653,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t dimp = rcodcl3_p[f_id];
 
         cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-          (&coefa_p[f_id], &cofaf_p[f_id],
-           &coefb_p[f_id], &cofbf_p[f_id],
-           pimp, dimp);
+          (f_id, p->bc_coeffs, pimp, dimp);
       }
 
       /* Neumann for the convection operator, zero flux for diffusion
@@ -1701,9 +1664,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t dimp = rcodcl3_p[f_id];
 
         cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
-          (&coefa_p[f_id], &cofaf_p[f_id],
-           &coefb_p[f_id], &cofbf_p[f_id],
-           dimp, hint);
+          (f_id, p->bc_coeffs, dimp, hint);
       }
     }
   } /* pressure */
@@ -1715,11 +1676,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   if (cs_glob_vof_parameters->vof_model > 0) {
 
     cs_field_t *volf2 = CS_F_(void_f);
-
-    cs_real_t *coefa_vol = volf2->bc_coeffs->a;
-    cs_real_t *coefb_vol = volf2->bc_coeffs->b;
-    cs_real_t *cofaf_vol = volf2->bc_coeffs->af;
-    cs_real_t *cofbf_vol = volf2->bc_coeffs->bf;
 
     int *icodcl_vol = volf2->bc_coeffs->icodcl;
     cs_real_t *rcodcl1_vol = volf2->bc_coeffs->rcodcl1;
@@ -1739,10 +1695,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t pimp = rcodcl1_vol[f_id];
         const cs_real_t hext = rcodcl2_vol[f_id];
 
-        cs_boundary_conditions_set_dirichlet_scalar(&coefa_vol[f_id],
-                                                    &cofaf_vol[f_id],
-                                                    &coefb_vol[f_id],
-                                                    &cofbf_vol[f_id],
+        cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                    volf2->bc_coeffs,
                                                     pimp,
                                                     hint,
                                                     hext);
@@ -1755,10 +1709,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         const cs_real_t dimp = rcodcl3_vol[f_id];
 
-        cs_boundary_conditions_set_neumann_scalar(&coefa_vol[f_id],
-                                                  &cofaf_vol[f_id],
-                                                  &coefb_vol[f_id],
-                                                  &cofbf_vol[f_id],
+        cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                  volf2->bc_coeffs,
                                                   dimp,
                                                   hint);
       }
@@ -1772,9 +1724,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         const cs_real_t cfl  = rcodcl2_vol[f_id];
 
         cs_boundary_conditions_set_convective_outlet_scalar
-          (&coefa_vol[f_id], &cofaf_vol[f_id],
-           &coefb_vol[f_id], &cofbf_vol[f_id],
-           pimp, cfl, hint);
+          (f_id, volf2->bc_coeffs, pimp, cfl, hint);
       }
     }
   } /* VOF */
@@ -1814,11 +1764,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           }
         }
 
-        cs_real_t *coefa_turb = turb->bc_coeffs->a;
-        cs_real_t *coefb_turb = turb->bc_coeffs->b;
-        cs_real_t *cofaf_turb = turb->bc_coeffs->af;
-        cs_real_t *cofbf_turb = turb->bc_coeffs->bf;
-
         int *icodcl_turb = turb->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_turb = turb->bc_coeffs->rcodcl1;
         cs_real_t *rcodcl2_turb = turb->bc_coeffs->rcodcl2;
@@ -1844,10 +1789,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_turb[f_id];
             const cs_real_t hext = rcodcl2_turb[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(&coefa_turb[f_id],
-                                                        &cofaf_turb[f_id],
-                                                        &coefb_turb[f_id],
-                                                        &cofbf_turb[f_id],
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        turb->bc_coeffs,
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -1861,10 +1804,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_turb[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(&coefa_turb[f_id],
-                                                      &cofaf_turb[f_id],
-                                                      &coefb_turb[f_id],
-                                                      &cofbf_turb[f_id],
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      turb->bc_coeffs,
                                                       dimp,
                                                       hint);
           }
@@ -1878,9 +1819,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t cfl  = rcodcl2_turb[f_id];
 
             cs_boundary_conditions_set_convective_outlet_scalar
-              (&coefa_turb[f_id], &cofaf_turb[f_id],
-               &coefb_turb[f_id], &cofbf_turb[f_id],
-               pimp, cfl, hint);
+              (f_id, turb->bc_coeffs, pimp, cfl, hint);
           }
 
           /* Imposed value for the convection operator,
@@ -1893,9 +1832,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_turb[f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-              (&coefa_turb[f_id], &cofaf_turb[f_id],
-               &coefb_turb[f_id], &cofbf_turb[f_id],
-               pimp, dimp);
+              (f_id, turb->bc_coeffs, pimp, dimp);
           }
         }
       }
@@ -2095,11 +2032,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
       cs_field_t *eps = CS_F_(eps);
 
-      cs_real_t *coefa_eps = eps->bc_coeffs->a;
-      cs_real_t *coefb_eps = eps->bc_coeffs->b;
-      cs_real_t *cofaf_eps = eps->bc_coeffs->af;
-      cs_real_t *cofbf_eps = eps->bc_coeffs->bf;
-
       int *icodcl_eps = eps->bc_coeffs->icodcl;
       cs_real_t *rcodcl1_eps = eps->bc_coeffs->rcodcl1;
       cs_real_t *rcodcl2_eps = eps->bc_coeffs->rcodcl2;
@@ -2184,10 +2116,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t pimp = rcodcl1_eps[f_id];
           const cs_real_t hext = rcodcl2_eps[f_id];
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_eps[f_id],
-                                                      &cofaf_eps[f_id],
-                                                      &coefb_eps[f_id],
-                                                      &cofbf_eps[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      eps->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       hext);
@@ -2200,10 +2130,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           const cs_real_t dimp = rcodcl3_eps[f_id];
 
-          cs_boundary_conditions_set_neumann_scalar(&coefa_eps[f_id],
-                                                    &cofaf_eps[f_id],
-                                                    &coefb_eps[f_id],
-                                                    &cofbf_eps[f_id],
+          cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                    eps->bc_coeffs,
                                                     dimp,
                                                     hint);
         }
@@ -2217,9 +2145,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t cfl =  rcodcl2_eps[f_id];
 
           cs_boundary_conditions_set_convective_outlet_scalar
-            (&coefa_eps[f_id], &cofaf_eps[f_id],
-             &coefb_eps[f_id], &cofbf_eps[f_id],
-             pimp, cfl, hint);
+            (f_id, eps->bc_coeffs, pimp, cfl, hint);
         }
 
         /* Imposed value for the convection operator,
@@ -2232,9 +2158,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t dimp = rcodcl3_eps[f_id];
 
           cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-            (&coefa_eps[f_id], &cofaf_eps[f_id],
-             &coefb_eps[f_id], &cofbf_eps[f_id],
-             pimp, dimp);
+            (f_id, eps->bc_coeffs, pimp, dimp);
         }
       }
 
@@ -2243,11 +2167,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
         cs_field_t *alpha = CS_F_(alp_bl);
-
-        cs_real_t *coefa_alp = alpha->bc_coeffs->a;
-        cs_real_t *coefb_alp = alpha->bc_coeffs->b;
-        cs_real_t *cofaf_alp = alpha->bc_coeffs->af;
-        cs_real_t *cofbf_alp = alpha->bc_coeffs->bf;
 
         int *icodcl_alp = alpha->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_alp = alpha->bc_coeffs->rcodcl1;
@@ -2267,10 +2186,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_alp[f_id];
             const cs_real_t hext = rcodcl2_alp[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(&coefa_alp[f_id],
-                                                        &cofaf_alp[f_id],
-                                                        &coefb_alp[f_id],
-                                                        &cofbf_alp[f_id],
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        alpha->bc_coeffs,
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -2284,10 +2201,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_alp[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(&coefa_alp[f_id],
-                                                      &cofaf_alp[f_id],
-                                                      &coefb_alp[f_id],
-                                                      &cofbf_alp[f_id],
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      alpha->bc_coeffs,
                                                       dimp,
                                                       hint);
           }
@@ -2301,9 +2216,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t cfl  = rcodcl2_alp[f_id];
 
             cs_boundary_conditions_set_convective_outlet_scalar
-              (&coefa_alp[f_id], &cofaf_alp[f_id],
-               &coefb_alp[f_id], &cofbf_alp[f_id],
-               pimp, cfl, hint);
+              (f_id, alpha->bc_coeffs, pimp, cfl, hint);
           }
 
           /* Imposed value for the convection operator,
@@ -2316,9 +2229,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_alp[f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-              (&coefa_alp[f_id], &cofaf_alp[f_id],
-               &coefb_alp[f_id], &cofbf_alp[f_id],
-               pimp, dimp);
+              (f_id, alpha->bc_coeffs, pimp, dimp);
           }
         }
       }
@@ -2348,11 +2259,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           sigma = cs_field_get_key_double(v2f, ksigmas);
         }
 
-        cs_real_t *coefa_v2f = v2f->bc_coeffs->a;
-        cs_real_t *coefb_v2f = v2f->bc_coeffs->b;
-        cs_real_t *cofaf_v2f = v2f->bc_coeffs->af;
-        cs_real_t *cofbf_v2f = v2f->bc_coeffs->bf;
-
         int *icodcl_v2f = v2f->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_v2f = v2f->bc_coeffs->rcodcl1;
         cs_real_t *rcodcl2_v2f = v2f->bc_coeffs->rcodcl2;
@@ -2379,10 +2285,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_v2f[f_id];
             const cs_real_t hext = rcodcl2_v2f[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(&coefa_v2f[f_id],
-                                                        &cofaf_v2f[f_id],
-                                                        &coefb_v2f[f_id],
-                                                        &cofbf_v2f[f_id],
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        v2f->bc_coeffs,
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -2395,10 +2299,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_v2f[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(&coefa_v2f[f_id],
-                                                      &cofaf_v2f[f_id],
-                                                      &coefb_v2f[f_id],
-                                                      &cofbf_v2f[f_id],
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      v2f->bc_coeffs,
                                                       dimp,
                                                       hint);
           }
@@ -2412,9 +2314,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t cfl  = rcodcl2_v2f[f_id];
 
             cs_boundary_conditions_set_convective_outlet_scalar
-              (&coefa_v2f[f_id], &cofaf_v2f[f_id],
-               &coefb_v2f[f_id], &cofbf_v2f[f_id],
-               pimp, cfl, hint);
+              (f_id, v2f->bc_coeffs, pimp, cfl, hint);
           }
 
           /* Imposed value for the convection operator,
@@ -2427,9 +2327,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_v2f[f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-              (&coefa_v2f[f_id], &cofaf_v2f[f_id],
-               &coefb_v2f[f_id], &cofbf_v2f[f_id],
-               pimp, dimp);
+              (f_id, v2f->bc_coeffs, pimp, dimp);
           }
         }
       }
@@ -2439,11 +2337,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         /* FB */
 
         cs_field_t *f_bar = CS_F_(f_bar);
-
-        cs_real_t *coefa_fb = f_bar->bc_coeffs->a;
-        cs_real_t *coefb_fb = f_bar->bc_coeffs->b;
-        cs_real_t *cofaf_fb = f_bar->bc_coeffs->af;
-        cs_real_t *cofbf_fb = f_bar->bc_coeffs->bf;
 
         int *icodcl_fb = f_bar->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_fb = f_bar->bc_coeffs->rcodcl1;
@@ -2468,10 +2361,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_fb[f_id];
             const cs_real_t hext = rcodcl2_fb[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(&coefa_fb[f_id],
-                                                        &cofaf_fb[f_id],
-                                                        &coefb_fb[f_id],
-                                                        &cofbf_fb[f_id],
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        f_bar->bc_coeffs,
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -2484,10 +2375,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_fb[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(&coefa_fb[f_id],
-                                                      &cofaf_fb[f_id],
-                                                      &coefb_fb[f_id],
-                                                      &cofbf_fb[f_id],
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      f_bar->bc_coeffs,
                                                       dimp,
                                                       hint);
           }
@@ -2501,9 +2390,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t cfl  = rcodcl2_fb[f_id];
 
             cs_boundary_conditions_set_convective_outlet_scalar
-              (&coefa_fb[f_id], &cofaf_fb[f_id],
-               &coefb_fb[f_id],        &cofbf_fb[f_id],
-               pimp, cfl, hint);
+              (f_id, f_bar->bc_coeffs, pimp, cfl, hint);
           }
 
           /* Imposed value for the convection operator,
@@ -2516,9 +2403,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_fb[f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-              (&coefa_fb[f_id], &cofaf_fb[f_id],
-               &coefb_fb[f_id], &cofbf_fb[f_id],
-               pimp, dimp);
+              (f_id, f_bar->bc_coeffs, pimp, dimp);
           }
         }
       }
@@ -2528,11 +2413,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         /* alpha */
 
         cs_field_t *alpha = CS_F_(alp_bl);
-
-        cs_real_t *coefa_alp = alpha->bc_coeffs->a;
-        cs_real_t *coefb_alp = alpha->bc_coeffs->b;
-        cs_real_t *cofaf_alp = alpha->bc_coeffs->af;
-        cs_real_t *cofbf_alp = alpha->bc_coeffs->bf;
 
         int *icodcl_alp = alpha->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_alp = alpha->bc_coeffs->rcodcl1;
@@ -2556,10 +2436,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_alp[f_id];
             const cs_real_t hext = rcodcl2_alp[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(&coefa_alp[f_id],
-                                                        &cofaf_alp[f_id],
-                                                        &coefb_alp[f_id],
-                                                        &cofbf_alp[f_id],
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        alpha->bc_coeffs,
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -2572,10 +2450,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_alp[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(&coefa_alp[f_id],
-                                                      &cofaf_alp[f_id],
-                                                      &coefb_alp[f_id],
-                                                      &cofbf_alp[f_id],
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      alpha->bc_coeffs,
                                                       dimp,
                                                       hint);
           }
@@ -2589,9 +2465,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t cfl  = rcodcl2_alp[f_id];
 
             cs_boundary_conditions_set_convective_outlet_scalar
-              (&coefa_alp[f_id], &cofaf_alp[f_id],
-               &coefb_alp[f_id], &cofbf_alp[f_id],
-               pimp, cfl, hint);
+              (f_id, alpha->bc_coeffs, pimp, cfl, hint);
           }
 
           /* Imposed value for the convection operator,
@@ -2604,9 +2478,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_alp[f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-              (&coefa_alp[f_id], &cofaf_alp[f_id],
-               &coefb_alp[f_id], &cofbf_alp[f_id],
-               pimp, dimp);
+              (f_id, alpha->bc_coeffs, pimp, dimp);
           }
         }
       }
@@ -2617,11 +2489,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     else if (iturb == CS_TURB_SPALART_ALLMARAS) {
 
       cs_field_t *nusa = CS_F_(nusa);
-
-      cs_real_t *coefa_nusa = nusa->bc_coeffs->a;
-      cs_real_t *coefb_nusa = nusa->bc_coeffs->b;
-      cs_real_t *cofaf_nusa = nusa->bc_coeffs->af;
-      cs_real_t *cofbf_nusa = nusa->bc_coeffs->bf;
 
       int *icodcl_nusa = nusa->bc_coeffs->icodcl;
       cs_real_t *rcodcl1_nusa = nusa->bc_coeffs->rcodcl1;
@@ -2647,10 +2514,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t pimp = rcodcl1_nusa[f_id];
           const cs_real_t hext = rcodcl2_nusa[f_id];
 
-          cs_boundary_conditions_set_dirichlet_scalar(&coefa_nusa[f_id],
-                                                      &cofaf_nusa[f_id],
-                                                      &coefb_nusa[f_id],
-                                                      &cofbf_nusa[f_id],
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      nusa->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       hext);
@@ -2663,10 +2528,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           const cs_real_t dimp = rcodcl3_nusa[f_id];
 
-          cs_boundary_conditions_set_neumann_scalar(&coefa_nusa[f_id],
-                                                    &cofaf_nusa[f_id],
-                                                    &coefb_nusa[f_id],
-                                                    &cofbf_nusa[f_id],
+          cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                    nusa->bc_coeffs,
                                                     dimp,
                                                     hint);
         }
@@ -2680,9 +2543,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t cfl  = rcodcl2_nusa[f_id];
 
           cs_boundary_conditions_set_convective_outlet_scalar
-            (&coefa_nusa[f_id], &cofaf_nusa[f_id],
-             &coefb_nusa[f_id], &cofbf_nusa[f_id],
-             pimp, cfl, hint);
+            (f_id, nusa->bc_coeffs, pimp, cfl, hint);
         }
 
         /* Imposed value for the convection operator,
@@ -2695,9 +2556,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t dimp = rcodcl3_nusa[f_id];
 
           cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-            (&coefa_nusa[f_id],        &cofaf_nusa[f_id],
-             &coefb_nusa[f_id], &cofbf_nusa[f_id],
-             pimp, dimp);
+            (f_id, nusa->bc_coeffs, pimp, dimp);
         }
       }
     }
@@ -2896,14 +2755,14 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             /* ||Ki.S||^2 */
             const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
-                                                 + visci[1][0]*n[1]
-                                                 + visci[2][0]*n[2])
-                                  + cs_math_pow2(  visci[0][1]*n[0]
-                                                 + visci[1][1]*n[1]
-                                                 + visci[2][1]*n[2])
-                                  + cs_math_pow2(  visci[0][2]*n[0]
-                                                 + visci[1][2]*n[1]
-                                                 + visci[2][2]*n[2]);
+                                                  + visci[1][0]*n[1]
+                                                  + visci[2][0]*n[2])
+                                  + cs_math_pow2(   visci[0][1]*n[0]
+                                                  + visci[1][1]*n[1]
+                                                  + visci[2][1]*n[2])
+                                  + cs_math_pow2(   visci[0][2]*n[0]
+                                                  + visci[1][2]*n[1]
+                                                  + visci[2][2]*n[2]);
 
             /* if.ki.s */
             cs_real_t fikis
@@ -2929,10 +2788,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_sc[f_id];
             const cs_real_t hext = rcodcl2_sc[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(&coefa_sc[f_id],
-                                                        &cofaf_sc[f_id],
-                                                        &coefb_sc[f_id],
-                                                        &cofbf_sc[f_id],
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        f_scal->bc_coeffs,
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -2949,10 +2806,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_sc[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(&coefa_sc[f_id],
-                                                      &cofaf_sc[f_id],
-                                                      &coefb_sc[f_id],
-                                                      &cofbf_sc[f_id],
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      f_scal->bc_coeffs,
                                                       dimp,
                                                       hint);
 
@@ -2974,9 +2829,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t cfl  = rcodcl2_sc[f_id];
 
             cs_boundary_conditions_set_convective_outlet_scalar
-              (&coefa_sc[f_id], &cofaf_sc[f_id],
-               &coefb_sc[f_id], &cofbf_sc[f_id],
-               pimp, cfl, hint);
+              (f_id, f_scal->bc_coeffs, pimp, cfl, hint);
 
             /* Store boundary value */
             if (f_scal_b != NULL)
@@ -2991,10 +2844,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t hext = rcodcl2_sc[f_id];
             const cs_real_t dimp = rcodcl3_sc[f_id];
 
-            cs_boundary_conditions_set_total_flux(&coefa_sc[f_id],
-                                                  &cofaf_sc[f_id],
-                                                  &coefb_sc[f_id],
-                                                  &cofbf_sc[f_id],
+            cs_boundary_conditions_set_total_flux(f_id,
+                                                  f_scal->bc_coeffs,
                                                   hext,
                                                   dimp);
 
@@ -3013,9 +2864,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_sc[f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-              (&coefa_sc[f_id], &cofaf_sc[f_id],
-               &coefb_sc[f_id], &cofbf_sc[f_id],
-               pimp, dimp);
+              (f_id, f_scal->bc_coeffs, pimp, dimp);
 
             /* Store boundary value */
             if (f_scal_b != NULL)
@@ -3077,8 +2926,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             cs_real_3_t  *coefa_tf = (cs_real_3_t  *)f_tf->bc_coeffs->a;
             cs_real_33_t *coefb_tf = (cs_real_33_t *)f_tf->bc_coeffs->b;
-            cs_real_3_t  *cofaf_tf = (cs_real_3_t  *)f_tf->bc_coeffs->af;
-            cs_real_33_t *cofbf_tf = (cs_real_33_t *)f_tf->bc_coeffs->bf;
             cs_real_3_t  *cofar_tf = (cs_real_3_t  *)f_tf->bc_coeffs->ad;
             cs_real_33_t *cofbr_tf = (cs_real_33_t *)f_tf->bc_coeffs->bd;
 
@@ -3123,9 +2970,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                 hextv[k] = rcodcl2_tf[n_b_faces*k + f_id];
 
               cs_boundary_conditions_set_dirichlet_vector_aniso
-                (coefa_tf[f_id], cofaf_tf[f_id],
-                 coefb_tf[f_id], cofbf_tf[f_id],
-                 pimpv, hintt, hextv);
+                (f_id, f_tf->bc_coeffs, pimpv, hintt, hextv);
 
               /* Boundary conditions for thermal transport equation */
               for (int isou = 0; isou < 3; isou++) {
@@ -3144,9 +2989,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                 qimpv[k] = rcodcl3_tf[n_b_faces*k + f_id];
 
               cs_boundary_conditions_set_neumann_vector_aniso
-                (coefa_tf[f_id], cofaf_tf[f_id],
-                 coefb_tf[f_id], cofbf_tf[f_id],
-                 qimpv, hintt);
+                (f_id, f_tf->bc_coeffs, qimpv, hintt);
 
               /* Boundary conditions for thermal transport equation */
               for (int isou = 0; isou < 3; isou++) {
@@ -3168,9 +3011,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                 cflv[k] = rcodcl2_tf[n_b_faces*k + f_id];
 
               cs_boundary_conditions_set_convective_outlet_vector_aniso
-                (coefa_tf[f_id], cofaf_tf[f_id],
-                 coefb_tf[f_id], cofbf_tf[f_id],
-                 pimpv,        cflv, hintt);
+                (f_id, f_tf->bc_coeffs, pimpv, cflv, hintt);
 
               /* Boundary conditions for thermal transport equation */
               for (int isou = 0; isou < 3; isou++) {
@@ -3194,8 +3035,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         cs_real_3_t  *coefa_vtq = (cs_real_3_t  *)vtq->bc_coeffs->a;
         cs_real_33_t *coefb_vtq = (cs_real_33_t *)vtq->bc_coeffs->b;
-        cs_real_3_t  *cofaf_vtq = (cs_real_3_t  *)vtq->bc_coeffs->af;
-        cs_real_33_t *cofbf_vtq = (cs_real_33_t *)vtq->bc_coeffs->bf;
 
         int *icodcl_vtq = vtq->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_vtq = vtq->bc_coeffs->rcodcl1;
@@ -3277,9 +3116,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               hextv[k] = rcodcl2_vtq[n_b_faces*k + f_id];
 
             cs_boundary_conditions_set_dirichlet_vector_aniso
-              (coefa_vtq[f_id], cofaf_vtq[f_id],
-               coefb_vtq[f_id], cofbf_vtq[f_id],
-               pimpv, hintt, hextv);
+              (f_id, vtq->bc_coeffs, pimpv, hintt, hextv);
 
             /* Store boundary value */
             if (b_f_id >= 0) {
@@ -3299,9 +3136,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               qimpv[k] = rcodcl3_vtq[n_b_faces*k + f_id];
 
             cs_boundary_conditions_set_neumann_vector_aniso
-              (coefa_vtq[f_id], cofaf_vtq[f_id],
-               coefb_vtq[f_id], cofbf_vtq[f_id],
-               qimpv, hintt);
+              (f_id, vtq->bc_coeffs, qimpv, hintt);
 
             /* Store boundary value */
             if (b_f_id >= 0) {
@@ -3324,9 +3159,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               cflv[k] = rcodcl2_vtq[n_b_faces*k + f_id];
 
             cs_boundary_conditions_set_convective_outlet_vector_aniso
-              (coefa_vtq[f_id], cofaf_vtq[f_id],
-               coefb_vtq[f_id], cofbf_vtq[f_id],
-               pimpv, cflv, hintt);
+              (f_id, vtq->bc_coeffs, pimpv, cflv, hintt);
 
             /* Store boundary value */
             if (b_f_id >= 0) {
@@ -3350,9 +3183,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               qimpv[k] = rcodcl3_vtq[n_b_faces*k + f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
-              (coefa_vtq[f_id], cofaf_vtq[f_id],
-               coefb_vtq[f_id], cofbf_vtq[f_id],
-               pimpv, qimpv);
+              (f_id, vtq->bc_coeffs, pimpv, qimpv);
 
             /* Store boundary value */
             if (b_f_id >= 0) {
@@ -3378,9 +3209,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             /* Coupled solving of the velocity components */
 
             cs_boundary_conditions_set_generalized_sym_vector_aniso
-              (coefa_vtq[f_id], cofaf_vtq[f_id],
-               coefb_vtq[f_id], cofbf_vtq[f_id],
-               pimpv, qimpv, hintt, b_face_u_normal[f_id]);
+              (f_id, vtq->bc_coeffs, pimpv, qimpv,
+               hintt, b_face_u_normal[f_id]);
 
             /* Store boundary value */
             if (b_f_id >= 0) {
@@ -3408,9 +3238,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             /* coupled solving of the velocity components */
 
             cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
-              (coefa_vtq[f_id], cofaf_vtq[f_id],
-               coefb_vtq[f_id], cofbf_vtq[f_id],
-               pimpv, qimpv, hintt, b_face_u_normal[f_id]);
+              (f_id, vtq->bc_coeffs, pimpv, qimpv,
+               hintt, b_face_u_normal[f_id]);
 
             /* Store boundary value */
             if (b_f_id >= 0) {
@@ -3429,10 +3258,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           || turb_flux_model == 31) {
 
         cs_field_t *f_al = cs_field_by_composite_name_try(f_scal->name, "alpha");
-        cs_real_t *coefa_al = f_al->bc_coeffs->a;
-        cs_real_t *coefb_al = f_al->bc_coeffs->b;
-        cs_real_t *cofaf_al = f_al->bc_coeffs->af;
-        cs_real_t *cofbf_al = f_al->bc_coeffs->bf;
 
         int *icodcl_al = f_al->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_al = f_al->bc_coeffs->rcodcl1;
@@ -3452,10 +3277,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_al[f_id];
             const cs_real_t hext = rcodcl2_al[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(&coefa_al[f_id],
-                                                        &cofaf_al[f_id],
-                                                        &coefb_al[f_id],
-                                                        &cofbf_al[f_id],
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        f_al->bc_coeffs,
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -3469,10 +3292,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_al[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(&coefa_al[f_id],
-                                                      &cofaf_al[f_id],
-                                                      &coefb_al[f_id],
-                                                      &cofbf_al[f_id],
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      f_al->bc_coeffs,
                                                       dimp,
                                                       hint);
           }
@@ -3486,9 +3307,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t cfl  = rcodcl2_al[f_id];
 
             cs_boundary_conditions_set_convective_outlet_scalar
-              (&coefa_al[f_id], &cofaf_al[f_id],
-               &coefb_al[f_id], &cofbf_al[f_id],
-               pimp, cfl, hint);
+              (f_id, f_al->bc_coeffs, pimp, cfl, hint);
           }
 
           /* Imposed value for the convection operator,
@@ -3501,9 +3320,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_al[f_id];
 
             cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-              (&coefa_al[f_id], &cofaf_al[f_id],
-               &coefb_al[f_id], &cofbf_al[f_id],
-               pimp, dimp);
+              (f_id, f_al->bc_coeffs, pimp, dimp);
 
           }
         } /* End of loop on face */
@@ -3519,11 +3336,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   if (cs_glob_ale == CS_ALE_LEGACY) {
 
     cs_field_t *m_vel = cs_field_by_name("mesh_velocity");
-
-    cs_real_3_t  *claale = (cs_real_3_t  *)m_vel->bc_coeffs->a;
-    cs_real_33_t *clbale = (cs_real_33_t *)m_vel->bc_coeffs->b;
-    cs_real_3_t  *cfaale = (cs_real_3_t  *)m_vel->bc_coeffs->af;
-    cs_real_33_t *cfbale = (cs_real_33_t *)m_vel->bc_coeffs->bf;
 
     int *icodcl_displ = m_vel->bc_coeffs->icodcl;
     cs_real_t *rcodcl1_displ = m_vel->bc_coeffs->rcodcl1;
@@ -3583,10 +3395,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         for (cs_lnum_t k = 0; k < 3; k++)
           hextv[k] = rcodcl2_displ[n_b_faces*k + f_id];
 
-        cs_boundary_conditions_set_dirichlet_vector_aniso(claale[f_id],
-                                                          cfaale[f_id],
-                                                          clbale[f_id],
-                                                          cfbale[f_id],
+        cs_boundary_conditions_set_dirichlet_vector_aniso(f_id,
+                                                          m_vel->bc_coeffs,
                                                           pimpv,
                                                           hintt,
                                                           hextv);
@@ -3602,10 +3412,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         for (cs_lnum_t k = 0; k < 3; k++)
           qimpv[k] = rcodcl3_displ[n_b_faces*k + f_id];
 
-        cs_boundary_conditions_set_neumann_vector_aniso(claale[f_id],
-                                                        cfaale[f_id],
-                                                        clbale[f_id],
-                                                        cfbale[f_id],
+        cs_boundary_conditions_set_neumann_vector_aniso(f_id,
+                                                        m_vel->bc_coeffs,
                                                         qimpv,
                                                         hintt);
       }
@@ -3624,9 +3432,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           cflv[k] = rcodcl2_displ[n_b_faces*k + f_id];
 
         cs_boundary_conditions_set_convective_outlet_vector_aniso
-          (claale[f_id], cfaale[f_id],
-           clbale[f_id], cfbale[f_id],
-           pimpv, cflv, hintt);
+          (f_id, m_vel->bc_coeffs, pimpv, cflv, hintt);
       }
     }
   }
@@ -3867,32 +3673,34 @@ cs_boundary_conditions_set_coeffs_init(void)
 /*!
  * \brief Set convective oulet boundary condition for a scalar.
  *
- * \param[out]  a      explicit BC coefficient for gradients
- * \param[out]  af     explicit BC coefficient for diffusive flux
- * \param[out]  b      implicit BC coefficient for gradients
- * \param[out]  bf     implicit BC coefficient for diffusive flux
- * \param[in]   pimp   flux value to impose
- * \param[in]   cfl    local Courant number used to convect
- * \param[in]   hint   internal exchange coefficient
+ * \param[in]   f_id          face id
+ * \param[out]  bc_coeffs     boundary conditions structure
+ * \param[in]   pimp          flux value to impose
+ * \param[in]   cfl           local Courant number used to convect
+ * \param[in]   hint          internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *a ,
-                                                    cs_real_t *af,
-                                                    cs_real_t *b,
-                                                    cs_real_t *bf,
-                                                    cs_real_t  pimp,
-                                                    cs_real_t  cfl,
-                                                    cs_real_t  hint)
+cs_boundary_conditions_set_convective_outlet_scalar
+  (cs_lnum_t              f_id,
+   cs_field_bc_coeffs_t  *bc_coeffs,
+   cs_real_t              pimp,
+   cs_real_t              cfl,
+   cs_real_t              hint)
 {
+  cs_real_t *a = bc_coeffs->a;
+  cs_real_t *b = bc_coeffs->b;
+  cs_real_t *af = bc_coeffs->af;
+  cs_real_t *bf = bc_coeffs->bf;
+
   /* Gradient BCs */
-  *b = cfl / (1.0 + cfl);
-  *a = (1.0 - *b) * pimp;
+  b[f_id] = cfl / (1.0 + cfl);
+  a[f_id] = (1.0 - b[f_id]) * pimp;
 
   /* Flux BCs */
-  *af = - hint * *a;
-  *bf =   hint * (1.0 - *b);
+  af[f_id] = - hint * a[f_id];
+  bf[f_id] =   hint * (1.0 - b[f_id]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3900,30 +3708,30 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *a ,
  * \brief  Set generalized BC for an anisotropic symmetric vector for a given
  *         face.
  *
- * \param[out]  a       explicit BC coefficient for gradients
- * \param[out]  af      explicit BC coefficient for diffusive flux
- * \param[out]  b       implicit BC coefficient for gradients
- * \param[out]  bf      implicit BC coefficient for diffusive flux
- * \param[in]   pimpv   Dirichlet value to impose on the normal component
- * \param[in]   qimpv   flux value to impose on the tangential components
- * \param[in]   hint    internal exchange coefficient
- * \param[in]   normal  normal
+ * \param[in]   f_id         face id
+ * \param[out]  bc_coeffs    boundary conditions structure
+ * \param[in]   pimpv        Dirichlet value to impose on the normal component
+ * \param[in]   qimpv        flux value to impose on the tangential components
+ * \param[in]   hint         internal exchange coefficient
+ * \param[in]   normal       unit normal
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_conditions_set_generalized_sym_vector_aniso
-  (cs_real_t        a[3],
-   cs_real_t        af[3],
-   cs_real_t        b[3][3],
-   cs_real_t        bf[3][3],
-   const cs_real_t  pimpv[3],
-   const cs_real_t  qimpv[3],
-   const cs_real_t  hint[6],
-   const cs_real_t  normal[3])
+  (cs_lnum_t              f_id,
+   cs_field_bc_coeffs_t  *bc_coeffs,
+   const cs_real_t        pimpv[3],
+   const cs_real_t        qimpv[3],
+   const cs_real_t        hint[6],
+   const cs_real_t        normal[3])
 {
-  cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
+  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
+  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
+  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
+  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
 
+  cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
   m[0] = hint[1]*hint[2] - hint[4]*hint[4];
   m[1] = hint[0]*hint[2] - hint[5]*hint[5];
   m[2] = hint[0]*hint[1] - hint[3]*hint[3];
@@ -3952,27 +3760,27 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
   for (int isou = 0; isou < 3; isou++) {
 
     /* Gradient BCs */
-    a[isou] = - qshint[isou];
+    a[f_id][isou] = - qshint[isou];
     /* "[1 -n(x)n] Qimp / hint" is divided into two */
     for (int jsou = 0; jsou < 3; jsou++) {
 
-      a[isou] = a[isou] + normal[isou]*normal[jsou]
+      a[f_id][isou] = a[f_id][isou] + normal[isou]*normal[jsou]
         * (pimpv[jsou] + qshint[jsou]);
 
       if (jsou == isou)
-        b[isou][jsou] = 1.0 - normal[isou]*normal[jsou];
+        b[f_id][isou][jsou] = 1.0 - normal[isou]*normal[jsou];
       else
-        b[isou][jsou] = - normal[isou]*normal[jsou];
+        b[f_id][isou][jsou] = - normal[isou]*normal[jsou];
     }
 
     /* Flux BCs */
-    af[isou] = qimpv[isou];
+    af[f_id][isou] = qimpv[isou];
     /* "[1 -n(x)n] Qimp" is divided into two */
     for (int jsou = 0; jsou < 3; jsou++){
-      af[isou] = af[isou] - normal[isou]*normal[jsou]
+      af[f_id][isou] = af[f_id][isou] - normal[isou]*normal[jsou]
                   * (hintpv[jsou] + qimpv[jsou]);
 
-      bf[isou][jsou] = hintnm[isou] * normal[jsou];
+      bf[f_id][isou][jsou] = hintnm[isou] * normal[jsou];
     }
   }
 }
@@ -3982,28 +3790,30 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
  * \brief  Set generalized Dirichlet BC for an anisotropic vector for a given
  *         face.
  *
- * \param[out]  a        explicit BC coefficient for gradients
- * \param[out]  af       explicit BC coefficient for diffusive flux
- * \param[out]  b        implicit BC coefficient for gradients
- * \param[out]  bf       implicit BC coefficient for diffusive flux
- * \param[in]   pimpv    Dirichlet value to impose on the tangential components
- * \param[in]   qimpv    flux value to impose on the normal component
- * \param[in]   hint     internal exchange coefficient
- * \param[in]   normal   normal
+ * \param[in]   f_id         face id
+ * \param[out]  bc_coeffs    boundary conditions structure
+ * \param[in]   pimpv        Dirichlet value to impose on the
+ *                           tangential components
+ * \param[in]   qimpv        flux value to impose on the normal component
+ * \param[in]   hint         internal exchange coefficient
+ * \param[in]   normal       unit normal
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
-  (cs_real_t        a[3],
-   cs_real_t        af[3],
-   cs_real_t        b[3][3],
-   cs_real_t        bf[3][3],
-   const cs_real_t  pimpv[3],
-   const cs_real_t  qimpv[3],
-   const cs_real_t  hint[6],
-   const cs_real_t  normal[3])
+  (cs_lnum_t              f_id,
+   cs_field_bc_coeffs_t  *bc_coeffs,
+   const cs_real_t        pimpv[3],
+   const cs_real_t        qimpv[3],
+   const cs_real_t        hint[6],
+   const cs_real_t        normal[3])
 {
+  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
+  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
+  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
+  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
+
   cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
   m[0] = hint[1]*hint[2] - hint[4]*hint[4];
   m[1] = hint[0]*hint[2] - hint[5]*hint[5];
@@ -4034,27 +3844,27 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
 
     /* Gradient BCs */
     /* "[1 -n(x)n] Pimp" is divided into two */
-    a[isou] = pimpv[isou];
+    a[f_id][isou] = pimpv[isou];
     for (int jsou = 0; jsou < 3; jsou++) {
 
-      a[isou] = a[isou] - normal[isou] * normal[jsou]
+      a[f_id][isou] = a[f_id][isou] - normal[isou] * normal[jsou]
                   * (pimpv[jsou] + qshint[jsou]);
 
-      b[isou][jsou] = normal[isou] * normal[jsou];
+      b[f_id][isou][jsou] = normal[isou] * normal[jsou];
     }
 
     /* Flux BCs */
     /* "[1 -n(x)n] Pimp" is divided into two */
-    af[isou] = -hintpv[isou];
+    af[f_id][isou] = -hintpv[isou];
     for (int jsou = 0; jsou < 3; jsou++) {
 
-      af[isou] = af[isou] + normal[isou]*normal[jsou]
+      af[f_id][isou] = af[f_id][isou] + normal[isou]*normal[jsou]
         *(qimpv[jsou]+hintpv[jsou]);
 
       if (jsou == isou)
-        bf[isou][jsou] = hint[isou]-hintnm[isou]*normal[jsou];
+        bf[f_id][isou][jsou] = hint[isou]-hintnm[isou]*normal[jsou];
       else
-        bf[isou][jsou] = -hintnm[isou]*normal[jsou];
+        bf[f_id][isou][jsou] = -hintnm[isou]*normal[jsou];
     }
   }
 }

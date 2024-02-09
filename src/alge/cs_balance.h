@@ -91,14 +91,7 @@ BEGIN_C_DECLS
  *                              may be NULL if pvara != NULL
  * \param[in]     pvara         solved variable (previous time step)
  *                              may be NULL if pvar != NULL
- * \param[in]     coefap        boundary condition array for the variable
- *                               (explicit part)
- * \param[in]     coefbp        boundary condition array for the variable
- *                               (implicit part)
- * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (explicit part)
- * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (implicit part)
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -122,29 +115,26 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_scalar(int                idtvar,
-                  int                f_id,
-                  int                imucpp,
-                  int                imasac,
-                  int                inc,
-                  cs_var_cal_opt_t  *var_cal_opt,
-                  cs_real_t          pvar[],
-                  const cs_real_t    pvara[],
-                  const cs_real_t    coefap[],
-                  const cs_real_t    coefbp[],
-                  const cs_real_t    cofafp[],
-                  const cs_real_t    cofbfp[],
-                  const cs_real_t    i_massflux[],
-                  const cs_real_t    b_massflux[],
-                  const cs_real_t    i_visc[],
-                  const cs_real_t    b_visc[],
-                  cs_real_6_t        viscel[],
-                  const cs_real_t    xcpp[],
-                  const cs_real_2_t  weighf[],
-                  const cs_real_t    weighb[],
-                  int                icvflb,
-                  const int          icvfli[],
-                  cs_real_t          smbrp[]);
+cs_balance_scalar(int                         idtvar,
+                  int                         f_id,
+                  int                         imucpp,
+                  int                         imasac,
+                  int                         inc,
+                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_real_t                   pvar[],
+                  const cs_real_t             pvara[],
+                  const cs_field_bc_coeffs_t *bc_coeffs,
+                  const cs_real_t             i_massflux[],
+                  const cs_real_t             b_massflux[],
+                  const cs_real_t             i_visc[],
+                  const cs_real_t             b_visc[],
+                  cs_real_6_t                 viscel[],
+                  const cs_real_t             xcpp[],
+                  const cs_real_2_t           weighf[],
+                  const cs_real_t             weighb[],
+                  int                         icvflb,
+                  const int                   icvfli[],
+                  cs_real_t                   smbrp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -194,14 +184,7 @@ cs_balance_scalar(int                idtvar,
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     coefav        boundary condition array for the variable
- *                               (explicit part)
- * \param[in]     coefbv        boundary condition array for the variable
- *                               (implicit part)
- * \param[in]     cofafv        boundary condition array for the diffusion
- *                               of the variable (explicit part)
- * \param[in]     cofbfv        boundary condition array for the diffusion
- *                               of the variable (implicit part)
+ * \param[in]     bc_coeffs_v   boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -226,32 +209,29 @@ cs_balance_scalar(int                idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_vector(int                  idtvar,
-                  int                  f_id,
-                  int                  imasac,
-                  int                  inc,
-                  int                  ivisep,
-                  cs_var_cal_opt_t    *var_cal_opt,
-                  cs_real_3_t          pvar[],
-                  const cs_real_3_t    pvara[],
-                  const cs_real_3_t    coefav[],
-                  const cs_real_33_t   coefbv[],
-                  const cs_real_3_t    cofafv[],
-                  const cs_real_33_t   cofbfv[],
-                  const cs_real_t      i_massflux[],
-                  const cs_real_t      b_massflux[],
-                  const cs_real_t      i_visc[],
-                  const cs_real_t      b_visc[],
-                  const cs_real_t      secvif[],
-                  const cs_real_t      secvib[],
-                  cs_real_6_t          viscel[],
-                  const cs_real_2_t    weighf[],
-                  const cs_real_t      weighb[],
-                  int                  icvflb,
-                  const int            icvfli[],
-                  cs_real_3_t          i_pvar[],
-                  cs_real_3_t          b_pvar[],
-                  cs_real_3_t          smbr[]);
+cs_balance_vector(int                         idtvar,
+                  int                         f_id,
+                  int                         imasac,
+                  int                         inc,
+                  int                         ivisep,
+                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_real_3_t                 pvar[],
+                  const cs_real_3_t           pvara[],
+                  const cs_field_bc_coeffs_t *bc_coeffs_v,
+                  const cs_real_t             i_massflux[],
+                  const cs_real_t             b_massflux[],
+                  const cs_real_t             i_visc[],
+                  const cs_real_t             b_visc[],
+                  const cs_real_t             secvif[],
+                  const cs_real_t             secvib[],
+                  cs_real_6_t                 viscel[],
+                  const cs_real_2_t           weighf[],
+                  const cs_real_t             weighb[],
+                  int                         icvflb,
+                  const int                   icvfli[],
+                  cs_real_3_t                 i_pvar[],
+                  cs_real_3_t                 b_pvar[],
+                  cs_real_3_t                 smbr[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -288,14 +268,7 @@ cs_balance_vector(int                  idtvar,
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     coefa       boundary condition array for the variable
- *                              (Explicit part)
- * \param[in]     coefb       boundary condition array for the variable
- *                              (Impplicit part)
- * \param[in]     cofaf       boundary condition array for the diffusion
- *                              of the variable (Explicit part)
- * \param[in]     cofbf       boundary condition array for the diffusion
- *                              of the variable (Implicit part)
+ * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -318,27 +291,24 @@ cs_balance_vector(int                  idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_tensor(int                 idtvar,
-                  int                 f_id,
-                  int                 imasac,
-                  int                 inc,
-                  cs_var_cal_opt_t   *var_cal_opt,
-                  cs_real_6_t         pvar[],
-                  const cs_real_6_t   pvara[],
-                  const cs_real_6_t   coefa[],
-                  const cs_real_66_t  coefb[],
-                  const cs_real_6_t   cofaf[],
-                  const cs_real_66_t  cofbf[],
-                  const cs_real_t     i_massflux[],
-                  const cs_real_t     b_massflux[],
-                  const cs_real_t     i_visc[],
-                  const cs_real_t     b_visc[],
-                  cs_real_6_t         viscel[],
-                  const cs_real_2_t   weighf[],
-                  const cs_real_t     weighb[],
-                  int                 icvflb,
-                  const int           icvfli[],
-                  cs_real_6_t         smbrp[]);
+cs_balance_tensor(int                         idtvar,
+                  int                         f_id,
+                  int                         imasac,
+                  int                         inc,
+                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_real_6_t                 pvar[],
+                  const cs_real_6_t           pvara[],
+                  const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                  const cs_real_t             i_massflux[],
+                  const cs_real_t             b_massflux[],
+                  const cs_real_t             i_visc[],
+                  const cs_real_t             b_visc[],
+                  cs_real_6_t                 viscel[],
+                  const cs_real_2_t           weighf[],
+                  const cs_real_t             weighb[],
+                  int                         icvflb,
+                  const int                   icvfli[],
+                  cs_real_6_t                 smbrp[]);
 
 /*----------------------------------------------------------------------------*/
 
