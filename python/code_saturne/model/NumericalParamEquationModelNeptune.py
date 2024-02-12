@@ -131,7 +131,8 @@ class NumericalParamEquatModel(Variables, Model):
         """
         Return : 1 if name of node is a turbulence variable, 0 if not
         """
-        if node and node['name'] in TurbulenceModelsDescription.turbulenceVariables['all'] :
+        if node and any(node['name'].startswith(prefix) for prefix 
+                        in TurbulenceModelsDescription.turbulenceVariables['all']) :
             return 1
         else:
             return 0
