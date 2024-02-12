@@ -246,7 +246,9 @@ class OutputVolumicVariablesModel(Variables, Model):
         authorized_variables = dicoLabel2Name.keys()
         for var in variables:
             self.isInList(var, authorized_variables)
-            (name, comp) = dicoLabel2Name[var]
+            t = dicoLabel2Name[var]  # tuple with 2 or 3 values
+            name = t[0]
+            comp = t[1]
             if comp is None:
                 comp = -1
             node.xmlAddChild('var_prop', name=name, component=comp)
