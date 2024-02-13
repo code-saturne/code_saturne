@@ -234,7 +234,8 @@ class OutputVolumicVariablesModel(Variables, Model):
                 component = label[1]
                 is_recognized = (label[0] == xml_variable['name'])
                 if component:
-                    is_recognized = (label == (xml_variable['name'], xml_variable['component']))
+                    if component != xml_variable['component']:
+                        is_recognized = False
                 if is_recognized:
                     recognized_variables.append(name)
         return recognized_variables
