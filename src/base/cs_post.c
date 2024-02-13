@@ -4102,11 +4102,13 @@ cs_f_post_write_var(int               mesh_id,
  * - \c \b EnSight \c \b Gold (\c \b EnSight also accepted)
  * - \c \b MED
  * - \c \b CGNS
- * - \c \b CCM (only for the full volume and boundary meshes)
  * - \c \b Catalyst (in-situ visualization)
  * - \c \b MEDCoupling (in-memory structure, to be used from other code)
+ * - \c \b Melissa (in-situ statistics)
+ * - \c \b histogram (comma or whitespace separated 2d plot files)
  * - \c \b plot (comma or whitespace separated 2d plot files)
  * - \c \b time_plot (comma or whitespace separated time plot files)
+ * - \c \b CCM (only for the full volume and boundary meshes)
  *
  * The format name is case-sensitive, so \c \b ensight or \c \b cgns are also valid.
  *
@@ -4281,9 +4283,9 @@ cs_post_define_writer(int                     writer_id,
 
   w->writer = NULL;
 
-  /* If writer is the default writer (id -1), update defaults */
+  /* If writer is the default writer, update defaults */
 
-  if (writer_id == -1) {
+  if (writer_id == CS_POST_WRITER_DEFAULT) {
     _cs_post_default_format_id = wd->fmt_id;
     if (wd->fmt_opts != NULL) {
       BFT_REALLOC(_cs_post_default_format_options,
