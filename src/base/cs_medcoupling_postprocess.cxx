@@ -522,9 +522,7 @@ static void _activate_slice_postprocessing
                                    _tag_slice_cells,
                                    slice);
 
-    size_t _len = strlen(_name.c_str()) + 1;
-    BFT_MALLOC(f->label, _len, char);
-    strcpy(f->label, _name.c_str());
+    cs_function_set_label(f, _name.c_str());
 
     f->type = CS_FUNCTION_INTENSIVE;
     f->post_vis = CS_POST_ON_LOCATION;
@@ -544,9 +542,7 @@ static void _activate_slice_postprocessing
                                    _get_slice_cells_surface,
                                    slice);
 
-    size_t _len = strlen(_name.c_str()) + 1;
-    BFT_MALLOC(f->label, _len, char);
-    strcpy(f->label, _name.c_str());
+    cs_function_set_label(f, _name.c_str());
 
     f->type = CS_FUNCTION_INTENSIVE;
     f->post_vis = CS_POST_ON_LOCATION;
