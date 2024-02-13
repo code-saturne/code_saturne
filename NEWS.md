@@ -1,3 +1,11 @@
+Release 8.0.4 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- GUI : Fix detection of turbulent variables for NCFD when setting default
+  numerical schemes.
+
 Release 8.0.3 (2024-03-09)
 --------------------------
 
