@@ -92,6 +92,8 @@ Makefile.in
 
 # /doc/user/graphics/
 
+/doc/web/references/_build
+
 # /gui/
 
 # /gui/Base/
