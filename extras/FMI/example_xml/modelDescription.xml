@@ -9,10 +9,10 @@
 			<String start="run"/>
 		</ScalarVariable>
 		<ScalarVariable name="code_saturne" valueReference="3000001" causality="parameter" variability="fixed" initial="exact">
-			<String start="/home/D43345/Code_Saturne/arch/dbg/bin/code_saturne"/>
+			<String start="/software/code_saturne/arch/dbg/bin/code_saturne"/>
 		</ScalarVariable>
 		<ScalarVariable name="casename" valueReference="3000002" causality="parameter" variability="fixed" initial="exact">
-			<String start="path/16_SUPERNIMBUS/CASE1"/>
+			<String start="path/STUDY/CASE"/>
 		</ScalarVariable>
 		<ScalarVariable name="cold_velocity" valueReference="0" causality="input" variability="discrete" >
 			<Real start="0.03183"/>

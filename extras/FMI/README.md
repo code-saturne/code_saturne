@@ -1,10 +1,13 @@
 What is FMI2 ?
 ==============
 
-The __Functional Mock-up Interface standard__ (FMI2) provides an interface
+The [Functional Mock-up Interface standard](fmi-standard.org) (FMI) provides an interface
 standard for coupling of simulation tools in a co-simulation environment. A
 master algorithm controls the data exchange and synchronization between all
 simulation solvers (slaves).
+
+The current implementation for code_saturne implements version 2.0 of the FMI
+specification.
 
 What is a FMU ?
 ===============
@@ -16,29 +19,57 @@ distributed in one ZIP file which contains several files:
 * All required model equations or the access to co-simulation tools are provided
 with a small set of C or C++ functions.
 
-How to use code_saturne as a FMU
-================================
+Client-server code_saturne FMU model
+====================================
+
+The FMU behaves as a client, controlling a standard code_saturne run as a server.
+
+When the FMU starts, it executes the following steps:
+* Call `code_saturne run --initialize` in the specified
+  case directory, to prepare the run.
+* Initialize a server socket.
+* Generate a `control_file` in the case's execution directory, specifying
+  the associated FMU host and port on which the communication will occur,
+  along with a randomly-generated key (only accessible to the user running the
+  computation, as others should not have read access to that file).
+* Start the server in the specified execution directory, using the
+  `run_solver` script (generated at the first step).
+  -  When starting, the solver will read that `control_file` and attempt
+     a connection with the FMU client.
+* Accept the handshake from this server using the provided key.
+* Send the lists of variables to be sent and received by the FMU;
+  - All of these variables (defined in the FMU model) must have a matching
+    notebook entry in the case setup.
+  - The setup may optionally include additional standard notebook entries
+    not used or controlled by the FMU.
+
+After these steps, the computation starts, exchanging the FMI model variables with the
+FMU at each time step.
+
+The number of time steps or physical time that should be executed, as defined in
+the case setup, is ignored when connected to the FMU. The FMU sends a stop message
+to the server when the FMI environment instructs it to halt.
 
 Building a code_saturne FMU
----------------------------
+===========================
 
-A FMU Builder tool developed by Monentia and available at
-https://bitbucket.org/simulage/c-fmu-builder/wiki/Home
-can be used to generate an FMU based on code_saturne.
+To build an FMU, the `modelDescription.xml` file can be copied from
+the `example_xml` directory to the current directory, and adapted
+to the desired model.
 
-The main steps are the following:
-* Open the FMU Builder;
-* Define every needed variable and static information and save
-them in a .fpd file;
-* Generate the project, creating a directory containing the XML file,
-auto-generated C++ files that should not be modified, and a C++ file named
-after the project (project.cpp) which much be filled;
-* Once every methods are completed (mainly init, doStep, terminate, getters and
-setters of every used variable types), the FMU can be built;
+Note that in the model description, the following string variables must always
+be defined:
+- _code_saturne_ specifies the path of the main `code_saturne` script
+  (from a valid code_saturne installation).
+- _casename_ specifies the path of the case that will be controlled by the
+  FMU client.
+- _run_id_ specifies the matching run id (so that the actual execution
+  directory will be: `<casename>/RESU/<run_id>`).
 
-Note that when updating the FMU (for example adding variables), the
-generated `code_saturne.h` file in the project should be removed before
-re-building the FMU, as it will not be overwritten by default.
+The following steps are then required:
+* run `./fmu_generator.py`, which will generate a `code_saturne_fmu_variables.h`
+  file from the XML model description.
+* run `Make`, which wil generate the FMU.
 
 Using code_saturne as a FMU
 ---------------------------
@@ -59,7 +90,20 @@ code_saturne simulation on a stratified case (such as the stratified_junction
 tutorial) where the cold inlet velocity is set and outlet temperatures are
 retrievied using the FMU.
 
-A .fpd file as well as the main project C++ file allow one to build a full
-code_saturne FMU. In order to use it, one can follow the steps defined in the 
-[Building a code_saturne FMU](#building-a-code_saturne-fmu) section. Paths in
-the .fpd file have to be modified.
+Optional helper tools
+=====================
+
+Various third-party tools, including open-source ones, can be used to assist
+in the generation of an FMU.
+
+For example, the FMU Builder tool developed by Monentia and available at
+https://bitbucket.org/simulage/c-fmu-builder/wiki/Home
+can be used to generate an FMU.
+
+When using such a tool, only the resulting `modelDescription.xml`. file is of
+interest to us, as the skeleton FMU would generally require further adaptation,
+but  so it is recommended
+to run this step in a separate directory.
+
+The generated model description must contain at least the _code_saturne_,
+_casename_, and _run_id_ ScalarVariable definitions, as in the example file.
