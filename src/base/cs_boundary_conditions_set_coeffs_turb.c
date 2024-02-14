@@ -573,8 +573,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
     else if (iscacp == 2) {
       cpp = (icp >= 0) ? cpro_cp[c_id] - rair : cp0 - rair;
-      /* FIXME: this formula does not seem consistent with that in diffst,
-         but was present in clptrg.f90 */
+      /* FIXME: this formula does not seem consistent with that
+         in cs_dilatable_scalar_diff_st, but was present in clptrg.f90 */
       if (icodcl_vel[f_id] == 6) {
         cpp = (icp >= 0) ? cpro_cv[c_id] : cp0;
       }

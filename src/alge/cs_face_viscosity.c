@@ -106,29 +106,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_face_viscosity
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (viscfa, VISCFA)
-(
- const int  *const   visc_mean_type,
- cs_real_t           c_visc[],
- cs_real_t           i_visc[],
- cs_real_t           b_visc[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  cs_face_viscosity(m,
-                    fvq,
-                    *visc_mean_type,
-                    c_visc,
-                    i_visc,
-                    b_visc);
-}
-
-/*----------------------------------------------------------------------------
  * Wrapper to cs_face_anisotropic_viscosity_vector
  *----------------------------------------------------------------------------*/
 

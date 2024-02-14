@@ -79,8 +79,6 @@ module cs_c_bindings
   procedure() :: csexit, dmtmps
   procedure() :: cslogname
 
-  procedure() :: viscfa
-
   !-----------------------------------------------------------------------------
 
   type, bind(c)  :: var_cal_opt

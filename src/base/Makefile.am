@@ -113,6 +113,7 @@ cs_control.h \
 cs_coupling.h \
 cs_crystal_router.h \
 cs_defs.h \
+cs_dilatable_scalar_diff_st.h \
 cs_drift_convective_flux.h \
 cs_equation_iterative_solve.h \
 cs_ext_library_info.h \
@@ -320,6 +321,7 @@ csprnt.f90 \
 cs_time_step_compute.c \
 cs_control.c \
 cs_coupling.c \
+cs_dilatable_scalar_diff_st.c \
 cs_drift_convective_flux.c \
 cs_ext_library_info.c \
 cs_ext_neighborhood.c \
@@ -404,7 +406,6 @@ cs_volume_zone.c \
 cs_wall_distance.c \
 cs_wall_functions.c \
 cs_xdef_eval_at_zone.c \
-diffst.f90 \
 distpr2.f90 \
 ecrlis.f90 \
 findpt.f90 \

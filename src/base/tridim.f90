@@ -156,11 +156,18 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 ! Interfaces
 !===============================================================================
 
-procedure() :: atr1vf, cou1do, debvtl, distpr2, diffst
+procedure() :: atr1vf, cou1do, debvtl, distpr2
 procedure() :: cs_tagmro
 procedure() :: phyvar, pthrbm, schtmp, scalai
 
 interface
+
+  subroutine cs_dilatable_scalar_diff_st(iterns)  &
+    bind(C, name='cs_dilatable_scalar_diff_st')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: iterns
+  end subroutine cs_dilatable_scalar_diff_st
 
   subroutine cs_wall_distance_yplus(visvdr)  &
     bind(C, name='cs_wall_distance_yplus')
@@ -993,7 +1000,7 @@ do while (iterns.le.nterup)
 
       ! Diffusion terms for weakly compressible algorithm
       if (idilat.ge.4) then
-        call diffst(nscal, iterns)
+        call cs_dilatable_scalar_diff_st(iterns)
       endif
 
       ! Update the density and turbulent viscosity
@@ -1303,7 +1310,7 @@ if (nscal.ge.1) then
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then
-    call diffst(nscal, iterns)
+    call cs_dilatable_scalar_diff_st(iterns)
   endif
 
 endif
