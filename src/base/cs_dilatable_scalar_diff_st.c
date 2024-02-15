@@ -173,11 +173,10 @@ cs_dilatable_scalar_diff_st(int iterns)
     else if (imucpp == 1) { // TODO: humid air
 
       if (icp >= 0) {
-        
         if (iscacp == 1)
           cs_array_real_copy(n_cells, cpro_cp, xcpp);
         else if (iscacp == 2) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+#         pragma omp parallel for if (n_cells > CS_THR_MIN)
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
             xcpp[c_id] = cpro_cp[c_id] - rair;
         }
@@ -191,9 +190,8 @@ cs_dilatable_scalar_diff_st(int iterns)
     }
 
     /* Handle parallelism and periodicity */
-    if (cs_glob_rank_id > -1 || mesh->periodicity != NULL) {
-      const cs_halo_t *halo = mesh->halo;
-      cs_halo_sync_var(halo, CS_HALO_STANDARD, xcpp);
+    if (mesh->halo != NULL) {
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, xcpp);
     }
 
     cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_scal);
@@ -204,7 +202,8 @@ cs_dilatable_scalar_diff_st(int iterns)
     const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
 
     const int iflmab
-      = cs_field_get_key_int(CS_F_(vel), cs_field_key_id("boundary_mass_flux_id"));
+      = cs_field_get_key_int(CS_F_(vel),
+                             cs_field_key_id("boundary_mass_flux_id"));
     const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
     /* Diffusion velocity */
@@ -226,14 +225,14 @@ cs_dilatable_scalar_diff_st(int iterns)
 
       if (ifcvsl < 0) {
         const cs_real_t visls_0 = cs_field_get_key_double(f_scal, kvisl0);
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           vistot[c_id] = visls_0
             + eqp_sc->idifft*xcpp[c_id]*cs_math_fmax(visct[c_id], 0.)
             / turb_schmidt;
       }
       else {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           vistot[c_id] = viscls[c_id]
             + eqp_sc->idifft*xcpp[c_id]*cs_math_fmax(visct[c_id], 0.)
@@ -299,14 +298,13 @@ cs_dilatable_scalar_diff_st(int iterns)
                       0,     /* icvflb; upwind scheme */
                       NULL,
                       cpro_tsscal);
+  } /* end loop on fields */
 
-    /* Free memory */
-    BFT_FREE(i_visc);
-    BFT_FREE(b_visc);
-    BFT_FREE(vistot);
-    BFT_FREE(xcpp);
-  }
-
+  /* Free memory */
+  BFT_FREE(i_visc);
+  BFT_FREE(b_visc);
+  BFT_FREE(vistot);
+  BFT_FREE(xcpp);
 }
 
 /*---------------------------------------------------------------------------- */
