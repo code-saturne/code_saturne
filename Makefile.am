@@ -35,7 +35,7 @@ if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-SUBDIRS = . $(PLE) $(PREPRO) src python $(DOCS) $(TSTS) $(NEPTUNE_CFD)
+SUBDIRS = . $(PLE) $(PREPRO) src python $(NEPTUNE_CFD) $(DOCS) $(TSTS)
 
 AUX_DIST =
 
@@ -269,7 +269,7 @@ extras/code_saturne.cfg.template
 
 # Generate and install documentation
 
-doc_dirs = $(PLE) docs $(NEPTUNE_CFD)
+doc_dirs = $(PLE) $(NEPTUNE_CFD) docs
 
 doc:
 	for p in $(doc_dirs); do \

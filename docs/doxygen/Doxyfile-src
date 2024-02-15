@@ -686,7 +686,7 @@ GENERATE_DEPRECATEDLIST= YES
 # sections, marked by \if <section_label> ... \endif and \cond <section_label>
 # ... \endcond blocks.
 
-ENABLED_SECTIONS       =
+ENABLED_SECTIONS       = $(NEPTUNE_CFD) $(PLE_DOX_SECTION)
 
 # The MAX_INITIALIZER_LINES tag determines the maximum number of lines that the
 # initial value of a variable or macro / define can have for it to appear in the
@@ -1509,7 +1509,7 @@ TREEVIEW_WIDTH         = 250
 # The default value is: NO.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-EXT_LINKS_IN_WINDOW    = NO
+EXT_LINKS_IN_WINDOW    = YES
 
 # Use this tag to change the font size of LaTeX formulas included as images in
 # the HTML documentation. When you change the font size after a successful
@@ -2192,7 +2192,8 @@ SKIP_FUNCTION_MACROS   = NO
 # the path). If a tag file is not located in the directory in which doxygen is
 # run, you must also specify the path to the tagfile here.
 
-TAGFILES               = ple.tag=$(ple_docdir)/doxygen
+TAGFILES               = ple.tag=$(ple_docdir)/doxygen \
+                         neptune.tag=../../../neptune_cfd/doxygen/src
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create a
 # tag file that is based on the input files it reads. See section "Linking to

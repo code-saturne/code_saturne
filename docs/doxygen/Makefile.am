@@ -25,7 +25,7 @@
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
 DoxygenLayout.xml cs_dox_header.html cs_dox_style.css cs_math_macros.tex \
 cs_mathjax_macros.js doxypypy.py field_names.h function_defaults.h keywords.h \
-mainpage.dox \
+mainpage.dox cs_external_links.dox\
 images examples \
 user_guide developer_guide
 
@@ -35,6 +35,7 @@ if HAVE_DOXYGEN
 
 DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_tex_path_end)"; \
   srcdir="$(top_srcdir)" builddir="$(top_builddir)" ple_docdir="$(ple_docdir)" \
+  PLE_DOX_SECTION="$(ple_dox_tag)" NEPTUNE_CFD="$(NEPTUNE_CFD)" \
   package_name="$(PACKAGE_NAME)" package_version="$(cs_version_short)" \
   have_dot="$(cs_have_dot)" use_mathjax="$(cs_enable_mathjax)" \
   "$(DOXYGEN)"
@@ -47,6 +48,9 @@ doxygen-src:
 	  cp $(top_builddir)/libple/doc/doxygen/html/ple.tag . ;\
 	else \
 	  cp $(ple_docdir)/doxygen/ple.tag . ;\
+	fi ;\
+	if test "$(NEPTUNE_CFD)" = "neptune_cfd" ; then \
+	  cp $(top_builddir)/neptune_cfd/docs/doxygen/neptune.tag . ;\
 	fi ;\
 	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-src
 

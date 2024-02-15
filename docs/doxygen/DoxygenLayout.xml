@@ -67,6 +67,7 @@
     <tab type="examples" visible="yes" title="" intro=""/>
     <tab type="user" visible="yes" url="@ref cs_user_examples" title="User examples"/>
     <tab type="user" visible="yes" url="@ref cs_var_dico" title="Variables and structures reference"/>
+    <tab type="user" visible="yes" url="@ref cs_external_links" title="Related Pages"/>
   </navindex>
 
   <!-- Layout definition for a class page -->
