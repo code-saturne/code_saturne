@@ -241,6 +241,7 @@ static FILE *tracefile = NULL;
 /* Mapping to default log categories
    categories up to "logAll" are standardized, the rest are local. */
 
+static const size_t _n_log_categories = 8;
 static const char *_log_categories[] = {"logEvents",
                                         "logStatusWarning",
                                         "logStatusError",
@@ -1452,7 +1453,9 @@ fmi2EnterInitializationMode(fmi2Component  component)
 
 #else
 
-  _cs_log(fmi2OK, CS_LOG_LAUNCH, exec_popen(cmd.c_str()).c_str());
+  _cs_log(fmi2OK, CS_LOG_LAUNCH, string("launch: \"") + cmd + string("\""));
+  _cs_log(fmi2OK, CS_LOG_LAUNCH,
+          string("output: \"") + exec_popen(cmd.c_str()) + string("\""));
 
   int key = _init_server(resu, &address);
 
@@ -1529,12 +1532,12 @@ fmi2EnterInitializationMode(fmi2Component  component)
 /*----------------------------------------------------------------------------*/
 
 fmi2Status
-fmi2DoStep(fmi2Component  _component,
+fmi2DoStep(fmi2Component  c,
            fmi2Real       currentComunicationTime,
            fmi2Real       stepSize,
            fmi2Boolean    noSetFmuFmuStatePriorToCurrentPoint)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(currentComunicationTime);
   CS_UNUSED(noSetFmuFmuStatePriorToCurrentPoint);
 
@@ -1573,9 +1576,9 @@ fmi2DoStep(fmi2Component  _component,
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status fmi2Terminate(fmi2Component  _component)
+fmi2Status fmi2Terminate(fmi2Component  c)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   string s_casename, s_run_id;
 
@@ -1632,9 +1635,9 @@ fmi2Status fmi2Terminate(fmi2Component  _component)
 /*----------------------------------------------------------------------------*/
 
 fmi2Status
-fmi2Reset(fmi2Component  _component)
+fmi2Reset(fmi2Component  c)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   return fmi2OK;
 }
@@ -1780,6 +1783,105 @@ void fmi2SetString(fmi2ValueReference  reference,
   _string_variable_values[var_index] = p_var;
 }
 
+/*----------------------------------------------------------------------------*/
+
+fmi2Status fmi2GetFMUstate(fmi2Component  c,
+                           fmi2FMUstate*  state)
+{
+  CS_UNUSED(c);
+
+  char s[128];
+  snprintf(s, 127, "%s: called for %p; not handled yet\n",
+           __func__, (void *)state);
+  _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+
+  return fmi2Warning;
+}
+
+/*----------------------------------------------------------------------------*/
+
+fmi2Status fmi2SetFMUstate(fmi2Component  c,
+                           fmi2FMUstate   state)
+{
+  CS_UNUSED(c);
+
+  char s[128];
+  snprintf(s, 127, "%s: called for %p; not handled yet\n",
+           __func__, (void *)state);
+  _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+
+  return fmi2Warning;
+}
+
+/*----------------------------------------------------------------------------*/
+
+fmi2Status fmi2FreeFMUstate(fmi2Component  c,
+                            fmi2FMUstate*  state)
+{
+  CS_UNUSED(c);
+
+  char s[128];
+  snprintf(s, 127, "%s: called for %p; not handled yet\n",
+           __func__, (void *)state);
+  _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+
+  return fmi2Warning;
+}
+
+/*----------------------------------------------------------------------------*/
+
+fmi2Status fmi2SerializedFMUstateSize(fmi2Component  c,
+                                      fmi2FMUstate   state,
+                                      size_t*        stateSize)
+{
+  CS_UNUSED(c);
+
+  *stateSize = 0;
+  char s[128];
+  snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
+  _cs_log(fmi2Error, CS_LOG_ERROR, s);
+
+  return fmi2Error;
+}
+
+/*----------------------------------------------------------------------------*/
+
+fmi2Status
+fmi2SerializeFMUstate(fmi2Component  c,
+                      fmi2FMUstate   state,
+                      fmi2Byte       serializedState[],
+                      size_t         serializedStateSize)
+{
+  CS_UNUSED(c);
+  CS_UNUSED(serializedState);
+  CS_UNUSED(serializedStateSize);
+
+  char s[128];
+  snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
+  _cs_log(fmi2Error, CS_LOG_ERROR, s);
+
+  return fmi2Error;
+}
+
+/*----------------------------------------------------------------------------*/
+
+fmi2Status
+fmi2DeSerializeFMUstate(fmi2Component   c,
+                        const fmi2Byte  serializedState,
+                        size_t          size,
+                        fmi2FMUstate*   state)
+{
+  CS_UNUSED(c);
+  CS_UNUSED(serializedState);
+  CS_UNUSED(size);
+
+  char s[128];
+  snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
+  _cs_log(fmi2Error, CS_LOG_ERROR, s);
+
+  return fmi2Error;
+}
+
 /*============================================================================
  * General FMI function definitions
  *============================================================================*/
@@ -1797,17 +1899,54 @@ fmi2GetVersion()
 }
 
 fmi2Status
-fmi2SetDebugLogging(fmi2Component     _component,
+fmi2SetDebugLogging(fmi2Component     c,
                     fmi2Boolean       loggingOn,
-                    size_t            numberOfCategories,
+                    size_t            nCategories,
                     const fmi2String  categories[])
 {
-  CS_UNUSED(_component);
-  CS_UNUSED(loggingOn);
-  CS_UNUSED(numberOfCategories);
-  CS_UNUSED(categories);
+  CS_UNUSED(c);
 
   // TODO complete this.
+
+  if (loggingOn) {
+    if (nCategories == 0) {
+      _log_active[0] = 1;  // events
+      _log_active[1] = 1;  // warning
+      _log_active[2] = 1;  // error
+      _log_active[3] = 1;  // fatal
+      _log_active[4] = 1;  // all
+      _log_active[6] = 1;  // launch
+    }
+
+    // Categories not provided/read in XML yet
+    else {
+      for (size_t i = 0; i < nCategories; i++) {
+        const fmi2String s = categories[i];
+        if (s == NULL)
+          continue;
+        size_t j = 0;
+        while (j < _n_log_categories) {
+          if (strcmp(s, _log_categories[j]) == 0) {
+            _log_active[j] = 1;
+            break;
+          }
+          j++;
+        }
+        if (j >= _n_log_categories)
+          cout << string(__func__) + ": category '" + string(s) \
+            + "' ignored" << endl;
+      }
+    }
+  }
+
+  /* If FMI logging off, keep low level log for now */
+  else {
+    for (size_t i = 0; i < nCategories; i++) {
+      if (_log_active[i] != 0) {
+        _log_active[i] = -1;
+      }
+    }
+  }
 
   return fmi2OK;
 }
@@ -1824,7 +1963,6 @@ fmi2Instantiate(fmi2String   instanceName,
   CS_UNUSED(fmuType);
   CS_UNUSED(fmuGUID);
   CS_UNUSED(visible);
-  CS_UNUSED(loggingOn);
 
   setFunctions(callbacks);
 
@@ -1835,18 +1973,28 @@ fmi2Instantiate(fmi2String   instanceName,
 
   setResourceLocation(fmuResourceLocation);
   _component = (fmi2Component*) fmiAlloc(sizeof(fmi2Component));
+
+  if (loggingOn) {
+    _log_active[0] = 1;  // events
+    _log_active[1] = 1;  // warning
+    _log_active[2] = 1;  // error
+    _log_active[3] = 1;  // fatal
+    _log_active[4] = 1;  // all
+    _log_active[6] = 1;  // launch
+  }
+
   return _component;
 }
 
 fmi2Status
-fmi2SetupExperiment(fmi2Component  _component,
+fmi2SetupExperiment(fmi2Component  c,
                     fmi2Boolean    toleranceDefined,
                     fmi2Real       tolerance,
                     fmi2Real       startTime,
                     fmi2Boolean    stopTimeDefined,
                     fmi2Real       stopTime)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(toleranceDefined);
   CS_UNUSED(tolerance);
   CS_UNUSED(startTime);
@@ -1857,28 +2005,28 @@ fmi2SetupExperiment(fmi2Component  _component,
 }
 
 fmi2Status
-fmi2ExitInitializationMode(fmi2Component  _component)
+fmi2ExitInitializationMode(fmi2Component  c)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   return fmi2OK;
 }
 
 void
-fmi2FreeInstance(fmi2Component  _component)
+fmi2FreeInstance(fmi2Component  c)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
-  fmiFree(_component);
+  fmiFree(c);
 }
 
 fmi2Status
-fmi2GetReal(fmi2Component             _component,
+fmi2GetReal(fmi2Component             c,
             const fmi2ValueReference  valueReference[],
             size_t                    numberOfValues,
             fmi2Real                  values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -1890,12 +2038,12 @@ fmi2GetReal(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2GetInteger(fmi2Component             _component,
+fmi2GetInteger(fmi2Component             c,
                const fmi2ValueReference  valueReference[],
                size_t                    numberOfValues,
                fmi2Integer               values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -1907,12 +2055,12 @@ fmi2GetInteger(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2GetBoolean(fmi2Component             _component,
+fmi2GetBoolean(fmi2Component             c,
                const fmi2ValueReference  valueReference[],
                size_t                    numberOfValues,
                fmi2Boolean               values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -1924,12 +2072,12 @@ fmi2GetBoolean(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2GetString(fmi2Component             _component,
+fmi2GetString(fmi2Component             c,
               const fmi2ValueReference  valueReference[],
               size_t                    numberOfValues,
               fmi2String                values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -1941,12 +2089,12 @@ fmi2GetString(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2SetReal(fmi2Component             _component,
+fmi2SetReal(fmi2Component             c,
             const fmi2ValueReference  valueReference[],
             size_t                    numberOfValues,
             const fmi2Real            values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -1958,12 +2106,12 @@ fmi2SetReal(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2SetInteger(fmi2Component             _component,
+fmi2SetInteger(fmi2Component             c,
                const fmi2ValueReference  valueReference[],
                size_t                    numberOfValues,
                const fmi2Integer         values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -1975,12 +2123,12 @@ fmi2SetInteger(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2SetBoolean(fmi2Component             _component,
+fmi2SetBoolean(fmi2Component             c,
                const fmi2ValueReference  valueReference[],
                size_t                    numberOfValues,
                const fmi2Boolean         values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -1992,12 +2140,12 @@ fmi2SetBoolean(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2SetString(fmi2Component             _component,
+fmi2SetString(fmi2Component             c,
               const fmi2ValueReference  valueReference[],
               size_t                    numberOfValues,
               const fmi2String          values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   try {
     for (size_t i = 0; i < numberOfValues; i++)
@@ -2008,74 +2156,8 @@ fmi2SetString(fmi2Component             _component,
   }
 }
 
-fmi2Status fmi2GetFMUstate(fmi2Component  _component,
-                           fmi2FMUstate*  state)
-{
-  CS_UNUSED(_component);
-  CS_UNUSED(state);
-
-  return fmi2Error;
-}
-
-fmi2Status fmi2SetFMUstate(fmi2Component  _component,
-                           fmi2FMUstate   state)
-{
-  CS_UNUSED(_component);
-  CS_UNUSED(state);
-
-  return fmi2Error;
-}
-
-fmi2Status fmi2FreeFMUstate(fmi2Component  _component,
-                            fmi2FMUstate*  state)
-{
-  CS_UNUSED(_component);
-  CS_UNUSED(state);
-
-  return fmi2Error;
-}
-
-fmi2Status fmi2SerializedFMUstateSize(fmi2Component  _component,
-                                      fmi2FMUstate   state,
-                                      size_t*        stateSize)
-{
-  CS_UNUSED(_component);
-  CS_UNUSED(state);
-  CS_UNUSED(stateSize);
-
-  return fmi2Error;
-}
-
 fmi2Status
-fmi2SerializeFMUstate(fmi2Component  _component,
-                      fmi2FMUstate   state,
-                      fmi2Byte       serializedState[],
-                      size_t         serializedStateSize)
-{
-  CS_UNUSED(_component);
-  CS_UNUSED(state);
-  CS_UNUSED(serializedState);
-  CS_UNUSED(serializedStateSize);
-
-  return fmi2Error;
-}
-
-fmi2Status
-fmi2DeSerializeFMUstate(fmi2Component   _component,
-                        const fmi2Byte  serializedState,
-                        size_t          size,
-                        fmi2FMUstate*   state)
-{
-  CS_UNUSED(_component);
-  CS_UNUSED(serializedState);
-  CS_UNUSED(size);
-  CS_UNUSED(state);
-
-  return fmi2Error;
-}
-
-fmi2Status
-fmi2GetDirectionalDerivative(fmi2Component             _component,
+fmi2GetDirectionalDerivative(fmi2Component             c,
                              const fmi2ValueReference  unknownValueReferences[],
                              size_t                    numberOfUnknowns,
                              const fmi2ValueReference  knownValueReferences[],
@@ -2083,7 +2165,7 @@ fmi2GetDirectionalDerivative(fmi2Component             _component,
                              fmi2Real                  knownDifferential[],
                              fmi2Real                  unknownDifferential[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(unknownValueReferences);
   CS_UNUSED(numberOfUnknowns);
   CS_UNUSED(knownValueReferences);
@@ -2095,13 +2177,13 @@ fmi2GetDirectionalDerivative(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2SetRealInputDerivatives(fmi2Component             _component,
+fmi2SetRealInputDerivatives(fmi2Component             c,
                             const fmi2ValueReference  valueReferences[],
                             size_t                    numberOfValueReferences,
                             fmi2Integer               orders[],
                             const fmi2Real            values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(valueReferences);
   CS_UNUSED(numberOfValueReferences);
   CS_UNUSED(orders);
@@ -2111,13 +2193,13 @@ fmi2SetRealInputDerivatives(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2GetRealOutputDerivatives(fmi2Component             _component,
+fmi2GetRealOutputDerivatives(fmi2Component             c,
                              const fmi2ValueReference  valueReference[],
                              size_t                    numberOfValues,
                              const fmi2Integer         order[],
                              fmi2Real                  values[])
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(valueReference);
   CS_UNUSED(numberOfValues);
   CS_UNUSED(order);
@@ -2127,19 +2209,19 @@ fmi2GetRealOutputDerivatives(fmi2Component             _component,
 }
 
 fmi2Status
-fmi2CancelStep(fmi2Component  _component)
+fmi2CancelStep(fmi2Component  c)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
 
   return fmi2Warning;
 }
 
 fmi2Status
-fmi2GetStatus(fmi2Component         _component,
+fmi2GetStatus(fmi2Component         c,
               const fmi2StatusKind  kind,
               fmi2Status*           status)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(kind);
   CS_UNUSED(status);
 
@@ -2147,11 +2229,11 @@ fmi2GetStatus(fmi2Component         _component,
 }
 
 fmi2Status
-fmi2GetRealStatus(fmi2Component         _component,
+fmi2GetRealStatus(fmi2Component         c,
                   const fmi2StatusKind  kind,
                   fmi2Real*             value)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(kind);
   CS_UNUSED(value);
 
@@ -2159,11 +2241,11 @@ fmi2GetRealStatus(fmi2Component         _component,
 }
 
 fmi2Status
-fmi2GetIntegerStatus(fmi2Component         _component,
+fmi2GetIntegerStatus(fmi2Component         c,
                      const fmi2StatusKind  kind,
                      fmi2Integer*          value)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(kind);
   CS_UNUSED(value);
 
@@ -2171,11 +2253,11 @@ fmi2GetIntegerStatus(fmi2Component         _component,
 }
 
 fmi2Status
-fmi2GetBooleanStatus(fmi2Component         _component,
+fmi2GetBooleanStatus(fmi2Component         c,
                      const fmi2StatusKind  kind,
                      fmi2Boolean*          value)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(kind);
   CS_UNUSED(value);
 
@@ -2183,11 +2265,11 @@ fmi2GetBooleanStatus(fmi2Component         _component,
 }
 
 fmi2Status
-fmi2GetStringStatus(fmi2Component         _component,
+fmi2GetStringStatus(fmi2Component         c,
                     const fmi2StatusKind  kind,
                     fmi2String*           value)
 {
-  CS_UNUSED(_component);
+  CS_UNUSED(c);
   CS_UNUSED(kind);
   CS_UNUSED(value);
 
