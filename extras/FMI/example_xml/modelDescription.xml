@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <fmiModelDescription fmiVersion="2.0" modelName="code_saturne" guid="b8c7f4831f1a1d12ada1adc1b01114c6" generationTool="code_saturne toolchain"
-                     generationDateAndTime="2024-02-15T01:59:01Z"
+                     generationDateAndTime="2024-02-15T16:23:10Z"
                      variableNamingConvention="structured" numberOfEventIndicators="0">
     <CoSimulation modelIdentifier="FMU_CS" needsExecutionTool="false" canHandleVariableCommunicationStepSize="true" canInterpolateInputs="true" maxOutputDerivativeOrder="0"
                   canRunAsynchronuously="false" canBeInstantiatedOnlyOncePerProcess="true" canNotUseMemoryManagementFunctions="false"  canGetAndSetFMUstate="true" canSerializeFMUstate="false"

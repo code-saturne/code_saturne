@@ -66,8 +66,7 @@ def generate_include_file(path):
 
     lines = []
 
-    lines.append("#ifndef __CS_FMU_VARIABLES_H__")
-    lines.append("#define __CS_FMU_VARIABLES_H__")
+    lines.append("#pragma once")
     lines.append('')
 
     n_real = len(real_vars)
@@ -159,8 +158,6 @@ def generate_include_file(path):
     lines.append('};')
     lines.append('')
 
-    lines.append("#endif // __CS_FMU_VARIABLES_H__")
-
     f = open(path, 'w')
     for l in lines:
         f.write(l + os.linesep)
@@ -168,11 +165,49 @@ def generate_include_file(path):
 
 #-------------------------------------------------------------------------------
 
+def update_generation_time(path):
+    """
+    Update generation time in model description
+    """
+
+    f = open(path, 'r')
+
+    # Determine or build default names if required
+
+    update = False
+    lines = []
+    s = 'generationDateAndTime="'
+    len_s = len(s)
+    for line in f:
+        index = line.find(s)
+        if index > -1:
+            from datetime import datetime
+            dt = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            l = line[0:index] + s + dt + '"'
+            line = line[index + len_s:]
+            index = line.find('"')
+            l += line[index+1:]
+            lines.append(l)
+            update = True
+        else:
+            lines.append(line)
+
+    if update:
+        f = open(path, 'w')
+        for l in lines:
+            f.write(l)
+        f.close
+
+#-------------------------------------------------------------------------------
+
 if __name__ == '__main__':
 
-    read_from_xml('modelDescription.xml')
+    read_from_xml("modelDescription.xml")
     generate_include_file("code_saturne_fmu_variables.h")
 
+    # Update date and time in XML file
+
+    update_generation_time("modelDescription.xml")
 
     # Next steps needing automation to build FMU from xml:
 

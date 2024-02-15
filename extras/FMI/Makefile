@@ -24,7 +24,6 @@ build:
 	fi
 
 fmu: build
-	date_string=`date -u +"%Y-%m-%dT%H:%M:%SZ"` && sed -i -e 's/\(generationDateAndTime=\).*/\1"'$$date_string'"/' modelDescription.xml
 	$(ZIP) -r FMU_CS.fmu modelDescription.xml binaries
 
 clean:

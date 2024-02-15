@@ -169,13 +169,13 @@ struct thread_data {
 
 typedef enum {
 
-  CS_LOG_EVENTS,   /* Events */
-  CS_LOG_WARNING,  /* Warnings */
+  CS_LOG_EVENT,    /* Event */
+  CS_LOG_WARNING,  /* Warning */
   CS_LOG_ERROR,    /* Error */
   CS_LOG_FATAL,    /* Fatal error */
-  CS_LOG_ALL,      /* All messages */
-  CS_LOG_COMM,     /* Log communication (low-level) */
+  CS_LOG_PENDING,  /* Pending (asynchronous cases) */
   CS_LOG_LAUNCH,   /* Log system calls */
+  CS_LOG_COMM,     /* Log communication (low-level) */
   CS_LOG_TRACE     /* Other trace logs (low-level) */
 
 } cs_log_types_t;
@@ -239,37 +239,36 @@ static fmi2Char *                _instance_name = _instance_name_init;
 static FILE *tracefile = NULL;
 
 /* Mapping to default log categories
-   categories up to "logAll" are standardized, the rest are local. */
+   categories up to "logStatusPending" are standardized, the rest are local.
+   The "logAll" is handled separately */
 
 static const size_t _n_log_categories = 8;
 static const char *_log_categories[] = {"logEvents",
                                         "logStatusWarning",
                                         "logStatusError",
                                         "logStatusFatal",
-                                        "logAll",
-                                        "logComm",
+                                        "logStatusPending",
                                         "logLaunch",
+                                        "logComm",
                                         "logTrace"};
 
 static const char *_log_prefix[] = {"[event]   ",
                                     "[warning] ",
                                     "[error]   ",
                                     "[fatal]   ",
-                                    "[]        ",
-                                    "[comm]    ",
+                                    "[pending] ",
                                     "[launch]  ",
+                                    "[comm]    ",
                                     "[trace]   "};
 
-/* Active logging: 0: inactive, 1, log using FMI, -1: low-level trace */
+/* Active logging: 0: inactive, 1, log using FMI, -1: low-level trace,
+   - 2: low level trace if FMI logging not active, changed to 1
+   if FMI debug logging activated.
 
-static int _log_active[] = {-1,  /* events */
-                            -1,  /* warning */
-                            -1,  /* error */
-                            -1,  /* fatal */
-                            -1,  /* all */
-                             0,  /* comm */
-                            -1,  /* launch */
-                            -1}; /* trace */
+   Actual initialization to default values in fmi2Instantiate
+   (preferred to static initialization in case FMI is restarted) */
+
+static int _log_active[] = {-1, -1, -1, -1, -1, -1, -1, -1};
 
 /* Read_queue */
 
@@ -287,12 +286,13 @@ fmi2Component *_component = nullptr;
  * Private function definitions
  *============================================================================*/
 
-/* Log messages. The generated code does not provide for querying of
-   logging activation, so we add a layer at least allowing easier mapping. */
+/* Log messages. We can also send some messages directly to stdout if
+   not logged by the FMI environment. */
 
-void _cs_log(fmi2Status       status,
-             cs_log_types_t   log_type,
-             const char      *text)
+void
+_cs_log(fmi2Status       status,
+        cs_log_types_t   log_type,
+        const char      *text)
 {
   if (_log_active[log_type] > 0)
     log(_component_environment, _instance_name,
@@ -301,9 +301,10 @@ void _cs_log(fmi2Status       status,
     cout << _log_prefix[log_type] << _instance_name << ": " << text << endl;
 }
 
-void _cs_log(fmi2Status       status,
-             cs_log_types_t   log_type,
-             string           text)
+void
+_cs_log(fmi2Status       status,
+        cs_log_types_t   log_type,
+        string           text)
 {
   if (_log_active[log_type] > 0)
     log(_component_environment, _instance_name,
@@ -312,12 +313,13 @@ void _cs_log(fmi2Status       status,
     cout << _log_prefix[log_type] << _instance_name << ": " << text << endl;
 }
 
-void _cs_log(fmi2ComponentEnvironment  environment,
-             fmi2String                id,
-             fmi2Status                status,
-             cs_log_types_t            log_type,
-             fmi2String                text,
-             void*                     pointers)
+void
+_cs_log(fmi2ComponentEnvironment  environment,
+        fmi2String                id,
+        fmi2Status                status,
+        cs_log_types_t            log_type,
+        fmi2String                text,
+        void*                     pointers)
 {
   if (_log_active[log_type] > 0)
     log(environment, id, status, _log_categories[log_type], text, pointers);
@@ -325,12 +327,13 @@ void _cs_log(fmi2ComponentEnvironment  environment,
     cout << _log_prefix[log_type] << id << ": " << text << endl;
 }
 
-void _cs_log(fmi2ComponentEnvironment  environment,
-             fmi2String                id,
-             fmi2Status                status,
-             cs_log_types_t            log_type,
-             string                    text,
-             void*                     pointers)
+void
+_cs_log(fmi2ComponentEnvironment  environment,
+        fmi2String                id,
+        fmi2Status                status,
+        cs_log_types_t            log_type,
+        string                    text,
+        void*                     pointers)
 {
   if (_log_active[log_type] > 0)
     log(environment, id, status, _log_categories[log_type], text.c_str(),
@@ -800,7 +803,7 @@ _comm_with_saturne(int   key)
   _recv_sock(_cs_socket, key_buffer, NULL, 1, len_key);
 
   if (strncmp(key_s.c_str(), key_buffer, len_key) != 0) {
-    _cs_log(fmi2Fatal, CS_LOG_ERROR,
+    _cs_log(fmi2Fatal, CS_LOG_FATAL,
             "wrong key received (socket handshake)");
     exit(EXIT_FAILURE);
   }
@@ -809,7 +812,7 @@ _comm_with_saturne(int   key)
 
   _send_sock_str(_cs_socket, magic_buffer);
 
-  _cs_log(fmi2OK, CS_LOG_ALL,
+  _cs_log(fmi2OK, CS_LOG_COMM,
           "Connection between FMU client and code_saturne established");
 
   /* Iteration OK */
@@ -824,10 +827,10 @@ _comm_with_saturne(int   key)
 
 /*----------------------------------------------------------------------------*/
 
-/* Configuration of the master socket (server) */
+/* Configuration of the master socket (client) */
 
 static int
-_configure_server(sockaddr_in  *address)
+_configure_client(sockaddr_in  *address)
 {
   int master_socket;
   int opt = 1;
@@ -887,7 +890,7 @@ _write_control_file(string path,
 /*----------------------------------------------------------------------------*/
 
 static int
-_init_server(string        path,
+_init_client(string        path,
              sockaddr_in  *address)
 {
   /* Master socket */
@@ -899,8 +902,8 @@ _init_server(string        path,
   /* Generation of the key */
   int key = _generate_key();
 
-  /* Server configuration */
-  _master_socket = _configure_server(address);
+  /* Client configuration */
+  _master_socket = _configure_client(address);
 
   /* Get the actual port */
   getsockname(_master_socket, (sockaddr *)&foo, &foosize);
@@ -908,7 +911,7 @@ _init_server(string        path,
 
   string s0 = "Listener on port ";
   string s1 = to_string(port);
-  _cs_log(fmi2OK, CS_LOG_ALL, s0 + s1);
+  _cs_log(fmi2OK, CS_LOG_COMM, s0 + s1);
 
   _write_control_file(path, hostname, port, key);
 
@@ -918,7 +921,7 @@ _init_server(string        path,
 /*----------------------------------------------------------------------------*/
 
 static void *
-_start_server(void *data)
+_start_client(void *data)
 {
   struct thread_data *t_data;
   t_data = (struct thread_data *)data;
@@ -950,13 +953,10 @@ _start_server(void *data)
 
   /* Inform user of socket number - used in send and receive commands */
 
-  string s = "New connection, socket fd is " + to_string(_cs_socket);
-  _cs_log(fmi2OK, CS_LOG_COMM, s);
+  string s = "New connection, socket fd: " + to_string(_cs_socket);
+  s += "; ip: " + string(inet_ntoa(address.sin_addr));
+  s += "; port: " + to_string(ntohs(address.sin_port));;
 
-  s = " ip is: " + string(inet_ntoa(address.sin_addr));
-  _cs_log(fmi2OK, CS_LOG_COMM, s);
-
-  s = " port: " + to_string(ntohs(address.sin_port));;
   _cs_log(fmi2OK, CS_LOG_COMM, s);
 
   pthread_exit(nullptr);
@@ -970,7 +970,7 @@ static void
   string &res = *(static_cast<string*>(resu));
   string cmd;
 
-  /* Wait for the server to be listening */
+  /* Wait for the client to be listening */
   sleep(1);
 
   /* Run Code_saturne client in background */
@@ -1184,7 +1184,7 @@ _advance(int   n)
 
   string buffer = "advance " + to_string(n);
 
-  string s = "Advancing " + to_string(n) + " iterations";
+  string s = "Advancing " + to_string(n) + " iteration(s)";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
 #if CS_DRY_RUN == 1
@@ -1357,7 +1357,7 @@ _disconnect(void)
 
   _send_sock_str(_cs_socket, buffer);
 
-  _cs_log(fmi2OK, CS_LOG_TRACE, "Disconnecting the controller...");
+  _cs_log(fmi2OK, CS_LOG_COMM, "Disconnecting the controller...");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1457,12 +1457,12 @@ fmi2EnterInitializationMode(fmi2Component  component)
   _cs_log(fmi2OK, CS_LOG_LAUNCH,
           string("output: \"") + exec_popen(cmd.c_str()) + string("\""));
 
-  int key = _init_server(resu, &address);
+  int key = _init_client(resu, &address);
 
   /* Accept the incoming connection */
   addrlen = sizeof(address);
 
-  _cs_log(component, _instance_name, fmi2OK, CS_LOG_ALL,
+  _cs_log(component, _instance_name, fmi2OK, CS_LOG_COMM,
           "Waiting for connection...",
           nullptr);
 
@@ -1470,8 +1470,10 @@ fmi2EnterInitializationMode(fmi2Component  component)
   data.address = address;
   data.addrlen = addrlen;
 
-  pthread_create(&thread_server, nullptr, _start_server, static_cast<void*>(&data));
-  pthread_create(&thread_cs, nullptr, _start_cs, static_cast<void*>(&resu));
+  pthread_create(&thread_server, nullptr, _start_client,
+                 static_cast<void*>(&data));
+  pthread_create(&thread_cs, nullptr, _start_cs,
+                 static_cast<void*>(&resu));
 
   pthread_attr_destroy(&attr);
   pthread_join(thread_server, &status);
@@ -1906,16 +1908,12 @@ fmi2SetDebugLogging(fmi2Component     c,
 {
   CS_UNUSED(c);
 
-  // TODO complete this.
-
   if (loggingOn) {
     if (nCategories == 0) {
-      _log_active[0] = 1;  // events
-      _log_active[1] = 1;  // warning
-      _log_active[2] = 1;  // error
-      _log_active[3] = 1;  // fatal
-      _log_active[4] = 1;  // all
-      _log_active[6] = 1;  // launch
+      for (size_t i = 0; i < _n_log_categories; i++) {
+        if (_log_active[i] == -2)
+          _log_active[i] = 1;
+      }
     }
 
     // Categories not provided/read in XML yet
@@ -1924,24 +1922,33 @@ fmi2SetDebugLogging(fmi2Component     c,
         const fmi2String s = categories[i];
         if (s == NULL)
           continue;
-        size_t j = 0;
-        while (j < _n_log_categories) {
-          if (strcmp(s, _log_categories[j]) == 0) {
-            _log_active[j] = 1;
-            break;
+        else if (strcmp(s, "logAll") == 0) {
+          for (size_t k = 0; k <= _n_log_categories; k++) {
+            if (_log_active[k] == -2)
+              _log_active[k] = 1;
           }
-          j++;
+          continue;
         }
-        if (j >= _n_log_categories)
-          cout << string(__func__) + ": category '" + string(s) \
-            + "' ignored" << endl;
+        else {
+          size_t j = 0;
+          while (j < _n_log_categories) {
+            if (strcmp(s, _log_categories[j]) != 0) {
+              _log_active[j] = 1;
+              break;
+            }
+            j++;
+          }
+          if (j >= _n_log_categories)
+            cout << string(__func__) + ": category '" + string(s)  \
+              + "' ignored" << endl;
+        }
       }
     }
   }
 
   /* If FMI logging off, keep low level log for now */
   else {
-    for (size_t i = 0; i < nCategories; i++) {
+    for (size_t i = 0; i < _n_log_categories; i++) {
       if (_log_active[i] != 0) {
         _log_active[i] = -1;
       }
@@ -1964,6 +1971,15 @@ fmi2Instantiate(fmi2String   instanceName,
   CS_UNUSED(fmuGUID);
   CS_UNUSED(visible);
 
+  _log_active[CS_LOG_EVENT] = -2;
+  _log_active[CS_LOG_WARNING] = -2;
+  _log_active[CS_LOG_ERROR] = -2;
+  _log_active[CS_LOG_FATAL] = -2;
+  _log_active[CS_LOG_PENDING] = -2;
+  _log_active[CS_LOG_LAUNCH] = -2;
+  _log_active[CS_LOG_COMM] = -2;
+  _log_active[CS_LOG_TRACE] = -1;
+
   setFunctions(callbacks);
 
   _map_initialize();
@@ -1975,12 +1991,11 @@ fmi2Instantiate(fmi2String   instanceName,
   _component = (fmi2Component*) fmiAlloc(sizeof(fmi2Component));
 
   if (loggingOn) {
-    _log_active[0] = 1;  // events
-    _log_active[1] = 1;  // warning
-    _log_active[2] = 1;  // error
-    _log_active[3] = 1;  // fatal
-    _log_active[4] = 1;  // all
-    _log_active[6] = 1;  // launch
+    for (size_t i = 0; i < _n_log_categories; i++) {
+      if (_log_active[i] == -2) {
+        _log_active[i] = 1;
+      }
+    }
   }
 
   return _component;
