@@ -1223,19 +1223,30 @@ class OutputControlModel(Model):
 
         num = 0
 
-        for line in lines:
+        for i, line in enumerate(lines):
             tmp = line.strip().split(',')
-            if len(tmp) != 3:
-                continue
-            try:
-               xp, yp, zp = float(tmp[0]), float(tmp[1]), float(tmp[2])
-               self.addMonitoringPoint(xp, yp, zp)
-               num = num + 1
-            except Exception:
-               if num != 0:
-                   print("Probes import error for line: " + str(line))
-                   print(tmp)
-                   print(len(tmp))
+            if len(tmp) == 3:
+                try:
+                    xp, yp, zp = float(tmp[0].strip()), float(tmp[1].strip()), float(tmp[2].strip())
+                    self.addMonitoringPoint(xp, yp, zp)
+                    num = num + 1
+                except Exception:
+                    if i != 0:
+                        print("Probes import error for line: " + str(i+1) + ": " + str(line))
+                        print("expected \"x, y, z\"")
+            elif len(tmp) == 4:
+                try:
+                    name, xp, yp, zp = tmp[0].strip(), float(tmp[1].strip()), float(tmp[2].strip()), float(tmp[3].strip())
+                    self.addMonitoringPoint(xp, yp, zp)
+                    self.setMonitoringPointName(str(num+1), name)
+                    num = num + 1
+                except Exception:
+                    if i != 0:
+                        print("Probes import error for line: " + str(i+1) + ": " + str(line))
+                        print("expected \"name, x, y, z\"")
+            elif i > 0:
+                print("Probes import error for line: " + str(line))
+                print("expected \"name, x, y, z\" or  \"x, y, z\"")
 
         return num
 
