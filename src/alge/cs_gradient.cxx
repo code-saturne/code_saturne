@@ -9479,14 +9479,19 @@ _gradient_strided_cell(const cs_mesh_t             *m,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
+  const a_t *bc_coeff_a = nullptr;
+  const b_t *bc_coeff_b = nullptr;
+
+  if (bc_coeffs_v != nullptr) {
+    bc_coeff_a = (const a_t *)bc_coeffs_v->a;
+    bc_coeff_b = (const b_t *)bc_coeffs_v->b;
+  }
+
   if (e_id > s_id) {
 
     /* Case with known BC's */
 
-    if (bc_coeffs_v->a != NULL) {
-
-      const a_t *bc_coeff_a = (const a_t *)bc_coeffs_v->a;
-      const b_t *bc_coeff_b = (const b_t *)bc_coeffs_v->b;
+    if (bc_coeff_a != nullptr) {
 
       for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -9580,7 +9585,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
 
   /* Correct gradient in case of Neumann BC's */
 
-  if (e_id > s_id && bc_coeffs_v->b != NULL) {
+  if (e_id > s_id && bc_coeff_b != nullptr) {
 
     const b_t *bc_coeff_b = (const b_t *)bc_coeffs_v->b;
 
