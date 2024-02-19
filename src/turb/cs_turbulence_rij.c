@@ -676,8 +676,9 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t deltij[6] = {1, 1, 1, 0, 0, 0};
 
   cs_lnum_t solid_stride = 1;
+  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
-  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  const int *c_is_solid = c_is_solid_zone_flag;
   if (c_is_solid == NULL) {
     c_is_solid = c_is_solid_ref;
     solid_stride = 0;
@@ -822,8 +823,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   } /* end loop on cells */
 
-  if (c_is_solid != c_is_solid_ref)
-    BFT_FREE(c_is_solid);
+  BFT_FREE(c_is_solid_zone_flag);
 
   /* Coriolis terms in the Phi1 and production
    * ----------------------------------------- */
@@ -1106,8 +1106,9 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   const cs_real_6_t deltij = {1, 1, 1, 0, 0, 0};
 
   cs_lnum_t solid_stride = 1;
+  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
-  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  const int *c_is_solid = c_is_solid_zone_flag;
   if (c_is_solid == NULL) {
     c_is_solid = c_is_solid_ref;
     solid_stride = 0;
@@ -1227,8 +1228,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   }
 
-  if (c_is_solid != c_is_solid_ref)
-    BFT_FREE(c_is_solid);
+  BFT_FREE(c_is_solid_zone_flag);
 
   /* Coriolis terms in the Phi1 and production
    * -----------------------------------------*/
@@ -1565,8 +1565,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   BFT_MALLOC(w2, n_cells_ext, cs_real_t);
 
   cs_lnum_t solid_stride = 1;
+  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
-  const int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  const int *c_is_solid = c_is_solid_zone_flag;
   if (c_is_solid == NULL) {
     c_is_solid = c_is_solid_ref;
     solid_stride = 0;
@@ -2034,8 +2035,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   } /* End for buoyancy source term */
 
-  if (c_is_solid != c_is_solid_ref)
-    BFT_FREE(c_is_solid);
+  BFT_FREE(c_is_solid_zone_flag);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
    * -------------------------------------------------------------------- */
@@ -2991,7 +2991,7 @@ cs_turbulence_rij(int          phase_id,
 
         int t_i = (cs_glob_time_scheme->isto2t > 0 && iroext > 0) ? 1 : 0;
         cs_real_t *cromo = f_rho->vals[t_i];
-        const cs_real_t *bromo = f_rhob->vals[t_i];
+        cs_real_t *bromo = f_rhob->vals[t_i];
 
         /* Compute gradient */
         cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -3730,8 +3730,9 @@ cs_turbulence_rij_clip(int        phase_id,
   const cs_real_t rijref = cs_math_fmax(trref/3., cs_math_epzero);
 
   cs_lnum_t solid_stride = 1;
+  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
-  int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
+  const int *c_is_solid = c_is_solid_zone_flag;
   if (c_is_solid == NULL) {
     c_is_solid = c_is_solid_ref;
     solid_stride = 0;
@@ -3883,8 +3884,7 @@ cs_turbulence_rij_clip(int        phase_id,
     icltot += t_icltot;
   }
 
-  if (c_is_solid != c_is_solid_ref)
-    BFT_FREE(c_is_solid);
+  BFT_FREE(c_is_solid_zone_flag);
 
   /* Store number of clippings for logging */
 
