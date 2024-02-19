@@ -9516,7 +9516,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
         }
 
         /* Initial prediction using non-reconstructed value for Neumann */
-        if (bc_coeff_b != NULL) {
+        if (bc_coeff_b != nullptr) {
           for (cs_lnum_t kk = 0; kk < stride; kk++) {
             for (cs_lnum_t ll = 0; ll < 3; ll++) {
               var_f[kk] += bc_coeff_b[f_id][ll][kk] * var[c_id][ll];
@@ -9586,8 +9586,6 @@ _gradient_strided_cell(const cs_mesh_t             *m,
   /* Correct gradient in case of Neumann BC's */
 
   if (e_id > s_id && bc_coeff_b != nullptr) {
-
-    const b_t *bc_coeff_b = (const b_t *)bc_coeffs_v->b;
 
     cs_real_t grad_0[stride][3], grad_i[stride][3];
 
