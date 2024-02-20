@@ -39,4 +39,10 @@ code_saturne: \n\n
 \ref mainpage_ple "\b PLE \b library \b documentation"
 \n
 \endif
+
+\if (!neptune_cfd && !libple)
+\n
+<b> No available external documentation </b>
+\n
+\endif
 */
