@@ -82,4 +82,8 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage us_pt1d
    - \subpage cs_user_lagr_sde_page
 
+\if neptune_cfd
+\section example_ext_ncfd neptune_cfd examples
+   - \subpage nc_user_examples
+\endif
 */
