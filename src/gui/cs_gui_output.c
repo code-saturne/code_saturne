@@ -53,6 +53,7 @@
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_meg_prototypes.h"
@@ -727,7 +728,12 @@ cs_gui_output(void)
 
   v_i = cs_tree_node_get_child_values_int(tn_o,
                                           "listing_printing_frequency");
-  if (v_i != NULL) cs_glob_log_frequency = v_i[0];
+  if (v_i != NULL) {
+    if (v_i[0] != 0)
+      cs_log_iteration_set_interval(v_i[0]);
+    else
+      cs_log_iteration_set_automatic(10);
+  }
 
   const int n_fields = cs_field_n_fields();
 

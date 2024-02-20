@@ -64,6 +64,7 @@ use ppincl
 use ppcpfu
 use cs_coal_incl
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -79,7 +80,7 @@ double precision volume(ncelet)
 
 integer          iel    , icla
 integer          npoin1,npoin2,npoin3,npoin4,npoin63,npoint
-integer          npyv, modntl
+integer          npyv
 integer          icha, ifcvsl
 
 double precision xx2     , xch    , xck    , xash   , xnp , xuash
@@ -91,6 +92,7 @@ double precision xnuss, tlimit , tmini
 double precision tmin, tmax, yvmin, yvmax, yymax
 
 double precision pprco2,pprh2o
+logical(kind=c_bool) :: log_is_active
 
 integer          iok1
 double precision, dimension (:), allocatable :: x2, x2srho2, rho1, w1
@@ -530,13 +532,7 @@ if ( ippmod(iccoal) .ge. 1 ) then
     endif
   enddo
 
-  if (ntlist.gt.0) then
-    modntl = mod(ntcabs,ntlist)
-  elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
-    modntl = 0
-  else
-    modntl = 1
-  endif
+  log_is_active = cs_log_default_is_active()
 
   do icla = 1, nclacp
 
@@ -669,17 +665,17 @@ if ( ippmod(iccoal) .ge. 1 ) then
     endif
 
 
-    if (modntl.eq.0) then
-      WRITE(NFECRA,*) ' For the class = ',ICLA,npoint
-      WRITE(NFECRA,*) '   Number of pts Xwat >0   =',NPOIN1
-      WRITE(NFECRA,*) '               T < TEBL  =',NPOIN2
-      WRITE(NFECRA,*) '               YV     >0 =',NPOIN3
-      WRITE(NFECRA,*) '               YV     <0 =',NPOIN4
-      WRITE(NFECRA,*) '   Annul G   T < TEBL=   ', npoin63
-      WRITE(NFECRA,*) '   Min Max ST = ',TMIN,TMAX
-      WRITE(NFECRA,*) '   Min Max YV = ',YVMIN,YVMAX
+    if (log_is_active) then
+      write(nfecra,*) ' For the class = ',ICLA,npoint
+      write(nfecra,*) '   Number of pts Xwat >0   =',NPOIN1
+      write(nfecra,*) '               T < TEBL  =',NPOIN2
+      write(nfecra,*) '               YV     >0 =',NPOIN3
+      write(nfecra,*) '               YV     <0 =',NPOIN4
+      write(nfecra,*) '   Annul G   T < TEBL=   ', npoin63
+      write(nfecra,*) '   Min Max ST = ',TMIN,TMAX
+      write(nfecra,*) '   Min Max YV = ',YVMIN,YVMAX
 
-      WRITE(NFECRA,*) ' Clipping of YV at Max ',NPYV,YYMAX
+      write(nfecra,*) ' Clipping of YV at Max ',NPYV,YYMAX
     endif
 
   enddo

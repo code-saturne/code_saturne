@@ -74,6 +74,46 @@ void
 cs_log_iteration(void);
 
 /*----------------------------------------------------------------------------
+ * Set adaptive interval for "per time step" logging information.
+ *
+ * Logging will also occur:
+ * - Each time step for the first n absolute or restarted time steps.
+ * - Every 5 time steps between n and 5.n time steps.
+ * - Every 10 time steps between 5.n and 10.n time steps.
+ * - Every 50 time steps between 10.n and 50.n time steps.
+ * - Every 100 time steps between 50.n and 100.n time steps.
+ * - ...
+ * - At the last time step\n\n"),
+ *
+ * parameters:
+ *   n  <--  base interval for output.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_set_automatic(int  n);
+
+/*----------------------------------------------------------------------------
+ * Set interval for "per time step" logging information.
+ *
+ * Logging will also occur for the 10 first time steps, as well as the last one.
+ *
+ * parameters:
+ *   n  <--  interval between 2 output time steps.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_set_interval(int  n);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate or deactivate default log for current iteration.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_set_active(void);
+
+/*----------------------------------------------------------------------------
  * Add or update array not saved as permanent field to iteration log.
  *
  * parameters:
@@ -150,6 +190,13 @@ cs_log_iteration_prepare(void);
 
 void
 cs_log_iteration_l2residual(void);
+
+/*----------------------------------------------------------------------------
+ * Print default log per iteration options to setup.log.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 

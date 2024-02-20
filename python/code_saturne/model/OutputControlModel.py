@@ -69,7 +69,7 @@ class OutputControlModel(Model):
         Return in a dictionnary which contains default values.
         """
         default = {}
-        default['listing_printing_frequency'] = 1
+        default['listing_printing_frequency'] = 0
         default['probe_recording_frequency'] = 1
         default['probe_recording_frequency_time'] = 0.1
         default['probe_format'] = "CSV"
@@ -106,7 +106,6 @@ class OutputControlModel(Model):
         f = self.node_out.xmlGetInt('listing_printing_frequency')
         if f is None:
             f = self.defaultInitialValues()['listing_printing_frequency']
-            self.setListingFrequency(f)
         return f
 
 
@@ -117,6 +116,8 @@ class OutputControlModel(Model):
         """
         self.isInt(freq)
         self.node_out.xmlSetData('listing_printing_frequency', freq)
+        if (freq == self.defaultInitialValues()['listing_printing_frequency']):
+            self.node_out.xmlRemoveChild('listing_printing_frequency')
 
 
     @Variables.noUndo

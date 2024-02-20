@@ -849,14 +849,8 @@ cs_parameters_check(void)
   int list_01[2] = {0, 1};
 
   /*--------------------------------------------------------------------------
-   * log frequency and checkpoint options
+   * checkpoint options
    *--------------------------------------------------------------------------*/
-
-  cs_parameters_is_greater_int(CS_ABORT_DELAYED,
-                               _("while reading input data"),
-                               "cs_glob_log_frequency",
-                               cs_glob_log_frequency,
-                               -1);
 
   cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                _("while reading input data"),

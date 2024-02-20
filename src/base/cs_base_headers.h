@@ -70,6 +70,7 @@
 #include "cs_interpolate.h"
 #include "cs_internal_coupling.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
 #include "cs_map.h"
 #include "cs_mass_source_terms.h"
 #include "cs_math.h"

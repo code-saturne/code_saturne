@@ -163,7 +163,7 @@ cs_time_control_is_active(cs_time_control_t     *tc,
  * \param[in]  tc           pointer to time control structure.
  * \param[in]  nt_start     start time step (or < 0 for unlimited)
  * \param[in]  nt_end       end time step (or < 0 for unlimited)
- * \param[in]  nt_interval  time step interval
+ * \param[in]  nt_interval  time step interval (< 0 if no periodic output)
  * \param[in]  at_start     always active at start ?
  * \param[in]  at_start     always active at end ?
  */
@@ -184,7 +184,7 @@ cs_time_control_init_by_time_step(cs_time_control_t  *tc,
  * \param[in]  tc          pointer to time control structure.
  * \param[in]  t_start     start time (or < 0 for unlimited)
  * \param[in]  t_end       end time (or < 0 for unlimited)
- * \param[in]  t_interval  time interval
+ * \param[in]  t_interval  time interval (< 0 if no periodic output)
  * \param[in]  at_start    always active at start ?
  * \param[in]  at_start    always active at end ?
  */

@@ -118,6 +118,18 @@ typedef struct {
 
 } cs_log_clip_t;
 
+/*----------------------------------------------------------------------------
+ * Prototypes for local static functions
+ *----------------------------------------------------------------------------*/
+
+static bool
+_log_time_control_automatic(const cs_time_step_t  *ts,
+                          void                  *input);
+
+static bool
+_log_time_control_interval(const cs_time_step_t  *ts,
+                           void                  *input);
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -146,18 +158,126 @@ static cs_log_clip_t  *_clips = NULL;
 
 static cs_time_plot_t  *_l2_residual_plot = NULL;
 
+static int _log_interval_base = 10;
+
+static cs_time_control_t  _log_time_control
+  = {.type = CS_TIME_CONTROL_FUNCTION,
+     .at_start = true,
+     .at_first = true,
+     .at_end = true,
+     .start_nt = 0,
+     .end_nt = 0,
+     .interval_nt = 0,
+     .control_func = _log_time_control_automatic,
+     .control_input = NULL,
+     .current_state = true,
+     .current_time_step = -1,
+     .last_nt = -1,
+     .last_t = -1};
+
+cs_time_control_t  *cs_glob_log_iteration_time_control = &_log_time_control;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
 /*============================================================================
- * Fortran function prototypes for subroutines from field.f90.
- *============================================================================*/
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Default function for main log activation.
+ *
+ * The activation occurs:
+ * - At each time step for the first n absolute or restarted time steps.
+ * - Every 5 time steps between n and 5.n time steps.
+ * - Every 10 time steps between 5.n and 10.n time steps.
+ * - Every 50 time steps between 10.n and 50.n time steps.
+ * - Every 100 time steps between 50.n and 100.n time steps.
+ * - And so on...
+ *
+ * \param[in]  ts     current time step structure
+ * \param[in]  input  pointer to integer n, or NULL
+ *
+ * \return  true if log is active at given time step, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_log_time_control_automatic(const cs_time_step_t  *ts,
+                            void                  *input)
+{
+  int n = (input != NULL) ? *((int *)input) : 10;
+
+  bool active = false;
+
+  int nt_abs = ts->nt_cur;
+  int nt_rel = ts->nt_cur - ts->nt_prev;
+
+  if (nt_abs < n || nt_rel < n)
+    active = true;
+
+  else if (nt_abs >= ts->nt_max)
+    active = true;
+
+  else {
+    int n10 = 10*n, n5 = 5*n;
+    while (nt_abs > n10 && nt_abs%n5 == 0) {
+      nt_abs /= n;
+    }
+    if (nt_abs <= n10) {
+      int interval = 10;
+      if (nt_abs <= n5)
+        interval = 5;
+      if (nt_abs%interval == 0)
+        active = true;
+    }
+  }
+
+  return active;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Time interval function for main log activation.
+ *
+ * The activation occurs:
+ * - Each of the first 10 time steps
+ * - At the end of the computation
+ * - Every "nt_interval" time step
+ *
+ * \param[in]  ts     current time step structure
+ * \param[in]  input  pointer to integer nt_interval, or NULL
+ *
+ * \return  true if log is active at given time step, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_log_time_control_interval(const cs_time_step_t  *ts,
+                           void                  *input)
+{
+  int nt_interval = (input != NULL) ? *((int *)input) : 10;
+
+  bool active = false;
+
+  int nt_abs = ts->nt_cur;
+  int nt_rel = ts->nt_cur - ts->nt_prev;
+
+  if (nt_abs >= ts->nt_max)
+    active = true;
+
+  else if (nt_interval > 0) {
+    if (nt_abs <= 10 || nt_rel <= 10)
+      active = true;
+    else if (nt_abs%nt_interval == 0)
+      active = true;
+  }
+
+  return active;
+}
 
 /*----------------------------------------------------------------------------
  * Compare simple stats elements (qsort function).
@@ -1500,10 +1620,6 @@ _log_clips(void)
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1573,6 +1689,73 @@ cs_log_iteration(void)
 
   cs_fan_log_iteration();
   cs_ctwr_log_balance();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set adaptive interval for "per time step" logging information.
+ *
+ * Logging will also occur:
+ * - Each time step for the first n absolute or restarted time steps.
+ * - Every 5 time steps between n and 5.n time steps.
+ * - Every 10 time steps between 5.n and 10.n time steps.
+ * - Every 50 time steps between 10.n and 50.n time steps.
+ * - Every 100 time steps between 50.n and 100.n time steps.
+ * - ...
+ * - At the last time step\n\n"),
+ *
+ * \param[in]  n  base interval for output.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_set_automatic(int  n)
+{
+  _log_interval_base = n;
+
+  cs_time_control_init_by_func(cs_glob_log_iteration_time_control,
+                               _log_time_control_automatic,
+                               &_log_interval_base,
+                               true,
+                               true);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set interval for "per time step" logging information.
+ *
+ * Logging will also occur for the 10 first time steps, as well as the last one.
+ *
+ * \param[in]  n  interval between 2 output time steps.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_set_interval(int  n)
+{
+  _log_interval_base = n;
+
+  cs_time_control_init_by_func(cs_glob_log_iteration_time_control,
+                               _log_time_control_interval,
+                               &_log_interval_base,
+                               true,
+                               true);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate or deactivate default log for current iteration.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_set_active(void)
+{
+  bool is_active
+    = cs_time_control_is_active(cs_glob_log_iteration_time_control,
+                                cs_glob_time_step);
+
+  cs_log_default_activate(is_active);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1890,6 +2073,69 @@ cs_log_iteration_l2residual(void)
                             vals);
 
     BFT_FREE(vals);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print default log per iteration options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_log_setup(void)
+{
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "Logging options\n"
+       "---------------\n\n"));
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("  run_solver.log output interval:\n\n"));
+
+  if (   cs_glob_log_iteration_time_control->control_func
+      == _log_time_control_automatic) {
+    int n = _log_interval_base;
+    if (n == 0)
+      n = 10;
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    Automatic:\n"
+         "     - Each time step for the first %d absolute "
+         "or restarted time steps.\n"
+         "     - Every 5 time steps between %d and %d time steps.\n"
+         "     - Every 10 time steps between %d and %d time steps.\n"
+         "     - Every 50 time steps between %d and %d time steps.\n"
+         "     - Every 100 time steps between %d and %d time steps.\n"
+         "     - ...\n"
+         "     - At the last time step.\n"),
+       n, n, 5*n, 5*n, 10*n, 10*n, 50*n, 50*n, 100*n);
+  }
+  else if (   cs_glob_log_iteration_time_control->control_func
+           == _log_time_control_interval) {
+    int n = _log_interval_base;
+    if (n > 0)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    Interval-based:\n"
+           "     - Each time step for the first 10 absolute "
+           "or restarted time steps.\n"
+           "     - Every %d time step(s).\n"
+           "     - At the last time step.\n\n"), n);
+    else
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    At the last time step only.\n"), n);
+  }
+  else {
+    char desc[256];
+    cs_time_control_get_description(cs_glob_log_iteration_time_control,
+                                    desc,
+                                    256);
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    %s\n"), desc);
   }
 }
 

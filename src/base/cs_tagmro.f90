@@ -70,6 +70,7 @@ use mesh
 use field
 use cs_nz_condensation, only:nzones,iztag1d,flthr,dflthr
 use cs_nz_tagmr
+use cs_c_bindings
 
 !===============================================================================
 
@@ -170,7 +171,7 @@ do ii = 1, nfbpcd
   endif
 enddo
 
-if (mod(ntcabs,ntlist).eq.0) then
+if (cs_log_default_is_active() .eqv. .true.) then
 
   do iz = 1, nzones
     tpminf(iz) = +1.d20

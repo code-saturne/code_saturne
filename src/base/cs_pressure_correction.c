@@ -210,8 +210,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
     return;
   }
 
-  const cs_time_step_t *ts = cs_glob_time_step;
-  if (ts->nt_cur%cs_glob_log_frequency == 0 || eqp_pr->verbosity > 0)
+  if (cs_log_default_is_active() || eqp_pr->verbosity > 0)
     bft_printf("  Hydrostatic pressure computation:\n"
                "    updating the Dirichlets at the end"
                " (_hydrostatic_pressure_compute)\n");

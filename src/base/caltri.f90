@@ -81,7 +81,7 @@ implicit none
 
 ! Local variables
 
-logical(kind=c_bool) :: mesh_modified, log_active, post_active
+logical(kind=c_bool) :: mesh_modified, post_active
 integer(c_int) :: ierr
 
 integer          iappel, iisuit
@@ -132,6 +132,14 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_initialize_fields_stage_0
+
+  !=============================================================================
+
+  subroutine cs_log_iteration_set_active()  &
+    bind(C, name='cs_log_iteration_set_active')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_log_iteration_set_active
 
   !=============================================================================
 
@@ -852,17 +860,11 @@ endif
 ! Check for runaway (diverging) computation
 ierr = cs_runaway_check()
 
-! Set default logging (always log 10 first iterations and last one=)
-log_active = .false.
-if (ntcabs - ntpabs.le.10 .or. ntcabs.eq.ntmabs) then
-  log_active = .true.
-else if (ntlist.gt.0) then
-  if (mod(ntcabs,ntlist) .eq. 0) log_active = .true.
-endif
-call cs_log_default_activate(log_active)
+! Set default logging
+call cs_log_iteration_set_active()
 
 if (idtvar.ne.1 .and. ntmabs.gt.ntpabs .and. itrale.gt.0) then
-  if (log_active) then
+  if (cs_log_default_is_active() .eqv. .true.) then
     write(nfecra,3001) ttcabs, ntcabs
   endif
 endif
@@ -1047,10 +1049,10 @@ if (icdo.eq.1) then
 endif
 
 !===============================================================================
-! Write to "run_solver.log" every ntlist iterations
+! Write to "run_solver.log" periodically
 !===============================================================================
 
-if (log_active) then
+if (cs_log_default_is_active() .eqv. .true.) then
 
   call ecrlis(ncelet, ncel, dt, cell_f_vol)
 

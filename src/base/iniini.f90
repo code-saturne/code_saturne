@@ -149,7 +149,6 @@ call wall_distance_options_init
 call velocity_pressure_options_init
 call restart_auxiliary_options_init
 call turb_reference_values_init
-call listing_writing_period_init
 call radiat_init
 call gas_mix_options_init
 call ctwr_properties_init

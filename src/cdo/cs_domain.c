@@ -462,7 +462,7 @@ cs_domain_needs_log(const cs_domain_t      *domain,
   if (domain->is_last_iter)
     return true;
 
-  return false;
+  return cs_log_default_is_active();
 }
 
 /*----------------------------------------------------------------------------*/

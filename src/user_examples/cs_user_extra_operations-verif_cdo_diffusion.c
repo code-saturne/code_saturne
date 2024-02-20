@@ -284,7 +284,7 @@ cs_user_extra_operations(cs_domain_t          *domain)
   if (eqp->flag & CS_EQUATION_UNSTEADY) {
     if (time_step->nt_cur == 0)
       return;
-    if (time_step->nt_cur % domain->output_nt > 0)
+    if (cs_log_default_is_active() == false)
       return;
 
     len += 9;

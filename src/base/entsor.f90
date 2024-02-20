@@ -78,57 +78,12 @@ module entsor
   integer    nusrmx
   parameter(nusrmx=20)
 
-  !> unit numbers for potential user specified files.
+  !> unit numbers fo potential user specified files.
   !> Useful if and only if the user needs files
   !> (therefore always useful, by security)
   integer, save :: impusr(nusrmx)
 
   !> \}
-
-  !> \defgroup log Output log
-
-  !> \addtogroup log
-  !> \{
-
-  !> writing period in the execution report file.
-  !>   - -1: no writing
-  !>   - \> 0: period (every \ref ntlist time step). The value of
-  !> \ref ntlist must be adapted according to the number of iterations
-  !> carried out in the calculation. Keeping \ref ntlist to 1 will indeed provide
-  !> a maximum volume of information, but if the number of time steps
-  !> is too large the execution report file might become too big and unusable
-  !> (problems with disk space, memory problems while opening the file with a
-  !> text editor, problems finding the desired information in the file, ...).
-  integer(c_int), pointer, save :: ntlist
-
-  !> \}
-
-  !=============================================================================
-
-  interface
-
-    !---------------------------------------------------------------------------
-
-    !> \cond DOXYGEN_SHOULD_SKIP_THIS
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function retrieving pointers of ntlist
-
-    subroutine cs_f_log_frequency_get_pointer(ntlist)             &
-      bind(C, name='cs_f_log_frequency_get_pointer')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: ntlist
-    end subroutine cs_f_log_frequency_get_pointer
-
-    !---------------------------------------------------------------------------
-
-    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
-
-    !---------------------------------------------------------------------------
-
-  end interface
 
   !=============================================================================
 
@@ -141,25 +96,6 @@ contains
   subroutine flush_nfecra() bind(C, name='cs_f_flush_logs')
     flush(nfecra)
   end subroutine flush_nfecra
-
-  !=============================================================================
-
-  !> \brief Map ntlist from C to Fortran
-
-  subroutine listing_writing_period_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_ntlist
-
-    call cs_f_log_frequency_get_pointer(c_ntlist)
-
-    call c_f_pointer(c_ntlist, ntlist)
-
-  end subroutine listing_writing_period_init
 
   !=============================================================================
 

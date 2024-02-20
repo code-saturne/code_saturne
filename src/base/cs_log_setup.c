@@ -55,6 +55,7 @@
 #include "cs_field.h"
 #include "cs_function.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mobile_structures.h"
 #include "cs_notebook.h"
@@ -183,6 +184,8 @@ _log_global_model_options(void)
   cs_time_step_log_setup();
   cs_time_scheme_log_setup();
 
+  cs_log_iteration_log_setup();
+
   /* Velocity-pressure coupling */
 
   cs_velocity_pressure_model_log_setup();
@@ -250,7 +253,6 @@ _log_global_model_options(void)
   cs_boundary_log_setup(cs_glob_domain->boundaries);
   cs_boundary_log_setup(cs_glob_domain->ale_boundaries);
 }
-
 
 /*============================================================================
  * Fortran wrapper function definitions

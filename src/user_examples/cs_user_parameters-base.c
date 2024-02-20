@@ -1851,9 +1851,9 @@ cs_user_finalize_setup(cs_domain_t     *domain)
 {
   CS_NO_WARN_IF_UNUSED(domain);
 
-  /* Frequency of log output */
+  /* Interval of log output */
   /*! [setup_log] */
-  cs_glob_log_frequency = 1;
+  cs_log_iteration_set_interval(1);
   /*! [setup_log] */
 
   /* Change a property's label

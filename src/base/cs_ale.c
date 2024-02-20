@@ -1645,7 +1645,7 @@ cs_ale_init_setup(cs_domain_t   *domain)
   //FIXME should be done elsewhere
   cs_domain_set_output_param(domain,
                              -1, /* restart frequency: Only at the end */
-                             cs_glob_log_frequency,
+                             domain->output_nt,
                              eqp->verbosity);
 
   cs_equation_t  *eq = cs_equation_by_name("mesh_velocity");

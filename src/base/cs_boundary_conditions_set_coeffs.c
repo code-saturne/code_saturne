@@ -73,6 +73,7 @@
 #include "cs_ht_convert.h"
 #include "cs_internal_coupling.h"
 #include "cs_les_inflow.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mobile_structures.h"
@@ -1323,7 +1324,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       }
     }
 
-    if (nt_cur%cs_glob_log_frequency == 0 || eqp_vel->verbosity >= 0) {
+    if (cs_log_default_is_active() || eqp_vel->verbosity >= 0) {
       cs_gnum_t isocpt[2] = {isoent, isorti};
       cs_parall_sum(2, CS_GNUM_TYPE, isocpt);
       if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))

@@ -9,6 +9,8 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Logging: add automatic logging frequency, with increasing intervals.
+
 - Add postprocessing functions to allow users to easily visualize intersection
   between postprocessing slices and the mesh.
 

@@ -1372,7 +1372,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelProbeFmt       = ComboModel(self.comboBoxProbeFmt,2,1)
 
         self.modelOutput.addItem(self.tr("No output"), 'None')
-        self.modelOutput.addItem(self.tr("Output listing at each time step"), 'At each step')
+        self.modelOutput.addItem(self.tr("Automatic (decreasing frequency)"), 'Automatic')
         self.modelOutput.addItem(self.tr("Output every 'n' time steps"), 'Frequency_l')
 
         self.modelNTLAL.addItem(self.tr("No output"), 'None')
@@ -1587,15 +1587,14 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Initialisation of the listing frequency
 
         ntlist = self.mdl.getListingFrequency()
-        if ntlist == -1:
+        if ntlist < 0:
             m = "None"
-        elif ntlist == 1:
-            m = "At each step"
+        elif ntlist == 0:
+            m = "Automatic"
         else:
             m = "Frequency_l"
         self.modelOutput.setItem(str_model=m)
         t = self.modelOutput.dicoM2V[m]
-        self.lineEditNTLIST.setText(str(ntlist))
         self.slotOutputListing(t)
 
         if self.case['run_type'] == 'standard':
@@ -1731,20 +1730,22 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if listing == "None":
             ntlist = -1
             self.mdl.setListingFrequency(ntlist)
-            self.lineEditNTLIST.setText(str(ntlist))
-            self.lineEditNTLIST.setDisabled(True)
+            self.lineEditNTLIST.setText("1")
+            self.lineEditNTLIST.hide()
 
-        elif listing == "At each step":
-            ntlist = 1
-            self.lineEditNTLIST.setText(str(ntlist))
-            self.lineEditNTLIST.setDisabled(True)
+        elif listing == "Automatic":
+            ntlist = 0
+            self.mdl.setListingFrequency(ntlist)
+            self.lineEditNTLIST.setText("1")
+            self.lineEditNTLIST.hide()
 
         elif listing == "Frequency_l":
-            self.lineEditNTLIST.setEnabled(True)
-            ntlist = from_qvariant(self.lineEditNTLIST.text(), int)
+            self.lineEditNTLIST.show()
+            ntlist = self.mdl.getListingFrequency()
             if ntlist < 1:
                 ntlist = 1
-                self.lineEditNTLIST.setText(str(ntlist))
+                self.mdl.setListingFrequency(ntlist)
+            self.lineEditNTLIST.setText(str(ntlist))
 
 
     @pyqtSlot(str)
