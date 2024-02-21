@@ -461,11 +461,15 @@ _compute_face_quantities(cs_lnum_t        n_faces,
 
         /* Second pass (face center) */
 
-        cs_real_t n[3];
-        cs_math_3_normalize(f_norm, n);
         cs_real_t sum_w = cs_math_3_norm(f_norm);
-        if (sum_w > s_epsilon)
-          d_surf_d3 = one_third / sum_w;
+        cs_real_t inv_norm = 1.;
+        if (sum_w > s_epsilon) {
+          inv_norm = 1. / sum_w;
+          d_surf_d3 = one_third * inv_norm;
+        }
+        cs_real_t n[3];
+        for (int i = 0; i < 3; i++)
+          n[i] = inv_norm * f_norm[i];
 
         for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
 
@@ -503,11 +507,15 @@ _compute_face_quantities(cs_lnum_t        n_faces,
 
         /* Second pass (face center) */
 
-        cs_real_t n[3];
-        cs_math_3_normalize(f_norm, n);
         cs_real_t sum_w = cs_math_3_norm(f_norm);
-        if (sum_w > s_epsilon)
-          d_surf_d3 = one_third / sum_w;
+        cs_real_t inv_norm = 1.;
+        if (sum_w > s_epsilon) {
+          inv_norm = 1. / sum_w;
+          d_surf_d3 = one_third * inv_norm;
+        }
+        cs_real_t n[3];
+        for (int i = 0; i < 3; i++)
+          n[i] = inv_norm * f_norm[i];
 
         for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
 
