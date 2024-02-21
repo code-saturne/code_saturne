@@ -1,5 +1,5 @@
 /*============================================================================
- * Unit test for some FVM global numbering issues;
+ * Unit test for some geometrical algorithms.
  *============================================================================*/
 
 /*
@@ -35,7 +35,6 @@
 #include <bft_printf.h>
 
 #include "cs_math.h"
-#include "cs_block_dist.h"
 
 /*---------------------------------------------------------------------------*/
 

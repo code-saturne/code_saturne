@@ -5337,6 +5337,34 @@ cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Compute quantities associated to a list of faces (border or internal)
+ *
+ * parameters:
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx        <--  "face -> vertices" connectivity
+ *   face_cog        -->  coordinates of the center of gravity of the faces
+ *   face_normal     -->  face surface normals
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_compute_face_quantities(cs_lnum_t        n_faces,
+                                           const cs_real_t  vtx_coord[][3],
+                                           const cs_lnum_t  face_vtx_idx[],
+                                           const cs_lnum_t  face_vtx[],
+                                           cs_real_t        face_cog[][3],
+                                           cs_real_t        face_normal[][3])
+{
+  _compute_face_quantities(n_faces,
+                           vtx_coord,
+                           face_vtx_idx,
+                           face_vtx,
+                           face_cog,
+                           face_normal);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Log mesh quantities options to setup file.

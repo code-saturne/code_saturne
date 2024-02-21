@@ -130,6 +130,7 @@ cs_geom_test \
 cs_interface_test \
 cs_map_test \
 cs_matrix_test \
+cs_mesh_quantities_test \
 cs_moment_test \
 cs_random_test \
 cs_rank_neighbors_test \
@@ -224,6 +225,11 @@ cs_matrix_test$(EXEEXT): $(top_srcdir)/tests/cs_matrix_test.c
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_matrix_test $(top_srcdir)/tests/cs_matrix_test.c
+
+cs_mesh_quantities_test$(EXEEXT): $(top_srcdir)/tests/cs_mesh_quantities_test.c
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_mesh_quantities_test $(top_srcdir)/tests/cs_mesh_quantities_test.c
 
 cs_moment_test_SOURCES  = cs_moment_test.c
 cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
