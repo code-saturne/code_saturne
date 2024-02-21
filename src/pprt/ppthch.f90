@@ -95,11 +95,11 @@ module ppthch
   integer, pointer, save ::  nrgaz
 
   !> rank of O2 in gas composition
-  integer, save ::           iio2
+  integer, pointer, save ::  iio2
   !> rank of H2O in gas composition
   integer, save ::           iih2o
   !> rank of CO2 in gas composition
-  integer, save ::           iico2
+  integer, pointer, save ::  iico2
   !> rank of CO in gas composition
   integer, save ::           iico
   !> rank of C in gas composition
@@ -169,14 +169,16 @@ module ppthch
 
     subroutine cs_f_ppthch_get_pointers(                                       &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_wmole, p_wmolg, p_wmolat,                                           &
          p_xco2, p_xh2o, p_fs, p_th,p_cpgazg)                                  &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) ::                                              &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_wmole, p_wmolg, p_wmolat,                                           &
          p_xco2, p_xh2o, p_fs, p_th,p_cpgazg
     end subroutine cs_f_ppthch_get_pointers
 
@@ -207,12 +209,14 @@ contains
 
     type(c_ptr) ::                                                             &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_wmole,p_wmolg, p_wmolat,                                            &
          p_xco2, p_xh2o, p_fs, p_th,p_cpgazg
 
     call cs_f_ppthch_get_pointers(                                             &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_npo, p_wmole, p_wmolg, p_wmolat,                             &
+         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_wmole, p_wmolg, p_wmolat,                                           &
          p_xco2, p_xh2o, p_fs, p_th, p_cpgazg)
 
     call c_f_pointer(p_ngaze, ngaze)
@@ -220,6 +224,8 @@ contains
     call c_f_pointer(p_nato, nato)
     call c_f_pointer(p_nrgaz, nrgaz)
     call c_f_pointer(p_iic, iic)
+    call c_f_pointer(p_iico2, iico2)
+    call c_f_pointer(p_iio2, iio2)
     call c_f_pointer(p_wmole, wmole, [ngazem])
     call c_f_pointer(p_wmolg, wmolg, [ngazgm])
     call c_f_pointer(p_wmolat, wmolat, [natom])

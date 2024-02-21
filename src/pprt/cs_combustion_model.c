@@ -112,6 +112,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **nato,
                          int     **nrgaz,
                          int     **iic,
+                         int     **iico2,
+                         int     **iio2,
                          int     **npo,
                          double  **wmole,
                          double  **wmolg,
@@ -181,6 +183,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **nato,
                          int     **nrgaz,
                          int     **iic,
+                         int     **iico2,
+                         int     **iio2,
                          int     **npo,
                          double  **wmole,
                          double  **wmolg,
@@ -206,7 +210,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
     *nrgaz  = &(cm->n_reactions);
     *npo    = &(cm->n_tab_points);
     *iic    = &(cm->iic);
-
+    *iio2   = &(cm->iio2);
+    *iico2  = &(cm->iico2);
     *wmole  = cm->wmole;
     *wmolg  = cm->wmolg;
     *wmolat = cm->wmolat;

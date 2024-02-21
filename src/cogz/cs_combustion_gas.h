@@ -188,6 +188,8 @@ typedef struct {
                                      enthalpy/temperature conversion */
 
   int     iic;                     /*!< rank of C in gas composition (base 1) */
+  int     iico2;                   /*!< rank of CO2 in gas composition (base 1) */
+  int     iio2;                    /*!< rank of O2 in gas composition  (base 1) */
   int     isoot;                   /*!< soot production modeling flag */
 
   double  hinfue;                  /*!< input mass enthalpy for fuel */
