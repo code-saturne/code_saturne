@@ -3,6 +3,9 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Boundary layer insertion: limiter could reduce insertion at incorrect
+  vertices due to incorrect indirection.
+
 - Lagrangian module: fix flags for boundary u* field.
   Ths fixes GitHub issue #103.
 
