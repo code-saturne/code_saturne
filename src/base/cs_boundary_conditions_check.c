@@ -246,6 +246,7 @@ cs_boundary_conditions_check(int  bc_type[],
   cs_gnum_t n_vel_error = 0;
   int icodcl_v = -1;
 
+  cs_gnum_t n_rough_error = 0;
   bool iok_rough = false;
 
   /* Eligible conditions for velocity components */
@@ -270,18 +271,16 @@ cs_boundary_conditions_check(int  bc_type[],
     /* Check roughness if rough wall function */
     if (icodcl_vel[f_id] == 6) {
 
-      iok_rough = false;
       if (f_rough == NULL)
-        iok_rough = true;
+        n_rough_error++;
       else if (bpro_rough[f_id] <= 0.0)
-        iok_rough = true;
+        n_rough_error++;
 
-      if (iok_rough) {
+      if (n_rough_error > 0) {
         if (bc_type[f_id] > 0)
           bc_type[f_id] = - bc_type[f_id];
 
         icodcl_v = icodcl_vel[f_id];
-        n_vel_error = n_vel_error + 1;
       }
     }
   }
@@ -678,7 +677,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
   int error = 0;
 
-  if (n_init_error > 0 || n_vel_error > 0 || n_p_error > 0 ||
+  if (n_init_error > 0 || n_vel_error > 0 || n_rough_error || n_p_error > 0 ||
       n_turb_error > 0 || n_scal_error > 0 || n_scal_vf_error > 0 ||
       n_turb_consis_error > 0 || n_sc_consis_error > 0)
     error = 1;
@@ -705,10 +704,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     if (n_vel_error != 0) {
       char string[10];
-      if (iok_rough)
-        strncpy(string, "roughness", 10);
-      else
-        strncpy(string, "velocity", 9);
+      strncpy(string, "velocity", 9);
 
       cs_log_printf
         (CS_LOG_DEFAULT,
@@ -717,7 +713,23 @@ cs_boundary_conditions_check(int  bc_type[],
            "@   Number of boundary faces: %llu\n"
            "@     variable: %s\n"
            "@     icodcl for last face: %d\n"
-           "@\n"), (unsigned long long)n_init_error, string, icodcl_v);
+           "@\n"), (unsigned long long)n_vel_error, string, icodcl_v);
+    }
+
+    _synchronize_boundary_conditions_error(n_rough_error, 1, &icodcl_v);
+
+    if (n_rough_error != 0) {
+      char string[10];
+      strncpy(string, "roughness", 10);
+
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _("@\n"
+           "@ Unexpected boundary conditions\n"
+           "@   Number of boundary faces: %llu\n"
+           "@     variable: %s\n"
+           "@     icodcl for last face: %d\n"
+           "@\n"), (unsigned long long)n_rough_error, string, icodcl_v);
     }
 
     _synchronize_boundary_conditions_error(n_p_error, 1, &icodcl_pr);
