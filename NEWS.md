@@ -44,6 +44,11 @@ Master (not on release branches yet)
   expected_time (HH:MM) can be used in smgr xml file to define expected
   computation time.
 
+### Bug fixes:
+
+- Boundary layer insertion: limiter could reduce insertion at incorrect
+  vertices due to incorrect indirection..
+
 Release 8.1.0 (2023-12-13)
 --------------------------
 
