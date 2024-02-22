@@ -100,14 +100,6 @@ code_saturne may contain code by Wes Petersen
 (ETHZ, Zurich, Switzerland) for random number generation
 (cs_random.c, adapted from Netlib's zufall functions)
 
-Part of the work of the Mathematical Expression Interpreter library
-is based in part on previous work by Tom Niemann (http://epaperpress.com/)
-with the following authorization: "Source code, when part of a software
-project, may be used freely without reference to the author.";
-and the hashtable implementation is based on
-http://www.liafa.jussieu.fr/~carton/Enseignement/C/Licence/LicenceInfo/Td09/hachage.c
-from olivier.carton@liafa.jussieu.fr
-
 
 The following people should also be thanked for cooperating
 with the code_saturne development team by providing fresh

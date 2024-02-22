@@ -46,8 +46,8 @@ Master (not on release branches yet)
 
 ### Bug fixes:
 
-- Boundary layer insertion: limiter could reduce insertion at incorrect
-  vertices due to incorrect indirection..
+- Boundary layer insertion: limiter could reduce insertion at wrong
+  vertices due to incorrect indirection.
 
 Release 8.1.0 (2023-12-13)
 --------------------------
