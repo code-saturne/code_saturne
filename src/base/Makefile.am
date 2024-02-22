@@ -114,6 +114,7 @@ cs_coupling.h \
 cs_crystal_router.h \
 cs_defs.h \
 cs_dilatable_scalar_diff_st.h \
+cs_dispatch.h \
 cs_drift_convective_flux.h \
 cs_equation_iterative_solve.h \
 cs_ext_library_info.h \

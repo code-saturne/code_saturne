@@ -1271,10 +1271,10 @@ if test "x$NVCC" != "x" ; then
   cs_ac_nvcc_version="`$NVCC --version 2>&1 |grep 'release' | head -1`"
 
   # Default compiler flags
-  nvccflags_default=""
-  nvccflags_default_dbg="-g -G"
-  nvccflags_default_opt="-O2"
-  nvccflags_default_prf="-O2 -g -lineinfo"
+  nvccflags_default="--expt-extended-lambda "
+  nvccflags_default_dbg="--expt-extended-lambda -g -G"
+  nvccflags_default_opt="--expt-extended-lambda -O2"
+  nvccflags_default_prf="--expt-extended-lambda -O2 -g -lineinfo"
 
 fi
 
