@@ -3,6 +3,9 @@ Release 8.1.2 (unreleased)
 
 ### Bug fixes:
 
+- Boundary layer insertion: limiter could reduce insertion at incorrect
+  vertices due to incorrect indirection.
+
 - GUI:
   * Improve robustness of probes import from CSV, and fix import
     for CSV file containing probe names.
