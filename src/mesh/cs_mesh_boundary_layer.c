@@ -244,7 +244,8 @@ _extrude_vector_limit(const char                 *vtx_flag,
       cs_lnum_t s_id = e->distribution_idx[i];
       cs_lnum_t e_id = e->distribution_idx[i+1];
       cs_lnum_t n_layers = e->n_layers[i];
-      if (vtx_flag[i] > 0 && n_layers > 0) {
+      cs_lnum_t vtx_id = e->vertex_ids[i];
+      if (vtx_flag[vtx_id] > 0 && n_layers > 0) {
         cs_real_t r = 0;
         if (n_layers > 1) {
           r = e->distribution[e_id-2];
@@ -269,7 +270,8 @@ _extrude_vector_limit(const char                 *vtx_flag,
   else { /* if (distribution_idx == NULL) */
 
     for (cs_lnum_t i = 0; i < e->n_vertices; i++) {
-      if (vtx_flag[i] > 0 && e->n_layers[i] > 0) {
+      cs_lnum_t vtx_id = e->vertex_ids[i];
+      if (vtx_flag[vtx_id] > 0 && e->n_layers[i] > 0) {
         cs_lnum_t n_layers = e->n_layers[i];
         double r = (double)(n_layers - 1) / (double)n_layers;
         n_layers -= 1;
