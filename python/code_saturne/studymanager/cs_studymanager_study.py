@@ -102,7 +102,7 @@ def create_base_xml_file(filepath, pkg):
 
 #-------------------------------------------------------------------------------
 
-def init_xml_file_with_study(smgr, studyp):
+def init_xml_file_with_study(smgr, studyp, pkg):
     """Initialize XML file with study content and save it.
     """
 
@@ -116,7 +116,7 @@ def init_xml_file_with_study(smgr, studyp):
     for elt in os.listdir(studyp):
         eltd = os.path.join(studyp, elt)
         if os.path.isdir(eltd):
-            if isCase(eltd):
+            if isCase(eltd, pkg):
                 cases.append(elt)
 
     cases.sort()
@@ -130,31 +130,51 @@ def init_xml_file_with_study(smgr, studyp):
 
 #-------------------------------------------------------------------------------
 
-def isStudy(dirpath):
+def isStudy(dirpath, pkg):
     """Try to determine if dirpath is a code_saturne study directory.
+       True if a studymanager xml file is found
     """
 
-    meshd = os.path.join(dirpath, 'MESH')
-    is_study = os.path.isdir(meshd)
+    is_study = False
+    if os.path.isdir(dirpath):
+        for elt in os.listdir(dirpath):
+            if ".xml" in str(elt):
+                xml_file = os.path.join(dirpath, elt)
+                if os.path.isfile(xml_file):
+                    try:
+                        smgr = XMLengine.Case(package=pkg, file_name=xml_file,
+                                              studymanager=True)
+                        Parser(xml_file, doc=smgr.doc)
+                        is_study = True
+                    except:
+                        pass
 
     return is_study
 
 #-------------------------------------------------------------------------------
 
-def isCase(dirpath):
+def isCase(dirpath, pkg):
     """Try to determine if dirpath is a code_saturne case directory.
+       True if a code_saturne xml file is found
     """
 
     # Verify that DATA folder exists with a xml file inside
     datad = os.path.join(dirpath, 'DATA')
 
-    found_xml = False
+    is_case = False
     if os.path.isdir(datad):
         for elt in os.listdir(datad):
             if ".xml" in str(elt):
-                found_xml = os.path.isfile(os.path.join(datad, elt))
+                xml_file = os.path.join(datad, elt)
+                if os.path.isfile(xml_file):
+                    try:
+                        setup = XMLengine.Case(package=pkg, file_name=xml_file)
+                        cs_xml_reader.Parser(fileName = xml_file)
+                        is_case = True
+                    except:
+                        pass
 
-    return found_xml
+    return is_case
 
 #===============================================================================
 # Case class
@@ -1104,10 +1124,10 @@ class Studies(object):
 
         # try to determine if current directory is a study one
         cwd = os.getcwd()
-        is_study = isStudy(cwd)
+        is_study = isStudy(cwd, pkg)
         studyd = None
         studyp = None
-        if is_study:
+        if is_study or options.create_xml:
             # default study directory is current one
             studyp = cwd
 
@@ -1179,30 +1199,26 @@ class Studies(object):
         # Create file of parameters
 
         filename = options.filename
-        if self.__create_xml and is_study:
+        if self.__create_xml:
             if filename is None:
                 studyd = os.path.basename(studyp)
                 filename = "smgr.xml"
                 options.filename = filename
 
             filepath = os.path.join(studyp, filename)
-            smgr, error = create_base_xml_file(filepath, self.__pkg)
+            smgr, error = create_base_xml_file(filepath, pkg)
 
             if error:
+                msg = "Error: can not create smgr xml file\n"
+                self.reporting(msg, report=False, exit=False)
                 self.reporting(error, report=False, exit=True)
             else:
-                init_xml_file_with_study(smgr, studyp)
+                init_xml_file_with_study(smgr, studyp, pkg)
                 self.reporting(" ", report=False)
                 self.reporting(" New smgr.xml file was created succesfully",
                                report=False)
                 self.reporting(" ", report=False)
                 return
-
-        elif self.__create_xml and not is_study:
-            msg = "Error: can not create XML file of parameter:\n" \
-                + "current directory is apparently not a study (no MESH " \
-                + "directory)."
-            self.reporting(msg, report=False, exit=True)
 
         if filename is None:
             msg = "Error: a file of parameters must be specified or created" \
@@ -1264,8 +1280,8 @@ class Studies(object):
                 self.__repo = self.__parser.getRepository()
             else:
                 msg = "Can not set a default repository directory:\n" \
-                    + "current directory is apparently not a study (no MESH" \
-                    + " directory).\n" \
+                    + "current directory is apparently not a study (no smgr" \
+                    + " xml file).\n" \
                     + "Add a repository path to the parameter file or use" \
                     + " the command line option (--repo=..)."
                 self.reporting(msg, report=False, exit=True)
@@ -1284,8 +1300,8 @@ class Studies(object):
                 self.__dest = self.__parser.getDestination()
             else:
                 msg = "Can not set a default destination directory:\n" \
-                    + "current directory is apparently not a study (no MESH" \
-                    + " directory).\n" \
+                    + "current directory is apparently not a study (no smgr" \
+                    + " xml file).\n" \
                     + "Add a destination path to the parameter file or use" \
                     + " the command line option (--dest=..).\n"
                 self.reporting(msg, report=False, exit=True)
