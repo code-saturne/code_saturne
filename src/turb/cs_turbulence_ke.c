@@ -162,19 +162,27 @@ _tsepls(int       phase_id,
   if (phase_id >= 0)
     f_vel = CS_FI_(vel, phase_id);
 
-  cs_real_33_t *gradv = NULL;
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
-  if (f_vel->grad == NULL) {
-    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  {
+    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
 
-    /* Computation of the velocity gradient */
+    if (f_vel->grad != NULL)
+      gradv = (cs_real_33_t *)f_vel->grad;
+    else if (f_vg != NULL)
+      gradv = (cs_real_33_t *)f_vg->val;
+    else {
+      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      gradv = _gradv;
+    }
+  }
 
+  /* Computation of the velocity gradient */
+  if (f_vel->grad == NULL)
     cs_field_gradient_vector(f_vel,
                              true,  /* use_previous_t */
                              1,     /* inc */
                              gradv);
-  } else
-    gradv = (cs_real_33_t *)f_vel->grad;
 
   /* Loop over u, v, w components:
      TODO interleave */
@@ -242,8 +250,7 @@ _tsepls(int       phase_id,
   }
 
   /* Free memory */
-  if (f_vel->grad == NULL)
-    BFT_FREE(gradv);
+  BFT_FREE(_gradv);
 
   BFT_FREE(w7);
 }
@@ -640,19 +647,28 @@ cs_turbulence_ke(int              phase_id,
      ======================================================================= */
 
   /* Allocate temporary arrays for gradients calculation */
-  cs_real_33_t *gradv = NULL;
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
-  if (f_vel->grad == NULL) {
-    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  {
+    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
 
-    /* Computation of the velocity gradient */
+    if (f_vel->grad != NULL)
+      gradv = (cs_real_33_t *)f_vel->grad;
+    else if (f_vg != NULL)
+      gradv = (cs_real_33_t *)f_vg->val;
+    else {
+      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      gradv = _gradv;
+    }
+  }
 
+  /* Computation of the velocity gradient */
+  if (f_vel->grad == NULL)
     cs_field_gradient_vector(f_vel,
                              true,  /* use_previous_t */
                              1,     /* inc */
                              gradv);
-  } else
-    gradv = (cs_real_33_t *)f_vel->grad;
+
 
   /* strain_sq = Stain rate of the deviatoric part of the strain tensor
      = 2 (Sij^D).(Sij^D)
@@ -2072,8 +2088,7 @@ cs_turbulence_ke(int              phase_id,
                         1);
 
   /* Free memory */
-  if (f_vel->grad == NULL)
-    BFT_FREE(gradv);
+  BFT_FREE(_gradv);
   BFT_FREE(viscf);
   BFT_FREE(viscb);
   BFT_FREE(usimpk);
@@ -2497,6 +2512,13 @@ cs_turbulence_ke_q_mu_t(int phase_id)
     }
   }
 
+  /* Computation of the velocity gradient */
+  if (f_vel->grad == NULL)
+    cs_field_gradient_vector(f_vel,
+                             true,  /* use_previous_t */
+                             1,     /* inc */
+                             gradv);
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     const cs_real_t s11 = gradv[c_id][0][0];
@@ -2515,7 +2537,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
                + 0.5*cs_math_pow2(dvdz+dwdy);
   }
 
-   BFT_FREE(_gradv);
+  BFT_FREE(_gradv);
 
   /* Compute turbulent viscosity
    * =========================== */
@@ -2577,7 +2599,7 @@ cs_turbulence_ke_q(int          phase_id,
   /* Initialization
    * ============== */
 
-  cs_real_33_t *gradv = NULL;
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
   if (f_vel->grad == NULL) {
     BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
@@ -2675,8 +2697,7 @@ cs_turbulence_ke_q(int          phase_id,
   }
 
   /* Free memory */
-  if (f_vel->grad == NULL)
-    BFT_FREE(gradv);
+  BFT_FREE(_gradv);
 }
 
 /*----------------------------------------------------------------------------*/
