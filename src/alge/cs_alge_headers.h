@@ -55,6 +55,7 @@
 #include "cs_sles.h"
 #include "cs_sles_it.h"
 #include "cs_sles_pc.h"
+#include "cs_vertex_to_cell.h"
 
 #if defined(HAVE_HYPRE)
 #include "cs_sles_hypre.h"
