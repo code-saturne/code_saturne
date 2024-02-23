@@ -2482,19 +2482,20 @@ cs_turbulence_ke_q_mu_t(int phase_id)
    *   S2 = S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
    * ==================================================== */
 
-  cs_real_33_t *gradv = NULL;
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
-  if (f_vel->grad == NULL) {
-    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  {
+    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
 
-    /* Computation of the velocity gradient */
-
-    cs_field_gradient_vector(f_vel,
-                             false,     // no use_previous_t
-                             1,         // inc
-                             gradv);
-  } else
-    gradv = (cs_real_33_t *)f_vel->grad;
+    if (f_vel->grad != NULL)
+      gradv = (cs_real_33_t *)f_vel->grad;
+    else if (f_vg != NULL)
+      gradv = (cs_real_33_t *)f_vg->val;
+    else {
+      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      gradv = _gradv;
+    }
+  }
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -2514,8 +2515,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
                + 0.5*cs_math_pow2(dvdz+dwdy);
   }
 
-  if (f_vel->grad == NULL)
-    BFT_FREE(gradv);
+   BFT_FREE(_gradv);
 
   /* Compute turbulent viscosity
    * =========================== */

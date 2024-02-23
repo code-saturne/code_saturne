@@ -1292,13 +1292,25 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
    * ================================================== */
 
   cs_real_t *s2;
-  cs_real_33_t *gradv;
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
+  {
+    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+
+    if (f_vel->grad != NULL)
+      gradv = (cs_real_33_t *)f_vel->grad;
+    else if (f_vg != NULL)
+      gradv = (cs_real_33_t *)f_vg->val;
+    else {
+      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      gradv = _gradv;
+    }
+  }
 
   /* Allocate arrays */
   BFT_MALLOC(s2, n_cells_ext, cs_real_t);
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
-  cs_field_gradient_vector(CS_F_(vel),
+  cs_field_gradient_vector(f_vel,
                            false, // no use_previous_t
                            1,    // inc
                            gradv);
@@ -1323,7 +1335,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
+  BFT_FREE(_gradv);
 
   /* Calculation of viscosity
    * ========================= */

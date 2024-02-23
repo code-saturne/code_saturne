@@ -1034,19 +1034,36 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
   cs_field_t *f_ut = cs_field_by_name(fname);
   cs_real_3_t *xut = (cs_real_3_t *)f_ut->val;
 
+  cs_field_t *f_vel = CS_F_(vel);
+
+  /* Compute velocity gradient */
+
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
+  {
+    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+
+    if (f_vel->grad != NULL)
+      gradv = (cs_real_33_t *)f_vel->grad;
+    else if (f_vg != NULL)
+      gradv = (cs_real_33_t *)f_vg->val;
+    else {
+      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      gradv = _gradv;
+    }
+  }
+
+  cs_field_gradient_vector(f_vel, false, 1, gradv);
+
   /* Compute scalar gradient */
 
-  cs_real_33_t *gradv;
   cs_real_3_t *gradt;
   BFT_MALLOC(gradt, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_field_gradient_scalar(f,
                            true,     /* use previous t   */
                            1,        /* not on increment */
                            gradt);
 
-  cs_field_gradient_vector(CS_F_(vel), false, 1, gradv);
 
   /* EB- AFM or EB-DFM: compute the gradient of alpha of the scalar */
 
@@ -1207,7 +1224,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   BFT_FREE(grad_al);
   BFT_FREE(gradt);
-  BFT_FREE(gradv);
+  BFT_FREE(_gradv);
   BFT_FREE(thflxf);
   BFT_FREE(thflxb);
 }

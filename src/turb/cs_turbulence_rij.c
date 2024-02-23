@@ -3373,7 +3373,6 @@ cs_turbulence_rij(int          phase_id,
 
    /* Free memory */
 
-   gradv = NULL;
    BFT_FREE(_gradv);
    produc = NULL;
    BFT_FREE(_produc);
@@ -3382,7 +3381,6 @@ cs_turbulence_rij(int          phase_id,
 
    BFT_FREE(viscf);
    BFT_FREE(viscb);
-   BFT_FREE(gradv);
    BFT_FREE(weighb);
    BFT_FREE(weighf);
 }

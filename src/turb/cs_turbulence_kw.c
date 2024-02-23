@@ -457,10 +457,21 @@ cs_turbulence_kw(int              phase_id,
 
     /* Computation of the velocity gradient */
 
-    cs_real_33_t *gradv = NULL;
+    cs_real_33_t *gradv = NULL, *_gradv = NULL;
+    {
+      cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+
+      if (f_vel->grad != NULL)
+        gradv = (cs_real_33_t *)f_vel->grad;
+      else if (f_vg != NULL)
+        gradv = (cs_real_33_t *)f_vg->val;
+      else {
+        BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+        gradv = _gradv;
+      }
+    }
 
     if (f_vel->grad == NULL) {
-      BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
       cs_field_gradient_vector(f_vel,
                                true,  /* use_previous_t */
@@ -475,8 +486,7 @@ cs_turbulence_kw(int              phase_id,
                     + cs_math_3_square_norm(gradv[c_id][2]);
     }
 
-    if (f_vel->grad == NULL)
-      BFT_FREE(gradv);
+    BFT_FREE(_gradv);
   }
   else if (cs_glob_turb_model->hybrid_turb == 3) {
 
@@ -1725,6 +1735,7 @@ cs_turbulence_kw_mu_t(int phase_id)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t ntcabs = cs_glob_time_step->nt_cur;
 
   /* Initialization
@@ -1761,17 +1772,19 @@ cs_turbulence_kw_mu_t(int phase_id)
    *   tr(Grad u)       is stored in    divukw
    * ======================================================================= */
 
-  cs_real_33_t *gradv;
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
+  {
+    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
 
-  if (f_vel->grad == NULL) {
-    BFT_MALLOC(gradv, mesh->n_cells_with_ghosts, cs_real_33_t);
-
-    cs_field_gradient_vector(f_vel,
-                             false,  // no use_previous_t
-                             1,      // inc
-                             gradv);
-  } else
-    gradv = (cs_real_33_t *)f_vel->grad;
+    if (f_vel->grad != NULL)
+      gradv = (cs_real_33_t *)f_vel->grad;
+    else if (f_vg != NULL)
+      gradv = (cs_real_33_t *)f_vg->val;
+    else {
+      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      gradv = _gradv;
+    }
+  }
 
   /* s2kw = Strain rate of the deviatoric part of the s2kw tensor
    *      = 2 (Sij^D).(Sij^D)
@@ -1819,8 +1832,7 @@ cs_turbulence_kw_mu_t(int phase_id)
                        + gradv[c_id][2][2];
   }
 
-  if (f_vel->grad == NULL)
-    BFT_FREE(gradv);
+  BFT_FREE(_gradv);
 
   /* Calculation of viscosity
    * ======================== */
