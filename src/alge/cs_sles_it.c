@@ -4639,6 +4639,9 @@ cs_sles_it_free(void  *context)
 {
   cs_sles_it_t  *c = context;
 
+  if (c == NULL)
+    return;
+
   cs_timer_t t0;
   if (c->update_stats == true)
     t0 = cs_timer_time();
