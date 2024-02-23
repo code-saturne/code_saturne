@@ -667,7 +667,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
   }
 
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-    cval_t_l = cs_field_by_name("temperature_liquid")->val;
+    cval_t_l = cs_field_by_name("temp_l_r")->val;
   }
 
   const cs_real_t pis6 = cs_math_pi / 6.0;
