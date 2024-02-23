@@ -415,7 +415,7 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   cs_real_t  *xsol = _set_xsol(1, n_scatter_dofs, x, matrix);
 
   /* Prepare solving (handle parallelism) and switch to a "gather" view
-   * stride = 1 for scalar-valued */
+   * stride = 1 for scalar-valued and unrolled vector-valued DoFs */
 
   cs_cdo_solve_prepare_system(1, false, n_scatter_dofs, rset, rhs_redux,
                               xsol, b);
@@ -428,9 +428,14 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   /* Retrieve the solving info structure stored in the cs_field_t structure
      and then solve the linear system */
 
-  cs_field_t  *fld = cs_field_by_id(slesp->field_id);
   cs_solving_info_t  sinfo;
-  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  if (slesp->field_id > -1) {
+
+    cs_field_t  *fld = cs_field_by_id(slesp->field_id);
+    cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  }
 
   sinfo.n_it = 0;
   sinfo.res_norm = DBL_MAX;
@@ -473,7 +478,12 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   if (xsol != x)
     BFT_FREE(xsol);
 
-  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+  if (slesp->field_id > -1) {
+
+    cs_field_t  *fld = cs_field_by_id(slesp->field_id);
+    cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  }
 
   return (sinfo.n_it);
 }
