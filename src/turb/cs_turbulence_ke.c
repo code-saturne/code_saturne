@@ -669,7 +669,6 @@ cs_turbulence_ke(int              phase_id,
                              1,     /* inc */
                              gradv);
 
-
   /* strain_sq = Stain rate of the deviatoric part of the strain tensor
      = 2 (Sij^D).(Sij^D)
      divu   = trace of the velocity gradient
@@ -2498,7 +2497,6 @@ cs_turbulence_ke_q_mu_t(int phase_id)
    * ==================================================== */
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
-
   {
     cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
 
