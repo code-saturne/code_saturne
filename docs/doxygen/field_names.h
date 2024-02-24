@@ -44,6 +44,30 @@
 /*!@{*/
 
 /*!
+  \var cs_algo
+
+  Fields used to chec algorithm behavior
+
+  Fields of the form "cs_algo:<type>_<variable_name>" are reserved
+  by the code to allow visualization of some intermediate computational
+  field values.
+
+  If the user creates such a field, and the code calls the matching
+  operator, this field will be uodated automatically.
+
+  Current reserved fields are:
+
+  - cs_algo:grad_clip_factor_<variable_name>
+    Least-squares gradient clip factor if gradient clipping is activated
+    (scalar field on cells).
+  - cs_algo:grad_b_iter_<variable_name>
+    Number of iterations for convergence of fixed-point algorithm for
+    least-squares boundary gradient of vector and tensor fields.
+    (scalar field on boundaery faces).
+*/
+char *cs_algo;
+
+/*!
   \var est_error_pre_2
 
   Error estimator for Navier-Stokes: prediction.
