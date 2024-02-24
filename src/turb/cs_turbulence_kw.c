@@ -1786,6 +1786,13 @@ cs_turbulence_kw_mu_t(int phase_id)
     }
   }
 
+  /* Computation of the velocity gradient */
+  if (f_vel->grad == NULL)
+    cs_field_gradient_vector(f_vel,
+                             true,  /* use_previous_t */
+                             1,     /* inc */
+                             gradv);
+
   /* s2kw = Strain rate of the deviatoric part of the s2kw tensor
    *      = 2 (Sij^D).(Sij^D)
    * divukw   = trace of the velocity gradient
