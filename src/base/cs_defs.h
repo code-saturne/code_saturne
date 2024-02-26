@@ -514,19 +514,6 @@ typedef enum {
 #define CS_NO_WARN_IF_UNUSED(x) (void)(x)
 
 /*----------------------------------------------------------------------------
- * Macro to remove parentheses
- *
- * CS_REMOVE_PARENTHESES(x)   -> x
- * CS_REMOVE_PARENTHESES((x)) -> x
- *----------------------------------------------------------------------------*/
-
-#define CS_REMOVE_PARENTHESES(x) CS_REMOVE_PARENTHESES_ESCAPE(CS_PARENTHESIS x)
-#define CS_REMOVE_PARENTHESES_ESCAPE_(...) CS_VANISH_ ## __VA_ARGS__
-#define CS_REMOVE_PARENTHESES_ESCAPE(...) CS_REMOVE_PARENTHESES_ESCAPE_(__VA_ARGS__)
-#define CS_PARENTHESIS(...) CS_PARENTHESIS __VA_ARGS__
-#define CS_VANISH_CS_PARENTHESIS
-
-/*----------------------------------------------------------------------------
  * Macros for compilation with a C++ compiler
  *----------------------------------------------------------------------------*/
 

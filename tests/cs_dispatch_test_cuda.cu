@@ -71,9 +71,8 @@ cs_dispatch_test_cuda(void)
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  csContext ctx(csCudaContext(1, 1, stream, device_id), {});
-
-  csCudaContext ctx_cuda = static_cast<csCudaContext&>(ctx);
+  //cs_dispatch_context ctx(cs_device_context(stream), {});
+  cs_dispatch_context ctx(cs_device_context(stream), {});
 
   cs_real_t *a0, *a1;
   cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE_SHARED;
@@ -84,24 +83,35 @@ cs_dispatch_test_cuda(void)
   unsigned int gridsize
     = (unsigned int)ceil((double)n / blocksize);
 
-  ctx_cuda.set_cuda_config(gridsize, blocksize);
-  ctx_cuda.iter(n, CS_HOST_DEVICE_FUNCTOR(=, (cs_lnum_t ii), {
-    cs_lnum_t c_id = ii;
+  for (int i = 0; i < 3; i++) {
+
+    if (i == 1) {
+      static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(200);
+      static_cast<cs_host_context&>(ctx).set_n_min_for_cpu_threads(200);
+      //  ctx_cuda.set_n_min_for_gpu(200);
+    }
+    else if (i == 2) {
+      static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(20);
+    }
+
+    ctx.parallel_for(n, CS_HOST_DEVICE_FUNCTOR(=, (cs_lnum_t ii), {
+      cs_lnum_t c_id = ii;
 #ifdef __CUDA_ARCH__   // Test to know whether we are on GPU or CPU...
-    a0[ii] = c_id*0.1;
+      a0[ii] = c_id*0.1;
 #else
-    a0[ii] = c_id;
+      a0[ii] = -c_id*0.1;
 #endif
-    a1[ii] = cos(a0[ii]);
-  }));
+      a1[ii] = cos(a0[ii]);
+    }));
 
-  cudaStreamSynchronize(stream);
+    cudaStreamSynchronize(stream);
 
-  for (cs_lnum_t ii = 0; ii < n; ii++) {
-    std::cout << ii << " " << a0[ii] << " " << a1[ii] << std::endl;
+    for (cs_lnum_t ii = 0; ii < n/10; ii++) {
+      std::cout << ii << " " << a0[ii] << " " << a1[ii] << std::endl;
+    }
   }
 
-  std::cout << "device_id " << device_id << " " << gridsize << " " << blocksize << std::endl;
+  std::cout << "device_id " << device_id << std::endl;
 
   CS_FREE_HD(a0);
   CS_FREE_HD(a1);

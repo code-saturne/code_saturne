@@ -26,7 +26,10 @@
 
 #include "cs_defs.h"
 
+#include "math.h"
 #include "stdlib.h"
+
+#include <iostream>
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -78,11 +81,17 @@ _cs_dispatch_test(void)
     CS_MALLOC_HD(a1, n, cs_real_t, CS_ALLOC_HOST);
   }
 
-#if 0
-  for (cs_lnum_t ii = 0; ii < n; ii++) {
-    cout << ii << " " << a0[ii] " " << a1[ii] << endl;
+  cs_dispatch_context ctx(cs_device_context(), {});
+
+  ctx.parallel_for(n, CS_HOST_DEVICE_FUNCTOR(=, (cs_lnum_t ii), {
+    cs_lnum_t c_id = ii;
+    a0[ii] = c_id*0.2;
+    a1[ii] = sin(a0[ii]);
+  }));
+
+  for (cs_lnum_t ii = 0; ii < n/10; ii++) {
+    std::cout << "cpu " << ii << " " << a0[ii] << " " << a1[ii] << std::endl;
   }
-#endif
 
   CS_FREE_HD(a0);
   CS_FREE_HD(a1);
@@ -97,7 +106,10 @@ main (int argc, char *argv[])
   CS_UNUSED(argv);
 
   _cs_dispatch_test();
+
+#if defined(HAVE_CUDA)
   cs_dispatch_test_cuda();
+#endif
 
   exit(EXIT_SUCCESS);
 }
