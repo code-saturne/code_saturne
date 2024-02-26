@@ -75,31 +75,31 @@ typedef struct {
   int                        restart;      /*!< max. iter. before restarting */
   cs_param_amg_type_t        amg_type;     /*!< type of AMG algorithm */
 
-  /*! \var pcd_block_type
+  /*! \var precond_block_type
    *  type of block preconditioner to use (only meaningful for vector-valued
    *  systems or more complex systems) */
 
-  cs_param_precond_block_t    pcd_block_type;
+  cs_param_precond_block_t   precond_block_type;
 
   /*! \var resnorm_type
    *  normalized or not the norm of the residual used for the stopping criterion
    *  See \ref CS_EQKEY_ITSOL_RESNORM_TYPE for more details. */
 
-  cs_param_resnorm_type_t     resnorm_type;
+  cs_param_resnorm_type_t    resnorm_type;
 
   /*! \var cvg_param
    *  Structure storing the parameters to know if an iterative process has to
    *  stop (convergence or divergence).
    */
 
-  cs_param_convergence_t      cvg_param;
+  cs_param_convergence_t     cvg_param;
 
   /*! \var context_param
    *  Pointer to a structure cast on-the-fly storing specific parameters
    *  related to the given solver (MUMPS for instance)
    */
 
-  void                       *context_param;
+  void                      *context_param;
 
 } cs_param_sles_t;
 
@@ -162,6 +162,89 @@ cs_param_sles_log(cs_param_sles_t   *slesp);
 void
 cs_param_sles_copy_from(const cs_param_sles_t  *src,
                         cs_param_sles_t        *dst);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the solver associated to this SLES from its keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_solver(const char       *keyval,
+                         cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the preconditioner associated to this SLES from its keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_precond(const char       *keyval,
+                          cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the class of solvers associated to this SLES from its keyval
+ *        Common choices are "petsc", "hypre" or "mumps"
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_solver_class(const char       *keyval,
+                               cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the type of algebraic multigrid (AMG) associated to this SLES
+ *        from its keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_amg_type(const char       *keyval,
+                           cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the convergence criteria for the given SLES parameters. One can
+ *        use the parameter value CS_CDO_KEEP_DEFAULT to let unchange the
+ *        settings.
+ *
+ * \param[in, out] slesp    pointer to a cs_param_sles_t structure
+ * \param[in]      rtol     relative tolerance
+ * \param[in]      atol     absolute tolerance
+ * \param[in]      dtol     divergence tolerance
+ * \param[in]      max_iter max. number of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_set_cvg_param(cs_param_sles_t  *slesp,
+                            double            rtol,
+                            double            atol,
+                            double            dtol,
+                            int               max_iter);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -308,19 +391,6 @@ cs_param_sles_hypre_from_petsc(void);
 
 cs_param_solver_class_t
 cs_param_sles_check_class(cs_param_solver_class_t  wanted_class);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if the setting related to the AMG is consistent with the
- *        solver class. If an issue is detected, try to solve it whith the
- *        nearest option.
- *
- * \param[in, out] slesp    pointer to a cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_check_amg(cs_param_sles_t   *slesp);
 
 /*----------------------------------------------------------------------------*/
 

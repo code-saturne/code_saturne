@@ -41,6 +41,10 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Same mechanism as the one used in PETSC_DEFAULT */
+
+#define CS_CDO_KEEP_DEFAULT  -2
+
 /* Specifications for OpenMP loops/sections */
 
 #define CS_CDO_OMP_CHUNK_SIZE   128

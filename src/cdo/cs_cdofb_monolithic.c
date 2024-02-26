@@ -1664,7 +1664,7 @@ cs_cdofb_monolithic_init_sharing(const cs_equation_param_t  *mom_eqp,
 
   cs_param_sles_t  *slesp = mom_eqp->sles_param;
 
-  if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
+  if (slesp->precond_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
     if (slesp->solver_class != CS_PARAM_SOLVER_CLASS_PETSC) {
 
       int  block_sizes[3] =

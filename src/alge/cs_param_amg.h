@@ -138,7 +138,6 @@ typedef enum {
 } cs_param_amg_boomer_smoother_t;
 
 /*! \struct cs_param_boomer_amg_t
-
  *  \brief Set of the main parameters to setup the algebraic multigrid
  *         BoomerAMG belonging to the HYPRE library. These parameters are used
  *         to define this AMG directly in HYPRE or through the PETSc library

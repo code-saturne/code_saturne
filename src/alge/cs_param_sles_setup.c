@@ -1066,7 +1066,7 @@ _petsc_common_block_hook(const cs_param_sles_t    *slesp,
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCFIELDSPLIT);
 
-  switch (slesp->pcd_block_type) {
+  switch (slesp->precond_block_type) {
   case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
   case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
     PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
@@ -2004,7 +2004,7 @@ _set_petsc_hypre_sles(bool                 use_field_id,
 #if defined(HAVE_PETSC)
   cs_sles_petsc_init();
 
-  if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
+  if (slesp->precond_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
 
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
 

@@ -31,9 +31,10 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <float.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <float.h>
 
 #if defined(HAVE_PETSC)
 #include <petscconf.h> /* Useful to know if HYPRE is accessible through PETSc */
@@ -47,7 +48,9 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_base.h"
 #include "cs_log.h"
+#include "cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -72,6 +75,145 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if PETSc or HYPRE is available and return the possible solver
+ *        class
+ *
+ * \param[in] slesp              pointer to a \ref cs_param_sles_t structure
+ * \param[in] petsc_mandatory    is PETSc mandatory with this settings
+ *
+ * \return a solver class
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_solver_class_t
+_get_petsc_or_hypre(const cs_param_sles_t  *slesp,
+                    bool                    petsc_mandatory)
+{
+  assert(slesp != NULL);
+
+  cs_param_solver_class_t  ret_class =
+    cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+  if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC && petsc_mandatory)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): Eq. %s Error detected while setting \"CS_EQKEY_PRECOND\""
+              " key.\n"
+              " PETSc is needed but not available with your installation.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+
+  if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_HYPRE)
+    ret_class = cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_HYPRE);
+
+  if (ret_class != CS_PARAM_SOLVER_CLASS_HYPRE &&
+      ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): Eq. %s Error detected while setting \"CS_EQKEY_PRECOND\""
+              " key.\n"
+              " Neither PETSc nor HYPRE is available with your installation.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+
+  return ret_class;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the setting related to the AMG is consistent with the
+ *        solver class. If an issue is detected, try to solve it whith the
+ *        nearest option.
+ *
+ * \param[in, out] slesp    pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_amg_type(cs_param_sles_t   *slesp)
+{
+  if (slesp == NULL)
+    return;
+  if (slesp->precond != CS_PARAM_PRECOND_AMG)
+    return;
+
+  switch (slesp->solver_class) {
+
+  case CS_PARAM_SOLVER_CLASS_PETSC:
+#if defined(HAVE_PETSC)
+    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_HOUSE_K)
+      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+
+    if (!cs_param_sles_hypre_from_petsc()) {
+      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V)
+        slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+      else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
+        slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
+    }
+#else  /* PETSC is not available */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): System \"%s\" PETSc is not available.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+#endif
+    break;
+
+  case CS_PARAM_SOLVER_CLASS_HYPRE:
+#if defined(HAVE_HYPRE)
+    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+    else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+#else
+#if defined(HAVE_PETSC)
+    if (cs_param_sles_hypre_from_petsc()) {
+
+      if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+          slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+          slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
+          slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
+        slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+        slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): System \"%s\" HYPRE is not available.\n"
+                " Please check your installation settings.\n",
+                __func__, slesp->name);
+
+#else  /* Neither HYPRE nor PETSC is available */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): System \"%s\" HYPRE and PETSc are not available.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+#endif  /* PETSc */
+#endif  /* HYPRE */
+    break;
+
+  case CS_PARAM_SOLVER_CLASS_CS:
+    if (slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||
+        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
+        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
+      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): System \"%s\" Incompatible setting detected.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+    break; /* Nothing to do */
+  }
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -116,7 +258,7 @@ cs_param_sles_create(int          field_id,
   slesp->restart = 15;                          /* restart after ? iterations */
   slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
 
-  slesp->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
+  slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
   slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
 
   slesp->cvg_param =  (cs_param_convergence_t) {
@@ -229,7 +371,7 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:       %s\n",
                   slesp->name,
-                  cs_param_get_precond_block_name(slesp->pcd_block_type));
+                  cs_param_get_precond_block_name(slesp->precond_block_type));
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.max_iter:     %d\n",
                   slesp->name, slesp->cvg_param.n_max_iter);
@@ -293,7 +435,7 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
   dst->precond = src->precond;
   dst->solver = src->solver;
   dst->amg_type = src->amg_type;
-  dst->pcd_block_type = src->pcd_block_type;
+  dst->precond_block_type = src->precond_block_type;
   dst->resnorm_type = src->resnorm_type;
 
   dst->cvg_param.rtol = src->cvg_param.rtol;
@@ -312,6 +454,753 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
                                          dst->precond,
                                          dst->amg_type))
     dst->context_param = cs_param_amg_boomer_copy(src->context_param);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the solver associated to this SLES from its keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_solver(const char       *keyval,
+                         cs_param_sles_t  *slesp)
+{
+  int  ierr = 0;
+
+  if (slesp == NULL)
+    return ierr;
+
+  const char  *sles_name = slesp->name;
+
+  if (strcmp(keyval, "amg") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_AMG;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+  }
+  else if (strcmp(keyval, "bicg") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_BICG;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "bicgstab2") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_BICGSTAB2;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "cg") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_CG;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "cr3") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_CR3;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "fcg") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_FCG;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "gauss_seidel") == 0 ||
+           strcmp(keyval, "gs") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+  }
+  else if (strcmp(keyval, "gcr") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_GCR;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "gmres") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_GMRES;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "fgmres") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_FGMRES;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "jacobi") == 0 ||
+           strcmp(keyval, "diag") == 0 ||
+           strcmp(keyval, "diagonal") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_JACOBI;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "minres") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_MINRES;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+    slesp->flexible = false;
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " PETSc is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_ITSOL");
+    else
+      slesp->solver_class = ret_class;
+
+  }
+  else if (strcmp(keyval, "mumps") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_MUMPS;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+    /* By default, one considers the stand-alone MUMPS library
+     * MUMPS or PETSc are valid choices
+     */
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_MUMPS);
+
+    if (ret_class == CS_PARAM_N_SOLVER_CLASSES)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " MUMPS is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_ITSOL");
+    else
+      slesp->solver_class = ret_class;
+
+    assert(slesp->solver_class != CS_PARAM_SOLVER_CLASS_CS &&
+           slesp->solver_class != CS_PARAM_SOLVER_CLASS_HYPRE);
+
+    cs_param_sles_mumps_reset(slesp);
+
+  }
+  else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
+           strcmp(keyval, "sgs") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "user") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_USER_DEFINED;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+
+  }
+  else if (strcmp(keyval, "none") == 0) {
+
+    slesp->solver = CS_PARAM_ITSOL_NONE;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+
+  }
+  else
+    ierr = 1;
+
+  return ierr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the preconditioner associated to this SLES from its keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_precond(const char       *keyval,
+                          cs_param_sles_t  *slesp)
+{
+  int  ierr = 0;
+
+  if (slesp == NULL)
+    return ierr;
+
+  const char  *sles_name = slesp->name;
+
+  if (strcmp(keyval, "none") == 0) {
+
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0) {
+
+    slesp->precond = CS_PARAM_PRECOND_DIAG;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "block_jacobi") == 0 ||
+           strcmp(keyval, "bjacobi") == 0) {
+
+    /* Either with PETSc or with PETSc/HYPRE using Euclid. In both cases,
+       PETSc is mandatory --> second parameter = "true" */
+
+    slesp->solver_class = _get_petsc_or_hypre(slesp, true);
+
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
+    slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "bjacobi_sgs") == 0 ||
+           strcmp(keyval, "bjacobi_ssor") == 0) {
+
+    /* Only available through the PETSc library */
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " PETSc is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_PRECOND");
+
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+
+    slesp->precond = CS_PARAM_PRECOND_BJACOB_SGS;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "lu") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " PETSc is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_PRECOND");
+
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+
+    slesp->precond = CS_PARAM_PRECOND_LU;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "ilu0") == 0) {
+
+    /* Either with PETSc or with PETSc/HYPRE or HYPRE using Euclid */
+
+    slesp->solver_class = _get_petsc_or_hypre(slesp, false);
+
+    slesp->precond = CS_PARAM_PRECOND_ILU0;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "icc0") == 0) {
+
+    /* Either with PETSc or with PETSc/HYPRE or HYPRE using Euclid */
+
+    slesp->solver_class = _get_petsc_or_hypre(slesp, false);
+
+    slesp->precond = CS_PARAM_PRECOND_ICC0;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "amg") == 0) {
+
+    slesp->precond = CS_PARAM_PRECOND_AMG;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+    slesp->flexible = true;
+
+    switch (slesp->solver) {
+    case CS_PARAM_ITSOL_CG:
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s() SLES \"%s\"\n"
+                    " >> Switch to a flexible variant for CG.\n",
+                    __func__, sles_name);
+
+      slesp->solver = CS_PARAM_ITSOL_FCG;
+      break;
+
+    case CS_PARAM_ITSOL_GMRES:
+    case CS_PARAM_ITSOL_CR3:
+    case CS_PARAM_ITSOL_BICG:
+    case CS_PARAM_ITSOL_BICGSTAB2:
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s() SLES \"%s\"\n"
+                    " >> Switch to a flexible variant: GCR solver.\n",
+                    __func__, sles_name);
+
+      slesp->solver = CS_PARAM_ITSOL_GCR;
+      break;
+
+    default:
+      break;  /* Do nothing */
+
+    }
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(slesp->solver_class);
+
+    /* Set the default AMG choice according to the class of solver */
+
+    switch (ret_class) {
+
+    case CS_PARAM_SOLVER_CLASS_CS:
+      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+      break;
+    case CS_PARAM_SOLVER_CLASS_PETSC:
+      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+      break;
+    case CS_PARAM_SOLVER_CLASS_HYPRE:
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+      cs_param_sles_boomeramg_reset(slesp);
+      break;
+
+    default:
+      ierr = 2;
+      return ierr;
+
+    } /* End of switch */
+
+  }
+  else if (strcmp(keyval, "amg_block") == 0 ||
+           strcmp(keyval, "block_amg") == 0) {
+
+    slesp->precond = CS_PARAM_PRECOND_AMG;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
+    slesp->flexible = true;
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(slesp->solver_class);
+
+    /* Set the default AMG choice according to the class of solver */
+
+    switch (ret_class) {
+
+    case CS_PARAM_SOLVER_CLASS_CS:
+      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+      break;
+
+    case CS_PARAM_SOLVER_CLASS_PETSC:
+      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+      break;
+
+    case CS_PARAM_SOLVER_CLASS_HYPRE:
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+
+      if (cs_param_sles_hypre_from_petsc())
+        slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+      else { /* No block is used in this case */
+
+        slesp->solver_class = CS_PARAM_SOLVER_CLASS_HYPRE;
+        slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_WARNINGS,
+                      "%s(): SLES \"%s\". Switch to HYPRE.\n"
+                      "No block preconditioner will be used.",
+                      __func__, sles_name);
+
+      }
+      break;
+
+    default:
+      ierr = 2;
+      return ierr;
+
+    } /* End of switch */
+
+  }
+  else if (strcmp(keyval, "mumps") == 0) {
+
+    slesp->flexible = false;
+    slesp->precond = CS_PARAM_PRECOND_MUMPS;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+    /* Only MUMPS is a valid choice in this situation */
+
+    if (cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_MUMPS) !=
+        CS_PARAM_SOLVER_CLASS_MUMPS)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " MUMPS is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_PRECOND");
+
+
+  }
+  else if (strcmp(keyval, "poly1") == 0) {
+
+    slesp->precond = CS_PARAM_PRECOND_POLY1;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "poly2") == 0) {
+
+    slesp->precond = CS_PARAM_PRECOND_POLY2;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = false;
+
+  }
+  else if (strcmp(keyval, "ssor") == 0) {
+
+    slesp->precond = CS_PARAM_PRECOND_SSOR;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+    slesp->flexible = false;
+
+    if (cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC) !=
+        CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " PETSc is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_PRECOND");
+
+  }
+  else
+    ierr = 1;
+
+  /* Default when using PETSc */
+
+  if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_PETSC)
+    slesp->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+
+  return ierr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the class of solvers associated to this SLES from its keyval
+ *        Common choices are "petsc", "hypre" or "mumps"
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_solver_class(const char       *keyval,
+                               cs_param_sles_t  *slesp)
+{
+  int  ierr = 0;
+
+  if (slesp == NULL)
+    return ierr;
+
+  const char  *sles_name = slesp->name;
+
+  if (strcmp(keyval, "cs") == 0 || strcmp(keyval, "saturne") == 0) {
+
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+
+    if (slesp->precond == CS_PARAM_PRECOND_AMG)
+      _check_amg_type(slesp);
+
+  }
+  else if (strcmp(keyval, "hypre") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_HYPRE);
+
+    if (ret_class == CS_PARAM_N_SOLVER_CLASSES)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Eq. %s Error detected while setting \"%s\" key.\n"
+                " Neither PETSc nor HYPRE is available.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_SOLVER_FAMILY");
+    else if (ret_class == CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Eq. %s Error detected while setting \"%s\" key.\n"
+                " PETSc with HYPRE is not available.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_SOLVER_FAMILY");
+
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_HYPRE;
+
+    /* Check that the AMG type is correctly set */
+
+    if (slesp->precond == CS_PARAM_PRECOND_AMG) {
+
+      _check_amg_type(slesp);
+      cs_param_sles_boomeramg_reset(slesp);
+
+    }
+
+  }
+  else if (strcmp(keyval, "mumps") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_MUMPS);
+
+    if (ret_class == CS_PARAM_N_SOLVER_CLASSES)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+                " MUMPS is not available.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_SOLVER_FAMILY");
+
+    slesp->solver_class = ret_class; /* PETSc or MUMPS */
+
+  }
+  else if (strcmp(keyval, "petsc") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class == CS_PARAM_N_SOLVER_CLASSES)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+                " PETSc is not available.\n"
+                " Please check your installation settings.\n",
+                __func__, sles_name, "CS_EQKEY_SOLVER_FAMILY");
+
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+
+    /* Check that the AMG type is correctly set */
+
+    if (slesp->precond == CS_PARAM_PRECOND_AMG)
+      _check_amg_type(slesp);
+
+  }
+
+  return ierr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the type of algebraic multigrid (AMG) associated to this SLES
+ *        from its keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_amg_type(const char       *keyval,
+                           cs_param_sles_t  *slesp)
+{
+  int  ierr = 0;
+
+  if (slesp == NULL)
+    return ierr;
+
+  const char  *sles_name = slesp->name;
+
+  if (strcmp(keyval, "v_cycle") == 0) {
+
+    slesp->amg_type = CS_PARAM_AMG_HOUSE_V;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "k_cycle") == 0 || strcmp(keyval, "kamg") == 0) {
+
+    slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "bamg") == 0 ||
+           strcmp(keyval, "boomer_v") == 0) {
+
+    cs_param_solver_class_t  wanted_class = CS_PARAM_SOLVER_CLASS_HYPRE;
+    if (slesp->precond_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
+      wanted_class = CS_PARAM_SOLVER_CLASS_PETSC;
+
+    cs_param_solver_class_t ret_class =
+      cs_param_sles_check_class(wanted_class);
+
+    slesp->flexible = true;
+    slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+    slesp->solver_class = ret_class;
+
+    cs_param_sles_boomeramg_reset(slesp);
+
+  }
+  else if (strcmp(keyval, "boomer_w") == 0 || strcmp(keyval, "bamg_w") == 0) {
+
+    cs_param_solver_class_t  wanted_class = CS_PARAM_SOLVER_CLASS_HYPRE;
+    if (slesp->precond_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
+      wanted_class = CS_PARAM_SOLVER_CLASS_PETSC;
+
+    cs_param_solver_class_t ret_class =
+      cs_param_sles_check_class(wanted_class);
+
+    slesp->flexible = true;
+    slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+    slesp->solver_class = ret_class;
+
+    cs_param_sles_boomeramg_reset(slesp);
+
+  }
+  else if (strcmp(keyval, "gamg") == 0 || strcmp(keyval, "gamg_v") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Eq. %s\n Invalid choice of AMG type.\n"
+                " PETSc is not available."
+                " Please check your settings.", __func__, sles_name);
+
+    slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "gamg_w") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Eq. %s\n Invalid choice of AMG type.\n"
+                " PETSc is not available."
+                " Please check your settings.", __func__, sles_name);
+
+    slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+    slesp->flexible = true;
+
+  }
+  else if (strcmp(keyval, "pcmg") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Eq. %s\n Invalid choice of AMG type.\n"
+                " PETSc is not available."
+                " Please check your settings.", __func__, sles_name);
+
+    slesp->amg_type = CS_PARAM_AMG_PETSC_PCMG;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+    slesp->flexible = true;
+
+  }
+  else
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+
+  return ierr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the convergence criteria for the given SLES parameters. One can
+ *        use the parameter value CS_CDO_KEEP_DEFAULT to let unchange the
+ *        settings.
+ *
+ * \param[in, out] slesp    pointer to a cs_param_sles_t structure
+ * \param[in]      rtol     relative tolerance
+ * \param[in]      atol     absolute tolerance
+ * \param[in]      dtol     divergence tolerance
+ * \param[in]      max_iter max. number of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_set_cvg_param(cs_param_sles_t  *slesp,
+                            double            rtol,
+                            double            atol,
+                            double            dtol,
+                            int               max_iter)
+{
+  if (slesp == NULL)
+    return;
+
+  /* Absolute tolerance */
+
+  if (fabs(atol - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+    slesp->cvg_param.atol = atol;
+
+  /* Relative tolerance */
+
+  if (fabs(rtol - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+    slesp->cvg_param.rtol = rtol;
+
+  /* Divergence tolerance */
+
+  if (fabs(dtol - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+    slesp->cvg_param.dtol = dtol;
+
+  /* Max. number of iterations */
+
+  if (max_iter - CS_CDO_KEEP_DEFAULT != 0)
+    slesp->cvg_param.n_max_iter = max_iter;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -612,101 +1501,6 @@ cs_param_sles_check_class(cs_param_solver_class_t  wanted_class)
 
   default:
     return CS_PARAM_N_SOLVER_CLASSES;
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if the setting related to the AMG is consistent with the
- *        solver class. If an issue is detected, try to solve it whith the
- *        nearest option.
- *
- * \param[in, out] slesp    pointer to a cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_check_amg(cs_param_sles_t   *slesp)
-{
-  if (slesp == NULL)
-    return;
-  if (slesp->precond != CS_PARAM_PRECOND_AMG)
-    return;
-
-  switch (slesp->solver_class) {
-
-  case CS_PARAM_SOLVER_CLASS_PETSC:
-#if defined(HAVE_PETSC)
-    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-        slesp->amg_type == CS_PARAM_AMG_HOUSE_K)
-      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-
-    if (!cs_param_sles_hypre_from_petsc()) {
-      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V)
-        slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-      else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-        slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
-    }
-#else  /* PETSC is not available */
-    bft_error(__FILE__, __LINE__, 0,
-              " %s(): System \"%s\" PETSc is not available.\n"
-              " Please check your installation settings.\n",
-              __func__, slesp->name);
-#endif
-    break;
-
-  case CS_PARAM_SOLVER_CLASS_HYPRE:
-#if defined(HAVE_HYPRE)
-    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
-      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-    else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
-      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
-#else
-#if defined(HAVE_PETSC)
-    if (cs_param_sles_hypre_from_petsc()) {
-
-      if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-          slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
-          slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
-          slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
-        slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
-        slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
-
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s(): System \"%s\" HYPRE is not available.\n"
-                " Please check your installation settings.\n",
-                __func__, slesp->name);
-
-#else  /* Neither HYPRE nor PETSC is available */
-    bft_error(__FILE__, __LINE__, 0,
-              " %s(): System \"%s\" HYPRE and PETSc are not available.\n"
-              " Please check your installation settings.\n",
-              __func__, slesp->name);
-#endif  /* PETSc */
-#endif  /* HYPRE */
-    break;
-
-  case CS_PARAM_SOLVER_CLASS_CS:
-    if (slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||
-        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
-        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s(): System \"%s\" Incompatible setting detected.\n"
-              " Please check your installation settings.\n",
-              __func__, slesp->name);
-    break; /* Nothing to do */
   }
 }
 
