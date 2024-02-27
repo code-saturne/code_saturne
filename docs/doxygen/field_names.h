@@ -46,14 +46,14 @@
 /*!
   \var cs_algo
 
-  Fields used to chec algorithm behavior
+  Fields used to check algorithm behavior
 
   Fields of the form "cs_algo:<type>_<variable_name>" are reserved
   by the code to allow visualization of some intermediate computational
   field values.
 
   If the user creates such a field, and the code calls the matching
-  operator, this field will be uodated automatically.
+  operator, this field will be updated automatically.
 
   Current reserved fields are:
 
