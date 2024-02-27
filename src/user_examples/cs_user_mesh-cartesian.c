@@ -103,8 +103,12 @@ cs_user_mesh_cartesian_define(void)
 
   /*! [mesh_cartesian_2] */
   {
+    /* Get pointer to mesh parameters structure */
+    const int n_meshes = cs_mesh_cartesian_get_number_of_meshes();
     /* Create a mesh using simple parameters */
-    cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(NULL);
+    if (n_meshes == 0)
+      cs_mesh_cartesian_create(NULL);
+    cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_by_id(0);
 
     /* Constant step for X direction */
     cs_mesh_cartesian_define_dir_params(mp, /* Pointer to mesh parameters */
