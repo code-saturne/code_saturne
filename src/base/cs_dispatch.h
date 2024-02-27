@@ -75,10 +75,6 @@
 #define CS_CUDA_HOST_DEVICE
 #endif
 
-// Define a functor that is implemented both on device and host.
-#define CS_HOST_DEVICE_FUNCTOR(capture, args, ...) \
-  ([CS_REMOVE_PARENTHESES(capture)] CS_CUDA_HOST_DEVICE args __VA_ARGS__)
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -95,11 +91,15 @@ public:
 
   // Loop over all internal faces
   template <class F, class... Args>
-  decltype(auto) parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args);
+  decltype(auto) parallel_for_i_faces(const cs_mesh_t*  m,
+                                      F&&               f,
+                                      Args&&...         args);
 
   // Loop over all boundary faces
   template <class F, class... Args>
-  decltype(auto) parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args);
+  decltype(auto) parallel_for_b_faces(const cs_mesh_t*  m,
+                                      F&&               f,
+                                      Args&&...         args);
 
   // Loop over all cells
   template <class F, class... Args>
@@ -116,9 +116,10 @@ template <class Derived>
 template <class F, class... Args>
 decltype(auto) csDispatchContextMixin<Derived>::parallel_for_i_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for(m->n_i_faces,
-                                                   static_cast<F&&>(f),
-                                                   static_cast<Args&&>(args)...);
+  return static_cast<Derived*>(this)->parallel_for
+                                        (m->n_i_faces,
+                                         static_cast<F&&>(f),
+                                         static_cast<Args&&>(args)...);
 }
 
 // Default implementation of parallel_for_b_faces based on parallel_for
@@ -126,9 +127,10 @@ template <class Derived>
 template <class F, class... Args>
 decltype(auto) csDispatchContextMixin<Derived>::parallel_for_b_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for(m->n_b_faces,
-                                           static_cast<F&&>(f),
-                                           static_cast<Args&&>(args)...);
+  return static_cast<Derived*>(this)->parallel_for
+                                        (m->n_b_faces,
+                                         static_cast<F&&>(f),
+                                         static_cast<Args&&>(args)...);
 }
 
 // Default implementation of parallel_for_cells based on parallel_for
@@ -136,9 +138,10 @@ template <class Derived>
 template <class F, class... Args>
 decltype(auto) csDispatchContextMixin<Derived>::parallel_for_cells
   (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for(m->n_cells,
-                                           static_cast<F&&>(f),
-                                           static_cast<Args&&>(args)...);
+  return static_cast<Derived*>(this)->parallel_for
+                                        (m->n_cells,
+                                         static_cast<F&&>(f),
+                                         static_cast<Args&&>(args)...);
 }
 
 /*!
@@ -148,32 +151,33 @@ class cs_host_context : public csDispatchContextMixin<cs_host_context> {
 
 private:
 
-  cs_lnum_t  _n_min_threshold;  /*!< Run on single thread under this threshold */
+  cs_lnum_t  n_min_for_threads;  /*!< Run on single thread
+                                   under this threshold */
 
 public:
 
   cs_host_context()
-    : _n_min_threshold(CS_THR_MIN)
+    : n_min_for_threads(CS_THR_MIN)
   {}
 
 public:
 
   /*! Set minimum number of elements threshold for CPU multithread execution */
-  void set_n_min_for_cpu_threads(cs_lnum_t  n_min_threshold) {
-    this->_n_min_threshold = n_min_threshold;
+  void set_n_min_for_cpu_threads(cs_lnum_t  n) {
+    this->n_min_for_threads = n;
   }
 
   // Iterate using a plain omp parallel for
   template <class F, class... Args>
   bool parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-#   pragma omp parallel for  if (n >= _n_min_threshold)
+#   pragma omp parallel for  if (n >= n_min_for_threads)
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, args...);
     }
     return true;
   }
 
-  // Loop over the internal faces of a mesh using a specific numbering
+  // Loop over the interior faces of a mesh using a specific numbering
   // that avoids conflicts between threads.
   template <class F, class... Args>
   bool parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
@@ -191,7 +195,24 @@ public:
         }
       }
     }
+    return true;
+  }
 
+  // Loop over the boundary faces of a mesh using a specific numbering
+  // that avoids conflicts between threads.
+  template <class F, class... Args>
+  bool parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+    const int n_b_threads = m->b_face_numbering->n_threads;
+    const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+    #pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t f_id = b_group_index[t_id*2];
+           f_id < b_group_index[t_id*2 + 1];
+           f_id++) {
+        f(f_id, args...);
+      }
+    }
     return true;
   }
 };
@@ -227,13 +248,13 @@ private:
   cudaStream_t  stream;   /*!< Associated CUDA stream */
   int   device;           /*!< Associated CUDA device id */
 
-  cs_lnum_t  _n_min_threshold;  /*!< Run on CPU under this threshold */
+  cs_lnum_t  n_min_for_device;  /*!< Run on CPU under this threshold */
 
 public:
 
   cs_device_context(void)
     : grid_size(0), block_size(0), stream(nullptr), device(0),
-      _n_min_threshold(0)
+      n_min_for_device(0)
   {
     block_size = 256;
     device = cs_base_cuda_get_device();
@@ -244,32 +265,35 @@ public:
                     cudaStream_t  stream,
                     int  device)
     : grid_size(grid_size), block_size(block_size), stream(stream),
-      device(device), _n_min_threshold(0)
+      device(device), n_min_for_device(0)
   {}
 
   cs_device_context(long  grid_size,
                     long  block_size,
                     cudaStream_t  stream)
     : grid_size(grid_size), block_size(block_size), stream(stream),
-      device(0), _n_min_threshold(0)
+      device(0), n_min_for_device(0)
   {
+    block_size = block_size;
+    grid_size = grid_size;
     device = cs_base_cuda_get_device();
   }
 
   cs_device_context(long  grid_size,
                     long  block_size)
     : grid_size(grid_size), block_size(block_size), stream(cudaStreamLegacy),
-      device(0)
+      device(0), n_min_for_device(0)
   {
     device = cs_base_cuda_get_device();
   }
 
   cs_device_context(cudaStream_t  stream)
     : grid_size(0), block_size(0), stream(stream), device(0),
-      _n_min_threshold(0)
+      n_min_for_device(0)
   {
     block_size = 256;
     device = cs_base_cuda_get_device();
+    printf("init device %d\n", device);
   }
 
   // Change grid_size configuration, but keeps the stream and device
@@ -305,8 +329,8 @@ public:
   }
 
   /*! Set minimum number of elements threshold for GPU execution */
-  void set_n_min_for_gpu(cs_lnum_t  n_min_threshold) {
-    this->_n_min_threshold = n_min_threshold;
+  void set_n_min_for_gpu(cs_lnum_t  n) {
+    this->n_min_for_device = n;
   }
 
 public:
@@ -314,7 +338,7 @@ public:
   // Try to iterate on the GPU and return false if the GPU is not available
   template <class F, class... Args>
   bool parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-    if (device < 0 || n < _n_min_threshold) {
+    if (device < 0 || n < n_min_for_device) {
       return false;
     }
 
@@ -323,7 +347,6 @@ public:
       l_grid_size = (n % block_size) ?  n/block_size + 1 : n/block_size;
     }
 
-    printf("On GPU\n");
     cs_cuda_kernel_parallel_for<<<l_grid_size, block_size, 0, stream>>>
       (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
@@ -349,7 +372,7 @@ public:
   }
 
   /*! Set minimum number of elements threshold for GPU execution */
-  void set_n_min_for_gpu([[maybe_unused]] cs_lnum_t  n_min_threshold) {
+  void set_n_min_for_gpu([[maybe_unused]] cs_lnum_t  n_min_for_device) {
   }
 
 public:

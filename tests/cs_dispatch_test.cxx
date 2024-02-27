@@ -35,6 +35,8 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "cs_base_accel.h"
+
 #include "cs_dispatch.h"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -83,11 +85,11 @@ _cs_dispatch_test(void)
 
   cs_dispatch_context ctx(cs_device_context(), {});
 
-  ctx.parallel_for(n, CS_HOST_DEVICE_FUNCTOR(=, (cs_lnum_t ii), {
+  ctx.parallel_for(n, [=] CS_CUDA_HOST_DEVICE (cs_lnum_t ii) {
     cs_lnum_t c_id = ii;
     a0[ii] = c_id*0.2;
     a1[ii] = sin(a0[ii]);
-  }));
+  });
 
   for (cs_lnum_t ii = 0; ii < n/10; ii++) {
     std::cout << "cpu " << ii << " " << a0[ii] << " " << a1[ii] << std::endl;

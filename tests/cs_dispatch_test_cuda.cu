@@ -71,7 +71,6 @@ cs_dispatch_test_cuda(void)
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  //cs_dispatch_context ctx(cs_device_context(stream), {});
   cs_dispatch_context ctx(cs_device_context(stream), {});
 
   cs_real_t *a0, *a1;
@@ -88,15 +87,14 @@ cs_dispatch_test_cuda(void)
     if (i == 1) {
       static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(200);
       static_cast<cs_host_context&>(ctx).set_n_min_for_cpu_threads(200);
-      //  ctx_cuda.set_n_min_for_gpu(200);
     }
     else if (i == 2) {
       static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(20);
     }
 
-    ctx.parallel_for(n, CS_HOST_DEVICE_FUNCTOR(=, (cs_lnum_t ii), {
+    ctx.parallel_for(n, [=] CS_CUDA_HOST_DEVICE (cs_lnum_t ii) {
       cs_lnum_t c_id = ii;
-#ifdef __CUDA_ARCH__   // Test to know whether we are on GPU or CPU...
+#ifdef __CUDA_ARCH__   // Test to show whether we are on GPU or CPU...
       a0[ii] = c_id*0.1;
 #else
       a0[ii] = -c_id*0.1;
