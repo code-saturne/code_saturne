@@ -92,47 +92,47 @@ END_C_DECLS
 _function_header = { \
 'vol':"""void
 cs_meg_volume_function(const char      *zone_name,
-                       const cs_lnum_t  n_elts,
-                       const cs_lnum_t *elt_ids,
-                       const cs_real_t  xyz[][3],
+                       [[maybe_unused]] const cs_lnum_t  n_elts,
+                       [[maybe_unused]] const cs_lnum_t *elt_ids,
+                       [[maybe_unused]] const cs_real_t  xyz[][3],
                        const char      *fields_names,
                        cs_real_t       *fvals[])
 {
 """,
 'bnd':"""void
 cs_meg_boundary_function(const char       *zone_name,
-                         const cs_lnum_t   n_elts,
-                         const cs_lnum_t  *elt_ids,
-                         const cs_real_t   xyz[][3],
+                         [[maybe_unused]] const cs_lnum_t   n_elts,
+                         [[maybe_unused]] const cs_lnum_t  *elt_ids,
+                         [[maybe_unused]] const cs_real_t   xyz[][3],
                          const char       *field_name,
-                         const char       *condition,
+                         [[maybe_unused]] const char       *condition,
                          cs_real_t        *retvals)
 {
 """,
 'src':"""void
 cs_meg_source_terms(const char       *zone_name,
-                    const cs_lnum_t   n_elts,
-                    const cs_lnum_t  *elt_ids,
-                    const cs_real_t   xyz[][3],
+                    [[maybe_unused]] const cs_lnum_t   n_elts,
+                    [[maybe_unused]] const cs_lnum_t  *elt_ids,
+                    [[maybe_unused]] const cs_real_t   xyz[][3],
                     const char       *name,
-                    const char       *source_type,
+                    [[maybe_unused]] const char       *source_type,
                     cs_real_t        *retvals)
 {
 """,
 'ini':"""void
 cs_meg_initialization(const char      *zone_name,
-                      const cs_lnum_t  n_elts,
-                      const cs_lnum_t *elt_ids,
-                      const cs_real_t  xyz[][3],
+                      [[maybe_unused]] const cs_lnum_t  n_elts,
+                      [[maybe_unused]] const cs_lnum_t *elt_ids,
+                      [[maybe_unused]] const cs_real_t  xyz[][3],
                       const char      *field_name,
                       cs_real_t       *retvals)
 {
 """,
 'ibm':"""void
 cs_meg_immersed_boundaries_inout(int         *ipenal,
-                                 const char  *object_name,
-                                 cs_real_t    xyz[3],
-                                 cs_real_t    t)
+                                 [[maybe_unused]] const char  *object_name,
+                                 [[maybe_unused]] cs_real_t    xyz[3],
+                                 [[maybe_unused]] cs_real_t    t)
 {
 """,
 'fsi':"""void
@@ -154,23 +154,23 @@ cs_meg_post_activate(void)
 """,
 'pca':"""void
 cs_meg_post_calculator(const char       *name,
-                       const cs_lnum_t   n_elts,
-                       const cs_lnum_t  *elt_ids,
-                       const cs_real_t   xyz[][3],
+                       [[maybe_unused]] const cs_lnum_t   n_elts,
+                       [[maybe_unused]] const cs_lnum_t  *elt_ids,
+                       [[maybe_unused]] const cs_real_t   xyz[][3],
                        cs_real_t        *retvals)
 {
 """
 }
 
-_function_names = {'vol': 'cs_meg_volume_function.c',
-                   'bnd': 'cs_meg_boundary_function.c',
-                   'src': 'cs_meg_source_terms.c',
-                   'ini': 'cs_meg_initialization.c',
-                   'ibm': 'cs_meg_immersed_boundaries_inout.c',
-                   'fsi': 'cs_meg_fsi_struct.c',
-                   'pfl': 'cs_meg_post_profile.c',
-                   'pwa': 'cs_meg_post_output.c',
-                   'pca': 'cs_meg_post_calculator.c'}
+_function_names = {'vol': 'cs_meg_volume_function.cxx',
+                   'bnd': 'cs_meg_boundary_function.cxx',
+                   'src': 'cs_meg_source_terms.cxx',
+                   'ini': 'cs_meg_initialization.cxx',
+                   'ibm': 'cs_meg_immersed_boundaries_inout.cxx',
+                   'fsi': 'cs_meg_fsi_struct.cxx',
+                   'pfl': 'cs_meg_post_profile.cxx',
+                   'pwa': 'cs_meg_post_output.cxx',
+                   'pca': 'cs_meg_post_calculator.cxx'}
 
 _block_comments = {'vol': 'User defined formula for variable(s) %s over zone %s',
                    'bnd': 'User defined formula for "%s" over BC=%s',
@@ -551,7 +551,7 @@ class meg_to_c_interpreter:
         usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = elt_ids[e_id];\n'
+        usr_blck += 3*tab + '[[maybe_unused]] cs_lnum_t c_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -663,7 +663,7 @@ class meg_to_c_interpreter:
 
         if need_for_loop:
             usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
-            usr_blck += 3*tab + 'cs_lnum_t b_e_id = elt_ids[e_id];\n'
+            usr_blck += 3*tab + '[[maybe_unused]] cs_lnum_t b_e_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -781,7 +781,7 @@ class meg_to_c_interpreter:
         usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = elt_ids[e_id];\n'
+        usr_blck += 3*tab + '[[maybe_unused]] cs_lnum_t c_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -892,7 +892,7 @@ class meg_to_c_interpreter:
         usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = elt_ids[e_id];\n'
+        usr_blck += 3*tab + '[[maybe_unused]] cs_lnum_t c_id = elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -1341,7 +1341,7 @@ class meg_to_c_interpreter:
         usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = (elt_ids == NULL) ? e_id : elt_ids[e_id];\n'
+        usr_blck += 3*tab + '[[maybe_unused]] cs_lnum_t c_id = (elt_ids == NULL) ? e_id : elt_ids[e_id];\n'
 
         usr_blck += usr_code
 

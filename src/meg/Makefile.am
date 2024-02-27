@@ -72,15 +72,15 @@ cs_meg_headers.h
 # Library source files
 
 megfiles = \
-cs_meg_boundary_function.c \
-cs_meg_fsi_struct.c \
-cs_meg_immersed_boundaries_inout.c \
-cs_meg_initialization.c \
-cs_meg_post_calculator.c \
-cs_meg_post_output.c \
-cs_meg_post_profile.c \
-cs_meg_source_terms.c \
-cs_meg_volume_function.c \
+cs_meg_boundary_function.cxx \
+cs_meg_fsi_struct.cxx \
+cs_meg_immersed_boundaries_inout.cxx \
+cs_meg_initialization.cxx \
+cs_meg_post_calculator.cxx \
+cs_meg_post_output.cxx \
+cs_meg_post_profile.cxx \
+cs_meg_source_terms.cxx \
+cs_meg_volume_function.cxx \
 cs_meg_xdef_wrapper.c
 
 noinst_LIBRARIES = libcsmeg.a
