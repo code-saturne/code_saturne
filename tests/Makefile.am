@@ -187,18 +187,10 @@ cs_core_test_SOURCES  = cs_core_test.c
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_core_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_dispatch_test_SOURCES = cs_dispatch_test.cpp
-if HAVE_CUDA
-  cs_dispatch_test_SOURCES += cs_dispatch_test_cuda.cu
-endif
-
-cs_dispatch_test$(EXEEXT): cs_dispatch_test.cpp cs_dispatch_test_cuda.cu
-	@list=; for p in ${cs_dispatch_test_SOURCES}; do \
-	  list="$$list $(top_srcdir)/tests/$$p"; \
-	done; \
+cs_dispatch_test$(EXEEXT): cs_dispatch_test.cpp
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-	-o cs_dispatch_test $$list
+	-o cs_dispatch_test $(top_srcdir)/tests/cs_dispatch_test.cpp
 
 cs_file_test_SOURCES  = cs_file_test.c
 cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

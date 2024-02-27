@@ -293,7 +293,6 @@ public:
   {
     block_size = 256;
     device = cs_base_cuda_get_device();
-    printf("init device %d\n", device);
   }
 
   // Change grid_size configuration, but keeps the stream and device

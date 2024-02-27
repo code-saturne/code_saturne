@@ -68,32 +68,63 @@ cs_dispatch_test_cuda(void);
  * Test dispatch class.
  *----------------------------------------------------------------------------*/
 
-static void
-_cs_dispatch_test(void)
+void
+cs_dispatch_test(void)
 {
   const cs_lnum_t n = 100;
 
-  cs_real_t *a0, *a1;
-  CS_MALLOC_HD(a0, n, cs_real_t, CS_ALLOC_HOST);
+#ifdef __NVCC__
 
-  if (cs_get_device_id() > -1) {
-    CS_MALLOC_HD(a1, n, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
-  }
-  else {
-    CS_MALLOC_HD(a1, n, cs_real_t, CS_ALLOC_HOST);
-  }
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+
+  cs_dispatch_context ctx(cs_device_context(stream), {});
+
+#else
 
   cs_dispatch_context ctx(cs_device_context(), {});
 
-  ctx.parallel_for(n, [=] CS_CUDA_HOST_DEVICE (cs_lnum_t ii) {
-    cs_lnum_t c_id = ii;
-    a0[ii] = c_id*0.2;
-    a1[ii] = sin(a0[ii]);
-  });
+#endif
 
-  for (cs_lnum_t ii = 0; ii < n/10; ii++) {
-    std::cout << "cpu " << ii << " " << a0[ii] << " " << a1[ii] << std::endl;
+  cs_real_t *a0, *a1;
+  cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE_SHARED;
+  CS_MALLOC_HD(a0, n, cs_real_t, amode);
+  CS_MALLOC_HD(a1, n, cs_real_t, amode);
+
+  unsigned int blocksize = 64;
+
+  for (int i = 0; i < 3; i++) {
+
+    if (i == 1) {
+      static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(200);
+      static_cast<cs_host_context&>(ctx).set_n_min_for_cpu_threads(20);
+    }
+    else if (i == 2) {
+      static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(20);
+    }
+
+    ctx.parallel_for(n, [=] CS_CUDA_HOST_DEVICE (cs_lnum_t ii) {
+      cs_lnum_t c_id = ii;
+#ifdef __CUDA_ARCH__   // Test to show whether we are on GPU or CPU...
+      a0[ii] = c_id*0.1;
+#else
+      a0[ii] = -c_id*0.1;
+#endif
+      a1[ii] = cos(a0[ii]);
+    });
+
+#ifdef __NVCC__
+    cudaStreamSynchronize(stream);
+#endif
+
+    for (cs_lnum_t ii = 0; ii < n/10; ii++) {
+      std::cout << ii << " " << a0[ii] << " " << a1[ii] << std::endl;
+    }
   }
+
+#ifdef __NVCC__
+  std::cout << "device_id " << cs_base_cuda_get_device << std::endl;
+#endif
 
   CS_FREE_HD(a0);
   CS_FREE_HD(a1);
@@ -107,11 +138,7 @@ main (int argc, char *argv[])
   CS_UNUSED(argc);
   CS_UNUSED(argv);
 
-  _cs_dispatch_test();
-
-#if defined(HAVE_CUDA)
-  cs_dispatch_test_cuda();
-#endif
+  cs_dispatch_test();
 
   exit(EXIT_SUCCESS);
 }
