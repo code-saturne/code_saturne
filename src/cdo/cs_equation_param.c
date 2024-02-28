@@ -393,6 +393,8 @@ _set_key(cs_equation_param_t   *eqp,
   case CS_EQKEY_ITSOL_EPS:  /* kept for backward compatibility */
   case CS_EQKEY_ITSOL_RTOL:
     eqp->sles_param->cvg_param.rtol = atof(keyval);
+    if (eqp->sles_param->cvg_param.atol > eqp->sles_param->cvg_param.rtol)
+      eqp->sles_param->cvg_param.atol = eqp->sles_param->cvg_param.rtol;
     break;
 
   case CS_EQKEY_ITSOL_RESNORM_TYPE:
