@@ -1479,7 +1479,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
 
   cs_equation_param_set(tr_eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
 
-  /* Default advection scheme: centered scheme with 20/100 of upwinding */
+  /* Default advection scheme: centered scheme with 25/100 of upwinding */
 
   cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
   cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_SCHEME, "mix_centered_upwind");

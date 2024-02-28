@@ -115,8 +115,8 @@ _set_key(cs_equation_param_t   *eqp,
   int  ierr = 0;
 
   const char  *eqname = eqp->name;
-  const char  emsg[] = " %s: %s equation --> Invalid key value %s for"
-    " keyword %s.\n";
+  const char  emsg[] = " %s: %s equation --> Invalid key value \"%s\" for"
+    " the keyword %s.\n";
 
   switch(key) {
 

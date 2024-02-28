@@ -449,7 +449,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
 
     /* This is for post-processing purpose, so, there is no need to have
      * a restrictive convergence tolerance on the resolution of the linear

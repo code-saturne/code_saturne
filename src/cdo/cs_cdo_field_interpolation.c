@@ -130,7 +130,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vcb");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
 
     /* Add a diffusion term (Poisson eq.) */
@@ -156,7 +156,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
 
     /* Add a diffusion term (Poisson eq.) */

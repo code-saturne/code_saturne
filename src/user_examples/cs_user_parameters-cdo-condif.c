@@ -384,7 +384,7 @@ cs_user_parameters(cs_domain_t   *domain)
     /* Linear algebra settings */
 #if defined(HAVE_PETSC)
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 #else
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");

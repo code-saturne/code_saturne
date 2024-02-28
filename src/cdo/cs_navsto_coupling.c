@@ -433,7 +433,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_MAX_ITER, "50");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
 #endif
 
   }
