@@ -455,6 +455,8 @@ static cs_equation_param_t _equation_param_default
 
    .adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV,
    .adv_scheme = CS_PARAM_N_ADVECTION_SCHEMES,
+   .adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED,
+   .adv_extrapol = CS_PARAM_N_ADVECTION_EXTRAPOLATIONS,
    .upwind_portion = 0.,
    .adv_field = NULL,
    .adv_scaling_property = NULL,
@@ -462,6 +464,7 @@ static cs_equation_param_t _equation_param_default
    .reaction_hodgep = _CS_HODGE_LEGACY_INIT,
    .n_reaction_terms = 0,
    .reaction_properties = NULL,
+
    .n_source_terms = 0,
    .source_terms = NULL,
    .n_volume_mass_injections = 0,
@@ -471,6 +474,15 @@ static cs_equation_param_t _equation_param_default
    .enforcement_params = NULL,
 
    .sles_param = NULL,
+   .saddle_param = NULL,
+
+   .incremental_algo_type = CS_PARAM_N_NL_ALGOS,
+   .incremental_algo_cvg =
+   {.atol = -1., .rtol = -1., .dtol = -1., .n_max_iter = -1},
+   .incremental_relax_factor = -1.,
+   .incremental_anderson_param = {.n_max_dir = 0, .starting_iter = 0,
+     .max_cond = -1., .beta = 0., .dp_type = CS_PARAM_N_DOTPROD_TYPES }
+
   };
 
 /* Space discretisation options structure and associated pointer */
