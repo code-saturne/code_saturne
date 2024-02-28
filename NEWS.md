@@ -3,6 +3,10 @@ Release 8.1.2 (unreleased)
 
 ### Bug fixes:
 
+- Radiative boundary condition : When selecting a thick wall with external
+  temperature, the internal wall temperature as not taken into account by
+  the fluid side when solving for temperature (OK for Enthalpy resolution).
+
 - Boundary layer insertion: limiter could reduce insertion at incorrect
   vertices due to incorrect indirection.
 
