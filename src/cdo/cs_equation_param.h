@@ -1594,28 +1594,6 @@ cs_equation_param_clear(cs_equation_param_t   *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free the contents of a \ref cs_equation_param_t
- *
- * \deprecated Renamed to\ref cs_equation_param_clear.
- *
- * The cs_equation_param_t structure itself is not freed, but all its
- * sub-structures are freed.
- *
- * This is useful for equation parameters which are accessed through
- * field keywords.
- *
- * \param[in, out]  eqp  pointer to a \ref cs_equation_param_t
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_equation_clear_param(cs_equation_param_t   *eqp)
-{
-  cs_equation_param_clear(eqp);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Free a \ref cs_equation_param_t
  *
  * \param[in] eqp          pointer to a \ref cs_equation_param_t
@@ -1626,24 +1604,6 @@ cs_equation_clear_param(cs_equation_param_t   *eqp)
 
 cs_equation_param_t *
 cs_equation_param_free(cs_equation_param_t     *eqp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a \ref cs_equation_param_t
- *
- * \deprecated Renamed to\ref cs_equation_param_free.
- *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-inline static cs_equation_param_t *
-cs_equation_free_param(cs_equation_param_t     *eqp)
-{
-  return cs_equation_param_free(eqp);
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

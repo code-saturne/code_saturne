@@ -1746,7 +1746,7 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
   if (eqp == NULL)
     return NULL;
 
-  cs_equation_clear_param(eqp);
+  cs_equation_param_clear(eqp);
 
   BFT_FREE(eqp);
 

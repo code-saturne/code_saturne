@@ -1143,7 +1143,7 @@ cs_parameters_define_field_keys(void)
      &_equation_param_default,
      _log_func_var_cal_opt,
      _log_func_default_var_cal_opt,
-     (cs_field_clear_key_struct_t *)cs_equation_clear_param,
+     (cs_field_clear_key_struct_t *)cs_equation_param_clear,
      sizeof(cs_var_cal_opt_t),
      CS_FIELD_VARIABLE);
 

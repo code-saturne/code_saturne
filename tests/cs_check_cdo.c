@@ -1319,7 +1319,7 @@ _test_cdovb_schemes(FILE                *out,
   /* Free memory */
 
   cs_advection_field_destroy_all();
-  eqp = cs_equation_free_param(eqp);
+  eqp = cs_equation_param_free(eqp);
 }
 
 /*----------------------------------------------------------------------------*/
