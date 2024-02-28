@@ -1031,7 +1031,8 @@ cs_rad_transfer_bcs(int         nvar,
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = cs_math_infinite_r;
       }
-      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
+      else if (   isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX
+               || isothm[face_id] ==  CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T) {
         /* Update wall temperature to be imposed */
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = twall[face_id] - xmtk;
       }
