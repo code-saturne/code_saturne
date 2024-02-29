@@ -1264,13 +1264,14 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   { /* outlet: in case of incoming mass flux, the mass flux is set to zero. */
 
-    cs_lnum_t isoent = 0;
-    cs_lnum_t isorti = 0;
+    cs_lnum_t n_inout_faces = 0;
+    cs_lnum_t n_out_faces = 0;
 
     for (int f_id = 0; f_id < n_b_faces; f_id++) {
 
       if (icodcl_vel[f_id] == 9) {
 
+        n_out_faces++;
         const cs_real_t flumbf = b_massflux[f_id];
 
         /* physical properties */
@@ -1287,8 +1288,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         else
           hint = (visclc + visctc) / distbf;
 
-        isorti = isorti + 1;
 
+        /* Ingoing face */
         if (flumbf < - cs_math_epzero) {
 
           /* Dirichlet boundary condition
@@ -1304,7 +1305,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                                       hint,
                                                       rinfiv);
 
-            isoent = isoent + 1;
+            n_inout_faces++;
         }
         else {
 
@@ -1325,7 +1326,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     }
 
     if (cs_log_default_is_active() || eqp_vel->verbosity >= 0) {
-      cs_gnum_t isocpt[2] = {isoent, isorti};
+      cs_gnum_t isocpt[2] = {n_inout_faces, n_out_faces};
       cs_parall_sum(2, CS_GNUM_TYPE, isocpt);
       if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))
         cs_log_printf
