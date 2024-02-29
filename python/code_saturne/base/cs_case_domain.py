@@ -1527,12 +1527,12 @@ class syrthes_domain(base_domain):
         # Determine environment which should be used for Syrthes
         # operations
 
-        self.paths_top = self.__paths_save__()
+        paths_top = self.__paths_save__()
 
         source_syrthes_env(self.package, verbose, force=True)
 
         self.paths_syr = self.__paths_save__()
-        self.__paths_restore__(self.paths_top)
+        self.__paths_restore__(paths_top)
 
         # Prepare wrapper command
 
@@ -1563,11 +1563,6 @@ class syrthes_domain(base_domain):
         for p in ('PATH', 'LD_LIBRARY_PATH'):
             if path_save[p]:
                 os.environ[p] = path_save[p]
-            else:
-                try:
-                    os.environ.pop(p)
-                except Exception:
-                    pass
 
     #---------------------------------------------------------------------------
 
@@ -1707,6 +1702,7 @@ class syrthes_domain(base_domain):
 
         # Define syrthes case structure
 
+        paths_top = self.__paths_save__()
         self.__paths_restore__(self.paths_syr)
 
         import syrthes
@@ -1721,7 +1717,7 @@ class syrthes_domain(base_domain):
 
         self.syrthes_case.read_data_file()
 
-        self.__paths_restore__(self.paths_top)
+        self.__paths_restore__(paths_top)
 
     #---------------------------------------------------------------------------
 
@@ -1749,11 +1745,12 @@ class syrthes_domain(base_domain):
 
         compile_logname = os.path.join(self.exec_dir, 'compile.log')
 
+        paths_top = self.__paths_save__()
         self.__paths_restore__(self.paths_syr)
 
         retval = self.syrthes_case.prepare_run(exec_srcdir, compile_logname)
 
-        self.__paths_restore__(self.paths_top)
+        self.__paths_restore__(paths_top)
 
         # Remove duplicates in src and parent
 
@@ -1788,6 +1785,7 @@ class syrthes_domain(base_domain):
         # Rebuild Syrthes case now that number of processes is known
         self.__init_syrthes_case__()
 
+        paths_top = self.__paths_save__()
         self.__paths_restore__(self.paths_syr)
 
         # Sumary of the parameters
@@ -1800,7 +1798,7 @@ class syrthes_domain(base_domain):
         # computation is done in parallel)
         retval = self.syrthes_case.preprocessing()
 
-        self.__paths_restore__(self.paths_top)
+        self.__paths_restore__(paths_top)
 
         if retval != 0:
             err_str = '\n  Error during the SYRTHES preprocessing step\n'
@@ -1815,11 +1813,12 @@ class syrthes_domain(base_domain):
 
         # Post-processing
         if self.syrthes_case.post_mode != None:
+            paths_top = self.__paths_save__()
             self.__paths_restore__(self.paths_syr)
 
             retval = self.syrthes_case.postprocessing(mode = \
                                                       self.syrthes_case.post_mode)
-            self.__paths_restore__(self.paths_top)
+            self.__paths_restore__(paths_top)
         else:
             retval = 0
 
@@ -1834,11 +1833,12 @@ class syrthes_domain(base_domain):
         if self.exec_dir == self.result_dir:
             return
 
+        paths_top = self.__paths_save__()
         self.__paths_restore__(self.paths_syr)
         retval = self.syrthes_case.save_results(save_dir = self.result_dir,
                                                 horodat = False,
                                                 overwrite = True)
-        self.__paths_restore__(self.paths_top)
+        self.__paths_restore__(paths_top)
 
         if retval != 0:
             err_str = '\n   Error saving SYRTHES results\n'
