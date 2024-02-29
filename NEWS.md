@@ -3,6 +3,8 @@ Release 8.0.4 (unreleased)
 
 ### Bug fixes:
 
+- Fix issues with environment module handling when coupling with Syrthes.
+
 - Radiative boundary condition : When selecting a thick wall with external
   temperature, the internal wall temperature as not taken into account by
   the fluid side when solving for temperature (OK for Enthalpy resolution).
