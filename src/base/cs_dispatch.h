@@ -32,6 +32,7 @@
 /*----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_assert.h"
 #include "cs_mesh.h"
 
 #ifdef __NVCC__
@@ -52,19 +53,6 @@
  * Macro definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Macro to remove parentheses
- *
- * CS_REMOVE_PARENTHESES(x)   -> x
- * CS_REMOVE_PARENTHESES((x)) -> x
- *----------------------------------------------------------------------------*/
-
-#define CS_REMOVE_PARENTHESES(x) CS_REMOVE_PARENTHESES_ESCAPE(CS_PARENTHESIS x)
-#define CS_REMOVE_PARENTHESES_ESCAPE_(...) CS_VANISH_ ## __VA_ARGS__
-#define CS_REMOVE_PARENTHESES_ESCAPE(...) CS_REMOVE_PARENTHESES_ESCAPE_(__VA_ARGS__)
-#define CS_PARENTHESIS(...) CS_PARENTHESIS __VA_ARGS__
-#define CS_VANISH_CS_PARENTHESIS
-
 #ifdef __NVCC__
 #define CS_CUDA_HOST __host__
 #define CS_CUDA_DEVICE __device__
@@ -80,13 +68,13 @@
  *============================================================================*/
 
 /*!
- * Provide default implementations of a csContext based on parallel_for
+ * Provide default implementations of a cs_context based on parallel_for
  * function. This class is a mixin that use CRTP (Curiously Recurring
  * Template Pattern) to provide such functions.
  */
 
 template <class Derived>
-class csDispatchContextMixin {
+class cs_dispatch_context_mixin {
 public:
 
   // Loop over all internal faces
@@ -109,12 +97,13 @@ public:
   // Must be redefined by the child class
   template <class F, class... Args>
   decltype(auto) parallel_for(cs_lnum_t n, F&& f, Args&&... args) = delete;
+
 };
 
 // Default implementation of parallel_for_i_faces based on parallel_for
 template <class Derived>
 template <class F, class... Args>
-decltype(auto) csDispatchContextMixin<Derived>::parallel_for_i_faces
+decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_i_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
   return static_cast<Derived*>(this)->parallel_for
                                         (m->n_i_faces,
@@ -125,7 +114,7 @@ decltype(auto) csDispatchContextMixin<Derived>::parallel_for_i_faces
 // Default implementation of parallel_for_b_faces based on parallel_for
 template <class Derived>
 template <class F, class... Args>
-decltype(auto) csDispatchContextMixin<Derived>::parallel_for_b_faces
+decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_b_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
   return static_cast<Derived*>(this)->parallel_for
                                         (m->n_b_faces,
@@ -136,7 +125,7 @@ decltype(auto) csDispatchContextMixin<Derived>::parallel_for_b_faces
 // Default implementation of parallel_for_cells based on parallel_for
 template <class Derived>
 template <class F, class... Args>
-decltype(auto) csDispatchContextMixin<Derived>::parallel_for_cells
+decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_cells
   (const cs_mesh_t* m, F&& f, Args&&... args) {
   return static_cast<Derived*>(this)->parallel_for
                                         (m->n_cells,
@@ -144,10 +133,11 @@ decltype(auto) csDispatchContextMixin<Derived>::parallel_for_cells
                                          static_cast<Args&&>(args)...);
 }
 
-/*!
- * csContext to execute loops with OpenMP on the CPU
+/*
+ * cs_context to execute loops with OpenMP on the CPU
  */
-class cs_host_context : public csDispatchContextMixin<cs_host_context> {
+
+class cs_host_context : public cs_dispatch_context_mixin<cs_host_context> {
 
 private:
 
@@ -235,171 +225,204 @@ __global__ void cs_cuda_kernel_parallel_for(cs_lnum_t n, F f, Args... args) {
 }
 
 /*!
- * csContext to execute loops with CUDA on the device
+ * Context to execute loops with CUDA on the device
  */
-class cs_device_context : public csDispatchContextMixin<cs_device_context> {
+
+class cs_device_context : public cs_dispatch_context_mixin<cs_device_context> {
 
 private:
 
-  long  grid_size;        /*!< Associated grid size; if <= 0, each kernel
-                            launch will use a grid size based on
-                            the number of elements. */
-  long  block_size;       /*!< Associated block size */
-  cudaStream_t  stream;   /*!< Associated CUDA stream */
-  int   device;           /*!< Associated CUDA device id */
+  long          grid_size_;   /*!< Associated grid size; if <= 0, each kernel
+                                launch will use a grid size based on
+                                the number of elements. */
+  long          block_size_;  /*!< Associated block size */
+  cudaStream_t  stream_;      /*!< Associated CUDA stream */
+  int           device_;      /*!< Associated CUDA device id */
 
-  cs_lnum_t  n_min_for_device;  /*!< Run on CPU under this threshold */
+  cs_lnum_t  n_min_for_device_;  /*!< Run on CPU under this threshold */
 
 public:
 
+  //! Constructor
+
   cs_device_context(void)
-    : grid_size(0), block_size(0), stream(nullptr), device(0),
-      n_min_for_device(0)
+    : grid_size_(0), block_size_(256), stream_(cs_cuda_get_stream(0)),
+      device_(0), n_min_for_device_(0)
   {
-    block_size = 256;
-    device = cs_base_cuda_get_device();
+    device_ = cs_base_cuda_get_device();
   }
 
-  cs_device_context(long  grid_size,
-                    long  block_size,
+  cs_device_context(long          grid_size,
+                    long          block_size,
                     cudaStream_t  stream,
-                    int  device)
-    : grid_size(grid_size), block_size(block_size), stream(stream),
-      device(device), n_min_for_device(0)
+                    int           device)
+    : grid_size_(grid_size), block_size_(block_size), stream_(stream),
+      device_(device), n_min_for_device_(0)
   {}
 
-  cs_device_context(long  grid_size,
-                    long  block_size,
+  cs_device_context(long          grid_size,
+                    long          block_size,
                     cudaStream_t  stream)
-    : grid_size(grid_size), block_size(block_size), stream(stream),
-      device(0), n_min_for_device(0)
+    : grid_size_(grid_size), block_size_(block_size), stream_(stream),
+      device_(0), n_min_for_device_(0)
   {
-    block_size = block_size;
-    grid_size = grid_size;
-    device = cs_base_cuda_get_device();
+    device_ = cs_base_cuda_get_device();
   }
 
   cs_device_context(long  grid_size,
                     long  block_size)
-    : grid_size(grid_size), block_size(block_size), stream(cudaStreamLegacy),
-      device(0), n_min_for_device(0)
+    : grid_size_(grid_size), block_size_(block_size),
+       stream_(cs_cuda_get_stream(0)), device_(0), n_min_for_device_(0)
   {
-    device = cs_base_cuda_get_device();
+    device_ = cs_base_cuda_get_device();
   }
 
   cs_device_context(cudaStream_t  stream)
-    : grid_size(0), block_size(0), stream(stream), device(0),
-      n_min_for_device(0)
+    : grid_size_(0), block_size_(256), stream_(stream), device_(0),
+      n_min_for_device_(0)
   {
-    block_size = 256;
-    device = cs_base_cuda_get_device();
+    device_ = cs_base_cuda_get_device();
   }
 
-  // Change grid_size configuration, but keeps the stream and device
-  void set_cuda_config(long grid_size,
-                       long block_size) {
-    this->grid_size = grid_size;
-    this->block_size = block_size;
+  //! Change grid_size configuration, but keep the stream and device
+
+  void
+  set_cuda_grid(long  grid_size,
+                long  block_size) {
+    this->grid_size_ = grid_size;
+    this->block_size_ = block_size;
   }
 
-  // Change stream, but keeps the grid and device configuration
-  void set_cuda_config(cudaStream_t stream) {
-    this->stream = stream;
+  //! Change stream, but keeps the grid and device configuration
+
+  void
+  set_cuda_stream(cudaStream_t stream) {
+    this->stream_ = stream;
   }
 
-  // Change grid_size configuration and stream, but keeps the device
-  void set_cuda_config(long grid_size,
-                       long block_size,
-                       cudaStream_t stream) {
-    this->grid_size = grid_size;
-    this->block_size = block_size;
-    this->stream = stream;
+  //! Change stream, but keeps the grid and device configuration
+
+  void
+  set_cuda_stream(int  stream_id) {
+    this->stream_ = cs_cuda_get_stream(stream_id);
   }
 
-  // Change grid_size configuration, stream and device
-  void set_cuda_config(long grid_size,
-                       long block_size,
-                       cudaStream_t stream,
-                       int device) {
-    this->grid_size = grid_size;
-    this->block_size = block_size;
-    this->stream = stream;
-    this->device = device;
+  //! Change CUDA device
+
+  void
+  set_cuda_device(int  device) {
+    this->device_ = device;
   }
 
-  /*! Set minimum number of elements threshold for GPU execution */
-  void set_n_min_for_gpu(cs_lnum_t  n) {
-    this->n_min_for_device = n;
+  //! Set minimum number of elements threshold for GPU execution
+
+  void
+  set_n_min_for_gpu(cs_lnum_t  n) {
+    this->n_min_for_device_ = n;
   }
 
 public:
 
-  // Try to iterate on the GPU and return false if the GPU is not available
+  //! Try to launch on the GPU and return false if not available
   template <class F, class... Args>
-  bool parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-    if (device < 0 || n < n_min_for_device) {
+  bool
+  parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+    if (device_ < 0 || n < n_min_for_device_) {
       return false;
     }
 
-    long l_grid_size = grid_size;
+    long l_grid_size = grid_size_;
     if (l_grid_size < 1) {
-      l_grid_size = (n % block_size) ?  n/block_size + 1 : n/block_size;
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
     }
 
-    cs_cuda_kernel_parallel_for<<<l_grid_size, block_size, 0, stream>>>
+    cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
       (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
     return true;
   }
+
+  //! Synchronize associated stream
+  void
+  wait(void) {
+    cudaStreamSynchronize(stream_);
+  }
+
 };
 
-#else
+#endif  // __NVCC__
 
 /*!
- * placeholder to device context
+ * Context to group unused options and catch missing execution paths.
  */
-class cs_device_context : public csDispatchContextMixin<cs_device_context> {
+
+class cs_void_context : public cs_dispatch_context_mixin<cs_void_context> {
 
 public:
 
-  cs_device_context(void)
+  //! Constructor
+
+  cs_void_context(void)
   {}
 
-  // Change grid_size configuration, but keeps the stream and device
-  void set_cuda_config([[maybe_unused]] long grid_size,
-                       [[maybe_unused]] long block_size) {
+#ifndef __NVCC__
+
+  /* Fill-in for CUDA methods, so as to allow using these methods
+     in final cs_dispatch_context even when CUDA is not available,
+     and without requireing a static cast of the form
+
+     static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(200);
+  */
+
+  void
+  set_cuda_grid([[maybe_unused]] long  grid_size,
+                [[maybe_unused]] long  block_size) {
   }
 
-  /*! Set minimum number of elements threshold for GPU execution */
-  void set_n_min_for_gpu([[maybe_unused]] cs_lnum_t  n_min_for_device) {
+  void
+  set_cuda_stream([[maybe_unused]] int  stream_id) {
   }
+
+  void
+  set_cuda_device([[maybe_unused]] int  device_id) {
+  }
+
+  void
+  set_n_min_for_gpu([[maybe_unused]] int  n) {
+  }
+
+  void
+  wait(void) {
+  }
+
+#endif  // __NVCC__
 
 public:
 
-  // Return false
+  // Abort execution if no execution method is available.
   template <class F, class... Args>
   bool parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+    cs_assert(0);
     return false;
   }
 };
 
-#endif
-
 /*!
- * csContext that is a combination of multiple contexts.
+ * cs_context that is a combination of multiple contexts.
  * This context will try every context in order, until one actually runs.
  */
 
 template <class... Contexts>
-class csCombinedContext : public csDispatchContextMixin<csCombinedContext<Contexts...>>,
-                          public Contexts... {
+class cs_combined_context
+  : public cs_dispatch_context_mixin<cs_combined_context<Contexts...>>,
+    public Contexts... {
 
 private:
-  using mixin_t = csDispatchContextMixin<csCombinedContext<Contexts...>>;
+  using mixin_t = cs_dispatch_context_mixin<cs_combined_context<Contexts...>>;
 
 public:
-  csCombinedContext() = default;
-  csCombinedContext(Contexts... contexts)
+  cs_combined_context() = default;
+  cs_combined_context(Contexts... contexts)
     : Contexts(std::move(contexts))...
   {}
 
@@ -412,7 +435,6 @@ public:
       (   launched = launched
        || Contexts::parallel_for_i_faces(m, f, args...), nullptr)...
     };
-    // TODO: raise an error if all contexts return false
   }
 
   template <class F, class... Args>
@@ -422,7 +444,6 @@ public:
       (   launched = launched
        || Contexts::parallel_for_b_faces(m, f, args...), nullptr)...
     };
-    // TODO: raise an error if all contexts return false
   }
 
   template <class F, class... Args>
@@ -432,35 +453,41 @@ public:
       (  launched = launched
        || Contexts::parallel_for_cells(m, f, args...), nullptr)...
     };
-    // TODO: raise an error if all contexts return false
   }
 
   template <class F, class... Args>
     auto parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
     bool launched = false;
-    decltype(nullptr) try_execute[] = {
+    [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
        || Contexts::parallel_for(n, f, args...), nullptr)...
     };
-    // TODO: raise an error if all contexts return false
   }
 };
 
+/*----------------------------------------------------------------------------*/
 /*!
  * Default cs_dispatch_context that is a combination of (CPU) and GPU (CUDA)
  * context if available.
  */
+/*----------------------------------------------------------------------------*/
 
-class cs_dispatch_context : public csCombinedContext<
+class cs_dispatch_context : public cs_combined_context<
+#ifdef __NVCC__
   cs_device_context,
-  cs_host_context
+#endif
+  cs_host_context,
+  cs_void_context
 >
 {
 
 private:
-  using base_t = csCombinedContext<
+  using base_t = cs_combined_context<
+#ifdef __NVCC__
   cs_device_context,
-  cs_host_context
+#endif
+  cs_host_context,
+  cs_void_context
 >;
 
 public:
@@ -468,6 +495,24 @@ public:
   using base_t::operator=;
 
 };
+
+/*
+  Remarks:
+
+  Instantiation can simply be done using:
+
+  `cs_dispatch_context ctx;`
+
+  Instanciation can also be done with specific contruction options,
+  for example:
+
+  `cs_dispatch_context ctx(cs_device_context(stream), {});`
+
+  or:
+
+  `cs_dispatch_context ctx(cs_device_context(), {});`
+
+*/
 
 /*=============================================================================
  * Global variable definitions

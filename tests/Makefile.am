@@ -187,7 +187,7 @@ cs_core_test_SOURCES  = cs_core_test.c
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_core_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_dispatch_test$(EXEEXT): cs_dispatch_test.cpp
+cs_dispatch_test$(EXEEXT): cs_dispatch_test.cpp $(top_srcdir)/src/base/cs_dispatch.h
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_dispatch_test $(top_srcdir)/tests/cs_dispatch_test.cpp

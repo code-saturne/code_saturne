@@ -73,34 +73,22 @@ cs_dispatch_test(void)
 {
   const cs_lnum_t n = 100;
 
-#ifdef __NVCC__
-
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
-
-  cs_dispatch_context ctx(cs_device_context(stream), {});
-
-#else
-
-  cs_dispatch_context ctx(cs_device_context(), {});
-
-#endif
+  //cs_dispatch_context ctx(cs_device_context(), {});
+  cs_dispatch_context ctx;
 
   cs_real_t *a0, *a1;
   cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE_SHARED;
   CS_MALLOC_HD(a0, n, cs_real_t, amode);
   CS_MALLOC_HD(a1, n, cs_real_t, amode);
 
-  unsigned int blocksize = 64;
-
   for (int i = 0; i < 3; i++) {
 
     if (i == 1) {
-      static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(200);
-      static_cast<cs_host_context&>(ctx).set_n_min_for_cpu_threads(20);
+      ctx.set_n_min_for_gpu(200);
+      ctx.set_n_min_for_cpu_threads(20);
     }
     else if (i == 2) {
-      static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(20);
+      ctx.set_n_min_for_gpu(20);
     }
 
     ctx.parallel_for(n, [=] CS_CUDA_HOST_DEVICE (cs_lnum_t ii) {
@@ -113,9 +101,7 @@ cs_dispatch_test(void)
       a1[ii] = cos(a0[ii]);
     });
 
-#ifdef __NVCC__
-    cudaStreamSynchronize(stream);
-#endif
+    ctx.wait();
 
     for (cs_lnum_t ii = 0; ii < n/10; ii++) {
       std::cout << ii << " " << a0[ii] << " " << a1[ii] << std::endl;
@@ -123,7 +109,7 @@ cs_dispatch_test(void)
   }
 
 #ifdef __NVCC__
-  std::cout << "device_id " << cs_base_cuda_get_device << std::endl;
+  std::cout << "device_id " << cs_base_cuda_get_device() << std::endl;
 #endif
 
   CS_FREE_HD(a0);
@@ -132,8 +118,8 @@ cs_dispatch_test(void)
 
 /*----------------------------------------------------------------------------*/
 
-extern "C" int
-main (int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
   CS_UNUSED(argc);
   CS_UNUSED(argv);
