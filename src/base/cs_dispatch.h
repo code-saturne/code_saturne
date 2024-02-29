@@ -967,7 +967,7 @@ public:
 
   /* Fill-in for CUDA methods, so as to allow using these methods
      in final cs_dispatch_context even when CUDA is not available,
-     and without requireing a static cast of the form
+     and without requiring a static cast of the form
 
      static_cast<cs_device_context&>(ctx).set_use_gpu(true);
   */
@@ -1174,7 +1174,7 @@ public:
 
   `cs_dispatch_context ctx;`
 
-  Instanciation can also be done with specific contruction options,
+  Instanciation can also be done with specific construction options,
   for example:
 
   `cs_dispatch_context ctx(cs_device_context(stream), {});`
