@@ -2823,7 +2823,8 @@ cs_atmo_init_meteo_profiles(void)
       - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
     aopt->meteo_t0     = t1
       - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;//FIXME conversion theta->T
-
+    aopt->meteo_z0     = z1 * exp(-cs_turb_xkappa * u1
+        / aopt->meteo_ustar0);
   }
 
   /* Center of the domain */
@@ -2868,9 +2869,10 @@ cs_atmo_init_meteo_profiles(void)
                 " for humidity field preprocessing (qw0 || qw1 || qw2).\n"));
 
   bft_printf("\n Meteo preprocessing values for computation:\n"
-             "  dlmo=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n qwstar=%17.9e\n"
-             " t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n",
+             " dlmo=%17.9e\n z0=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n"
+             " qwstar=%17.9e\n t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n",
              aopt->meteo_dlmo,
+             aopt->meteo_z0,
              aopt->meteo_ustar0,
              aopt->meteo_tstar,
              aopt->meteo_qwstar,
