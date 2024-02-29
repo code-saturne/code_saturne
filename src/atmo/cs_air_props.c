@@ -42,6 +42,7 @@
 
 #include "bft_mem.h"
 
+#include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
@@ -566,23 +567,24 @@ cs_air_yw_to_x(cs_real_t  qw)
 /*!
  * \brief Calculation of the density of humid air
  *
- * \param[in]     ywm           air water mass fraction
- * \param[in]     t_liq         temperature computed from
- *                              liquid potential temperature (K)
+ * \param[in]     yw_h          air water mass fraction
+ * \param[in]     theta_l       liquid potential temperature (K)
  * \param[in]     p             pressure
  * \param[out]    yw_liq        liquid water mass fraction
  * \param[out]    t_h           temperature of humid air in Celsius
  * \param[out]    rho_h         density of humid air
+ * \param[out]    beta_h        thermal expansion of the bulk
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
-                cs_real_t   t_liq,
+cs_rho_humidair(cs_real_t   yw_h,
+                cs_real_t   theta_l,
                 cs_real_t   p,
                 cs_real_t  *yw_liq,
                 cs_real_t  *t_h,
-                cs_real_t  *rho_h)
+                cs_real_t  *rho_h,
+                cs_real_t  *beta_h)
 {
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
@@ -594,20 +596,32 @@ cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
   cs_real_t clatev = phys_pro->clatev;
   cs_real_t cp0 = phys_pro->cp0;
 
+  /* Compute liquid temperature from potential temperature
+   * Approximation used as explained in Jacobson book
+   * we use here Rd/Cpd instead of Rm/Cpm */
+  cs_real_t ps = cs_glob_atmo_constants->ps;
+  cs_real_t t_liq = theta_l * pow(p / ps, rair/cp0);
+
   cs_real_t t_c = t_liq - cs_physical_constants_celsius_to_kelvin;
   /* Saturated vapor content */
   cs_real_t yw_sat = cs_air_yw_sat(t_c, p);
-  cs_real_t delta_yw = ywm - yw_sat;
+  cs_real_t delta_yw = yw_h - yw_sat;
 
   /* Temperature of the mixture in Kelvin */
   cs_real_t t_h_k = t_liq;
+
+  /* Initialize virtual potential temperature */
+  cs_real_t theta_virt = theta_l;
 
   /* Density of the air parcel
    * ------------------------- */
 
   /* Unsaturated air parcel */
   if (delta_yw <= 0.) {
-    lrhum = rair*(1. + (rvsra - 1.)*ywm);
+    /* Rm/Rd */
+    cs_real_t rmdrd = (1. + (rvsra - 1.)*yw_h);
+    lrhum = rair * rmdrd;
+    theta_virt *= rmdrd;
     *yw_liq = 0.;
   }
   /* Saturated (ie. with liquid water) air parcel */
@@ -615,7 +629,10 @@ cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
     *yw_liq = delta_yw
       / (1. + yw_sat * cs_math_pow2(clatev)
       / (rair*rvsra*cp0*cs_math_pow2(t_h_k))); //FIXME rair * rvsra =rvap
-    lrhum = rair*(1. + (rvsra - 1.)*(ywm - *yw_liq) -* yw_liq);
+    /* Rm/Rd */
+    cs_real_t rmdrd = (1. - *yw_liq + (rvsra - 1.)*(yw_h - *yw_liq));
+    lrhum = rair * rmdrd;
+    theta_virt *= rmdrd;
     t_h_k += (clatev/cp0) * *yw_liq;
   }
 
@@ -623,6 +640,12 @@ cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
   *t_h = t_h_k - cs_physical_constants_celsius_to_kelvin;
   /* Perfect gas law */
   *rho_h = p / (lrhum * t_h_k);
+
+  /* Thermal expansion used for turbulent production
+    "delta rho = - beta rho delta theta" gives
+    "beta = 1 / theta_v", theta_v the virtual temperature */
+  *beta_h = 1. / theta_virt;
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -110,13 +110,13 @@ BEGIN_C_DECLS
 
 static void
 _etheq(cs_real_t   pphy,
-         cs_real_t   thetal,
-         cs_real_t   qw,
-         cs_real_t   qldia,
-         cs_real_t   xnebdia,
-         cs_real_t   xnn,
-         cs_real_t  *etheta,
-         cs_real_t  *eq)
+       cs_real_t   thetal,
+       cs_real_t   qw,
+       cs_real_t   qldia,
+       cs_real_t   xnebdia,
+       cs_real_t   xnn,
+       cs_real_t  *etheta,
+       cs_real_t  *eq)
 {
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
 
@@ -266,15 +266,13 @@ _dry_atmosphere(const cs_real_t  cromo[],
   /* Compute potential temperature derivatives
      ======================================== */
 
-  cs_real_t *cvara_tpp = f_thm->val_pre;
-
   /* Computation of the gradient of the potential temperature
    *
    * compute the turbulent production/destruction terms:
    * dry atmo: (1/turb_schmidt*theta)*(dtheta/dz)*gz */
 
   cs_field_gradient_scalar(f_thm,
-                           true, // use_previous_t
+                           false, // use_previous_t
                            1,    // inc
                            grad);
 
@@ -283,10 +281,8 @@ _dry_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t rho, visct, xeps, xk, ttke, gravke;
   cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
-  cs_real_t *cpro_beta = NULL;
   cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
-  if (vp_model->idilat == 0)
-    cpro_beta = cs_field_by_name("thermal_expansion")->val;
+  cs_field_t *f_beta = cs_field_by_name("thermal_expansion");
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     rho    = cromo[c_id];
@@ -294,7 +290,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
     xeps   = cvara_ep[c_id];
     xk     = cvara_k[c_id];
     ttke   = xk / xeps;
-    cs_real_t beta = (cpro_beta == NULL) ? 1./cvara_tpp[c_id] : cpro_beta[c_id];
+    cs_real_t beta = f_beta->val[c_id];
 
     gravke = beta *
       cs_math_3_dot_product(grad[c_id], grav) / prdtur;
@@ -360,6 +356,8 @@ _humid_atmosphere(const cs_real_t  cromo[],
                                      cs_field_key_id("turbulent_schmidt"));
   }
 
+  cs_field_t *f_beta = cs_field_by_name("thermal_expansion");
+
   /* Allocate work arrays */
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
@@ -387,8 +385,8 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   /* Computation of the gradient of the potentalp_bl temperature */
 
-  cs_real_t *cvara_tpp  = f_thm->val_pre;
-  cs_real_t *cvara_qw   = cs_field_by_name("ym_water")->val_pre;
+  cs_real_t *cvar_tpp  = f_thm->val;
+  cs_real_t *cvar_qw   = cs_field_by_name("ym_water")->val;
   cs_real_t *cpro_pcliq = cs_field_by_name("liquid_water")->val;
 
   /* compute the coefficients etheta,eq */
@@ -421,8 +419,8 @@ _humid_atmosphere(const cs_real_t  cromo[],
     }
 
     _etheq(pphy,
-           cvara_tpp[c_id],
-           cvara_qw[c_id],
+           cvar_tpp[c_id],
+           cvar_qw[c_id],
            cpro_pcliq[c_id],
            diag_neb[c_id],
            frac_neb[c_id],
@@ -431,10 +429,11 @@ _humid_atmosphere(const cs_real_t  cromo[],
   }
 
   /* compute the turbulent production/destruction terms:
-   * humid atmo: (1/turb_schmidt*theta_v)*(dtheta_l/dz)*gz */
+   * humid atmo: (beta/turb_schmidt*theta_v)*(dtheta_l/dz)*gz
+   * with beta = 1/theta_v */
 
   cs_field_gradient_scalar(f_thm,
-                           true, // use_previous_t
+                           false, // use_previous_t
                            1,    // inc
                            grad);
 
@@ -444,13 +443,9 @@ _humid_atmosphere(const cs_real_t  cromo[],
   /* Now store the production term due to theta_liq in gravke_theta */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t qw         = cvara_qw[c_id];    /* total water content */
-    cs_real_t qldia      = cpro_pcliq[c_id];  /* liquid water content */
-    cs_real_t theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
-
-    gravke_theta[c_id] =   etheta[c_id]
-                         * (cs_math_3_dot_product(grad[c_id], grav)
-                         / (theta_virt*prdtur));
+    gravke_theta[c_id] =   etheta[c_id] * f_beta->val[c_id]
+                         * cs_math_3_dot_product(grad[c_id], grav)
+                         / prdtur;
   }
 
   /* Gradient of humidity and it's associated production term
@@ -460,7 +455,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
    * humid atmo: (1/turb_schmidt*theta_v)*(dtheta_l/dz)*gz */
 
   cs_field_gradient_scalar(cs_field_by_name("ym_water"),
-                           true, // use_previous_t
+                           false, // use_previous_t
                            1,    // inc
                            grad);
 
@@ -470,13 +465,9 @@ _humid_atmosphere(const cs_real_t  cromo[],
   /* Store the production term due to qw in gravke_qw */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t qw         = cvara_qw[c_id];    /* total water content*/
-    cs_real_t qldia      = cpro_pcliq[c_id];  /* liquid water content */
-    cs_real_t theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
-
-    gravke_qw[c_id] =   eq[c_id]
-                      * (cs_math_3_dot_product(grad[c_id], grav)
-                      / (theta_virt*prdtur));
+    gravke_qw[c_id] =   eq[c_id] * f_beta->val[c_id]
+                      * cs_math_3_dot_product(grad[c_id], grav)
+                      / prdtur;
   }
 
   /* Finalization */

@@ -604,18 +604,19 @@ double precision, save:: zaero
     !> \brief Calculation of the density of humid air.
 
     !> \param[in]  ywm           air water mass fraction
-    !> \param[in]  t_liq         liquid temperature
+    !> \param[in]  theta_l       potential liquide temperature
     !> \param[in]  p             pressure
     !> \param[out] yw_liq        liquid water mass fraction
     !> \param[out] t_h           temperature of humid air in Celsius
     !> \param[out] rho_h         density of humid air
+    !> \param[out] beta_h
 
-    subroutine cs_rho_humidair(ywm, t_liq, p, yw_liq, t_h, rho_h) &
+    subroutine cs_rho_humidair(ywm, theta_l, p, yw_liq, t_h, rho_h, beta_h) &
         bind(C, name='cs_rho_humidair')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(c_double), value :: ywm, t_liq, p
-      real(c_double), intent(out) :: yw_liq, t_h, rho_h
+      real(c_double), value :: ywm, theta_l, p
+      real(c_double), intent(out) :: yw_liq, t_h, rho_h, beta_h
     end subroutine cs_rho_humidair
 
     !=============================================================================

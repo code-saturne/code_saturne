@@ -59,14 +59,16 @@ implicit none
 ! Local variables
 
 integer          ivart, iel
+integer          f_id_beta
 
 double precision xvart, rhum, rscp, pp, zent
 double precision lrhum, theta0
 double precision qsl, deltaq
-double precision yw_liq, qwt, tliq, dum
+double precision yw_liq, qwt, tliq, dum, beta
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
+double precision, dimension(:), pointer :: cvara_vart
 double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 double precision, dimension(:), pointer :: cpro_beta
 double precision, dimension(:), pointer :: cpro_met_p, cpro_met_rho
@@ -83,7 +85,8 @@ activate = .false.
 
 ivart = -1
 
-if (idilat.eq.0) then
+call field_get_id_try("thermal_expansion", f_id_beta)
+if (f_id_beta.ge.0) then
   call field_get_val_s_by_name("thermal_expansion", cpro_beta)
 endif
 
@@ -171,32 +174,40 @@ do iel = 1, ncel
   ! ------------------------
   ! law: rho = P / ( R_mixture * T_mixture(K) )
 
+  ! Boussines / anelastic approximation
   if (idilat.eq.0) then
+    ! Compute T in Celisus
+    cpro_tempc(iel) = tliq - tkelvi
+
     ! Boussinesq with respect to the adiabatic density
+    ! (so called anelastic approximation)
     if (imeteo.ge.2) then
       crom(iel) = cpro_met_rho(iel)
-      ! "delta rho = - beta rho0 delta theta" gives
-      ! "beta = 1 / theta"
-      cpro_beta(iel) = 1.d0 / theta0
-      ! Compute T in Celisus
-      cpro_tempc(iel) = tliq - tkelvi
+
     ! Boussinesq with respect to rho0
+    ! (true Boussinesq approximation)
     else
       crom(iel) = ro0
-      ! "delta rho = - beta rho0 delta theta" gives
-      ! "beta = 1 / theta"
-      cpro_beta(iel) = 1.d0 / xvart
-      ! Compute T in Celisus
-      cpro_tempc(iel) = tliq - tkelvi
     endif
+
+    ! "delta rho = - beta0 rho_a delta theta" gives
+    ! "beta0 = 1 / theta0"
+    cpro_beta(iel) = 1.d0 / theta0
   else
 
-    call cs_rho_humidair(qwt, tliq, pp, yw_liq, cpro_tempc(iel), crom(iel))
-  endif
+    call cs_rho_humidair(qwt, xvart, pp, yw_liq, cpro_tempc(iel), crom(iel), &
+                         beta)
+    ! Humid atmosphere
 
-  ! Humid atmosphere
-  if (ippmod(iatmos).ge.2) then
-    cpro_liqwt(iel) = yw_liq
+    if (ippmod(iatmos).ge.2) then
+      cpro_liqwt(iel) = yw_liq
+    endif
+    ! Thermal expansion for turbulent production
+    ! "delta rho = - beta rho delta theta" gives
+    ! "beta = 1 / theta_v", theta_v the virtual temperature
+    if (f_id_beta.ge.0) then
+      cpro_beta(iel) = beta
+    endif
   endif
 
 enddo

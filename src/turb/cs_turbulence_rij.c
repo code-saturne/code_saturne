@@ -305,12 +305,6 @@ _compute_up_rhop(int        phase_id,
   const int idilat = vp_model->idilat;
 
 
-  /* Using thermal fluxes
-   * (only for thermal scalar for the moment) */
-  cs_real_t *cpro_beta = NULL;
-  if (cs_field_by_name_try("thermal_expansion") != NULL)
-    cpro_beta = cs_field_by_name_try("thermal_expansion")->val;
-
   const cs_field_t *thf = cs_thermal_model_field();
   if (phase_id >= 0)
     thf = CS_FI_(h_tot, phase_id);
@@ -328,11 +322,15 @@ _compute_up_rhop(int        phase_id,
 
     const cs_real_t *cvar_scalt = thf->val;
 
+    /* Using thermal fluxes
+     * (only for thermal scalar for the moment) */
+    cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+
     cs_real_3_t *xut = (cs_real_3_t *)cs_field_by_name(fname)->val;
     /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_real_t beta = (cpro_beta == NULL) ? 1./cvar_scalt[c_id] : cpro_beta[c_id];
+      cs_real_t beta = (f_beta == NULL) ? 0. : f_beta->val[c_id];
 
       const cs_real_t factor = - beta * rho[c_id];
 
@@ -360,6 +358,10 @@ _compute_up_rhop(int        phase_id,
 
         const cs_real_t *cvara_scalt = thf->val_pre;
 
+        /* Using thermal fluxes
+         * (only for thermal scalar for the moment) */
+        cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+
         cs_real_3_t *gradt;
         BFT_MALLOC(gradt, n_cells_ext, cs_real_3_t);
 
@@ -375,7 +377,7 @@ _compute_up_rhop(int        phase_id,
           cs_real_t rit[3];
           cs_math_sym_33_3_product(cvara_rij[c_id], gradt[c_id], rit);
 
-          cs_real_t beta = (cpro_beta == NULL) ? 1./cvara_scalt[c_id] : cpro_beta[c_id];
+          cs_real_t beta = (f_beta == NULL) ? 0. : f_beta->val[c_id];
 
           /* factor = - rho beta C k/eps */
           const cs_real_t factor = - beta * rho[c_id] * cons
