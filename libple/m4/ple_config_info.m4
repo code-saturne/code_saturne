@@ -1,4 +1,4 @@
-dnl Copyright (C) 2004-2023 EDF
+dnl Copyright (C) 2004-2024 EDF
 dnl
 dnl This file is part of the PLE software package.  For license
 dnl information, see the COPYING file in the top level directory of the
@@ -300,4 +300,3 @@ else
 fi
 
 ])dnl
-

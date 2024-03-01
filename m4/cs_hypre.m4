@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of code_saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2020 EDF S.A.
+dnl Copyright (C) 1998-2024 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -46,7 +46,7 @@ AC_ARG_WITH(hypre-include,
              fi
              HYPRE_CPPFLAGS="-I$with_hypre_include"],
             [if test "x$with_hypre" != "xno" -a "x$with_hypre" != "xyes" \
-	          -a "x$with_hypre" != "xcheck"; then
+                  -a "x$with_hypre" != "xcheck"; then
                HYPRE_CPPFLAGS="-I$with_hypre/include"
              fi])
 
@@ -59,7 +59,7 @@ AC_ARG_WITH(hypre-lib,
              HYPRE_LDFLAGS="-L$with_hypre_lib"
              cs_hypre_libpath="$with_hypre_lib"],
             [if test "x$with_hypre" != "xno" -a "x$with_hypre" != "xyes" \
-	          -a "x$with_hypre" != "xcheck"; then
+                  -a "x$with_hypre" != "xcheck"; then
                HYPRE_LDFLAGS="-L$with_hypre/lib"
                cs_hypre_libpath="$with_hypre/lib"
              fi])

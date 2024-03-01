@@ -6,7 +6,7 @@
   This file is part of the code_saturne Preprocessor, element of the
   code_saturne CFD tool.
 
-  Copyright (C) 1999-2022 EDF S.A., France
+  Copyright (C) 1999-2024 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -355,7 +355,7 @@ static void nopo_err_fic
   }
 
 }
-                  
+
 
 /*----------------------------------------------------------------------------
  *  Lecture d'un enregistrement d'un fichier NOPO
@@ -415,7 +415,7 @@ static void nopo_lit_rec
   }
 
 }
-                  
+
 
 /*----------------------------------------------------------------------------
  *  Écriture d'un enregistrement d'un fichier NOPO
@@ -445,7 +445,7 @@ static void nopo_ecr_rec
   if (fwrite((char *)(&nbr_cmp), 4, 1, fic) != 1)
     nopo_err_fic(fic);
 }
-                  
+
 
 /*----------------------------------------------------------------------------
  *  Lecture d'un fichier NOPO (Format INRIA utilisé par Simail)
@@ -501,7 +501,7 @@ static nopo_maillage_t nopo_lit_maillage
      nopo_err_fic(fic_maillage);
 
   /* Test si le fichier est au format natif ou non */
-  
+
   if (fread((char *)(&ind_test), 4, 1, fic_maillage) != 1)
      nopo_err_fic(fic_maillage);
 
@@ -719,7 +719,7 @@ static nopo_maillage_t nopo_lit_maillage
   else
     printf("                      %10d tétraèdres\n"
            "                      %10d pentaèdres\n"
-           "                      %10d hexaèdres\n\n", 
+           "                      %10d hexaèdres\n\n",
            m.ntet, m.npen, m.nhex);
 
   if (ntacoo != 1) {
@@ -835,7 +835,7 @@ static int_32_t * nopo_traite_sommets
     fprintf(stderr, "Impossible d'allouer %d octets\n", taille);
     exit(EXIT_FAILURE);
   }
-  
+
   for (i = 0, j = 0 ; i < m->np ; i++) {
 
     coo_tmp[0] = m->coord[i*3];
@@ -1249,7 +1249,7 @@ static void nopo_ecrit_maillage
          "                    %10d quadrangles\n"
          "                    %10d tétraèdres\n"
          "                    %10d pentaèdres\n"
-         "                    %10d hexaèdres\n\n", 
+         "                    %10d hexaèdres\n\n",
          m.np, m.nesg, m.ntri, m.nqua, m.ntet, m.npen, m.nhex);
 
   nopo_ecr_rec(fic_maillage, NOPO_TAILLE_2, (char *)nop2);

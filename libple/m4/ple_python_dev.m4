@@ -1,4 +1,4 @@
-dnl Copyright (C) 2005-2023 EDF
+dnl Copyright (C) 2005-2024 EDF
 dnl
 dnl This file is part of the PLE software package.  For license
 dnl information, see the COPYING file in the top level directory of the
@@ -64,4 +64,3 @@ AC_DEFUN([PLE_AC_PYTHON_DEV],[
   AC_SUBST([PYTHON_CPPFLAGS])
 
 ])
-
