@@ -69,24 +69,6 @@ cs_f_domain_initialize_cdo_systems(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set to true the automatic update of all advection fields
- * \brief  Set auxiliary parameters related to the way output is done
- *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- * \param[in]       nt_interval  frequency for the restart process
- * \param[in]       nt_list      output frequency into the log
- * \param[in]       verbosity    level of information displayed
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_output_param(cs_domain_t       *domain,
-                           int                nt_interval,
-                           int                nt_list,
-                           int                verbosity);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set parameters for unsteady computations: the max number of time
  *         steps or the final physical time of the simulation
  *

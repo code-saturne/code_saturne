@@ -324,7 +324,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
     }
   }
 
-  bool  do_output = cs_domain_needs_log(domain, false);
+  bool  do_output = cs_domain_needs_log(domain);
 
   /* Output information */
 
@@ -462,7 +462,7 @@ _solve_domain(cs_domain_t  *domain)
   const cs_time_step_t  *ts = domain->time_step;
   const int  nt_cur = ts->nt_cur;
 
-  bool  do_output = cs_domain_needs_log(domain, true);
+  bool  do_output = cs_domain_needs_log(domain);
 
   /* Output information */
 
@@ -786,6 +786,13 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   /* Last user setup stage */
 
   cs_domain_finalize_user_setup(domain);
+
+  /* Modify logging if needed (f equal to 0, do nothing: default behavior) */
+
+  if (domain->output_nt > 0)
+    cs_log_iteration_set_interval(domain->output_nt);
+  else if (domain->output_nt < 0)
+    cs_log_iteration_set_automatic(-domain->output_nt);
 
   /* Assign to a cs_equation_t structure a list of functions to manage this
    * structure during the computation.

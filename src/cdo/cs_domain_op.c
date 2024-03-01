@@ -445,7 +445,7 @@ cs_domain_post(cs_domain_t  *domain)
 
   /* Log output */
 
-  if (cs_domain_needs_log(domain, false)) {
+  if (cs_domain_needs_log(domain)) {
 
     /* Post-processing */
     /* =============== */

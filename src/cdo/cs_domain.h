@@ -273,6 +273,25 @@ cs_domain_get_cdo_mode(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set parameters related to the way output/logging is done
+ *
+ * \param[in, out] domain      pointer to a cs_domain_t structure
+ * \param[in]      restart_nt  frequency for the restart process
+ * \param[in]      log_nt      output frequency into the log (> 0: constant with
+ *                             the given frequency, < 0: automatic with log_nt
+ *                             first iterations detailed)
+ * \param[in]      verbosity   level of information displayed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_output_param(cs_domain_t  *domain,
+                           int           restart_nt,
+                           int           log_nt,
+                           int           verbosity);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the computation stage in the domain structure
  *
  * \param[in, out] domain    pointer to a cs_domain_t structure
@@ -314,16 +333,14 @@ cs_domain_needs_iteration(cs_domain_t  *domain);
 /*!
  * \brief Check if an output is requested according to the domain setting
  *
- * \param[in] domain    pointer to a cs_domain_t structure
- * \param[in] oneplus   add or not plus one to the current time step
+ * \param[in] domain  pointer to a cs_domain_t structure
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_domain_needs_log(const cs_domain_t      *domain,
-                    bool                    oneplus);
+cs_domain_needs_log(const cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

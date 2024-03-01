@@ -54,6 +54,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_coupling.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_property.h"
@@ -248,9 +249,9 @@ cs_domain_create(void)
 
   /* Other options */
 
-  domain->restart_nt = 0;
-  domain->output_nt = -1;
-  domain->verbosity = 1;
+  domain->restart_nt = CS_RESTART_INTERVAL_DEFAULT;
+  domain->output_nt = -10;  /* automatic with 10 first iterations */
+  domain->verbosity = 1;    /* default verbosity */
 
   /* By default: CDO/HHO schemes are not activated (see cs_param_cdo.c) */
 
@@ -344,6 +345,34 @@ cs_domain_get_cdo_mode(const cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set parameters related to the way output/logging is done
+ *
+ * \param[in, out] domain      pointer to a cs_domain_t structure
+ * \param[in]      restart_nt  frequency for the restart process
+ * \param[in]      log_nt      output frequency into the log (> 0: constant with
+ *                             the given frequency, < 0: automatic with log_nt
+ *                             first iterations detailed, 0: do nothing)
+ * \param[in]      verbosity   level of information displayed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_output_param(cs_domain_t  *domain,
+                           int           restart_nt,
+                           int           log_nt,
+                           int           verbosity)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The domain structure is not allocated.", __func__);
+
+  domain->restart_nt = restart_nt;
+  domain->output_nt = log_nt;
+  domain->verbosity = verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the computation stage in the domain structure
  *
  * \param[in, out] domain    pointer to a cs_domain_t structure
@@ -356,8 +385,8 @@ cs_domain_set_stage(cs_domain_t         *domain,
                     cs_domain_stage_t    stage)
 {
   if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: domain is not allocated.",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The domain structure is not allocated.", __func__);
 
   domain->stage = stage;
 }
@@ -376,8 +405,8 @@ cs_domain_stage_t
 cs_domain_get_stage(const cs_domain_t    *domain)
 {
   if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: domain is not allocated.",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The domain structure is not allocated.", __func__);
 
   return domain->stage;
 }
@@ -423,44 +452,24 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if an output is requested according to the domain setting
+ * \brief Check if an output is requested according to the domain setting
  *
- * \param[in]   domain    pointer to a cs_domain_t structure
- * \param[in]   oneplus   add or not plus one to the current time step
+ * \param[in] domain  pointer to a cs_domain_t structure
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_domain_needs_log(const cs_domain_t      *domain,
-                    bool                    oneplus)
+cs_domain_needs_log(const cs_domain_t  *domain)
 {
-  const cs_time_step_t  *ts = domain->time_step;
-
   if (domain->verbosity < 0)
     return false;
 
   if (domain->only_steady)
     return true;
 
-  if (domain->output_nt > 0) {
-
-    int nt_cur = (oneplus) ? ts->nt_cur + 1 : ts->nt_cur;
-
-    /* Steady-state computation in an unsteady computation or
-     * force the output for the first iteration */
-
-    if (nt_cur < 2)
-      return true;
-
-    if ((nt_cur - ts->nt_prev) % domain->output_nt == 0)
-      return true;
-
-  }
-
-  if (domain->is_last_iter)
-    return true;
+  cs_log_iteration_set_active();
 
   return cs_log_default_is_active();
 }
