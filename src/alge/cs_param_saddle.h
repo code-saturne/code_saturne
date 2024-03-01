@@ -535,6 +535,19 @@ cs_param_saddle_get_augmentation_coef(const cs_param_saddle_t  *saddlep);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the name of the type of saddle-point solver
+ *
+ * \param[in] type  type of saddle-point solver
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create a cs_param_saddle_t structure
  *        No solver is set by default.
  *
@@ -556,6 +569,19 @@ cs_param_saddle_create(void);
 
 void
 cs_param_saddle_free(cs_param_saddle_t  **p_saddlep);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the name of the saddle-point solver
+ *
+ * \param[in] saddlep  pointer to a set of saddle-point parameters
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_saddle_get_name(const cs_param_saddle_t  *saddlep);
 
 /*----------------------------------------------------------------------------*/
 /*!

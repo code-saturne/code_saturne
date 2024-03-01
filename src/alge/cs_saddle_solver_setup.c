@@ -60,6 +60,7 @@
 #include "cs_math.h"
 #include "cs_multigrid.h"
 #include "cs_param_sles_setup.h"
+#include "cs_saddle_solver.h"
 #include "cs_sles.h"
 
 #if defined(HAVE_MUMPS)
@@ -89,13 +90,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*============================================================================
- * Local private variables
- *============================================================================*/
-
-static int  cs_saddle_solver_n_systems = 0;
-static cs_saddle_solver_t  **cs_saddle_solver_systems = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -790,66 +784,6 @@ _setup(cs_saddle_solver_t  *solver,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add a new solver for solving a saddle-point problem.
- *
- * \param[in] n1_elts         number of elements associated to the (1,1)-block
- * \param[in] n1_dofs_by_elt  number of DoFs by elements in the (1,1)-block
- * \param[in] n2_elts         number of elements associated to the (2,2)-block
- * \param[in] n2_dofs_by_elt  number of DoFs by elements in the (2,2)-block
- * \param[in] saddlep         set of parameters for the saddle-point solver
- * \param[in] sh              pointer to a system helper structure
- * \param[in] main_sles       pointer to the main SLES structure related to
- *                            this saddle-point problem
- *
- * \return a pointer to the new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_saddle_solver_t *
-cs_saddle_solver_add(cs_lnum_t                 n1_elts,
-                     int                       n1_dofs_by_elt,
-                     cs_lnum_t                 n2_elts,
-                     int                       n2_dofs_by_elt,
-                     const cs_param_saddle_t  *saddlep,
-                     cs_cdo_system_helper_t   *sh,
-                     cs_sles_t                *main_sles)
-{
-  BFT_REALLOC(cs_saddle_solver_systems,
-              cs_saddle_solver_n_systems + 1,
-              cs_saddle_solver_t *);
-
-  cs_saddle_solver_t  *solver = cs_saddle_solver_create(n1_elts,
-                                                        n1_dofs_by_elt,
-                                                        n2_elts,
-                                                        n2_dofs_by_elt,
-                                                        saddlep,
-                                                        sh,
-                                                        main_sles);
-  assert(solver != NULL);
-
-  /* Update static variables */
-
-  cs_saddle_solver_systems[cs_saddle_solver_n_systems] = solver;
-  cs_saddle_solver_n_systems += 1;
-
-  return solver;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free all remaining structures related to saddle-point solvers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_saddle_solver_destroy_all(void)
-{
-  cs_saddle_solver_n_systems = 0;
-  BFT_FREE(cs_saddle_solver_systems);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define the SLES structures (potentially several) related to a
  *        saddle-point system
  */
@@ -858,9 +792,11 @@ cs_saddle_solver_destroy_all(void)
 void
 cs_saddle_solver_setup_sles(void)
 {
-  for (int i = 0; i < cs_saddle_solver_n_systems; i++) {
+  int n = cs_saddle_solver_get_n_systems();
 
-    cs_saddle_solver_t  *solver = cs_saddle_solver_systems[i];
+  for (int id = 0; id < n; id++) {
+
+    cs_saddle_solver_t  *solver = cs_saddle_solver_by_id(id);
     assert(solver != NULL);
     const cs_param_saddle_t  *const_saddlep = solver->param;
 

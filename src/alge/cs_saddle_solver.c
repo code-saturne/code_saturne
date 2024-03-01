@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <float.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,6 +119,13 @@ typedef int
 /*============================================================================
  * Private variables
  *============================================================================*/
+
+/*============================================================================
+ * Local private variables
+ *============================================================================*/
+
+static int  cs_saddle_solver_n_systems = 0;
+static cs_saddle_solver_t  **cs_saddle_solver_systems = NULL;
 
 /*============================================================================
  * Static inline private function prototypes
@@ -1949,12 +1957,6 @@ _uzawa_cg_cvg_test(cs_iter_algo_t  *algo)
   return cvg_status;
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create and initialize a cs_saddle_solver_t structure. The context and
@@ -1973,14 +1975,14 @@ _uzawa_cg_cvg_test(cs_iter_algo_t  *algo)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_saddle_solver_t *
-cs_saddle_solver_create(cs_lnum_t                 n1_elts,
-                        int                       n1_dofs_by_elt,
-                        cs_lnum_t                 n2_elts,
-                        int                       n2_dofs_by_elt,
-                        const cs_param_saddle_t  *saddlep,
-                        cs_cdo_system_helper_t   *sh,
-                        cs_sles_t                *main_sles)
+static cs_saddle_solver_t *
+_create_saddle_solver(cs_lnum_t                 n1_elts,
+                      int                       n1_dofs_by_elt,
+                      cs_lnum_t                 n2_elts,
+                      int                       n2_dofs_by_elt,
+                      const cs_param_saddle_t  *saddlep,
+                      cs_cdo_system_helper_t   *sh,
+                      cs_sles_t                *main_sles)
 {
   if (saddlep == NULL)
     return NULL;
@@ -2021,7 +2023,160 @@ cs_saddle_solver_create(cs_lnum_t                 n1_elts,
   solver->context = NULL;
   solver->algo = NULL;
 
+  /* Monitoring */
+
+  solver->n_calls = 0;
+  solver->n_iter_min = INT_MAX;
+  solver->n_iter_max = 0;
+  solver->n_iter_tot = 0;
+
   return solver;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the monitoring performance of a saddle-point solver
+ *
+ * \param[in] solver  pointer to the solver to log
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_monitoring(const cs_saddle_solver_t  *solver)
+{
+  if (solver == NULL)
+    return;
+
+  const cs_param_saddle_t  *saddlep = solver->param;
+
+  int  n_calls = solver->n_calls;
+  int  n_it_min = solver->n_iter_min;
+  int  n_it_max = solver->n_iter_max;
+  int  n_it_mean = 0;
+
+  if (n_it_min < 0)
+    n_it_min = 0;
+
+  if (n_calls > 0)
+    n_it_mean = (int)(solver->n_iter_tot/((unsigned long long)n_calls));
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\nSummary of resolutions for \"%s\"\n",
+                cs_param_saddle_get_name(saddlep));
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n  Saddle solver type:            %s\n",
+                cs_param_saddle_get_type_name(saddlep->solver));
+
+  if (n_it_mean == 0)
+    cs_log_printf(CS_LOG_PERFORMANCE, "\n  No resolution\n");
+
+  else
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "  Number of calls:               %12d\n"
+                  "  Minimum number of iterations:  %12d\n"
+                  "  Maximum number of iterations:  %12d\n"
+                  "  Mean number of iterations:     %12d\n",
+                  n_calls, n_it_min, n_it_max, n_it_mean);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the number of saddle-point systems which have been added
+ *
+ * \return the current number of systems
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_saddle_solver_get_n_systems(void)
+{
+  return cs_saddle_solver_n_systems;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a pointer to a saddle-point solver from its id
+ *
+ * \param[in] id  id of the saddle-point system
+ *
+ * \return a pointer to a saddle-point solver structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_saddle_solver_t *
+cs_saddle_solver_by_id(int  id)
+{
+  if (id < 0 || id >= cs_saddle_solver_n_systems)
+    return NULL;
+  assert(cs_saddle_solver_systems != NULL);
+
+  return cs_saddle_solver_systems[id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a new solver for solving a saddle-point problem.
+ *
+ * \param[in] n1_elts         number of elements associated to the (1,1)-block
+ * \param[in] n1_dofs_by_elt  number of DoFs by elements in the (1,1)-block
+ * \param[in] n2_elts         number of elements associated to the (2,2)-block
+ * \param[in] n2_dofs_by_elt  number of DoFs by elements in the (2,2)-block
+ * \param[in] saddlep         set of parameters for the saddle-point solver
+ * \param[in] sh              pointer to a system helper structure
+ * \param[in] main_sles       pointer to the main SLES structure related to
+ *                            this saddle-point problem
+ *
+ * \return a pointer to the new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_saddle_solver_t *
+cs_saddle_solver_add(cs_lnum_t                 n1_elts,
+                     int                       n1_dofs_by_elt,
+                     cs_lnum_t                 n2_elts,
+                     int                       n2_dofs_by_elt,
+                     const cs_param_saddle_t  *saddlep,
+                     cs_cdo_system_helper_t   *sh,
+                     cs_sles_t                *main_sles)
+{
+  BFT_REALLOC(cs_saddle_solver_systems,
+              cs_saddle_solver_n_systems + 1,
+              cs_saddle_solver_t *);
+
+  cs_saddle_solver_t  *solver = _create_saddle_solver(n1_elts,
+                                                      n1_dofs_by_elt,
+                                                      n2_elts,
+                                                      n2_dofs_by_elt,
+                                                      saddlep,
+                                                      sh,
+                                                      main_sles);
+  assert(solver != NULL);
+
+  /* Update static variables */
+
+  cs_saddle_solver_systems[cs_saddle_solver_n_systems] = solver;
+  cs_saddle_solver_n_systems += 1;
+
+  return solver;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free all remaining structures related to saddle-point solvers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_finalize(void)
+{
+  BFT_FREE(cs_saddle_solver_systems);
+  cs_saddle_solver_n_systems = 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2035,6 +2190,9 @@ cs_saddle_solver_create(cs_lnum_t                 n1_elts,
 void
 cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 {
+  if (p_solver == NULL)
+    return;
+
   cs_saddle_solver_t  *solver = *p_solver;
 
   if (solver == NULL)
@@ -2170,6 +2328,53 @@ cs_saddle_solver_clean(cs_saddle_solver_t  *solver)
   }
 
   solver->do_setup = true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the current monitoring state with n_iter
+ *
+ * \param[in, out] solver  pointer to a saddle solver structure
+ * \param[in]      n_iter  number of iterations needed for a new call
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_update_monitoring(cs_saddle_solver_t  *solver,
+                                   int                  n_iter)
+{
+  if (solver == NULL)
+    return;
+
+  solver->n_calls += 1;
+  solver->n_iter_tot += n_iter;
+
+  if (solver->n_iter_min > n_iter)
+    solver->n_iter_min = n_iter;
+
+  if (solver->n_iter_max < n_iter)
+    solver->n_iter_max = n_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the monitoring performance for all defined saddle-point solvers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_log_monitoring(void)
+{
+  if (cs_saddle_solver_n_systems == 0)
+    return;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\nMonitoring of the performance of saddle-point systems\n");
+
+  for (int i = 0; i < cs_saddle_solver_n_systems; i++)
+    _log_monitoring(cs_saddle_solver_systems[i]);
+
+  cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------*/

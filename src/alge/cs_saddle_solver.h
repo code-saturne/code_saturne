@@ -102,6 +102,13 @@ typedef struct {
 
   void                          *context;
 
+  /* Monitoring */
+
+  unsigned                       n_calls;
+  unsigned                       n_iter_min;
+  unsigned                       n_iter_max;
+  unsigned                       n_iter_tot;
+
 } cs_saddle_solver_t;
 
 
@@ -345,8 +352,31 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create and initialize a cs_saddle_solver_t structure. The context and
- *        algo pointers can be defined in a second step if needed.
+ * \brief Retrieve the number of saddle-point systems which have been added
+ *
+ * \return the current number of systems
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_saddle_solver_get_n_systems(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a pointer to saddle-point solver from its id
+ *
+ * \param[in] id  id of the saddle-point system
+ *
+ * \return a pointer to a saddle-point solver structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_saddle_solver_t *
+cs_saddle_solver_by_id(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a new solver for solving a saddle-point problem.
  *
  * \param[in] n1_elts         number of elements associated to the (1,1)-block
  * \param[in] n1_dofs_by_elt  number of DoFs by elements in the (1,1)-block
@@ -362,13 +392,22 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 cs_saddle_solver_t *
-cs_saddle_solver_create(cs_lnum_t                 n1_elts,
-                        int                       n1_dofs_by_elt,
-                        cs_lnum_t                 n2_elts,
-                        int                       n2_dofs_by_elt,
-                        const cs_param_saddle_t  *saddlep,
-                        cs_cdo_system_helper_t   *sh,
-                        cs_sles_t                *main_sles);
+cs_saddle_solver_add(cs_lnum_t                 n1_elts,
+                     int                       n1_dofs_by_elt,
+                     cs_lnum_t                 n2_elts,
+                     int                       n2_dofs_by_elt,
+                     const cs_param_saddle_t  *saddlep,
+                     cs_cdo_system_helper_t   *sh,
+                     cs_sles_t                *main_sles);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free all remaining structures related to saddle-point solvers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -391,6 +430,28 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver);
 
 void
 cs_saddle_solver_clean(cs_saddle_solver_t  *solver);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the current monitoring state with n_iter
+ *
+ * \param[in, out] solver  pointer to a saddle solver structure
+ * \param[in]      n_iter  number of iterations needed for a new call
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_update_monitoring(cs_saddle_solver_t  *solver,
+                                   int                  n_iter);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the monitoring performance of all saddle-point systems
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

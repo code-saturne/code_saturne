@@ -449,8 +449,6 @@ cs_equation_system_log_setup(void)
 void
 cs_equation_system_log_monitoring(void)
 {
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n%-43s %9s\n", " ", "Total");
-
   for (int i = 0; i < _n_equation_systems; i++) {
 
     cs_equation_system_t  *eqsys = _equation_systems[i];

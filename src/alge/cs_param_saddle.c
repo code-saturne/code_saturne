@@ -114,8 +114,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
   if (saddlep->schur_sles_param != NULL)
     cs_param_sles_free(&(saddlep->schur_sles_param));
 
-  const char  *basename = (saddlep->name == NULL) ?
-    saddlep->block11_sles_param->name : saddlep->name;
+  const char  *basename = cs_param_saddle_get_name(saddlep);
 
   int  len = strlen(basename) + strlen("_schur_approx");
   char  *name = NULL;
@@ -154,8 +153,7 @@ _init_xtra_slesp(cs_param_saddle_t  *saddlep)
   if (saddlep->xtra_sles_param != NULL)
     cs_param_sles_free(&(saddlep->xtra_sles_param));
 
-  const char  *basename = (saddlep->name == NULL) ?
-    saddlep->block11_sles_param->name : saddlep->name;
+  const char  *basename = cs_param_saddle_get_name(saddlep);
 
   int  len = strlen(basename) + strlen("_b11_xtra");
   char  *name = NULL;
@@ -375,6 +373,52 @@ cs_param_saddle_get_augmentation_coef(const cs_param_saddle_t  *saddlep)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the name of the type of saddle-point solver
+ *
+ * \param[in] type  type of saddle-point solver
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type)
+{
+  switch (type) {
+  case CS_PARAM_SADDLE_SOLVER_NONE:
+    return "None";
+
+  case CS_PARAM_SADDLE_SOLVER_ALU:
+    return "Augmented-Lagrangian Uzawa";
+
+  case CS_PARAM_SADDLE_SOLVER_FGMRES:
+    return "FGMRES";
+
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    return "GCR";
+
+  case CS_PARAM_SADDLE_SOLVER_GKB:
+    return "GKB";
+
+  case CS_PARAM_SADDLE_SOLVER_MINRES:
+    return "MinRES";
+
+  case CS_PARAM_SADDLE_SOLVER_MUMPS:
+    return "MUMPS";
+
+  case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
+    return "MUMPS";
+
+  case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+    return "CG";
+
+  case CS_PARAM_SADDLE_N_SOLVERS:
+    return "Undefined";
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create a cs_param_saddle_t structure
  *        No solver is set by default.
  *
@@ -448,6 +492,37 @@ cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
 
   BFT_FREE(saddlep);
   *p_saddlep = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the name of the saddle-point solver
+ *
+ * \param[in] saddlep  pointer to a set of saddle-point parameters
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_saddle_get_name(const cs_param_saddle_t  *saddlep)
+{
+  const char  default_name[] = "Undefined";
+
+  if (saddlep == NULL)
+    return default_name;
+
+  if (saddlep->name != NULL)
+    return saddlep->name;
+
+  else {
+
+    if (saddlep->block11_sles_param != NULL)
+      return saddlep->block11_sles_param->name;
+    else
+      return default_name;
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -926,8 +1001,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   bool  log_xtra_slesp = false;
 
-  const char  *basename = (saddlep->name == NULL) ?
-    saddlep->block11_sles_param->name : saddlep->name;
+  const char  *basename = cs_param_saddle_get_name(saddlep);
 
   char  *prefix = NULL;
   int  len = strlen(basename) + strlen("  *  |") + 1;
@@ -939,17 +1013,6 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
   cs_log_printf(CS_LOG_SETUP,
                 "\n### Setup for the saddle-point system: \"%s\"\n", basename);
   cs_log_printf(CS_LOG_SETUP, "%s Verbosity: %d\n", prefix, saddlep->verbosity);
-
-  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_MUMPS) {
-
-    cs_log_printf(CS_LOG_SETUP, "%s saddle_solver.max_iter:  %d\n",
-                  prefix, saddlep->cvg_param.n_max_iter);
-    cs_log_printf(CS_LOG_SETUP, "%s saddle_solver.rtol:      % -10.6e\n",
-                  prefix, saddlep->cvg_param.rtol);
-    cs_log_printf(CS_LOG_SETUP, "%s saddle_solver..atol:     % -10.6e\n",
-                  prefix, saddlep->cvg_param.atol);
-
-  }
 
   /* Solver */
 
@@ -1080,6 +1143,19 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
     break;
 
   } /* Preconditioner */
+
+  /* Convergence criteria */
+
+  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_MUMPS) {
+
+    cs_log_printf(CS_LOG_SETUP, "%s Convergence.max_iter:  %d\n",
+                  prefix, saddlep->cvg_param.n_max_iter);
+    cs_log_printf(CS_LOG_SETUP, "%s Convergence.rtol:     % -10.6e\n",
+                  prefix, saddlep->cvg_param.rtol);
+    cs_log_printf(CS_LOG_SETUP, "%s Convergence.atol:     % -10.6e\n",
+                  prefix, saddlep->cvg_param.atol);
+
+  }
 
   /* Schur complement */
   /* ---------------- */

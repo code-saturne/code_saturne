@@ -63,6 +63,7 @@
 #include "cs_post.h"
 #include "cs_pressure_correction.h"
 #include "cs_prototypes.h"
+#include "cs_saddle_solver.h"
 #include "cs_saddle_solver_setup.h"
 #include "cs_solid_selection.h"
 #include "cs_solidification.h"
@@ -648,6 +649,8 @@ _performance_log_monitoring(const cs_domain_t   *domain)
   cs_equation_system_log_monitoring();
 
   cs_equation_log_monitoring();
+
+  cs_saddle_solver_log_monitoring();
 }
 
 /*============================================================================
@@ -983,7 +986,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Free the memory related to systems of equations */
 
   cs_equation_system_destroy_all();
-  cs_saddle_solver_destroy_all();
+  cs_saddle_solver_finalize();
 
   /* Free the memory related to equations */
 

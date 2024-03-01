@@ -1790,6 +1790,9 @@ cs_equation_log_monitoring(void)
     cs_equation_builder_log_performance(eq->param, eq->builder);
 
   } /* Loop on equations */
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------*/

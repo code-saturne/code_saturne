@@ -1052,6 +1052,8 @@ cs_cdofb_monolithic_sles_alu(const cs_navsto_param_t  *nsp,
 
   int  n_iters = algo_ctx->n_algo_iter;
 
+  cs_saddle_solver_update_monitoring(solver, n_iters);
+
   /* Output information about the convergence */
 
   if (saddlep->verbosity > 0)
@@ -1268,6 +1270,8 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
   int  n_iters = algo_ctx->n_algo_iter;
 
+  cs_saddle_solver_update_monitoring(solver, n_iters);
+
   /* Output information about the convergence */
 
   if (saddlep->verbosity > 0)
@@ -1345,6 +1349,8 @@ cs_cdofb_monolithic_sles_full_system(const cs_navsto_param_t  *nsp,
 
   cs_iter_algo_default_t  *algo_ctx = solver->algo->context;
   int  n_iters = algo_ctx->n_algo_iter;
+
+  cs_saddle_solver_update_monitoring(solver, n_iters);
 
   /* Output information about the convergence */
 
@@ -1433,6 +1439,8 @@ cs_cdofb_monolithic_sles_gkb_inhouse(const cs_navsto_param_t  *nsp,
 
   int  n_iters = algo_ctx->n_algo_iter;
 
+  cs_saddle_solver_update_monitoring(solver, n_iters);
+
   /* Output information about the convergence */
 
   if (saddlep->verbosity > 0)
@@ -1510,6 +1518,8 @@ cs_cdofb_monolithic_sles_notay(const cs_navsto_param_t  *nsp,
 
   cs_iter_algo_default_t  *algo_ctx = solver->algo->context;
   int  n_iters = algo_ctx->n_algo_iter;
+
+  cs_saddle_solver_update_monitoring(solver, n_iters);
 
   /* Output information about the convergence */
 
@@ -1692,6 +1702,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
   /* ------------------------ */
 
   int  n_iters = algo_ctx->n_algo_iter;
+
+  cs_saddle_solver_update_monitoring(solver, n_iters);
 
   /* Output information about the convergence */
 
