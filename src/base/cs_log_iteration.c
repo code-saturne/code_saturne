@@ -54,6 +54,7 @@
 #include "cs_map.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
@@ -1695,6 +1696,8 @@ cs_log_iteration(void)
 
   cs_fan_log_iteration();
   cs_ctwr_log_balance();
+
+  cs_notebook_log();
 }
 
 /*----------------------------------------------------------------------------*/

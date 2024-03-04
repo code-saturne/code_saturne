@@ -73,13 +73,15 @@ class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, idx, name, value, oturns_var, editable, restart, description):
+    def __init__(self, idx, name, value, oturns_var, editable, restart, log,
+                 description):
         self.index  = idx
         self.name   = name
         self.value  = value
         self.oturns = oturns_var
         self.edit   = editable
         self.read   = restart
+        self.log    = log
         self.descr  = description
 
     def __repr__(self):
@@ -114,7 +116,7 @@ class TreeItem(object):
 
 
     def columnCount(self):
-        return 6
+        return 7
 
 
     def data(self, column, role):
@@ -135,6 +137,8 @@ class TreeItem(object):
             elif column == 4 and role == Qt.DisplayRole:
                 return self.item.read
             elif column == 5 and role == Qt.DisplayRole:
+                return self.item.log
+            elif column == 6 and role == Qt.DisplayRole:
                 return self.item.descr
         return None
 
@@ -175,7 +179,7 @@ class VariableStandardItemModel(QAbstractItemModel):
         if parent and parent.isValid():
             return parent.internalPointer().columnCount()
         else:
-            return 6
+            return 7
 
 
     def data(self, index, role):
@@ -201,6 +205,8 @@ class VariableStandardItemModel(QAbstractItemModel):
             elif index.column() == 4:
                 return self.tr("Read at restart")
             elif index.column() == 5:
+                return self.tr("Print to default log file")
+            elif index.column() == 6:
                 return self.tr("Description")
 
         # Display
@@ -231,16 +237,18 @@ class VariableStandardItemModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return self.tr("variable name")
+                return self.tr("Variable name")
             elif section == 1:
-                return self.tr("value")
+                return self.tr("Value")
             elif section == 2:
-                return self.tr("OpenTurns Variable")
+                return self.tr("OpenTurns\nVariable")
             elif section == 3:
                 return self.tr("Editable")
             elif section == 4:
-                return self.tr("Read at restart")
+                return self.tr("Read at\nrestart")
             elif section == 5:
+                return self.tr("Print to default\nlog file")
+            elif section == 6:
                 return self.tr("Description")
         return None
 
@@ -299,8 +307,9 @@ class VariableStandardItemModel(QAbstractItemModel):
             oturns = self.mdl.getVariableOt(idx)
             edit   = self.mdl.getVariableEditable(idx)
             read   = self.mdl.getVariableRestart(idx)
+            log    = self.mdl.getVariableLog(idx)
             descr  = self.mdl.getVariableDescription(idx)
-            item = item_class(idx, cname, value, oturns, edit, read, descr)
+            item = item_class(idx, cname, value, oturns, edit, read, log, descr)
             new_item = TreeItem(item, cname, parentItem)
             parentItem.appendChild(new_item)
 
@@ -327,6 +336,9 @@ class VariableStandardItemModel(QAbstractItemModel):
             editable = from_qvariant(value, to_text_string)
             item.item.edit = editable
             self.mdl.setVariableEditable(item.item.index, item.item.edit)
+            # Editable variable are automatically printed in default log file
+            item.item.log = editable
+            self.mdl.setVariableLog(item.item.index, item.item.edit)
 
         elif index.column() == 4:
             restart = from_qvariant(value, to_text_string)
@@ -334,6 +346,11 @@ class VariableStandardItemModel(QAbstractItemModel):
             self.mdl.setVariableRestart(item.item.index, item.item.read)
 
         elif index.column() == 5:
+            log = from_qvariant(value, to_text_string)
+            item.item.log = log
+            self.mdl.setVariableLog(item.item.index, item.item.log)
+
+        elif index.column() == 6:
             description = from_qvariant(value, to_text_string)
             item.item.descr = description
             self.mdl.setVariableDescription(item.item.index, item.item.descr)
@@ -395,15 +412,22 @@ class NotebookView(QWidget, Ui_NotebookForm):
 
         RestartOptions = ["Yes","No"]
         restartDelegate = ComboDelegate(self.treeViewNotebook,
-                                         opts_list=RestartOptions)
+                                        opts_list=RestartOptions)
         self.treeViewNotebook.setItemDelegateForColumn(4, restartDelegate)
 
+        LogOptions = ["No","Yes"]
+        logDelegate = ComboDelegate(self.treeViewNotebook,
+                                    opts_list=LogOptions)
+        self.treeViewNotebook.setItemDelegateForColumn(5, logDelegate)
+
         descriptionDelegate = LabelDelegate(self.treeViewNotebook)
-        self.treeViewNotebook.setItemDelegateForColumn(5, descriptionDelegate)
+        self.treeViewNotebook.setItemDelegateForColumn(6, descriptionDelegate)
 
         self.treeViewNotebook.resizeColumnToContents(0)
         self.treeViewNotebook.resizeColumnToContents(2)
+        self.treeViewNotebook.resizeColumnToContents(4)
         self.treeViewNotebook.resizeColumnToContents(5)
+        self.treeViewNotebook.resizeColumnToContents(6)
 
         # Connections
         self.toolButtonAdd.clicked.connect(self.slotAddVariable)

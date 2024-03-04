@@ -187,6 +187,15 @@ void
 cs_notebook_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print values of editable notebook variables to default log  file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_log(void);
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Number of notebook variables
  *

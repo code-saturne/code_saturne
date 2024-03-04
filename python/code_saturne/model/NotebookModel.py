@@ -70,6 +70,7 @@ class NotebookModel(Model):
         default['oturns']      = "No"
         default['editable']    = "No"
         default['restart']     = "Yes"
+        default['log']         = "No"
         default['description'] = ""
 
         return default
@@ -150,6 +151,7 @@ class NotebookModel(Model):
                 value  = content[1]
                 oturns = None
                 read   = None
+                log    = None
                 descr  = None
 
                 if len(content) >= 3:
@@ -163,7 +165,12 @@ class NotebookModel(Model):
                     read = "Yes"
 
                 if len(content) >= 5:
-                    descr = content[4]
+                    log = content[4]
+                else:
+                    log = "No"
+
+                if len(content) >= 6:
+                    descr = content[5]
                 else:
                     descr = ""
 
@@ -172,6 +179,7 @@ class NotebookModel(Model):
                     node['value']       = value
                     node['oturns']      = oturns
                     node['read']        = read
+                    node['log']         = log
                     node['description'] = descr
                 else:
                     self.addVariable()
@@ -180,6 +188,7 @@ class NotebookModel(Model):
                     self.setVariableName(idx-1, var)
                     self.setVariableOt(idx-1, oturns)
                     self.setVariableRestart(idx-1, read)
+                    self.setVariableLog(idx-1, log)
 
 
     @Variables.noUndo
@@ -280,6 +289,12 @@ class NotebookModel(Model):
         """
         node = self.node_note.xmlInitChildNode("var", id = idx)
         node['editable'] = editable
+        node['_editable'] = self.defaultNotebookValues()['editable']
+
+        # editable parameter are printed in log file by default
+        if editable:
+            node['log'] = editable
+            node['_log'] = self.defaultNotebookValues()['log']
 
 
     @Variables.noUndo
@@ -305,6 +320,38 @@ class NotebookModel(Model):
         """
         node = self.node_note.xmlInitChildNode("var", id = idx)
         node['restart'] = restart
+        node['_restart'] = self.defaultNotebookValues()['restart']
+
+
+    @Variables.noUndo
+    def getVariableLog(self, idx):
+        """
+        Return Yes or No to indicate if the parameter value will be printed
+        in the default log file.
+        """
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        log = node['log']
+        if not log:
+            # editable parameter are printed in log file by default
+            editable = node['editable']
+            if editable:
+                log = editable
+            else:
+                log = self.defaultNotebookValues()['log']
+            self.setVariableLog(idx, log)
+
+        return log
+
+
+    @Variables.undoGlobal
+    def setVariableLog(self, idx, log):
+        """
+        Set Yes or No to indicate if the parameter value will be printed
+        in the default log file.
+        """
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        node['log'] = log
+        node['_log'] = self.defaultNotebookValues()['log']
 
 
     @Variables.noUndo

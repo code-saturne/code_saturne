@@ -90,6 +90,8 @@ typedef struct {
 
   bool        restart;    /* Can the value be read at restart */
 
+  bool        log;        /* Print */
+
 } _cs_notebook_entry_t;
 
 /*============================================================================
@@ -147,6 +149,8 @@ _entry_by_name(const char *name)
  * \param[in] uncertain  flag (int) indicating if it is an uncertain input/output
  * \param[in] editable   flag (bool) indicating if the value can be modified
  * \param[in] restart    flag (bool) indicating if the value is read at restart
+ * \param[in] log        flag (bool) indicating if the value is printed in
+                         default log file
  *
  * \return a _cs_notebook_entry_t pointer
  */
@@ -156,7 +160,8 @@ static _cs_notebook_entry_t *
 _entry_create(const char  *name,
               int          uncertain,
               bool         editable,
-              bool         restart)
+              bool         restart,
+              bool         log)
 {
   size_t l = strlen(name);
 
@@ -220,6 +225,7 @@ _entry_create(const char  *name,
 
   e->editable  = editable;
   e->restart   = restart;
+  e->log       = log;
 
   return e;
 }
@@ -295,6 +301,7 @@ cs_notebook_load_from_file(void)
     const char *c_val  = cs_tree_node_get_tag(n, "value");
     const char *c_edit = cs_tree_node_get_tag(n, "editable");
     const char *c_read = cs_tree_node_get_tag(n, "restart");
+    const char *c_log  = cs_tree_node_get_tag(n, "log");
 
     if (d == NULL)
       d = na;
@@ -322,6 +329,12 @@ cs_notebook_load_from_file(void)
       if (strcmp(c_read, "No") == 0)
         restart = false;
 
+    /* Editable values are printed by default */
+    bool log = editable;
+    if (c_log != NULL)
+      if (strcmp(c_log, "No") == 0)
+        log = false;
+
     /* If the variable is uncertain then :
      * - an input cannot be modifed, hence editable = false
      * - an output has to be modified by the code, hence editable=true
@@ -337,7 +350,11 @@ cs_notebook_load_from_file(void)
       editable = uncertain;
     }
 
-    _cs_notebook_entry_t *e = _entry_create(name, uncertain, editable, restart);
+    _cs_notebook_entry_t *e = _entry_create(name,
+                                            uncertain,
+                                            editable,
+                                            restart,
+                                            log);
 
     _entry_set_description(e, d);
     cs_real_t val = atof(c_val);
@@ -590,6 +607,7 @@ cs_notebook_log_setup(void)
                        "    uncertain:    %d\n"
                        "    editable:     %d\n"
                        "    restart:      %d\n"
+                       "    log:          %d\n"
                        "    value:        %f\n"),
                   i,
                   _entries[i]->name,
@@ -597,10 +615,77 @@ cs_notebook_log_setup(void)
                   _entries[i]->uncertain,
                   _entries[i]->editable,
                   _entries[i]->restart,
+                  _entries[i]->log,
                   _entries[i]->val);
 
   cs_log_printf(l, "\n");
   cs_log_separator(l);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print values of notebook variables to default log file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_log(void)
+{
+  if (_n_entries == 0)
+    return;
+
+  static size_t _max_size_name = 0;
+  static bool log_needed = false;
+  static char prefix[4] = "n  ";
+
+  /* Verify at first iteration that at least one variable need to be printed
+     in default log file. Also compute the maximum length of names */
+  if (_max_size_name < 1)
+    for (int i = 0; i < _n_entries; i++) {
+      log_needed = _entries[i]->log;
+      _max_size_name = CS_MAX(_max_size_name, strlen(_entries[i]->name));
+    }
+
+  if (log_needed) {
+    char tmp_s[2][64] =  {"", ""};
+
+    /* Print title */ 
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("\n"
+                    "  ** Notebook editable values\n"
+                    "     ------------------------\n"));
+ 
+    cs_log_strpad(tmp_s[0], _("Name"), _max_size_name, 64);
+    cs_log_strpadl(tmp_s[1], _("value"), 14, 64);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n   %s  %s\n",
+                  tmp_s[0], tmp_s[1]);
+
+    /* Underline title */
+    size_t n_cols = 2;
+    for (size_t col = 0; col < n_cols; col++) {
+      size_t i;
+      size_t w0 = (col == 0) ? _max_size_name : 14;
+      for (i = 0; i < w0; i++)
+        tmp_s[col][i] = '-';
+      tmp_s[col][w0] = '\0';
+    }
+
+    /* Loop on all variables and print required values */
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "-  %s  %s\n",
+                  tmp_s[0], tmp_s[1]);
+
+    for (int i = 0; i < _n_entries; i++)
+      if (_entries[i]->log) {
+        cs_log_strpad(tmp_s[0], _entries[i]->name, _max_size_name, 64);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "%s%s  %14.5g\n",
+                      prefix, tmp_s[0], _entries[i]->val);
+      }
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
