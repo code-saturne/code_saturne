@@ -382,34 +382,41 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from CDO schemes with scalar-valued
- *         degrees of freedom
+ * \brief Solve a linear system arising from CDO schemes with scalar-valued
+ *        degrees of freedom
  *
- * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
- * \param[in]  slesp          pointer to a cs_param_sles_t structure
- * \param[in]  matrix         pointer to a cs_matrix_t structure
- * \param[in]  rset           pointer to a cs_range_set_t structure
- * \param[in]  normalization  value used for the residual normalization
- * \param[in]  rhs_redux      do or not a parallel sum reduction on the RHS
- * \param[in, out] sles       pointer to a cs_sles_t structure
- * \param[in, out] x          solution of the linear system (in: initial guess)
- * \param[in, out] b          right-hand side (scatter/gather if needed)
+ * \param[in] n_scatter_dofs local number of DoFs (may be != n_gather_elts)
+ * \param[in] slesp          pointer to a cs_param_sles_t structure
+ * \param[in] matrix         pointer to a cs_matrix_t structure
+ * \param[in] rset           pointer to a cs_range_set_t structure
+ * \param[in] normalization  value used for the residual normalization
+ * \param[in] rhs_redux      do or not a parallel sum reduction on the RHS
+ * \param[in, out] sles      pointer to a cs_sles_t structure
+ * \param[in, out] x         solution of the linear system (in: initial guess)
+ * \param[in, out] b         right-hand side (scatter/gather if needed)
  *
  * \return the number of iterations of the linear solver
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
-                           const cs_param_sles_t        *slesp,
-                           const cs_matrix_t            *matrix,
-                           const cs_range_set_t         *rset,
-                           cs_real_t                     normalization,
-                           bool                          rhs_redux,
-                           cs_sles_t                    *sles,
-                           cs_real_t                    *x,
-                           cs_real_t                    *b)
+cs_cdo_solve_scalar_system(cs_lnum_t               n_scatter_dofs,
+                           const cs_param_sles_t  *slesp,
+                           const cs_matrix_t      *matrix,
+                           const cs_range_set_t   *rset,
+                           cs_real_t               normalization,
+                           bool                    rhs_redux,
+                           cs_sles_t              *sles,
+                           cs_real_t              *x,
+                           cs_real_t              *b)
 {
+  assert(slesp != NULL);
+
+  if (sles == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s(): SLES structure is NULL for SLES \"%s\"\n",
+              __func__, slesp->name);
+
   /* Set xsol (manage allocation and initialization in case of parallelism) */
 
   cs_real_t  *xsol = _set_xsol(1, n_scatter_dofs, x, matrix);
@@ -490,37 +497,44 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from CDO schemes with vector-valued
- *         degrees of freedom (DoFs).
- *         Number of DoFs is equal to 3*n_scatter_elts
+ * \brief Solve a linear system arising from CDO schemes with vector-valued
+ *        degrees of freedom (DoFs).
+ *        Number of DoFs is equal to 3*n_scatter_elts
  *
- * \param[in]  n_scatter_elts local number of elements (may be != n_gather_elts)
- * \param[in]  interlace      way to arrange data (true/false)
- * \param[in]  slesp          pointer to a cs_param_sles_t structure
- * \param[in]  matrix         pointer to a cs_matrix_t structure
- * \param[in]  rset           pointer to a cs_range_set_t structure
- * \param[in]  normalization  value used for the residual normalization
- * \param[in]  rhs_redux      do or not a parallel sum reduction on the RHS
- * \param[in, out] sles       pointer to a cs_sles_t structure
- * \param[in, out] x          solution of the linear system (in: initial guess)
- * \param[in, out] b          right-hand side (scatter/gather if needed)
+ * \param[in] n_scatter_elts local number of elements (may be != n_gather_elts)
+ * \param[in] interlace      way to arrange data (true/false)
+ * \param[in] slesp          pointer to a cs_param_sles_t structure
+ * \param[in] matrix         pointer to a cs_matrix_t structure
+ * \param[in] rset           pointer to a cs_range_set_t structure
+ * \param[in] normalization  value used for the residual normalization
+ * \param[in] rhs_redux      do or not a parallel sum reduction on the RHS
+ * \param[in, out] sles      pointer to a cs_sles_t structure
+ * \param[in, out] x         solution of the linear system (in: initial guess)
+ * \param[in, out] b         right-hand side (scatter/gather if needed)
  *
  * \return the number of iterations of the linear solver
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_elts,
-                           bool                          interlace,
-                           const cs_param_sles_t        *slesp,
-                           const cs_matrix_t            *matrix,
-                           const cs_range_set_t         *rset,
-                           cs_real_t                     normalization,
-                           bool                          rhs_redux,
-                           cs_sles_t                    *sles,
-                           cs_real_t                    *x,
-                           cs_real_t                    *b)
+cs_cdo_solve_vector_system(cs_lnum_t               n_scatter_elts,
+                           bool                    interlace,
+                           const cs_param_sles_t  *slesp,
+                           const cs_matrix_t      *matrix,
+                           const cs_range_set_t   *rset,
+                           cs_real_t               normalization,
+                           bool                    rhs_redux,
+                           cs_sles_t              *sles,
+                           cs_real_t              *x,
+                           cs_real_t              *b)
 {
+  assert(slesp != NULL);
+
+  if (sles == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s(): SLES structure is NULL for SLES \"%s\"\n",
+              __func__, slesp->name);
+
   /* Set xsol (manage allocation and initialization in case of parallelism) */
 
   cs_real_t  *xsol = _set_xsol(3, n_scatter_elts, x, matrix);
