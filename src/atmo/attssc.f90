@@ -75,7 +75,6 @@ double precision pp, dum
 
 double precision, dimension(:), allocatable :: ray3Di, ray3Dst
 double precision, dimension(:,:), allocatable, save :: grad1, grad2
-double precision, dimension(:), allocatable, save :: r3
 
 double precision, save :: qliqmax,r3max
 logical, save :: r3_is_defined = .false.
@@ -88,6 +87,7 @@ double precision, dimension(:), pointer :: cpro_tempc
 double precision, dimension(:), pointer :: cpro_liqwt
 double precision, dimension(:), pointer :: cpro_rad_cool
 double precision, dimension(:), pointer :: cpro_met_p
+double precision, dimension(:), pointer :: r3
 
 !===============================================================================
 ! 1. Initialization
@@ -171,6 +171,7 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
 
   call field_get_val_s(iliqwt, cpro_liqwt)
   call field_get_val_s(itempc, cpro_tempc)
+  call field_get_val_s_by_name('droplet_eq_radius', r3)
 
   ! Test minimum liquid water to carry out drop sedimentation
   qliqmax = 0.d0
@@ -179,69 +180,69 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
   enddo
   if (irangp.ge.0) call parmax(qliqmax)
 
-  if (qliqmax.gt.1d-8) then
+  if (.not.r3_is_defined)then
+    call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
 
-    if (.not.r3_is_defined)then
+    ! Compute the mean value: (<r^3>)**1/3
+    call define_r3
+    r3_is_defined = .true.
 
-      call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
-
-      allocate(r3(ncelet))
-      ! Compute the mean value: (<r^3>)**1/3
-      call define_r3
-      r3_is_defined = .true.
-
-      allocate(grad1(3,ncelet), grad2(3,ncelet))
-
+    allocate(grad1(3,ncelet), grad2(3,ncelet))
+    if (qliqmax.gt.1d-8) then
       call grad_sed(grad1, grad2)
+    endif
+  endif! r3_not_defined
 
-    endif ! r3_not_defined
+  ivar = isca(iscal)
+  if (ivar.eq.isca(iscalt)) then
 
-    ivar = isca(iscal)
-    if (ivar.eq.isca(iscalt)) then
-
+    if (qliqmax.gt.1d-8) then
       do iel = 1, ncel
         if (imeteo.eq.0) then
           call atmstd(xyzcen(3,iel),pp,dum,dum)
         else if (imeteo.eq.1) then
           call intprf &
-               ( nbmett, nbmetm,                                        &
-                 ztmet , tmmet , phmet , xyzcen(3,iel) , ttcabs, pp )
+            ( nbmett, nbmetm,                                        &
+            ztmet , tmmet , phmet , xyzcen(3,iel) , ttcabs, pp )
         else
           pp = cpro_met_p(iel)
         endif
 
         crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)           &
-                    *cell_f_vol(iel)*grad1(3,iel)
+          *cell_f_vol(iel)*grad1(3,iel)
       enddo
-      treated_scalars = treated_scalars + 1
+    endif
+    treated_scalars = treated_scalars + 1
 
-    elseif (ivar.eq.isca(iymw)) then
+  elseif (ivar.eq.isca(iymw)) then
 
+    if (qliqmax.gt.1d-8) then
       do iel = 1, ncel
         crvexp(iel) = crvexp(iel) - cell_f_vol(iel)*grad1(3,iel)
       enddo
+    endif
 
-      treated_scalars = treated_scalars + 1
+    treated_scalars = treated_scalars + 1
 
-    elseif (ivar.eq.isca(intdrp)) then
+  elseif (ivar.eq.isca(intdrp)) then
 
+    if (qliqmax.gt.1d-8) then
       do iel = 1, ncel
         crvexp(iel) = crvexp(iel) + cell_f_vol(iel)*grad2(3,iel)
       enddo
-
-      treated_scalars = treated_scalars + 1
-
     endif
 
-    treated_scalars = mod(treated_scalars, 3)
+    treated_scalars = treated_scalars + 1
 
-    if (treated_scalars.eq.0) then ! keeping same gradients for 3 atm. var.
-      deallocate(r3)
-      r3_is_defined = .false.
-      deallocate(grad1)
-      deallocate(grad2)
-    endif
-  endif ! qliqmax.gt.1.d-8
+  endif
+
+  treated_scalars = mod(treated_scalars, 3)
+
+  if (treated_scalars.eq.0) then ! keeping same gradients for 3 atm. var.
+    r3_is_defined = .false.
+    deallocate(grad1)
+    deallocate(grad2)
+  endif
 endif ! for humid atmosphere physics only
 
 !--------

@@ -104,6 +104,9 @@ if (ippmod(iatmos).eq.2) then
   call add_property_field_1d('nebulosity_frac', 'Nebulo frac', f_id)
   !> Diagnosed nebulosity
   call add_property_field_1d('nebulosity_diag', 'Nebulo diag', f_id)
+  call add_property_field_1d('droplet_eq_radius', 'Drop eq radius3', f_id)
+  call field_set_key_int(f_id, keylog, 1)
+  call field_set_key_int(f_id, keyvis, 1)
 endif
 
 return

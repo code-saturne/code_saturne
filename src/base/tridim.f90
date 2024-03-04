@@ -924,7 +924,7 @@ do while (iterns.le.nterup)
       if (iale.eq.0) imajdy = 1
     endif
 
- endif
+  endif
 
   ! Compute y+ if needed
   ! and Van Driest "amortissement"
