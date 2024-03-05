@@ -144,6 +144,10 @@ static _cs_base_sighandler_t cs_glob_base_sigterm_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigfpe_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigsegv_save = SIG_DFL;
 
+#if defined(SIGBUS)
+static _cs_base_sighandler_t cs_glob_base_sigbus_save = SIG_DFL;
+#endif
+
 #if defined(SIGXCPU)
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
@@ -711,6 +715,13 @@ _cs_base_sig_fatal(int  signum)
     _cs_base_err_printf(_("SIGSEGV signal (forbidden memory area access) "
                           "intercepted!\n"));
     break;
+
+#if defined(SIGBUS)
+  case SIGBUS:
+    _cs_base_err_printf(_("SIGBUS signal (bus error) intercepted.\n"
+                          "--> computation interrupted.\n"));
+    break;
+#endif
 
 #if defined(SIGXCPU)
   case SIGXCPU:
@@ -1575,6 +1586,11 @@ cs_base_error_init(bool  signal_defaults)
 
     cs_glob_base_sigfpe_save  = signal(SIGFPE, _cs_base_sig_fatal);
     cs_glob_base_sigsegv_save = signal(SIGSEGV, _cs_base_sig_fatal);
+
+#if defined(SIGBUS)
+    if (cs_glob_rank_id <= 0)
+      cs_glob_base_sigbus_save  = signal(SIGBUS, _cs_base_sig_fatal);
+#endif
 
 #if defined(SIGXCPU)
     if (cs_glob_rank_id <= 0)
