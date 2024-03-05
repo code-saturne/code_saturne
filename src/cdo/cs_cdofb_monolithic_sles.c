@@ -561,6 +561,19 @@ _schur_matrix_from_m11_inv_approx(cs_param_solver_class_t  mat_class,
                              n_i_faces, i_face_cells,
                              diag_smat, xtra_smat);
 
+  /* Associate some mesh quantities to the matrix (useful for grid
+     coarsening) */
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+
+  cs_matrix_set_mesh_association(smat,
+                                 ma->cell_cells_idx,
+                                 ma->cell_i_faces,
+                                 ma->cell_i_faces_sgn,
+                                 (const cs_real_3_t *)quant->cell_centers,
+                                 (const cs_real_t *)quant->cell_vol,
+                                 (const cs_real_3_t *)quant->i_face_normal);
+
   /* Return the associated matrix and set the pointers to return
    * Return arrays (to be freed when the algorithm is converged) */
 
