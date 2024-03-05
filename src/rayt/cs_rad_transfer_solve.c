@@ -1762,7 +1762,7 @@ cs_rad_transfer_solve(int  bc_type[])
           snprintf(f_name, 63, "spectral_absorption_%02d",
               rt_params->atmo_dr_o3_id + 1);
           cs_field_t *f_abs_dr  = cs_field_by_name_try(f_name);
-          /* Emission initialized by direct absorption S0*/
+          /* Emission initialized by direct absorption S0 * dtau/dz */
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
             f_emi->val[cell_id] = f_abs_dr->val[cell_id] * onedpi;
         }
