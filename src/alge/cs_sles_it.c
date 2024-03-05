@@ -3885,11 +3885,10 @@ cs_sles_it_define(int                 f_id,
 
   /* Now define solver */
 
-  cs_sles_it_t *
-    c = cs_sles_it_create(solver_type,
-                          poly_degree,
-                          n_max_iter,
-                          true); /* update stats */
+  cs_sles_it_t *c = cs_sles_it_create(solver_type,
+                                      poly_degree,
+                                      n_max_iter,
+                                      true); /* update stats */
 
   cs_sles_t *sc = cs_sles_define(f_id,
                                  name,
@@ -3902,8 +3901,7 @@ cs_sles_it_define(int                 f_id,
                                  cs_sles_it_copy,
                                  cs_sles_it_destroy);
 
-  cs_sles_set_error_handler(sc,
-                            cs_sles_it_error_post_and_abort);
+  cs_sles_set_error_handler(sc, cs_sles_it_error_post_and_abort);
 
   return c;
 }
