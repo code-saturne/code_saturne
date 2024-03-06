@@ -78,9 +78,30 @@ int  cs_glob_cuda_max_block_size = -1;
 int  cs_glob_cuda_max_blocks = -1;
 int  cs_glob_cuda_n_mp = -1;
 
+/* Stream pool */
+
+static int            _cs_glob_cuda_n_streams = -1;
+static cudaStream_t  *_cs_glob_cuda_streams = nullptr;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy stream pool at exit.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+finalize_streams_(void)
+{
+  for (int i = 0; i < _cs_glob_cuda_n_streams; i++)
+    cudaStreamDestroy(_cs_glob_cuda_streams[i]);
+
+  BFT_FREE(_cs_glob_cuda_streams);
+  _cs_glob_cuda_n_streams = 0;
+}
 
 /*============================================================================
  * Semi-private function prototypes
@@ -464,9 +485,57 @@ cs_cuda_get_host_ptr(const void  *ptr)
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+END_C_DECLS
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+#ifdef __CUDACC__
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return stream handle from stream pool.
+ *
+ * If the requested stream id is higher than the current number of streams,
+ * one or more new streams will be created, so that size of the stream pool
+ * matches at least stream_id+1.
+ *
+ * By default, the first stream (with id 0) will be used for most operations,
+ * while stream id 1 will be used for operations which can be done
+ * concurrently, such as memory prefetching.
+ *
+ * Additional streams can be used for independent tasks, though opportunities
+ * for this are limited in the current code (this would probably also require
+ * associating different MPI communicators with each task).
+ *
+ * \param [in]  stream_id  id or requested stream
+ *
+ * \returns handle to requested stream
+ */
+/*----------------------------------------------------------------------------*/
+
+cudaStream_t
+cs_cuda_get_stream(int  stream_id)
+{
+  if (stream_id >= 0 && stream_id < _cs_glob_cuda_n_streams)
+    return _cs_glob_cuda_streams[stream_id];
+  else if (stream_id < 0)
+    return nullptr;
+
+  if (_cs_glob_cuda_n_streams < 0) {
+    cs_base_at_finalize(finalize_streams_);
+    _cs_glob_cuda_n_streams = 0;
+  }
+
+  BFT_REALLOC(_cs_glob_cuda_streams, stream_id+1, cudaStream_t);
+  for (int i = _cs_glob_cuda_n_streams; i < stream_id+1; i++)
+    cudaStreamCreate(&_cs_glob_cuda_streams[i]);
+
+  return _cs_glob_cuda_streams[stream_id];
+}
+
+#endif /* defined(__CUDACC__) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -476,7 +545,7 @@ cs_cuda_get_host_ptr(const void  *ptr)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_base_cuda_device_info(cs_log_t  log_id)
 {
   int n_devices = 0;
@@ -538,7 +607,7 @@ cs_base_cuda_device_info(cs_log_t  log_id)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_base_cuda_version_info(cs_log_t  log_id)
 {
   int runtime_version = -1, driver_version = -1;
@@ -559,7 +628,7 @@ cs_base_cuda_version_info(cs_log_t  log_id)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_base_cuda_compiler_info(cs_log_t  log_id)
 {
   cs_log_printf(log_id,
@@ -580,7 +649,7 @@ cs_base_cuda_compiler_info(cs_log_t  log_id)
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_base_cuda_select_default_device(void)
 {
   int device_id = 0, n_devices = 0;
@@ -640,7 +709,7 @@ cs_base_cuda_select_default_device(void)
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_base_cuda_get_device(void)
 {
   int device_id = -1, n_devices = 0;
@@ -657,5 +726,3 @@ cs_base_cuda_get_device(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

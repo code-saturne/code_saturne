@@ -420,7 +420,7 @@ cs_cuda_grid_size(cs_lnum_t     n,
 
 END_C_DECLS
 
-#if defined(__CUDACC__)
+#if defined(__NVCC__)
 
 /*----------------------------------------------------------------------------
  * Synchronize of copy a cs_real_t type array from the host to a device.
@@ -472,13 +472,38 @@ cs_sync_or_copy_h2d(const T        *val_h,
   *buf_d = _buf_d;
 }
 
-#endif /* defined(__CUDACC__) */
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return stream handle from stream pool.
+ *
+ * If the requested stream id is higher than the current number of streams,
+ * one or more new streams will be created, so that size of the stream pool
+ * matches at least stream_id+1.
+ *
+ * By default, the first stream (with id 0) will be used for most operations,
+ * while stream id 1 will be used for operations which can be done
+ * concurrently, such as memory prefetching.
+ *
+ * Additional streams can be used for independent tasks, though opportunities
+ * for this are limited in the current code (this would probably also require
+ * associating different MPI communicators with each task).
+ *
+ * \param [in]  stream_id  id or requested stream
+ *
+ * \returns handle to requested stream
+ */
+/*----------------------------------------------------------------------------*/
+
+cudaStream_t
+cs_cuda_get_stream(int  stream_id);
+
+#endif /* defined(__NVCC__) */
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
