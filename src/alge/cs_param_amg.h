@@ -137,7 +137,7 @@ typedef enum {
 
 } cs_param_amg_boomer_smoother_t;
 
-/*! \struct cs_param_boomer_amg_t
+/*! \struct cs_param_amg_boomer_t
  *  \brief Set of the main parameters to setup the algebraic multigrid
  *         BoomerAMG belonging to the HYPRE library. These parameters are used
  *         to define this AMG directly in HYPRE or through the PETSc library
@@ -166,6 +166,96 @@ typedef struct {
 
 } cs_param_amg_boomer_t;
 
+/* In-house AMG algorithms */
+/* ----------------------- */
+
+/*! \enum cs_param_amg_inhouse_solver_t
+ *  \brief Type of algorithm used in the in-house algorithm for smoothing each
+ *  level or solving the coarse level. Only the most relevant algorithms are
+ *  available here.
+ *
+ * This enum avoids using \ref cs_sles_it_type_t and to include higher level
+ * headers with loop cycle issue.
+ */
+
+ typedef enum {
+
+   CS_PARAM_AMG_INHOUSE_FORWARD_GS,   /* smoother only */
+   CS_PARAM_AMG_INHOUSE_BACKWARD_GS,  /* smoother only */
+
+   CS_PARAM_AMG_INHOUSE_JACOBI,
+   CS_PARAM_AMG_INHOUSE_PROCESS_GS,
+   CS_PARAM_AMG_INHOUSE_PROCESS_SGS,
+
+   CS_PARAM_AMG_INHOUSE_CG,
+   CS_PARAM_AMG_INHOUSE_CR3,
+   CS_PARAM_AMG_INHOUSE_GCR,
+   CS_PARAM_AMG_INHOUSE_GMRES,
+
+   CS_PARAM_AMG_INHOUSE_N_SOLVERS
+
+ } cs_param_amg_inhouse_solver_t;
+
+/*! \enum cs_param_amg_inhouse_coarsen_t
+ *  \brief Type of algorithm used in the in-house algorithm to coarsen each
+ *  level. This enum avoids using the associated \ref cs_grid_coarsen_t type
+ *  which includes higher level headers.
+ */
+
+ typedef enum {
+
+   /* For symmetric positive definite matrices (SPD) */
+
+   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_DX,  /*!< SPD, diag/extradiag ratio based */
+   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX,  /*!< SPD, diag/extradiag ratio based */
+   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW,  /*!< SPD, pairwise aggregation */
+
+   CS_PARAM_AMG_INHOUSE_COARSEN_CONV_DIFF_DX,  /*!< for general matrices */
+
+   CS_PARAM_AMG_INHOUSE_N_COARSENINGS
+
+ } cs_param_amg_inhouse_coarsen_t;
+
+/*! \struct cs_param_amg_inhouse_t
+ *  \brief Set of the main parameters used to setup the algebraic multigrid
+ *         available natively in code_saturne (in-house implementations). These
+ *         parameters are the most impacting ones. For a more advanced
+ *         usage, this is still possible to consider the function \ref
+ *         cs_user_linear_solvers
+ */
+
+typedef struct {
+
+  /* Coarsening algorithm */
+
+  int                             max_levels;     /* advanced settings */
+  cs_gnum_t                       min_n_g_rows;   /* advanced settings */
+  double                          p0p1_relax;     /* advanced settings */
+
+  int                             aggreg_limit;
+  cs_param_amg_inhouse_coarsen_t  coarsen_algo;
+
+  /* Down smoother */
+
+  int                             n_down_iter;
+  cs_param_amg_inhouse_solver_t   down_smoother;
+  int                             down_poly_degree;
+
+  /* Up smoother */
+
+  int                             n_up_iter;
+  cs_param_amg_inhouse_solver_t   up_smoother;
+  int                             up_poly_degree;
+
+  /* Coarse solver */
+
+  double                          coarse_rtol_mult; /* advanced settings */
+  int                             coarse_max_iter;  /* advanced settings */
+  cs_param_amg_inhouse_solver_t   coarse_solver;
+  int                             coarse_poly_degree;
+
+} cs_param_amg_inhouse_t;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -187,23 +277,35 @@ cs_param_amg_boomer_is_needed(cs_param_itsol_type_t    solver,
                               cs_param_precond_type_t  precond,
                               cs_param_amg_type_t      amg)
 {
-  if (precond == CS_PARAM_PRECOND_AMG) {
-
-    if (amg == CS_PARAM_AMG_HYPRE_BOOMER_V)
-      return true;
-    else if (amg == CS_PARAM_AMG_HYPRE_BOOMER_W)
+  if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_ITSOL_AMG)
+    if (amg == CS_PARAM_AMG_HYPRE_BOOMER_V ||
+        amg == CS_PARAM_AMG_HYPRE_BOOMER_W)
       return true;
 
-  }
+  return false;
+}
 
-  if (solver == CS_PARAM_ITSOL_AMG) {
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return true if the settings rely on the in-house implementation,
+ *        otherwise false
+ *
+ * \param[in] solver     type of SLES solver
+ * \param[in] precond    type of preconditioner
+ * \param[in] amg        type of AMG
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
 
-    if (amg == CS_PARAM_AMG_HYPRE_BOOMER_V)
+static inline bool
+cs_param_amg_inhouse_is_needed(cs_param_itsol_type_t    solver,
+                               cs_param_precond_type_t  precond,
+                               cs_param_amg_type_t      amg)
+{
+  if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_ITSOL_AMG)
+    if (amg == CS_PARAM_AMG_INHOUSE_K || amg == CS_PARAM_AMG_INHOUSE_V)
       return true;
-    else if (amg == CS_PARAM_AMG_HYPRE_BOOMER_W)
-      return true;
-
-  }
 
   return false;
 }
@@ -289,6 +391,62 @@ cs_param_amg_get_boomer_smoother_name(cs_param_amg_boomer_smoother_t  smoother);
 void
 cs_param_amg_boomer_log(const char                  *name,
                        const cs_param_amg_boomer_t  *bamgp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new structure storing a set of parameters used when calling
+ *        the in-house AMG algo. Set default values for all parameters.
+ *
+ * \param[in] used_as_solver   true or false
+ * \param[in] used_as_k_cycle  true or false
+ *
+ * \return a pointer to a new set of parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_inhouse_t *
+cs_param_amg_inhouse_create(bool  used_as_solver,
+                            bool  used_as_k_cycle);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy the given set of parameters used when calling in-house AMG algo.
+ *        into a new structure
+ *
+ * \param[in] amgp  reference set of in-house AMG parameters
+ *
+ * \return a pointer to a new set of in-house AMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_inhouse_t *
+cs_param_amg_inhouse_copy(const cs_param_amg_inhouse_t  *amgp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the name of the solver used with in-house AMG algo.
+ *
+ * \param[in] solver  solver type
+ *
+ * \return name of the given solver type
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_amg_get_inhouse_solver_name(cs_param_amg_inhouse_solver_t  solver);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the set of parameters used for setting in-house AMG algorithms
+ *
+ * \param[in] name  name related to the current SLES
+ * \param[in] amgp  set of in-house AMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_amg_inhouse_log(const char                    *name,
+                         const cs_param_amg_inhouse_t  *amgp);
 
 /*----------------------------------------------------------------------------*/
 

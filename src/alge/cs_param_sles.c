@@ -449,6 +449,11 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
       dst->solver == CS_PARAM_ITSOL_MUMPS)
     dst->context_param = cs_param_mumps_copy(src->context_param);
 
+  else if (cs_param_amg_inhouse_is_needed(dst->solver,
+                                          dst->precond,
+                                          dst->amg_type))
+    dst->context_param = cs_param_amg_inhouse_copy(src->context_param);
+
   else if (cs_param_amg_boomer_is_needed(dst->solver,
                                          dst->precond,
                                          dst->amg_type))
@@ -484,6 +489,8 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+    cs_param_sles_amg_inhouse_reset(slesp, true, true);
 
   }
   else if (strcmp(keyval, "bicg") == 0) {
@@ -805,6 +812,7 @@ cs_param_sles_set_precond(const char       *keyval,
 
     case CS_PARAM_SOLVER_CLASS_CS:
       slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
+      cs_param_sles_amg_inhouse_reset(slesp, false, true);
       break;
     case CS_PARAM_SOLVER_CLASS_PETSC:
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
@@ -837,6 +845,7 @@ cs_param_sles_set_precond(const char       *keyval,
 
     case CS_PARAM_SOLVER_CLASS_CS:
       slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
+      cs_param_sles_amg_inhouse_reset(slesp, false, true);
       break;
 
     case CS_PARAM_SOLVER_CLASS_PETSC:
@@ -1063,12 +1072,22 @@ cs_param_sles_set_amg_type(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 
+    if (slesp->solver == CS_PARAM_ITSOL_AMG)
+      cs_param_sles_amg_inhouse_reset(slesp, true, false);
+    else if (slesp->precond == CS_PARAM_PRECOND_AMG)
+      cs_param_sles_amg_inhouse_reset(slesp, false, false);
+
   }
   else if (strcmp(keyval, "k_cycle") == 0 || strcmp(keyval, "kamg") == 0) {
 
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
+
+    if (slesp->solver == CS_PARAM_ITSOL_AMG)
+      cs_param_sles_amg_inhouse_reset(slesp, true, true);
+    else if (slesp->precond == CS_PARAM_PRECOND_AMG)
+      cs_param_sles_amg_inhouse_reset(slesp, false, true);
 
   }
   else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "bamg") == 0 ||
@@ -1205,6 +1224,141 @@ cs_param_sles_set_cvg_param(cs_param_sles_t  *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and initialize a new context structure for the in-house AMG
+ *        settings.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      used_as_solver   true or false
+ * \param[in]      used_as_k_cycle  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_amg_inhouse_reset(cs_param_sles_t  *slesp,
+                                bool              used_as_solver,
+                                bool              used_as_k_cycle)
+{
+  if (slesp == NULL)
+    return;
+
+  if (slesp->context_param != NULL)
+    BFT_FREE(slesp->context_param);
+
+  slesp->context_param = cs_param_amg_inhouse_create(used_as_solver,
+                                                     used_as_k_cycle);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_amg_inhouse_t structure. This
+ *        structure is not reset before applying the given parameter. Please
+ *        call \ref cs_param_sles_amg_inhouse_reset to do so.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      down_poly_deg   poly. degree for the down smoother
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
+ * \param[in]      up_poly_deg     poly. degree for the up smoother
+ * \param[in]      coarse_solver   solver at the coarsest level
+ * \param[in]      coarse_poly_deg poly. degree for the coarse solver
+ * \param[in]      coarsen_algo    type of algorithm to coarsen grids
+ * \param[in]      aggreg_limit    limit for the aggregation process
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_amg_inhouse(cs_param_sles_t                *slesp,
+                          int                             n_down_iter,
+                          cs_param_amg_inhouse_solver_t   down_smoother,
+                          int                             down_poly_deg,
+                          int                             n_up_iter,
+                          cs_param_amg_inhouse_solver_t   up_smoother,
+                          int                             up_poly_deg,
+                          cs_param_amg_inhouse_solver_t   coarse_solver,
+                          int                             coarse_poly_deg,
+                          cs_param_amg_inhouse_coarsen_t  coarsen_algo,
+                          int                             aggreg_limit)
+{
+  if (slesp == NULL)
+    return;
+
+  assert(slesp->context_param != NULL);
+  cs_param_amg_inhouse_t  *amgp = slesp->context_param;
+
+  if (n_down_iter != CS_CDO_KEEP_DEFAULT)
+    amgp->n_down_iter = n_down_iter;
+  if (down_smoother != CS_CDO_KEEP_DEFAULT)
+    amgp->down_smoother = down_smoother;
+  if (down_poly_deg != CS_CDO_KEEP_DEFAULT)
+    amgp->down_poly_degree = down_poly_deg;
+
+  if (n_up_iter != CS_CDO_KEEP_DEFAULT)
+    amgp->n_up_iter = n_up_iter;
+  if (up_smoother != CS_CDO_KEEP_DEFAULT)
+    amgp->up_smoother = up_smoother;
+  if (up_poly_deg != CS_CDO_KEEP_DEFAULT)
+    amgp->up_poly_degree = up_poly_deg;
+
+  if (coarse_solver != CS_CDO_KEEP_DEFAULT)
+    amgp->coarse_solver = coarse_solver;
+  if (coarse_poly_deg != CS_CDO_KEEP_DEFAULT)
+    amgp->coarse_poly_degree = coarse_poly_deg;
+
+  if (coarsen_algo != CS_CDO_KEEP_DEFAULT)
+    amgp->coarsen_algo = coarsen_algo;
+  if (aggreg_limit != CS_CDO_KEEP_DEFAULT)
+    amgp->aggreg_limit = aggreg_limit;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_amg_inhouse_t structure used in
+ *        advanced settings. CS_CDO_KEEP_DEFAULT can be used to let unchange
+ *        the parameter value.
+ *
+ * \param[in, out] slesp             pointer to a cs_param_sles_t structure
+ * \param[in]      max_levels        max. number of levels
+ * \param[in]      min_n_g_rows      do not coarsen anymore below this number
+ * \param[in]      p0p1_relax        p0/p1 relaxation parameter
+ * \param[in]      coarse_max_iter   max. number of iter. for the coarse solver
+ * \param[in]      coarse_rtol_mult  max. number of iter. for the coarse solver
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
+                                   int               max_levels,
+                                   cs_gnum_t         min_n_g_rows,
+                                   double            p0p1_relax,
+                                   int               coarse_max_iter,
+                                   double            coarse_rtol_mult)
+{
+  if (slesp == NULL)
+    return;
+
+  assert(slesp->context_param != NULL);
+  cs_param_amg_inhouse_t  *amgp = slesp->context_param;
+
+  if (max_levels != CS_CDO_KEEP_DEFAULT)
+    amgp->max_levels = max_levels;
+
+  if (min_n_g_rows != CS_CDO_KEEP_DEFAULT)
+    amgp->min_n_g_rows = min_n_g_rows;
+
+  if (fabs(p0p1_relax - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+    amgp->p0p1_relax = p0p1_relax;
+
+  if (coarse_max_iter != CS_CDO_KEEP_DEFAULT)
+    amgp->coarse_max_iter = coarse_max_iter;
+
+  if (coarse_rtol_mult != CS_CDO_KEEP_DEFAULT)
+    amgp->coarse_rtol_mult = coarse_rtol_mult;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and initialize a new context structure for the boomerAMG
  *        settings.
  *
@@ -1235,9 +1389,9 @@ cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp)
  * \param[in]      n_down_iter     number of smoothing steps for the down cycle
  * \param[in]      down_smoother   type of smoother for the down cycle
  * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for th up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
  * \param[in]      coarse_solver   solver at the coarsest level
- * \param[in]      coarsen_algo    type of algoritmh for the coarsening
+ * \param[in]      coarsen_algo    type of algorithm to coarsen grids
  */
 /*----------------------------------------------------------------------------*/
 

@@ -248,6 +248,78 @@ cs_param_sles_set_cvg_param(cs_param_sles_t  *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and initialize a new context structure for the in-house AMG
+ *        settings.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      used_as_solver   true or false
+ * \param[in]      used_as_k_cycle  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_amg_inhouse_reset(cs_param_sles_t  *slesp,
+                                bool              used_as_solver,
+                                bool              used_as_k_cycle);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_amg_inhouse_t structure. This
+ *        structure is not reset before applying the given parameter. Please
+ *        call \ref cs_param_sles_amg_inhouse_reset to do so.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      down_poly_deg   poly. degree for the down smoother
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
+ * \param[in]      up_poly_deg     poly. degree for the up smoother
+ * \param[in]      coarse_solver   solver at the coarsest level
+ * \param[in]      coarse_poly_deg poly. degree for the coarse solver
+ * \param[in]      coarsen_algo    type of algorithm to coarsen grids
+ * \param[in]      aggreg_limit    limit for the aggregation process
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_amg_inhouse(cs_param_sles_t                *slesp,
+                          int                             n_down_iter,
+                          cs_param_amg_inhouse_solver_t   down_smoother,
+                          int                             down_poly_deg,
+                          int                             n_up_iter,
+                          cs_param_amg_inhouse_solver_t   up_smoother,
+                          int                             up_poly_deg,
+                          cs_param_amg_inhouse_solver_t   coarse_solver,
+                          int                             coarse_poly_deg,
+                          cs_param_amg_inhouse_coarsen_t  coarsen_algo,
+                          int                             aggreg_limit);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_amg_inhouse_t structure used in
+ *        advanced settings. CS_CDO_KEEP_DEFAULT can be used to let unchange
+ *        the parameter value.
+ *
+ * \param[in, out] slesp             pointer to a cs_param_sles_t structure
+ * \param[in]      max_levels        max. number of levels
+ * \param[in]      min_n_g_rows      do not coarsen anymore below this number
+ * \param[in]      p0p1_relax        p0/p1 relaxation parameter
+ * \param[in]      coarse_max_iter   max. number of iter. for the coarse solver
+ * \param[in]      coarse_rtol_mult  max. number of iter. for the coarse solver
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
+                                   int               max_levels,
+                                   cs_gnum_t         min_n_g_rows,
+                                   double            p0p1_relax,
+                                   int               coarse_max_iter,
+                                   double            coarse_rtol_mult);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and initialize a new context structure for the boomerAMG
  *        settings.
  *
@@ -269,9 +341,9 @@ cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp);
  * \param[in]      n_down_iter     number of smoothing steps for the down cycle
  * \param[in]      down_smoother   type of smoother for the down cycle
  * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for th up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
  * \param[in]      coarse_solver   solver at the coarsest level
- * \param[in]      coarsen_algo    type of algoritmh for the coarsening
+ * \param[in]      coarsen_algo    type of algorithm to coarsen grids
  */
 /*----------------------------------------------------------------------------*/
 

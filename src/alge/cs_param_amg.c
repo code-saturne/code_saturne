@@ -107,10 +107,10 @@ cs_param_amg_get_type_name(cs_param_amg_type_t  type)
   case CS_PARAM_AMG_PETSC_PCMG:
     return  "PCMG (PETSc)";
     break;
-  case CS_PARAM_AMG_HOUSE_V:
+  case CS_PARAM_AMG_INHOUSE_V:
     return  "In-house (V-cycle)";
     break;
-  case CS_PARAM_AMG_HOUSE_K:
+  case CS_PARAM_AMG_INHOUSE_K:
     return  "In-house (K-cycle)";
     break;
   default:
@@ -408,6 +408,279 @@ cs_param_amg_boomer_log(const char                  *name,
     break;
 
   } /* Interpolation algorithm */
+
+  BFT_FREE(prefix);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new structure storing a set of parameters used when calling
+ *        the in-house AMG algo. Set default values for all parameters.
+ *
+ * \param[in] used_as_solver   true or false
+ * \param[in] used_as_k_cycle  true or false
+ *
+ * \return a pointer to a new set of parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_inhouse_t *
+cs_param_amg_inhouse_create(bool  used_as_solver,
+                            bool  used_as_k_cycle)
+{
+  cs_param_amg_inhouse_t  *amgp = NULL;
+
+  BFT_MALLOC(amgp, 1, cs_param_amg_inhouse_t);
+
+  /* Options shared among all configurations */
+
+  amgp->max_levels = 15;
+  amgp->min_n_g_rows = 256;
+
+  amgp->coarse_poly_degree = 1;
+  amgp->coarse_rtol_mult = 1.0;
+  amgp->coarse_max_iter = 2500;
+  amgp->coarse_solver = CS_PARAM_AMG_INHOUSE_CG;
+
+  if (used_as_k_cycle) {
+
+    /* Coarsening options */
+
+    amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW;
+    amgp->p0p1_relax = 0.;
+    amgp->down_poly_degree = -1;
+    amgp->up_poly_degree = -1;
+
+    if (used_as_solver) {
+
+      amgp->aggreg_limit = 4;
+
+      /* Down smoother options */
+
+      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
+      amgp->n_down_iter = 3;
+
+      /* Up smoother options */
+
+      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
+      amgp->n_up_iter = 3;
+
+    }
+    else { /* Used as a preconditioner */
+
+      amgp->aggreg_limit = 8;
+
+      /* Down smoother options */
+
+      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_FORWARD_GS;
+      amgp->n_down_iter = 1;
+
+      /* Up smoother options */
+
+      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_BACKWARD_GS;
+      amgp->n_up_iter = 2;
+
+    }
+
+  }
+  else { /* This is a V-cycle AMG algorithm */
+
+    /* Coarsening options */
+
+    amgp->aggreg_limit = 4;
+    amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_DX;
+    amgp->p0p1_relax = 0.95;
+
+    if (used_as_solver) {
+
+      /* Down smoother options */
+
+      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_CG;
+      amgp->down_poly_degree = 0;
+      amgp->n_down_iter = 2;
+
+      /* Up smoother options */
+
+      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_CG;
+      amgp->up_poly_degree = 0;
+      amgp->n_up_iter = 10;
+
+    }
+    else { /* Used as preconditioner */
+
+      /* Down smoother options */
+
+      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
+      amgp->down_poly_degree = -1;
+      amgp->n_down_iter = 1;
+
+      /* Up smoother options */
+
+      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
+      amgp->up_poly_degree = -1;
+      amgp->n_up_iter = 1;
+
+    }
+
+  } /* V-cycle */
+
+  return amgp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy the given set of parameters used when calling in-house AMG algo.
+ *        into a new structure
+ *
+ * \param[in] amgp  reference set of in-house AMG parameters
+ *
+ * \return a pointer to a new set of in-house AMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_inhouse_t *
+cs_param_amg_inhouse_copy(const cs_param_amg_inhouse_t  *amgp)
+{
+  cs_param_amg_inhouse_t  *cpy = cs_param_amg_inhouse_create(true, true);
+
+  cpy->max_levels = amgp->max_levels;
+  cpy->min_n_g_rows = amgp->min_n_g_rows;
+  cpy->p0p1_relax = amgp->p0p1_relax;
+
+  cpy->aggreg_limit = amgp->aggreg_limit;
+  cpy->coarsen_algo = amgp->coarsen_algo;
+
+  cpy->coarse_solver = amgp->coarse_solver;
+  cpy->coarse_max_iter = amgp->coarse_max_iter;
+  cpy->coarse_poly_degree = amgp->coarse_poly_degree;
+  cpy->coarse_rtol_mult = amgp->coarse_rtol_mult;
+
+  cpy->n_down_iter = amgp->n_down_iter;
+  cpy->down_smoother = amgp->down_smoother;
+  cpy->down_poly_degree = amgp->down_poly_degree;
+
+  cpy->n_up_iter = amgp->n_up_iter;
+  cpy->up_smoother = amgp->up_smoother;
+  cpy->up_poly_degree = amgp->up_poly_degree;
+
+  return cpy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the name of the solver used with in-house AMG algo.
+ *
+ * \param[in] solver  solver type
+ *
+ * \return name of the given solver type
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_amg_get_inhouse_solver_name(cs_param_amg_inhouse_solver_t  solver)
+{
+  switch (solver) {
+
+  case CS_PARAM_AMG_INHOUSE_FORWARD_GS:
+    return "Forward Gauss-Seidel smoother";
+  case CS_PARAM_AMG_INHOUSE_BACKWARD_GS:
+    return "Backward Gauss-Seidel smoother";
+  case CS_PARAM_AMG_INHOUSE_JACOBI:
+    return "Jacobi";
+  case CS_PARAM_AMG_INHOUSE_PROCESS_GS:
+    return "Process local Gauss-Seidel/Jacobi";
+  case CS_PARAM_AMG_INHOUSE_PROCESS_SGS:
+    return "Process local Symm. Gauss-Seidel/Jacobi";
+  case CS_PARAM_AMG_INHOUSE_CG:
+    return "Conjugate Gradient";
+  case CS_PARAM_AMG_INHOUSE_CR3:
+    return "3-layer Conjugate Residual (CR3)";
+  case CS_PARAM_AMG_INHOUSE_GCR:
+    return "Generalized Conjugate Residual (GCR)";
+  case CS_PARAM_AMG_INHOUSE_GMRES:
+    return "GMRES";
+
+  default:
+    return "Undefined";
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the set of parameters used for setting in-house AMG algorithms
+ *
+ * \param[in] name  name related to the current SLES
+ * \param[in] amgp  set of in-house AMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_amg_inhouse_log(const char                    *name,
+                         const cs_param_amg_inhouse_t  *amgp)
+{
+  if (amgp == NULL)
+    return;
+
+  char  *prefix = NULL;
+  int  len = strlen(name) + strlen("  *  |") + 1;
+  BFT_MALLOC(prefix, len, char);
+  sprintf(prefix, "  * %s |", name);
+
+  cs_log_printf(CS_LOG_SETUP,
+                "%s in-house.AMG_down_smoothing: %1d it.| poly.degree %1d |"
+                " %s\n",
+                prefix, amgp->n_down_iter, amgp->down_poly_degree,
+                cs_param_amg_get_inhouse_solver_name(amgp->down_smoother));
+  cs_log_printf(CS_LOG_SETUP,
+                "%s in-house.AMG_up_smoothing:   %1d it.| poly.degree %1d |"
+                " %s\n",
+                prefix, amgp->n_up_iter, amgp->up_poly_degree,
+                cs_param_amg_get_inhouse_solver_name(amgp->up_smoother));
+  cs_log_printf(CS_LOG_SETUP,
+                "%s in-house.AMG_coarse_solver:  poly.degree %1d | %s\n",
+                prefix, amgp->coarse_poly_degree,
+                cs_param_amg_get_inhouse_solver_name(amgp->coarse_solver));
+  cs_log_printf(CS_LOG_SETUP,
+                "%s                              rtol.mult   %.2e\n",
+                prefix, amgp->coarse_rtol_mult);
+
+  switch (amgp->coarsen_algo) {
+
+  case CS_PARAM_AMG_INHOUSE_COARSEN_SPD_DX:
+    cs_log_printf(CS_LOG_SETUP, "%s in-house.AMG_coarsening:    %s\n",
+                  prefix, "SPD, diag/extradiag ratio-based");
+    break;
+  case CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX:
+    cs_log_printf(CS_LOG_SETUP, "%s in-house.AMG_coarsening:    %s\n",
+                  prefix, "SPD, max diag/extradiag ratio-based");
+    break;
+  case CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW:
+    cs_log_printf(CS_LOG_SETUP, "%s in-house.AMG_coarsening:    %s\n",
+                  prefix, "SPD, pairwise aggregation");
+    break;
+  case CS_PARAM_AMG_INHOUSE_COARSEN_CONV_DIFF_DX:
+    cs_log_printf(CS_LOG_SETUP, "%s in-house.AMG_coarsening:    %s\n",
+                  prefix, "Conv-Diff, diag/extradiag ratio-based");
+    break;
+
+  default:
+    cs_log_printf(CS_LOG_SETUP, "%s in-house.AMG_coarsening:     %s\n",
+                  prefix, "Unknown");
+    break;
+
+  } /* Coarsening algorithm */
+
+  /* Advanced parameters related to the coarsening */
+
+  cs_log_printf(CS_LOG_SETUP, "%s   max_levels:             %d\n",
+                prefix, amgp->max_levels      );
+  cs_log_printf(CS_LOG_SETUP, "%s   min_n_g_rows:           %lu\n",
+                prefix, amgp->min_n_g_rows);
+  cs_log_printf(CS_LOG_SETUP, "%s   p0p1_relax:             %f\n",
+                prefix, amgp->p0p1_relax);
+  cs_log_printf(CS_LOG_SETUP, "%s   aggregation_limit:      %d\n",
+                prefix, amgp->aggreg_limit);
 
   BFT_FREE(prefix);
 }

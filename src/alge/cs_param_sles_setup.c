@@ -1516,30 +1516,277 @@ _check_settings(cs_param_sles_t     *slesp)
  * \brief Retrieve the value of the polynomial degree to consider according to
  *        the settings. Only for in-house solvers.
  *
- * \param[in]  slesp      pointer to a \ref cs_param_sles_t structure
+ * \param[in] slesp  pointer to a \ref cs_param_sles_t structure
  *
  * \return the value of the polynomial degree to consider
  */
 /*----------------------------------------------------------------------------*/
 
-static int
-_get_poly_degree(const cs_param_sles_t     *slesp)
+static inline int
+_get_poly_degree(const cs_param_sles_t  *slesp)
 {
   switch (slesp->precond) { /* Switch on the preconditioner type */
 
   case CS_PARAM_PRECOND_DIAG:
     return 0;
-
   case CS_PARAM_PRECOND_POLY1:
     return 1;
-
   case CS_PARAM_PRECOND_POLY2:
     return 2;
 
   default:
     return -1;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert a cs_param_amg_inhouse_solver_t into a cs_sles_it_type_t
+ *        This additional type avoids including high-level headers in
+ *        cs_param_amg.* files which are "low-level" (loop cycle issue).
+ *
+ * \param[in] solver  solver to convert
+ *
+ * \return the matching cs_sles_it_type_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_sles_it_type_t
+_convert_inhouse_solver(cs_param_amg_inhouse_solver_t  solver)
+{
+  switch (solver) {
+
+  case CS_PARAM_AMG_INHOUSE_FORWARD_GS:
+    return CS_SLES_TS_F_GAUSS_SEIDEL;
+  case CS_PARAM_AMG_INHOUSE_BACKWARD_GS:
+    return CS_SLES_TS_B_GAUSS_SEIDEL;
+
+  case CS_PARAM_AMG_INHOUSE_JACOBI:
+    return CS_SLES_JACOBI;
+  case CS_PARAM_AMG_INHOUSE_PROCESS_GS:
+    return CS_SLES_P_GAUSS_SEIDEL;
+  case CS_PARAM_AMG_INHOUSE_PROCESS_SGS:
+    return CS_SLES_P_SYM_GAUSS_SEIDEL;
+
+  case CS_PARAM_AMG_INHOUSE_CG:
+    return CS_SLES_PCG;
+  case CS_PARAM_AMG_INHOUSE_CR3:
+    return CS_SLES_PCR3;
+  case CS_PARAM_AMG_INHOUSE_GCR:
+    return CS_SLES_GCR;
+  case CS_PARAM_AMG_INHOUSE_GMRES:
+    return CS_SLES_GMRES;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of in-house solver for AMG\n",
+              __func__);
+  }
+
+  return CS_SLES_N_SMOOTHER_TYPES;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert a cs_param_amg_inhouse_coarsen_t into a cs_grid_coarsening_t
+ *        This additional type avoids including high-level headers in
+ *        cs_param_amg.* files which are "low-level" (loop cycle issue).
+ *
+ * \param[in] algo   coarsening algo. to convert
+ *
+ * \return the matching cs_grid_coarsening_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_grid_coarsening_t
+_convert_inhouse_coarsen_algo(cs_param_amg_inhouse_coarsen_t  algo)
+{
+  switch (algo) {
+
+  case CS_PARAM_AMG_INHOUSE_COARSEN_SPD_DX:
+    return CS_GRID_COARSENING_SPD_DX;
+  case CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX:
+    return CS_GRID_COARSENING_SPD_MX;
+  case CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW:
+    return CS_GRID_COARSENING_SPD_PW;
+  case CS_PARAM_AMG_INHOUSE_COARSEN_CONV_DIFF_DX:
+    return CS_GRID_COARSENING_CONV_DIFF_DX;
+
+  default:
+    return CS_GRID_COARSENING_DEFAULT;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define an AMG solver using in-house implementation
+ *
+ * \param[in] sles_name  NULL or name of the SLES
+ * \param[in] slesp      pointer to a \ref cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_saturne_amg_solver(const char             *sles_name,
+                        const cs_param_sles_t  *slesp)
+{
+  const cs_param_amg_inhouse_t  *amgp = slesp->context_param;
+  assert(amgp != NULL);
+
+  cs_multigrid_t  *mg = NULL;
+
+  /* Convert enum */
+
+  cs_sles_it_type_t  coarse_solver =
+    _convert_inhouse_solver(amgp->coarse_solver);
+  cs_sles_it_type_t  down_smoother =
+    _convert_inhouse_solver(amgp->down_smoother);
+  cs_sles_it_type_t  up_smoother =
+    _convert_inhouse_solver(amgp->up_smoother);
+  cs_grid_coarsening_t  coarsen_algo =
+    _convert_inhouse_coarsen_algo(amgp->coarsen_algo);
+
+  switch (slesp->amg_type) {
+
+  case CS_PARAM_AMG_INHOUSE_V:
+    mg = cs_multigrid_define(slesp->field_id, sles_name,
+                             CS_MULTIGRID_V_CYCLE);
+
+    /* Advanced setup (default is specified inside the brackets)
+     * for AMG as solver */
+
+    cs_multigrid_set_solver_options
+      (mg,
+       down_smoother,            /* descent smoother (CS_SLES_PCG) */
+       up_smoother,              /* ascent smoother (CS_SLES_PCG) */
+       coarse_solver,            /* coarse solver (CS_SLES_PCG) */
+       slesp->cvg_param.n_max_iter, /* n max cycles (100) */
+       amgp->n_down_iter,        /* n max iter for descent (10) */
+       amgp->n_up_iter,          /* n max iter for ascent (10) */
+       amgp->coarse_max_iter,    /* n max iter coarse solver (10000) */
+       amgp->down_poly_degree,   /* poly. precond. degree descent (0) */
+       amgp->up_poly_degree,     /* poly. precond. degree ascent (0) */
+       amgp->coarse_poly_degree, /* poly. precond. degree coarse (0) */
+       1.0,     /* precision multiplier descent (< 0 forces max iters) */
+       1.0,     /* precision multiplier ascent (< 0 forces max iters) */
+       amgp->coarse_rtol_mult);  /* precision multiplier coarse (default 1) */
+    break;
+
+  case CS_PARAM_AMG_INHOUSE_K:
+    mg = cs_multigrid_define(slesp->field_id, sles_name,
+                             CS_MULTIGRID_K_CYCLE);
+
+    cs_multigrid_set_solver_options
+      (mg,
+       down_smoother,      /* descent smoother */
+       up_smoother,        /* ascent smoother */
+       coarse_solver,      /* coarse solver */
+       slesp->cvg_param.n_max_iter, /* n max cycles */
+       amgp->n_down_iter,        /* n max iter for descent */
+       amgp->n_up_iter,          /* n max iter for ascent */
+       amgp->coarse_max_iter,    /* n max iter coarse solver */
+       amgp->down_poly_degree,   /* poly. precond. degree descent */
+       amgp->up_poly_degree,     /* poly. precond. degree ascent */
+       amgp->coarse_poly_degree, /* poly. precond. degree coarse */
+       -1.0,    /* precision multiplier descent (< 0 forces max iters) */
+       -1.0,    /* precision multiplier ascent (< 0 forces max iters) */
+       amgp->coarse_rtol_mult);  /* precision multiplier coarse (default 1) */
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: System: \"%s\". Invalid AMG type with code_saturne"
+              " solvers.", __func__, slesp->name);
+    break;
+
+  } /* End of switch on the AMG type */
+
+  cs_multigrid_set_coarsening_options(mg,
+                                      amgp->aggreg_limit,
+                                      coarsen_algo,
+                                      amgp->max_levels,
+                                      amgp->min_n_g_rows,
+                                      amgp->p0p1_relax,
+                                      0);   /* postprocess */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define an AMG preconditioner using in-house implementation
+ *
+ * \param[in] slesp        pointer to a \ref cs_param_sles_t structure
+ * \param[in, out] itsol   iterative solver structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_saturne_amg_precond(const cs_param_sles_t  *slesp,
+                         cs_sles_it_t           *itsol)
+{
+  const cs_param_amg_inhouse_t  *amgp = slesp->context_param;
+  assert(amgp != NULL);
+
+  cs_multigrid_t  *mg = NULL;
+
+  if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V) {
+
+    cs_sles_pc_t  *pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
+    mg = cs_sles_pc_get_context(pc);
+    cs_sles_it_transfer_pc(itsol, &pc);
 
   }
+  else if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K) {
+
+    cs_sles_pc_t  *pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
+    mg = cs_sles_pc_get_context(pc);
+    cs_sles_it_transfer_pc(itsol, &pc);
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0, " %s: System: \"%s\"."
+              " Invalid AMG type with code_saturne solvers.",
+              __func__, slesp->name);
+
+  assert(mg != NULL);
+
+  /* Convert enum */
+
+  cs_sles_it_type_t  coarse_solver =
+    _convert_inhouse_solver(amgp->coarse_solver);
+  cs_sles_it_type_t  down_smoother =
+    _convert_inhouse_solver(amgp->down_smoother);
+  cs_sles_it_type_t  up_smoother =
+    _convert_inhouse_solver(amgp->up_smoother);
+  cs_grid_coarsening_t  coarsen_algo =
+    _convert_inhouse_coarsen_algo(amgp->coarsen_algo);
+
+  /* Change the default settings when used as preconditioner */
+
+  cs_multigrid_set_solver_options
+    (mg,
+     down_smoother,            /* descent smoother */
+     up_smoother,              /* ascent smoother */
+     coarse_solver,            /* coarse solver */
+     1,                        /* n max cycles */
+     amgp->n_down_iter,        /* n max iter for descent */
+     amgp->n_up_iter,          /* n max iter for ascent */
+     amgp->coarse_max_iter,    /* n max iter coarse solver */
+     amgp->down_poly_degree,   /* poly. precond. degree descent */
+     amgp->up_poly_degree,     /* poly. precond. degree ascent */
+     amgp->coarse_poly_degree, /* poly. precond. degree coarse */
+     -1.0,    /* precision multiplier descent (< 0 forces max iters) */
+     -1.0,    /* precision multiplier ascent (< 0 forces max iters) */
+     amgp->coarse_rtol_mult);  /* precision multiplier coarse (default 1) */
+
+  /* Set the parameters for the agregation process */
+
+  cs_multigrid_set_coarsening_options(mg,
+                                      amgp->aggreg_limit,
+                                      coarsen_algo,
+                                      amgp->max_levels,
+                                      amgp->min_n_g_rows,
+                                      amgp->p0p1_relax,
+                                      0);   /* postprocess */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1567,270 +1814,133 @@ _set_saturne_sles(bool                 use_field_id,
   cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, sles_name);
   cs_sles_it_t  *itsol = cs_sles_get_context(sles);
 
-  if (itsol != NULL && slesp->field_id > -1)
-    return; /* Solver settings already forced */
+  /* Since one wants to setup a SLES w.r.t. to the given set of parameters, one
+     prefers to start with an empty structure before performing the setup */
+
+  if (itsol != NULL)
+    cs_sles_it_destroy(&itsol);
 
   int  poly_degree = _get_poly_degree(slesp);
-
-  /* Retrieve associated context structures */
-
-  cs_sles_pc_t  *pc = cs_sles_it_get_pc(itsol);
-  cs_multigrid_t  *mg = NULL;
 
   /* 1- Define the iterative solver
    *    =========================== */
 
-  if (itsol == NULL) { /* Not already defined. Add a new one. */
+  switch (slesp->solver) {
 
-    switch (slesp->solver) {
+  case CS_PARAM_ITSOL_AMG:
+    _set_saturne_amg_solver(sles_name, slesp);
+    break;
 
-    case CS_PARAM_ITSOL_AMG:
-      {
-        switch (slesp->amg_type) {
+  case CS_PARAM_ITSOL_BICG:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_BICGSTAB,
+                              poly_degree,
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-        case CS_PARAM_AMG_INHOUSE_V:
-          mg = cs_multigrid_define(slesp->field_id, sles_name,
-                                   CS_MULTIGRID_V_CYCLE);
+  case CS_PARAM_ITSOL_BICGSTAB2:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_BICGSTAB2,
+                              poly_degree,
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-          /* Advanced setup (default is specified inside the brackets)
-           * for AMG as solver */
-
-          cs_multigrid_set_solver_options
-            (mg,
-             CS_SLES_JACOBI,              /* descent smoother (CS_SLES_PCG) */
-             CS_SLES_JACOBI,              /* ascent smoother (CS_SLES_PCG) */
-             CS_SLES_PCG,                 /* coarse solver (CS_SLES_PCG) */
-             slesp->cvg_param.n_max_iter, /* n max cycles (100) */
-             5,       /* n max iter for descent (10) */
-             5,       /* n max iter for ascent (10) */
-             1000,    /* n max iter coarse solver (10000) */
-             0,       /* polynomial precond. degree descent (0) */
-             0,       /* polynomial precond. degree ascent (0) */
-             -1,      /* polynomial precond. degree coarse (0) */
-             1.0,     /* precision multiplier descent (< 0 forces max iters) */
-             1.0,     /* precision multiplier ascent (< 0 forces max iters) */
-             1);      /* requested precision multiplier coarse (default 1) */
-          break;
-
-        case CS_PARAM_AMG_INHOUSE_K:
-          mg = cs_multigrid_define(slesp->field_id, sles_name,
-                                   CS_MULTIGRID_K_CYCLE);
-
-          cs_multigrid_set_solver_options
-            (mg,
-             CS_SLES_P_SYM_GAUSS_SEIDEL,    /* descent smoother */
-             CS_SLES_P_SYM_GAUSS_SEIDEL,    /* ascent smoother */
-             CS_SLES_PCG,                   /* coarse smoother */
-             slesp->cvg_param.n_max_iter,   /* n_max_cycles */
-             1,                             /* n_max_iter_descent, */
-             1,                             /* n_max_iter_ascent */
-             100,                           /* n_max_iter_coarse */
-             0,                             /* poly_degree_descent */
-             0,                             /* poly_degree_ascent */
-             0,                             /* poly_degree_coarse */
-             -1.0,                          /* precision_mult_descent */
-             -1.0,                          /* precision_mult_ascent */
-             1);                            /* precision_mult_coarse */
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s; System: %s -- Invalid AMG type with code_saturne"
-                    " solvers.", __func__, slesp->name);
-          break;
-
-        } /* End of switch on the AMG type */
-
-      }
-      break; /* AMG as solver */
-
-    case CS_PARAM_ITSOL_BICG:
+  case CS_PARAM_ITSOL_CG:
+    if (slesp->flexible) {
+      slesp->solver = CS_PARAM_ITSOL_FCG;
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_BICGSTAB,
+                                CS_SLES_IPCG,
                                 poly_degree,
                                 slesp->cvg_param.n_max_iter);
-      break;
-
-    case CS_PARAM_ITSOL_BICGSTAB2:
+    }
+    else
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_BICGSTAB2,
+                                CS_SLES_PCG,
                                 poly_degree,
                                 slesp->cvg_param.n_max_iter);
-      break;
+    break;
 
-    case CS_PARAM_ITSOL_CG:
-      if (slesp->flexible) {
-        slesp->solver = CS_PARAM_ITSOL_FCG;
-        itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                  CS_SLES_IPCG,
-                                  poly_degree,
-                                  slesp->cvg_param.n_max_iter);
-      }
-      else
-        itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                  CS_SLES_PCG,
-                                  poly_degree,
-                                  slesp->cvg_param.n_max_iter);
-      break;
+  case CS_PARAM_ITSOL_CR3:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_PCR3,
+                              poly_degree,
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-    case CS_PARAM_ITSOL_CR3:
-      itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_PCR3,
-                                poly_degree,
-                                slesp->cvg_param.n_max_iter);
-      break;
+  case CS_PARAM_ITSOL_FCG:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_FCG,
+                              poly_degree,
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-    case CS_PARAM_ITSOL_FCG:
-      itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_FCG,
-                                poly_degree,
-                                slesp->cvg_param.n_max_iter);
-      break;
+  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_P_GAUSS_SEIDEL,
+                              -1, /* Not useful to apply a preconditioner */
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-    case CS_PARAM_ITSOL_GAUSS_SEIDEL:
-      itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_P_GAUSS_SEIDEL,
-                                -1, /* Not useful to apply a preconditioner */
-                                slesp->cvg_param.n_max_iter);
-      break;
+  case CS_PARAM_ITSOL_FGMRES:  /* Not available --> close to GCR */
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Switch to the GCR implementation of code_saturne\n",
+                  __func__);
+    /* No break (wanted behavior) */
+  case CS_PARAM_ITSOL_GCR:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_GCR,
+                              poly_degree,
+                              slesp->cvg_param.n_max_iter);
+    cs_sles_it_set_restart_interval(itsol, slesp->restart);
+    break;
 
-    case CS_PARAM_ITSOL_FGMRES:  /* Not available --> close to GCR */
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_WARNINGS,
-                    "%s: Switch to the GCR implementation of code_saturne\n",
-                    __func__);
-      /* No break (wanted behavior) */
-    case CS_PARAM_ITSOL_GCR:
+  case CS_PARAM_ITSOL_GMRES:
+    if (slesp->flexible) {
+      slesp->solver = CS_PARAM_ITSOL_GCR;
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_GCR,
                                 poly_degree,
                                 slesp->cvg_param.n_max_iter);
       cs_sles_it_set_restart_interval(itsol, slesp->restart);
-      break;
-
-    case CS_PARAM_ITSOL_GMRES:
-      if (slesp->flexible) {
-        slesp->solver = CS_PARAM_ITSOL_GCR;
-        itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                  CS_SLES_GCR,
-                                  poly_degree,
-                                  slesp->cvg_param.n_max_iter);
-        cs_sles_it_set_restart_interval(itsol, slesp->restart);
-      }
-      else
-        itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                  CS_SLES_GMRES,
-                                  poly_degree,
-                                  slesp->cvg_param.n_max_iter);
-      break;
-
-    case CS_PARAM_ITSOL_JACOBI:
+    }
+    else
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_JACOBI,
-                                -1, /* Not useful to apply a preconditioner */
-                                slesp->cvg_param.n_max_iter);
-      break;
-
-    case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
-      itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_P_SYM_GAUSS_SEIDEL,
-                                -1, /* Not useful to apply a preconditioner */
-                                slesp->cvg_param.n_max_iter);
-      break;
-
-    case CS_PARAM_ITSOL_USER_DEFINED:
-      itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_USER_DEFINED,
+                                CS_SLES_GMRES,
                                 poly_degree,
                                 slesp->cvg_param.n_max_iter);
-      break;
+    break;
 
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid iterative solver for solving equation \"%s\".\n"
-                " Please modify your settings.", __func__, slesp->name);
-      break;
+  case CS_PARAM_ITSOL_JACOBI:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_JACOBI,
+                              -1, /* Not useful to apply a preconditioner */
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-    } /* End of switch */
+  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_P_SYM_GAUSS_SEIDEL,
+                              -1, /* Not useful to apply a preconditioner */
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-  }
-  else {
+  case CS_PARAM_ITSOL_USER_DEFINED:
+    itsol = cs_sles_it_define(slesp->field_id, sles_name,
+                              CS_SLES_USER_DEFINED,
+                              poly_degree,
+                              slesp->cvg_param.n_max_iter);
+    break;
 
-    /* The itsol structure has already been defined. Check that this is
-       consistent with the SLES parameters */
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid iterative solver for solving equation \"%s\".\n"
+              " Please modify your settings.", __func__, slesp->name);
+    break;
 
-    cs_sles_it_type_t  itsol_type = cs_sles_it_get_type(itsol);
-    int  ret_code = -1;
-    switch (itsol_type) {
+  } /* End of switch */
 
-    case CS_SLES_PCG:
-      if (slesp->solver != CS_PARAM_ITSOL_CG)
-        ret_code = 0;
-      break;
-
-    case CS_SLES_FCG:
-    case CS_SLES_IPCG:
-      if (slesp->solver != CS_PARAM_ITSOL_FCG)
-        ret_code = 1;
-      break;
-
-    case CS_SLES_JACOBI:
-      if (slesp->solver != CS_PARAM_ITSOL_JACOBI)
-        ret_code = 2;
-      break;
-
-    case CS_SLES_BICGSTAB:
-      if (slesp->solver != CS_PARAM_ITSOL_BICG)
-        ret_code = 3;
-      break;
-
-    case CS_SLES_BICGSTAB2:
-      if (slesp->solver != CS_PARAM_ITSOL_BICGSTAB2)
-        ret_code = 4;
-      break;
-
-    case CS_SLES_GCR:
-      if (slesp->solver != CS_PARAM_ITSOL_GCR)
-        ret_code = 5;
-      break;
-
-    case CS_SLES_GMRES:
-      if (slesp->solver != CS_PARAM_ITSOL_GMRES)
-        ret_code = 6;
-      break;
-
-    case CS_SLES_P_GAUSS_SEIDEL:
-      if (slesp->solver != CS_PARAM_ITSOL_GAUSS_SEIDEL)
-        ret_code = 7;
-      break;
-
-    case CS_SLES_P_SYM_GAUSS_SEIDEL:
-      if (slesp->solver != CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL)
-        ret_code = 8;
-      break;
-
-    case CS_SLES_PCR3:
-      if (slesp->solver != CS_PARAM_ITSOL_CR3)
-        ret_code = 9;
-      break;
-
-    case CS_SLES_USER_DEFINED:
-      if (slesp->solver != CS_PARAM_ITSOL_USER_DEFINED)
-        ret_code = 10;
-      break;
-
-    default:
-      ret_code = 11;
-      break;
-
-    } /* End of switch on itsol_type */
-
-    if (ret_code > -1)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid solver w.r.t. settings (code: %d)\n",
-                __func__, ret_code);
-
-  } /* Iterative solver already defined */
+  assert(itsol != NULL);
 
   if (slesp->flexible) { /* Additional checks */
 
@@ -1855,61 +1965,17 @@ _set_saturne_sles(bool                 use_field_id,
   /* 2- Define the preconditioner
    *    ========================= */
 
-  if (pc == NULL) { /* Add the preconditioner context */
+  switch (slesp->precond) {
 
-    assert(itsol != NULL);
+  case CS_PARAM_PRECOND_AMG:
+    /* -------------------- */
+    _set_saturne_amg_precond(slesp, itsol);
+    break;
 
-    switch (slesp->precond) {
+  case CS_PARAM_PRECOND_MUMPS:
+    {
+      cs_sles_pc_t  *pc = NULL;
 
-    case CS_PARAM_PRECOND_AMG:
-      /* -------------------- */
-      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V) {
-
-        pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
-        mg = cs_sles_pc_get_context(pc);
-        cs_sles_it_transfer_pc(itsol, &pc);
-
-      }
-      else if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K) {
-
-        pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
-        mg = cs_sles_pc_get_context(pc);
-        cs_sles_it_transfer_pc(itsol, &pc);
-
-        /* Change the default settings when used as preconditioner */
-
-        cs_multigrid_set_solver_options
-          (mg,
-           CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoother */
-           CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoother */
-           CS_SLES_PCG,                /* coarse solver */
-           1,                          /* n_max_cycles */
-           1,                          /* n_max_iter_descent, */
-           4,                          /* n_max_iter_ascent */
-           500,                        /* n_max_iter_coarse */
-           0,                          /* poly_degree_descent */
-           0,                          /* poly_degree_ascent */
-           1,                          /* poly_degree_coarse */
-           -1.0,                       /* precision_mult_descent */
-           -1.0,                       /* precision_mult_ascent */
-           1.0);                       /* precision_mult_coarse */
-
-        cs_multigrid_set_coarsening_options(mg,
-                                            8,    /* aggregation_limit */
-                                            CS_GRID_COARSENING_SPD_PW,
-                                            10,   /* n_max_levels */
-                                            150,  /* min_g_cells */
-                                            0.,   /* P0P1 relaxation */
-                                            0);   /* postprocess */
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, " %s: System: %s;"
-                  " Invalid AMG type with code_saturne solvers.",
-                  __func__, slesp->name);
-      break;
-
-    case CS_PARAM_PRECOND_MUMPS:
 #if defined(HAVE_MUMPS)
       if (slesp->context_param == NULL)
         cs_param_sles_mumps(slesp,
@@ -1918,18 +1984,19 @@ _set_saturne_sles(bool                 use_field_id,
 
       pc = cs_sles_mumps_pc_create(slesp);
 #else
-      bft_error(__FILE__, __LINE__, 0, "%s: MUMPS not available in this build.",
-                __func__);
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: SLES \"%s\": MUMPS not available in this build.\n",
+                __func__, slesp->name);
 #endif
+
       cs_sles_it_transfer_pc(itsol, &pc);
-      break;
+    }
+    break;
 
-    default: /* Nothing else to do */
-      break;
+  default: /* Nothing else to do */
+    break;
 
-    } /* Switch on the preconditioner */
-
-  } /* Preconditioner is not defined */
+  } /* Switch on the preconditioner */
 
   /* In case of high verbosity, additional outputs are generated */
 
