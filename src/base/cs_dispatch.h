@@ -54,18 +54,33 @@
  *============================================================================*/
 
 #ifdef __NVCC__
-#define CS_CUDA_HOST __host__
-#define CS_CUDA_DEVICE __device__
-#define CS_CUDA_HOST_DEVICE __host__ __device__
+
+#define CS_F_HOST __host__
+#define CS_F_DEVICE __device__
+#define CS_F_HOST_DEVICE __host__ __device__
+
 #else
-#define CS_CUDA_HOST
-#define CS_CUDA_DEVICE
-#define CS_CUDA_HOST_DEVICE
+
+#define CS_F_HOST
+#define CS_F_DEVICE
+#define CS_F_HOST_DEVICE
+
 #endif
 
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*! Algorithm classes for indirect sums from a graph's edges to its nodes,
+  such as face-to cell sums. */
+
+typedef enum {
+
+  CS_DISPATCH_SUM_SIMPLE,  /*!< Simple sum (assumes data race-avoiding
+                                numbering/coloring) */
+  CS_DISPATCH_SUM_ATOMIC   /*!< Atomic sum */
+
+} cs_dispatch_sum_t;
 
 /*!
  * Provide default implementations of a cs_context based on parallel_for
@@ -77,58 +92,48 @@ template <class Derived>
 class cs_dispatch_context_mixin {
 public:
 
-  // Loop over all internal faces
-  template <class F, class... Args>
-  decltype(auto) parallel_for_i_faces(const cs_mesh_t*  m,
-                                      F&&               f,
-                                      Args&&...         args);
-
-  // Loop over all boundary faces
-  template <class F, class... Args>
-  decltype(auto) parallel_for_b_faces(const cs_mesh_t*  m,
-                                      F&&               f,
-                                      Args&&...         args);
-
-  // Loop over all cells
-  template <class F, class... Args>
-  decltype(auto) parallel_for_cells(const cs_mesh_t* m, F&& f, Args&&... args);
-
   // Loop over n elements
   // Must be redefined by the child class
   template <class F, class... Args>
   decltype(auto) parallel_for(cs_lnum_t n, F&& f, Args&&... args) = delete;
 
+  // Loop over n elements with sum type info
+  // Must be redefined by the child class
+  template <class F, class... Args>
+  decltype(auto) parallel_for_sum(cs_lnum_t n, F&& f, Args&&... args) = delete;
+
+  // Assembly loop over all internal faces
+  template <class F, class... Args>
+  decltype(auto) parallel_for_i_faces(const cs_mesh_t*  m,
+                                      F&&               f,
+                                      Args&&...         args);
+
+  // Assembly loop over all boundary faces
+  template <class F, class... Args>
+  decltype(auto) parallel_for_b_faces(const cs_mesh_t*  m,
+                                      F&&               f,
+                                      Args&&...         args);
+
 };
 
-// Default implementation of parallel_for_i_faces based on parallel_for
+// Default implementation of parallel_for_i_faces based on parallel_for_sum
 template <class Derived>
 template <class F, class... Args>
 decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_i_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for
+  return static_cast<Derived*>(this)->parallel_for_sum
                                         (m->n_i_faces,
                                          static_cast<F&&>(f),
                                          static_cast<Args&&>(args)...);
 }
 
-// Default implementation of parallel_for_b_faces based on parallel_for
+// Default implementation of parallel_for_b_faces based on parallel_for_sum
 template <class Derived>
 template <class F, class... Args>
 decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_b_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for
+  return static_cast<Derived*>(this)->parallel_for_sum
                                         (m->n_b_faces,
-                                         static_cast<F&&>(f),
-                                         static_cast<Args&&>(args)...);
-}
-
-// Default implementation of parallel_for_cells based on parallel_for
-template <class Derived>
-template <class F, class... Args>
-decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_cells
-  (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for
-                                        (m->n_cells,
                                          static_cast<F&&>(f),
                                          static_cast<Args&&>(args)...);
 }
@@ -159,7 +164,8 @@ public:
 
   // Iterate using a plain omp parallel for
   template <class F, class... Args>
-  bool parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+  bool
+  parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
 #   pragma omp parallel for  if (n >= n_min_for_threads)
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, args...);
@@ -167,10 +173,22 @@ public:
     return true;
   }
 
+  // Iterate using a plain omp parallel for
+  template <class F, class... Args>
+  bool
+  parallel_for_sum(cs_lnum_t n, F&& f, Args&&... args) {
+#   pragma omp parallel for  if (n >= n_min_for_threads)
+    for (cs_lnum_t i = 0; i < n; ++i) {
+      f(i, CS_DISPATCH_SUM_ATOMIC, args...);
+    }
+    return true;
+  }
+
   // Loop over the interior faces of a mesh using a specific numbering
   // that avoids conflicts between threads.
   template <class F, class... Args>
-  bool parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  bool
+  parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     const int n_i_groups  = m->i_face_numbering->n_groups;
     const int n_i_threads = m->i_face_numbering->n_threads;
     const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
@@ -181,7 +199,7 @@ public:
         for (cs_lnum_t f_id = i_group_index[(t_id * n_i_groups + g_id) * 2];
              f_id < i_group_index[(t_id * n_i_groups + g_id) * 2 + 1];
              f_id++) {
-          f(f_id, args...);
+          f(f_id, CS_DISPATCH_SUM_SIMPLE, args...);
         }
       }
     }
@@ -200,14 +218,14 @@ public:
       for (cs_lnum_t f_id = b_group_index[t_id*2];
            f_id < b_group_index[t_id*2 + 1];
            f_id++) {
-        f(f_id, args...);
+        f(f_id, CS_DISPATCH_SUM_SIMPLE, args...);
       }
     }
     return true;
   }
 };
 
-#ifdef __NVCC__
+#if defined(__NVCC__)
 
 /* Default kernel that loops over an integer range and calls a device functor.
    This kernel uses a grid_size-stride loop and thus guarantees that all
@@ -221,6 +239,23 @@ __global__ void cs_cuda_kernel_parallel_for(cs_lnum_t n, F f, Args... args) {
   for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
        id += blockDim.x * gridDim.x) {
     f(id, args...);
+  }
+}
+
+/* Kernel for assembly that loops over an integer range and calls a device
+   functor. This is similar to the above, but passes an extra argument
+   indicating the sum type to use, allowing a templated test.
+   This kernel uses a grid_size-stride loop and thus guarantees that all
+   integers are processed, even if the grid is smaller.
+   All arguments *must* be passed by value to avoid passing CPU references
+   to the GPU. */
+
+template <class F, class... Args>
+__global__ void cs_cuda_kernel_parallel_for_sum(cs_lnum_t n, F f, Args... args) {
+  // grid_size-stride loop
+  for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
+       id += blockDim.x * gridDim.x) {
+    f(id, CS_DISPATCH_SUM_ATOMIC, args...);
   }
 }
 
@@ -342,6 +377,26 @@ public:
     return true;
   }
 
+  //! Try to launch on the GPU and return false if not available
+  template <class F, class... Args>
+  bool
+  parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+    const cs_lnum_t n = m->n_i_faces;
+    if (device_ < 0 || n < n_min_for_device_) {
+      return false;
+    }
+
+    long l_grid_size = grid_size_;
+    if (l_grid_size < 1) {
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+
+    cs_cuda_kernel_parallel_for_sum<<<l_grid_size, block_size_, 0, stream_>>>
+      (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+    return true;
+  }
+
   //! Synchronize associated stream
   void
   wait(void) {
@@ -350,7 +405,14 @@ public:
 
 };
 
-#endif  // __NVCC__
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+/*!
+ * Context to execute loops with SYCL on the device
+ */
+
+
+#endif  // __NVCC__ or SYCL
 
 /*!
  * Context to group unused options and catch missing execution paths.
@@ -365,7 +427,7 @@ public:
   cs_void_context(void)
   {}
 
-#ifndef __NVCC__
+#if !defined(__NVCC__)
 
   /* Fill-in for CUDA methods, so as to allow using these methods
      in final cs_dispatch_context even when CUDA is not available,
@@ -387,6 +449,12 @@ public:
   set_cuda_device([[maybe_unused]] int  device_id) {
   }
 
+#endif  // __NVCC__
+
+#if !defined(__NVCC__) && !defined(SYCL_LANGUAGE_VERSION)
+
+  /* Fill-in for device methods */
+
   void
   set_n_min_for_gpu([[maybe_unused]] int  n) {
   }
@@ -395,16 +463,28 @@ public:
   wait(void) {
   }
 
-#endif  // __NVCC__
+#endif  // ! __NVCC__ && ! SYCL_LANGUAGE_VERSION
 
 public:
 
   // Abort execution if no execution method is available.
   template <class F, class... Args>
-  bool parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+  bool parallel_for([[maybe_unused]] cs_lnum_t  n,
+                    [[maybe_unused]] F&&        f,
+                    [[maybe_unused]] Args&&...  args) {
     cs_assert(0);
     return false;
   }
+
+  // Abort execution if no execution method is available.
+  template <class F, class... Args>
+  bool parallel_for_sum([[maybe_unused]] cs_lnum_t  n,
+                        [[maybe_unused]] F&&        f,
+                        [[maybe_unused]] Args&&...  args) {
+    cs_assert(0);
+    return false;
+  }
+
 };
 
 /*!
@@ -429,9 +509,18 @@ public:
 public:
 
   template <class F, class... Args>
+    void parallel_for_sum(const cs_mesh_t* m, F&& f, Args&&... args) {
+    bool launched = false;
+    [[maybe_unused]] decltype(nullptr) try_execute[] = {
+      (   launched = launched
+       || Contexts::parallel_for_sum(m, f, args...), nullptr)...
+    };
+  }
+
+  template <class F, class... Args>
     void parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     bool launched = false;
-    decltype(nullptr) try_execute[] = {
+    [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
        || Contexts::parallel_for_i_faces(m, f, args...), nullptr)...
     };
@@ -440,18 +529,9 @@ public:
   template <class F, class... Args>
     auto parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     bool launched = false;
-    decltype(nullptr) try_execute[] = {
+    [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
        || Contexts::parallel_for_b_faces(m, f, args...), nullptr)...
-    };
-  }
-
-  template <class F, class... Args>
-    auto parallel_for_cells_(const cs_mesh_t* m, F&& f, Args&&... args) {
-    bool launched = false;
-    decltype(nullptr) try_execute[] = {
-      (  launched = launched
-       || Contexts::parallel_for_cells(m, f, args...), nullptr)...
     };
   }
 

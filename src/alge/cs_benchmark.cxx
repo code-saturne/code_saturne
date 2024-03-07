@@ -36,16 +36,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-
-#if defined(__STDC_VERSION__)      /* size_t */
-#if (__STDC_VERSION__ == 199901L)
-#    include <stddef.h>
-#  else
-#    include <stdlib.h>
-#  endif
-#else
-#include <stdlib.h>
-#endif
+#include <stddef.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -71,6 +62,7 @@
 #include "cs_base.h"
 #include "cs_base_accel.h"
 #include "cs_blas.h"
+#include "cs_dispatch.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -338,6 +330,64 @@ _mat_vec_exdiag_native_v1(cs_lnum_t            n_faces,
 
 /*----------------------------------------------------------------------------
  * Measure matrix.vector product extradiagonal terms related performance
+ * (symmetric matrix case), using dispatch.
+ *
+ * parameters:
+ *   n_faces         <-- local number of internal faces
+ *   face_cell       <-- face -> cells connectivity
+ *   xa              <-- extradiagonal values
+ *   x               <-- vector
+ *   y               <-> vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_mat_vec_exdiag_native_v2(const cs_real_t     *restrict xa,
+                          cs_real_t           *restrict x,
+                          cs_real_t           *restrict y)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+  cs_dispatch_context ctx;
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE
+                           (cs_lnum_t          face_id,
+                            cs_dispatch_sum_t  sum_type) {
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
+
+#ifdef __CUDA_ARCH__   // Test to show whether we are on GPU or CPU...
+    cs_real_t pfaci = cos(xa[face_id] * x[ii]);
+    cs_real_t pfacj = cos(xa[face_id] * x[jj]);
+#else
+    cs_real_t pfaci = -cos(xa[face_id] * x[ii]);
+    cs_real_t pfacj = -cos(xa[face_id] * x[jj]);
+#endif
+
+    if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+      y[face_id] += pfaci;
+      y[face_id] += pfacj;
+    }
+    else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+#ifdef __CUDA_ARCH__   // Test whether we are on GPU or CPU...
+      atomicAdd(&y[ii], pfaci);
+      atomicAdd(&y[jj], pfacj);
+#else
+      #pragma omp atomic
+      y[ii] += pfaci;
+      #pragma omp atomic
+      y[jj] += pfacj;
+#endif
+    }
+  });
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------
+ * Measure matrix.vector product extradiagonal terms related performance
  * with contribution to face-based array instead of cell-based array
  * (symmetric matrix case).
  *
@@ -533,6 +583,38 @@ _sub_matrix_vector_test(double               t_measure,
 
 #endif /* (HAVE_CUDA) */
 
+  /* Dispatch variant */
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _mat_vec_exdiag_native_v2(xa, x, y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n"
+                "Matrix.vector product, extradiagonal part (dispatch)\n"
+                "---------------------\n");
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "  (calls: %d;  test sum: %12.5f)\n",
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+
   /* Matrix.vector product, contribute to faces only */
 
   /* n_faces*2 nonzeroes, n_row_elts multiplications */
@@ -685,7 +767,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   /* Global cell ids, based on range/scan */
 
-  cs_gnum_t l_range[2] = {0, n_rows};
+  cs_gnum_t l_range[2] = {0, (cs_gnum_t)n_rows};
   cs_gnum_t n_g_rows = n_rows;
 
 #if defined(HAVE_MPI)
