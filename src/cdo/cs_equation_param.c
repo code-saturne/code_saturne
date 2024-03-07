@@ -1626,7 +1626,7 @@ cs_equation_param_ensure_consistent_settings(cs_equation_param_t   *eqp)
         eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_VORONOI) {
 
       cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
+      cs_log_printf(CS_LOG_WARNINGS,
                     "%s: Incompatible Hodge algo. for the diffusion term.\n"
                     "%s: Equation \"%s\": Switch to a WBS algo.\n"
                     "%s: Please check your settings.\n",
@@ -1640,7 +1640,7 @@ cs_equation_param_ensure_consistent_settings(cs_equation_param_t   *eqp)
     if (eqp->diffusion_hodgep.algo == CS_HODGE_ALGO_WBS) {
 
       cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
+      cs_log_printf(CS_LOG_WARNINGS,
                     "%s: Incompatible Hodge algo. for the diffusion term.\n"
                     "%s: Equation \"%s\": Switch to a COST algo.\n"
                     "%s: Please check your settings.\n",

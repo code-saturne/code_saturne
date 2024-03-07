@@ -960,7 +960,7 @@ cs_property_add(const char            *name,
 
   if (pty != NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT,
+    cs_log_printf(CS_LOG_WARNINGS,
                   _(" %s: An existing property has already the name %s.\n"
                     " Stop adding this property.\n"), __func__, name);
     return  pty;
@@ -1371,7 +1371,7 @@ cs_property_finalize_setup(void)
                   __func__);
 
       cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
+      cs_log_printf(CS_LOG_WARNINGS,
                     "\n The property \"%s\" will be defined using its reference"
                     " value.\n", pty->name);
 

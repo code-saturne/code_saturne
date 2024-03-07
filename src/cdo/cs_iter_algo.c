@@ -43,6 +43,7 @@
 #include <bft_printf.h>
 
 #include "cs_array.h"
+#include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_sdm.h"
 
@@ -1497,10 +1498,11 @@ cs_iter_algo_check_warning(const char          *func_name,
     double  res = cs_iter_algo_get_residual(algo);
 
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" %s: %s algorithm reaches the max. number of iterations"
-               " when solving equation \"%s\"\n"
-               " %s: max_iter=%d; last residual=%5.3e\n",
-               func_name, algo_name, eq_name, func_name, n_iter, res);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  " %s: %s algorithm reaches the max. number of iterations"
+                  " when solving equation \"%s\"\n"
+                  " %s: max_iter=%d; last residual=%5.3e\n",
+                  func_name, algo_name, eq_name, func_name, n_iter, res);
 
   }
 }

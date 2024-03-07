@@ -2993,7 +2993,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
   if (ml_t != CS_MESH_LOCATION_INTERIOR_FACES &&
       ml_t != CS_MESH_LOCATION_BOUNDARY_FACES) {
     cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT,
+    cs_log_printf(CS_LOG_WARNINGS,
                   _(" Mesh location type is incompatible with the computation\n"
                     " of the flux across faces.\n"));
     return;

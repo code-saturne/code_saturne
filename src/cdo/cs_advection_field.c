@@ -474,7 +474,7 @@ cs_advection_field_add(const char                    *name,
   cs_adv_field_t  *adv = cs_advection_field_by_name(name);
   if (adv != NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT,
+    cs_log_printf(CS_LOG_WARNINGS,
                   _(" An existing advection field has already the name %s.\n"
                     " Stop adding this advection field.\n"), name);
     return adv;

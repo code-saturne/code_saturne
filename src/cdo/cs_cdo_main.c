@@ -1054,8 +1054,10 @@ cs_cdo_main(cs_domain_t   *domain)
 {
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
+
   if (cs_equation_get_n_equations() < 1) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n  No equation to solve. Immediate exit\n");
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "\n  No equation to solve. Immediate exit\n");
     return;
   }
 

@@ -744,7 +744,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
       slesp->precond = CS_PARAM_PRECOND_BJACOB_SGS;
       cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
+      cs_log_printf(CS_LOG_WARNINGS,
                     " %s: System %s: Modify the requested preconditioner to"
                     " enable a parallel computation with PETSC.\n"
                     " Switch to a block jacobi preconditioner.\n",
@@ -763,7 +763,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
     if (cs_glob_n_ranks > 1) { /* Switch to a block version */
 
       cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
+      cs_log_printf(CS_LOG_WARNINGS,
                     " %s: System %s: Modify the requested preconditioner to"
                     " enable a parallel computation with PETSC.\n"
                     " Switch to a block jacobi preconditioner.\n",
@@ -2029,7 +2029,7 @@ _set_petsc_hypre_sles(bool                 use_field_id,
         else {
 
           cs_base_warn(__FILE__, __LINE__);
-          cs_log_printf(CS_LOG_DEFAULT,
+          cs_log_printf(CS_LOG_WARNINGS,
                         " %s: System: %s.\n"
                         " Boomer is not available. Switch to GAMG solver.",
                         __func__, slesp->name);
