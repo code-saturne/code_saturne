@@ -219,7 +219,10 @@ _log_time_control_automatic(const cs_time_step_t  *ts,
   if (nt_abs < n || nt_rel < n)
     active = true;
 
-  else if (nt_abs >= ts->nt_max)
+  else if (ts->nt_max > -1 && nt_abs >= ts->nt_max)
+    active = true;
+
+  else if (ts->t_max > 0 && ts->t_cur >= ts->t_max)
     active = true;
 
   else {
@@ -266,7 +269,10 @@ _log_time_control_interval(const cs_time_step_t  *ts,
   int nt_abs = ts->nt_cur;
   int nt_rel = ts->nt_cur - ts->nt_prev;
 
-  if (nt_abs >= ts->nt_max)
+  if (ts->nt_max > -1 && nt_abs >= ts->nt_max)
+    active = true;
+
+  else if (ts->t_max > 0 && ts->t_cur >= ts->t_max)
     active = true;
 
   else if (nt_interval > 0) {
