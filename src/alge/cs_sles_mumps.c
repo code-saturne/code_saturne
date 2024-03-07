@@ -2235,7 +2235,7 @@ _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
 
     mumps->ICNTL(23) = mem_space;
 
-    if (slesp->verbosity > 1)
+    if (slesp->verbosity > 1 && cs_log_default_is_active())
       cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
                     " Estimation of the memory requirement: %lu --> %lu MB\n",
                     max_estimated_mem, mem_space);
@@ -2247,7 +2247,7 @@ _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
     if (mumps->ICNTL(35) > 1) /* BLR activated */
       max_estimated_mem = mumps->INFOG(36);
 
-    if (slesp->verbosity > 1)
+    if (slesp->verbosity > 1 && cs_log_default_is_active())
       cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
                     " Estimation of the memory requirement: %lu MB\n",
                     max_estimated_mem);
@@ -2497,7 +2497,7 @@ _automatic_smumps_settings_before_facto(const cs_param_sles_t   *slesp,
 
     mumps->ICNTL(23) = mem_space;
 
-    if (slesp->verbosity > 1)
+    if (slesp->verbosity > 1 && cs_log_default_is_active())
       cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
                     " Estimation of the memory requirement: %lu --> %lu MB\n",
                     max_estimated_mem, mem_space);
@@ -2509,7 +2509,7 @@ _automatic_smumps_settings_before_facto(const cs_param_sles_t   *slesp,
     if (mumps->ICNTL(35) > 1) /* BLR activated */
       max_estimated_mem = mumps->INFOG(36);
 
-    if (slesp->verbosity > 1)
+    if (slesp->verbosity > 1 && cs_log_default_is_active())
       cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
                     " Estimation of the memory requirement: %lu MB\n",
                     max_estimated_mem);
@@ -3201,7 +3201,7 @@ cs_sles_mumps_setup(void               *context,
                 __func__, __func__, infog1, infog2);
     }
     else {
-      if (verbosity > 1)
+      if (verbosity > 1 && cs_log_default_is_active())
         cs_log_printf(CS_LOG_DEFAULT,
                       "\n MUMPS feedback code: INFOG(1)=%d, INFOG(2)=%d\n",
                       infog1, infog2);

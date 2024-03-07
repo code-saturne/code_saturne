@@ -1394,6 +1394,9 @@ cs_iter_algo_log_cvg(cs_iter_algo_t      *algo,
   if (algo->verbosity < 1)
     return;
 
+  if (cs_log_default_is_active() == false)
+    return;
+
   if (algo->type & CS_ITER_ALGO_DEFAULT) {
 
     cs_iter_algo_default_t  *c = algo->context;

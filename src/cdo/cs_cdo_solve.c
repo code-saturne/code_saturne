@@ -368,7 +368,7 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
   /* Output information about the convergence of the resolution */
 
-  if (slesp->verbosity > 0)
+  if (slesp->verbosity > 0 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   slesp->name, code,
@@ -461,7 +461,7 @@ cs_cdo_solve_scalar_system(cs_lnum_t               n_scatter_dofs,
 
   /* Output information about the convergence of the resolution */
 
-  if (slesp->verbosity > 0)
+  if (slesp->verbosity > 0 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   slesp->name, code,
@@ -568,7 +568,7 @@ cs_cdo_solve_vector_system(cs_lnum_t               n_scatter_elts,
 
   /* Output information about the convergence of the resolution */
 
-  if (slesp->verbosity > 0)
+  if (slesp->verbosity > 0 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   slesp->name, code,

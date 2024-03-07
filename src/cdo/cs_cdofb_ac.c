@@ -1232,7 +1232,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   _ac_update_pr(ts->t_cur, ts->dt[0], cc->zeta, mom_eqp, mom_eqb, div, pr);
 
-  if (nsp->verbosity > 1) {
+  if (nsp->verbosity > 1 && cs_log_default_is_active()) {
 
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
                   n_solver_iter);
@@ -1476,7 +1476,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (nsp->verbosity > 1) {
+  if (nsp->verbosity > 1 && cs_log_default_is_active()) {
 
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
                   cs_iter_algo_get_n_inner_iter(nl_algo));

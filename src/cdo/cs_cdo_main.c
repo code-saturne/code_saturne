@@ -1075,6 +1075,10 @@ cs_cdo_main(cs_domain_t   *domain)
 
   cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
+  /* Always activate the log for the steady-state part */
+
+  cs_log_default_activate(true);
+
   /*  Build high-level structures and create algebraic systems
       Set the initial values of the fields and properties. */
 
@@ -1125,6 +1129,10 @@ cs_cdo_main(cs_domain_t   *domain)
     /* Check if this is the last iteration */
 
     domain->is_last_iter = _is_last_iter(domain->time_step);
+
+    /* Do one need log information for this time step ? */
+
+    cs_log_iteration_set_active();
 
     /* Build and solve equations related to the computational domain */
 

@@ -1580,7 +1580,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
       delta_th_tolerance = delta * inv_tref;
       iter++;
 
-      if (nsp->verbosity > 0)
+      if (nsp->verbosity > 0 && cs_log_default_is_active())
         cs_log_printf(CS_LOG_DEFAULT,
                       "### Boussinesq.Iteration: %2d | delta_th_var= %5.3e\n",
                       iter, delta_th_tolerance);

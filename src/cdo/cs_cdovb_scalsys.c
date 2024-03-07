@@ -447,7 +447,7 @@ _solve_mumps(int                                   n_eqs,
 
   /* Output information about the convergence of the resolution */
 
-  if (sysp->verbosity > 0)
+  if (sysp->verbosity > 0 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   sysp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);

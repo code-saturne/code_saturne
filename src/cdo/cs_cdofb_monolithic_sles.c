@@ -1069,8 +1069,8 @@ cs_cdofb_monolithic_sles_alu(const cs_navsto_param_t  *nsp,
 
   /* Output information about the convergence */
 
-  if (saddlep->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/%20s> "
+  if (saddlep->verbosity > 0 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, "\n  <%s/%20s> "
                   "cvg_code:%-d | n_iter:%3d (inner:%4d) | residual:% -8.4e\n",
                   __func__, saddlep->name, algo_ctx->cvg_status,
                   n_iters, algo_ctx->n_inner_iter, algo_ctx->res);
@@ -1287,8 +1287,8 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
   /* Output information about the convergence */
 
-  if (saddlep->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/%20s> "
+  if (saddlep->verbosity > 0 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, "\n  <%s/%20s> "
                   "cvg_code:%-d | n_iter:%3d (inner:%4d) | residual:% -8.4e\n",
                   __func__, saddlep->name, algo_ctx->cvg_status,
                   n_iters, algo_ctx->n_inner_iter, algo_ctx->res);
@@ -1367,9 +1367,9 @@ cs_cdofb_monolithic_sles_full_system(const cs_navsto_param_t  *nsp,
 
   /* Output information about the convergence */
 
-  if (saddlep->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "  <%s/%20s> cvg_code=%-d | n_iter:%d | residual:% -8.4e\n",
+  if (saddlep->verbosity > 0 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, "\n  <%s/%20s> "
+                  "cvg_code=%-d | n_iter:%d | residual:% -8.4e\n",
                   __func__, saddlep->name,
                   algo_ctx->cvg_status, n_iters, algo_ctx->res);
 
@@ -1456,8 +1456,8 @@ cs_cdofb_monolithic_sles_gkb_inhouse(const cs_navsto_param_t  *nsp,
 
   /* Output information about the convergence */
 
-  if (saddlep->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/%20s> "
+  if (saddlep->verbosity > 0 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, "\n  <%s/%20s> "
                   "cvg_code:%-d | n_iter:%3d (inner:%4d) | residual:% -8.4e\n",
                   __func__, saddlep->name, algo_ctx->cvg_status,
                   n_iters, algo_ctx->n_inner_iter, algo_ctx->res);
@@ -1536,9 +1536,9 @@ cs_cdofb_monolithic_sles_notay(const cs_navsto_param_t  *nsp,
 
   /* Output information about the convergence */
 
-  if (saddlep->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "  <%s/%20s> cvg_code=%-d | n_iter:%d | residual:% -8.4e\n",
+  if (saddlep->verbosity > 0 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, "\n  <%s/%20s> "
+                  "cvg_code=%-d | n_iter:%d | residual:% -8.4e\n",
                   __func__, saddlep->name,
                   algo_ctx->cvg_status, n_iters, algo_ctx->res);
 
@@ -1720,8 +1720,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 
   /* Output information about the convergence */
 
-  if (saddlep->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/%20s> "
+  if (saddlep->verbosity > 0 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, "\n  <%s/%20s> "
                   "cvg_code:%-d | n_iter:%3d (inner:%4d) | residual:% -8.4e\n",
                   __func__, saddlep->name, algo_ctx->cvg_status,
                   n_iters, algo_ctx->n_inner_iter, algo_ctx->res);

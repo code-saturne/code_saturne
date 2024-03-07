@@ -386,7 +386,7 @@ cs_cdocb_monolithic_solve(const cs_equation_param_t     *eqp,
 
   /* Output information about the convergence of the resolution */
 
-  if (sles_param->verbosity > 1)
+  if (sles_param->verbosity > 1 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %d |"
                   " residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);

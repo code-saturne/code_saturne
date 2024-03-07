@@ -2917,7 +2917,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
                                                    0,      /* aux. size */
                                                    NULL);  /* aux. buffers */
 
-  if (slesp->verbosity > 0)
+  if (slesp->verbosity > 0 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,
                   "  <%s/sles_cvg> code %-d n_iters %d residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);

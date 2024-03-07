@@ -717,8 +717,7 @@ _scb_init_cell_system(const cs_cell_mesh_t         *cm,
     {
       cs_log_printf(CS_LOG_DEFAULT, ">> Divergence:\n");
       for (short int f = 0; f < cm->n_fc; f++)
-        cs_log_printf(CS_LOG_DEFAULT, "    f%2d: %- .4e \n",
-                      f, div_op[f]);
+        cs_log_printf(CS_LOG_DEFAULT, "    f%2d: %- .4e \n", f, div_op[f]);
     } /* Critical section */
   }
 #endif
@@ -1649,9 +1648,11 @@ cs_cdocb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t_solve_start, &t_solve_end);
 
-  cs_log_printf(CS_LOG_DEFAULT, " -cvg- CDO Cb: cumulated_inner_iters: %d\n",
-                cumulated_inner_iters);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
+  if (cs_log_default_is_active()) {
+    cs_log_printf(CS_LOG_DEFAULT, " -cvg- CDO Cb: cumulated_inner_iters: %d\n",
+                  cumulated_inner_iters);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+  }
 
   /* Free a part of the structure */
 

@@ -2095,7 +2095,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 
   cs_cdofb_navsto_mass_flux(nsp, quant, u_f, sc->mass_flux_array);
 
-  if (nsp->verbosity > 1) {
+  if (nsp->verbosity > 1 && cs_log_default_is_active()) {
 
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- %s: iter: %d\n", __func__, iter);
     cs_log_printf_flush(CS_LOG_DEFAULT);
@@ -2277,7 +2277,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (nsp->verbosity > 1) {
+  if (nsp->verbosity > 1 && cs_log_default_is_active()) {
 
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
                   cs_iter_algo_get_n_inner_iter(nl_algo));
@@ -2398,7 +2398,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
 
   cs_cdofb_navsto_mass_flux(nsp, quant, u_f, sc->mass_flux_array);
 
-  if (nsp->verbosity > 1) {
+  if (nsp->verbosity > 1 && cs_log_default_is_active()) {
 
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- %s: iters: %d\n", __func__, iter);
     cs_log_printf_flush(CS_LOG_DEFAULT);
@@ -2602,7 +2602,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (nsp->verbosity > 1) {
+  if (nsp->verbosity > 1 && cs_log_default_is_active()) {
 
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
                   cs_iter_algo_get_n_inner_iter(nl_algo));

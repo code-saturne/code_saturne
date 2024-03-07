@@ -469,8 +469,6 @@ cs_domain_needs_log(const cs_domain_t  *domain)
   if (domain->only_steady)
     return true;
 
-  cs_log_iteration_set_active();
-
   return cs_log_default_is_active();
 }
 

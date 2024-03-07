@@ -879,7 +879,7 @@ _solve_m11_approximation(cs_saddle_solver_t                    *solver,
 
   /* Output information about the convergence of the resolution */
 
-  if (m11_slesp->verbosity > 1) {
+  if (m11_slesp->verbosity > 1 && cs_log_default_is_active()) {
 
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/%20s> "
                   "cvg_code:%-d | n_iter:%3d | residual:% -8.4e",
@@ -1605,7 +1605,7 @@ _alu_incr_cvg_test(cs_iter_algo_t    *algo,
 
   cs_iter_algo_log_cvg(algo, "# ALUi");
 
-  if (algo->verbosity > 1) /* Additional logging */
+  if (algo->verbosity > 1 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,
                   "### ALUi.It%03d | l2norm_res2:%10.4e; l2norm_incr:%10.4e\n",
                   cs_iter_algo_get_n_iter(algo), l2norm_res2, l2norm_incr);
@@ -3594,7 +3594,7 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
   /* --- ALGO END --- */
   /* ---------------- */
 
-  if (saddlep->verbosity > 1) {
+  if (saddlep->verbosity > 1 && cs_log_default_is_active()) {
 
     /* Compute the real residual norm at exit */
 
@@ -3820,7 +3820,7 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
   /* --- ALGO END --- */
   /* ---------------- */
 
-  if (saddlep->verbosity > 1) {
+  if (saddlep->verbosity > 1 && cs_log_default_is_active()) {
 
     /* Compute the real residual norm at exit */
 
