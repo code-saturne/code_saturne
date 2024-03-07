@@ -514,6 +514,7 @@ _gkb_setup(cs_saddle_solver_t  *solver,
     {
       /* Golub-Kahan Bi-diagonalization is available starting from the 3.11
          version of PETSc */
+#if defined(HAVE_PETSC)
 #if PETSC_VERSION_GE(3,11,0)
       cs_sles_petsc_init();
 
@@ -527,6 +528,7 @@ _gkb_setup(cs_saddle_solver_t  *solver,
                 "%s: Invalid GKB solver in PETSc\n"
                 " PETSc 3.11.x or greater is required.\n", __func__);
 #endif
+#endif  /* HAVE PETSC */
     }
     break;
 
