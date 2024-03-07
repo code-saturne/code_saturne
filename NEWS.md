@@ -17,6 +17,19 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Add a calculator mode to the mathematical expressions editor of the GUI.
+  The layout also contains a combobox with the available fields and/or
+  notebook parameters.
+
+- Add a calculator function in the GUI.
+  * This adds a new subpage in the "Postprocessing" section.
+  * User can define a postprocessing mathematical formula using the MEG editor
+    of the GUI. The defined formulae are then evaluated on the corresponding
+    support (cells, faces,...) and can be used for 3D/2D postprocessing, probes,
+    profiles.
+  * listing file output can be activated in a user defined function.
+  * Values are only computed when needed, hence avoiding unnecessary calculations.
+
 - Logging: add automatic logging frequency, with increasing intervals.
 
 - Add postprocessing functions to allow users to easily visualize intersection
