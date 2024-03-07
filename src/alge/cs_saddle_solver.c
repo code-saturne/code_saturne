@@ -2402,8 +2402,12 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
   ctx->b1_tilda = NULL;
   ctx->rhs = NULL;
 
+  /* Extra SLES if needed */
+
   const cs_param_saddle_t  *saddlep = solver->param;
   const cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+
+  ctx->xtra_sles = NULL;
 
   if (ctxp->dedicated_xtra_sles) {
 
@@ -2669,6 +2673,9 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
   ctx->x1_tilda = NULL;
 
   ctx->rhs_tilda = NULL;
+
+  /* Extra SLES if needed */
+
   ctx->xtra_sles = NULL;
 
   const cs_param_saddle_t  *saddlep = solver->param;
