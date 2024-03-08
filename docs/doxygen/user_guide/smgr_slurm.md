@@ -44,7 +44,8 @@ total computation time of 8 hours. The number of cases per batch could then be
 inferior to 20 if the total computation time exceeds 8h.
 
 In order to compute the total computation time per batch, it is necessary to
-specify an expected computation time per case (HH:MM) in the smgr xml file.
+specify an expected computation time per case (HH:MM) in the smgr xml file (3
+hours by default).
 
 ```{.xml}
     <study label="MyStudy1" status="on">
