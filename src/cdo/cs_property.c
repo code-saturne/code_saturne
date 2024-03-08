@@ -43,7 +43,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "cs_array.h"
 #include "cs_defs.h"
@@ -2397,9 +2396,10 @@ cs_property_def_by_array(cs_property_t      *pty,
   if (z_id == 0 && full_length == false) {
     full_length = true;
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf("%s: Inconsistency detected in the settings of property \"%s\""
-               "\n A full-length array is set since z_id=0.",
-               __func__, pty->name);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Invalid settings detected for property \"%s\"\n"
+                  "    A full-length array is set since z_id=0.",
+                  __func__, pty->name);
   }
 
   cs_xdef_array_context_t  input = {.z_id = z_id,
@@ -2498,9 +2498,10 @@ cs_property_boundary_def_by_array(cs_property_t      *pty,
   if (z_id == 0 && full_length == false) {
     full_length = true;
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf("%s: Inconsistency detected in the settings of property \"%s\""
-               "\n A full-length array is set since z_id=0.",
-               __func__, pty->name);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Invalid settings detected for property \"%s\"\n"
+                  "    A full-length array is set since z_id=0.",
+                  __func__, pty->name);
   }
 
   cs_xdef_array_context_t  input = {.z_id = z_id,

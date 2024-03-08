@@ -52,7 +52,6 @@
 
 #include <bft_error.h>
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_equation.h"
 #include "cs_fp_exception.h"

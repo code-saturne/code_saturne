@@ -39,7 +39,6 @@
 
 #include <bft_error.h>
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_array.h"
 #include "cs_cdofb_scaleq.h"
@@ -3995,8 +3994,9 @@ cs_solidification_set_strategy(cs_solidification_strategy_t  strategy)
 
   case CS_SOLIDIFICATION_MODEL_STEFAN:
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf("%s:  Only one strategy is available with the Stefan model.\n",
-               __func__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Only one strategy is available with the Stefan model.\n",
+                  __func__);
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:

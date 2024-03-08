@@ -52,7 +52,6 @@
 
 #include <bft_error.h>
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_fp_exception.h"
 #include "cs_log.h"
@@ -1841,7 +1840,8 @@ _set_saturne_sles(bool                 use_field_id,
     case CS_SLES_GMRES:
     case CS_SLES_PCR3:
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf("--> A flexible Krylov method should be used.\n");
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: A flexible Krylov method should be used.\n", __func__);
       break;
 
     default:

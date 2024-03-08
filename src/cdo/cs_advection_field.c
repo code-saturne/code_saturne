@@ -42,7 +42,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "cs_array.h"
 #include "cs_boundary_zone.h"
@@ -1058,9 +1057,10 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   if (z_id == 0 && full_length == false) {
     full_length = true;
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf("%s: Inconsistency detected in the settings of property \"%s\""
-               "\n A full-length array is set since z_id=0.",
-               __func__, adv->name);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Invalid settings detected for tha adv. field \"%s\"\n"
+                  "    A full-length array is set since z_id=0.",
+                  __func__, adv->name);
   }
 
   cs_xdef_array_context_t  context = {.z_id = z_id,

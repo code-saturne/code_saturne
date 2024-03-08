@@ -45,7 +45,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_array.h"
 #include "cs_equation_bc.h"
@@ -541,10 +540,13 @@ cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t   approx,
 
     if (!use_diffusion_view_for_darcy) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" Change an invalid user setting:\n"
-                 "   Use a diffusion viewpoint for the Darcy term.\n");
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: Change an invalid user setting:\n"
+                    "    Use a diffusion viewpoint for the Darcy term.\n",
+                    __func__);
     }
     break;
+
   case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
     mc->use_coupled_solver = false;
     mc->use_diffusion_view_for_darcy = true; /* No other choice */
@@ -552,14 +554,17 @@ cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t   approx,
 
     if (!use_diffusion_view_for_darcy) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" Change an invalid user setting:\n"
-                 "   Use a diffusion viewpoint for the Darcy term.\n");
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: Change an invalid user setting:\n"
+                    "    Use a diffusion viewpoint for the Darcy term.\n",
+                    __func__);
     }
 
     if (!use_incremental_solver) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" Change an invalid user setting:\n"
-                 "   Force an incremental resolution.\n");
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: Change an invalid user setting:\n"
+                    "    Force an incremental resolution.\n", __func__);
     }
     break;
 
@@ -1112,9 +1117,10 @@ cs_gwf_add_decay_chain(int                       n_tracers,
     if (lambda_vals[i] < 0) {
 
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" %s: The decay coefficient for the tracer \"%s\" has a"
-                 " negative value (%6.4e).\n",
-                 __func__, varname, lambda_vals[i]);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    " %s: The decay coefficient for the tracer \"%s\" has a"
+                    " negative value (%6.4e).\n",
+                    __func__, varname, lambda_vals[i]);
 
     }
 
