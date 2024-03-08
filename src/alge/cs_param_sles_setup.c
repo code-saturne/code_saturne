@@ -1705,6 +1705,7 @@ _set_saturne_sles(bool                 use_field_id,
                                 CS_SLES_GCR,
                                 poly_degree,
                                 slesp->cvg_param.n_max_iter);
+      cs_sles_it_set_restart_interval(itsol, slesp->restart);
       break;
 
     case CS_PARAM_ITSOL_GMRES:
@@ -1714,6 +1715,7 @@ _set_saturne_sles(bool                 use_field_id,
                                   CS_SLES_GCR,
                                   poly_degree,
                                   slesp->cvg_param.n_max_iter);
+        cs_sles_it_set_restart_interval(itsol, slesp->restart);
       }
       else
         itsol = cs_sles_it_define(slesp->field_id, sles_name,
