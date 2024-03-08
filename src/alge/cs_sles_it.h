@@ -348,18 +348,17 @@ cs_sles_pc_t  *
 cs_sles_it_get_pc(cs_sles_it_t  *context);
 
 /*----------------------------------------------------------------------------
- * Assign a preconditioner to an iterative sparse linear equation
- * solver, transfering its ownership to to solver context.
+ * \brief Assign a preconditioner to an iterative sparse linear equation
+ *        solver, transfering its ownership to the solver context.
  *
  * This allows assigning a non default (Jacobi or polynomial) preconditioner.
  *
  * The input pointer is set to NULL to make it clear the caller does not
  * own the preconditioner anymore, though the context can be accessed using
- * cs_sles_it_get_cp().
+ * \ref cs_sles_it_get_pc.
  *
- * parameters:
- *   context <->  pointer to iterative solver info and context
- *   pc      <->  pointer to preconditoner context
+ * \param[in, out]  context   pointer to iterative solver info and context
+ * \param[in, out]  pc        pointer to preconditoner context
  *----------------------------------------------------------------------------*/
 
 void

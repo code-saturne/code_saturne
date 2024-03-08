@@ -56,7 +56,6 @@
 
 #include "bft_mem.h"
 #include "bft_error.h"
-#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_log.h"

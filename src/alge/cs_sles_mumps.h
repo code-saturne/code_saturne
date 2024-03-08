@@ -163,14 +163,14 @@ cs_sles_mumps_define(int                            f_id,
 /*!
  * \brief Create a preconditioner structure relying on MUMPS solver
  *
- * \param[in]      slesp         pointer to a cs_param_sles_t structure
+ * \param[in] slesp  pointer to a cs_param_sles_t structure
  *
- * \return  pointer to newly created preconditioner object.
+ * \return a pointer to the newly created preconditioner object.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_pc_t *
-cs_sles_mumps_pc_create(const cs_param_sles_t       *slesp);
+cs_sles_mumps_pc_create(const cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!

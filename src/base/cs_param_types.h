@@ -759,20 +759,20 @@ typedef enum {
  *  \ref cs_param_amg_type_t)
  *
  * \var CS_PARAM_ITSOL_BICG
- *  Bi-Conjuguate gradient (useful for non-symmetric systems)
+ *  Bi-Conjugate gradient (useful for non-symmetric systems)
  *
  * \var CS_PARAM_ITSOL_BICGSTAB2
- *  Stabilized Bi-Conjuguate gradient (useful for non-symmetric systems)
+ *  Stabilized Bi-Conjugate gradient (useful for non-symmetric systems)
  *
  * \var CS_PARAM_ITSOL_CG
- *  Conjuguate Gradient (solver of choice for symmetric positive definite
+ *  Conjugate Gradient (solver of choice for symmetric positive definite
  *  systems)
  *
  * \var CS_PARAM_ITSOL_CR3
  * 3-layer conjugate residual (can handle non-symmetric systems)
  *
  * \var CS_PARAM_ITSOL_FCG
- * Flexible Conjuguate Gradient (variant of the CG when the preconditioner
+ * Flexible Conjugate Gradient (variant of the CG when the preconditioner
  * may change from one iteration to another. For instance when using an AMG
  * as preconditioner)
  *

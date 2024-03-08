@@ -100,11 +100,15 @@ BEGIN_C_DECLS
 /*!
  * \brief Return true if the prescribed solver implies a symmetric linear
  *        system
+ *
+ * \param[in] solver  solver to test
+ *
+ * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-_system_should_be_sym(cs_param_itsol_type_t   solver)
+_system_should_be_sym(cs_param_itsol_type_t  solver)
 {
   switch (solver) {
 
@@ -889,7 +893,7 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
       KSPSetType(ksp, KSPCG);
     break;
 
-  case CS_PARAM_ITSOL_FCG:       /* Flexible Conjuguate Gradient */
+  case CS_PARAM_ITSOL_FCG:       /* Flexible Conjugate Gradient */
     KSPSetType(ksp, KSPFCG);
     break;
 
@@ -897,7 +901,7 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
     KSPSetType(ksp, KSPFGMRES);
     break;
 
-  case CS_PARAM_ITSOL_GCR:       /* Generalized Conjuguate Residual */
+  case CS_PARAM_ITSOL_GCR:       /* Generalized Conjugate Residual */
     KSPSetType(ksp, KSPGCR);
     break;
 
@@ -1545,8 +1549,8 @@ _get_poly_degree(const cs_param_sles_t     *slesp)
  *        resolution of the linear system.
  *        Case of saturne's own solvers.
  *
- * \param[in]       use_field_id  if false use system name
- * \param[in, out]  slesp         pointer to a \ref cs_param_sles_t structure
+ * \param[in]      use_field_id  if false use system name
+ * \param[in, out] slesp         pointer to a \ref cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1742,7 +1746,7 @@ _set_saturne_sles(bool                 use_field_id,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid iterative solver for solving equation %s.\n"
+                " %s: Invalid iterative solver for solving equation \"%s\".\n"
                 " Please modify your settings.", __func__, slesp->name);
       break;
 
@@ -1752,7 +1756,7 @@ _set_saturne_sles(bool                 use_field_id,
   else {
 
     /* The itsol structure has already been defined. Check that this is
-       consistent with the sles parameters */
+       consistent with the SLES parameters */
 
     cs_sles_it_type_t  itsol_type = cs_sles_it_get_type(itsol);
     int  ret_code = -1;

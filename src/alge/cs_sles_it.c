@@ -4736,7 +4736,7 @@ cs_sles_it_get_pc(cs_sles_it_t  *context)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign a preconditioner to an iterative sparse linear equation
- *        solver, transfering its ownership to to solver context.
+ *        solver, transfering its ownership to the solver context.
  *
  * This allows assigning a non default (Jacobi or polynomial) preconditioner.
  *
