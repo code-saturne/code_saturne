@@ -142,8 +142,8 @@ _check_amg_type(cs_param_sles_t   *slesp)
 
   case CS_PARAM_SOLVER_CLASS_PETSC:
 #if defined(HAVE_PETSC)
-    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-        slesp->amg_type == CS_PARAM_AMG_HOUSE_K)
+    if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_INHOUSE_K)
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
 
     if (!cs_param_sles_hypre_from_petsc()) {
@@ -162,8 +162,8 @@ _check_amg_type(cs_param_sles_t   *slesp)
 
   case CS_PARAM_SOLVER_CLASS_HYPRE:
 #if defined(HAVE_HYPRE)
-    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+    if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
         slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
         slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
       slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
@@ -173,8 +173,8 @@ _check_amg_type(cs_param_sles_t   *slesp)
 #if defined(HAVE_PETSC)
     if (cs_param_sles_hypre_from_petsc()) {
 
-      if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
-          slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V ||
+          slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
           slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
           slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
         slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
@@ -203,7 +203,7 @@ _check_amg_type(cs_param_sles_t   *slesp)
         slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||
         slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
         slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+      slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
     break;
 
   default:
@@ -481,6 +481,7 @@ cs_param_sles_set_solver(const char       *keyval,
   if (strcmp(keyval, "amg") == 0) {
 
     slesp->solver = CS_PARAM_ITSOL_AMG;
+    slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
@@ -804,7 +805,7 @@ cs_param_sles_set_precond(const char       *keyval,
     switch (ret_class) {
 
     case CS_PARAM_SOLVER_CLASS_CS:
-      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+      slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
       break;
     case CS_PARAM_SOLVER_CLASS_PETSC:
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
@@ -836,7 +837,7 @@ cs_param_sles_set_precond(const char       *keyval,
     switch (ret_class) {
 
     case CS_PARAM_SOLVER_CLASS_CS:
-      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+      slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
       break;
 
     case CS_PARAM_SOLVER_CLASS_PETSC:
@@ -1059,14 +1060,14 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
   if (strcmp(keyval, "v_cycle") == 0) {
 
-    slesp->amg_type = CS_PARAM_AMG_HOUSE_V;
+    slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 
   }
   else if (strcmp(keyval, "k_cycle") == 0 || strcmp(keyval, "kamg") == 0) {
 
-    slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+    slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 

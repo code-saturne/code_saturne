@@ -345,7 +345,7 @@ cs_user_linear_solvers(void)
 
       /* If multigrid is chosen as preconditioner */
 
-      if (slesp->amg_type == CS_PARAM_AMG_HOUSE_K) {
+      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K) {
 
         /* If this is a K-cycle multigrid */
 
@@ -443,7 +443,7 @@ cs_user_linear_solvers(void)
 
       /* If multigrid is the chosen preconditioner */
 
-      if (eqp->sles_param->amg_type == CS_PARAM_AMG_HOUSE_K) {
+      if (eqp->sles_param->amg_type == CS_PARAM_AMG_INHOUSE_K) {
 
         /* If this is a K-cycle multigrid. One has to follow the same
            principles for an in-house V-cycle algorithm. */

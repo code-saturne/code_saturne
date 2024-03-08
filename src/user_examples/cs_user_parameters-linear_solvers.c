@@ -512,8 +512,8 @@ cs_user_linear_solvers(void)
     if (slesp->precond == CS_PARAM_PRECOND_AMG) { /* If multigrid is chosen as
                                                      preconditioner */
 
-      if (slesp->amg_type == CS_PARAM_AMG_HOUSE_K) { /* If this is a K-cycle
-                                                        algebraic multigrid */
+      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K) { /* If this is a K-cycle
+                                                          algebraic multigrid */
 
         /* Retrieve the different context structures to apply additional
            settings */

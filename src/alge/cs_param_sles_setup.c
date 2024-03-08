@@ -1587,7 +1587,7 @@ _set_saturne_sles(bool                 use_field_id,
       {
         switch (slesp->amg_type) {
 
-        case CS_PARAM_AMG_HOUSE_V:
+        case CS_PARAM_AMG_INHOUSE_V:
           mg = cs_multigrid_define(slesp->field_id, sles_name,
                                    CS_MULTIGRID_V_CYCLE);
 
@@ -1611,7 +1611,7 @@ _set_saturne_sles(bool                 use_field_id,
              1);      /* requested precision multiplier coarse (default 1) */
           break;
 
-        case CS_PARAM_AMG_HOUSE_K:
+        case CS_PARAM_AMG_INHOUSE_K:
           mg = cs_multigrid_define(slesp->field_id, sles_name,
                                    CS_MULTIGRID_K_CYCLE);
 
@@ -1869,14 +1869,14 @@ _set_saturne_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       /* -------------------- */
-      if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V) {
+      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V) {
 
         pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
         mg = cs_sles_pc_get_context(pc);
         cs_sles_it_transfer_pc(itsol, &pc);
 
       }
-      else if (slesp->amg_type == CS_PARAM_AMG_HOUSE_K) {
+      else if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K) {
 
         pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
         mg = cs_sles_pc_get_context(pc);
