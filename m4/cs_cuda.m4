@@ -62,7 +62,7 @@ if test "x$cs_have_cuda" != "xno" ; then
   CUDA_LIBS+=" -lcudart"
 
   # Try to detect available architectures.
-  # As of late 2021, we do not care to support CUDA versions older than 9
+  # As of 2024, we do not care to support CUDA versions older than 11
   # (and even then,target machines should be at least Volta, though
   # developping/debugging on local machines using older hardware remains useful).
 
@@ -73,19 +73,23 @@ if test "x$cs_have_cuda" != "xno" ; then
 
   user_nvccflags="${NVCCFLAGS}"
 
-  NVCCFLAGS="-DHAVE_CONFIG_H"  # wrap C++ compiler arount nvcc
+  # Flags to add later if nvcc is used as C++ compiler driver
+  cxx_nvccflags_add=""
+
   if test "$CUDA_ARCH_NUM" != ""; then
     touch conftest.cu
     for cu_arch in $CUDA_ARCH_NUM; do
       $NVCC --dryrun -c conftest.cu -o conftest.o -gencode arch=compute_${cu_arch},code=sm_${cu_arch} >/dev/null 2>&1
       if test $? -eq 0; then
         NVCCFLAGS="${NVCCFLAGS} -gencode arch=compute_${cu_arch},code=sm_${cu_arch}"
+        cxx_nvccflags_add="${cxx_nvccflags_add} -gencode arch=compute_${cu_arch},code=sm_${cu_arch}"
       fi
     done
     rm -f conftest.cu conftest.o
   fi
 
   NVCCFLAGS="${NVCCFLAGS} -Xptxas -v"
+  cxx_nvccflags_add="${cxx_nvccflags_add}  -Xptxas -v"
 
   if test "$user_nvccflags" != ""; then
     NVCCFLAGS="${NVCCFLAGS} ${user_nvccflags}"

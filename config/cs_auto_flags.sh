@@ -182,7 +182,7 @@ if test "x$GCC" = "xyes"; then
 
   # Intel and LLVM compilers may pass as GCC but
   # may be recognized by version string
-  # NVIDIA compiler defines __GNUC__ which confuses configure
+  # NVIDIA compiler calls gcc on host, so defines __GNUC__ which confuses configure
 
   cs_ac_cc_version=`$CC $user_CFLAGS --version 2>&1 | head -1`
 
@@ -614,7 +614,7 @@ if test "x$cs_gxx" = "xg++"; then
   # Practical version info for option setting
   cs_cxx_version="`$CXX -v 2>&1 |grep 'gcc version' |\
                   sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
-  cs_cxx_vendor=`echo $cxx_version |sed 's/\([a-z]*\).*/\1/'`
+  cs_cxx_vendor=`echo $cs_cxx_version |sed 's/\([a-z]*\).*/\1/'`
   cs_cxx_version=`echo $cs_cxx_version |sed 's/[-a-z]//g'`
 
   if test "x" = "x$cs_cxx_vendor" -a "x" != "x$cs_cxx_version"; then
@@ -776,8 +776,8 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_omp="-fopenmp=libomp"
   cxxflags_default_std="-funsigned-char"
 
-# Otherwise, are we using pgc++/nvc++ ?
-#--------------------------------------
+# Otherwise, are we using pgc++/nvc++ or nvcc ?
+#----------------------------------------------
 
 else
 
@@ -808,15 +808,32 @@ else
       $CXX -V 2>&1 | grep 'Cuda compiler driver' > /dev/null
       if test "$?" = "0" ; then
 
-        echo "compiler '$CXX' is NVIDIA compiler driver"
-
         # Version strings for logging purposes and known compiler flag
         $CXX -V conftest.c > $outfile 2>&1
         cs_ac_cxx_version=`grep cuda_ $outfile | head -1`
         cs_cxx_compiler_known=yes
+        cs_cxx_compiler_is_nvcc=yes
 
-        # Default compiler flags
-        cxxflags_default="-forward-unknown-to-host-compiler --x cu --expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal -Xlinker --no-as-needed"
+        # Pass CXXFLAGS in case user forces choice of host compiler
+        cs_ac_cxx_version="`$CXX $CXXFLAGS -E -x cu --compiler-options --version - \
+                            < /dev/null 2>&1 | head -1`"
+
+        # Practical version info
+        cs_cxx_version="`$CXX $CXXFLAGS -E -x cu --compiler-options -v - \
+                        < /dev/null 2>&1 | grep 'gcc version' |\
+                        sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
+
+        # If we are using gcc for the host, we could set other option here
+        if test "x" != "x$cs_cxx_version" ; then
+          echo "compiler '$CXX' is NVIDIA compiler driver (using gcc $cs_cxx_version)."
+        else
+          echo "compiler '$CXX' is NVIDIA compiler driver with host compiler:"
+          echo "  $cs_ac_cxx_version"
+        fi
+
+        # Default compiler flags (based on gcc; would need additional tests above
+        # for non default compiler, such as clang or nvc++)
+        cxxflags_default="${cxx_nvccflags_add} -forward-unknown-to-host-compiler --x cu --expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal -Xlinker --no-as-needed"
         cxxflags_default_dbg="-g -G"
         cxxflags_default_opt="-O2"
         cxxflags_default_hot="-O2 -Xcompiler -03"
