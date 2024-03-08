@@ -302,15 +302,16 @@ cs_user_parameters(cs_domain_t    *domain)
                               /* coarse solver, coarse poly. deg. */
                               CS_PARAM_AMG_INHOUSE_CG, 1,
                               /* coarsen algo, aggregation limit */
-                              CS_PARAM_AMG_INHOUSE_COARSEN_PW, 8);
+                              CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 8);
 
     /* Set advanced parameters for an in-house AMG */
 
     cs_param_sles_amg_inhouse_advanced(slesp,
-                                       CS_CDO_KEEP_DEFAULT, /* max. levels */
-                                       100,                 /* min. n_g_rows */
-                                       CS_CDO_KEEP_DEFAULT, /* p0p1 relax. */
-                                       1000); /* coarse max. iter */
+                                       CS_CDO_KEEP_DEFAULT, // max. levels
+                                       100,                 // min. n_g_rows
+                                       CS_CDO_KEEP_DEFAULT, // p0p1 relax.
+                                       CS_CDO_KEEP_DEFAULT, // coarse max. iter
+                                       1e-2);               // coarse rtol mult.
 #endif
 
     /* Linear algebra settings for the Schur complement approximation */
