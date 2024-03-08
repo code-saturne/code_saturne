@@ -4667,14 +4667,17 @@ cs_sles_it_free(void  *context)
  *
  * \param[in]  context  pointer to iterative solver info and context
  *
- * \return  selected solver type
+ * \return selected solver type
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_it_type_t
 cs_sles_it_get_type(const cs_sles_it_t  *context)
 {
-  return context->type;
+  if (context == NULL)
+    return CS_SLES_N_SMOOTHER_TYPES;
+  else
+    return context->type;
 }
 
 /*----------------------------------------------------------------------------*/
