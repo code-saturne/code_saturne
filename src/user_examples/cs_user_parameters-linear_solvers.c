@@ -509,84 +509,28 @@ cs_user_linear_solvers(void)
     /* In case of an in-house K-cylcle multigrid as a preconditioner of a
        linear iterative solver */
 
-    if (slesp->precond == CS_PARAM_PRECOND_AMG) { /* If multigrid is chosen as
-                                                     preconditioner */
+    if ((slesp->precond == CS_PARAM_PRECOND_AMG) &&
+        (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K)) {
 
-      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K) { /* If this is a K-cycle
-                                                          algebraic multigrid */
+      cs_param_sles_amg_inhouse(slesp,
+                                /* Down: n_iter, smoother, poly. deg. */
+                                1, CS_PARAM_AMG_INHOUSE_FORWARD_GS, 0,
+                                /* Up: n_iter, smoother, poly. deg. */
+                                1, CS_PARAM_AMG_INHOUSE_BACKWARD_GS, 0,
+                                /* Coarse: solver, poly. deg. */
+                                CS_PARAM_AMG_INHOUSE_CG, 0,
+                                /* coarsen algo, aggregation limit */
+                                CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 8);
 
-        /* Retrieve the different context structures to apply additional
-           settings */
+      cs_param_sles_amg_inhouse_advanced
+        (slesp,
+         CS_CDO_KEEP_DEFAULT,  /* max_levels */
+         500,                  /* coarse min_n_g_rows */
+         CS_CDO_KEEP_DEFAULT,  /* p0p1_relax */
+         CS_CDO_KEEP_DEFAULT,  /* coarse_max_iter */
+         CS_CDO_KEEP_DEFAULT); /* coarse_rtol_mult */
 
-        cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, NULL);
-        cs_sles_it_t  *itsol = cs_sles_get_context(sles);
-        cs_sles_pc_t  *pc = cs_sles_it_get_pc(itsol);
-        cs_multigrid_t  *mg = NULL;
-
-        if (itsol == NULL) { /* Not already defined */
-
-          if (slesp->solver == CS_PARAM_ITSOL_CG ||
-              slesp->solver == CS_PARAM_ITSOL_FCG)
-            itsol =  cs_sles_it_define(slesp->field_id, NULL,
-                                       CS_SLES_IPCG, -1,
-                                       slesp->cvg_param.n_max_iter);
-          else
-            bft_error(__FILE__, __LINE__, 0,
-                      " %s: Case not treated.\n", __func__);
-
-        }
-        assert(itsol != NULL);
-
-        if (pc == NULL) { /* Not already defined */
-
-          pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
-          mg = cs_sles_pc_get_context(pc);
-          cs_sles_it_transfer_pc(itsol, &pc);
-
-        }
-        else
-          mg = cs_sles_pc_get_context(pc);
-
-        assert(mg != NULL && pc != NULL);
-
-        /* Available settings:
-         * - max. number of elements in an aggregation
-         * - type of algorithm to perform the aggregation
-         * - max. number of levels (i.e. grids)
-         * - max global number of rows at the coarsest level
-         * - type of relaxation (weighting between a P_0 and P_1). For K-cycle,
-         * this should be equal to 0.
-         * - Activation of the postprocessing for the aggregation if > 0.
-         * Aggregation set is numbered by its coarse row number modulo this
-         * value
-         */
-
-        cs_multigrid_set_solver_options
-          (mg,
-           CS_SLES_TS_F_GAUSS_SEIDEL,
-           CS_SLES_TS_B_GAUSS_SEIDEL,
-           CS_SLES_PCG,       /* coarse solver */
-           1,                 /* n_max_cycles */
-           1,                 /* n_max_iter_descent, */
-           1,                 /* n_max_iter_ascent */
-           200,               /* n_max_iter_coarse */
-           0,                 /* poly_degree_descent */
-           0,                 /* poly_degree_ascent */
-           0,                 /* poly_degree_coarse */
-           -1.0,              /* precision_mult_descent */
-           -1.0,              /* precision_mult_ascent */
-           1.0);              /* precision_mult_coarse */
-
-        cs_multigrid_set_coarsening_options(mg,
-                                            8,    /* aggregation_limit*/
-                                            CS_GRID_COARSENING_SPD_PW,
-                                            10,   /* n_max_levels */
-                                            500,  /* min_g_cells */
-                                            0.,   /* P0P1 relaxation */
-                                            0);   /* postprocess */
-
-      } /* K-cycle */
-    }   /* Multigrid as preconditioner */
+    }  /* K-cycle multigrid as preconditioner */
   }
   /*! [sles_kamg_momentum] */
 
