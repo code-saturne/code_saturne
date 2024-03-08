@@ -1103,10 +1103,10 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
   /* Advection term */
 
-  dst->adv_extrapol = ref->adv_extrapol;
   dst->adv_formulation = ref->adv_formulation;
   dst->adv_scheme = ref->adv_scheme;
   dst->adv_strategy = ref->adv_strategy;
+  dst->adv_extrapol = ref->adv_extrapol;
   dst->upwind_portion = ref->upwind_portion;
   dst->adv_field = ref->adv_field;
   dst->adv_scaling_property = ref->adv_scaling_property;
@@ -1174,6 +1174,30 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   }
 
   cs_param_saddle_copy(ref->saddle_param, dst->saddle_param);
+
+  /* Non-linear algorithm */
+
+  dst->incremental_algo_type = ref->incremental_algo_type;
+  dst->incremental_relax_factor = ref->incremental_relax_factor;
+
+  {
+    const cs_param_convergence_t  cvgp = ref->incremental_algo_cvg;
+
+    dst->incremental_algo_cvg.rtol = cvgp.rtol;
+    dst->incremental_algo_cvg.atol = cvgp.atol;
+    dst->incremental_algo_cvg.dtol = cvgp.dtol;
+    dst->incremental_algo_cvg.n_max_iter = cvgp.n_max_iter;
+  }
+
+  {
+    const cs_iter_algo_param_aac_t  aacp = ref->incremental_anderson_param;
+
+    dst->incremental_anderson_param.n_max_dir = aacp.n_max_dir;
+    dst->incremental_anderson_param.starting_iter = aacp.starting_iter;
+    dst->incremental_anderson_param.max_cond = aacp.max_cond;
+    dst->incremental_anderson_param.beta = aacp.beta;
+    dst->incremental_anderson_param.dp_type = aacp.dp_type;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
