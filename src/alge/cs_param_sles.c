@@ -346,9 +346,14 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
       cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:            %s\n",
                     slesp->name, cs_param_amg_get_type_name(slesp->amg_type));
 
-      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
-          slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
+      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
+          slesp->amg_type == CS_PARAM_AMG_INHOUSE_V)
+        cs_param_amg_inhouse_log(slesp->name, slesp->context_param);
+
+      else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
+               slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
         cs_param_amg_boomer_log(slesp->name, slesp->context_param);
+
 
     }
 
@@ -359,6 +364,10 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
       cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:            %s\n",
                     slesp->name, cs_param_amg_get_type_name(slesp->amg_type));
+
+      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
+          slesp->amg_type == CS_PARAM_AMG_INHOUSE_V)
+        cs_param_amg_inhouse_log(slesp->name, slesp->context_param);
 
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
           slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
