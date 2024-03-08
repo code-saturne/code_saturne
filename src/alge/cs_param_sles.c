@@ -518,9 +518,18 @@ cs_param_sles_set_solver(const char       *keyval,
   }
   else if (strcmp(keyval, "cg") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_CG;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = false;
+    if (slesp->precond == CS_PARAM_PRECOND_AMG) {
+
+      slesp->solver = CS_PARAM_ITSOL_FCG;
+      slesp->flexible = true;
+
+    }
+    else {
+
+      slesp->solver = CS_PARAM_ITSOL_CG;
+      slesp->flexible = false;
+
+    }
 
   }
   else if (strcmp(keyval, "cr3") == 0) {
