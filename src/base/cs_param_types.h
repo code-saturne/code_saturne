@@ -786,14 +786,6 @@ typedef enum {
  * Generalized conjugate residual (flexible iterative solver for symmetric or
  * non-symmetric system)
  *
- * \var CS_PARAM_ITSOL_GKB_CG
- * Golub-Kahan Bidiagonalization algorithm. Useful for solving saddle-point
- * systems. The inner solver is a (flexible) CG solver.
- *
- * \var CS_PARAM_ITSOL_GKB_GMRES
- * Golub-Kahan Bidiagonalization algorithm. Useful for solving saddle-point
- * systems. The inner solver is a (flexible) GMRES solver.
- *
  * \var CS_PARAM_ITSOL_GMRES
  * Generalized Minimal RESidual
  *
@@ -827,8 +819,6 @@ typedef enum {
   CS_PARAM_ITSOL_FGMRES,           /*!< Only with PETSc */
   CS_PARAM_ITSOL_GAUSS_SEIDEL,
   CS_PARAM_ITSOL_GCR,
-  CS_PARAM_ITSOL_GKB_CG,
-  CS_PARAM_ITSOL_GKB_GMRES,
   CS_PARAM_ITSOL_GMRES,            /*!< Only with PETSc */
   CS_PARAM_ITSOL_JACOBI,
   CS_PARAM_ITSOL_MINRES,           /*!< Only with PETSc */

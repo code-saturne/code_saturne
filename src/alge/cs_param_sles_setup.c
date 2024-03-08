@@ -110,8 +110,6 @@ _system_should_be_sym(cs_param_itsol_type_t   solver)
 
   case CS_PARAM_ITSOL_CG:
   case CS_PARAM_ITSOL_FCG:
-  case CS_PARAM_ITSOL_GKB_CG:
-  case CS_PARAM_ITSOL_GKB_GMRES:
   case CS_PARAM_ITSOL_MINRES:
     return true;
 
@@ -1686,13 +1684,6 @@ _set_saturne_sles(bool                 use_field_id,
                                 slesp->cvg_param.n_max_iter);
       break;
 
-    case CS_PARAM_ITSOL_GKB_CG:
-      itsol = cs_sles_it_define(slesp->field_id, sles_name,
-                                CS_SLES_IPCG,
-                                poly_degree,
-                                slesp->cvg_param.n_max_iter);
-      break;
-
     case CS_PARAM_ITSOL_GAUSS_SEIDEL:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_P_GAUSS_SEIDEL,
@@ -1706,7 +1697,6 @@ _set_saturne_sles(bool                 use_field_id,
                     "%s: Switch to the GCR implementation of code_saturne\n",
                     __func__);
       /* No break (wanted behavior) */
-    case CS_PARAM_ITSOL_GKB_GMRES:
     case CS_PARAM_ITSOL_GCR:
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_GCR,
@@ -1775,8 +1765,7 @@ _set_saturne_sles(bool                 use_field_id,
 
     case CS_SLES_FCG:
     case CS_SLES_IPCG:
-      if (slesp->solver != CS_PARAM_ITSOL_FCG &&
-          slesp->solver != CS_PARAM_ITSOL_GKB_CG)
+      if (slesp->solver != CS_PARAM_ITSOL_FCG)
         ret_code = 1;
       break;
 
@@ -1796,8 +1785,7 @@ _set_saturne_sles(bool                 use_field_id,
       break;
 
     case CS_SLES_GCR:
-      if (slesp->solver != CS_PARAM_ITSOL_GCR &&
-          slesp->solver != CS_PARAM_ITSOL_GKB_GMRES)
+      if (slesp->solver != CS_PARAM_ITSOL_GCR)
         ret_code = 5;
       break;
 
