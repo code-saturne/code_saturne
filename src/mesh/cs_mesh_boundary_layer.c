@@ -497,10 +497,6 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
   cs_equation_define_context_structures();
 
-  /* Set the requested SLES from the settings (need the scheme context) */
-
-  cs_equation_set_sles();
-
   /* Initialize field values */
 
   cs_equation_init_field_values(domain->mesh, domain->time_step);

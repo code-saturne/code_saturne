@@ -214,7 +214,7 @@ cs_mesh_deform_activate(void)
 
     /* System to solve is SPD by construction */
 
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 
   }
