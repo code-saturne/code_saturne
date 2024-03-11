@@ -180,17 +180,17 @@ typedef struct {
 
  typedef enum {
 
-   CS_PARAM_AMG_INHOUSE_FORWARD_GS,   /* smoother only */
-   CS_PARAM_AMG_INHOUSE_BACKWARD_GS,  /* smoother only */
+   CS_PARAM_AMG_INHOUSE_FORWARD_GS = 1,   /* smoother only */
+   CS_PARAM_AMG_INHOUSE_BACKWARD_GS = 2,  /* smoother only */
 
-   CS_PARAM_AMG_INHOUSE_JACOBI,
-   CS_PARAM_AMG_INHOUSE_PROCESS_GS,
-   CS_PARAM_AMG_INHOUSE_PROCESS_SGS,
+   CS_PARAM_AMG_INHOUSE_JACOBI = 3,
+   CS_PARAM_AMG_INHOUSE_PROCESS_GS = 4,
+   CS_PARAM_AMG_INHOUSE_PROCESS_SGS = 5,
 
-   CS_PARAM_AMG_INHOUSE_CG,
-   CS_PARAM_AMG_INHOUSE_CR3,
-   CS_PARAM_AMG_INHOUSE_GCR,
-   CS_PARAM_AMG_INHOUSE_GMRES,
+   CS_PARAM_AMG_INHOUSE_CG = 6,
+   CS_PARAM_AMG_INHOUSE_CR3 = 7,
+   CS_PARAM_AMG_INHOUSE_GCR = 8,
+   CS_PARAM_AMG_INHOUSE_GMRES = 9,
 
    CS_PARAM_AMG_INHOUSE_N_SOLVERS
 
@@ -206,11 +206,13 @@ typedef struct {
 
    /* For symmetric positive definite matrices (SPD) */
 
-   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_DX,  /*!< SPD, diag/extradiag ratio based */
-   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX,  /*!< SPD, diag/extradiag ratio based */
-   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW,  /*!< SPD, pairwise aggregation */
+   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_DX = 1 ,  /*!< SPD, diag/extradiag ratio
+                                                based */
+   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX = 2,   /*!< SPD, diag/extradiag ratio
+                                                based */
+   CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW = 3 ,  /*!< SPD, pairwise aggregation */
 
-   CS_PARAM_AMG_INHOUSE_COARSEN_CONV_DIFF_DX,  /*!< for general matrices */
+   CS_PARAM_AMG_INHOUSE_COARSEN_CONV_DIFF_DX = 4,  /*!< for general matrices */
 
    CS_PARAM_AMG_INHOUSE_N_COARSENINGS
 

@@ -415,6 +415,8 @@ cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type)
   case CS_PARAM_SADDLE_N_SOLVERS:
     return "Undefined";
   }
+
+  return "Undefined";
 }
 
 /*----------------------------------------------------------------------------*/
@@ -507,10 +509,8 @@ cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
 const char *
 cs_param_saddle_get_name(const cs_param_saddle_t  *saddlep)
 {
-  const char  default_name[] = "Undefined";
-
   if (saddlep == NULL)
-    return default_name;
+    return "Undefined";
 
   if (saddlep->name != NULL)
     return saddlep->name;
@@ -520,7 +520,7 @@ cs_param_saddle_get_name(const cs_param_saddle_t  *saddlep)
     if (saddlep->block11_sles_param != NULL)
       return saddlep->block11_sles_param->name;
     else
-      return default_name;
+      return "Undefined";
 
   }
 }
