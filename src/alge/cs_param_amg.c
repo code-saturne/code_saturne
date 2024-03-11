@@ -437,10 +437,22 @@ cs_param_amg_inhouse_create(bool  used_as_solver,
   amgp->max_levels = 15;
   amgp->min_n_g_rows = 256;
 
-  amgp->coarse_poly_degree = 1;
   amgp->coarse_rtol_mult = 1.0;
   amgp->coarse_max_iter = 2500;
+  amgp->coarse_poly_degree = 0;
   amgp->coarse_solver = CS_PARAM_AMG_INHOUSE_CG;
+
+  /* Down smoother options */
+
+  amgp->down_poly_degree = 0;
+  amgp->down_smoother = CS_PARAM_AMG_INHOUSE_CG;
+  amgp->n_down_iter = 2;
+
+  /* Up smoother options */
+
+  amgp->up_poly_degree = 0;
+  amgp->up_smoother = CS_PARAM_AMG_INHOUSE_CG;
+  amgp->n_up_iter = 2;
 
   if (used_as_k_cycle) {
 
@@ -448,8 +460,6 @@ cs_param_amg_inhouse_create(bool  used_as_solver,
 
     amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW;
     amgp->p0p1_relax = 0.;
-    amgp->down_poly_degree = -1;
-    amgp->up_poly_degree = -1;
 
     if (used_as_solver) {
 
@@ -457,28 +467,20 @@ cs_param_amg_inhouse_create(bool  used_as_solver,
 
       /* Down smoother options */
 
+      amgp->down_poly_degree = -1;
       amgp->down_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
       amgp->n_down_iter = 3;
 
       /* Up smoother options */
 
+      amgp->up_poly_degree = -1;
       amgp->up_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
       amgp->n_up_iter = 3;
 
     }
     else { /* Used as a preconditioner */
 
-      amgp->aggreg_limit = 8;
-
-      /* Down smoother options */
-
-      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_FORWARD_GS;
-      amgp->n_down_iter = 1;
-
-      /* Up smoother options */
-
-      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_BACKWARD_GS;
-      amgp->n_up_iter = 2;
+      amgp->aggreg_limit = 8; /* More aggresive */
 
     }
 
@@ -487,38 +489,19 @@ cs_param_amg_inhouse_create(bool  used_as_solver,
 
     /* Coarsening options */
 
-    amgp->aggreg_limit = 4;
-    amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_DX;
+    amgp->aggreg_limit = 3;
+    amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX;
     amgp->p0p1_relax = 0.95;
 
     if (used_as_solver) {
 
       /* Down smoother options */
 
-      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_CG;
-      amgp->down_poly_degree = 0;
-      amgp->n_down_iter = 2;
+      amgp->n_down_iter = 5;
 
       /* Up smoother options */
 
-      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_CG;
-      amgp->up_poly_degree = 0;
-      amgp->n_up_iter = 10;
-
-    }
-    else { /* Used as preconditioner */
-
-      /* Down smoother options */
-
-      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
-      amgp->down_poly_degree = -1;
-      amgp->n_down_iter = 1;
-
-      /* Up smoother options */
-
-      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
-      amgp->up_poly_degree = -1;
-      amgp->n_up_iter = 1;
+      amgp->n_up_iter = 5;
 
     }
 

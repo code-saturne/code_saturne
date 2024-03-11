@@ -254,7 +254,7 @@ cs_param_sles_create(int          field_id,
   slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
   slesp->solver = CS_PARAM_ITSOL_GCR;           /* iterative solver */
   slesp->flexible = false;                      /* not the flexible variant */
-  slesp->restart = 15;                          /* restart after ? iterations */
+  slesp->restart = 25;                          /* restart after ? iterations */
   slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
 
   slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
@@ -494,12 +494,12 @@ cs_param_sles_set_solver(const char       *keyval,
   if (strcmp(keyval, "amg") == 0) {
 
     slesp->solver = CS_PARAM_ITSOL_AMG;
-    slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
+    slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
 
-    cs_param_sles_amg_inhouse_reset(slesp, true, true);
+    cs_param_sles_amg_inhouse_reset(slesp, true, false);
 
   }
   else if (strcmp(keyval, "bicg") == 0) {
@@ -829,8 +829,8 @@ cs_param_sles_set_precond(const char       *keyval,
     switch (ret_class) {
 
     case CS_PARAM_SOLVER_CLASS_CS:
-      slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
-      cs_param_sles_amg_inhouse_reset(slesp, false, true);
+      slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
+      cs_param_sles_amg_inhouse_reset(slesp, false, false);
       break;
     case CS_PARAM_SOLVER_CLASS_PETSC:
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
@@ -862,8 +862,8 @@ cs_param_sles_set_precond(const char       *keyval,
     switch (ret_class) {
 
     case CS_PARAM_SOLVER_CLASS_CS:
-      slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
-      cs_param_sles_amg_inhouse_reset(slesp, false, true);
+      slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
+      cs_param_sles_amg_inhouse_reset(slesp, false, false);
       break;
 
     case CS_PARAM_SOLVER_CLASS_PETSC:
