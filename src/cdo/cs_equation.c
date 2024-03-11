@@ -1701,12 +1701,15 @@ cs_equation_destroy_all(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
 
-    eq->param = cs_equation_param_free(eq->param);
-
     /* Free the associated builder structure */
 
     cs_equation_builder_free(&(eq->builder));
     eq->scheme_context = eq->free_context(eq->scheme_context);
+
+    /* Free at last the set of parameters (useful to known what has been
+       allocated) */
+
+    eq->param = cs_equation_param_free(eq->param);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

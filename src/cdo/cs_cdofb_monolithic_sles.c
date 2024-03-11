@@ -308,111 +308,21 @@ _build_shared_structures_full_system(cs_cdo_system_block_t  *block,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Retrieve the inverse of the diagonal of the (1,1)-block matrix
- *        The storage of a matrix is in a gather view and the resulting array is
- *        in scatter view.
+ * \brief Define a diagonal scaled mass matrix
  *
- * \param[in]  m11       matrix related to the (1,1) block
- * \param[in]  b11_rset  range set structure for the (1,1) block
+ * \param[in] nsp  set of parameters for the Navier-Stokes system
+ * \param[in] pty  property related to the (2,2) block
  *
- * \return a pointer to the computed array (scatter view)
+ * \return a pointer to a newly allocated array
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t *
-_get_m11_inv_diag(cs_lnum_t              b11_max_size,
-                  const cs_matrix_t     *m11,
-                  const cs_range_set_t  *b11_rset)
+_get_scaled_diag_m22(const cs_navsto_param_t  *nsp,
+                     const cs_property_t      *pty)
 {
-  const cs_lnum_t  n11_rows = cs_matrix_get_n_rows(m11);
-  const cs_real_t  *diag_m11 = cs_matrix_get_diagonal(m11);
-
-  assert(n11_rows <= b11_max_size);
-  cs_real_t  *inv_diag_m11 = NULL;
-  BFT_MALLOC(inv_diag_m11, b11_max_size, cs_real_t);
-
-# pragma omp parallel for if (n11_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n11_rows; i++)
-    inv_diag_m11[i] = 1./diag_m11[i];
-
-  /* Switch to a scatter view */
-
-  cs_range_set_scatter(b11_rset,
-                       CS_REAL_TYPE, 1, /* treated as scalar-valued up to now */
-                       inv_diag_m11,    /* gathered view */
-                       inv_diag_m11);   /* scatter view */
-
-  return inv_diag_m11;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Retrieve the lumped matrix the inverse of the diagonal of the
- *        (1,1)-block matrix. The storage of a matrix is in a gather view and
- *        the resulting array is in scatter view.
- *
- * \param[in]      solver     solver for saddle-point problems
- * \param[in]      m11        matrix related to the (1,1) block
- * \param[in]      b11_rset   range set structure for the (1,1) block
- * \param[in, out] xtra_sles  pointer to an extra SLES structure
- * \param[out]     n_iter     number of iterations for this operation
- *
- * \return a pointer to the computed array (scatter view)
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t *
-_get_m11_inv_lumped(cs_saddle_solver_t     *solver,
-                    const cs_matrix_t      *m11,
-                    const cs_range_set_t   *b11_rset,
-                    cs_sles_t              *xtra_sles,
-                    int                    *n_iter)
-{
-  const cs_lnum_t  b11_size = solver->n1_scatter_dofs;
-
-  cs_real_t  *inv_lumped_m11 = NULL;
-  BFT_MALLOC(inv_lumped_m11, b11_size, cs_real_t);
-  cs_array_real_fill_zero(b11_size, inv_lumped_m11);
-
-  cs_real_t  *rhs = NULL;
-  BFT_MALLOC(rhs, b11_size, cs_real_t);
-  cs_array_real_set_scalar(b11_size, 1., rhs);
-
-  /* Solve m11.x = 1 */
-
-  *n_iter = cs_cdo_solve_scalar_system(b11_size,
-                                       solver->param->xtra_sles_param,
-                                       m11,
-                                       b11_rset,
-                                       1,     /* no normalization */
-                                       false, /* rhs_redux --> already done */
-                                       xtra_sles,
-                                       inv_lumped_m11,
-                                       rhs);
-
-  /* Partial memory free */
-
-  BFT_FREE(rhs);
-
-  return inv_lumped_m11;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a scaled mass matrix (on the pressure space) and a scaling
- *        coefficient for the compatible Laplacian
- *
- * \param[in]  nsp            set of parameters for the Navier-Stokes system
- * \param[out] schur_scaling  scaling in front f the Schur matrix if needed
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t *
-_get_m22_scaled_diag_mass_matrix(const cs_navsto_param_t  *nsp,
-                                 cs_real_t                *schur_scaling)
-{
-  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_time_step_t  *ts = cs_glob_time_step;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_lnum_t  n_cells = cdoq->n_cells;
 
   cs_real_t  *m22_mass_diag = NULL;
@@ -422,32 +332,20 @@ _get_m22_scaled_diag_mass_matrix(const cs_navsto_param_t  *nsp,
 
   if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
 
-    const cs_real_t  visc_val = nsp->lam_viscosity->ref_value;
+    const cs_real_t  ref_val = pty->ref_value;
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_cells; i++)
-      m22_mass_diag[i] = visc_val/cdoq->cell_vol[i];
+      m22_mass_diag[i] = ref_val/cdoq->cell_vol[i];
 
   }
   else {
 
-    cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, m22_mass_diag);
+    cs_property_eval_at_cells(ts->t_cur, pty, m22_mass_diag);
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_cells; i++)
       m22_mass_diag[i] /= cdoq->cell_vol[i];
 
   }
-
-  const cs_real_t  rho0 = nsp->mass_density->ref_value;
-
-  /* alpha coefficient related to time */
-
-  cs_real_t  alpha = 1/ts->dt[0];
-  if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
-    alpha = 0.01*nsp->lam_viscosity->ref_value;
-
-  /* Values to return */
-
-  *schur_scaling = rho0*alpha;
 
   return m22_mass_diag;
 }
@@ -468,10 +366,10 @@ _get_m22_scaled_diag_mass_matrix(const cs_navsto_param_t  *nsp,
 /*----------------------------------------------------------------------------*/
 
 static cs_matrix_t *
-_schur_matrix_from_m11_inv_approx(cs_param_solver_class_t  mat_class,
-                                  const cs_real_t         *m11_inv_approx,
-                                  cs_real_t              **p_diag_smat,
-                                  cs_real_t              **p_xtra_smat)
+_schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
+                           const cs_real_t         *m11_inv_approx,
+                           cs_real_t              **p_diag_smat,
+                           cs_real_t              **p_xtra_smat)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *mesh = cs_shared_mesh;
@@ -752,7 +650,7 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
 
   BFT_MALLOC(ctx->dzk, solver->n1_scatter_dofs, cs_real_t);
 
-  ctx->inv_m22 = _get_m22_scaled_diag_mass_matrix(nsp, &(ctx->alpha));
+  ctx->inv_m22 = _get_scaled_diag_m22(nsp, ctx->pty_22);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -913,15 +811,18 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
  *        the Navier-Stokes equation using a monolithic approach for the
  *        velocity-pressure coupling
  *
+ * \param[in]      nsp      set of parameters for the Navier-Stokes system
  * \param[in]      saddlep  parameters for solving a saddle-point problem
  * \param[in, out] sc       pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_init_solver(const cs_param_saddle_t  *saddlep,
+cs_cdofb_monolithic_sles_init_solver(const cs_navsto_param_t  *nsp,
+                                     const cs_param_saddle_t  *saddlep,
                                      cs_cdofb_monolithic_t    *sc)
 {
+  const cs_time_step_t  *ts = cs_glob_time_step;
   const cs_mesh_t  *m = cs_shared_mesh;
   const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
   const cs_lnum_t  n_cells = cs_shared_quant->n_cells;
@@ -943,19 +844,28 @@ cs_cdofb_monolithic_sles_init_solver(const cs_param_saddle_t  *saddlep,
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
+      sc->solve = cs_cdofb_monolithic_sles_alu;
+
       cs_saddle_solver_context_alu_create(solver);
 
       cs_saddle_solver_context_alu_t  *ctx = solver->context;
 
-      ctx->compute_square_norm_b11 = cs_cdo_blas_square_norm_pfvp;
-
-      sc->solve = cs_cdofb_monolithic_sles_alu;
+      ctx->square_norm_b11 = cs_cdo_blas_square_norm_pfvp;
+      ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_vector;
+      ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_vector;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
-    cs_saddle_solver_context_notay_create(solver);
-    sc->solve = cs_cdofb_monolithic_sles_notay;
+    {
+      sc->solve = cs_cdofb_monolithic_sles_notay;
+
+      cs_saddle_solver_context_notay_create(solver);
+
+      cs_saddle_solver_context_notay_t  *ctx = solver->context;
+
+      ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_vector;
+    }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
@@ -964,26 +874,79 @@ cs_cdofb_monolithic_sles_init_solver(const cs_param_saddle_t  *saddlep,
 
     else {
 
+      sc->solve = cs_cdofb_monolithic_sles_gkb_inhouse;
+
       cs_saddle_solver_context_gkb_create(solver);
 
       cs_saddle_solver_context_gkb_t  *ctx = solver->context;
 
-      ctx->compute_square_norm_b11 = cs_cdo_blas_square_norm_pfvp;
-
-      sc->solve = cs_cdofb_monolithic_sles_gkb_inhouse;
+      ctx->square_norm_b11 = cs_cdo_blas_square_norm_pfvp;
+      ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_vector;
+      ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_vector;
 
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
   case CS_PARAM_SADDLE_SOLVER_MINRES:
-    cs_saddle_solver_context_block_pcd_create(m->n_cells_with_ghosts, solver);
-    sc->solve = cs_cdofb_monolithic_sles_block_krylov;
+    {
+      sc->solve = cs_cdofb_monolithic_sles_block_krylov;
+
+      cs_saddle_solver_context_block_pcd_create(m->n_cells_with_ghosts, solver);
+
+      cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
+
+      ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_vector;
+      ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_vector;
+
+      if (nsp->turbulence->model->iturb == CS_TURB_NONE)
+        ctx->pty_22 = nsp->lam_viscosity;
+      else
+        ctx->pty_22 = nsp->tot_viscosity;
+
+      const cs_real_t  rho0 = nsp->mass_density->ref_value;
+
+      /* alpha coefficient is related to time */
+
+      cs_real_t  alpha;
+      if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
+        alpha = 0.01*nsp->lam_viscosity->ref_value;
+      else
+        alpha = 1/ts->dt[0];
+
+      ctx->schur_scaling = rho0 * alpha;
+    }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
-    cs_saddle_solver_context_uzawa_cg_create(m->n_cells_with_ghosts, solver);
-    sc->solve = cs_cdofb_monolithic_sles_uzawa_cg;
+    {
+      sc->solve = cs_cdofb_monolithic_sles_uzawa_cg;
+
+      cs_saddle_solver_context_uzawa_cg_create(m->n_cells_with_ghosts, solver);
+
+      cs_saddle_solver_context_uzawa_cg_t  *ctx = solver->context;
+
+      ctx->square_norm_b11 = cs_cdo_blas_square_norm_pfvp;
+      ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_vector;
+      ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_vector;
+
+      if (nsp->turbulence->model->iturb == CS_TURB_NONE)
+        ctx->pty_22 = nsp->lam_viscosity;
+      else
+        ctx->pty_22 = nsp->tot_viscosity;
+
+      const cs_real_t  rho0 = nsp->mass_density->ref_value;
+
+      /* zeta coefficient is related to time */
+
+      cs_real_t  zeta;
+      if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
+        zeta = 0.01*nsp->lam_viscosity->ref_value;
+      else
+        zeta = 1/ts->dt[0];
+
+      ctx->alpha = rho0 * zeta; /* similar to a schur scaling */
+    }
     break;
 
   default:
@@ -1174,74 +1137,70 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
   switch (saddlep->schur_approx) {
 
   case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
-    ctx->m11_inv_diag = _get_m11_inv_diag(ctx->b11_max_size,
-                                          ctx->m11,
-                                          ctx->b11_range_set);
+    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
+                                                      ctx->m11,
+                                                      ctx->b11_range_set);
 
-    ctx->schur_matrix =
-      _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                        ctx->m11_inv_diag,
-                                        &(ctx->schur_diag),
-                                        &(ctx->schur_xtra));
+    ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                   ctx->m11_inv_diag,
+                                                   &(ctx->schur_diag),
+                                                   &(ctx->schur_xtra));
     break;
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped = _get_m11_inv_lumped(solver,
-                                                       ctx->m11,
-                                                       ctx->b11_range_set,
-                                                       ctx->xtra_sles,
-                                                       &n_xtra_iters);
+      cs_real_t  *m11_inv_lumped =
+        cs_saddle_solver_m11_inv_lumped(solver,
+                                        ctx->m11,
+                                        ctx->b11_range_set,
+                                        ctx->xtra_sles,
+                                        &n_xtra_iters);
 
       algo_ctx->n_inner_iter += n_xtra_iters;
 
-      ctx->schur_matrix =
-        _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                          m11_inv_lumped,
-                                          &(ctx->schur_diag),
-                                          &(ctx->schur_xtra));
+      ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                     m11_inv_lumped,
+                                                     &(ctx->schur_diag),
+                                                     &(ctx->schur_xtra));
 
       BFT_FREE(m11_inv_lumped);
     }
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED:
-    ctx->m22_mass_diag =
-      _get_m22_scaled_diag_mass_matrix(nsp, &(ctx->schur_scaling));
+    ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
-    ctx->m22_mass_diag =
-      _get_m22_scaled_diag_mass_matrix(nsp, &(ctx->schur_scaling));
+    ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
 
-    ctx->m11_inv_diag = _get_m11_inv_diag(ctx->b11_max_size,
-                                          ctx->m11,
-                                          ctx->b11_range_set);
-    ctx->schur_matrix =
-      _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                        ctx->m11_inv_diag,
-                                        &(ctx->schur_diag),
-                                        &(ctx->schur_xtra));
+    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
+                                                      ctx->m11,
+                                                      ctx->b11_range_set);
+
+    ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                   ctx->m11_inv_diag,
+                                                   &(ctx->schur_diag),
+                                                   &(ctx->schur_xtra));
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped = _get_m11_inv_lumped(solver,
-                                                       ctx->m11,
-                                                       ctx->b11_range_set,
-                                                       ctx->xtra_sles,
-                                                       &n_xtra_iters);
+      cs_real_t  *m11_inv_lumped =
+        cs_saddle_solver_m11_inv_lumped(solver,
+                                        ctx->m11,
+                                        ctx->b11_range_set,
+                                        ctx->xtra_sles,
+                                        &n_xtra_iters);
 
       algo_ctx->n_inner_iter += n_xtra_iters;
 
-      ctx->schur_matrix =
-        _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                          m11_inv_lumped,
-                                          &(ctx->schur_diag),
-                                          &(ctx->schur_xtra));
+      ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                     m11_inv_lumped,
+                                                     &(ctx->schur_diag),
+                                                     &(ctx->schur_xtra));
 
-      ctx->m22_mass_diag =
-        _get_m22_scaled_diag_mass_matrix(nsp, &(ctx->schur_scaling));
+      ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
 
       BFT_FREE(m11_inv_lumped);
     }
@@ -1330,7 +1289,7 @@ cs_cdofb_monolithic_sles_full_system(const cs_navsto_param_t  *nsp,
 
   const cs_param_saddle_t  *saddlep = solver->param;
 
-  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_MUMPS ||
+  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_MUMPS &&
       saddlep->solver != CS_PARAM_SADDLE_SOLVER_FGMRES)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Full system solver is expected.\n"
@@ -1630,63 +1589,62 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
   switch (saddlep->schur_approx) {
 
   case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
-    ctx->m11_inv_diag = _get_m11_inv_diag(ctx->b11_max_size,
-                                          ctx->m11,
-                                          ctx->b11_range_set);
-    ctx->schur_matrix =
-      _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                        ctx->m11_inv_diag,
-                                        &(ctx->schur_diag),
-                                        &(ctx->schur_xtra));
+    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
+                                                      ctx->m11,
+                                                      ctx->b11_range_set);
+
+    ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                   ctx->m11_inv_diag,
+                                                   &(ctx->schur_diag),
+                                                   &(ctx->schur_xtra));
     break;
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped = _get_m11_inv_lumped(solver,
-                                                       ctx->m11,
-                                                       ctx->b11_range_set,
-                                                       ctx->xtra_sles,
-                                                       &n_xtra_iters);
+      cs_real_t  *m11_inv_lumped =
+        cs_saddle_solver_m11_inv_lumped(solver,
+                                        ctx->m11,
+                                        ctx->b11_range_set,
+                                        ctx->xtra_sles,
+                                        &n_xtra_iters);
 
       algo_ctx->n_inner_iter += n_xtra_iters;
 
-      ctx->schur_matrix =
-        _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                          m11_inv_lumped,
-                                          &(ctx->schur_diag),
-                                          &(ctx->schur_xtra));
+      ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                     m11_inv_lumped,
+                                                     &(ctx->schur_diag),
+                                                     &(ctx->schur_xtra));
 
       BFT_FREE(m11_inv_lumped);
     }
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
-    ctx->m11_inv_diag = _get_m11_inv_diag(ctx->b11_max_size,
-                                          ctx->m11,
-                                          ctx->b11_range_set);
+    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
+                                                      ctx->m11,
+                                                      ctx->b11_range_set);
 
-    ctx->schur_matrix =
-      _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                        ctx->m11_inv_diag,
-                                        &(ctx->schur_diag),
-                                        &(ctx->schur_xtra));
+    ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                   ctx->m11_inv_diag,
+                                                   &(ctx->schur_diag),
+                                                   &(ctx->schur_xtra));
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped = _get_m11_inv_lumped(solver,
-                                                       ctx->m11,
-                                                       ctx->b11_range_set,
-                                                       ctx->xtra_sles,
-                                                       &n_xtra_iters);
+      cs_real_t  *m11_inv_lumped =
+        cs_saddle_solver_m11_inv_lumped(solver,
+                                        ctx->m11,
+                                        ctx->b11_range_set,
+                                        ctx->xtra_sles,
+                                        &n_xtra_iters);
 
       algo_ctx->n_inner_iter += n_xtra_iters;
 
-      ctx->schur_matrix =
-        _schur_matrix_from_m11_inv_approx(schur_slesp->solver_class,
-                                          m11_inv_lumped,
-                                          &(ctx->schur_diag),
-                                          &(ctx->schur_xtra));
+      ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                     m11_inv_lumped,
+                                                     &(ctx->schur_diag),
+                                                     &(ctx->schur_xtra));
 
       BFT_FREE(m11_inv_lumped);
     }

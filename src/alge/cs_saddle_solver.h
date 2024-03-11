@@ -55,15 +55,35 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-  /*
-   * Main structure to solve a saddle-point problem described as follows
-   *
-   *      | M11 | M12 | | x1 |   |rhs1 |
-   *  M = |-----------| |----| = |-----|
-   *      | M21 |  0  | | x2 |   |rhs2 |
-   *
-   *  One assumes that M12 = M21^T
-   */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Generic function prototype to perform a matrix vector operation
+ *        This operation takes place between an unassembled matrix and a vector
+ *
+ * \param[in]      n2_dofs  number of (scatter) DoFs for the (2,2)-block
+ * \param[in]      vec      array of values
+ * \param[in]      mat_adj  adjacency related to the matrix operator
+ * \param[in]      mat_val  values associated to the matrix operator
+ * \param[in, out] matvec   resulting vector (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_saddle_solver_matvec_t)(cs_lnum_t              n2_dofs,
+                            const cs_real_t       *vec,
+                            const cs_adjacency_t  *mat_adj,
+                            const cs_real_t       *mat_op,
+                            cs_real_t             *matvec);
+
+/*
+ * Main structure to solve a saddle-point problem described as follows
+ *
+ *      | M11 | M12 | | x1 |   |rhs1 |
+ *  M = |-----------| |----| = |-----|
+ *      | M21 |  0  | | x2 |   |rhs2 |
+ *
+ *  One assumes that M12 = M21^T
+ */
 
 typedef struct {
 
@@ -135,17 +155,20 @@ typedef struct {
 
   cs_sles_t  *xtra_sles;
 
-  /* Function pointer for computing the norm on the first block */
+  /* Function pointers for computing operations needed in the algorithm */
+  /* ------------------------------------------------------------------ */
 
-  cs_cdo_blas_square_norm_t  *compute_square_norm_b11;
+  cs_cdo_blas_square_norm_t  *square_norm_b11;
+  cs_saddle_solver_matvec_t  *m12_vector_multiply;
+  cs_saddle_solver_matvec_t  *m21_vector_multiply;
 
   /* Shared pointers */
 
-  const cs_real_t            *m21_op;
+  const cs_real_t            *m21_val;
 
   /* Indexed list used to scan the unassembled m21 operator */
 
-  const cs_adjacency_t       *m21_adjacency;
+  const cs_adjacency_t       *m21_adj;
 
 } cs_saddle_solver_context_alu_t;
 
@@ -167,41 +190,45 @@ typedef struct {
 
   /* Shortcut on pointers available through the system helper */
 
-  cs_matrix_t           *m11;
-  cs_range_set_t        *b11_range_set;
+  cs_matrix_t      *m11;
+  cs_range_set_t   *b11_range_set;
 
   /* Max. size of the blocks (scatter or gather view). This size takes into
      account the size needed for synchronization. */
 
-  cs_lnum_t              b11_max_size;
-  cs_lnum_t              b22_max_size;
+  cs_lnum_t         b11_max_size;
+  cs_lnum_t         b22_max_size;
 
   /* SLES structure associated to the Schur complement. It depends on the type
      of Schur complement approximation used */
 
-  cs_matrix_t           *schur_matrix;
-  cs_sles_t             *schur_sles;
-  double                 schur_scaling;
+  cs_matrix_t      *schur_matrix;
+  cs_sles_t        *schur_sles;
+  double            schur_scaling;
 
   /* Native arrays for the Schur matrix (optional) */
 
-  cs_real_t             *schur_diag;
-  cs_real_t             *schur_xtra;
+  cs_real_t        *schur_diag;
+  cs_real_t        *schur_xtra;
 
   /* Diagonal approximations of block matrices (optional) */
 
-  cs_real_t             *m11_inv_diag;
-  cs_real_t             *m22_mass_diag;
+  cs_real_t        *m11_inv_diag;
+  cs_real_t        *m22_mass_diag;
 
-  cs_sles_t             *xtra_sles;
+  cs_sles_t        *xtra_sles;
+
+  /* Function pointers */
+
+  cs_saddle_solver_matvec_t  *m12_vector_multiply;
+  cs_saddle_solver_matvec_t  *m21_vector_multiply;
 
   /* Shared pointers */
 
-  const cs_real_t       *m21_op;
-
-  /* Indexed list used to scan the unassembled m21 operator */
-
-  const cs_adjacency_t  *m21_adjacency;
+  const cs_property_t   *pty_22;  /* Property related to the (2,2) block */
+  const cs_real_t       *m21_val;
+  const cs_adjacency_t  *m21_adj; /* Indexed list used to scan the unassembled
+                                     m21 operator */
 
 } cs_saddle_solver_context_block_pcd_t;
 
@@ -247,17 +274,19 @@ typedef struct {
 
   cs_sles_t  *xtra_sles;
 
-  /* Function pointer for computing the norm on the first block */
+  /* Function pointers */
 
-  cs_cdo_blas_square_norm_t  *compute_square_norm_b11;
+  cs_cdo_blas_square_norm_t  *square_norm_b11;
+  cs_saddle_solver_matvec_t  *m12_vector_multiply;
+  cs_saddle_solver_matvec_t  *m21_vector_multiply;
 
   /* Shared pointers */
 
-  const cs_real_t            *m21_op;
+  const cs_real_t            *m21_val;
 
   /* Indexed list used to scan the unassembled m21 operator */
 
-  const cs_adjacency_t       *m21_adjacency;
+  const cs_adjacency_t       *m21_adj;
 
 } cs_saddle_solver_context_gkb_t;
 
@@ -269,15 +298,19 @@ typedef struct {
 
   /* Scaling coefficient */
 
-  cs_real_t              alpha;
+  cs_real_t                   alpha;
+
+  /* Function pointer */
+
+  cs_saddle_solver_matvec_t  *m12_vector_multiply;
 
   /* Shared pointers */
 
-  const cs_real_t       *m21_op;
+  const cs_real_t            *m21_val;
 
   /* Indexed list used to scan the unassembled m21 operator */
 
-  const cs_adjacency_t  *m21_adjacency;
+  const cs_adjacency_t       *m21_adj;
 
 } cs_saddle_solver_context_notay_t;
 
@@ -303,9 +336,11 @@ typedef struct {
   cs_real_t  *dzk;      /* buffer of size n1_dofs */
   cs_real_t  *rhs;      /* buffer of size n1_dofs */
 
-  /* Function pointer for computing the norm on the first block */
+  /* Function pointers */
 
-  cs_cdo_blas_square_norm_t  *compute_square_norm_b11;
+  cs_cdo_blas_square_norm_t  *square_norm_b11;
+  cs_saddle_solver_matvec_t  *m12_vector_multiply;
+  cs_saddle_solver_matvec_t  *m21_vector_multiply;
 
   /* Shortcut on pointers available through the system helper */
 
@@ -337,11 +372,10 @@ typedef struct {
 
   /* Shared pointers */
 
-  const cs_real_t       *m21_op;
-
-  /* Indexed list used to scan the unassembled m21 operator */
-
-  const cs_adjacency_t  *m21_adjacency;
+  const cs_property_t   *pty_22;  /* Property related to the (2,2) block */
+  const cs_real_t       *m21_val;
+  const cs_adjacency_t  *m21_adj; /* Indexed list used to scan the unassembled
+                                     m21 operator */
 
 } cs_saddle_solver_context_uzawa_cg_t;
 
@@ -442,7 +476,7 @@ cs_saddle_solver_clean(cs_saddle_solver_t  *solver);
 
 void
 cs_saddle_solver_update_monitoring(cs_saddle_solver_t  *solver,
-                                   int                  n_iter);
+                                   unsigned             n_iter);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -452,6 +486,138 @@ cs_saddle_solver_update_monitoring(cs_saddle_solver_t  *solver,
 
 void
 cs_saddle_solver_log_monitoring(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the inverse of the diagonal of the (1,1)-block matrix
+ *        The storage of a matrix is in a gather view and the resulting array is
+ *        in scatter view.
+ *
+ * \param[in] b11_max_size  max size related to the (1,1) block
+ * \param[in] m11           matrix related to the (1,1) block
+ * \param[in] b11_rset      range set structure for the (1,1) block
+ *
+ * \return a pointer to the computed array (scatter view)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_saddle_solver_m11_inv_diag(cs_lnum_t              b11_max_size,
+                              const cs_matrix_t     *m11,
+                              const cs_range_set_t  *b11_rset);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the lumped matrix the inverse of the diagonal of the
+ *        (1,1)-block matrix. The storage of a matrix is in a gather view and
+ *        the resulting array is in scatter view.
+ *
+ * \param[in]      solver     solver for saddle-point problems
+ * \param[in]      m11        matrix related to the (1,1) block
+ * \param[in]      b11_rset   range set structure for the (1,1) block
+ * \param[in, out] xtra_sles  pointer to an extra SLES structure
+ * \param[out]     n_iter     number of iterations for this operation
+ *
+ * \return a pointer to the computed array (scatter view)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
+                                const cs_matrix_t      *m11,
+                                const cs_range_set_t   *b11_rset,
+                                cs_sles_t              *xtra_sles,
+                                int                    *n_iter);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m12*x2
+ *        The stride is equal to 3 for the operator m21 (unassembled)
+ *        x2 corresponds to a "scatter" view
+ *
+ *        This is an update operation. Be careful that the resulting array has
+ *        to be initialized.
+ *
+ * \param[in]      n2_dofs  number of DoFs for x2
+ * \param[in]      x2       array for the second set
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  array associated to the M21 operator (unassembled)
+ * \param[in, out] m12x2    resulting array (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m12_multiply_vector(cs_lnum_t              n2_dofs,
+                                     const cs_real_t       *x2,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m12x2);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m12*x2
+ *        The stride is equal to 1 for the operator m21 (unassembled)
+ *        x2 corresponds to a "scatter" view.
+ *
+ *        This is an update operation. Be careful that the resulting array has
+ *        to be initialized.
+ *
+ * \param[in]      n2_elts  number of elements for x2 (not DoFs)
+ * \param[in]      x2       array for the second set
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  array associated to the M21 operator (unassembled)
+ * \param[in, out] m12x2    resulting array (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m12_multiply_scalar(cs_lnum_t              n2_elts,
+                                     const cs_real_t       *x2,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m12x2);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m21*x1
+ *        The stride is equal to 3 for the operator m21 operator
+ *        x1 corresponds to a "scatter" view
+ *
+ * \param[in]      n2_dofs  number of (scatter) DoFs for (2,2)-block
+ * \param[in]      x1       array for the first part
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  values associated to the M21 operator (unassembled)
+ * \param[in, out] m21x1    resulting vector (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m21_multiply_vector(cs_lnum_t              n2_dofs,
+                                     const cs_real_t       *x1,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m21x1);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m21*x1
+ *        The stride is equal to 1 for the operator m21 operator
+ *        x1 corresponds to a "scatter" view
+ *
+ * \param[in]      n2_dofs  number of (scatter) DoFs for (2,2)-block
+ * \param[in]      x1       array for the first part
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  values associated to the M21 operator (unassembled)
+ * \param[in, out] m21x1    resulting vector (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m21_multiply_scalar(cs_lnum_t              n2_dofs,
+                                     const cs_real_t       *x1,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m21x1);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -94,13 +94,15 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
  *        the Navier-Stokes equation using a monolithic approach for the
  *        velocity-pressure coupling
  *
+ * \param[in]      nsp      set of parameters for the Navier-Stokes system
  * \param[in]      saddlep  parameters for solving a saddle-point problem
  * \param[in, out] sc       pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_init_solver(const cs_param_saddle_t  *saddlep,
+cs_cdofb_monolithic_sles_init_solver(const cs_navsto_param_t  *nsp,
+                                     const cs_param_saddle_t  *saddlep,
                                      cs_cdofb_monolithic_t    *sc);
 
 /*----------------------------------------------------------------------------*/

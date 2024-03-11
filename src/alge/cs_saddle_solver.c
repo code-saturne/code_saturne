@@ -56,8 +56,8 @@
 #include "cs_blas.h"
 #include "cs_cdo_solve.h"
 #include "cs_log.h"
-#include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_saddle_system.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -84,10 +84,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
-
-/* Block size for superblock algorithm */
-
-#define CS_SBLOCK_BLOCK_SIZE 60
 
 /* Cache line multiple, in cs_real_t units */
 
@@ -503,6 +499,42 @@ _join_x1_vector_x2_deinterlaced(cs_lnum_t         n1_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Join the first set of elements (flux for instance) with the
+ *        second set of elements (potential for instance) into the same
+ *        array. Do the same thing for the output rhs named b.
+ *
+ * \param[in]      n1_elts  number of elements in x1
+ * \param[in]      x1       first array
+ * \param[in]      n2_elts  number of elements in x2
+ * \param[in]      x2       second array
+ * \param[in]      rhs      system rhs (interlaced)
+ * \param[in, out] x        solution array to define
+ * \param[in, out] b        rhs array to define
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_join_x1_scalar_x2_deinterlaced(cs_lnum_t         n1_elts,
+                                const cs_real_t  *x1,
+                                cs_lnum_t         n2_elts,
+                                const cs_real_t  *x2,
+                                const cs_real_t  *rhs,
+                                cs_real_t        *x,
+                                cs_real_t        *b)
+{
+  /* Treatment of the first set of elements. */
+
+  cs_array_real_copy(n1_elts, x1, x);
+  cs_array_real_copy(n1_elts, rhs, b);
+
+  /* Treatment of the second set of elements */
+
+  cs_array_real_copy(n2_elts, x2, x + n1_elts);
+  cs_array_real_copy(n2_elts, rhs + n1_elts, b + n1_elts);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Perform a matrix-vector multiplication for the (1,1) block when the
  *        input vector is in a scatter state.
 
@@ -559,85 +591,6 @@ _m11_vector_multiply_allocated(const cs_range_set_t  *rset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the resulting vector of the operation m12*x2
- *        The stride is equal to 3 for the operator m21 (unassembled)
- *        x2 corresponds to a "scatter" view
- *
- * \param[in]      n2_dofs  number of DoFs for x2
- * \param[in]      x2       array for the second set
- * \param[in]      m21_adj  adjacency related to the M21 operator
- * \param[in]      m21_op   array associated to the M21 operator (unassembled)
- * \param[in, out] m12x2    resulting array (have to be allocated)
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_m12_vector_multiply(cs_lnum_t              n2_dofs,
-                     const cs_real_t       *x2,
-                     const cs_adjacency_t  *m21_adj,
-                     const cs_real_t       *m21_op,
-                     cs_real_t             *m12x2)
-{
-  assert(n2_dofs == m21_adj->n_elts);
-
-# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
-  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
-
-    const cs_real_t  _x2 = x2[i2];
-    for (cs_lnum_t j = m21_adj->idx[i2]; j < m21_adj->idx[i2+1]; j++) {
-
-      const cs_real_t  *m21_vals = m21_op + 3*j;
-      cs_real_t  *_m12x2 = m12x2 + 3*m21_adj->ids[j];
-
-#     pragma omp critical
-      {
-        _m12x2[0] += m21_vals[0] * _x2;
-        _m12x2[1] += m21_vals[1] * _x2;
-        _m12x2[2] += m21_vals[2] * _x2;
-      }
-
-    } /* Loop on x1 elements associated to a given x2 DoF */
-
-  } /* Loop on x2 DoFs */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the resulting vector of the operation m21*x1
- *        The stride is equal to 3 for the operator m21 operator
- *        x1 corresponds to a "scatter" view
- *
- * \param[in]      n2_dofs  number of (scatter) DoFs for (2,2)-block
- * \param[in]      x1       array for the first part
- * \param[in]      m21_adj  adjacency related to the M21 operator
- * \param[in]      m21_op   values associated to the M21 operator (unassembled)
- * \param[in, out] m21x1    resulting vector (have to be allocated)
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_m21_vector_multiply(cs_lnum_t              n2_dofs,
-                     const cs_real_t       *x1,
-                     const cs_adjacency_t  *m21_adj,
-                     const cs_real_t       *m21_op,
-                     cs_real_t             *m21x1)
-{
-  assert(n2_dofs == m21_adj->n_elts);
-
-# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
-  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
-
-    cs_real_t  _m21x1 = 0.;
-    for (cs_lnum_t j = m21_adj->idx[i2]; j < m21_adj->idx[i2+1]; j++)
-      _m21x1 += cs_math_3_dot_product(m21_op + 3*j, x1 + 3*m21_adj->ids[j]);
-
-    m21x1[i2] = _m21x1;
-
-  } /* Loop on x2 elements */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute the residual of the saddle-point system
  *        res1 = rhs1 - M11.x1 - M12.x2 (residual for the first block)
  *        res2 = rhs2 - M21.x1          (residual for the second block)
@@ -680,7 +633,7 @@ _compute_residual_3(cs_saddle_solver_t  *solver,
   BFT_MALLOC(m12x2, solver->n1_scatter_dofs, cs_real_t);
   cs_array_real_fill_zero(solver->n1_scatter_dofs, m12x2);
 
-  const cs_adjacency_t  *adj = ctx->m21_adjacency;
+  const cs_adjacency_t  *adj = ctx->m21_adj;
 
   assert(solver->n2_elts == adj->n_elts);
 # pragma omp parallel for if (solver->n2_elts > CS_THR_MIN)
@@ -690,7 +643,7 @@ _compute_residual_3(cs_saddle_solver_t  *solver,
     cs_real_t  _m21x1 = 0.;
     for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2+1]; j2++) {
 
-      const cs_real_t  *m21_vals = ctx->m21_op + 3*j2;
+      const cs_real_t  *m21_vals = ctx->m21_val + 3*j2;
       const cs_lnum_t  shift = 3*adj->ids[j2];
       assert(shift < solver->n1_scatter_dofs);
 
@@ -754,7 +707,7 @@ _matvec_product(cs_saddle_solver_t  *solver,
   cs_real_t  *mv1 = matvec, *mv2 = matvec + ctx->b11_max_size;
 
   const cs_range_set_t  *rset = ctx->b11_range_set;
-  const cs_adjacency_t  *adj = ctx->m21_adjacency;
+  const cs_adjacency_t  *adj = ctx->m21_adj;
 
   /* The resulting array is composed of two parts:
    * a) mv1 = M11.v1 + M12.v2
@@ -776,7 +729,7 @@ _matvec_product(cs_saddle_solver_t  *solver,
     for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2+1]; j2++) {
 
       const cs_lnum_t  shift = 3*adj->ids[j2];
-      const cs_real_t  *m21_vals = ctx->m21_op + 3*j2;
+      const cs_real_t  *m21_vals = ctx->m21_val + 3*j2;
 
       _m21v1 += cs_math_3_dot_product(m21_vals, v1 + shift);
 
@@ -1099,11 +1052,9 @@ _lower_schur_pc_apply(cs_saddle_solver_t                    *solver,
   const cs_real_t  *r2 = r + ctx->b11_max_size;
   cs_real_t  *r2_tilda = pc_wsp;
 
-  _m21_vector_multiply(solver->n2_scatter_dofs,
-                       z,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       r2_tilda);
+  ctx->m21_vector_multiply(solver->n2_scatter_dofs,
+                           z, ctx->m21_adj, ctx->m21_val,
+                           r2_tilda);
 
 # pragma omp parallel for if (solver->n2_scatter_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < solver->n2_scatter_dofs; i2++)
@@ -1179,10 +1130,9 @@ _upper_schur_pc_apply(cs_saddle_solver_t                    *solver,
   cs_real_t  *r1_tilda = pc_wsp;
 
   cs_array_real_fill_zero(ctx->b11_max_size, r1_tilda);
-  _m12_vector_multiply(solver->n2_scatter_dofs, z2,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       r1_tilda);
+  ctx->m12_vector_multiply(solver->n2_scatter_dofs,
+                           z2, ctx->m21_adj, ctx->m21_val,
+                           r1_tilda);
 
   if (rset->ifs != NULL)
     cs_interface_set_sum(rset->ifs,
@@ -1255,10 +1205,8 @@ _sgs_schur_pc_apply(cs_saddle_solver_t                    *solver,
 
   cs_real_t  *r2_hat = pc_wsp + ctx->b11_max_size; /* x2_size */
 
-  _m21_vector_multiply(n2_elts, z1_hat,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       r2_hat); /* z1_hat has to be "scatter" */
+  ctx->m21_vector_multiply(n2_elts, z1_hat, ctx->m21_adj, ctx->m21_val,
+                           r2_hat); /* z1_hat has to be "scatter" */
 
   const cs_real_t  *r2 = r + ctx->b11_max_size;
 
@@ -1300,10 +1248,8 @@ _sgs_schur_pc_apply(cs_saddle_solver_t                    *solver,
 
   /* Update += of r1_tilda inside the following function */
 
-  _m12_vector_multiply(n2_elts, z2,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       r1_tilda);
+  ctx->m12_vector_multiply(n2_elts, z2, ctx->m21_adj, ctx->m21_val,
+                           r1_tilda);
 
   /* 5. Solve M11.z1 = r1_tilda
      ========================== */
@@ -1374,10 +1320,8 @@ _uza_schur_pc_apply(cs_saddle_solver_t                    *solver,
 
   cs_real_t  *r2_hat = pc_wsp;  /* x2_size */
 
-  _m21_vector_multiply(n2_elts, z,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       r2_hat);
+  ctx->m21_vector_multiply(n2_elts, z, ctx->m21_adj, ctx->m21_val,
+                           r2_hat);
 
   const cs_real_t  *r2 = r + ctx->b11_max_size;
 
@@ -1404,10 +1348,8 @@ _uza_schur_pc_apply(cs_saddle_solver_t                    *solver,
   cs_real_t  *r1_tilda = pc_wsp + ctx->b22_max_size; /* x1_size */
 
   cs_array_real_fill_zero(ctx->b11_max_size, r1_tilda);
-  _m12_vector_multiply(n2_elts, z2,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       r1_tilda);
+  ctx->m12_vector_multiply(n2_elts, z2, ctx->m21_adj, ctx->m21_val,
+                           r1_tilda);
 
   if (rset->ifs != NULL)
     cs_interface_set_sum(rset->ifs,
@@ -1421,6 +1363,7 @@ _uza_schur_pc_apply(cs_saddle_solver_t                    *solver,
   cs_real_t  *z1_tilda = pc_wsp + ctx->b11_max_size + ctx->b22_max_size;
 
   /* No need to scatter the r1_tilda array since it is not used anymore */
+
   n_iter += _solve_m11_approximation(solver, ctx,
                                      r1_tilda, false, /* no scatter */
                                      z1_tilda, true); /* scatter at exit */
@@ -1430,10 +1373,9 @@ _uza_schur_pc_apply(cs_saddle_solver_t                    *solver,
 
   cs_real_t  *r2_tilda = z1_tilda + ctx->b11_max_size; /* x2_size */
 
-  _m21_vector_multiply(n2_elts, z1_tilda, /* z1_tilda has to be "scatter" */
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       r2_tilda);
+  ctx->m21_vector_multiply(n2_elts, z1_tilda, /* z1_tilda has to be "scatter" */
+                           ctx->m21_adj, ctx->m21_val,
+                           r2_tilda);
 
   /* 7. Update solutions
      =================== */
@@ -1650,7 +1592,7 @@ _gkb_cvg_test(double                           gamma,
      threshold. The normalization arises from an iterative estimation of the
      initial error in the energy norm */
 
-  int  n = (n_algo_iter < ctx->zeta_size) ? n_algo_iter + 1: ctx->zeta_size;
+  int  n = (n_algo_iter < ctx->zeta_size) ? n_algo_iter + 1 : ctx->zeta_size;
   cs_real_t  err2_energy = 0.;
   for (int i = 0; i < n; i++)
     err2_energy += ctx->zeta_array[i];
@@ -1765,10 +1707,8 @@ _gkb_transform_system(cs_saddle_solver_t              *solver,
     /* Build m12q = M12.rhs_tilda */
 
     cs_array_real_fill_zero(n1_dofs, ctx->m12q);
-    _m12_vector_multiply(n2_dofs, ctx->q,
-                         ctx->m21_adjacency,
-                         ctx->m21_op,
-                         ctx->m12q);
+    ctx->m12_vector_multiply(n2_dofs, ctx->q, ctx->m21_adj, ctx->m21_val,
+                             ctx->m12q);
 
     /* RHS reduction is delayed */
 
@@ -1782,7 +1722,7 @@ _gkb_transform_system(cs_saddle_solver_t              *solver,
 
   /* Compute w = M11^-1.(rhs1 + gamma.M12.M22^-1.rhs2) */
 
-  cs_real_t  normalization = ctx->compute_square_norm_b11(ctx->rhs_tilda);
+  cs_real_t  normalization = ctx->square_norm_b11(ctx->rhs_tilda);
   normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
   cs_array_real_fill_zero(n1_dofs, ctx->v);
@@ -1811,10 +1751,8 @@ _gkb_transform_system(cs_saddle_solver_t              *solver,
 
   /* Compute rhs_tilda := rhs2 - M21.v */
 
-  _m21_vector_multiply(n2_dofs, ctx->v,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       ctx->m21v);
+  ctx->m21_vector_multiply(n2_dofs, ctx->v, ctx->m21_adj, ctx->m21_val,
+                           ctx->m21v);
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
@@ -1877,10 +1815,8 @@ _gkb_init_solution(cs_saddle_solver_t              *solver,
    * w is updated in the next function */
 
   cs_array_real_fill_zero(n1_dofs, ctx->w);
-  _m12_vector_multiply(n2_dofs, ctx->q,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       ctx->w);
+  ctx->m12_vector_multiply(n2_dofs, ctx->q, ctx->m21_adj, ctx->m21_val,
+                           ctx->w);
 
   if (rset->ifs != NULL)
     cs_interface_set_sum(rset->ifs,
@@ -1888,7 +1824,7 @@ _gkb_init_solution(cs_saddle_solver_t              *solver,
                          n1_dofs, 1, false, CS_REAL_TYPE,
                          ctx->w);
 
-  cs_real_t  normalization = ctx->compute_square_norm_b11(ctx->w);
+  cs_real_t  normalization = ctx->square_norm_b11(ctx->w);
   normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
   cs_array_real_fill_zero(n1_dofs, ctx->v);
@@ -2341,7 +2277,7 @@ cs_saddle_solver_clean(cs_saddle_solver_t  *solver)
 
 void
 cs_saddle_solver_update_monitoring(cs_saddle_solver_t  *solver,
-                                   int                  n_iter)
+                                   unsigned             n_iter)
 {
   if (solver == NULL)
     return;
@@ -2379,6 +2315,255 @@ cs_saddle_solver_log_monitoring(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the inverse of the diagonal of the (1,1)-block matrix
+ *        The storage of a matrix is in a gather view and the resulting array is
+ *        in a scatter view.
+ *
+ * \param[in] b11_max_size  max size related to the (1,1) block
+ * \param[in] m11           matrix related to the (1,1) block
+ * \param[in] b11_rset      range set structure for the (1,1) block
+ *
+ * \return a pointer to the computed array (scatter view)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_saddle_solver_m11_inv_diag(cs_lnum_t              b11_max_size,
+                              const cs_matrix_t     *m11,
+                              const cs_range_set_t  *b11_rset)
+{
+  if (m11 == NULL)
+    return NULL;
+
+  const cs_lnum_t  n11_rows = cs_matrix_get_n_rows(m11);
+  const cs_real_t  *diag_m11 = cs_matrix_get_diagonal(m11);
+
+  assert(n11_rows <= b11_max_size);
+  cs_real_t  *inv_diag_m11 = NULL;
+  BFT_MALLOC(inv_diag_m11, b11_max_size, cs_real_t);
+
+# pragma omp parallel for if (n11_rows > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n11_rows; i++)
+    inv_diag_m11[i] = 1./diag_m11[i];
+
+  /* Switch to a scatter view */
+
+  cs_range_set_scatter(b11_rset,
+                       CS_REAL_TYPE, 1, /* treated as scalar-valued up to now */
+                       inv_diag_m11,    /* gathered view */
+                       inv_diag_m11);   /* scatter view */
+
+  return inv_diag_m11;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the lumped matrix the inverse of the diagonal of the
+ *        (1,1)-block matrix. The storage of a matrix is in a gather view and
+ *        the resulting array is in scatter view.
+ *
+ * \param[in]      solver     solver for saddle-point problems
+ * \param[in]      m11        matrix related to the (1,1) block
+ * \param[in]      b11_rset   range set structure for the (1,1) block
+ * \param[in, out] xtra_sles  pointer to an extra SLES structure
+ * \param[out]     n_iter     number of iterations for this operation
+ *
+ * \return a pointer to the computed array (scatter view)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
+                                const cs_matrix_t      *m11,
+                                const cs_range_set_t   *b11_rset,
+                                cs_sles_t              *xtra_sles,
+                                int                    *n_iter)
+{
+  const cs_lnum_t  b11_size = solver->n1_scatter_dofs;
+
+  cs_real_t  *inv_lumped_m11 = NULL;
+  BFT_MALLOC(inv_lumped_m11, b11_size, cs_real_t);
+  cs_array_real_fill_zero(b11_size, inv_lumped_m11);
+
+  cs_real_t  *rhs = NULL;
+  BFT_MALLOC(rhs, b11_size, cs_real_t);
+  cs_array_real_set_scalar(b11_size, 1., rhs);
+
+  /* Solve m11.x = 1 */
+
+  *n_iter = cs_cdo_solve_scalar_system(b11_size,
+                                       solver->param->xtra_sles_param,
+                                       m11,
+                                       b11_rset,
+                                       1,     /* no normalization */
+                                       false, /* rhs_redux --> already done */
+                                       xtra_sles,
+                                       inv_lumped_m11,
+                                       rhs);
+
+  /* Partial memory free */
+
+  BFT_FREE(rhs);
+
+  return inv_lumped_m11;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m12*x2
+ *        The stride is equal to 3 for the operator m21 (unassembled)
+ *        x2 corresponds to a "scatter" view
+ *
+ *        This is an update operation. Be careful that the resulting array has
+ *        to be initialized.
+ *
+ * \param[in]      n2_dofs  number of DoFs for x2
+ * \param[in]      x2       array for the second set
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  array associated to the M21 operator (unassembled)
+ * \param[in, out] m12x2    resulting array (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m12_multiply_vector(cs_lnum_t              n2_dofs,
+                                     const cs_real_t       *x2,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m12x2)
+{
+  assert(n2_dofs == m21_adj->n_elts);
+
+# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
+
+    const cs_real_t  _x2 = x2[i2];
+    for (cs_lnum_t j = m21_adj->idx[i2]; j < m21_adj->idx[i2+1]; j++) {
+
+      const cs_real_t  *m21_vals = m21_val + 3*j;
+      cs_real_t  *_m12x2 = m12x2 + 3*m21_adj->ids[j];
+
+#     pragma omp critical
+      {
+        _m12x2[0] += m21_vals[0] * _x2;
+        _m12x2[1] += m21_vals[1] * _x2;
+        _m12x2[2] += m21_vals[2] * _x2;
+      }
+
+    } /* Loop on x1 elements associated to a given x2 DoF */
+
+  } /* Loop on x2 DoFs */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m12*x2
+ *        The stride is equal to 1 for the operator m21 (unassembled)
+ *        x2 corresponds to a "scatter" view.
+ *
+ *        This is an update operation. Be careful that the resulting array has
+ *        to be initialized.
+ *
+ * \param[in]      n2_elts  number of elements for x2 (not DoFs)
+ * \param[in]      x2       array for the second set
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  array associated to the M21 operator (unassembled)
+ * \param[in, out] m12x2    resulting array (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m12_multiply_scalar(cs_lnum_t              n2_elts,
+                                     const cs_real_t       *x2,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m12x2)
+{
+  assert(n2_elts == m21_adj->n_elts);
+
+# pragma omp parallel for if (n2_elts > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < n2_elts; i2++) {
+
+    const cs_real_t  _x2 = x2[i2];
+    for (cs_lnum_t j = m21_adj->idx[i2]; j < m21_adj->idx[i2+1]; j++)
+#     pragma omp atomic
+      m12x2[m21_adj->ids[j]] += _x2 * m21_val[j];
+
+  } /* Loop on x2 DoFs */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m21*x1
+ *        The stride is equal to 3 for the operator m21 operator
+ *        x1 corresponds to a "scatter" view
+ *
+ * \param[in]      n2_dofs  number of (scatter) DoFs for (2,2)-block
+ * \param[in]      x1       array for the first part
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  values associated to the M21 operator (unassembled)
+ * \param[in, out] m21x1    resulting vector (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m21_multiply_vector(cs_lnum_t              n2_dofs,
+                                     const cs_real_t       *x1,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m21x1)
+{
+  assert(n2_dofs == m21_adj->n_elts);
+
+# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
+
+    cs_real_t  _m21x1 = 0.;
+    for (cs_lnum_t j = m21_adj->idx[i2]; j < m21_adj->idx[i2+1]; j++)
+      _m21x1 += cs_math_3_dot_product(m21_val + 3*j, x1 + 3*m21_adj->ids[j]);
+
+    m21x1[i2] = _m21x1;
+
+  } /* Loop on x2 elements */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the resulting vector of the operation m21*x1
+ *        The stride is equal to 1 for the operator m21 operator
+ *        x1 corresponds to a "scatter" view
+ *
+ * \param[in]      n2_dofs  number of (scatter) DoFs for (2,2)-block
+ * \param[in]      x1       array for the first part
+ * \param[in]      m21_adj  adjacency related to the M21 operator
+ * \param[in]      m21_val  values associated to the M21 operator (unassembled)
+ * \param[in, out] m21x1    resulting vector (have to be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_m21_multiply_scalar(cs_lnum_t              n2_dofs,
+                                     const cs_real_t       *x1,
+                                     const cs_adjacency_t  *m21_adj,
+                                     const cs_real_t       *m21_val,
+                                     cs_real_t             *m21x1)
+{
+  assert(n2_dofs == m21_adj->n_elts);
+
+# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
+
+    cs_real_t  _m21x1 = 0.;
+    for (cs_lnum_t j = m21_adj->idx[i2]; j < m21_adj->idx[i2+1]; j++)
+      _m21x1 += m21_val[j] * x1[m21_adj->ids[j]];
+
+    m21x1[i2] = _m21x1;
+
+  } /* Loop on x2 elements */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create and initialize the context structure for an algorithm related
  *        to the ALU algorithm
  *
@@ -2401,6 +2586,12 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
 
   ctx->b1_tilda = NULL;
   ctx->rhs = NULL;
+
+  /* Function pointers */
+
+  ctx->square_norm_b11 = NULL;
+  ctx->m12_vector_multiply = NULL;
+  ctx->m21_vector_multiply = NULL;
 
   /* Extra SLES if needed */
 
@@ -2430,8 +2621,8 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
   const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
 
-  ctx->m21_op = b21_ublock->values;
-  ctx->m21_adjacency = b21_ublock->adjacency;
+  ctx->m21_val = b21_ublock->values;
+  ctx->m21_adj = b21_ublock->adjacency;
 
   /* Set the context structure */
 
@@ -2516,6 +2707,9 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
   const cs_cdo_system_block_t  *vel_block = sh->blocks[0];
   const cs_cdo_system_dblock_t  *vel_dblock = vel_block->block_pointer;
 
+  ctx->m12_vector_multiply = NULL;
+  ctx->m21_vector_multiply = NULL;
+
   /* One assumes that up to now, the (1,1)-block is associated to only one
      matrix */
 
@@ -2532,8 +2726,8 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
   const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
 
-  ctx->m21_op = b21_ublock->values;
-  ctx->m21_adjacency = b21_ublock->adjacency;
+  ctx->m21_val = b21_ublock->values;
+  ctx->m21_adj = b21_ublock->adjacency;
 
   /* The following members are defined by the higher-level functions since it
      may depends on the discretization and modelling choices */
@@ -2689,6 +2883,10 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
    * localization and stride of the (1,1)-block DoFs
    */
 
+  ctx->square_norm_b11 = NULL;
+  ctx->m12_vector_multiply = NULL;
+  ctx->m21_vector_multiply = NULL;
+
   /* Quick access to the (2,1)-block in an unassembled way. This is also the
    * transposed part of the (1,2)-block by definition of the saddle-point
    * system */
@@ -2697,8 +2895,8 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
   const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
 
-  ctx->m21_op = b21_ublock->values;
-  ctx->m21_adjacency = b21_ublock->adjacency;
+  ctx->m21_val = b21_ublock->values;
+  ctx->m21_adj = b21_ublock->adjacency;
 
   /* Set the context structure */
 
@@ -2789,6 +2987,10 @@ cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver)
 
   ctx->alpha = ctxp->scaling_coef;
 
+  /* Function pointer */
+
+  ctx->m12_vector_multiply = NULL;
+
   /* Quick access to the (2,1)-block in an unassembled way. This is also the
    * transposed part of the (1,2)-block by definition of the saddle-point
    * system */
@@ -2797,8 +2999,8 @@ cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver)
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
   const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
 
-  ctx->m21_op = b21_ublock->values;
-  ctx->m21_adjacency = b21_ublock->adjacency;
+  ctx->m21_val = b21_ublock->values;
+  ctx->m21_adj = b21_ublock->adjacency;
 
   /* Set the context structure */
 
@@ -2852,6 +3054,12 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
   ctx->b11_max_size = 0; /* To be set later */
   ctx->b22_max_size = b22_max_size;
 
+  /* Function pointers */
+
+  ctx->square_norm_b11 = NULL;
+  ctx->m12_vector_multiply = NULL;
+  ctx->m21_vector_multiply = NULL;
+
   /* Quick access to the (2,1)-block in an unassembled way. This is also the
    * transposed part of the (1,2)-block by definition of the saddle-point
    * system */
@@ -2859,8 +3067,8 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
   const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
 
-  ctx->m21_op = b21_ublock->values;
-  ctx->m21_adjacency = b21_ublock->adjacency;
+  ctx->m21_val = b21_ublock->values;
+  ctx->m21_adj = b21_ublock->adjacency;
 
   /* The following members are defined by the higher-level functions since it
      may depends on the discretization and modelling choices */
@@ -3002,6 +3210,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
     (ctxp->dedicated_xtra_sles) ? ctx->xtra_sles : solver->main_sles;
   assert(xtra_sles != NULL);
 
+  const cs_lnum_t  n2_elts = solver->n2_elts;
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
@@ -3018,21 +3227,14 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   /* Transformation of the initial right-hand side */
   /* --------------------------------------------- */
 
-  /* _m12_vector_multiply() updates the resulting array that's why one
-   * initializes this array first */
-
-  cs_array_real_fill_zero(n1_dofs, ctx->b1_tilda);
-
   cs_real_t  *btilda_c = ctx->m21x1;
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
     btilda_c[i2] = ctx->inv_m22[i2]*b2[i2];
 
-  _m12_vector_multiply(n2_dofs, btilda_c,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       ctx->b1_tilda);
+  cs_saddle_system_b12_matvec(sh, btilda_c, ctx->b1_tilda,
+                              true); /* reset b1_tilda */
 
   if (rset->ifs != NULL) {
 
@@ -3048,7 +3250,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
 
   }
 
-  /* Update the modify right-hand side: b1_tilda = b1 + gamma*Dt.W^-1.b_c */
+  /* Update the modify right-hand side: b1_tilda = b1 + gamma*m12.W^-1.b_c */
 
 # pragma omp parallel for if (n1_dofs > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {
@@ -3059,17 +3261,9 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   /* Initialization */
   /* ============== */
 
-  /* Compute the RHS for the Uzawa system: rhs = b1_tilda - Dt.p_c
-   * _m12_vector_multiply() updates the resulting array that's why one
-   * initializes this array first
-   */
+  /* Compute the RHS for the Uzawa system: rhs = b1_tilda - b12.x2 */
 
-  cs_array_real_fill_zero(n1_dofs, ctx->rhs);
-
-  _m12_vector_multiply(n2_dofs, x2,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       ctx->rhs);
+  cs_saddle_system_b12_matvec(sh, x2, ctx->rhs, true);
 
   if (rset->ifs != NULL)
     cs_interface_set_sum(rset->ifs,
@@ -3088,7 +3282,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
    * the accuracy at this step has an influence on the global accuracy
    */
 
-  cs_real_t  normalization = ctx->compute_square_norm_b11(ctx->rhs);
+  cs_real_t  normalization = ctx->square_norm_b11(ctx->rhs);
 
   normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
@@ -3114,14 +3308,13 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   /* Compute the vector m21x1 = b2 - m21.x1 which corresponds to the residual
    * vector of the second block. It will be used as a stopping criteria */
 
-  _m21_vector_multiply(n2_dofs, x1,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       ctx->m21x1);
+  cs_saddle_system_b21_matvec(sh, x1, ctx->m21x1);
 
-  /* Update x2 = x2 - gamma * (B.x1 - b2).
-   * Recall that B is often the operator -div
-   * Compute the RHS for the Uzawa system: rhs = -gamma*B^T.W^-1.(B.x1 - b2) */
+  /* Update x2 = x2 - gamma * (m21.x1 - b2).
+   * Recall that m21 corresponds often to the operator -div
+   * Compute the RHS for the Uzawa system:
+   *   rhs = -gamma*m12.m22^-1.(m21.x1 - b2)
+   */
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
@@ -3136,15 +3329,10 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
                             ctx->inv_m22, ctx->m21x1) == CS_SLES_ITERATING) {
 
     /* Continue building the RHS
-     * _m12_vector_multiply() updates the resulting array that's why one
+     * m12_vector_multiply() updates the resulting array that's why one
      * initializes this array first */
 
-    cs_array_real_fill_zero(n1_dofs, ctx->rhs);
-
-    _m12_vector_multiply(n2_dofs, ctx->res2,
-                         ctx->m21_adjacency,
-                         ctx->m21_op,
-                         ctx->rhs);
+    cs_saddle_system_b12_matvec(sh, ctx->res2, ctx->rhs, true);
 
     if (rset->ifs != NULL)
       cs_interface_set_sum(rset->ifs,
@@ -3170,7 +3358,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
 
     cs_iter_algo_update_inner_iters(algo, n_iter);
 
-    l2norm_x1_incr = ctx->compute_square_norm_b11(x1_incr);
+    l2norm_x1_incr = ctx->square_norm_b11(x1_incr);
     l2norm_x1_incr = (fabs(l2norm_x1_incr) > FLT_MIN) ?
       sqrt(l2norm_x1_incr) : 1.0;
 
@@ -3182,15 +3370,12 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
 
     /* Update the m21.x1 array */
 
-    _m21_vector_multiply(n2_dofs, x1,
-                         ctx->m21_adjacency,
-                         ctx->m21_op,
-                         ctx->m21x1);
+    cs_saddle_system_b21_matvec(sh, x1, ctx->m21x1);
 
     /* Update the x2 array
-       x2 = x2 - gamma * (B.x1 - b2). Recall that B = -div
+     *   x2 = x2 - gamma * (m21.x1 - b2). Recall that m21 = -div
      * Prepare the computation of the RHS for the next Uzawa system:
-     * rhs = -gamma*B^T.W^-1.(B.x1 - b2)
+     *   rhs = -gamma*m12.m22^-1.(m21.x1 - b2)
      */
 
 #   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
@@ -3230,6 +3415,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
+  const cs_lnum_t  n2_elts = solver->n2_elts;
   const cs_lnum_t  n_scatter_dofs = n1_dofs + n2_dofs;
 
   /* Prepare the solution and rhs arrays given to the solver */
@@ -3324,8 +3510,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   BFT_MALLOC(m12_x2, n1_dofs, cs_real_t);
 
-  cs_array_real_fill_zero(n1_dofs, m12_x2);
-  _m12_vector_multiply(n2_dofs, x2, ctx->m21_adjacency, ctx->m21_op, m12_x2);
+  cs_saddle_system_b12_matvec(sh, x2, m12_x2, true);
 
   /* Perform the parallel synchronization. */
 
@@ -3406,7 +3591,7 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
   BFT_MALLOC(wsp, wsp_size, cs_real_t);
 
   /* Avoid calling an OpenMP initialization on the full buffer (first touch
-     paragdim could slows down the memory access when used */
+     paragdim could slows down the memory access when used) */
 
   memset(wsp, 0, wsp_size*sizeof(cs_real_t));
 
@@ -3447,7 +3632,9 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
 
   /* Compute the first residual: v = b - M.x */
 
-  _compute_residual_3(solver, x1, x2, v);
+  cs_saddle_system_residual(sh, x1, x2,
+                            v,                      /* v1 */
+                            v + ctx->b11_max_size); /* v2 */
 
   /* Apply preconditioning: M.z = v */
 
@@ -3484,7 +3671,9 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
 
     /* Compute the matrix-vector product M.z = mz */
 
-    _matvec_product(solver, z, mz);
+    cs_saddle_system_matvec(sh,
+                            z, z + ctx->b11_max_size,    /* z1, z2 */
+                            mz, mz + ctx->b11_max_size); /* mz1, mz2 */
 
     /* alpha = <z, mz> */
 
@@ -3598,8 +3787,12 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
 
     /* Compute the real residual norm at exit */
 
-    _compute_residual_3(solver, x1, x2, v);
+    cs_saddle_system_residual(sh, x1, x2,
+                              v,                      /* v1 */
+                              v + ctx->b11_max_size); /* v2 */
+
     residual_norm = _norm(solver, v); /* ||v|| */
+
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s: Residual norm at exit= %6.4e in %d iterations\n",
                   __func__, residual_norm, cs_iter_algo_get_n_iter(algo));
@@ -3876,6 +4069,7 @@ cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t  *solver,
 
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
+  const cs_lnum_t  n2_elts = solver->n2_elts;
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
   const cs_matrix_t  *m11 = cs_cdo_system_get_matrix(sh, 0);
 
@@ -3899,10 +4093,8 @@ cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t  *solver,
      *         beta = (g, M22.g)
      */
 
-    _m21_vector_multiply(n2_dofs, ctx->v,
-                         ctx->m21_adjacency,
-                         ctx->m21_op,
-                         ctx->m21v);
+    ctx->m21_vector_multiply(n2_dofs, ctx->v, ctx->m21_adj, ctx->m21_val,
+                             ctx->m21v);
 
 #   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
     for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
@@ -3928,10 +4120,8 @@ cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t  *solver,
      * M12.q is updated in the next function */
 
     cs_array_real_fill_zero(n1_dofs, ctx->m12q);
-    _m12_vector_multiply(n2_dofs, ctx->q,
-                         ctx->m21_adjacency,
-                         ctx->m21_op,
-                         ctx->m12q);
+    ctx->m12_vector_multiply(n2_elts, ctx->q, ctx->m21_adj, ctx->m21_val,
+                             ctx->m12q);
 
     if (rset->ifs != NULL)
       cs_interface_set_sum(rset->ifs,
@@ -4044,6 +4234,10 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
                                     n2_dofs, x2,
                                     sh->rhs,
                                     sol, b);
+  else if (solver->n1_dofs_by_elt == 1)
+    _join_x1_scalar_x2_deinterlaced(n1_dofs, x1,
+                                    n2_dofs, x2,
+                                    sh->rhs, sol, b);
   else
     bft_error(__FILE__, __LINE__, 0,
               "%s: Case not handled yet.\n", __func__);
@@ -4118,14 +4312,20 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
 
   cs_array_real_copy(n2_dofs, sol + n1_dofs, x2);
 
-  const cs_real_t  *solx = sol, *soly = sol + n1_dofs, *solz = sol + 2*n1_dofs;
+  if (solver->n1_dofs_by_elt == 3) {
 
-# pragma omp parallel for if (CS_THR_MIN > n1_dofs)
-  for (cs_lnum_t f = 0; f < n1_dofs; f++) {
-    x1[3*f  ] = solx[f];
-    x1[3*f+1] = soly[f];
-    x1[3*f+2] = solz[f];
+    const cs_real_t *solx = sol, *soly = sol + n1_dofs, *solz = sol + 2*n1_dofs;
+
+#   pragma omp parallel for if (CS_THR_MIN > n1_dofs)
+    for (cs_lnum_t f = 0; f < n1_dofs; f++) {
+      x1[3*f  ] = solx[f];
+      x1[3*f+1] = soly[f];
+      x1[3*f+2] = solz[f];
+    }
+
   }
+  else if (solver->n1_dofs_by_elt == 1)
+    cs_array_real_copy(n1_dofs, sol, x1);
 
   if (slesp->field_id > -1)
     cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
@@ -4168,6 +4368,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
+  const cs_lnum_t  n2_elts = solver->n2_elts;
   const cs_range_set_t  *rset = ctx->b11_range_set;
 
   cs_real_t  *rhs1 = sh->rhs_array[0];
@@ -4176,10 +4377,8 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
   /* Compute the first RHS: A.u0 = rhs = b_f - B^t.p_0 to solve */
 
   cs_array_real_fill_zero(n1_dofs, ctx->rhs);
-  _m12_vector_multiply(n2_dofs, x2,
-                       ctx->m21_adjacency,
-                       ctx->m21_op,
-                       ctx->rhs);
+  ctx->m12_vector_multiply(n2_elts, x2, ctx->m21_adj, ctx->m21_val,
+                           ctx->rhs);
 
   if (rset->ifs != NULL) {
 
@@ -4201,7 +4400,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
   /* Initial normalization from the newly computed rhs */
 
-  double  normalization = ctx->compute_square_norm_b11(ctx->rhs);
+  double  normalization = ctx->square_norm_b11(ctx->rhs);
 
   normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
@@ -4231,9 +4430,8 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
   /* Compute the first residual rk0 (in fact the velocity divergence) */
 
-  _m21_vector_multiply(n2_dofs, x1,
-                       ctx->m21_adjacency, ctx->m21_op,
-                       rk);
+  ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val,
+                           rk);
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
@@ -4277,10 +4475,8 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
     /* Define the rhs for this system */
 
     cs_array_real_fill_zero(n1_dofs, ctx->rhs);
-    _m12_vector_multiply(n2_dofs, dk,
-                         ctx->m21_adjacency,
-                         ctx->m21_op,
-                         ctx->rhs);
+    ctx->m12_vector_multiply(n2_elts, dk, ctx->m21_adj, ctx->m21_val,
+                             ctx->rhs);
 
     if (rset->ifs != NULL)
       cs_interface_set_sum(rset->ifs,
@@ -4288,7 +4484,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
                            n1_dofs, 1, false, CS_REAL_TYPE,
                            ctx->rhs);
 
-    normalization = ctx->compute_square_norm_b11(ctx->rhs);
+    normalization = ctx->square_norm_b11(ctx->rhs);
     normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
     /* Solve M11.wk = M12.dk (In our context, M12 should be -B^t (and M21 = -B
@@ -4312,10 +4508,8 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
      /* M21 is equal to -B s.t. (-B)(-w) = dwk has the right sign */
 
-    _m21_vector_multiply(n2_dofs, wk,
-                         ctx->m21_adjacency,
-                         ctx->m21_op,
-                         dwk);
+    ctx->m21_vector_multiply(n2_dofs, wk, ctx->m21_adj, ctx->m21_val,
+                             dwk);
 
   /* Solve the Schur complement approximation: smat.zk = dwk */
 

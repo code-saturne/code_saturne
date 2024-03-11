@@ -1927,7 +1927,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
   /* Handle the resolution of a saddle-point system */
 
-  cs_cdofb_monolithic_sles_init_solver(saddlep, sc);
+  cs_cdofb_monolithic_sles_init_solver(nsp, saddlep, sc);
 
   /* Iterative algorithm to handle the non-linearity (Picard by default) */
 
