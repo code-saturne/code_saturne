@@ -493,6 +493,7 @@ cs_param_sles_set_solver(const char       *keyval,
 
   if (strcmp(keyval, "amg") == 0) {
 
+    slesp->flexible = false;
     slesp->solver = CS_PARAM_ITSOL_AMG;
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;

@@ -1623,10 +1623,12 @@ _convert_inhouse_coarsen_algo(cs_param_amg_inhouse_coarsen_t  algo)
  *
  * \param[in] sles_name  NULL or name of the SLES
  * \param[in] slesp      pointer to a \ref cs_param_sles_t structure
+ *
+ * \return a pointer to a multigrid context
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static cs_multigrid_t *
 _set_saturne_amg_solver(const char             *sles_name,
                         const cs_param_sles_t  *slesp)
 {
@@ -1708,6 +1710,8 @@ _set_saturne_amg_solver(const char             *sles_name,
                                       amgp->min_n_g_rows,
                                       amgp->p0p1_relax,
                                       0);   /* postprocess */
+
+  return mg;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1812,13 +1816,9 @@ _set_saturne_sles(bool                 use_field_id,
   /* Retrieve the sles structure for this equation */
 
   cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, sles_name);
-  cs_sles_it_t  *itsol = cs_sles_get_context(sles);
-
-  /* Since one wants to setup a SLES w.r.t. to the given set of parameters, one
-     prefers to start with an empty structure before performing the setup */
-
-  if (itsol != NULL)
-    cs_sles_it_destroy(&itsol);
+  cs_sles_it_t  *itsol = NULL;
+  cs_multigrid_t  *mg = NULL;
+  bool  multigrid_as_solver = false;
 
   int  poly_degree = _get_poly_degree(slesp);
 
@@ -1828,7 +1828,8 @@ _set_saturne_sles(bool                 use_field_id,
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_AMG:
-    _set_saturne_amg_solver(sles_name, slesp);
+    multigrid_as_solver = true;
+    mg = _set_saturne_amg_solver(sles_name, slesp);
     break;
 
   case CS_PARAM_ITSOL_BICG:
@@ -1940,10 +1941,9 @@ _set_saturne_sles(bool                 use_field_id,
 
   } /* End of switch */
 
-  assert(itsol != NULL);
+  if (slesp->flexible && !multigrid_as_solver) { /* Additional checks */
 
-  if (slesp->flexible) { /* Additional checks */
-
+    assert(itsol != NULL);
     switch (cs_sles_it_get_type(itsol)) {
 
     case CS_SLES_PCG:
@@ -1969,6 +1969,7 @@ _set_saturne_sles(bool                 use_field_id,
 
   case CS_PARAM_PRECOND_AMG:
     /* -------------------- */
+    assert(mg == NULL);
     _set_saturne_amg_precond(slesp, itsol);
     break;
 
@@ -1989,6 +1990,7 @@ _set_saturne_sles(bool                 use_field_id,
                 __func__, slesp->name);
 #endif
 
+      assert(itsol != NULL);
       cs_sles_it_transfer_pc(itsol, &pc);
     }
     break;
@@ -2000,8 +2002,20 @@ _set_saturne_sles(bool                 use_field_id,
 
   /* In case of high verbosity, additional outputs are generated */
 
-  if (slesp->verbosity > 3) /* true=use_iteration instead of wall clock time */
-    cs_sles_it_set_plot_options(itsol, slesp->name, true);
+  if (slesp->verbosity > 3) {
+
+    /* 3rd parameter --> true = use_iteration instead of wall clock time */
+
+    if (multigrid_as_solver) {
+      assert(mg != NULL);
+      cs_multigrid_set_plot_options(mg, slesp->name, true);
+    }
+    else {
+      assert(itsol!= NULL);
+      cs_sles_it_set_plot_options(itsol, slesp->name, true);
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
