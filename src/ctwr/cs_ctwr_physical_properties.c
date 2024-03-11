@@ -672,6 +672,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     cs_halo_sync_var(halo, CS_HALO_STANDARD, h_h);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_h);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, t_l_p);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, yh_l_p);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, h_l_p);
   }
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
