@@ -1012,7 +1012,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
   cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_OFF);
 
   cs_log_printf(CS_LOG_DEFAULT,
-                "\n  Finalize and free CDO-related structures.\n");
+                "\n Finalize and free CDO-related structures.\n");
 
   _initialized_setup = false;
   _initialized_structures = false;

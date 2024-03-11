@@ -772,9 +772,9 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t             *mesh,
-                                      const cs_cdo_connect_t      *connect,
-                                      const cs_cdo_quantities_t   *quant)
+cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t            *mesh,
+                                      const cs_cdo_connect_t     *connect,
+                                      const cs_cdo_quantities_t  *quant)
 {
   /* Assign static const pointers */
 
@@ -856,7 +856,7 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
         cs_cdo_system_add_ublock(sh, 1,               /* block_id */
                                  connect->c2f,        /* adjacency */
                                  cs_flag_primal_face, /* column location */
-                                 cdoq->n_faces,      /* n_elements */
+                                 cdoq->n_faces,       /* n_elements */
                                  3,                   /* stride */
                                  true);               /* interlaced */
 

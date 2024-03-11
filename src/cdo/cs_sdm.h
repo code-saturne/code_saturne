@@ -97,35 +97,35 @@ struct _cs_sdm_t {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Generic prototype for computing a local dense matrix-product
- *          c = a*b where c has been previously allocated
+ * \brief Generic prototype for computing a local dense matrix-product
+ *        c = a*b where c has been previously allocated
  *
- * \param[in]      a     local dense matrix to use
- * \param[in]      b     local dense matrix to use
- * \param[in, out] c     result of the local matrix-product
+ * \param[in]      a  local dense matrix to use
+ * \param[in]      b  local dense matrix to use
+ * \param[in, out] c  result of the local matrix-product
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_sdm_product_t) (const cs_sdm_t   *a,
-                    const cs_sdm_t   *b,
-                    cs_sdm_t         *c);
+(cs_sdm_product_t)(const cs_sdm_t   *a,
+                   const cs_sdm_t   *b,
+                   cs_sdm_t         *c);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Generic prototype for computing a dense matrix-vector product
- *          mv has been previously allocated
+ * \brief Generic prototype for computing a dense matrix-vector product
+ *        mv has been previously allocated
  *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use
- * \param[in, out] mv     result of the local matrix-vector product
+ * \param[in]      mat  local matrix to use
+ * \param[in]      vec  local vector to use
+ * \param[in, out] mv   result of the local matrix-vector product
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_sdm_matvec_t) (const cs_sdm_t    *mat,
-                   const cs_real_t   *vec,
-                   cs_real_t         *mv);
+(cs_sdm_matvec_t)(const cs_sdm_t    *mat,
+                  const cs_real_t   *vec,
+                  cs_real_t         *mv);
 
 /*============================================================================
  * Public function prototypes
@@ -133,15 +133,15 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Basic dot product for a small vector
- *         For very small array sizes (3, 4, 6) prefer functions in cs_math
- *         For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
+ * \brief Basic dot product for a small vector
+ *        For very small array sizes (3, 4, 6) prefer functions in cs_math
+ *        For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
  *
- * \param[in]  n      size of arrays x and y (small)
- * \param[in]  x      first array
- * \param[in]  y      second array
+ * \param[in] n  size of arrays x and y (small)
+ * \param[in] x  first array
+ * \param[in] y  second array
  *
- * \return  the dot product
+ * \return the dot product
  */
 /*----------------------------------------------------------------------------*/
 
@@ -163,22 +163,22 @@ cs_sdm_dot(int               n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Multiply a small vector by a scalar coefficient: \a y = \a s \a x
- *         For very small array sizes (3, 4, 6) prefer functions in cs_math
- *         For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
+ * \brief Multiply a small vector by a scalar coefficient: \a y = \a s \a x
+ *        For very small array sizes (3, 4, 6) prefer functions in cs_math
+ *        For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
  *
- * \param[in]      n      size of arrays x and y (small)
- * \param[in]      s      scalar coefficient
- * \param[in]      x      in array
- * \param[in,out]  y      out array
+ * \param[in]     n  size of arrays x and y (small)
+ * \param[in]     s  scalar coefficient
+ * \param[in]     x  input array
+ * \param[in,out] y  output array
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_sdm_scalvect(int               n,
-                const cs_real_t   s,
-                const cs_real_t   x[],
-                cs_real_t         y[])
+cs_sdm_scalvect(int              n,
+                const cs_real_t  s,
+                const cs_real_t  x[],
+                cs_real_t        y[])
 {
   if (x == NULL || y == NULL)
     return;
@@ -189,22 +189,22 @@ cs_sdm_scalvect(int               n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Multiply a small vector by a scalar coefficient: \a y += \a s \a x
- *         For very small array sizes (3, 4, 6) prefer functions in cs_math
- *         For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
+ * \brief Multiply a small vector by a scalar coefficient: \a y += \a s \a x
+ *        For very small array sizes (3, 4, 6) prefer functions in cs_math
+ *        For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
  *
- * \param[in]      n      size of arrays x and y (small)
- * \param[in]      s      scalar coefficient
- * \param[in]      x      in array
- * \param[in,out]  y      out array
+ * \param[in]     n  size of arrays x and y (small)
+ * \param[in]     s  scalar coefficient
+ * \param[in]     x  input array
+ * \param[in,out] y  output array
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_sdm_add_scalvect(int               n,
-                    const cs_real_t   s,
-                    const cs_real_t   x[],
-                    cs_real_t         y[])
+cs_sdm_add_scalvect(int              n,
+                    const cs_real_t  s,
+                    const cs_real_t  x[],
+                    cs_real_t        y[])
 {
   if (x == NULL || y == NULL)
     return;
@@ -215,15 +215,15 @@ cs_sdm_add_scalvect(int               n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the lower left according to the upper right part in order to
- *          get a symmetric matrix.
+ * \brief Set the lower left according to the upper right part in order to get
+ *        a symmetric matrix.
  *
- * \param[in, out]      mat    pointer to a cs_sdm_t structure
+ * \param[in, out] mat  pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_sdm_symm_ur(cs_sdm_t      *mat)
+cs_sdm_symm_ur(cs_sdm_t  *mat)
 {
   assert(mat != NULL);
   for (int i = 1; i < mat->n_rows; i++) {
@@ -235,55 +235,55 @@ cs_sdm_symm_ur(cs_sdm_t      *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure
- *          Most generic function to create a cs_sdm_t structure
+ * \brief Allocate and initialize a cs_sdm_t structure
+ *        Most generic function to create a cs_sdm_t structure
  *
- * \param[in]  flag         metadata related to a cs_sdm_t structure
- * \param[in]  n_max_rows   max number of rows
- * \param[in]  n_max_cols   max number of columns
+ * \param[in] flag        metadata related to a cs_sdm_t structure
+ * \param[in] n_max_rows  max number of rows
+ * \param[in] n_max_cols  max number of columns
  *
- * \return  a new allocated cs_sdm_t structure
+ * \return a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_create(cs_flag_t   flag,
-              int         n_max_rows,
-              int         n_max_cols);
+cs_sdm_create(cs_flag_t  flag,
+              int        n_max_rows,
+              int        n_max_cols);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure
- *          Case of a square matrix
+ * \brief Allocate and initialize a cs_sdm_t structure
+ *        Case of a square matrix
  *
- * \param[in]  n_max_rows   max number of rows
+ * \param[in] n_max_rows  max number of rows
  *
- * \return  a new allocated cs_sdm_t structure
+ * \return a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_square_create(int   n_max_rows);
+cs_sdm_square_create(int  n_max_rows);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate a cs_sdm_t structure and initialized it with the
- *          copy of the matrix m in input
+ * \brief Allocate a cs_sdm_t structure and initialized it with the copy of the
+ *        matrix m in input
  *
- * \param[in]     m     pointer to a cs_sdm_t structure to copy
+ * \param[in] m  pointer to a cs_sdm_t structure to copy
  *
- * \return  a pointer to a new allocated cs_sdm_t structure
+ * \return a pointer to a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_create_copy(const cs_sdm_t   *m);
+cs_sdm_create_copy(const cs_sdm_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define a new matrix which is its transpose.
+ * \brief Define a new matrix which is its transpose.
  *
- * \param[in] mat   local matrix to transpose
+ * \param[in] mat  local matrix to transpose
  *
  * \return a pointer to the new allocated transposed matrix
  */
@@ -329,23 +329,23 @@ cs_sdm_block33_create(int      n_max_blocks_by_row,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Map an array into a predefined cs_sdm_t structure. This array is
- *          shared and the lifecycle of this array is not managed by the
- *          cs_sdm_t structure
+ * \brief Map an array into a predefined cs_sdm_t structure. This array is
+ *        shared and the lifecycle of this array is not managed by the
+ *        cs_sdm_t structure
  *
- * \param[in]      n_max_rows   max. number of rows
- * \param[in]      n_max_cols   max. number of columns
- * \param[in, out] m            pointer to a cs_sdm_t structure to set
- * \param[in, out] array        pointer to an array of values of size equal to
- *                              n_max_rows x n_max_cols
+ * \param[in]      n_max_rows  max. number of rows
+ * \param[in]      n_max_cols  max. number of columns
+ * \param[in, out] m           pointer to a cs_sdm_t structure to set
+ * \param[in, out] array       pointer to an array of values of size equal to
+ *                             n_max_rows x n_max_cols
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_sdm_map_array(int          n_max_rows,
-                 int          n_max_cols,
-                 cs_sdm_t    *m,
-                 cs_real_t   *array)
+cs_sdm_map_array(int         n_max_rows,
+                 int         n_max_cols,
+                 cs_sdm_t   *m,
+                 cs_real_t  *array)
 {
   assert(array != NULL && m != NULL);  /* Sanity check */
 
@@ -358,11 +358,11 @@ cs_sdm_map_array(int          n_max_rows,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free a cs_sdm_t structure
+ * \brief Free a cs_sdm_t structure
  *
- * \param[in]  mat    pointer to a cs_sdm_t struct. to free
+ * \param[in] mat  pointer to a cs_sdm_t struct. to free
  *
- * \return  a NULL pointer
+ * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -465,11 +465,11 @@ cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Copy a cs_sdm_t structure into another cs_sdm_t structure
- *          which has been already allocated
+ * \brief Copy a cs_sdm_t structure into another cs_sdm_t structure
+ *        which has been already allocated
  *
- * \param[in, out]  recv    pointer to a cs_sdm_t struct.
- * \param[in]       send    pointer to a cs_sdm_t struct.
+ * \param[in, out] recv  pointer to a cs_sdm_t struct.
+ * \param[in]      send  pointer to a cs_sdm_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -491,34 +491,34 @@ cs_sdm_copy(cs_sdm_t        *recv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure w.r.t. to a given
- *          matrix
+ * \brief Allocate and initialize a cs_sdm_t structure w.r.t. to a given
+ *        matrix
  *
- * \param[in]  mref       pointer to a matrix to copy
+ * \param[in] mref  pointer to a matrix to copy
  *
- * \return  a new allocated cs_sdm_t structure which is a copy of mref
+ * \return a new allocated cs_sdm_t structure which is a copy of mref
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create_copy(const cs_sdm_t   *mref);
+cs_sdm_block_create_copy(const cs_sdm_t  *mref);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get a specific block in a cs_sdm_t structure defined by block
+ * \brief Get a specific block in a cs_sdm_t structure defined by block
  *
- * \param[in]       m              pointer to a cs_sdm_t struct.
- * \param[in]       row_block_id   id of the block row, zero-based.
- * \param[in]       col_block_id   id of the block column, zero-based.
+ * \param[in] m             pointer to a cs_sdm_t struct.
+ * \param[in] row_block_id  id of the block row, zero-based.
+ * \param[in] col_block_id  id of the block column, zero-based.
  *
  * \return a pointer to a cs_sdm_t structure corresponfing to a block
  */
 /*----------------------------------------------------------------------------*/
 
 static inline cs_sdm_t *
-cs_sdm_get_block(const cs_sdm_t    *const m,
-                 int                      row_block_id,
-                 int                      col_block_id)
+cs_sdm_get_block(const cs_sdm_t  *const m,
+                 int                    row_block_id,
+                 int                    col_block_id)
 {
   /* Sanity checks */
   assert(m != NULL);
@@ -532,18 +532,18 @@ cs_sdm_get_block(const cs_sdm_t    *const m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get a copy of a column in a preallocated vector
+ * \brief Get a copy of a column in a preallocated vector
  *
- * \param[in]       m         pointer to a cs_sdm_t struct.
- * \param[in]       col_id    id of the column, zero-based.
- * \param[in, out]  col_vals  extracted values
+ * \param[in]      m         pointer to a cs_sdm_t struct.
+ * \param[in]      col_id    id of the column, zero-based.
+ * \param[in, out] col_vals  extracted values
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_sdm_get_col(const cs_sdm_t    *m,
-               int                col_id,
-               cs_real_t         *col_vals)
+cs_sdm_get_col(const cs_sdm_t  *m,
+               int              col_id,
+               cs_real_t       *col_vals)
 {
   /* Sanity checks */
   assert(m != NULL && col_vals != NULL);
@@ -556,16 +556,15 @@ cs_sdm_get_col(const cs_sdm_t    *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  copy a block of a matrix into a sub-matrix starting from (r_id, c_id)
- *  with a size of nr rows and nc cols
+ * \brief Copy a block of a matrix into a sub-matrix starting from (r_id, c_id)
+ *        with a size of nr rows and nc cols
  *
- * \param[in]      m      pointer to cs_sdm_t structure
- * \param[in]      r_id   row index
- * \param[in]      c_id   column index
- * \param[in]      nr     number of rows to extract
- * \param[in]      nc     number of column to extract
- * \param[in,out]  b      submatrix
- *
+ * \param[in]     m     pointer to cs_sdm_t structure
+ * \param[in]     r_id  row index
+ * \param[in]     c_id  column index
+ * \param[in]     nr    number of rows to extract
+ * \param[in]     nc    number of column to extract
+ * \param[in,out] b     submatrix
  */
 /*----------------------------------------------------------------------------*/
 

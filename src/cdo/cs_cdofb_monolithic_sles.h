@@ -67,9 +67,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t             *mesh,
-                                      const cs_cdo_connect_t      *connect,
-                                      const cs_cdo_quantities_t   *quant);
+cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t            *mesh,
+                                      const cs_cdo_connect_t     *connect,
+                                      const cs_cdo_quantities_t  *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -122,56 +122,56 @@ _create_sdm(cs_flag_t   flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure
- *          Most generic function to create a cs_sdm_t structure without block
- *          description
+ * \brief Allocate and initialize a cs_sdm_t structure
+ *        Most generic function to create a cs_sdm_t structure without block
+ *        description
  *
- * \param[in]  flag         metadata related to a cs_sdm_t structure
- * \param[in]  n_max_rows   max number of rows
- * \param[in]  n_max_cols   max number of columns
+ * \param[in] flag        metadata related to a cs_sdm_t structure
+ * \param[in] n_max_rows  max number of rows
+ * \param[in] n_max_cols  max number of columns
  *
- * \return  a new allocated cs_sdm_t structure
+ * \return a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_create(cs_flag_t   flag,
-              int         n_max_rows,
-              int         n_max_cols)
+cs_sdm_create(cs_flag_t  flag,
+              int        n_max_rows,
+              int        n_max_cols)
 {
   return _create_sdm(flag, n_max_rows, n_max_cols);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure
- *          Case of a square matrix
+ * \brief Allocate and initialize a cs_sdm_t structure
+ *        Case of a square matrix
  *
- * \param[in]  n_max_rows   max number of rows
+ * \param[in] n_max_rows  max number of rows
  *
- * \return  a new allocated cs_sdm_t structure
+ * \return a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_square_create(int   n_max_rows)
+cs_sdm_square_create(int  n_max_rows)
 {
   return _create_sdm(0, n_max_rows, n_max_rows);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate a cs_sdm_t structure and initialized it with the
- *          copy of the matrix m in input
+ * \brief Allocate a cs_sdm_t structure and initialized it with the copy of the
+ *        matrix m in input
  *
- * \param[in]     m     pointer to a cs_sdm_t structure to copy
+ * \param[in] m  pointer to a cs_sdm_t structure to copy
  *
- * \return  a pointer to a new allocated cs_sdm_t structure
+ * \return a pointer to a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_create_copy(const cs_sdm_t   *m)
+cs_sdm_create_copy(const cs_sdm_t  *m)
 {
   cs_sdm_t  *c = _create_sdm(m->flag, m->n_max_rows, m->n_max_cols);
 
@@ -184,9 +184,9 @@ cs_sdm_create_copy(const cs_sdm_t   *m)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define a new matrix which is its transpose.
+ * \brief Define a new matrix which is its transpose.
  *
- * \param[in] mat   local matrix to transpose
+ * \param[in] mat  local matrix to transpose
  *
  * \return a pointer to the new allocated transposed matrix
  */
@@ -321,11 +321,11 @@ cs_sdm_block33_create(int      n_max_blocks_by_row,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free a cs_sdm_t structure
+ * \brief Free a cs_sdm_t structure
  *
- * \param[in]  mat    pointer to a cs_sdm_t struct. to free
+ * \param[in] mat  pointer to a cs_sdm_t struct. to free
  *
- * \return  a NULL pointer
+ * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -494,17 +494,17 @@ cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure w.r.t. to a given
- *          matrix
+ * \brief Allocate and initialize a cs_sdm_t structure w.r.t. to a given
+ *        matrix
  *
- * \param[in]  mref       pointer to a matrix to copy
+ * \param[in] mref  pointer to a matrix to copy
  *
- * \return  a new allocated cs_sdm_t structure which is a copy of mref
+ * \return a new allocated cs_sdm_t structure which is a copy of mref
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create_copy(const cs_sdm_t   *mref)
+cs_sdm_block_create_copy(const cs_sdm_t  *mref)
 {
   cs_sdm_t  *m = NULL;
 

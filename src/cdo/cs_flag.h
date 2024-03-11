@@ -133,7 +133,7 @@ BEGIN_C_DECLS
 /*!
  * @}
  * @name Flags use to identify the type of equations requested.
-
+ *
  * There exists one flag for each type of space discretization.
  * If this flag is activated, then at least one equation or system of this
  * kind is discretized with this space discretization scheme.

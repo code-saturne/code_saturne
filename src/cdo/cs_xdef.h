@@ -348,6 +348,7 @@ typedef struct {
    * NULL or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
+
   void                  *input;
 
   /*! \var free_input
