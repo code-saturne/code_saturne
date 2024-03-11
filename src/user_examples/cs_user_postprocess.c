@@ -566,7 +566,7 @@ cs_user_postprocess_probes(void)
   {
     cs_coord_3_t  start = {0., 0.025, 0.025};
     cs_coord_3_t  end = {1., 0.025, 0.025};
-    int  writer_ids[] = {2};
+    int  writer_ids[] = {3};
 
     cs_probe_set_t  *pset =
       cs_probe_set_create_from_segment("Prof1", // name
@@ -591,7 +591,7 @@ cs_user_postprocess_probes(void)
                                        start,   // start coordinates
                                        end);    // end coordinates
 
-    int  writer_ids[] = {2};
+    int  writer_ids[] = {3};
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 
     cs_probe_set_option(pset, "boundary", "true");
@@ -605,7 +605,7 @@ cs_user_postprocess_probes(void)
   {
     cs_coord_3_t  start = {0., 0.025, 0.025};
     cs_coord_3_t  end = {1., 0.025, 0.025};
-    int  writer_ids[] = {2};
+    int  writer_ids[] = {3};
 
     cs_probe_set_t  *pset =
       cs_probe_set_create_from_segment("Prof4", // name

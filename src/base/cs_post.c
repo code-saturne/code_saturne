@@ -4140,9 +4140,9 @@ cs_f_post_write_var(int               mesh_id,
  * character strings given as arguments here are suppressed automatically.
  *
  * \param[in]  writer_id        id of writer to create. (< 0 reserved,
- *                              > 0 for user); eveb for reserved ids,
+ *                              > 0 for user); even for reserved ids,
  *                              the matching writer's options
- *                              may be redifined by calls to this function
+ *                              may be redefined by calls to this function
  * \param[in]  case_name        associated case name
  * \param[in]  dir_name         associated directory name
  * \param[in]  fmt_name         associated format name
