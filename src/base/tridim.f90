@@ -1043,7 +1043,7 @@ do while (iterns.le.nterup)
     if (iturbo.eq.2) then
       call field_get_val_s(ivarfl(ipr), cvar_pr)
       if (iphydr.eq.1) then
-        call field_get_val_v_by_name('volume_forces', frcxt)
+        call field_get_val_v_by_name('volume_forces', frcxt)!FIXME MF rm
       end if
     endif
 
@@ -1076,9 +1076,118 @@ do while (iterns.le.nterup)
 
       if (inslst.eq.1) goto 100
 
+    endif ! Fin si calcul sur champ de vitesse figee
+
+    !TODO put TURBULENCE HERE (if option activated)
+    ! call update_turbulence(iterns)
+    ! or if (isot2t.eq.2)
+    iok = 0
+    if(vcopt_u%iwarni.ge.1) then
+      if( itytur.eq.2 .or. itytur.eq.3              &
+           .or. itytur.eq.5 .or. iturb.eq.60 ) then
+        iok = 1
+      endif
+      if(iok.eq.1) then
+        write(nfecra,1050)
+      endif
     endif
 
-  endif ! Fin si calcul sur champ de vitesse figee
+    if ((itytur.eq.2) .or. (itytur.eq.5)) then
+
+      ! Reserve array to avoid recomputing production in cs_turbulence_v2f
+      if (itytur.eq.5) then
+        allocate(prdv2f(ncelet))
+      endif
+
+      call cs_turbulence_ke(-1, ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
+
+      if (itytur.eq.5)  then
+
+        call cs_turbulence_v2f(ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
+
+        ! Free memory
+        deallocate(prdv2f)
+
+      endif
+
+      call field_get_val_s(ivarfl(ik), cvar_k)
+      call field_get_val_prev_s(ivarfl(ik), cvara_k)
+      call field_get_val_s(ivarfl(iep), cvar_ep)
+      call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+      !  RELAXATION DE K ET EPSILON SI IKECOU=0 EN INSTATIONNAIRE
+      if (ikecou.eq.0 .and. idtvar.ge.0) then
+        call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+        relaxk = vcopt%relaxv
+        call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+        relaxe = vcopt%relaxv
+        do iel = 1,ncel
+          cvar_k(iel) = relaxk*cvar_k(iel) + (1.d0-relaxk)*cvara_k(iel)
+          cvar_ep(iel) = relaxe*cvar_ep(iel) + (1.d0-relaxe)*cvara_ep(iel)
+        enddo
+      endif
+
+      ! HTLES
+      if (hybrid_turb.eq.4) then
+        call cs_turbulence_htles()
+      end if
+
+    else if(itytur.eq.3) then
+
+      ! Compute Alpha for EBRSM
+      if (iturb.eq.32) then
+
+        call cs_turbulence_rij_solve_alpha(ivarfl(ial), -1, xcl)
+
+      endif
+
+      call cs_turbulence_rij(-1, ncetsm, icetsm, itypsm, smacel)
+
+    else if (iturb.eq.60) then
+
+      call cs_turbulence_kw(-1, ncetsm, icetsm, itypsm, dt, smacel)
+
+      call field_get_val_s(ivarfl(ik), cvar_k)
+      call field_get_val_prev_s(ivarfl(ik), cvara_k)
+      call field_get_val_s(ivarfl(iomg), cvar_omg)
+      call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
+
+      !  RELAXATION DE K ET OMEGA SI IKECOU=0
+      if (ikecou.eq.0 .and. idtvar.ge.0) then
+        call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+        relaxk = vcopt%relaxv
+        call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt)
+        relaxw = vcopt%relaxv
+        do iel = 1,ncel
+          cvar_k(iel)   = relaxk*cvar_k(iel)   + (1.d0-relaxk)*cvara_k(iel)
+          cvar_omg(iel) = relaxw*cvar_omg(iel) + (1.d0-relaxw)*cvara_omg(iel)
+        enddo
+      end if
+
+      ! HTLES
+      if (hybrid_turb.eq.4) then
+        call cs_turbulence_htles()
+      end if
+
+    else if (iturb.eq.70) then
+
+      call cs_turbulence_sa(ncetsm, icetsm, itypsm, dt, smacel, itypfb)
+
+      call field_get_val_s(ivarfl(inusa), cvar_nusa)
+      call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)
+
+      !  RELAXATION DE NUSA
+      if (idtvar.ge.0) then
+        call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
+        relaxn = vcopt%relaxv
+        do iel = 1,ncel
+          cvar_nusa(iel) = relaxn*cvar_nusa(iel)+(1.d0-relaxn)*cvara_nusa(iel)
+        enddo
+      endif
+
+    endif
+
+  endif
 
   iterns = iterns + 1
 
@@ -1168,6 +1277,9 @@ if (iccvfg.eq.0) then
 ! 14. RESOLUTION TURBULENCE
 !===============================================================================
 
+! TODO  do an option to put turblence in velocity/pressure loop
+! call update_turbulence(-1)
+if (.false.) then
   iok = 0
   if(vcopt_u%iwarni.ge.1) then
     if( itytur.eq.2 .or. itytur.eq.3              &
@@ -1273,6 +1385,8 @@ if (iccvfg.eq.0) then
     endif
 
   endif
+
+endif ! HARD CODED
 
 endif  ! Fin si calcul sur champ de vitesse fige SUITE
 

@@ -189,7 +189,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 if (abs(vcopt%thetav-1.d0).lt.epzero.and.               &
      (istmpf.eq.2.or.                                   &
      isno2t.ne.0.or.                                    &
-     isto2t.ne.0.or.                                    &
+     isto2t.ne.1.or.                                    &
      iroext.ne.0.or.                                    &
      iviext.ne.0.or.                                    &
      icpext.ne.0   ) ) then
@@ -200,7 +200,7 @@ endif
 if (abs(vcopt%thetav-0.5d0).lt.epzero.and.             &
      (istmpf.ne.2.or.                                   &
      isno2t.ne.1.or.                                    &
-     isto2t.ne.1.or.                                    &
+     isto2t.ne.2.or.                                    &
      iroext.ne.1.or.                                    &
      iviext.ne.1.or.                                    &
      icpext.ne.1   ) ) then
@@ -231,11 +231,12 @@ endif
 
 !     A priori, pour le moment, l'ordre 2 en temps
 !       n'est pas pris en compte en k-eps, v2f ou k-omega couple : on s'arrete
+!FIXME IOANIS : remove or move to cs_parameters_check.c
 if (itytur.eq.2 .and.ikecou.eq.1) then
   call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
   call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
   if ((     thetst       .gt.0.d0 ).or.                    &
-       (    isto2t       .gt.0    ).or.                    &
+       (    isto2t       .gt.1    ).or.                    &
        (abs(vcopt%thetav-1.0d0).gt.epzero).or.             &
        (abs(vcopt1%thetav-1.0d0).gt.epzero) ) then
     write(nfecra,2142)iturb,ikecou,                        &
@@ -250,7 +251,7 @@ if (iturb.eq.50.and.ikecou.eq.1) then
   call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
   call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt3)
   if ((     thetst       .gt.0.d0 ).or.                    &
-      (    isto2t       .gt.0    ).or.                     &
+      (    isto2t       .gt.1    ).or.                     &
       (abs(vcopt%thetav-1.0d0).gt.epzero).or.              &
       (abs(vcopt1%thetav-1.0d0).gt.epzero).or.             &
       (abs(vcopt2%thetav-1.0d0).gt.epzero).or.             &
@@ -268,7 +269,7 @@ if (iturb.eq.51.and.ikecou.eq.1) then
   call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
   call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt3)
   if ((    thetst       .gt.0.d0 ).or.                     &
-     (    isto2t       .gt.0    ).or.                      &
+     (    isto2t       .gt.1    ).or.                      &
       (abs(vcopt%thetav-1.0d0).gt.epzero).or.              &
       (abs(vcopt1%thetav-1.0d0).gt.epzero).or.             &
       (abs(vcopt2%thetav-1.0d0).gt.epzero).or.             &
@@ -284,7 +285,7 @@ if (iturb.eq.60.and.ikecou.eq.1) then
   call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
   call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt1)
   if ((    thetst       .gt.0.d0 ).or.                     &
-       (    isto2t       .gt.0    ).or.                    &
+       (    isto2t       .gt.1    ).or.                    &
        (abs(vcopt%thetav-1.0d0).gt.epzero).or.             &
        (abs(vcopt1%thetav-1.0d0).gt.epzero) ) then
     write(nfecra,2144)iturb,ikecou,                        &
@@ -296,7 +297,7 @@ endif
 if (iturb.eq.70) then
   call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
   if ((thetst .gt.0.d0).or.                                &
-      (isto2t .gt. 0).or.                                  &
+      (isto2t .gt. 1).or.                                  &
       (abs(vcopt%thetav-1.0d0).gt.epzero)) then
     write(nfecra,2145)iturb,thetst,isto2t,vcopt%thetav
     iok = iok + 1
@@ -342,7 +343,7 @@ if (iilagr .eq. 2) then
   if ((    thetsn       .gt.0.d0 ).or.                    &
        (    isno2t       .gt.0    ).or.                   &
        (    thetst       .gt.0.d0 ).or.                   &
-       (    isto2t       .gt.0    ) ) then
+       (    isto2t       .gt.1    ) ) then
     write(nfecra,2147)thetsn,isno2t,thetst,isto2t
     iok = iok + 1
   endif

@@ -222,20 +222,14 @@ if (isno2t.eq.-999) then
     isno2t = 1
   endif
 endif
-!     Termes sources turbulence (k-eps, Rij, v2f ou k-omega)
-!     On n'autorise de changer ISTO2T qu'en Rij (sinon avec
-!       le couplage k-eps/omega il y a pb)
+
+! Time stepping for turbulence (k-eps, Rij, v2f ou k-omega)
 if (isto2t.eq.-999) then
   if (ischtp.eq.1) then
-    isto2t = 0
+    isto2t = 1
   else if (ischtp.eq.2) then
-    !       Pour le moment par defaut on ne prend pas l'ordre 2
-    !              ISTO2T = 1
-    isto2t = 0
+    isto2t = 2
   endif
-else if (itytur.eq.2.or.iturb.eq.50.or.iturb.ne.60) then
-  write(nfecra,8132) iturb,isto2t
-  iok = iok + 1
 endif
 
 do iscal = 1, nscal
@@ -314,11 +308,6 @@ if (isno2t.ne.0.and.isno2t.ne. 1.and.isno2t.ne.2) then
   write(nfecra,8131) 'ISNO2T',isno2t
   iok = iok + 1
 endif
-! Schema en temps pour les termes sources des grandeurs turbulentes
-if (isto2t.ne.0.and.isto2t.ne. 1.and.isto2t.ne.2) then
-  write(nfecra,8131) 'ISTO2T',isto2t
-  iok = iok + 1
-endif
 
 do iscal = 1, nscal
   ! Schema en temps pour les termes sources des scalaires
@@ -373,7 +362,8 @@ if (isno2t.gt.0) then
   endif
 endif
 
-if (isto2t.gt.0) then
+! FIXME IOANIS is it usefull?
+if (isto2t.gt.1) then
   ! The dimension of this array depends on turbulence model:
   if (itytur.eq.2) then
     call add_source_term_prev_field(ivarfl(ik))
@@ -890,24 +880,6 @@ return
 '@    =========                                               ',/,&
 '@    ',A6,' MUST BE AN INTEGER EQUAL TO 0, 1 OR 2            ',/,&
 '@    HERE IT IS  ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8132 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@  With the chosen turbulence model   , ITURB = ',I10         ,/,&
-'@    the value of ISTO2T (extrapolation of the source terms  ',/,&
-'@    for the turbulent variables) cannot be modified         ',/,&
-'@    yet ISTO2T has been forced to ',I10                      ,/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&

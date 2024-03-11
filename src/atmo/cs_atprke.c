@@ -537,7 +537,8 @@ cs_atmo_buoyancy_ke_prod(cs_real_t  tinstk[],
 
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
 
-  if (time_scheme->isto2t > 0) {
+  //TODO FIXME that is not coherent...
+  if (time_scheme->turbulence_time_stepping > 1) {
     if (cs_field_get_key_int(CS_F_(rho), key_t_ext_id) > 0) {
       cromo = CS_F_(rho)->val_pre;
     }
