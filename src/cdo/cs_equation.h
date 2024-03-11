@@ -791,27 +791,29 @@ cs_equation_solve_wrapper(bool                        cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build the linear system for this equation (deprecated)
+ * \brief Build the linear system for this equation (deprecated). Only for HHO
+ *        schemes
  *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in, out] eq          pointer to a cs_equation_t structure
+ * \param[in]      mesh  pointer to a cs_mesh_t structure
+ * \param[in, out] eq    pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_build_system(const cs_mesh_t            *mesh,
-                         cs_equation_t              *eq);
+cs_equation_build_system(const cs_mesh_t  *mesh,
+                         cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the linear system for this equation (deprecated)
+ * \brief Solve the linear system for this equation (deprecated). Only for HHO
+ *        schemes
  *
- * \param[in, out] eq          pointer to a cs_equation_t structure
+ * \param[in, out] eq  pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_deprecated(cs_equation_t   *eq);
+cs_equation_solve_deprecated(cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

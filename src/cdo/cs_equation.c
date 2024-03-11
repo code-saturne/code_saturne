@@ -64,6 +64,7 @@
 #include "cs_hho_vecteq.h"
 #include "cs_log.h"
 #include "cs_parall.h"
+#include "cs_parameters.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_range_set.h"
@@ -211,16 +212,16 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
  * \brief Carry out operations for allocating and/or initializing the solution
  *        array and the right hand side of the linear system to solve.
  *        Handle parallelism thanks to cs_range_set_t structure.
- *        Deprecated function.
+ *        Deprecated function (Only for HHO schemes).
  *
- * \param[in, out] eq_to_cast   pointer to generic builder structure
- * \param[in, out] p_x          pointer of pointer to the solution array
+ * \param[in, out] eq_to_cast  pointer to generic builder structure
+ * \param[in, out] p_x         pointer of pointer to the solution array
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_prepare_fb_solving(void              *eq_to_cast,
-                    cs_real_t         *p_x[])
+_prepare_fb_solving(void       *eq_to_cast,
+                    cs_real_t  *p_x[])
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
   cs_equation_param_t  *eqp = eq->param;
@@ -1572,7 +1573,7 @@ cs_equation_add(const char            *eqname,
   eq->solve = NULL;
   eq->solve_steady_state = NULL;
 
-  /* Deprecated functions */
+  /* Deprecated functions (only for HHO schemes) */
 
   eq->set_dir_bc = NULL;
   eq->build_system = NULL;
@@ -2093,7 +2094,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdovb_scaleq_free_context;
         eq->init_field_values = cs_cdovb_scaleq_init_values;
 
-        /* Deprecated pointers */
+        /* Deprecated pointers (Only for HHO schemes) */
 
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
@@ -2172,7 +2173,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdovb_vecteq_free_context;
         eq->init_field_values = cs_cdovb_vecteq_init_values;
 
-        /* Deprecated pointers */
+        /* Deprecated pointers (Only for HHO schemes) */
 
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
@@ -2229,7 +2230,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdovcb_scaleq_free_context;
         eq->init_field_values = cs_cdovcb_scaleq_init_values;
 
-        /* Deprecated pointers */
+        /* Deprecated pointers (Only for HHO schemes) */
 
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
@@ -2293,7 +2294,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdofb_scaleq_free_context;
         eq->init_field_values = cs_cdofb_scaleq_init_values;
 
-        /* Deprecated pointers */
+        /* Deprecated pointers (Only for HHO schemes) */
 
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
@@ -2353,7 +2354,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdofb_vecteq_free_context;
         eq->init_field_values = cs_cdofb_vecteq_init_values;
 
-        /* Deprecated pointers */
+        /* Deprecated pointers (Only for HHO schemes) */
 
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
@@ -2422,7 +2423,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdocb_scaleq_free_context;
         eq->init_field_values = cs_cdocb_scaleq_init_values;
 
-        /* Deprecated pointers */
+        /* Deprecated pointers (Only for HHO schemes) */
 
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
@@ -2481,7 +2482,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdoeb_vecteq_free_context;
         eq->init_field_values = cs_cdoeb_vecteq_init_values;
 
-        /* Deprecated pointers */
+        /* Deprecated pointers (Only for HHO schemes) */
 
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
@@ -2847,16 +2848,17 @@ cs_equation_init_field_values(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build the linear system for this equation (deprecated)
+ * \brief Build the linear system for this equation (deprecated). Only for HHO
+ *        schemes
  *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in, out] eq          pointer to a cs_equation_t structure
+ * \param[in]      mesh  pointer to a cs_mesh_t structure
+ * \param[in, out] eq    pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_build_system(const cs_mesh_t            *mesh,
-                         cs_equation_t              *eq)
+cs_equation_build_system(const cs_mesh_t  *mesh,
+                         cs_equation_t    *eq)
 {
   assert(eq != NULL);
 
@@ -2875,15 +2877,21 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the linear system for this equation (deprecated)
+ * \brief Solve the linear system for this equation (deprecated). Only for HHO
+ *        schemes
  *
- * \param[in, out] eq          pointer to a cs_equation_t structure
+ * \param[in, out] eq  pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_deprecated(cs_equation_t   *eq)
+cs_equation_solve_deprecated(cs_equation_t  *eq)
 {
+  if (eq == NULL)
+    return;
+
+  cs_timer_t  t0 = cs_timer_time();
+
   int  n_iters = 0;
   double  residual = DBL_MAX;
   cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
@@ -2897,21 +2905,28 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
     cs_timer_stats_start(eq->main_ts_id);
 
   const cs_equation_param_t  *eqp = eq->param;
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_sles_t  *slesp = eqp->sles_param;
 
   /* Handle parallelism (the the x array and for the rhs) */
 
   eq->prepare_solving(eq, &x);
 
+  assert(fld != NULL);
+  cs_solving_info_t  s_info;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &s_info);
+
+  s_info.n_it = 0;
+  s_info.res_norm = DBL_MAX;
+  s_info.rhs_norm = 1.0; /* No renormalization by default (TODO) */
+
   const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    matrix,
                                                    slesp->cvg_param.rtol,
-                                                   r_norm,
-                                                   &n_iters,
-                                                   &residual,
+                                                   s_info.rhs_norm,
+                                                   &(s_info.n_it),
+                                                   &(s_info.res_norm),
                                                    sh->rhs,
                                                    x,
                                                    0,      /* aux. size */
@@ -2921,6 +2936,8 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
     cs_log_printf(CS_LOG_DEFAULT,
                   "  <%s/sles_cvg> code %-d n_iters %d residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);
+
+  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &s_info);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
@@ -2941,6 +2958,9 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   /* Copy current field values to previous values */
 
   cs_field_current_to_previous(fld);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t0, &t1);
 
   /* Define the new field value for the current time */
 
