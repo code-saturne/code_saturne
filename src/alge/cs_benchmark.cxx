@@ -358,27 +358,22 @@ _mat_vec_exdiag_native_v2(const cs_real_t     *restrict xa,
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 
-#ifdef __CUDA_ARCH__   // Test to show whether we are on GPU or CPU...
-    cs_real_t pfaci = cos(xa[face_id] * x[ii]);
-    cs_real_t pfacj = cos(xa[face_id] * x[jj]);
-#else
-    cs_real_t pfaci = -cos(xa[face_id] * x[ii]);
-    cs_real_t pfacj = -cos(xa[face_id] * x[jj]);
-#endif
+    cs_real_t ci = xa[face_id] * x[ii];
+    cs_real_t cj = xa[face_id] * x[jj];
 
     if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-      y[face_id] += pfaci;
-      y[face_id] += pfacj;
+      y[ii] += ci;
+      y[jj] += cj;
     }
     else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
 #ifdef __CUDA_ARCH__   // Test whether we are on GPU or CPU...
-      atomicAdd(&y[ii], pfaci);
-      atomicAdd(&y[jj], pfacj);
+      atomicAdd(&y[ii], ci);
+      atomicAdd(&y[jj], cj);
 #else
       #pragma omp atomic
-      y[ii] += pfaci;
+      y[ii] += ci;
       #pragma omp atomic
-      y[jj] += pfacj;
+      y[jj] += cj;
 #endif
     }
   });

@@ -91,7 +91,7 @@ cs_dispatch_test(void)
       ctx.set_n_min_for_gpu(20);
     }
 
-    ctx.parallel_for(n, [=] CS_CUDA_HOST_DEVICE (cs_lnum_t ii) {
+    ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       cs_lnum_t c_id = ii;
 #ifdef __CUDA_ARCH__   // Test to show whether we are on GPU or CPU...
       a0[ii] = c_id*0.1;
