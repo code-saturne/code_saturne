@@ -115,8 +115,10 @@ _set_key(cs_equation_param_t   *eqp,
   int  ierr = 0;
 
   const char  *eqname = eqp->name;
-  const char  emsg[] = " %s: %s equation --> Invalid key value \"%s\" for"
+  const char  emsg[] = " %s: \"%s\" equation\n --> Invalid key value \"%s\" for"
     " the keyword %s.\n";
+  const char  wkmsg[] = " %s: \"%s\" equation\n --> Deprecated key \"%s\"\n"
+    " --> Please replace it with key \"%s\".\n";
 
   switch(key) {
 
@@ -368,36 +370,70 @@ _set_key(cs_equation_param_t   *eqp,
     }
     break;
 
-  case CS_EQKEY_ITSOL:
+  case CS_EQKEY_ITSOL:  /* kept for backward compatibility */
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
+                  "CS_EQKEY_ITSOL", "CS_EQKEY_SOLVER");
+    /* No break wanted */
+  case CS_EQKEY_SOLVER:
     ierr = cs_param_sles_set_solver(keyval, eqp->sles_param);
 
     if (ierr > 0) {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL");
+                emsg, __func__, eqname, _val, "CS_EQKEY_SOLVER");
     }
     break;
 
-  case CS_EQKEY_ITSOL_ATOL:
+  case CS_EQKEY_ITSOL_ATOL:  /* kept for backward compatibility */
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
+                  "CS_EQKEY_ITSOL_ATOL", "CS_EQKEY_SOLVER_ATOL");
+    /* No break wanted */
+  case CS_EQKEY_SOLVER_ATOL:
     eqp->sles_param->cvg_param.atol = atof(keyval);
     break;
 
-  case CS_EQKEY_ITSOL_DTOL:
+  case CS_EQKEY_ITSOL_DTOL:  /* kept for backward compatibility */
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
+                  "CS_EQKEY_ITSOL_DTOL", "CS_EQKEY_SOLVER_DTOL");
+    /* No break wanted */
+  case CS_EQKEY_SOLVER_DTOL:
     eqp->sles_param->cvg_param.dtol = atof(keyval);
     break;
 
-  case CS_EQKEY_ITSOL_MAX_ITER:
+  case CS_EQKEY_ITSOL_MAX_ITER:  /* kept for backward compatibility */
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
+                  "CS_EQKEY_ITSOL_MAX_ITER", "CS_EQKEY_SOLVER_MAX_ITER");
+    /* No break wanted */
+  case CS_EQKEY_SOLVER_MAX_ITER:
     eqp->sles_param->cvg_param.n_max_iter = atoi(keyval);
     break;
 
   case CS_EQKEY_ITSOL_EPS:  /* kept for backward compatibility */
   case CS_EQKEY_ITSOL_RTOL:
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  " %s: Key \"%s\" or \"%s\" are deprecated.\n"
+                  "  Please replace it with \"%s\"\n",
+                  __func__, "CS_EQKEY_ITSOL_EPS", "CS_EQKEY_ITSOL_RTOL",
+                  "CS_EQKEY_SOLVER_RTOL");
+    /* No break wanted */
+  case CS_EQKEY_SOLVER_RTOL:
     eqp->sles_param->cvg_param.rtol = atof(keyval);
     if (eqp->sles_param->cvg_param.atol > eqp->sles_param->cvg_param.rtol)
       eqp->sles_param->cvg_param.atol = eqp->sles_param->cvg_param.rtol;
     break;
 
-  case CS_EQKEY_ITSOL_RESNORM_TYPE:
+  case CS_EQKEY_ITSOL_RESNORM_TYPE: /* kept for backward compatibility */
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
+                  "CS_EQKEY_ITSOL_RESNORM_TYPE",
+                  "CS_EQKEY_SOLVER_RESNORM_TYPE");
+    /* No break wanted */
+  case CS_EQKEY_SOLVER_RESNORM_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0 ||
         strcmp(keyval, "") == 0)
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NONE;
@@ -412,11 +448,16 @@ _set_key(cs_equation_param_t   *eqp,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL_RESNORM_TYPE");
+                emsg, __func__, eqname, _val, "CS_EQKEY_SOLVER_RESNORM_TYPE");
     }
     break;
 
-  case CS_EQKEY_ITSOL_RESTART:
+  case CS_EQKEY_ITSOL_RESTART:  /* kept for backward compatibility */
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
+                  "CS_EQKEY_ITSOL_RESTART", "CS_EQKEY_SOLVER_RESTART");
+    /* No break wanted */
+  case CS_EQKEY_SOLVER_RESTART:
     eqp->sles_param->restart = atoi(keyval);
     break;
 

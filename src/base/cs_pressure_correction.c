@@ -3414,13 +3414,13 @@ cs_pressure_correction_cdo_activate(void)
 
   /* System to solve is SPD by construction */
 
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
   cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
 
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-5");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER_MAX_ITER, "2500");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-5");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RESNORM_TYPE, "filtered");
 
   prcdo->pressure_incr = eq;    /* Keep a link the equation pointer */
 }

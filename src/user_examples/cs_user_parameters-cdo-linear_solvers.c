@@ -121,7 +121,7 @@ cs_user_parameters(cs_domain_t    *domain)
 
 #if defined(HAVE_MUMPS)
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "mumps");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "mumps");
 #else
     bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
 #endif
@@ -141,7 +141,7 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
 
 #if defined(HAVE_MUMPS)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "mumps");
 
     /* More advanced usage */
 
@@ -180,7 +180,7 @@ cs_user_parameters(cs_domain_t    *domain)
     /* Linear algebra settings for the (1,1) block */
 
 #if defined(HAVE_MUMPS)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "mumps");
 #else
     bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
 #endif
@@ -201,10 +201,10 @@ cs_user_parameters(cs_domain_t    *domain)
 
     /* Linear algebra settings for the (1,1)-block */
 
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-5");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-5");
   }
   /*! [cdo_sles_navsto_gkb_kcycle] */
 
@@ -222,15 +222,15 @@ cs_user_parameters(cs_domain_t    *domain)
     /* Linear algebra settings for the (1,1)-block */
 
 #if defined(HAVE_HYPRE)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fgmres");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fgmres");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
 #else
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-4");
 #endif
 
     /* Linear algebra settings for the Schur complement approximation */
@@ -256,12 +256,12 @@ cs_user_parameters(cs_domain_t    *domain)
 
     /* Linear algebra settings for the (1,1)-block */
 
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
 
 #if defined(HAVE_PETSC) /* One assumes that PETSc is installed with Hypre */
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
 
     /* Must be set after the previous line to switch to PETSC in order to be
        able to use a block preconditioning for the velocity block */
@@ -292,7 +292,7 @@ cs_user_parameters(cs_domain_t    *domain)
                                      2);  /* n_agg_paths */
 #else  /* PETSc not installed */
     cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-4");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-4");
 
     cs_param_sles_amg_inhouse(slesp,
                               /* n_down_iter, down smoother, down poly. deg. */

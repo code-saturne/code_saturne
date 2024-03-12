@@ -384,16 +384,16 @@ cs_user_parameters(cs_domain_t   *domain)
     /* Linear algebra settings */
 #if defined(HAVE_PETSC)
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 #else
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
 #endif
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-12");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "false");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_MAX_ITER, "2500");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-12");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RESNORM_TYPE, "false");
 
   }
   /*! [param_cdo_numerics] */

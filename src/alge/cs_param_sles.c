@@ -603,7 +603,7 @@ cs_param_sles_set_solver(const char       *keyval,
                 " %s: SLES \"%s\" Error detected while setting \"%s\" key.\n"
                 " PETSc is not available with your installation.\n"
                 " Please check your installation settings.\n",
-                __func__, sles_name, "CS_EQKEY_ITSOL");
+                __func__, sles_name, "CS_EQKEY_SOLVER");
     else
       slesp->solver_class = ret_class;
 
@@ -629,7 +629,7 @@ cs_param_sles_set_solver(const char       *keyval,
                 " %s: SLES \"%s\" Error detected while setting \"%s\" key.\n"
                 " MUMPS is not available with your installation.\n"
                 " Please check your installation settings.\n",
-                __func__, sles_name, "CS_EQKEY_ITSOL");
+                __func__, sles_name, "CS_EQKEY_SOLVER");
     else
       slesp->solver_class = ret_class;
 

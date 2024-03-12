@@ -444,7 +444,7 @@ cs_walldistance_activate(void)
 
   /* System to solve is SPD by construction */
 
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 
   /* Set the static pointer */

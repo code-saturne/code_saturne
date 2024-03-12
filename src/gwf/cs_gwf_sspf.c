@@ -323,10 +323,10 @@ cs_gwf_sspf_init(cs_gwf_sspf_t       *mc,
      heterogeneities may be taken into account. Moreover, the system is SPD by
      construction. One can thus use a AMG + FCG as the default solver. */
 
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RTOL, "1e-8");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "fcg");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-8");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "5000");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER_MAX_ITER, "5000");
 
   /* The default value of the relative tolerance is 1e-6 (please refer to
      cs_param_sles_create() to know all the default settings related to linear

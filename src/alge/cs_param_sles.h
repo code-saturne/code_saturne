@@ -83,7 +83,7 @@ typedef struct {
 
   /*! \var resnorm_type
    *  normalized or not the norm of the residual used for the stopping criterion
-   *  See \ref CS_EQKEY_ITSOL_RESNORM_TYPE for more details. */
+   *  See \ref CS_EQKEY_SOLVER_RESNORM_TYPE for more details. */
 
   cs_param_resnorm_type_t    resnorm_type;
 

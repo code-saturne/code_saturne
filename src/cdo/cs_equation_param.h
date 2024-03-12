@@ -966,7 +966,8 @@ typedef struct {
  * reconstruction of potential-like degrees of freedom and needs a correct
  * computation of the cell barycenter
  *
- * \var CS_EQKEY_ITSOL
+ * \var CS_EQKEY_SOLVER (deprecated variant)
+ * \var CS_EQKEY_SOLVER
  * Specify the iterative solver for solving the linear system related to an
  * equation. Avalaible choices are:\n
  * - "amg"           --> Algebraic MultiGrid iterative solver.
@@ -1005,28 +1006,32 @@ typedef struct {
  *                       cs_user_sles_it_solver())
  * - "none"          --> No solver.
  *
- * \var CS_EQKEY_ITSOL_ATOL
-
+ * \var CS_EQKEY_ITSOL_ATOL (deprecated variant)
+ * \var CS_EQKEY_SOLVER_ATOL
  * Absolute tolerance factor for stopping the iterative process during the
  * iterative resolution of a linear system related to an equation. Most
  * iterative solver are not using this tolerance (the relative tolerance is
  * always used). PETSc solvers use this information for instance.Please refer
- * to \ref CS_EQKEY_ITSOL_RTOL\n
+ * to \ref CS_EQKEY_SOLVER_RTOL\n
  * - Example: "1e-14"
  *
- * \var CS_EQKEY_ITSOL_DTOL
+ * \var CS_EQKEY_ITSOL_DTOL (deprecated variant)
+ * \var CS_EQKEY_SOLVER_DTOL
  * Divergence tolerance factor for stopping the iterative process during the
  * iterative resolution of a linear system related to an equation. Most
  * iterative solver are not using this tolerance (the relative tolerance is
- * always used). PETSc solvers use this information for instance.Please refer
- * to \ref CS_EQKEY_ITSOL_RTOL\n
+ * always used). PETSc solvers use this information for instance. Please refer
+ * to \ref CS_EQKEY_SOLVER_RTOL\n
+
  * - Example: "1e3"
  *
- * \var CS_EQKEY_ITSOL_MAX_ITER
+ * \var CS_EQKEY_ITSOL_MAX_ITER (deprecated variant)
+ * \var CS_EQKEY_SOLVER_MAX_ITER
  * Maximum number of iterations for solving the linear system
  * - Example: "2000"
  *
- * \var CS_EQKEY_ITSOL_RESNORM_TYPE
+ * \var CS_EQKEY_ITSOL_RESNORM_TYPE (deprecated variant)
+ * \var CS_EQKEY_SOLVER_RESNORM_TYPE
  * Normalized or not the residual before testing if one continues iterating
  * for solving the linear system. This normalization is performed before
  * applying the boundary conditions to avoid handling the penalization of
@@ -1039,15 +1044,17 @@ typedef struct {
  * "weighted_rhs" or "weighted"
  * "filtered_rhs" or "filtered_rhs"
  *
- * \var CS_EQKEY_ITSOL_RESTART
+ * \var CS_EQKEY_ITSOL_RESTART (deprecated variant)
+ * \var CS_EQKEY_SOLVER_RESTART
  * Maximum number of iterations before restarting a Krylov solver
  * Only useful with GMRES, flexible GMRES or GCR solvers.
  * This value has an impact on the memory footprint since one has to store a
  * buffer of double with a size equal to restart*sizeof(solution array)
  * - Example: "20"
  *
- * \var CS_EQKEY_ITSOL_RTOL
+ * \var CS_EQKEY_ITSOL_RTOL (deprecated variant)
  * \var CS_EQKEY_ITSOL_EPS (deprecated)
+ * \var CS_EQKEY_SOLVER_RTOL
  * Relative tolerance factor for stopping the iterative process during the
  * iterative resolution of a linear system related to an equation.\n
  * - Example: "1e-10"
@@ -1119,7 +1126,7 @@ typedef struct {
  * \var CS_EQKEY_SADDLE_MAX_ITER
  * Max. number of iterations before stopping the "saddle-point" solver when
  * solving a saddle-point problem related to this equation. This is different
- * from \ref CS_EQKEY_ITSOL_MAX_ITER This latter key is dedicated to the
+ * from \ref CS_EQKEY_SOLVER_MAX_ITER This latter key is dedicated to the
  * preconditioning of the (1,1)-block when a saddle-point system has to be
  * solved. Read the description of the structure \ref cs_param_saddle_t for
  * more details.
@@ -1245,14 +1252,22 @@ typedef enum {
   CS_EQKEY_HODGE_DIFF_COEF,
   CS_EQKEY_HODGE_TIME_ALGO,
   CS_EQKEY_HODGE_REAC_ALGO,
-  CS_EQKEY_ITSOL,
-  CS_EQKEY_ITSOL_ATOL,
-  CS_EQKEY_ITSOL_DTOL,
+  CS_EQKEY_ITSOL,               /* deprecated */
+  CS_EQKEY_ITSOL_ATOL,          /* deprecated */
+  CS_EQKEY_ITSOL_DTOL,          /* deprecated */
   CS_EQKEY_ITSOL_EPS,           /* deprecated */
-  CS_EQKEY_ITSOL_MAX_ITER,
-  CS_EQKEY_ITSOL_RESNORM_TYPE,
-  CS_EQKEY_ITSOL_RESTART,
-  CS_EQKEY_ITSOL_RTOL,
+  CS_EQKEY_ITSOL_MAX_ITER,      /* deprecated */
+  CS_EQKEY_ITSOL_RESNORM_TYPE,  /* deprecated */
+  CS_EQKEY_ITSOL_RESTART,       /* deprecated */
+  CS_EQKEY_ITSOL_RTOL,          /* deprecated */
+  CS_EQKEY_SOLVER,
+  CS_EQKEY_SOLVER_ATOL,
+  CS_EQKEY_SOLVER_DTOL,
+  CS_EQKEY_SOLVER_EPS,           /* deprecated */
+  CS_EQKEY_SOLVER_MAX_ITER,
+  CS_EQKEY_SOLVER_RESNORM_TYPE,
+  CS_EQKEY_SOLVER_RESTART,
+  CS_EQKEY_SOLVER_RTOL,
   CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_PRECOND_BLOCK_TYPE,

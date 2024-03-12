@@ -434,7 +434,7 @@ cs_user_parameters(cs_domain_t     *domain)
 
 #if defined(HAVE_PETSC)
   cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 
   if (cs_param_sles_hypre_from_petsc())
@@ -444,7 +444,7 @@ cs_user_parameters(cs_domain_t     *domain)
 #else
   cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+  cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
 #endif
 }
 

@@ -194,9 +194,9 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
   /* Set the default solver settings */
 
   if (nsp->model == CS_NAVSTO_MODEL_STOKES)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "cg");
   else
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "gcr");
 
   return nsc;
 }
@@ -388,10 +388,10 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER_RESTART, "40");
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_MAX_ITER, "100");
 
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_MAX_ITER, "50");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_MAX_ITER, "50");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
 
 #if defined(HAVE_PETSC)
     cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
@@ -415,7 +415,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
 #if defined(HAVE_MUMPS)
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "alu");
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_AUGMENT_SCALING, "100");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "mumps");
 
     /* Set the solver for the transformation system (copy from the main one) */
 
@@ -431,9 +431,9 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_MAX_ITER, "100");
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_MAX_ITER, "50");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_RTOL, "1e-1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_MAX_ITER, "50");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
 #endif
 
   }
@@ -595,9 +595,9 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     /* Solver settings */
 
     if (nsp->model == CS_NAVSTO_MODEL_STOKES)
-      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+      cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
     else
-      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "gcr");
+      cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "gcr");
   }
 
   /* The default boundary condition on the pressure field is always a
@@ -621,7 +621,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     /* Solver settings */
 
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
   }
 
   nsc->div_st = NULL;
