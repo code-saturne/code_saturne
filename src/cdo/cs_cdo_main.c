@@ -810,9 +810,15 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   cs_equation_system_set_functions();
 
-  if (domain->only_steady)
+  if (domain->only_steady) {
+
     domain->is_last_iter = true;
 
+    if (cs_dt_pty != NULL)
+      if (cs_dt_pty->n_definitions == 0)
+        cs_property_def_iso_by_value(cs_dt_pty, NULL, cs_dt_pty->ref_value);
+
+  }
   else { /* Setup the time step if not already done */
 
     if (cs_dt_pty == NULL)
