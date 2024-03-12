@@ -36,16 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
-/*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_locator.h>
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -53,8 +43,6 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
-
-#include "fvm_nodal_extract.h"
 
 #include "cs_air_props.h"
 #include "cs_atmo.h"
@@ -78,8 +66,6 @@
 #include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
-#include "cs_restart.h"
-#include "cs_selector.h"
 #include "cs_thermal_model.h"
 #include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
@@ -432,7 +418,6 @@ cs_ctwr_add_property_fields(void)
   const int keylog = cs_field_key_id("log");
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
-
 
   /* Humid air properties */
   {

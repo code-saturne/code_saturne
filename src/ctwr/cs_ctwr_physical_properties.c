@@ -41,20 +41,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_locator.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
-
-#include "fvm_nodal_extract.h"
 
 #include "cs_air_props.h"
 #include "cs_atmo.h"
@@ -76,12 +68,8 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
-#include "cs_post.h"
 #include "cs_prototypes.h"
-#include "cs_restart.h"
-#include "cs_selector.h"
 #include "cs_thermal_model.h"
-#include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
 
 #include "cs_ctwr.h"
@@ -136,8 +124,8 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
                                                         humid air (bulk) */
 
   /* Packing liquid quantities */
-  cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;      /* Liquid temperature */
-  cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;      /* Liquid enthalpy */
+  cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;    /* Liquid temperature */
+  cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;  /* Liquid enthalpy */
   cs_real_t *y_l_p = (cs_real_t *)CS_F_(y_l_pack)->val; /* Liquid mass per
                                                          unit cell volume */
 
@@ -235,9 +223,9 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
     cp_h[cell_id] = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
 
     h_h[cell_id] = cs_air_h_humidair(cp_h[cell_id],
-                                      x[cell_id],
-                                      x_s[cell_id],
-                                      t_h[cell_id]);
+                                     x[cell_id],
+                                     x_s[cell_id],
+                                     t_h[cell_id]);
 
     /* Update the liquid temperature based on the solved liquid enthalpy
      * NB: May not be required as it is also done in 'cs_ctwr_phyvar_update'?
@@ -256,8 +244,8 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
      * C_D = 24 / Re * (1 + 0.15 * Re^0.687)
      * See ZOPLU HT-31-08-06 */
 
-    cs_real_t v_lim = pow(droplet_diam, 2.) * rho_l / (18. * visc)
-                    * cs_math_3_norm(gravity);
+    cs_real_t v_lim =   pow(droplet_diam, 2.) * rho_l / (18. * visc)
+                      * cs_math_3_norm(gravity);
 
     cs_real_t reynolds_old = 0.;
 
@@ -344,10 +332,9 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   }
 
   /* Free memory */
-  if (cfld_taup == NULL)
+  if (cfld_taup != NULL)
     BFT_FREE(cpro_taup);
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -470,13 +457,14 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
     /* Continuous phase mass fraction */
     cpro_x1[cell_id] = 1. - ym_l_r[cell_id];
+
     //TODO not one for rain zones - Why not?
     //If it represents the humid air, then it should be one?  If it represents
     //the dry air, then it should account for both y_l_r and ym_w
 
-
     /* Update humidity field */
     x[cell_id] = ym_w[cell_id]/(1.0 - ym_w[cell_id]);
+
     // FIXME for drops - This should be the proportion of 'gaseous' water
     // (dissolved and condensate) in the humid air:
     //   Y(dry air)+ Y(gasesous water) + Y(drops) = 1 in all computational cells
@@ -519,28 +507,21 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   }
 
-  cs_gnum_t n_g_clip_yw_min = nclip_yw_min;
-  cs_gnum_t n_g_clip_yw_max = nclip_yw_max;
+  cs_gnum_t n_g_clip_count[4] = {nclip_yw_min, nclip_yw_max,
+                                 nclip_yp_min, nclip_yp_max};
 
-  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_min);
-  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_max);
-
-  cs_gnum_t n_g_clip_yp_min = nclip_yp_min;
-  cs_gnum_t n_g_clip_yp_max = nclip_yp_max;
-
-  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yp_min);
-  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yp_max);
+  cs_parall_sum(4, CS_GNUM_TYPE, n_g_clip_count);
 
   /* Printing clips in listing */
-  if (n_g_clip_yp_min >= 1 || n_g_clip_yp_max >= 1) {
+  if (n_g_clip_count[0] >= 1 || n_g_clip_count[1] >= 1) {
     bft_printf("WARNING : clipping on rain mass fraction"
-                "in cs_ctwr_phyvar_update : min_clip = %lu, max_clip = %lu\n",
-                n_g_clip_yp_min, n_g_clip_yp_max);
+               "in cs_ctwr_phyvar_update : min_clip = %lu, max_clip = %lu\n",
+               n_g_clip_count[0], n_g_clip_count[1]);
   }
-  if (n_g_clip_yw_min >= 1 || n_g_clip_yw_max >= 1) {
+  if (n_g_clip_count[2] >= 1 || n_g_clip_count[2] >= 1) {
     bft_printf("WARNING : clipping on water mass fraction"
                 "in cs_ctwr_phyvar_update : min_clip = %lu, max_clip = %lu\n",
-                n_g_clip_yw_min, n_g_clip_yw_max);
+                n_g_clip_count[2], n_g_clip_count[3]);
   }
 
   /* If solving rain velocity */
@@ -662,7 +643,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     }
   }
 
-
   /* Parallel synchronization */
   if (halo != NULL) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, x);
@@ -680,6 +660,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     bpro_x1[face_id] = cpro_x1[b_face_cells[face_id]];
   }
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
