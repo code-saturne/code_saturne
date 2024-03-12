@@ -758,10 +758,10 @@ typedef enum {
  *  Algebraic multigrid solver (additional options may be set using
  *  \ref cs_param_amg_type_t)
  *
- * \var CS_PARAM_ITSOL_BICG
+ * \var CS_PARAM_ITSOL_BICGS
  *  Bi-Conjugate gradient (useful for non-symmetric systems)
  *
- * \var CS_PARAM_ITSOL_BICGSTAB2
+ * \var CS_PARAM_ITSOL_BICGS2
  *  Stabilized Bi-Conjugate gradient (useful for non-symmetric systems)
  *
  * \var CS_PARAM_ITSOL_CG
@@ -811,8 +811,8 @@ typedef enum {
   CS_PARAM_ITSOL_NONE,
 
   CS_PARAM_ITSOL_AMG,
-  CS_PARAM_ITSOL_BICG,
-  CS_PARAM_ITSOL_BICGSTAB2,
+  CS_PARAM_ITSOL_BICGS,
+  CS_PARAM_ITSOL_BICGS2,
   CS_PARAM_ITSOL_CG,
   CS_PARAM_ITSOL_CR3,
   CS_PARAM_ITSOL_FCG,

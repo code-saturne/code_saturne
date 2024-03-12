@@ -288,10 +288,10 @@ _build_is_for_fieldsplit(cs_saddle_solver_t  *solver,
 /*   case CS_PARAM_ITSOL_CG: */
 /*     KSPSetType(u_ksp, KSPCG); */
 /*     break; */
-/*   case CS_PARAM_ITSOL_BICG:      /\* Improved Bi-CG stab *\/ */
+/*   case CS_PARAM_ITSOL_BICGS:      /\* Improved Bi-CG stab *\/ */
 /*     KSPSetType(u_ksp, KSPIBCGS); */
 /*     break; */
-/*   case CS_PARAM_ITSOL_BICGSTAB2: /\* BiCGstab2 *\/ */
+/*   case CS_PARAM_ITSOL_BICGS2: /\* BiCGstab2 *\/ */
 /*     KSPSetType(u_ksp, KSPBCGSL); */
 /*     break; */
 /*   case CS_PARAM_ITSOL_MUMPS:     /\* Direct solver (factorization) *\/ */

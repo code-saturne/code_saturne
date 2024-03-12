@@ -877,11 +877,11 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
     KSPSetType(ksp, KSPPREONLY);
     break;
 
-  case CS_PARAM_ITSOL_BICG:      /* Improved Bi-CG stab */
+  case CS_PARAM_ITSOL_BICGS:      /* Improved Bi-CG stab */
     KSPSetType(ksp, KSPIBCGS);
     break;
 
-  case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
+  case CS_PARAM_ITSOL_BICGS2: /* Preconditioned BiCGstab2 */
     KSPSetType(ksp, KSPBCGSL);
     break;
 
@@ -1832,14 +1832,14 @@ _set_saturne_sles(bool                 use_field_id,
     mg = _set_saturne_amg_solver(sles_name, slesp);
     break;
 
-  case CS_PARAM_ITSOL_BICG:
+  case CS_PARAM_ITSOL_BICGS:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_BICGSTAB,
                               poly_degree,
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_BICGSTAB2:
+  case CS_PARAM_ITSOL_BICGS2:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_BICGSTAB2,
                               poly_degree,
@@ -2192,8 +2192,8 @@ _set_hypre_solver(cs_param_sles_t    *slesp,
     pc = hs;
     break;
 
-  case CS_PARAM_ITSOL_BICG:
-  case CS_PARAM_ITSOL_BICGSTAB2:
+  case CS_PARAM_ITSOL_BICGS:
+  case CS_PARAM_ITSOL_BICGS2:
     HYPRE_BiCGSTABSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
     HYPRE_BiCGSTABSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_BiCGSTABGetPrecond(hs, &pc);
@@ -2520,8 +2520,8 @@ _set_hypre_sles(bool                 use_field_id,
     }
     break;
 
-  case CS_PARAM_ITSOL_BICG:
-  case CS_PARAM_ITSOL_BICGSTAB2:
+  case CS_PARAM_ITSOL_BICGS:
+  case CS_PARAM_ITSOL_BICGS2:
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:

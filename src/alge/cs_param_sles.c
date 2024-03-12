@@ -503,16 +503,17 @@ cs_param_sles_set_solver(const char       *keyval,
     cs_param_sles_amg_inhouse_reset(slesp, true, false);
 
   }
-  else if (strcmp(keyval, "bicg") == 0) {
+  else if (strcmp(keyval, "bicgs") == 0 ||
+           strcmp(keyval, "bicgstab") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_BICG;
+    slesp->solver = CS_PARAM_ITSOL_BICGS;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = false;
 
   }
   else if (strcmp(keyval, "bicgstab2") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_BICGSTAB2;
+    slesp->solver = CS_PARAM_ITSOL_BICGS2;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = false;
 
@@ -806,8 +807,8 @@ cs_param_sles_set_precond(const char       *keyval,
 
     case CS_PARAM_ITSOL_GMRES:
     case CS_PARAM_ITSOL_CR3:
-    case CS_PARAM_ITSOL_BICG:
-    case CS_PARAM_ITSOL_BICGSTAB2:
+    case CS_PARAM_ITSOL_BICGS:
+    case CS_PARAM_ITSOL_BICGS2:
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s() SLES \"%s\"\n"

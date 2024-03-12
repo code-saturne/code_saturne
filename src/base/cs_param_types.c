@@ -521,11 +521,11 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_AMG:
     return "Algebraic.Multigrid";
     break;
-  case CS_PARAM_ITSOL_BICG:
-    return "BiCG";
+  case CS_PARAM_ITSOL_BICGS:
+    return "stabilized BiCG";
     break;
-  case CS_PARAM_ITSOL_BICGSTAB2:
-    return "BiCGstab2";
+  case CS_PARAM_ITSOL_BICGS2:
+    return "stabilized BiCG(2)";
     break;
   case CS_PARAM_ITSOL_CG:
     return "CG";

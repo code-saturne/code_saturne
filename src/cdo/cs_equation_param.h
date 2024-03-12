@@ -982,9 +982,10 @@ typedef struct {
  * - "fcg"           --> flexible version of the conjuguate gradient
  *                       algorithm used when the preconditioner can change
  *                       iteration by iteration
- * - "bicg"          --> Bi-CG algorithm (for non-symmetric linear systems)
- * - "bicgstab2"     --> BiCG-Stab2 algorithm (for non-symmetric linear
- *                       systems)
+ * - "bicgs",        --> stabilized Bi-CG algorithm (for non-symmetric linear
+ *   "bicgstab"          systems).
+ * - "bicgstab2"     --> variant of the stabilized Bi-CG algorithm (for
+ *                       non-symmetric linear systems)
  * - "gcr"           --> robust and flexible iterative solver. Not the best
  *                       choice if the system is easy to solve
  * - "gmres"         --> robust iterative solver. Not the best choice if the
