@@ -29,6 +29,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
