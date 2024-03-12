@@ -448,8 +448,6 @@ cs_param_saddle_create(void)
     .rtol = 1e-6,        /* relative tolerance */
     .dtol = 1e3 };       /* divergence tolerance */
 
-  saddlep->block11_stride = 1;  /* default value */
-
   /* saddlep->block11_sles_param is shared and thus is only set if a
      saddle-point problem is solved */
 

@@ -328,15 +328,6 @@ typedef struct {
 
   /*! @} */
 
-  /*! \var block11_stride
-   * Stride of the (1,1)-block. For instance, this value is equal to 3 when the
-   * (1,1) block is vector-valued as in the case of the Navier-Stokes problem
-   * or it is equal to 1 when the saddle-point problem arises from the CDO
-   * cell-based scheme.
-   */
-
-  int                         block11_stride;
-
   /*! \var block11_sles_param
    * Set of parameters used to solve (1,1)-block i.e. the A matrix. This
    * is shared with the \ref cs_equation_param_t structure.
