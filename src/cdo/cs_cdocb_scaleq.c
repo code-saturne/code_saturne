@@ -232,7 +232,7 @@ _scb_apply_dirichlet(const cs_equation_param_t   *eqp,
 
   /* Update the RHS with the Dirichlet value for the related face */
 
-  for (short int f = 0; f < csys->n_dofs; f++)
+  for (short int f = 0; f < cm->n_fc; f++)
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f]))
       csys->rhs[f] += -cm->f_sgn[f]*csys->dir_values[f];
 }
