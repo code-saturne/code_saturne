@@ -206,11 +206,11 @@ cs_scalar_clipping(cs_field_t  *f)
 
   if (variance_id > -1) {
 
-    iclmax[0] = 0;
-    iclmin[0] = 0;
     const int iclvfl = cs_field_get_key_int(f, kclvfl);
 
     if (iclvfl == 1) {
+
+      iclmax[0] = 0;
 
       /* Get the corresponding scalar */
       cs_field_t *fl = cs_field_by_id(variance_id);
