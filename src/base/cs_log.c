@@ -481,7 +481,7 @@ cs_log_printf(cs_log_t     log,
 
   if (log != CS_LOG_DEFAULT) {
 
-    if (_cs_log[log] == NULL && log != CS_LOG_DEFAULT)
+    if (_cs_log[log] == NULL)
       _open_log(log);
 
     va_start(arg_ptr, format);
@@ -491,7 +491,6 @@ cs_log_printf(cs_log_t     log,
     va_end(arg_ptr);
 
   }
-
   else {
 
     bft_printf_proxy_t *_printf_proxy = bft_printf_proxy_get();
