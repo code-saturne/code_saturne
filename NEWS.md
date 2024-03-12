@@ -6,6 +6,10 @@ Master (not on release branches yet)
 - Reshape the interface with the MUMPS library (sparse direct solver)
   to make the usage of common MUMPS options easier. Take benefit from
   optimizations available in the latest 5.6.2 version.
+- Add a higher-level interface for settings algebraic multigrids (AMG)
+  thanks to cs_param_sles_t structure
+  * Context parameters for in-house K-cycle and V-cycle
+  * Context parameters for boomerAMG included in the HYPRE library
 - Reshape the way to set the strategy and the related options to solve
   a saddle-point problem. This induces also many modifications in the
   way to set linear solvers inside the CDO/HHO framework. This is a
@@ -89,6 +93,10 @@ Release 8.1.0 (2023-12-13)
   New keyword solve_rain_velocity has been added to allow the solving of
   rain drops drift velocity equation. The model has been adapted from
   existing one related to coal combustion.
+
+- "Groundwater flow" module: Two models (miscible and immiscible) for
+   two-phase flows in porous media have been validated thanks to two
+   test cases belonging to the code_aster's VnV basis.
 
 ### User changes:
 
@@ -444,7 +452,7 @@ Physical modeling:
 - GWF/CDO: Add two new models for two-phase flows in porous media: an immiscible
   and a miscible model. Solved variables are the liquid and gas pressures. Only
   user-defined laws are available in this case to define the behavior of the
-  soil. Several numerical algorithm are currently under tests (coupled or
+  soil. Several numerical algorithms are currently under tests (coupled or
   segregated solver; different ways of treating the non-linearities). This
   functionality is still under development and may evolve in depth.
 
