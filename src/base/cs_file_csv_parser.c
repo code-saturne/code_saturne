@@ -143,6 +143,7 @@ _parse_line(char          *line,
       char *_t = _get_token(c, n);
       if (keep_missing_tokens || (_t != NULL && strlen(_t) > 0) ) {
         BFT_REALLOC(tokens, _nt + 1, char *);
+        BFT_FREE(_t);
         tokens[_nt] = _get_token(c, n);
         _nt += 1;
       }
