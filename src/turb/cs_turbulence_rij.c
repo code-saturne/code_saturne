@@ -497,7 +497,7 @@ _rij_echo(int              phase_id,
   cs_real_t *cromo = NULL;
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
   int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
-  if ((cs_glob_time_scheme->turbulence_time_stepping > 1) && (iroext > 0))
+  if ((cs_glob_time_scheme->isto2t > 0) && (iroext > 0))
     cromo = f_rho->val_pre;
   else
     cromo = f_rho->val;
@@ -3481,7 +3481,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   /* Matrix */
 
   const cs_real_t thetv = eqp->thetav;
-  cs_real_t thetap = (cs_glob_time_scheme->turbulence_time_stepping > 1) ? thetv : 1.0;
+  cs_real_t thetap = (cs_glob_time_scheme->isto2t > 0) ? thetv : 1.0;
 
   // FIXME the source term extrapolation is not well done!!!!
 

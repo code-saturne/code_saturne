@@ -170,9 +170,11 @@ endif
 if (abs(thetst+999.d0).gt.epzero) then
   write(nfecra,1011) 'ISTO2T', isto2t, 'THETST'
   iok = iok + 1
-elseif (isto2t.eq.2) then
-  thetst = 0.5d0 !FIXME is it still usefull?
 elseif (isto2t.eq.1) then
+  thetst = 0.5d0
+elseif (isto2t.eq.2) then
+  thetst = 1.d0
+elseif (isto2t.eq.0) then
   thetst = 0.d0
 endif
 

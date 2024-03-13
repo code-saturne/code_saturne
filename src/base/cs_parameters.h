@@ -169,7 +169,7 @@ typedef struct {
                                  terms of the momentum, apart from
                                  convection and diffusion */
 
-  int           turbulence_time_stepping; /* time scheme activated for the source
+  int           isto2t;       /* time scheme activated for the source
                                  terms of turbulent equations */
 
   double        thetsn;       /* value of \f$theta_S\f$ for Navier-Stokes

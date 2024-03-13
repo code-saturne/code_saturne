@@ -688,10 +688,7 @@ _face_diff_vel(const cs_mesh_t             *m,
   if (eqp_u->idiff > 0) {
 
     const cs_real_t *viscl = CS_F_(mu)->val;
-    const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
-    const cs_real_t thetmut  = time_scheme->thetvi;
     const cs_real_t *visct = CS_F_(mu_t)->val;
-    const cs_real_t *viscta = CS_F_(mu_t)->val_pre;
     cs_real_t idifft = eqp_u->idifft;
 
     cs_real_t *w1;
@@ -702,7 +699,7 @@ _face_diff_vel(const cs_mesh_t             *m,
     else
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w1[c_id] = viscl[c_id] + idifft*(thetmut * visct[c_id] + (1 - thetmut) * viscta[c_id]);
+        w1[c_id] = viscl[c_id] + idifft*visct[c_id];
 
     /*  Scalar diffusivity (Default) */
     if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
@@ -717,7 +714,7 @@ _face_diff_vel(const cs_mesh_t             *m,
       if (   cs_glob_turb_model->itytur == 3
           && cs_glob_turb_rans_model->irijnu == 1) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          w1[c_id] = viscl[c_id] + idifft*(thetmut * visct[c_id] + (1 - thetmut) * viscta[c_id]);
+          w1[c_id] = viscl[c_id] + idifft*visct[c_id];
 
         cs_face_viscosity(m, mq,
                           eqp_u->imvisf,
@@ -748,7 +745,7 @@ _face_diff_vel(const cs_mesh_t             *m,
           && cs_glob_turb_rans_model->irijnu == 1) {
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          w1[c_id] = viscl[c_id] + idifft*(thetmut * visct[c_id] + (1 - thetmut) * viscta[c_id]);
+          w1[c_id] = viscl[c_id] + idifft*visct[c_id];
 
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
@@ -3730,7 +3727,6 @@ cs_solve_navier_stokes(const int   iterns,
   /* Physical quantities */
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
-  const cs_real_t *viscta = CS_F_(mu_t)->val_pre;
 
   /* Pointers to properties */
   cs_real_t *crom_eos = CS_F_(rho)->val;
@@ -4180,7 +4176,6 @@ cs_solve_navier_stokes(const int   iterns,
 
         viscl = CS_F_(mu)->val;
         visct = CS_F_(mu_t)->val;
-        viscta = CS_F_(mu_t)->val_pre;
 
         vel = (cs_real_3_t *)CS_F_(vel)->val;
         vela = (cs_real_3_t *)CS_F_(vel)->val_pre;
@@ -4226,10 +4221,8 @@ cs_solve_navier_stokes(const int   iterns,
         continue;
 
       /* Physical Propreties */
-      const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
-      const cs_real_t thetmut  = time_scheme->thetvi; //TODO put it outside the loop.
       const cs_real_t visclc = viscl[c_id];
-      const cs_real_t visctc = (thetmut * visct[c_id] + (1 - thetmut) * viscta[c_id]);
+      const cs_real_t visctc = visct[c_id];
 
       /* Geometrical quantities */
       const cs_real_t distbf = mq->b_dist[face_id];
@@ -4574,9 +4567,7 @@ cs_solve_navier_stokes(const int   iterns,
     }
     vp_param->xnrmu = sqrt(xnr_mu[0]);
 
-    /* Fixed-point convergence indicator
-     * TODO IOANIS you can add other tests...
-     * */
+    /* Fixed-point convergence indicator */
     if (vp_param->xnrmu >= vp_param->epsup * vp_param->xnrmu0)
       *icvrge = 0;
 

@@ -1092,13 +1092,6 @@ cs_parameters_check(void)
 
     const cs_time_scheme_t *t_sch = cs_glob_time_scheme;
 
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                              _("while reading input data"),
-                              "cs_glob_time_scheme->turbulence_time_stepping",
-                              cs_glob_time_scheme->turbulence_time_stepping,
-                              1, 3);
-
     if (   fabs(eqp->thetav-1.0) > 1e-3
         || t_sch->thetvi > 0
         || t_sch->thetsn > 0

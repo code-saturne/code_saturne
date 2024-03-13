@@ -188,16 +188,16 @@ BEGIN_C_DECLS
              is initialized to 1 (second-order) when the selected time scheme
              is second-order (\ref ischtp = 2), otherwise to 0.
 
-  \var  cs_time_scheme_t::turbulence_time_stepping
-        \anchor turbulence_time_stepping
+  \var  cs_time_scheme_t::isto2t
+        \anchor isto2t
         Specifies the time scheme for
         the source terms of the turbulence equations i.e. related to
         \f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\omega\f$, \f$\varphi\f$,
         \f$\overline{f}\f$), apart from convection and diffusion.
-        - 1: standard first-order: the terms which are linear
+        - 0: standard first-order: the terms which are linear
              functions of the solved variable are implicit and the others
              are explicit.
-        - 2: TODO IOANIS change second-order: the terms of the form \f$S_i\phi\f$ which are
+        - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
              linear functions of the solved variable \f$\phi\f$ are
              expressed as second-order terms by interpolation (according to
              the formula
@@ -208,6 +208,14 @@ BEGIN_C_DECLS
              the formula
              \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
              \f$\theta\f$ being given by the value of \ref thetst = 0.5)
+        - 2: the linear terms \f$S_i\phi\f$ are treated in the same
+             \ref isto2t = 1; the other terms \f$S_e\f$ are way as when
+             extrapolated according to the same formula as when
+             \ref isto2t = 1, but with \f$\theta\f$= \ref thetst = 1.\n
+             Due to certain specific couplings between the turbulence equations,
+             \ref isto2t is allowed the value 1 or 2 only for the
+             \f$R_{ij}\f$ models (\ref iturb = 30 or 31);
+             hence, it is always initialised to 0.
 
   \var  cs_time_scheme_t::thetsn
         \anchor thetsn
@@ -225,11 +233,11 @@ BEGIN_C_DECLS
         \anchor thetst
         \f$ \theta \f$-scheme for the extrapolation of the nonlinear
         explicit source terms $S_e$ of the turbulence equations when the
-        source term extrapolation has been activated (see \ref turbulence_time_stepping),
+        source term extrapolation has been activated (see \ref isto2t),
         following the formula
         \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
         The value of \f$theta\f$ is deduced from the value chosen for
-        \ref turbulence_time_stepping. Generally, only the value 0.5 is used.
+        \ref isto2t. Generally, only the value 0.5 is used.
         -  0 : explicit
         - 1/2: extrapolated in n+1/2
         -  1 : extrapolated in n+1
@@ -496,7 +504,7 @@ static cs_time_scheme_t  _time_scheme =
   .time_order = -1,
   .istmpf = -999,
   .isno2t = -999,
-  .turbulence_time_stepping = -999,
+  .isto2t = -999,
   .thetsn = -999.0,
   .thetst = -999.0,
   .thetvi = -999.0,
@@ -561,7 +569,7 @@ void
 cs_f_time_scheme_get_pointers(int     **ischtp,
                               int     **istmpf,
                               int     **isno2t,
-                              int     **turbulence_time_stepping,
+                              int     **isto2t,
                               double  **thetsn,
                               double  **thetst,
                               double  **thetvi,
@@ -796,7 +804,7 @@ void
 cs_f_time_scheme_get_pointers(int     **ischtp,
                               int     **istmpf,
                               int     **isno2t,
-                              int     **turbulence_time_stepping,
+                              int     **isto2t,
                               double  **thetsn,
                               double  **thetst,
                               double  **thetvi,
@@ -809,7 +817,7 @@ cs_f_time_scheme_get_pointers(int     **ischtp,
   *ischtp = &(_time_scheme.time_order);
   *istmpf = &(_time_scheme.istmpf);
   *isno2t = &(_time_scheme.isno2t);
-  *turbulence_time_stepping = &(_time_scheme.turbulence_time_stepping);
+  *isto2t = &(_time_scheme.isto2t);
   *thetsn = &(_time_scheme.thetsn);
   *thetst = &(_time_scheme.thetst);
   *thetvi = &(_time_scheme.thetvi);
@@ -2058,15 +2066,15 @@ cs_time_scheme_log_setup(void)
   cs_log_printf
     (CS_LOG_SETUP,
      _("  Time scheme:\n\n"
-       "    time_order:               %d (order of base time stepping scheme)\n"
-       "    istmpf:                   %d (time order of the mass flux scheme)\n"
-       "    isno2t:                   %d (time scheme for the momentum source terms,\n"
-       "                                  apart from convection and diffusion)\n"
-       "    turbulence_time_stepping: %d (time scheme for the turbulence source terms)\n"),
+       "    time_order:  %d (order of base time stepping scheme)\n"
+       "    istmpf:      %d (time order of the mass flux scheme)\n"
+       "    isno2t:      %d (time scheme for the momentum source terms,\n"
+       "                     apart from convection and diffusion)\n"
+       "    isto2t:      %d (time scheme for the turbulence source terms)\n"),
      cs_glob_time_scheme->time_order,
      cs_glob_time_scheme->istmpf,
      cs_glob_time_scheme->isno2t,
-     cs_glob_time_scheme->turbulence_time_stepping);
+     cs_glob_time_scheme->isto2t);
 
   if (cs_glob_time_scheme->isno2t > 0)
     cs_log_printf
@@ -2074,7 +2082,7 @@ cs_time_scheme_log_setup(void)
        _("    thetsn:      %g (theta_S for Navier-Stokes source terms)\n"),
        cs_glob_time_scheme->thetsn);
 
-  if (cs_glob_time_scheme->turbulence_time_stepping > 1)
+  if (cs_glob_time_scheme->isto2t > 0)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    thetst:      %g (theta for turbulence explicit source terms)\n"),
