@@ -12,12 +12,12 @@ Master (not on release branches yet)
   * Context parameters for boomerAMG included in the HYPRE library
 - Reshape the way to set the strategy and the related options to solve
   a saddle-point problem. This induces also many modifications in the
-  way to set linear solvers inside the CDO/HHO framework. This is a
-  preparatory step to mutualize saddle-point solvers between CDO
-  cell-based schemes for scalar-valued equation and CDO face-based
-  schemes for the monolothic coupling of the Navier-Stokes
-  equations. The user-defined settings related to the linear algebra
-  have to be modified.
+  way to set linear solvers inside the CDO/HHO framework. The
+  user-defined settings related to the linear algebra have to be
+  modified.
+- Mutualize saddle-point solvers between CDO cell-based schemes for
+  scalar-valued equation and CDO face-based schemes for the monolothic
+  coupling of the Navier-Stokes equations.
 
 ### User changes:
 

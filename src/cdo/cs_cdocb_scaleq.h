@@ -59,8 +59,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_cdocb_t  cs_cdocb_scaleq_t;
-
 /*============================================================================
  * Static inline public function prototypes
  *============================================================================*/
@@ -98,16 +96,18 @@ cs_cdocb_scaleq_get(cs_cell_sys_t       **csys,
 /*!
  * \brief  Set shared pointers from the main domain members
  *
- * \param[in]  cdoq        additional CDO mesh quantities
- * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a \ref cs_time_step_t structure
+ * \param[in] mesh       pointer to the mesh structure
+ * \param[in] cdoq       additional CDO mesh quantities
+ * \param[in] connect    pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in] time_step  pointer to a \ref cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdocb_scaleq_init_sharing(const cs_cdo_quantities_t     *cdoq,
-                             const cs_cdo_connect_t        *connect,
-                             const cs_time_step_t          *time_step);
+cs_cdocb_scaleq_init_sharing(const cs_mesh_t            *mesh,
+                             const cs_cdo_quantities_t  *cdoq,
+                             const cs_cdo_connect_t     *connect,
+                             const cs_time_step_t       *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -142,40 +142,40 @@ cs_cdocb_scaleq_init_context(const cs_equation_param_t   *eqp,
 /*!
  * \brief Destroy a cs_cdocb_scaleq_t structure
  *
- * \param[in, out] scheme_context   pointer to a scheme context to free
+ * \param[in, out] scheme_context  pointer to a scheme context to free
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdocb_scaleq_free_context(void       *scheme_context);
+cs_cdocb_scaleq_free_context(void  *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary conditions known from the settings
- *         Define an indirection array for the enforcement of internal DoFs
- *         only if needed.
- *         Case of scalar-valued CDO-Cb schemes
+ * \brief Set the boundary conditions known from the settings
+ *        Define an indirection array for the enforcement of internal DoFs
+ *        only if needed.
+ *        Case of scalar-valued CDO-Cb schemes
  *
- * \param[in]      t_eval          time at which one evaluates BCs
- * \param[in]      mesh            pointer to a cs_mesh_t structure
- * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval  time at which one evaluates BCs
+ * \param[in]      mesh    pointer to a cs_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb     pointer to a cs_equation_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdocb_scaleq_setup(cs_real_t                      t_eval,
-                      const cs_mesh_t               *mesh,
-                      const cs_equation_param_t     *eqp,
-                      cs_equation_builder_t         *eqb);
+cs_cdocb_scaleq_setup(cs_real_t                   t_eval,
+                      const cs_mesh_t            *mesh,
+                      const cs_equation_param_t  *eqp,
+                      cs_equation_builder_t      *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the initial values of the variable field taking into account
- *         the boundary conditions.
- *         Case of scalar-valued CDO-Cb schemes.
+ * \brief Set the initial values of the variable field taking into account
+ *        the boundary conditions.
+ *        Case of scalar-valued CDO-Cb schemes.
  *
  * \param[in]      t_eval     time at which one evaluates BCs
  * \param[in]      field_id   id related to the variable field of this equation
@@ -187,12 +187,12 @@ cs_cdocb_scaleq_setup(cs_real_t                      t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdocb_scaleq_init_values(cs_real_t                     t_eval,
-                            const int                     field_id,
-                            const cs_mesh_t              *mesh,
-                            const cs_equation_param_t    *eqp,
-                            cs_equation_builder_t        *eqb,
-                            void                         *context);
+cs_cdocb_scaleq_init_values(cs_real_t                   t_eval,
+                            const int                   field_id,
+                            const cs_mesh_t            *mesh,
+                            const cs_equation_param_t  *eqp,
+                            cs_equation_builder_t      *eqb,
+                            void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

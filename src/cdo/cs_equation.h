@@ -584,28 +584,30 @@ cs_equation_set_sles(void);
  * \brief Set shared pointers to the main structures. Associate these
  *        structures among the activated class of discretization schemes.
  *
- * \param[in] connect           pointer to a cs_cdo_connect_t structure
- * \param[in] cdoq              pointer to additional mesh quantities struct.
- * \param[in] time_step         pointer to a time step structure
- * \param[in] cb_scheme_flag    metadata for cell-based schemes
- * \param[in] eb_scheme_flag    metadata for edge-based schemes
- * \param[in] fb_scheme_flag    metadata for face_based schemes
- * \param[in] vb_scheme_flag    metadata for vertex-based schemes
- * \param[in] vcb_scheme_flag   metadata for vertex+cell-based schemes
- * \param[in] hho_scheme_flag   metadata for HHO schemes
+ * \param[in] mesh             pointer to a mesh structure
+ * \param[in] connect          pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq             pointer to additional mesh quantities struct.
+ * \param[in] time_step        pointer to a time step structure
+ * \param[in] cb_scheme_flag   metadata for cell-based schemes
+ * \param[in] eb_scheme_flag   metadata for edge-based schemes
+ * \param[in] fb_scheme_flag   metadata for face_based schemes
+ * \param[in] vb_scheme_flag   metadata for vertex-based schemes
+ * \param[in] vcb_scheme_flag  metadata for vertex+cell-based schemes
+ * \param[in] hho_scheme_flag  metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_sharing(const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *cdoq,
-                         const cs_time_step_t        *time_step,
-                         cs_flag_t                    cb_scheme_flag,
-                         cs_flag_t                    eb_scheme_flag,
-                         cs_flag_t                    fb_scheme_flag,
-                         cs_flag_t                    vb_scheme_flag,
-                         cs_flag_t                    vcb_scheme_flag,
-                         cs_flag_t                    hho_scheme_flag);
+cs_equation_init_sharing(const cs_mesh_t            *mesh,
+                         const cs_cdo_connect_t     *connect,
+                         const cs_cdo_quantities_t  *cdoq,
+                         const cs_time_step_t       *time_step,
+                         cs_flag_t                   cb_scheme_flag,
+                         cs_flag_t                   eb_scheme_flag,
+                         cs_flag_t                   fb_scheme_flag,
+                         cs_flag_t                   vb_scheme_flag,
+                         cs_flag_t                   vcb_scheme_flag,
+                         cs_flag_t                   hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -81,6 +81,9 @@ cs_cdo_solve.h \
 cs_cdo_system.h \
 cs_cdo_toolbox.h \
 cs_cdo_turbulence.h \
+cs_cdocb_scaleq.h \
+cs_cdocb_scaleq_sles.h \
+cs_cdocb_priv.h \
 cs_cdoeb_priv.h \
 cs_cdoeb_vecteq.h \
 cs_cdofb_ac.h \
@@ -97,9 +100,6 @@ cs_cdovb_scalsys.h \
 cs_cdovb_priv.h \
 cs_cdovb_vecteq.h \
 cs_cdovcb_scaleq.h \
-cs_cdocb_scaleq.h \
-cs_cdocb_monolithic_sles.h \
-cs_cdocb_priv.h \
 cs_dbg.h \
 cs_domain.h \
 cs_domain_op.h \
@@ -165,6 +165,9 @@ cs_cdo_solve.c \
 cs_cdo_system.c \
 cs_cdo_toolbox.c \
 cs_cdo_turbulence.c \
+cs_cdocb_priv.c \
+cs_cdocb_scaleq.c \
+cs_cdocb_scaleq_sles.c \
 cs_cdoeb_vecteq.c \
 cs_cdofb_ac.c \
 cs_cdofb_monolithic.c \
@@ -178,7 +181,6 @@ cs_cdovb_scaleq.c \
 cs_cdovb_scalsys.c \
 cs_cdovb_vecteq.c \
 cs_cdovcb_scaleq.c \
-cs_cdocb_scaleq.c \
 cs_dbg.c \
 cs_domain.c \
 cs_domain_op.c \
@@ -225,11 +227,9 @@ libcscdo_a_LIBADD =
 
 noinst_LIBRARIES += libcscdo_extension.a
 libcscdo_extension_a_SOURCES = \
-cs_equation_system_sles.c \
-cs_cdocb_monolithic_sles.c
+cs_equation_system_sles.c
 libcscdo_a_LIBADD += \
-libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT) \
-libcscdo_extension_a-cs_cdocb_monolithic_sles.$(OBJEXT)
+libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT)
 
 clean-local:
 	-rm -rf .deps

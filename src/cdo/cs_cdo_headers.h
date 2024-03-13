@@ -44,6 +44,8 @@
 #include "cs_cdo_system.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_cdo_turbulence.h"
+#include "cs_cdocb_scaleq.h"
+#include "cs_cdocb_scaleq_sles.h"
 #include "cs_cdoeb_vecteq.h"
 #include "cs_cdofb_ac.h"
 #include "cs_cdofb_monolithic.h"

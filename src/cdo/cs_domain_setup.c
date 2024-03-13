@@ -648,7 +648,8 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                            domain->connect,
                            domain->mesh);
 
-  cs_equation_init_sharing(domain->connect,
+  cs_equation_init_sharing(domain->mesh,
+                           domain->connect,
                            domain->cdo_quantities,
                            domain->time_step,
                            cc->cb_scheme_flag,

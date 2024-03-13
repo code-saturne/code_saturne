@@ -47,6 +47,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
+#include "cs_cdocb_priv.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
@@ -706,29 +707,10 @@ _set_key(cs_equation_param_t   *eqp,
 
     }
     else if (strcmp(keyval, "cdo_cb") == 0 ||
-             strcmp(keyval, "cdocb") == 0) {
+             strcmp(keyval, "cdocb") == 0)
+      cs_cdocb_init_default_param(eqp);
 
-      eqp->space_scheme = CS_SPACE_SCHEME_CDOCB;
-      eqp->space_poly_degree = 0;
 
-      eqp->diffusion_hodgep.inv_pty = true;
-      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_FPED;
-      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
-
-      eqp->time_hodgep.type = CS_HODGE_TYPE_VDCP;
-      eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
-
-      eqp->reaction_hodgep.type = CS_HODGE_TYPE_VDCP;
-      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
-
-      eqp->saddle_param->solver = CS_PARAM_SADDLE_SOLVER_MUMPS;
-      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
-
-      cs_param_sles_mumps(eqp->sles_param,
-                          false, /* is single-precision */
-                          CS_PARAM_MUMPS_FACTO_LDLT_SYM);
-
-    }
     else if (strcmp(keyval, "cdo_eb") == 0 ||
              strcmp(keyval, "cdoeb") == 0) {
 
