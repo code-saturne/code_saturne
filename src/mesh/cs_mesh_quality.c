@@ -420,9 +420,9 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
     }
     double of_s = _MODULE_3D(v1) * _MODULE_3D(v2);
 
-    offsetting[cell1] = CS_MAX(offsetting[cell1],
+    offsetting[cell1] = CS_MIN(offsetting[cell1],
         1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell1]), 1./3.));
-    offsetting[cell2] = CS_MAX(offsetting[cell2],
+    offsetting[cell2] = CS_MIN(offsetting[cell2],
         1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell2]), 1./3.));
 
   } /* End of loop on faces */
@@ -1033,11 +1033,11 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     BFT_MALLOC(working_array, n_i_faces + n_cells_wghosts, double);
 
-    for (i = 0; i < n_i_faces + n_cells_wghosts; i++)
-      working_array[i] = 0.;
-
     weighting = working_array;
     offsetting = working_array + n_i_faces;
+
+    for (i = 0; i < n_cells_wghosts; i++)
+      offsetting[i] = 1.;
 
     _compute_weighting_offsetting(mesh,
                                   mesh_quantities,
