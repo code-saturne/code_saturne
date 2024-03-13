@@ -4060,18 +4060,27 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   /* Solve the linear solver */
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+  const cs_param_sles_t  *slesp = saddlep->block11_sles_param;
 
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
   cs_real_t  rtol = saddlep->cvg_param.rtol;
+
+  cs_solving_info_t  sinfo;
+  cs_field_t  *fld = NULL;
+  if (slesp->field_id > -1) {
+    fld = cs_field_by_id(slesp->field_id);
+    cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+  }
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
+  sinfo.rhs_norm = 1.0; /* No renormalization by default (TODO) */
 
   cs_sles_convergence_state_t  code = cs_sles_solve(solver->main_sles,
                                                     matrix,
                                                     rtol,
-                                                    r_norm,
-                                                    &n_iters,
-                                                    &residual,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
                                                     b,
                                                     sol,
                                                     0,      /* aux. size */
@@ -4082,9 +4091,9 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   cs_iter_algo_default_t  *algo_ctx = solver->algo->context;
 
   algo_ctx->cvg_status = code;
-  algo_ctx->normalization = r_norm;
-  algo_ctx->res = residual;
-  algo_ctx->n_algo_iter = n_iters;
+  algo_ctx->normalization = sinfo.rhs_norm;
+  algo_ctx->res = sinfo.res_norm;
+  algo_ctx->n_algo_iter = sinfo.n_it;
 
   /* sol is computed and stored in a "gather" view. Switch to a "scatter"
      view */
@@ -4117,6 +4126,9 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
     x1[3*f+1] = soly[f];
     x1[3*f+2] = solz[f];
   }
+
+  if (slesp->field_id > -1)
+    cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 
   BFT_FREE(sol);
   BFT_FREE(b);
