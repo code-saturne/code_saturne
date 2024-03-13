@@ -279,6 +279,8 @@ _count_lines_in_file(const char *file_name)
 /*!
  * \brief Parse a csv file and export to a dataset (char ***).
  *
+ * The caller is responsible for freeing the dataset when not needed anymore.
+ *
  * \param[in] file_name              Name of the file to read
  * \param[in] separator              Separator (int)
  * \param[in] n_headers              Number of headers (to ignore during import)
@@ -290,7 +292,7 @@ _count_lines_in_file(const char *file_name)
  * \param[in] n_rows                 Pointer to number of rows in file
  * \param[in] n_cols                 Pointer to number of columns in file
  *
- * \returns Pointer to newly created dataseti. Needs to be deallocated by caller
+ * \returns Pointer to newly created dataset.
  */
 /*----------------------------------------------------------------------------*/
 

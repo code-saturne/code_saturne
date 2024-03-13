@@ -465,7 +465,6 @@ cs_time_table_from_csv_file_simple(const char *name,
                                    const char *file_name,
                                    const char *separator)
 {
-
   cs_time_table_t *retval = cs_time_table_from_csv_file(name,
                                                         file_name,
                                                         separator,
@@ -497,7 +496,6 @@ cs_time_table_from_csv_file_simple_headers(const char *name,
                                            const char *separator,
                                            const int   n_headers)
 {
-
   cs_time_table_t *retval = cs_time_table_from_csv_file(name,
                                                         file_name,
                                                         separator,
@@ -531,8 +529,8 @@ cs_time_table_set_time_col_id(cs_time_table_t *table,
 /*!
  * \brief Define the column id for time based on a label
  *
- * \param[in] table      Pointer to time table structure
- * \param[in] time_label Label to identify index of column which is to be used as time
+ * \param[in] table       Pointer to time table structure
+ * \param[in] time_label  Label to identify index of column used as time
  */
 /*----------------------------------------------------------------------------*/
 
@@ -606,12 +604,14 @@ cs_time_table_update_position(cs_time_table_t *table,
     coeffs[1].id  = 0;
     coeffs[0].val = 1.;
     coeffs[1].val = 0.;
-  } else if (_time > time_vals[n_rows - 1]) {
+  }
+  else if (_time > time_vals[n_rows - 1]) {
     coeffs[0].id = n_rows - 1;
     coeffs[1].id = n_rows - 1;
     coeffs[0].val = 1.;
     coeffs[1].val = 0.;
-  } else {
+  }
+  else {
     for (int i = t0_id; i < n_rows - 1; i++) {
       if (_time >= time_vals[i] && _time < time_vals[i+1]) {
         coeffs[1].id = i + 1;

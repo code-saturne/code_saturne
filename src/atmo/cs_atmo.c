@@ -2867,7 +2867,6 @@ cs_atmo_init_meteo_profiles(void)
               _("Meteo preprocessor: at least one information is required"
                 " for humidity field preprocessing (qw0 || qw1 || qw2).\n"));
 
-
   bft_printf("\n Meteo preprocessing values for computation:\n"
              "  dlmo=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n qwstar=%17.9e\n"
              " t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n",
