@@ -1487,7 +1487,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
 
   /* Linear algebra */
 
-  cs_equation_param_set(tr_eqp, CS_EQKEY_SOLVER, "bicg");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_SOLVER, "bicgs");
   cs_equation_param_set(tr_eqp, CS_EQKEY_PRECOND, "jacobi");
   cs_equation_param_set(tr_eqp, CS_EQKEY_SOLVER_RTOL, "1e-8");
 
