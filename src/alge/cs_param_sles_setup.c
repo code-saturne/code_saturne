@@ -35,6 +35,14 @@
 #include <string.h>
 #include <float.h>
 
+/* Avoid warnings due to previous values */
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_VERSION
+
 #if defined(HAVE_PETSC)
 #include <petsc.h>
 #include <petscconf.h> /* Useful to know if HYPRE is accessible through PETSc */

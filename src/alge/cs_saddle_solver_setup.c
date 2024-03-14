@@ -41,6 +41,14 @@
 #include <petscversion.h>
 #endif
 
+/* Avoid warnings due to previous values */
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_VERSION
+
 #if defined(HAVE_HYPRE)
 #include <HYPRE_krylov.h>
 #include <HYPRE_parcsr_ls.h>
