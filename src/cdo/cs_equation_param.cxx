@@ -326,7 +326,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
     }
     else if (strcmp(keyval, "frac23") == 0 || strcmp(keyval, "2/3") == 0) {
-      eqp->diffusion_hodgep.coef = 2.*cs_math_1ov3;
+      eqp->diffusion_hodgep.coef = 2./3.;
     }
     else {
       eqp->diffusion_hodgep.coef = atof(keyval);
@@ -374,7 +374,7 @@ _set_key(cs_equation_param_t   *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL", "CS_EQKEY_SOLVER");
-    /* No break wanted */
+    [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER:
     ierr = cs_param_sles_set_solver(keyval, eqp->sles_param);
 
@@ -389,7 +389,7 @@ _set_key(cs_equation_param_t   *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_ATOL", "CS_EQKEY_SOLVER_ATOL");
-    /* No break wanted */
+    [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_ATOL:
     eqp->sles_param->cvg_param.atol = atof(keyval);
     break;
@@ -398,7 +398,7 @@ _set_key(cs_equation_param_t   *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_DTOL", "CS_EQKEY_SOLVER_DTOL");
-    /* No break wanted */
+    [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_DTOL:
     eqp->sles_param->cvg_param.dtol = atof(keyval);
     break;
@@ -407,7 +407,7 @@ _set_key(cs_equation_param_t   *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_MAX_ITER", "CS_EQKEY_SOLVER_MAX_ITER");
-    /* No break wanted */
+    [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_MAX_ITER:
     eqp->sles_param->cvg_param.n_max_iter = atoi(keyval);
     break;
@@ -420,7 +420,7 @@ _set_key(cs_equation_param_t   *eqp,
                   "  Please replace it with \"%s\"\n",
                   __func__, "CS_EQKEY_ITSOL_EPS", "CS_EQKEY_ITSOL_RTOL",
                   "CS_EQKEY_SOLVER_RTOL");
-    /* No break wanted */
+    [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_RTOL:
     eqp->sles_param->cvg_param.rtol = atof(keyval);
     if (eqp->sles_param->cvg_param.atol > eqp->sles_param->cvg_param.rtol)
@@ -432,7 +432,7 @@ _set_key(cs_equation_param_t   *eqp,
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_RESNORM_TYPE",
                   "CS_EQKEY_SOLVER_RESNORM_TYPE");
-    /* No break wanted */
+    [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_RESNORM_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0 ||
         strcmp(keyval, "") == 0)
@@ -456,7 +456,7 @@ _set_key(cs_equation_param_t   *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_RESTART", "CS_EQKEY_SOLVER_RESTART");
-    /* No break wanted */
+    [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_RESTART:
     eqp->sles_param->restart = atoi(keyval);
     break;
@@ -666,7 +666,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
-      eqp->diffusion_hodgep.coef = 2*cs_math_1ov3;
+      eqp->diffusion_hodgep.coef = 2./3.;
 
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
@@ -702,7 +702,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
-      eqp->diffusion_hodgep.coef = 2*cs_math_1ov3;
+      eqp->diffusion_hodgep.coef = 2./3.;
 
     }
     else if (strcmp(keyval, "cdo_cb") == 0 ||
@@ -940,9 +940,9 @@ cs_equation_param_create(const char            *name,
   eqp->do_lumping = false;
   eqp->time_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_HODGE_ALGO_VORONOI,
     .type = CS_HODGE_TYPE_VPCD,
-    .coef = 1.,
+    .algo = CS_HODGE_ALGO_VORONOI,
+    .coef = 1., // not used by default with Voronoi
   };
 
   /* Description of the discretization of the diffusion term */
@@ -950,9 +950,9 @@ cs_equation_param_create(const char            *name,
   eqp->diffusion_property = NULL;
   eqp->diffusion_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_HODGE_ALGO_COST,
     .type = CS_HODGE_TYPE_EPFD,
-    .coef = 2*cs_math_1ov3,
+    .algo = CS_HODGE_ALGO_COST,
+    .coef = 2/3.,
   };
 
   /* Description of the discretization of the curl-curl term */
@@ -960,9 +960,9 @@ cs_equation_param_create(const char            *name,
   eqp->curlcurl_property = NULL;
   eqp->curlcurl_hodgep = (cs_hodge_param_t) {
     .inv_pty = true,
-    .algo = CS_HODGE_ALGO_COST,
     .type = CS_HODGE_TYPE_FPED,
-    .coef = cs_math_1ov3,
+    .algo = CS_HODGE_ALGO_COST,
+    .coef = 1./3.,
   };
 
   /* Description of the discretization of the grad-div term */
@@ -970,9 +970,9 @@ cs_equation_param_create(const char            *name,
   eqp->graddiv_property = NULL;
   eqp->graddiv_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_HODGE_ALGO_VORONOI,
     .type = CS_HODGE_TYPE_EPFD,
-    .coef = cs_math_1ov3,
+    .algo = CS_HODGE_ALGO_VORONOI,
+    .coef = 1., // not used by default with Voronoi
   };
 
   /* Advection term */
@@ -992,8 +992,9 @@ cs_equation_param_create(const char            *name,
   eqp->reaction_properties = NULL;
   eqp->reaction_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_HODGE_ALGO_VORONOI,
     .type = CS_HODGE_TYPE_VPCD,
+    .algo = CS_HODGE_ALGO_VORONOI,
+    .coef = 1., // not used by default with Voronoi
   };
 
   /* Source term (always in the right-hand side)
@@ -2289,11 +2290,12 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  context = {.func = func,
-                                    .input = input,
-                                    .free_input = NULL,
-                                    .dof_location = loc_flag,
-                                    .z_id = z_id };
+  cs_xdef_dof_context_t context = {
+    .z_id = z_id,
+    .dof_location = loc_flag,
+    .func = func,
+    .input = input,
+    .free_input = NULL, };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim, z_id,
@@ -2496,9 +2498,9 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                                     .values = array,
                                     /* Optional parameters */
                                     .full2subset = NULL,
-                                    .adjacency = NULL,
                                     .n_list_elts = 0,
-                                    .elt_ids= NULL };
+                                    .elt_ids= NULL,
+                                    .adjacency = NULL,};
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
@@ -2882,7 +2884,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  cs_xdef_dof_context_t  cx = {.z_id = z_id,
+  cs_xdef_dof_context_t  ctx = {.z_id = z_id,
                                .dof_location = loc_flag,
                                .func = func,
                                .input = input,
@@ -2896,7 +2898,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
                                           z_id,
                                           0, /* state */
                                           meta_flag,
-                                          &cx);
+                                          &ctx);
 
   /* Before incrementing the list of definitions, first verify that there
    * isn't an existing one on the same zone. If so, remove it.
@@ -3439,10 +3441,10 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
     meta_flag |= CS_FLAG_FULL_LOC;
 
   cs_xdef_dof_context_t  context = {.z_id = z_id,
+                                    .dof_location = loc_flag,
                                     .func = func,
                                     .input = input,
-                                    .free_input = NULL,
-                                    .dof_location = loc_flag };
+                                    .free_input = NULL};
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim,
@@ -3509,24 +3511,24 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_array_context_t  cx = {.z_id = z_id,
-                                   .stride = eqp->dim,
-                                   .value_location = loc,
-                                   .values = array,
-                                   .is_owner = is_owner,
-                                   .full_length = full_length,
-                                   /* Optional parameters */
-                                   .full2subset = NULL,
-                                   .adjacency = NULL,
-                                   .n_list_elts = 0,
-                                   .elt_ids= NULL };
+  cs_xdef_array_context_t  ctx = {.z_id = z_id,
+                                  .stride = eqp->dim,
+                                  .value_location = loc,
+                                  .is_owner = is_owner,
+                                  .full_length = full_length,
+                                  .values = array,
+                                  /* Optional parameters */
+                                  .full2subset = NULL,
+                                  .n_list_elts = 0,
+                                  .elt_ids= NULL,
+                                  .adjacency = NULL,};
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        (void *)&cx);
+                                        (void *)&ctx);
 
   /* Build the indirection array if only a subset is used */
 
@@ -3670,7 +3672,7 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+  cs_xdef_analytic_context_t  ctx = {.z_id = z_id,
                                      .func = func,
                                      .input = input,
                                      .free_input = NULL };
@@ -3680,7 +3682,7 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        &ac);
+                                        &ctx);
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;
@@ -3726,18 +3728,18 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  cx = {.func = func,
-                               .input = input,
-                               .free_input = NULL,
-                               .dof_location = loc_flag,
-                               .z_id = z_id};
+  cs_xdef_dof_context_t  ctx = {.z_id = z_id,
+                                .dof_location = loc_flag,
+                                .func = func,
+                                .input = input,
+                                .free_input = NULL,};
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        &cx);
+                                        &ctx);
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;

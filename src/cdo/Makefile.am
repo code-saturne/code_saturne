@@ -44,6 +44,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -185,7 +186,7 @@ cs_enforcement.c \
 cs_equation.c \
 cs_equation_bc.c \
 cs_equation_builder.c \
-cs_equation_param.c \
+cs_equation_param.cxx \
 cs_equation_system.c \
 cs_equation_system_param.c \
 cs_evaluate.c \
