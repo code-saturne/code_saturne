@@ -333,15 +333,15 @@ _mat_vec_exdiag_native_v1(cs_lnum_t            n_faces,
  * (symmetric matrix case), using dispatch.
  *
  * parameters:
- *   n_faces         <-- local number of internal faces
- *   face_cell       <-- face -> cells connectivity
+ *   accel           <-- use accelerated version if available.
  *   xa              <-- extradiagonal values
  *   x               <-- vector
  *   y               <-> vector
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_exdiag_native_v2(const cs_real_t     *restrict xa,
+_mat_vec_exdiag_native_v2(bool                 accel,
+                          const cs_real_t     *restrict xa,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y)
 {
@@ -351,6 +351,8 @@ _mat_vec_exdiag_native_v2(const cs_real_t     *restrict xa,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
 
   cs_dispatch_context ctx;
+  if (accel == false)
+    ctx.set_n_min_for_gpu(100000000);
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE
                            (cs_lnum_t          face_id,
@@ -358,24 +360,11 @@ _mat_vec_exdiag_native_v2(const cs_real_t     *restrict xa,
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 
-    cs_real_t ci = xa[face_id] * x[ii];
-    cs_real_t cj = xa[face_id] * x[jj];
+    cs_real_t ci = xa[face_id] * x[jj];
+    cs_real_t cj = xa[face_id] * x[ii];
 
-    if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-      y[ii] += ci;
-      y[jj] += cj;
-    }
-    else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-#ifdef __CUDA_ARCH__   // Test whether we are on GPU or CPU...
-      atomicAdd(&y[ii], ci);
-      atomicAdd(&y[jj], cj);
-#else
-      #pragma omp atomic
-      y[ii] += ci;
-      #pragma omp atomic
-      y[jj] += cj;
-#endif
-    }
+    cs_dispatch_sum(&y[ii], ci, sum_type);
+    cs_dispatch_sum(&y[jj], cj, sum_type);
   });
 
   ctx.wait();
@@ -532,13 +521,13 @@ _sub_matrix_vector_test(double               t_measure,
 
 #if (HAVE_CUDA)
 
-  const cs_lnum_2_t *__restrict__ d_face_cell
-    = (const cs_lnum_2_t *)cs_get_device_ptr((void *)face_cell);
-  const cs_real_t *__restrict__ d_xa
-    = (const cs_real_t *)cs_get_device_ptr((void *)xa);
-  const cs_real_t *__restrict__ d_x
-    = (const cs_real_t *)cs_get_device_ptr((void *)x);
-  cs_real_t *__restrict__ d_y
+  const cs_lnum_2_t *restrict d_face_cell
+    = cs_get_device_ptr_const_pf(face_cell);
+  const cs_real_t *restrict d_xa
+    = cs_get_device_ptr_const_pf(xa);
+  const cs_real_t *restrict d_x
+    = cs_get_device_ptr_const(x);
+  cs_real_t *restrict d_y
     = (cs_real_t *)cs_get_device_ptr((void *)y);
 
   //cs_sync_h2d(face_cell);
@@ -580,6 +569,8 @@ _sub_matrix_vector_test(double               t_measure,
 
   /* Dispatch variant */
 
+#if defined(HAVE_ACCEL)
+
   test_sum = 0.0;
   wt0 = cs_timer_wtime(), wt1 = wt0;
   if (t_measure > 0)
@@ -590,7 +581,40 @@ _sub_matrix_vector_test(double               t_measure,
   while (run_id < n_runs) {
     double test_sum_mult = 1.0/n_runs;
     while (run_id < n_runs) {
-      _mat_vec_exdiag_native_v2(xa, x, y);
+      _mat_vec_exdiag_native_v2(true, xa, x, y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     "\n"
+     "Matrix.vector product, extradiagonal part (dispatch, accelerated)\n"
+     "---------------------\n");
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "  (calls: %d;  test sum: %12.5f)\n",
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+
+#endif
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      _mat_vec_exdiag_native_v2(false, xa, x, y);
       test_sum += y[n_cells-1]*test_sum_mult;
       run_id++;
     }
@@ -694,6 +718,82 @@ _matrix_check_compare(cs_lnum_t        n_elts,
 #endif
 
   return dmax;
+}
+
+/*----------------------------------------------------------------------------
+ * Check matrix.vector product local extradiagonal part related correctness.
+ *
+ * parameters:
+ *   t_measure   <-- minimum time for each measure (< 0 for single pass)
+ *   n_cells     <-- number of cells
+ *   n_cells_ext <-- number of cells including ghost cells (array size)
+ *   n_faces     <-- local number of internal faces
+ *   face_cell   <-- face -> cells connectivity
+ *   xa          <-- extradiagonal values
+ *   x           <-> vector
+ *   y           --> vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_sub_matrix_vector_check(cs_lnum_t            n_cells,
+                         cs_lnum_t            n_cells_ext,
+                         cs_lnum_t            n_faces,
+                         const cs_lnum_2_t   *face_cell,
+                         const cs_real_t     *restrict xa,
+                         cs_real_t           *restrict x,
+                         cs_real_t           *restrict y)
+{
+  cs_real_t *yc = NULL;
+
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++) {
+    y[jj] = 0.0;
+  }
+
+  /* Matrix.vector product, reference */
+
+  _mat_vec_exdiag_native(n_faces, face_cell, xa, x, y);
+
+  /* Dispatch variant */
+
+  CS_MALLOC_HD(yc, n_cells_ext, cs_real_t, cs_alloc_mode);
+
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++) {
+    yc[jj] = 0.0;
+  }
+
+  cs_log_printf
+    (CS_LOG_DEFAULT,
+     "\n"
+     "Scalar face assembly dispatch\n"
+     "-----------------------------\n");
+
+  double mdiff = 0;
+
+#if defined(HAVE_ACCEL)
+
+  _mat_vec_exdiag_native_v2(true, xa, x, yc);
+
+  mdiff = _matrix_check_compare(n_cells, y, yc);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                "  (diff to ref (device): %12.5f)\n",
+                mdiff);
+
+#endif
+
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++) {
+    yc[jj] = 0.0;
+  }
+
+  _mat_vec_exdiag_native_v2(false, xa, x, yc);
+
+  mdiff = _matrix_check_compare(n_cells, y, yc);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                "  (diff to ref (host):   %12.5f)\n",
+                mdiff);
+
+  CS_FREE_HD(yc);
 }
 
 /*----------------------------------------------------------------------------
@@ -1205,6 +1305,14 @@ cs_benchmark(int  mpi_trace_mode)
                           xa,
                           x,
                           y);
+
+  _sub_matrix_vector_check(n_cells,
+                           n_cells_ext,
+                           n_faces,
+                           i_face_cells,
+                           xa,
+                           x,
+                           y);
 
   cs_matrix_finalize();
 

@@ -408,7 +408,7 @@ END_C_DECLS
 #if defined(__cplusplus) && defined(HAVE_ACCEL)
 
 template <class T>
-inline T *restrict
+inline const T *restrict
 cs_get_device_ptr_const(T *ptr)
 {
   const void *ptr_v

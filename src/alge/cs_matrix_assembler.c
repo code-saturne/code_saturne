@@ -2586,8 +2586,8 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
     BFT_FREE(_ma->d_g_c_id);
     BFT_FREE(_ma->d_r_idx);
 
-    CS_FREE_HD(_ma->_c_id);
-    CS_FREE_HD(_ma->_r_idx);
+    BFT_FREE(_ma->_c_id);
+    BFT_FREE(_ma->_r_idx);
 
     BFT_FREE(*ma);
   }

@@ -37,6 +37,7 @@
 
 #ifdef __NVCC__
 #include "cs_base_cuda.h"
+#include "cs_alge_cuda.cuh"
 #endif
 
 /*----------------------------------------------------------------------------
@@ -192,7 +193,6 @@ public:
     const int n_i_groups  = m->i_face_numbering->n_groups;
     const int n_i_threads = m->i_face_numbering->n_threads;
     const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
       #pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
@@ -411,6 +411,8 @@ public:
  * Context to execute loops with SYCL on the device
  */
 
+// TODO
+
 
 #endif  // __NVCC__ or SYCL
 
@@ -602,6 +604,135 @@ public:
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  sum values using a chosen dispatch sum type.
+ *
+ * This allows calling a unique function for assembly in lambda functions
+ * called by a dispatch context for interior or boundary faces.
+ *
+ * \tparam  T    array type
+ *
+ * \param[in, out]  dest      destination
+ * \param[in]       src       source value
+ * \param[in]       sum_type  sum type
+ */
+/*----------------------------------------------------------------------------*/
+
+#ifdef __CUDA_ARCH__   // Test whether we are on GPU or CPU...
+
+template <typename T>
+__device__ static void __forceinline__
+cs_dispatch_sum(T                  *dest,
+                const T             src,
+                cs_dispatch_sum_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+#if 1
+    using sum_v = assembled_value<T>;
+    sum_v v;
+
+    v.get() = src;
+    sum_v::ref(*dest).conflict_free_add(-1u, v);
+#else
+    atomicAdd(dest, src);
+#endif
+  }
+  else if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    *dest += src;
+  }
+}
+
+#else  // ! __CUDA_ARCH__
+
+template <typename T>
+inline void
+cs_dispatch_sum(T                  *dest,
+                const T             src,
+                cs_dispatch_sum_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    *dest += src;
+  }
+  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+    #pragma omp atomic
+    *dest += src;
+  }
+}
+
+#endif // __CUDA_ARCH__
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  sum values using a chosen dispatch sum type.
+ *
+ * This allows calling a unique function for assembly in lambda functions
+ * called by a dispatch context for interior or boundary faces.
+ *
+ * \tparam  dim  array stride
+ * \tparam  T    array type
+ *
+ * \param[in, out]  dest      destination values
+ * \param[in]       src       source values
+ * \param[in]       sum_type  sum type
+ */
+/*----------------------------------------------------------------------------*/
+
+#ifdef __CUDA_ARCH__   // Test whether we are on GPU or CPU...
+
+template <size_t dim, typename T>
+__device__ static void __forceinline__
+cs_dispatch_sum(T                  *dest,
+                const T            *src,
+                cs_dispatch_sum_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    for (cs_lnum_t i = 0; i < dim; i++) {
+      dest[i] += src[i];
+    }
+  }
+  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+#if 1
+    using sum_v = assembled_value<T, dim>;
+    sum_v v;
+
+    for (size_t i = 0; i < dim; i++) {
+      v[i].get() = src[i];
+    }
+    sum_v::ref(dest).conflict_free_add(-1u, v);
+#else
+    for (size_t i = 0; i < dim; i++) {
+      atomicAdd(&dest[i], src[i]);
+    }
+#endif
+  }
+}
+
+#else  // ! __CUDA_ARCH__
+
+template <size_t dim, typename T>
+inline void
+cs_dispatch_sum(T                  *dest,
+                const T            *src,
+                cs_dispatch_sum_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    for (size_t i = 0; i < dim; i++) {
+      dest[i] += src[i];
+    }
+  }
+  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+    for (size_t i = 0; i < dim; i++) {
+      #pragma omp atomic
+      dest[i] += src[i];
+    }
+  }
+}
+
+#endif // __CUDA_ARCH__
+
 #endif /* __cplusplus */
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_DISPATCH_H__ */

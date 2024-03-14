@@ -155,7 +155,7 @@ public:
   assembled_value() noexcept = default;
 
   __device__
-  assembled_value(T value) noexcept : value(value)
+  assembled_value(T val) noexcept : value(val)
   {
   }
 
@@ -353,7 +353,7 @@ public:
   }
 
   __device__ inner_type &
-             get() noexcept
+  get() noexcept
   {
     return reinterpret_cast<inner_type &>(*this);
   }

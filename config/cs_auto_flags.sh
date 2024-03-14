@@ -1332,7 +1332,11 @@ if test "x$cs_linker_set" != "xyes" ; then
 
     linux*)
       ldflags_default=""
-      ldflags_default_opt="-O"
+      if test "x$cs_cxx_compiler_is_nvcc" = "xyes"; then
+        ldflags_default_opt="-O2"
+      else
+        ldflags_default_opt="-O"
+      fi
       ldflags_default_dbg="-g"
       ldflags_rpath="-Wl,-rpath -Wl,"
       if test "x$cs_gfortran" = "xgfortran"; then
