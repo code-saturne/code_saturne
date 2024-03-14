@@ -499,6 +499,15 @@ class study:
         if os.path.isfile(abs_setup_distpath) and not self.copy:
             shutil.copy(abs_setup_distpath, data)
             unset_executable(data)
+            if self.package.name == 'neptune_cfd':
+                from code_saturne.model.XMLengine import Case
+                path = os.path.join(data, 'setup.xml')
+                case = Case(package=self.package, file_name=path)
+                case.xmlRootNode().tagName = "NEPTUNE_CFD_GUI"
+                case['xmlfile'] = path
+                from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
+                XMLinitNeptune(case).initialize()
+                case.xmlSaveDocument()
 
         if self.use_ref:
             thch_distpath = os.path.join(data_distpath, 'user')

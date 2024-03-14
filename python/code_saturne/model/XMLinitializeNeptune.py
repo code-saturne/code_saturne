@@ -759,21 +759,23 @@ class XMLinitNeptune(BaseXmlInit):
 
         # Check that all zones have the 'physical_properties' flag
         XMLVolumicNode = self.case.xmlGetNode('volumic_conditions')
-        for node in XMLVolumicNode.xmlGetChildNodeList('zone', 'label', 'id'):
-            if not node['physical_properties']:
-                # The 'all_cells' zone is always used for physical properties
-                # for the v7.0
-                if node['label'] == "all_cells":
-                    node['physical_properties'] = 'on'
-                else:
-                    node['physical_properties'] = 'off'
+        if XMLVolumicNode:
+            for node in XMLVolumicNode.xmlGetChildNodeList('zone', 'label', 'id'):
+                if not node['physical_properties']:
+                    # The 'all_cells' zone is always used for physical properties
+                    # for the v7.0
+                    if node['label'] == "all_cells":
+                        node['physical_properties'] = 'on'
+                    else:
+                        node['physical_properties'] = 'off'
 
         # Rename "inclusions" drag model into "Gobin"
         cm_node = self.case.xmlGetNode("closure_modeling")
         if_node = cm_node.xmlGetNode("interfacial_forces")
-        for node in if_node.xmlGetChildNodeList("force"):
-            if (node.xmlGetNode("drag_model")["model"] == "inclusions"):
-                node.xmlGetNode("drag_model")["model"] = "Gobin"
+        if if_node:
+            for node in if_node.xmlGetChildNodeList("force"):
+                if (node.xmlGetNode("drag_model")["model"] == "inclusions"):
+                    node.xmlGetNode("drag_model")["model"] = "Gobin"
 
     def __backwardCompatibilityFrom_7_1(self):
         """
