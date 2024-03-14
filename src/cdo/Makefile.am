@@ -204,7 +204,7 @@ cs_navsto_param.c \
 cs_navsto_system.c \
 cs_param_cdo.c \
 cs_property.c \
-cs_quadrature.c \
+cs_quadrature.cxx \
 cs_reco.c \
 cs_reco_cw.c \
 cs_scheme_geometry.c \

@@ -516,7 +516,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
   case CS_QUADRATURE_HIGHER:
   case CS_QUADRATURE_HIGHEST:
     ret_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ;
-    /* No break, pass to the following too */
+    [[fallthrough]]; /* No break, pass to the following too */
   case CS_QUADRATURE_BARY_SUBDIV:
     ret_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
     break;
@@ -534,7 +534,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
     case CS_QUADRATURE_HIGHER:
     case CS_QUADRATURE_HIGHEST:
       ret_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_HFQ;
-      /* No break, pass to the following too */
+      [[fallthrough]]; /* No break, pass to the following too */
     case CS_QUADRATURE_BARY_SUBDIV:
       ret_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
       break;
@@ -553,7 +553,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
     case CS_QUADRATURE_HIGHER:
     case CS_QUADRATURE_HIGHEST:
       ret_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ;
-      /* No break, pass to the following too */
+      [[fallthrough]]; /* No break, pass to the following too */
     case CS_QUADRATURE_BARY_SUBDIV:
       ret_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ |
         CS_FLAG_COMP_PF;
@@ -573,7 +573,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
     case CS_QUADRATURE_HIGHER:
     case CS_QUADRATURE_HIGHEST:
       ret_flag |= CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF;
-      /* No break, pass to the following too */
+      [[fallthrough]]; /* No break, pass to the following too */
     case CS_QUADRATURE_BARY_SUBDIV:
       ret_flag |= CS_FLAG_COMP_EF | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ |
         CS_FLAG_COMP_PV | CS_FLAG_COMP_PE;
