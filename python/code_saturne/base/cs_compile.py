@@ -257,7 +257,7 @@ class cs_compile(object):
                 flags.insert(0, "-I" + self.pkg.get_dir("includedir"))
             # In the case where it is neptune_cfd, add preprocessing flag
             # to allow compatibility of user functions
-            if self.pkg.name == "neptune_cfd" or base_name == 'nc_solver':
+            if base_name == 'nc_solver':
                 flags.append("-DUSE_NEPTUNE_CFD")
 
         elif flag == 'ldflags':
