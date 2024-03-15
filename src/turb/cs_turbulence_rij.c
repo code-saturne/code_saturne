@@ -2148,7 +2148,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
         cs_real_t implmat2add[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-        const cs_real_t gkks3 = cs_math_3_dot_product(up_rhop, grav) / 3.;
+        const cs_real_t gkks3 = cs_math_3_dot_product(up_rhop[c_id], grav) / 3.;
 
         cs_real_t matrn[6];
         for (int ii = 0; ii < 6; ii++)
