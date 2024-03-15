@@ -1134,7 +1134,7 @@ cs_gui_coal_model(void)
     cm->rho0ch[icha] = _get_solid_fuel_child_real(tn, "density");
 
     /* ---- Thermal conductivity of the coal (W/m/K) */
-    if (cm->thcdch != NULL && cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
+    if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
       cm->thcdch[icha] = 1e-5; /* default */
       cs_gui_node_get_child_real(tn, "thermal_conductivity",
                                  &(cm->thcdch[icha]));

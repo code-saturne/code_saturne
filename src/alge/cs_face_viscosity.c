@@ -243,7 +243,7 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
 # pragma omp parallel
   {
     cs_lnum_t t_s_id, t_e_id;
-    cs_parall_thread_range(mesh->n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+    cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
     /* Laminar viscosity */
 

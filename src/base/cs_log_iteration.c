@@ -2133,7 +2133,7 @@ cs_log_iteration_log_setup(void)
     else
       cs_log_printf
         (CS_LOG_SETUP,
-         _("    At the last time step only.\n"), n);
+         _("    At the last time step only.\n"));
   }
   else {
     char desc[256];

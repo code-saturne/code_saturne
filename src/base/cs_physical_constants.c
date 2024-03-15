@@ -738,6 +738,7 @@ cs_fluid_properties_log_setup(void)
        cs_glob_fluid_properties->cp0,
        cs_glob_fluid_properties->icp,
        cs_glob_fluid_properties->icv,
+       cs_glob_fluid_properties->iviscv,
        cs_glob_fluid_properties->p0,
        cs_glob_fluid_properties->pred0,
        cs_glob_fluid_properties->t0,

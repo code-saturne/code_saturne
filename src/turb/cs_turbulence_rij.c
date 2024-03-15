@@ -274,23 +274,20 @@ _compute_up_rhop(int        phase_id,
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_rho = CS_F_(rho);
-  cs_field_t *f_rhob = CS_F_(rho_b);
 
   if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);
     f_eps = CS_FI_(eps, phase_id);
     f_rho = CS_FI_(rho, phase_id);
-    f_rhob = CS_FI_(rho_b, phase_id);
   }
 
   const cs_real_t *cvara_ep = f_eps->val_pre;
-  const cs_real_6_t *cvara_rij = f_rij->val_pre;
-  const cs_real_t *rho = f_rho->val;
-  const cs_real_t *rho_b = CS_F_(rho_b)->val;
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
+  cs_real_t *rho = f_rho->val;
+  cs_real_t *rho_b = CS_F_(rho_b)->val;
 
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
-
 
   cs_real_t cons = -1.5 * cs_turb_cmu;
 
@@ -303,7 +300,6 @@ _compute_up_rhop(int        phase_id,
   const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;
   const int idilat = vp_model->idilat;
-
 
   const cs_field_t *thf = cs_thermal_model_field();
   if (phase_id >= 0)
@@ -320,8 +316,6 @@ _compute_up_rhop(int        phase_id,
     char fname[128];
     snprintf(fname, 128, "%s_turbulent_flux", thf->name); fname[127] = '\0';
 
-    const cs_real_t *cvar_scalt = thf->val;
-
     /* Using thermal fluxes
      * (only for thermal scalar for the moment) */
     cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
@@ -337,7 +331,6 @@ _compute_up_rhop(int        phase_id,
       for (cs_lnum_t i = 0; i < 3; i++)
         up_rhop[c_id][i] = factor * xut[c_id][i];
     }
-
   }
 
   /* Note that the buoyant term is normally expressed in term of
@@ -349,14 +342,12 @@ _compute_up_rhop(int        phase_id,
 
     /* Boussinesq or anelastic approximation:
      * buoyant terms in function of gradT */
-    if (idilat == 0
-      || cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+    if (   idilat == 0
+        || cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
       /* TODO take all buoyant scalars */
 
       if (thf != NULL) {
-
-        const cs_real_t *cvara_scalt = thf->val_pre;
 
         /* Using thermal fluxes
          * (only for thermal scalar for the moment) */
@@ -437,7 +428,7 @@ _compute_up_rhop(int        phase_id,
                          gradro);
 
       /* finalize rho'u' */
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
         cs_real_t rit[3];
@@ -455,9 +446,7 @@ _compute_up_rhop(int        phase_id,
       BFT_FREE(coefb);
     }
   }
-
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1722,15 +1711,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
-  cs_real_t cons = -1.5 * cs_turb_cmu;
-
-  cs_field_t *f_thm = cs_thermal_model_field();
-  if (f_thm != NULL) {
-    double turb_schmidt
-      = cs_field_get_key_double(f_thm, cs_field_key_id("turbulent_schmidt"));
-    cons = -1.5 * cs_turb_cmu / turb_schmidt;
-  }
-
   cs_real_t *w1, *w2;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
   BFT_MALLOC(w2, n_cells_ext, cs_real_t);
@@ -1904,7 +1884,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                                 + impl_lin_cst * deltij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + ceps_impl * oo_matrn[_ij];
-
           }
         }
         /* Compute the 6x6 matrix A which verifies
@@ -1943,7 +1922,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                                 + impl_lin_cst * deltij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + alpha3 * ceps_impl * oo_matrn[_ij];
-
           }
         }
         /* Compute the 6x6 matrix A which verifies
@@ -2144,7 +2122,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
           continue;
 
         const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
-        const cs_real_t k_ov_eps = trrij / cvara_ep[c_id];
 
         cs_real_t implmat2add[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
@@ -2159,7 +2136,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         for (int ii = 0; ii < 6; ii++)
           oo_matrn[ii] /= trrij;
 
-
         if (gkks3 <= 0) {
           /* Term "C3 tr(G) Id"
              Compute inverse matrix of R^n
@@ -2172,7 +2148,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
             }
           }
         }
-
 
         /* rho'u' is written as R^{n+1} (R^n)^-1 rho'u'
          * only if g . (R^n)^-1 . rho'u' < 0
@@ -2792,7 +2767,6 @@ cs_turbulence_rij(int          phase_id,
   cs_field_t *f_alpbl = CS_F_(alp_bl);
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_rho = CS_F_(rho);
-  cs_field_t *f_rhob = CS_F_(rho_b);
 
   if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);
@@ -2800,7 +2774,6 @@ cs_turbulence_rij(int          phase_id,
     f_alpbl = CS_FI_(alp_bl, phase_id);
     f_vel = CS_FI_(vel, phase_id);
     f_rho = CS_FI_(rho, phase_id);
-    f_rhob = CS_FI_(rho_b, phase_id);
   }
 
   cs_real_t *cvar_ep = f_eps->val;
@@ -4126,7 +4099,6 @@ cs_turbulence_rij_compute_rusanov(void)
       bpro_rusanov[face_id] = 0.;
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

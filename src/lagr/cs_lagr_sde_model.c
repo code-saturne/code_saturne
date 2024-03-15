@@ -1716,7 +1716,6 @@ _lagiae(void)
   /* Adressing field values of the eulerian cooling tower model*/
   cs_real_t *x   = cs_field_by_name("humidity")->val;
   cs_real_t *x_s = cs_field_by_name("x_s")->val;
-  cs_real_t *t_h = cs_field_by_name("temperature")->val; /* humid air temperature */
 
   /* User defined air properties of the cooling tower model*/
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
@@ -1725,8 +1724,8 @@ _lagiae(void)
   cs_real_t rho_l                = air_prop->rho_l;
 
   /* General fluid properties*/
-  cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
-  cs_real_t p0                       = fluid_props->p0;
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+  cs_real_t p0                             = fluid_props->p0;
 
   /* Numerical properties */
   int       nor = cs_glob_lagr_time_step->nor;
@@ -1742,10 +1741,8 @@ _lagiae(void)
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
     cs_lnum_t      cell_id  = cs_lagr_particle_get_lnum(particle, p_am,
                                                         CS_LAGR_CELL_ID);
-    /* Caluclating the current particle surface*/
-    cs_real_t dia = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
-    cs_real_t surf_p = cs_math_pi*pow(dia,2)/4.;
 
+    cs_real_t dia = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
 
     /* Drop diameter based Reynolds number */
     cs_real_t vel_p = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_VELOCITY);

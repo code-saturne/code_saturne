@@ -653,7 +653,6 @@ cs_sles_hypre_setup(void               *context,
           HYPRE_BoomerAMGSetRAP2(hs, 0);            /* RAP in two multiplications
                                                        (default: FALSE) */
 
-          HYPRE_BoomerAMGSetAggNumLevels(hs, 2);
           HYPRE_BoomerAMGSetPMaxElmts(hs, 4);
 
           //HYPRE_SetSpGemmUseVendor(0);

@@ -281,7 +281,6 @@ _dry_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t rho, visct, xeps, xk, ttke, gravke;
   cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
-  cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
   cs_field_t *f_beta = cs_field_by_name("thermal_expansion");
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -373,7 +372,6 @@ _humid_atmosphere(const cs_real_t  cromo[],
      ======================================== */
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
-  cs_real_t rvsra = phys_pro->rvsra;
 
   /* compute the production term in case of humid atmosphere
    * ie. when iatmos eq 2 */

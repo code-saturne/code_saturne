@@ -7612,9 +7612,6 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
                       cs_real_t          *restrict b_iter_count,
                       cs_real_3_t        *restrict gradv)
 {
-  const cs_real_t  *restrict coefav = (const cs_real_t *restrict)bc_coeffs->a;
-  const cs_real_t *restrict coefbv = (const cs_real_t *restrict)bc_coeffs->b;
-
   _lsq_strided_gradient<e2n>(
     m,
     madj,

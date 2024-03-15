@@ -866,7 +866,7 @@ cs_ctwr_source_term(int              f_id,
       if (cs_glob_lagr_source_terms->ltsthe == 1) {
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
           if (f_id == (CS_F_(t)->id)) {
-            cs_real_t cp_h     = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
+            cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
           }
         }
       }
