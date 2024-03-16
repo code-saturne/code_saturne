@@ -85,6 +85,10 @@ cs_sles_petsc_library_info(cs_log_t  log_type);
 #include "cs_sles_amgx.h"
 #endif
 
+#if defined(HAVE_MKL)
+#include "mkl.h"
+#endif
+
 #if defined(HAVE_MUMPS)
 #include "cs_sles_mumps.h"
 #endif
@@ -143,6 +147,10 @@ _ext_library_version_info(bool  log)
   n_ext += 1;
 #endif
 
+#if defined(HAVE_MKL)
+  n_ext += 1;
+#endif
+
 #if defined(HAVE_MUMPS)
   n_ext += 1;
 #endif
@@ -171,6 +179,17 @@ _ext_library_version_info(bool  log)
 #if defined(HAVE_AMGX)
     cs_sles_amgx_library_info(logs[log_id]);
 #endif
+
+#if defined(HAVE_MKL)
+    {
+      char buffer[81];
+      MKL_Get_Version_String(buffer, 80);
+      buffer[80] = '\0';
+      cs_log_printf(logs[log_id],
+                    "    MKL %s\n", buffer);
+    }
+#endif
+
 #if defined(HAVE_MUMPS)
     cs_sles_mumps_library_info(logs[log_id]);
 #endif

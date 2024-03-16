@@ -101,6 +101,30 @@ static const cs_lnum_t _cs_cl = (CS_CL_SIZE/8);
 /* Note that most types are declared in cs_matrix_priv.h.
    only those only handled here are declared here. */
 
+/*=============================================================================
+ * Local Type Definitions
+ *============================================================================*/
+
+#if defined(HAVE_MKL)
+
+/* Mapping of matrix coefficients and structure to MKL matrix handle */
+/*-------------------------------------------------------------------*/
+
+typedef struct _cs_matrix_mkl_sparse_map_t {
+
+  sparse_matrix_t      a;                /* handle to MKL matrix */
+
+  struct matrix_descr  descr;            /* matrix descriptor */
+
+  MKL_INT             *_rows_start;      /* row index if copied */
+  MKL_INT             *_col_indx;        /* column ids if copied */
+
+  bool                 mapped;           /* is the mapping done */
+
+} cs_matrix_mkl_sparse_map_t;
+
+#endif // defined(HAVE_MKL)
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -111,11 +135,260 @@ static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
        "does not handle case with excluded diagonal.");
 
+static const char  *_cs_mkl_strings[] = {
+  "success",
+  "empty handle or matrix arrays",
+  "internal error: memory allocation failed",
+  "invalid input value",
+  "execution failed (e.g. incorrect data, etc.",
+  "internal error",
+  "operation not_supported",
+  "unknown error code"};
+
 #endif
 
 /*============================================================================
  * Private function definitions
-- *============================================================================*/
+ *============================================================================*/
+
+#if defined (HAVE_MKL)
+
+/*----------------------------------------------------------------------------
+ * Return string indicating MKL sparse status.
+ *
+ * parameters:
+ *   s  <--  sparse status code
+ *
+ * return
+ *   matching error string;
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_cs_mkl_status_get_string(sparse_status_t  s)
+{
+  const char *ss = NULL;
+  switch(s) {
+  case SPARSE_STATUS_SUCCESS:
+    ss = _cs_mkl_strings[0];
+    break;
+  case SPARSE_STATUS_NOT_INITIALIZED:
+    ss = _cs_mkl_strings[1];
+    break;
+  case SPARSE_STATUS_ALLOC_FAILED:
+    ss = _cs_mkl_strings[2];
+    break;
+  case SPARSE_STATUS_INVALID_VALUE:
+    ss = _cs_mkl_strings[3];
+    break;
+  case SPARSE_STATUS_EXECUTION_FAILED:
+    ss = _cs_mkl_strings[4];
+    break;
+  case SPARSE_STATUS_INTERNAL_ERROR:
+    ss = _cs_mkl_strings[5];
+    break;
+  case SPARSE_STATUS_NOT_SUPPORTED:
+    ss = _cs_mkl_strings[6];
+    break;
+  default:
+    ss = _cs_mkl_strings[7];
+  }
+
+  return ss;
+}
+
+/*----------------------------------------------------------------------------
+ * Unset matrix MKL sparse BLAS mapping.
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_unset_mkl_sparse_map(cs_matrix_t   *matrix)
+{
+  cs_matrix_mkl_sparse_map_t *csm
+    = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
+
+  if (csm == NULL)
+    return;
+
+  sparse_status_t status = SPARSE_STATUS_SUCCESS;
+
+  if (csm->mapped) {
+    status = mkl_sparse_destroy(csm->a);
+    BFT_FREE(csm->_rows_start);
+    BFT_FREE(csm->_col_indx);
+  }
+
+  if (SPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
+              __func__, (int)status, _cs_mkl_status_get_string(status));
+
+  BFT_FREE(matrix->ext_lib_map);
+  matrix->destroy_adaptor = NULL;
+}
+
+/*----------------------------------------------------------------------------
+ * Set matrix MKL sparse BLAS mapping.
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_mkl_sparse_map_t *
+_set_mkl_sparse_map(cs_matrix_t   *matrix)
+{
+  cs_matrix_mkl_sparse_map_t *csm
+    = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
+
+  if (csm != NULL) {
+    _unset_mkl_sparse_map(matrix);
+  }
+  else {
+    BFT_MALLOC(csm, 1, cs_matrix_mkl_sparse_map_t);
+    csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+    csm->descr.mode = SPARSE_FILL_MODE_FULL;
+    csm->descr.diag = SPARSE_DIAG_NON_UNIT;
+    csm->_rows_start = NULL;
+    csm->_col_indx = NULL;
+    csm->mapped = false;
+    matrix->ext_lib_map = (void *)csm;
+  }
+  matrix->destroy_adaptor = _unset_mkl_sparse_map;
+
+  cs_lnum_t *row_index, *col_id;
+  cs_real_t *e_val;
+  MKL_INT rows = 0, cols = 0, nnz = 0;
+
+  if (matrix->type == CS_MATRIX_CSR) {
+    cs_matrix_struct_csr_t *ms
+      = (cs_matrix_struct_csr_t  *)matrix->structure;
+    cs_matrix_coeff_csr_t *mc
+      = (cs_matrix_coeff_csr_t *)matrix->coeffs;
+    rows = ms->n_rows;
+    cols = ms->n_cols_ext;
+    nnz = ms->row_index[matrix->n_rows];
+    row_index = ms->_row_index;
+    col_id = ms->_col_id;
+    e_val = mc->_val;
+  }
+  else {
+    cs_matrix_struct_dist_t *ms
+      = (cs_matrix_struct_dist_t *)matrix->structure;
+    cs_matrix_coeff_dist_t *mc
+      = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+    rows = ms->n_rows;
+    if (matrix->type == CS_MATRIX_DIST)
+      cols = ms->n_rows; /* extended cols are separate here */
+    else
+      cols = ms->n_cols_ext;
+    nnz = ms->e.row_index[matrix->n_rows];
+    row_index = ms->e._row_index;
+    col_id = ms->e._col_id;
+    e_val = mc->_e_val;
+  }
+
+  sparse_status_t status = SPARSE_STATUS_SUCCESS;
+
+  MKL_INT *rows_start, *col_indx;
+  MKL_INT *_rows_start = NULL, *_col_indx = NULL;
+  if (sizeof(cs_lnum_t) != sizeof(MKL_INT) || true) {
+    BFT_MALLOC(_rows_start, rows+1, MKL_INT);
+    BFT_MALLOC(_col_indx, nnz, MKL_INT);
+    for (cs_lnum_t i = 0; i < rows+1; i++)
+      _rows_start[i] = row_index[i];
+    for (cs_lnum_t i = 0; i < nnz; i++)
+      _col_indx[i] = col_id[i];
+    rows_start = _rows_start;
+    col_indx = _col_indx;
+    csm->_rows_start = _rows_start;
+    csm->_col_indx = _col_indx;
+  }
+  else {
+    rows_start = row_index;
+    col_indx = col_id;
+  }
+
+  sparse_matrix_t a;
+
+  if (matrix->eb_size == 1) {
+
+#if CS_REAL_TYPE == CS_DOUBLE
+
+    status = mkl_sparse_d_create_csr(&a,
+                                     SPARSE_INDEX_BASE_ZERO,
+                                     rows,
+                                     cols,
+                                     rows_start,
+                                     rows_start + 1,
+                                     col_indx,
+                                     e_val);
+
+#elif CS_REAL_TYPE == CS_FLOAT
+
+    status = mkl_sparse_s_create_csr(&a,
+                                     SPARSE_INDEX_BASE_ZERO,
+                                     rows,
+                                     cols,
+                                     rows_start,
+                                     rows_start + 1,
+                                     col_indx,
+                                     e_val);
+
+#else
+
+    cs_assert(0);
+
+#endif
+
+  }
+  else { /* matrix->eb_size > 1 */
+
+#if CS_REAL_TYPE == CS_DOUBLE
+
+    status = mkl_sparse_d_create_bsr(&a,
+                                     SPARSE_INDEX_BASE_ZERO,
+                                     SPARSE_LAYOUT_ROW_MAJOR,
+                                     rows,
+                                     cols,
+                                     (MKL_INT)matrix->eb_size,
+                                     rows_start,
+                                     NULL,  /* rows_end = rows_start + 1 */
+                                     col_indx,
+                                     e_val);
+
+#elif CS_REAL_TYPE == CS_FLOAT
+
+    status = mkl_sparse_s_create_bsr(&a,
+                                     SPARSE_INDEX_BASE_ZERO,
+                                     SPARSE_LAYOUT_ROW_MAJOR,
+                                     rows,
+                                     cols,
+                                     (MKL_INT)matrix->eb_size,
+                                     rows_start,
+                                     NULL,  /* rows_end = rows_start + 1 */
+                                     col_indx,
+                                     e_val);
+
+#else
+
+    cs_assert(0);
+
+#endif
+
+  }
+
+  csm->a = a;
+  csm->mapped = true;
+
+  if (SPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
+              __func__, (int)status, _cs_mkl_status_get_string(status));
+
+  return csm;
+}
+
+#endif // defined(HAVE_MKL_SPARSE)
 
 /*----------------------------------------------------------------------------
  * Compute matrix-vector product for one dense block: y[i] = a[i].x[i]
@@ -1524,32 +1797,63 @@ _mat_vec_p_l_csr_mkl(cs_matrix_t  *matrix,
                      cs_real_t    *restrict x,
                      cs_real_t    *restrict y)
 {
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+  if (exclude_diag)
+    bft_error(__FILE__, __LINE__, 0,
+              _(_no_exclude_diag_error_str), __func__);
 
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+
+  /* Map matrix if not yet done */
+
+  cs_matrix_mkl_sparse_map_t *csm
+    = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
+
+  if (csm == NULL) {
+    matrix->ext_lib_map = _set_mkl_sparse_map(matrix);
+    csm = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
+  }
+
+  /* Finalize ghost cells communication */
+
   if (hs != NULL)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* MKL call */
 
-  int n_rows = ms->n_rows;
-  char transa[] = "n";
+#if CS_REAL_TYPE == CS_DOUBLE
 
-  if (exclude_diag)
-    bft_error(__FILE__, __LINE__, 0,
-              _(_no_exclude_diag_error_str), __func__);
+  sparse_status_t status
+    = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,
+                      1, // alpha,
+                      csm->a,
+                      csm->descr,
+                      x,
+                      0, // beta,
+                      y);
 
-  mkl_cspblas_dcsrgemv(transa,
-                       &n_rows,
-                       mc->val,
-                       ms->row_index,
-                       ms->col_id,
-                       (double *)x,
-                       y);
+#elif CS_REAL_TYPE == CS_FLOAT
+
+  sparse_status_t status
+    = mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE,
+                      1, // alpha,
+                      csm->a,
+                      csm->descr,
+                      x,
+                      0, // beta,
+                      y);
+
+#else
+
+  cs_assert(0);
+
+#endif
+
+  if (SPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
+              __func__, (int)status, _cs_mkl_status_get_string(status));
 }
 
 #endif /* defined (HAVE_MKL) */
@@ -2273,7 +2577,6 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
                      cs_real_t     x[restrict],
                      cs_real_t     y[restrict])
 {
-  const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   /* Ghost cell communication */
@@ -2285,26 +2588,118 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
 
   /* Call MKL function */
 
-  int n_rows = ms->n_rows;
-  char transa[] = "n";
+  /* Map matrix if not yet done */
 
-  mkl_cspblas_dcsrgemv(transa,
-                       &n_rows,
-                       mc->e_val,
-                       ms->e.row_index,
-                       ms->e.col_id,
-                       (double *)x,
-                       y);
+  cs_matrix_mkl_sparse_map_t *csm
+    = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
 
-  /* Add diagonal contribution */
+  if (csm == NULL) {
+    matrix->ext_lib_map = _set_mkl_sparse_map(matrix);
+    csm = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
+  }
+
+  /* Diagonal contribution */
+
+  cs_real_t beta = 1;
 
   if (!exclude_diag && mc->d_val != NULL) {
-    cs_lnum_t ii;
+    const cs_lnum_t n_rows = matrix->n_rows;
     const double *restrict da = mc->d_val;
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += da[ii] * x[ii];
+    switch (matrix->db_size) {
+    case 1:
+      {
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          y[ii] = da[ii] * x[ii];
+      }
+      break;
+    case 3:
+      {
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          _dense_3_3_ax(ii, mc->d_val, x, y);
+      }
+      break;
+    case 6:
+      {
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          _dense_6_6_ax(ii, mc->d_val, x, y);
+      }
+      break;
+    default:
+      {
+        cs_lnum_t db_size = matrix->db_size;
+        cs_lnum_t db_size_2 = db_size*db_size;
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          _dense_b_ax(ii, db_size, db_size_2, mc->d_val, x, y);
+      }
+    }
   }
+  else
+    beta = 0;
+
+  /* MKL call */
+
+  sparse_status_t status = SPARSE_STATUS_SUCCESS;
+
+#if CS_REAL_TYPE == CS_DOUBLE
+
+  if (matrix->db_size == matrix->eb_size)
+    status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,
+                             1, // alpha
+                             csm->a,
+                             csm->descr,
+                             x,
+                             beta,
+                             y);
+  else
+    status = mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE,
+                             1, // alpha
+                             csm->a,
+                             csm->descr,
+                             SPARSE_LAYOUT_ROW_MAJOR,
+                             y, // B
+                             matrix->n_cols_ext, // columns
+                             matrix->db_size,    // ldb
+                             beta,
+                             y, // C
+                             matrix->db_size);   // ldc
+
+#elif CS_REAL_TYPE == CS_FLOAT
+
+  if (matrix->db_size == matrix->eb_size)
+    status = mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE,
+                             1, // alpha,
+                             csm->a,
+                             csm->descr,
+                             x,
+                             beta,
+                             y);
+  else
+    status = mkl_sparse_s_mm(SPARSE_OPERATION_NON_TRANSPOSE,
+                             1, // alpha
+                             csm->a,
+                             csm->descr,
+                             SPARSE_LAYOUT_ROW_MAJOR,
+                             y, // B
+                             matrix->n_cols_ext, // columns
+                             matrix->db_size,    // ldb
+                             beta,
+                             y, // C
+                             matrix->db_size);   // ldc
+
+#else
+
+    cs_assert(0);
+
+#endif
+
+  if (SPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
+              __func__, (int)status, _cs_mkl_status_get_string(status));
+
 }
 
 #endif /* defined (HAVE_MKL) */
@@ -2933,6 +3328,7 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
  *     default
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
+ *     mkl             (with MKL Inspector-executor sparse BLAS)
  *
  *   CS_MATRIX_MSR
  *     default
