@@ -110,6 +110,7 @@ user_CFLAGS_HOT=$CFLAGS_HOT
 user_CXXFLAGS=$CXXFLAGS
 user_FCFLAGS=$FCFLAGS
 user_FCFLAGS_HOT=$FCFLAGS_HOT
+user_NVCCFLAGS_HC=$NVCCFLAGS_HC
 user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
 user_CS_LD=$CS_LD
@@ -271,6 +272,7 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(cs_cxx_version_string, [${cs_ac_cxx_version}])
   AC_SUBST(cs_fc_version_string, [${cs_ac_fc_version}])
   AC_SUBST(cs_nvcc_version_string, [${cs_ac_nvcc_version}])
+  AC_SUBST(cs_nvcc_hc_version_string, [${cs_nvcc_hc_version}])
 
   if test "x$cs_ac_cc_version" != "x" -a "x$cs_ac_cc_version" != "xunknown" ; then
     AC_DEFINE_UNQUOTED([CS_CC_VERSION_STRING], ["$cs_ac_cc_version"], [C compiler version string])
@@ -283,6 +285,9 @@ if test "x$auto_flags" = "xyes" ; then
   fi
   if test "x$cs_ac_nvcc_version" != "x" ; then
     AC_DEFINE_UNQUOTED([CS_NVCC_VERSION_STRING], ["$cs_ac_nvcc_version"], [CUDA compiler version string])
+  fi
+  if test "x$cs_ac_nvcc_hc_version" != "x" ; then
+    AC_DEFINE_UNQUOTED([CS_NVCC_HC_VERSION_STRING], ["$cs_ac_nvcc_hc_version"], [CUDA host compiler version])
   fi
 
 fi
@@ -622,6 +627,16 @@ if test "x$auto_flags" = "xyes" ; then
      AC_DEFINE([HAVE_OPENMP_TARGET_USM], 1, [openmp target unified shared memory support])
     fi
   fi
+
+  if test "$cs_enable_cuda_cpp" = "yes"; then
+    if test "x$cs_have_openmp" = "xyes" ; then
+      NVCCFLAGS_CPP="$nvccflags_default_cpp $nvccflags_default_cpp_omp $user_NVCCFLAGS_HC"
+    else
+      NVCCFLAGS_CPP="$nvccflags_default_cpp $user_NVCCFLAGS_HC"
+    fi
+    AC_SUBST(NVCCFLAGS_CPP)
+  fi
+
 fi
 
 AM_CONDITIONAL([HAVE_ACCEL], [test "$cs_have_accel" = "yes"])
@@ -1275,6 +1290,7 @@ echo " CUDA support: "$cs_have_cuda""
 if test x$cs_have_cuda = xyes ; then
   echo "   cuBLAS support: "$cs_have_cublas""
   echo "   cuSPARSE support: "$cs_have_cusparse""
+  echo "   use CUDA in .cpp files: "$cs_enable_cuda_cpp""
 fi
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$with_blas_type""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""

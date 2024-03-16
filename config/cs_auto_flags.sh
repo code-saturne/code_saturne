@@ -804,43 +804,6 @@ else
       cxxflags_default_omp="-mp"
       cxxflags_default_std=""
 
-    else
-      $CXX -V 2>&1 | grep 'Cuda compiler driver' > /dev/null
-      if test "$?" = "0" ; then
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -V conftest.c > $outfile 2>&1
-        cs_ac_cxx_version=`grep cuda_ $outfile | head -1`
-        cs_cxx_compiler_known=yes
-        cs_cxx_compiler_is_nvcc=yes
-
-        # Pass CXXFLAGS in case user forces choice of host compiler
-        cs_ac_cxx_version="`$CXX $CXXFLAGS -E -x cu --compiler-options --version - \
-                            < /dev/null 2>&1 | head -1`"
-
-        # Practical version info
-        cs_cxx_version="`$CXX $CXXFLAGS -E -x cu --compiler-options -v - \
-                        < /dev/null 2>&1 | grep 'gcc version' |\
-                        sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
-
-        # If we are using gcc for the host, we could set other option here
-        if test "x" != "x$cs_cxx_version" ; then
-          echo "compiler '$CXX' is NVIDIA compiler driver (using gcc $cs_cxx_version)."
-        else
-          echo "compiler '$CXX' is NVIDIA compiler driver with host compiler:"
-          echo "  $cs_ac_cxx_version"
-        fi
-
-        # Default compiler flags (based on gcc; would need additional tests above
-        # for non default compiler, such as clang or nvc++)
-        cxxflags_default="${cxx_nvccflags_add} -forward-unknown-to-host-compiler --x cu --expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal -Xlinker --no-as-needed"
-        cxxflags_default_dbg="-g -G"
-        cxxflags_default_opt="-O2"
-        cxxflags_default_hot="-O2 -Xcompiler -03"
-        cxxflags_default_prf="-g -lineinfo"
-        cxxflags_default_omp="-fopenmp"
-        cxxflags_default_std="-funsigned-char"
-      fi
     fi
   fi
 
@@ -1307,11 +1270,68 @@ if test "x$NVCC" != "x" ; then
 
   cs_ac_nvcc_version="`$NVCC --version 2>&1 |grep 'release' | head -1`"
 
+  # Host compiler version info
+
+  cs_nvcc_hc="unknown"
+  cs_nvcc_hc_version=""
+
+  # try GCC first, then clang, then nvc
+
+  cs_nvcc_hc_version="`$NVCC -E -x cu --compiler-options -v - \
+                       < /dev/null 2>&1 | grep 'gcc version' |\
+                       sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
+
+  if test "x" != "x$cs_nvcc_hc_version" ; then
+    cs_nvcc_hc="gcc"
+  else
+    cs_nvcc_hc_version="`$NVCC -E -x cu --compiler-options -v - \
+                         < /dev/null 2>&1 | grep 'clang version' |\
+                         sed 's/.*clang version \([-a-z0-9\.]*\).*/\1/'`"
+    if test "x" != "x$cs_nvcc_hc_version" ; then
+      cs_nvcc_hc="clang"
+    fi
+
+    if test "x" != "x$cs_nvcc_hc_version" ; then
+      cs_nvcc_hc_version="`$NVCC -E -x cu --compiler-options -v - \
+                           < /dev/null 2>&1 | grep -c 'D__PGI'`"
+      if test "0" != "$cs_nvcc_hc_version" ; then
+        cs_nvcc_hc="nvc"
+      fi
+      cs_nvcc_hc_version=""
+    fi
+  fi
+
+  if test "x" != "x$cs_nvcc_hc_version" ; then
+    cs_nvcc_hc_version="$cs_nvcc_hc $cs_nvcc_hc_version"
+  else
+    cs_nvcc_hc_version="$cs_nvcc_hc."
+  fi
+  echo "${NVCC} host compiler is $cs_nvcc_hc_version."
+
   # Default compiler flags
+
   nvccflags_default="--expt-extended-lambda "
-  nvccflags_default_dbg="--expt-extended-lambda -g -G"
-  nvccflags_default_opt="--expt-extended-lambda -O2"
-  nvccflags_default_prf="--expt-extended-lambda -O2 -g -lineinfo"
+  nvccflags_default_dbg="-g -G"
+  nvccflags_default_opt="-O2"
+  nvccflags_default_prf="-O2 -g -lineinfo"
+  nvccflags_default_cpp_omp=""
+  nvccflags_default_cpp=" --x cu -forward-unknown-to-host-compiler -funsigned-char"
+
+  case "$cs_nvcc_hc" in
+    gcc)
+      nvccflags_default="--expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal"
+      nvccflags_default_cc_omp="-fopenmp"
+      ;;
+    clang)
+      nvccflags_default="--expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wmissing-prototypes,-Wuninitialized -Wunused"
+      nvccflags_default_cc_omp="-fopenmp=libomp"
+      ;;
+    nvc)
+      nvccflags_default_cc_omp="-mp"
+      ;;
+    *)
+      ;;
+  esac
 
 fi
 

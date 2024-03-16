@@ -184,7 +184,7 @@ libcsalge_a_SOURCES = \
 cs_bad_cells_regularisation.c \
 cs_balance.c \
 cs_balance_by_zone.cxx \
-cs_benchmark.cxx \
+cs_benchmark.cpp \
 cs_benchmark_matrix.c \
 cs_blas.c \
 cs_bw_time_diff.c \
@@ -271,6 +271,11 @@ endif
 
 clean-local:
 	-rm -rf .deps
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
 
 .cu.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
