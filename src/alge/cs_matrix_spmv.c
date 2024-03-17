@@ -268,9 +268,9 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
     rows = ms->n_rows;
     cols = ms->n_cols_ext;
     nnz = ms->row_index[matrix->n_rows];
-    row_index = ms->_row_index;
-    col_id = ms->_col_id;
-    e_val = mc->_val;
+    row_index = ms->row_index;
+    col_id = ms->col_id;
+    e_val = mc->val;
   }
   else {
     cs_matrix_struct_dist_t *ms
@@ -283,9 +283,9 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
     else
       cols = ms->n_cols_ext;
     nnz = ms->e.row_index[matrix->n_rows];
-    row_index = ms->e._row_index;
-    col_id = ms->e._col_id;
-    e_val = mc->_e_val;
+    row_index = ms->e.row_index;
+    col_id = ms->e.col_id;
+    e_val = mc->e_val;
   }
 
   sparse_status_t status = SPARSE_STATUS_SUCCESS;
