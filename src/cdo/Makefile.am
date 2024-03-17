@@ -131,6 +131,7 @@ cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
 cs_reco_cw.h \
+cs_saddle_system.h \
 cs_scheme_geometry.h \
 cs_sdm.h \
 cs_solid_selection.h \
@@ -207,6 +208,7 @@ cs_property.c \
 cs_quadrature.cxx \
 cs_reco.c \
 cs_reco_cw.c \
+cs_saddle_system.c \
 cs_scheme_geometry.c \
 cs_sdm.c \
 cs_solid_selection.c \
