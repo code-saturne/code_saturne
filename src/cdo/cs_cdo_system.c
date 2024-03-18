@@ -1107,7 +1107,7 @@ cs_cdo_system_helper_create(cs_cdo_system_type_t    type,
   for (int i = 0; i < n_col_blocks; i++) {
 
     sh->col_block_sizes[i] = col_block_sizes[i];
-    sh->full_rhs_size +=  col_block_sizes[i];
+    sh->full_rhs_size += col_block_sizes[i];
 
   }
 

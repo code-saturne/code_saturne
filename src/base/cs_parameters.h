@@ -66,11 +66,13 @@ typedef cs_equation_param_t cs_var_cal_opt_t;
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+
   int     n_it;
   double  rhs_norm;
   double  res_norm;
   double  derive;
   double  l2residual;
+
 } cs_solving_info_t;
 
 /*----------------------------------------------------------------------------
@@ -113,6 +115,7 @@ enum {
  *----------------------------------------------------------------------------*/
 
 enum {
+
   CS_DRIFT_SCALAR_ON = (1 << 0),
   CS_DRIFT_SCALAR_ADD_DRIFT_FLUX = (1 << 1),
   CS_DRIFT_SCALAR_THERMOPHORESIS = (1 << 2),
@@ -122,6 +125,7 @@ enum {
   CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX = (1 << 6),
   CS_DRIFT_SCALAR_ZERO_BNDY_FLUX = (1 << 7),
   CS_DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS = (1 << 8)
+
 };
 
 /*----------------------------------------------------------------------------

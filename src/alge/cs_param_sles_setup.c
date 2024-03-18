@@ -132,22 +132,22 @@ _system_should_be_sym(cs_param_itsol_type_t  solver)
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the command line option for PETSc
+ * \brief Set the command line option for PETSc
  *
- * \param[in]      use_prefix    need a prefix
- * \param[in]      prefix        optional prefix
- * \param[in]      keyword       command keyword
- * \param[in]      keyval        command value
+ * \param[in] use_prefix  need a prefix
+ * \param[in] prefix      optional prefix
+ * \param[in] keyword     command keyword
+ * \param[in] keyval      command value
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_cmd(bool          use_prefix,
-           const char   *prefix,
-           const char   *keyword,
-           const char   *keyval)
+_petsc_cmd(bool         use_prefix,
+           const char  *prefix,
+           const char  *keyword,
+           const char  *keyval)
 {
-  char  cmd_line[128];
+  char cmd_line[128];
 
   if (use_prefix)
     sprintf(cmd_line, "-%s_%s", prefix, keyword);
@@ -165,12 +165,12 @@ _petsc_cmd(bool          use_prefix,
 /*!
  * \brief Predefined settings for a block ILU(0) with PETSc
  *
- * \param[in] prefix        prefix name associated to the current SLES
+ * \param[in] prefix  prefix name associated to the current SLES
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_bilu0_hook(const char              *prefix)
+_petsc_bilu0_hook(const char  *prefix)
 {
   assert(prefix != NULL);
 
@@ -189,12 +189,12 @@ _petsc_bilu0_hook(const char              *prefix)
 /*!
  * \brief Predefined settings for a block ICC(0) with PETSc
  *
- * \param[in] prefix        prefix name associated to the current SLES
+ * \param[in] prefix  prefix name associated to the current SLES
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_bicc0_hook(const char              *prefix)
+_petsc_bicc0_hook(const char  *prefix)
 {
   assert(prefix != NULL);
 
@@ -213,12 +213,12 @@ _petsc_bicc0_hook(const char              *prefix)
 /*!
  * \brief Predefined settings for a block SSOR with PETSc
  *
- * \param[in]      prefix        prefix name associated to the current SLES
+ * \param[in] prefix  prefix name associated to the current SLES
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_bssor_hook(const char              *prefix)
+_petsc_bssor_hook(const char  *prefix)
 {
   assert(prefix != NULL);
 
@@ -392,21 +392,20 @@ _petsc_pcgamg_hook(const char              *prefix,
 /*!
  * \brief Predefined settings for BoomerAMG in HYPRE as a preconditioner
  *
- * \param[in]      prefix        prefix name associated to the current SLES
- * \param[in]      slesp         pointer to a set of SLES parameters
- * \param[in]      is_symm       the linear system to solve is symmetric
- * \param[in, out] pc            pointer to a PETSc preconditioner
+ * \param[in]      prefix   prefix name associated to the current SLES
+ * \param[in]      slesp    pointer to a set of SLES parameters
+ * \param[in]      is_symm  the linear system to solve is symmetric
+ * \param[in, out] pc       pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pchypre_hook(const char              *prefix,
-                    const cs_param_sles_t   *slesp,
-                    bool                     is_symm,
-                    PC                       pc)
+_petsc_pchypre_hook(const char             *prefix,
+                    const cs_param_sles_t  *slesp,
+                    bool                    is_symm,
+                    PC                      pc)
 {
 #if defined(PETSC_HAVE_HYPRE)
-
   CS_UNUSED(is_symm);
 
   assert(prefix != NULL);
@@ -471,7 +470,8 @@ _petsc_pchypre_hook(const char              *prefix,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Undefined coarsening algo.", __func__);
+    bft_error(__FILE__, __LINE__, 0, "%s: Undefined coarsening algo.",
+              __func__);
     break;
   }
 
@@ -549,7 +549,7 @@ _petsc_pchypre_hook(const char              *prefix,
   /* _petsc_cmd(true, prefix, "pc_hypre_boomeramg_smooth_type","Euclid"); */
 
   /* Remark: FCF-Jacobi or l1scaled-Jacobi (or Chebyshev) as up/down smoothers
-   *  can be a good choice
+   *         can be a good choice
    */
 
   /* Smoother for the down cycle */
@@ -705,8 +705,8 @@ _petsc_pchypre_hook(const char              *prefix,
  * \brief Set the command line options for PC according to the kind of
  *        preconditioner to apply
  *
- * \param[in, out] slesp  set of parameters for the linear algebra
- * \param[in, out] ksp    PETSc solver structure
+ * \param[in, out] slesp   set of parameters for the linear algebra
+ * \param[in, out] ksp     PETSc solver structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -763,8 +763,10 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
     }
     else { /* Serial computation */
+
       PCSetType(pc, PCSOR);
       PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
+
     }
     break;
 
@@ -782,8 +784,10 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
     }
     else {
+
       PCSetType(pc, PCICC);
       PCFactorSetLevels(pc, 0);
+
     }
     break;
 
@@ -802,9 +806,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
       _petsc_bilu0_hook(slesp->name);
       if (cs_glob_n_ranks > 1)  /* Switch to a block version */
         slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
-
 #endif
-
     }
     else {
 
@@ -861,10 +863,11 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set PETSc solver
+ * \brief Set the PETSc solver
  *
- * \param[in]      slesp  pointer to SLES parameters
- * \param[in, out] ksp    pointer to PETSc KSP context
+ * \param[in]      prefix  label to identify this (part of) system
+ * \param[in]      slesp   pointer to SLES parameters
+ * \param[in, out] ksp     pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
