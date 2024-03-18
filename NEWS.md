@@ -13,6 +13,7 @@ Release 8.0.4 (unreleased)
   vertices due to incorrect indirection..
 
 - GUI:
+  * Fix bug in FSI internal coupling
   * Improve robustness of probes import from CSV, and fix import
     for CSV file containing probe names.
   * Fix detection of turbulent variables for NCFD when setting default

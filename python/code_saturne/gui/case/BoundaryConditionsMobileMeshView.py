@@ -560,6 +560,11 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.groupBoxStructureVelPos.show()
             self.groupBoxStructureCharacteristics.show()
             self.groupBoxForceApplied.show()
+            boundary = Boundary("coupling_mobile_boundary",
+                                self.__boundary.getLabel(), self.case)
+
+            self.__boundary = boundary
+            self.__couplingManager.setBoundary(boundary)
         else:
             self.groupBoxStructureVelPos.hide()
             self.groupBoxStructureCharacteristics.hide()
@@ -572,19 +577,13 @@ class BoundaryConditionsMobileMeshView(QWidget,
         """
         if self.__model.getMethod() != "off":
             modelData = b.getALEChoice()
+            self.__boundary = b
             if b.getNature() == "wall":
                 self.__comboModel.enableItem(str_model="internal_coupling")
                 self.__comboModel.enableItem(str_model="external_coupling")
             else:
                 self.__comboModel.disableItem(str_model="internal_coupling")
                 self.__comboModel.disableItem(str_model="external_coupling")
-            if modelData == 'internal_coupling':
-                boundary = Boundary("coupling_mobile_boundary",
-                                    b.getLabel(), self.case)
-                self.__boundary = boundary
-                self.__couplingManager.setBoundary(boundary)
-            else:
-                self.__boundary = b
             self.update_view(modelData)
             self.show()
         else:
