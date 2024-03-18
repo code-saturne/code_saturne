@@ -458,7 +458,7 @@ _norm(cs_saddle_solver_t  *solver,
  * \param[in]      n2_elts  number of elements in x2
  * \param[in]      x2       second array
  * \param[in]      rhs      system rhs (interlaced)
- * \param[in, out] x        solution array to define
+ * \param[in, out] u        solution array to define
  * \param[in, out] b        rhs array to define
  */
 /*----------------------------------------------------------------------------*/
@@ -469,23 +469,24 @@ _join_x1_vector_x2_deinterlaced(cs_lnum_t         n1_elts,
                                 cs_lnum_t         n2_elts,
                                 const cs_real_t  *x2,
                                 const cs_real_t  *rhs,
-                                cs_real_t        *x,
+                                cs_real_t        *u,
                                 cs_real_t        *b)
 {
-  cs_real_t  *xx = x, *bx = b;
-  cs_real_t  *xy = x + n1_elts, *by = b + n1_elts;
-  cs_real_t  *xz = x + 2*n1_elts, *bz = b + 2*n1_elts;
+  cs_real_t  *ux = u,             *bx = b;
+  cs_real_t  *uy = u + n1_elts,   *by = b + n1_elts;
+  cs_real_t  *uz = u + 2*n1_elts, *bz = b + 2*n1_elts;
 
   /* Treatment of the first set of elements. */
 
 # pragma omp parallel for if (CS_THR_MIN > n1_elts)
-  for (cs_lnum_t f = 0; f < n1_elts; f++) {
+  for (cs_lnum_t i1 = 0; i1 < n1_elts; i1++) {
 
-    const cs_real_t  *_x1 = x1 + 3*f;
-    const cs_real_t  *_rhs = rhs + 3*f;
+    const cs_real_t  *_x1 = x1 + 3*i1;
+    const cs_real_t  *_rhs = rhs + 3*i1;
 
-    xx[f] = _x1[0], xy[f] = _x1[1], xz[f] = _x1[2];
-    bx[f] = _rhs[0], by[f] = _rhs[1], bz[f] = _rhs[2];
+    ux[i1] = _x1[0], bx[i1] = _rhs[0];
+    uy[i1] = _x1[1], by[i1] = _rhs[1];
+    uz[i1] = _x1[2], bz[i1] = _rhs[2];
 
   }
 
@@ -493,7 +494,7 @@ _join_x1_vector_x2_deinterlaced(cs_lnum_t         n1_elts,
 
   const cs_lnum_t  x1_shift = 3*n1_elts;
 
-  cs_array_real_copy(n2_elts, x2, x + x1_shift);
+  cs_array_real_copy(n2_elts, x2, u + x1_shift);
   cs_array_real_copy(n2_elts, rhs + x1_shift, b + x1_shift);
 }
 
@@ -508,7 +509,7 @@ _join_x1_vector_x2_deinterlaced(cs_lnum_t         n1_elts,
  * \param[in]      n2_elts  number of elements in x2
  * \param[in]      x2       second array
  * \param[in]      rhs      system rhs (interlaced)
- * \param[in, out] x        solution array to define
+ * \param[in, out] u        solution array to define
  * \param[in, out] b        rhs array to define
  */
 /*----------------------------------------------------------------------------*/
@@ -519,17 +520,17 @@ _join_x1_scalar_x2_deinterlaced(cs_lnum_t         n1_elts,
                                 cs_lnum_t         n2_elts,
                                 const cs_real_t  *x2,
                                 const cs_real_t  *rhs,
-                                cs_real_t        *x,
+                                cs_real_t        *u,
                                 cs_real_t        *b)
 {
   /* Treatment of the first set of elements. */
 
-  cs_array_real_copy(n1_elts, x1, x);
+  cs_array_real_copy(n1_elts, x1, u);
   cs_array_real_copy(n1_elts, rhs, b);
 
   /* Treatment of the second set of elements */
 
-  cs_array_real_copy(n2_elts, x2, x + n1_elts);
+  cs_array_real_copy(n2_elts, x2, u + n1_elts);
   cs_array_real_copy(n2_elts, rhs + n1_elts, b + n1_elts);
 }
 
@@ -2980,12 +2981,10 @@ cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver)
     return;
 
   cs_saddle_solver_context_notay_t  *ctx = NULL;
-  BFT_MALLOC(solver->context, 1, cs_saddle_solver_context_notay_t);
+  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_notay_t);
 
   const cs_param_saddle_t  *saddlep = solver->param;
   const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
-
-  ctx->alpha = ctxp->scaling_coef;
 
   /* Function pointer */
 
@@ -3210,7 +3209,6 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
     (ctxp->dedicated_xtra_sles) ? ctx->xtra_sles : solver->main_sles;
   assert(xtra_sles != NULL);
 
-  const cs_lnum_t  n2_elts = solver->n2_elts;
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
@@ -3409,14 +3407,17 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 {
   assert(solver != NULL);
 
+  const cs_param_saddle_t  *saddlep = solver->param;
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
   const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t  n1_elts = solver->n1_elts;
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
-  const cs_lnum_t  n2_elts = solver->n2_elts;
   const cs_lnum_t  n_scatter_dofs = n1_dofs + n2_dofs;
+
+  assert(n2_dofs == solver->n2_elts);
 
   /* Prepare the solution and rhs arrays given to the solver */
 
@@ -3427,10 +3428,9 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
   BFT_MALLOC(b, n_scatter_dofs, cs_real_t);
 
   if (solver->n1_dofs_by_elt == 3 && solver->n2_dofs_by_elt == 1)
-    _join_x1_vector_x2_deinterlaced(n1_dofs, x1,
+    _join_x1_vector_x2_deinterlaced(n1_elts, x1,
                                     n2_dofs, x2,
-                                    sh->rhs,
-                                    sol, b);
+                                    sh->rhs, sol, b);
   else
     bft_error(__FILE__, __LINE__, 0,
               "%s: Case not handled yet.\n", __func__);
@@ -3439,8 +3439,8 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
      the dedicated PETSc hook function) */
 
 # pragma omp parallel for if (CS_THR_MIN > n2_dofs)
-  for (cs_lnum_t i = n1_dofs; i < n_scatter_dofs; i++)
-    b[i] = -1.0*b[i];
+  for (cs_lnum_t i2 = n1_dofs; i2 < n_scatter_dofs; i2++)
+    b[i2] = -1.0*b[i2];
 
   /* Handle parallelism: switch from a scatter to a gather view */
 
@@ -3453,19 +3453,27 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   /* Solve the linear solver */
 
-  const cs_param_saddle_t  *saddlep = solver->param;
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+  const cs_param_sles_t  *slesp = saddlep->block11_sles_param;
 
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
   cs_real_t  rtol = saddlep->cvg_param.rtol;
+  cs_field_t  *fld = NULL;
+
+  cs_solving_info_t  sinfo;
+  if (slesp->field_id > -1) {
+    fld = cs_field_by_id(slesp->field_id);
+    cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+  }
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
+  sinfo.rhs_norm = 1.0; /* No renormalization by default (TODO) */
 
   cs_sles_convergence_state_t  code = cs_sles_solve(solver->main_sles,
                                                     matrix,
                                                     rtol,
-                                                    r_norm,
-                                                    &n_iters,
-                                                    &residual,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
                                                     b,
                                                     sol,
                                                     0,      /* aux. size */
@@ -3476,9 +3484,9 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
   cs_iter_algo_default_t  *algo_ctx = solver->algo->context;
 
   algo_ctx->cvg_status = code;
-  algo_ctx->normalization = r_norm;
-  algo_ctx->res = residual;
-  algo_ctx->n_algo_iter = n_iters;
+  algo_ctx->normalization = sinfo.rhs_norm;
+  algo_ctx->res = sinfo.res_norm;
+  algo_ctx->n_algo_iter = sinfo.n_it;
 
   /* sol is computed and stored in a "gather" view. Switch to a "scatter"
      view */
@@ -3533,17 +3541,18 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
                        cs_matrix_get_diagonal(matrix), /* gathered view */
                        mat_diag);                      /* scatter view */
 
-  const double  alpha = ctx->alpha;
-  const cs_real_t  *dx = mat_diag, *dy = mat_diag + n1_dofs;
-  const cs_real_t  *dz = mat_diag + 2*n1_dofs;
-  const cs_real_t  *solx = sol, *soly = sol + n1_dofs, *solz = sol + 2*n1_dofs;
+  const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
+  const double  alpha = ctxp->scaling_coef;
+  const cs_real_t  *dx = mat_diag,             *solx = sol;
+  const cs_real_t  *dy = mat_diag + n1_elts,   *soly = sol + n1_elts;
+  const cs_real_t  *dz = mat_diag + 2*n1_elts, *solz = sol + 2*n1_elts;
 
-# pragma omp parallel for if (CS_THR_MIN > n1_dofs)             \
-  shared(dx, dy, dz, solx, soly, solz) firstprivate(n1_dofs)
-  for (cs_lnum_t f = 0; f < n1_dofs; f++) {
-    x1[3*f  ] = solx[f] - alpha * m12_x2[3*f  ]/dx[f];
-    x1[3*f+1] = soly[f] - alpha * m12_x2[3*f+1]/dy[f];
-    x1[3*f+2] = solz[f] - alpha * m12_x2[3*f+2]/dz[f];
+# pragma omp parallel for if (CS_THR_MIN > n1_elts)             \
+  shared(dx, dy, dz, solx, soly, solz) firstprivate(n1_elts)
+  for (cs_lnum_t i1 = 0; i1 < n1_elts; i1++) {
+    x1[3*i1  ] = solx[i1] - alpha * m12_x2[3*i1  ]/dx[i1];
+    x1[3*i1+1] = soly[i1] - alpha * m12_x2[3*i1+1]/dy[i1];
+    x1[3*i1+2] = solz[i1] - alpha * m12_x2[3*i1+2]/dz[i1];
   }
 
   BFT_FREE(m12_x2);
@@ -4217,6 +4226,7 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
   const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t  n1_elts = solver->n1_elts;
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
   const cs_lnum_t  n_scatter_dofs = n1_dofs + n2_dofs;
@@ -4229,13 +4239,14 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   cs_real_t  *b = NULL;
   BFT_MALLOC(b, n_scatter_dofs, cs_real_t);
 
+  assert(solver->n2_elts == n2_dofs);
+
   if (solver->n1_dofs_by_elt == 3)
-    _join_x1_vector_x2_deinterlaced(n1_dofs, x1,
+    _join_x1_vector_x2_deinterlaced(n1_elts, x1,
                                     n2_dofs, x2,
-                                    sh->rhs,
-                                    sol, b);
+                                    sh->rhs, sol, b);
   else if (solver->n1_dofs_by_elt == 1)
-    _join_x1_scalar_x2_deinterlaced(n1_dofs, x1,
+    _join_x1_scalar_x2_deinterlaced(n1_elts, x1,
                                     n2_dofs, x2,
                                     sh->rhs, sol, b);
   else
@@ -4314,17 +4325,17 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
 
   if (solver->n1_dofs_by_elt == 3) {
 
-    const cs_real_t *solx = sol, *soly = sol + n1_dofs, *solz = sol + 2*n1_dofs;
+    const cs_real_t *solx = sol, *soly = sol + n1_elts, *solz = sol + 2*n1_elts;
 
-#   pragma omp parallel for if (CS_THR_MIN > n1_dofs)
-    for (cs_lnum_t f = 0; f < n1_dofs; f++) {
+#   pragma omp parallel for if (CS_THR_MIN > n1_elts)
+    for (cs_lnum_t f = 0; f < n1_elts; f++) {
       x1[3*f  ] = solx[f];
       x1[3*f+1] = soly[f];
       x1[3*f+2] = solz[f];
     }
 
   }
-  else if (solver->n1_dofs_by_elt == 1)
+  else if (solver->n1_dofs_by_elt == 1) /* n1_dofs == n1_elts */
     cs_array_real_copy(n1_dofs, sol, x1);
 
   if (slesp->field_id > -1)

@@ -392,13 +392,13 @@ cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type)
     return "Augmented-Lagrangian Uzawa";
 
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
-    return "FGMRES";
+    return "Flexible GMRES";
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     return "GCR";
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
-    return "GKB";
+    return "Golub-Kahan Bidiagonalization (GKB)";
 
   case CS_PARAM_SADDLE_SOLVER_MINRES:
     return "MinRES";
@@ -407,10 +407,10 @@ cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type)
     return "MUMPS";
 
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
-    return "MUMPS";
+    return "Notay's algebraic transformation";
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
-    return "CG";
+    return "Uzawa-CG";
 
   case CS_PARAM_SADDLE_N_SOLVERS:
     return "Undefined";
@@ -852,7 +852,9 @@ cs_param_saddle_set_solver(const char          *keyval,
   else if (strcmp(keyval, "notay") == 0) {
 
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM;
-    saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    saddlep->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
 
     /* Context structure dedicated to this algorithm */
 

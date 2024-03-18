@@ -296,10 +296,6 @@ typedef struct {
 
 typedef struct {
 
-  /* Scaling coefficient */
-
-  cs_real_t                   alpha;
-
   /* Function pointer */
 
   cs_saddle_solver_matvec_t  *m12_vector_multiply;

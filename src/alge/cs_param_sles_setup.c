@@ -2977,7 +2977,7 @@ cs_param_sles_setup_petsc_ksp(const char       *label,
   int len = strlen(label) + 1;
   char  *prefix = NULL;
   BFT_MALLOC(prefix, len + 1, char);
-  sprintf(prefix, "%s_", slesp->name);
+  sprintf(prefix, "%s_", label);
   prefix[len] = '\0';
   KSPSetOptionsPrefix(ksp, prefix);
   BFT_FREE(prefix);

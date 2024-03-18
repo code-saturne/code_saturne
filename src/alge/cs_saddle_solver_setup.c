@@ -120,10 +120,12 @@ _build_is_for_fieldsplit(cs_saddle_solver_t  *solver,
                          IS                  *is2)
 {
   cs_cdo_system_helper_t  *sh = solver->system_helper;
-  assert(sh->n_blocks == 1);
 
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
+
+  /* The block id equal to 0 should describe the full system */
+
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
 
   PetscInt  *indices = NULL;
@@ -500,6 +502,159 @@ _gkb_hook(void  *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function pointer: setup hook for setting PETSc
+ *        Case of Notay's algebraic transformation.
+ *        This relies on the following article:
+ *        "Algebraic multigrid for Stokes equations", Y. Notay (2017)
+ *        SIAM J. Sci. Comput., Vol. 39 (5), pp 88-111
+ *
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_notay_hook(void  *context,
+            void  *ksp_struct)
+{
+  cs_saddle_solver_t  *solver = context;
+
+  const cs_param_saddle_t  *saddlep = solver->param;
+
+#if defined(HAVE_PETSC)
+  KSP  ksp = ksp_struct;
+
+  const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
+  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  if (cs_glob_n_ranks > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s (Eq. %s) Warning: Algo. not tested in parallel.\n",
+                  __func__, b11_slesp->name);
+
+  /* Build IndexSet structures to extract block matrices */
+
+  const cs_cdo_system_helper_t  *sh = solver->system_helper;
+  const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
+
+  IS  is1 = NULL, is2 = NULL;
+  _build_is_for_fieldsplit(solver, &is1, &is2);
+
+  Mat Amat, Amat_nest;
+  KSPGetOperators(ksp, &Amat, NULL);
+
+  /* Retrieve blocks */
+
+  Mat A11, A12, A21;
+  MatCreateSubMatrix(Amat, is1, is1, MAT_INITIAL_MATRIX, &A11);
+  MatCreateSubMatrix(Amat, is1, is2, MAT_INITIAL_MATRIX, &A12);
+  MatCreateSubMatrix(Amat, is2, is1, MAT_INITIAL_MATRIX, &A21);
+
+  PetscInt n1, n2;
+  MatGetSize(A12, &n1, &n2);
+
+  /* Define diag = inv(diag(A11)) */
+
+  Vec D11;
+  VecCreate(PETSC_COMM_WORLD, &D11);
+  VecSetSizes(D11, PETSC_DECIDE, n1);
+  VecSetType(D11, VECMPI);
+  MatGetDiagonal(A11, D11);
+  VecReciprocal(D11);
+
+  const PetscReal  alpha = ctxp->scaling_coef;
+  if (fabs(alpha - 1.0) > 0)
+    VecScale(D11, alpha);
+
+  /* Computing new blocks for the transformed system */
+
+  PetscScalar one = 1.0;
+
+  /* Compute the block (1, 2)
+   * First step: T11 <- Id - A11*inv(diag(A11)) */
+
+  Mat T11;
+  MatConvert(A11, MATSAME, MAT_INITIAL_MATRIX, &T11);
+
+  MatDiagonalScale(T11, NULL, D11); /* left scaling = NULL;
+                                       right scaling = D11 */
+  MatScale(T11, -one);
+
+  Vec ones;
+  VecCreate(PETSC_COMM_WORLD, &ones);
+  VecSetSizes(ones, PETSC_DECIDE, n1);
+  VecSetType(ones, VECMPI);
+  VecSet(ones, one);
+  MatDiagonalSet(T11, ones, ADD_VALUES);
+
+  /* Second step: T12 = T11*A12 = (Id - A11*inv(D_A11))*A12 */
+
+  Mat T12;
+  MatMatMult(T11, A12, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &T12);
+
+  /* Compute the A22 block
+   * A22 = A21*inv(diag(A11))*A12 */
+
+  Mat T21, A22;
+  MatConvert(A21, MATSAME, MAT_INITIAL_MATRIX, &T21);
+  MatDiagonalScale(T21, NULL, D11); /* T21 <- A21*inv(diag(A11)) */
+  MatMatMult(T21, A12, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &A22);
+
+  /* Partial free */
+
+  VecDestroy(&D11);
+  VecDestroy(&ones);
+  MatDestroy(&A12);
+  MatDestroy(&T11);
+  MatDestroy(&T21);
+
+  /* Compute the (2, 1)-block
+   *   A21 <- -1.0*A21 */
+
+  MatScale(A21, -1.0);
+
+  /* Update blocks and assemble Amat */
+
+  Mat subA[4] = {A11, T12, A21, A22};
+
+  MatCreateNest(PETSC_COMM_WORLD, 2, NULL, 2, NULL, subA, &Amat_nest);
+  MatConvert(Amat_nest, MATMPIAIJ, MAT_INITIAL_MATRIX, &Amat);
+
+  KSPSetOperators(ksp, Amat, Amat);
+
+  /* Partial free */
+
+  MatDestroy(&Amat_nest);
+  MatDestroy(&A11);
+  MatDestroy(&A21);
+  MatDestroy(&A22);
+  MatDestroy(&T12);
+  ISDestroy(&is1);
+  ISDestroy(&is2);
+  MatDestroy(&Amat);
+
+  PC  saddle_pc;
+  KSPGetPC(ksp, &saddle_pc);
+
+  /* Set the main solver and main options for the preconditioner */
+
+  cs_param_sles_setup_petsc_ksp(saddlep->name, b11_slesp, ksp);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            "%s: PETSc is required for solving \"%s\"\n",
+            " Please modify your settings/build code_saturne with PETSc.",
+            __func__, saddlep->name);
+#endif  /* HAVE_PETSC */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Do the setup stage in case of GKB algorithm
  *
  * \param[in, out] solver         pointer to a saddle-point solver structure
@@ -567,6 +722,54 @@ _gkb_setup(cs_saddle_solver_t  *solver,
 
       }
     }
+    break;
+
+  } /* Class of solver to consider */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Do the setup stage when the Notay's algebraic transformation is
+ *        chosen
+ *
+ * \param[in, out] solver         pointer to a saddle-point solver structure
+ * \param[in, out] saddlep        set of parameters for solving a saddle-point
+ * \param[in, out] block11_slesp  set of parameters for the (1,1)-block system
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_notay_transformation_setup(cs_saddle_solver_t  *solver,
+                            cs_param_saddle_t   *saddlep,
+                            cs_param_sles_t     *block11_slesp)
+{
+  assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM);
+
+  switch (saddlep->solver_class) {
+
+  case CS_PARAM_SOLVER_CLASS_PETSC:
+#if defined(HAVE_PETSC)
+    cs_sles_petsc_init();
+
+    cs_sles_petsc_define(block11_slesp->field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _notay_hook,
+                         (void *)solver); /* context structure for PETSc */
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: PETSc is required for solving \"%\"\n",
+              " Please modify your settings/build code_saturne with PETSc.",
+              __func__, saddlep->name);
+#endif  /* HAVE PETSC */
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid solver class.\n"
+              " PETSc is requested for solving \"%s\"\n"
+              " Please modify your settings.",
+              __func__, saddlep->name);
     break;
 
   } /* Class of solver to consider */
@@ -750,6 +953,7 @@ _setup(cs_saddle_solver_t  *solver,
 
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
     /* --------------------------------------- */
+    _notay_transformation_setup(solver, saddlep, block11_slesp);
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:

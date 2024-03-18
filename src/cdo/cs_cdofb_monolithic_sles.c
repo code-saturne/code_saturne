@@ -772,9 +772,54 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
     }
     break;
 
+  case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
+    {
+      cs_lnum_t block_size = 3*cdoq->n_faces + cdoq->n_cells;
+
+      sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
+                                       1,
+                                       &block_size,
+                                       2); /* Only one block for the system
+                                            * matrix. The 2nd block is for the
+                                            * algebraic transformation */
+
+      /* Add the only block and then define the underpinning structures */
+
+      cs_cdo_system_block_t
+        *a = cs_cdo_system_add_xblock(sh, 0,       /* block id */
+                                      block_size); /* n_dofs */
+
+      _build_shared_structures_full_system(a, false);
+
+      /* Add a second block for the (1,0) and (0,1) blocks and then define the
+         underpinning structures. The (0,1) block needs to be transposed before
+         using it */
+
+      cs_cdo_system_block_t  *bdiv =
+        cs_cdo_system_add_ublock(sh, 1,               /* block_id */
+                                 connect->c2f,        /* adjacency */
+                                 cs_flag_primal_face, /* column location */
+                                 cdoq->n_faces,       /* n_elements */
+                                 3,                   /* stride */
+                                 true);               /* interlaced */
+
+      cs_cdo_system_ublock_t  *b_ub = bdiv->block_pointer;
+
+      /* Define the bdiv block by hand */
+
+      cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
+
+      b_ub->adjacency = connect->c2f;  /* shared pointer */
+      b_ub->values = sc->block21_op;   /* shared pointer */
+      assert(b_ub->values != NULL);
+      b_ub->shared_structures = true;
+      b_ub->range_set = rset;          /* shared pointer */
+      b_ub->interface_set = rset->ifs; /* shared pointer */
+    }
+    break;
+
   default:
     /* CS_PARAM_SADDLE_SOLVER_FGMRES
-     * CS_PARAM_SADDLE_SOLVER_NOTAY
      * CS_PARAM_SADDLE_SOLVER_MUMPS */
     {
       cs_lnum_t block_size = 3*cdoq->n_faces + cdoq->n_cells;
@@ -1474,8 +1519,6 @@ cs_cdofb_monolithic_sles_notay(const cs_navsto_param_t  *nsp,
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
   assert(sh != NULL);
-  assert(sh->n_blocks == 1);
-
   if (sh->type != CS_CDO_SYSTEM_SADDLE_POINT)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid type of system: saddle-point system expected\n",
