@@ -70,7 +70,7 @@ typedef struct {
 
   cs_param_solver_class_t    solver_class; /*!< class of SLES to consider  */
   cs_param_precond_type_t    precond;      /*!< type of preconditioner */
-  cs_param_itsol_type_t      solver;       /*!< type of solver */
+  cs_param_solver_type_t     solver;       /*!< type of solver */
   bool                       flexible;     /*!< need a flexible variant ? */
   int                        restart;      /*!< max. iter. before restarting */
   cs_param_amg_type_t        amg_type;     /*!< type of AMG algorithm */

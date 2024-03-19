@@ -115,13 +115,13 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-_system_should_be_sym(cs_param_itsol_type_t  solver)
+_system_should_be_sym(cs_param_solver_type_t  solver)
 {
   switch (solver) {
 
-  case CS_PARAM_ITSOL_CG:
-  case CS_PARAM_ITSOL_FCG:
-  case CS_PARAM_ITSOL_MINRES:
+  case CS_PARAM_SOLVER_CG:
+  case CS_PARAM_SOLVER_FCG:
+  case CS_PARAM_SOLVER_MINRES:
     return true;
 
   default:
@@ -714,7 +714,7 @@ static void
 _petsc_set_pc_type(cs_param_sles_t  *slesp,
                    KSP               ksp)
 {
-  if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
+  if (slesp->solver == CS_PARAM_SOLVER_MUMPS)
     return; /* Direct solver: Nothing to do at this stage */
 
   PC  pc;
@@ -884,46 +884,46 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
 
   switch (slesp->solver) {
 
-  case CS_PARAM_ITSOL_NONE:
+  case CS_PARAM_SOLVER_NONE:
     KSPSetType(ksp, KSPPREONLY);
     break;
 
-  case CS_PARAM_ITSOL_BICGS:      /* Improved Bi-CG stab */
+  case CS_PARAM_SOLVER_BICGS:    /* Improved Bi-CG stab */
     KSPSetType(ksp, KSPIBCGS);
     break;
 
-  case CS_PARAM_ITSOL_BICGS2: /* Preconditioned BiCGstab2 */
+  case CS_PARAM_SOLVER_BICGS2:   /* Preconditioned BiCGstab2 */
     KSPSetType(ksp, KSPBCGSL);
     break;
 
-  case CS_PARAM_ITSOL_CG:        /* Preconditioned Conjugate Gradient */
+  case CS_PARAM_SOLVER_CG:        /* Preconditioned Conjugate Gradient */
     if (slesp->precond == CS_PARAM_PRECOND_AMG)
       KSPSetType(ksp, KSPFCG);
     else
       KSPSetType(ksp, KSPCG);
     break;
 
-  case CS_PARAM_ITSOL_FCG:       /* Flexible Conjugate Gradient */
+  case CS_PARAM_SOLVER_FCG:       /* Flexible Conjugate Gradient */
     KSPSetType(ksp, KSPFCG);
     break;
 
-  case CS_PARAM_ITSOL_FGMRES:    /* Preconditioned flexible GMRES */
+  case CS_PARAM_SOLVER_FGMRES:    /* Preconditioned flexible GMRES */
     KSPSetType(ksp, KSPFGMRES);
     break;
 
-  case CS_PARAM_ITSOL_GCR:       /* Generalized Conjugate Residual */
+  case CS_PARAM_SOLVER_GCR:       /* Generalized Conjugate Residual */
     KSPSetType(ksp, KSPGCR);
     break;
 
-  case CS_PARAM_ITSOL_GMRES:     /* Preconditioned GMRES */
+  case CS_PARAM_SOLVER_GMRES:     /* Preconditioned GMRES */
     KSPSetType(ksp, KSPLGMRES);
     break;
 
-  case CS_PARAM_ITSOL_MINRES:    /* Minimal residual */
+  case CS_PARAM_SOLVER_MINRES:    /* Minimal residual */
     KSPSetType(ksp, KSPMINRES);
     break;
 
-  case CS_PARAM_ITSOL_MUMPS:     /* Direct solver (factorization) */
+  case CS_PARAM_SOLVER_MUMPS:     /* Direct solver (factorization) */
 #if defined(PETSC_HAVE_MUMPS)
     KSPSetType(ksp, KSPPREONLY);
 #else
@@ -942,7 +942,7 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
 
   switch (slesp->solver) {
 
-  case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
+  case CS_PARAM_SOLVER_GMRES: /* Preconditioned GMRES */
     _petsc_cmd(true, slesp->name, "ksp_gmres_modifiedgramschmidt", "1");
     break;
 
@@ -966,16 +966,16 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
 
   switch (slesp->solver) {
 
-  case CS_PARAM_ITSOL_GMRES:  /* Preconditioned GMRES */
-  case CS_PARAM_ITSOL_FGMRES: /* Flexible GMRES */
+  case CS_PARAM_SOLVER_GMRES:  /* Preconditioned GMRES */
+  case CS_PARAM_SOLVER_FGMRES: /* Flexible GMRES */
     KSPGMRESSetRestart(ksp, slesp->restart);
     break;
 
-  case CS_PARAM_ITSOL_GCR: /* Preconditioned GCR */
+  case CS_PARAM_SOLVER_GCR: /* Preconditioned GCR */
     KSPGCRSetRestart(ksp, slesp->restart);
     break;
 
-  case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_SOLVER_MUMPS:
 #if defined(PETSC_HAVE_MUMPS)
     {
       cs_param_mumps_t  *mumpsp = slesp->context_param;
@@ -1486,7 +1486,7 @@ _petsc_block_hook(void     *context,
 static void
 _check_settings(cs_param_sles_t     *slesp)
 {
-  if (slesp->solver == CS_PARAM_ITSOL_MUMPS) { /* Checks related to MUMPS */
+  if (slesp->solver == CS_PARAM_SOLVER_MUMPS) { /* Checks related to MUMPS */
 
     cs_param_solver_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_MUMPS);
@@ -1511,9 +1511,9 @@ _check_settings(cs_param_sles_t     *slesp)
 
   /* Checks related to GCR/GMRES algorithms */
 
-  if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
-      slesp->solver == CS_PARAM_ITSOL_FGMRES ||
-      slesp->solver == CS_PARAM_ITSOL_GCR)
+  if (slesp->solver == CS_PARAM_SOLVER_GMRES ||
+      slesp->solver == CS_PARAM_SOLVER_FGMRES ||
+      slesp->solver == CS_PARAM_SOLVER_GCR)
     if (slesp->restart < 2)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected while setting the SLES \"%s\"\n"
@@ -1838,28 +1838,28 @@ _set_saturne_sles(bool                 use_field_id,
 
   switch (slesp->solver) {
 
-  case CS_PARAM_ITSOL_AMG:
+  case CS_PARAM_SOLVER_AMG:
     multigrid_as_solver = true;
     mg = _set_saturne_amg_solver(sles_name, slesp);
     break;
 
-  case CS_PARAM_ITSOL_BICGS:
+  case CS_PARAM_SOLVER_BICGS:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_BICGSTAB,
                               poly_degree,
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_BICGS2:
+  case CS_PARAM_SOLVER_BICGS2:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_BICGSTAB2,
                               poly_degree,
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_CG:
+  case CS_PARAM_SOLVER_CG:
     if (slesp->flexible) {
-      slesp->solver = CS_PARAM_ITSOL_FCG;
+      slesp->solver = CS_PARAM_SOLVER_FCG;
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_IPCG,
                                 poly_degree,
@@ -1872,34 +1872,34 @@ _set_saturne_sles(bool                 use_field_id,
                                 slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_CR3:
+  case CS_PARAM_SOLVER_CR3:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_PCR3,
                               poly_degree,
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_FCG:
+  case CS_PARAM_SOLVER_FCG:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_FCG,
                               poly_degree,
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
+  case CS_PARAM_SOLVER_GAUSS_SEIDEL:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_P_GAUSS_SEIDEL,
                               -1, /* Not useful to apply a preconditioner */
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_FGMRES:  /* Not available --> close to GCR */
+  case CS_PARAM_SOLVER_FGMRES:  /* Not available --> close to GCR */
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Switch to the GCR implementation of code_saturne\n",
                   __func__);
     /* No break (wanted behavior) */
-  case CS_PARAM_ITSOL_GCR:
+  case CS_PARAM_SOLVER_GCR:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_GCR,
                               poly_degree,
@@ -1907,9 +1907,9 @@ _set_saturne_sles(bool                 use_field_id,
     cs_sles_it_set_restart_interval(itsol, slesp->restart);
     break;
 
-  case CS_PARAM_ITSOL_GMRES:
+  case CS_PARAM_SOLVER_GMRES:
     if (slesp->flexible) {
-      slesp->solver = CS_PARAM_ITSOL_GCR;
+      slesp->solver = CS_PARAM_SOLVER_GCR;
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_GCR,
                                 poly_degree,
@@ -1923,21 +1923,21 @@ _set_saturne_sles(bool                 use_field_id,
                                 slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_JACOBI:
+  case CS_PARAM_SOLVER_JACOBI:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_JACOBI,
                               -1, /* Not useful to apply a preconditioner */
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
+  case CS_PARAM_SOLVER_SYM_GAUSS_SEIDEL:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_P_SYM_GAUSS_SEIDEL,
                               -1, /* Not useful to apply a preconditioner */
                               slesp->cvg_param.n_max_iter);
     break;
 
-  case CS_PARAM_ITSOL_USER_DEFINED:
+  case CS_PARAM_SOLVER_USER_DEFINED:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_USER_DEFINED,
                               poly_degree,
@@ -2198,34 +2198,34 @@ _set_hypre_solver(cs_param_sles_t    *slesp,
 
   switch (slesp->solver) {
 
-  case CS_PARAM_ITSOL_AMG: /* BoomerAMG as solver. Nothing to do at this
+  case CS_PARAM_SOLVER_AMG: /* BoomerAMG as solver. Nothing to do at this
                               stage. This is done in the calling function. */
     pc = hs;
     break;
 
-  case CS_PARAM_ITSOL_BICGS:
-  case CS_PARAM_ITSOL_BICGS2:
+  case CS_PARAM_SOLVER_BICGS:
+  case CS_PARAM_SOLVER_BICGS2:
     HYPRE_BiCGSTABSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
     HYPRE_BiCGSTABSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_BiCGSTABGetPrecond(hs, &pc);
     break;
 
-  case CS_PARAM_ITSOL_CG:
-  case CS_PARAM_ITSOL_FCG:
+  case CS_PARAM_SOLVER_CG:
+  case CS_PARAM_SOLVER_FCG:
     HYPRE_PCGSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
     HYPRE_PCGSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_PCGGetPrecond(hs, &pc);
     break;
 
-  case CS_PARAM_ITSOL_FGMRES:
-  case CS_PARAM_ITSOL_GCR:
+  case CS_PARAM_SOLVER_FGMRES:
+  case CS_PARAM_SOLVER_GCR:
     HYPRE_FlexGMRESSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
     HYPRE_FlexGMRESSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_FlexGMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
     HYPRE_FlexGMRESGetPrecond(hs, &pc);
     break;
 
-  case CS_PARAM_ITSOL_GMRES:
+  case CS_PARAM_SOLVER_GMRES:
     HYPRE_GMRESSetTol(hs, (HYPRE_Real)slesp->cvg_param.rtol);
     HYPRE_GMRESSetMaxIter(hs, (HYPRE_Int)slesp->cvg_param.n_max_iter);
     HYPRE_GMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
@@ -2270,7 +2270,7 @@ _hypre_boomeramg_hook(int     verbosity,
   cs_param_amg_boomer_t  *bamgp = slesp->context_param;
   HYPRE_Solver  hs = solver_p;
   HYPRE_Solver  amg = _set_hypre_solver(slesp, hs);
-  bool  amg_as_precond = (slesp->solver == CS_PARAM_ITSOL_AMG) ? false : true;
+  bool  amg_as_precond = (slesp->solver == CS_PARAM_SOLVER_AMG) ? false:true;
 
   assert(bamgp != NULL);
 
@@ -2515,7 +2515,7 @@ _set_hypre_sles(bool                 use_field_id,
 
   switch(slesp->solver) {
 
-  case CS_PARAM_ITSOL_AMG:
+  case CS_PARAM_SOLVER_AMG:
     {
       cs_param_amg_boomer_t  *bamgp = slesp->context_param;
 
@@ -2531,8 +2531,8 @@ _set_hypre_sles(bool                 use_field_id,
     }
     break;
 
-  case CS_PARAM_ITSOL_BICGS:
-  case CS_PARAM_ITSOL_BICGS2:
+  case CS_PARAM_SOLVER_BICGS:
+  case CS_PARAM_SOLVER_BICGS2:
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
@@ -2585,8 +2585,8 @@ _set_hypre_sles(bool                 use_field_id,
     }
     break;
 
-  case CS_PARAM_ITSOL_CG:
-  case CS_PARAM_ITSOL_FCG:
+  case CS_PARAM_SOLVER_CG:
+  case CS_PARAM_SOLVER_FCG:
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
@@ -2632,8 +2632,8 @@ _set_hypre_sles(bool                 use_field_id,
     }
     break;
 
-  case CS_PARAM_ITSOL_FGMRES:
-  case CS_PARAM_ITSOL_GCR:
+  case CS_PARAM_SOLVER_FGMRES:
+  case CS_PARAM_SOLVER_GCR:
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
@@ -2687,7 +2687,7 @@ _set_hypre_sles(bool                 use_field_id,
     }
     break;
 
-  case CS_PARAM_ITSOL_GMRES:
+  case CS_PARAM_SOLVER_GMRES:
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
@@ -2871,7 +2871,7 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
     {
       switch (slesp->solver) {
 
-      case CS_PARAM_ITSOL_AMG:
+      case CS_PARAM_SOLVER_AMG:
         {
           cs_multigrid_t  *mg = cs_sles_get_context(sles);
           assert(mg != NULL);
@@ -2880,8 +2880,8 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
         }
         break;
 
-      case CS_PARAM_ITSOL_GCR:
-      case CS_PARAM_ITSOL_GMRES:
+      case CS_PARAM_SOLVER_GCR:
+      case CS_PARAM_SOLVER_GMRES:
         {
           cs_sles_it_t  *itsol = cs_sles_get_context(sles);
           assert(itsol != NULL);

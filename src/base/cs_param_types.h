@@ -746,89 +746,89 @@ typedef enum {
 } cs_param_precond_type_t;
 
 /*!
- * \enum cs_param_itsol_type_t
- *  Type of solver to use to solve a linear system.
+ * \enum cs_param_solver_type_t
+ *  Type of solver used to solve a linear system.
  *  Some of the mentionned solver are available only if the PETSc library is
  *  linked with code_saturne.
  *
- * \var CS_PARAM_ITSOL_NONE
+ * \var CS_PARAM_SOLVER_NONE
  *  No iterative solver (equivalent to a "preonly" choice in PETSc)
  *
- * \var CS_PARAM_ITSOL_AMG
+ * \var CS_PARAM_SOLVER_AMG
  *  Algebraic multigrid solver (additional options may be set using
  *  \ref cs_param_amg_type_t)
  *
- * \var CS_PARAM_ITSOL_BICGS
+ * \var CS_PARAM_SOLVER_BICGS
  *  Bi-Conjugate gradient (useful for non-symmetric systems)
  *
- * \var CS_PARAM_ITSOL_BICGS2
+ * \var CS_PARAM_SOLVER_BICGS2
  *  Stabilized Bi-Conjugate gradient (useful for non-symmetric systems)
  *
- * \var CS_PARAM_ITSOL_CG
+ * \var CS_PARAM_SOLVER_CG
  *  Conjugate Gradient (solver of choice for symmetric positive definite
  *  systems)
  *
- * \var CS_PARAM_ITSOL_CR3
+ * \var CS_PARAM_SOLVER_CR3
  * 3-layer conjugate residual (can handle non-symmetric systems)
  *
- * \var CS_PARAM_ITSOL_FCG
+ * \var CS_PARAM_SOLVER_FCG
  * Flexible Conjugate Gradient (variant of the CG when the preconditioner
  * may change from one iteration to another. For instance when using an AMG
  * as preconditioner)
  *
- * \var CS_PARAM_ITSOL_FGMRES
+ * \var CS_PARAM_SOLVER_FGMRES
  * Flexible Generalized Minimal RESidual
  *
- * \var CS_PARAM_ITSOL_GAUSS_SEIDEL
+ * \var CS_PARAM_SOLVER_GAUSS_SEIDEL
  * Gauss-Seidel
  *
- * \var CS_PARAM_ITSOL_GCR
+ * \var CS_PARAM_SOLVER_GCR
  * Generalized conjugate residual (flexible iterative solver for symmetric or
  * non-symmetric system)
  *
- * \var CS_PARAM_ITSOL_GMRES
+ * \var CS_PARAM_SOLVER_GMRES
  * Generalized Minimal RESidual
  *
- * \var CS_PARAM_ITSOL_JACOBI
+ * \var CS_PARAM_SOLVER_JACOBI
  * Jacobi (diagonal relaxation)
  *
- * \var CS_PARAM_ITSOL_MINRES
+ * \var CS_PARAM_SOLVER_MINRES
  * Mininal residual algorithm
  *
- * \var CS_PARAM_ITSOL_MUMPS
+ * \var CS_PARAM_SOLVER_MUMPS
  * MUMPS sparse direct solver
  *
- * \var CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL
+ * \var CS_PARAM_SOLVER_SYM_GAUSS_SEIDEL
  * Symmetric Gauss-Seidel
  *
- * \var CS_PARAM_ITSOL_USER_DEFINED
+ * \var CS_PARAM_SOLVER_USER_DEFINED
  * User-defined iterative solver. It relies on the implementation of the
  * the function cs_user_sles_it_solver()
  */
 
 typedef enum {
 
-  CS_PARAM_ITSOL_NONE,
+  CS_PARAM_SOLVER_NONE,
 
-  CS_PARAM_ITSOL_AMG,
-  CS_PARAM_ITSOL_BICGS,
-  CS_PARAM_ITSOL_BICGS2,
-  CS_PARAM_ITSOL_CG,
-  CS_PARAM_ITSOL_CR3,
-  CS_PARAM_ITSOL_FCG,
-  CS_PARAM_ITSOL_FGMRES,           /*!< Only with PETSc */
-  CS_PARAM_ITSOL_GAUSS_SEIDEL,
-  CS_PARAM_ITSOL_GCR,
-  CS_PARAM_ITSOL_GMRES,            /*!< Only with PETSc */
-  CS_PARAM_ITSOL_JACOBI,
-  CS_PARAM_ITSOL_MINRES,           /*!< Only with PETSc */
-  CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETSc or MUMPS */
-  CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
-  CS_PARAM_ITSOL_USER_DEFINED,
+  CS_PARAM_SOLVER_AMG,
+  CS_PARAM_SOLVER_BICGS,
+  CS_PARAM_SOLVER_BICGS2,
+  CS_PARAM_SOLVER_CG,
+  CS_PARAM_SOLVER_CR3,
+  CS_PARAM_SOLVER_FCG,
+  CS_PARAM_SOLVER_FGMRES,           /*!< Only with PETSc */
+  CS_PARAM_SOLVER_GAUSS_SEIDEL,
+  CS_PARAM_SOLVER_GCR,
+  CS_PARAM_SOLVER_GMRES,            /*!< Only with PETSc */
+  CS_PARAM_SOLVER_JACOBI,
+  CS_PARAM_SOLVER_MINRES,           /*!< Only with PETSc */
+  CS_PARAM_SOLVER_MUMPS,            /*!< Only with PETSc or MUMPS */
+  CS_PARAM_SOLVER_SYM_GAUSS_SEIDEL,
+  CS_PARAM_SOLVER_USER_DEFINED,
 
-  CS_PARAM_N_ITSOL_TYPES
+  CS_PARAM_N_SOLVER_TYPES
 
-} cs_param_itsol_type_t;
+} cs_param_solver_type_t;
 
 /*!
  * \enum cs_param_resnorm_type_t
@@ -1043,16 +1043,16 @@ cs_param_get_dotprod_type_name(cs_param_dotprod_type_t   dp_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the solver
+ * \brief Get the name of the solver
  *
- * \param[in] solver     type of iterative solver
+ * \param[in] solver  type of iterative solver
  *
  * \return the associated solver name
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_get_solver_name(cs_param_itsol_type_t  solver);
+cs_param_get_solver_name(cs_param_solver_type_t  solver);
 
 /*----------------------------------------------------------------------------*/
 /*!

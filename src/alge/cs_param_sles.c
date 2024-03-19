@@ -252,7 +252,7 @@ cs_param_sles_create(int          field_id,
 
   slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; /* solver family */
   slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
-  slesp->solver = CS_PARAM_ITSOL_GCR;           /* iterative solver */
+  slesp->solver = CS_PARAM_SOLVER_GCR;           /* iterative solver */
   slesp->flexible = false;                      /* not the flexible variant */
   slesp->restart = 25;                          /* restart after ? iterations */
   slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
@@ -336,12 +336,12 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Name:         %s\n",
                 slesp->name, cs_param_get_solver_name(slesp->solver));
 
-  if (slesp->solver == CS_PARAM_ITSOL_MUMPS)
+  if (slesp->solver == CS_PARAM_SOLVER_MUMPS)
     cs_param_mumps_log(slesp->name, slesp->context_param);
 
   else { /* Iterative solvers */
 
-    if (slesp->solver == CS_PARAM_ITSOL_AMG) {
+    if (slesp->solver == CS_PARAM_SOLVER_AMG) {
 
       cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:            %s\n",
                     slesp->name, cs_param_amg_get_type_name(slesp->amg_type));
@@ -388,9 +388,9 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.atol:        % -10.6e\n",
                   slesp->name, slesp->cvg_param.atol);
 
-    if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
-        slesp->solver == CS_PARAM_ITSOL_FGMRES ||
-        slesp->solver == CS_PARAM_ITSOL_GCR)
+    if (slesp->solver == CS_PARAM_SOLVER_GMRES ||
+        slesp->solver == CS_PARAM_SOLVER_FGMRES ||
+        slesp->solver == CS_PARAM_SOLVER_GCR)
       cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Restart:      %d\n",
                     slesp->name, slesp->restart);
 
@@ -455,7 +455,7 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
     BFT_FREE(dst->context_param);
 
   if (dst->precond == CS_PARAM_PRECOND_MUMPS ||
-      dst->solver == CS_PARAM_ITSOL_MUMPS)
+      dst->solver == CS_PARAM_SOLVER_MUMPS)
     dst->context_param = cs_param_mumps_copy(src->context_param);
 
   else if (cs_param_amg_inhouse_is_needed(dst->solver,
@@ -494,7 +494,7 @@ cs_param_sles_set_solver(const char       *keyval,
   if (strcmp(keyval, "amg") == 0) {
 
     slesp->flexible = false;
-    slesp->solver = CS_PARAM_ITSOL_AMG;
+    slesp->solver = CS_PARAM_SOLVER_AMG;
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
@@ -506,14 +506,14 @@ cs_param_sles_set_solver(const char       *keyval,
   else if (strcmp(keyval, "bicgs") == 0 ||
            strcmp(keyval, "bicgstab") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_BICGS;
+    slesp->solver = CS_PARAM_SOLVER_BICGS;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = false;
 
   }
   else if (strcmp(keyval, "bicgstab2") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_BICGS2;
+    slesp->solver = CS_PARAM_SOLVER_BICGS2;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = false;
 
@@ -522,13 +522,13 @@ cs_param_sles_set_solver(const char       *keyval,
 
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
 
-      slesp->solver = CS_PARAM_ITSOL_FCG;
+      slesp->solver = CS_PARAM_SOLVER_FCG;
       slesp->flexible = true;
 
     }
     else {
 
-      slesp->solver = CS_PARAM_ITSOL_CG;
+      slesp->solver = CS_PARAM_SOLVER_CG;
       slesp->flexible = false;
 
     }
@@ -536,14 +536,14 @@ cs_param_sles_set_solver(const char       *keyval,
   }
   else if (strcmp(keyval, "cr3") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_CR3;
+    slesp->solver = CS_PARAM_SOLVER_CR3;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = false;
 
   }
   else if (strcmp(keyval, "fcg") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_FCG;
+    slesp->solver = CS_PARAM_SOLVER_FCG;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 
@@ -551,7 +551,7 @@ cs_param_sles_set_solver(const char       *keyval,
   else if (strcmp(keyval, "gauss_seidel") == 0 ||
            strcmp(keyval, "gs") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
+    slesp->solver = CS_PARAM_SOLVER_GAUSS_SEIDEL;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
@@ -559,21 +559,21 @@ cs_param_sles_set_solver(const char       *keyval,
   }
   else if (strcmp(keyval, "gcr") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_GCR;
+    slesp->solver = CS_PARAM_SOLVER_GCR;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 
   }
   else if (strcmp(keyval, "gmres") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_GMRES;
+    slesp->solver = CS_PARAM_SOLVER_GMRES;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = false;
 
   }
   else if (strcmp(keyval, "fgmres") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_FGMRES;
+    slesp->solver = CS_PARAM_SOLVER_FGMRES;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 
@@ -582,7 +582,7 @@ cs_param_sles_set_solver(const char       *keyval,
            strcmp(keyval, "diag") == 0 ||
            strcmp(keyval, "diagonal") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_JACOBI;
+    slesp->solver = CS_PARAM_SOLVER_JACOBI;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
@@ -591,7 +591,7 @@ cs_param_sles_set_solver(const char       *keyval,
   }
   else if (strcmp(keyval, "minres") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_MINRES;
+    slesp->solver = CS_PARAM_SOLVER_MINRES;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->flexible = false;
 
@@ -610,7 +610,7 @@ cs_param_sles_set_solver(const char       *keyval,
   }
   else if (strcmp(keyval, "mumps") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_MUMPS;
+    slesp->solver = CS_PARAM_SOLVER_MUMPS;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
@@ -642,7 +642,7 @@ cs_param_sles_set_solver(const char       *keyval,
   else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
            strcmp(keyval, "sgs") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL;
+    slesp->solver = CS_PARAM_SOLVER_SYM_GAUSS_SEIDEL;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
@@ -651,13 +651,13 @@ cs_param_sles_set_solver(const char       *keyval,
   }
   else if (strcmp(keyval, "user") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_USER_DEFINED;
+    slesp->solver = CS_PARAM_SOLVER_USER_DEFINED;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
 
   }
   else if (strcmp(keyval, "none") == 0) {
 
-    slesp->solver = CS_PARAM_ITSOL_NONE;
+    slesp->solver = CS_PARAM_SOLVER_NONE;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
@@ -795,27 +795,27 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->flexible = true;
 
     switch (slesp->solver) {
-    case CS_PARAM_ITSOL_CG:
+    case CS_PARAM_SOLVER_CG:
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s() SLES \"%s\"\n"
                     " >> Switch to a flexible variant for CG.\n",
                     __func__, sles_name);
 
-      slesp->solver = CS_PARAM_ITSOL_FCG;
+      slesp->solver = CS_PARAM_SOLVER_FCG;
       break;
 
-    case CS_PARAM_ITSOL_GMRES:
-    case CS_PARAM_ITSOL_CR3:
-    case CS_PARAM_ITSOL_BICGS:
-    case CS_PARAM_ITSOL_BICGS2:
+    case CS_PARAM_SOLVER_GMRES:
+    case CS_PARAM_SOLVER_CR3:
+    case CS_PARAM_SOLVER_BICGS:
+    case CS_PARAM_SOLVER_BICGS2:
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s() SLES \"%s\"\n"
                     " >> Switch to a flexible variant: GCR solver.\n",
                     __func__, sles_name);
 
-      slesp->solver = CS_PARAM_ITSOL_GCR;
+      slesp->solver = CS_PARAM_SOLVER_GCR;
       break;
 
     default:
@@ -1092,7 +1092,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 
-    if (slesp->solver == CS_PARAM_ITSOL_AMG)
+    if (slesp->solver == CS_PARAM_SOLVER_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, true, false);
     else if (slesp->precond == CS_PARAM_PRECOND_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, false, false);
@@ -1104,7 +1104,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->flexible = true;
 
-    if (slesp->solver == CS_PARAM_ITSOL_AMG)
+    if (slesp->solver == CS_PARAM_SOLVER_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, true, true);
     else if (slesp->precond == CS_PARAM_PRECOND_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, false, true);

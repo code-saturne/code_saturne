@@ -124,7 +124,7 @@ cs_equation_system_param_create(const char       *name,
 #if defined(HAVE_MUMPS)
   sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
 
-  slesp->solver = CS_PARAM_ITSOL_MUMPS;
+  slesp->solver = CS_PARAM_SOLVER_MUMPS;
   slesp->precond = CS_PARAM_PRECOND_NONE;
   slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
 #else
@@ -132,7 +132,7 @@ cs_equation_system_param_create(const char       *name,
 #if defined(PETSC_HAVE_MUMPS)
   sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
 
-  slesp->solver = CS_PARAM_ITSOL_MUMPS;
+  slesp->solver = CS_PARAM_SOLVER_MUMPS;
   slesp->precond = CS_PARAM_PRECOND_NONE;
   slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
 #else

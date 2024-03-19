@@ -501,66 +501,66 @@ cs_param_get_dotprod_type_name(cs_param_dotprod_type_t   dp_type)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the solver
+ * \brief Get the name of the solver
  *
- * \param[in] solver     type of iterative solver
+ * \param[in] solver  type of iterative solver
  *
  * \return the associated solver name
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_get_solver_name(cs_param_itsol_type_t  solver)
+cs_param_get_solver_name(cs_param_solver_type_t  solver)
 {
   switch (solver) {
 
-  case CS_PARAM_ITSOL_NONE:
+  case CS_PARAM_SOLVER_NONE:
     return "None (PreOnly)";
     break;
 
-  case CS_PARAM_ITSOL_AMG:
+  case CS_PARAM_SOLVER_AMG:
     return "Algebraic.Multigrid";
     break;
-  case CS_PARAM_ITSOL_BICGS:
+  case CS_PARAM_SOLVER_BICGS:
     return "stabilized BiCG";
     break;
-  case CS_PARAM_ITSOL_BICGS2:
+  case CS_PARAM_SOLVER_BICGS2:
     return "stabilized BiCG(2)";
     break;
-  case CS_PARAM_ITSOL_CG:
+  case CS_PARAM_SOLVER_CG:
     return "CG";
     break;
-  case CS_PARAM_ITSOL_CR3:
+  case CS_PARAM_SOLVER_CR3:
     return "Conjugate.Residual.3Layers";
     break;
-  case CS_PARAM_ITSOL_FCG:
+  case CS_PARAM_SOLVER_FCG:
     return "Flexible.CG";
     break;
-  case CS_PARAM_ITSOL_FGMRES:
+  case CS_PARAM_SOLVER_FGMRES:
     return "Flexible.GMRES";
     break;
-  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
+  case CS_PARAM_SOLVER_GAUSS_SEIDEL:
     return "Gauss.Seidel";
     break;
-  case CS_PARAM_ITSOL_GCR:
+  case CS_PARAM_SOLVER_GCR:
     return "Generalized Conjugate Residual";
     break;
-  case CS_PARAM_ITSOL_GMRES:
+  case CS_PARAM_SOLVER_GMRES:
     return "GMRES";
     break;
-  case CS_PARAM_ITSOL_JACOBI:
+  case CS_PARAM_SOLVER_JACOBI:
     return "Jacobi";
     break;
-  case CS_PARAM_ITSOL_MINRES:
+  case CS_PARAM_SOLVER_MINRES:
     return "MinRes";
     break;
-  case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_SOLVER_MUMPS:
     return "MUMPS";
     break;
-  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
+  case CS_PARAM_SOLVER_SYM_GAUSS_SEIDEL:
     return "Symmetric.Gauss.Seidel";
     break;
-  case CS_PARAM_ITSOL_USER_DEFINED:
+  case CS_PARAM_SOLVER_USER_DEFINED:
     return "User-defined iterative solver";
     break;
 

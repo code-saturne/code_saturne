@@ -266,20 +266,20 @@ typedef struct {
 /*!
  * \brief Return true if the settings rely on boomeramg, otherwise false
  *
- * \param[in] solver     type of SLES solver
- * \param[in] precond    type of preconditioner
- * \param[in] amg        type of AMG
+ * \param[in] solver   type of SLES solver
+ * \param[in] precond  type of preconditioner
+ * \param[in] amg      type of AMG
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_param_amg_boomer_is_needed(cs_param_itsol_type_t    solver,
+cs_param_amg_boomer_is_needed(cs_param_solver_type_t   solver,
                               cs_param_precond_type_t  precond,
                               cs_param_amg_type_t      amg)
 {
-  if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_ITSOL_AMG)
+  if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_SOLVER_AMG)
     if (amg == CS_PARAM_AMG_HYPRE_BOOMER_V ||
         amg == CS_PARAM_AMG_HYPRE_BOOMER_W)
       return true;
@@ -292,20 +292,20 @@ cs_param_amg_boomer_is_needed(cs_param_itsol_type_t    solver,
  * \brief Return true if the settings rely on the in-house implementation,
  *        otherwise false
  *
- * \param[in] solver     type of SLES solver
- * \param[in] precond    type of preconditioner
- * \param[in] amg        type of AMG
+ * \param[in] solver   type of SLES solver
+ * \param[in] precond  type of preconditioner
+ * \param[in] amg      type of AMG
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_param_amg_inhouse_is_needed(cs_param_itsol_type_t    solver,
+cs_param_amg_inhouse_is_needed(cs_param_solver_type_t   solver,
                                cs_param_precond_type_t  precond,
                                cs_param_amg_type_t      amg)
 {
-  if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_ITSOL_AMG)
+  if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_SOLVER_AMG)
     if (amg == CS_PARAM_AMG_INHOUSE_K || amg == CS_PARAM_AMG_INHOUSE_V)
       return true;
 

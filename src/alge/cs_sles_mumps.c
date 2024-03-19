@@ -290,7 +290,7 @@ _set_pc_usage(const cs_param_sles_t  *slesp)
 
   switch (slesp->solver) {
 
-  case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_SOLVER_MUMPS:
     return false;
 
   default: /* Not a solver. Try as preconditioner */

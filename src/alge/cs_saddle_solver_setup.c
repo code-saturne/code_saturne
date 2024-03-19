@@ -725,9 +725,9 @@ _setup(cs_saddle_solver_t  *solver,
 
   case CS_PARAM_SADDLE_SOLVER_MUMPS:
     /* ---------------------------- */
-    if (block11_slesp->solver != CS_PARAM_ITSOL_MUMPS) {
+    if (block11_slesp->solver != CS_PARAM_SOLVER_MUMPS) {
 
-      block11_slesp->solver = CS_PARAM_ITSOL_MUMPS;
+      block11_slesp->solver = CS_PARAM_SOLVER_MUMPS;
       block11_slesp->precond = CS_PARAM_PRECOND_NONE;
       block11_slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
 

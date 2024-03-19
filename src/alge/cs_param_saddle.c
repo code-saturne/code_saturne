@@ -124,7 +124,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
   cs_param_sles_t  *schurp =  cs_param_sles_create(-1, name);
 
   schurp->precond = CS_PARAM_PRECOND_AMG;    /* preconditioner */
-  schurp->solver = CS_PARAM_ITSOL_FCG;       /* iterative solver */
+  schurp->solver = CS_PARAM_SOLVER_FCG;      /* iterative solver */
   schurp->amg_type = CS_PARAM_AMG_INHOUSE_K; /* no predefined AMG type */
   schurp->cvg_param.rtol = 1e-4;             /* relative tolerance to stop an
                                                 iterative solver */
