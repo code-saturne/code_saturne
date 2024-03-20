@@ -150,7 +150,7 @@ _petsc_cmd(bool         use_prefix,
   char cmd_line[128];
 
   if (use_prefix)
-    sprintf(cmd_line, "-%s_%s", prefix, keyword);
+    sprintf(cmd_line, "-%s%s", prefix, keyword);
   else
     sprintf(cmd_line, "-%s", keyword);
 
