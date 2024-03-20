@@ -794,9 +794,7 @@ CS_AC_TEST_DOCS
 
 cs_have_neptune_cfd=no
 if test -f ${srcdir}/neptune_cfd/configure; then
-  if test x$cs_have_mpi != xno; then
-    cs_have_neptune_cfd=yes
-  fi
+  cs_have_neptune_cfd=yes
 fi
 
 # Check if we need to force preprocessor link with C++
