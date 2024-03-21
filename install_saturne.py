@@ -365,66 +365,6 @@ class Package:
 
     #---------------------------------------------------------------------------
 
-    def install_ptscotch(self):
-
-        current_dir = os.getcwd()
-
-        build_dir = self.source_dir + '.build'
-        if os.path.isdir(build_dir): shutil.rmtree(build_dir)
-
-        # Create some install directories in case install script does not work
-        if self.install_dir:
-            inc_dir = os.path.join(self.install_dir, 'include')
-            lib_dir = os.path.join(self.install_dir, 'lib')
-            for dir in [inc_dir, lib_dir]:
-                if not os.path.isdir(dir):
-                    os.makedirs(dir)
-
-        # Copy source files in build directory as VPATH feature is unsupported
-        shutil.copytree(self.source_dir, build_dir)
-
-        os.chdir(os.path.join(build_dir, 'src'))
-
-        if self.shared:
-            fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2.shlib')
-        else:
-            fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2')
-        fd = open('Makefile.inc','w')
-
-        re_thread_mpi = re.compile('-DSCOTCH_PTHREAD_MPI')
-        re_thread = re.compile('-DSCOTCH_PTHREAD')
-        re_intsize32 = re.compile('-DINTSIZE32')
-        re_intsize64 = re.compile('-DINTSIZE64')
-        re_idxsize64 = re.compile('-DIDXSIZE64')
-
-        for line in fdr:
-
-            if line[0:3] in ['CCS', 'CCP', 'CCD']:
-                i1 = line.find('=')
-                line = line[0:i1] + '= ' + self.cc + '\n'
-            line = re.sub(re_thread_mpi, '', line)
-            line = re.sub(re_thread, '', line)
-            line = re.sub(re_intsize32, '', line)
-            line = re.sub(re_intsize64, '', line)
-            line = re.sub(re_idxsize64, '-DIDXSIZE64 -DINTSIZE64', line)
-
-            fd.write(line)
-
-        fdr.close()
-        fd.close()
-
-        # Build and install
-        for target in ['scotch', 'ptscotch']:
-            run_command("make "+target, "Compile", self.name, self.log_file)
-            run_command("make install prefix="+self.install_dir,
-                        "Install", self.name, self.log_file)
-            run_command("make clean", "Clean", self.name, self.log_file)
-
-        # End of installation
-        os.chdir(current_dir)
-
-    #---------------------------------------------------------------------------
-
     def install_parmetis(self):
 
         current_dir = os.getcwd()
@@ -644,6 +584,10 @@ class Setup:
                     version="7.0.4",
                     archive="scotch_7.0.4.tar.gz",
                     url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.4/%s")
+        p = self.packages['scotch']
+        p.config_opts = "-DBUILD_LIBSCOTCHMETIS=OFF"
+        if self.shared:
+        p.config_opts += " -DBUILD_SHARED_LIBS=ON"
 
     #---------------------------------------------------------------------------
 
@@ -984,9 +928,7 @@ Check the setup file and some utilities presence.
             # Compilers
             p.cc = self.cc
             p.cxx = self.cxx
-            if lib in ['scotch'] and self.mpicc:
-                p.cc = self.mpicc
-            elif lib in ['code_saturne', 'parmetis']:
+            if lib in ['code_saturne', 'parmetis']:
                 if self.mpicc:
                     p.cc = self.mpicc
                 if self.mpicxx:
@@ -1101,9 +1043,7 @@ Check the setup file and some utilities presence.
                 sys.stdout.write("Installation of %s\n" % p.name)
                 if verbose == 'yes':
                     p.info()
-                if lib == 'scotch':
-                    p.install_ptscotch()
-                elif lib == 'parmetis':
+                if lib == 'parmetis':
                     p.install_parmetis()
                 else:
                     p.install()
