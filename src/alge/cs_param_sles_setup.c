@@ -433,7 +433,7 @@ _petsc_pchypre_hook(const char             *prefix,
               __func__, slesp->name);
   }
 
-  char option[32];
+  char option[48];
 
   /* From HYPRE documentation: https://hypre.readthedocs.io/en/lastest
    *
@@ -559,11 +559,11 @@ _petsc_pchypre_hook(const char             *prefix,
   case CS_PARAM_AMG_BOOMER_JACOBI:
     sprintf(option, "%s", "Jacobi");
     break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
-    sprintf(option, "%s", "SOR/Jacobi");
-    break;
   case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
     sprintf(option, "%s", "backward-SOR/Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
+    sprintf(option, "%s", "SOR/Jacobi");
     break;
   case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
     sprintf(option, "%s", "symmetric-SOR/Jacobi");
@@ -575,10 +575,10 @@ _petsc_pchypre_hook(const char             *prefix,
     sprintf(option, "%s", "Gaussian-elimination");
     break;
   case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
-    sprintf(option, "%s", "l1-Gauss-Seidel");
+    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
     break;
   case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
-    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
+    sprintf(option, "%s", "l1-Gauss-Seidel");
     break;
   case CS_PARAM_AMG_BOOMER_CG:
     sprintf(option, "%s", "CG");
@@ -609,11 +609,11 @@ _petsc_pchypre_hook(const char             *prefix,
   case CS_PARAM_AMG_BOOMER_JACOBI:
     sprintf(option, "%s", "Jacobi");
     break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
-    sprintf(option, "%s", "SOR/Jacobi");
-    break;
   case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
     sprintf(option, "%s", "backward-SOR/Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
+    sprintf(option, "%s", "SOR/Jacobi");
     break;
   case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
     sprintf(option, "%s", "symmetric-SOR/Jacobi");
@@ -625,10 +625,10 @@ _petsc_pchypre_hook(const char             *prefix,
     sprintf(option, "%s", "Gaussian-elimination");
     break;
   case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
-    sprintf(option, "%s", "l1-Gauss-Seidel");
+    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
     break;
   case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
-    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
+    sprintf(option, "%s", "l1-Gauss-Seidel");
     break;
   case CS_PARAM_AMG_BOOMER_CG:
     sprintf(option, "%s", "CG");
