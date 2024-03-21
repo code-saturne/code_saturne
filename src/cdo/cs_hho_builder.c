@@ -838,6 +838,8 @@ cs_hho_builder_free(cs_hho_builder_t  **p_builder)
   b->bf_t = cs_sdm_free(b->bf_t);
   b->jstab = cs_sdm_free(b->jstab);
 
+  b->hdg = cs_sdm_free(b->hdg);
+
   BFT_FREE(b);
 
   *p_builder = NULL;
