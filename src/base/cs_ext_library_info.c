@@ -59,6 +59,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_printf.h"
+#include "cs_blas.h"
 #include "cs_log.h"
 
 #if defined(HAVE_CUDA)
@@ -83,10 +84,6 @@ cs_sles_petsc_library_info(cs_log_t  log_type);
 
 #if defined(HAVE_AMGX)
 #include "cs_sles_amgx.h"
-#endif
-
-#if defined(HAVE_MKL)
-#include "mkl.h"
 #endif
 
 #if defined(HAVE_MUMPS)
@@ -181,13 +178,7 @@ _ext_library_version_info(bool  log)
 #endif
 
 #if defined(HAVE_MKL)
-    {
-      char buffer[81];
-      MKL_Get_Version_String(buffer, 80);
-      buffer[80] = '\0';
-      cs_log_printf(logs[log_id],
-                    "    MKL %s\n", buffer);
-    }
+    cs_blas_library_info(logs[log_id]);
 #endif
 
 #if defined(HAVE_MUMPS)

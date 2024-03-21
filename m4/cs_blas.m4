@@ -165,6 +165,14 @@ if test "x$with_blas" != "xno" ; then
                      [cs_have_blas=no])
       AC_MSG_RESULT($cs_have_blas)
 
+      if test "x$cs_have_blas" = "xyes" ; then
+        AC_MSG_CHECKING([for MKL sparse inspector/executor API])
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mkl_spblas.h>]],
+                       [[ mkl_sparse_d_create_csr(0, 0, 0, 0, 0, 0, 0, 0); ]])],
+                       [ AC_DEFINE([HAVE_MKL_SPARSE_IE], 1, [MKL sparse BLAS inspector/executor API]) ],
+                       [])
+      fi
+
     fi
 
     if test "x$with_blas_type" = "xMKL" ; then

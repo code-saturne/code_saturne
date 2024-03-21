@@ -41,7 +41,7 @@
 #include <mpi.h>
 #endif
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 #include <mkl_spblas.h>
 #endif
 
@@ -105,7 +105,7 @@ static const cs_lnum_t _cs_cl = (CS_CL_SIZE/8);
  * Local Type Definitions
  *============================================================================*/
 
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
 
 /* Mapping of matrix coefficients and structure to MKL matrix handle */
 /*-------------------------------------------------------------------*/
@@ -123,13 +123,13 @@ typedef struct _cs_matrix_mkl_sparse_map_t {
 
 } cs_matrix_mkl_sparse_map_t;
 
-#endif // defined(HAVE_MKL)
+#endif // defined(HAVE_MKL_SPARSE_IE)
 
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 
 static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
@@ -151,7 +151,7 @@ static const char  *_cs_mkl_strings[] = {
  * Private function definitions
  *============================================================================*/
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 
 /*----------------------------------------------------------------------------
  * Return string indicating MKL sparse status.
@@ -353,7 +353,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
                                      cols,
                                      (MKL_INT)matrix->eb_size,
                                      rows_start,
-                                     NULL,  /* rows_end = rows_start + 1 */
+                                     rows_start + 1,
                                      col_indx,
                                      e_val);
 
@@ -366,7 +366,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
                                      cols,
                                      (MKL_INT)matrix->eb_size,
                                      rows_start,
-                                     NULL,  /* rows_end = rows_start + 1 */
+                                     rows_start + 1,
                                      col_indx,
                                      e_val);
 
@@ -388,7 +388,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
   return csm;
 }
 
-#endif // defined(HAVE_MKL_SPARSE)
+#endif // defined(HAVE_MKL_SPARSE_IE)
 
 /*----------------------------------------------------------------------------
  * Compute matrix-vector product for one dense block: y[i] = a[i].x[i]
@@ -1788,7 +1788,7 @@ _mat_vec_p_l_csr(cs_matrix_t  *matrix,
   }
 }
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 
 static void
 _mat_vec_p_l_csr_mkl(cs_matrix_t  *matrix,
@@ -1856,7 +1856,7 @@ _mat_vec_p_l_csr_mkl(cs_matrix_t  *matrix,
               __func__, (int)status, _cs_mkl_status_get_string(status));
 }
 
-#endif /* defined (HAVE_MKL) */
+#endif /* defined (HAVE_MKL_SPARSE_IE) */
 
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x with MSR matrix.
@@ -2568,7 +2568,7 @@ _bb_mat_vec_p_l_msr(cs_matrix_t  *matrix,
  *   y            --> resulting vector
  *----------------------------------------------------------------------------*/
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 
 static void
 _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
@@ -2654,18 +2654,19 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
                              x,
                              beta,
                              y);
-  else
+  else {
     status = mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE,
                              1, // alpha
                              csm->a,
                              csm->descr,
                              SPARSE_LAYOUT_ROW_MAJOR,
-                             y, // B
+                             x, // B
                              matrix->n_cols_ext, // columns
                              matrix->db_size,    // ldb
                              beta,
                              y, // C
                              matrix->db_size);   // ldc
+  }
 
 #elif CS_REAL_TYPE == CS_FLOAT
 
@@ -2683,7 +2684,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
                              csm->a,
                              csm->descr,
                              SPARSE_LAYOUT_ROW_MAJOR,
-                             y, // B
+                             x, // B
                              matrix->n_cols_ext, // columns
                              matrix->db_size,    // ldb
                              beta,
@@ -2702,7 +2703,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
 
 }
 
-#endif /* defined (HAVE_MKL) */
+#endif /* defined (HAVE_MKL_SPARSE_IE) */
 
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x with MSR matrix.
@@ -3252,7 +3253,7 @@ _bb_mat_vec_p_l_dist(cs_matrix_t  *matrix,
  *   y            --> resulting vector
  *----------------------------------------------------------------------------*/
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 
 static void
 _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
@@ -3284,7 +3285,7 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
   const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_lnum_t  n_h_rows = ms->h.n_rows;
 
-  /* Standard case */
+  /* Standard case (TODO: handle non-scalar cases) */
 
   if (n_h_rows > 0) {
 
@@ -3310,7 +3311,7 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
   }
 }
 
-#endif /* defined (HAVE_MKL) */
+#endif /* defined (HAVE_MKL_SPARSE_IE) */
 
 #if defined(HAVE_ACCEL)
 
@@ -3328,12 +3329,13 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
  *     default
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
- *     mkl             (with MKL Inspector-executor sparse BLAS)
+ *     mkl             (with MKL)
  *
  *   CS_MATRIX_MSR
  *     default
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
+ *     mkl             (with MKL)
  *
  * parameters:
  *   m_type      <--  Matrix type
@@ -3686,7 +3688,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
         _spmv[1] = _mat_vec_p_l_csr;
       }
       else if (!strcmp(func_name, "mkl")) {
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
         _spmv[0] = _mat_vec_p_l_csr_mkl;
         _spmv[1] = _mat_vec_p_l_csr_mkl;
 #else
@@ -3750,7 +3752,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     }
 
     else if (!strcmp(func_name, "mkl")) {
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
@@ -3866,7 +3868,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     }
 
     else if (!strcmp(func_name, "mkl")) {
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:

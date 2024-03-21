@@ -33,11 +33,16 @@
 #include <math.h>
 #include <stdio.h>
 
+#if defined(HAVE_MKL)
+#include "mkl.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_log.h"
 #include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -1266,6 +1271,29 @@ static cs_dot_t *_cs_glob_gmean = _cs_gmean_superblock;
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on BLAS libraries used.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_blas_library_info(cs_log_t  log_type)
+{
+#if defined(HAVE_MKL)
+  MKLVersion v;
+
+  mkl_get_version(&v);
+
+  cs_log_printf(log_type,
+                "    MKL %d.%d.%d (%s, build %s for %s)\n",
+                v.MajorVersion, v.MinorVersion, v.UpdateVersion,
+                v.ProductStatus, v.Build, v.Platform);
+#endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

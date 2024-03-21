@@ -87,7 +87,7 @@
 #include <mpi.h>
 #endif
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 #include <mkl_spblas.h>
 #endif
 
@@ -180,7 +180,7 @@ const char  *cs_matrix_fill_type_name[] = {"CS_MATRIX_SCALAR",
 const char  *cs_matrix_spmv_type_name[] = {"y ← A.x",
                                            "y ← (A-D).x"};
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 
 static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
@@ -6365,7 +6365,7 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                  &n_variants_max,
                  m_variant);
 
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add(_("CSR, with MKL"),
                  m->type,
@@ -6376,7 +6376,7 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_MKL) */
+#endif /* defined(HAVE_MKL_SPARSE_IE) */
 
 #if defined(HAVE_CUDA)
 
@@ -6415,7 +6415,7 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                  &n_variants_max,
                  m_variant);
 
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add(_("MSR, with MKL"),
                  m->type,
@@ -6426,7 +6426,7 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_MKL) */
+#endif /* defined(HAVE_MKL_SPARSE_IE) */
 
 #if defined(HAVE_CUDA)
 

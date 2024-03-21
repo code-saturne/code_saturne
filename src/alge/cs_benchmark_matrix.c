@@ -41,7 +41,7 @@
 #include <mpi.h>
 #endif
 
-#if defined (HAVE_MKL)
+#if defined (HAVE_MKL_SPARSE_IE)
 #include <mkl_spblas.h>
 #endif
 
@@ -419,7 +419,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add("CSR, with MKL",
                  NULL,
@@ -434,7 +434,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_MKL) */
+#endif /* defined(HAVE_MKL_SPARSE_IE) */
 
 #if defined(HAVE_CUDA)
 
@@ -489,7 +489,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add("MSR, with MKL",
                  NULL,
@@ -504,7 +504,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_MKL) */
+#endif /* defined(HAVE_MKL_SPARSE_IE) */
 
 #if defined(HAVE_CUDA)
 
@@ -591,7 +591,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_MKL) */
+#endif /* defined(HAVE_MKL_SPARSE_IE) */
 
   }
 
@@ -610,7 +610,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#if defined(HAVE_MKL)
+#if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add("Distributed, with MKL",
                  NULL,
@@ -625,7 +625,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_MKL) */
+#endif /* defined(HAVE_MKL_SPARSE_IE) */
 
     _variant_add("Distributed, OpenMP scheduling",
                  NULL,
