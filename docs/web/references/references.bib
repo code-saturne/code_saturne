@@ -74,29 +74,35 @@
 }
 
 @article{amino2022time,
-  title={A time-staggered second order conservative time scheme for variable density flow},
-  author={Amino, Hector and Flageul, C{\'e}dric and Benhamadouche, Sofiane and Tiselj, Iztok and Carissimo, Bertrand and Ferrand, Martin},
-  journal={International Journal for Numerical Methods in Fluids},
-  volume={94},
-  number={12},
-  pages={1964--1995},
-  year={2022},
+  author = {Amino, Hector and Flageul, Cédric and Benhamadouche, Sofiane and Tiselj, Iztok and Carissimo, Bertrand and Ferrand, Martin},
+  title = {A time-staggered second order conservative time scheme for variable density flow},
+  journal = {International Journal for Numerical Methods in Fluids},
+  volume = {94},
+  number = {12},
+  pages = {1964-1995},
+  keywords = {CFD, pressure correction, finite volume, compressible flow, second order, RANS, LES},
+  doi = {https://doi.org/10.1002/fld.5116},
+  url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/fld.5116},
+  eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/fld.5116},
+  abstract = {Abstract In this study, we present a robust conservative time-staggered scheme for variable density flow. This pressure correction scheme uses the compressible Navier–Stokes equations and is implemented in the collocated finite-volume open-source computational fluid dynamics solver code\_saturne. The Helmholtz equation is solved for the pressure increment, taking the thermodynamic pressure into account and avoiding the acoustic time step limitation. The internal energy equation is used and completed by a source term derived from the discrete kinetic energy equation, thus enforcing total energy conservation and consistency for irregular solutions. A numerical analysis providing conditions ensuring the positivity of the thermodynamic variables is proposed. The scheme is verified and validated against analytical and experimental test cases. Its ability to reproduce the pressure variation while conserving the mass is demonstrated. Its conservative property and time convergence order are also verified. An irregular shock solution is studied, emphasizing the importance of the source term in the internal energy equation. Finally, the scheme is validated against reference numerical results on a two-dimensional natural convection cavity and experimental data on a three-dimensional ventilation test case. The comparison against experimental data is made using first-and second-order turbulent simulations.},
+  year = {2022},
   publisher={Wiley Online Library}
 }
 
-@inproceedings{amino2022time,
-  title={A time-staggered CFD scheme for variable density moist air Flow},
-  author={Amino, Hector Amino and Flageul, C{\'e}dric Flageul and Carissimo, Bertrand Carissimo and Ferrand, Martin Ferrand},
+@inproceedings{amino2022time:eccomas,
+  title={A Time-Staggered CFD Scheme for Moist Air Variable Density Flow},
+  author={Amino, Hector Amino and Flageul, C{\'e}dric and Carissimo, Bertrand and Ferrand, Martin},
   booktitle={ECCOMAS Congress 2022-8th European Congress on Computational Methods in Applied Sciences and Engineering},
   year={2022}
 }
 
-@inproceedings{amino2022time,
-  title={A TIME-STAGGERED SECOND ORDER SCHEME FOR MOIST AIR VARIABLE DENSITY FLOW},
-  author={Amino, Hector and Flageul, C{\'e}dric and Carissimo, Bertrand and Ferrand, Martin and H{\'e}rard, Jean-Marc},
-  booktitle={European Congress on Computational Methods in Applied Sciences and Engineering},
-  year={2022}
-}
+% Duplicate with above
+% inproceedings{amino2022time,
+%  title={A TIME-STAGGERED SECOND ORDER SCHEME FOR MOIST AIR VARIABLE DENSITY FLOW},
+%  author={Amino, Hector and Flageul, C{\'e}dric and Carissimo, Bertrand and Ferrand, Martin and H{\'e}rard, Jean-Marc},
+%  booktitle={European Congress on Computational Methods in Applied Sciences and Engineering},
+%  year={2022}
+%}
 
 @article{al2022modeling,
   title={Modeling the Contribution of Aerosols to Fog Evolution through Their Influence on Solar Radiation},
