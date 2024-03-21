@@ -821,7 +821,7 @@ cs_ctwr_source_term(int              f_id,
             }
 
             if (packing_cell[cell_id_1] != -1) {
-              exp_st[cell_id_1] += CS_MAX(imasfl_r[face_id],0)
+              exp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id],0)
                 * cfld_yh_rain->val[cell_id_1];
             }
           }
