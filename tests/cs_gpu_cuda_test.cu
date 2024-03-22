@@ -558,7 +558,6 @@ _dot_products_1(double   t_measure,
 
     cudaDeviceSynchronize();
 
-#   pragma omp parallel for
     for (cs_lnum_t ii = 0; ii < n; ii++) {
       x[ii] = (ii%10 - 3)*_pi;
       y[ii] = (ii%10 + 1);
