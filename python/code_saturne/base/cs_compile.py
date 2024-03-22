@@ -394,8 +394,12 @@ class cs_compile(object):
 
         c_files = fnmatch.filter(src_list, '*.c')
         h_files = fnmatch.filter(src_list, '*.h')
-        cxx_files = fnmatch.filter(src_list, '*.cxx') + fnmatch.filter(src_list, '*.cpp')
+        cxx_files = fnmatch.filter(src_list, '*.cxx')
         cu_files = fnmatch.filter(src_list, '*.cu')
+        if pkg.config.features['cuda'] == 'yes':
+            cu_files += fnmatch.filter(src_list, '*.cpp')
+        else:
+            cxx_files += fnmatch.filter(src_list, '*.cpp')
         hxx_files = fnmatch.filter(src_list, '*.hxx') + fnmatch.filter(src_list, '*.hpp')
         f_files = fnmatch.filter(src_list, '*.[fF]90')
         o_files = fnmatch.filter(src_list, '*.o')
@@ -471,6 +475,8 @@ class cs_compile(object):
             cmd.append('-DHAVE_CONFIG_H')
             cmd += self.get_flags('cppflags', base_name=base_name)
             cmd += separate_args(pkg.config.flags['nvccflags'])
+            if f[-3:] != '.cu':
+                cmd += separate_args(pkg.config.flags['nvccflags_cpp'])
             cmd += ["-c", f]
             if run_command(cmd, pkg=pkg, echo=True,
                            stdout=stdout, stderr=stderr) != 0:
