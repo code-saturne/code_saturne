@@ -185,7 +185,7 @@ cs_bad_cells_regularisation.c \
 cs_balance.c \
 cs_balance_by_zone.cxx \
 cs_benchmark.cpp \
-cs_benchmark_matrix.c \
+cs_benchmark_matrix.cpp \
 cs_blas.c \
 cs_bw_time_diff.c \
 cs_cell_to_vertex.c \

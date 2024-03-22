@@ -27,8 +27,10 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
+
+#include <chrono>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -61,7 +63,6 @@
 #include "cs_numbering.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
-#include "cs_timer.h"
 
 #if defined(HAVE_HYPRE)
 #include "cs_matrix_hypre.h"
@@ -89,6 +90,8 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
+
+#define _CS_N_TIME_RUNS 10
 
 /*=============================================================================
  * Local Type Definitions
@@ -863,8 +866,8 @@ _matrix_check(int                          n_variants,
           if (is_external_type == false) {
             cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
             cs_matrix_variant_set_func(mv,
-                                       f_id,
-                                       op_id,
+                                       (cs_matrix_fill_type_t)f_id,
+                                       (cs_matrix_spmv_type_t)op_id,
                                        numbering,
                                        v->vector_multiply_name[f_id][op_id]);
             cs_matrix_variant_apply(m, mv);
@@ -883,7 +886,7 @@ _matrix_check(int                          n_variants,
 
           /* Check multiplication */
 
-          vector_multiply(m, op_id, true, x, y);
+          vector_multiply(m, (cs_matrix_spmv_type_t)op_id, true, x, y);
           if (v_id == 0)
             memcpy(yr0, y, n_rows*_block_mult*sizeof(cs_real_t));
           else {
@@ -952,8 +955,7 @@ _matrix_time_test(double                       t_measure,
 {
   cs_lnum_t  ii;
   int  n_runs, run_id, v_id, f_id;
-  double  wt0, wt1, wtu;
-  double wti, wtf;
+  std::chrono::high_resolution_clock::time_point wt0, wt1;
   cs_matrix_type_t  type, type_prev;
 
   double test_sum = 0.0;
@@ -1003,31 +1005,32 @@ _matrix_time_test(double                       t_measure,
 
       test_assign = true;
 
-      wt0 = cs_timer_wtime(), wt1 = wt0;
-      run_id = 0, n_runs = (t_measure > 0) ? 16 : 1;
+      wt0 = std::chrono::high_resolution_clock::now();
+
+      run_id = 0, n_runs = (t_measure > 0) ? _CS_N_TIME_RUNS : 1;
       while (run_id < n_runs) {
-        while (run_id < n_runs) {
-          if (m != NULL)
-            cs_matrix_destroy(&m);
-          if (ms != NULL)
-            cs_matrix_structure_destroy(&ms);
-          ms = cs_matrix_structure_create(type,
-                                          n_cells,
-                                          n_cells_ext,
-                                          n_faces,
-                                          face_cell,
-                                          halo,
-                                          numbering);
-          m = cs_matrix_create(ms);
-          run_id++;
-        }
-        wt1 = cs_timer_wtime();
-        double wt_r0 = wt1 - wt0;
-        cs_parall_max(1, CS_DOUBLE, &wt_r0);
-        if (wt_r0 < t_measure)
-          n_runs *= 2;
+        if (m != NULL)
+          cs_matrix_destroy(&m);
+        if (ms != NULL)
+          cs_matrix_structure_destroy(&ms);
+        ms = cs_matrix_structure_create(type,
+                                        n_cells,
+                                        n_cells_ext,
+                                        n_faces,
+                                        face_cell,
+                                        halo,
+                                        numbering);
+        m = cs_matrix_create(ms);
+        run_id++;
       }
-      v->matrix_create_cost = (wt1 - wt0) / n_runs;
+      wt1 = std::chrono::high_resolution_clock::now();
+      std::chrono::microseconds wt_r0_m;
+      wt_r0_m = std::chrono::duration_cast
+               <std::chrono::microseconds>(wt1 - wt0);
+      double wt_r0 = wt_r0_m.count() * 1.e-6;
+      cs_parall_max(1, CS_DOUBLE, &wt_r0);
+
+      v->matrix_create_cost = wt_r0 / n_runs;
     }
 
     /* Loop on fill patterns sizes */
@@ -1044,8 +1047,6 @@ _matrix_time_test(double                       t_measure,
 
       /* Loop on diagonal exclusion flags */
 
-      double t_measure_assign = -1;
-
       if (   strlen(v->vector_multiply_name[f_id][0]) < 1
           && strlen(v->vector_multiply_name[f_id][1]) < 1)
         continue;
@@ -1058,34 +1059,33 @@ _matrix_time_test(double                       t_measure,
       /* Measure overhead of setting coefficients if not already done */
 
       if (test_assign) {
-        t_measure_assign = t_measure;
-        n_runs = 16;
+        n_runs = _CS_N_TIME_RUNS;
       }
       else
         n_runs = 1;
 
-      wt0 = cs_timer_wtime(), wt1 = wt0;
+      wt0 = std::chrono::high_resolution_clock::now();
       run_id = 0;
       while (run_id < n_runs) {
-        while (run_id < n_runs) {
-          cs_matrix_set_coefficients(m,
-                                     sym_coeffs,
-                                     _d_block_size,
-                                     _e_block_size,
-                                     n_faces,
-                                     (const cs_lnum_2_t *)face_cell,
-                                     da,
-                                     xa);
-          run_id++;
-        }
-        wt1 = cs_timer_wtime();
-        double wt_r0 = wt1 - wt0;
-        cs_parall_max(1, CS_DOUBLE, &wt_r0);
-        if (wt_r0 < t_measure_assign)
-          n_runs *= 2;
+        cs_matrix_set_coefficients(m,
+                                   sym_coeffs,
+                                   _d_block_size,
+                                   _e_block_size,
+                                   n_faces,
+                                   (const cs_lnum_2_t *)face_cell,
+                                   da,
+                                   xa);
+        run_id++;
       }
-      if (n_runs > 1)
-        v->matrix_assign_cost[f_id] = (wt1 - wt0) / n_runs;
+      wt1 = std::chrono::high_resolution_clock::now();
+      std::chrono::microseconds wt_r0_m;
+      wt_r0_m = std::chrono::duration_cast
+               <std::chrono::microseconds>(wt1 - wt0);
+      double wt_r0 = wt_r0_m.count() * 1.e-6;
+
+      cs_parall_max(1, CS_DOUBLE, &wt_r0);
+
+      v->matrix_assign_cost[f_id] = wt_r0 / n_runs;
 
       /* Measure matrix.vector operations */
 
@@ -1101,8 +1101,8 @@ _matrix_time_test(double                       t_measure,
               && strlen(v->vector_multiply_name[f_id][op_id]) > 0) {
             cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
             cs_matrix_variant_set_func(mv,
-                                       f_id,
-                                       op_id,
+                                       (cs_matrix_fill_type_t)f_id,
+                                       (cs_matrix_spmv_type_t)op_id,
                                        numbering,
                                        v->vector_multiply_name[f_id][op_id]);
             cs_matrix_variant_apply(m, mv);
@@ -1132,48 +1132,54 @@ _matrix_time_test(double                       t_measure,
 
         for (int mpi_flag = 0; mpi_flag < mpi_flag_max; mpi_flag++) {
 
-          wt0 = cs_timer_wtime(), wt1 = wt0;
-          run_id = 0, n_runs = (t_measure > 0) ? 16 : 1;
+          run_id = 0, n_runs = (t_measure > 0) ? _CS_N_TIME_RUNS : 1;
 
           double mean = 0.0;
           double m2 = 0.0;
+          test_sum = 0;
+
+          wt0 = std::chrono::high_resolution_clock::now();
 
           while (run_id < n_runs) {
-            while (run_id < n_runs) {
-              if (run_id % 16)
-                test_sum = 0;
-              wti = cs_timer_wtime(), wtf = wti;
-              if (mpi_flag > 0)
-                vector_multiply(m, op_id, false, x, y);
-              else {
-                if (op_id == 0)
-                  cs_matrix_vector_multiply(m, x, y);
-                else
-                  cs_matrix_vector_multiply_partial(m, op_id, x, y);
-              }
-              wtf = cs_timer_wtime();
-              test_sum += y[n_cells-1];
-              run_id++;
-              double t = (wtf - wti);
-              double delta = t - mean;
-              double r = delta / run_id;
-              double m_n = mean + r;
-              m2 = (m2*(run_id-1) + delta*(t-m_n)) / run_id;
-              mean += r;
+            std::chrono::high_resolution_clock::time_point
+              wti = std::chrono::high_resolution_clock::now();
+            if (mpi_flag > 0)
+              vector_multiply(m, op_id, false, x, y);
+            else {
+              if (op_id == CS_MATRIX_SPMV)
+                cs_matrix_vector_multiply(m, x, y);
+              else
+                cs_matrix_vector_multiply_partial(m,
+                                                  (cs_matrix_spmv_type_t)op_id,
+                                                  x,
+                                                  y);
             }
-            wt1 = cs_timer_wtime();
-            double wt_r0 = wt1 - wt0;
-            cs_parall_max(1, CS_DOUBLE, &wt_r0);
-            if (wt_r0 < t_measure)
-              n_runs *= 2;
-          }
+            std::chrono::high_resolution_clock::time_point
+              wtf = std::chrono::high_resolution_clock::now();
+            test_sum += y[n_cells-1];
+            run_id++;
 
-          wtu = (wt1 - wt0) / n_runs;
+            std::chrono::microseconds t_ms
+              = std::chrono::duration_cast
+               <std::chrono::microseconds>(wtf - wti);
+            double t =  t_ms.count() * 1.e-6;
+            double delta = t - mean;
+            double r = delta / run_id;
+            double m_n = mean + r;
+            m2 = (m2*(run_id-1) + delta*(t-m_n)) / run_id;
+            mean += r;
+          }
+          wt1 = std::chrono::high_resolution_clock::now();
+          wt_r0_m = std::chrono::duration_cast
+                   <std::chrono::microseconds>(wt1 - wt0);
+          wt_r0 = wt_r0_m.count() * 1.e-6;
+          cs_parall_max(1, CS_DOUBLE, &wt_r0);
+
           if (n_runs > 1)
             m2 = sqrt(m2 / (n_runs - 1));
           else
             m2 = 0;
-          v->matrix_vector_cost[f_id][op_id][0][mpi_flag] = wtu;
+          v->matrix_vector_cost[f_id][op_id][0][mpi_flag] = wt_r0;
           v->matrix_vector_cost[f_id][op_id][1][mpi_flag] = m2;
 
         } /* End of loop on mpi_flag */
@@ -1701,7 +1707,7 @@ cs_benchmark_matrix(double                 t_measure,
 
   /* Print info on variants */
 
-  _matrix_time_create_assign_title(1, 0);
+  _matrix_time_create_assign_title(1, CS_MATRIX_SCALAR);
   for (v_id = 0; v_id < n_variants; v_id++)
     _matrix_time_create_assign_stats(m_variant, v_id, 1, CS_MATRIX_SCALAR);
 
@@ -1722,19 +1728,21 @@ cs_benchmark_matrix(double                 t_measure,
     for (f_id = 0; f_id < _n_fill_types; f_id++) {
       cs_matrix_fill_type_t  fill_type = _fill_types[f_id];
       for (ed_flag = 0; ed_flag < 2; ed_flag++) {
-        _matrix_time_spmv_title(fill_type, ed_flag, mpi_flag);
+        _matrix_time_spmv_title(fill_type,
+                                (cs_matrix_spmv_type_t)ed_flag,
+                                mpi_flag);
         for (v_id = 0; v_id < n_variants; v_id++)
           _matrix_time_spmv_stats(m_variant,
                                   v_id,
                                   fill_type,
-                                  ed_flag,
+                                  (cs_matrix_spmv_type_t)ed_flag,
                                   mpi_flag);
         _matrix_time_spmv_title_ops();
         for (v_id = 0; v_id < n_variants; v_id++)
           _matrix_time_spmv_stats_ops(m_variant,
                                       v_id,
                                       fill_type,
-                                      ed_flag,
+                                      (cs_matrix_spmv_type_t)ed_flag,
                                       mpi_flag);
       }
     }
