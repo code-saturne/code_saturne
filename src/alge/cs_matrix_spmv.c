@@ -385,6 +385,14 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
     bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
               __func__, (int)status, _cs_mkl_status_get_string(status));
 
+#if 0
+  status = mkl_sparse_optimize(csm->a);
+
+  if (SPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
+              __func__, (int)status, _cs_mkl_status_get_string(status));
+#endif
+
   return csm;
 }
 
@@ -2655,13 +2663,17 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
                              beta,
                              y);
   else {
+  if (SPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
+              __func__, (int)status, _cs_mkl_status_get_string(status));
+
     status = mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE,
                              1, // alpha
                              csm->a,
                              csm->descr,
                              SPARSE_LAYOUT_ROW_MAJOR,
                              x, // B
-                             matrix->n_cols_ext, // columns
+                             matrix->db_size,    // columns
                              matrix->db_size,    // ldb
                              beta,
                              y, // C
@@ -2685,7 +2697,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
                              csm->descr,
                              SPARSE_LAYOUT_ROW_MAJOR,
                              x, // B
-                             matrix->n_cols_ext, // columns
+                             matrix->db_size,    // columns
                              matrix->db_size,    // ldb
                              beta,
                              y, // C
@@ -3481,14 +3493,14 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *   CS_MATRIX_MSR
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
- *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     mkl             (with MKL)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
  *
  *   CS_MATRIX_DIST
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
- *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     mkl             (with MKL)
  *
  * parameters:
  *   m_type      <--  Matrix type
@@ -3756,6 +3768,10 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
+      case CS_MATRIX_BLOCK_D:
+      case CS_MATRIX_BLOCK_D_66:
+      case CS_MATRIX_BLOCK_D_SYM:
+      case CS_MATRIX_BLOCK:
         _spmv[0] = _mat_vec_p_l_msr_mkl;
         _spmv[1] = _mat_vec_p_l_msr_mkl;
         break;

@@ -180,14 +180,6 @@ const char  *cs_matrix_fill_type_name[] = {"CS_MATRIX_SCALAR",
 const char  *cs_matrix_spmv_type_name[] = {"y ← A.x",
                                            "y ← (A-D).x"};
 
-#if defined (HAVE_MKL_SPARSE_IE)
-
-static char _no_exclude_diag_error_str[]
-  = N_("Matrix product variant using function %s\n"
-       "does not handle case with excluded diagonal.");
-
-#endif
-
 /* Tuning parameters */
 
 cs_lnum_t _base_assembler_thr_min = 128;
