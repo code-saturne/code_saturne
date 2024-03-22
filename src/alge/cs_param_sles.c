@@ -912,7 +912,8 @@ cs_param_sles_set_precond(const char       *keyval,
     cs_param_sles_mumps_reset(slesp);
 
   }
-  else if (strcmp(keyval, "poly1") == 0) {
+  else if (strcmp(keyval, "poly1") == 0 ||
+           strcmp(keyval, "poly_1") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_POLY1;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
@@ -921,7 +922,8 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->flexible = false;
 
   }
-  else if (strcmp(keyval, "poly2") == 0) {
+  else if (strcmp(keyval, "poly2") == 0 ||
+           strcmp(keyval, "poly_2") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_POLY2;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;

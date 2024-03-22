@@ -133,8 +133,8 @@ key value | description | type | family
 `"icc0"` | Incomplete Choleski factorization (zero fill-in meaning that the same sparsity level is used). For SPD matrices. | \ref CS_PARAM_PRECOND_ICC0 | PETSc, HYPRE
 `"mumps"` | the sparse direct solver MUMPS used as preconditioner. Please refer to [the MUMPS section](@ref cs_ug_cdo_sles_mumps) for more details. | \ref CS_PARAM_PRECOND_MUMPS | mumps
 `"none"` | No preconditioner. | \ref CS_PARAM_PRECOND_NONE | saturne, PETSc, HYPRE
-`"poly1"` | 1st order Neumann polynomial preconditioning | \ref CS_PARAM_PRECOND_POLY1 | saturne
-`"poly2"` | 2nd order Neumann polynomial preconditioning | \ref CS_PARAM_PRECOND_POLY2 | saturne
+`"poly1"`, `"poly_1"` | 1st order Neumann polynomial preconditioning | \ref CS_PARAM_PRECOND_POLY1 | saturne
+`"poly2"`, `"poly_2"` | 2nd order Neumann polynomial preconditioning | \ref CS_PARAM_PRECOND_POLY2 | saturne
 `"ssor"` | Symmetric Successive OverRelaxation (SSOR) algorithm. In case of parallel computations, each MPI rank performs a SSOR on the local matrix. | \ref CS_PARAM_PRECOND_SSOR | PETSc
 
 
