@@ -147,7 +147,7 @@ class config:
             self.compilers[k] = d.get(k, None)
 
         self.flags = {}
-        for k in ('cflags', 'cxxflags', 'fcflags', 'nvccflags',
+        for k in ('cflags', 'cxxflags', 'fcflags', 'nvccflags', 'nvccflags_cpp',
                   'cflags_shared', 'cxxflags_shared', 'fcflags_shared'):
             self.flags[k] = d.get(k, '')
 
@@ -215,13 +215,13 @@ class config:
         self.features = {}
         self.features['debug'] = d.get('debug', 'no')
         self.features['relocatable'] = d.get('relocatable', 'no')
-        self.features['shared'] = d.get('enable_shared', 'yes')
-        self.features['gui'] = d.get('cs_have_gui', 'yes')
-        self.features['frontend'] = d.get('cs_have_frontend', 'yes')
-        self.features['mpi'] = d.get('cs_have_mpi', 'yes')
-        self.features['openmp'] = d.get('cs_have_openmp', 'yes')
-        self.features['cuda'] = d.get('cs_have_cuda', 'no')
-        self.features['long-gnum'] = d.get('cs_have_long_gnum', 'yes')
+        self.features['shared'] = d.get('shared', 'yes')
+        self.features['gui'] = d.get('gui', 'yes')
+        self.features['frontend'] = d.get('frontend', 'yes')
+        self.features['mpi'] = d.get('mpi', 'yes')
+        self.features['openmp'] = d.get('openmp', 'yes')
+        self.features['cuda'] = d.get('cuda', 'no')
+        self.features['long-gnum'] = d.get('long-gnum', 'yes')
         self.features['build_os'] = d.get('build_os', '')
 
         # Now, one can setup the prerequisites information
