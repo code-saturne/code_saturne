@@ -212,6 +212,9 @@ _run(void)
 #if defined(HAVE_CUDA)
   cs_base_cuda_select_default_device();
 #endif
+#if defined(HAVE_OPENMP_TARGET)
+  cs_omp_target_select_default_device();
+#endif
 
   if (cs_get_device_id() < 0)
     cs_halo_set_buffer_alloc_mode(CS_ALLOC_HOST);
