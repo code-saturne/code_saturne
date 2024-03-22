@@ -434,11 +434,11 @@ if __name__ == '__main__':
 
     from cs_package import package
 
-    if exec_name == 'code_saturne':
-        pkg = package(config_file=config_file, install_mode=True)
+    if exec_name == 'nc_solver':
+        pkg = package(config_file=config_file, install_mode=True,
+                      name='neptune_cfd')
     else:
-        pkg = package(config_file=config_file, install_mode=True, \
-                name='neptune_cfd')
+        pkg = package(config_file=config_file, install_mode=True)
 
     src_dir = None
     if src_files:
