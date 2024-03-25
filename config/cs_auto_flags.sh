@@ -408,38 +408,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
 fi
 
-# Otherwise, are we using xlc ?
-#------------------------------
-
-if test "x$cs_cc_compiler_known" != "xyes" ; then
-
-  $CC -qversion 2>&1 | grep 'XL C' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CC' is IBM XL C/C++ compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CC -qversion > $outfile 2>&1
-    cs_ac_cc_version=`grep 'XL C' $outfile`
-    cs_cc_compiler_known=yes
-    cs_linker_set=yes
-
-    # Default compiler flags
-    cflags_default=""
-    cflags_default_opt="-O3"
-    cflags_default_hot="-O3"
-    cflags_default_dbg="-g -qfullpath"
-    cflags_default_omp="-qsmp=omp -qthreaded"
-
-    # Default  linker flags
-    ldflags_default=""
-    ldflags_default_opt="-O3"
-    ldflags_default_dbg="-g -qfullpath"
-    ldflags_rpath="-R"
-
-  fi
-fi
-
 # Otherwise, are we using the Cray compiler ?
 #--------------------------------------------
 
@@ -726,8 +694,8 @@ elif test "x$cs_gxx" = "xicpc"; then
       ;;
   esac
 
-# Otherwise, are we using ICC NextGen ?  This is a deprecated beta version.
-#--------------------------------------
+# Otherwise, are we using Intel LLVM DPC++/C++ Compiler ?
+#--------------------------------------------------------
 
 elif test "x$cs_gxx" = "xoneAPI"; then
 
@@ -807,32 +775,6 @@ else
     fi
   fi
 
-fi
-
-# Otherwise, are we using xlc++ ?
-#--------------------------------
-
-if test "x$cs_cxx_compiler_known" != "xyes" ; then
-
-  $CXX -qversion 2>&1 | grep 'XL C' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CXX' is IBM XL C/C++ compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CXX -qversion > $outfile 2>&1
-    cs_ac_cxx_version=`grep 'XL C' $outfile`
-    cs_cxx_compiler_known=yes
-
-    # Default compiler flags
-    cxxflags_default="-q64 -qlanglvl=redefmac"
-    cxxflags_default_opt="-O3"
-    cxxflags_default_hot="-O3"
-    cxxflags_default_dbg="-g"
-    cxxflags_default_omp="-qsmp=omp -qthreaded"
-    cxxflags_default_std=""
-
-  fi
 fi
 
 # Otherwise, are we using the Cray compiler ?
@@ -1131,30 +1073,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fi
   fi
 
-fi
-
-if test "x$cs_fc_compiler_known" != "xyes" ; then
-
-  # Are we using xlf ?
-  #-------------------
-
-  $FC -qversion 2>&1 | grep 'XL Fortran' > /dev/null
-
-  if test "$?" = "0" ; then
-
-    echo "compiler '$FC' is IBM XL Fortran compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $FC -qversion > $outfile 2>&1
-    cs_ac_fc_version=`grep 'XL Fortran' $outfile`
-    cs_fc_compiler_known=yes
-
-    fcflags_default="-q64 -qextname -qsuffix=cpp=f90"
-    fcflags_default_dbg="-g"
-    fcflags_default_opt="-O3"
-    fcflags_default_omp="-qsmp=omp -qthreaded"
-
-  fi
 fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
