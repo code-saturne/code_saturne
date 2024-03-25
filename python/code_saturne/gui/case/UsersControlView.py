@@ -82,7 +82,7 @@ class NameDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         self.old_name = ""
-        rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
+        rx = "[_a-zA-Z:][_A-Za-z0-9:]{1," + str(LABEL_LENGTH_MAX-1) + "}"
         self.regExp = QRegExp(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
