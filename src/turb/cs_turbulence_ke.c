@@ -165,7 +165,7 @@ _tsepls(int       phase_id,
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
   {
-    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -650,7 +650,7 @@ cs_turbulence_ke(int              phase_id,
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
   {
-    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -721,7 +721,7 @@ cs_turbulence_ke(int              phase_id,
    * the production term is assumed to be asymptotiy in S and
    * not in mu_TxS**2 */
 
-  cs_field_t *f_tke_prod = cs_field_by_name_try("tke_production");
+  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:tke_production");
 
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD) {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
@@ -1032,7 +1032,7 @@ cs_turbulence_ke(int              phase_id,
        smbrk = P+G
        smbre = P+(1-ce3)*G */
 
-    cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
+    cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:tke_buoyancy");
 
     /* smbr* store mu_TxS**2 */
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
@@ -2498,7 +2498,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;

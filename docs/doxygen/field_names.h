@@ -44,11 +44,11 @@
 /*!@{*/
 
 /*!
-  \var cs_algo
+  \var algo
 
-  Fields used to check algorithm behavior
+  Fields used to check algorithm behavior.
 
-  Fields of the form "cs_algo:<type>_<variable_name>" are reserved
+  Fields of the form "algo:<type>_<variable_name>" are reserved
   by the code to allow visualization of some intermediate computational
   field values.
 
@@ -57,15 +57,39 @@
 
   Current reserved fields are:
 
-  - cs_algo:grad_clip_factor_<variable_name>
+
+  - <tt> algo:predicted_velocity </tt>
+    Velocity field after the prediction step, cell-based field of dimension 3.
+  - <tt> algo:predicted_vel_divergence </tt>
+    Divergence of the velocity field after the prediction step, cell-based field of dimension 1.
+  - <tt> algo:pressure_gradient </tt>
+    Pressure gradient, cell-based field of dimension 1.
+  - <tt> algo:pressure_increment_gradient </tt>
+    Pressure of the increment solved in the correction step, cell-based field of dimension 1.
+  - <tt> algo:rij_divergence </tt>
+    Divergence of the Reynolds stress in the momentum equation for  Reynolds stress RANS models, cell-based field of dimension 3.
+  - <tt> algo:rij_production </tt>
+    So called production term in Reynolds stress RANS models, cell-based field of dimension 6.
+  - <tt> algo:rij_pressure_strain_correlation </tt>
+    So called pressure strain correlation term in Reynolds stress RANS models, cell-based field of dimension 6.
+  - <tt> algo:rij_buoyancy </tt>
+    So called buoyancy term in Reynolds stress RANS models, cell-based field of dimension 6.
+  - <tt> algo:tke_production </tt>
+    So called production term in k-epsilon RANS models, cell-based field of dimension 1.
+  - <tt> algo:tke_buoyancy </tt>
+    So called buoyancy term in k-epsilon RANS models, cell-based field of dimension 1.
+  - <tt> algo:turbulent_flux_divergence </tt>
+    Divergence of the turbulent flux in the energy equation, cell-based field of dimension 1.
+
+  - <tt> algo:grad_clip_factor_<variable_name> </tt>
     Least-squares gradient clip factor if gradient clipping is activated
     (scalar field on cells).
-  - cs_algo:grad_b_iter_<variable_name>
+  - <tt> algo:grad_b_iter_<variable_name> </tt>
     Number of iterations for convergence of fixed-point algorithm for
     least-squares boundary gradient of vector and tensor fields.
-    (scalar field on boundaery faces).
+    (scalar field on boundary faces).
 */
-char *cs_algo;
+char *algo;
 
 /*!
   \var est_error_pre_2

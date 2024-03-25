@@ -459,7 +459,7 @@ cs_turbulence_kw(int              phase_id,
 
     cs_real_33_t *gradv = NULL, *_gradv = NULL;
     {
-      cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+      cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
       if (f_vel->grad != NULL)
         gradv = (cs_real_33_t *)f_vel->grad;
@@ -1774,7 +1774,7 @@ cs_turbulence_kw_mu_t(int phase_id)
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;

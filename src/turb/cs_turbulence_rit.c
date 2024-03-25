@@ -1040,7 +1040,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -1207,8 +1207,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || turb_flux_model_type == 2
       || turb_flux_model_type == 3) {
     cs_real_t *divut;
-    if (cs_field_by_name_try("turbulent_flux_divergence") != NULL)
-      divut = cs_field_by_name_try("turbulent_flux_divergence")->val;
+    if (cs_field_by_name_try("algo:turbulent_flux_divergence") != NULL)
+      divut = cs_field_by_name_try("algo:turbulent_flux_divergence")->val;
     else
       BFT_MALLOC(divut, n_cells_ext, cs_real_t);
 
@@ -1218,7 +1218,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       smbrs[c_id] -= divut[c_id];
 
-    if (cs_field_by_name_try("turbulent_flux_divergence") == NULL)
+    if (cs_field_by_name_try("algo:turbulent_flux_divergence") == NULL)
       BFT_FREE(divut);
   }
 

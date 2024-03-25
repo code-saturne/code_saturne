@@ -1495,25 +1495,17 @@ cs_parameters_define_auxiliary_fields(void)
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
         || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-      cs_field_create("pressure_gradient",
+      cs_field_create("algo:pressure_gradient",
                       0,
                       CS_MESH_LOCATION_CELLS,
                       3,
                       false);
-    }
 
-    if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
-
-      cs_field_create("pressure_increment_gradient",
+      cs_field_create("algo:pressure_increment_gradient",
                       0,
                       CS_MESH_LOCATION_CELLS,
                       3,
                       false);
-    }
-
-    if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
       /* FIXME: check relation between this and "specific_heat" field */
 

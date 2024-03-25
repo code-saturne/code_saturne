@@ -1317,7 +1317,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
     /* Pressure increment gradient */
 
     cs_real_3_t *cpro_gradp = NULL, *gradp = NULL;
-    cs_field_t *f_inc = cs_field_by_name_try("pressure_increment_gradient");
+    cs_field_t *f_inc = cs_field_by_name_try("algo:pressure_increment_gradient");
     if (f_inc != NULL)
       cpro_gradp = (cs_real_3_t *)f_inc->val;
     else {
@@ -2207,7 +2207,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   /* Pressure gradient */
   cs_real_3_t *grad = NULL, *cpro_gradp = NULL;
-  f = cs_field_by_name_try("pressure_gradient");
+  f = cs_field_by_name_try("algo:pressure_gradient");
   if (f != NULL)
     cpro_gradp = (cs_real_3_t *)f->val;
   else {
@@ -2710,9 +2710,9 @@ _velocity_prediction(const cs_mesh_t             *m,
       && (   cs_glob_turb_model->itytur == 3
           || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD)) {
 
-    if (cs_field_by_name_try("reynolds_stress_divergence") != NULL)
+    if (cs_field_by_name_try("algo:rij_divergence") != NULL)
       cpro_divr
-        = (cs_real_3_t *)cs_field_by_name_try("reynolds_stress_divergence")->val;
+        = (cs_real_3_t *)cs_field_by_name_try("algo:rij_divergence")->val;
     else {
       BFT_MALLOC(divt, n_cells_ext, cs_real_3_t);
       cpro_divr = divt;
@@ -3249,7 +3249,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   /* Finalaze estimators + logging */
 
-  f = cs_field_by_name_try("predicted_velocity");
+  f = cs_field_by_name_try("algo:predicted_velocity");
   if (f != NULL)
     cs_array_real_copy(3*n_cells, (const cs_real_t *)vel, f->val);
 

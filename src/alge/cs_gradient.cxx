@@ -806,7 +806,7 @@ _gradient_update_face_clip_factor(const cs_mesh_t              *m,
  * \brief  Return pointer to clipping factor field values if present
  *
  * The field, if present, is expected to be called
- * "cs_algo:grad_clip_factor_<variable_name>".
+ * "algo:grad_clip_factor_<variable_name>".
  *
  * \param[in]  var_name  variable name
  *
@@ -821,7 +821,7 @@ _get_clip_factor_try(const char  *var_name)
 
   if (var_name != NULL) {
     cs_field_t *f_c_iter
-      = cs_field_by_composite_name_try("cs_algo:grad_clip_factor",
+      = cs_field_by_composite_name_try("algo:grad_clip_factor",
                                        var_name);
     if (f_c_iter != NULL)
       c_iter = f_c_iter->val;
@@ -6919,7 +6919,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
  * \brief  Return pointer to iteration count field values if present
  *
  * The field, if present, is expected to be called
- * "cs_algo:grad_b_iter_<variable_name>".
+ * "algo:grad_b_iter_<variable_name>".
  *
  * \param[in]  var_name  variable name
  *
@@ -6934,7 +6934,7 @@ _get_c_iter_try(const char  *var_name)
 
   if (var_name != NULL) {
     cs_field_t *f_c_iter
-      = cs_field_by_composite_name_try("cs_algo:grad_b_iter",
+      = cs_field_by_composite_name_try("algo:grad_b_iter",
                                        var_name);
     if (f_c_iter != NULL)
       c_iter = f_c_iter->val;

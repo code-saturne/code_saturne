@@ -595,7 +595,7 @@ _pressure_correction_fv(int                   iterns,
   }
 
   cs_real_t *cpro_divu = NULL, *_cpro_divu = NULL;
-  cs_field_t *f_divu = cs_field_by_name_try("predicted_vel_divergence");
+  cs_field_t *f_divu = cs_field_by_name_try("algo:predicted_vel_divergence");
   if (f_divu != NULL)
     cpro_divu = f_divu->val;
   else {
@@ -2944,7 +2944,7 @@ _pressure_correction_fv(int                   iterns,
   if (idilat == 2 && ieos != CS_EOS_NONE) {
     /* CFL conditions related to the pressure equation */
     cs_real_t *cflp = NULL;
-    cs_field_t *f_cflp = cs_field_by_name_try("cfl_p");
+    cs_field_t *f_cflp = cs_field_by_name_try("algo:cfl_p");
     if (f_cflp != NULL) {
       cflp = f_cflp->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
@@ -3495,7 +3495,7 @@ cs_pressure_correction_cdo_init_setup(void)
   const int  field_post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
   prcdo->pressure_gradient =
-    cs_field_find_or_create("pressure_gradient",
+    cs_field_find_or_create("algo:pressure_gradient",
                             CS_FIELD_INTENSIVE,
                             CS_MESH_LOCATION_CELLS,
                             3,
@@ -3505,7 +3505,7 @@ cs_pressure_correction_cdo_init_setup(void)
   cs_field_set_key_int(prcdo->pressure_gradient, log_key, field_post_flag);
 
   prcdo->pressure_incr_gradient =
-    cs_field_find_or_create("pressure_increment_gradient",
+    cs_field_find_or_create("algo:pressure_increment_gradient",
                             CS_FIELD_INTENSIVE,
                             CS_MESH_LOCATION_CELLS,
                             3,
