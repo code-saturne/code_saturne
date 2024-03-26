@@ -405,11 +405,11 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
       boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
   }
 
-  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  int bc_code = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
-    bc_type = 6;
+    bc_code = 6;
 
-  bc_type *= icodcl_m;
+  bc_code *= icodcl_m;
 
   for (cs_lnum_t coo_id = 0; coo_id < def->dim; coo_id++) {
 
@@ -419,7 +419,7 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
 #   pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
       const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
-      _icodcl[elt_id]  = bc_type;
+      _icodcl[elt_id]  = bc_code;
       _rcodcl1[elt_id] = 0;
     }
   }
@@ -473,20 +473,20 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
       boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
   }
 
-  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  int bc_code = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
-    bc_type = 6;
+    bc_code = 6;
   if (boundary_type & CS_BOUNDARY_CONVECTIVE_INLET)
-    bc_type = 13;
+    bc_code = 13;
 
-  bc_type *= icodcl_m;
+  bc_code *= icodcl_m;
 
   /* Special case for mesh velocity (ALE) wall BC type. */
 
   if (f->dim == 3) {
     if (   (strcmp(f->name, "mesh_velocity") == 0)
         && (boundary_type & CS_BOUNDARY_WALL))
-      bc_type = 1;
+      bc_code = 1;
   }
 
   if (f->dim != def_dim)
@@ -512,7 +512,7 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_type;
+          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = constant_val[coo_id];
         }
 
@@ -538,7 +538,7 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_type;
+          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = eval_buf[_dim*i + coo_id];
         }
 
@@ -617,7 +617,7 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
 
   assert(eqp->dim == def->dim);
 
-  const int bc_type = 3;
+  const int bc_code = 3;
 
   switch(def->type) {
 
@@ -636,7 +636,7 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
 #       pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_type;
+          _icodcl[elt_id]  = bc_code;
           _rcodcl3[elt_id] = value;
         }
 
@@ -662,7 +662,7 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_type;
+          _icodcl[elt_id]  = bc_code;
           _rcodcl3[elt_id] = eval_buf[_dim*i + coo_id];
         }
 
@@ -722,9 +722,9 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
       boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
   }
 
-  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  int bc_code = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
-    bc_type = 6;
+    bc_code = 6;
 
   if (stride != def_dim) {
     bft_error(__FILE__, __LINE__, 0,
@@ -754,7 +754,7 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_type;
+          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = u0;
           _rcodcl2[elt_id] = -alpha;
         }
@@ -780,7 +780,7 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_type;
+          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = eval_buf[stride*i + 1 + coo_id];
           _rcodcl2[elt_id] = -eval_buf[stride*i];
         }
