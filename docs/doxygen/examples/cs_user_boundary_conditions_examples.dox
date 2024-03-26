@@ -47,10 +47,7 @@
   - \subpage compressible_examples
   - \subpage electric_arcs_examples
   - \subpage electric_arcs_ieljou_3_or_4_examples
-  - \subpage fuel_examples
   - \subpage gas_3ptchem_examples
-  - \subpage gas_ebu_examples
-  - \subpage gas_libby_williams_examples
   - \subpage pulverized_coal_bcs
   - \subpage medcoupling_remapper_2d
 */
@@ -752,49 +749,6 @@
 
 /*-----------------------------------------------------------------------------*/
 /*!
-  \page fuel_examples Fuel examples
-
-  \section advanced_loc_var_fe Local variables to be added
-
-  \snippet cs_user_boundary_conditions-fuel.f90 loc_var_dec
-
-  \section base_init_fe Initialization and finalization
-
-  Initialization and finalization is similar to that of the base examples
-
-  \section fuel_ex_1 Example 1
-
-  The 12 color is a pure air inlet
-
-  \snippet cs_user_boundary_conditions-fuel.f90 example_1
-
-  \section fuel_ex_2 Example 2
-
-  Inlet of both primary Air and Fuel
-
-  \snippet cs_user_boundary_conditions-fuel.f90 example_2
-
-  \section fuel_ex_3 Example 3
-
-  Color 15 is a wall
-
-  \snippet cs_user_boundary_conditions-fuel.f90 example_3
-
-  \section fuel_ex_4 Example 4
-
-  Color 19 is an outlet
-
-  \snippet cs_user_boundary_conditions-fuel.f90 example_4
-
-  \section fuel_ex_5 Example 5
-
-  14 and 4 are symmetry
-
-  \snippet cs_user_boundary_conditions-fuel.f90 example_5
-*/
-
-/*-----------------------------------------------------------------------------*/
-/*!
   \page gas_3ptchem_examples Gas 3 PTCHEM example
 
   The following sections illustrate subsets of a same example,
@@ -846,56 +800,6 @@
   be managed, on an example zone named "open":
 
   \snippet cs_user_boundary_conditions-gas_3ptchem.c open
-*/
-
-/*-----------------------------------------------------------------------------*/
-/*!
-  \page gas_ebu_examples Gas EBU examples
-
-  \section advanced_loc_var_ebu Local variables to be added
-
-  \snippet cs_user_boundary_conditions-gas_ebu.f90 loc_var_dec
-
-  \section base_init_ebu Initialization and finalization
-
-  Initialization and finalization is similar to that of the base examples
-
-  \section gas_ebu_ex_1 Example 1
-
-  Definition of a burned gas inlet (pilot flame) for each face of color 11
-
-  \snippet cs_user_boundary_conditions-gas_ebu.f90 example_1
-
-  \section gas_ebu_ex_2 Example 2
-
-  Definition of an unburned gas inlet for each face of color 12
-
-  \snippet cs_user_boundary_conditions-gas_ebu.f90 example_2
-*/
-
-/*-----------------------------------------------------------------------------*/
-/*!
-  \page gas_libby_williams_examples Gas Libby-Williams examples
-
-  \section advanced_loc_var_lw Local variables to be added
-
-  \snippet cs_user_boundary_conditions-gas_libby_williams.f90 loc_var_dec
-
-  \section base_init_lw Initialization and finalization
-
-  Initialization and finalization is similar to that of the base examples
-
-  \section gas_libby_williams_ex_1 Example 1
-
-  Definition of a burned gas inlet (pilot flame) for each face of color 11
-
-  \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_1
-
-  \section gas_libby_williams_ex_2 Example 2
-
-  Definition of an unburned gas inlet for each face of color 12
-
-  \snippet cs_user_boundary_conditions-gas_libby_williams.f90 example_2
 */
 
 /*-----------------------------------------------------------------------------*/

@@ -191,10 +191,6 @@ cs_user_zones.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions-atmo.f90 \
 cs_user_boundary_conditions-gas_3ptchem.c \
-cs_user_boundary_conditions-gas_ebu.f90 \
-cs_user_boundary_conditions-gas_libby_williams.f90 \
-cs_user_initialization-gas_ebu.f90 \
-cs_user_initialization-gas_libby_williams.f90 \
 cs_user_parameters.f90 \
 cs_user_profile.cxx \
 cs_user_profile.h \

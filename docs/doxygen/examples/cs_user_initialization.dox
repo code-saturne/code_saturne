@@ -61,10 +61,7 @@
    - \subpage user_initialization_atmospheric
    - \subpage user_initialization_compressible
    - \subpage user_initialization_electric_arcs
-   - \subpage user_initialization_fuel
    - \subpage user_initialization_gas_3ptchem
-   - \subpage user_initialization_gas_ebu
-   - \subpage user_initialization_gas_libby_williams
    - \subpage user_initialization_pulverized_coal
    - \subpage user_initialization_time_step
    - \subpage user_initialization_remapper_3d
@@ -163,19 +160,6 @@
 
 /*-----------------------------------------------------------------------------*/
 /*!
-  \page user_initialization_fuel Fuel initializartion example
-
-  \section fuel Fuel example
-
-  \subsection user_initialization_fuel_s_init Initialization
-
-  The following initialization block needs to be added for the following examples:
-
-  \snippet cs_user_initialization-fuel.c init
-*/
-
-/*-----------------------------------------------------------------------------*/
-/*!
   \page user_initialization_gas_3ptchem Gas 3 PTCHEM example
 
   \section gas_3ptchem Gas 3 PTCHEM example
@@ -186,66 +170,6 @@
 
   \snippet cs_user_initialization-gas_3ptchem.c init
 
-*/
-
-/*-----------------------------------------------------------------------------*/
-/*!
-  \page user_initialization_gas_ebu Gas EBU example
-
-  \section gas_ebu Gas EBU example
-
-  \subsection user_initialization_gas_ebu_loc_var_dec Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-gas_ebu.f90 loc_var_dec
-
-  \subsection user_initialization_gas_ebu_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
-
-  \subsection user_initialization_gas_ebu_s_init Initialization
-
-  The following initialization block needs to be added for the following examples:
-
-  \snippet cs_user_initialization-gas_ebu.f90 init
-
-  \subsection user_initialization_gas_ebu_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
-*/
-
-/*-----------------------------------------------------------------------------*/
-/*!
-  \page user_initialization_gas_libby_williams Libby-Williams gas example
-
-  \section gas_libby_williams  Libby-Williams gas example
-
-  \subsection user_initialization_gas_lb_loc_var_dec Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-gas_libby_williams.f90 loc_var_dec
-
-  \subsection user_initialization_gas_lb_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
-
-  \subsection user_initialization_gas_lb_s_init Initialization
-
-  The following initialization block needs to be added for the following examples:
-
-  \snippet cs_user_initialization-gas_libby_williams.f90 init
-
-  \subsection user_initialization_gas_lb_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
 */
 
 /*-----------------------------------------------------------------------------*/

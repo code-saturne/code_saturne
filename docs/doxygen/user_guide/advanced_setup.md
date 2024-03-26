@@ -30,7 +30,6 @@ documentation. It is also recommended to check the
 - \subpage low_level_boundary_condition_definitions
 - \subpage advanced_specific_physics
 - \subpage advanced_coal_and_gas_combution
-- \subpage advanced_fuel_oil_combustion
 - \subpage advanced_radiative_thermal
 - \subpage advanced_conjugate_heat_transfer
 - \subpage advanced_particle_tracking
@@ -755,21 +754,6 @@ start, can be used to:
 
 - set the value of the constant \ref cebu of the Eddy Break Up model (only in
 \ref cs_user_combustion).
-
-<!-- ----------------------------------------------------------------------- -->
-
-\page advanced_fuel_oil_combustion Heavy fuel oil combustion module
-
-Initialization of transported variables
-=======================================
-
-To initialize or modify (in case of a restart) values of transported
-variables and of the time step, the standard \ref cs_user_initialization function is used.
-
-Boundary conditions
-===================
-
-Boundary conditions are defined as usual on a per-face basis in \ref cs_user_boundary_conditions or with the **GUI**.
 
 <!-- ----------------------------------------------------------------------- -->
 
