@@ -3301,6 +3301,17 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
           bc_type |= CS_BOUNDARY_INLET_SUBSONIC_PH;
 
       }
+      else {
+
+        cs_tree_node_t *tn_c
+          = cs_tree_get_node(tn_bc, "convective_inlet");
+
+        int convective_inlet = 0;
+        cs_gui_node_get_status_int(tn_c, &convective_inlet);
+        if (convective_inlet)
+          bc_type |= CS_BOUNDARY_CONVECTIVE_INLET;
+
+      }
 
     }
     else if (cs_gui_strcmp(nature, "wall")) {
