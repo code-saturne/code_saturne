@@ -389,6 +389,8 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
   int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
     bc_type = 6;
+  if (boundary_type & CS_BOUNDARY_CONVECTIVE_INLET)
+    bc_type = 13;
 
   bc_type *= icodcl_m;
 
