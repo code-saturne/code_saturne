@@ -13,6 +13,8 @@ Release 8.0.4 (unreleased)
   vertices due to incorrect indirection..
 
 - GUI:
+  * Fix handling of convective inlet boundary conditions. The convective
+    specification was ignored.
   * Fix bug in FSI internal coupling
   * Improve robustness of probes import from CSV, and fix import
     for CSV file containing probe names.
