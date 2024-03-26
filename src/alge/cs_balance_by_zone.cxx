@@ -1371,6 +1371,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             &term_balance);
 
     if (bc_type[f_id_sel] == CS_INLET ||
+        bc_type[f_id_sel] == CS_CONVECTIVE_INLET ||
         bc_type[f_id_sel] == CS_FREE_INLET ||
         bc_type[f_id_sel] == CS_ESICF ||
         bc_type[f_id_sel] == CS_EPHCF)
@@ -2877,6 +2878,7 @@ cs_flux_through_surface(const char         *scalar_name,
       flux_b_faces[f_id] = term_balance;
 
     if (bc_type[f_id_sel] == CS_INLET ||
+        bc_type[f_id_sel] == CS_CONVECTIVE_INLET ||
         bc_type[f_id_sel] == CS_FREE_INLET ||
         bc_type[f_id_sel] == CS_ESICF ||
         bc_type[f_id_sel] == CS_EPHCF)
