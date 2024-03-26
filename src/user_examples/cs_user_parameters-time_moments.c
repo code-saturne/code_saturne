@@ -253,7 +253,7 @@ cs_user_time_moments(void)
     int moment_f_id[] = {CS_F_(vel)->id};
     int moment_c_id[] = {-1};
     int n_fields = 1;
-    cs_time_moment_define_by_field_ids("U_mean",
+    cs_time_moment_define_by_field_ids("u_mean",
                                        n_fields,
                                        moment_f_id,
                                        moment_c_id,
@@ -273,7 +273,7 @@ cs_user_time_moments(void)
     int moment_f_id[] = {CS_F_(vel)->id};
     int moment_c_id[] = {-1};
     int n_fields = 1;
-    cs_time_moment_define_by_field_ids("U_variance",
+    cs_time_moment_define_by_field_ids("u_variance",
                                        n_fields,
                                        moment_f_id,
                                        moment_c_id,
@@ -293,7 +293,7 @@ cs_user_time_moments(void)
     int moment_f_id[] = {CS_F_(rho)->id, CS_F_(vel)->id};
     int moment_c_id[] = {-1, -1};
     int n_fields = 2;
-    cs_time_moment_define_by_field_ids("U_mean",
+    cs_time_moment_define_by_field_ids("rho_u_mean",
                                        n_fields,
                                        moment_f_id,
                                        moment_c_id,
