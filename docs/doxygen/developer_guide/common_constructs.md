@@ -122,4 +122,19 @@ For mesh connectivities (adjacencies) that may be used across
 several functions, the \ref cs_adjacency_t structure
 allows storing an manipulation indexed arrays.
 
+Parallel dispatch {#sec_prg_parallel_dispatch}
+=================
 
+In C++ code using the `.cpp` extension, the `cs_dispatch_context` class may
+be used to run code defined as C++ lambda functions in parallel. The
+corresponding code can be written in a portable manner, but executed using
+different runtimes, such as OpenMP or CUDA.
+
+Examples are provided in the source tree, in
+- `test/cs_dispatch_test.cpp`
+- `src/alge/cs_benchmark.cpp`
+
+Note that this class should not be called from code with the `.cxx` extension,
+as when using CUDA, that code will ve compiled using a different compiler,
+and using the class in both cases may confuse those compiler's avoidance of
+duplicating C++ template code instanciation.

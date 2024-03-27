@@ -65,6 +65,15 @@ C programming
 For visualization of code execution (Python, C, C++, and more), the following educational tool is
 very nice: https://pythontutor.com.
 
+C++ parallel programming
+- For parallel C++ programming allowing offload to accelerator devices, an
+  [NVIDIA developer blog post](https://developer.nvidia.com/blog/accelerating-standard-c-with-gpus-using-stdpar/)
+  illustrates how this can be sone, with minimal impact to to code when switching
+  from CPU to GPU, and a low dependency on vendor specific syntax such as that
+  used in CUDA.
+- Note that this requires C++17, and as more and more systems include compilers
+  supporting C++20, newer constructs may be an option in the near future.
+
 C and Fortran basics
 ====================
 

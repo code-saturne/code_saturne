@@ -93,8 +93,8 @@ followed:
 - No white space before a closing parenthesis, white-space after a closing
   parenthesis.
 
-C coding style
-==============
+C and C++coding style
+=====================
 
 The code_saturne coding style inherits from common conventions, with
 a few specific additions.
@@ -196,13 +196,14 @@ manual fine-tuning.
 Language {#sec_prg_lang_c}
 --------
 
-ANSI C11 or above is required, so C11-specific constructs are allowed,
-though C++ style comments should be avoided, so as to maintain a consistent
-style. C99 variable-length arrays should be avoided, as it is not
+ANSI C11 or above is required, so C11-specific constructs are allowed.
+ C99 variable-length arrays should be avoided, as it is not
 always clear whether they are allocated on the stack or heap, and are
 an optional feature only (though we could expect that support for those
 constructs will remain available on general-purpose architectures, and
 removed only in the embedded space).
+
+For C++, at least C++14 is assumed.
 
 Assertions
 ----------
@@ -356,6 +357,14 @@ than the number of output columns it uses. The \ref cs_log_strlen
 function may be used to compute the printable width of a character
 string, while and \ref cs_log_strpad and \ref cs_log_strpadl may be use
 to pad a string.
+
+C++ coding style
+================
+
+Most rules applicable to C apply here also. Note that standard C++ stream output
+(using `std::cout` ) may be practical for temporary debugging code, but
+should not be used instead of `bft_printf` or `cs_log` for production code.
+
 
 Fortran coding style
 ====================
