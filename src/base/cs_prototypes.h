@@ -587,12 +587,16 @@ cs_user_initialization(cs_domain_t     *domain);
  * \brief This function is called at startup and allows overloading the GUI
  * defined initialization functions.
  *
+ * This function is called before the beginning of the computation
+ * allowing an overload of the GUI defined initialization (called just
+ * after cs_gui_initial_conditions).
+ *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_initialization_setup(cs_domain_t  *domain);
+cs_user_initial_conditions(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
