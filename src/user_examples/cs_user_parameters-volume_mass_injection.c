@@ -91,7 +91,7 @@ _define_injection(cs_real_t           time,
 
   const cs_zone_t *z = cs_volume_zone_by_name("mass_injection");
 
-  /* Injection mass flow rate */
+  /* Injection mass flow rate (in kg/s) */
   cs_real_t xgamma = 30000;
 
   if (z->measure <= 0)
@@ -174,14 +174,14 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
   const char z_name[] = "mass_injection";
 
-  /* Pressure */
+  /* Mass source term, associated to the pressure variable */
 
-  double mass_in[1] = {30000};
+  double mass_in[1] = {30000}; /* */
 
   cs_equation_add_volume_mass_injection_by_value
     (cs_field_get_equation_param(CS_F_(p)), z_name, mass_in);
 
-  /* Velocity */
+  /* Velocity injected associated to the mass source term */
 
   double vel_in[3] = {0, wind, 0};
 

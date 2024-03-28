@@ -402,7 +402,7 @@ Using opaque structures has advantages:
 - It conveys the information to most users that they can use the structure without
   worrying about its internals
 - Structure internals can be modified without breaking compatibility (changing
-  access functions
+  access functions)
 
 It also has some disadvantages:
 - Access is more cumbersome, requiring functions.
