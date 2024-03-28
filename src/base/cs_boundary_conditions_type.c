@@ -171,7 +171,7 @@ cs_boundary_conditions_type(bool  init,
                           "cs/cs coupling", "cs/cs coupling",
                           "Free surface", "Undefined"};
 
-  /* Type ids and names (incompressible case) */
+  /* Type ids and names (compressible case) */
 
   const int type_id_c[9] = {CS_EQHCF, CS_EPHCF, CS_ESICF,
                             CS_SOPCF, CS_SSPCF,
