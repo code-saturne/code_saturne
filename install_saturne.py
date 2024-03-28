@@ -587,7 +587,7 @@ class Setup:
         p = self.packages['scotch']
         p.config_opts = "-DBUILD_LIBSCOTCHMETIS=OFF"
         if self.shared:
-        p.config_opts += " -DBUILD_SHARED_LIBS=ON"
+            p.config_opts += " -DBUILD_SHARED_LIBS=ON"
 
     #---------------------------------------------------------------------------
 
