@@ -131,7 +131,7 @@ corresponding code can be written in a portable manner, but executed using
 different runtimes, such as OpenMP or CUDA.
 
 Examples are provided in the source tree, in
-- `test/cs_dispatch_test.cpp`
+- `tests/cs_dispatch_test.cpp`
 - `src/alge/cs_benchmark.cpp`
 
 Note that this class should not be called from code with the `.cxx` extension,

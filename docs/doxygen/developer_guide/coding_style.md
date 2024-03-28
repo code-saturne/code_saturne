@@ -93,8 +93,8 @@ followed:
 - No white space before a closing parenthesis, white-space after a closing
   parenthesis.
 
-C and C++coding style
-=====================
+C and C++ coding style
+======================
 
 The code_saturne coding style inherits from common conventions, with
 a few specific additions.
