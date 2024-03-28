@@ -1259,84 +1259,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   BFT_FREE(rijipb);
 
   /*--------------------------------------------------------------------------
-   * 9) velocity: outlet, Dirichlet and Neumann and convective outlet
+   * 9) velocity: Dirichlet, Neumann and convective outlet
    *--------------------------------------------------------------------------*/
 
-  { /* outlet: in case of incoming mass flux, the mass flux is set to zero. */
-
-    cs_lnum_t n_inout_faces = 0;
-    cs_lnum_t n_out_faces = 0;
-
-    for (int f_id = 0; f_id < n_b_faces; f_id++) {
-
-      if (icodcl_vel[f_id] == 9) {
-
-        n_out_faces++;
-        const cs_real_t flumbf = b_massflux[f_id];
-
-        /* physical properties */
-        const cs_lnum_t c_id = b_face_cells[f_id];
-        const cs_real_t visclc  = viscl[c_id];
-        const cs_real_t visctc  = visct[c_id];
-        cs_real_t hint = 0.0;
-
-        /* geometric quantities */
-        const cs_real_t distbf = b_dist[f_id];
-
-        if (itytur == 3)
-          hint = visclc / distbf;
-        else
-          hint = (visclc + visctc) / distbf;
-
-
-        /* Ingoing face */
-        if (flumbf < - cs_math_epzero) {
-
-          /* Dirichlet boundary condition
-             ---------------------------- */
-
-          cs_real_3_t pimpv = {0., 0., 0.};
-
-          /* coupled solving of the velocity components */
-
-          cs_boundary_conditions_set_dirichlet_vector(f_id,
-                                                      vel->bc_coeffs,
-                                                      pimpv,
-                                                      hint,
-                                                      rinfiv);
-
-            n_inout_faces++;
-        }
-        else {
-
-          /* Neumann boundary conditions
-             --------------------------- */
-
-          cs_real_3_t qimpv = {0., 0., 0.};
-
-          /* coupled solving of the velocity components */
-
-          cs_boundary_conditions_set_neumann_vector(f_id,
-                                                    vel->bc_coeffs,
-                                                    qimpv,
-                                                    hint);
-
-        }
-      }
-    }
-
-    if (cs_log_default_is_active() || eqp_vel->verbosity >= 0) {
-      cs_gnum_t isocpt[2] = {n_inout_faces, n_out_faces};
-      cs_parall_sum(2, CS_GNUM_TYPE, isocpt);
-      if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           _("Incoming flow detained for %llu out of %llu outlet faces\n"),
-           (unsigned long long)isocpt[0],
-           (unsigned long long)isocpt[1]);
-    }
-
-    /* Dirichlet and Neumann */
+  { /* Dirichlet and Neumann */
 
     cs_real_t *rcodcl1_vel = vel->bc_coeffs->rcodcl1;
     cs_real_t *rcodcl2_vel = vel->bc_coeffs->rcodcl2;

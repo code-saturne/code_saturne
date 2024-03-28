@@ -215,6 +215,8 @@ cs_boundary_conditions_type(bool  init,
   const cs_real_t *cvara_pr = (const cs_real_t *)CS_F_(p)->val_pre;
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
+  const cs_real_3_t *nu = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
   cs_real_t *b_head_loss = cs_boundary_conditions_get_b_head_loss(false);
 
@@ -806,10 +808,32 @@ cs_boundary_conditions_type(bool  init,
 
     if (CS_F_(vel) != NULL) {
 
+      cs_lnum_t n_inout_faces = 0;
+      cs_lnum_t n_out_faces = e_id-s_id;
+
+      int b_massflux_id = cs_field_get_key_int(CS_F_(vel), kbmasf);
+
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t c_id = b_face_cells[f_id];
+        
         if (icodcl_vel[f_id] == 0) {
-          icodcl_vel[f_id] = 9;
+                  
+          const cs_real_t b_massflux = (b_massflux_id > -1) ?
+            cs_field_by_id(b_massflux_id)->val[f_id]:
+            cs_math_3_dot_product(vel[c_id], nu[f_id]);
+
+          /* outlet: in case of incoming mass flux,
+                     the mass flux is set to zero. */
+        
+          if (b_massflux < - cs_math_epzero) {
+            /* Dirichlet boundary condition */
+            icodcl_vel[f_id] = 1;
+            n_inout_faces++;
+          }
+          else
+            /* Neumann boundary conditions */
+            icodcl_vel[f_id] = 3;
 
           for (cs_lnum_t k = 0; k < 3; k++) {
             rcodcl1_vel[n_b_faces*k + f_id] = 0.;
@@ -817,6 +841,17 @@ cs_boundary_conditions_type(bool  init,
             rcodcl3_vel[n_b_faces*k + f_id] = 0.;
           }
         }
+      }
+
+      if (cs_log_default_is_active() || eqp_vel->verbosity >= 0) {
+        cs_gnum_t isocpt[2] = {n_inout_faces, n_out_faces};
+        cs_parall_sum(2, CS_GNUM_TYPE, isocpt);
+        if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))
+          cs_log_printf
+            (CS_LOG_DEFAULT,
+             _("Incoming flow detained for %llu out of %llu outlet faces\n"),
+             (unsigned long long)isocpt[0],
+             (unsigned long long)isocpt[1]);
       }
 
     }
