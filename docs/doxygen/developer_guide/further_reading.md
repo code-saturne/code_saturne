@@ -265,7 +265,7 @@ static int call_id = 0; /* static C equivalent
 const double pi = 4.*atan(1.), e = exp(1);
 ```
 
-\Remark
+\remark
 In Fortran, initialization with declaration implies *save* attribute, so
 the following are equivalent:
 
