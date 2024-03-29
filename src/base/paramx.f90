@@ -79,8 +79,9 @@ module paramx
   !> the velocity. An optional Dirichlet condition can be specified for the scalars
   !> and turbulent quantities.
   !> \remark A standard \ref isolib outlet face amounts to a Dirichlet
-  !> condition (\ref icodcl=1) for the pressure, a free outlet condition
-  !> (\ref icodcl=9) for the velocity and a Dirichlet condition
+  !> condition (\ref icodcl=1) for the pressure, a zero Dirichlet condition if
+  !> the mass flux is entering (or a homogeneous Neumann if outgoing)
+  !> for the velocity, and a Dirichlet condition
   !> (\ref icodcl=1) if the user has specified a Dirichlet value or a zero-flux
   !> condition (\ref icodcl=3) for the other variables.
   integer   isolib

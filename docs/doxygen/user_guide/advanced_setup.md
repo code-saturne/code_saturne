@@ -90,7 +90,6 @@ For non-standard boundary conditions, those arrays must be fully completed.
 | 4       | Symmetry condition                                           |
 | 5       | Wall law (friction for velocity, wall value for scalars)     |
 | 6       | Rough wall law (deprecated))                                 |
-| 9       | Free outlet condition (for velocity)                         |
 | 11      | Neumann on the normal component, Dirichlet on tangential components. |
 | 12      | Imposed value for convection proportional to boundary cell value, imposed flux for diffusion (Robin condition) |
 | 13      | Imposed value for convection, imposed flux for diffusion     |
@@ -420,14 +419,6 @@ filled as follows:
   - For the other scalars, the thermal/scalar roughness height is given by
     `f->bc_coeffs->rcodcl3[face_id]` only.
 
-- If `f->bc_coeffs->icodcl[face_id] == 9`: free outlet condition for the
-  velocity. This condition is only applicable to velocity components.<br>
-  If the mass flow at the face is negative, this condition is equivalent
-  to a zero-flux condition.<br>
-  If the mass flow at the face is positive, the velocity at the face is
-  set to zero (but not the mass flow).<br>
-  `rcodcl` is not used.
-
 - If `f->bc_coeffs->icodcl[face_id] == 14`: generalized symmetry boundary
   condition for vectors (Marangoni effect for the velocity for instance).
 
@@ -466,7 +457,7 @@ Specific cases
 ### Outlet faces
 
 A standard `CS_OUTLET` outlet face amounts to a Dirichlet condition (`icodcl == 1`)
-for the pressure, a free outlet condition (`icodcl == 9`) for the velocity, and a
+for the pressure, an outlet condition (zero Dirichlet if entering, homogeneous Neumann if outgoing) for the velocity, and a
 Dirichlet condition (`icodcl == 1`) if the user has specified a Dirichlet value
 or a zero-flux condition (`icodcl == 3`) for the other variables.
 
