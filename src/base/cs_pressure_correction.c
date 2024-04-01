@@ -260,7 +260,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                            eqp_pr->idiff,
                            0,
                            1,
-                           eqp_pr->thetav,
+                           eqp_pr->theta,
                            0,
                            bc_coeffs_hp,
                            rovsdt,
@@ -638,23 +638,23 @@ _pressure_correction_fv(int                   iterns,
     cs_real_t *bpro_rho_mass = cs_field_by_name("boundary_density_mass")->val;
 
     /* Staggered in time velocity and pressure */
-    if (eqp_u->thetav < 1 && iterns > 1 && vp_param->itpcol == 0) {
+    if (eqp_u->theta < 1 && iterns > 1 && vp_param->itpcol == 0) {
       BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
       BFT_MALLOC(bpro_rho_tc, m->n_b_faces, cs_real_t);
 
-      const cs_real_t thetav =  eqp_u->thetav;
-      const cs_real_t one_m_thetav = 1.0 - thetav;
+      const cs_real_t theta =  eqp_u->theta;
+      const cs_real_t one_m_theta = 1.0 - theta;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        cpro_rho_tc[c_id] =  thetav * cpro_rho_mass[c_id]
-                            + one_m_thetav * croma[c_id];
+        cpro_rho_tc[c_id] =  theta * cpro_rho_mass[c_id]
+                            + one_m_theta * croma[c_id];
       }
 
       crom = cpro_rho_tc;
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        bpro_rho_tc[f_id] =   thetav * bpro_rho_mass[f_id]
-                            + one_m_thetav * broma[f_id];
+        bpro_rho_tc[f_id] =   theta * bpro_rho_mass[f_id]
+                            + one_m_theta * broma[f_id];
       }
 
       brom = bpro_rho_tc;
@@ -1018,7 +1018,7 @@ _pressure_correction_fv(int                   iterns,
       BFT_MALLOC(xcpp, n_cells_ext, cs_real_t);
 
       /* Theta scheme related term */
-      _coef = 1. + 2. * (1. - eqp_u->thetav);
+      _coef = 1. + 2. * (1. - eqp_u->theta);
 
       /* Get cp */
       if (fluid_props->icp > 0) {
@@ -1779,7 +1779,7 @@ _pressure_correction_fv(int                   iterns,
 
   if ((idilat == 2 || idilat == 3) && compressible_flag != 3) {
     if (ieos == CS_EOS_NONE) { // If no particular EOS is set
-      if (vp_param->itpcol == 1 && eqp_u->thetav < 1.) {
+      if (vp_param->itpcol == 1 && eqp_u->theta < 1.) {
         cs_real_t *imasfla
           = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val_pre;
         cs_real_t *bmasfla
@@ -1789,11 +1789,11 @@ _pressure_correction_fv(int                   iterns,
 
         cs_divergence(m, 1, imasfla, bmasfla, divu_prev);
 
-        cs_real_t thetav = eqp_u->thetav;
+        cs_real_t theta = eqp_u->theta;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_real_t drom = crom_eos[c_id] - croma[c_id];
-          cpro_divu[c_id] +=  (1. + thetav) *drom *cell_f_vol[c_id] /dt[c_id]
-            + thetav *divu_prev[c_id];
+          cpro_divu[c_id] +=  (1. + theta) *drom *cell_f_vol[c_id] /dt[c_id]
+            + theta *divu_prev[c_id];
         }
         BFT_FREE(divu_prev);
       }
@@ -2679,7 +2679,7 @@ _pressure_correction_fv(int                   iterns,
                                         seem more logical */
     eqp_loc.nswrsm = -1;
     eqp_loc.iwgrec = 0;
-    eqp_loc.thetav = 1;
+    eqp_loc.theta = 1;
     eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
     eqp_loc.epsilo = -1;
     eqp_loc.epsrsm = -1;

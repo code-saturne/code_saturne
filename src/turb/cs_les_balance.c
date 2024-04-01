@@ -412,7 +412,7 @@ _les_balance_laplacian(cs_real_t   *wa,
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
   cs_equation_param_t _eqp = *eqp;
   _eqp.iconv = 0; /* only diffusion */
-  _eqp.thetav = 1.;
+  _eqp.theta = 1.;
 
   cs_convection_diffusion_scalar(0,              /* idtvar */
                                  -1,             /* f_id */

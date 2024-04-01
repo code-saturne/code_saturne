@@ -211,7 +211,7 @@ cs_balance_scalar(int                         idtvar,
     eqp_loc.ircflu   = eqp->ircflu;
     eqp_loc.iwgrec   = 0;  /* require field id */
     eqp_loc.icoupl   = -1; /* require field id */
-    eqp_loc.thetav   = eqp->thetav;
+    eqp_loc.theta   = eqp->theta;
     eqp_loc.blencv   = eqp->blencv;
     eqp_loc.blend_st = eqp->blend_st;
     eqp_loc.epsilo   = -1.; /* unused in balance */
@@ -223,7 +223,7 @@ cs_balance_scalar(int                         idtvar,
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
     cs_field_get_key_struct(f, k_id, &eqp_loc);
-    eqp_loc.thetav = eqp->thetav;
+    eqp_loc.theta = eqp->theta;
   }
 
   /* Scalar diffusivity */
@@ -441,7 +441,7 @@ cs_balance_vector(int                         idtvar,
     eqp_loc.ircflu   = eqp->ircflu;
     eqp_loc.iwgrec   = 0;  /* require field id */
     eqp_loc.icoupl   = -1; /* require field id */
-    eqp_loc.thetav   = eqp->thetav;
+    eqp_loc.theta   = eqp->theta;
     eqp_loc.blencv   = eqp->blencv;
     eqp_loc.blend_st = eqp->blend_st;
     eqp_loc.epsilo   = -1.; /* unused in balance */
@@ -453,7 +453,7 @@ cs_balance_vector(int                         idtvar,
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
     cs_field_get_key_struct(f, k_id, &eqp_loc);
-    eqp_loc.thetav = eqp->thetav;
+    eqp_loc.theta = eqp->theta;
   }
 
   /* Scalar diffusivity */
@@ -650,7 +650,7 @@ cs_balance_tensor(int                         idtvar,
     eqp_loc.ircflu   = eqp->ircflu;
     eqp_loc.iwgrec   = 0;  /* require field id */
     eqp_loc.icoupl   = -1; /* require field id */
-    eqp_loc.thetav   = eqp->thetav;
+    eqp_loc.theta   = eqp->theta;
     eqp_loc.blencv   = eqp->blencv;
     eqp_loc.blend_st = eqp->blend_st;
     eqp_loc.epsilo   = -1.; /* unused in balance */
@@ -662,7 +662,7 @@ cs_balance_tensor(int                         idtvar,
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
     cs_field_get_key_struct(f, k_id, &eqp_loc);
-    eqp_loc.thetav = eqp->thetav;
+    eqp_loc.theta = eqp->theta;
   }
 
   /* Scalar diffusivity */

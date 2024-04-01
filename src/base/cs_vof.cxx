@@ -1556,7 +1556,7 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
   }
 
   /* Theta related to void fraction */
-  //const cs_real_t thetv = eqp_vol->thetav; /* UNUSED */
+  //const cs_real_t thetv = eqp_vol->theta; /* UNUSED */
 
   /* Initialization */
 

@@ -351,7 +351,7 @@ _solve_eq_fbr_al(const int         istprv,
 
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
   const cs_real_t thets = time_scheme->thetst;
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     rhs[i] = 0;
@@ -595,7 +595,7 @@ _solve_eq_fbr_al(const int         istprv,
   eqp_loc.icoupl = -1;
   eqp_loc.idifft = -1;
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
-  eqp_loc.thetav = thetv;
+  eqp_loc.theta = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
@@ -723,7 +723,7 @@ _solve_eq_phi(const int           istprv,
 
   const cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
   const cs_real_t thets  = time_scheme->thetst;
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     rhs[i] = 0;

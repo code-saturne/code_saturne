@@ -380,7 +380,7 @@ typedef struct {
    * - -1: not coupled (default)
    * -  1: coupled
    *
-   * \var thetav
+   * \var theta
    * Value of \f$ \theta \f$ used to express at the second order the terms of
    * convection, diffusion and the source terms which are linear functions of
    * the solved variable, according to the formula
@@ -389,10 +389,10 @@ typedef struct {
    * modify this variable.
    * - 1: first-order
    * - 0.5: second-order\n
-   * For the pressure, \ref thetav is always 1. For  the other variables,
-   * \ref thetav = 0.5 is used when the  second-order time scheme is activated
+   * For the pressure, \ref theta is always 1. For  the other variables,
+   * \ref theta = 0.5 is used when the  second-order time scheme is activated
    * (\ref optcal::ischtp "ischtp = 2", standard for LES calculations),
-   * otherwise \ref thetav = 1.
+   * otherwise \ref theta = 1.
    *
    * \var blencv
    * Proportion of second-order convective scheme (0 corresponds to an upwind
@@ -472,7 +472,10 @@ typedef struct {
   int ircflu;
   int iwgrec;
   int icoupl;
-  double thetav;   /* TODO: merge with theta */
+  union {
+    double theta;
+    double thetav;   /* deprecated */
+  };
   double blencv;
   double blend_st;
   double epsilo;
@@ -566,15 +569,13 @@ typedef struct {
    * \var time_scheme
    * Type of numerical scheme used for the time discretization
    *
-   * \var theta
-   * Value of the coefficient for a theta scheme (between 0 and 1)
+   * NB: theta is share with the legacy schema
    *
    */
 
   cs_hodge_param_t            time_hodgep;
   cs_property_t              *time_property;
   cs_param_time_scheme_t      time_scheme;
-  cs_real_t                   theta;
 
   /*!
    * @}

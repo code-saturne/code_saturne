@@ -1535,8 +1535,8 @@ cs_turbulence_ke(int              phase_id,
   /* If source terms are extrapolated over time */
   if (istprv >= 0) {
 
-    cs_real_t thetak = eqp_k->thetav;
-    cs_real_t thetae = eqp_eps->thetav;
+    cs_real_t thetak = eqp_k->theta;
+    cs_real_t thetae = eqp_eps->theta;
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

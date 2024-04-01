@@ -176,7 +176,7 @@ BEGIN_C_DECLS
              linear functions of the solved variable \f$\phi\f$ are expressed
              as second-order terms by interpolation (according to the formula
              \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
-             \f$\theta\f$ being given by the value of \ref thetav associated
+             \f$\theta\f$ being given by the value of \ref theta associated
              with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
              expressed as second-order terms by extrapolation (according to the
              formula \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
@@ -202,7 +202,7 @@ BEGIN_C_DECLS
              expressed as second-order terms by interpolation (according to
              the formula
              \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
-             \f$\theta\f$ being given by the value of \ref thetav associated
+             \f$\theta\f$ being given by the value of \ref theta associated
              with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
              expressed as second-order terms by extrapolation (according to
              the formula
@@ -347,7 +347,7 @@ typedef struct {
                            - -1: not coupled (default)
                            -  1: coupled                                 */
 
-  double  thetav;
+  double  theta;
   double  blencv;
   double  blend_st;
   double  epsilo;
@@ -419,7 +419,7 @@ static cs_equation_param_t _equation_param_default
    .ircflu = 1,
    .iwgrec = 0,
    .icoupl = -1,
-   .thetav = 1.,
+   .theta = 1.,
    .blencv = 1.,
    .blend_st = 0.,
    .epsilo = 1.e-5,
@@ -626,7 +626,7 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ircflu", _t->ircflu);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iwgrec", _t->iwgrec);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "icoupl", _t->icoupl);
-  cs_log_printf(CS_LOG_SETUP, fmt_r, "thetav", _t->thetav);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "theta", _t->theta);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blend_st", _t->blend_st);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsilo", _t->epsilo);
@@ -717,7 +717,7 @@ _log_func_default_var_cal_opt(const void *t)
                 _("Resolution precision"));
 
   cs_log_printf(CS_LOG_SETUP,"    Time-scheme\n");
-  cs_log_printf(CS_LOG_SETUP, fmt_r, "thetav", _t->thetav,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "theta", _t->theta,
                 _("[0.;1.] theta-scheme for the main variables (0.5 for "
                   "Crank-Nicolson)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ibdtso", _t->ibdtso,
@@ -760,7 +760,7 @@ _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
   eqp->iwgrec = vcopt->iwgrec;
   eqp->icoupl = vcopt->icoupl;
 
-  eqp->thetav = vcopt->thetav;
+  eqp->theta = vcopt->theta;
   eqp->blencv = vcopt->blencv;
   eqp->blend_st = vcopt->blend_st;
   eqp->epsilo = vcopt->epsilo;
@@ -893,7 +893,7 @@ cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
   vcopt->iwgrec = eqp->iwgrec;
   vcopt->icoupl = eqp->icoupl;
 
-  vcopt->thetav = eqp->thetav;
+  vcopt->theta = eqp->theta;
   vcopt->blencv = eqp->blencv;
   vcopt->blend_st = eqp->blend_st;
   vcopt->epsilo = eqp->epsilo;

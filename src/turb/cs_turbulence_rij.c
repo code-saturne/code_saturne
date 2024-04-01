@@ -1243,7 +1243,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   else
     cromo = f_rho->val;
 
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
 
   /* Coefficient of the "Coriolis-type" term */
   const int icorio = cs_glob_physical_constants->icorio;
@@ -2348,7 +2348,7 @@ _solve_epsilon(int              phase_id,
   /* S as Source, V as Variable */
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
   const cs_real_t thets = time_scheme->thetst;
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
 
   cs_array_real_fill_zero(n_cells, rhs);
   cs_array_real_fill_zero(n_cells, rovsdt);
@@ -2672,7 +2672,7 @@ _solve_epsilon(int              phase_id,
   eqp_loc.icoupl = -1;
   eqp_loc.idifft = -1;
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
-  eqp_loc.thetav = thetv;
+  eqp_loc.theta = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
   cs_real_t *dpvar;
@@ -2805,7 +2805,7 @@ cs_turbulence_rij(int          phase_id,
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
 
   const cs_real_t thets = time_scheme->thetst;
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
   const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
@@ -3287,7 +3287,7 @@ cs_turbulence_rij(int          phase_id,
    cs_equation_param_t eqp_loc = *eqp;
    eqp_loc.istat  = -1;
    eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
-   eqp_loc.thetav = thetv;
+   eqp_loc.theta = thetv;
    eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
    cs_equation_iterative_solve_tensor(cs_glob_time_step_options->idtvar,
@@ -3453,7 +3453,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
   /* Matrix */
 
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
   cs_real_t thetap = (cs_glob_time_scheme->isto2t > 0) ? thetv : 1.0;
 
   // FIXME the source term extrapolation is not well done!!!!
@@ -3537,7 +3537,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   eqp_loc.icoupl = -1;
   eqp_loc.idifft = -1;
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
-  eqp_loc.thetav = thetv;
+  eqp_loc.theta = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
   cs_real_t *dpvar;

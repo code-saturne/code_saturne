@@ -235,7 +235,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   double epsrsp = eqp->epsrsm;
   double epsilp = eqp->epsilo;
   double relaxp = eqp->relaxv;
-  double thetap = eqp->thetav;
+  double thetap = eqp->theta;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -375,7 +375,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        has to impose 0 on mass accumulation. */
     imasac = 0;
 
-    eqp->thetav = thetex;
+    eqp->theta = thetex;
 
     cs_balance_scalar(idtvar,
                       f_id,
@@ -398,7 +398,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       icvfli,
                       smbrp);
 
-    eqp->thetav = thetap;
+    eqp->theta = thetap;
 
   }
 
@@ -851,8 +851,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       /* If thetex = 0, no need to do more */
       if (fabs(thetex) > cs_math_epzero) {
-        thetap = eqp->thetav;
-        eqp->thetav = thetex;
+        thetap = eqp->theta;
+        eqp->theta = thetex;
 
         cs_face_convection_scalar(idtvar,
                                   f_id,
@@ -869,7 +869,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                   i_flux2,
                                   b_flux->val);
 
-        eqp->thetav = thetap;
+        eqp->theta = thetap;
       }
 
       cs_face_convection_scalar(idtvar,
@@ -1131,7 +1131,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   double epsrsp = eqp->epsrsm;
   double epsilp = eqp->epsilo;
   double relaxp = eqp->relaxv;
-  double thetap = eqp->thetav;
+  double thetap = eqp->theta;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -1311,7 +1311,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
      * has to impose 0 on mass accumulation. */
     imasac = 0;
 
-    eqp->thetav = thetex;
+    eqp->theta = thetex;
 
     cs_balance_vector(idtvar,
                       f_id,
@@ -1343,7 +1343,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
       cs_field_current_to_previous(b_vf);
     }
 
-    eqp->thetav = thetap;
+    eqp->theta = thetap;
   }
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
@@ -2034,7 +2034,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
   double epsrsp = eqp->epsrsm;
   double epsilp = eqp->epsilo;
   double relaxp = eqp->relaxv;
-  double thetap = eqp->thetav;
+  double thetap = eqp->theta;
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
@@ -2180,7 +2180,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
      * has to impose 0 on mass accumulation. */
     imasac = 0;
 
-    eqp->thetav = thetex;
+    eqp->theta = thetex;
 
     cs_balance_tensor(idtvar,
                       f_id,
@@ -2201,7 +2201,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                       icvfli,
                       smbrp);
 
-    eqp->thetav = thetap;
+    eqp->theta = thetap;
   }
 
   /* Before looping, the RHS without reconstruction is stored in smbini */

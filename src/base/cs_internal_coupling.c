@@ -2347,7 +2347,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   int idiffp = 0;
 
   if (eqp->icoupl > 0) {
-    thetap = eqp->thetav;
+    thetap = eqp->theta;
     idiffp = eqp->idiff;
   }
 
@@ -2520,7 +2520,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   int idiffp = 0;
 
   if (eqp->icoupl > 0) {
-    thetap = eqp->thetav;
+    thetap = eqp->theta;
     idiffp = eqp->idiff;
   }
 

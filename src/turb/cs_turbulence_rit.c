@@ -787,7 +787,7 @@ _solve_rit(const cs_field_t     *f,
                        (cs_real_t *)rhs_ut,
                        (cs_real_t *)fimp);
 
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
   if (st_prv_id > -1) {
 #   pragma omp parallel if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -948,7 +948,7 @@ _solve_rit(const cs_field_t     *f,
 
   cs_equation_param_t eqp_loc = *eqp;
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
-  eqp_loc.thetav = thetv;
+  eqp_loc.theta = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,

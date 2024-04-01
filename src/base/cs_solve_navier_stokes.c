@@ -1364,7 +1364,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
 
     /*  Update the velocity field */
 
-    const cs_real_t thetap = eqp_p->thetav;
+    const cs_real_t thetap = eqp_p->theta;
 
     /* Specific handling of hydrostatic pressure */
 
@@ -2029,7 +2029,7 @@ _velocity_prediction(const cs_mesh_t             *m,
      (default for 1st order in time) */
   cs_real_t *crom = crom_eos, *brom = brom_eos;
 
-  if (eqp_u->thetav < 1.0) {   /* 2nd order in time */
+  if (eqp_u->theta < 1.0) {   /* 2nd order in time */
    /* map the density pointer:
     * 1/4(n-1) + 1/2(n) + 1/4(n+1)
     * here replaced by (n) */
@@ -2044,7 +2044,7 @@ _velocity_prediction(const cs_mesh_t             *m,
    * FIXME irovar=1 and if dt varies, use theta(rho) = theta(u)*... */
 
   cs_real_t *cproa_rho_tc = NULL;
-  if (   (eqp_u->thetav < 1.0) && (iappel == 1)
+  if (   (eqp_u->theta < 1.0) && (iappel == 1)
       && (iterns > 1) && (vp_param->itpcol == 0)) {
     BFT_MALLOC(cproa_rho_tc, n_cells_ext, cs_real_t);
 
@@ -2052,25 +2052,25 @@ _velocity_prediction(const cs_mesh_t             *m,
     cs_real_t *imasfl_prev = cs_field_by_id(iflmas)->val_pre;
     cs_real_t *bmasfl_prev = cs_field_by_id(iflmab)->val_pre;
 
-    const cs_real_t thetav = eqp_u->thetav;
+    const cs_real_t theta = eqp_u->theta;
 
     if (fp->irovar == 1) {
       /* remap the density pointer: n-1/2 */
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-        cproa_rho_tc[c_id] =          thetav  * croma[c_id]
-                             + (1.0 - thetav) * cromaa[c_id];
+        cproa_rho_tc[c_id] =          theta  * croma[c_id]
+                             + (1.0 - theta) * cromaa[c_id];
       pcrom = cproa_rho_tc;
     }
 
     /* Inner mass flux interpolation: n-1/2->n+1/2 */
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
-      imasfl[f_id] =          thetav  * imasfl[f_id]
-                     + (1.0 - thetav) * imasfl_prev[f_id];
+      imasfl[f_id] =          theta  * imasfl[f_id]
+                     + (1.0 - theta) * imasfl_prev[f_id];
 
     /* Boundary mass flux interpolation: n-1/2->n+1/2 */
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-      bmasfl[f_id] =          thetav  * bmasfl[f_id]
-                     + (1.0 - thetav) * bmasfl_prev[f_id];
+      bmasfl[f_id] =          theta  * bmasfl[f_id]
+                     + (1.0 - theta) * bmasfl_prev[f_id];
   }
 
   cs_real_6_t *viscce = NULL;
@@ -2231,13 +2231,13 @@ _velocity_prediction(const cs_mesh_t             *m,
       cpro_rho_mass = cs_field_by_name("density_mass")->val;
 
       /* Time interpolated density */
-      if (eqp_u->thetav < 1.0 && iterns > 1) {
-        cs_real_t thetav = eqp_u->thetav;
+      if (eqp_u->theta < 1.0 && iterns > 1) {
+        cs_real_t theta = eqp_u->theta;
         BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
 #       pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-          cpro_rho_tc[c_id] =          thetav  * cpro_rho_mass[c_id]
-                              + (1.0 - thetav) * croma[c_id];
+          cpro_rho_tc[c_id] =          theta  * cpro_rho_mass[c_id]
+                              + (1.0 - theta) * croma[c_id];
         wgrec_crom = cpro_rho_tc;
       }
       else
@@ -2591,7 +2591,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   if (iappel == 1 && ncepdc > 0) {
     /* The theta-scheme for head loss is the same as the other terms */
-    const cs_real_t thetap = eqp_u->thetav;
+    const cs_real_t thetap = eqp_u->theta;
 
     for (cs_lnum_t hl_id = 0; hl_id < ncepdc; hl_id++) {
       const cs_lnum_t c_id = icepdc[hl_id];
@@ -2675,7 +2675,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       && (   cs_glob_physical_constants->icorio == 1
           || iturbo == CS_TURBOMACHINERY_FROZEN)) {
     /* The theta-scheme for the Coriolis term is the same as the other terms */
-    const cs_real_t thetap = eqp_u->thetav;
+    const cs_real_t thetap = eqp_u->theta;
 
     /* Reference frame + turbomachinery frozen rotors rotation */
     if (iturbo == CS_TURBOMACHINERY_FROZEN) {
@@ -2845,7 +2845,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   if (iappel == 1) {
     if (cs_glob_time_scheme->isno2t > 0)
-      cs_axpy(n_cells*3*3, -eqp_u->thetav,
+      cs_axpy(n_cells*3*3, -eqp_u->theta,
               (cs_real_t *)tsimp, (cs_real_t *)fimp);
 
     else {
@@ -3750,19 +3750,19 @@ cs_solve_navier_stokes(const int   iterns,
     bpro_rho_mass = cs_field_by_name("boundary_density_mass")->val;
 
     /* Time interpolated density */
-    if (eqp_u->thetav < 1.0 && vp_param->itpcol == 0) {
+    if (eqp_u->theta < 1.0 && vp_param->itpcol == 0) {
       croma = CS_F_(rho)->val_pre;
       broma = CS_F_(rho_b)->val_pre;
       BFT_MALLOC(bpro_rho_tc, n_b_faces, cs_real_t);
       BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-        cpro_rho_tc[c_id] =   eqp_u->thetav * cpro_rho_mass[c_id]
-                            + (1.0 - eqp_u->thetav) * croma[c_id];
+        cpro_rho_tc[c_id] =   eqp_u->theta * cpro_rho_mass[c_id]
+                            + (1.0 - eqp_u->theta) * croma[c_id];
 
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-         bpro_rho_tc[face_id] =   eqp_u->thetav * bpro_rho_mass[face_id]
-                                + (1.0 - eqp_u->thetav) * broma[face_id];
+         bpro_rho_tc[face_id] =   eqp_u->theta * bpro_rho_mass[face_id]
+                                + (1.0 - eqp_u->theta) * broma[face_id];
 
       crom = cpro_rho_tc;
       cromk1 = cpro_rho_tc;  /* rho at time n+1/2,k-1 */
@@ -4148,14 +4148,14 @@ cs_solve_navier_stokes(const int   iterns,
           cpro_rho_mass = cs_field_by_name("density_mass")->val;
 
           /* Time interpolated density */
-          if (eqp_u->thetav < 1.0 && vp_param->itpcol == 0) {
+          if (eqp_u->theta < 1.0 && vp_param->itpcol == 0) {
             croma = CS_F_(rho)->val_pre;
             BFT_REALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
 
 #           pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
             for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-              cpro_rho_tc[c_id] =   eqp_u->thetav * cpro_rho_mass[c_id]
-                                  + (1.0 - eqp_u->thetav) * croma[c_id];
+              cpro_rho_tc[c_id] =   eqp_u->theta * cpro_rho_mass[c_id]
+                                  + (1.0 - eqp_u->theta) * croma[c_id];
 
             crom = cpro_rho_tc;
             cromk1 = cpro_rho_tc;
@@ -4310,7 +4310,7 @@ cs_solve_navier_stokes(const int   iterns,
     cpro_rho_mass = cs_field_by_name("density_mass")->val;
 
     /* Time interpolated density */
-    if (eqp_u->thetav < 1.0 && vp_param->itpcol == 0) {
+    if (eqp_u->theta < 1.0 && vp_param->itpcol == 0) {
 
       croma = CS_F_(rho)->val_pre;
 
@@ -4320,8 +4320,8 @@ cs_solve_navier_stokes(const int   iterns,
       }
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cpro_rho_tc[c_id] =   eqp_u->thetav * cpro_rho_mass[c_id]
-                            + (1.0 - eqp_u->thetav) * croma[c_id];
+        cpro_rho_tc[c_id] =   eqp_u->theta * cpro_rho_mass[c_id]
+                            + (1.0 - eqp_u->theta) * croma[c_id];
       }
 
       cs_mesh_sync_var_scal(cpro_rho_tc);

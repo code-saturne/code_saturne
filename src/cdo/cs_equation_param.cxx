@@ -889,7 +889,7 @@ cs_equation_param_create(const char            *name,
   eqp->ircflu = 1;
   eqp->iwgrec = 0;
   eqp->icoupl = -1;
-  eqp->thetav = 1.;
+  eqp->theta = 1.;
   eqp->blencv = 1.;
   eqp->blend_st = 0.;
   eqp->epsilo = 1.e-5;
@@ -918,7 +918,6 @@ cs_equation_param_create(const char            *name,
 
   eqp->time_property = NULL;
   eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
-  eqp->theta = 1.0;
   eqp->do_lumping = false;
   eqp->time_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
@@ -1072,7 +1071,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->ircflu = ref->ircflu;
   dst->iwgrec = ref->iwgrec;
   dst->icoupl = ref->icoupl;
-  dst->thetav = ref->thetav;
+  dst->theta = ref->theta;
   dst->blencv = ref->blencv;
   dst->blend_st = ref->blend_st;
   dst->epsilo = ref->epsilo;
@@ -1094,7 +1093,6 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   /* Description of the time discretization */
 
   dst->time_scheme = ref->time_scheme;
-  dst->theta = ref->theta;
   dst->do_lumping = ref->do_lumping;
   dst->time_property = ref->time_property;
 

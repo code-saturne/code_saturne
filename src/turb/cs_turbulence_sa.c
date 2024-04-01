@@ -530,7 +530,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   if (istprv >= 0) {
     const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
     const cs_real_t thetst = time_scheme->thetst;
-    const cs_real_t thetv  = eqp_nusa->thetav;
+    const cs_real_t thetv  = eqp_nusa->theta;
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       const cs_real_t tuexpn = c_st_nusa_p[i];

@@ -275,7 +275,7 @@ cs_dilatable_scalar_diff_st(int iterns)
     eqp_loc.isstpc = 1;
     eqp_loc.nswrsm = -1;
     eqp_loc.iwgrec = 0;
-    eqp_loc.thetav = 1.0;
+    eqp_loc.theta = 1.0;
     eqp_loc.blencv = 0.0;
     eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
     eqp_loc.epsilo = -1;

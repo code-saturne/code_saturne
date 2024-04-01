@@ -187,7 +187,7 @@ _beta_limiter_denom(cs_field_t                 *f,
   const int ischcp = eqp->ischcv;
   const int ircflp = eqp->ircflu;
   const int imrgra = eqp->imrgra;
-  const cs_real_t thetap = eqp->thetav;
+  const cs_real_t thetap = eqp->theta;
   const cs_real_t blencp = eqp->blencv;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
@@ -525,7 +525,7 @@ _beta_limiter_num(cs_field_t                 *f,
   cs_real_t scalar_max = cs_field_get_key_double(f, key_scamax_id);
   cs_real_t scalar_min = cs_field_get_key_double(f, key_scamin_id);
 
-  const cs_real_t thetex =  1. - eqp->thetav;
+  const cs_real_t thetex =  1. - eqp->theta;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -1387,7 +1387,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -2826,7 +2826,7 @@ cs_face_convection_scalar(int                         idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -3949,7 +3949,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -5674,7 +5674,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -6635,7 +6635,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -7965,7 +7965,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -8710,7 +8710,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -9251,7 +9251,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
@@ -9956,7 +9956,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   const double epsrgp = eqp.epsrgr;
   const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
-  const double thetap = eqp.thetav;
+  const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;

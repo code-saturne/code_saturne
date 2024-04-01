@@ -1126,7 +1126,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       cpro_st = cpro_scal_st;
   }
 
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
   const int kthetss = cs_field_key_id_try("st_exp_extrapolated");
   const cs_real_t thets = cs_field_get_key_double(f, kthetss);
 
@@ -1660,7 +1660,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                              divflu);
 
     const int iconvp = eqp->iconv;
-    const cs_real_t thetap = eqp->thetav;
+    const cs_real_t thetap = eqp->theta;
 
     /*  NB: if the porosity module is switched on, the porosity is already
      * taken into account in divflu */
@@ -2069,7 +2069,7 @@ cs_solve_equation_vector(cs_field_t       *f,
    *     goes in rhs (no other choice). */
 
   cs_real_3_t *cproa_vect_st = NULL;
-  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t thetv = eqp->theta;
   const int kthetss = cs_field_key_id_try("st_exp_extrapolated");
   const cs_real_t thets = cs_field_get_key_double(f, kthetss);
 
@@ -2279,7 +2279,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                              divflu);
 
     const int iconvp = eqp->iconv;
-    const cs_real_t thetap = eqp->thetav;
+    const cs_real_t thetap = eqp->theta;
 
     /* NB: if the porosity module is swiched on, the the porosity is already
      * taken into account in divflu */

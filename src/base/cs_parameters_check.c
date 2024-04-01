@@ -987,8 +987,8 @@ cs_parameters_check(void)
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                        _(f_desc),
-                                       "equation param thetav (theta-scheme)",
-                                       eqp->thetav,
+                                       "equation param theta (theta-scheme)",
+                                       eqp->theta,
                                        0., 1.);
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
@@ -1041,7 +1041,7 @@ cs_parameters_check(void)
     }
   }
 
-  /* thetav for pressure must be equal to 1 */
+  /* theta for pressure must be equal to 1 */
   {
     cs_equation_param_t *eqp = cs_field_get_equation_param(f_pot);
     f_desc = _field_section_desc(f_pot, "while reading numerical "
@@ -1049,8 +1049,8 @@ cs_parameters_check(void)
 
     cs_parameters_is_equal_double(CS_ABORT_DELAYED,
                                   _(f_desc),
-                                  "equation param thetav (theta-scheme)",
-                                  eqp->thetav,
+                                  "equation param theta (theta-scheme)",
+                                  eqp->theta,
                                   1.);
 
     BFT_FREE(f_desc);
@@ -1092,7 +1092,7 @@ cs_parameters_check(void)
 
     const cs_time_scheme_t *t_sch = cs_glob_time_scheme;
 
-    if (   fabs(eqp->thetav-1.0) > 1e-3
+    if (   fabs(eqp->theta-1.0) > 1e-3
         || t_sch->thetvi > 0
         || t_sch->thetsn > 0
         || t_sch->isno2t > 0
@@ -1142,8 +1142,8 @@ cs_parameters_check(void)
 
     cs_parameters_is_equal_double(CS_WARNING,
                                   _(f_desc),
-                                  "equation param thetav (theta-scheme)",
-                                  eqp_v->thetav,
+                                  "equation param theta (theta-scheme)",
+                                  eqp_v->theta,
                                   0.5);
 
     BFT_FREE(f_desc);
@@ -1184,8 +1184,8 @@ cs_parameters_check(void)
 
         cs_parameters_is_equal_double(CS_WARNING,
                                       _(f_desc),
-                                      "equation param thetav (theta-scheme)",
-                                      eqp->thetav,
+                                      "equation param theta (theta-scheme)",
+                                      eqp->theta,
                                       0.5);
 
         BFT_FREE(f_desc);
@@ -1974,8 +1974,8 @@ cs_parameters_check(void)
                                     "for the velocity\n"
                                     "only compatible with constant time step "
                                     "unsteady algorithm"),
-                                  "equation param thetav",
-                                  eqp_v->thetav,
+                                  "equation param theta",
+                                  eqp_v->theta,
                                   1);
   }
   /* U-P reinforced coupling not compatible with theta scheme with theta
@@ -1987,8 +1987,8 @@ cs_parameters_check(void)
                                     "for the velocity\n"
                                     "not compatible with reinforced "
                                     "velocity-pressure coupling"),
-                                  "equation param thetav",
-                                  eqp_v->thetav,
+                                  "equation param theta",
+                                  eqp_v->theta,
                                   1);
   }
 

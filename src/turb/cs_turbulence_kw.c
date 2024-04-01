@@ -381,8 +381,8 @@ cs_turbulence_kw(int              phase_id,
 
   if (istprv >= 0) {
 
-    cs_real_t thetak = eqp_k->thetav;
-    cs_real_t thetaw = eqp_w->thetav;
+    cs_real_t thetak = eqp_k->theta;
+    cs_real_t thetaw = eqp_w->theta;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       /* Recover the value at time (n-1) */

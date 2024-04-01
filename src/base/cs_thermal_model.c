@@ -552,7 +552,7 @@ cs_thermal_model_kinetic_st_prepare(const cs_real_t  imasfl[],
   const cs_field_t *f_vel = CS_F_(vel);
   const cs_equation_param_t *eqp_u
     = cs_field_get_equation_param_const(f_vel);
-  const cs_real_t thetv = eqp_u->thetav;
+  const cs_real_t thetv = eqp_u->theta;
 
   cs_real_t rhoa_theta;
   cs_real_t *croma = CS_F_(rho)->val_pre;
@@ -724,7 +724,7 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
                                       + trav2[jj][1] * i_face_normal[f_id][1]
                                       + trav2[jj][2] * i_face_normal[f_id][2]));
       cflp[ii] += dt[ii] /(croma[ii] * cell_f_vol[ii])
-        * (1 - eqp_u-> thetav) * dt[ii]
+        * (1 - eqp_u->theta) * dt[ii]
         * pow(  cs_math_pow2(i_face_normal[f_id][0])
               + cs_math_pow2(i_face_normal[f_id][1])
               + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
@@ -740,7 +740,7 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
                                      + trav2[jj][1] * i_face_normal[f_id][1]
                                      + trav2[jj][2] * i_face_normal[f_id][2]));
       cflp[jj] -= dt[jj] / (croma[jj]*cell_f_vol[jj])
-        * (1 - eqp_u-> thetav) * dt[jj]
+        * (1 - eqp_u->theta) * dt[jj]
         * pow(  cs_math_pow2(i_face_normal[f_id][0])
               + cs_math_pow2(i_face_normal[f_id][1])
               + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
@@ -782,7 +782,7 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
               + trav2[jj][2] * i_face_normal[f_id][2]);
       }
       cflp[ii] +=   dt[ii] /(croma[ii] * cell_f_vol[ii])
-                  * (1 - eqp_u-> thetav) * dt[ii]
+                  * (1 - eqp_u->theta) * dt[ii]
                   * pow(  cs_math_pow2(i_face_normal[f_id][0])
                         + cs_math_pow2(i_face_normal[f_id][1])
                         + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
@@ -791,7 +791,7 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
                         + cs_math_pow2(cell_cen[jj][1] - cell_cen[ii][1])
                         + cs_math_pow2(cell_cen[jj][2] - cell_cen[ii][2]), 0.5);
       cflp[jj] -=   dt[jj] /(croma[jj]*cell_f_vol[jj])
-                  * (1 - eqp_u-> thetav) * dt[jj]
+                  * (1 - eqp_u->theta) * dt[jj]
                   * pow(  cs_math_pow2(i_face_normal[f_id][0])
                         + cs_math_pow2(i_face_normal[f_id][1])
                         + cs_math_pow2(i_face_normal[f_id][2]), 0.5)
@@ -1069,7 +1069,7 @@ cs_thermal_model_newton_t(int               method,
     cs_real_t drop;
     const cs_real_t rvsra = phys_pro->rvsra;
 
-    cs_real_t _coef = (eqp_u->thetav >= 1) ?  1. :  2.;
+    cs_real_t _coef = (eqp_u->theta >= 1) ?  1. :  2.;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -1168,7 +1168,7 @@ cs_thermal_model_pdivu(cs_real_t         smbrs[restrict])
     const cs_field_t *f_vel = CS_F_(vel);
     const cs_equation_param_t *eqp_u
       = cs_field_get_equation_param_const(f_vel);
-    const cs_real_t thetv = eqp_u->thetav;
+    const cs_real_t thetv = eqp_u->theta;
     cs_real_t _coef = 1. + 2. * (1. - thetv);
 
     const cs_lnum_2_t *restrict i_face_cells
@@ -1333,7 +1333,7 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
     = cs_field_get_equation_param_const(f_vel);
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
 
-  cs_real_t thetv = eqp_u->thetav;
+  cs_real_t thetv = eqp_u->theta;
 
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
     cs_real_3_t *gradp
