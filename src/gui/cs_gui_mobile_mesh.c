@@ -528,18 +528,15 @@ cs_gui_ale_diffusion_type(void)
 
   int iortvm = _ale_visc_type(tn);
 
-  cs_var_cal_opt_t vcopt;
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_field_t *f_mesh_u = cs_field_by_name("mesh_velocity");
-  cs_field_get_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f_mesh_u);
 
   if (iortvm == 1) { /* orthotropic viscosity */
-    vcopt.idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
+    eqp->idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
   }
   else { /* isotropic viscosity */
-    vcopt.idften = CS_ISOTROPIC_DIFFUSION;
+    eqp->idften = CS_ISOTROPIC_DIFFUSION;
   }
-  cs_field_set_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);

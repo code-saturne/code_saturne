@@ -433,7 +433,7 @@ cs_wall_distance(int iterns)
     if (nswrsp > 0) {
       nswrsp = 0;
       ircflp = 0;
-      /* Reset also in var_cal_opt structure because some basic routines
+      /* Reset also in equation param structure because some basic routines
          directly use the field options in vcopt... */
 
       eqp_wd->nswrsm = nswrsp;

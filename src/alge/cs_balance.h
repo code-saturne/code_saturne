@@ -85,7 +85,7 @@ BEGIN_C_DECLS
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved variable (current time step)
  *                              may be NULL if pvara != NULL
@@ -120,7 +120,7 @@ cs_balance_scalar(int                         idtvar,
                   int                         imucpp,
                   int                         imasac,
                   int                         inc,
-                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_equation_param_t        *eqp,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs,
@@ -180,7 +180,7 @@ cs_balance_scalar(int                         idtvar,
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
  *                               - 1 take into account,
  *                               - 0 otherwise
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
@@ -214,7 +214,7 @@ cs_balance_vector(int                         idtvar,
                   int                         imasac,
                   int                         inc,
                   int                         ivisep,
-                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_equation_param_t        *eqp,
                   cs_real_3_t                 pvar[],
                   const cs_real_3_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_v,
@@ -264,7 +264,7 @@ cs_balance_vector(int                         idtvar,
  * \param[in]     f_id          field id (or -1)
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     inc           indicator
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
@@ -295,7 +295,7 @@ cs_balance_tensor(int                         idtvar,
                   int                         f_id,
                   int                         imasac,
                   int                         inc,
-                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_equation_param_t        *eqp,
                   cs_real_6_t                 pvar[],
                   const cs_real_6_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_ts,

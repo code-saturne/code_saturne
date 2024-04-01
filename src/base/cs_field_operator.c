@@ -486,7 +486,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
     parent_f = cs_field_by_id(f_parent_id);
 
   int imrgra = cs_glob_space_disc->imrgra;
-  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t
@@ -662,7 +662,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
     parent_f = cs_field_by_id(f_parent_id);
 
   int imrgra = cs_glob_space_disc->imrgra;
-  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t
@@ -760,7 +760,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   int imrgra = cs_glob_space_disc->imrgra;
-  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
@@ -857,7 +857,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   int imrgra = cs_glob_space_disc->imrgra;
-  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
@@ -940,7 +940,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     parent_f = cs_field_by_id(f_parent_id);
 
   int b_gradient_r = cs_glob_space_disc->imrgra;
-  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t
@@ -1107,7 +1107,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
     parent_f = cs_field_by_id(f_parent_id);
 
   int b_gradient_r = cs_glob_space_disc->imrgra;
-  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t
@@ -1265,7 +1265,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
     parent_f = cs_field_by_id(f_parent_id);
 
   int b_gradient_r = cs_glob_space_disc->imrgra;
-  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t

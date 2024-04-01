@@ -154,7 +154,7 @@ BEGIN_C_DECLS
         On meshes of insufficient quality, in order to
         improve the convergence, it may be useful to increase the number of
         iterations for the reconstruction of the pressure right-hand side,
-        i.e. \ref cs_var_cal_opt_t::nswrsm "nswrsm".\n If head losses are
+        i.e. \ref cs_equation_param_t::nswrsm "nswrsm".\n If head losses are
         present just along an outlet boundary, it is necessary to specify
         \ref icalhy = 0 in order to deactivate the recalculation of the
         hydrostatic pressure at the boundary, which may otherwise cause

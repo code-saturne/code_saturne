@@ -312,6 +312,8 @@ if (iale.ge.1) then
   call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
   vcopt%istat = 0
   vcopt%iconv = 0
+  vcopt%idifft = 0
+  vcopt%relaxv = 1
   call field_set_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
 
 endif

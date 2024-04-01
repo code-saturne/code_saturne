@@ -323,18 +323,19 @@ _lageqp(cs_real_t   *vitessel,
 
   /* In the theta-scheme case, set theta to 1 (order 1) */
 
-  cs_var_cal_opt_t  var_cal_opt = cs_parameters_var_cal_opt_default();
 
-  var_cal_opt.verbosity = 2;  /* quasi-debug at this stage, TODO clean */
-  var_cal_opt.iconv  = 0;     /* no convection, pure diffusion here */
-  var_cal_opt.istat  = -1;
-  var_cal_opt.ndircl = 1;
-  var_cal_opt.idifft = -1;
-  var_cal_opt.isstpc = 0;
-  var_cal_opt.nswrgr = 10000;
-  var_cal_opt.nswrsm = 2;
-  var_cal_opt.imrgra = cs_glob_space_disc->imrgra;
-  var_cal_opt.imligr = 1;
+  cs_equation_param_t eqp_loc = cs_parameters_equation_param_default();
+
+  eqp_loc.verbosity = 2;  /* quasi-debug at this stage, TODO clean */
+  eqp_loc.iconv  = 0;     /* no convection, pure diffusion here */
+  eqp_loc.istat  = -1;
+  eqp_loc.ndircl = 1;
+  eqp_loc.idifft = -1;
+  eqp_loc.isstpc = 0;
+  eqp_loc.nswrgr = 10000;
+  eqp_loc.nswrsm = 2;
+  eqp_loc.imrgra = cs_glob_space_disc->imrgra;
+  eqp_loc.imligr = 1;
 
   cs_equation_iterative_solve_scalar(idtva0,
                                      1,            /* external sub-iteration? */
@@ -343,7 +344,7 @@ _lageqp(cs_real_t   *vitessel,
                                      0,            /* iescap */
                                      0,            /* imucpp */
                                      -1,           /* normp */
-                                     &var_cal_opt,
+                                     &eqp_loc,
                                      phia, phia,
                                      &bc_coeffs_phi_loc,
                                      fmala, fmalb,

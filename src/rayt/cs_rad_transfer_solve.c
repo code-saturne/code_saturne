@@ -54,6 +54,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_coal.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_gui_util.h"
 #include "cs_ht_convert.h"
@@ -508,11 +509,8 @@ _cs_rad_transfer_sol(int                        gg_id,
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  /* Get a copy of the equation parameter */
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(CS_FI_(radiance, gg_id),
-                          cs_field_key_id("var_cal_opt"),
-                          &vcopt);
+  cs_equation_param_t *eqp =
+    cs_field_get_equation_param(CS_FI_(radiance, gg_id));
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -735,7 +733,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              0,   /* iescap */
                                              0,   /* imucpp */
                                              -1,  /* normp */
-                                             &vcopt,
+                                             eqp,
                                              radiance_prev,
                                              radiance_prev,
                                              bc_coeffs_rad,

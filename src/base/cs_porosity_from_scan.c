@@ -1125,9 +1125,6 @@ cs_compute_porosity_from_scan(void)
     = cs_field_by_id
         (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
 
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
-
   /* Local variables */
   cs_real_t *rovsdt, *pvar, *dpvar, *rhs;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
@@ -1186,7 +1183,7 @@ cs_compute_porosity_from_scan(void)
       /* Dirichlet BCs */
       if (b_massflux[face_id] <= 0.) {
 
-       vcopt.ndircl = 1;
+       eqp->ndircl = 1;
        cs_real_t hint = 1. / mq->b_dist[face_id];
        cs_real_t pimp = 0.;
 
@@ -1223,7 +1220,7 @@ cs_compute_porosity_from_scan(void)
 
     /* Even if there is no Dirichlet, the system is well-posed
      * so no need of diagonal reinforcement */
-    vcopt.ndircl = 1;
+    eqp->ndircl = 1;
 
     /* Right hand side and initial guess
      *==================================*/
@@ -1255,7 +1252,7 @@ cs_compute_porosity_from_scan(void)
                                        0,   /* iescap */
                                        0,   /* imucpp */
                                        norm,
-                                       &vcopt,
+                                       eqp,
                                        f->val_pre,
                                        f->val,
                                        f->bc_coeffs,

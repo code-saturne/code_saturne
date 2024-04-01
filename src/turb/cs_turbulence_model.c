@@ -48,6 +48,7 @@
 
 #include "cs_assert.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_function.h"
 #include "cs_gradient.h"
@@ -224,7 +225,7 @@ BEGIN_C_DECLS
         clearly demonstrated.\n Since the system is solved in
         incremental form, this extra turbulent viscosity does
         not change the final solution for steady flows. However,
-        for unsteady flows, the parameter \ref cs_var_cal_opt_t::nswrsm "nswrsm"
+        for unsteady flows, the parameter \ref cs_equation_param_t::nswrsm "nswrsm"
         should be increased.\n Useful if and only if \ref iturb = 30
         or 31 (\f$R_{ij}-\epsilon\f$ model).
   \var  cs_turb_rans_model_t::irijrb
@@ -1685,9 +1686,6 @@ cs_turb_model_log_setup(void)
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_wall_functions_t *wall_fns = cs_get_glob_wall_functions();
 
-  cs_var_cal_opt_t var_cal_opt;
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   cs_log_printf(CS_LOG_SETUP, _("\n"
                                 "Turbulence model options\n"
                                 "------------------------\n\n"
@@ -1782,10 +1780,8 @@ cs_turb_model_log_setup(void)
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
-      cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxvk = var_cal_opt.relaxv;
-      cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxve = var_cal_opt.relaxv;
+      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
+      cs_real_t relaxve = cs_field_get_equation_param_const(CS_F_(eps))->relaxv;
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
@@ -1881,11 +1877,8 @@ cs_turb_model_log_setup(void)
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
 
-      cs_real_t relaxvk, relaxve;
-      cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
-      relaxvk = var_cal_opt.relaxv;
-      cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
-      relaxve = var_cal_opt.relaxv;
+      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
+      cs_real_t relaxve = cs_field_get_equation_param_const(CS_F_(eps))->relaxv;
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
@@ -1920,11 +1913,8 @@ cs_turb_model_log_setup(void)
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
 
-      cs_real_t relaxvk, relaxve;
-      cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
-      relaxvk = var_cal_opt.relaxv;
-      cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
-      relaxve = var_cal_opt.relaxv;
+      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
+      cs_real_t relaxve = cs_field_get_equation_param_const(CS_F_(eps))->relaxv;
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
@@ -1959,10 +1949,8 @@ cs_turb_model_log_setup(void)
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
 
-      cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxvk = var_cal_opt.relaxv;
-      cs_field_get_key_struct(CS_F_(omg), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxvo = var_cal_opt.relaxv;
+      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
+      cs_real_t relaxvo = cs_field_get_equation_param_const(CS_F_(omg))->relaxv;
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for omega (Relaxation)\n"),
@@ -1974,12 +1962,12 @@ cs_turb_model_log_setup(void)
   }
   else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
 
-    cs_field_get_key_struct(CS_F_(nusa), key_cal_opt_id, &var_cal_opt);
+    cs_real_t relaxv = cs_field_get_equation_param_const(CS_F_(nusa))->relaxv;
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:        %14.5e (Characteristic velocity)\n"
                     "    relaxv:      %14.5e for nu (Relaxation)\n"),
                   cs_glob_turb_ref_values->uref,
-                  var_cal_opt.relaxv);
+                  relaxv);
 
   }
 

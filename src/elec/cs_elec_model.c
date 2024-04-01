@@ -847,81 +847,74 @@ void
 cs_electrical_model_specific_initialization(void)
 {
   cs_field_t *f = NULL;
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const int kvisls0 = cs_field_key_id("diffusivity_ref");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  cs_var_cal_opt_t var_cal_opt;
 
   /* specific initialization for field */
-  f = CS_F_(potr);
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  var_cal_opt.iconv  = 0;
-  var_cal_opt.istat  = 0;
-  var_cal_opt.idiff  = 1;
-  var_cal_opt.idifft = 0;
-
-  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  {
+    f = CS_F_(potr);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->iconv  = 0;
+    eqp->istat  = 0;
+    eqp->idiff  = 1;
+    eqp->idifft = 0;
+  }
 
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
   if (ieljou == 2 || ieljou == 4) {
     f = CS_F_(poti);
-    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-    var_cal_opt.iconv  = 0;
-    var_cal_opt.istat  = 0;
-    var_cal_opt.idiff  = 1;
-    var_cal_opt.idifft = 0;
-    cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->iconv  = 0;
+    eqp->istat  = 0;
+    eqp->idiff  = 1;
+    eqp->idifft = 0;
   }
 
   if (ielarc > 1) {
-    cs_field_t  *fp = cs_field_by_name_try("vec_potential");
-    cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
-    var_cal_opt.iconv  = 0;
-    var_cal_opt.istat  = 0;
-    var_cal_opt.idiff  = 1;
-    var_cal_opt.idifft = 0;
-    cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
-    cs_field_set_key_double(fp, kvisls0, 1.0);
+    f = cs_field_by_name_try("vec_potential");
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->iconv  = 0;
+    eqp->istat  = 0;
+    eqp->idiff  = 1;
+    eqp->idifft = 0;
+    cs_field_set_key_double(f, kvisls0, 1.0);
   }
 
   /* for all specific field */
-  f = CS_F_(h);
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  var_cal_opt.blencv = 1.;
-  cs_field_set_key_double(f, ksigmas, 0.7);
-  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-  f = CS_F_(potr);
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  var_cal_opt.blencv = 1.;
-  cs_field_set_key_double(f, ksigmas, 0.7);
-  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
+  {
+    f = CS_F_(h);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->blencv = 1.;
+    cs_field_set_key_double(f, ksigmas, 0.7);
+  }
+  {
+    f = CS_F_(potr);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->blencv = 1.;
+    cs_field_set_key_double(f, ksigmas, 0.7);
+  }
   if (ieljou == 2 || ieljou == 4) {
     f = CS_F_(poti);
-    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-    var_cal_opt.blencv = 1.;
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->blencv = 1.;
     cs_field_set_key_double(f, ksigmas, 0.7);
-    cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
   if (ielarc > 1) {
-    cs_field_t  *fp = cs_field_by_name_try("vec_potential");
-    cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
-    var_cal_opt.blencv = 1.;
+    f = cs_field_by_name_try("vec_potential");
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->blencv = 1.;
     cs_field_set_key_double(f, ksigmas, 0.7);
-    cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
   }
 
   if (cs_glob_elec_properties->ngaz > 1) {
     for (int igaz = 0; igaz < cs_glob_elec_properties->ngaz - 1; igaz++) {
       f = CS_FI_(ycoel, igaz);
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      var_cal_opt.blencv = 1.;
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      eqp->blencv = 1.;
       cs_field_set_key_double(f, ksigmas, 0.7);
-      cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
 
@@ -1745,9 +1738,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
   cs_lnum_t          n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_real_t   *volume = mesh_quantities->cell_vol;
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
@@ -1756,7 +1747,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
 
   /* enthalpy source term */
   if (strcmp(name, "enthalpy") == 0) {
-    if (var_cal_opt.verbosity > 0)
+    if (eqp->verbosity > 0)
       bft_printf("compute source terms for variable : %s\n", name);
 
     if (cs_glob_time_step->nt_cur > 2) {
@@ -1771,7 +1762,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         smbrs[iel] += w1[iel];
 
-      if (var_cal_opt.verbosity > 0) {
+      if (eqp->verbosity > 0) {
         double valmin = w1[0];
         double valmax = w1[0];
 
@@ -1806,9 +1797,7 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
   cs_lnum_t          n_cells     = mesh->n_cells;
   const cs_real_t   *volume = mesh_quantities->cell_vol;
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
@@ -1817,7 +1806,7 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
   if (ielarc >= 2 && f_id == (CS_F_(potva)->id)) {
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
 
-    if (var_cal_opt.verbosity > 0)
+    if (eqp->verbosity > 0)
       bft_printf("compute source terms for variable: %s\n", f->name);
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)

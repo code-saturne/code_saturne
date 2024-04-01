@@ -186,15 +186,13 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_var_cal_opt_t var_cal_opt;
-
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     /* Get the calculation option from the pressure field */
 
-    cs_field_get_key_struct(extra->pressure, key_cal_opt_id, &var_cal_opt);
+    const cs_equation_param_t *eqp =
+      cs_field_get_equation_param_const(extra->pressure);
 
-    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+    cs_gradient_type_by_imrgra(eqp->imrgra,
                                &gradient_type,
                                &halo_type);
 
@@ -202,7 +200,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     cs_internal_coupling_t  *cpl = NULL;
     int w_stride = 1;
 
-    if (var_cal_opt.iwgrec == 1) {
+    if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(extra->pressure, key_id);
@@ -218,8 +216,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
         if (coupl_id > -1)
           cpl = cs_internal_coupling_by_id(coupl_id);
       }
-    } else if (var_cal_opt.iwgrec == 0) {
-      if (var_cal_opt.idiff > 0) {
+    } else if (eqp->iwgrec == 0) {
+      if (eqp->idiff > 0) {
         int key_id = cs_field_key_id_try("coupling_entity");
         if (key_id > -1) {
           int coupl_id = cs_field_get_key_int(extra->pressure, key_id);
@@ -236,13 +234,13 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                        gradient_type,
                        halo_type,
                        1,
-                       var_cal_opt.nswrgr,
+                       eqp->nswrgr,
                        hyd_p_flag,
                        w_stride,
-                       var_cal_opt.verbosity,
-                       var_cal_opt.imligr,
-                       var_cal_opt.epsrgr,
-                       var_cal_opt.climgr,
+                       eqp->verbosity,
+                       eqp->imligr,
+                       eqp->epsrgr,
+                       eqp->climgr,
                        f_ext,
                        extra->pressure->bc_coeffs,
                        wpres,
@@ -277,8 +275,9 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     if (cs_glob_lagr_model->viscous_terms) {
 
       cs_field_t *f_vel = CS_F_(vel);
-      const cs_equation_param_t *eqp_vel
-        = cs_field_get_equation_param_const(f_vel);
+      cs_equation_param_t eqp_loc;
+      /* local copy of equation parameters for velocity */
+      cs_field_get_key_struct(f_vel, cs_field_key_id("var_cal_opt"), &eqp_loc);
       const cs_mesh_t  *m = cs_glob_mesh;
       cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
@@ -294,7 +293,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
       cs_face_viscosity(m,
                         fvq,
-                        eqp_vel->imvisf,
+                        eqp_loc.imvisf,
                         CS_F_(mu)->val, // cell viscosity
                         i_visc,
                         b_visc);
@@ -321,13 +320,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
         div_mu_gradvel = _div_mu_gradvel;
       }
 
-      cs_var_cal_opt_t vcopt_vel;
-
-      /* Get the calculation option from the velocity field */
-      cs_field_get_key_struct(extra->vel, key_cal_opt_id, &vcopt_vel);
-
       /* Do not consider convective terms */
-      vcopt_vel.iconv = 0;
+      eqp_loc.iconv = 0;
       cs_real_t *i_secvis= NULL;
       cs_real_t *b_secvis= NULL;
 
@@ -345,7 +339,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                         0,//imasac,
                         1,//inc,
                         0, //TODO vp_model->ivisse,
-                        &vcopt_vel,
+                        &eqp_loc,
                         cvar_vel,
                         cvar_vela,
                         f_vel->bc_coeffs,

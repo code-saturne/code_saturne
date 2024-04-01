@@ -104,8 +104,8 @@ cs_cell_courant_number(const int   f_id,
  * Return pointer to slope test indicator field values if active.
  *
  * parameters:
- *   f_id        <-- field id (or -1)
- *   var_cal_opt <-- variable calculation options
+ *   f_id  <-- field id (or -1)
+ *   eqp   <-- equation parameters
  *
  * return:
  *   pointer to local values array, or NULL;
@@ -113,7 +113,7 @@ cs_cell_courant_number(const int   f_id,
 
 cs_real_t *
 cs_get_v_slope_test(int                        f_id,
-                    const cs_equation_param_t  var_cal_opt);
+                    const cs_equation_param_t  eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -208,7 +208,7 @@ cs_beta_limiter_building(int              f_id,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -260,7 +260,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -284,7 +284,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
 void
 cs_face_convection_scalar(int                         idtvar,
                           int                         f_id,
-                          const cs_equation_param_t   var_cal_opt,
+                          const cs_equation_param_t   eqp,
                           int                         icvflb,
                           int                         inc,
                           int                         imasac,
@@ -321,7 +321,7 @@ cs_face_convection_scalar(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -339,7 +339,7 @@ cs_face_convection_scalar(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]     bc_coeffs_v   boundary conditions structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -357,7 +357,7 @@ cs_face_convection_scalar(int                         idtvar,
 void
 cs_convection_diffusion_vector(int                         idtvar,
                                int                         f_id,
-                               const cs_equation_param_t   var_cal_opt,
+                               const cs_equation_param_t   eqp,
                                int                         icvflb,
                                int                         inc,
                                int                         ivisep,
@@ -379,23 +379,23 @@ cs_convection_diffusion_vector(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the convection/diffusion terms of a transport
- *  equation of a vector field \f$ \vect{\varia} \f$.
+ *  equation of a tensor field \f$ \tens{\varia} \f$.
  *
- * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
+ * More precisely, the right hand side \f$ \tens{Rhs} \f$ is updated as
  * follows:
  * \f[
- *  \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
- *         \dot{m}_\ij \left( \vect{\varia}_\fij - \vect{\varia}_\celli \right)
- *       - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
+ *  \tens{Rhs} = \tens{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
+ *         \dot{m}_\ij \left( \tens{\varia}_\fij - \tens{\varia}_\celli \right)
+ *       - \mu_\fij \gradt_\fij \tens{\varia} \cdot \tens{S}_\ij  \right)
  * \f]
  *
  * Warning:
- * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
+ * - \f$ \tens{Rhs} \f$ has already been initialized before calling bilsc!
  * - mind the sign minus
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -412,7 +412,7 @@ cs_convection_diffusion_vector(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \tens{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -450,7 +450,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters)
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -504,7 +504,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -527,7 +527,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
 void
 cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 int                         f_id,
-                                const cs_equation_param_t   var_cal_opt,
+                                const cs_equation_param_t   eqp,
                                 int                         inc,
                                 cs_real_t        *restrict  pvar,
                                 const cs_real_t  *restrict  pvara,
@@ -564,7 +564,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -587,7 +587,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 void
 cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      int                         f_id,
-                                     const cs_equation_param_t   var_cal_opt,
+                                     const cs_equation_param_t   eqp,
                                      int                         inc,
                                      int                         ivisep,
                                      cs_real_3_t       *restrict pvar,
@@ -618,7 +618,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -641,7 +641,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 void
 cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                       int                          f_id,
-                                      const cs_equation_param_t    var_cal_opt,
+                                      const cs_equation_param_t    eqp,
                                       int                          inc,
                                       cs_real_3_t        *restrict pvar,
                                       const cs_real_3_t  *restrict pvara,
@@ -672,7 +672,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
- * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     eqp           equation parameters
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -695,7 +695,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 void
 cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 int                          f_id,
-                                const cs_equation_param_t    var_cal_opt,
+                                const cs_equation_param_t    eqp,
                                 int                          inc,
                                 cs_real_6_t        *restrict pvar,
                                 const cs_real_6_t  *restrict pvara,

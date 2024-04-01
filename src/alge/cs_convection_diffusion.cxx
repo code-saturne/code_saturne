@@ -5603,18 +5603,18 @@ cs_convection_diffusion_vector(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the convection/diffusion terms of a transport
- *  equation of a vector field \f$ \vect{\varia} \f$.
+ *  equation of a tensor field \f$ \tens{\varia} \f$.
  *
- * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
+ * More precisely, the right hand side \f$ \tens{Rhs} \f$ is updated as
  * follows:
  * \f[
- *  \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
- *         \dot{m}_\ij \left( \vect{\varia}_\fij - \vect{\varia}_\celli \right)
- *       - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
+ *  \tens{Rhs} = \tens{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
+ *         \dot{m}_\ij \left( \tens{\varia}_\fij - \tens{\varia}_\celli \right)
+ *       - \mu_\fij \gradt_\fij \tens{\varia} \cdot \tens{S}_\ij  \right)
  * \f]
  *
  * Warning:
- * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
+ * - \f$ \tens{Rhs} \f$ has already been initialized before calling bilsc!
  * - mind the sign minus
  *
  * \param[in]     idtvar        indicator of the temporal scheme
@@ -5636,7 +5636,7 @@ cs_convection_diffusion_vector(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \tens{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -9916,7 +9916,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
  *                               - 1 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$

@@ -44,6 +44,7 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_gradient.h"
@@ -283,30 +284,29 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
     eta2[i] = 0.;
   }
 
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
+  const cs_equation_param_t *eqp = NULL;
 
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 5
       || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
-    cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
+    eqp = cs_field_get_equation_param_const(CS_F_(k));
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS){
-    cs_field_get_key_struct(CS_F_(nusa), key_cal_opt_id, &var_cal_opt);
+    eqp = cs_field_get_equation_param_const(CS_F_(nusa));
   }
 
-  int nswrgp = var_cal_opt.nswrgr;
-  int imligp = var_cal_opt.imligr;
-  int iwarnp = var_cal_opt.verbosity;
-  cs_real_t epsrgp = var_cal_opt.epsrgr;
-  cs_real_t climgp = var_cal_opt.climgr;
+  int nswrgp = eqp->nswrgr;
+  int imligp = eqp->imligr;
+  int iwarnp = eqp->verbosity;
+  cs_real_t epsrgp = eqp->epsrgr;
+  cs_real_t climgp = eqp->climgr;
 
   int inc = 1;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 

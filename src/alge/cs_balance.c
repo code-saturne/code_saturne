@@ -136,7 +136,7 @@ BEGIN_C_DECLS
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved variable (current time step)
  *                              may be NULL if pvara != NULL
@@ -171,7 +171,7 @@ cs_balance_scalar(int                         idtvar,
                   int                         imucpp,
                   int                         imasac,
                   int                         inc,
-                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_equation_param_t        *eqp,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs,
@@ -188,42 +188,42 @@ cs_balance_scalar(int                         idtvar,
                   cs_real_t                   smbrp[])
 {
   /* Local variables */
-  int iconvp = var_cal_opt->iconv;
-  int idiffp = var_cal_opt->idiff;
-  int idftnp = var_cal_opt->idften;
-  cs_var_cal_opt_t var_cal_opt_loc;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int idftnp = eqp->idften;
+  cs_equation_param_t eqp_loc;
 
   if (f_id < 0) {
-    var_cal_opt_loc = cs_parameters_var_cal_opt_default();
-    var_cal_opt_loc.verbosity   = var_cal_opt->verbosity;
-    var_cal_opt_loc.iconv    = var_cal_opt->iconv;
-    var_cal_opt_loc.istat    = -1; /* unused in balance */
-    var_cal_opt_loc.idiff    = var_cal_opt->idiff;
-    var_cal_opt_loc.idifft   = -1; /* unused in balance */
-    var_cal_opt_loc.idften   = var_cal_opt->idften;
-    var_cal_opt_loc.iswdyn   = -1; /* unused in balance */
-    var_cal_opt_loc.ischcv   = var_cal_opt->ischcv;
-    var_cal_opt_loc.isstpc   = var_cal_opt->isstpc;
-    var_cal_opt_loc.nswrgr   = var_cal_opt->nswrgr;
-    var_cal_opt_loc.nswrsm   = -1; /* unused in balance */
-    var_cal_opt_loc.imrgra   = var_cal_opt->imrgra;
-    var_cal_opt_loc.imligr   = var_cal_opt->imligr;
-    var_cal_opt_loc.ircflu   = var_cal_opt->ircflu;
-    var_cal_opt_loc.iwgrec   = 0;  /* require field id */
-    var_cal_opt_loc.icoupl   = -1; /* require field id */
-    var_cal_opt_loc.thetav   = var_cal_opt->thetav;
-    var_cal_opt_loc.blencv   = var_cal_opt->blencv;
-    var_cal_opt_loc.blend_st = var_cal_opt->blend_st;
-    var_cal_opt_loc.epsilo   = -1.; /* unused in balance */
-    var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
-    var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
-    var_cal_opt_loc.climgr   = var_cal_opt->climgr;
-    var_cal_opt_loc.relaxv   = var_cal_opt->relaxv;
+    eqp_loc = cs_parameters_equation_param_default();
+    eqp_loc.verbosity   = eqp->verbosity;
+    eqp_loc.iconv    = eqp->iconv;
+    eqp_loc.istat    = -1; /* unused in balance */
+    eqp_loc.idiff    = eqp->idiff;
+    eqp_loc.idifft   = -1; /* unused in balance */
+    eqp_loc.idften   = eqp->idften;
+    eqp_loc.iswdyn   = -1; /* unused in balance */
+    eqp_loc.ischcv   = eqp->ischcv;
+    eqp_loc.isstpc   = eqp->isstpc;
+    eqp_loc.nswrgr   = eqp->nswrgr;
+    eqp_loc.nswrsm   = -1; /* unused in balance */
+    eqp_loc.imrgra   = eqp->imrgra;
+    eqp_loc.imligr   = eqp->imligr;
+    eqp_loc.ircflu   = eqp->ircflu;
+    eqp_loc.iwgrec   = 0;  /* require field id */
+    eqp_loc.icoupl   = -1; /* require field id */
+    eqp_loc.thetav   = eqp->thetav;
+    eqp_loc.blencv   = eqp->blencv;
+    eqp_loc.blend_st = eqp->blend_st;
+    eqp_loc.epsilo   = -1.; /* unused in balance */
+    eqp_loc.epsrsm   = -1.; /* unused in balance */
+    eqp_loc.epsrgr   = eqp->epsrgr;
+    eqp_loc.climgr   = eqp->climgr;
+    eqp_loc.relaxv   = eqp->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
-    cs_field_get_key_struct(f, k_id, &var_cal_opt_loc);
-    var_cal_opt_loc.thetav = var_cal_opt->thetav;
+    cs_field_get_key_struct(f, k_id, &eqp_loc);
+    eqp_loc.thetav = eqp->thetav;
   }
 
   /* Scalar diffusivity */
@@ -231,7 +231,7 @@ cs_balance_scalar(int                         idtvar,
     if (imucpp == 0) {
       cs_convection_diffusion_scalar(idtvar,
                                      f_id,
-                                     var_cal_opt_loc,
+                                     eqp_loc,
                                      icvflb,
                                      inc,
                                      imasac,
@@ -248,7 +248,7 @@ cs_balance_scalar(int                         idtvar,
     /* The convective part is multiplied by Cp for the temperature */
       cs_convection_diffusion_thermal(idtvar,
                                       f_id,
-                                      var_cal_opt_loc,
+                                      eqp_loc,
                                       inc,
                                       imasac,
                                       pvar,
@@ -264,12 +264,12 @@ cs_balance_scalar(int                         idtvar,
   }
   /* Symmetric tensor diffusivity */
   else if (idftnp & CS_ANISOTROPIC_DIFFUSION) {
-    var_cal_opt_loc.idiff = 0;
+    eqp_loc.idiff = 0;
     /* Convective part */
     if (imucpp == 0 && iconvp == 1) {
       cs_convection_diffusion_scalar(idtvar,
                                      f_id,
-                                     var_cal_opt_loc,
+                                     eqp_loc,
                                      icvflb,
                                      inc,
                                      imasac,
@@ -287,7 +287,7 @@ cs_balance_scalar(int                         idtvar,
     else if (imucpp == 1 && iconvp == 1) {
       cs_convection_diffusion_thermal(idtvar,
                                       f_id,
-                                      var_cal_opt_loc,
+                                      eqp_loc,
                                       inc,
                                       imasac,
                                       pvar,
@@ -305,7 +305,7 @@ cs_balance_scalar(int                         idtvar,
     if (idiffp == 1) {
       cs_anisotropic_diffusion_scalar(idtvar,
                                       f_id,
-                                      var_cal_opt_loc,
+                                      eqp_loc,
                                       inc,
                                       pvar,
                                       pvara,
@@ -364,7 +364,7 @@ cs_balance_scalar(int                         idtvar,
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
  *                               - 1 take into account,
  *                               - 0 otherwise
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
@@ -398,7 +398,7 @@ cs_balance_vector(int                         idtvar,
                   int                         imasac,
                   int                         inc,
                   int                         ivisep,
-                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_equation_param_t        *eqp,
                   cs_real_3_t                 pvar[],
                   const cs_real_3_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_v,
@@ -418,49 +418,49 @@ cs_balance_vector(int                         idtvar,
                   cs_real_3_t                 smbr[])
 {
   /* Local variables */
-  int iconvp = var_cal_opt->iconv;
-  int idiffp = var_cal_opt->idiff;
-  int idftnp = var_cal_opt->idften;
-  cs_var_cal_opt_t var_cal_opt_loc;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int idftnp = eqp->idften;
+  cs_equation_param_t eqp_loc;
 
   if (f_id < 0) {
-    var_cal_opt_loc = cs_parameters_var_cal_opt_default();
-    var_cal_opt_loc.verbosity   = var_cal_opt->verbosity;
-    var_cal_opt_loc.iconv    = var_cal_opt->iconv;
-    var_cal_opt_loc.istat    = -1; /* unused in balance */
-    var_cal_opt_loc.idiff    = var_cal_opt->idiff;
-    var_cal_opt_loc.idifft   = -1; /* unused in balance */
-    var_cal_opt_loc.idften   = var_cal_opt->idften;
-    var_cal_opt_loc.iswdyn   = -1; /* unused in balance */
-    var_cal_opt_loc.ischcv   = var_cal_opt->ischcv;
-    var_cal_opt_loc.isstpc   = var_cal_opt->isstpc;
-    var_cal_opt_loc.nswrgr   = var_cal_opt->nswrgr;
-    var_cal_opt_loc.nswrsm   = -1; /* unused in balance */
-    var_cal_opt_loc.imrgra   = var_cal_opt->imrgra;
-    var_cal_opt_loc.imligr   = var_cal_opt->imligr;
-    var_cal_opt_loc.ircflu   = var_cal_opt->ircflu;
-    var_cal_opt_loc.iwgrec   = 0;  /* require field id */
-    var_cal_opt_loc.icoupl   = -1; /* require field id */
-    var_cal_opt_loc.thetav   = var_cal_opt->thetav;
-    var_cal_opt_loc.blencv   = var_cal_opt->blencv;
-    var_cal_opt_loc.blend_st = var_cal_opt->blend_st;
-    var_cal_opt_loc.epsilo   = -1.; /* unused in balance */
-    var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
-    var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
-    var_cal_opt_loc.climgr   = var_cal_opt->climgr;
-    var_cal_opt_loc.relaxv = var_cal_opt->relaxv;
+    eqp_loc = cs_parameters_equation_param_default();
+    eqp_loc.verbosity   = eqp->verbosity;
+    eqp_loc.iconv    = eqp->iconv;
+    eqp_loc.istat    = -1; /* unused in balance */
+    eqp_loc.idiff    = eqp->idiff;
+    eqp_loc.idifft   = -1; /* unused in balance */
+    eqp_loc.idften   = eqp->idften;
+    eqp_loc.iswdyn   = -1; /* unused in balance */
+    eqp_loc.ischcv   = eqp->ischcv;
+    eqp_loc.isstpc   = eqp->isstpc;
+    eqp_loc.nswrgr   = eqp->nswrgr;
+    eqp_loc.nswrsm   = -1; /* unused in balance */
+    eqp_loc.imrgra   = eqp->imrgra;
+    eqp_loc.imligr   = eqp->imligr;
+    eqp_loc.ircflu   = eqp->ircflu;
+    eqp_loc.iwgrec   = 0;  /* require field id */
+    eqp_loc.icoupl   = -1; /* require field id */
+    eqp_loc.thetav   = eqp->thetav;
+    eqp_loc.blencv   = eqp->blencv;
+    eqp_loc.blend_st = eqp->blend_st;
+    eqp_loc.epsilo   = -1.; /* unused in balance */
+    eqp_loc.epsrsm   = -1.; /* unused in balance */
+    eqp_loc.epsrgr   = eqp->epsrgr;
+    eqp_loc.climgr   = eqp->climgr;
+    eqp_loc.relaxv = eqp->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
-    cs_field_get_key_struct(f, k_id, &var_cal_opt_loc);
-    var_cal_opt_loc.thetav = var_cal_opt->thetav;
+    cs_field_get_key_struct(f, k_id, &eqp_loc);
+    eqp_loc.thetav = eqp->thetav;
   }
 
   /* Scalar diffusivity */
   if (idftnp & CS_ISOTROPIC_DIFFUSION) {
     cs_convection_diffusion_vector(idtvar,
                                    f_id,
-                                   var_cal_opt_loc,
+                                   eqp_loc,
                                    icvflb,
                                    inc,
                                    ivisep,
@@ -482,12 +482,12 @@ cs_balance_vector(int                         idtvar,
   /* Symmetric tensor diffusivity */
   else if (idftnp & CS_ANISOTROPIC_DIFFUSION) {
     /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
-    var_cal_opt_loc.idiff = 0;
+    eqp_loc.idiff = 0;
     /* Convective part */
     if (iconvp == 1) {
       cs_convection_diffusion_vector(idtvar,
                                      f_id,
-                                     var_cal_opt_loc,
+                                     eqp_loc,
                                      icvflb,
                                      inc,
                                      ivisep,
@@ -516,7 +516,7 @@ cs_balance_vector(int                         idtvar,
          nor transpose of gradient */
       cs_anisotropic_right_diffusion_vector(idtvar,
                                             f_id,
-                                            var_cal_opt_loc,
+                                            eqp_loc,
                                             inc,
                                             pvar,
                                             pvara,
@@ -533,7 +533,7 @@ cs_balance_vector(int                         idtvar,
     else if (idiffp == 1 && idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
       cs_anisotropic_left_diffusion_vector(idtvar,
                                            f_id,
-                                           var_cal_opt_loc,
+                                           eqp_loc,
                                            inc,
                                            ivisep,
                                            pvar,
@@ -578,7 +578,7 @@ cs_balance_vector(int                         idtvar,
  * \param[in]     f_id          field id (or -1)
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     inc           indicator
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
@@ -609,7 +609,7 @@ cs_balance_tensor(int                         idtvar,
                   int                         f_id,
                   int                         imasac,
                   int                         inc,
-                  cs_var_cal_opt_t           *var_cal_opt,
+                  cs_equation_param_t        *eqp,
                   cs_real_6_t                 pvar[],
                   const cs_real_6_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
@@ -627,49 +627,49 @@ cs_balance_tensor(int                         idtvar,
   CS_UNUSED(icvfli);
 
   /* Local variables */
-  int iconvp = var_cal_opt->iconv;
-  int idiffp = var_cal_opt->idiff;
-  int idftnp = var_cal_opt->idften;
-  cs_var_cal_opt_t var_cal_opt_loc;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int idftnp = eqp->idften;
+  cs_equation_param_t eqp_loc;
 
   if (f_id < 0) {
-    var_cal_opt_loc = cs_parameters_var_cal_opt_default();
-    var_cal_opt_loc.verbosity   = var_cal_opt->verbosity;
-    var_cal_opt_loc.iconv    = var_cal_opt->iconv;
-    var_cal_opt_loc.istat    = -1; /* unused in balance */
-    var_cal_opt_loc.idiff    = var_cal_opt->idiff;
-    var_cal_opt_loc.idifft   = -1; /* unused in balance */
-    var_cal_opt_loc.idften   = var_cal_opt->idften;
-    var_cal_opt_loc.iswdyn   = -1; /* unused in balance */
-    var_cal_opt_loc.ischcv   = var_cal_opt->ischcv;
-    var_cal_opt_loc.isstpc   = var_cal_opt->isstpc;
-    var_cal_opt_loc.nswrgr   = var_cal_opt->nswrgr;
-    var_cal_opt_loc.nswrsm   = -1; /* unused in balance */
-    var_cal_opt_loc.imrgra   = var_cal_opt->imrgra;
-    var_cal_opt_loc.imligr   = var_cal_opt->imligr;
-    var_cal_opt_loc.ircflu   = var_cal_opt->ircflu;
-    var_cal_opt_loc.iwgrec   = 0;  /* require field id */
-    var_cal_opt_loc.icoupl   = -1; /* require field id */
-    var_cal_opt_loc.thetav   = var_cal_opt->thetav;
-    var_cal_opt_loc.blencv   = var_cal_opt->blencv;
-    var_cal_opt_loc.blend_st = var_cal_opt->blend_st;
-    var_cal_opt_loc.epsilo   = -1.; /* unused in balance */
-    var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
-    var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
-    var_cal_opt_loc.climgr   = var_cal_opt->climgr;
-    var_cal_opt_loc.relaxv = var_cal_opt->relaxv;
+    eqp_loc = cs_parameters_equation_param_default();
+    eqp_loc.verbosity   = eqp->verbosity;
+    eqp_loc.iconv    = eqp->iconv;
+    eqp_loc.istat    = -1; /* unused in balance */
+    eqp_loc.idiff    = eqp->idiff;
+    eqp_loc.idifft   = -1; /* unused in balance */
+    eqp_loc.idften   = eqp->idften;
+    eqp_loc.iswdyn   = -1; /* unused in balance */
+    eqp_loc.ischcv   = eqp->ischcv;
+    eqp_loc.isstpc   = eqp->isstpc;
+    eqp_loc.nswrgr   = eqp->nswrgr;
+    eqp_loc.nswrsm   = -1; /* unused in balance */
+    eqp_loc.imrgra   = eqp->imrgra;
+    eqp_loc.imligr   = eqp->imligr;
+    eqp_loc.ircflu   = eqp->ircflu;
+    eqp_loc.iwgrec   = 0;  /* require field id */
+    eqp_loc.icoupl   = -1; /* require field id */
+    eqp_loc.thetav   = eqp->thetav;
+    eqp_loc.blencv   = eqp->blencv;
+    eqp_loc.blend_st = eqp->blend_st;
+    eqp_loc.epsilo   = -1.; /* unused in balance */
+    eqp_loc.epsrsm   = -1.; /* unused in balance */
+    eqp_loc.epsrgr   = eqp->epsrgr;
+    eqp_loc.climgr   = eqp->climgr;
+    eqp_loc.relaxv = eqp->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
-    cs_field_get_key_struct(f, k_id, &var_cal_opt_loc);
-    var_cal_opt_loc.thetav = var_cal_opt->thetav;
+    cs_field_get_key_struct(f, k_id, &eqp_loc);
+    eqp_loc.thetav = eqp->thetav;
   }
 
   /* Scalar diffusivity */
   if (idftnp & CS_ISOTROPIC_DIFFUSION) {
     cs_convection_diffusion_tensor(idtvar,
                                    f_id,
-                                   var_cal_opt_loc,
+                                   eqp_loc,
                                    icvflb,
                                    inc,
                                    imasac,
@@ -685,12 +685,12 @@ cs_balance_tensor(int                         idtvar,
   /* Symmetric tensor diffusivity */
   else if (idftnp & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
     /* No diffusive part */
-    var_cal_opt_loc.idiff = 0;
+    eqp_loc.idiff = 0;
     /* Convective part */
     if (iconvp == 1) {
       cs_convection_diffusion_tensor(idtvar,
                                      f_id,
-                                     var_cal_opt_loc,
+                                     eqp_loc,
                                      icvflb,
                                      inc,
                                      imasac,
@@ -707,7 +707,7 @@ cs_balance_tensor(int                         idtvar,
     if (idiffp == 1) {
       cs_anisotropic_diffusion_tensor(idtvar,
                                       f_id,
-                                      var_cal_opt_loc,
+                                      eqp_loc,
                                       inc,
                                       pvar,
                                       pvara,

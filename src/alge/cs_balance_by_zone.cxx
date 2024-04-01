@@ -53,6 +53,7 @@
 #include "cs_convection_diffusion.h"
 #include "cs_convection_diffusion_priv.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_mesh.h"
@@ -819,12 +820,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     return;
   }
 
-  /* Internal coupling variables */
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
   /* Get the calculation option from the field */
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
@@ -863,7 +860,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   }
 
   /* Internal coupling initialization*/
-  if (var_cal_opt.icoupl > 0) {
+  if (eqp->icoupl > 0) {
     const int coupling_key_id = cs_field_key_id("coupling_entity");
     const int coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
@@ -948,7 +945,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  const int imrgra = var_cal_opt.imrgra;
+  const int imrgra = eqp->imrgra;
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
                              &halo_type);
@@ -956,7 +953,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Limiters */
 
   int limiter_choice = -1;
-  int ischcp = var_cal_opt.ischcv;
+  int ischcp = eqp->ischcv;
   if (field_id != -1) {
     f = cs_field_by_id(field_id);
 
@@ -1024,7 +1021,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
   cs_real_3_t *gradup = NULL;
   cs_real_3_t *gradst = NULL;
-  if (var_cal_opt.blencv > 0 && var_cal_opt.isstpc == 0) {
+  if (eqp->blencv > 0 && eqp->isstpc == 0) {
     BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradst[c_id][0] = 0.;
@@ -1032,7 +1029,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       gradst[c_id][2] = 0.;
     }
     /* Slope test gradient */
-    if (var_cal_opt.iconv > 0)
+    if (eqp->iconv > 0)
       cs_slope_test_gradient(field_id,
                              inc,
                              halo_type,
@@ -1045,8 +1042,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   }
   /* Pure SOLU scheme without using gradient_slope_test function
      or Roe and Sweby limiters */
-  if (var_cal_opt.blencv > 0
-      && (var_cal_opt.ischcv==2 || var_cal_opt.ischcv==4)) {
+  if (eqp->blencv > 0
+      && (eqp->ischcv==2 || eqp->ischcv==4)) {
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradup[c_id][0] = 0.;
@@ -1054,7 +1051,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       gradup[c_id][2] = 0.;
     }
 
-    if (var_cal_opt.iconv > 0)
+    if (eqp->iconv > 0)
       cs_upwind_gradient(field_id,
                          inc,
                          halo_type,
@@ -1067,7 +1064,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   }
 
   /* Face viscosity */
-  int imvisf = var_cal_opt.imvisf;
+  int imvisf = eqp->imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
@@ -1092,7 +1089,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Turbulent part */
   cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
 
-  if (var_cal_opt.idifft == 1) {
+  if (eqp->idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
     cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1320,10 +1317,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     }
   }
 
-  int iconvp = var_cal_opt.iconv;
-  int idiffp = var_cal_opt.idiff;
-  int ircflp = var_cal_opt.ircflu;
-  double relaxp = var_cal_opt.relaxv;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int ircflp = eqp->ircflu;
+  double relaxp = eqp->relaxv;
 
   /* Balance on boundary faces
      -------------------------
@@ -1400,7 +1397,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      We handle different types of boundary faces separately to better
      analyze the information, but this is not mandatory. */
 
-  if (var_cal_opt.icoupl > 0) {
+  if (eqp->icoupl > 0) {
 
     /* Prepare data for sending from distant */
     BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
@@ -1465,9 +1462,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      that are interior to the total mesh
      ---------------------------------------------- */
 
-  int isstpp = var_cal_opt.isstpc;
-  double blencp = var_cal_opt.blencv;
-  double blend_st = var_cal_opt.blend_st;
+  int isstpp = eqp->isstpc;
+  double blencp = eqp->blencv;
+  double blend_st = eqp->blend_st;
   int iupwin = (blencp > 0.) ? 0 : 1;
 
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
@@ -2567,11 +2564,12 @@ cs_flux_through_surface(const char         *scalar_name,
   const int *bc_type = cs_glob_bc_type;
 
   const cs_field_t *f = cs_field_by_name_try(scalar_name);
+  if (f == NULL)
+    return;
+
   const int field_id = cs_field_id_by_name(scalar_name);
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
@@ -2640,7 +2638,7 @@ cs_flux_through_surface(const char         *scalar_name,
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   /* Face viscosity */
-  int imvisf = var_cal_opt.imvisf;
+  int imvisf = eqp->imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
@@ -2665,7 +2663,7 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Turbulent part */
   cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
 
-  if (var_cal_opt.idifft == 1) {
+  if (eqp->idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
     const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -2677,7 +2675,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
   /* Internal coupling*/
 
-  if (var_cal_opt.icoupl > 0) {
+  if (eqp->icoupl > 0) {
     const int coupling_key_id = cs_field_key_id("coupling_entity");
     const int coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
@@ -2693,7 +2691,7 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  const int imrgra = var_cal_opt.imrgra;
+  const int imrgra = eqp->imrgra;
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
                              &halo_type);
@@ -2701,7 +2699,7 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Limiters */
 
   int limiter_choice = -1;
-  int ischcp = var_cal_opt.ischcv;
+  int ischcp = eqp->ischcv;
   if (field_id != -1) {
     f = cs_field_by_id(field_id);
 
@@ -2746,7 +2744,7 @@ cs_flux_through_surface(const char         *scalar_name,
      (the slope test, limiter, SOLU, etc) */
   cs_real_3_t *gradup = NULL;
   cs_real_3_t *gradst = NULL;
-  if (var_cal_opt.blencv > 0 && var_cal_opt.isstpc == 0) {
+  if (eqp->blencv > 0 && eqp->isstpc == 0) {
     BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradst[c_id][0] = 0.;
@@ -2754,7 +2752,7 @@ cs_flux_through_surface(const char         *scalar_name,
       gradst[c_id][2] = 0.;
     }
     /* Slope test gradient */
-    if (var_cal_opt.iconv > 0)
+    if (eqp->iconv > 0)
       cs_slope_test_gradient(f->id,
                              1, /* inc */
                              CS_HALO_STANDARD,
@@ -2767,8 +2765,8 @@ cs_flux_through_surface(const char         *scalar_name,
 
   /* Pure SOLU scheme without using gradient_slope_test function
      or Roe and Sweby limiters */
-  if (var_cal_opt.blencv > 0
-      && (var_cal_opt.ischcv==2 || var_cal_opt.ischcv==4)) {
+  if (eqp->blencv > 0
+      && (eqp->ischcv==2 || eqp->ischcv==4)) {
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradup[c_id][0] = 0.;
@@ -2776,7 +2774,7 @@ cs_flux_through_surface(const char         *scalar_name,
       gradup[c_id][2] = 0.;
     }
 
-    if (var_cal_opt.iconv > 0)
+    if (eqp->iconv > 0)
       cs_upwind_gradient(f->id,
                          1, /* inc */
                          CS_HALO_STANDARD,
@@ -2829,10 +2827,10 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Boundary faces contribution
      --------------------------- */
 
-  int iconvp = var_cal_opt.iconv;
-  int idiffp = var_cal_opt.idiff;
-  int ircflp = var_cal_opt.ircflu;
-  double relaxp = var_cal_opt.relaxv;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int ircflp = eqp->ircflu;
+  double relaxp = eqp->relaxv;
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++) {
 
@@ -2907,7 +2905,7 @@ cs_flux_through_surface(const char         *scalar_name,
     We handle different types of boundary faces separately to better
     analyze the information, but this is not mandatory. */
 
-  if (var_cal_opt.icoupl > 0) {
+  if (eqp->icoupl > 0) {
 
     cs_lnum_t *inv_b_face_sel_ids = NULL;
 
@@ -2999,9 +2997,9 @@ cs_flux_through_surface(const char         *scalar_name,
 
   /* Balance on selected interior faces */
 
-  int isstpp = var_cal_opt.isstpc;
-  double blencp = var_cal_opt.blencv;
-  double blend_st = var_cal_opt.blend_st;
+  int isstpp = eqp->isstpc;
+  double blencp = eqp->blencv;
+  double blend_st = eqp->blend_st;
   int iupwin = (blencp > 0.) ? 0 : 1;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++) {

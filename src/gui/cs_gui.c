@@ -3635,11 +3635,10 @@ cs_gui_linear_solvers(void)
 
         /* If we have convection, set appropriate options */
         if (f_id >= 0) {
-          cs_var_cal_opt_t var_cal_opt;
-          cs_field_get_key_struct(cs_field_by_id(f_id),
-                                  cs_field_key_id("var_cal_opt"),
-                                  &var_cal_opt);
-          if (var_cal_opt.iconv > 0)
+          const cs_equation_param_t *eqp =
+            cs_field_get_equation_param_const(cs_field_by_id(f_id));
+
+          if (eqp->iconv > 0)
             cs_multigrid_set_solver_options
               (mg,
                CS_SLES_P_SYM_GAUSS_SEIDEL,

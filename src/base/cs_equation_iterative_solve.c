@@ -153,7 +153,7 @@ BEGIN_C_DECLS
  *                               - 1 do multiply the convectiv term by Cp
  * \param[in]     normp         Reference norm to solve the system (optional)
  *                              if negative: recomputed here
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
  *                               \f$ a^n \f$
@@ -202,7 +202,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    int                   iescap,
                                    int                   imucpp,
                                    cs_real_t             normp,
-                                   cs_var_cal_opt_t     *var_cal_opt,
+                                   cs_equation_param_t   *eqp,
                                    const cs_real_t       pvara[],
                                    const cs_real_t       pvark[],
                                    const cs_field_bc_coeffs_t *bc_coeffs,
@@ -227,15 +227,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Local variables */
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  int iconvp = var_cal_opt->iconv;
-  int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->verbosity;
-  int iswdyp = var_cal_opt->iswdyn;
-  int ndircp = var_cal_opt->ndircl;
-  double epsrsp = var_cal_opt->epsrsm;
-  double epsilp = var_cal_opt->epsilo;
-  double relaxp = var_cal_opt->relaxv;
-  double thetap = var_cal_opt->thetav;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int iwarnp = eqp->verbosity;
+  int iswdyp = eqp->iswdyn;
+  int ndircp = eqp->ndircl;
+  double epsrsp = eqp->epsrsm;
+  double epsilp = eqp->epsilo;
+  double relaxp = eqp->relaxv;
+  double thetap = eqp->thetav;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -375,14 +375,14 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        has to impose 0 on mass accumulation. */
     imasac = 0;
 
-    var_cal_opt->thetav = thetex;
+    eqp->thetav = thetex;
 
     cs_balance_scalar(idtvar,
                       f_id,
                       imucpp,
                       imasac,
                       inc,
-                      var_cal_opt,
+                      eqp,
                       NULL, /* pvar == pvara */
                       pvara,
                       bc_coeffs,
@@ -398,7 +398,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       icvfli,
                       smbrp);
 
-    var_cal_opt->thetav = thetap;
+    eqp->thetav = thetap;
 
   }
 
@@ -424,8 +424,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      except for Weight Matrix (nswrsp=-1) */
   inc = 1;
 
-  if (var_cal_opt->nswrsm == -1) {
-    var_cal_opt->nswrsm = 1;
+  if (eqp->nswrsm == -1) {
+    eqp->nswrsm = 1;
     inc = 0;
   }
 
@@ -442,7 +442,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     imucpp,
                     imasac,
                     inc,
-                    var_cal_opt,
+                    eqp,
                     pvar,
                     pvara,
                     bc_coeffs,
@@ -541,7 +541,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   BFT_FREE(w1);
 
   /* Warning: for weight matrix, one and only one sweep is done. */
-  nswmod = CS_MAX(var_cal_opt->nswrsm, 1);
+  nswmod = CS_MAX(eqp->nswrsm, 1);
 
   /* Reconstruction loop (beginning) */
   if (iterns <= 1)
@@ -608,7 +608,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                         imucpp,
                         imasac,
                         inc,
-                        var_cal_opt,
+                        eqp,
                         dpvar,
                         NULL, /* dpvara == dpvar */
                         bc_coeffs,
@@ -753,7 +753,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       imucpp,
                       imasac,
                       inc,
-                      var_cal_opt,
+                      eqp,
                       pvar,
                       pvara,
                       bc_coeffs,
@@ -851,12 +851,12 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       /* If thetex = 0, no need to do more */
       if (fabs(thetex) > cs_math_epzero) {
-        thetap = var_cal_opt->thetav;
-        var_cal_opt->thetav = thetex;
+        thetap = eqp->thetav;
+        eqp->thetav = thetex;
 
         cs_face_convection_scalar(idtvar,
                                   f_id,
-                                  *var_cal_opt,
+                                  *eqp,
                                   icvflb,
                                   inc,
                                   imasac,
@@ -869,12 +869,12 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                   i_flux2,
                                   b_flux->val);
 
-        var_cal_opt->thetav = thetap;
+        eqp->thetav = thetap;
       }
 
       cs_face_convection_scalar(idtvar,
                                 f_id,
-                                *var_cal_opt,
+                                *eqp,
                                 icvflb,
                                 inc,
                                 imasac,
@@ -893,16 +893,18 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       inc  = 0;
 
-      cs_var_cal_opt_t var_cal_opt_loc;
+      cs_equation_param_t eqp_loc;
       int k_id = cs_field_key_id("var_cal_opt");
-      cs_field_get_key_struct(f, k_id, &var_cal_opt_loc);
 
-      var_cal_opt_loc.nswrgr = 0;
-      var_cal_opt_loc.blencv = 0.;
+      /* copy of the equation param structure in eqp_loc */
+      cs_field_get_key_struct(f, k_id, &eqp_loc);
+
+      eqp_loc.nswrgr = 0;
+      eqp_loc.blencv = 0.;
 
       cs_face_convection_scalar(idtvar,
                                 f_id,
-                                var_cal_opt_loc,
+                                eqp_loc,
                                 icvflb,
                                 inc,
                                 imasac,
@@ -949,7 +951,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       imucpp,
                       imasac,
                       inc,
-                      var_cal_opt,
+                      eqp,
                       pvar,
                       pvara,
                       bc_coeffs,
@@ -1046,7 +1048,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               - 1 take into account,
  *                               - 0 otherwise
  * \param[in]      iescap        compute the predictor indicator if >= 1
- * \param[in]      var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]      eqp   pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]      pvara         variable at the previous time step
  *                               \f$ \vect{a}^n \f$
@@ -1094,7 +1096,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const char           *name,
                                    int                   ivisep,
                                    int                   iescap,
-                                   cs_var_cal_opt_t     *var_cal_opt,
+                                   cs_equation_param_t  *eqp,
                                    const cs_real_3_t     pvara[],
                                    const cs_real_3_t     pvark[],
                                    const cs_field_bc_coeffs_t *bc_coeffs_v,
@@ -1120,16 +1122,16 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  int iconvp = var_cal_opt->iconv;
-  int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->verbosity;
-  int iswdyp = var_cal_opt->iswdyn;
-  int idftnp = var_cal_opt->idften;
-  int ndircp = var_cal_opt->ndircl;
-  double epsrsp = var_cal_opt->epsrsm;
-  double epsilp = var_cal_opt->epsilo;
-  double relaxp = var_cal_opt->relaxv;
-  double thetap = var_cal_opt->thetav;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int iwarnp = eqp->verbosity;
+  int iswdyp = eqp->iswdyn;
+  int idftnp = eqp->idften;
+  int ndircp = eqp->ndircl;
+  double epsrsp = eqp->epsrsm;
+  double epsilp = eqp->epsilo;
+  double relaxp = eqp->relaxv;
+  double thetap = eqp->thetav;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -1309,14 +1311,14 @@ cs_equation_iterative_solve_vector(int                   idtvar,
      * has to impose 0 on mass accumulation. */
     imasac = 0;
 
-    var_cal_opt->thetav = thetex;
+    eqp->thetav = thetex;
 
     cs_balance_vector(idtvar,
                       f_id,
                       imasac,
                       inc,
                       ivisep,
-                      var_cal_opt,
+                      eqp,
                       NULL, /* pvar == pvara */
                       pvara,
                       bc_coeffs_v,
@@ -1341,7 +1343,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
       cs_field_current_to_previous(b_vf);
     }
 
-    var_cal_opt->thetav = thetap;
+    eqp->thetav = thetap;
   }
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
@@ -1369,8 +1371,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    * except for Weight Matrix (nswrsp=-1) */
   inc = 1;
 
-  if (var_cal_opt->nswrsm == -1) {
-    var_cal_opt->nswrsm = 1;
+  if (eqp->nswrsm == -1) {
+    eqp->nswrsm = 1;
     inc = 0;
   }
 
@@ -1391,7 +1393,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     imasac,
                     inc,
                     ivisep,
-                    var_cal_opt,
+                    eqp,
                     pvar,
                     pvara,
                     bc_coeffs_v,
@@ -1523,7 +1525,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   BFT_FREE(w1);
 
   /* Warning: for Weight Matrix, one and only one sweep is done. */
-  nswmod = CS_MAX(var_cal_opt->nswrsm, 1);
+  nswmod = CS_MAX(eqp->nswrsm, 1);
 
   isweep = 1;
 
@@ -1598,7 +1600,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                         imasac,
                         inc,
                         ivisep,
-                        var_cal_opt,
+                        eqp,
                         dpvar,
                         NULL, /* dpvar */
                         bc_coeffs_v,
@@ -1767,7 +1769,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       imasac,
                       inc,
                       ivisep,
-                      var_cal_opt,
+                      eqp,
                       pvar,
                       pvara,
                       bc_coeffs_v,
@@ -1856,7 +1858,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       imasac,
                       inc,
                       ivisep,
-                      var_cal_opt,
+                      eqp,
                       pvar,
                       pvara,
                       bc_coeffs_v,
@@ -1959,7 +1961,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
  * \param[in]     name          associated name if f_id < 0, or NULL
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp   pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
  *                               \f$ \vect{a}^n \f$
@@ -2000,7 +2002,7 @@ void
 cs_equation_iterative_solve_tensor(int                         idtvar,
                                    int                         f_id,
                                    const char                 *name,
-                                   cs_var_cal_opt_t           *var_cal_opt,
+                                   cs_equation_param_t        *eqp,
                                    const cs_real_6_t           pvara[],
                                    const cs_real_6_t           pvark[],
                                    const cs_field_bc_coeffs_t *bc_coeffs_ts,
@@ -2023,16 +2025,16 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  int iconvp = var_cal_opt->iconv;
-  int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->verbosity;
-  int iswdyp = var_cal_opt->iswdyn;
-  int idftnp = var_cal_opt->idften;
-  int ndircp = var_cal_opt->ndircl;
-  double epsrsp = var_cal_opt->epsrsm;
-  double epsilp = var_cal_opt->epsilo;
-  double relaxp = var_cal_opt->relaxv;
-  double thetap = var_cal_opt->thetav;
+  int iconvp = eqp->iconv;
+  int idiffp = eqp->idiff;
+  int iwarnp = eqp->verbosity;
+  int iswdyp = eqp->iswdyn;
+  int idftnp = eqp->idften;
+  int ndircp = eqp->ndircl;
+  double epsrsp = eqp->epsrsm;
+  double epsilp = eqp->epsilo;
+  double relaxp = eqp->relaxv;
+  double thetap = eqp->thetav;
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
@@ -2178,13 +2180,13 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
      * has to impose 0 on mass accumulation. */
     imasac = 0;
 
-    var_cal_opt->thetav = thetex;
+    eqp->thetav = thetex;
 
     cs_balance_tensor(idtvar,
                       f_id,
                       imasac,
                       inc,
-                      var_cal_opt,
+                      eqp,
                       NULL, /* pvar == pvara */
                       pvara,
                       bc_coeffs_ts,
@@ -2199,7 +2201,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                       icvfli,
                       smbrp);
 
-    var_cal_opt->thetav = thetap;
+    eqp->thetav = thetap;
   }
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
@@ -2227,8 +2229,8 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
    * except for Weight Matrix (nswrsp=-1) */
   inc = 1;
 
-  if (var_cal_opt->nswrsm == -1) {
-    var_cal_opt->nswrsm = 1;
+  if (eqp->nswrsm == -1) {
+    eqp->nswrsm = 1;
     inc = 0;
   }
 
@@ -2248,7 +2250,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                     f_id,
                     imasac,
                     inc,
-                    var_cal_opt,
+                    eqp,
                     pvar,
                     pvara,
                     bc_coeffs_ts,
@@ -2370,7 +2372,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
   BFT_FREE(w1);
 
   /* Warning: for Weight Matrix, one and only one sweep is done. */
-  nswmod = CS_MAX(var_cal_opt->nswrsm, 1);
+  nswmod = CS_MAX(eqp->nswrsm, 1);
 
   isweep = 1;
 
@@ -2443,7 +2445,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                         lvar,
                         imasac,
                         inc,
-                        var_cal_opt,
+                        eqp,
                         dpvar,
                         NULL, /* dpvar */
                         bc_coeffs_ts,
@@ -2608,7 +2610,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                       f_id,
                       imasac,
                       inc,
-                      var_cal_opt,
+                      eqp,
                       pvar,
                       pvara,
                       bc_coeffs_ts,

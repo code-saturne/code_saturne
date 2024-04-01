@@ -45,6 +45,7 @@
 #include "bft_printf.h"
 
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -1387,11 +1388,10 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
     rhotot = gamma / (gamma - 1.) * (ptot+gamma*psginf) / bc_en[face_id];
     old_pstat = ptot;
 
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-    cs_var_cal_opt_t var_cal_opt;
-    cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &var_cal_opt);
+    const cs_equation_param_t *eqp =
+      cs_field_get_equation_param_const(CS_F_(p));
 
-    eps = var_cal_opt.epsrsm;
+    eps = eqp->epsrsm;
     nitermax = 100;
     res = 1.;
 

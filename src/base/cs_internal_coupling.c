@@ -66,6 +66,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_convection_diffusion.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_selector.h"
 #include "cs_parall.h"
@@ -2341,15 +2342,13 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
 
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
   cs_real_t thetap = 0.0;
   int idiffp = 0;
 
-  if (var_cal_opt.icoupl > 0) {
-    thetap = var_cal_opt.thetav;
-    idiffp = var_cal_opt.idiff;
+  if (eqp->icoupl > 0) {
+    thetap = eqp->thetav;
+    idiffp = eqp->idiff;
   }
 
   /* Exchange x */
@@ -2516,15 +2515,13 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   const cs_lnum_t n_distant = cpl->n_distant;
   const cs_lnum_t n_local = cpl->n_local;
 
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
   cs_real_t thetap = 0.0;
   int idiffp = 0;
 
-  if (var_cal_opt.icoupl > 0) {
-    thetap = var_cal_opt.thetav;
-    idiffp = var_cal_opt.idiff;
+  if (eqp->icoupl > 0) {
+    thetap = eqp->thetav;
+    idiffp = eqp->idiff;
   }
 
   /* Compute global ids and exchange coefficient */
@@ -2647,9 +2644,6 @@ cs_internal_coupling_setup(void)
   const int coupling_key_id = cs_field_key_id("coupling_entity");
   int coupling_id = 0;
 
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
   const int n_fields = cs_field_n_fields();
 
   /* Definition of coupling_ids as keys of variable fields */
@@ -2658,8 +2652,8 @@ cs_internal_coupling_setup(void)
   for (field_id = 0; field_id < n_fields; field_id++) {
     f = cs_field_by_id(field_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (var_cal_opt.icoupl > 0) {
+      const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+      if (eqp->icoupl > 0) {
         cs_field_set_key_int(f, coupling_key_id, coupling_id);
         // coupling_id++;
       }
@@ -2672,8 +2666,8 @@ cs_internal_coupling_setup(void)
   for (field_id = 0; field_id < n_fields; field_id++) {
     f = cs_field_by_id(field_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (var_cal_opt.icoupl > 0) {
+      const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+      if (eqp->icoupl > 0) {
         coupling_id++;
       }
     }
@@ -2820,15 +2814,11 @@ cs_internal_coupling_map(cs_mesh_t   *mesh)
 void
 cs_internal_coupling_add_entity(int        f_id)
 {
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
   cs_field_t* f = cs_field_by_id(f_id);
 
   if (f->type & CS_FIELD_VARIABLE) {
-    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-    var_cal_opt.icoupl = 1;
-    cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->icoupl = 1;
   }
   else
     bft_error(__FILE__, __LINE__, 0,

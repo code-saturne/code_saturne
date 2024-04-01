@@ -170,19 +170,19 @@ cs_rad_transfer_pun(int                          iband,
 
   /* Solver settings and initialization */
 
-  cs_var_cal_opt_t  vcopt = cs_parameters_var_cal_opt_default();
+  cs_equation_param_t eqp_loc = cs_parameters_equation_param_default();
 
-  vcopt.imvisf = cs_glob_space_disc->imvisf;
-  vcopt.imrgra = cs_glob_space_disc->imrgra;
-  vcopt.istat  = -1;
-  vcopt.ndircl =  1; /* There are Dirichlet BCs  */
-  vcopt.isstpc =  0;
-  vcopt.verbosity =  cs_glob_rad_transfer_params->verbosity;
-  vcopt.blencv =  0.0;
-  vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
-  vcopt.iconv  =  0;      /* No convection for P1 model */
-  vcopt.idiff  =  1;      /* Diffusion equation */
-  vcopt.idifft = -1;
+  eqp_loc.imvisf = cs_glob_space_disc->imvisf;
+  eqp_loc.imrgra = cs_glob_space_disc->imrgra;
+  eqp_loc.istat  = -1;
+  eqp_loc.ndircl =  1; /* There are Dirichlet BCs  */
+  eqp_loc.isstpc =  0;
+  eqp_loc.verbosity =  cs_glob_rad_transfer_params->verbosity;
+  eqp_loc.blencv =  0.0;
+  eqp_loc.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+  eqp_loc.iconv  =  0;      /* No convection for P1 model */
+  eqp_loc.idiff  =  1;      /* Diffusion equation */
+  eqp_loc.idifft = -1;
 
   int iescap = 0;
   int imucpp = 0;
@@ -211,7 +211,7 @@ cs_rad_transfer_pun(int                          iband,
 
   cs_face_viscosity(cs_glob_mesh,
                     cs_glob_mesh_quantities,
-                    vcopt.imvisf,
+                    eqp_loc.imvisf,
                     ckmel,
                     viscf,
                     viscb);
@@ -226,7 +226,7 @@ cs_rad_transfer_pun(int                          iband,
                                      iescap,
                                      imucpp,
                                      -1, /* normp */
-                                     &vcopt,
+                                     &eqp_loc,
                                      thetaa,
                                      thetaa,
                                      bc_coeffs,
@@ -260,7 +260,7 @@ cs_rad_transfer_pun(int                          iband,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(vcopt.imrgra,
+  cs_gradient_type_by_imrgra(eqp_loc.imrgra,
                              &gradient_type,
                              &halo_type);
 

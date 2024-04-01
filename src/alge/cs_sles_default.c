@@ -621,19 +621,14 @@ cs_sles_default_get_verbosity(int          f_id,
   int retval = 0;
 
   static int k_log = -1;
-  static int k_cal_opt_id = -1;
 
   if (k_log < 0)
     k_log = cs_field_key_id("log");
-  if (k_cal_opt_id < 0)
-    k_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   if (f_id > -1) {
     const cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_var_cal_opt_t var_cal_opt;
-      cs_field_get_key_struct(f, k_cal_opt_id, &var_cal_opt);
-      retval = var_cal_opt.verbosity;
+      retval = cs_field_get_equation_param_const(f)->verbosity;
     }
     else
       retval = cs_field_get_key_int(f, k_log);

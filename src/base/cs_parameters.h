@@ -492,15 +492,15 @@ cs_parameters_output_complete(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a local variable calculation options structure,
+ * \brief Return a local equation param structure,
  *        with default options.
  *
- * \return  variable calculations options structure
+ * \return  equation param structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_var_cal_opt_t
-cs_parameters_var_cal_opt_default(void);
+cs_equation_param_t
+cs_parameters_equation_param_default(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

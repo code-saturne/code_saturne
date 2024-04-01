@@ -100,7 +100,7 @@ BEGIN_C_DECLS
  *                               - 1 do multiply the convectiv term by Cp
  * \param[in]     normp         Reference norm to solve the system (optional)
  *                              if negative: recomputed here
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
  *                               \f$ a^n \f$
@@ -149,7 +149,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    int                   iescap,
                                    int                   imucpp,
                                    cs_real_t             normp,
-                                   cs_var_cal_opt_t     *var_cal_opt,
+                                   cs_equation_param_t   *eqp,
                                    const cs_real_t       pvara[],
                                    const cs_real_t       pvark[],
                                    const cs_field_bc_coeffs_t *bc_coeffs,
@@ -226,7 +226,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               - 1 take into account,
  *                               - 0 otherwise
  * \param[in]      iescap        compute the predictor indicator if >= 1
- * \param[in]      var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]      eqp   pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]      pvara         variable at the previous time step
  *                               \f$ \vect{a}^n \f$
@@ -274,7 +274,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const char           *name,
                                    int                   ivisep,
                                    int                   iescap,
-                                   cs_var_cal_opt_t     *var_cal_opt,
+                                   cs_equation_param_t  *eqp,
                                    const cs_real_3_t     pvara[],
                                    const cs_real_3_t     pvark[],
                                    const cs_field_bc_coeffs_t *bc_coeffs_v,
@@ -345,7 +345,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
  * \param[in]     name          associated name if f_id < 0, or NULL
- * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
+ * \param[in]     eqp   pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
  *                               \f$ \vect{a}^n \f$
@@ -386,7 +386,7 @@ void
 cs_equation_iterative_solve_tensor(int                         idtvar,
                                    int                         f_id,
                                    const char                 *name,
-                                   cs_var_cal_opt_t           *var_cal_opt,
+                                   cs_equation_param_t        *eqp,
                                    const cs_real_6_t           pvara[],
                                    const cs_real_6_t           pvark[],
                                    const cs_field_bc_coeffs_t *bc_coeffs_ts,
