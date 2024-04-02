@@ -116,14 +116,12 @@ Several types of tools may be available. We list a few commonly available tools,
     on the command line.
     The files produced are text files, but can also be visualized with the [Massif-vizualizer](https://apps.kde.org/fr/massif-visualizer/) application where available.
 
-  - [Cachegrind](https://valgrind.org/info/tools.html#cachegrind) profiles cache usage, and can be used in a similar manner, using
+  - [Callgrind](https://valgrind.org/docs/manual/cl-manual.html) functions as a "general purpose" profiler, and can be used in a similar manner, using
 ```
-    valgrind --tool=cachegrind
+    valgrind --tool=callgrind
 ```
-    Data may be visualized using the [kcachegrind](https://kcachegrind.github.io/html/Home.html) tool.
-    Note also that since cache behavior is simulated, the various cach sizes used may be modified, and the effect on behavior observed.
 
-  - [Callgrind](https://valgrind.org/docs/manual/cl-manual.html) functions as a "general purpose" profiler. Combined with the [kcachegrind](https://kcachegrind.github.io/html/Home.html) tool, it is extremely easy to use on a Linux workstation. It allows easy visualization of call trees and hot spots, as illustrated below:
+ Combined with the [kcachegrind](https://kcachegrind.github.io/html/Home.html) visualization tool, it is extremely easy to use on a Linux workstation. It allows easy visualization of call trees and hot spots, as illustrated below:
 
   \image html dg/kcachegrind.png "GDB in terminal mode" width=80%
 
