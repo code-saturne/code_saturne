@@ -1238,14 +1238,14 @@ if test "x$NVCC" != "x" ; then
   case "$cs_nvcc_hc" in
     gcc)
       nvccflags_default="--expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal"
-      nvccflags_default_cc_omp="-fopenmp"
+      nvccflags_default_cpp_omp="-fopenmp"
       ;;
     clang)
       nvccflags_default="--expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wmissing-prototypes,-Wuninitialized -Wunused"
-      nvccflags_default_cc_omp="-fopenmp=libomp"
+      nvccflags_default_cpp_omp="-fopenmp=libomp"
       ;;
     nvc)
-      nvccflags_default_cc_omp="-mp"
+      nvccflags_default_cpp_omp="-mp"
       ;;
     *)
       ;;
