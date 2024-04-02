@@ -105,15 +105,15 @@ cs_user_source_terms(cs_domain_t  *domain,
    *
    * In the following example:
    *   A = - rho * CKP
-   *   B =   XMMT
+   *   B =   MMT
    *
    * with:
    *  CKP = 1.0   [1/s]      (return term on velocity)
-   *  MMT = 100.0 [kg/m2/s2] (momentum production by volume and time unit)
+   *  MMT = 100.0 [Pa/m]     (momentum production by volume and time unit)
    *
    * which yields:
-   *  st_imp[i][0][0] = cell_f_vol[i] * A = - cell_f_vol[i]*(rho*CKP)
-   *  st_exp[i][0]    = cell_f_vol[i] * B =   cell_f_vol[i]*(XMMT)
+   *  st_imp[i][0][0] = cell_f_vol[i] * A = - cell_f_vol[i] * rho * CKP
+   *  st_exp[i][0]    = cell_f_vol[i] * B =   cell_f_vol[i]       * MMT
    */
 
   /*! [st_momentum_e_1] */
@@ -126,11 +126,11 @@ cs_user_source_terms(cs_domain_t  *domain,
     /* Density */
 
     const cs_real_t ckp = 10.0;
-    const cs_real_t xmmt = 100.0;
+    const cs_real_t mmt = 100.0;
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       _st_imp[i][0][0] = - cell_f_vol[i] * cpro_rom[i] * ckp;
-      _st_exp[i][0]    =   cell_f_vol[i] * cpro_rom[i] * xmmt;
+      _st_exp[i][0]    =   cell_f_vol[i] *               mmt;
     }
 
   }
