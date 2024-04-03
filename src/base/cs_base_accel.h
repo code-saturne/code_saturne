@@ -30,10 +30,14 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
+
+#if defined(SYCL_LANGUAGE_VERSION)
+#include <sycl/sycl.hpp>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -168,6 +172,12 @@ extern int cs_mpi_device_support;
 
 #define cs_mpi_device_support 0;
 
+#endif
+
+/*! Default queue for SYCL */
+
+#if defined(SYCL_LANGUAGE_VERSION)
+extern sycl::queue  cs_glob_sycl_queue;
 #endif
 
 /*=============================================================================
@@ -915,6 +925,26 @@ int
 cs_omp_target_select_default_device(void);
 
 #endif /* defined(HAVE_OPENMP_TARGET) */
+
+#if defined(HAVE_SYCL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set SYCL device based on SYCL device selector.
+ *
+ * Should be based on based on MPI rank and number of devices in the future.
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ *
+ * \return  selected device id, or -1 if no usable device is available
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sycl_select_default_device(void);
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 

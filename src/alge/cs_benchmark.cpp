@@ -354,9 +354,9 @@ _mat_vec_exdiag_native_v2(bool                 accel,
   if (accel == false)
     ctx.set_n_min_for_gpu(100000000);
 
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE
-                           (cs_lnum_t          face_id,
-                            cs_dispatch_sum_t  sum_type) {
+  cs_dispatch_sum_type_t sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 

@@ -477,6 +477,32 @@ CS_AC_TEST_FC_MOD
 AC_FC_LIBRARY_LDFLAGS
 
 #------------------------------------------------------------------------------
+# Determine SYCL support
+#------------------------------------------------------------------------------
+
+cs_have_sycl=no
+
+AC_ARG_ENABLE(sycl,
+  [AS_HELP_STRING([--enable-sycl], [enable SYCL support])],
+  [
+    case "${enableval}" in
+      yes) cs_have_sycl=yes ;;
+      no)  cs_have_sycl=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-sycl]) ;;
+    esac
+  ],
+  [ cs_have_sycl=no ]
+)
+
+if test "x$cs_have_sycl" = "xyes" ; then
+  CXXFLAGS_SYCL="-fsycl"
+  AC_DEFINE([HAVE_SYCL], 1, [SYCL support])
+  AC_SUBST(CXXFLAGS_SYCL)
+fi
+
+AC_SUBST(cs_have_sycl)
+
+#------------------------------------------------------------------------------
 # Determine OpenMP support
 #------------------------------------------------------------------------------
 
@@ -604,6 +630,10 @@ if test "x$auto_flags" = "xyes" ; then
     AC_SUBST(NVCCFLAGS_DBG)
     AC_SUBST(NVCCFLAGS_OPT)
     AC_SUBST(NVCCCFLAGS_HOT)
+  fi
+
+  if test "$cs_have_sycl" = "yes"; then
+    cs_have_accel=yes
   fi
 
   if test "$cs_have_openmp_target" = "yes"; then
@@ -1290,6 +1320,7 @@ if test x$cs_have_cuda = xyes ; then
   echo "   cuSPARSE support: "$cs_have_cusparse""
   echo "   use CUDA in .cpp files: "$cs_enable_cuda_cpp""
 fi
+echo " SYCL support: "$cs_have_sycl""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$with_blas_type""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
 if test x$cs_have_parmetis = xno ; then

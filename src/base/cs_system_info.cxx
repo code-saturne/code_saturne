@@ -30,6 +30,14 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <iostream>
+#include <string>
+
+#if defined(SYCL_LANGUAGE_VERSION)
+#include <sycl/sycl.hpp>
+#include <dpct/dpct.hpp>
+#endif
+
 #include <assert.h>
 #include <string.h>
 #include <time.h>
@@ -59,6 +67,9 @@
 #include "bft_printf.h"
 #include "cs_log.h"
 
+#if defined(HAVE_ACCEL)
+#include "cs_base_accel.h"
+#endif
 #if defined(HAVE_CUDA)
 #include "cs_base_cuda.h"
 #endif
@@ -88,8 +99,6 @@ cs_sles_petsc_library_info(cs_log_t  log_type);
 #include "cs_system_info.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -298,6 +307,46 @@ _sys_info_release(char      *issue_str,
 
 #endif
 }
+
+#if defined(SYCL_LANGUAGE_VERSION)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Log information on available CUDA devices.
+ *
+ * \param[in]  log_id  id of log file in which to print information
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sycl_device_info(cs_log_t  log_id)
+{
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
+
+  for (auto platform : sycl::platform::get_platforms()) {
+
+    int gpu_count = 0;
+    for (auto device : platform.get_devices()) {
+      if (device.is_gpu())
+        gpu_count++;
+    }
+    if (gpu_count == 0)
+      continue;
+
+    cs_log_printf(logs[log_id],
+                  _("  Platform: %s\n"),
+                  platform.get_info<sycl::info::platform::name>().c_str());
+
+    for (auto device : platform.get_devices()) {
+      if (device.is_gpu())
+        cs_log_printf(logs[log_id],
+                      _("    SYCL device: %s\n"),
+                      device.get_info<sycl::info::device::name>().c_str());
+    }
+  }
+}
+
+#endif /* defined(SYCL_LANGUAGE_VERSION) */
 
 #if defined(HAVE_MPI)
 
@@ -570,8 +619,12 @@ _system_info(bool  log)
 
 #if defined(HAVE_CUDA)
   for (int log_id = 0; log_id < n_logs; log_id++) {
-    cs_base_cuda_device_info(log_id);
+    cs_base_cuda_device_info((cs_log_t)log_id);
     cs_base_cuda_version_info(logs[log_id]);
+  }
+#elif defined(SYCL_LANGUAGE_VERSION)
+  for (int log_id = 0; log_id < n_logs; log_id++) {
+    _sycl_device_info((cs_log_t)log_id);
   }
 #endif
 
@@ -775,6 +828,8 @@ _omp_version_info(bool  log)
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions

@@ -687,6 +687,8 @@ cs_base_cuda_select_default_device(void)
 
   cs_glob_cuda_device_id = device_id;
 
+  cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+
   /* Also query some device properties */
 
   struct cudaDeviceProp prop;

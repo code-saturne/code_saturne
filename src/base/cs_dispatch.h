@@ -32,13 +32,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
-#include "cs_assert.h"
-#include "cs_mesh.h"
-
-#ifdef __NVCC__
-#include "cs_base_cuda.h"
-#include "cs_alge_cuda.cuh"
-#endif
 
 /*----------------------------------------------------------------------------
  * Standard C++ library headers
@@ -46,9 +39,21 @@
 
 #include <utility>
 
+#if defined(SYCL_LANGUAGE_VERSION)
+#include <sycl/sycl.hpp>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "cs_assert.h"
+#include "cs_mesh.h"
+
+#ifdef __NVCC__
+#include "cs_base_cuda.h"
+#include "cs_alge_cuda.cuh"
+#endif
 
 /*=============================================================================
  * Macro definitions
@@ -81,7 +86,7 @@ typedef enum {
                                 numbering/coloring) */
   CS_DISPATCH_SUM_ATOMIC   /*!< Atomic sum */
 
-} cs_dispatch_sum_t;
+} cs_dispatch_sum_type_t;
 
 /*!
  * Provide default implementations of a cs_context based on parallel_for
@@ -96,33 +101,37 @@ public:
   // Loop over n elements
   // Must be redefined by the child class
   template <class F, class... Args>
-  decltype(auto) parallel_for(cs_lnum_t n, F&& f, Args&&... args) = delete;
-
-  // Loop over n elements with sum type info
-  // Must be redefined by the child class
-  template <class F, class... Args>
-  decltype(auto) parallel_for_sum(cs_lnum_t n, F&& f, Args&&... args) = delete;
+  decltype(auto)
+  parallel_for(cs_lnum_t n, F&& f, Args&&... args) = delete;
 
   // Assembly loop over all internal faces
   template <class F, class... Args>
-  decltype(auto) parallel_for_i_faces(const cs_mesh_t*  m,
-                                      F&&               f,
-                                      Args&&...         args);
+  decltype(auto)
+  parallel_for_i_faces(const cs_mesh_t*  m,
+                       F&&               f,
+                       Args&&...         args);
 
   // Assembly loop over all boundary faces
   template <class F, class... Args>
-  decltype(auto) parallel_for_b_faces(const cs_mesh_t*  m,
-                                      F&&               f,
-                                      Args&&...         args);
+  decltype(auto)
+  parallel_for_b_faces(const cs_mesh_t*  m,
+                       F&&               f,
+                       Args&&...         args);
+
+  // Query sum type for assembly loop over all interior faces
+  // Must be redefined by the child class
+  bool
+  try_get_parallel_for_i_faces_sum_type(const cs_mesh_t*         m,
+                                        cs_dispatch_sum_type_t&  st);
 
 };
 
-// Default implementation of parallel_for_i_faces based on parallel_for_sum
+// Default implementation of parallel_for_i_faces based on parallel_for
 template <class Derived>
 template <class F, class... Args>
 decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_i_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for_sum
+  return static_cast<Derived*>(this)->parallel_for
                                         (m->n_i_faces,
                                          static_cast<F&&>(f),
                                          static_cast<Args&&>(args)...);
@@ -133,10 +142,19 @@ template <class Derived>
 template <class F, class... Args>
 decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_b_faces
   (const cs_mesh_t* m, F&& f, Args&&... args) {
-  return static_cast<Derived*>(this)->parallel_for_sum
+  return static_cast<Derived*>(this)->parallel_for
                                         (m->n_b_faces,
                                          static_cast<F&&>(f),
                                          static_cast<Args&&>(args)...);
+}
+
+// Default implementation of get interior faces sum type
+template <class Derived>
+bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_i_faces_sum_type
+  ([[maybe_unused]]const cs_mesh_t*  m,
+   cs_dispatch_sum_type_t&           st) {
+  st = CS_DISPATCH_SUM_SIMPLE;
+  return true;
 }
 
 /*
@@ -159,7 +177,8 @@ public:
 public:
 
   /*! Set minimum number of elements threshold for CPU multithread execution */
-  void set_n_min_for_cpu_threads(cs_lnum_t  n) {
+  void
+  set_n_min_for_cpu_threads(cs_lnum_t  n) {
     this->n_min_for_threads = n;
   }
 
@@ -170,17 +189,6 @@ public:
 #   pragma omp parallel for  if (n >= n_min_for_threads)
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, args...);
-    }
-    return true;
-  }
-
-  // Iterate using a plain omp parallel for
-  template <class F, class... Args>
-  bool
-  parallel_for_sum(cs_lnum_t n, F&& f, Args&&... args) {
-#   pragma omp parallel for  if (n >= n_min_for_threads)
-    for (cs_lnum_t i = 0; i < n; ++i) {
-      f(i, CS_DISPATCH_SUM_ATOMIC, args...);
     }
     return true;
   }
@@ -199,7 +207,7 @@ public:
         for (cs_lnum_t f_id = i_group_index[(t_id * n_i_groups + g_id) * 2];
              f_id < i_group_index[(t_id * n_i_groups + g_id) * 2 + 1];
              f_id++) {
-          f(f_id, CS_DISPATCH_SUM_SIMPLE, args...);
+          f(f_id, args...);
         }
       }
     }
@@ -209,7 +217,8 @@ public:
   // Loop over the boundary faces of a mesh using a specific numbering
   // that avoids conflicts between threads.
   template <class F, class... Args>
-  bool parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  bool
+  parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     const int n_b_threads = m->b_face_numbering->n_threads;
     const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
@@ -218,11 +227,20 @@ public:
       for (cs_lnum_t f_id = b_group_index[t_id*2];
            f_id < b_group_index[t_id*2 + 1];
            f_id++) {
-        f(f_id, CS_DISPATCH_SUM_SIMPLE, args...);
+        f(f_id, args...);
       }
     }
     return true;
   }
+
+  // Get interior faces sum type associated with this context
+  bool
+  try_get_parallel_for_i_faces_sum_type([[maybe_unused]]const cs_mesh_t*  m,
+                                        cs_dispatch_sum_type_t&           st) {
+    st = CS_DISPATCH_SUM_SIMPLE;
+    return true;
+  }
+
 };
 
 #if defined(__NVCC__)
@@ -239,23 +257,6 @@ __global__ void cs_cuda_kernel_parallel_for(cs_lnum_t n, F f, Args... args) {
   for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
        id += blockDim.x * gridDim.x) {
     f(id, args...);
-  }
-}
-
-/* Kernel for assembly that loops over an integer range and calls a device
-   functor. This is similar to the above, but passes an extra argument
-   indicating the sum type to use, allowing a templated test.
-   This kernel uses a grid_size-stride loop and thus guarantees that all
-   integers are processed, even if the grid is smaller.
-   All arguments *must* be passed by value to avoid passing CPU references
-   to the GPU. */
-
-template <class F, class... Args>
-__global__ void cs_cuda_kernel_parallel_for_sum(cs_lnum_t n, F f, Args... args) {
-  // grid_size-stride loop
-  for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
-       id += blockDim.x * gridDim.x) {
-    f(id, CS_DISPATCH_SUM_ATOMIC, args...);
   }
 }
 
@@ -391,7 +392,7 @@ public:
       l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
     }
 
-    cs_cuda_kernel_parallel_for_sum<<<l_grid_size, block_size_, 0, stream_>>>
+    cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
       (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
     return true;
@@ -403,6 +404,19 @@ public:
     cudaStreamSynchronize(stream_);
   }
 
+  // Get interior faces sum type associated with this context
+  bool
+  try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    const cs_lnum_t n = m->n_i_faces;
+    if (device_ < 0 || n < n_min_for_device_) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
 };
 
 #elif defined(SYCL_LANGUAGE_VERSION)
@@ -411,8 +425,85 @@ public:
  * Context to execute loops with SYCL on the device
  */
 
-// TODO
+/*!
+ * Context to execute loops with CUDA on the device
+ */
 
+class cs_device_context : public cs_dispatch_context_mixin<cs_device_context> {
+
+private:
+
+  sycl::queue      &queue_;      /*!< Associated SYCL queue */
+  bool              is_gpu;      /*!< Is the associated device à GPU ? */
+
+  cs_lnum_t  n_min_for_device_;  /*!< Run on host under this threshold */
+
+public:
+
+  //! Constructor
+
+  cs_device_context(void)
+    : queue_(cs_glob_sycl_queue), is_gpu(false), n_min_for_device_(0)
+  {
+    is_gpu = queue_.get_device().is_gpu();
+  }
+
+  //! Set minimum number of elements threshold for GPU execution
+
+  void
+  set_n_min_for_gpu(cs_lnum_t  n) {
+    this->n_min_for_device_ = n;
+  }
+
+public:
+
+  //! Try to launch on the device and return false if not available
+  template <class F, class... Args>
+  bool
+  parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+    if (is_gpu == false || n < n_min_for_device_) {
+      return false;
+    }
+
+    queue_.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+    return true;
+  }
+
+  //! Try to launch on the GPU and return false if not available
+  template <class F, class... Args>
+  bool
+  parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+    const cs_lnum_t n = m->n_i_faces;
+    if (is_gpu == false || n < n_min_for_device_) {
+      return false;
+    }
+
+    queue_.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+    return true;
+  }
+
+  //! Synchronize associated stream
+  void
+  wait(void) {
+    queue_.wait();
+  }
+
+  // Get interior faces sum type associated with this context
+  bool
+  try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    const cs_lnum_t n = m->n_i_faces;
+    if (is_gpu == false || n < n_min_for_device_) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
+};
 
 #endif  // __NVCC__ or SYCL
 
@@ -478,15 +569,6 @@ public:
     return false;
   }
 
-  // Abort execution if no execution method is available.
-  template <class F, class... Args>
-  bool parallel_for_sum([[maybe_unused]] cs_lnum_t  n,
-                        [[maybe_unused]] F&&        f,
-                        [[maybe_unused]] Args&&...  args) {
-    cs_assert(0);
-    return false;
-  }
-
 };
 
 /*!
@@ -511,16 +593,7 @@ public:
 public:
 
   template <class F, class... Args>
-    void parallel_for_sum(const cs_mesh_t* m, F&& f, Args&&... args) {
-    bool launched = false;
-    [[maybe_unused]] decltype(nullptr) try_execute[] = {
-      (   launched = launched
-       || Contexts::parallel_for_sum(m, f, args...), nullptr)...
-    };
-  }
-
-  template <class F, class... Args>
-    void parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  void parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
@@ -529,7 +602,7 @@ public:
   }
 
   template <class F, class... Args>
-    auto parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  auto parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
@@ -538,13 +611,26 @@ public:
   }
 
   template <class F, class... Args>
-    auto parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+  auto parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
        || Contexts::parallel_for(n, f, args...), nullptr)...
     };
   }
+
+  cs_dispatch_sum_type_t
+  get_parallel_for_i_faces_sum_type(const cs_mesh_t* m) {
+    cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+    bool known = false;
+    [[maybe_unused]] decltype(nullptr) try_query[] = {
+      (   known = known
+       || Contexts::try_get_parallel_for_i_faces_sum_type(m, sum_type),
+          nullptr)...
+    };
+    return sum_type;
+  }
+
 };
 
 /*----------------------------------------------------------------------------*/
@@ -555,7 +641,7 @@ public:
 /*----------------------------------------------------------------------------*/
 
 class cs_dispatch_context : public cs_combined_context<
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(SYCL_LANGUAGE_VERSION)
   cs_device_context,
 #endif
   cs_host_context,
@@ -565,7 +651,7 @@ class cs_dispatch_context : public cs_combined_context<
 
 private:
   using base_t = cs_combined_context<
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(SYCL_LANGUAGE_VERSION)
   cs_device_context,
 #endif
   cs_host_context,
@@ -623,9 +709,9 @@ public:
 
 template <typename T>
 __device__ static void __forceinline__
-cs_dispatch_sum(T                  *dest,
-                const T             src,
-                cs_dispatch_sum_t   sum_type)
+cs_dispatch_sum(T                       *dest,
+                const T                  src,
+                cs_dispatch_sum_type_t   sum_type)
 {
   if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
 #if 1
@@ -643,13 +729,32 @@ cs_dispatch_sum(T                  *dest,
   }
 }
 
-#else  // ! __CUDA_ARCH__
+#elif defined(SYCL_LANGUAGE_VERSION)
 
 template <typename T>
 inline void
-cs_dispatch_sum(T                  *dest,
-                const T             src,
-                cs_dispatch_sum_t   sum_type)
+cs_dispatch_sum(T                       *dest,
+                const T                  src,
+                cs_dispatch_sum_type_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    *dest += src;
+  }
+  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+    sycl::atomic_ref<T,
+                     sycl::memory_order::relaxed,
+                     sycl::memory_scope::device> aref(*dest);
+    aref.fetch_add(src);
+  }
+}
+
+#else  // ! CUDA or SYCL
+
+template <typename T>
+inline void
+cs_dispatch_sum(T                       *dest,
+                const T                  src,
+                cs_dispatch_sum_type_t   sum_type)
 {
   if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
     *dest += src;
@@ -682,9 +787,9 @@ cs_dispatch_sum(T                  *dest,
 
 template <size_t dim, typename T>
 __device__ static void __forceinline__
-cs_dispatch_sum(T                  *dest,
-                const T            *src,
-                cs_dispatch_sum_t   sum_type)
+cs_dispatch_sum(T                       *dest,
+                const T                 *src,
+                cs_dispatch_sum_type_t   sum_type)
 {
   if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
     for (cs_lnum_t i = 0; i < dim; i++) {
@@ -708,13 +813,36 @@ cs_dispatch_sum(T                  *dest,
   }
 }
 
-#else  // ! __CUDA_ARCH__
+#elif defined(SYCL_LANGUAGE_VERSION)
 
 template <size_t dim, typename T>
 inline void
-cs_dispatch_sum(T                  *dest,
-                const T            *src,
-                cs_dispatch_sum_t   sum_type)
+cs_dispatch_sum(T                       *dest,
+                const T                 *src,
+                cs_dispatch_sum_type_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    for (size_t i = 0; i < dim; i++) {
+      dest[i] += src[i];
+    }
+  }
+  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+    for (size_t i = 0; i < dim; i++) {
+      sycl::atomic_ref<T,
+                       sycl::memory_order::relaxed,
+                       sycl::memory_scope::device> aref(dest[i]);
+      aref.fetch_add(src[i]);
+    }
+  }
+}
+
+#else  // ! CUDA or SYCL
+
+template <size_t dim, typename T>
+inline void
+cs_dispatch_sum(T                       *dest,
+                const T                 *src,
+                cs_dispatch_sum_type_t   sum_type)
 {
   if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
     for (size_t i = 0; i < dim; i++) {

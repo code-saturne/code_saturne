@@ -55,7 +55,7 @@ $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
-AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -268,7 +268,7 @@ cs_rank_neighbors.c \
 cs_map.c \
 cs_order.c \
 cs_part_to_block.c \
-cs_system_info.c \
+cs_system_info.cxx \
 cs_timer.c \
 cs_tree.c
 
