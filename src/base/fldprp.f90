@@ -554,15 +554,15 @@ return
 !---
 
  1000 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP'              ,/,&
+'@    ======'                                                  ,/,&
+'@     FIELD: ', a, ' HAS ALREADY BEEN DEFINED.'               ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
 
 end subroutine add_property_field
 

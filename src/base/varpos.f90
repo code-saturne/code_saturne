@@ -261,7 +261,7 @@ do iscal = 1, nscal
   call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
 
   if (iscal.eq.iscalt) then
-    if (turb_flux_model.gt.0.and.irovar.eq.1) then
+    if (turb_flux_model.gt.0.and.irovar.eq.1.and.ibeta.eq.-1) then
       call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
     endif
   endif
