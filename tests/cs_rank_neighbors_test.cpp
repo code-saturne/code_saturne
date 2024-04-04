@@ -175,10 +175,11 @@ _sanity_test(void)
 
   /* Other methods */
 
-  for (cs_rank_neighbors_exchange_t t = CS_RANK_NEIGHBORS_NBX;
-       t <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
-       t++) {
+  for (int t_idx = CS_RANK_NEIGHBORS_NBX;
+       t_idx <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
+       t_idx ++) {
 
+    cs_rank_neighbors_exchange_t t = (cs_rank_neighbors_exchange_t) t_idx;
     cs_rank_neighbors_set_exchange_type(t);
     if (cs_rank_neighbors_get_exchange_type() != t) {
       bft_printf("%s not available\n",
@@ -222,10 +223,11 @@ _sanity_test(void)
 
   /* Other methods */
 
-  for (cs_rank_neighbors_exchange_t t = CS_RANK_NEIGHBORS_NBX;
-       t <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
-       t++) {
+  for (int t_idx = CS_RANK_NEIGHBORS_NBX;
+       t_idx <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
+       t_idx ++) {
 
+    cs_rank_neighbors_exchange_t t = (cs_rank_neighbors_exchange_t) t_idx;
     cs_rank_neighbors_t  *nr1;
     cs_lnum_t            *recv_count1;
 
@@ -283,10 +285,11 @@ _performance_test(void)
 
   for (int pass_id = 0; pass_id < n_passes; pass_id++) {
 
-    for (cs_rank_neighbors_exchange_t t = CS_RANK_NEIGHBORS_PEX;
-         t <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
-         t++) {
+    for (int t_idx = CS_RANK_NEIGHBORS_NBX;
+         t_idx <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
+         t_idx ++) {
 
+      cs_rank_neighbors_exchange_t t = (cs_rank_neighbors_exchange_t) t_idx;
       cs_lnum_t            *send_count = NULL, *recv_count = NULL;
 
       double wt[3] = {0, 0, 0};
@@ -328,10 +331,10 @@ _performance_test(void)
 
   }
 
-  for (cs_rank_neighbors_exchange_t t = CS_RANK_NEIGHBORS_PEX;
-       t <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
-       t++)
-    wt_sum[t] /= (n_passes*size);
+    for (int t_idx = CS_RANK_NEIGHBORS_NBX;
+         t_idx <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
+         t_idx ++)
+    wt_sum[t_idx] /= (n_passes*size);
 
   if (rank == 0)
     printf("\n"

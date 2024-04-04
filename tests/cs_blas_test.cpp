@@ -619,9 +619,9 @@ _dot_product_1(double   t_measure,
 
       test_sum = test_sum - floor(test_sum);
 
-      for (cs_blas_reduce_t j = 0; j < 2; j++) {
+      for (int j = 0; j < 2; j++) {
 
-        cs_blas_set_reduce_algorithm(j);
+        cs_blas_set_reduce_algorithm((cs_blas_reduce_t)j);
 
         wt0 = cs_timer_wtime(), wt1 = wt0;
         if (t_measure > 0)
@@ -784,9 +784,9 @@ _dot_product_2(double  t_measure)
 
     test_sum = test_sum - floor(test_sum);
 
-    for (cs_blas_reduce_t j = 0; j < 2; j++) {
+    for (int j = 0; j < 2; j++) {
 
-      cs_blas_set_reduce_algorithm(j);
+      cs_blas_set_reduce_algorithm((cs_blas_reduce_t)j);
 
       wt0 = cs_timer_wtime(), wt1 = wt0;
 
@@ -2877,8 +2877,8 @@ main (int argc, char *argv[])
     bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
                "canonical", (int)n, ref_s - s);
 
-    for (cs_blas_reduce_t j = 0; j < 2; j++) {
-      cs_blas_set_reduce_algorithm(j);
+    for (int j = 0; j < 2; j++) {
+      cs_blas_set_reduce_algorithm((cs_blas_reduce_t)j);
       s = cs_dot(n, x, y);
       bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
                  reduce_name[j], (int)n, ref_s - s);

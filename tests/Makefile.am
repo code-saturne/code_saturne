@@ -152,12 +152,12 @@ LDADD_CS_TESTS = \
 	$(top_builddir)/src/bft/libbft.a \
 	$(PLE_LIBS) $(MPI_LIBS) $(CUDA_LIBS) -lm
 
-cs_all_to_all_test_SOURCES  = cs_all_to_all_test.c
+cs_all_to_all_test_SOURCES  = cs_all_to_all_test.cpp
 cs_all_to_all_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_all_to_all_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_blas_test_SOURCES  = \
-cs_blas_test.c \
+cs_blas_test.cpp \
 cs_blas.c
 cs_blas_test_CPPFLAGS  = \
 -I$(top_srcdir)/src/alge \
@@ -183,7 +183,7 @@ cs_check_sdm$(EXEEXT):
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_sdm $(top_srcdir)/tests/cs_check_sdm.c
 
-cs_core_test_SOURCES  = cs_core_test.c
+cs_core_test_SOURCES  = cs_core_test.cpp
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_core_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -194,11 +194,11 @@ cs_dispatch_test$(EXEEXT): cs_dispatch_test.cpp $(top_srcdir)/src/base/cs_dispat
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_dispatch_test $(top_srcdir)/tests/cs_dispatch_test.cpp
 
-cs_file_test_SOURCES  = cs_file_test.c
+cs_file_test_SOURCES  = cs_file_test.cpp
 cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_file_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_geom_test_SOURCES  = cs_geom_test.c
+cs_geom_test_SOURCES  = cs_geom_test.cpp
 cs_geom_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_geom_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -225,7 +225,7 @@ cs_interface_test_LDADD    = \
 $(top_builddir)/src/fvm/libfvm.a \
 $(LDADD_CS_TESTS)
 
-cs_map_test_SOURCES  = cs_map_test.c
+cs_map_test_SOURCES  = cs_map_test.cpp
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -241,15 +241,15 @@ cs_mesh_quantities_test$(EXEEXT): $(top_srcdir)/tests/cs_mesh_quantities_test.c
 
 cs_moment_test_SOURCES  = cs_moment_test.c
 cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
+cs_moment_test_LDADD    = -lm
 
 cs_random_test_SOURCES  = \
-cs_random_test.c \
+cs_random_test.cpp \
 cs_random.c
 cs_random_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_random_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_rank_neighbors_test_SOURCES  = cs_rank_neighbors_test.c
+cs_rank_neighbors_test_SOURCES  = cs_rank_neighbors_test.cpp
 cs_rank_neighbors_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_rank_neighbors_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -265,11 +265,11 @@ fvm_selector_postfix_test$(EXEEXT):
 	-o fvm_selector_postfix_test \
 	$(top_srcdir)/tests/fvm_selector_postfix_test.c
 
-cs_sizes_test_SOURCES  = cs_sizes_test.c
+cs_sizes_test_SOURCES  = cs_sizes_test.cpp
 cs_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_sizes_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_tree_test_SOURCES  = cs_tree_test.c
+cs_tree_test_SOURCES  = cs_tree_test.cpp
 cs_tree_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_tree_test_LDADD    = $(LDADD_CS_TESTS)
 

@@ -74,9 +74,9 @@ main (int argc, char *argv[])
 
   /* Initialization and environment */
 
-  xr = malloc(nr*sizeof(double));
-  yr = malloc(nr*sizeof(double));
-  wr = malloc(nr*sizeof(double));
+  xr = (double *)malloc(nr*sizeof(double));
+  yr = (double *)malloc(nr*sizeof(double));
+  wr = (double *)malloc(nr*sizeof(double));
 
   printf("\n");
 
