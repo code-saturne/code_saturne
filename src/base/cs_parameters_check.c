@@ -135,15 +135,15 @@ inline static char *
 _field_section_desc(cs_field_t  *f,
                     const char  *section_desc_b)
 {
-  const char *f_label = cs_field_get_label(f);
+  const char *f_name = f->name;
 
   /* 2 stands for the terminal character and one blank */
   int s_size =  cs_log_strlen(section_desc_b)
-              + cs_log_strlen(f_label) + 2;
+              + cs_log_strlen(f_name) + 2;
 
   char *section_desc = NULL;
   BFT_MALLOC(section_desc, s_size, char);
-  snprintf(section_desc, s_size, "%s %s", section_desc_b, f_label);
+  snprintf(section_desc, s_size, "%s %s", section_desc_b, f_name);
 
   return section_desc;
 }
