@@ -1831,7 +1831,6 @@ class meg_to_c_interpreter:
                         # Turbulence
                         tc = boundary.getTurbulenceChoice(fId)
                         turb_model = tm.getTurbulenceModel(fId)
-                        print("Model: {}".format(turb_model))
                         if tc == 'formula' and turb_model not in ['none', 'q2-q12-tchen', 'r2-r12-tchen']:
                             exp, reqo, sym = boundary.getTurbFormulaComponents(fId,
                                                                               turb_model)
