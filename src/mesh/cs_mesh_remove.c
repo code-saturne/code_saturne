@@ -396,5 +396,54 @@ cs_mesh_remove_cells_negative_volume(cs_mesh_t  *m)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove cells based on a selection criteria
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_remove_cells_from_selection_criteria
+(
+  cs_mesh_t  *m,          /*!<[in,out] pointer to mesh structure */
+  const char *criteria,   /*!<[in] selection criteria */
+  const char *group_name  /*!<[in] Name of group to assign new boundary faces,
+                                   or NULL */
+)
+{
+  /* Get all selected cells */
+  cs_lnum_t   n_selected_elts = 0;
+  cs_lnum_t  *selected_elts = NULL;
+
+  BFT_MALLOC(selected_elts, m->n_cells, cs_lnum_t);
+
+  cs_selector_get_cell_list(criteria,
+                            &n_selected_elts,
+                            selected_elts);
+
+  /* Set flag values */
+  char *flag;
+  BFT_MALLOC(flag, m->n_cells, char);
+
+  for (cs_lnum_t i = 0; i < m->n_cells; i++) {
+    flag[i] = 0;
+  }
+
+  for (cs_lnum_t i = 0; i < n_selected_elts; i++) {
+    flag[selected_elts[i]] = 1;
+  }
+
+  /* Remove cells */
+  cs_mesh_remove_cells(m, flag, group_name);
+
+  /* Free pointers */
+  BFT_FREE(selected_elts);
+  BFT_FREE(flag);
+
+  /* Mark for re-partitioning */
+  m->modified |= CS_MESH_MODIFIED_BALANCE;
+}
+
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

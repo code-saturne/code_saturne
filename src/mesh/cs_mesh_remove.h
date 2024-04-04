@@ -81,6 +81,18 @@ void
 cs_mesh_remove_cells_negative_volume(cs_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
+/* Remove cells based on a selection criteria (string) */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_remove_cells_from_selection_criteria
+(
+  cs_mesh_t  *m,
+  const char *criteria,
+  const char *group_name
+);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

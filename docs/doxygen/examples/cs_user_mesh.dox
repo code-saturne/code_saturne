@@ -177,7 +177,11 @@
   by matrix multiplication, while simple rotations or translations
   may still be defined easily.
 
-  Cells from a selection can also be removed.
+  Cells from a selection can also be removed using a simple selection criteria
+
+  \snippet cs_user_mesh-modify.c mesh_modify_remove_cells_1
+
+  or a user defined flag array
 
   \snippet cs_user_mesh-modify.c mesh_modify_remove_cells
 

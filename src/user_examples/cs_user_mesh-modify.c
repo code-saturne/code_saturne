@@ -427,9 +427,24 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   }
   /*! [mesh_modify_refine_2] */
 
-  /* Remove cells from a selection
+  /* Remove cells from a selection string
    * Note: if present, remove periodicity info first */
-  /*! [mesh_modify_remove_cells] */
+  /*! [mesh_modify_remove_cells_1] */
+  {
+    /* Selection criteria */
+    const char criteria[] = "box[-250, -250, 0, 250, 250, 100]";
+    /* Group name for newly added boundary faces */
+    const char new_group[] = "new_wall";
+
+    cs_mesh_remove_cells_from_selection_criteria(mesh,
+                                                 criteria,
+                                                 new_group);
+  }
+  /*! [mesh_modify_remove_cells_1] */
+
+  /* Remove cells from a selection where the user computes the flag array
+   * Note: if present, remove periodicity info first */
+  /*! [mesh_modify_remove_cells_2] */
   {
     cs_lnum_t   n_selected_elts = 0;
     cs_lnum_t  *selected_elts = NULL;
@@ -461,7 +476,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     /* Mark for re-partitioning */
     mesh->modified |= CS_MESH_MODIFIED_BALANCE;
   }
-  /*! [mesh_modify_remove_cells] */
+  /*! [mesh_modify_remove_cells_2] */
 
 }
 
