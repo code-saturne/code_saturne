@@ -45,6 +45,7 @@ subroutine addfld
 !===============================================================================
 
 use atincl, only: compute_z_ground, imeteo
+use cstnum, only: epzero
 use paramx
 use coincl, only: ifm
 use dimens
@@ -94,9 +95,11 @@ integer          t_ext
 integer          kclipp
 integer          key_turb_schmidt, kscavr, key_turb_diff, key_sgs_sca_coef
 integer          key_restart_id
-integer          var_f_id
+integer          var_f_id, iscvr
 
-character(len=80) :: name, f_name, f_label, s_label, s_name
+double precision mod_grav
+
+character(len=80) :: name, f_name, f_label, s_label, s_name, f_var_name
 type(var_cal_opt) :: vcopt_dfm, vcopt_alpha, vcopt
 
 procedure() :: add_variable_field, add_property_field, hide_property
@@ -152,6 +155,8 @@ call field_get_key_id('label', keylbl)
 ! User variables
 !---------------
 
+mod_grav = sqrt(gx**2 + gy**2 +gz**2)
+
 do ii = 1, nscal
 
   if (isca(ii) .gt. 0) then
@@ -180,6 +185,17 @@ do ii = 1, nscal
 
         call field_get_key_id("clipping_id",kclipp)
         call field_set_key_int(iflid, kclipp, 1)
+
+        ! If variance is required
+        if ((irovar.gt.0 .or. idilat.eq.0).and.mod_grav.gt.epzero) then
+          f_var_name = trim(name)//'_variance'
+          call add_model_scalar_field(f_var_name, f_var_name, iscvr)
+
+          var_f_id = ivarfl(isca(iscvr))
+
+          ! set first order moment to scalar
+          call field_set_key_int( var_f_id, kscavr, f_id)
+        endif
 
       else
         itycat = FIELD_INTENSIVE + FIELD_PROPERTY  ! for properties
