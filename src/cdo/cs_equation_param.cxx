@@ -932,7 +932,7 @@ cs_equation_param_create(const char            *name,
   eqp->diffusion_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
     .type = CS_HODGE_TYPE_EPFD,
-    .algo = CS_HODGE_ALGO_COST,
+    .algo = CS_HODGE_ALGO_BUBBLE,
     .coef = 2/3.,
   };
 
