@@ -48,7 +48,8 @@ BEGIN_C_DECLS
  * \param[in]     f_sc          drift scalar field
  * \param[in,out] i_mass_flux   scalar mass flux at interior face centers
  * \param[in,out] b_mass_flux   scalar mass flux at boundary face centers
- * \param[in,out] divflu        divergence of drift flux
+ * \param[in,out] fimp          implicit term
+ * \param[in,out] rhs           right hand side term
  */
 /*----------------------------------------------------------------------------*/
 
@@ -56,7 +57,8 @@ void
 cs_drift_convective_flux(cs_field_t  *f_sc,
                          cs_real_t    i_mass_flux[],
                          cs_real_t    b_mass_flux[],
-                         cs_real_t    divflu[]);
+                         cs_real_t    fimp[],
+                         cs_real_t    rhs[]);
 
 /*----------------------------------------------------------------------------*/
 

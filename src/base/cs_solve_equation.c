@@ -1650,30 +1650,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const int iflmab = cs_field_get_key_int(f, kbmasf);
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
-  if (iscdri > 0) {
-    cs_real_t *divflu;
-    BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
-
+  if (iscdri > 0)
     cs_drift_convective_flux(f,
                              imasfl,
                              bmasfl,
-                             divflu);
-
-    const int iconvp = eqp->iconv;
-    const cs_real_t thetap = eqp->theta;
-
-    /*  NB: if the porosity module is switched on, the porosity is already
-     * taken into account in divflu */
-
-    /* mass aggregation term */
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      fimp[c_id] += iconvp*thetap*divflu[c_id];
-      rhs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
-    }
-
-    BFT_FREE(divflu);
-  }
+                             fimp,
+                             rhs);
 
   /* Solve
    * ===== */
@@ -2269,31 +2251,12 @@ cs_solve_equation_vector(cs_field_t       *f,
   const int iflmab = cs_field_get_key_int(f, kbmasf);
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
-  if (iscdri > 0) {
-    cs_real_t *divflu;
-    BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
-
+  if (iscdri > 0)
     cs_drift_convective_flux(f,
                              imasfl,
                              bmasfl,
-                             divflu);
-
-    const int iconvp = eqp->iconv;
-    const cs_real_t thetap = eqp->theta;
-
-    /* NB: if the porosity module is swiched on, the the porosity is already
-     * taken into account in divflu */
-
-    /* mass aggregation term */
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        fimp[c_id][j][j] += iconvp * thetap * divflu[c_id];
-        rhs[c_id][j] -= iconvp * divflu[c_id] * cvara_var[c_id][j];
-      }
-    }
-
-    BFT_FREE(divflu);
-  }
+                             (cs_real_t *) fimp,
+                             (cs_real_t *) rhs);
 
   /* Solve
      ===== */

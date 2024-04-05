@@ -101,7 +101,8 @@ BEGIN_C_DECLS
  * \param[in]     f_sc          drift scalar field
  * \param[in,out] i_mass_flux   scalar mass flux at interior face centers
  * \param[in,out] b_mass_flux   scalar mass flux at boundary face centers
- * \param[in,out] divflu        divergence of drift flux
+ * \param[in,out] fimp          implicit term
+ * \param[in,out] rhs           right hand side term
  */
 /*----------------------------------------------------------------------------*/
 
@@ -109,7 +110,8 @@ void
 cs_drift_convective_flux(cs_field_t  *f_sc,
                          cs_real_t    i_mass_flux[],
                          cs_real_t    b_mass_flux[],
-                         cs_real_t    divflu[])
+                         cs_real_t    fimp[],
+                         cs_real_t    rhs[])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -731,13 +733,47 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       flumab[face_id] = b_mass_flux[face_id] - b_mass_flux_mix[face_id];
   }
 
+  cs_real_t *divflu;
+  BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
+
   cs_divergence(mesh,
                 1, /* init */
                 flumas,
                 flumab,
                 divflu);
 
+
+  const int iconvp = eqp_sc->iconv;
+  const cs_real_t thetap = eqp_sc->theta;
+
+  /*  NB: if the porosity module is switched on, the porosity is already
+   * taken into account in divflu */
+
+  /* mass aggregation term */
+  if (f_sc->dim == 1) {
+    cs_real_t *cvara_var = f_sc->val_pre;
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      fimp[c_id] += iconvp*thetap*divflu[c_id];
+      rhs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
+    }
+  }
+  else {
+    assert(f_sc->dim == 3);
+    cs_real_3_t *cvara_var = (cs_real_3_t *)f_sc->val_pre;
+    cs_real_3_t *_rhs= (cs_real_3_t *)rhs;
+    cs_real_33_t *_fimp= (cs_real_33_t *)fimp;
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t i = 0; i < f_sc->dim; i++) {
+        _fimp[c_id][i][i] += iconvp*thetap*divflu[c_id];
+        _rhs[c_id][i] -= iconvp*divflu[c_id]*cvara_var[c_id][i];
+      }
+    }
+  }
+
   /* Free memory */
+  BFT_FREE(divflu);
   BFT_FREE(viscce);
   BFT_FREE(dudt);
   BFT_FREE(w1);
