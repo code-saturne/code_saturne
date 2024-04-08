@@ -94,16 +94,16 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     if (b_forces != NULL) {
       cs_real_3_t total_b_forces = {0., 0., 0.};
-      cs_lnum_t n_elts, *lst_elts;
-      BFT_MALLOC(lst_elts, n_b_faces, cs_lnum_t);
-      cs_selector_get_b_face_list("2 or 3", &n_elts, lst_elts);
+      cs_real_3_t *bpro_forces = (cs_real_3_t *) b_forces->val;
 
-      for (cs_lnum_t i_elt = 0; i_elt < n_elts; i_elt++) {
-        cs_lnum_t face_id = lst_elts[i_elt];
-        for (int ii = 0; ii < 3; ii++)
-          total_b_forces[ii] += b_forces->val[3*face_id + ii];
+      /* get zone from its name, here "selected_wall" */
+      const cs_zone_t *zn = cs_boundary_zone_by_name("selected_wall");
+
+      for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
+        cs_lnum_t face_id = zn->elt_ids[e_id];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          total_b_forces[i] += bpro_forces[face_id][i];
       }
-      BFT_FREE(lst_elts);
 
       /* parallel sum */
       cs_parall_sum(3, CS_DOUBLE, total_b_forces);
@@ -114,25 +114,25 @@ cs_user_extra_operations(cs_domain_t     *domain)
   /*! [boundary_forces_ex2] */
   {
     const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
-    const cs_real_t *b_f_face_normal =
-      domain->mesh_quantities->b_f_face_normal;
+    const cs_real_3_t *b_f_face_normal =
+      (cs_real_3_t *)domain->mesh_quantities->b_f_face_normal;
 
     cs_real_3_t total_b_p_forces = {0., 0., 0.};
-    cs_lnum_t n_elts, *lst_elts;
-    BFT_MALLOC(lst_elts, n_b_faces, cs_lnum_t);
-    cs_selector_get_b_face_list("2 or 3", &n_elts, lst_elts);
+
+    /* get zone from its name, here "selected_wall" */
+    const cs_zone_t *zn = cs_boundary_zone_by_name("selected_wall");
 
     /* compute static pressure on selected boundary faces */
     cs_real_t *p_b_val;
-    BFT_MALLOC(p_b_val, n_elts, cs_real_t);
-    cs_post_b_pressure(n_elts, lst_elts, p_b_val);
+    BFT_MALLOC(p_b_val, zn->n_elts, cs_real_t);
+    cs_post_b_pressure(zn->n_elts, zn->elt_ids, p_b_val);
 
-    for (cs_lnum_t i_elt = 0; i_elt < n_elts; i_elt++) {
-      cs_lnum_t face_id = lst_elts[i_elt];
-      for (int ii = 0; ii < 3; ii++)
-        total_b_p_forces[ii] += p_b_val[i_elt]*b_f_face_normal[3*face_id+ii];
+    for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
+      cs_lnum_t face_id = zn->elt_ids[e_id];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        total_b_p_forces[i] += p_b_val[e_id]*b_f_face_normal[face_id][i];
     }
-    BFT_FREE(lst_elts);
+
     BFT_FREE(p_b_val);
 
     /* parallel sum */
