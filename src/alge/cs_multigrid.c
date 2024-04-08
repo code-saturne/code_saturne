@@ -2927,8 +2927,12 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     _aux_vectors = wr + wr_size;
     _aux_r_size -= wr_size;
   }
-  else
-    CS_MALLOC_HD(wr, wr_size, cs_real_t, amode);
+  else {
+    if (amode <= CS_ALLOC_HOST)
+      BFT_MALLOC(wr, wr_size, cs_real_t);
+    else
+      CS_MALLOC_HD(wr, wr_size, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
+  }
 
   /* map arrays for rhs and vx;
      for the finest level, simply point to input and output arrays */

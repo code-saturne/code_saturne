@@ -69,26 +69,9 @@
  * Local Macro Definitions
  *============================================================================*/
 
-#define _CS_ALLOC_LOG 1
-
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
-
-typedef struct
-{
-  void  *host_ptr;          //!< host pointer
-  void  *device_ptr;        //!< host pointer
-
-  size_t           size;    //! allocation size
-  cs_alloc_mode_t  mode;    //!< allocation mode
-
-#if _CS_ALLOC_LOG == 1
-  char  var_name[32];       //!< variable name
-  char  src_line[64];       //!< source line info
-#endif
-
-} _cs_base_accel_mem_map;
 
 /*============================================================================
  *  Global variables
@@ -97,10 +80,6 @@ typedef struct
 #if defined(HAVE_OPENMP_TARGET_USM)
 #pragma omp requires unified_shared_memory
 #endif
-
-static std::map<const void *, _cs_base_accel_mem_map> _hd_alloc_map;
-
-static bool _initialized = false;
 
 /*! Default "host+device" allocation mode */
 /*----------------------------------------*/
@@ -142,57 +121,6 @@ sycl::queue   cs_glob_sycl_queue;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Reallocate memory on host and device for ni elements of size bytes.
- *
- * This function calls the appropriate reallocation function based on
- * the requested mode, and allows introspection of the allocated memory.
- *
- * \param [in]  host_ptr   host pointer
- * \param [in]  ni         number of elements
- * \param [in]  size       element size
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_realloc_host(void            *host_ptr,
-              size_t           ni,
-              size_t           size,
-              const char      *var_name,
-              const char      *file_name,
-              int              line_num)
-{
-  return cs_realloc_hd(host_ptr,
-                       CS_ALLOC_HOST,
-                       ni, size,
-                       var_name, file_name, line_num);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize memory mapping on device.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_initialize(void)
-{
-  bft_mem_alternative_set(cs_get_allocation_hd_size,
-                          _realloc_host,
-                          cs_free_hd);
-
-  _initialized = true;
-
-  if (cs_get_device_id() < 0)
-    cs_alloc_mode = CS_ALLOC_HOST;
-}
 
 #if defined(SYCL_LANGUAGE_VERSION)
 
@@ -440,43 +368,6 @@ _omp_target_mem_malloc_managed(size_t        n,
 
 #endif /* defined(HAVE_OPENMP_TARGET) */
 
-#if _CS_ALLOC_LOG == 1
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Loc variable namev and line if enabled.
- *
- * If separate pointers are used on the host and device,
- * the host pointer is returned.
- *
- * \param [in, out]  me         memory map element
- * \param [in]       var_name   allocated variable name string
- * \param [in]       file_name  name of calling source file
- * \param [in]       line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_log_call_site(_cs_base_accel_mem_map  &me,
-               const char              *var_name,
-               const char              *file_name,
-               int                      line_num)
-{
-  memset(me.var_name, 0, 32);
-  memset(me.src_line, 0, 64);
-  strncpy(me.var_name, var_name, 63);
-  const char *_file_name = file_name;
-  for (size_t i = 0; file_name[i] != '\0'; i++) {
-    if (file_name[i] == '/')
-      _file_name = file_name + i + 1;
-  }
-  snprintf(me.src_line, 63, "%s:%d", _file_name, line_num);
-}
-
-#endif
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 BEGIN_C_DECLS
@@ -544,25 +435,18 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
              const char       *file_name,
              int               line_num)
 {
-  if (_initialized == false) {
-   _initialize();
-  }
-
   if (ni == 0)
     return nullptr;
 
-  _cs_base_accel_mem_map  me = {
+  cs_mem_block_t  me = {
     .host_ptr = nullptr,
     .device_ptr = nullptr,
     .size = ni * size,
     .mode = mode};
 
-#if _CS_ALLOC_LOG == 1
-  _log_call_site(me, var_name, file_name, line_num);
-#endif
-
-  if (mode < CS_ALLOC_HOST_DEVICE_PINNED)
-    me.host_ptr = bft_mem_malloc(ni, size, var_name, file_name, line_num);
+  if (mode < CS_ALLOC_HOST_DEVICE_PINNED) {
+    me.host_ptr = bft_mem_malloc(ni, size, var_name, nullptr, 0);
+  }
 
   // Device allocation will be postponed later thru call to
   // cs_get_device_ptr. This applies for CS_ALLOC_HOST_DEVICE
@@ -636,10 +520,9 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
 
 #endif
 
-  if (me.host_ptr != nullptr)
-    _hd_alloc_map[me.host_ptr] = me;
-  else if (me.device_ptr != nullptr)
-    _hd_alloc_map[me.device_ptr] = me;
+  if (file_name != nullptr)
+    bft_mem_update_block_info(var_name, file_name, line_num,
+                              nullptr, &me);
 
   /* Return pointer to allocated memory */
 
@@ -699,23 +582,39 @@ cs_realloc_hd(void            *ptr,
     return nullptr;
   }
 
-  _cs_base_accel_mem_map  me;
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
 
-  if (_hd_alloc_map.count(ptr) == 0) {  /* Case where memory was allocated
-                                           on host only (through BFT_MALLOC) */
-    me = {.host_ptr = ptr,
-          .device_ptr = nullptr,
-          .size = bft_mem_get_block_size(ptr),
-          .mode = CS_ALLOC_HOST};
-    _hd_alloc_map[me.host_ptr] = me;
-
+  if (   me.device_ptr != me.host_ptr
+      && me.device_ptr != nullptr
+      && me.host_ptr != nullptr) {
+#if defined(HAVE_CUDA)
+    cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
+#elif defined(SYCL_LANGUAGE_VERSION)
+    sycl::free(me.device_ptr, cs_glob_sycl_queue);
+#elif defined(HAVE_OPENMP_TARGET)
+    omp_target_free(me.device_ptr, cs_glob_omp_target_device_id);
+#endif
+    me.device_ptr = nullptr;
   }
-  else {
-    me = _hd_alloc_map[ptr];
 
-    if (   me.device_ptr != me.host_ptr
-        && me.device_ptr != nullptr
-        && me.host_ptr != nullptr) {
+  if (new_size == me.size && mode == me.mode) {
+    if (me.host_ptr != nullptr)
+      return me.host_ptr;
+    else
+      return me.device_ptr;
+  }
+
+  cs_mem_block_t me_old = me;
+  me.mode = mode;
+
+  if (   me_old.mode <= CS_ALLOC_HOST_DEVICE
+      && me.mode <= CS_ALLOC_HOST_DEVICE) {
+    me.host_ptr = bft_mem_realloc(me_old.host_ptr, ni, size,
+                                  var_name, nullptr, 0);
+    me.size = new_size;
+    ret_ptr = me.host_ptr;
+
+    if (me.device_ptr != NULL) {
 #if defined(HAVE_CUDA)
       cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
 #elif defined(SYCL_LANGUAGE_VERSION)
@@ -727,51 +626,42 @@ cs_realloc_hd(void            *ptr,
     }
   }
 
-#if _CS_ALLOC_LOG == 1
-  _log_call_site(me, var_name, file_name, line_num);
-#endif
-
-  if (new_size == me.size && mode == me.mode) {
-    if (me.host_ptr != nullptr)
-      return me.host_ptr;
-    else
-      return me.device_ptr;
-  }
-
-  if (   me.mode <= CS_ALLOC_HOST_DEVICE
-      && me.mode == mode) {
-    me.host_ptr = bft_mem_realloc(me.host_ptr, ni, size,
-                                  var_name, file_name, line_num);
-    me.size = new_size;
-    _hd_alloc_map.erase(ptr);
-    _hd_alloc_map[me.host_ptr] = me;
-
-    ret_ptr = me.host_ptr;
-  }
   else {
-    size_t copy_size = me.size;
+    size_t copy_size = me_old.size;
     if (new_size < copy_size)
       copy_size = new_size;
     me.size = new_size;
 
     ret_ptr = cs_malloc_hd(mode, 1, me.size,
-                           var_name, file_name, line_num);
+                           var_name, nullptr, 0);
 
-    if (me.mode < CS_ALLOC_DEVICE) {
-      if (mode < CS_ALLOC_DEVICE)
+    if (me_old.mode < CS_ALLOC_DEVICE) {
+      if (me.mode < CS_ALLOC_DEVICE)
         memcpy(ret_ptr, ptr, copy_size);
       else
         cs_copy_h2d(ret_ptr, ptr, copy_size);
     }
     else { /* if (me.mode == CS_ALLOC_DEVICE) */
-      if (mode < CS_ALLOC_DEVICE)
+      if (me.mode < CS_ALLOC_DEVICE)
         cs_copy_d2h(ret_ptr, ptr, copy_size);
       else
         cs_copy_d2d(ret_ptr, ptr, copy_size);
     }
 
-    cs_free_hd(ptr, var_name, file_name, line_num);
+    if (me.mode < CS_ALLOC_DEVICE) {
+      me.host_ptr = ret_ptr;
+      if (mode == CS_ALLOC_HOST_DEVICE_SHARED)
+        me.device_ptr = ret_ptr;
+    }
+    else
+      me.device_ptr = ret_ptr;
+
+    cs_free_hd(ptr, var_name, nullptr, 0);
   }
+
+  if (file_name != nullptr)
+    bft_mem_update_block_info(var_name, file_name, line_num,
+                              &me_old, &me);
 
   return ret_ptr;
 }
@@ -799,105 +689,53 @@ cs_free_hd(void        *ptr,
   if (ptr == nullptr)
     return;
 
-  if (_hd_alloc_map.count(ptr) == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: No host or device pointer matching %p."),
-              __func__, ptr);
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
 
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
-
-  if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED) {
+  if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED)
     bft_mem_free(me.host_ptr, var_name, file_name, line_num);
-    me.host_ptr = nullptr;
-  }
 
-  if (me.host_ptr != nullptr) {
+  else if (me.host_ptr != nullptr) {
 
 #if defined(HAVE_CUDA)
 
-    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED)
       cs_cuda_mem_free(me.host_ptr, var_name, file_name, line_num);
-      me.device_ptr = nullptr;
-    }
-
     else
       cs_cuda_mem_free_host(me.host_ptr, var_name, file_name, line_num);
-
-    me.host_ptr = nullptr;
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
     sycl::free(me.host_ptr, cs_glob_sycl_queue);
-    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      me.device_ptr = nullptr;
-
-    me.host_ptr = nullptr;
 
 #elif defined(HAVE_OPENMP_TARGET)
 
     omp_target_free(me.host_ptr, cs_glob_omp_target_device_id);
-    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      me.device_ptr = nullptr;
-
-    me.host_ptr = nullptr;
 
 #endif
 
   }
 
-  if (me.device_ptr != nullptr) {
+  if (me.device_ptr != nullptr && me.device_ptr != me.host_ptr) {
 
 #if defined(HAVE_CUDA)
 
     cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
-    me.device_ptr = nullptr;
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
     sycl::free(me.device_ptr, cs_glob_sycl_queue);
-    me.device_ptr = nullptr;
 
 #elif defined(HAVE_OPENMP_TARGET)
 
     omp_target_free(me.device_ptr, cs_glob_omp_target_device_id);
-    me.device_ptr = nullptr;
 
 #endif
 
   }
 
-  _hd_alloc_map.erase(ptr);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free memory on host and device for a given pointer.
- *
- * Compared to \ref cs_free_hd, this function also allows freeing memory
- * allocated through BFT_MEM_MALLOC / bft_mem_malloc.
- *
- * \param [in]  ptr        pointer to free
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_free(void        *ptr,
-        const char  *var_name,
-        const char  *file_name,
-        int          line_num)
-{
-  if (ptr == nullptr)
-    return;
-
-  else if (_hd_alloc_map.count(ptr) == 0) {
-    bft_mem_free(ptr, var_name, file_name, line_num);
-    return;
-  }
-  else
-    cs_free_hd(ptr, var_name, file_name, line_num);
+  if (file_name != nullptr)
+    bft_mem_update_block_info(var_name, file_name, line_num,
+                              &me, nullptr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -922,19 +760,21 @@ cs_get_device_ptr(void  *ptr)
   if (ptr == nullptr)
     return nullptr;
 
-  if (_hd_alloc_map.count(ptr) == 0) {
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  if (me.mode == CS_ALLOC_HOST) {
     bft_error(__FILE__, __LINE__, 0,
-              _("%s: No host or device pointer matching %p."), __func__, ptr);
+              _("%s: %p has no device association."), __func__, ptr);
     return nullptr;
   }
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
 
   /* Allocate on device if not done yet */
 
   if (me.device_ptr == nullptr) {
     if (   me.mode == CS_ALLOC_HOST_DEVICE
         || me.mode == CS_ALLOC_HOST_DEVICE_PINNED) {
+
+      cs_mem_block_t me_old = me;
+
 #if defined(HAVE_CUDA)
 
       me.device_ptr = cs_cuda_mem_malloc_device(me.size,
@@ -964,8 +804,8 @@ cs_get_device_ptr(void  *ptr)
 
 #endif
 
-      _hd_alloc_map[ptr] = me;
-
+      bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                                &me_old, &me);
     }
   }
 
@@ -994,19 +834,21 @@ cs_get_device_ptr_const(const void  *ptr)
   if (ptr == nullptr)
     return nullptr;
 
-  if (_hd_alloc_map.count(ptr) == 0) {
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  if (me.mode == CS_ALLOC_HOST) {
     bft_error(__FILE__, __LINE__, 0,
-              _("%s: No host or device pointer matching %p."), __func__, ptr);
+              _("%s: %p has no device association."), __func__, ptr);
     return nullptr;
   }
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
 
   /* Allocate and sync on device if not done yet */
 
   if (me.device_ptr == nullptr) {
     if (   me.mode == CS_ALLOC_HOST_DEVICE
         || me.mode == CS_ALLOC_HOST_DEVICE_PINNED) {
+
+      cs_mem_block_t me_old = me;
+
 #if defined(HAVE_CUDA)
 
       me.device_ptr = cs_cuda_mem_malloc_device(me.size,
@@ -1030,7 +872,8 @@ cs_get_device_ptr_const(const void  *ptr)
 
 #endif
 
-      _hd_alloc_map[ptr] = me;
+      bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                                &me_old, &me);
       cs_sync_h2d(ptr);
 
     }
@@ -1062,19 +905,21 @@ cs_get_device_ptr_const_pf(const void  *ptr)
   if (ptr == nullptr)
     return nullptr;
 
-  if (_hd_alloc_map.count(ptr) == 0) {
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  if (me.mode == CS_ALLOC_HOST) {
     bft_error(__FILE__, __LINE__, 0,
-              _("%s: No host or device pointer matching %p."), __func__, ptr);
+              _("%s: %p has no device association."), __func__, ptr);
     return nullptr;
   }
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
 
   /* Allocate and sync on device if not done yet */
 
   if (me.device_ptr == nullptr) {
     if (   me.mode == CS_ALLOC_HOST_DEVICE
         || me.mode == CS_ALLOC_HOST_DEVICE_PINNED) {
+
+      cs_mem_block_t me_old = me;
+
 #if defined(HAVE_CUDA)
 
       me.device_ptr = cs_cuda_mem_malloc_device(me.size,
@@ -1098,7 +943,8 @@ cs_get_device_ptr_const_pf(const void  *ptr)
 
 #endif
 
-      _hd_alloc_map[ptr] = me;
+      bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                                &me_old, &me);
       cs_sync_h2d(ptr);
 
     }
@@ -1126,10 +972,8 @@ cs_get_device_ptr_const_pf(const void  *ptr)
 cs_alloc_mode_t
 cs_check_device_ptr(const void  *ptr)
 {
-  if (_hd_alloc_map.count(ptr) == 0)
-    return CS_ALLOC_HOST;
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
 
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
   return me.mode;
 }
 
@@ -1154,15 +998,18 @@ cs_associate_device_ptr(void    *host_ptr,
                         size_t   ni,
                         size_t   size)
 {
-  if (_hd_alloc_map.count(host_ptr) == 0) {
+  cs_mem_block_t  me_old = bft_mem_get_block_info_try(host_ptr);
 
-    _cs_base_accel_mem_map  me = {
+  if (me_old.mode == CS_ALLOC_HOST) {
+
+    cs_mem_block_t  me = {
       .host_ptr = host_ptr,
       .device_ptr = nullptr,
       .size = ni * size,
       .mode = CS_ALLOC_HOST_DEVICE};
 
-    _hd_alloc_map[me.host_ptr] = me;
+    bft_mem_update_block_info("me.host_ptr", __FILE__, __LINE__,
+                              &me_old, &me);
 
   }
 
@@ -1183,14 +1030,13 @@ cs_associate_device_ptr(void    *host_ptr,
 void
 cs_disassociate_device_ptr(void  *host_ptr)
 {
-  if (_hd_alloc_map.count(host_ptr) == 0)
-    return;
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
+  cs_mem_block_t me = bft_mem_get_block_info_try(host_ptr);
 
   if (   me.device_ptr != nullptr
       && (   me.mode == CS_ALLOC_HOST_DEVICE
           || me.mode == CS_ALLOC_HOST_DEVICE_PINNED)) {
+
+    cs_mem_block_t me_old = me;
 
 #if defined(HAVE_CUDA)
 
@@ -1208,6 +1054,9 @@ cs_disassociate_device_ptr(void  *host_ptr)
 #endif
 
     me.device_ptr = nullptr;
+
+    bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                              &me_old, &me);
   }
 }
 
@@ -1238,29 +1087,15 @@ cs_set_alloc_mode(void             **host_ptr,
   if (_host_ptr == nullptr)
     return;
 
-  if (_hd_alloc_map.count(_host_ptr) == 0) {
+  cs_mem_block_t me = bft_mem_get_block_info(_host_ptr);
 
-    _cs_base_accel_mem_map  me = {
-      .host_ptr = _host_ptr,
-      .device_ptr = nullptr,
-      .size = bft_mem_get_block_size(_host_ptr),
-      .mode = CS_ALLOC_HOST};
+  if (mode != me.mode) {
 
-    _hd_alloc_map[me.host_ptr] = me;
-
-  }
-
-  cs_alloc_mode_t old_mode = cs_check_device_ptr(_host_ptr);
-
-  if (mode != old_mode) {
-
-    _cs_base_accel_mem_map  me = _hd_alloc_map[_host_ptr];
-
-    if (old_mode == CS_ALLOC_HOST_DEVICE)
+    if (me.mode == CS_ALLOC_HOST_DEVICE)
       cs_disassociate_device_ptr(_host_ptr);
 
     if (   mode == CS_ALLOC_HOST_DEVICE_SHARED
-        || old_mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+        || me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
 
       ret_ptr = cs_malloc_hd(mode, 1, me.size,
                              "me.host_ptr", __FILE__, __LINE__);
@@ -1268,7 +1103,7 @@ cs_set_alloc_mode(void             **host_ptr,
       /* TODO: check if we have multiple OpenMP threads, in which
          case applying a "first-touch" policy might be useful here */
 
-      if (old_mode < CS_ALLOC_DEVICE) {
+      if (me.mode < CS_ALLOC_DEVICE) {
         if (mode < CS_ALLOC_DEVICE)
           memcpy(ret_ptr, _host_ptr, me.size);
         else
@@ -1308,10 +1143,7 @@ cs_set_alloc_mode(void             **host_ptr,
 void
 cs_sync_h2d(const void  *ptr)
 {
-  if (_hd_alloc_map.count(ptr) == 0)
-    return;
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
+  cs_mem_block_t me = bft_mem_get_block_info(ptr);
 
   if (me.device_ptr == nullptr)
     me.device_ptr = const_cast<void *>(cs_get_device_ptr_const(ptr));
@@ -1413,10 +1245,7 @@ cs_sync_h2d(const void  *ptr)
 void
 cs_sync_h2d_future(const void  *ptr)
 {
-  if (_hd_alloc_map.count(ptr) == 0)
-    return;
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
+  cs_mem_block_t me = bft_mem_get_block_info(ptr);
 
   switch (me.mode) {
 
@@ -1483,10 +1312,7 @@ cs_sync_h2d_future(const void  *ptr)
 void
 cs_sync_d2h(void  *ptr)
 {
-  if (_hd_alloc_map.count(ptr) == 0)
-    return;
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
+  cs_mem_block_t me = bft_mem_get_block_info(ptr);
 
   switch (me.mode) {
 
@@ -1726,40 +1552,6 @@ cs_copy_d2d(void        *dest,
                     cs_glob_omp_target_device_id, cs_glob_omp_target_device_id);
 
 #endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return number of host-device allocations
- *
- * \returns current number of host-device allocations.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_get_n_allocations_hd(void)
-{
-  return _hd_alloc_map.size();
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if a given host pointer is allocated with associated with
- *        cs_alloc_hd or cs_realloc_hd.
- *
- * \returns allocated memory size, or zero if not allocated with this
- *          mechanism.
- */
-/*----------------------------------------------------------------------------*/
-
-size_t
-cs_get_allocation_hd_size(void  *host_ptr)
-{
-  if (_hd_alloc_map.count(host_ptr) == 0)
-    return 0;
-
-  _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
-  return me.size;
 }
 
 #if defined(HAVE_SYCL)

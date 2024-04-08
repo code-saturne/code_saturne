@@ -29,7 +29,7 @@
   the correct feature macros are defined first.
 */
 
-#if defined(__linux__)
+#if defined(__linux__) && !defined(_GNU_SOURCE)
 #  define _GNU_SOURCE
 #endif
 
@@ -38,8 +38,10 @@
 /*-----------------------------------------------------------------------------*/
 
 /*
- * Standard C library headers
+ * Standard C and C++ library headers
  */
+
+#include <map>
 
 #include <assert.h>
 #include <errno.h>
@@ -58,8 +60,6 @@
 #include "bft_printf.h"
 
 /*-----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -147,17 +147,6 @@ BEGIN_C_DECLS
  * Local type definitions
  *-----------------------------------------------------------------------------*/
 
-/*
- * Structure defining an allocated memory block (for memory tracing)
- */
-
-struct _bft_mem_block_t {
-
-  void    *p_bloc;  /* Allocated memory block start adress */
-  size_t   size;    /* Allocated memory block length */
-
-};
-
 /*-----------------------------------------------------------------------------
  * Local function prototypes
  *-----------------------------------------------------------------------------*/
@@ -188,14 +177,11 @@ _bft_mem_error_handler_default(const char  *file_name,
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
 
-static int  _bft_mem_global_initialized = 0;
+static int  _bft_mem_global_init_mode = 0;
 
 static FILE *_bft_mem_global_file = NULL;
 
-static struct _bft_mem_block_t  *_bft_mem_global_block_array = NULL;
-
-static unsigned long  _bft_mem_global_block_nbr = 0 ;
-static unsigned long  _bft_mem_global_block_max = 512 ;
+static std::map<const void *, cs_mem_block_t> _bft_alloc_map;
 
 static size_t  _bft_mem_global_alloc_cur = 0;
 static size_t  _bft_mem_global_alloc_max = 0;
@@ -207,7 +193,6 @@ static size_t  _bft_mem_global_n_frees = 0;
 static bft_error_handler_t  *_bft_mem_error_handler
                               = (_bft_mem_error_handler_default);
 
-static bft_mem_get_size_t  *_bft_alt_get_size_func = NULL;
 static bft_mem_realloc_t   *_bft_alt_realloc_func = NULL;
 static bft_mem_free_t      *_bft_alt_free_func = NULL;
 
@@ -433,194 +418,253 @@ _bft_mem_block_info_error(const void  *p)
 }
 
 /*
- * Return the _bft_mem_block structure corresponding to a given
- * allocated block.
- *
- * parameters:
- *   p_in: <-- allocated block's start adress.
- *
- * returns:
- *   corresponding _bft_mem_block structure.
+ * Fill a cs_mem_block_t structure for an allocated pointer.
  */
 
-static struct _bft_mem_block_t *
-_bft_mem_block_info(const void *p_get)
+static inline cs_mem_block_t
+_bft_mem_block_new(void          *p_new,
+                   const size_t   size_new)
 {
-  struct _bft_mem_block_t  *pinfo = NULL;
-  unsigned long idx;
+#if defined(HAVE_ACCEL)
+  cs_mem_block_t  mib = {
+    .host_ptr = p_new,
+    .device_ptr = nullptr,
+    .size = size_new,
+    .mode = CS_ALLOC_HOST};
+#else
+  cs_mem_block_t  mib = {
+    .host_ptr = p_new,
+    .size = size_new};
+#endif
 
-  if (_bft_mem_global_block_array != NULL) {
-
-    for (idx = _bft_mem_global_block_nbr - 1;
-         idx > 0 && (_bft_mem_global_block_array + idx)->p_bloc != p_get;
-         idx--);
-
-    if ((_bft_mem_global_block_array + idx)->p_bloc != p_get)
-      _bft_mem_block_info_error(p_get);
-    else {
-      pinfo = _bft_mem_global_block_array + idx;
-      assert(p_get == pinfo->p_bloc);
-    }
-
-  }
-
-  return pinfo;
-}
-
-/*
- * Return the _bft_mem_block structure corresponding to a given
- * allocated block if available.
- *
- * parameters:
- *   p_in: <-- allocated block's start adress.
- *
- * returns:
- *   corresponding _bft_mem_block structure.
- */
-
-static struct _bft_mem_block_t *
-_bft_mem_block_info_try(const void *p_get)
-{
-  struct _bft_mem_block_t  *pinfo = NULL;
-
-  if (_bft_mem_global_block_array != NULL) {
-
-    unsigned long idx = _bft_mem_global_block_nbr - 1;
-    while (idx > 0 && (_bft_mem_global_block_array + idx)->p_bloc != p_get)
-      idx--;
-
-    if ((_bft_mem_global_block_array + idx)->p_bloc == p_get) {
-      pinfo = _bft_mem_global_block_array + idx;
-      assert(p_get == pinfo->p_bloc);
-    }
-
-  }
-
-  return pinfo;
-}
-
-/*
- * Return the size of a given allocated block.
- *
- * parameters:
- *   p_in: <-- allocated block's start adress.
- *
- * returns:
- *   block size.
- */
-
-static size_t
-_bft_mem_block_size(const void  *p_in)
-{
-  struct _bft_mem_block_t *pinfo = _bft_mem_block_info(p_in);
-
-  if (pinfo != NULL)
-    return pinfo->size;
-  else
-    return 0;
-}
-
-/*
- * Fill a _bft_mem_block_t structure for an allocated pointer.
- */
-
-static void
-_bft_mem_block_malloc(void          *p_new,
-                      const size_t   size_new)
-{
-  struct _bft_mem_block_t *pinfo;
-
-  assert(size_new != 0);
-
-  if (_bft_mem_global_block_array == NULL)
-    return;
-
-  if (_bft_mem_global_block_nbr >= _bft_mem_global_block_max) {
-
-    _bft_mem_global_block_max *= 2;
-    _bft_mem_global_block_array
-      = (struct _bft_mem_block_t *) realloc(_bft_mem_global_block_array,
-                                            sizeof(struct _bft_mem_block_t)
-                                            * _bft_mem_global_block_max);
-
-    if (_bft_mem_global_block_array == NULL) {
-      _bft_mem_error(__FILE__, __LINE__, errno,
-                     _("Memory allocation failure"));
-      return;
-    }
-
-  }
-
-  _bft_mem_global_block_nbr += 1;
-
-  pinfo = _bft_mem_global_block_array + _bft_mem_global_block_nbr - 1;
-
-  /* Start adress and size of allocated block */
-
-  pinfo->p_bloc = p_new;
-  pinfo->size   = size_new;
-}
-
-/*
- * Update a _bft_mem_block_t structure for an reallocated pointer.
- */
-
-static void
-_bft_mem_block_realloc(const void    *p_old,
-                       void          *p_new,
-                       size_t         size_new)
-{
-  struct _bft_mem_block_t *pinfo;
-
-  assert(size_new != 0);
-
-  pinfo = _bft_mem_block_info(p_old);
-
-  if (pinfo != NULL) {
-    pinfo->p_bloc = p_new;
-    pinfo->size   = size_new;
-  }
-}
-
-/*
- * Free a _bft_mem_block_t structure for a freed pointer.
- */
-
-static void
-_bft_mem_block_free(const void *p_free)
-{
-  struct _bft_mem_block_t *pinfo, *pmove;
-  unsigned long idx;
-
-  if (_bft_mem_global_block_array == NULL)
-    return;
-
-  for (idx = _bft_mem_global_block_nbr - 1;
-       idx > 0 && (_bft_mem_global_block_array + idx)->p_bloc != p_free;
-       idx--);
-
-  if ((_bft_mem_global_block_array + idx)->p_bloc != p_free)
-    _bft_mem_error(__FILE__, __LINE__, 0,
-                   _("Adress [%10p] does not correspond to "
-                     "the beginning of an allocated block."),
-                   p_free);
-
-  else {
-
-    /* We move the contents of the array's final block to the position
-       of the freed block, and shorten the array's useful part by one. */
-
-    pinfo = _bft_mem_global_block_array + idx;
-    pmove = _bft_mem_global_block_array + _bft_mem_global_block_nbr - 1;
-    pinfo->p_bloc = pmove->p_bloc;
-    pinfo->size   = pmove->size;
-
-    _bft_mem_global_block_nbr -= 1;
-
-  }
+  return mib;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Semi private function definitions
+ *============================================================================*/
+
+/*!
+ * \brief Return the cs_mem_block structure corresponding to a given
+ * allocated block.
+ *
+ * \param [in]  p_get  allocated block's start adress.
+ *
+ * \return  corresponding cs_mem_block structure.
+ */
+
+cs_mem_block_t
+bft_mem_get_block_info(const void  *p_get)
+{
+  auto it = _bft_alloc_map.find(p_get);
+
+  if (it == _bft_alloc_map.end())
+    _bft_mem_block_info_error(p_get);
+
+  return it->second;
+}
+
+/*!
+ * \brief Return the cs_mem_block structure corresponding to a given
+ * allocated block if available.
+ *
+ * If no block info is available, return block with null pointers
+ * and zero size.
+ *
+ * \param [in]  p_get  allocated block's start adress.
+ *
+ * \return  corresponding cs_mem_block structure.
+ */
+
+cs_mem_block_t
+bft_mem_get_block_info_try(const void  *p_get)
+{
+  cs_mem_block_t mbi;
+
+  auto it = _bft_alloc_map.find(p_get);
+  if (it != _bft_alloc_map.end())
+    mbi = it->second;
+  else {
+    mbi.host_ptr = nullptr;
+#if defined(HAVE_ACCEL)
+    mbi.device_ptr = nullptr;
+#endif
+    mbi.size = 0;
+#if defined(HAVE_ACCEL)
+    mbi.mode = CS_ALLOC_HOST;
+#endif
+  }
+
+  return mbi;
+}
+
+/*!
+ * \brief Add memory block information to allocation map.
+ *
+ * \param [in]  me  memory block info.
+ */
+
+void
+bft_mem_map_block(const cs_mem_block_t  &me)
+{
+  if (me.host_ptr != nullptr)
+    _bft_alloc_map[me.host_ptr] = me;
+
+#if defined(HAVE_ACCEL)
+  else if (me.device_ptr != nullptr)
+    _bft_alloc_map[me.device_ptr] = me;
+#endif
+}
+
+/*!
+ * \brief Remove memory block information from allocation map.
+ *
+ * \param [in]  p  pointer used as map key
+ */
+
+void
+bft_mem_erase_block(const void  *p)
+{
+  _bft_alloc_map.erase(p);
+}
+
+/*!
+ * \brief Log matching memory operation if logging is enabled
+ *
+ * \param [in] var_name  allocated variable name string.
+ * \param [in] file_name name of calling source file.
+ * \param [in] line_num  line number in calling source file.
+ * \param [in] old_block pointer to old block info, if present
+ * \param [in] new_block pointer to new block info, if present
+ */
+
+void
+bft_mem_update_block_info(const char            *var_name,
+                          const char            *file_name,
+                          int                    line_num,
+                          const cs_mem_block_t  *old_block,
+                          const cs_mem_block_t  *new_block)
+{
+  const void *p_m_old = nullptr, *p_m_new = nullptr;
+  size_t old_size = 0, new_size = 0;
+  cs_alloc_mode_t old_mode = CS_ALLOC_HOST, new_mode = CS_ALLOC_HOST;
+
+  if (old_block != nullptr) {
+    p_m_old = old_block->host_ptr;
+#if defined(HAVE_ACCEL)
+    old_mode = old_block->mode;
+    if (old_mode == CS_ALLOC_DEVICE)
+      p_m_old = old_block->device_ptr;
+#endif
+    old_size = old_block->size;
+  }
+
+  if (new_block != nullptr) {
+    p_m_new = new_block->host_ptr;
+#if defined(HAVE_ACCEL)
+    new_mode = new_block->mode;
+    if (new_mode == CS_ALLOC_DEVICE)
+      p_m_new = new_block->device_ptr;
+#endif
+    new_size = new_block->size;
+  }
+
+  if (   _bft_mem_global_init_mode > 1
+      ||  old_mode > CS_ALLOC_HOST || new_mode > CS_ALLOC_HOST) {
+
+#if defined(HAVE_OPENMP)
+    int in_parallel = omp_in_parallel();
+    if (in_parallel)
+      omp_set_lock(&_bft_mem_lock);
+#endif
+
+    /* Update map */
+
+    if (old_block != nullptr && (new_block == nullptr || p_m_new != p_m_old))
+      _bft_alloc_map.erase(p_m_old);
+    if (new_block != nullptr && p_m_new != nullptr)
+      _bft_alloc_map[p_m_new] = *new_block;
+
+    /* Memory allocation counting */
+
+    if (_bft_mem_global_init_mode > 1) {
+      long long size_diff = new_size - old_size;
+
+      int cat_id = 3;
+      if (p_m_old == nullptr) {
+        cat_id = 0;
+        _bft_mem_global_n_allocs += 1;
+      }
+      else if (p_m_new == nullptr) {
+        cat_id = 2;
+        _bft_mem_global_n_frees += 1;
+      }
+      else if (old_size != new_size) {
+        cat_id = 1;
+        _bft_mem_global_n_reallocs += 1;
+      }
+
+      _bft_mem_global_alloc_cur += size_diff;
+
+      if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
+        _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+
+      /* Log to file */
+
+      if (_bft_mem_global_file != NULL) {
+
+        static const char cat_s[4][8]
+          = {"  alloc", "realloc", "   free", "mapping"};
+        char c_sgn = '+';
+        if (size_diff < 0) {
+          c_sgn = '-';
+          size_diff = - size_diff;
+        }
+
+        const void *p_old = nullptr, *p_new = nullptr;
+        if (old_block != nullptr)
+          p_old = old_block->host_ptr;
+        if (new_block != nullptr)
+          p_new = new_block->host_ptr;
+
+        fprintf(_bft_mem_global_file, "\n%s: %-27s:%6d : %-39s: %9lu",
+                cat_s[cat_id], _bft_mem_basename(file_name), line_num,
+                var_name, (unsigned long)new_size);
+        fprintf(_bft_mem_global_file, " : (%c%9lu) : %12lu : [%14p] : [%14p]",
+                c_sgn, (unsigned long)size_diff,
+                (unsigned long)_bft_mem_global_alloc_cur,
+                p_old, p_new);
+#if defined(HAVE_ACCEL)
+        static const char *alloc_mode_s[5] = {
+          "host",
+          "host/device",
+          "host/device pinned",
+          "host/device shared",
+          "device"};
+        const void *p_old_d
+          = (old_block != nullptr) ? old_block->device_ptr : nullptr;
+        const void *p_new_d
+          = (new_block != nullptr) ? new_block->device_ptr : nullptr;
+        fprintf(_bft_mem_global_file, " : [%14p] : [%14p] : %s",
+                p_old_d, p_new_d, alloc_mode_s[new_mode]);
+#endif
+        fflush(_bft_mem_global_file);
+
+      } /* End of log to file */
+
+    } /* End counting and logging */
+
+#if defined(HAVE_OPENMP)
+    if (in_parallel)
+      omp_unset_lock(&_bft_mem_lock);
+#endif
+
+  } /* End if map needs to be updated */
+}
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -641,8 +685,6 @@ _bft_mem_block_free(const void *p_free)
 void
 bft_mem_init(const char *log_file_name)
 {
-  size_t alloc_size;
-
 #if defined(HAVE_OPENMP)
   if (omp_in_parallel()) {
     if (omp_get_thread_num() != 0)
@@ -651,25 +693,20 @@ bft_mem_init(const char *log_file_name)
   omp_init_lock(&_bft_mem_lock);
 #endif
 
-  if (_bft_mem_global_initialized == 1) {
+  if (_bft_mem_global_init_mode > 0) {
     _bft_mem_error(__FILE__, __LINE__, 0,
                    _("bft_mem_init() has already been called"));
   }
-  _bft_mem_global_initialized = 1;
 
-  alloc_size = sizeof(struct _bft_mem_block_t) * _bft_mem_global_block_max;
-
-  _bft_mem_global_block_array
-    = malloc(sizeof(struct _bft_mem_block_t) * _bft_mem_global_block_max);
-
-  if (_bft_mem_global_block_array == NULL) {
-    _bft_mem_error(__FILE__, __LINE__, errno,
-                   _("Failure to allocate \"%s\" (%lu bytes)"),
-                   "_bft_mem_global_block_array", (unsigned long)alloc_size);
-    return;
-  }
+#if defined(HAVE_ACCEL)
+  _bft_mem_global_init_mode = 2;
+#else
+  _bft_mem_global_init_mode = 1;
+#endif
 
   if (log_file_name != NULL) {
+
+    _bft_mem_global_init_mode = 2;
 
     _bft_mem_global_file = fopen(log_file_name, "w");
 
@@ -699,10 +736,22 @@ bft_mem_init(const char *log_file_name)
     fprintf(_bft_mem_global_file,
             "       :     FILE NAME              : LINE  :"
             "  POINTER NAME                          : N BYTES   :"
-            " (+- N BYTES) : TOTAL BYTES  : [    ADRESS]\n"
+            " (+- N BYTES) : TOTAL BYTES  : [   OLD ADRESS ] : [   NEW ADRESS ]");
+#if defined(HAVE_ACCEL)
+    fprintf(_bft_mem_global_file,
+            " : [OLD ADRESS (D)] : [NEW ADRESS (D)] : MODE");
+#endif
+    fprintf(_bft_mem_global_file, "\n");
+
+    fprintf(_bft_mem_global_file,
             "-------:----------------------------:-------:"
             "----------------------------------------:-----------:"
-            "-----------------------------:--------------");
+            "-----------------------------:------------------:-----------------");
+#if defined(HAVE_ACCEL)
+    fprintf(_bft_mem_global_file,
+            "-:------------------:------------------:-----");
+#endif
+    fprintf(_bft_mem_global_file, "\n");
 
   }
 
@@ -716,9 +765,10 @@ bft_mem_init(const char *log_file_name)
  * writes final information to the log file and closes is.
  */
 
-void bft_mem_end(void)
+void
+bft_mem_end(void)
 {
-  if (_bft_mem_global_initialized == 0)
+  if (_bft_mem_global_init_mode == 0)
     return;
 
 #if defined(HAVE_OPENMP)
@@ -729,12 +779,9 @@ void bft_mem_end(void)
   omp_destroy_lock(&_bft_mem_lock);
 #endif
 
-  _bft_mem_global_initialized = 0;
+  _bft_mem_global_init_mode = 0;
 
   if (_bft_mem_global_file != NULL) {
-
-    unsigned long  non_free = 0;
-    struct _bft_mem_block_t  *pinfo;
 
     /* Memory usage summary */
 
@@ -742,45 +789,35 @@ void bft_mem_end(void)
 
     /* List of non-freed pointers */
 
-    if (_bft_mem_global_block_array != NULL) {
+    size_t non_free = _bft_alloc_map.size();
+
+    if (non_free > 0) {
 
       fprintf(_bft_mem_global_file, "List of non freed pointers:\n");
 
-      for (pinfo = _bft_mem_global_block_array;
-           pinfo < _bft_mem_global_block_array + _bft_mem_global_block_nbr;
-           pinfo++) {
+      for (auto const& x : _bft_alloc_map) {
+        const void *p = x.first;
+        // const cs_mem_block_t b = x.second;
 
-        fprintf(_bft_mem_global_file,"[%10p]\n", pinfo->p_bloc);
-        non_free++;
-
+        fprintf(_bft_mem_global_file,"[%p]\n", p);
       }
 
-      fprintf(_bft_mem_global_file,
-              "Number of non freed pointers remaining: %lu\n",
-              non_free);
-
     }
+
+    fprintf(_bft_mem_global_file,
+            "Number of non freed pointers remaining: %lu\n",
+            non_free);
 
     fclose(_bft_mem_global_file);
   }
 
   /* Reset defaults in case of later initialization */
 
-  if (_bft_mem_global_block_array != NULL) {
-    free(_bft_mem_global_block_array);
-    _bft_mem_global_block_array = NULL;
-  }
-
-  _bft_mem_global_block_nbr   = 0 ;
-  _bft_mem_global_block_max   = 512 ;
-
-  _bft_mem_global_alloc_cur = 0;
-  _bft_mem_global_alloc_max = 0;
+  _bft_alloc_map.clear();
 
   _bft_mem_global_n_allocs = 0;
   _bft_mem_global_n_reallocs = 0;
   _bft_mem_global_n_frees = 0;
-
 }
 
 /*!
@@ -792,7 +829,7 @@ void bft_mem_end(void)
 int
 bft_mem_initialized(void)
 {
-  return _bft_mem_global_initialized;
+  return (_bft_mem_global_init_mode > 0) ? 1 : 0;
 }
 
 /*!
@@ -801,6 +838,11 @@ bft_mem_initialized(void)
  * This function calls malloc(), but adds tracing capabilities, and
  * automatically calls the bft_error() errorhandler if it fails to
  * allocate the required memory.
+ *
+ * Allocation couting and logging to trace file will be done if
+ * both required by the bft_mem_init options and if file_name != nullptr.
+ * If required but file_name == nullptr, it must be handled by the caller,
+ * using \ref bft_mem_log_mem_op.
  *
  * \param [in] ni        number of elements.
  * \param [in] size      element size.
@@ -818,7 +860,6 @@ bft_mem_malloc(size_t       ni,
                const char  *file_name,
                int          line_num)
 {
-  void       *p_loc;
   size_t      alloc_size = ni * size;
 
   if (ni == 0)
@@ -826,55 +867,29 @@ bft_mem_malloc(size_t       ni,
 
   /* Allocate memory and check return */
 
-  p_loc = malloc(alloc_size);
+  void  *p_new = malloc(alloc_size);
 
-  if (p_loc == NULL) {
+  if (p_new == NULL) {
     _bft_mem_error(file_name, line_num, errno,
                    _("Failure to allocate \"%s\" (%lu bytes)"),
                    var_name, (unsigned long)alloc_size);
     return NULL;
   }
-  else if (_bft_mem_global_initialized == 0)
-    return p_loc;
+  else if (_bft_mem_global_init_mode < 2)
+    return p_new;
 
-  /* Memory allocation counting */
+  cs_mem_block_t mib = _bft_mem_block_new(p_new, alloc_size);
 
-  {
-#if defined(HAVE_OPENMP)
-    int in_parallel = omp_in_parallel();
-    if (in_parallel)
-      omp_set_lock(&_bft_mem_lock);
-#endif
-
-    _bft_mem_global_alloc_cur += alloc_size;
-
-    if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
-      _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
-
-    if (_bft_mem_global_file != NULL) {
-      fprintf(_bft_mem_global_file, "\n  alloc: %-27s:%6d : %-39s: %9lu",
-              _bft_mem_basename(file_name), line_num,
-              var_name, (unsigned long)alloc_size);
-      fprintf(_bft_mem_global_file, " : (+%9lu) : %12lu : [%10p]",
-              (unsigned long)alloc_size,
-              (unsigned long)_bft_mem_global_alloc_cur,
-              p_loc);
-      fflush(_bft_mem_global_file);
-    }
-
-    _bft_mem_block_malloc(p_loc, alloc_size);
-
-    _bft_mem_global_n_allocs += 1;
-
-#if defined(HAVE_OPENMP)
-    if (in_parallel)
-      omp_unset_lock(&_bft_mem_lock);
-#endif
-  }
+  if (file_name != nullptr)
+    bft_mem_update_block_info(var_name,
+                              file_name,
+                              line_num,
+                              nullptr,
+                              &mib);
 
   /* Return pointer to allocated memory */
 
-  return p_loc;
+  return p_new;
 }
 
 /*!
@@ -903,14 +918,7 @@ bft_mem_realloc(void        *ptr,
                 const char  *file_name,
                 int          line_num)
 {
-  void      *p_loc;
-
-  size_t old_size = 0;
   size_t new_size = ni * size;
-
-#if defined(HAVE_OPENMP)
-  int in_parallel = 0;
-#endif
 
   /*
     Behave as bft_mem_malloc() if the previous pointer is equal to NULL.
@@ -937,102 +945,43 @@ bft_mem_realloc(void        *ptr,
                         file_name,
                         line_num);
 
-  /* When possible, get previous size to compute difference. */
+  /* When possible, get previous allocation information. */
 
-  if (_bft_mem_global_initialized) {
+  cs_mem_block_t mib_old;
+  if (_bft_mem_global_init_mode > 1)
+    mib_old = bft_mem_get_block_info(ptr);
+  else
+    mib_old = bft_mem_get_block_info_try(ptr);
 
-#if defined(HAVE_OPENMP)
-    in_parallel = omp_in_parallel();
-    if (in_parallel)
-      omp_set_lock(&_bft_mem_lock);
-#endif
+  /* If the old size is known to equal the new size,
+     nothing needs to be done. */
 
-    struct _bft_mem_block_t *pinfo = _bft_mem_block_info_try(ptr);
-    if (pinfo != NULL)
-      old_size = pinfo->size;
-
-#if defined(HAVE_OPENMP)
-    if (in_parallel)
-      omp_unset_lock(&_bft_mem_lock);
-#endif
-
-    if (pinfo == NULL) {
-      if (_bft_alt_get_size_func != NULL) {
-        old_size = _bft_alt_get_size_func(ptr);
-        if (old_size > 0)
-          return _bft_alt_realloc_func(ptr, ni, size,
-                                     var_name, file_name, line_num);
-      }
-      _bft_mem_block_info_error(ptr);
-    }
-
-    /* If the old size is known to equal the new size,
-       nothing needs to be done. */
-
-    if (new_size == old_size)
-      return ptr;
-
+  if (new_size == mib_old.size) {
+    return ptr;
   }
 
   /* In the general case, we have a true reallocation. */
 
-  p_loc = realloc(ptr, new_size);
+  void *p_new = realloc(ptr, new_size);
 
-  if (p_loc == NULL) {
-    _bft_mem_error(file_name, line_num, errno,
-                   _("Failure to reallocate \"%s\" (%lu bytes)"),
-                   var_name, (unsigned long)new_size);
-    return NULL;
+#if defined(HAVE_ACCEL)
+  if (mib_old.mode >= CS_ALLOC_HOST_DEVICE_PINNED) {
+    return _bft_alt_realloc_func(ptr, ni, size,
+                                 var_name, file_name, line_num);
   }
-  else if (_bft_mem_global_initialized == 0)
-    return p_loc;
-
-  {
-#if defined(HAVE_OPENMP)
-    if (in_parallel)
-      omp_set_lock(&_bft_mem_lock);
 #endif
 
-    /* FIXME: size_diff overestimated when _bft_mem_global_initialized == 0,
-       so bft_mem_size_current/bft_mem_size_max will return incorrect values
-       in this case.
-       Maybe these functions should simply return 0 in the case. */
+  if (file_name != nullptr) {
+    cs_mem_block_t mib_new = _bft_mem_block_new(p_new, new_size);
 
-    long size_diff = new_size - old_size;
-
-    _bft_mem_global_alloc_cur += size_diff;
-
-    if (size_diff > 0) {
-      if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
-        _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
-    }
-
-    if (_bft_mem_global_file != NULL) {
-      char sgn = (size_diff > 0) ? '+' : '-';
-      fprintf(_bft_mem_global_file, "\nrealloc: %-27s:%6d : %-39s: %9lu",
-              _bft_mem_basename(file_name), line_num,
-              var_name, (unsigned long)new_size);
-      fprintf(_bft_mem_global_file, " : (%c%9lu) : %12lu : [%10p]",
-              sgn,
-              (unsigned long) ((size_diff > 0) ? size_diff : -size_diff),
-              (unsigned long)_bft_mem_global_alloc_cur,
-              p_loc);
-      fflush(_bft_mem_global_file);
-    }
-
-    _bft_mem_block_realloc(ptr, p_loc, new_size);
-
-    _bft_mem_global_n_reallocs += 1;
-
-#if defined(HAVE_OPENMP)
-    if (in_parallel)
-      omp_unset_lock(&_bft_mem_lock);
-#endif
-
-    return p_loc;
+    bft_mem_update_block_info(var_name,
+                              file_name,
+                              line_num,
+                              &mib_old,
+                              &mib_new);
   }
 
-  return NULL; /* Avoid a compiler warning */
+  return p_new;
 }
 
 /*!
@@ -1065,58 +1014,29 @@ bft_mem_free(void        *ptr,
 
   /* General case (free allocated memory) */
 
-  if (_bft_mem_global_initialized != 0) {
+  /* When possible, get previous allocation information. */
 
-#if defined(HAVE_OPENMP)
-    int in_parallel = omp_in_parallel();
-    if (in_parallel)
-      omp_set_lock(&_bft_mem_lock);
-#endif
+  cs_mem_block_t mib_old;
+  if (_bft_mem_global_init_mode > 1)
+    mib_old = bft_mem_get_block_info(ptr);
+  else
+    mib_old = bft_mem_get_block_info_try(ptr);
 
-    struct _bft_mem_block_t *pinfo = _bft_mem_block_info_try(ptr);
-
-    if (pinfo != NULL) {
-
-      size_t  size_info = pinfo->size;
-
-      _bft_mem_global_alloc_cur -= size_info;
-
-      if (_bft_mem_global_file != NULL) {
-        fprintf(_bft_mem_global_file,"\n   free: %-27s:%6d : %-39s: %9lu",
-                _bft_mem_basename(file_name), line_num,
-                var_name, (unsigned long)size_info);
-        fprintf(_bft_mem_global_file, " : (-%9lu) : %12lu : [%10p]",
-                (unsigned long)size_info,
-                (unsigned long)_bft_mem_global_alloc_cur,
-                ptr);
-        fflush(_bft_mem_global_file);
-      }
-
-      _bft_mem_block_free(ptr);
-
-      _bft_mem_global_n_frees += 1;
-
-    }
-
-#if defined(HAVE_OPENMP)
-    if (in_parallel)
-      omp_unset_lock(&_bft_mem_lock);
-#endif
-
-    if (pinfo == NULL) {
-      if (_bft_alt_get_size_func != NULL) {
-        size_t size_info = _bft_alt_get_size_func(ptr);
-        if (size_info > 0) {
-          _bft_alt_free_func(ptr, var_name, file_name, line_num);
-          return NULL;
-        }
-      }
-      _bft_mem_block_info_error(ptr);
-    }
-
+#if defined(HAVE_ACCEL)
+  if (mib_old.mode >= CS_ALLOC_HOST_DEVICE_PINNED) {
+    _bft_alt_free_func(ptr, var_name, file_name, line_num);
+    return NULL;
   }
+#endif
 
   free(ptr);
+  if (   mib_old.host_ptr != nullptr
+      && file_name != nullptr)
+    bft_mem_update_block_info(var_name,
+                              file_name,
+                              line_num,
+                              &mib_old,
+                              nullptr);
 
   return NULL;
 }
@@ -1178,43 +1098,17 @@ bft_mem_memalign(size_t       alignment,
     }
     return NULL;
   }
-  else if (_bft_mem_global_initialized == 0)
+  else if (_bft_mem_global_init_mode < 2)
     return p_loc;
 
-  /* Memory allocation counting */
+  cs_mem_block_t mib = _bft_mem_block_new(p_loc, alloc_size);
 
-  {
-#if defined(HAVE_OPENMP)
-    int in_parallel = omp_in_parallel();
-    if (in_parallel)
-      omp_set_lock(&_bft_mem_lock);
-#endif
-
-    _bft_mem_global_alloc_cur += alloc_size;
-
-    if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
-      _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
-
-    if (_bft_mem_global_file != NULL) {
-      fprintf(_bft_mem_global_file, "\n  alloc: %-27s:%6d : %-39s: %9lu",
-              _bft_mem_basename(file_name), line_num,
-              var_name, (unsigned long)alloc_size);
-      fprintf(_bft_mem_global_file, " : (+%9lu) : %12lu : [%10p]",
-              (unsigned long)alloc_size,
-              (unsigned long)_bft_mem_global_alloc_cur,
-              p_loc);
-      fflush(_bft_mem_global_file);
-    }
-
-    _bft_mem_block_malloc(p_loc, alloc_size);
-
-    _bft_mem_global_n_allocs += 1;
-
-#if defined(HAVE_OPENMP)
-    if (in_parallel)
-      omp_unset_lock(&_bft_mem_lock);
-#endif
-  }
+  if (file_name != nullptr)
+    bft_mem_update_block_info(var_name,
+                              file_name,
+                              line_num,
+                              nullptr,
+                              &mib);
 
   /* Return pointer to allocated memory */
 
@@ -1228,40 +1122,6 @@ bft_mem_memalign(size_t       alignment,
   return NULL;
 
 #endif
-}
-
-/*!
- * \brief Return block size associated with a given pointer.
- *
- * bft_mem_init() must have beed called before this function can be used.
- *
- * \param [in] ptr  pointer to previous memory location
- *
- * \returns size of associated memory block.
- */
-
-size_t
-bft_mem_get_block_size(void  *ptr)
-{
-  size_t block_size = 0;
-
-  if (_bft_mem_global_initialized) {
-
-#if defined(HAVE_OPENMP)
-    int in_parallel = omp_in_parallel();
-    if (in_parallel)
-      omp_set_lock(&_bft_mem_lock);
-#endif
-
-    block_size = _bft_mem_block_size(ptr);
-
-  }
-  else
-    _bft_mem_error(__FILE__, __LINE__, 0,
-                   _("%s: should not be called before %s\n"),
-                   __func__, "bft_mem_init");
-
-  return block_size;
 }
 
 /*!
@@ -1348,15 +1208,13 @@ bft_mem_error_handler_set(bft_error_handler_t *handler)
  *
  * parameter:
  *   realloc_func <-- pointer to alternative reallocation function.
- *   realloc_func <-- pointer to alternative free function.
+ *   free_func    <-- pointer to alternative free function.
  */
 
 void
-bft_mem_alternative_set(bft_mem_get_size_t  *get_size_func,
-                        bft_mem_realloc_t   *realloc_func,
+bft_mem_alternative_set(bft_mem_realloc_t   *realloc_func,
                         bft_mem_free_t      *free_func)
 {
-  _bft_alt_get_size_func = get_size_func;
   _bft_alt_realloc_func = realloc_func;
   _bft_alt_free_func = free_func;
 }

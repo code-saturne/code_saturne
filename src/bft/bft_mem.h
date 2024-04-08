@@ -43,6 +43,41 @@ BEGIN_C_DECLS
  * Public types
  *============================================================================*/
 
+/*!
+ * Allocation modes for accelerated code.
+ */
+
+typedef enum {
+
+  CS_ALLOC_HOST,                /*!< allocation on host only */
+  CS_ALLOC_HOST_DEVICE,         /*!< allocation on host and device */
+  CS_ALLOC_HOST_DEVICE_PINNED,  /*!< allocation on host and device,
+                                  using page-locked memory on host
+                                  if possible */
+  CS_ALLOC_HOST_DEVICE_SHARED,  /*!< allocation on host and device,
+                                  using mapped/shared memory */
+  CS_ALLOC_DEVICE               /*!< allocation on device only */
+
+} cs_alloc_mode_t;
+
+/*
+ * Structure defining an allocated memory block
+ */
+
+typedef struct
+{
+  void  *host_ptr;          //!< host pointer
+#if defined(HAVE_ACCEL)
+  void  *device_ptr;        //!< device pointer
+#endif
+
+  size_t           size;    //! allocation size
+#if defined(HAVE_ACCEL)
+  cs_alloc_mode_t  mode;    //!< allocation mode
+#endif
+
+} cs_mem_block_t;
+
 /*============================================================================
  * Public macros
  *============================================================================*/
@@ -142,6 +177,71 @@ typedef void
                  int          line_num);
 
 /*============================================================================
+ * Semi private function definitions
+ *============================================================================*/
+
+END_C_DECLS
+
+#ifdef __cplusplus /* only for C++ API */
+
+/*----------------------------------------------------------------------------*/
+
+/*
+ * Return the cs_mem_block structure corresponding to a given
+ * allocated block.
+ *
+ * parameters:
+ *   p_get: <-- allocated block's start adress.
+ *
+ * returns:
+ *   corresponding cs_mem_block structure.
+ */
+
+cs_mem_block_t
+bft_mem_get_block_info(const void  *p_get);
+
+/*
+ * Return the cs_mem_block structure corresponding to a given
+ * allocated block if available.
+ *
+ * If no block info is available, return block with null pointers
+ * and zero size.
+ *
+ * parameters:
+ *   p_get: <-- allocated block's start adress.
+ *
+ * returns:
+ *   pointer tocorresponding cs_mem_block structure.
+ */
+
+cs_mem_block_t
+bft_mem_get_block_info_try(const void  *p_get);
+
+/*
+ * \brief Update block information map if enabled.
+ *
+ * parameters
+ *   var_name  <-- allocated variable name string.
+ *   file_name <-- name of calling source file.
+ *   line_num  <-- line number in calling source file.
+ *   old_block <-- pointer to old block info, if present
+ *   new_block <-- pointer to new block info, if present
+ */
+
+void
+bft_mem_update_block_info(const char            *var_name,
+                          const char            *file_name,
+                          int                    line_num,
+                          const cs_mem_block_t  *old_block,
+                          const cs_mem_block_t  *new_block);
+
+/*----------------------------------------------------------------------------*/
+
+#endif // __cplusplus
+
+BEGIN_C_DECLS
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -201,6 +301,11 @@ bft_mem_initialized(void);
  * This function calls malloc(), but adds tracing capabilities, and
  * automatically calls the bft_error() errorhandler if it fails to
  * allocate the required memory.
+ *
+ * Allocation couting and logging to trace file will be done if
+ * both required by the bft_mem_init options and if file_name != nullptr.
+ * If required but file_name == nullptr, it must be handled by the caller,
+ * using `bft_mem_log_mem_op`.
  *
  * parameters:
  *   ni        <-- number of items.
@@ -304,19 +409,6 @@ bft_mem_memalign(size_t       alignment,
                  int          line_num);
 
 /*!
- * \brief Return block size associated with a given pointer.
- *
- * bft_mem_init() must have beed called before this function can be used.
- *
- * \param [in] ptr  pointer to previous memory location
- *
- * \returns size of associated memory block.
- */
-
-size_t
-bft_mem_get_block_size(void  *ptr);
-
-/*!
  * \brief Return current theoretical dynamic memory allocated.
  *
  * \return current memory handled through bft_mem_...() (in kB).
@@ -383,13 +475,11 @@ bft_mem_error_handler_set(bft_error_handler_t *handler);
  *
  * parameter:
  *   realloc_func <-- pointer to alternative reallocation function.
- *   realloc_func <-- pointer to alternative reallocation function.
  *   free_func    <-- pointer to alternative free function.
  */
 
 void
-bft_mem_alternative_set(bft_mem_get_size_t  *get_size_func,
-                        bft_mem_realloc_t   *realloc_func,
+bft_mem_alternative_set(bft_mem_realloc_t   *realloc_func,
                         bft_mem_free_t      *free_func);
 
 /*----------------------------------------------------------------------------*/

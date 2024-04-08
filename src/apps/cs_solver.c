@@ -675,13 +675,6 @@ _run(void)
 
   cs_base_time_summary();
 
-#if defined(HAVE_ACCEL)
-  int n_alloc_hd_remain = cs_get_n_allocations_hd();
-  if (n_alloc_hd_remain > 0)
-    bft_printf(_("Warning: %d remaining host-device allocations\n"
-                 "         (possible memory leak)\n"), n_alloc_hd_remain);
-#endif
-
   cs_base_mem_finalize();
 
   cs_log_printf_flush(CS_LOG_N_TYPES);

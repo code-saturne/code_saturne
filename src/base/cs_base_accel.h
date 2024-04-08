@@ -125,7 +125,7 @@ cs_free_hd(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
  */
 
 #define CS_FREE(_ptr) \
-cs_free(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
+cs_free_hd(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
 
 /*----------------------------------------------------------------------------*/
 
@@ -134,27 +134,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Variable value type.
- *----------------------------------------------------------------------------*/
-
-/*!
- * Allocation modes for accelerated code.
- */
-
-typedef enum {
-
-  CS_ALLOC_HOST,                /*!< allocation on host only */
-  CS_ALLOC_HOST_DEVICE,         /*!< allocation on host and device */
-  CS_ALLOC_HOST_DEVICE_PINNED,  /*!< allocation on host and device,
-                                  using page-locked memory on host
-                                  if possible */
-  CS_ALLOC_HOST_DEVICE_SHARED,  /*!< allocation on host and device,
-                                  using mapped/shared memory */
-  CS_ALLOC_DEVICE               /*!< allocation on device only */
-
-} cs_alloc_mode_t;
 
 /*=============================================================================
  * Global variable definitions
@@ -341,41 +320,6 @@ cs_free_hd(void         *ptr,
            const char   *var_name,
            const char   *file_name,
            int           line_num)
-{
-  bft_mem_free(ptr, var_name, file_name, line_num);
-}
-
-#endif
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free memory on host and device for a given pointer.
- *
- * Compared to \cs_free_hd, this function also allows freeing memory
- * allocated through BFT_MEM_MALLOC / bft_mem_malloc.
- *
- * \param [in]  ptr        pointer to free
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- */
-/*----------------------------------------------------------------------------*/
-
-#if defined(HAVE_ACCEL)
-
-void
-cs_free(void        *ptr,
-        const char  *var_name,
-        const char  *file_name,
-        int          line_num);
-
-#else
-
-inline static void
-cs_free(void         *ptr,
-        const char   *var_name,
-        const char   *file_name,
-        int           line_num)
 {
   bft_mem_free(ptr, var_name, file_name, line_num);
 }
@@ -858,55 +802,6 @@ cs_copy_d2d(void        *dest,
             size_t       size);
 
 #endif /* defined(HAVE_ACCEL) */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return number of host-device allocations
- *
- * \returns current number of host-device allocations.
- */
-/*----------------------------------------------------------------------------*/
-
-#if defined(HAVE_ACCEL)
-
-int
-cs_get_n_allocations_hd(void);
-
-#else
-
-static inline int
-cs_get_n_allocations_hd(void)
-{
-  return 0;
-}
-
-#endif
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if a given host pointer is allocated with associated with
- *        cs_alloc_hd or cs_realloc_hd.
- *
- * \returns allocated memory size, or zero if not allocated with this
- *          mechanism.
- */
-/*----------------------------------------------------------------------------*/
-
-#if defined(HAVE_ACCEL)
-
-size_t
-cs_get_allocation_hd_size(void  *host_ptr);
-
-#else
-
-static inline size_t
-cs_get_allocation_hd_size(void  *host_ptr)
-{
-  CS_UNUSED(host_ptr);
-  return 0;
-}
-
-#endif
 
 #if defined(HAVE_OPENMP_TARGET)
 

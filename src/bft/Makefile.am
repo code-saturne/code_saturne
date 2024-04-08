@@ -28,6 +28,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 AM_LDFLAGS =
 
 # Public header files (to be installed)
@@ -46,7 +47,7 @@ noinst_LIBRARIES = libbft.a
 libbft_a_SOURCES  = \
 bft_backtrace.c \
 bft_error.c \
-bft_mem.c \
+bft_mem.cpp \
 bft_mem_usage.c \
 bft_printf.c
 
@@ -54,3 +55,8 @@ libbft_a_LIBADD =
 
 clean-local:
 	-rm -rf .deps
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif

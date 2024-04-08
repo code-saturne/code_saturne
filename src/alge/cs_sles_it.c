@@ -4550,7 +4550,7 @@ cs_sles_it_solve(void                *context,
         CS_FREE_HD(_vx);
       }
       else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED)
-        cs_sync_d2h(_vx);
+        cs_sync_d2h(vx);
 
       CS_FREE_HD(_rhs_w);
     }

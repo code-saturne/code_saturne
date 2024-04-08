@@ -979,13 +979,10 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
 
   if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(vx, vec_size, device_id, stream);
+    cudaMemPrefetchAsync(vx, vec_size, device_id, stream_pf);
 
   if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
     cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
-  else if (amode_rhs == CS_ALLOC_HOST) {
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
-  }
 
   const cs_real_t  *restrict ad
     =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
