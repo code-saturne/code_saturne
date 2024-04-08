@@ -180,6 +180,7 @@ const char *cs_lagr_attribute_name[] = {
   /* Non-spherical particles submodel additoinal parameters */
   "shape",
   "orientation",
+  "quaternion",
   "radii",
   "angular_vel",
   "euler",
