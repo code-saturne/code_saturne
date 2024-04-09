@@ -104,7 +104,7 @@ typedef enum {
   CS_ENUMF_(mu_t),         /*!< turbulent dynamic viscosity */
 
   CS_ENUMF_(lambda),       /*!< Thermal conductivity */
-  CS_ENUMF_(th_diff),      /*!< Thermal diffusivity */
+  CS_ENUMF_(th_diff),      /*!< Dynamic thermal diffusivity */
 
   CS_ENUMF_(poro),         /*!< porosity */
   CS_ENUMF_(if_poro),      /*!< internal faces porosity */
