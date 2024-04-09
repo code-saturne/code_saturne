@@ -43,7 +43,7 @@
 
   \subsection drift_scalars_body Body
 
-  This example sets the scalar laminar diffusivity (for Brownian motion)
+  This example sets the scalar laminar dynamic diffusivity (for Brownian motion)
   to take thermophoresis into account.
 
   Here is the corresponding code:

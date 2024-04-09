@@ -43,7 +43,7 @@
 
   - the field's \ref diffusivity_id integer key
     must <b> have been specified </b>
-    in \ref cs_user_parameters  if we wish to define a variable viscosity
+    in \ref cs_user_parameters  if we wish to define a variable dynamic viscosity
     \c viscls.
 
   \remarks
@@ -62,10 +62,10 @@
       - density at boundary faces:                    kg/m3)
       - molecular viscosity:                          kg/(m s)
       - specific heat:                                J/(kg degrees)
-      - diffusivities associated with temperatures:   W/(m K)
-      - diffusivities associated with other scalars:  kg/(m s)
+      - conductivities associated with temperatures:  W/(m K)
+      - dynamic diffusivities associated with other scalars:  kg/(m s)
 
-  \warning: if the scalar is the temperature, its associated diffusivity
+  \warning: if the scalar is the temperature, its associated dynamic diffusivity
   actually corresponds to its conductivity (Lambda) in W/(m K)
 
   The types of boundary faces at the previous time step are available
@@ -126,16 +126,16 @@
   \snippet cs_user_physical_properties-compressible_flow.c example_4
 
 
-  \section example5_comp Molecular diffusivity of user-defined scalars varying with temperature
+  \section example5_comp Molecular dynamic diffusivity of user-defined scalars varying with temperature
 
-  The molecular diffusivity can be set for all the user-defined scalars
+  The molecular dynamic diffusivity can be set for all the user-defined scalars
   <b>except</b>:
     - temperature and enthalpy (already dealt with above: for these
       variables, the 'diffusivity' is the thermal conductivity)
     - variances of the fluctuations of another scalar variable (the
       diffusivity is assumed to be equal to that of the associated
       scalar)
-  The values of the molecular diffusivity are provided as a function
+  The values of the molecular dynamic diffusivity are provided as a function
   of the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:

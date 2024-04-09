@@ -333,7 +333,7 @@
   \ref cs_real_t *dttens = \ref cs_field_by_name("dttens")->val                     |call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::idtten "idtten", dttens)        | Field id for the dttens tensor
   CS_F_(t_b)->val                                                                   |call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::itempb "itempb", t_b)           | Boundary temperature </tt>
 
-Some physical properties such as specific heat or diffusivity are often
+Some physical properties such as specific heat or dynamic diffusivity are often
 constant (depending on the model or user parameters).
 In that case, these properties are stored as a simple real numbers
 rather than in a field over all mesh cells.
@@ -348,10 +348,10 @@ rather than in a field over all mesh cells.
     \ref cs_user_parameters.c, it is automatically reset to the id of
     the  cell-based property field referenced in the above table.
 
-- This is the same for the diffusivity <em>K</em> of each scalar.
+- This is the same for the dynamic diffusivity <em>K</em> of each scalar.
 
   - When <em>K</em> is constant, its value is based on the field's reference
-    diffusivity, accessible through the scalar field's \ref diffusivity_ref
+    dynamic diffusivity, accessible through the scalar field's \ref diffusivity_ref
     keyword.
 
     When it is variable, the matching field can be specified and accessed using
@@ -502,8 +502,8 @@ rather than in a field over all mesh cells.
   <tt> CS_FI_(d32,ip)->val </tt>          | Droplets Sauter mean diameter
   <tt> CS_FI_(drag,ipcpl)->val </tt>      | Drag between phases
   <tt> CS_FI_(ad_mass,ip)->val </tt>      | Added mass
-  <tt> CS_FI_(th_diff,ip)->val </tt>      | Thermal diffusivity
-  <tt> CS_FI_(th_diff_t,ip)->val </tt>    | Turbulent thermal diffusivity
+  <tt> CS_FI_(th_diff,ip)->val </tt>      | Thermal dynamic diffusivity (\f$kg.m^{-1}.s^{-1}\f$)
+  <tt> CS_FI_(th_diff_t,ip)->val </tt>    | Turbulent thermal dynamic diffusivity (\f$kg.m^{-1}.s^{-1}\f$)
   <tt> CS_FI_(drho_dp,ip)->val </tt>      | dRho over dP
   <tt> CS_FI_(drho_dh,ip)->val </tt>      | dRho over dH
   <tt> CS_FI_(tau12_t,ip)->val </tt>      | Turbulent tau12 for particles

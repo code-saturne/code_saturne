@@ -153,7 +153,8 @@ char *restart_file;
 
 /*!
   \var diffusivity_id
-  Field id of the matching molecular diffusivity for a scalar.
+  Field id of the matching dynamic molecular diffusivity for a scalar
+  (\f$kg.m^{-1}.s^{-1}\f$).
   Negative value if the field has constant diffusivity.
 
   If set to 0, a matching field will be created and its value
@@ -168,7 +169,7 @@ int diffusivity_id;
 
 /*!
   \var diffusivity_ref
-  Reference molecular diffusivity for a scalar (\f$kg.m^{-1}.s^{-1}\f$).
+  Reference molecular dynamic diffusivity for a scalar (\f$kg.m^{-1}.s^{-1}\f$).
   Negative value if not initialized or used.
 
   \warning: for a temperature, the diffusivity is defined as
@@ -260,7 +261,7 @@ double variance_dissipation;
 
 /*!
   \var scalar_diffusivity_prev
-  scalar diffusivity read from checkpoint file
+  scalar dynamic diffusivity (\f$kg.m^{-1}.s^{-1}\f$) read from checkpoint file
 */
 int scalar_diffusivity_prev;
 

@@ -1045,7 +1045,7 @@ Management of variable physical properties
 
 Without the **GUI**, all of the laws governing the physical properties of the fluid
 (molecular viscosity, molecular volumetric viscosity, molecular thermal conductivity and
-molecular diffusivity of the user-defined scalars) can be specified in the function \ref cs_user_physical_properties of
+molecular dynamic diffusivity of the user-defined scalars) can be specified in the function \ref cs_user_physical_properties of
 the \ref cs_user_physical_properties.c file.
 
 The user should check that the defined laws are valid for
@@ -1059,7 +1059,7 @@ For some examples we can see:
  - [Ex. 2: molecular volumetric viscosity varying with temperature](@ref example2_comp)
  - [Ex. 3: isobaric specific heat varying with temperature](@ref example3_comp)
  - [Ex. 4: molecular thermal conductivity varying with temperature](@ref example4_comp)
- - [Ex. 5: molecular diffusivity of user-defined scalars varying with temperature](@ref example5_comp)
+ - [Ex. 5: molecular dynamic diffusivity of user-defined scalars varying with temperature](@ref example5_comp)
 
 
 <!-- ----------------------------------------------------------------------- -->

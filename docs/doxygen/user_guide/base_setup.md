@@ -68,7 +68,7 @@ see figures [calculation features](@ref gui_calculation_features) to  [species](
 
 - Body forces: gravity and coriolis forces, see [body forces](@ref gui_body_forces).
 
-- Physical properties: reference pressure, fluid properties (density, viscosity, thermal conductivity, specific heat and scalar diffusivity), see [fluid properties](@ref gui_fluid_props).
+- Physical properties: reference pressure, fluid properties (density, viscosity, thermal conductivity, specific heat and scalar dynamic diffusivity), see [fluid properties](@ref gui_fluid_props).
 
 - Volume conditions: definition of volume regions (for initialization, head losses and source terms, [user source terms](@ref sec_prg_usersourceterms) and [head losses](@ref sec_prg_headlosses), initialization of the variables (including scalars), see [figure](@ref gui_initialization).
 
@@ -120,7 +120,7 @@ In addition to the GUI, user-defined functions may be used:
 - \ref cs_user_parameters to define most general or variable-based parameters
 - \ref cs_user_time_moments to define time moments associated with the various fields.
 - \ref linear_solvers to define linear solver options specific to any given system.
-- \ref cs_user_finalize_setup to modify or variable-based settings, or define them for secondary variables based on options set on main parameters (such as additional variables associated with variable scalar diffusivity, turbulent Schmidt number, ...).
+- \ref cs_user_finalize_setup to modify or variable-based settings, or define them for secondary variables based on options set on main parameters (such as additional variables associated with variable scalar dynamic diffusivity, turbulent Schmidt number, ...).
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -390,7 +390,7 @@ When the fluid properties are not constant, the user may define the variation la
 in the GUI or in the \ref cs_user_physical_properties user-defined function,
 which is called at each time step. In the GUI, in the item **Fluid properties**
 under the **Physical properties** section , the variation laws are defined for the
-fluid density, viscosity, specific heat, thermal conductivity and scalar diffusivity
+fluid density, viscosity, specific heat, thermal conductivity and scalar dynamic dynamic diffusivity
 as shown on the figures below.
 
 \anchor fig_gui_fluid_props2
@@ -416,7 +416,7 @@ a third-degree polynomial law may produce negative density values).
   possibly for some physical models in which this is predefined.
 
 - By default, the <em>C<sub>p</sub></em> coefficient and the
-  diffusivity for the scalars (<em>λ</em> for the temperature) are considered
+  dynamic diffusivity for the scalars (conductivity <em>λ</em> for the temperature) are considered
   as constant in time and uniform in space, with the \ref cs_fluid_properties_t::cp0
   and the value associated to the field's \ref diffusivity_ref keyword.
   To assign a variable value to <em>C<sub>p</sub></em>, the user **must** specify
@@ -425,7 +425,7 @@ a third-degree polynomial law may produce negative density values).
   and assign a value for each cell to the array `cpro_cp` which can be
   accessed through \ref CS_F_(cp)->val.
 
-- In the same manner, to have a variable diffusivity for a given
+- In the same manner, to have a variable dynamic diffusivity for a given
   scalar}, the user **must** specify it in the GUI (with a user law)
   or set that field's \ref diffusivity_id keyword to a value > -1
   in \ref cs_user_parameters.c before assigning values to the matching field.
