@@ -567,6 +567,8 @@ bft_mem_update_block_info(const char            *var_name,
     new_mode = new_block->mode;
     if (new_mode == CS_ALLOC_DEVICE)
       p_m_new = new_block->device_ptr;
+    assert(   new_block->device_ptr == nullptr
+           || new_block->mode != CS_ALLOC_HOST);
 #endif
     new_size = new_block->size;
   }

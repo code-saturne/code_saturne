@@ -641,19 +641,6 @@ cs_realloc_hd(void            *ptr,
 
   cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
 
-  if (   me.device_ptr != me.host_ptr
-      && me.device_ptr != nullptr
-      && me.host_ptr != nullptr) {
-#if defined(HAVE_CUDA)
-    cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
-#elif defined(SYCL_LANGUAGE_VERSION)
-    sycl::free(me.device_ptr, cs_glob_sycl_queue);
-#elif defined(HAVE_OPENMP_TARGET)
-    omp_target_free(me.device_ptr, cs_glob_omp_target_device_id);
-#endif
-    me.device_ptr = nullptr;
-  }
-
   if (new_size == me.size && mode == me.mode) {
     if (me.host_ptr != nullptr)
       return me.host_ptr;
@@ -671,7 +658,7 @@ cs_realloc_hd(void            *ptr,
     me.size = new_size;
     ret_ptr = me.host_ptr;
 
-    if (me.device_ptr != NULL) {
+    if (me.device_ptr != nullptr) {
 #if defined(HAVE_CUDA)
       cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
 #elif defined(SYCL_LANGUAGE_VERSION)
@@ -1200,6 +1187,9 @@ cs_set_alloc_mode(void             **host_ptr,
 void
 cs_sync_h2d(const void  *ptr)
 {
+  if (ptr == NULL)
+    return;
+
   cs_mem_block_t me = bft_mem_get_block_info(ptr);
 
   if (me.device_ptr == nullptr)
@@ -1302,6 +1292,9 @@ cs_sync_h2d(const void  *ptr)
 void
 cs_sync_h2d_future(const void  *ptr)
 {
+  if (ptr == NULL)
+    return;
+
   cs_mem_block_t me = bft_mem_get_block_info(ptr);
 
   switch (me.mode) {
@@ -1369,6 +1362,9 @@ cs_sync_h2d_future(const void  *ptr)
 void
 cs_sync_d2h(void  *ptr)
 {
+  if (ptr == NULL)
+    return;
+
   cs_mem_block_t me = bft_mem_get_block_info(ptr);
 
   switch (me.mode) {
@@ -1458,6 +1454,9 @@ void
 cs_prefetch_h2d(void    *ptr,
                 size_t   size)
 {
+  if (ptr == NULL)
+    return;
+
 #if defined(HAVE_CUDA)
 
   cs_cuda_prefetch_h2d(ptr, size);
@@ -1492,6 +1491,9 @@ void
 cs_prefetch_d2h(void    *ptr,
                 size_t   size)
 {
+  if (ptr == NULL)
+    return;
+
 #if defined(HAVE_CUDA)
 
   cs_cuda_prefetch_d2h(ptr, size);
@@ -1527,6 +1529,9 @@ cs_copy_h2d(void        *dest,
             const void  *src,
             size_t       size)
 {
+  if (src == NULL)
+    return;
+
 #if defined(HAVE_CUDA)
 
   cs_cuda_copy_h2d(dest, src, size);
@@ -1561,6 +1566,9 @@ cs_copy_d2h(void        *dest,
             const void  *src,
             size_t       size)
 {
+  if (src == NULL)
+    return;
+
 #if defined(HAVE_CUDA)
 
   cs_cuda_copy_d2h(dest, src, size);
@@ -1595,6 +1603,9 @@ cs_copy_d2d(void        *dest,
             const void  *src,
             size_t       size)
 {
+  if (src == NULL)
+    return;
+
 #if defined(HAVE_CUDA)
 
   cs_cuda_copy_d2d(dest, src, size);

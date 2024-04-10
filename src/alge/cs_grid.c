@@ -1075,7 +1075,7 @@ _coarsen_halo(const cs_grid_t   *f,
   /*-------------------------*/
 
   CS_MALLOC_HD(c_halo->send_list, c_halo->n_send_elts[0], cs_lnum_t,
-               CS_ALLOC_HOST);
+               cs_check_device_ptr(c_halo->send_index));
 
   c_halo->n_send_elts[0] = 0;
 
@@ -1174,8 +1174,10 @@ _coarsen_halo(const cs_grid_t   *f,
   c_halo->index[2*domain_count] = c_halo->index[2*c_halo->n_c_domains];
   c_halo->send_index[2*domain_count] = c_halo->send_index[2*c_halo->n_c_domains];
 
-  CS_REALLOC_HD(c_halo->index, domain_count*2+1, cs_lnum_t, CS_ALLOC_HOST);
-  CS_REALLOC_HD(c_halo->send_index, domain_count*2+1, cs_lnum_t, CS_ALLOC_HOST);
+  CS_REALLOC_HD(c_halo->index, domain_count*2+1, cs_lnum_t,
+                cs_check_device_ptr(c_halo->index));
+  CS_REALLOC_HD(c_halo->send_index, domain_count*2+1, cs_lnum_t,
+                cs_check_device_ptr(c_halo->send_index));
 
   if (domain_count < c_halo->n_c_domains && n_sections > 0) {
 
@@ -1423,7 +1425,8 @@ _rebuild_halo_send_lists(cs_halo_t  *h,
   h->n_send_elts[0] = h->send_index[h->n_c_domains*2];
   h->n_send_elts[1] = h->n_send_elts[0];
 
-  CS_MALLOC_HD(h->send_list, h->n_send_elts[0], cs_lnum_t, CS_ALLOC_HOST);
+  CS_MALLOC_HD(h->send_list, h->n_send_elts[0], cs_lnum_t,
+               cs_check_device_ptr(h->send_index));
 
   /* Receive data from distant ranks */
 
