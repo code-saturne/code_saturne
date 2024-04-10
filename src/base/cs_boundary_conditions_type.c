@@ -816,16 +816,16 @@ cs_boundary_conditions_type(bool  init,
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
         const cs_lnum_t c_id = b_face_cells[f_id];
-        
+
         if (icodcl_vel[f_id] == 0) {
-                  
+
           const cs_real_t b_massflux = (b_massflux_id > -1) ?
             cs_field_by_id(b_massflux_id)->val[f_id]:
             cs_math_3_dot_product(vel[c_id], nu[f_id]);
 
           /* outlet: in case of incoming mass flux,
                      the mass flux is set to zero. */
-        
+
           if (b_massflux < - cs_math_epzero) {
             /* Dirichlet boundary condition */
             icodcl_vel[f_id] = 1;

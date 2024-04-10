@@ -649,12 +649,12 @@ cs_notebook_log(void)
   if (log_needed) {
     char tmp_s[2][64] =  {"", ""};
 
-    /* Print title */ 
+    /* Print title */
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
                     "  ** Notebook editable values\n"
                     "     ------------------------\n"));
- 
+
     cs_log_strpad(tmp_s[0], _("Name"), _max_size_name, 64);
     cs_log_strpadl(tmp_s[1], _("value"), 14, 64);
     cs_log_printf(CS_LOG_DEFAULT,
