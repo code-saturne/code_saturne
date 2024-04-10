@@ -81,6 +81,8 @@
 #pragma omp requires unified_shared_memory
 #endif
 
+static bool _initialized = false;
+
 /*! Default "host+device" allocation mode */
 /*----------------------------------------*/
 
@@ -121,6 +123,55 @@ sycl::queue   cs_glob_sycl_queue;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reallocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate reallocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * \param [in]  host_ptr   host pointer
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_realloc_host(void            *host_ptr,
+              size_t           ni,
+              size_t           size,
+              const char      *var_name,
+              const char      *file_name,
+              int              line_num)
+{
+  return cs_realloc_hd(host_ptr,
+                       CS_ALLOC_HOST,
+                       ni, size,
+                       var_name, file_name, line_num);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize memory mapping on device.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_initialize(void)
+{
+  bft_mem_alternative_set(_realloc_host, cs_free_hd);
+
+  _initialized = true;
+
+  if (cs_get_device_id() < 0)
+    cs_alloc_mode = CS_ALLOC_HOST;
+}
 
 #if defined(SYCL_LANGUAGE_VERSION)
 
@@ -435,6 +486,9 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
              const char       *file_name,
              int               line_num)
 {
+  if (_initialized == false)
+   _initialize();
+
   if (ni == 0)
     return nullptr;
 
@@ -571,6 +625,9 @@ cs_realloc_hd(void            *ptr,
               const char      *file_name,
               int              line_num)
 {
+  if (_initialized == false)
+   _initialize();
+
   void *ret_ptr = ptr;
   size_t new_size = ni*size;
 

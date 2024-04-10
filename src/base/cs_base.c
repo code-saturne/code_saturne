@@ -74,7 +74,6 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_base_accel.h"
 #include "cs_file.h"
 #include "cs_fp_exception.h"
 #include "cs_log.h"
@@ -1664,8 +1663,6 @@ cs_base_mem_init(void)
 #if defined(HAVE_ACCEL)
     else
       bft_mem_init(NULL);
-
-    bft_mem_alternative_set(cs_realloc_hd, cs_free_hd);
 #endif
 
     cs_glob_base_bft_mem_init = true;
