@@ -260,6 +260,8 @@ static int _grid_tune_max_level = 0;
 static int *_grid_tune_max_fill_level = NULL;
 static cs_matrix_variant_t **_grid_tune_variant = NULL;
 
+static int _grid_max_level_device = 1;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1230,6 +1232,11 @@ _coarsen_halo(const cs_grid_t   *f,
   }
   c_halo->n_c_domains = domain_count;
   BFT_REALLOC(c_halo->c_domain_rank, c_halo->n_c_domains, int);
+
+  if (cs_check_device_ptr(c_halo->send_index) > CS_ALLOC_HOST) {
+    cs_sync_h2d(c_halo->send_index);
+    cs_sync_h2d(c_halo->send_list);
+  }
 
   /* Free memory */
 
@@ -5920,6 +5927,9 @@ cs_grid_coarsen(const cs_grid_t  *f,
                                                   NULL);
 
     c->_matrix = cs_matrix_create(c->matrix_struct);
+
+    if (c->level > _grid_max_level_device)
+      cs_matrix_set_alloc_mode(c->_matrix, CS_ALLOC_HOST);
 
     cs_matrix_set_coefficients(c->_matrix,
                                c->symmetric,

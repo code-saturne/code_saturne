@@ -4336,6 +4336,8 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
 
+  ms->alloc_mode = cs_check_device_ptr(*row_index);
+
   /* Define Structure */
 
   switch(ms->type) {
