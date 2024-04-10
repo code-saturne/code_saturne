@@ -522,6 +522,7 @@ pkginclude_HEADERS += cs_eos.hxx
 noinst_LIBRARIES += libcs_eos.a
 libcs_eos_a_SOURCES = cs_eos.cxx
 
+if ENABLE_SHARED
 local_libraries_add += cs_eos.${SHARED_LIB_EXT}
 LDADD_EOS = \
 $(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH)
@@ -532,6 +533,13 @@ cs_eos.${SHARED_LIB_EXT}: libcs_eos.a
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libcs_eos_a-cs_eos.$(OBJEXT) ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_EOS} $(AM_LIBS)
 
 local_libraries_add += cs_eos.${SHARED_LIB_EXT}
+
+else
+
+libcsbase_a_LIBADD += \
+libcs_eos_a-cs_eos.$(OBJEXT)
+
+endif
 
 endif
 

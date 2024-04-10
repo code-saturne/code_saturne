@@ -149,7 +149,7 @@ libsaturne.a: ${libsaturne_a_libs}
 	rm -f $@ ; \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ -v --archive ${libsaturne_a_libs}
 
-libcs_solver.a: cs_solver.$(OBJEXT)
+libcs_solver.a: libsaturne.a cs_solver.$(OBJEXT)
 	rm -f $@ ; \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ -v --archive cs_solver.$(OBJEXT)
 
