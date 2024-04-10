@@ -244,6 +244,36 @@ class NotebookModel(Model):
         node['value'] = val
 
 
+    @Variables.undoGlobal
+    def _setVariableAttr(self, idx, a, val):
+        """
+        Set value of attribute, set default value if not available.
+        """
+        node = self.node_note.xmlInitChildNode("var", id=idx)
+        node[a] = val
+
+        # If default value set the hidden value for cleanup
+        if val == self.defaultNotebookValues()[a]:
+            node["_{}".format(a)] = val
+        else:
+            node.xmlDelAttribute("_{}".format(a))
+
+
+    @Variables.noUndo
+    def _getVariableAttr(self, idx, a):
+        """
+        Get value of attribute, set default value if not available.
+        """
+        node = self.node_note.xmlInitChildNode("var", id=idx)
+
+        retval = node[a]
+        if not retval:
+            retval = self.defaultNotebookValues()[a]
+            self._setVariableAttr(idx, a, retval)
+
+        return retval
+
+
     @Variables.noUndo
     def getVariableOt(self, idx):
         """
@@ -273,11 +303,7 @@ class NotebookModel(Model):
         """
         Return Yes or No to indicate if the parameter value can be modified.
         """
-        node = self.node_note.xmlInitChildNode("var", id = idx)
-        editable = node['editable']
-        if not editable:
-            editable = self.defaultNotebookValues()['editable']
-            self.setVariableEditable(idx, editable)
+        editable = self._getVariableAttr(idx, 'editable')
 
         return editable
 
@@ -287,14 +313,11 @@ class NotebookModel(Model):
         """
         Set Yes or No to indicate if the parameter value can be modified.
         """
-        node = self.node_note.xmlInitChildNode("var", id = idx)
-        node['editable'] = editable
-        node['_editable'] = self.defaultNotebookValues()['editable']
+        self._setVariableAttr(idx, 'editable', editable)
 
         # editable parameter are printed in log file by default
         if editable:
-            node['log'] = editable
-            node['_log'] = self.defaultNotebookValues()['log']
+            self._setVariableAttr(idx, 'log', editable)
 
 
     @Variables.noUndo
@@ -303,11 +326,7 @@ class NotebookModel(Model):
         Return Yes or No to indicate if the parameter value will be read
         when reading a restart file.
         """
-        node = self.node_note.xmlInitChildNode("var", id = idx)
-        restart = node['restart']
-        if not restart:
-            restart = self.defaultNotebookValues()['restart']
-            self.setVariableRestart(idx, restart)
+        restart = self._getVariableAttr(idx, 'restart')
 
         return restart
 
@@ -318,9 +337,7 @@ class NotebookModel(Model):
         Set Yes or No to indicate if the parameter value will be read
         when reading a restart file.
         """
-        node = self.node_note.xmlInitChildNode("var", id = idx)
-        node['restart'] = restart
-        node['_restart'] = self.defaultNotebookValues()['restart']
+        self._setVariableAttr(idx, 'restart', restart)
 
 
     @Variables.noUndo
@@ -349,9 +366,7 @@ class NotebookModel(Model):
         Set Yes or No to indicate if the parameter value will be printed
         in the default log file.
         """
-        node = self.node_note.xmlInitChildNode("var", id = idx)
-        node['log'] = log
-        node['_log'] = self.defaultNotebookValues()['log']
+        self._setVariableAttr(idx, 'log', log)
 
 
     @Variables.noUndo
