@@ -964,14 +964,14 @@ bft_mem_realloc(void        *ptr,
 
   /* In the general case, we have a true reallocation. */
 
-  void *p_new = realloc(ptr, new_size);
-
 #if defined(HAVE_ACCEL)
   if (mib_old.mode >= CS_ALLOC_HOST_DEVICE_PINNED) {
     return _bft_alt_realloc_func(ptr, ni, size,
                                  var_name, file_name, line_num);
   }
 #endif
+
+  void *p_new = realloc(ptr, new_size);
 
   if (file_name != nullptr) {
     cs_mem_block_t mib_new = _bft_mem_block_new(p_new, new_size);

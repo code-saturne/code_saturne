@@ -675,6 +675,7 @@ cs_realloc_hd(void            *ptr,
     if (new_size < copy_size)
       copy_size = new_size;
     me.size = new_size;
+    me.device_ptr = nullptr;
 
     ret_ptr = cs_malloc_hd(mode, 1, me.size,
                            var_name, nullptr, 0);
