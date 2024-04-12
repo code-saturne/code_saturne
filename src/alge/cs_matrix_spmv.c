@@ -3703,6 +3703,8 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #if defined(HAVE_MKL_SPARSE_IE)
         _spmv[0] = _mat_vec_p_l_csr_mkl;
         _spmv[1] = _mat_vec_p_l_csr_mkl;
+        _spmv_xy_hd[0] = 'g';
+        _spmv_xy_hd[1] = 'g';
 #else
         retcode = 2;
 #endif
@@ -3774,6 +3776,8 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_BLOCK:
         _spmv[0] = _mat_vec_p_l_msr_mkl;
         _spmv[1] = _mat_vec_p_l_msr_mkl;
+        _spmv_xy_hd[0] = 'g';
+        _spmv_xy_hd[1] = 'g';
         break;
       default:
         break;
@@ -3890,6 +3894,8 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = _mat_vec_p_l_dist_mkl;
         _spmv[1] = _mat_vec_p_l_dist_mkl;
+        _spmv_xy_hd[0] = 'g';
+        _spmv_xy_hd[1] = 'g';
         break;
       default:
         break;

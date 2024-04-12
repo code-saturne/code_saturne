@@ -6513,9 +6513,11 @@ cs_matrix_variant_apply(cs_matrix_t          *m,
     m->vector_multiply[m->fill_type][i] = mv->vector_multiply[i];
 
 #if defined(HAVE_ACCEL)
-    if (mv->vector_multiply_xy_hd[i] == 'h')
+    if (   mv->vector_multiply_xy_hd[i] == 'h'
+        || mv->vector_multiply_xy_hd[i] == 'g')
       m->vector_multiply_h[m->fill_type][i] = mv->vector_multiply[i];
-    else if (mv->vector_multiply_xy_hd[i] == 'd')
+    else if (   mv->vector_multiply_xy_hd[i] == 'd'
+             || mv->vector_multiply_xy_hd[i] == 'g')
       m->vector_multiply_d[m->fill_type][i] = mv->vector_multiply[i];
 #endif
   }

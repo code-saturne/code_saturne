@@ -401,7 +401,7 @@ struct _cs_matrix_variant_t {
 
   cs_matrix_vector_product_t   *vector_multiply[CS_MATRIX_SPMV_N_TYPES];
 
-  /* Associated vector host/device locations */
+  /* Associated vector host/device locations (h/d/g for host/device/both) */
 
   char                          vector_multiply_xy_hd[CS_MATRIX_SPMV_N_TYPES];
 };
