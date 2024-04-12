@@ -737,7 +737,7 @@ cs_free_hd(void        *ptr,
   cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
 
   if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED)
-    bft_mem_free(me.host_ptr, var_name, file_name, line_num);
+    bft_mem_free(me.host_ptr, var_name, nullptr, 0);
 
   else if (me.host_ptr != nullptr) {
 
