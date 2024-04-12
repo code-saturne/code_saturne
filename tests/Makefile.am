@@ -96,7 +96,7 @@ bft_printf_test
 
 CPPFLAGS_BFT_TESTS = -I$(top_srcdir)/src/bft
 LDFLAGS_BFT_TESTS =
-LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.a
+LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.a $(CUDA_LIBS)
 
 bft_backtrace_test_SOURCES  = bft_backtrace_test.c
 bft_backtrace_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
@@ -110,7 +110,7 @@ bft_mem_usage_test_SOURCES  = bft_mem_usage_test.c
 bft_mem_usage_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_mem_usage_test_LDADD    = $(LDADD_BFT_TESTS)
 
-bft_mem_test_SOURCES  = bft_mem_test.c
+bft_mem_test_SOURCES  = bft_mem_test.cpp
 bft_mem_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_mem_test_LDADD    = $(LDADD_BFT_TESTS)
 
@@ -221,7 +221,7 @@ cs_gpu_test$(EXEEXT): cs_gpu_test.cpp cs_gpu_cuda_test.cu
 
 endif
 
-cs_interface_test_SOURCES  = cs_interface_test.c
+cs_interface_test_SOURCES  = cs_interface_test.cpp
 cs_interface_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_interface_test_LDADD    = \
 $(top_builddir)/src/fvm/libfvm.a \
@@ -290,6 +290,7 @@ $(top_srcdir)/tests/graphics
 
 clean-local:
 	-rm -f $(BUILT_SOURCES)
+	-rm -rf .deps
 
 .cu.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<

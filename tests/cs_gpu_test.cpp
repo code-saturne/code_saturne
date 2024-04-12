@@ -198,13 +198,9 @@ main (int argc, char *argv[])
     CS_MALLOC_HD(a2, 100, cs_real_t, CS_ALLOC_HOST);
   }
 
-  bft_printf("Number of current allocations: %d\n", cs_get_n_allocations_hd());
-
   CS_FREE_HD(a0);
   CS_FREE_HD(a1);
   CS_FREE_HD(a2);
-
-  bft_printf("Number of current allocations: %d\n", cs_get_n_allocations_hd());
 
   /* OpenMP tests */
 
