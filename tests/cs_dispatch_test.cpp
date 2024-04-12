@@ -93,7 +93,8 @@ cs_dispatch_test(void)
 
     ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       cs_lnum_t c_id = ii;
-#ifdef __CUDA_ARCH__   // Test to show whether we are on GPU or CPU...
+      // Test to show whether we are on GPU or CPU...
+#if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
       a0[ii] = c_id*0.1;
 #else
       a0[ii] = -c_id*0.1;
