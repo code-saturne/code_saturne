@@ -111,6 +111,7 @@ user_CXXFLAGS=$CXXFLAGS
 user_FCFLAGS=$FCFLAGS
 user_FCFLAGS_HOT=$FCFLAGS_HOT
 user_NVCCFLAGS_HC=$NVCCFLAGS_HC
+user_SYCLFLAGS=$SYCLFLAGS
 user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
 user_CS_LD=$CS_LD
@@ -481,6 +482,7 @@ AC_FC_LIBRARY_LDFLAGS
 #------------------------------------------------------------------------------
 
 cs_have_sycl=no
+cs_sycl_targets=""
 
 AC_ARG_ENABLE(sycl,
   [AS_HELP_STRING([--enable-sycl], [enable SYCL support])],
@@ -494,8 +496,10 @@ AC_ARG_ENABLE(sycl,
   [ cs_have_sycl=no ]
 )
 
+AC_ARG_VAR([SYCLFLAGS], [Additional compile flags for SYCL])
+
 if test "x$cs_have_sycl" = "xyes" ; then
-  CXXFLAGS_SYCL="-fsycl"
+  CXXFLAGS_SYCL="-fsycl $user_SYCLFLAGS"
   AC_DEFINE([HAVE_SYCL], 1, [SYCL support])
   AC_SUBST(CXXFLAGS_SYCL)
 fi
@@ -668,6 +672,8 @@ if test "x$auto_flags" = "xyes" ; then
   fi
 
 fi
+
+AC_ARG_VAR([NVCCFLAGS_HC], [Additional host compiler flags for CUDA nvcc])
 
 AM_CONDITIONAL([HAVE_ACCEL], [test "$cs_have_accel" = "yes"])
 AM_CONDITIONAL([HAVE_OPENMP_TARGET], [test "$cs_have_openmp_target" = "yes"])

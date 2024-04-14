@@ -1186,7 +1186,7 @@ If desired, to ensure that the versions defined by SALOME are used, the followin
 configuration options may also be used for HDF5, CGNS, MED, MEDCoupling,
 and ParaView Catalyst respectively:
 
- ```
+```
 --with-hdf5=salome
 --with-cgns=salome
 --with-med=salome
@@ -1251,6 +1251,54 @@ these extensions are not necessary.
 Note finally that SALOME expects a specific directory tree when loading modules,
 so salome_cfd extensions might fail when installing with a specified
 (i.e. non-default) `--datarootdir` path in the code_saturne `configure` options.
+
+Compiling for CUDA-enabled devices
+----------------------------------
+
+Compiling for CUDA enabled devices requires adding the `--enable-cuda` option.
+
+Note that in this case, some source files in addition to CUDA (those with a
+`.cpp` extension) will be compiled using CUDA's `nvcc` compiler. If MPI is used
+and compile flags are passed using a `mpicxx` compiler wrapper (rather than
+using `--with-mpi` or `--with-mpi-include`), the MPI include paths may be missing
+for the CUDA compiler. In this case, use `mpicc -show` to determine the needed
+header include options, and add those to the `NVCCFLAGS` variable.
+For the linker to find some CUDA libraries, it may also be needed to add
+the CUDA libraries path using `LD_FLAGS`.
+
+It is also possible to specify the required target architectures
+using the `CUDA_ARCH_NUM` variable. The default option is
+```
+CUDA_ARCH_NUM="70 80"
+```
+
+Compiling with SYCL
+-------------------
+
+Compiling for SYCL requires adding the `--enable-sycl` option.
+
+The `SYCLFLAGS` variable also allows specifying additional options.
+For exemple, when using the Codeplay plugin to use an NVIDIA GPU with
+a oneAPI build, we can define:
+
+```
+SYCLFLAGS="-fsycl-targets=nvptx64-nvidia-cuda
+```
+
+Or if we want to target a minimal CUDA compute capability to allow instructions
+available only on more modern GPUs, we can specify the target capability
+(8.0 in this example).
+```
+SYCLFLAGS="-fsycl-targets=nvptx64-nvidia-cuda \
+-Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_80"
+```
+
+When using SYCL, as the device selector in code_saturne is not very
+advanced yet, it may be useful to help it using a the `ONEAPI_DEVICE_SELECTOR`
+at run time, for example (using the Codeplay plugin):
+```
+export ONEAPI_DEVICE_SELECTOR=ext_oneapi_cuda:gpu
+```
 
 Configuration command examples
 ==============================

@@ -68,7 +68,7 @@ if test "x$cs_have_cuda" != "xno" ; then
 
   if test "$CUDA_ARCH_NUM" = ""; then
     # CUDA_ARCH_NUM="60 61 62 70 72 75 80 86"
-    CUDA_ARCH_NUM="60 70 80"
+    CUDA_ARCH_NUM="70 80"
   fi
 
   user_nvccflags="${NVCCFLAGS}"
@@ -96,6 +96,7 @@ if test "x$cs_have_cuda" != "xno" ; then
   fi
 
   AC_DEFINE([HAVE_CUDA], 1, [CUDA offload support])
+  AC_ARG_VAR([NVCCFLAGS], [Additional flags for CUDA nvcc])
 
   AC_SUBST(cs_have_cuda)
   AC_SUBST(NVCC)
