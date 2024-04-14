@@ -797,7 +797,7 @@ cs_dispatch_sum(T                       *dest,
     }
   }
   else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-#if 1
+#if __CUDA_ARCH__ >= 700
     using sum_v = assembled_value<T, dim>;
     sum_v v;
 
