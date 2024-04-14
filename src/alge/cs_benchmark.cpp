@@ -27,8 +27,10 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
+
+#include <chrono>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -152,7 +154,7 @@ _print_stats(long    n_runs,
              long    n_ops_single,
              double  wt)
 {
-  double fm = 1.0 * n_runs / (1.e9 * (CS_MAX(wt, 1)));
+  double fm = 1.0 * n_runs / fmax(1.e9 * wt, 1);
 
   if (cs_glob_n_ranks == 1)
     cs_log_printf(CS_LOG_PERFORMANCE,
@@ -390,14 +392,12 @@ _mat_vec_exdiag_part_p1(cs_lnum_t            n_faces,
                         cs_real_t           *restrict x,
                         cs_real_t           *restrict ya)
 {
-  cs_lnum_t  ii, jj, face_id;
-
   const cs_lnum_t *restrict face_cel_p
     = (const cs_lnum_t *restrict)face_cell;
 
-  for (face_id = 0; face_id < n_faces; face_id++) {
-    ii = *face_cel_p++;
-    jj = *face_cel_p++;
+  for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
+    cs_lnum_t ii = *face_cel_p++;
+    cs_lnum_t jj = *face_cel_p++;
     ya[face_id] += xa[face_id] * x[ii];
     ya[face_id] += xa[face_id] * x[jj];
   }
@@ -407,7 +407,7 @@ _mat_vec_exdiag_part_p1(cs_lnum_t            n_faces,
  * Measure matrix.vector product local extradiagonal part related performance.
  *
  * parameters:
- *   t_measure   <-- minimum time for each measure (< 0 for single pass)
+ *   n_time_runs <-- number of timing runs for each measure
  *   n_cells     <-- number of cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
@@ -418,7 +418,7 @@ _mat_vec_exdiag_part_p1(cs_lnum_t            n_faces,
  *----------------------------------------------------------------------------*/
 
 static void
-_sub_matrix_vector_test(double               t_measure,
+_sub_matrix_vector_test(int                  n_time_runs,
                         cs_lnum_t            n_cells,
                         cs_lnum_t            n_cells_ext,
                         cs_lnum_t            n_faces,
@@ -427,13 +427,14 @@ _sub_matrix_vector_test(double               t_measure,
                         cs_real_t           *restrict x,
                         cs_real_t           *restrict y)
 {
-  cs_lnum_t  jj;
-  double wt0, wt1;
-  int    run_id, n_runs;
+  std::chrono::high_resolution_clock::time_point wt0, wt1;
+  std::chrono::microseconds wt_r0_m;
+
   long   n_ops, n_ops_glob;
   double *ya = NULL;
 
   double test_sum = 0.0;
+  double test_sum_mult = 1.0/n_time_runs;
 
   /* n_faces*2 nonzeroes,
      n_row_elts multiplications + n_row_elts-1 additions per row */
@@ -445,29 +446,21 @@ _sub_matrix_vector_test(double               t_measure,
   else
     n_ops_glob = (cs_glob_mesh->n_g_i_faces*4 - cs_glob_mesh->n_g_cells);
 
-  for (jj = 0; jj < n_cells_ext; jj++)
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++)
     y[jj] = 0.0;
 
   /* Matrix.vector product, variant 0 */
 
   test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      _mat_vec_exdiag_native(n_faces, face_cell, xa, x, y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
+  wt0 = std::chrono::high_resolution_clock::now();
+  for (int run_id = 0; run_id < n_time_runs; run_id++) {
+    _mat_vec_exdiag_native(n_faces, face_cell, xa, x, y);
+    test_sum += y[n_cells-1]*test_sum_mult;
   }
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  double wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -476,35 +469,25 @@ _sub_matrix_vector_test(double               t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "  (calls: %d;  test sum: %12.5f)\n",
-                n_runs, test_sum);
+                n_time_runs, test_sum);
 
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+  _print_stats(n_time_runs, n_ops, n_ops_glob, wt_r0);
 
-  for (jj = 0; jj < n_cells_ext; jj++)
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++)
     y[jj] = 0.0;
-
-  test_sum = 0.0;
 
   /* Matrix.vector product, variant 1 */
 
   test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      _mat_vec_exdiag_native_v1(n_faces, face_cell, xa, x, y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
+  wt0 = std::chrono::high_resolution_clock::now();
+  for (int run_id = 0; run_id < n_time_runs; run_id++) {
+    _mat_vec_exdiag_native_v1(n_faces, face_cell, xa, x, y);
+    test_sum += y[n_cells-1]*test_sum_mult;
   }
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -513,13 +496,16 @@ _sub_matrix_vector_test(double               t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "  (calls: %d;  test sum: %12.5f)\n",
-                n_runs, test_sum);
+                n_time_runs, test_sum);
 
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+  _print_stats(n_time_runs, n_ops, n_ops_glob, wt_r0);
 
   /* Matrix.vector product, CUDA variant */
 
 #if (HAVE_CUDA)
+
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++)
+    y[jj] = 0.0;
 
   const cs_lnum_2_t *restrict d_face_cell
     = cs_get_device_ptr_const_pf(face_cell);
@@ -536,23 +522,15 @@ _sub_matrix_vector_test(double               t_measure,
   cs_sync_h2d(y);
 
   test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      cs_mat_vec_exdiag_native_sym_cuda(n_faces, d_face_cell, d_xa, d_x, d_y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
+  wt0 = std::chrono::high_resolution_clock::now();
+  for (int run_id = 0; run_id < n_time_runs; run_id++) {
+    cs_mat_vec_exdiag_native_sym_cuda(n_faces, d_face_cell, d_xa, d_x, d_y);
+    test_sum += y[n_cells-1]*test_sum_mult;
   }
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -561,9 +539,9 @@ _sub_matrix_vector_test(double               t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "  (calls: %d;  test sum: %12.5f)\n",
-                n_runs, test_sum);
+                n_time_runs, test_sum);
 
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+  _print_stats(n_time_runs, n_ops, n_ops_glob, wt_r0);
 
 #endif /* (HAVE_CUDA) */
 
@@ -571,24 +549,19 @@ _sub_matrix_vector_test(double               t_measure,
 
 #if defined(HAVE_ACCEL)
 
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++)
+    y[jj] = 0.0;
+
   test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      _mat_vec_exdiag_native_v2(true, xa, x, y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
+  wt0 = std::chrono::high_resolution_clock::now();
+  for (int run_id = 0; run_id < n_time_runs; run_id++) {
+    _mat_vec_exdiag_native_v2(true, xa, x, y);
+    test_sum += y[n_cells-1]*test_sum_mult;
   }
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
@@ -598,30 +571,25 @@ _sub_matrix_vector_test(double               t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "  (calls: %d;  test sum: %12.5f)\n",
-                n_runs, test_sum);
+                n_time_runs, test_sum);
 
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+  _print_stats(n_time_runs, n_ops, n_ops_glob, wt_r0);
 
 #endif
 
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++)
+    y[jj] = 0.0;
+
   test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      _mat_vec_exdiag_native_v2(false, xa, x, y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
+  wt0 = std::chrono::high_resolution_clock::now();
+  for (int run_id = 0; run_id < n_time_runs; run_id++) {
+    _mat_vec_exdiag_native_v2(false, xa, x, y);
+    test_sum += y[n_cells-1]*test_sum_mult;
   }
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -630,9 +598,9 @@ _sub_matrix_vector_test(double               t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "  (calls: %d;  test sum: %12.5f)\n",
-                n_runs, test_sum);
+                n_time_runs, test_sum);
 
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+  _print_stats(n_time_runs, n_ops, n_ops_glob, wt_r0);
 
   /* Matrix.vector product, contribute to faces only */
 
@@ -646,27 +614,19 @@ _sub_matrix_vector_test(double               t_measure,
     n_ops_glob = (cs_glob_mesh->n_g_i_faces*2);
 
   CS_MALLOC_HD(ya, n_faces, cs_real_t, cs_alloc_mode);
-  for (jj = 0; jj < n_faces; jj++)
+  for (cs_lnum_t jj = 0; jj < n_faces; jj++)
     ya[jj] = 0.0;
 
   test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      _mat_vec_exdiag_part_p1(n_faces, face_cell, xa, x, ya);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
+  wt0 = std::chrono::high_resolution_clock::now();
+  for (int run_id = 0; run_id < n_time_runs; run_id++) {
+    _mat_vec_exdiag_part_p1(n_faces, face_cell, xa, x, ya);
+    test_sum += y[n_cells-1]*test_sum_mult;
   }
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
 
   CS_FREE_HD(ya);
 
@@ -677,9 +637,9 @@ _sub_matrix_vector_test(double               t_measure,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "  (calls: %d;  test sum: %12.5f)\n",
-                n_runs, test_sum);
+                n_time_runs, test_sum);
 
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+  _print_stats(n_time_runs, n_ops, n_ops_glob, wt_r0);
 }
 
 /*----------------------------------------------------------------------------
@@ -724,7 +684,7 @@ _matrix_check_compare(cs_lnum_t        n_elts,
  * Check matrix.vector product local extradiagonal part related correctness.
  *
  * parameters:
- *   t_measure   <-- minimum time for each measure (< 0 for single pass)
+ *   n_time_runs <-- number of timing runs for each measure
  *   n_cells     <-- number of cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
@@ -1193,7 +1153,7 @@ cs_benchmark(int  mpi_trace_mode)
 
   size_t ii;
 
-  double t_measure = (mpi_trace_mode) ? -1.0 : 0.8;
+  int n_time_runs = (mpi_trace_mode) ? 1 : 10;
 
   cs_real_t *x = NULL, *y = NULL;
   cs_real_t *da = NULL, *xa = NULL;
@@ -1268,7 +1228,7 @@ cs_benchmark(int  mpi_trace_mode)
                 "General timing for matrices\n"
                 "===========================\n");
 
-  cs_benchmark_matrix(t_measure,
+  cs_benchmark_matrix(n_time_runs,
                       0,
                       n_fill_types_nsym,
                       NULL,
@@ -1285,7 +1245,7 @@ cs_benchmark(int  mpi_trace_mode)
                 "Timing for symmetric matrices\n"
                 "=============================\n");
 
-  cs_benchmark_matrix(t_measure,
+  cs_benchmark_matrix(n_time_runs,
                       0,
                       n_fill_types_sym,
                       NULL,
@@ -1297,7 +1257,7 @@ cs_benchmark(int  mpi_trace_mode)
                       mesh->halo,
                       mesh->i_face_numbering);
 
-  _sub_matrix_vector_test(t_measure,
+  _sub_matrix_vector_test(n_time_runs,
                           n_cells,
                           n_cells_ext,
                           n_faces,

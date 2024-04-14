@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  * Time matrix operations.
  *
  * parameters:
- *   t_measure      <-- minimum time for each measure
+ *   n_time_runs    <-- number of timing runs for each measure
  *   n_types        <-- number of matrix types timed, or 0
  *   n_fill_types   <-- number of fill types timed, or 0
  *   types          <-- array of matrix types timed, or NULL
@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_benchmark_matrix(double                 t_measure,
+cs_benchmark_matrix(int                    n_time_runs,
                     int                    n_types,
                     int                    n_fill_types,
                     cs_matrix_type_t       types[],

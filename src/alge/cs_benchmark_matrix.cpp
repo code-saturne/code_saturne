@@ -91,8 +91,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define _CS_N_TIME_RUNS 10
-
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -693,7 +691,6 @@ _matrix_check_compare(cs_lnum_t        n_elts,
  * Check local matrix.vector product operations.
  *
  * parameters:
- *   t_measure   <-- minimum time for each measure
  *   n_variants  <-- number of variants in array
  *   n_rows      <-- local number of rows
  *   n_cols_ext  <-- number of local + ghost columns
@@ -930,7 +927,7 @@ _matrix_check(int                          n_variants,
  * Tune local matrix.vector product operations.
  *
  * parameters:
- *   t_measure   <-- minimum time for each measure
+ *   n_time_runs <-- number of timing runs for each measure
  *   n_variants  <-- number of variants in array
  *   n_cells     <-- number of local cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
@@ -943,7 +940,7 @@ _matrix_check(int                          n_variants,
  *----------------------------------------------------------------------------*/
 
 static void
-_matrix_time_test(double                       t_measure,
+_matrix_time_test(int                          n_time_runs,
                   int                          n_variants,
                   cs_lnum_t                    n_cells,
                   cs_lnum_t                    n_cells_ext,
@@ -953,8 +950,6 @@ _matrix_time_test(double                       t_measure,
                   const cs_numbering_t        *numbering,
                   cs_matrix_timing_variant_t  *m_variant)
 {
-  cs_lnum_t  ii;
-  int  n_runs, run_id, v_id, f_id;
   std::chrono::high_resolution_clock::time_point wt0, wt1;
   cs_matrix_type_t  type, type_prev;
 
@@ -978,14 +973,14 @@ _matrix_time_test(double                       t_measure,
   CS_MALLOC_HD(xa, n_faces*e_block_stride*2, cs_real_t, cs_alloc_mode);
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext*d_block_stride; ii++)
+  for (cs_lnum_t ii = 0; ii < n_cells_ext*d_block_stride; ii++)
     da[ii] = 1.0;
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext*d_block_size; ii++)
+  for (cs_lnum_t ii = 0; ii < n_cells_ext*d_block_size; ii++)
     x[ii] = ii*0.1/n_cells_ext;
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_faces*e_block_stride; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_faces*e_block_stride; ii++) {
     xa[ii*2] = 0.5;
     xa[ii*2 + 1] = -0.5;
   }
@@ -993,7 +988,7 @@ _matrix_time_test(double                       t_measure,
   /* Loop on variant types */
   /*-----------------------*/
 
-  for (v_id = 0; v_id < n_variants; v_id++) {
+  for (int v_id = 0; v_id < n_variants; v_id++) {
 
     bool test_assign = false;
 
@@ -1007,8 +1002,7 @@ _matrix_time_test(double                       t_measure,
 
       wt0 = std::chrono::high_resolution_clock::now();
 
-      run_id = 0, n_runs = (t_measure > 0) ? _CS_N_TIME_RUNS : 1;
-      while (run_id < n_runs) {
+      for (int run_id = 0; run_id < n_time_runs; run_id++) {
         if (m != NULL)
           cs_matrix_destroy(&m);
         if (ms != NULL)
@@ -1021,7 +1015,6 @@ _matrix_time_test(double                       t_measure,
                                         halo,
                                         numbering);
         m = cs_matrix_create(ms);
-        run_id++;
       }
       wt1 = std::chrono::high_resolution_clock::now();
       std::chrono::microseconds wt_r0_m;
@@ -1030,12 +1023,12 @@ _matrix_time_test(double                       t_measure,
       double wt_r0 = wt_r0_m.count() * 1.e-6;
       cs_parall_max(1, CS_DOUBLE, &wt_r0);
 
-      v->matrix_create_cost = wt_r0 / n_runs;
+      v->matrix_create_cost = wt_r0 / n_time_runs;
     }
 
     /* Loop on fill patterns sizes */
 
-    for (f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
+    for (int f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
 
       const cs_lnum_t _d_block_size
         = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : 1;
@@ -1058,15 +1051,10 @@ _matrix_time_test(double                       t_measure,
 
       /* Measure overhead of setting coefficients if not already done */
 
-      if (test_assign) {
-        n_runs = _CS_N_TIME_RUNS;
-      }
-      else
-        n_runs = 1;
+      int n_assign_time_runs = (test_assign) ? n_time_runs : 1;
 
       wt0 = std::chrono::high_resolution_clock::now();
-      run_id = 0;
-      while (run_id < n_runs) {
+      for (int run_id = 0; run_id < n_assign_time_runs; run_id++) {
         cs_matrix_set_coefficients(m,
                                    sym_coeffs,
                                    _d_block_size,
@@ -1075,7 +1063,6 @@ _matrix_time_test(double                       t_measure,
                                    (const cs_lnum_2_t *)face_cell,
                                    da,
                                    xa);
-        run_id++;
       }
       wt1 = std::chrono::high_resolution_clock::now();
       std::chrono::microseconds wt_r0_m;
@@ -1085,7 +1072,8 @@ _matrix_time_test(double                       t_measure,
 
       cs_parall_max(1, CS_DOUBLE, &wt_r0);
 
-      v->matrix_assign_cost[f_id] = wt_r0 / n_runs;
+      if (test_assign)
+        v->matrix_assign_cost[f_id] = wt_r0 / n_time_runs;
 
       /* Measure matrix.vector operations */
 
@@ -1132,15 +1120,13 @@ _matrix_time_test(double                       t_measure,
 
         for (int mpi_flag = 0; mpi_flag < mpi_flag_max; mpi_flag++) {
 
-          run_id = 0, n_runs = (t_measure > 0) ? _CS_N_TIME_RUNS : 1;
-
           double mean = 0.0;
           double m2 = 0.0;
           test_sum = 0;
 
           wt0 = std::chrono::high_resolution_clock::now();
 
-          while (run_id < n_runs) {
+          for (int run_id = 0; run_id < n_time_runs; run_id++) {
             std::chrono::high_resolution_clock::time_point
               wti = std::chrono::high_resolution_clock::now();
             if (mpi_flag > 0)
@@ -1157,7 +1143,6 @@ _matrix_time_test(double                       t_measure,
             std::chrono::high_resolution_clock::time_point
               wtf = std::chrono::high_resolution_clock::now();
             test_sum += y[n_cells-1];
-            run_id++;
 
             std::chrono::microseconds t_ms
               = std::chrono::duration_cast
@@ -1166,7 +1151,8 @@ _matrix_time_test(double                       t_measure,
             double delta = t - mean;
             double r = delta / run_id;
             double m_n = mean + r;
-            m2 = (m2*(run_id-1) + delta*(t-m_n)) / run_id;
+            if (run_id > 0)
+              m2 = (m2*(run_id-1) + delta*(t-m_n)) / run_id;
             mean += r;
           }
           wt1 = std::chrono::high_resolution_clock::now();
@@ -1175,8 +1161,8 @@ _matrix_time_test(double                       t_measure,
           wt_r0 = wt_r0_m.count() * 1.e-6;
           cs_parall_max(1, CS_DOUBLE, &wt_r0);
 
-          if (n_runs > 1)
-            m2 = sqrt(m2 / (n_runs - 1));
+          if (n_time_runs > 1)
+            m2 = sqrt(m2 / (n_time_runs - 1));
           else
             m2 = 0;
           v->matrix_vector_cost[f_id][op_id][0][mpi_flag] = wt_r0;
@@ -1195,9 +1181,9 @@ _matrix_time_test(double                       t_measure,
   } /* end of loop on variants */
 
   if (isnan(test_sum))
-      bft_error(__FILE__, __LINE__, 0,
-                "Test sum for matrix-vector products is a NaN,\n"
-                "so at least one product was incorrect.");
+    bft_error(__FILE__, __LINE__, 0,
+              "Test sum for matrix-vector products is a NaN,\n"
+              "so at least one product was incorrect.");
 
   if (m != NULL)
     cs_matrix_destroy(&m);
@@ -1230,7 +1216,7 @@ _matrix_time_create_assign_title(int                    struct_flag,
   /* Print title */
 
   if (struct_flag == 0) {
-    snprintf(title + i,  l-i, " matrix %s coefficients assign",
+    snprintf(title + i,  l-i, "matrix %s coefficients assign",
              _matrix_fill_name[fill_type]);
     title[80] = '\0';
     i = strlen(title);
@@ -1607,7 +1593,7 @@ _matrix_time_spmv_stats_ops(const cs_matrix_timing_variant_t  *m_variant,
  * Time matrix operations.
  *
  * parameters:
- *   t_measure      <-- minimum time for each measure
+ *   n_time_runs    <-- number of timing runs for each measure
  *   n_types        <-- number of matrix types timed, or 0
  *   n_fill_types   <-- number of fill types timed, or 0
  *   types          <-- array of matrix types timed, or NULL
@@ -1622,7 +1608,7 @@ _matrix_time_spmv_stats_ops(const cs_matrix_timing_variant_t  *m_variant,
  *----------------------------------------------------------------------------*/
 
 void
-cs_benchmark_matrix(double                 t_measure,
+cs_benchmark_matrix(int                    n_time_runs,
                     int                    n_types,
                     int                    n_fill_types,
                     cs_matrix_type_t       types[],
@@ -1695,7 +1681,7 @@ cs_benchmark_matrix(double                 t_measure,
 
   /* Run tests on variants */
 
-  _matrix_time_test(t_measure,
+  _matrix_time_test(n_time_runs,
                     n_variants,
                     n_cells,
                     n_cells_ext,
