@@ -363,15 +363,13 @@ if (ico2.eq.1) then
     call rayigc(zbas, zz, pspo(k), zqq0, pzp0, acsups(k), dacsups(k),      &
                 qv0(k), u, tco2, romray(k))
 
-    if(k.ne.k1) then
-      tco2 = (temray(k1) + temray(k)) / 2.d0 + tkelvi
-      zz = zray(k1)
-      zzk = zray(k)
+    tco2 = (temray(k1) + temray(k)) / 2.d0 + tkelvi
+    zz = zray(k1)
+    zzk = zray(k)
 
-      u = qqqv(k)
-      call rayigc(zbas, zz, pspo(k1), zzk, pspo(k), acinfe(k), dacinfe(k), &
-                  qv0(k), u, tco2, romray(k))
-    endif
+    u = qqqv(k)
+    call rayigc(zbas, zz, pspo(k1), zzk, pspo(k), acinfe(k), dacinfe(k), &
+                qv0(k), u, tco2, romray(k))
   enddo
 
   acsups(1) = acsup(1)
