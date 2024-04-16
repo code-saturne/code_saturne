@@ -81,7 +81,7 @@ _create_test_data(void)
 #else
   f = cs_file_open("file_test_data",
                    CS_FILE_MODE_WRITE,
-                   0);
+                   CS_FILE_STDIO_SERIAL);
 #endif
 
   cs_file_set_big_endian(f);
@@ -124,11 +124,11 @@ main (int argc, char *argv[])
                                       CS_FILE_MPI_NON_COLLECTIVE,
                                       CS_FILE_MPI_COLLECTIVE};
   const cs_file_mpi_positioning_t pos[2] = {CS_FILE_MPI_EXPLICIT_OFFSETS,
-                                             CS_FILE_MPI_INDIVIDUAL_POINTERS};
+                                            CS_FILE_MPI_INDIVIDUAL_POINTERS};
 #else
   const int n_pos = 1;
   const int n_access = 1;
-  const int access[1] = {CS_FILE_STDIO_SERIAL};
+  const cs_file_access_t access[1] = {CS_FILE_STDIO_SERIAL};
   const cs_file_mpi_positioning_t pos[1] = {CS_FILE_MPI_EXPLICIT_OFFSETS};
 #endif
 
