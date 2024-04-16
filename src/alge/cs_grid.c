@@ -3558,7 +3558,6 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX)
       ag_threshold = (1. - epsilon) * pow(relaxation_parameter, npass);
 
-
     for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
 
       cs_lnum_t c_face = f_c_face[face_id] -1;
