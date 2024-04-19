@@ -130,6 +130,36 @@ double precision, dimension(:), pointer :: crom, brom, cpro_cv, cvar_en
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
+interface
+
+  !=============================================================================
+
+  subroutine cs_cf_boundary_rusanov(ifac, bc_en, bc_pr, bc_vel) &
+    bind(C, name='cs_cf_boundary_rusanov')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: ifac
+    real(kind=c_double), dimension(*) :: bc_en, bc_pr
+    real(kind=c_double), dimension(3, *) :: bc_vel
+  end subroutine cs_cf_boundary_rusanov
+
+  !=============================================================================
+
+  !=============================================================================
+
+  subroutine cs_cf_boundary_analytical_flux(ifac, bc_en, bc_pr, bc_vel) &
+    bind(C, name='cs_cf_boundary_analytical_flux')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: ifac
+    real(kind=c_double), dimension(*) :: bc_en, bc_pr
+    real(kind=c_double), dimension(3, *) :: bc_vel
+  end subroutine cs_cf_boundary_analytical_flux
+
+  !=============================================================================
+
+end interface
+
 !===============================================================================
 
 ! Map field arrays
@@ -466,7 +496,7 @@ do ifac = 1, nfabor
 
     ! Dirichlet for velocity and pressure are computed in order to
     ! impose the Rusanov fluxes in mass, momentum and energy balance.
-      call cfrusb(ifac, bc_en, bc_pr, bc_vel)
+      call cs_cf_boundary_rusanov(ifac-1, bc_en, bc_pr, bc_vel)
 
     ! For the other types of inlets/outlets (subsonic outlet, QH inlet,
     ! PH inlet), analytical fluxes are computed
@@ -474,7 +504,7 @@ do ifac = 1, nfabor
 
       ! the pressure part of the boundary analytical flux is not added here,
       ! but set through the pressure gradient boundary conditions (Dirichlet)
-      call cffana(ifac, bc_en, bc_pr, bc_vel)
+      call cs_cf_boundary_analytical_flux(ifac-1, bc_en, bc_pr, bc_vel)
 
     endif
 

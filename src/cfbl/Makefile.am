@@ -67,6 +67,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_cf_boundary_conditions.h \
+cs_cf_boundary_flux.h \
 cs_cf_compute.h \
 cs_cf_energy.h \
 cs_cf_model.h \
@@ -83,11 +84,10 @@ libcscfbl_a_SOURCES = \
 cfini1.f90 \
 cfiniv.f90 \
 cfphyv.f90 \
-cfrusb.f90 \
-cffana.f90 \
 cfvarp.f90 \
 cfxtcl.f90 \
 cs_cf_boundary_conditions.c \
+cs_cf_boundary_flux.c \
 cs_cf_compute.c \
 cs_cf_energy.c \
 cs_cf_model.c \
