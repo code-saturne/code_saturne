@@ -630,8 +630,7 @@ _performance_log_monitoring(const cs_domain_t   *domain)
     return;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                "\nSummary of the performance monitoring for the CDO part\n"
-                "------------------------------------------------------\n\n");
+                "\nSummary of the performance monitoring for the CDO part\n");
 
   long long  connect_time = cs_cdo_connect_get_time_perfo();
   long long  quant_time = cs_cdo_quantities_get_time_perfo();
