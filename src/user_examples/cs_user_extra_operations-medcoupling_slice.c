@@ -221,6 +221,8 @@ cs_user_extra_operations(cs_domain_t *domain)
                                                                 CS_F_(t)->val,
                                                                 rho_cp,
                                                                 cvar_vel);
+
+    BFT_FREE(rho_cp);
     /*![medcpl_slice_integral_weighted]*/
   }
 
