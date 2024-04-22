@@ -18,6 +18,10 @@ Release 8.1.2 (unreleased)
   * Fix detection of turbulent variables for NCFD when setting default
     numerical schemes.
 
+### User changes:
+
+- Fix medcoupling slice example in user function by adding missing free.
+
 Release 8.1.1 (2024-03-09)
 --------------------------
 
