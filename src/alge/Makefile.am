@@ -199,7 +199,7 @@ cs_matrix.c \
 cs_matrix_assembler.c \
 cs_matrix_building.c \
 cs_matrix_default.c \
-cs_matrix_spmv.c \
+cs_matrix_spmv.cpp \
 cs_matrix_tuning.c \
 cs_matrix_util.c \
 cs_multigrid.c \
