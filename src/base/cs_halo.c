@@ -633,8 +633,10 @@ cs_halo_create_complete(cs_halo_t  *halo)
 #if defined(HAVE_MPI)
 
   /* Make buffer available on device if relevant */
-  cs_sync_h2d(halo->send_index);
-  cs_sync_h2d(halo->send_list);
+  if (cs_check_device_ptr(halo->send_index) > CS_ALLOC_HOST) {
+    cs_sync_h2d(halo->send_index);
+    cs_sync_h2d(halo->send_list);
+  }
 
   /* Create group for one-sided communication */
   if (_halo_comm_mode > CS_HALO_COMM_P2P) {
