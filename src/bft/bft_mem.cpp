@@ -501,36 +501,6 @@ bft_mem_get_block_info_try(const void  *p_get)
 }
 
 /*!
- * \brief Add memory block information to allocation map.
- *
- * \param [in]  me  memory block info.
- */
-
-void
-bft_mem_map_block(const cs_mem_block_t  &me)
-{
-  if (me.host_ptr != nullptr)
-    _bft_alloc_map[me.host_ptr] = me;
-
-#if defined(HAVE_ACCEL)
-  else if (me.device_ptr != nullptr)
-    _bft_alloc_map[me.device_ptr] = me;
-#endif
-}
-
-/*!
- * \brief Remove memory block information from allocation map.
- *
- * \param [in]  p  pointer used as map key
- */
-
-void
-bft_mem_erase_block(const void  *p)
-{
-  _bft_alloc_map.erase(p);
-}
-
-/*!
  * \brief Log matching memory operation if logging is enabled
  *
  * \param [in] var_name  allocated variable name string.
