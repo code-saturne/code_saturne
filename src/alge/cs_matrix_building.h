@@ -537,8 +537,8 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
  * tensorial diffusivity.
  *
  * The advection is upwind, the diffusion is not reconstructed.
- * The matrix is split into a diagonal block (3x3 times number of cells)
- * and an extra diagonal part (of dimension 2 times 3x3 the number of internal
+ * The matrix is split into a diagonal block (6x6 times number of cells)
+ * and an extra diagonal part (of dimension 2 times 6x6 the number of internal
  * faces).
  *
  * \param[in]     m             pointer to mesh structure
@@ -628,8 +628,8 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t             *m,
  * tensorial diffusivity (symmetric matrix).
  *
  * The diffusion is not reconstructed.
- * The matrix is split into a diagonal block (3x3 times number of cells)
- * and an extra diagonal part (of dimension 3x3 the number of internal
+ * The matrix is split into a diagonal block (6x6 times number of cells)
+ * and an extra diagonal part (of dimension 6x6 the number of internal
  * faces).
  *
  * \param[in]     m             pointer to mesh structure

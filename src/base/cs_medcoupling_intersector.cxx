@@ -178,7 +178,7 @@ _create_intersector(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
                                     const cs_lnum_t               n_vtx,
                                     const cs_lnum_t               dim)
@@ -300,7 +300,7 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _allocate_intersector(cs_medcoupling_intersector_t *mi,
                       const char                   *name,
                       const char                   *medfile_path,
@@ -408,7 +408,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _add_intersector(const char                 *name,
                  const char                 *medfile_path,
                  const char                 *interp_method,

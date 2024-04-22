@@ -2139,7 +2139,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
    * are disabled
    * If a whole line of the matrix is 0, the diagonal is set to 1 */
   if (mq->has_disable_flag == 1) {
-# pragma omp parallel for  if (n_cells > CS_THR_MIN)
+#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t i = 0; i < 6; i++) {
         if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
