@@ -73,6 +73,17 @@ AC_ARG_WITH(blas-libs,
             [AS_HELP_STRING([--with-blas-libs=LIBS],
                             [specify BLAS libraries])])
 
+AC_ARG_ENABLE(mkl-sycl-offload,
+  [AS_HELP_STRING([--enable-mkl-sycl-offload], [enable SYCL offloaf for MKL])],
+  [
+    case "${enableval}" in
+      yes) cs_have_mkl_sycl=yes ;;
+      no)  cs_have_mkl_sycl=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-mkl-sycl-offload]) ;;
+    esac
+  ],
+  [ cs_have_mkl_sycl=no ]
+)
 
 if test "x$with_blas" != "xno" ; then
 
@@ -115,7 +126,11 @@ if test "x$with_blas" != "xno" ; then
         if test "$1" = "yes" ; then # Threaded version ?
           case `uname -m` in
             *64)
-              BLAS_LIBS="-lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -lpthread -lm"
+              if test "x$cs_have_mkl_sycl" = "xno" ; then
+                BLAS_LIBS="-lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -lpthread -lm"
+              else
+                BLAS_LIBS="-lmkl_sycl_blas -lmkl_sycl_sparse -lmkl_intel_ilp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm"
+              fi
               ;;
             *)
               BLAS_LIBS="-lmkl_intel -lmkl_core -lmkl_intel_thread -lpthread -lm"
@@ -280,6 +295,10 @@ fi
 # MKL provides sparse matrix-vector
 # operations (so it may be used by the code_saturne solver)
 AM_CONDITIONAL(HAVE_MKL, test x$with_blas_type = xMKL)
+AM_CONDITIONAL(HAVE_MKL_SYCL, test x$cs_have_mkl_sycl = xyes)
+if test "x$cs_have_mkl_sycl" = "xyes" ; then
+  AC_DEFINE([HAVE_MKL_SYCL], 1, [MKL can use SYCL API])
+fi
 
 AC_SUBST(cs_have_blas)
 AC_SUBST(BLAS_CPPFLAGS)

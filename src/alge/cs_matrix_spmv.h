@@ -85,6 +85,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
  *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
  *
@@ -92,6 +93,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
  *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
  *
@@ -99,6 +101,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
  *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *
  * parameters:
  *   m_type      <--  Matrix type

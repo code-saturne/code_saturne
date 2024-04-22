@@ -435,6 +435,21 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
+#if defined(HAVE_MKL_SYCL)
+    _variant_add("CSR, with MKL SYCL offload",
+                 NULL,
+                 CS_MATRIX_CSR,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_a,
+                 "mkl_sycl",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+#endif /* defined(HAVE_MKL_SYCL) */
+
 #endif /* defined(HAVE_MKL_SPARSE_IE) */
 
 #if defined(HAVE_CUDA)
@@ -504,6 +519,21 @@ _variant_build_list(int                             n_fill_types,
                  n_variants,
                  &n_variants_max,
                  m_variant);
+
+#if defined(HAVE_MKL_SYCL)
+    _variant_add("CSR, with MKL SYCL offload",
+                 NULL,
+                 CS_MATRIX_MSR,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_ae,
+                 "mkl_sycl",
+                 "mkl_sycl",
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+#endif /* defined(HAVE_MKL_SYCL) */
 
 #endif /* defined(HAVE_MKL_SPARSE_IE) */
 
@@ -625,6 +655,21 @@ _variant_build_list(int                             n_fill_types,
                  n_variants,
                  &n_variants_max,
                  m_variant);
+
+#if defined(HAVE_MKL_SYCL)
+    _variant_add("Distributed, with MKL SYCL offload",
+                 NULL,
+                 CS_MATRIX_DIST,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_ae,
+                 "mkl_sycl",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+#endif /* defined(HAVE_MKL_SYCL) */
 
 #endif /* defined(HAVE_MKL_SPARSE_IE) */
 

@@ -42,7 +42,15 @@
 #endif
 
 #if defined (HAVE_MKL_SPARSE_IE)
-#include <mkl_spblas.h>
+#if defined(HAVE_MKL_SYCL)
+  #undef VERSION
+  #define MKL_ILP64
+  #include <mkl_spblas.h>
+  #include <oneapi/mkl.hpp>
+  using namespace oneapi::mkl;
+#else
+  #include <mkl_spblas.h>
+#endif
 #endif
 
 /*----------------------------------------------------------------------------
@@ -122,6 +130,26 @@ typedef struct _cs_matrix_mkl_sparse_map_t {
   bool                 mapped;           /* is the mapping done */
 
 } cs_matrix_mkl_sparse_map_t;
+
+#if defined(HAVE_MKL_SYCL)
+
+/* Mapping of matrix coefficients and structure to MKL matrix handle */
+/*-------------------------------------------------------------------*/
+
+typedef struct _cs_matrix_mkl_sparse_sycl_map_t {
+
+  sparse::matrix_handle_t  a;            /* handle to MKL matrix */
+
+  struct matrix_descr  descr;            /* matrix descriptor */
+
+  std::int64_t        *_rows_start;      /* row index if copied */
+  std::int64_t        *_col_indx;        /* column ids if copied */
+
+  bool                 mapped;           /* is the mapping done */
+
+} cs_matrix_mkl_sparse_sycl_map_t;
+
+#endif // defined(HAVE_MKL_SPARSE_SYCL)
 
 #endif // defined(HAVE_MKL_SPARSE_IE)
 
@@ -395,6 +423,170 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
 
   return csm;
 }
+
+#if defined (HAVE_MKL_SYCL)
+
+/*----------------------------------------------------------------------------
+ * Unset matrix MKL sparse BLAS mapping.
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_unset_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
+{
+  cs_matrix_mkl_sparse_sycl_map_t *csm
+    = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
+
+  if (csm == NULL)
+    return;
+
+  sparse_status_t status = SPARSE_STATUS_SUCCESS;
+
+  if (csm->mapped) {
+    auto ev_release
+      = oneapi::mkl::sparse::release_matrix_handle(cs_glob_sycl_queue,
+                                                   &(csm->a),
+                                                   {});
+    ev_release.wait();   // ev_release.wait_and_throw();
+
+    CS_FREE(csm->_rows_start);
+    CS_FREE(csm->_col_indx);
+  }
+
+  if (SPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
+              __func__, (int)status, _cs_mkl_status_get_string(status));
+
+  BFT_FREE(matrix->ext_lib_map);
+  matrix->destroy_adaptor = NULL;
+}
+
+/*----------------------------------------------------------------------------
+ * Set matrix MKL sparse BLAS mapping.
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_mkl_sparse_sycl_map_t *
+_set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
+{
+  cs_matrix_mkl_sparse_sycl_map_t *csm
+    = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
+
+  if (csm != NULL) {
+    _unset_mkl_sparse_sycl_map(matrix);
+  }
+  else {
+    BFT_MALLOC(csm, 1, cs_matrix_mkl_sparse_sycl_map_t);
+    csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+    csm->descr.mode = SPARSE_FILL_MODE_FULL;
+    csm->descr.diag = SPARSE_DIAG_NON_UNIT;
+    csm->_rows_start = NULL;
+    csm->_col_indx = NULL;
+    csm->mapped = false;
+    matrix->ext_lib_map = (void *)csm;
+  }
+  matrix->destroy_adaptor = _unset_mkl_sparse_sycl_map;
+
+  const cs_lnum_t *row_index, *col_id;
+  cs_real_t *e_val;
+  std::uint64_t nrows = 0, ncols = 0, nnz = 0;
+
+  if (matrix->type == CS_MATRIX_CSR) {
+    cs_matrix_struct_csr_t *ms
+      = (cs_matrix_struct_csr_t  *)matrix->structure;
+    cs_matrix_coeff_csr_t *mc
+      = (cs_matrix_coeff_csr_t *)matrix->coeffs;
+    nrows = ms->n_rows;
+    ncols = ms->n_cols_ext;
+    nnz = ms->row_index[matrix->n_rows];
+    row_index = ms->row_index;
+    col_id = ms->col_id;
+    e_val = const_cast<cs_real_t *>(mc->val);
+  }
+  else {
+    cs_matrix_struct_dist_t *ms
+      = (cs_matrix_struct_dist_t *)matrix->structure;
+    cs_matrix_coeff_dist_t *mc
+      = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+    nrows = ms->n_rows;
+    if (matrix->type == CS_MATRIX_DIST)
+      ncols = ms->n_rows; /* extended cols are separate here */
+    else
+      ncols = ms->n_cols_ext;
+    nnz = ms->e.row_index[matrix->n_rows];
+    row_index = ms->e.row_index;
+    col_id = ms->e.col_id;
+    e_val = const_cast<cs_real_t *>(mc->e_val);
+  }
+
+  std::int64_t *rows_start, *col_indx;
+  std::int64_t *_rows_start = NULL, *_col_indx = NULL;
+  if (sizeof(cs_lnum_t) != sizeof(std::uint64_t) || true) {
+    BFT_MALLOC(_rows_start, nrows+1, std::int64_t);
+    BFT_MALLOC(_col_indx, nnz, std::int64_t);
+    for (cs_lnum_t i = 0; i < nrows+1; i++)
+      _rows_start[i] = row_index[i];
+    for (cs_lnum_t i = 0; i < nnz; i++)
+      _col_indx[i] = col_id[i];
+    rows_start = _rows_start;
+    col_indx = _col_indx;
+    csm->_rows_start = _rows_start;
+    csm->_col_indx = _col_indx;
+  }
+  else {
+    rows_start = (std::int64_t *)row_index;
+    col_indx = (std::int64_t *)col_id;
+  }
+
+  csm->a = nullptr;
+  sparse::init_matrix_handle(&(csm->a));
+
+  if (matrix->eb_size == 1) {
+
+    auto ev_set = sparse::set_csr_data(cs_glob_sycl_queue,
+                                       csm->a, nrows, ncols,
+                                       index_base::zero,
+                                       rows_start, col_indx, e_val);
+    if (matrix->db_size == 1) {
+      auto ev_opt = sparse::optimize_gemv(cs_glob_sycl_queue,
+                                          transpose::nontrans,
+                                          csm->a,
+                                          {ev_set});
+      ev_opt.wait();
+    }
+    else {
+      #if 0  // mentioned in oneAPI standard as of 2024-04, not in oneAPI 2024.1
+      ev_opt = sparse::optimize_gemm(cs_glob_sycl_queue,
+                                     transpose::nontrans,
+                                     transpose::nontrans,
+                                     layout::row_major,
+                                     matrix->db_size,
+                                     csm->a,
+                                     {ev_set});
+      ev_opt.wait();
+      #else
+      ev_set.wait();
+      #endif
+    }
+  }
+  else { /* matrix->eb_size > 1 */
+
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: no MKL BSR structure using oneAPI."),
+              __func__);
+
+  }
+
+  csm->mapped = true;
+
+  return csm;
+}
+
+#endif // defined(HAVE_MKL_SPARSE_SYCL)
 
 #endif // defined(HAVE_MKL_SPARSE_IE)
 
@@ -1897,6 +2089,55 @@ _mat_vec_p_l_csr_mkl(cs_matrix_t  *matrix,
               __func__, (int)status, _cs_mkl_status_get_string(status));
 }
 
+#if defined (HAVE_MKL_SYCL)
+
+static void
+_mat_vec_p_l_csr_mkl_sycl(cs_matrix_t  *matrix,
+                          bool          exclude_diag,
+                          bool          sync,
+                          cs_real_t    *restrict x,
+                          cs_real_t    *restrict y)
+{
+  if (exclude_diag)
+    bft_error(__FILE__, __LINE__, 0,
+              _(_no_exclude_diag_error_str), __func__);
+
+  /* Ghost cell communication */
+
+  cs_halo_state_t *hs
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+
+  /* Map matrix if not yet done */
+
+  cs_matrix_mkl_sparse_sycl_map_t *csm
+    = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
+
+  if (csm == NULL) {
+    matrix->ext_lib_map = _set_mkl_sparse_sycl_map(matrix);
+    csm = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
+  }
+
+  /* Finalize ghost cells communication */
+
+  if (hs != NULL)
+    cs_halo_sync_wait(matrix->halo, x, hs);
+
+  /* MKL call */
+
+  auto ev_gemv = sparse::gemv(cs_glob_sycl_queue,
+                              transpose::nontrans,
+                              1, // alpha
+                              csm->a,
+                              x,
+                              0, // beta
+                              y);
+
+  ev_gemv.wait();  // TODO check if this is needed or waiting
+                   // on downstream events is sufficient.
+}
+
+#endif /* defined (HAVE_MKL_SYCL) */
+
 #endif /* defined (HAVE_MKL_SPARSE_IE) */
 
 /*----------------------------------------------------------------------------
@@ -2763,6 +3004,115 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
 
 }
 
+#if defined(HAVE_MKL_SYCL)
+
+static void
+_mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
+                          bool          exclude_diag,
+                          bool          sync,
+                          cs_real_t     x[restrict],
+                          cs_real_t     y[restrict])
+{
+  const cs_matrix_coeff_dist_t  *mc
+    = (const cs_matrix_coeff_dist_t  *)matrix->coeffs;
+
+  /* Ghost cell communication */
+
+  cs_halo_state_t *hs
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+  if (hs != NULL)
+    cs_halo_sync_wait(matrix->halo, x, hs);
+
+  /* Call MKL function */
+
+  /* Map matrix if not yet done */
+
+  cs_matrix_mkl_sparse_sycl_map_t *csm
+    = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
+
+  if (csm == NULL) {
+    matrix->ext_lib_map = _set_mkl_sparse_map(matrix);
+    csm = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
+  }
+
+  /* Diagonal contribution */
+
+  cs_real_t beta = 1;
+
+  if (!exclude_diag && mc->d_val != NULL) {
+    const cs_lnum_t n_rows = matrix->n_rows;
+    const double *restrict da = mc->d_val;
+    switch (matrix->db_size) {
+    case 1:
+      {
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          y[ii] = da[ii] * x[ii];
+      }
+      break;
+    case 3:
+      {
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          _dense_3_3_ax(ii, mc->d_val, x, y);
+      }
+      break;
+    case 6:
+      {
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          _dense_6_6_ax(ii, mc->d_val, x, y);
+      }
+      break;
+    default:
+      {
+        cs_lnum_t db_size = matrix->db_size;
+        cs_lnum_t db_size_2 = db_size*db_size;
+#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          _dense_b_ax(ii, db_size, db_size_2, mc->d_val, x, y);
+      }
+    }
+  }
+  else
+    beta = 0;
+
+  /* MKL call */
+
+  if (matrix->db_size == matrix->eb_size) {
+    auto ev_gemv = sparse::gemv(cs_glob_sycl_queue,
+                                transpose::nontrans,
+                                1, // alpha,
+                                csm->a,
+                                x,
+                                beta,
+                                y);
+
+    ev_gemv.wait();  // TODO check if this is needed or waiting
+                     // on downstream events is sufficient.
+  }
+  else {
+    auto ev_gemm = sparse::gemm(cs_glob_sycl_queue,
+                                layout::row_major,
+                                transpose::nontrans,  // tranpose_A
+                                transpose::nontrans,  // tranpose_B
+                                1, // alpha,
+                                csm->a,
+                                x, // B
+                                matrix->db_size,      // columns
+                                matrix->db_size,      // ldb
+                                beta,
+                                y, // C
+                                matrix->db_size,      // ldc
+                                {});                  // dependencies
+
+    ev_gemm.wait();  // TODO check if this is needed or waiting
+                     // on downstream events is sufficient.
+  }
+}
+
+#endif /* defined (HAVE_MKL_SYCL) */
+
 #endif /* defined (HAVE_MKL_SPARSE_IE) */
 
 /*----------------------------------------------------------------------------
@@ -3387,6 +3737,68 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
   }
 }
 
+#if defined (HAVE_MKL_SYCL)
+
+static void
+_mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
+                           bool          exclude_diag,
+                           bool          sync,
+                           cs_real_t     x[restrict],
+                           cs_real_t     y[restrict])
+{
+  /* Initialize halo synchronization */
+
+  cs_halo_state_t *hs
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+
+  /* Compute local part */
+
+  _mat_vec_p_l_msr_mkl_sycl(matrix,
+                            exclude_diag,
+                            sync,
+                            x,
+                            y);
+
+  /* Finalize halo communication */
+
+  if (hs != NULL)
+    cs_halo_sync_wait(matrix->halo, x, hs);
+
+  /* Compute distant part */
+
+  const cs_matrix_struct_dist_t  *ms
+    = (const cs_matrix_struct_dist_t *)matrix->structure;
+  const cs_lnum_t  n_h_rows = ms->h.n_rows;
+
+  /* Standard case (TODO: handle non-scalar cases) */
+
+  if (n_h_rows > 0) {
+
+    const cs_lnum_t  *h_col_id = ms->h.col_id;
+    const cs_lnum_t  *h_row_index = ms->h.row_index;
+    const cs_matrix_coeff_dist_t  *mc
+      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+
+#   pragma omp parallel for  if(n_h_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_h_rows; ii++) {
+
+      const cs_lnum_t *restrict col_id = h_col_id + h_row_index[ii];
+      const cs_real_t *restrict m_row = mc->h_val + h_row_index[ii];
+      cs_lnum_t n_cols = h_row_index[ii+1] - h_row_index[ii];
+      cs_real_t sii = 0.0;
+
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+        sii += (m_row[jj]*x[col_id[jj]]);
+
+      y[ii] += sii;
+
+    }
+
+  }
+}
+
+#endif /* defined (HAVE_MKL_SYCL) */
+
 #endif /* defined (HAVE_MKL_SPARSE_IE) */
 
 #if defined(HAVE_ACCEL)
@@ -3405,13 +3817,13 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
  *     default
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
- *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *
  *   CS_MATRIX_MSR
  *     default
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
- *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *
  * parameters:
  *   m_type      <--  Matrix type
@@ -3462,8 +3874,14 @@ const char *default_name_native = s_cuda;
 #else  /* defined(HAVE_CUDA) */
 
 const char s_not_impl[] = "not_implemented";
-const char *default_name = s_not_impl;
 const char *default_name_native = s_not_impl;
+
+#if defined (HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+const char s_mkl_sycl[] = "mkl_sycl";
+const char *default_name = s_mkl_sycl;
+#else
+const char *default_name = s_not_impl;
+#endif
 
 #endif /* not defined(HAVE_CUDA) */
 
@@ -3549,6 +3967,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
  *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
  *
@@ -3556,6 +3975,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
  *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
  *
@@ -3563,6 +3983,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
  *     mkl             (with MKL)
+ *     mkl_sycl        (with MKL, using SYCL offload)
  *
  * parameters:
  *   m_type      <--  Matrix type
@@ -3614,12 +4035,15 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
+        [[fallthrough]];
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = _mat_vec_p_l_native;
         _spmv[1] = _mat_vec_p_l_native;
         break;
       case CS_MATRIX_BLOCK_D:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_66:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_SYM:
         _spmv[0] = _b_mat_vec_p_l_native_fixed;
         _spmv[1] = _b_mat_vec_p_l_native_fixed;
@@ -3635,6 +4059,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       if (standard > 1) { /* default optimized variants */
         switch(fill_type) {
         case CS_MATRIX_SCALAR:
+          [[fallthrough]];
         case CS_MATRIX_SCALAR_SYM:
           if (numbering != NULL) {
 #if defined(HAVE_OPENMP)
@@ -3650,7 +4075,9 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
           }
           break;
         case CS_MATRIX_BLOCK_D:
+          [[fallthrough]];
         case CS_MATRIX_BLOCK_D_66:
+          [[fallthrough]];
         case CS_MATRIX_BLOCK_D_SYM:
           if (numbering != NULL) {
 #if defined(HAVE_OPENMP)
@@ -3674,12 +4101,15 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
         if (numbering->type == CS_NUMBERING_THREADS) {
           switch(fill_type) {
           case CS_MATRIX_SCALAR:
+            [[fallthrough]];
           case CS_MATRIX_SCALAR_SYM:
             _spmv[0] = _mat_vec_p_l_native_omp;
             _spmv[1] = _mat_vec_p_l_native_omp;
             break;
           case CS_MATRIX_BLOCK_D:
+            [[fallthrough]];
           case CS_MATRIX_BLOCK_D_66:
+            [[fallthrough]];
           case CS_MATRIX_BLOCK_D_SYM:
             _spmv[0] = _b_mat_vec_p_l_native_omp;
             _spmv[1] = _b_mat_vec_p_l_native_omp;
@@ -3698,12 +4128,15 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #if defined(HAVE_OPENMP)
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
+        [[fallthrough]];
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = _mat_vec_p_l_native_omp_atomic;
         _spmv[1] = _mat_vec_p_l_native_omp_atomic;
         break;
       case CS_MATRIX_BLOCK_D:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_66:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_SYM:
         _spmv[0] = _b_mat_vec_p_l_native_omp_atomic;
         _spmv[1] = _b_mat_vec_p_l_native_omp_atomic;
@@ -3719,6 +4152,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     else if (!strcmp(func_name, "vector")) {
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
+        [[fallthrough]];
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = _mat_vec_p_l_native_vector;
         _spmv[1] = _mat_vec_p_l_native_vector;
@@ -3732,12 +4166,15 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #if defined(HAVE_CUDA)
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
+        [[fallthrough]];
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = cs_matrix_spmv_cuda_native;
         _spmv[1] = cs_matrix_spmv_cuda_native;
         break;
       case CS_MATRIX_BLOCK_D:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_66:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_SYM:
       default:
         break;
@@ -3756,6 +4193,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 
     switch(fill_type) {
     case CS_MATRIX_SCALAR:
+      [[fallthrough]];
     case CS_MATRIX_SCALAR_SYM:
       if (standard > 0) {
         _spmv[0] = _mat_vec_p_l_csr;
@@ -3765,8 +4203,16 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #if defined(HAVE_MKL_SPARSE_IE)
         _spmv[0] = _mat_vec_p_l_csr_mkl;
         _spmv[1] = _mat_vec_p_l_csr_mkl;
-        _spmv_xy_hd[0] = 'g';
-        _spmv_xy_hd[1] = 'g';
+#else
+        retcode = 2;
+#endif
+      }
+      else if (!strcmp(func_name, "mkl_sycl")) {
+#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+        _spmv[0] = _mat_vec_p_l_csr_mkl_sycl;
+        _spmv[1] = _mat_vec_p_l_csr_mkl_sycl;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
 #else
         retcode = 2;
 #endif
@@ -3808,12 +4254,15 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     if (standard > 0) {
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
+        [[fallthrough]];
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = _mat_vec_p_l_msr;
         _spmv[1] = _mat_vec_p_l_msr;
         break;
       case CS_MATRIX_BLOCK_D:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_66:
+        [[fallthrough]];
       case CS_MATRIX_BLOCK_D_SYM:
         _spmv[0] = _b_mat_vec_p_l_msr;
         _spmv[1] = _b_mat_vec_p_l_msr;
@@ -3829,26 +4278,38 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 
     else if (!strcmp(func_name, "mkl")) {
 #if defined(HAVE_MKL_SPARSE_IE)
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-      case CS_MATRIX_BLOCK_D:
-      case CS_MATRIX_BLOCK_D_66:
-      case CS_MATRIX_BLOCK_D_SYM:
-      case CS_MATRIX_BLOCK:
-        _spmv[0] = _mat_vec_p_l_msr_mkl;
-        _spmv[1] = _mat_vec_p_l_msr_mkl;
-        _spmv_xy_hd[0] = 'g';
-        _spmv_xy_hd[1] = 'g';
-        break;
-      default:
-        break;
-      }
+      _spmv[0] = _mat_vec_p_l_msr_mkl;
+      _spmv[1] = _mat_vec_p_l_msr_mkl;
 #else
       retcode = 2;
 #endif
     }
-
+    else if (!strcmp(func_name, "mkl_sycl")) {
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+        [[fallthrough]];
+      case CS_MATRIX_SCALAR_SYM:
+        [[fallthrough]];
+      case CS_MATRIX_BLOCK_D:
+        [[fallthrough]];
+      case CS_MATRIX_BLOCK_D_66:
+        [[fallthrough]];
+      case CS_MATRIX_BLOCK_D_SYM:
+#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+        _spmv[0] = _mat_vec_p_l_msr_mkl_sycl;
+        _spmv[1] = _mat_vec_p_l_msr_mkl_sycl;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+#else
+        retcode = 2;
+#endif
+        break;
+      case CS_MATRIX_BLOCK:
+        [[fallthrough]];
+      default:
+        break;
+      }
+    }
     else if (!strcmp(func_name, "cuda")) {
 #if defined(HAVE_CUDA)
       switch(fill_type) {
@@ -3956,8 +4417,6 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = _mat_vec_p_l_dist_mkl;
         _spmv[1] = _mat_vec_p_l_dist_mkl;
-        _spmv_xy_hd[0] = 'g';
-        _spmv_xy_hd[1] = 'g';
         break;
       default:
         break;
@@ -3965,6 +4424,24 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #else
       retcode = 2;
 #endif
+    }
+
+    else if (!strcmp(func_name, "mkl_sycl")) {
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+        _spmv[0] = _mat_vec_p_l_dist_mkl_sycl;
+        _spmv[1] = _mat_vec_p_l_dist_mkl_sycl;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+#else
+        retcode = 2;
+#endif
+        break;
+      default:
+        break;
+      }
     }
 
     else if (!strcmp(func_name, "omp_sched")) {
