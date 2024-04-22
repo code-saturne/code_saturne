@@ -124,6 +124,12 @@ public:
   try_get_parallel_for_i_faces_sum_type(const cs_mesh_t*         m,
                                         cs_dispatch_sum_type_t&  st);
 
+  // Query sum type for assembly loop over all boundary faces
+  // Must be redefined by the child class
+  bool
+  try_get_parallel_for_b_faces_sum_type(const cs_mesh_t*         m,
+                                        cs_dispatch_sum_type_t&  st);
+
 };
 
 // Default implementation of parallel_for_i_faces based on parallel_for
@@ -151,6 +157,15 @@ decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_b_faces
 // Default implementation of get interior faces sum type
 template <class Derived>
 bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_i_faces_sum_type
+  ([[maybe_unused]]const cs_mesh_t*  m,
+   cs_dispatch_sum_type_t&           st) {
+  st = CS_DISPATCH_SUM_SIMPLE;
+  return true;
+}
+
+// Default implementation of get boundary faces sum type
+template <class Derived>
+bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_b_faces_sum_type
   ([[maybe_unused]]const cs_mesh_t*  m,
    cs_dispatch_sum_type_t&           st) {
   st = CS_DISPATCH_SUM_SIMPLE;
@@ -236,6 +251,14 @@ public:
   // Get interior faces sum type associated with this context
   bool
   try_get_parallel_for_i_faces_sum_type([[maybe_unused]]const cs_mesh_t*  m,
+                                        cs_dispatch_sum_type_t&           st) {
+    st = CS_DISPATCH_SUM_SIMPLE;
+    return true;
+  }
+
+  // Get boundary faces sum type associated with this context
+  bool
+  try_get_parallel_for_b_faces_sum_type([[maybe_unused]]const cs_mesh_t*  m,
                                         cs_dispatch_sum_type_t&           st) {
     st = CS_DISPATCH_SUM_SIMPLE;
     return true;
@@ -417,6 +440,19 @@ public:
     return true;
   }
 
+  // Get boundary faces sum type associated with this context
+  bool
+  try_get_parallel_for_b_faces_sum_type(const cs_mesh_t         *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    const cs_lnum_t n = m->n_b_faces;
+    if (device_ < 0 || n < n_min_for_device_) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
 };
 
 #elif defined(SYCL_LANGUAGE_VERSION)
@@ -495,6 +531,19 @@ public:
   try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
                                         cs_dispatch_sum_type_t  &st) {
     const cs_lnum_t n = m->n_i_faces;
+    if (is_gpu == false || n < n_min_for_device_) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
+  // Get interior faces sum type associated with this context
+  bool
+  try_get_parallel_for_b_faces_sum_type(const cs_mesh_t         *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    const cs_lnum_t n = m->n_b_faces;
     if (is_gpu == false || n < n_min_for_device_) {
       return false;
     }
@@ -626,6 +675,18 @@ public:
     [[maybe_unused]] decltype(nullptr) try_query[] = {
       (   known = known
        || Contexts::try_get_parallel_for_i_faces_sum_type(m, sum_type),
+          nullptr)...
+    };
+    return sum_type;
+  }
+
+  cs_dispatch_sum_type_t
+  get_parallel_for_b_faces_sum_type(const cs_mesh_t* m) {
+    cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+    bool known = false;
+    [[maybe_unused]] decltype(nullptr) try_query[] = {
+      (   known = known
+       || Contexts::try_get_parallel_for_b_faces_sum_type(m, sum_type),
           nullptr)...
     };
     return sum_type;
