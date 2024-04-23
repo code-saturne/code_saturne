@@ -659,18 +659,20 @@ _cell_profile_probes_define(void          *input,
   const cs_real_t dx1[3] = {sx[3]-sx[0], sx[4]-sx[1], sx[5]-sx[2]};
   const cs_real_t s_norm2 = cs_math_3_square_norm(dx1);
 
-  const cs_real_3_t  *cell_cen
-    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
-
   cs_lnum_t n_cells = 0;
   cs_lnum_t *cell_ids = NULL;
   cs_real_t *seg_c_len = NULL;
+  cs_real_3_t *seg_c_cen = NULL;
 
   /* Compared to cs_cell_segment_intersect_select, this function also
      selects a cell if the segment is included in this cell */
 
   cs_mesh_intersect_polyline_cell_select(sx,
-                                         2, &n_cells, &cell_ids, &seg_c_len);
+                                         2,
+                                         &n_cells, 
+                                         &cell_ids, 
+                                         &seg_c_len,
+                                         &seg_c_cen);
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
@@ -680,7 +682,7 @@ _cell_profile_probes_define(void          *input,
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     cs_real_t dx[3], coo[3];
     for (cs_lnum_t j = 0; j < 3; j++) {
-      coo[j] = cell_cen[cell_ids[i]][j];
+      coo[j] = seg_c_cen[i][j];
       dx[j] = coo[j] - sx[j];
       _coords[i][j] = coo[j];
     }
@@ -689,6 +691,7 @@ _cell_profile_probes_define(void          *input,
 
   BFT_FREE(cell_ids);
   BFT_FREE(seg_c_len);
+  BFT_FREE(seg_c_cen);
 
   /* Set return values */
 

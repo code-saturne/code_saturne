@@ -86,6 +86,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   static cs_lnum_t n_elts = -1;    /* >= 0 after initialization */
   static cs_lnum_t *elt_ids = NULL;
   static cs_real_t *seg_c_len = NULL;
+  cs_real_3_t *seg_c_cen = NULL;
 
   /* x, y, z of origin, and x, y, z of destination */
   /* From North to South at the middle of the first elevation*/
@@ -106,7 +107,8 @@ cs_user_source_terms(cs_domain_t  *domain,
                                            n_points,
                                            &n_elts,
                                            &elt_ids,
-                                           &seg_c_len);
+                                           &seg_c_len,
+                                           &seg_c_cen);
 
     cs_real_t len = 0.;
     /* To visualize selected cells */
@@ -140,6 +142,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   }
 
   /* Free memory */
+  BFT_FREE(seg_c_cen);
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
     BFT_FREE(elt_ids);
     BFT_FREE(seg_c_len);

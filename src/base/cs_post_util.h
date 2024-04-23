@@ -113,15 +113,18 @@ cs_cell_segment_intersect_select(void        *input,
  * \param[out]  n_cells   number of selected cells
  * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
  * \param[out]  seg_c_len array of length of the segment in the selected cells
+ * \param[out]  seg_c_cen array of center coordinates of the segment in the 
+                          selected cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_polyline_intersect_select(void        *input,
-                                  cs_lnum_t   n_points,
-                                  cs_lnum_t   *n_cells,
-                                  cs_lnum_t  **cell_ids,
-                                  cs_real_t  **seg_c_len);
+cs_cell_polyline_intersect_select(void         *input,
+                                  cs_lnum_t    n_points,
+                                  cs_lnum_t    *n_cells,
+                                  cs_lnum_t   **cell_ids,
+                                  cs_real_t   **seg_c_len,
+                                  cs_real_3_t **seg_c_cen);
 
 /*----------------------------------------------------------------------------*/
 /*!

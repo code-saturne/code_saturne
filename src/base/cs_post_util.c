@@ -158,21 +158,25 @@ cs_cell_segment_intersect_select(void        *input,
  * \param[out]  n_cells   number of selected cells
  * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
  * \param[out]  seg_c_len array of length of the segment in the selected cells
+ * \param[out]  seg_c_cen array of center coordinates of the segment in the 
+                          selected cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_polyline_intersect_select(void        *input,
-                                  cs_lnum_t   n_points,
-                                  cs_lnum_t   *n_cells,
-                                  cs_lnum_t  **cell_ids,
-                                  cs_real_t  **seg_c_len)
+cs_cell_polyline_intersect_select(void         *input,
+                                  cs_lnum_t    n_points,
+                                  cs_lnum_t    *n_cells,
+                                  cs_lnum_t   **cell_ids,
+                                  cs_real_t   **seg_c_len,
+                                  cs_real_3_t **seg_c_cen)
 {
   cs_mesh_intersect_polyline_cell_select(input,
                                          n_points,
                                          n_cells,
                                          cell_ids,
-                                         seg_c_len);
+                                         seg_c_len,
+                                         seg_c_cen);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -225,11 +229,17 @@ cs_cell_segment_intersect_probes_define(void          *input,
   cs_lnum_t n_cells = 0;
   cs_lnum_t *cell_ids = NULL;
   cs_real_t *seg_c_len = NULL;
+  cs_real_3_t *seg_c_cen = NULL;
 
   /* This version is better than cs_cell_segment_intersect_select
      because it gives the cell
      if the segment is included in this cell */
-  cs_cell_polyline_intersect_select(input, 2, &n_cells, &cell_ids, &seg_c_len);
+  cs_cell_polyline_intersect_select(input, 
+                                    2, 
+                                    &n_cells, 
+                                    &cell_ids, 
+                                    &seg_c_len,
+                                    &seg_c_cen);
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
@@ -248,6 +258,7 @@ cs_cell_segment_intersect_probes_define(void          *input,
 
   BFT_FREE(cell_ids);
   BFT_FREE(seg_c_len);
+  BFT_FREE(seg_c_cen);
 
   /* Set return values */
 

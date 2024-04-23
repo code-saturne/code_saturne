@@ -426,15 +426,18 @@ cs_mesh_intersect_segment_cell_select(void        *input,
  * \param[out]  n_cells   number of selected cells
  * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
  * \param[out]  seg_c_len array of length of the segment in the selected cells
+ * \param[out]  seg_c_cen array of center coordinates of the segment in the 
+                          selected cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_intersect_polyline_cell_select(void        *input,
-                                       cs_lnum_t    n_points,
-                                       cs_lnum_t   *n_cells,
-                                       cs_lnum_t  **cell_ids,
-                                       cs_real_t  **seg_c_len)
+cs_mesh_intersect_polyline_cell_select(void          *input,
+                                       cs_lnum_t      n_points,
+                                       cs_lnum_t     *n_cells,
+                                       cs_lnum_t    **cell_ids,
+                                       cs_real_t    **seg_c_len,
+                                       cs_real_3_t  **seg_c_cen)
 {
   cs_real_t *sx = (cs_real_t *)input;
 
@@ -445,7 +448,10 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
   cs_lnum_t *_cell_ids = NULL;
   cs_lnum_t *_in = NULL;
   cs_lnum_t *_out = NULL;
+  cs_lnum_t *_n_in = NULL;
+  cs_lnum_t *_n_out = NULL;
   cs_real_t *_seg_c_len = NULL;
+  cs_real_3_t *_seg_c_cen = NULL;
 
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
@@ -455,8 +461,11 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
 
   BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t);   /* Selection list */
   BFT_MALLOC(_seg_c_len, _n_cells, cs_real_t);  /* Selection list length */
+  BFT_MALLOC(_seg_c_cen, _n_cells, cs_real_3_t);  /* Selection list length */
   BFT_MALLOC(_in, _n_cells, cs_lnum_t);
   BFT_MALLOC(_out, _n_cells, cs_lnum_t);
+  BFT_MALLOC(_n_in, _n_cells, cs_lnum_t);
+  BFT_MALLOC(_n_out, _n_cells, cs_lnum_t);
 
   /* Mark for each cell */
   /*--------------------*/
@@ -464,6 +473,8 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
   for (cs_lnum_t cell_id = 0; cell_id < _n_cells; cell_id++) {
     _cell_ids[cell_id] = -1;
     _seg_c_len[cell_id] = 0.;
+    for (int i = 0; i < 3; i++)
+      _seg_c_cen[cell_id][i] = 0;
   }
 
   const cs_real_3_t *vtx_coord= (const cs_real_3_t *)m->vtx_coord;
@@ -481,6 +492,8 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
     for (cs_lnum_t cell_id = 0; cell_id < _n_cells; cell_id++) {
       _in[cell_id] = 0;
       _out[cell_id] = 0;
+      _n_in[cell_id]  = 0;
+      _n_out[cell_id] = 0;
     }
 
     /* Contribution from interior faces;
@@ -572,12 +585,20 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
               _cell_ids[c_id0] = s_id;
 
               /* OD enters cell i from cell j */
-              if (n_inout[0] > 0)
+              if (n_inout[0] > 0){
                 _seg_c_len[c_id0] -= length_up;
+                _n_in[c_id0] += 1;
+                for (int i = 0; i < 3; i++)
+                  _seg_c_cen[c_id0][i] += 0.5*(sx0[i] + t*(sx1[i]-sx0[i]));
+              }
 
               /* OD leaves cell i to cell j */
-              if (n_inout[1] > 0)
+              if (n_inout[1] > 0){
                 _seg_c_len[c_id0] -= length_down;
+                _n_out[c_id0] += 1;
+                for (int i = 0; i < 3; i++)
+                  _seg_c_cen[c_id0][i] += 0.5*(sx0[i] + t*(sx1[i]-sx0[i]));
+              }
 
             }
             if (c_id1 < _n_cells) {
@@ -588,14 +609,21 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
 
               /* OD enters cell i from cell j
                * so leaves cell j */
-              if (n_inout[0] > 0)
+              if (n_inout[0] > 0){
                 _seg_c_len[c_id1] -= length_down;
+                _n_out[c_id1] += 1;
+                for (int i = 0; i < 3; i++)
+                  _seg_c_cen[c_id1][i] += 0.5*(sx0[i] + t*(sx1[i]-sx0[i]));
+              }
 
               /* OD leaves cell i to cell j
                * so enters cell j */
-              if (n_inout[1] > 0)
+              if (n_inout[1] > 0){
                 _seg_c_len[c_id1] -= length_up;
-
+                _n_in[c_id1] += 1;
+                for (int i = 0; i < 3; i++)
+                  _seg_c_cen[c_id1][i] += 0.5*(sx0[i] + t*(sx1[i]-sx0[i]));
+              }
             }
           }
         }
@@ -664,12 +692,20 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
           _cell_ids[c_id] = s_id;
 
           /* OD enters cell i */
-          if (n_inout[0] > 0)
+          if (n_inout[0] > 0){
             _seg_c_len[c_id] -= length_up;
+            _n_in[c_id] += 1;
+            for (int i = 0; i < 3; i++)
+              _seg_c_cen[c_id][i] += 0.5*(sx0[i] + t*(sx1[i]-sx0[i]));
+          }
 
           /* OD leaves cell i */
-          if (n_inout[1] > 0)
+          if (n_inout[1] > 0){
             _seg_c_len[c_id] -= length_down;
+            _n_out[c_id] += 1;
+            for (int i = 0; i < 3; i++)
+              _seg_c_cen[c_id][i] += 0.5*(sx0[i] + t*(sx1[i]-sx0[i]));
+          }
 
         }
 
@@ -687,12 +723,28 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
         _cell_ids[cell_id] = s_id;
         _seg_c_len[cell_id] += length;
       }
+      
+      /* When the segment enter a cell but do not leave it (or the contrary)
+         we take the extremity of the segment as center point */
+      if (_cell_ids[cell_id] == s_id){
+        if ( _n_out[cell_id] > 0 && _n_in[cell_id] == 0){
+          for (int i = 0; i < 3; i++)
+            _seg_c_cen[cell_id][i] = sx0[i];
+        }
+        if ( _n_out[cell_id] == 0 && _n_in[cell_id] > 0){
+          for (int i = 0; i < 3; i++)
+            _seg_c_cen[cell_id][i] = sx1[i];
+        }
+      }
+
     }
 
   } /* End loop over the segments */
 
   BFT_FREE(_in);
   BFT_FREE(_out);
+  BFT_FREE(_n_in);
+  BFT_FREE(_n_out);
 
   /* Now check marked cells and renumber */
   _n_cells = 0;
@@ -700,6 +752,8 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
     if (_cell_ids[cell_id] >= 0) {
       _cell_ids[_n_cells] = cell_id;
       _seg_c_len[_n_cells] = _seg_c_len[cell_id];
+      for (int i = 0; i < 3; i++)
+        _seg_c_cen[_n_cells][i] = _seg_c_cen[cell_id][i];
       _n_cells++;
     }
   }
@@ -707,12 +761,14 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
   BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
                                                   but not required) */
   BFT_REALLOC(_seg_c_len, _n_cells, cs_real_t);
+  BFT_REALLOC(_seg_c_cen, _n_cells, cs_real_3_t);
 
   /* Set return values */
 
   *n_cells = _n_cells;
   *cell_ids = _cell_ids;
   *seg_c_len = _seg_c_len;
+  *seg_c_cen = _seg_c_cen;
 }
 
 /*----------------------------------------------------------------------------*/
