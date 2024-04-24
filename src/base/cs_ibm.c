@@ -47,6 +47,7 @@
 
 #include "fvm_writer.h"
 
+#include "cs_array.h"
 #include "cs_cell_to_vertex.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
@@ -170,17 +171,42 @@ cs_f_porosity_ibm_get_pointer(int **ibm_porosity_mode)
  *
  * \param[in]  alphai       value at neighbouring cell i
  * \param[in]  alphaj       value at neighbouring cell j
+ * \param[in]  sizei        distance face - center of gravity cell i
+ * \param[in]  sizej        distance face - center of gravity cell j
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
 _geom_face_fraction(cs_real_t alphai,
-                    cs_real_t alphaj)
+                    cs_real_t alphaj,
+                    cs_real_t sizei,
+                    cs_real_t sizej)
 {
-  cs_real_t alpi = cs_math_fmin(alphai, alphaj);
-  cs_real_t alpj = cs_math_fmax(alphai, alphaj);
+  cs_real_t alpi = alphai;
+  cs_real_t alpj = alphaj;
+  cs_real_t Li = sizei;
+  cs_real_t Lj = sizej;
 
-  cs_real_t alpij = 0.5 * (alpi + alpj);
+  if (alphaj < alphai) {
+    alpi = alphaj;
+    alpj = alphai;
+    Li = sizej;
+    Lj = sizei;
+  }
+
+  cs_real_t a, b, x1, x2, y1, y2, aa, bb, cc, delta, b1, b2;
+  cs_real_t rap;
+
+  /* Small porosity treatment */
+  cs_real_t eps = 1.e-10;
+  if (alpi < 1.-eps && alpj  > 1.-eps)
+    return alpj;
+  if (alpi < eps && alpj  > eps)
+    return alpi;
+
+  /* Initialize the solution */
+  rap = Li/Lj;
+  cs_real_t alpij = (alpi + rap*alpj) / (1. + rap);
 
   if (alpj < 1.e-10)
     return alpij;
@@ -188,70 +214,92 @@ _geom_face_fraction(cs_real_t alphai,
   if (alpi > 1. - 1.e-10)
     return alpij;
 
-  /* Four cases are possible : faces are cut each one on Y, one on X and one
-   * on Y, one on X and so the other one, or Y and X. The minimax of
-   * initialization of alpi alpj guarantees the positivity of the slope. */
+  if (alpi < 1.e-3 && alpj > 1.-1.e-3) return alpij;
+
+  /* Four crossing cases are possible : faces are cut each one on Y, one on X
+   * one on Y, one on X the other one too, or Y and X. The minimax of
+   * initialization of the alpi alpj guarantees the positivity of the slope. */
 
   /* Case YY */
-  cs_real_t x1 = 0.;
-  cs_real_t x2 = 0.;
+  b = alpij;
+  a = (b - alpi) * 2./Li;
+  y1 = b - a*Li;
+  y2 = b + a*Lj;
+
+  if (y1 >= 0. && y2 <= 1.)
+    return b;
 
   /* Case YX */
-  cs_real_t bb = 4. * alpj - 6.;
-  cs_real_t cc = 1. + 4. * alpi * (1. - alpj);
-  cs_real_t delta = bb * bb - 4. * cc;
+  rap = Lj/Li;
+  aa = 1.;
+  bb = -2. - 4.*(1. - alpj)*rap;
+  cc = 1. + 4 * alpi*(1. - alpj)*rap;
+  delta = bb*bb - 4.*aa*cc;
 
-  if (delta >= 0.)
-    x2 = 0.5 * (-bb - sqrt(delta));
-  else
-    x2 = -1.;
-
-  if (x2 >= alpi && x2 <= 2. * alpi && x2 <= 2. * alpj - 1.)
-    return x2;
-
-  x1 = 0.5 * (alpi + alpj);
-  if (x1 <= 2. * alpi && x1 >= 2. * alpj - 1.)
-    return x1;
-
-  /* Case XX */
-  cs_real_t aa = 1. - (alpi + alpj);
-  bb = 2. * alpi;
-  cc = -alpi;
-  delta = bb * bb - 4. * aa * cc;
-
-  if (delta >= 0. && cs_math_fabs(aa) > 0.) {
-    cs_real_t sqrt_delta = sqrt(delta);
-    cs_real_t den = 0.5 / aa;
-    x1 = (-bb + sqrt_delta) * den;
-    x2 = (-bb - sqrt_delta) * den;
-  } else {
-    x1 = -1.;
-    x2 = -1.;
+  if (delta >= 0.) {
+    b = (-bb - sqrt(delta)) / (2.*aa);
+    if (b >= alpi && b <= alpj) {
+      a = (b - alpi)*2./Li;
+      if (a > 0.) {
+        y1 = b - a*Li;
+        x2 = (1. - b)/a;
+        if (y1 >= 0. && x2 <= Lj)
+          return b;
+      }
+    }
   }
 
-  if (x1 >= 2. * alpi && x1 <= 2. * alpj - 1.)
-    return x1;
-  else if (x2 >= 2. * alpi && x2 <= 2 * alpj - 1.)
-    return x2;
+  /* Case XX */
+  aa = (1. - alpj)*Lj - alpi*Li;
+  bb = 2.*alpi*Li;
+  cc = -alpi*Li;
+  delta = bb*bb - 4.*aa*cc;
+
+  if (delta >= 0.) {
+    if (cs_math_fabs(aa) < 1.e-20) {
+      return 0.5;
+    } else {
+      b1 = (-bb - sqrt(delta)) / (2.*aa);
+      b2 = (-bb + sqrt(delta)) / (2.*aa);
+      if (b1 >= alpi && b1 <= alpj) {
+        a = b1*b1/(2.*alpi*Li);
+        if (a > 0) {
+          x1 = -b1/a;
+          x2 = (1. - b1)/a;
+          if (x1 >= -Li && x2 <= Lj)
+            return b1;
+        }
+      }
+      if (b2 >= alpi && b2 <= alpj) {
+        a = b2*b2/(2.*alpi*Li);
+        if (a > 0.) {
+          x1 = -b2/a;
+          x2 = (1. - b2)/a;
+          if (x1 >= -Li && x2 <= Lj)
+            return b2;
+        }
+      }
+    }
+  }
 
   /* Case XY */
-  bb = 4. * alpi;
-  cc = -4. * alpi * alpj;
-  delta = bb * bb - 4. * cc;
-
-  if (delta >= 0.)
-    x1 = 0.5 * (-bb + sqrt(delta));
-  else
-    x1 = -1.;
-
-  if (x1 >= 2. * alpi && x1 >= 2. * alpj - 1. && x1 <= alpj)
-    return x1;
-
-  cs_real_t eps = 1.e-10;
-  if (alpi < 1.-eps && alpj  > 1.-eps)
-    return alpj;
-  if (alpi < eps && alpj  > eps)
-    return alpi;
+  rap = Li/Lj;
+  aa = 1.;
+  bb = 4.*alpi*rap;
+  cc = -4.*alpi*alpj*rap;
+  delta = bb*bb - 4.*aa*cc;
+  if (delta >= 0.) {
+    b = (-bb + sqrt(delta)) / (2.*aa);
+    if (b >= alpi && b <= alpj) {
+      a = (alpj - b)*2./Lj;
+      if (a > 0.) {
+        y2 = b + a*Lj;
+        x1 = -b/a;
+        if (x1 >= -Li && y2 <= 1.)
+          return b;
+      }
+    }
+  }
 
   return alpij;
 }
@@ -1770,14 +1818,14 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
   int icut = cs_ibm->nb_cut_cells;
   cs_real_t voltot = 0;
 
-  int *nbvtx, *nbvtx_in, *cog_in, *node_in;
-  BFT_MALLOC(nbvtx, n_cells_ext, int);
-  BFT_MALLOC(nbvtx_in, n_cells_ext, int);
-  BFT_MALLOC(cog_in, n_cells_ext, int);
-  BFT_MALLOC(node_in, mesh->n_vertices, int);
-  memset(nbvtx, 0, n_cells_ext*sizeof(int));
-  memset(nbvtx_in, 0, n_cells_ext*sizeof(int));
-  memset(cog_in, 0, n_cells_ext*sizeof(int));
+  cs_lnum_t *nbvtx, *nbvtx_in, *cog_in, *node_in;
+  BFT_MALLOC(nbvtx, n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(nbvtx_in, n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(cog_in, n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(node_in, mesh->n_vertices, cs_lnum_t);
+  cs_array_lnum_fill_zero(n_cells_ext, nbvtx);
+  cs_array_lnum_fill_zero(n_cells_ext, nbvtx_in);
+  cs_array_lnum_fill_zero(n_cells_ext, cog_in);
 
   for (int v_id = 0; v_id < mesh->n_vertices; v_id++)
     node_in[v_id] = -1;
@@ -2020,7 +2068,7 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
       }
   }
 
-  cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val);
+  cs_field_synchronize(CS_F_(poro), CS_HALO_STANDARD);
 
   BFT_FREE(cog_in);
   BFT_FREE(nbvtx);
@@ -2300,12 +2348,12 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
     }
 
   /* Recompute cognew for cells with almost null porosities */
-  cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
+  cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
                            (cs_real_t *)cell_f_cen, 3);
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, porbis);
 
   if (mesh->n_init_perio > 0)
-    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_STANDARD,
+    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
                               (cs_real_t *)cell_f_cen);
 
   cs_lnum_t size_weight = n_cells_ext;
@@ -2375,20 +2423,23 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
       cell_s_cen[c_id][2] = cell_cen[c_id][2];
     }
 
-    if (CS_F_(poro)->val[c_id] > 1.-1.e-5)
+    if (CS_F_(poro)->val[c_id] > 1.-1.e-5) {
       for (int i = 0; i < 3; i++)
         cell_s_cen[c_id][i] = cell_cen[c_id][i];
+      for (int i = 0; i < 3; i++)
+        cell_f_cen[c_id][i] = cell_cen[c_id][i];
+    }
   }
 
-  cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
+  cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
                            (cs_real_t *)cell_f_cen, 3);
-  cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
+  cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
                            (cs_real_t *)cell_s_cen, 3);
 
   if (mesh->n_init_perio > 0) {
-    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_STANDARD,
+    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
                               (cs_real_t *)cell_f_cen);
-    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_STANDARD,
+    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
                               (cs_real_t *)cell_s_cen);
   }
 
@@ -2433,7 +2484,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
           }
       }
 
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val);
+    cs_field_synchronize(CS_F_(poro), CS_HALO_STANDARD);
   }
 
   BFT_FREE(porbis);
@@ -2476,7 +2527,7 @@ _compute_b_fac_porosity(const cs_mesh_t            *mesh,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     cs_lnum_t c_id = b_face_cells[f_id];
 
-    bfpro_poro[f_id] = c_poro[c_id];
+    bfpro_poro[f_id] = 0.5*(c_poro[c_id] + CS_F_(poro)->val_pre[c_id]);
 
     cs_real_3_t cog;
     for (int i = 0; i < 3; i++)
@@ -2501,13 +2552,10 @@ _compute_b_fac_porosity(const cs_mesh_t            *mesh,
       porc += v_poro[v_id];
     }
 
-    if (ptin == cpt)
-      bfpro_poro[f_id] = 0.;
-
-    else if (ptin == 0)
+    if (ptin == 0)
       bfpro_poro[f_id] = 1.;
 
-    else {
+    else if (ptin < cpt) {
       for (int i = 0; i < 3; i++)
         cog[i] /= (cs_real_t)(cpt);
       porc /= (cs_real_t)(cpt);
@@ -2606,6 +2654,9 @@ _compute_i_fac_porosity(const cs_mesh_t            *mesh,
   cs_lnum_t n_i_faces   = mesh->n_i_faces;
 
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_real_3_t *i_face_cog
+    = (const cs_real_3_t *)mesh_quantities->i_face_cog;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
@@ -2614,17 +2665,18 @@ _compute_i_fac_porosity(const cs_mesh_t            *mesh,
     cs_real_t pori = 0.5 * (c_poro[c_id0] + CS_F_(poro)->val_pre[c_id0]);
     cs_real_t porj = 0.5 * (c_poro[c_id1] + CS_F_(poro)->val_pre[c_id1]);
 
-    cs_real_t porij = _geom_face_fraction(pori, porj);
-    cs_real_t porimin = cs_math_fmin(c_poro[c_id0],
+    cs_real_t sizei = cs_math_3_distance(i_face_cog[f_id], cell_cen[c_id0]);
+    cs_real_t sizej = cs_math_3_distance(i_face_cog[f_id], cell_cen[c_id1]);
+
+    cs_real_t porij = _geom_face_fraction(pori, porj, sizei, sizej);
+
+    cs_real_t porimin = cs_math_fmax(c_poro[c_id0],
                                      CS_F_(poro)->val_pre[c_id0]);
-    cs_real_t porjmin = cs_math_fmin(c_poro[c_id1],
+    cs_real_t porjmin = cs_math_fmax(c_poro[c_id1],
                                      CS_F_(poro)->val_pre[c_id1]);
 
-    if (porij < 1.e-5 || porimin < 1.e-5 || porjmin < 1.e-5)
+    if (porij < 1.e-6 || porimin < 1.e-6 || porjmin < 1.e-6)
       porij = 0.;
-
-    cs_real_t porijmin = cs_math_fmin(pori, porj);
-    porij = cs_math_fmin(porij, 50.*porijmin);
 
     ifpro_poro[f_id] = porij;
   }
@@ -2753,7 +2805,7 @@ _compute_solid_porosity(const cs_mesh_t            *mesh,
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
   cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_f_cen;
 
-  memset(cs_ibm->solid_porosity, 0, n_cells_ext*sizeof(cs_real_t));
+  cs_array_real_fill_zero(n_cells_ext, cs_ibm->solid_porosity);
 
   cs_real_t t_cur = cs_glob_time_step->t_cur;
 
@@ -2781,11 +2833,11 @@ _compute_solid_porosity(const cs_mesh_t            *mesh,
   }
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, c_poro);
-  cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
+  cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
                            (cs_real_t *)cell_f_cen, 3);
 
   if (mesh->n_init_perio > 0)
-    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_STANDARD,
+    cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
                               (cs_real_t *)cell_f_cen);
 }
 
@@ -3020,12 +3072,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
                                                     i_face_normal_unit));
     dist_ipjp = cs_math_fmax(dist_ipjp, 0.5 * dist[f_id]);
 
-    // Security
-    if (cs_math_fmin(CS_F_(poro)->val[c_id0],CS_F_(poro)->val[c_id1]) > 0.9999)
-      dist_ipjp = dist[f_id];
-
-    weight_loc = cs_math_fmax(weight_loc, 0.2);
-    i_f_weight[f_id] = cs_math_fmin(weight_loc, 0.8);
+    weight_loc = cs_math_fmax(weight_loc, 0.05);
+    i_f_weight[f_id] = cs_math_fmin(weight_loc, 0.95);
   }
 
   // TODO: Check
@@ -3094,9 +3142,14 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
       den += cs_math_pow2(b_face_normal[f_id][idim]);
     }
 
-    cs_real_t lambda = num / den;
-    for (int idim = 0; idim < 3; idim++)
-      b_face_cog_tp[idim] = xip[idim] + lambda * b_face_normal[f_id][idim];
+    if(den > 1.e-20) {
+      cs_real_t lambda = num / den;
+      for (int idim = 0; idim < 3; idim++)
+        b_face_cog_tp[idim] = xip[idim] + lambda * b_face_normal[f_id][idim];
+    } else {
+      for (int idim = 0; idim < 3; idim++)
+        b_face_cog_tp[idim] = b_face_normal[f_id][idim];
+    }
 
     for (int k = 0; k < 3; k++)
       for (int l = 0; l < 3; l++)
@@ -3238,15 +3291,10 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
       int iok2 = 1;
       if (c_poro[c_id] > 0.75) {
-        cs_real_t psca2
-          = (xp[0]-cell_cen[c_id][0])*(cell_f_cen[c_id][0]-cell_cen[c_id][0])
-          + (xp[1]-cell_cen[c_id][1])*(cell_f_cen[c_id][1]-cell_cen[c_id][1])
-          + (xp[2]-cell_cen[c_id][2])*(cell_f_cen[c_id][2]-cell_cen[c_id][2]);
         cs_real_t psca3
           = cs_math_3_distance_dot_product(cell_f_cen[c_id], xp, nx);
 
-        if (psca2 > 0. || psca3 > 0.)
-          iok2 = 0;
+        if (psca3 > 0.) iok2 = 0;
       }
 
       if ((iok == 0 || iok2 == 0) && denom2[c_id] >= 1.e-20)
@@ -3279,7 +3327,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
   /* Readjustment of cog_cut */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)   {
-    cs_real_t poro = CS_F_(poro)->val[c_id];
+    cs_real_t poro = 0.5*(CS_F_(poro)->val_pre[c_id] + CS_F_(poro)->val[c_id]);
 
     if (poro > 1.e-6 && poro < 1. - 1.e-6) {
       cs_real_3_t nxyz;
@@ -3323,8 +3371,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   cs_real_3_t *cell_length3D, *weight3D;
   BFT_MALLOC(cell_length3D, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(weight3D, n_cells_ext, cs_real_3_t);
-  memset(cell_length3D, 0, n_cells_ext*sizeof(cs_real_3_t));
-  memset(weight3D, 0, n_cells_ext*sizeof(cs_real_3_t));
+  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)cell_length3D);
+  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)weight3D);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
@@ -3380,28 +3428,30 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     cs_real_t dwall
       = cs_math_fabs(cs_math_3_distance_dot_product(xpp, xip, npx));
 
-    cs_real_3_t dipxyz;
-    for (int i = 0; i < 3; i++)
-      dipxyz[i] = xpp[i] - xip[i];
+    cs_real_t poro = 0.5*(CS_F_(poro)->val[c_id]+CS_F_(poro)->val_pre[c_id]);
 
-    cs_real_t dipn = cs_math_3_norm(dipxyz);
+    npx[0] = cs_math_fmax(cs_math_fabs(npx[0]), 1.e-20);
+    npx[1] = cs_math_fmax(cs_math_fabs(npx[1]), 1.e-20);
+    npx[2] = cs_math_fmax(cs_math_fabs(npx[2]), 1.e-20);
 
-    if (dipn < 1.e-10) {
-      for (int i = 0; i < 3; i++)
-        dipxyz[i] = 1.e-10;
+    cs_real_t lambdax = cell_length3D[c_id][0] / npx[0];
+    cs_real_t lambday = cell_length3D[c_id][1] / npx[1];
+    cs_real_t lambdaz = cell_length3D[c_id][2] / npx[2];
 
-      dipn = cs_math_3_norm(dipxyz);
-    }
+    cs_real_t lambda = cs_math_fmin(lambdax, lambday);
+    lambda = cs_math_fmin(lambda, lambdaz);
 
-    cs_real_t dcell_geom =  cs_math_fabs(cell_length3D[c_id][0] * dipxyz[0])
-                          + cs_math_fabs(cell_length3D[c_id][1] * dipxyz[1])
-                          + cs_math_fabs(cell_length3D[c_id][2] * dipxyz[2]);
-    dcell_geom /= dipn;
+    cs_real_t dcell_geom_max
+      = sqrt(  cell_length3D[c_id][0]*cell_length3D[c_id][0]
+             + cell_length3D[c_id][1]*cell_length3D[c_id][1]
+             + cell_length3D[c_id][2]*cell_length3D[c_id][2]);
+
+    cs_real_t dcell_geom = cs_math_fmin(lambda,dcell_geom_max) * 0.5* cs_math_fmax(poro,1.e-3);
 
     c_w_dist_inv[c_id]
-      = 1./cs_math_fmax(dwall, 1.e-3 * pow(cell_vol[c_id], cs_math_1ov3));
+      = 1./cs_math_fmax(dwall, 0.5 * dcell_geom);
     c_w_dist_inv[c_id]
-      = cs_math_fmin(c_w_dist_inv[c_id], 1./(0.1 * dcell_geom));
+      = cs_math_fmax(c_w_dist_inv[c_id], 1./(3. * dcell_geom));
 
   }
 
@@ -3882,9 +3932,11 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
                                 f_ext,
                                 gradp);
 
-    /* Initializer porosity at the previous value */
+    /* Initialize porosity at the previous value */
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
       CS_F_(poro)->val_pre[c_id] = CS_F_(poro)->val[c_id];
+
+    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val_pre);
 
     /* List of cells for which one has to recompute porosity -> comp_cell */
     int *comp_cell;
@@ -3903,6 +3955,10 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
         _compute_cell_cut_porosity(mesh, mesh_quantities, comp_cell);
 
+        for(int c_id = 0; c_id < n_cells_ext; c_id++)
+          if (CS_F_(poro)->val[c_id] < 1.e-4)
+            CS_F_(poro)->val[c_id] = 0.;
+
       /* Compute cell porosity from a file */
       /* Object logic in this section */
       } else {
@@ -3917,7 +3973,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
         /* Local declarations */
         cs_real_t *obj_vol_f_tot = NULL;
         BFT_MALLOC(obj_vol_f_tot, n_cells_ext, cs_real_t);
-        memset(obj_vol_f_tot, 0, n_cells_ext*sizeof(cs_real_t));
+        cs_array_real_fill_zero(n_cells_ext, obj_vol_f_tot);
 
         for (int o_id = 0; o_id < cs_ibm->n_objects; o_id++) {
           cs_ibm_object_t *ibm_obj = cs_ibm_object_by_id(o_id);
@@ -3942,7 +3998,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
           CS_F_(poro)->val[c_id] =
             cs_math_fmin(cs_math_fmax(CS_F_(poro)->val[c_id], 0.), 1.);
 
-        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val);
+        cs_field_synchronize(CS_F_(poro), CS_HALO_STANDARD);
 
         BFT_FREE(obj_vol_f_tot);
       }
@@ -3983,8 +4039,16 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
         for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
           CS_F_(poro)->val_pre[c_id] = CS_F_(poro)->val[c_id];
 
+      /* Projection at vertices */
+      cs_real_t *c_poro;
+      BFT_MALLOC(c_poro, n_cells_ext, cs_real_t);
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+        c_poro[c_id] = 0.5*(CS_F_(poro)->val_pre[c_id]+CS_F_(poro)->val[c_id]);
+
       cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, NULL,
-                        CS_F_(poro)->val, NULL, v_poro);
+                        c_poro, NULL, v_poro);
+
+      BFT_FREE(c_poro);
 
       /* Compute cell centers of gravity */
       _compute_cell_cog(mesh, mesh_quantities,
@@ -4001,9 +4065,6 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
       /* Take into account inner porosity of solid */
       _compute_solid_porosity(mesh, mesh_quantities,
                               CS_F_(poro)->val, comp_cell);
-
-      cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, NULL,
-                        CS_F_(poro)->val, NULL, v_poro);
 
       /* Boundary face porosity */
       _compute_b_fac_porosity(mesh, mesh_quantities,
@@ -4037,12 +4098,13 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
         CS_F_(p)->val_pre[c_id] = CS_F_(p)->val[c_id];
       }
 
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(p)->val);
+      cs_field_synchronize(CS_F_(p), CS_HALO_STANDARD);
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(p)->val_pre);
     }
 
     BFT_FREE(cog_save);
     BFT_FREE(gradp);
+
   }
 
   /* Porosity */
