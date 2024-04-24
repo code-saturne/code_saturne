@@ -103,11 +103,17 @@ typedef struct {
                                   have an index for standard halo and one
                                   for extended halo. */
 
-  cs_lnum_t  *send_perio_lst ; /* For each transformation and for each type of
+  cs_lnum_t  *send_perio_lst;  /* For each transformation and for each type of
                                   halo on each communicating rank, we store
                                   2 values:
                                    - start index,
                                    - number of elements. */
+
+  cs_lnum_t   std_send_block_size;  /* Send block size for packing */
+  cs_lnum_t   n_std_send_blocks;    /* Number of send blocks for packing with
+                                       standard exchange */
+  cs_lnum_t  *std_send_blocks;      /* Block start and end info for packing
+                                       with standard exchange */
 
   /* halo features : receive from distant ranks */
 

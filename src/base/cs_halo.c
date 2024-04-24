@@ -603,6 +603,10 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
   halo->send_list = NULL;
 
+  halo->std_send_block_size = 256;  /* Fixed size for now */
+  halo->n_std_send_blocks   = 0;
+  halo->std_send_blocks = NULL;
+
 #if defined(HAVE_MPI)
   halo->c_domain_group = MPI_GROUP_NULL;
   halo->c_domain_s_shift = NULL;
@@ -673,6 +677,52 @@ cs_halo_create_complete(cs_halo_t  *halo)
   if (_halo_comm_mode == CS_HALO_COMM_RMA_GET)
     _exchange_send_shift(halo);
 
+  /* Build block send info for packing of standard exchange
+     (not needed if the halo only has a standard component,
+     as we can use the whole send list in that case) */
+
+  if (halo->n_send_elts[1] > halo->n_send_elts[0]) {
+    const cs_lnum_t block_size = halo->std_send_block_size;
+
+    cs_lnum_t n_blocks_ref
+      = (halo->n_send_elts[1] % block_size)
+          ? halo->n_send_elts[1]/block_size + 1
+          : halo->n_send_elts[1]/block_size;
+    cs_lnum_t n_blocks = 0;
+
+    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+      size_t n = (  halo->send_index[2*rank_id + 1]
+                  - halo->send_index[2*rank_id]);
+      n_blocks +=  (n % block_size) ?  n/block_size + 1 : n/block_size;
+    }
+
+    if (n_blocks < n_blocks_ref) {
+      halo->n_std_send_blocks = n_blocks;
+
+      cs_lnum_t *send_blocks;
+      CS_MALLOC_HD(send_blocks, halo->n_std_send_blocks*2, cs_lnum_t,
+                   cs_check_device_ptr(halo->send_list));
+
+      n_blocks = 0;
+
+      for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        cs_lnum_t e_id = halo->send_index[2*rank_id+1];
+
+        for (cs_lnum_t s_id = halo->send_index[2*rank_id];
+             s_id < e_id;
+             s_id += block_size) {
+          send_blocks[n_blocks*2] = s_id;
+          send_blocks[n_blocks*2+1] = CS_MIN(s_id + block_size, e_id);
+          n_blocks += 1;
+        }
+
+      }
+
+      halo->std_send_blocks = send_blocks;
+    }
+  }
+
 #endif /* defined(HAVE_MPI) */
 
   if (_halo_state == NULL)
@@ -705,6 +755,8 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
   halo->n_rotations = ref->n_rotations;
 
   halo->n_local_elts = 0;
+  halo->n_send_elts[0] = 0;
+  halo->n_send_elts[1] = 0;
 
   BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
@@ -738,6 +790,10 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
   }
 
   halo->send_list = NULL;
+
+  halo->std_send_block_size = 256;  /* Fixed size for now */
+  halo->n_std_send_blocks   = 0;
+  halo->std_send_blocks = NULL;
 
 #if defined(HAVE_MPI)
   halo->c_domain_group = MPI_GROUP_NULL;
@@ -810,6 +866,10 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
     halo->n_send_elts[i] = 0;
     halo->n_elts [i] = n_distant_elts;
   }
+
+  halo->std_send_block_size = 256;  /* Fixed size for now */
+  halo->n_std_send_blocks   = 0;
+  halo->std_send_blocks = NULL;
 
   /* Count elements for each rank;
      check they are are ordered lexicographically */
@@ -1029,6 +1089,8 @@ cs_halo_destroy(cs_halo_t  **halo)
 
   BFT_FREE(_halo->send_perio_lst);
   BFT_FREE(_halo->perio_lst);
+
+  BFT_FREE(_halo->std_send_blocks);
 
   BFT_FREE(*halo);
 
@@ -1436,79 +1498,84 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
                                                     send_buf,
                                                     hs);
 
-  cs_lnum_t end_shift = 0;
+  const size_t block_size = halo->std_send_block_size;
+  const cs_lnum_t *send_list = halo->send_list;
+  const cs_lnum_t *send_blocks = NULL;
 
-  if (sync_mode == CS_HALO_STANDARD)
-    end_shift = 1;
+  size_t n_send = 0, n_blocks = 0;
 
-  else if (sync_mode == CS_HALO_EXTENDED)
-    end_shift = 2;
+  /* If we do not need to send the full halo, use blocks
+     to possibly allow for threading */
 
-  /* Assemble buffers for halo exchange; avoid threading for now, as dynamic
-     scheduling led to slightly higher cost here in some tests,
-     and even static scheduling might lead to false sharing for small
-     halos. */
+  if (sync_mode == CS_HALO_STANDARD && halo->n_std_send_blocks > 0) {
+    n_send = halo->std_send_block_size * halo->n_std_send_blocks;
+    n_blocks = halo->n_std_send_blocks;
+    send_blocks = halo->std_send_blocks;
+  }
+  else {
+    n_send = halo->n_send_elts[1];
+    n_blocks = (n_send % block_size) ? n_send/block_size + 1 : n_send/block_size;
+  }
 
-  if (data_type == CS_REAL_TYPE) {
+  #pragma omp parallel for  if (n_send > CS_THR_MIN)
+  for (size_t b_id = 0; b_id < n_blocks; b_id++) {
 
-    cs_real_t *buffer = (cs_real_t *)_send_buffer;
-    cs_real_t *var = val;
+    size_t s_id, e_id;
+    if (send_blocks != NULL) {
+      s_id = halo->std_send_blocks[b_id*2];
+      e_id = halo->std_send_blocks[b_id*2 + 1];
+    }
+    else {
+      s_id = b_id*block_size;
+      e_id = (b_id+1)*block_size;
+      if (e_id > n_send)
+        e_id = n_send;
+    }
 
-    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    if (data_type == CS_REAL_TYPE) {
 
-      cs_lnum_t p_start = halo->send_index[2*rank_id]*stride;
-      size_t start = halo->send_index[2*rank_id];
-      size_t length = (  halo->send_index[2*rank_id + end_shift]
-                       - halo->send_index[2*rank_id]);
+      cs_real_t *buffer = (cs_real_t *)_send_buffer;
+      cs_real_t *var = val;
 
+      if (stride == 1) {
+        for (size_t i = s_id; i < e_id; i++)
+          buffer[i] = var[send_list[i]];
+      }
       if (stride == 3) { /* Unroll loop for this case */
-        for (size_t i = 0; i < length; i++) {
-          buffer[p_start + i*3]
-            = var[(halo->send_list[start + i])*3];
-          buffer[p_start + i*3 + 1]
-            = var[(halo->send_list[start + i])*3 + 1];
-          buffer[p_start + i*3 + 2]
-            = var[(halo->send_list[start + i])*3 + 2];
+        for (size_t i = s_id; i < e_id; i++) {
+          const size_t j = send_list[i];
+          buffer[i*3]     = var[j*3];
+          buffer[i*3 + 1] = var[j*3 + 1];
+          buffer[i*3 + 2] = var[j*3 + 2];
         }
       }
       else {
         size_t _stride = stride;
-        for (size_t i = 0; i < length; i++) {
-          size_t r_start = halo->send_list[start + i] * stride;
-          for (size_t j = 0; j < _stride; j++)
-            buffer[p_start + i*_stride + j] = var[r_start + j];
+        for (size_t i = s_id; i < e_id; i++) {
+          size_t j_s = send_list[i]*_stride;
+          for (size_t k = 0; k < _stride; k++)
+            buffer[i*_stride + k] = var[j_s + k];
         }
       }
 
     }
 
-  }
+    else {
 
-  else {
+      unsigned char *buffer = (unsigned char *)_send_buffer;
+      unsigned char *var = val;
 
-    unsigned char *buffer = (unsigned char *)_send_buffer;
-
-    size_t elt_size = cs_datatype_size[data_type] * stride;
-
-    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      cs_lnum_t p_start = halo->send_index[2*rank_id]*elt_size;
-      size_t start = halo->send_index[2*rank_id];
-      size_t length = (  halo->send_index[2*rank_id + end_shift]
-                       - halo->send_index[2*rank_id]);
-
-      unsigned char *restrict _val = val;
-      unsigned char *_buffer = buffer + p_start;
-
-      for (size_t i = 0; i < length; i++) {
-        size_t r_start = halo->send_list[start + i] * elt_size;
-        for (size_t j = 0; j < elt_size; j++)
-          _buffer[i*elt_size + j] = _val[r_start + j];
+      size_t elt_size = cs_datatype_size[data_type] * stride;
+      for (size_t i = s_id; i < e_id; i++) {
+        size_t i_s = i*elt_size;
+        size_t j_s = send_list[i]*elt_size;
+        for (size_t k = 0; k < elt_size; k++)
+          buffer[i_s + k] = var[j_s + k];
       }
 
     }
 
-  }
+  } /* End of loop on blocks */
 }
 
 #if defined(HAVE_ACCEL)
