@@ -712,68 +712,70 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   /* Mass aggregation term of the additional part "div(rho(u_p-u_f))"
      ---------------------------------------------------------------- */
+  if (!(iscdri & CS_DRIFT_SCALAR_NO_MASS_AGGREGATION)) {
+    /* Recompute the difference between mixture and the class */
+    if (iscdri & CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX) {
+#     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+        flumas[face_id] = - i_mass_flux_mix[face_id];
 
-  /* Recompute the difference between mixture and the class */
-  if (iscdri & CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX) {
-#   pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-      flumas[face_id] = - i_mass_flux_mix[face_id];
-
-#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      flumab[face_id] = - b_mass_flux_mix[face_id];
-  }
-  else {
-#   pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-      flumas[face_id] = i_mass_flux[face_id] - i_mass_flux_mix[face_id];
-
-#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      flumab[face_id] = b_mass_flux[face_id] - b_mass_flux_mix[face_id];
-  }
-
-  cs_real_t *divflu;
-  BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
-
-  cs_divergence(mesh,
-                1, /* init */
-                flumas,
-                flumab,
-                divflu);
-
-
-  const int iconvp = eqp_sc->iconv;
-  const cs_real_t thetap = eqp_sc->theta;
-
-  /*  NB: if the porosity module is switched on, the porosity is already
-   * taken into account in divflu */
-
-  /* mass aggregation term */
-  if (f_sc->dim == 1) {
-    cs_real_t *cvara_var = f_sc->val_pre;
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      fimp[c_id] += iconvp*thetap*divflu[c_id];
-      rhs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
+#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+        flumab[face_id] = - b_mass_flux_mix[face_id];
     }
-  }
-  else {
-    assert(f_sc->dim == 3);
-    cs_real_3_t *cvara_var = (cs_real_3_t *)f_sc->val_pre;
-    cs_real_3_t *_rhs= (cs_real_3_t *)rhs;
-    cs_real_33_t *_fimp= (cs_real_33_t *)fimp;
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t i = 0; i < f_sc->dim; i++) {
-        _fimp[c_id][i][i] += iconvp*thetap*divflu[c_id];
-        _rhs[c_id][i] -= iconvp*divflu[c_id]*cvara_var[c_id][i];
+    else {
+#     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+        flumas[face_id] = i_mass_flux[face_id] - i_mass_flux_mix[face_id];
+
+#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+        flumab[face_id] = b_mass_flux[face_id] - b_mass_flux_mix[face_id];
+    }
+
+    cs_real_t *divflu;
+    BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
+
+    cs_divergence(mesh,
+                  1, /* init */
+                  flumas,
+                  flumab,
+                  divflu);
+
+
+    const int iconvp = eqp_sc->iconv;
+    const cs_real_t thetap = eqp_sc->theta;
+
+    /*  NB: if the porosity module is switched on, the porosity is already
+     * taken into account in divflu */
+
+    /* mass aggregation term */
+    if (f_sc->dim == 1) {
+      cs_real_t *cvara_var = f_sc->val_pre;
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        fimp[c_id] += iconvp*thetap*divflu[c_id];
+        rhs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
       }
     }
+    else {
+      assert(f_sc->dim == 3);
+      cs_real_3_t *cvara_var = (cs_real_3_t *)f_sc->val_pre;
+      cs_real_3_t *_rhs= (cs_real_3_t *)rhs;
+      cs_real_33_t *_fimp= (cs_real_33_t *)fimp;
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t i = 0; i < f_sc->dim; i++) {
+          _fimp[c_id][i][i] += iconvp*thetap*divflu[c_id];
+          _rhs[c_id][i] -= iconvp*divflu[c_id]*cvara_var[c_id][i];
+        }
+      }
+    }
+
+    /* Free memory */
+    BFT_FREE(divflu);
   }
 
-  /* Free memory */
-  BFT_FREE(divflu);
   BFT_FREE(viscce);
   BFT_FREE(dudt);
   BFT_FREE(w1);
