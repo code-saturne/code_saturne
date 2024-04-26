@@ -49,14 +49,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_mem_usage.h"
 #include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_ext_library_info.h"
-#include "cs_gui_util.h"
-#include "cs_notebook.h"
-#include "cs_parameters.h"
 #include "cs_system_info.h"
 
 /*----------------------------------------------------------------------------
