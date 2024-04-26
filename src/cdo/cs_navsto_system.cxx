@@ -1195,14 +1195,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
       ns->compute_steady      = nullptr;
 
-      if (nsp->nl_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
-                  "%s: The projection coupling algorithm "
-                  "can not be used with a non-linear algorithm",
-                  __func__);
-
       switch (mom_eqp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:

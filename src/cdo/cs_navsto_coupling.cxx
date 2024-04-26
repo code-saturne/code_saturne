@@ -621,6 +621,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
   nsc->div_st             = nullptr;
   nsc->bdy_pressure_incr  = nullptr;
   nsc->predicted_velocity = nullptr;
+  nsc->phi                = nullptr;
 
   return nsc;
 }
@@ -719,6 +720,7 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   /* Add the variable field */
 
   cs_equation_predefined_create_field((has_previous ? 1 : 0), nsc->prediction);
+  cs_equation_predefined_create_field(0, nsc->correction);
 }
 
 /*----------------------------------------------------------------------------*/

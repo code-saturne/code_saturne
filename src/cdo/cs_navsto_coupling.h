@@ -120,6 +120,12 @@ typedef struct {
 
   cs_field_t     *predicted_velocity;
 
+  /*! \var pressure
+   * pressure field (value of the pressure at cells after the
+   * correction step).
+   */
+  cs_field_t     *phi;
+
 } cs_navsto_projection_t;
 
 /*============================================================================
