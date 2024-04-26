@@ -138,9 +138,6 @@ void
 CS_PROCF (elini1, ELINI1) (void);
 
 void
-CS_PROCF (elflux, ELFLUX) (int      *iappel);
-
-void
 CS_PROCF (elthht, ELTHHT) (int       *mode,
                            cs_real_t *ym,
                            cs_real_t *enthal,
@@ -158,9 +155,6 @@ CS_PROCF (eltssc, ELTSSC) (const int       *isca,
 
 void
 CS_PROCF (eliniv, ELINIV) (int      *isuite);
-
-void
-CS_PROCF (elreca, ELRECA) (cs_real_t *dt);
 
 /*=============================================================================
  * Public function prototypes

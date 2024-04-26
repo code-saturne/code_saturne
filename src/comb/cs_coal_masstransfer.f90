@@ -42,8 +42,8 @@
 !> \param[in]      volume        cell volumes
 !______________________________________________________________________________!
 
-subroutine cs_coal_masstransfer &
- ( ncelet , ncel , volume )
+subroutine cs_coal_masstransfer() & !(ncelet, ncel, volume) &
+  bind(C, name='cs_f_coal_masstransfer')
 
 !===============================================================================
 ! Module files
@@ -61,6 +61,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use mesh
 use ppcpfu
 use cs_coal_incl
 use field
@@ -72,9 +73,9 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
+!integer          ncelet , ncel
 
-double precision volume(ncelet)
+!double precision volume(ncelet)
 
 ! Local variables
 

@@ -188,6 +188,7 @@ cs_selector.h \
 cs_solid_zone.h \
 cs_solve_equation.h \
 cs_solve_navier_stokes.h \
+cs_solve_transported_variables.h \
 cs_sort.h \
 cs_sort_partition.h \
 cs_syr_coupling.h \
@@ -385,6 +386,7 @@ cs_selector_f2c.f90 \
 cs_solid_zone.c \
 cs_solve_equation.c \
 cs_solve_navier_stokes.c \
+cs_solve_transported_variables.c \
 cs_sort.c \
 cs_sort_partition.c \
 cs_syr_coupling.c \
@@ -426,7 +428,6 @@ modini.f90 \
 mmtycl.f90 \
 phyvar.f90 \
 pthrbm.f90 \
-scalai.f90 \
 schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \

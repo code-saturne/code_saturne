@@ -102,6 +102,18 @@ logical          update_rad
 integer, save :: ntcabs_prev = -1
 logical, save :: is_vploop = .false.
 
+interface
+
+  subroutine max_mid_min_progvar(zm0, cmax, cmid, cmin)  &
+    bind(C, name='cs_f_max_mid_min_progvar')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(c_double), intent(in)    :: zm0
+    real(c_double), intent(inout) :: cmax, cmid, cmin
+  end subroutine max_mid_min_progvar
+
+end interface
+
 if (ntcabs_prev .eq. ntcabs) then
   is_vploop = .true.
 else
@@ -1017,70 +1029,6 @@ end subroutine
 !>
 !> \brief Specific physic subroutine: diffusion flame.
 !>
-!> Calculation of Min/Max of progress variable as a function of fm
-!-------------------------------------------------------------------------------
-
-subroutine max_mid_min_progvar(zm0, cmax, cmid, cmin)
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use coincl
-
-implicit none
-
-double precision, dimension(:), allocatable :: xData
-double precision :: zm0, cmax, cmid, cmin
-
-double precision :: weight_zm
-integer :: dataIndex
-
-! Start with z_m
-allocate(xData(nzm))
-xData(:) = flamelet_library(1,1,1,1,:)
-
-if(xData(1).ge.zm0) then
-  cmax = flamelet_library(FLAMELET_C,nki,1,1,1)
-  cmid = flamelet_library(FLAMELET_C,ikimid,1,1,1)
-  cmin = flamelet_library(FLAMELET_C,1,1,1,1)
-elseif(xData(size(xData)).le.zm0) then
-  cmax = flamelet_library(FLAMELET_C,nki,1,1,nzm)
-  cmid = flamelet_library(FLAMELET_C,ikimid,1,1,nzm)
-  cmin = flamelet_library(FLAMELET_C,1,1,1,nzm)
-else
-
-  dataIndex = 1
-  do while(xData(dataIndex).lt.zm0 &
-      .and. dataIndex .lt. size(xData))
-    dataIndex = dataIndex + 1
-  enddo
-  if(dataIndex .gt.1 ) then
-    weight_zm = (zm0 - xData(dataIndex-1))/(xData(dataIndex)-xData(dataIndex-1))
-    cmax = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,nki,1,1,dataIndex-1) &
-      + weight_zm*flamelet_library(FLAMELET_C,nki,1,1,dataIndex)
-
-    cmid = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,ikimid,1,1,dataIndex-1) &
-      + weight_zm*flamelet_library(FLAMELET_C,ikimid,1,1,dataIndex)
-
-    cmin = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,1,1,1,dataIndex-1) &
-      + weight_zm*flamelet_library(FLAMELET_C,1,1,1,dataIndex)
-
-  endif
-endif
-
-deallocate(xData)
-
-end subroutine
-
-!===============================================================================
-! Function:
-! ---------
-
-!> \file cs_steady_laminar_flamelet_physical_prop.f90
-!>
-!> \brief Specific physic subroutine: diffusion flame.
-!>
 !> Calculation of total scalar dissipation rate
 !-------------------------------------------------------------------------------
 
@@ -1217,3 +1165,59 @@ enddo
 end subroutine
 
 
+subroutine max_mid_min_progvar(zm0, cmax, cmid, cmin) &
+    bind(C, name='cs_f_max_mid_min_progvar')
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use coincl
+
+implicit none
+
+double precision, dimension(:), allocatable :: xData
+real(c_double) :: zm0, cmax, cmid, cmin
+double precision :: weight_zm
+integer :: dataIndex
+
+! Start with z_m
+allocate(xData(nzm))
+xData(:) = flamelet_library(1,1,1,1,:)
+
+if(xData(1).ge.zm0) then
+  cmax = flamelet_library(FLAMELET_C,nki,1,1,1)
+  cmid = flamelet_library(FLAMELET_C,ikimid,1,1,1)
+  cmin = flamelet_library(FLAMELET_C,1,1,1,1)
+elseif(xData(size(xData)).le.zm0) then
+  cmax = flamelet_library(FLAMELET_C,nki,1,1,nzm)
+  cmid = flamelet_library(FLAMELET_C,ikimid,1,1,nzm)
+  cmin = flamelet_library(FLAMELET_C,1,1,1,nzm)
+else
+
+  dataIndex = 1
+  do while(xData(dataIndex).lt.zm0 &
+      .and. dataIndex .lt. size(xData))
+    dataIndex = dataIndex + 1
+  enddo
+  if(dataIndex .gt.1 ) then
+    weight_zm = (zm0 - xData(dataIndex-1))/(xData(dataIndex)-xData(dataIndex-1))
+    cmax = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,nki,1,1,dataIndex-1) &
+      + weight_zm*flamelet_library(FLAMELET_C,nki,1,1,dataIndex)
+
+    cmid = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,ikimid,1,1,dataIndex-1) &
+      + weight_zm*flamelet_library(FLAMELET_C,ikimid,1,1,dataIndex)
+
+    cmin = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,1,1,1,dataIndex-1) &
+      + weight_zm*flamelet_library(FLAMELET_C,1,1,1,dataIndex)
+
+  endif
+endif
+
+deallocate(xData)
+
+end subroutine max_mid_min_progvar
+
+
+
+!end module steady_laminar

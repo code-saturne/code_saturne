@@ -26,7 +26,8 @@
 !> \brief Calls the computation of reaction rates for atmospheric chemistry
 
 !-------------------------------------------------------------------------------
-subroutine kinrates ()
+subroutine kinrates ()  &
+  bind(C, name='cs_f_kinetics_rates_compute')
 
 !===============================================================================
 ! Module files

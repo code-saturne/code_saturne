@@ -107,7 +107,7 @@ cs_mesh_intersect_segment_cell_select(void        *input,
  * \param[out]  n_cells   number of selected cells
  * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
  * \param[out]  seg_c_len array of length of the segment in the selected cells
- * \param[out]  seg_c_cen array of center coordinates of the segment in the 
+ * \param[out]  seg_c_cen array of center coordinates of the segment in the
                           selected cells
  */
 /*----------------------------------------------------------------------------*/

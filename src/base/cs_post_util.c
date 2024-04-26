@@ -158,7 +158,7 @@ cs_cell_segment_intersect_select(void        *input,
  * \param[out]  n_cells   number of selected cells
  * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
  * \param[out]  seg_c_len array of length of the segment in the selected cells
- * \param[out]  seg_c_cen array of center coordinates of the segment in the 
+ * \param[out]  seg_c_cen array of center coordinates of the segment in the
                           selected cells
  */
 /*----------------------------------------------------------------------------*/
@@ -234,10 +234,10 @@ cs_cell_segment_intersect_probes_define(void          *input,
   /* This version is better than cs_cell_segment_intersect_select
      because it gives the cell
      if the segment is included in this cell */
-  cs_cell_polyline_intersect_select(input, 
-                                    2, 
-                                    &n_cells, 
-                                    &cell_ids, 
+  cs_cell_polyline_intersect_select(input,
+                                    2,
+                                    &n_cells,
+                                    &cell_ids,
                                     &seg_c_len,
                                     &seg_c_cen);
 

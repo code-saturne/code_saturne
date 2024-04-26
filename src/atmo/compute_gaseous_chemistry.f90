@@ -37,7 +37,8 @@
 !> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
-subroutine compute_gaseous_chemistry ( dt )
+subroutine compute_gaseous_chemistry ( dt ) &
+  bind(C, name='cs_f_compute_gaseous_chemistry')
 
 !===============================================================================
 ! Module files
@@ -69,7 +70,7 @@ procedure() :: fexchem_1, fexchem_2, fexchem_3, fexchem_4, chem_roschem
 
 ! Arguments
 
-double precision dt(ncelet)
+real(c_double), dimension(*), intent(in) :: dt
 
 ! Local Variables
 

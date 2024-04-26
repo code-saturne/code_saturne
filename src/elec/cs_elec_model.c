@@ -686,13 +686,6 @@ CS_PROCF (elini1, ELINI1) (void)
 }
 
 void
-CS_PROCF (elflux, ELFLUX) (int      *iappel)
-{
-  cs_elec_compute_fields(cs_glob_mesh,
-                         *iappel);
-}
-
-void
 CS_PROCF (elthht, ELTHHT) (int       *mode,
                            cs_real_t *ym,
                            cs_real_t *enthal,
@@ -726,12 +719,6 @@ void
 CS_PROCF (eliniv, ELINIV) (int       *isuite)
 {
   cs_elec_fields_initialize(cs_glob_mesh,  *isuite);
-}
-
-void
-CS_PROCF (elreca, ELRECA) (cs_real_t *dt)
-{
-  cs_elec_scaling_function(cs_glob_mesh, cs_glob_mesh_quantities, dt);
 }
 
 /*=============================================================================

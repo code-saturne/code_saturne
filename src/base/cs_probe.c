@@ -669,8 +669,8 @@ _cell_profile_probes_define(void          *input,
 
   cs_mesh_intersect_polyline_cell_select(sx,
                                          2,
-                                         &n_cells, 
-                                         &cell_ids, 
+                                         &n_cells,
+                                         &cell_ids,
                                          &seg_c_len,
                                          &seg_c_cen);
 

@@ -835,52 +835,6 @@ _diffusion_terms_vector(const cs_field_t            *f,
  * Fortran wrapper function definitions
  *============================================================================*/
 
-void
-cs_f_solve_equation_scalar(int              f_id,
-                           cs_lnum_t        ncesmp,
-                           int              iterns,
-                           int              itspdv,
-                           const cs_lnum_t  icetsm[],
-                           int              itypsm[],
-                           cs_real_t        smacel[],
-                           cs_real_t        viscf[],
-                           cs_real_t        viscb[])
-{
-  cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_solve_equation_scalar(f,
-                           ncesmp,
-                           iterns,
-                           itspdv,
-                           icetsm,
-                           itypsm,
-                           smacel,
-                           viscf,
-                           viscb);
-}
-
-void
-cs_f_solve_equation_vector(int              f_id,
-                           cs_lnum_t        ncesmp,
-                           int              iterns,
-                           const cs_lnum_t  icetsm[],
-                           int              itypsm[],
-                           cs_real_t        smacel[],
-                           cs_real_t        viscf[],
-                           cs_real_t        viscb[])
-{
-  cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_solve_equation_vector(f,
-                           ncesmp,
-                           iterns,
-                           icetsm,
-                           itypsm,
-                           smacel,
-                           viscf,
-                           viscb);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
