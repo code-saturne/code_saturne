@@ -666,10 +666,9 @@ cs_immersed_boundary_wall_functions(int         f_id,
         cs_real_t hflui = cpro_mu[c_id]*c_w_dist_inv[c_id]*ypup;
 
         for (cs_lnum_t i = 0; i < 3; i++) {
-          //TODO moving walls
-          _st_exp[c_id][i] = 0.;
+          //TODO add moving walls contibution
           for (cs_lnum_t j = 0; j < 3; j++) {
-            _st_imp[c_id][i][j] = - ( hflui * cs_math_33_identity[i][j]
+            _st_imp[c_id][i][j] -= ( hflui * cs_math_33_identity[i][j]
                                     + (hint - hflui) * nw[i] * nw[j] )
                                     * solid_surf;
           }
@@ -731,8 +730,8 @@ cs_immersed_boundary_wall_functions(int         f_id,
               (cs_turb_xkappa * cs_math_pow2(l_visc * (yplus + 2.*dplus)));
         }
 
-        st_exp[c_id] = hint * solid_surf * pimp;
-        st_imp[c_id] = - hint * solid_surf;
+        /* Note: no implicit terme because coded as a Neumann */
+        st_exp[c_id] += hint * solid_surf * pimp;
 
       }
     }
@@ -788,8 +787,9 @@ cs_immersed_boundary_wall_functions(int         f_id,
           pimp =   60. * cpro_mu[c_id] /
             (rho[c_id] * cs_turb_ckwbt1 * cs_math_pow2(wall_dist));
 
-        st_exp[c_id] =  hint * solid_surf * pimp;
-        st_imp[c_id] = -hint * solid_surf;
+        /* Note: equivalent Dirichlet condition */
+        st_exp[c_id] += hint * solid_surf * pimp;
+        st_imp[c_id] -= hint * solid_surf;
       }
     }
   }
