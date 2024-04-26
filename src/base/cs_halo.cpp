@@ -154,10 +154,10 @@ static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
 static int _halo_use_barrier = false;
 
 /* Default halo state handler */
-static cs_halo_state_t *_halo_state = NULL;
+static cs_halo_state_t *_halo_state = nullptr;
 
 /* Halo communications mode */
-static int _halo_comm_mode = CS_HALO_COMM_P2P;
+static cs_halo_comm_mode_t _halo_comm_mode = CS_HALO_COMM_P2P;
 
 /*============================================================================
  * Private function definitions
@@ -168,7 +168,7 @@ static int _halo_comm_mode = CS_HALO_COMM_P2P;
  * \brief Test if an array of global numbers is ordered.
  *
  * \param[in]  list    optional list (1 to n numbering) of selected entities
- *                     (or NULL if all nb_ent are selected). This list may
+ *                     (or nullptr if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  nb_ent  number of entities considered
  *
@@ -184,7 +184,7 @@ _order_int_test(const int  list[],
 
   /* If numbering is explicit */
 
-  if (list != NULL) {
+  if (list != nullptr) {
     for (i = 1 ; i < nb_ent ; i++) {
       if (list[i] < list[i-1])
         break;
@@ -216,7 +216,7 @@ static void
 _update_requests(const cs_halo_t  *halo,
                  cs_halo_state_t  *hs)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
   int n_requests = halo->n_c_domains*2;
@@ -241,8 +241,8 @@ static void
 _exchange_send_shift(cs_halo_t  *halo)
 {
   MPI_Comm comm = cs_glob_mpi_comm;
-  MPI_Request *request = NULL;
-  MPI_Status *status = NULL;
+  MPI_Request *request = nullptr;
+  MPI_Status *status = nullptr;
 
   BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
   BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
@@ -315,7 +315,7 @@ _sync_local(const cs_halo_t  *halo,
 {
   cs_lnum_t end_shift = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
 
-  unsigned char *_val = val;
+  unsigned char *_val = (unsigned char *)val;
   unsigned char *recv
     = _val + (halo->n_local_elts + halo->index[2*local_rank_id]) * size;
 
@@ -354,7 +354,7 @@ _sync_local(const cs_halo_t  *halo,
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       val         pointer to variable value array
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -368,7 +368,7 @@ _halo_sync_start_one_sided(const cs_halo_t  *halo,
   size_t elt_size = cs_datatype_size[hs->data_type] * stride;
   size_t n_loc_elts = halo->n_local_elts;
 
-  unsigned char *restrict _val = val;
+  unsigned char *restrict _val = (unsigned char *)val;
   unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
 
   MPI_Datatype mpi_datatype = cs_datatype_to_mpi[hs->data_type];
@@ -436,7 +436,7 @@ _halo_sync_start_one_sided(const cs_halo_t  *halo,
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       val         pointer to variable value array
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -493,9 +493,9 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
   cs_lnum_t  loc_id = -1;
 
-  cs_halo_t  *halo = NULL;
+  cs_halo_t  *halo = nullptr;
 
-  const cs_interface_t  *interface = NULL;
+  const cs_interface_t  *interface = nullptr;
 
   BFT_MALLOC(halo, 1, cs_halo_t);
 
@@ -541,8 +541,8 @@ cs_halo_create(const cs_interface_set_t  *ifs)
       && _order_int_test(&(halo->c_domain_rank[1]),
                          halo->n_c_domains-1) == 0) {
 
-    cs_lnum_t  *order = NULL;
-    cs_gnum_t  *buffer = NULL;
+    cs_lnum_t  *order = nullptr;
+    cs_gnum_t  *buffer = nullptr;
 
     BFT_MALLOC(order, halo->n_c_domains - 1, cs_lnum_t);
     BFT_MALLOC(buffer, halo->n_c_domains - 1, cs_gnum_t);
@@ -550,7 +550,7 @@ cs_halo_create(const cs_interface_set_t  *ifs)
     for (i = 1; i < halo->n_c_domains; i++)
       buffer[i-1] = (cs_gnum_t)halo->c_domain_rank[i];
 
-    cs_order_gnum_allocated(NULL,
+    cs_order_gnum_allocated(nullptr,
                             buffer,
                             order,
                             halo->n_c_domains - 1);
@@ -572,10 +572,10 @@ cs_halo_create(const cs_interface_set_t  *ifs)
     halo->index[i] = 0;
   }
 
-  halo->send_perio_lst = NULL;
-  halo->perio_lst = NULL;
+  halo->send_perio_lst = nullptr;
+  halo->perio_lst = nullptr;
 
-  if (halo->periodicity != NULL) {
+  if (halo->periodicity != nullptr) {
 
     halo->n_transforms = fvm_periodicity_get_n_transforms(halo->periodicity);
 
@@ -601,15 +601,15 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
   }
 
-  halo->send_list = NULL;
+  halo->send_list = nullptr;
 
   halo->std_send_block_size = 256;  /* Fixed size for now */
   halo->n_std_send_blocks   = 0;
-  halo->std_send_blocks = NULL;
+  halo->std_send_blocks = nullptr;
 
 #if defined(HAVE_MPI)
   halo->c_domain_group = MPI_GROUP_NULL;
-  halo->c_domain_s_shift = NULL;
+  halo->c_domain_s_shift = nullptr;
 #endif
 
   _n_halos += 1;
@@ -646,7 +646,7 @@ cs_halo_create_complete(cs_halo_t  *halo)
   if (_halo_comm_mode > CS_HALO_COMM_P2P) {
     const int local_rank = CS_MAX(cs_glob_rank_id, 0);
     int n_group_ranks = 0;
-    int *group_ranks = NULL;
+    int *group_ranks = nullptr;
     BFT_MALLOC(group_ranks, halo->n_c_domains + 1, int);
     for (int i = 0; i < halo->n_c_domains; i++) {
       if (halo->c_domain_rank[i] < local_rank)
@@ -725,7 +725,7 @@ cs_halo_create_complete(cs_halo_t  *halo)
 
 #endif /* defined(HAVE_MPI) */
 
-  if (_halo_state == NULL)
+  if (_halo_state == nullptr)
     _halo_state = cs_halo_state_create();
 }
 
@@ -744,7 +744,7 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 {
   cs_lnum_t  i;
 
-  cs_halo_t  *halo = NULL;
+  cs_halo_t  *halo = nullptr;
 
   BFT_MALLOC(halo, 1, cs_halo_t);
 
@@ -772,8 +772,8 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
     halo->index[i] = 0;
   }
 
-  halo->send_perio_lst = NULL;
-  halo->perio_lst = NULL;
+  halo->send_perio_lst = nullptr;
+  halo->perio_lst = nullptr;
 
   if (halo->n_transforms > 0) {
 
@@ -789,15 +789,15 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
   }
 
-  halo->send_list = NULL;
+  halo->send_list = nullptr;
 
   halo->std_send_block_size = 256;  /* Fixed size for now */
   halo->n_std_send_blocks   = 0;
-  halo->std_send_blocks = NULL;
+  halo->std_send_blocks = nullptr;
 
 #if defined(HAVE_MPI)
   halo->c_domain_group = MPI_GROUP_NULL;
-  halo->c_domain_s_shift = NULL;
+  halo->c_domain_s_shift = nullptr;
 #endif
 
   _n_halos += 1;
@@ -842,7 +842,7 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
                                    const int                   elt_rank_id[],
                                    const cs_lnum_t             elt_id[])
 {
-  cs_halo_t  *halo = NULL;
+  cs_halo_t  *halo = nullptr;
 
   BFT_MALLOC(halo, 1, cs_halo_t);
 
@@ -851,13 +851,13 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
   halo->n_rotations = 0;
 
-  halo->periodicity = NULL;
-  halo->send_perio_lst = NULL;
-  halo->perio_lst = NULL;
+  halo->periodicity = nullptr;
+  halo->send_perio_lst = nullptr;
+  halo->perio_lst = nullptr;
 
 #if defined(HAVE_MPI)
   halo->c_domain_group = MPI_GROUP_NULL;
-  halo->c_domain_s_shift = NULL;
+  halo->c_domain_s_shift = nullptr;
 #endif
 
   halo->n_local_elts = n_local_elts;
@@ -869,7 +869,7 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
   halo->std_send_block_size = 256;  /* Fixed size for now */
   halo->n_std_send_blocks   = 0;
-  halo->std_send_blocks = NULL;
+  halo->std_send_blocks = nullptr;
 
   /* Count elements for each rank;
      check they are are ordered lexicographically */
@@ -899,8 +899,8 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   /* Now exchange counts with neighboring elements */
 
   MPI_Comm comm = cs_glob_mpi_comm;
-  MPI_Request *request = NULL;
-  MPI_Status *status = NULL;
+  MPI_Request *request = nullptr;
+  MPI_Status *status = nullptr;
 
   BFT_MALLOC(request, rn->size*2, MPI_Request);
   BFT_MALLOC(status, rn->size*2, MPI_Status);
@@ -1066,10 +1066,10 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 void
 cs_halo_destroy(cs_halo_t  **halo)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
-  if (*halo == NULL)
+  if (*halo == nullptr)
     return;
 
   cs_halo_t  *_halo = *halo;
@@ -1122,18 +1122,18 @@ cs_halo_state_create(void)
     .stride = 0,
     .var_location = CS_ALLOC_HOST,
     .send_buffer_location = CS_ALLOC_HOST,
-    .send_buffer_cur = NULL,
+    .send_buffer_cur = nullptr,
     .n_requests = 0,
     .local_rank_id = -1,
     .send_buffer_size = 0,
     .recv_buffer_size = 0,
-    .send_buffer = NULL,
-    .recv_buffer = NULL
+    .send_buffer = nullptr,
+    .recv_buffer = nullptr
 #if defined(HAVE_MPI)
     ,
     .request_size = 0,
-    .request = NULL,
-    .status = NULL,
+    .request = nullptr,
+    .status = nullptr,
     .win = MPI_WIN_NULL
 
 #endif
@@ -1156,7 +1156,7 @@ cs_halo_state_create(void)
 void
 cs_halo_state_destroy(cs_halo_state_t  **halo_state)
 {
-  if (halo_state != NULL) {
+  if (halo_state != nullptr) {
     cs_halo_state_t *hs = *halo_state;
 
 #if defined(HAVE_MPI)
@@ -1206,7 +1206,7 @@ void
 cs_halo_renumber_cells(cs_halo_t        *halo,
                        const cs_lnum_t   new_cell_id[])
 {
-  if (halo != NULL) {
+  if (halo != nullptr) {
 
     const cs_lnum_t n_elts = halo->n_send_elts[CS_HALO_EXTENDED];
 
@@ -1230,7 +1230,7 @@ void
 cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
                              const cs_lnum_t   old_cell_id[])
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
   /* Reverse update from distant cells */
@@ -1381,8 +1381,8 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
  * \param[in]       sync_mode   synchronization mode (standard or extended)
  * \param[in]       data_type   data type
  * \param[in]       stride      number of (interlaced) values by entity
- * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[out]      send_buf    pointer to send buffer, nullptr for global buffer
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  *
  * \return  pointer to halo send buffer
  */
@@ -1398,12 +1398,12 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
 {
   void *_send_buffer = send_buf;
 
-  if (halo == NULL)
+  if (halo == nullptr)
     return _send_buffer;
 
-  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+  cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
-  if (_send_buffer == NULL) {
+  if (_send_buffer == nullptr) {
     size_t send_buffer_size = cs_halo_pack_size(halo, data_type, stride);
 
     if (send_buffer_size > _hs->send_buffer_size) {
@@ -1474,8 +1474,8 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
  * \param[in]       data_type   data type
  * \param[in]       stride      number of (interlaced) values by entity
  * \param[in]       val         pointer to variable value array
- * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[out]      send_buf    pointer to send buffer, nullptr for global buffer
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1488,7 +1488,7 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
                   void             *send_buf,
                   cs_halo_state_t  *hs)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
   void *_send_buffer = cs_halo_sync_pack_init_state(halo,
@@ -1500,7 +1500,7 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
 
   const size_t block_size = halo->std_send_block_size;
   const cs_lnum_t *send_list = halo->send_list;
-  const cs_lnum_t *send_blocks = NULL;
+  const cs_lnum_t *send_blocks = nullptr;
 
   size_t n_send = 0, n_blocks = 0;
 
@@ -1521,7 +1521,7 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
   for (size_t b_id = 0; b_id < n_blocks; b_id++) {
 
     size_t s_id, e_id;
-    if (send_blocks != NULL) {
+    if (send_blocks != nullptr) {
       s_id = halo->std_send_blocks[b_id*2];
       e_id = halo->std_send_blocks[b_id*2 + 1];
     }
@@ -1535,7 +1535,7 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
     if (data_type == CS_REAL_TYPE) {
 
       cs_real_t *buffer = (cs_real_t *)_send_buffer;
-      cs_real_t *var = val;
+      cs_real_t *var = (cs_real_t *)val;
 
       if (stride == 1) {
         for (size_t i = s_id; i < e_id; i++)
@@ -1563,7 +1563,7 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
     else {
 
       unsigned char *buffer = (unsigned char *)_send_buffer;
-      unsigned char *var = val;
+      unsigned char *var = (unsigned char *)val;
 
       size_t elt_size = cs_datatype_size[data_type] * stride;
       for (size_t i = s_id; i < e_id; i++) {
@@ -1597,8 +1597,8 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
  * \param[in]       stride      number of (interlaced) values by entity
  * \param[in]       val         pointer to variable value array (on device)
  * \param[out]      send_buf    pointer to send buffer (on device),
- *                              NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ *                              nullptr for global buffer
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1611,10 +1611,10 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
                     void             *send_buf,
                     cs_halo_state_t  *hs)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
-  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+  cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
   void *_send_buf = cs_halo_sync_pack_init_state(halo,
                                                  sync_mode,
@@ -1627,7 +1627,7 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
 
 #if defined(HAVE_CUDA)
 
-  cs_real_t *val_host_ptr = NULL;
+  cs_real_t *val_host_ptr = nullptr;
 
   cs_halo_cuda_pack_send_buffer_real(halo,
                                      sync_mode,
@@ -1649,7 +1649,7 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
 
   _hs->var_location = CS_ALLOC_HOST_DEVICE_SHARED;
 
-  if (val_host_ptr != val && val != NULL)
+  if (val_host_ptr != val && val != nullptr)
     _hs->var_location = CS_ALLOC_DEVICE;
 
 #else
@@ -1689,7 +1689,7 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       val         pointer to variable value array
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1698,10 +1698,10 @@ cs_halo_sync_start(const cs_halo_t  *halo,
                    void             *val,
                    cs_halo_state_t  *hs)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
-  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+  cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
 #if (MPI_VERSION >= 3)
   if (_halo_comm_mode > CS_HALO_COMM_P2P) {
@@ -1715,7 +1715,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
   size_t elt_size = cs_datatype_size[_hs->data_type] * stride;
   size_t n_loc_elts = halo->n_local_elts;
 
-  unsigned char *restrict _val = val;
+  unsigned char *restrict _val = (unsigned char *)val;
   unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
 
   unsigned char *buffer = (unsigned char *)(_hs->send_buffer_cur);
@@ -1840,7 +1840,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       val         pointer to variable value array
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1849,10 +1849,10 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
                   void             *val,
                   cs_halo_state_t  *hs)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
-  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+  cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
 #if (MPI_VERSION >= 3)
   if (_halo_comm_mode > CS_HALO_COMM_P2P) {
@@ -1908,7 +1908,7 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
   _hs->sync_mode = CS_HALO_STANDARD;
   _hs->data_type = CS_DATATYPE_NULL;
   _hs->stride = 0;
-  _hs->send_buffer_cur = NULL;
+  _hs->send_buffer_cur = nullptr;
   _hs->n_requests = 0;
   _hs->local_rank_id  = -1;
 }
@@ -1936,7 +1936,7 @@ cs_halo_sync(const cs_halo_t  *halo,
              int               stride,
              void             *val)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
   cs_halo_sync_pack(halo,
@@ -1944,12 +1944,12 @@ cs_halo_sync(const cs_halo_t  *halo,
                     data_type,
                     stride,
                     val,
-                    NULL,
-                    NULL);
+                    nullptr,
+                    nullptr);
 
-  cs_halo_sync_start(halo, val, NULL);
+  cs_halo_sync_start(halo, val, nullptr);
 
-  cs_halo_sync_wait(halo, val, NULL);
+  cs_halo_sync_wait(halo, val, nullptr);
 }
 
 #if defined(HAVE_ACCEL)
@@ -1978,7 +1978,7 @@ cs_halo_sync_d(const cs_halo_t  *halo,
                int               stride,
                void             *val)
 {
-  if (halo == NULL)
+  if (halo == nullptr)
     return;
 
   cs_halo_state_t  *hs = _halo_state;
@@ -1988,7 +1988,7 @@ cs_halo_sync_d(const cs_halo_t  *halo,
                       data_type,
                       stride,
                       val,
-                      NULL,
+                      nullptr,
                       hs);
 
   cs_halo_sync_start(halo, val, hs);
@@ -2191,7 +2191,7 @@ void
 cs_halo_dump(const cs_halo_t  *halo,
              int               print_level)
 {
-  if (halo == NULL) {
+  if (halo == nullptr) {
     bft_printf("\n\n  halo: nil\n");
     return;
   }
@@ -2214,7 +2214,7 @@ cs_halo_dump(const cs_halo_t  *halo,
   for (int halo_id = 0; halo_id < 2; halo_id++) {
 
     cs_lnum_t  n_elts[2];
-    cs_lnum_t  *index = NULL, *list = NULL, *perio_lst = NULL;
+    cs_lnum_t  *index = nullptr, *list = nullptr, *perio_lst = nullptr;
 
     bft_printf("\n    ---------\n");
 
@@ -2234,7 +2234,7 @@ cs_halo_dump(const cs_halo_t  *halo,
       n_elts[0] = halo->n_elts[0];
       n_elts[1] = halo->n_elts[1];
       index = halo->index;
-      list = NULL;
+      list = nullptr;
       perio_lst = halo->perio_lst;
 
     }
@@ -2243,7 +2243,7 @@ cs_halo_dump(const cs_halo_t  *halo,
     bft_printf("  n_ghost_cells:        %ld\n"
                "  n_std_ghost_cells:    %ld\n", (long)n_elts[1], (long)n_elts[0]);
 
-    if (index == NULL)
+    if (index == nullptr)
       return;
 
     if (halo->n_transforms > 0) {
@@ -2278,7 +2278,7 @@ cs_halo_dump(const cs_halo_t  *halo,
         bft_printf("  idx start %ld:          idx end   %ld:\n",
                    (long)index[2*i], (long)index[2*i+1]);
 
-        if (print_level > 0 && list != NULL) {
+        if (print_level > 0 && list != nullptr) {
           bft_printf("\n            idx     elt id\n");
           for (cs_lnum_t j = index[2*i]; j < index[2*i+1]; j++)
             bft_printf("    %10ld %10ld\n", (long)j, (long)list[j]);
@@ -2292,7 +2292,7 @@ cs_halo_dump(const cs_halo_t  *halo,
         bft_printf("  idx start %ld:          idx end   %ld:\n",
                    (long)index[2*i+1], (long)index[2*i+2]);
 
-        if (print_level > 0 && list != NULL) {
+        if (print_level > 0 && list != nullptr) {
           bft_printf("\n            idx     elt id\n");
           for (long j = index[2*i+1]; j < index[2*i+2]; j++)
             bft_printf("    %10ld %10ld %10ld\n",

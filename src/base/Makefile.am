@@ -338,7 +338,7 @@ cs_function_default.c \
 cs_gas_mix.c \
 cs_gas_mix_initialization.f90 \
 cs_gas_mix_physical_properties.f90 \
-cs_halo.c \
+cs_halo.cpp \
 cs_halo_perio.c \
 cs_head_losses.c \
 cs_ibm.c \

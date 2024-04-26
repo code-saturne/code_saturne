@@ -379,8 +379,8 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
  * \param[in]       sync_mode   synchronization mode (standard or extended)
  * \param[in]       data_type   data type
  * \param[in]       stride      number of (interlaced) values by entity
- * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[out]      send_buf    pointer to send buffer, nullptr for global buffer
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  *
  * \return  pointer to halo send buffer
  */
@@ -410,8 +410,8 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
  * \param[in]       data_type   data type
  * \param[in]       stride      number of (interlaced) values by entity
  * \param[in]       val         pointer to variable value array
- * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[out]      send_buf    pointer to send buffer, nullptr for global buffer
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -443,8 +443,8 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
  * \param[in]       stride      number of (interlaced) values by entity
  * \param[in]       val         pointer to variable value array (on device)
  * \param[out]      send_buf    pointer to send buffer (on device),
- *                              NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ *                              nullptr for global buffer
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -472,7 +472,7 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       val         pointer to variable value array
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -495,7 +495,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       val         pointer to variable value array
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in, out]  hs          pointer to halo state, nullptr for global state
  */
 /*----------------------------------------------------------------------------*/
 
