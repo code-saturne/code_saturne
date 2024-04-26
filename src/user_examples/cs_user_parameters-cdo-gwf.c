@@ -94,6 +94,7 @@ static const double k1 = 1e5, k2 = 1;
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [param_cdo_gwf_get_tracer_ic] */
 static inline void
 get_tracer_ic(cs_real_t          time,
               cs_lnum_t          n_elts,
@@ -126,6 +127,7 @@ get_tracer_ic(cs_real_t          time,
   } /* Loop on selected elements */
 
 }
+/*! [param_cdo_gwf_get_tracer_ic] */
 
 /*============================================================================
  * User function definitions
@@ -553,10 +555,14 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                               "left",      /* boundary zone name */
                               &left_val);  /* value to set */
 
-  /* Define the initial condition with an analytic function (if nothing is
-     done, the default initialization is zero) */
+  /*! [param_cdo_gwf_set_ic] */
+  {
+    /* Define the initial condition with an analytic function (if nothing is
+       done, the default initialization is zero) */
 
-  cs_equation_add_ic_by_analytic(t_eqp, "cells", get_tracer_ic, NULL);
+    cs_equation_add_ic_by_analytic(t_eqp, "cells", get_tracer_ic, NULL);
+  }
+  /*! [param_cdo_gwf_set_ic] */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -66,63 +66,61 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Set the initial temperature in the computational domain
+ *
+ * For the calling function, elt_ids is optional. If not NULL, the coords
+ * array should be accessed with an indirection. The same indirection can
+ * be applied to fill retval if dense_output is set to false.
+ *
+ * \param[in]      time          when ?
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids (in coords and retval)
+ * \param[in]      coords        where ?
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*--------------------------------------------------------------------------*/
+
 /*! [param_cdo_initial_temperature_function] */
+static void
+_initial_temperature(cs_real_t            time,
+                     cs_lnum_t            n_elts,
+                     const cs_lnum_t     *elt_ids,
+                     const cs_real_t     *coords,
+                     bool                 dense_output,
+                     void                *input,
+                     cs_real_t           *retval)
 {
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set the initial temperature in the computational domain
-   *
-   * For the calling function, elt_ids is optional. If not NULL, the coords
-   * array should be accessed with an indirection. The same indirection can
-   * be applied to fill retval if dense_output is set to false.
-   *
-   * \param[in]      time          when ?
-   * \param[in]      n_elts        number of elements to consider
-   * \param[in]      elt_ids       list of elements ids (in coords and retval)
-   * \param[in]      coords        where ?
-   * \param[in]      dense_output  perform an indirection in retval or not
-   * \param[in]      input         NULL or pointer cast on-the-fly
-   * \param[in, out] retval        resulting value(s). Must be allocated.
-   */
-  /*--------------------------------------------------------------------------*/
+  CS_NO_WARN_IF_UNUSED(time);
+  CS_NO_WARN_IF_UNUSED(input);
 
-  static void
-    _initial_temperature(cs_real_t            time,
-                         cs_lnum_t            n_elts,
-                         const cs_lnum_t     *elt_ids,
-                         const cs_real_t     *coords,
-                         bool                 dense_output,
-                         void                *input,
-                         cs_real_t           *retval)
-  {
-    CS_NO_WARN_IF_UNUSED(time);
-    CS_NO_WARN_IF_UNUSED(input);
+  if (elt_ids == NULL) { /* No indirection */
 
-    if (elt_ids == NULL) { /* No indirection */
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      retval[i] = -1 + 2*coords[3*i];            /* T(t=0) = -1 + 2*x */
 
+  }
+  else {
+
+    if (dense_output)
       for (cs_lnum_t i = 0; i < n_elts; i++)
-        retval[i] = -1 + 2*coords[3*i];            /* T(t=0) = -1 + 2*x */
+        retval[i] = -1 + 2*coords[3*elt_ids[i]]; /* T(t=0) = -1 + 2*x */
 
-    }
     else {
 
-      if (dense_output)
-        for (cs_lnum_t i = 0; i < n_elts; i++)
-          retval[i] = -1 + 2*coords[3*elt_ids[i]]; /* T(t=0) = -1 + 2*x */
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-      else {
+        const cs_lnum_t  elt_id = elt_ids[i];
+        retval[elt_id] = -1 + 2*coords[3*elt_id]; /* T(t=0) = -1 + 2*x */
 
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
+      }
 
-          const cs_lnum_t  elt_id = elt_ids[i];
-          retval[elt_id] = -1 + 2*coords[3*elt_id]; /* T(t=0) = -1 + 2*x */
+    } /* dense_output ? */
 
-        }
-
-      } /* dense_output ? */
-
-    } /* elt_ids == NULL ? */
-  }
+  } /* elt_ids == NULL ? */
 }
 /*! [param_cdo_initial_temperature_function] */
 
@@ -142,13 +140,13 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
+  /* Activate the CDO module so that the main additional structures are
+     built */
+
+  cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
+
   /*! [param_cdo_activate_thermal_solver] */
   {
-    /* Activate the CDO module so that the main additional structures are
-       built */
-
-    cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
-
     cs_thermal_system_activate(0,  /* model flag (0=default) */
                                0,  /* numeric flag (0=default) */
                                0); /* post flag (0=no automatic post-process) */
@@ -217,7 +215,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 
-  /*! [param_cdo_define_thermal_solver] */
+  /*! [param_cdo_define_thermal_properties] */
   {
     /* Define the predefined properties */
     /* -------------------------------- */
@@ -233,6 +231,11 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_property_t  *rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
     cs_property_def_iso_by_value(rho, NULL, 1979);
 
+  }
+  /*! [param_cdo_define_thermal_properties] */
+
+  /*! [param_cdo_define_thermal_bc] */
+  {
     /* Define the boundary conditions */
     /* ------------------------------ */
 
@@ -266,6 +269,12 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
     /* The remaining part of the boundary faces are set to a homogeneous Neumann
        BCs (the default BC) */
+  }
+  /*! [param_cdo_define_thermal_bc] */
+
+  /*! [param_cdo_define_thermal_ic] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
 
     /* Define the initial conditions */
     /* ----------------------------- */
@@ -277,7 +286,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                    _initial_temperature, /* function def. */
                                    NULL);                /* no context */
   }
-  /*! [param_cdo_define_thermal_solver] */
+  /*! [param_cdo_define_thermal_ic] */
 }
 
 /*----------------------------------------------------------------------------*/

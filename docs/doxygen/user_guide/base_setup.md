@@ -35,6 +35,8 @@ documentation. It is also recommended to check the
 - \subpage base_setup_mass_injection
 - \subpage gui_user_law_editor
 - \subpage base_var_modify_end_time_step
+- [CDO schemes](@ref cs_ug_cdo_hho)
+
 
 <!-- ----------------------------------------------------------------------- -->
 
@@ -120,7 +122,14 @@ In addition to the GUI, user-defined functions may be used:
 - \ref cs_user_parameters to define most general or variable-based parameters
 - \ref cs_user_time_moments to define time moments associated with the various fields.
 - \ref linear_solvers to define linear solver options specific to any given system.
-- \ref cs_user_finalize_setup to modify or variable-based settings, or define them for secondary variables based on options set on main parameters (such as additional variables associated with variable scalar dynamic diffusivity, turbulent Schmidt number, ...).
+- \ref cs_user_finalize_setup to modify or variable-based settings, or
+  define them for secondary variables based on options set on main
+  parameters (such as additional variables associated with variable
+  scalar dynamic diffusivity, turbulent Schmidt number, ...). The
+  settings of **CDO/HHO** schemes (boundary conditions, initial
+  conditions, source terms, definitions of properties or advection
+  fields) take place in this function (\ref
+  cs_user_parameters_h_cs_user_model_cdo "example").
 
 <!-- ----------------------------------------------------------------------- -->
 

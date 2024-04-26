@@ -153,6 +153,86 @@ _define_bcs(cs_real_t           time,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Give the explicit definition of the source term
+ *        pt_ids is optional. If not NULL, it enables to access in xyz
+ *        at the right location and to fill the resulting array if a dense
+ *        output is not requested.
+ *        Rely on the generic function pointer for an analytic function
+ *
+ * \param[in]      time         when ?
+ * \param[in]      n_elts       number of elements to consider
+ * \param[in]      pt_ids       list of elements ids (to access coords and fill)
+ * \param[in]      coords       where ?
+ * \param[in]      dense_output true:no indirection, false:apply pt_ids
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] values       result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+/*! [param_cdo_condif_analytic_st] */
+static void
+_my_source_term(cs_real_t           time,
+                cs_lnum_t           n_pts,
+                const cs_lnum_t    *pt_ids,
+                const cs_real_t    *xyz,
+                bool                dense_output,
+                void               *input,
+                cs_real_t          *values)
+{
+  CS_NO_WARN_IF_UNUSED(time);
+
+  const double  *pcoefs = (double *)input;
+  const double  mu = pcoefs[0];
+  const double  pi = pcoefs[1];
+
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+
+    const cs_lnum_t  id = (pt_ids == NULL) ? i : pt_ids[i];
+    const cs_lnum_t  ii = dense_output ? i : id;
+    const double  x = xyz[3*id], y = xyz[3*id+1], z = xyz[3*id+2];
+    const double  px = pi*x, cpx = cos(px), spx = sin(px);
+    const double  py = 2*pi*y, cpy = cos(py), spy = sin(py);
+    const double  pz = pi*z, cpz = cos(pz), spz = sin(pz);
+    const cs_real_t  gx = cpx*spy*spz;
+    const cs_real_t  gy = 2*spx*cpy*spz;
+    const cs_real_t  gz = spx*spy*cpz;
+
+    values[ii] = pi*( (y-0.5)*gx + (0.5-x)*gy + (z+1.0)*gz ) + mu*spx*spy*spz;
+
+  }
+}
+/*! [param_cdo_condif_analytic_st] */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy an input data structure.
+ *        Complex data structure can be used when a \ref cs_xdef_t structure
+ *        is defined by an analytic function, a DoF function or a time
+ *        function. Please refer to \ref cs_xdef_analytic_context_t,
+ *        \ref cs_xdef_time_func_context_t or \ref cs_xdef_dof_context_t
+ *
+ * \param[in, out] input    pointer to an input structure associated to a
+ *                          context structure
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+/*! [param_cdo_condif_free_input] */
+static void *
+_free_input(void   *input)
+{
+  double *_input = (double *)input;
+
+  BFT_FREE(_input);
+  input = NULL;
+
+  return NULL;
+}
+/*! [param_cdo_condif_free_input] */
+
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -200,8 +280,7 @@ cs_user_model(void)
      *   CS_BOUNDARY_SYMMETRY
      */
 
-    cs_boundary_add(bdy, CS_BOUNDARY_INLET, "in");
-    cs_boundary_add(bdy, CS_BOUNDARY_OUTLET, "out");
+    cs_boundary_add(bdy, CS_BOUNDARY_SYMMETRY, "sym");
   }
   /*! [param_cdo_domain_boundary] */
 
@@ -214,6 +293,11 @@ cs_user_model(void)
 
   /*! [param_cdo_add_user_equation] */
   {
+    cs_equation_add_user("my_equation", /* name of the equation */
+                         "my_variable", /* name of the associated variable */
+                         1,             /* dimension of the variable */
+                         CS_PARAM_BC_HMG_NEUMANN); /* default BC */
+
     /* Add a new user equation.
      *   The default boundary condition has to be chosen among:
      *    CS_PARAM_BC_HMG_DIRICHLET
@@ -238,8 +322,13 @@ cs_user_model(void)
 
   /*! [param_cdo_add_user_properties] */
   {
+    /* For an anistropic property (tensor-valued) */
+
     cs_property_add("conductivity",      /* property name */
                     CS_PROPERTY_ANISO);  /* type of material property */
+
+    /* For an isotropic property (scalar-valued) */
+
     cs_property_add("rho.cp",            /* property name */
                     CS_PROPERTY_ISO);    /* type of material property */
 
@@ -263,9 +352,10 @@ cs_user_model(void)
   /*! [param_cdo_add_user_adv_field] */
   {
     /* Add a user-defined advection field named "adv_field"  */
+
     cs_adv_field_t  *adv = cs_advection_field_add_user("adv_field");
 
-    CS_NO_WARN_IF_UNUSED(adv); /* adv can be used to set options */
+    assert(adv != NULL);
   }
   /*! [param_cdo_add_user_adv_field] */
 
@@ -290,8 +380,8 @@ cs_user_model(void)
     cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
     /* Compute the Courant number (if unsteady simulation) */
-    cs_advection_field_set_postprocess(adv, CS_ADVECTION_FIELD_POST_COURANT);
 
+    cs_advection_field_set_postprocess(adv, CS_ADVECTION_FIELD_POST_COURANT);
   }
   /*! [param_cdo_add_user_adv_field_post] */
 }
@@ -364,24 +454,53 @@ cs_user_parameters(cs_domain_t   *domain)
   {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
 
+    cs_equation_param_set(eqp, CS_EQKEY_VERBOSITY, "2");
     cs_equation_param_set(eqp, CS_EQKEY_EXTRA_OP, "peclet");
   }
   /*! [param_cdo_post_equation] */
 
   /*! [param_cdo_numerics] */
   {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+  }
+  /*! [param_cdo_numerics] */
+
+  /*! [param_cdo_conv_numerics] */
+  {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
 
-    /* The modification of the space discretization should be apply first */
-    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    /* Set the advection scheme */
+
     cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
+    /* Set the advection formulation
+       - "u.grad(Y)" for a "non-servative" or gradient formulation
+       - "div(u.Y)" for a "conservtive" or divergence formulation
+    */
+
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
+  }
+  /*! [param_cdo_conv_numerics] */
+
+  /*! [param_cdo_diff_numerics] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+
     /* Modify other parameters than the space discretization */
-    cs_equation_param_set(eqp, CS_EQKEY_VERBOSITY, "2");
+
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+  }
+  /*! [param_cdo_diff_numerics] */
+
+  /*! [param_cdo_sles_settings] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
 
     /* Linear algebra settings */
+
 #if defined(HAVE_PETSC)
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
@@ -393,10 +512,8 @@ cs_user_parameters(cs_domain_t   *domain)
 #endif
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_MAX_ITER, "2500");
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-12");
-    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RESNORM_TYPE, "false");
-
   }
-  /*! [param_cdo_numerics] */
+  /*! [param_cdo_sles_settings] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -446,9 +563,6 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
     cs_advection_field_def_by_analytic(adv, _define_adv_field, NULL);
-
-    /* Activate the post-processing of the related Courant number */
-    cs_advection_field_set_postprocess(adv, CS_ADVECTION_FIELD_POST_COURANT);
   }
   /*! [param_cdo_setup_advfield] */
 
@@ -500,19 +614,56 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
     /* Activate advection effect */
     cs_equation_add_advection(eqp, adv);
+  }
+  /*! [param_cdo_add_terms] */
+
+  /*! [param_cdo_add_simple_source_terms] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
 
     /* Simple definition with cs_equation_add_source_term_by_val
        where the value of the source term is given by m^3
     */
-    cs_real_t  st_val = -0.1;
-    cs_xdef_t  *st = cs_equation_add_source_term_by_val(eqp,
-                                                        "cells",
-                                                        &st_val);
 
-    CS_NO_WARN_IF_UNUSED(st); /* st can be used for advanced settings like
-                                 quadrature rules */
+    cs_real_t  st_val = -0.1;
+    cs_equation_add_source_term_by_val(eqp, "cells", &st_val);
   }
-  /*! [param_cdo_add_terms] */
+  /*! [param_cdo_add_simple_source_terms] */
+
+  /*! [param_cdo_add_source_terms] */
+  {
+    /* More advanced definition relying on an analytic function and a context
+       structure */
+
+    cs_equation_param_t  *eqp2 = cs_equation_param_by_name("MyEq");
+
+    double  *input = NULL;
+    BFT_MALLOC(input, 2, double);
+
+    input[0] = 0.5;            /* Value of the reaction coefficient */
+    input[1] = 4.0*atan(1.0);  /* Value of pi (computed only once) */
+
+    cs_xdef_t  *st =
+      cs_equation_add_source_term_by_analytic(eqp2,
+                                              "x_leq_0", /* zone name */
+                                              _my_source_term,
+                                              input);    /* context structure */
+
+    /* Specify how the cs_xdef_t structure can free its input structure */
+
+    cs_xdef_set_free_input_function(st, _free_input);
+
+    /* st can be used for advanced settings like quadrature rules. By default,
+       a barycentric quadrature rule is used (one evaluation at the cell center
+       by mesh cell) */
+
+    cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHER);
+
+    /* Each cell is subdivided into an implicit tetrahedral sub-mesh relying on
+       the vertices, the middle of each edge, the face barycenter and the cell
+       center. A quadrature exact up to 3rd order polynomial is set. */
+  }
+  /*! [param_cdo_add_source_terms] */
 
   /*! [param_cdo_copy_settings] */
   {

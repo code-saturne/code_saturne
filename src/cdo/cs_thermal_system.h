@@ -82,8 +82,8 @@ typedef cs_flag_t  cs_thermal_model_type_t;
  * \brief Disable the unsteady term of the thermal equation
  *
  * \def CS_THERMAL_MODEL_NAVSTO_ADVECTION
- * \brief Add an advection term arising from the velocity field solution
- *        of the Navier-Stokes equations
+ * \brief Add an advection term arising from the velocity field (more precisely
+ *        the mass flux) solution of the Navier-Stokes equations
  *
  * \def CS_THERMAL_MODEL_USE_TEMPERATURE
  * \brief The thermal equation solved using the temperature variable

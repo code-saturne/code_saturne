@@ -812,7 +812,7 @@ typedef struct {
  * Please refer to \ref cs_param_advection_extrapol_t for more details.
  *
  * \var CS_EQKEY_ADV_FORMULATION
- * Kind of formulation of the advective term. Available choices are:
+ * Kind of formulation of the advective term. There are two possible choices:
  * - "conservative"
  * - "non_conservative"
  *

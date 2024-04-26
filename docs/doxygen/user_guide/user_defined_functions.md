@@ -145,6 +145,12 @@ functions which will be able to access those elements.
   earlier), so that the the variable and property fields implied by those
   models are instanciated and available in the following user function call points.
 
+  The activation of **CDO/HHO schemes** has to be done in this
+  function (\ref cs_user_parameters_h_cs_user_model_cdo "example")
+  along with the add of user-defined equations and/or the activation
+  of CDO-related modules such that Navier--Stokes, solidification or
+  groundwater flows.
+
   The equivalent Fortran function is named \ref usppmo.
 
 - \ref cs_user_zones
@@ -167,6 +173,12 @@ functions which will be able to access those elements.
   earlier), so that the the variable and property fields implied by those
   models are instanciated and available in the following user function call points.
 
+  **With CDO/HHO schemes**, the numerical settings of each equation
+  (added in \ref cs_user_model) take place in this function thanks to
+  the generic function \ref cs_equation_param_set (hanging on a
+  key/value principle). Additional stuffs (management of the time
+  stepping or the log output frequency) is also handled at this stage.
+
   The equivalent Fortran function is named \ref usppmo.
 
 - \ref cs_user_postprocess_writers, \ref cs_user_postprocess_meshes,
@@ -185,6 +197,10 @@ functions which will be able to access those elements.
 
   May be used for additionl definitions, or as an alternative or extension
   to \ref cs_user_boundary_conditions_setup.
+
+  **With CDO/HHO schemes**, the definitions of boundary conditions, initial
+  conditions, source terms or the definitions of properties or
+  user-defined advection fields take place in this function.
 
 ### For specific models
 
