@@ -422,7 +422,7 @@ _variant_build_list(int                             n_fill_types,
 
 #if defined(HAVE_MKL_SPARSE_IE)
 
-    _variant_add("CSR, with MKL",
+    _variant_add("CSR, MKL",
                  NULL,
                  CS_MATRIX_CSR,
                  n_fill_types,
@@ -473,7 +473,7 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_CUSPARSE)
 
     if (cs_get_device_id() > -1)
-      _variant_add("CSR, with cuSPARSE",
+      _variant_add("CSR, cuSPARSE",
                    NULL,
                    CS_MATRIX_CSR,
                    n_fill_types,
@@ -507,7 +507,7 @@ _variant_build_list(int                             n_fill_types,
 
 #if defined(HAVE_MKL_SPARSE_IE)
 
-    _variant_add("MSR, with MKL",
+    _variant_add("MSR, MKL",
                  NULL,
                  CS_MATRIX_MSR,
                  n_fill_types,
@@ -558,7 +558,7 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_CUSPARSE)
 
     if (cs_get_device_id() > -1)
-      _variant_add("MSR, with cuSPARSE",
+      _variant_add("MSR, cuSPARSE",
                    NULL,
                    CS_MATRIX_MSR,
                    n_fill_types,
@@ -643,7 +643,7 @@ _variant_build_list(int                             n_fill_types,
 
 #if defined(HAVE_MKL_SPARSE_IE)
 
-    _variant_add("Distributed, with MKL",
+    _variant_add("Distributed, MKL",
                  NULL,
                  CS_MATRIX_DIST,
                  n_fill_types,
@@ -1194,10 +1194,9 @@ _matrix_time_test(int                          n_time_runs,
                <std::chrono::microseconds>(wtf - wti);
             double t =  t_ms.count() * 1.e-6;
             double delta = t - mean;
-            double r = delta / run_id;
+            double r = delta / (run_id+1);
             double m_n = mean + r;
-            if (run_id > 0)
-              m2 = (m2*(run_id-1) + delta*(t-m_n)) / run_id;
+            m2 = (m2*run_id + delta*(t-m_n)) / (run_id+1);
             mean += r;
           }
           wt1 = std::chrono::high_resolution_clock::now();
@@ -1295,8 +1294,8 @@ _matrix_time_create_assign_title(int                    struct_flag,
     cs_log_strpadl(tmp_s[2], "max", 10, 24);
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %10s %s\n"
-                  "  %24s %s %s\n",
+                  "  %32s %10s %s\n"
+                  "  %32s %s %s\n",
                   " ", " ", tmp_s[0],
                   " ", tmp_s[1], tmp_s[2]);
   }
@@ -1310,7 +1309,7 @@ _matrix_time_create_assign_title(int                    struct_flag,
     cs_log_strpadl(tmp_s, "time (s)", 10, 24);
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %s\n",
+                  "  %32s %s\n",
                   " ", tmp_s);
 
   }
@@ -1332,13 +1331,13 @@ _matrix_time_create_assign_stats(const cs_matrix_timing_variant_t  *m_variant,
                                  int                                struct_flag,
                                  cs_matrix_fill_type_t              fill_type)
 {
-  char title[32];
+  char title[33];
 
   double t_loc = -1;
 
   const cs_matrix_timing_variant_t  *v = m_variant + variant_id;
 
-  cs_log_strpad(title, v->name, 24, 32);
+  cs_log_strpad(title, v->name, 32, 33);
 
   if (struct_flag == 0)
     t_loc = v->matrix_assign_cost[fill_type];
@@ -1423,8 +1422,8 @@ _matrix_time_spmv_title(cs_matrix_fill_type_t  fill_type,
     cs_log_strpadl(tmp_s[9], "max", 9, 24);
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %8s %s   %7s %s   %6s %s\n"
-                  "  %24s %s %s | %s %s %s | %s %s\n",
+                  "  %32s %8s %s   %7s %s   %6s %s\n"
+                  "  %32s %s %s | %s %s %s | %s %s\n",
                   " ", " ", tmp_s[0], " ", tmp_s[1], " ", tmp_s[2],
                   " ", tmp_s[3], tmp_s[4], tmp_s[5],
                   tmp_s[6], tmp_s[7], tmp_s[8], tmp_s[9]);
@@ -1435,7 +1434,7 @@ _matrix_time_spmv_title(cs_matrix_fill_type_t  fill_type,
   if (cs_glob_n_ranks == 1) {
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s  time (s)  speedup  std. dev.\n", " ");
+                  "  %32s  time (s)  speedup  std. dev.\n", " ");
 
   }
 }
@@ -1458,14 +1457,14 @@ _matrix_time_spmv_stats(const cs_matrix_timing_variant_t  *m_variant,
                         cs_matrix_spmv_type_t              op_type,
                         int                                mpi_flag)
 {
-  char title[32];
+  char title[33];
 
   double v_loc[3] = {-1, -1, 0};
 
   const cs_matrix_timing_variant_t  *r = m_variant;
   const cs_matrix_timing_variant_t  *v = m_variant + variant_id;
 
-  cs_log_strpad(title, v->name, 24, 32);
+  cs_log_strpad(title, v->name, 32, 33);
 
   /* Get timing info */
 
@@ -1543,8 +1542,8 @@ _matrix_time_spmv_title_ops(void)
     cs_log_strpadl(tmp_s[3], "max", 10, 24);
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %19s %s\n"
-                  "  %24s %s %s %s\n",
+                  "  %32s %19s %s\n"
+                  "  %32s %s %s %s\n",
                   " ", " ", tmp_s[0],
                   " ", tmp_s[1], tmp_s[2], tmp_s[3]);
   }
@@ -1558,7 +1557,7 @@ _matrix_time_spmv_title_ops(void)
     cs_log_strpadl(tmp_s[0], "GFLOPS", 10, 24);
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %s\n",
+                  "  %32s %s\n",
                   " ", tmp_s[0]);
 
   }
@@ -1582,11 +1581,11 @@ _matrix_time_spmv_stats_ops(const cs_matrix_timing_variant_t  *m_variant,
                             cs_matrix_spmv_type_t              op_type,
                             int                                mpi_flag)
 {
-  char title[32];
+  char title[33];
 
   const cs_matrix_timing_variant_t  *v = m_variant + variant_id;
 
-  cs_log_strpad(title, v->name, 24, 32);
+  cs_log_strpad(title, v->name, 32, 33);
 
   /* Get timing info */
 
