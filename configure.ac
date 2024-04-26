@@ -1328,10 +1328,6 @@ if test x$cs_have_cuda = xyes ; then
 fi
 echo " SYCL support: "$cs_have_sycl""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$with_blas_type""
-if test x$cs_have_sycl = xyes ; then
-  echo "   SYCL MKL offload: "$cs_have_mkl_sycl""
-fi
-echo " SYCL support: "$cs_have_sycl""
 
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
 if test x$cs_have_parmetis = xno ; then

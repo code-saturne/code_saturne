@@ -42,15 +42,15 @@
 #endif
 
 #if defined (HAVE_MKL_SPARSE_IE)
-#if defined(HAVE_MKL_SYCL)
+  #if defined(HAVE_LONG_LNUM)
+    #define MKL_ILP64
+  #endif
   #undef VERSION
-  #define MKL_ILP64
   #include <mkl_spblas.h>
-  #include <oneapi/mkl.hpp>
-  using namespace oneapi::mkl;
-#else
-  #include <mkl_spblas.h>
-#endif
+  #if defined(HAVE_SYCL)
+    #include <oneapi/mkl.hpp>
+    using namespace oneapi::mkl;
+  #endif
 #endif
 
 /*----------------------------------------------------------------------------
@@ -124,14 +124,11 @@ typedef struct _cs_matrix_mkl_sparse_map_t {
 
   struct matrix_descr  descr;            /* matrix descriptor */
 
-  MKL_INT             *_rows_start;      /* row index if copied */
-  MKL_INT             *_col_indx;        /* column ids if copied */
-
   bool                 mapped;           /* is the mapping done */
 
 } cs_matrix_mkl_sparse_map_t;
 
-#if defined(HAVE_MKL_SYCL)
+#if defined(HAVE_SYCL)
 
 /* Mapping of matrix coefficients and structure to MKL matrix handle */
 /*-------------------------------------------------------------------*/
@@ -142,14 +139,11 @@ typedef struct _cs_matrix_mkl_sparse_sycl_map_t {
 
   struct matrix_descr  descr;            /* matrix descriptor */
 
-  std::int64_t        *_rows_start;      /* row index if copied */
-  std::int64_t        *_col_indx;        /* column ids if copied */
-
   bool                 mapped;           /* is the mapping done */
 
 } cs_matrix_mkl_sparse_sycl_map_t;
 
-#endif // defined(HAVE_MKL_SPARSE_SYCL)
+#endif // defined(HAVE_SYCL)
 
 #endif // defined(HAVE_MKL_SPARSE_IE)
 
@@ -242,11 +236,8 @@ _unset_mkl_sparse_map(cs_matrix_t   *matrix)
 
   sparse_status_t status = SPARSE_STATUS_SUCCESS;
 
-  if (csm->mapped) {
+  if (csm->mapped)
     status = mkl_sparse_destroy(csm->a);
-    BFT_FREE(csm->_rows_start);
-    BFT_FREE(csm->_col_indx);
-  }
 
   if (SPARSE_STATUS_SUCCESS != status)
     bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
@@ -277,8 +268,6 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
     csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     csm->descr.mode = SPARSE_FILL_MODE_FULL;
     csm->descr.diag = SPARSE_DIAG_NON_UNIT;
-    csm->_rows_start = NULL;
-    csm->_col_indx = NULL;
     csm->mapped = false;
     matrix->ext_lib_map = (void *)csm;
   }
@@ -286,7 +275,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
 
   const cs_lnum_t *row_index, *col_id;
   cs_real_t *e_val;
-  MKL_INT rows = 0, cols = 0, nnz = 0;
+  MKL_INT rows = 0, cols = 0;
 
   if (matrix->type == CS_MATRIX_CSR) {
     cs_matrix_struct_csr_t *ms
@@ -295,7 +284,6 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
       = (cs_matrix_coeff_csr_t *)matrix->coeffs;
     rows = ms->n_rows;
     cols = ms->n_cols_ext;
-    nnz = ms->row_index[matrix->n_rows];
     row_index = ms->row_index;
     col_id = ms->col_id;
     e_val = const_cast<cs_real_t *>(mc->val);
@@ -310,7 +298,6 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
       cols = ms->n_rows; /* extended cols are separate here */
     else
       cols = ms->n_cols_ext;
-    nnz = ms->e.row_index[matrix->n_rows];
     row_index = ms->e.row_index;
     col_id = ms->e.col_id;
     e_val = const_cast<cs_real_t *>(mc->e_val);
@@ -319,23 +306,10 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
   sparse_status_t status = SPARSE_STATUS_SUCCESS;
 
   MKL_INT *rows_start, *col_indx;
-  MKL_INT *_rows_start = NULL, *_col_indx = NULL;
-  if (sizeof(cs_lnum_t) != sizeof(MKL_INT) || true) {
-    BFT_MALLOC(_rows_start, rows+1, MKL_INT);
-    BFT_MALLOC(_col_indx, nnz, MKL_INT);
-    for (cs_lnum_t i = 0; i < rows+1; i++)
-      _rows_start[i] = row_index[i];
-    for (cs_lnum_t i = 0; i < nnz; i++)
-      _col_indx[i] = col_id[i];
-    rows_start = _rows_start;
-    col_indx = _col_indx;
-    csm->_rows_start = _rows_start;
-    csm->_col_indx = _col_indx;
-  }
-  else {
-    rows_start = (MKL_INT *)row_index;
-    col_indx = (MKL_INT *)col_id;
-  }
+  static_assert(sizeof(cs_lnum_t) == sizeof(MKL_INT),
+                "MKL_INT does not match cs_lnum_t; check MKL_ILP64 setting");
+  rows_start = (MKL_INT *)row_index;
+  col_indx = (MKL_INT *)col_id;
 
   sparse_matrix_t a;
 
@@ -424,7 +398,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
   return csm;
 }
 
-#if defined (HAVE_MKL_SYCL)
+#if defined (HAVE_SYCL)
 
 /*----------------------------------------------------------------------------
  * Unset matrix MKL sparse BLAS mapping.
@@ -450,9 +424,6 @@ _unset_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
                                                    &(csm->a),
                                                    {});
     ev_release.wait();   // ev_release.wait_and_throw();
-
-    CS_FREE(csm->_rows_start);
-    CS_FREE(csm->_col_indx);
   }
 
   if (SPARSE_STATUS_SUCCESS != status)
@@ -484,8 +455,6 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
     csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     csm->descr.mode = SPARSE_FILL_MODE_FULL;
     csm->descr.diag = SPARSE_DIAG_NON_UNIT;
-    csm->_rows_start = NULL;
-    csm->_col_indx = NULL;
     csm->mapped = false;
     matrix->ext_lib_map = (void *)csm;
   }
@@ -493,7 +462,7 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
 
   const cs_lnum_t *row_index, *col_id;
   cs_real_t *e_val;
-  std::uint64_t nrows = 0, ncols = 0, nnz = 0;
+  std::uint64_t nrows = 0, ncols = 0;
 
   if (matrix->type == CS_MATRIX_CSR) {
     cs_matrix_struct_csr_t *ms
@@ -502,7 +471,6 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
       = (cs_matrix_coeff_csr_t *)matrix->coeffs;
     nrows = ms->n_rows;
     ncols = ms->n_cols_ext;
-    nnz = ms->row_index[matrix->n_rows];
     row_index = ms->row_index;
     col_id = ms->col_id;
     e_val = const_cast<cs_real_t *>(mc->val);
@@ -517,30 +485,13 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
       ncols = ms->n_rows; /* extended cols are separate here */
     else
       ncols = ms->n_cols_ext;
-    nnz = ms->e.row_index[matrix->n_rows];
     row_index = ms->e.row_index;
     col_id = ms->e.col_id;
     e_val = const_cast<cs_real_t *>(mc->e_val);
   }
 
-  std::int64_t *rows_start, *col_indx;
-  std::int64_t *_rows_start = NULL, *_col_indx = NULL;
-  if (sizeof(cs_lnum_t) != sizeof(std::uint64_t) || true) {
-    BFT_MALLOC(_rows_start, nrows+1, std::int64_t);
-    BFT_MALLOC(_col_indx, nnz, std::int64_t);
-    for (cs_lnum_t i = 0; i < nrows+1; i++)
-      _rows_start[i] = row_index[i];
-    for (cs_lnum_t i = 0; i < nnz; i++)
-      _col_indx[i] = col_id[i];
-    rows_start = _rows_start;
-    col_indx = _col_indx;
-    csm->_rows_start = _rows_start;
-    csm->_col_indx = _col_indx;
-  }
-  else {
-    rows_start = (std::int64_t *)row_index;
-    col_indx = (std::int64_t *)col_id;
-  }
+  cs_lnum_t *rows_start = const_cast<cs_lnum_t *>(row_index);
+  cs_lnum_t *col_indx = const_cast<cs_lnum_t *>(col_id);
 
   csm->a = nullptr;
   sparse::init_matrix_handle(&(csm->a));
@@ -586,7 +537,7 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
   return csm;
 }
 
-#endif // defined(HAVE_MKL_SPARSE_SYCL)
+#endif // defined(HAVE_SYCL)
 
 #endif // defined(HAVE_MKL_SPARSE_IE)
 
@@ -2089,7 +2040,7 @@ _mat_vec_p_l_csr_mkl(cs_matrix_t  *matrix,
               __func__, (int)status, _cs_mkl_status_get_string(status));
 }
 
-#if defined (HAVE_MKL_SYCL)
+#if defined (HAVE_SYCL)
 
 static void
 _mat_vec_p_l_csr_mkl_sycl(cs_matrix_t  *matrix,
@@ -2124,19 +2075,26 @@ _mat_vec_p_l_csr_mkl_sycl(cs_matrix_t  *matrix,
 
   /* MKL call */
 
-  auto ev_gemv = sparse::gemv(cs_glob_sycl_queue,
-                              transpose::nontrans,
-                              1, // alpha
-                              csm->a,
-                              x,
-                              0, // beta
-                              y);
+  try {
+    auto ev_gemv = sparse::gemv(cs_glob_sycl_queue,
+                                transpose::nontrans,
+                                1, // alpha
+                                csm->a,
+                                x,
+                                0, // beta
+                                y);
 
-  ev_gemv.wait();  // TODO check if this is needed or waiting
-                   // on downstream events is sufficient.
+    ev_gemv.wait();  // TODO check if this is needed or waiting
+    // on downstream events is sufficient.
+  }
+  catch(const oneapi::mkl::exception& ex) {
+    bft_error(__FILE__, __LINE__, 0, _("%s: error MKL sparse blas error:\n"
+                                       "  (%s)."),
+              __func__, ex.what());
+  }
 }
 
-#endif /* defined (HAVE_MKL_SYCL) */
+#endif /* defined (HAVE_SYCL) */
 
 #endif /* defined (HAVE_MKL_SPARSE_IE) */
 
@@ -3004,7 +2962,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
 
 }
 
-#if defined(HAVE_MKL_SYCL)
+#if defined(HAVE_SYCL)
 
 static void
 _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
@@ -3031,7 +2989,7 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
     = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
 
   if (csm == NULL) {
-    matrix->ext_lib_map = _set_mkl_sparse_map(matrix);
+    matrix->ext_lib_map = _set_mkl_sparse_sycl_map(matrix);
     csm = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
   }
 
@@ -3079,39 +3037,47 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
 
   /* MKL call */
 
-  if (matrix->db_size == matrix->eb_size) {
-    auto ev_gemv = sparse::gemv(cs_glob_sycl_queue,
-                                transpose::nontrans,
-                                1, // alpha,
-                                csm->a,
-                                x,
-                                beta,
-                                y);
+  try {
 
-    ev_gemv.wait();  // TODO check if this is needed or waiting
-                     // on downstream events is sufficient.
+    if (matrix->db_size == matrix->eb_size) {
+      auto ev_gemv = sparse::gemv(cs_glob_sycl_queue,
+                                  transpose::nontrans,
+                                  1, // alpha,
+                                  csm->a,
+                                  x,
+                                  beta,
+                                  y);
+
+      ev_gemv.wait();  // TODO check if this is needed or waiting
+                       // on downstream events is sufficient.
+    }
+    else {
+      auto ev_gemm = sparse::gemm(cs_glob_sycl_queue,
+                                  layout::row_major,
+                                  transpose::nontrans,  // tranpose_A
+                                  transpose::nontrans,  // tranpose_B
+                                  1, // alpha,
+                                  csm->a,
+                                  x, // B
+                                  matrix->db_size,      // columns
+                                  matrix->db_size,      // ldb
+                                  beta,
+                                  y, // C
+                                  matrix->db_size,      // ldc
+                                  {});                  // dependencies
+
+      ev_gemm.wait();  // TODO check if this is needed or waiting
+                      // on downstream events is sufficient.
+    }
   }
-  else {
-    auto ev_gemm = sparse::gemm(cs_glob_sycl_queue,
-                                layout::row_major,
-                                transpose::nontrans,  // tranpose_A
-                                transpose::nontrans,  // tranpose_B
-                                1, // alpha,
-                                csm->a,
-                                x, // B
-                                matrix->db_size,      // columns
-                                matrix->db_size,      // ldb
-                                beta,
-                                y, // C
-                                matrix->db_size,      // ldc
-                                {});                  // dependencies
-
-    ev_gemm.wait();  // TODO check if this is needed or waiting
-                     // on downstream events is sufficient.
+  catch(const oneapi::mkl::exception& ex) {
+    bft_error(__FILE__, __LINE__, 0, _("%s: error MKL sparse blas error:\n"
+                                       "  (%s)."),
+              __func__, ex.what());
   }
 }
 
-#endif /* defined (HAVE_MKL_SYCL) */
+#endif /* defined (HAVE_SYCL) */
 
 #endif /* defined (HAVE_MKL_SPARSE_IE) */
 
@@ -3737,7 +3703,7 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
   }
 }
 
-#if defined (HAVE_MKL_SYCL)
+#if defined (HAVE_SYCL)
 
 static void
 _mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
@@ -3797,7 +3763,7 @@ _mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
   }
 }
 
-#endif /* defined (HAVE_MKL_SYCL) */
+#endif /* defined (HAVE_SYCL) */
 
 #endif /* defined (HAVE_MKL_SPARSE_IE) */
 
@@ -3876,7 +3842,7 @@ const char *default_name_native = s_cuda;
 const char s_not_impl[] = "not_implemented";
 const char *default_name_native = s_not_impl;
 
-#if defined (HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+#if defined (HAVE_MKL_SPARSE_IE) && defined(HAVE_SYCL)
 const char s_mkl_sycl[] = "mkl_sycl";
 const char *default_name = s_mkl_sycl;
 #else
@@ -4208,11 +4174,11 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #endif
       }
       else if (!strcmp(func_name, "mkl_sycl")) {
-#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_SYCL)
         _spmv[0] = _mat_vec_p_l_csr_mkl_sycl;
         _spmv[1] = _mat_vec_p_l_csr_mkl_sycl;
-        _spmv_xy_hd[0] = 'd';
-        _spmv_xy_hd[1] = 'd';
+        _spmv_xy_hd[0] = 'g';
+        _spmv_xy_hd[1] = 'g';
 #else
         retcode = 2;
 #endif
@@ -4295,11 +4261,11 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_BLOCK_D_66:
         [[fallthrough]];
       case CS_MATRIX_BLOCK_D_SYM:
-#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_SYCL)
         _spmv[0] = _mat_vec_p_l_msr_mkl_sycl;
         _spmv[1] = _mat_vec_p_l_msr_mkl_sycl;
-        _spmv_xy_hd[0] = 'd';
-        _spmv_xy_hd[1] = 'd';
+        _spmv_xy_hd[0] = 'g';
+        _spmv_xy_hd[1] = 'g';
 #else
         retcode = 2;
 #endif
@@ -4430,11 +4396,11 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
-#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_MKL_SYCL)
+#if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_SYCL)
         _spmv[0] = _mat_vec_p_l_dist_mkl_sycl;
         _spmv[1] = _mat_vec_p_l_dist_mkl_sycl;
-        _spmv_xy_hd[0] = 'd';
-        _spmv_xy_hd[1] = 'd';
+        _spmv_xy_hd[0] = 'g';
+        _spmv_xy_hd[1] = 'g';
 #else
         retcode = 2;
 #endif

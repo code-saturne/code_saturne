@@ -73,18 +73,6 @@ AC_ARG_WITH(blas-libs,
             [AS_HELP_STRING([--with-blas-libs=LIBS],
                             [specify BLAS libraries])])
 
-AC_ARG_ENABLE(mkl-sycl-offload,
-  [AS_HELP_STRING([--enable-mkl-sycl-offload], [enable SYCL offloaf for MKL])],
-  [
-    case "${enableval}" in
-      yes) cs_have_mkl_sycl=yes ;;
-      no)  cs_have_mkl_sycl=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-mkl-sycl-offload]) ;;
-    esac
-  ],
-  [ cs_have_mkl_sycl=no ]
-)
-
 if test "x$with_blas" != "xno" ; then
 
   saved_CPPFLAGS="$CPPFLAGS"
@@ -97,13 +85,7 @@ if test "x$with_blas" != "xno" ; then
 
     if test "x$with_blas_lib" = "x" ; then
       mkl_lib="$with_blas/lib"
-      if test `uname -m` = ia64 ; then
-        if test -d ${mkl_lib}/intel64 ; then
-          mkl_sub_lib="/intel64"
-        elif test -d ${mkl_lib}/64 ; then
-          mkl_sub_lib="/64"
-        fi
-      elif test `uname -m` = x86_64 ; then
+      if test `uname -m` = x86_64 ; then
         if test -d ${mkl_lib}/intel64 ; then
           mkl_sub_lib="/intel64"
         elif test -d ${mkl_lib}/em64t ; then
@@ -122,49 +104,27 @@ if test "x$with_blas" != "xno" ; then
 
       if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xMKL"; then
         BLAS_LIBS="$with_blas_libs"
-      elif  test "x$enable_shared" = xyes ; then
-        if test "$1" = "yes" ; then # Threaded version ?
-          case `uname -m` in
-            *64)
-              if test "x$cs_have_mkl_sycl" = "xno" ; then
-                BLAS_LIBS="-lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -lpthread -lm"
-              else
-                BLAS_LIBS="-lmkl_sycl_blas -lmkl_sycl_sparse -lmkl_intel_ilp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm"
-              fi
-              ;;
-            *)
-              BLAS_LIBS="-lmkl_intel -lmkl_core -lmkl_intel_thread -lpthread -lm"
-              ;;
-          esac
-        else
-          case `uname -m` in
-            *64)
-              BLAS_LIBS="-lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm"
-              ;;
-            *)
-              BLAS_LIBS="-lmkl_intel -lmkl_core -lmkl_sequential -lpthread -lm"
-              ;;
-          esac
-        fi
       else
+        BLAS_LIBS=""
+        if test "x$cs_have_sycl" = "xyes" ; then
+          BLAS_LIBS="-lmkl_sycl_blas -lmkl_sycl_sparse"
+        fi
+        case `uname -m` in
+          *64)
+            if test "x$cs_have_long_lnum" = "xyes"; then
+              BLAS_LIBS="${BLAS_LIBS} -lmkl_intel_ilp64 -lmkl_core"
+            else
+              BLAS_LIBS="${BLAS_LIBS} -lmkl_intel_lp64 -lmkl_core"
+            fi
+            ;;
+          *)
+            BLAS_LIBS="${BLAS_LIBS} -lmkl_intel -lmkl_core"
+            ;;
+        esac
         if test "$1" = "yes" ; then # Threaded version ?
-          case `uname -m` in
-            *64)
-              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel_lp64.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_intel_thread.a -Wl,--end-group -lpthread -lm"
-              ;;
-            *)
-              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_intel_thread.a -Wl,--end-group -lpthread -lm"
-              ;;
-          esac
+          BLAS_LIBS="${BLAS_LIBS} -lmkl_intel_thread"
         else
-          case `uname -m` in
-            *64)
-              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel_lp64.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_sequential.a -Wl,--end-group -lpthread -lm"
-              ;;
-            *)
-              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_sequential.a -Wl,--end-group -lpthread -lm"
-              ;;
-          esac
+          BLAS_LIBS="${BLAS_LIBS} -lmkl_sequential"
         fi
       fi
 
@@ -295,10 +255,6 @@ fi
 # MKL provides sparse matrix-vector
 # operations (so it may be used by the code_saturne solver)
 AM_CONDITIONAL(HAVE_MKL, test x$with_blas_type = xMKL)
-AM_CONDITIONAL(HAVE_MKL_SYCL, test x$cs_have_mkl_sycl = xyes)
-if test "x$cs_have_mkl_sycl" = "xyes" ; then
-  AC_DEFINE([HAVE_MKL_SYCL], 1, [MKL can use SYCL API])
-fi
 
 AC_SUBST(cs_have_blas)
 AC_SUBST(BLAS_CPPFLAGS)
