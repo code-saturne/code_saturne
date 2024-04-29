@@ -255,6 +255,21 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .aero_conc_file_name = NULL
 };
 
+/* atmo imbrication options structure */
+static cs_atmo_imbrication_t _atmo_imbrication = {
+  .imbrication_flag = false,
+  .imbrication_verbose = false,
+  .cressman_u = false,
+  .cressman_v = false,
+  .cressman_qw = false,
+  .cressman_nc = false,
+  .cressman_tke = false,
+  .cressman_eps = false,
+  .cressman_theta = false,
+  .vertical_influence_radius = 100.0,
+  .horizontal_influence_radius = 8500.0
+};
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -274,6 +289,8 @@ static const char *cs_atmo_aerosol_type_name[]
      N_("Atmospheric aerosol using external code SSH-aerosol")};
 
 static int _init_atmo_chemistry = 1;
+
+cs_atmo_imbrication_t *cs_glob_atmo_imbrication = &_atmo_imbrication;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -404,6 +421,19 @@ cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
 
 void
 cs_f_atmo_chem_finalize(void);
+
+void
+cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
+                                   bool      **imbrication_verbose,
+                                   bool      **cressman_u,
+                                   bool      **cressman_v,
+                                   bool      **cressman_qw,
+                                   bool      **cressman_nc,
+                                   bool      **cressman_tke,
+                                   bool      **cressman_eps,
+                                   bool      **cressman_theta,
+                                   cs_real_t **vertical_influence_radius,
+                                   cs_real_t **horizontal_influence_radius);
 
 /*============================================================================
  * Private function definitions
@@ -1929,6 +1959,32 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.spack_file_name);
   BFT_FREE(_atmo_chem.aero_file_name);
   BFT_FREE(_atmo_chem.chem_conc_file_name);
+}
+
+void
+cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
+                                   bool      **imbrication_verbose,
+                                   bool      **cressman_u,
+                                   bool      **cressman_v,
+                                   bool      **cressman_qw,
+                                   bool      **cressman_nc,
+                                   bool      **cressman_tke,
+                                   bool      **cressman_eps,
+                                   bool      **cressman_theta,
+                                   cs_real_t **vertical_influence_radius,
+                                   cs_real_t **horizontal_influence_radius)
+{
+  *imbrication_flag = &(_atmo_imbrication.imbrication_flag);
+  *imbrication_verbose = &(_atmo_imbrication.imbrication_verbose);
+  *cressman_u = &(_atmo_imbrication.cressman_u);
+  *cressman_v = &(_atmo_imbrication.cressman_v);
+  *cressman_qw = &(_atmo_imbrication.cressman_qw);
+  *cressman_nc = &(_atmo_imbrication.cressman_nc);
+  *cressman_tke = &(_atmo_imbrication.cressman_tke);
+  *cressman_eps = &(_atmo_imbrication.cressman_eps);
+  *cressman_theta = &(_atmo_imbrication.cressman_theta);
+  *vertical_influence_radius = &(_atmo_imbrication.vertical_influence_radius);
+  *horizontal_influence_radius = &(_atmo_imbrication.horizontal_influence_radius);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

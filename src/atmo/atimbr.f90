@@ -49,27 +49,26 @@ implicit none
 ! --------------------------------------------------------------
 !> activation flag
 ! --------------------------------------------------------------
-logical imbrication_flag
-logical imbrication_verbose
-save imbrication_verbose
+logical(c_bool), pointer :: imbrication_flag
+logical(c_bool), pointer, save :: imbrication_verbose
 
 ! --------------------------------------------------------------
 !> Flags for activating the cressman interpolation for the boundary
 !> conditions
 ! --------------------------------------------------------------
-logical cressman_u
-logical cressman_v
-logical cressman_tke
-logical cressman_eps
-logical cressman_theta
-logical cressman_qw
-logical cressman_nc
+logical(c_bool), pointer :: cressman_u
+logical(c_bool), pointer :: cressman_v
+logical(c_bool), pointer :: cressman_tke
+logical(c_bool), pointer :: cressman_eps
+logical(c_bool), pointer :: cressman_theta
+logical(c_bool), pointer :: cressman_qw
+logical(c_bool), pointer :: cressman_nc
 
 ! --------------------------------------------------------------
 !> numerical parameters for the cressman interpolation formulas
 ! --------------------------------------------------------------
-double precision :: horizontal_influence_radius
-double precision :: vertical_influence_radius
+real(c_double), pointer :: vertical_influence_radius
+real(c_double), pointer :: horizontal_influence_radius
 
 ! --------------------------------------------------------------
 !> Parameter for "meteo" files
@@ -154,12 +153,61 @@ integer id_theta
 integer id_qw
 integer id_nc
 
+interface
+
+  subroutine cs_f_atmo_get_pointers_imbrication(p_imbrication_flag,       &
+    p_imbrication_verbose, p_cressman_u, p_cressman_v, p_cressman_qw,     &
+    p_cressman_nc, p_cressman_tke, p_cressman_eps, p_cressman_theta,      &
+    p_vertical_influence_radius, p_horizontal_influence_radius)           &
+    bind(C, name='cs_f_atmo_get_pointers_imbrication')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_imbrication_flag, p_cressman_qw
+      type(c_ptr), intent(out) :: p_imbrication_verbose, p_cressman_u
+      type(c_ptr), intent(out) :: p_horizontal_influence_radius, p_cressman_v
+      type(c_ptr), intent(out) :: p_cressman_nc, p_cressman_tke, p_cressman_eps
+      type(c_ptr), intent(out) :: p_vertical_influence_radius, p_cressman_theta
+    end subroutine cs_f_atmo_get_pointers_imbrication
+
+end interface
+
 ! --------------------------------------------------------------
 !> 1D array of times at which profiles are given
 ! --------------------------------------------------------------
 double precision, dimension(:), pointer :: times_sequence=>null()
 !> \}
 contains
+
+! ----------------------------------------------------------------
+!> \brief  Map Fortran to C variables
+! ----------------------------------------------------------------
+
+subroutine atmo_init_imbrication()
+  implicit none
+  type(c_ptr) :: c_imbrication_flag, c_cressman_qw
+  type(c_ptr) :: c_imbrication_verbose, c_cressman_u
+  type(c_ptr) :: c_horizontal_influence_radius, c_cressman_v
+  type(c_ptr) :: c_cressman_nc, c_cressman_tke, c_cressman_eps
+  type(c_ptr) :: c_vertical_influence_radius, c_cressman_theta
+
+  call cs_f_atmo_get_pointers_imbrication(c_imbrication_flag,                &
+       c_imbrication_verbose, c_cressman_u, c_cressman_v, c_cressman_qw,     &
+       c_cressman_nc, c_cressman_tke, c_cressman_eps, c_cressman_theta,      &
+       c_vertical_influence_radius, c_horizontal_influence_radius)
+
+  call c_f_pointer(c_imbrication_flag, imbrication_flag)
+  call c_f_pointer(c_imbrication_verbose, imbrication_verbose)
+  call c_f_pointer(c_cressman_u, cressman_u)
+  call c_f_pointer(c_cressman_v, cressman_v)
+  call c_f_pointer(c_cressman_qw, cressman_qw)
+  call c_f_pointer(c_cressman_nc, cressman_nc)
+  call c_f_pointer(c_cressman_tke, cressman_tke)
+  call c_f_pointer(c_cressman_eps, cressman_eps)
+  call c_f_pointer(c_cressman_theta, cressman_theta)
+  call c_f_pointer(c_vertical_influence_radius, vertical_influence_radius)
+  call c_f_pointer(c_horizontal_influence_radius, horizontal_influence_radius)
+
+end subroutine atmo_init_imbrication
 
 ! ----------------------------------------------------------------
 !> \brief Allocate variables adapted to the number of files

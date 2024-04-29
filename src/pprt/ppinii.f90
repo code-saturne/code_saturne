@@ -265,31 +265,7 @@ iqv0 = 0
 ! adimensional
 sigc = 0.53 ! other referenced values are 0.28, 0.15
 
-!  -----------------------------------------------------------------------------
-!  Atmospheric imbrication on large scale meteo (atimbr module)
-!  -----------------------------------------------------------------------------
-
-! activation flag
-imbrication_flag = .false.
-imbrication_verbose = .false.
-
-! ------------------------------------------------------------------------------
-! flags for activating the cressman interpolation for the boundary conditions
-! ------------------------------------------------------------------------------
-
-cressman_u = .false.
-cressman_v = .false.
-cressman_tke = .false.
-cressman_eps = .false.
-cressman_theta = .false.
-cressman_qw = .false.
-cressman_nc = .false.
-
-! --------------------------------------------------------------
-! numerical parameters for the cressman interpolation formulas
-! --------------------------------------------------------------
-horizontal_influence_radius = 8500.d0
-vertical_influence_radius = 100.d0
+call atmo_init_imbrication()
 
 ! key id for optimal interpolation
 
