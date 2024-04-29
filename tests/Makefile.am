@@ -54,7 +54,7 @@ AM_CXXFLAGS = $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS  = $(CXXFLAGS_SYCL)
 
 BUILT_SOURCES = \
-cs_halo.c \
+cs_halo.cpp \
 cs_range_set.c \
 cs_sort.c \
 cs_matrix.c \
@@ -62,7 +62,7 @@ cs_matrix_assembler.c \
 cs_blas.c \
 cs_random.c
 
-cs_halo.c: Makefile $(top_srcdir)/src/base/cs_halo.c
+cs_halo.cpp: Makefile $(top_srcdir)/src/base/cs_halo.cpp
 	cat $(top_srcdir)/src/base/$@ >$@
 
 cs_range_set.c: Makefile $(top_srcdir)/src/base/cs_range_set.c
