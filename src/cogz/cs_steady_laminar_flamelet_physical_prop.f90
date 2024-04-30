@@ -1176,8 +1176,10 @@ use coincl
 
 implicit none
 
+real(c_double), intent(in)    :: zm0
+real(c_double), intent(inout) :: cmax, cmid, cmin
+
 double precision, dimension(:), allocatable :: xData
-real(c_double) :: zm0, cmax, cmid, cmin
 double precision :: weight_zm
 integer :: dataIndex
 
