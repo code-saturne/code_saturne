@@ -52,7 +52,7 @@
 #include "fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_halo.h"
@@ -1632,9 +1632,9 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
   cs_halo_cuda_pack_send_buffer_real(halo,
                                      sync_mode,
                                      stride,
-                                     val,
+                                     (const cs_real_t *)val,
                                      &val_host_ptr,
-                                     _send_buf_d);
+                                     (cs_real_t *)_send_buf_d);
 
   /* We do not try to optimize for CS_ALLOC_HOST_DEVICE or
      CS_ALLOC_HOST_DEVICE_PINNED here as this would require tracking
@@ -1727,7 +1727,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
     /* For CUDA-aware MPI, directly work with buffer on device */
 
     if (cs_mpi_device_support)
-      buffer = cs_get_device_ptr(buffer);
+      buffer = (unsigned char *)cs_get_device_ptr(buffer);
 
     /* For host-based MPI, copy or prefetch buffer */
 
@@ -1754,7 +1754,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
           CS_MALLOC_HD(_hs->recv_buffer, _hs->recv_buffer_size, unsigned char,
                        CS_ALLOC_HOST_DEVICE_PINNED);
         }
-        _val_dest = _hs->recv_buffer;
+        _val_dest = (unsigned char *)_hs->recv_buffer;
       }
     }
   }
@@ -1882,7 +1882,7 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
     size_t n_bytes = n_elts*elt_size;
 
     if (n_elts > 0) {
-      unsigned char *restrict _val = val;
+      unsigned char *restrict _val = (unsigned char *)val;
       unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
 
       if (_hs->var_location == CS_ALLOC_HOST_DEVICE_SHARED)
