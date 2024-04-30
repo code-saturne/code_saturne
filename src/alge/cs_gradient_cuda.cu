@@ -1275,7 +1275,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_cells_e);
 
   const cs_lnum_t *restrict b_cells
-    = (cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->b_cells);
+    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->b_cells);
   const cs_lnum_t *restrict cell_b_faces_idx
     = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_b_faces_idx);
   const cs_lnum_t *restrict cell_b_faces
