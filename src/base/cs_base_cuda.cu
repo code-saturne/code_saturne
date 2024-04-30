@@ -532,6 +532,8 @@ cs_cuda_get_stream(int  stream_id)
   for (int i = _cs_glob_cuda_n_streams; i < stream_id+1; i++)
     cudaStreamCreate(&_cs_glob_cuda_streams[i]);
 
+  _cs_glob_cuda_n_streams = stream_id+1;
+
   return _cs_glob_cuda_streams[stream_id];
 }
 
