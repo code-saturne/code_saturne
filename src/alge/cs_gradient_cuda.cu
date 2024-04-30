@@ -1828,12 +1828,12 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
   const cs_real_t *c_weight_d = NULL;
   decltype(r_grad) r_grad_d = NULL;
 
-  cs_sync_or_copy_h2d(pvar, n_cells_ext*stride, device_id, stream,
+  cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream,
                       &pvar_d, &_pvar_d);
 
-  cs_sync_or_copy_h2d(coefav, n_b_faces*stride, device_id, stream,
+  cs_sync_or_copy_h2d(coefav, n_b_faces, device_id, stream,
                       &coefa_d, &_coefa_d);
-  cs_sync_or_copy_h2d(coefbv, n_b_faces*stride*stride, device_id, stream,
+  cs_sync_or_copy_h2d(coefbv, n_b_faces, device_id, stream,
                       &coefb_d, &_coefb_d);
 
   cs_sync_or_copy_h2d(c_weight, n_cells_ext, device_id, stream,
