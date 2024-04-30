@@ -224,9 +224,11 @@ cs_boundary_conditions_priv.h
 if HAVE_CUDA
 pkginclude_HEADERS += \
 cs_base_cuda.h \
-cs_halo_cuda.h \
 cs_math_cuda.cuh \
 cs_cuda_contrib.h
+
+noinst_HEADERS += \
+cs_halo_cuda.h
 endif
 
 # Library source files
@@ -583,6 +585,11 @@ endif
 endif
 
 # Rules for CUDA (not known by Automake)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
 
 .cu.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<

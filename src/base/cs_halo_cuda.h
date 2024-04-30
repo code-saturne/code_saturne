@@ -1,5 +1,4 @@
-#ifndef __CS_HALO_CUDA_H__
-#define __CS_HALO_CUDA_H__
+#pragma once
 
 /*============================================================================
  * Functions dealing with ghost cells using CUDA.
@@ -59,22 +58,18 @@ BEGIN_C_DECLS
  * \param[in]   sync_mode     synchronization mode (standard or extended)
  * \param[in]   stride        number of (interlaced) values by entity
  * \param[in]   var           pointer to value array (device)
- * \param[out]  var_host_ptr  pointer to matching value array on host, or NULL
  * \param[out]  send_buffer   pointer to send buffer, NULL for global buffer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_halo_cuda_pack_send_buffer_real(const cs_halo_t   *halo,
-                                   cs_halo_type_t     sync_mode,
-                                   cs_lnum_t          stride,
-                                   const cs_real_t    var[],
-                                   cs_real_t        **var_host_ptr,
-                                   cs_real_t          send_buffer[]);
+cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
+                              cs_halo_type_t     sync_mode,
+                              cs_datatype_t      data_type,
+                              cs_lnum_t          stride,
+                              const void        *val,
+                              void              *send_buffer);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
-#endif /* __CS_HALO_CUDA_H__ */
-

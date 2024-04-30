@@ -63,20 +63,72 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Gather real values from a source buffer to another buffer.
+ * Gather values from a source buffer to another buffer, by blocks
  *
  * parameters:
- *   n    <-- number of elements to gather
- *   ids  <-- ids of values in src array
- *   src  <-- array of values to gather from (source)
- *   dest <-- array of gathered values (destination)
+ *   n           <-- number of elements to gather
+ *   send_blocks <-- ids of values in src array
+ *   ids         <-- ids of values in src array
+ *   src         <-- array of values to gather from (source)
+ *   dest        <-- array of gathered values (destination)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 __global__ static void
-_gather_real(cs_lnum_t        n,
-             const cs_lnum_t  ids[],
-             const cs_real_t  src[],
-             cs_real_t        dest[])
+_gather_block_cu(const cs_lnum_t   send_blocks[],
+                 const cs_lnum_t   ids[],
+                 const T           src[],
+                 T                 dest[])
+{
+  cs_lnum_t i = send_blocks[blockIdx.x*2] + threadIdx.x;
+  if (i < send_blocks[blockIdx.x*2 + 1])
+    dest[i] = src[ids[i]];
+}
+
+/*----------------------------------------------------------------------------
+ * Gather strided values from a source buffer to another buffer, by blocks
+ *
+ * parameters:
+ *   n           <-- number of elements to gather
+ *   stride      <-- number of elements to gather
+ *   send_blocks <-- ids of values in src array
+ *   ids         <-- ids of values in src array
+ *   src         <-- array of values to gather from (source)
+ *   dest        <-- array of gathered values (destination)
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+__global__ static void
+_gather_block_strided_cu(const cs_lnum_t   send_blocks[],
+                         cs_lnum_t         stride,
+                         const cs_lnum_t   ids[],
+                         const T           src[],
+                         T                 dest[])
+{
+  cs_lnum_t i = send_blocks[blockIdx.x*2] + threadIdx.x;
+  if (i < send_blocks[blockIdx.x*2 + 1]) {
+    cs_lnum_t j = ids[i];
+    for (cs_lnum_t k = 0; k < stride; k++)
+      dest[i*stride + k] = src[j*stride + k];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Gather values from a source buffer to another buffer, by blocks
+ *
+ * parameters:
+ *   n           <-- number of elements to gather
+ *   ids         <-- ids of values in src array
+ *   src         <-- array of values to gather from (source)
+ *   dest        <-- array of gathered values (destination)
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+__global__ static void
+_gather_full_cu(cs_lnum_t         n,
+                const cs_lnum_t   ids[],
+                const T           src[],
+                T                 dest[])
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
   if (ii < n)
@@ -84,25 +136,25 @@ _gather_real(cs_lnum_t        n,
 }
 
 /*----------------------------------------------------------------------------
- * Gather strided real values from a source buffer to another buffer.
+ * Gather strided values from a source buffer to another buffer, by blocks
  *
  * parameters:
- *   n      <-- number of elements to gather
- *   stride <-- stride (dimension) of elements to gather
- *   ids    <-- ids of values in src array
- *   src    <-- array of values to gather from (source)
- *   dest   <-- array of gathered values (destination)
+ *   n           <-- number of elements to gather
+ *   stride      <-- number of elements to gather
+ *   ids         <-- ids of values in src array
+ *   src         <-- array of values to gather from (source)
+ *   dest        <-- array of gathered values (destination)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 __global__ static void
-_gather_real_strided(cs_lnum_t        n,
-                     cs_lnum_t        stride,
-                     const cs_lnum_t  ids[],
-                     const cs_real_t  src[],
-                     cs_real_t        dest[])
+_gather_full_strided_cu(cs_lnum_t         n,
+                        cs_lnum_t         stride,
+                        const cs_lnum_t   ids[],
+                        const T           src[],
+                        T                 dest[])
 {
   cs_lnum_t i = blockIdx.x*blockDim.x + threadIdx.x;
-
   if (i < n) {
     cs_lnum_t j = ids[i];
     for (cs_lnum_t k = 0; k < stride; k++)
@@ -128,53 +180,81 @@ BEGIN_C_DECLS
  *
  * \param[in]   halo          pointer to halo structure
  * \param[in]   sync_mode     synchronization mode (standard or extended)
+ * \param[in]   data_type     data type
  * \param[in]   stride        number of (interlaced) values by entity
  * \param[in]   var           pointer to value array (device)
- * \param[out]  var_host_ptr  pointer to matching value array on host, or NULL
  * \param[out]  send_buffer   pointer to send buffer, NULL for global buffer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_halo_cuda_pack_send_buffer_real(const cs_halo_t   *halo,
-                                   cs_halo_type_t     sync_mode,
-                                   cs_lnum_t          stride,
-                                   const cs_real_t    var[],
-                                   cs_real_t        **var_host_ptr,
-                                   cs_real_t          send_buffer[])
+cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
+                              cs_halo_type_t     sync_mode,
+                              cs_datatype_t      data_type,
+                              cs_lnum_t          stride,
+                              const void        *val,
+                              void              *send_buffer)
 {
-  *var_host_ptr = (cs_real_t *)cs_cuda_get_host_ptr(var);
+  const size_t block_size = halo->std_send_block_size;
+  const cs_lnum_t *send_list = halo->send_list;
+  const cs_lnum_t *send_blocks = nullptr;
 
-  const cs_lnum_t end_shift = (sync_mode == CS_HALO_STANDARD) ? 1 : 2;
+  size_t n_send = 0, n_blocks = 0;
 
-  const cs_lnum_t *send_list = (cs_lnum_t *)cs_get_device_ptr(halo->send_list);
+  /* If we do not need to send the full halo, use blocks
+     to possibly allow for threading */
 
-  cudaStream_t nstream[halo->n_c_domains];
-  for (cs_lnum_t i = 0; i < halo->n_c_domains; i++)
-    cudaStreamCreate(&nstream[i]);
+  if (sync_mode == CS_HALO_STANDARD && halo->n_std_send_blocks > 0) {
+    n_blocks = halo->n_std_send_blocks;
+    send_blocks = halo->std_send_blocks;
+  }
+  else {
+    n_send = halo->n_send_elts[1];
+    n_blocks = (n_send % block_size) ? n_send/block_size + 1 : n_send/block_size;
+  }
 
-  for (cs_lnum_t rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-    cs_lnum_t start = halo->send_index[2*rank_id];
-    cs_lnum_t length =   halo->send_index[2*rank_id + end_shift]
-                       - halo->send_index[2*rank_id];
-    if (length == 0)
-      continue;
+  cudaStream_t stream = cs_cuda_get_stream(0);
 
-    unsigned int blocksize = (length < 256)? length:256;
-    unsigned int gridsize = (unsigned int)ceil((double)length/blocksize);
+  if (data_type == CS_REAL_TYPE) {
 
-    if (stride == 1)
-      _gather_real<<<gridsize, blocksize, 0, nstream[rank_id]>>>
-        (length, send_list+start, var, send_buffer+start);
+    cs_real_t *buffer = (cs_real_t *)send_buffer;
+    const cs_real_t *var = (const cs_real_t *)val;
+
+    if (stride == 1) {
+      if (send_blocks == nullptr)
+        _gather_full_cu<<<n_blocks, block_size, 0, stream>>>
+          (n_send, send_list, var, buffer);
+      else
+        _gather_block_cu<<<n_blocks, block_size, 0, stream>>>
+          (send_blocks, send_list, var, buffer);
+    }
+    else {
+      if (send_blocks == nullptr)
+        _gather_full_strided_cu<<<n_blocks, block_size, 0, stream>>>
+          (n_send, stride, send_list, var, buffer);
+      else
+        _gather_block_strided_cu<<<n_blocks, block_size, 0, stream>>>
+          (send_blocks, stride, send_list, var, buffer);
+    }
+
+  }
+  else {
+
+    unsigned char *buffer = (unsigned char *)send_buffer;
+    const unsigned char *var = (const unsigned char *)val;
+
+    cs_lnum_t elt_size = cs_datatype_size[data_type] * stride;
+
+    if (send_blocks == nullptr)
+      _gather_full_strided_cu<<<n_blocks, block_size, 0, stream>>>
+        (n_send, elt_size, send_list, var, buffer);
     else
-      _gather_real_strided<<<gridsize, blocksize, 0, nstream[rank_id]>>>
-        (length, stride, send_list+start, var, send_buffer+(start*stride));
+      _gather_block_strided_cu<<<n_blocks, block_size, 0, stream>>>
+        (send_blocks, elt_size, send_list, var, buffer);
+
   }
 
-  for (cs_lnum_t i = 0; i < halo->n_c_domains; i++) {
-    CS_CUDA_CHECK(cudaStreamSynchronize(nstream[i]));
-    cudaStreamDestroy(nstream[i]);
-  }
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
 }
 
 /*----------------------------------------------------------------------------*/

@@ -44,6 +44,9 @@
 
 #include "cs_base.h"
 #include "cs_base_accel.h"
+#if defined(HAVE_CUDA)
+#include "cs_base_cuda.h"
+#endif
 #include "cs_order.h"
 
 #include "cs_interface.h"
@@ -148,7 +151,8 @@ static int _n_halos = 0;
    We should run performance comparisons, but in the case of similar
    performance, going for the shared approach would be preferred for its
    other advantages (simplicity most of all, and pageable device memory). */
-static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
+//static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
+static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 
 /* Should we use barriers after posting receives ? */
 static int _halo_use_barrier = false;
@@ -159,9 +163,13 @@ static cs_halo_state_t *_halo_state = nullptr;
 /* Halo communications mode */
 static cs_halo_comm_mode_t _halo_comm_mode = CS_HALO_COMM_P2P;
 
+END_C_DECLS
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1623,18 +1631,17 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
                                                  send_buf,
                                                  _hs);
 
-  void *_send_buf_d = cs_get_device_ptr(_send_buf);
-
 #if defined(HAVE_CUDA)
 
-  cs_real_t *val_host_ptr = nullptr;
+  void *val_host_ptr = cs_cuda_get_host_ptr(val);
+  void *_send_buf_d = cs_get_device_ptr(_send_buf);
 
-  cs_halo_cuda_pack_send_buffer_real(halo,
-                                     sync_mode,
-                                     stride,
-                                     (const cs_real_t *)val,
-                                     &val_host_ptr,
-                                     (cs_real_t *)_send_buf_d);
+  cs_halo_cuda_pack_send_buffer(halo,
+                                sync_mode,
+                                data_type,
+                                stride,
+                                val,
+                                _send_buf_d);
 
   /* We do not try to optimize for CS_ALLOC_HOST_DEVICE or
      CS_ALLOC_HOST_DEVICE_PINNED here as this would require tracking
@@ -1652,7 +1659,7 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
   if (val_host_ptr != val && val != nullptr)
     _hs->var_location = CS_ALLOC_DEVICE;
 
-#else
+#else // defined(HAVE_CUDA)
 
   cs_halo_sync_pack(halo,
                     sync_mode,
