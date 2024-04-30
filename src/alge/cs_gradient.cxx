@@ -7046,6 +7046,8 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
                                  cocgb,
                                  cocg,
                                  grad);
+
+    _sync_strided_gradient_halo<stride>(m, halo_type, grad);
     return;
   }
 
