@@ -3461,6 +3461,8 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
   cs_interpolate_from_location_t
     *interpolate_func = cs_interpolate_from_location_p0;
 
+  int pset_interpolation = 0;
+
   if (pset != NULL) {
     cs_probe_set_get_post_info(pset,
                                NULL,
@@ -3471,8 +3473,10 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
                                NULL,
                                NULL,
                                NULL);
-    if (pset_on_boundary == false && cs_probe_set_get_interpolation(pset) == 1)
+    if (pset_on_boundary == false && cs_probe_set_get_interpolation(pset) == 1){
+      pset_interpolation = 1;
       interpolate_func = cs_interpolate_from_location_p1;
+    }
   }
 
   for (int i = 0; i < post_mesh->n_a_fields; i++) {
@@ -3567,6 +3571,16 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
 
       char interpolate_input[96];
       strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
+
+      if (   field_loc_type == CS_MESH_LOCATION_CELLS
+          && pset_interpolation == 1) {
+        if (_field_sync != NULL) {
+          if (_field_sync[f->id] == 0) {
+            cs_field_synchronize(f, CS_HALO_EXTENDED);
+            _field_sync[f->id] = 1;
+          }
+        }
+      }
 
       cs_post_write_probe_values(post_mesh->id,
                                  writer_id,
