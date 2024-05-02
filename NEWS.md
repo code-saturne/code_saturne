@@ -3,6 +3,10 @@ Release 8.1.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix configure test for MEDCoupling when MEDCoupling is only compiled in
+  static mode. Error was due to wrong order of MEDCoupling libraries used
+  in the link command.
+
 - Fix issues with environment module handling when coupling with Syrthes.
 
 - Radiative boundary condition : When selecting a thick wall with external
