@@ -158,7 +158,7 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 
 procedure() :: atr1vf, cou1do, debvtl, distpr2
 procedure() :: cs_tagmro
-procedure() :: phyvar, pthrbm, schtmp, scalai
+procedure() :: phyvar, pthrbm, schtmp
 
 interface
 
