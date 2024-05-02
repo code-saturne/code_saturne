@@ -153,7 +153,7 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 
     else
 
-      MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel -lmedcouplingremapper -lmedloader"
+      MEDCOUPLING_LIBS="-lmedloader -lmedcoupling -lmedcouplingremapper -linterpkernel"
 
       LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${LDFLAGS}"
       LIBS="${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${LIBS}"
