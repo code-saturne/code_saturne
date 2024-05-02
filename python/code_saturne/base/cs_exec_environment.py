@@ -69,7 +69,7 @@ def abs_exec_path(path):
 def separate_args(s):
     """
     Separate arguments that may contain whitespace, depending on whether
-    whitespace is protected or not by ", ', and \ characters.
+    whitespace is protected or not by ", ', and \\ characters.
     If quotes are found after the beginning of a string, such as in
     --option="string 1", do not remove them.
     """
@@ -966,7 +966,7 @@ def source_syrthes_env(pkg, verbose=True, force=False):
     # use existing environment or load one based on current configuration.
 
     for p in sys.path:
-        if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
+        if p[-14:] == '/share/syrthes' or p[-14:] == '\\share\\syrthes':
             syr_profile = os.path.join(p[:-14], 'bin', 'syrthes.profile')
             if os.path.isfile(syr_profile):
                 if verbose:
@@ -1115,7 +1115,7 @@ class batch_info:
 
         if self.batch_type == 'PBS':
             cmd = "qstat -r $PBS_JOBID | grep $PBS_JOBID" \
-                + " | sed -e's/ \{1,\}/ /g' | cut -d ' ' -f 9"
+                + " | sed -e's/ \\{1,\\}/ /g' | cut -d ' ' -f 9"
             rtime = get_command_output(cmd)
         elif self.batch_type == 'SLURM':
             cmd = "squeue -h -j $SLURM_JOBID -o %L"
