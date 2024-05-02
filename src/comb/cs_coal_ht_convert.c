@@ -165,7 +165,7 @@ cs_coal_ht_convert_h_to_t_gas(int              location_id,
 
   for (int icha = 0; icha < cm->n_coals; icha++) {
     cvar_f1m[icha] = cs_field_by_id(cm->if1m[icha])->val;
-    cvar_f2m[icha] = cs_field_by_id(cm->if1m[icha])->val;
+    cvar_f2m[icha] = cs_field_by_id(cm->if2m[icha])->val;
   }
 
   # pragma omp parallel for if (n_elts > CS_THR_MIN)
