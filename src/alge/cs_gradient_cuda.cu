@@ -1432,6 +1432,9 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   else
     cs_sync_d2h(grad);
 
+  if (_grad_d != NULL)
+    CS_CUDA_CHECK(cudaFree(_grad_d));
+
   if (_pvar_d != NULL)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
   if (_coefa_d != NULL)
