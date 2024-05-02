@@ -177,7 +177,7 @@ cs_coal_source_terms_scalar(int        fld_id,
   const int ih2o = cm->ih2o -1;
   const int in2 = cm->in2 -1;
 
-  const cs_real_t *cpro_yox = cs_field_by_id(cm->iym1[io2])->val;
+  const cs_real_t *cpro_yo2 = cs_field_by_id(cm->iym1[io2])->val;
   const cs_real_t *cpro_yco2 = cs_field_by_id(cm->iym1[ico2])->val;
   const cs_real_t *cpro_yco = cs_field_by_id(cm->iym1[ico])->val;
   const cs_real_t *cpro_yh2o = cs_field_by_id(cm->iym1[ih2o])->val;
@@ -1148,7 +1148,7 @@ cs_coal_source_terms_scalar(int        fld_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_real_t xxco  = cpro_yco[c_id]/wmole[ico] * cpro_rom1[c_id];
-      cs_real_t xxo2  = cpro_yox[c_id]/wmole[io2] * cpro_rom1[c_id];
+      cs_real_t xxo2  = cpro_yo2[c_id]/wmole[io2] * cpro_rom1[c_id];
       cs_real_t xxco2 = cpro_yco2[c_id]/wmole[ico2] * cpro_rom1[c_id];
       cs_real_t xxh2o = cpro_yh2o[c_id]/wmole[ih2o] * cpro_rom1[c_id];
 
@@ -1683,7 +1683,7 @@ cs_coal_source_terms_scalar(int        fld_id,
         cs_real_t gmhet[CS_COMBUSTION_MAX_COALS];
 
         cs_real_t wmel = cpro_mmel[c_id];
-        cs_real_t xo2 = cpro_yox[c_id] * wmel / wmo2;
+        cs_real_t xo2 = cpro_yo2[c_id] * wmel / wmo2;
 
         cs_real_t aux
           =   cell_f_vol[c_id]*crom[c_id]

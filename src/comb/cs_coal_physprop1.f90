@@ -182,6 +182,20 @@ interface
     real(kind=c_double), dimension(*) :: eh, tp
   end subroutine cs_coal_ht_convert_h_to_t_gas
 
+  subroutine cs_coal_noxst(indpdf,                              &
+                           pdfm1, pdfm2, doxyd, dfuel, hrec,    &
+                           f3m, f4m, f5m, f6m, f7m, f8m, f9m,   &
+                           fs3no, fs4no, yfs4no, enthox)        &
+    bind(C, name='cs_coal_noxst')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*) :: indpdf
+    real(kind=c_double), dimension(*) :: pdfm1, pdfm2, doxyd, dfuel, hrec
+    real(kind=c_double), dimension(*) :: f3m, f4m, f5m, f6m, f7m, f8m, f9m
+    real(kind=c_double), dimension(*) :: fs3no, fs4no, yfs4no, enthox
+  end subroutine cs_coal_noxst
+
 end interface
 
 !===============================================================================
@@ -452,16 +466,15 @@ enddo
 
 ! Nox's model: Not used at the first relative iteration
 
-if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
+if (ieqnox .eq. 1 .and. ipass .gt. 1) then
 
   call cs_coal_noxst &
-
- ( ncel   , intpdf ,                                              &
+ ( intpdf ,                                                       &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                     &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,         &
    fs3no  , fs4no  , yfs4no , enthox )
 
-else if ( ieqnox .eq. 1 ) then
+else if (ieqnox .eq. 1) then
 
   call field_get_val_s(ighcn1,cpro_ghcn1)
   call field_get_val_s(ighcn2,cpro_ghcn2)

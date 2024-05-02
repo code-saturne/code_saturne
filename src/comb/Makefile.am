@@ -85,7 +85,7 @@ cs_coal_bt2h.f90 \
 cs_coal_fp2st.f90 \
 cs_coal_ht_convert.c \
 cs_coal_masstransfer.f90 \
-cs_coal_noxst.f90 \
+cs_coal_noxst.c \
 cs_coal_param.f90 \
 cs_coal_physprop1.f90 \
 cs_coal_physprop2.f90 \
