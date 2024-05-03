@@ -76,6 +76,7 @@ integer          key_buoyant_id, is_buoyant_fld, key_restart_file
 integer          keydri
 integer          kturt, turb_flux_model, kisso2t
 integer          ivar, iscdri, isso2t
+integer          ibeta
 
 double precision gravn2
 
@@ -261,6 +262,7 @@ do iscal = 1, nscal
   call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
 
   if (iscal.eq.iscalt) then
+    call field_get_id_try("thermal_expansion", ibeta)
     if (turb_flux_model.gt.0.and.irovar.eq.1.and.ibeta.eq.-1) then
       call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
     endif

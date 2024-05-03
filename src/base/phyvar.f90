@@ -100,6 +100,7 @@ integer          nn, isou, iz
 integer          mbrom, ifcvsl, iscacp
 integer          idftnp
 integer          kturt, turb_flux_model, turb_flux_model_type
+integer          ibeta
 
 double precision vismax(nscamx), vismin(nscamx)
 double precision varmn(4), varmx(4), ttke, visls_0
@@ -757,24 +758,26 @@ if (nscal.ge.1) then
       iok = iok + 1
     endif
 
-    if (ibeta.ge.0) then
-      iok1 = 0
-      call field_get_val_s(ibeta, cpro_beta)
-      call field_get_name(ibeta, chaine)
-      ii = 1
-      varmn(ii) = cpro_beta(1)
-      do iel = 2, ncel
-        varmn(ii) = min(varmn(ii),cpro_beta(iel))
-      enddo
-      if (irangp.ge.0) then
-        call parmin (varmn(ii))
-      endif
-      if (varmn(ii).lt.0.d0) then
-        write(nfecra,9011)chaine(1:16),varmn(ii)
-        iok = iok + 1
-      endif
-    endif
   enddo
+
+  call field_get_id_try("thermal_expansion", ibeta)
+  if (ibeta.ge.0) then
+    iok1 = 0
+    call field_get_val_s(ibeta, cpro_beta)
+    call field_get_name(ibeta, chaine)
+    ii = 1
+    varmn(ii) = cpro_beta(1)
+    do iel = 2, ncel
+      varmn(ii) = min(varmn(ii),cpro_beta(iel))
+    enddo
+    if (irangp.ge.0) then
+      call parmin (varmn(ii))
+    endif
+    if (varmn(ii).lt.0.d0) then
+      write(nfecra,9011)chaine(1:16),varmn(ii)
+      iok = iok + 1
+    endif
+  endif
 
 endif
 

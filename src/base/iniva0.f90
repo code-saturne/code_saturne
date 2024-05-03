@@ -81,6 +81,7 @@ integer          ifcvsl
 integer          idftnp
 integer          keyvar
 integer          f_id
+integer          ibeta
 
 logical          have_previous
 
@@ -170,6 +171,7 @@ enddo
 
 ! Boussinesq
 if (idilat.eq.0) then
+  call field_get_id_try("thermal_expansion", ibeta)
   call field_get_val_s(ibeta, cpro_beta)
   do iel = 1, ncelet
     cpro_beta(iel) = -1.d0

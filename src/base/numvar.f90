@@ -246,9 +246,6 @@ module numvar
   !> pointer for global dilatation source terms
   integer, save :: itsrho = -1
 
-  !> pointer for thermal expansion coefficient
-  integer, save :: ibeta = -1
-
   !> pointer for deduced mass fraction in case of gas mix
   integer, save :: iddgas = -1
 

@@ -77,7 +77,7 @@ if (ippmod(iatmos).ge.1) then
                                          'Non Neutral Scalar Correction', f_id)
   call field_set_key_int(f_id, keylog, 0)
 
-  call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
+  call add_property_field_1d('thermal_expansion', 'Beta', f_id)
 endif
 
 ! Liquid water content (ippmod(iatmos) = 2)
