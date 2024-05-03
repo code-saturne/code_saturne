@@ -1505,16 +1505,16 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
   int device_id;
   cudaGetDevice(&device_id);
 
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
+  cudaStream_t stream = cs_cuda_get_stream(0);
 
-  cudaEvent_t e_start, e_h2d, e_cells, e_b_faces, e_gradient;
+  cudaEvent_t e_start, e_h2d, e_init, e_cells, e_b_faces, e_gradient;
   cudaEvent_t e_b_correction, e_halo, e_stop;
   float msec = 0.0f;
 
   if (cs_glob_timer_kernels_flag > 0) {
     CS_CUDA_CHECK(cudaEventCreate(&e_start));
     CS_CUDA_CHECK(cudaEventCreate(&e_h2d));
+    CS_CUDA_CHECK(cudaEventCreate(&e_init));
     CS_CUDA_CHECK(cudaEventCreate(&e_cells));
     CS_CUDA_CHECK(cudaEventCreate(&e_b_faces));
     CS_CUDA_CHECK(cudaEventCreate(&e_gradient));
@@ -1588,6 +1588,9 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
   const cs_real_3_t *restrict diipb
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->diipb);
 
+  if (cs_glob_timer_kernels_flag > 0)
+    CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
+
   decltype(grad) rhs_d;
   CS_CUDA_CHECK(cudaMalloc(&rhs_d, n_cells * sizeof(cs_real_t)*stride*3));
 
@@ -1596,7 +1599,7 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
   // cs_cuda_copy_h2d(grad_d, grad, sizeof(cs_real_t) * n_cells * stride * 3);
 
   if (cs_glob_timer_kernels_flag > 0)
-    CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
+    CS_CUDA_CHECK(cudaEventRecord(e_init, stream));
 
   const unsigned int blocksize = 256;
   int gridsize;
@@ -1665,17 +1668,16 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_b_correction, stream));
 
-  cudaStreamSynchronize(stream);
-
   cs_sync_strided_gradient_halo_d(m, halo_type, grad_d);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_halo, stream));
 
   /* Sync to host */
-  if (grad_d != NULL) {
+  if (_grad_d != NULL) {
     size_t size = n_cells * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
+    printf("copy\n");
   }
   else
     cs_sync_d2h(grad);
@@ -1686,7 +1688,6 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
   }
 
   cudaStreamSynchronize(stream);
-  cudaStreamDestroy(stream);
 
   if (cs_glob_timer_kernels_flag > 0) {
     printf("%d: %s<%d>", cs_glob_rank_id, __func__, stride);
@@ -1694,6 +1695,10 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
     msec = 0.0f;
     CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_start, e_h2d));
     printf(", h2d = %.0f", msec*1000.f);
+
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_h2d, e_init));
+    printf(", init = %.0f", msec*1000.f);
 
     msec = 0.0f;
     CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_h2d, e_cells));
@@ -1714,6 +1719,10 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
     msec = 0.0f;
     CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_b_correction, e_halo));
     printf(", halo = %.0f", msec*1000.f);
+
+    msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_halo, e_stop));
+    printf(", d2h = %.0f", msec*1000.f);
 
     msec = 0.0f;
     CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_start, e_stop));
@@ -1793,8 +1802,7 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
   int device_id;
   cudaGetDevice(&device_id);
 
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
+  cudaStream_t stream = cs_cuda_get_stream(0);
 
   cudaEvent_t e_start, e_h2d, e_init, e_i_faces, e_b_faces, e_s_lincorr;
   cudaEvent_t e_halo, e_stop;
@@ -1825,11 +1833,9 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
   }
 
   void *_pvar_d = NULL, *_coefa_d = NULL, *_coefb_d = NULL, *_c_weight_d = NULL;
-  void *_r_grad_d = NULL;
   decltype(pvar) pvar_d = NULL, coefa_d = NULL;
   decltype(coefbv) coefb_d = NULL;
   const cs_real_t *c_weight_d = NULL;
-  decltype(r_grad) r_grad_d = NULL;
 
   cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream,
                       &pvar_d, &_pvar_d);
@@ -1842,8 +1848,7 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
   cs_sync_or_copy_h2d(c_weight, n_cells_ext, device_id, stream,
                       &c_weight_d, &_c_weight_d);
 
-  cs_sync_or_copy_h2d(r_grad, n_cells_ext, device_id, stream,
-                      &r_grad_d, &_r_grad_d);
+  grad_t *r_grad_d = (grad_t *)cs_get_device_ptr((void *)r_grad);
 
   const cs_lnum_2_t *restrict i_face_cells = NULL;
   const cs_lnum_t *restrict b_face_cells = NULL;
@@ -1964,15 +1969,13 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_s_lincorr, stream));
 
-  cudaStreamSynchronize(stream);
-
   cs_sync_strided_gradient_halo_d(m, halo_type, grad_d);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_halo, stream));
 
   /* Sync to host */
-  if (grad_d != NULL) {
+  if (_grad_d != NULL) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
@@ -1985,7 +1988,6 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
   }
 
   cudaStreamSynchronize(stream);
-  cudaStreamDestroy(stream);
 
   if (cs_glob_timer_kernels_flag > 0) {
     printf("%d: %s<%d>", cs_glob_rank_id, __func__, stride);
@@ -2014,6 +2016,10 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     printf(", halo = %.0f", msec*1000.f);
 
     msec = 0.0f;
+    CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_halo, e_stop));
+    printf(", d2h = %.0f", msec*1000.f);
+
+    msec = 0.0f;
     CS_CUDA_CHECK(cudaEventElapsedTime(&msec, e_start, e_stop));
     printf(", total = %.0f\n", msec*1000.f);
 
@@ -2035,8 +2041,6 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     CS_CUDA_CHECK(cudaFree(_coefb_d));
   if (_c_weight_d != NULL)
     CS_CUDA_CHECK(cudaFree(_c_weight_d));
-  if (_r_grad_d != NULL)
-    CS_CUDA_CHECK(cudaFree(_r_grad_d));
 
   if (_grad_d != NULL)
     CS_CUDA_CHECK(cudaFree(_grad_d));

@@ -770,14 +770,14 @@ _matrix_check(int                          n_variants,
      "------------------------------------------------\n");
 
   /* Allocate and initialize  working arrays
-     (for a maximum block size of 6) */
+     (for a maximum diagonal block size of 6 and extra-diag block size of 3) */
 
   CS_MALLOC_HD(x, n_cols_ext*6, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(y, n_cols_ext*6, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(yr0, n_cols_ext*6, cs_real_t);
 
   CS_MALLOC_HD(da, (size_t)n_cols_ext*(size_t)(6*6), cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(xa, (size_t)n_edges*(size_t)(2*6*6), cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xa, (size_t)n_edges*(size_t)(2*3*3), cs_real_t, cs_alloc_mode);
 
   /* Initialize arrays */
 

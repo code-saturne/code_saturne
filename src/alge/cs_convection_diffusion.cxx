@@ -4049,7 +4049,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   /* Allocate work arrays */
 
-  BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(grad, n_cells_ext, cs_real_33_t, cs_alloc_mode);
   BFT_MALLOC(grdpa, n_cells_ext, cs_real_33_t);
 
   /* Choose gradient type */
@@ -5597,7 +5597,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   /* Free memory */
   BFT_FREE(grdpa);
-  BFT_FREE(grad);
+  CS_FREE_HD(grad);
 }
 
 /*----------------------------------------------------------------------------*/

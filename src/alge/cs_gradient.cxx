@@ -1707,7 +1707,7 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
   cs_real_t  dvol1, dvol2;
 
   if (cocg == NULL) {
-    BFT_MALLOC(cocg, n_cells_with_ghosts, cs_real_33_t);
+    CS_MALLOC_HD(cocg, n_cells_with_ghosts, cs_real_33_t, cs_alloc_mode);
     gq->cocg_it = cocg;
   }
 
@@ -8648,7 +8648,7 @@ _gradient_scalar(const char                    *var_name,
     {
       cs_real_3_t  *restrict r_grad;
       if (gradient_type == CS_GRADIENT_GREEN_LSQ)
-        BFT_MALLOC(r_grad, n_cells_ext, cs_real_3_t);
+        CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
       else
         r_grad = grad;
 
@@ -8737,7 +8737,7 @@ _gradient_scalar(const char                    *var_name,
                                      r_grad,
                                      grad);
 
-        BFT_FREE(r_grad);
+        CS_FREE_HD(r_grad);
       }
     }
     break;
@@ -8981,7 +8981,7 @@ _gradient_vector(const char                     *var_name,
   case CS_GRADIENT_GREEN_LSQ:
     {
       cs_real_33_t *restrict r_gradv;
-      BFT_MALLOC(r_gradv, n_cells_ext, cs_real_33_t);
+      CS_MALLOC_HD(r_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
       if (_use_legacy_strided_lsq_gradient) {
         _lsq_vector_gradient(mesh,
@@ -9027,7 +9027,7 @@ _gradient_vector(const char                     *var_name,
                                        r_gradv,
                                        grad);
 
-      BFT_FREE(r_gradv);
+      CS_FREE_HD(r_gradv);
     }
     break;
 
@@ -9210,7 +9210,8 @@ _gradient_tensor(const char                 *var_name,
   case CS_GRADIENT_GREEN_LSQ:
     {
       cs_real_63_t *restrict r_grad;
-      BFT_MALLOC(r_grad, mesh->n_cells_with_ghosts, cs_real_63_t);
+      CS_MALLOC_HD(r_grad, mesh->n_cells_with_ghosts, cs_real_63_t,
+                   cs_alloc_mode);
 
       if (_use_legacy_strided_lsq_gradient) {
         _lsq_tensor_gradient(mesh,
@@ -9256,7 +9257,7 @@ _gradient_tensor(const char                 *var_name,
                                        r_grad,
                                        grad);
 
-      BFT_FREE(r_grad);
+      CS_FREE_HD(r_grad);
     }
     break;
 

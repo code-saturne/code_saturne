@@ -532,7 +532,7 @@ _add_val(cs_lnum_t   n_elts,
 {
   cs_real_t  *val = val_old;
 
-  BFT_REALLOC(val, n_elts*dim, cs_real_t);
+  CS_REALLOC_HD(val, n_elts*dim, cs_real_t, cs_alloc_mode);
 
   /* Initialize field. This should not be necessary, but when using
      threads with Open MP, this should help ensure that the memory will
@@ -1899,8 +1899,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       f->bc_coeffs->rcodcl2 = NULL;
       f->bc_coeffs->rcodcl3 = NULL;
 
-      BFT_MALLOC(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t);
-      BFT_MALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
+      CS_MALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
 
       if (have_flux_bc) {
         BFT_MALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
@@ -1942,8 +1942,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
     else {
 
-      BFT_REALLOC(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t);
-      BFT_REALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
+      CS_REALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
+      CS_REALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
 
       if (have_flux_bc) {
         BFT_REALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
