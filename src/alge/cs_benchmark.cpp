@@ -48,9 +48,6 @@
 #include <mkl_cblas.h>
 #include <mkl_spblas.h>
 
-#elif defined(HAVE_CBLAS)
-#include <cblas.h>
-
 #endif
 
 /*----------------------------------------------------------------------------
@@ -106,10 +103,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
-
-#if defined(HAVE_CBLAS) || defined (HAVE_MKL)
-#define HAVE_BLAS 1
-#endif
 
 /*=============================================================================
  * Local Structure Definitions

@@ -202,6 +202,42 @@ if test "x$with_blas" != "xno" ; then
 
   fi
 
+  # Test for ArmPL BLAS
+
+  if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xARMPL" ; then
+
+    if test "x$with_blas_libs" = "x" ; then
+      if  test "x$enable_shared" = xyes ; then
+        if test "$cs_have_openmp" = "yes" ; then # Threaded version ?
+          BLAS_LIBS="-larmpl_mp -lm"
+        else
+	  BLAS_LIBS="-larmpl -lm"
+        fi
+      else
+        if test "$cs_have_openmp" = "yes" ; then # Threaded version ?
+          BLAS_LIBS="$ARMPL_DIR/lib/libarmpl_mp.a"
+        else
+          BLAS_LIBS="$ARMPL_DIR/lib/libarmpl.a"
+        fi
+      fi
+    else
+      BLAS_LIBS="$with_blas_libs"
+    fi
+
+    CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
+    LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
+    LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
+
+    AC_MSG_CHECKING([for ArmPL libraries])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
+                   [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
+                   [ AC_DEFINE([HAVE_ARMPL], 1, [ArmPL BLAS support])
+                     cs_have_blas=yes; with_blas_type=ARMPL ],
+                   [cs_have_blas=no])
+    AC_MSG_RESULT($cs_have_blas)
+
+  fi
+
   # Test for generic C BLAS
 
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xBLAS" ; then

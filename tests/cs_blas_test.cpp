@@ -31,6 +31,10 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#if defined(HAVE_ATLAS) || defined(HAVE_ARMPL) || defined(HAVE_CBLAS)
+  #define CS_HAVE_CBLAS 1
+#endif
+
 /* For the Intel MKL library, function prototypes are defined in mkl_cblas.h,
    with standard legacy C BLAS names */
 
@@ -38,7 +42,7 @@
 #include <mkl_cblas.h>
 #include <mkl_spblas.h>
 
-#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS)
+#elif defined((CS_HAVE_CBLAS)
 #include <cblas.h>
 
 #endif
@@ -520,7 +524,7 @@ _dot_product_1(double   t_measure,
 
     /* First simple local x.x version */
 
-#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(CS_HAVE_CBLAS) || defined(HAVE_MKL)
 
     for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -553,7 +557,7 @@ _dot_product_1(double   t_measure,
       while (run_id < n_runs) {
         double test_sum_mult = 1.0/n_runs;
         while (run_id < n_runs) {
-#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(CS_HAVE_CBLAS) ||defined(HAVE_MKL)
           double s1 = cblas_ddot(n, x, 1, y, 1);
 #endif
 #if defined(HAVE_MPI)
@@ -706,7 +710,7 @@ _dot_product_2(double  t_measure)
 
   /* First simple local x.x version */
 
-#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(CS_HAVE_CBLAS) ||defined(HAVE_MKL)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -736,7 +740,7 @@ _dot_product_2(double  t_measure)
     while (run_id < n_runs) {
       double test_sum_mult = 1.0/n_runs;
       while (run_id < n_runs) {
-#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
+#if defined(CS_HAVE_CBLAS) || defined(HAVE_MKL)
         double s1 = cblas_ddot(n, x, 1, x, 1);
         double s2 = cblas_ddot(n, x, 1, y, 1);
 #endif
@@ -952,7 +956,7 @@ _axpy_test(double  t_measure)
 
   /* First simple local x.x version */
 
-#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(CS_HAVE_CBLAS) ||defined(HAVE_MKL)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -982,7 +986,7 @@ _axpy_test(double  t_measure)
     while (run_id < n_runs) {
       double test_sum_mult = 1.0/n_runs;
       while (run_id < n_runs) {
-#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
+#if defined(CS_HAVE_CBLAS) || defined(HAVE_MKL)
         cblas_daxpy(n, test_sum_mult, x, 1, y, 1);
 #endif
         test_sum += test_sum_mult*y[run_id%n];
