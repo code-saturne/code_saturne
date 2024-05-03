@@ -151,8 +151,7 @@ static int _n_halos = 0;
    We should run performance comparisons, but in the case of similar
    performance, going for the shared approach would be preferred for its
    other advantages (simplicity most of all, and pageable device memory). */
-//static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
-static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
 
 /* Should we use barriers after posting receives ? */
 static int _halo_use_barrier = false;
