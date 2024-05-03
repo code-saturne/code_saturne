@@ -162,11 +162,11 @@ procedure() :: phyvar, pthrbm, schtmp
 
 interface
 
-  subroutine cs_solve_transported_variables(iterns, nscal)  &
+  subroutine cs_solve_transported_variables(iterns)  &
     bind(C, name='cs_solve_transported_variables')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(kind=c_int), value :: iterns, nscal
+    integer(kind=c_int), value :: iterns
   end subroutine cs_solve_transported_variables
 
   subroutine cs_dilatable_scalar_diff_st(iterns)  &
@@ -1003,7 +1003,7 @@ do while (iterns.le.nterup)
       if (fluid_solid) call cs_porous_model_set_has_disable_flag(0)
 
       ! Update buoyant scalar(s)
-      call cs_solve_transported_variables(nscal, iterns);
+      call cs_solve_transported_variables(iterns);
 
       ! Diffusion terms for weakly compressible algorithm
       if (idilat.ge.4) then
@@ -1313,7 +1313,7 @@ if (nscal.ge.1) then
 
   ! Update non-buoyant scalar(s)
   iterns = -1
-  call cs_solve_transported_variables(nscal, iterns);
+  call cs_solve_transported_variables(iterns);
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then

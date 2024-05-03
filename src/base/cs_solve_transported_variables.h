@@ -56,14 +56,12 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \param[in]     nscal         total number of scalars
  * \param[in]     iterns        Navier-Stokes iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solve_transported_variables(int nscal,
-                               int iterns);
+cs_solve_transported_variables(int iterns);
 
 /*----------------------------------------------------------------------------*/
 

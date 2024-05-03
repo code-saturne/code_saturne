@@ -141,14 +141,12 @@ static bool _initialized = false;
  * \brief Resolution of source term convection diffusion equations
  *        for scalars in a time step.
  *
- * \param[in]     nscal         total number of scalars
  * \param[in]     iterns        Navier-Stokes iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solve_transported_variables(int nscal,
-                               int iterns)
+cs_solve_transported_variables(int iterns)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -313,7 +311,7 @@ cs_solve_transported_variables(int nscal,
         int itspdv = -1;
         if (iscavr == -1)
           itspdv = 0;
-        else if (iscavr > 0 && iscavr < nscal)
+        else if (iscavr > 0)
           itspdv = 1;
         else {
 
@@ -322,7 +320,6 @@ cs_solve_transported_variables(int nscal,
             "    ========\n"
             "    Scalar name = %s, id = %d\n"
             "    iscavr must be stricly positive or -1 integer\n"
-            "      and lower or equal than nscal = %d\n"
             "    its value is %d\n"
             "\n\n"
             "  If iscavr(I) = -1, the scalar I is not a variance\n"
@@ -331,7 +328,7 @@ cs_solve_transported_variables(int nscal,
             "    whose number is iscavr(I)\n"
             "\n"
             "  Check parameters"), __func__,
-                    f_scal->name, f_scal->id, nscal, iscavr);
+                    f_scal->name, f_scal->id, iscavr);
         }
 
         /* Specific process BC for gas combustion: steady laminar flamelet */
@@ -469,7 +466,7 @@ cs_solve_transported_variables(int nscal,
 
             /* Readjust electric variables j, j.E (and Pot, E) */
             if (   cs_glob_elec_option->ielcor == 1
-                 && cs_get_glob_time_step()->nt_cur > 1)
+                && cs_get_glob_time_step()->nt_cur > 1)
               cs_elec_scaling_function(m, fvq, dt);
 
           }
@@ -544,7 +541,7 @@ cs_solve_transported_variables(int nscal,
 
     if (iscavr == -1)
       itspdv = 0;
-    else if (iscavr > 0 && iscavr < nscal)
+    else if (iscavr > 0)
       itspdv = 1;
     else {
       bft_error(__FILE__, __LINE__, 0,
@@ -552,7 +549,6 @@ cs_solve_transported_variables(int nscal,
             "    ========\n"
             "    Scalar name = %s, id = %d\n"
             "    iscavr must be stricly positive or -1 integer\n"
-            "      and lower or equal than nscal = %d\n"
             "    its value is %d\n"
             "\n\n"
             "  If iscavr(I) = -1, the scalar I is not a variance\n"
@@ -561,7 +557,7 @@ cs_solve_transported_variables(int nscal,
             "    whose number is iscavr(I)\n"
             "\n"
             "  Check parameters"), __func__,
-            f_scal->name, f_scal->id, nscal, iscavr);
+            f_scal->name, f_scal->id, iscavr);
     }
 
     int *itypsm = NULL;

@@ -93,6 +93,7 @@
 #include "cs_turbulence_rit.h"
 #include "cs_velocity_pressure.h"
 #include "cs_vof.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_wall_condensation.h"
 #include "cs_wall_functions.h"
 
@@ -134,26 +135,7 @@ BEGIN_C_DECLS
 
 extern int cs_glob_darcy_unsteady;
 
-void
-cs_f_get_dimens(int  *nvar,
-                int  *nscal);
-
 /* Use legacy macro type to maintain compatibility with legacy user files */
-
-void
-CS_PROCF(ustssc, USTSSC)(const int        *nvar,
-                         const int        *nscal,
-                         const cs_lnum_t  *ncepdp,
-                         const cs_lnum_t  *ncesmp,
-                         const int        *iscal,
-                         const cs_lnum_t  *icepdc,
-                         const cs_lnum_t  *icetsm,
-                         cs_lnum_t        *itypsm,
-                         const cs_real_t   dt[],
-                         const cs_real_t  *ckupdc,
-                         const cs_real_t  *smacel,
-                         cs_real_t         crvexp[],
-                         cs_real_t         crvimp[]);
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -168,27 +150,6 @@ CS_PROCF(ustssc, USTSSC)(const int        *nvar,
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
-
-void
-cs_f_solve_equation_scalar(int              f_id,
-                           cs_lnum_t        ncesmp,
-                           int              iterns,
-                           int              itspdv,
-                           const cs_lnum_t  icetsm[],
-                           int              itypsm[],
-                           cs_real_t        smacel[],
-                           cs_real_t        viscf[],
-                           cs_real_t        viscb[]);
-
-void
-cs_f_solve_equation_vector(int              f_id,
-                           cs_lnum_t        ncesmp,
-                           int              iterns,
-                           const cs_lnum_t  icetsm[],
-                           int              itypsm[],
-                           cs_real_t        smacel[],
-                           cs_real_t        viscf[],
-                           cs_real_t        viscb[]);
 
 /*============================================================================
  * Private function definitions
@@ -869,8 +830,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          int                iterns,
                          int                itspdv,
                          const cs_lnum_t    icetsm[],
-                         int                itypsm[],
-                         cs_real_t          smacel[],
+                         int                itypsm_sc[],
+                         cs_real_t          smacel_sc[],
                          cs_real_t          viscf[],
                          cs_real_t          viscb[])
 {
@@ -975,19 +936,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                fimp);
   else
     cs_gui_thermal_source_terms(f, cvar_var, rhs, fimp);
-
-  {
-    int nvar = 0, nscal = 0;
-    cs_lnum_t ncepdp = 0;
-    cs_lnum_t *icepdc = NULL;
-    cs_real_t *ckupdc = NULL;
-
-    cs_f_get_dimens(&nvar, & nscal);
-
-    CS_PROCF(ustssc, USTSSC)(&nvar, &nscal, &ncepdp, &ncesmp, &iscal,
-                             icepdc, icetsm, itypsm, dt,
-                             ckupdc, smacel, rhs, fimp);
-  }
 
   cs_user_source_terms(cs_glob_domain,
                        f->id,
@@ -1408,20 +1356,29 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_real_t *w1;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
-  const int ipr = cs_field_get_key_int(CS_F_(p), keyvar);
   if (ncesmp > 0) {
     cs_real_t *srcmas;
-    int *_itypsm = itypsm + (ivar-1)*ncesmp;
-    cs_real_t *_smacel_ipr = smacel + (ipr-1)*ncesmp;
-    cs_real_t *_smacel_ivar = smacel + (ivar-1)*ncesmp;
+
+    int *_itypsm_ipr = NULL;
+    cs_lnum_t _ncetsm = 0;
+    cs_lnum_t *_icetsm = NULL;
+    cs_real_t *_smacel_ipr = NULL;
+    cs_real_t *_gamma_ipr = NULL;
+
+    cs_volume_mass_injection_get_arrays(CS_F_(p),
+                                        &_ncetsm,
+                                        &_icetsm,
+                                        &_itypsm_ipr,
+                                        &_smacel_ipr,
+                                        &_gamma_ipr);
 
     BFT_MALLOC(srcmas, ncesmp, cs_real_t);
 
     /* When treating the Temperature, the equation is multiplied by Cp */
     for (cs_lnum_t c_id = 0; c_id < ncesmp; c_id++) {
-      if ((_smacel_ipr[c_id] > 0.0) && (_itypsm[c_id] == 1)) {
+      if ((_smacel_ipr[c_id] > 0.0) && (itypsm_sc[c_id] == 1)) {
         const cs_lnum_t id = icetsm[c_id] - 1;
-        srcmas[c_id] = _smacel_ipr[c_id]* xcpp[id];
+        srcmas[c_id] = _smacel_ipr[c_id] * xcpp[id];
       }
       else {
        srcmas[c_id] = 0.;
@@ -1433,10 +1390,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          1,
                          ncesmp,
                          icetsm,
-                         _itypsm,
+                         itypsm_sc,
                          cell_f_vol,
                          cvara_var,
-                         _smacel_ivar,
+                         smacel_sc,
                          srcmas,
                          rhs,
                          fimp,
@@ -1881,8 +1838,8 @@ cs_solve_equation_vector(cs_field_t       *f,
                          const cs_lnum_t   ncesmp,
                          int               iterns,
                          const cs_lnum_t   icetsm[],
-                         int               itypsm[],
-                         cs_real_t         smacel[],
+                         int               itypsm_v[],
+                         cs_real_t         smacel_v[],
                          cs_real_t         viscf[],
                          cs_real_t         viscb[])
 {
@@ -1903,9 +1860,6 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   cs_real_3_t *cvar_var = (cs_real_3_t *)f->val;
   cs_real_3_t *cvara_var = (cs_real_3_t *)f->val_pre;
-
-  const int keyvar = cs_field_key_id("variable_id");
-  const int ivar = cs_field_get_key_int(f, keyvar);
 
   /* If the vector is buoyant, it is inside the Navier Stokes loop, and
      so iterns >=1; otherwise it is outside of the loop and iterns = -1. */
@@ -2056,21 +2010,28 @@ cs_solve_equation_vector(cs_field_t       *f,
     cs_real_3_t *gavinj;
     BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
 
-    const int ipr = cs_field_get_key_int(CS_F_(p), keyvar);
+    int *_itypsm_ipr = NULL;
+    cs_lnum_t _ncetsm = 0;
+    cs_lnum_t *_icetsm = NULL;
+    cs_real_t *_smacel_ipr = NULL;
+    cs_real_t *_gamma_ipr = NULL;
 
-    int *_itypsm = itypsm + (ivar-1)*ncesmp;
-    cs_real_t *_smacel_ipr = smacel + (ipr-1)*ncesmp;
-    cs_real_t *_smacel_ivar = smacel + (ivar-1)*ncesmp;
+    cs_volume_mass_injection_get_arrays(CS_F_(p),
+                                        &_ncetsm,
+                                        &_icetsm,
+                                        &_itypsm_ipr,
+                                        &_smacel_ipr,
+                                        &_gamma_ipr);
 
     /* We increment SMBRV by -Gamma RTPA and FIMP by Gamma */
     cs_mass_source_terms(1,
                          3,
                          ncesmp,
                          icetsm,
-                         _itypsm,
+                         itypsm_v,
                          cell_f_vol,
                          (const cs_real_t *)cvara_var,
-                         _smacel_ivar,
+                         smacel_v,
                          _smacel_ipr,
                          (cs_real_t *)rhs,
                          (cs_real_t *)fimp,
