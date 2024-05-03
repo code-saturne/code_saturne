@@ -151,7 +151,6 @@ endif
 
 if (ippmod(iaeros).ge.0) then
   call cs_ctwr_phyvar_update(ro0,t0,p0)
-endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
 else if (ippmod(iatmos).ge.1) then
