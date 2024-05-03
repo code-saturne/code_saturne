@@ -154,8 +154,7 @@ if (ippmod(iaeros).ge.0) then
 endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
-
-if (ippmod(iatmos).ge.1) then
+else if (ippmod(iatmos).ge.1) then
   call atphyv
 endif
 
