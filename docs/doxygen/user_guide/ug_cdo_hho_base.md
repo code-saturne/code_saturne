@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_ug_cdo_hho Using CDO/HHO schemes
+\page cs_ug_cdo_hho_base Using CDO/HHO schemes
 
 [TOC]
 
@@ -35,35 +35,53 @@
 Introduction {#sec_ug_cdo_hho_intro}
 ============
 
-Compatible Discrete Operator (CDO) and Hybrid High-Order (HHO) schemes are
-available in code_saturne as alternative space discretizations to the legacy
-Finite Volumes (FV) schemes. These are new generation of space discretizations
-dedicated to polyhedral meshes.  The capabilities of these schemes in terms of
-physical modelling are limited compared to the legacy FV schemes.
+**Compatible Discrete Operator** (CDO) and **Hybrid High-Order** (HHO) schemes
+are available in code_saturne as alternative space discretizations to the
+legacy Finite Volumes (FV) schemes. These are new generation of space
+discretizations dedicated to polyhedral meshes.  The capabilities of these
+schemes in terms of physical modelling are limited compared to the legacy FV
+schemes.
 
-With **CDO schemes**, the following models/equations are available:
+Overview of physical models
+------------
+
+With **CDO schemes**, the resolution of the following models/equations are
+available:
     - **User-defined scalar-valued or vector-valued equations** with
       - unsteady term
-      - advection term (the advection-field can be user-defined or one retrieves
-        the mass flux from the Navier--Stokes equations)
+      - advection term (the advection-field can be user-defined or one
+        retrieves the mass flux from the Navier--Stokes equations or the Darcy
+        velocity from the Richards equation for instance)
       - diffusion term with a homogeneous or heterogeneous +
         isotropic/orthotropic or anisotropic diffusivity tensor
       - reaction term (also called *implicit source term* in the FV parts of
         this documentation)
-      - source terms
-    - **steady/unsteady Stokes or Navier--Stokes equations** in a laminar flow
-      regime
+      - source terms (also called *explicit source term* in the FV parts of
+        this documentation)
+    - **Steady/unsteady Stokes or Navier--Stokes equations** in a laminar flow
+      regime : NavSto module
       - Several velocity/pressure coupling algorithms are available: monolithic,
         artifical compressibility or prediction/correction algorithm
+      - Please refer to the [dedicated page](@ref cs_ug_cdo_navsto) for more details.
     - **Thermal systems** with the possibility to model phase-change
       (liquid/solid)
-    - **Groundwater flows**: Please refer to @ref cs_gwf_cdo for
-      more details
-    - **Solidification process**: Please refer to @ref cs_solidification_cdo
-      for more details
+    - **Groundwater flows**: GWF module
+      -  This module computes the Darcy velocity from the hydraulic state of
+         the soil seen as porous media and can advect tracers (possibly
+         radioactive tracers) in that soil.
+      -  Please refer to [the dedicated page](@ref cs_ug_cdo_gwf)
+         for more details
+    - **Solidification process**:
+        - This module relies on the NavSto module and the Thermal module. Phase
+          transitions between solid and liquid states (solidification or
+          melting) are taken into account.
+        - Segregation phenomena can be considered with binary alloys
+        - Please refer to [the dedicated page](@ref cs_ug_cdo_solidification)
+          for more details
     - **Wall distance** computations.
     - **Maxwell module**. This is an on-going work. Up to now, electro-static
       and magneto-static problems are available.
+
 
 To get started
 ------------
@@ -168,75 +186,15 @@ equations). When activating a predefined module, this implies:
 
 ### Navier-Stokes (NavSto module)
 
-The activation of the NavSto module is done thanks to the function \ref cs_navsto_system_activate
-For instance, here are two examples to activate and set the main parameters for the
-NavSto module
+Please refer to the dedicated documentation available [here](@ref cs_ug_cdo_navsto).
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_activate
+### Groundwater flows (GWF)
 
-or
+Please refer to the dedicated documentation available [here](@ref cs_ug_cdo_gwf).
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_activate2
+### Solidification/melting module
 
-The first parameter is the structure managing the domain boundaries. An example
-of settings for the domain boundaries is described [here](@ref ug_cdo_sec_domain_boundaries).
-
-The second parameter specifies the type of model to
-consider among the following choice:
-    - \ref CS_NAVSTO_MODEL_STOKES,
-    - \ref CS_NAVSTO_MODEL_OSEEN,
-    - \ref CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,
-
-The *base* model can be updated thanks to the third parameter which is a flag
-built from the following elemental bit (\ref cs_navsto_param_model_bit_t):
-    - \ref CS_NAVSTO_MODEL_STEADY to specify the model is steady-state (by
-      default, this is not the case).
-    - \ref CS_NAVSTO_MODEL_GRAVITY_EFFECTS
-    - \ref CS_NAVSTO_MODEL_BOUSSINESQ
-
-The fourth parameter specifies which type of velocity-pressure algorithm will be
-used (\ref cs_navsto_param_coupling_t). The choice is done among:
-    - \ref CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY (cf. \cite MiBoE22 and
-      \cite Mila20),
-    - \ref CS_NAVSTO_COUPLING_MONOLITHIC
-    - \ref CS_NAVSTO_COUPLING_PROJECTION (work in progress),
-
-The last parameter specifies predefined post-processing operations. As the third
-parameter, this a flag built from the following elemental bit
-(\ref cs_navsto_param_post_bit_t):
-    - \ref CS_NAVSTO_POST_VELOCITY_DIVERGENCE
-    - \ref CS_NAVSTO_POST_KINETIC_ENERGY
-    - \ref CS_NAVSTO_POST_VORTICITY
-    - \ref CS_NAVSTO_POST_VELOCITY_GRADIENT
-    - \ref CS_NAVSTO_POST_STREAM_FUNCTION (This adds an equation named
-      *streamfunction_eq* and its variable field named *stream_function*. This
-      equation relies on a CDO vertex-based equation.)
-    - \ref CS_NAVSTO_POST_HELICITY
-    - \ref CS_NAVSTO_POST_ENSTROPHY
-    - \ref CS_NAVSTO_POST_MASS_DENSITY
-    - \ref CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE
-    - \ref CS_NAVSTO_POST_PRESSURE_GRADIENT
-
-
-
-
-Predefined equations associated to the Navier--Stokes equations are
-    - the *momentum* equation is automatically added when activated with a
-    **monolithic** or **artificial compressibility** velocity-pressure coupling
-
-
-
-In all cases, a vector-valued field named "*velocity*" and a scalar-valued field
-named "*pressure*" are created. Moreover, several properties are added:
-    - the property "*mass_density*" (a \ref cs_property_t structure);
-    - the property "*laminar viscosity*" (a \ref cs_property_t structure);
-    - the properties "*turbulent_viscosity*" and the "*total_viscosity*" are added
-      if the model of turbulence is different from the laminar one (cf. \ref cs_turb_model_t);
-    - the property "*graddiv_coef*" (a \ref cs_property_t structure) when the
-**artificial compressibility** is set;
-
-along with the advection field "*mass_flux*" (a \ref cs_adv_field_t structure)
-
+Please refer to the dedicated documentation available [here](@ref cs_ug_cdo_solidification).
 
 ### Thermal system
 
@@ -246,7 +204,9 @@ The activation of the thermal module yields the following actions:
   "temperature")
 - Add the properties "mass_density", "thermal_capacity" and "thermal_conductivity"
 
-Here is the simplest example to activate the thermal module.
+For the thermal equation, the default boundary condition is a no flux
+(i.e. a homogeneous Neumann boundary condition).  Here is the simplest
+example to activate the thermal module.
 
 \snippet cs_user_parameters-cdo-thermal-solver.c param_cdo_activate_thermal_solver
 
@@ -275,15 +235,6 @@ The third parameter is a flag related to the activation of automatic
 post-processings.
 
 - \ref CS_THERMAL_POST_ENTHALPY
-
-
-### Groundwater flows (GWF)
-
-Please refer to the dedicated documentation available [here](@ref cs_gwf_cdo).
-
-### Solidification/melting module
-
-Please refer to the dedicated documentation available [here](@ref cs_solidification_cdo).
 
 ### Wall-distance computation
 
@@ -315,9 +266,9 @@ User-defined properties are added thanks to a call to the function
 The function \ref cs_property_add returns a pointer to a \ref cs_property_t
 structure which can be used to set advanced parameters. If the pointer to a \ref
 cs_property_t structure is not available, this can be easily recover thanks to a
-call to the function \ref \cs_property_by_name
+call to the function \ref cs_property_by_name
 
-To enable the computation of the Fourier number related to a given property in
+To enable the computation of the **Fourier number** related to a given property in
 an unsteady simulation proceed as follows:
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties_opt
@@ -333,8 +284,9 @@ schemes is specified as follows:
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
 
-When an advection is defined, it is possible to retrieve it and then set a
-post-processing operation as follows:
+When an advection field is defined, it is possible to retrieve it and then set
+a post-processing operation. For instance, to activate the post-processing of
+the **CFL number** proceed as follows:
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_post
 
@@ -349,14 +301,6 @@ Boundary conditions
 ### User-defined equations
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_bcs
-
-### NavSto module
-
-In the case of the NavSto module, this is done as follows (One does not access
-to the equation directly since it depends on the way the velocity/pressure
-coupling is done).
-
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_bc1
 
 ### Thermal system
 
@@ -452,25 +396,14 @@ and the function for the memory management of a \ref cs_xdef_t structure is
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_condif_free_input
 
-### NavSto module
-
-In the case of the NavSto module, this is done as follows. Since the equation on
-which this source term applies, depends on the choice of the velocity-pressure
-algorithm, the way to proceed varies slightly of the way used on a user-defined
-equation.
-
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_st1
-
-where the function *_src_def* is defined as follows
-
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_st_function
 
 
 
 Add diffusion, advection, etc. to a user-defined equation
 ---------------------
 
-Add terms like diffusion term,/ advection term, unsteady term, reaction terms or source terms.
+Add terms like a diffusion term, an advection term, unsteady term, reaction
+terms or source terms.
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_add_terms
 
@@ -479,10 +412,10 @@ Add terms like diffusion term,/ advection term, unsteady term, reaction terms or
 
 
 
-Settings done in cs_user_parameters()
+Settings done in cs_user_parameters() {#cs_ug_cdo_hho_base_user_param}
 ===================
 
-Change the logging frequency
+Logging options
 ----------------
 
 The management of the level and frequency of details written by the code can be
@@ -491,7 +424,7 @@ specified for CDO/HHO schemes as follows:
 \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_output
 
 
-Change the time stepping strategy
+Time stepping strategy
 ----------------
 
 The management of the time step with CDO/HHO schemes can be specified as
@@ -499,8 +432,10 @@ follows:
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_time_step
 
+This can be completed with numerical options to specify the time scheme. See
+the next section)
 
-Change the numerical parameters associated to an equation
+Discretization parameters associated to an equation {#cs_ug_cdo_hho_base_set_eqparam}
 -------------------------
 
 To modify the numerical settings, the mechanism relies on a `(key, value)`
@@ -508,7 +443,7 @@ rationale.  The function to use is \ref cs_equation_param_set For instance, with
 an equation called `"MyEquation"`, and a key called `CS_EQKEY_PARAM_TO_SET` with
 the value `"value_to_set"`.
 
-```
+```c
 cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEquation");
 
 cs_equation_param_set(eqp, CS_EQKEY_PARAM_TO_SET, "value_to_set");
@@ -517,11 +452,12 @@ cs_equation_param_set(eqp, CS_EQKEY_PARAM_TO_SET, "value_to_set");
 If one wants to modify the settings for all equations, this is possible using
 the function \ref cs_equation_set_default_param
 
-```
+```c
 cs_equation_set_default_param(CS_EQKEY_PARAM_TO_SET, "value_to_set");
 ```
 
 All available keys are listed and described with \ref cs_equation_key_t
+One gives some examples for some of them.
 
 ### Set the space discretization scheme
 
@@ -579,36 +515,67 @@ CDO-Eb. CDO-Fb are also detailed in \cite Mila20. CDO-VCb are detailed in
 
 ### Set the advection scheme
 
-Modifiy the numerical parameters related to a given user-defined equation. This
-way to proceed applies to all equations: predefined or user-defined.
-
 \snippet cs_user_parameters-cdo-condif.c param_cdo_conv_numerics
 
+The available advection schemes are listed in the description of the key
+\ref CS_EQKEY_ADV_SCHEME
 
+\snippet cs_user_parameters-cdo-condif.c param_cdo_conv_schemes
 
-### Modifiy the numerical scheme for the diffusion term
+### Set the time scheme
+
+When the equation to solve is unsteady, one has to specify a time
+discretization scheme. Available time schemes are listed in the description of
+the key \ref \CS_EQKEY_TIME_SCHEME
+By default, a first order implicit Euler scheme is used. To modify this default
+settings, please proceed as follows:
+
+\snippet cs_user_parameters-cdo-condif.c param_cdo_time_schemes
+
+The mass matrix associated to the unsteady term is also a parameter. One can
+use either a mass matrix like in FV scheme using a `"voronoi"` algorithm
+(default) or the `"wbs"` algorithm like in Finite Element (FE) schemes.
+
+\snippet cs_user_parameters-cdo-condif.c param_cdo_time_hodge
+
+### Modify the numerical scheme for the diffusion term
+
+Several algorithms are available to build the diffusion term. They are all
+listed in the description of the key \ref CS_EQKEY_HODGE_DIFF_ALGO Please refer
+to \cite Bonel14 for more details In the case of the `cost` (or `ocs`), one can
+specify the value of the scaling coefficient in front of the stabilization
+part. This is done using the key \ref CS_EQKEY_HODGE_DIFF_COEF
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_diff_numerics
 
 
-### Set the linear solver and its associated options for a user-defined equation
+Linear algebra settings
+-------------------
+
+Several examples are detailed hereafter to specify a solver different from the
+default one. Available linear solvers are listed in \ref cs_param_solver_type_t
+; the preconditioner in \ref cs_param_precond_type_t
+
+For a symmetric positive definite (SPD) system, the solver of choice is the
+conjugate gradient (\ref CS_PARAM_SOLVER_CG) or its flexible variant (\ref
+CS_PARAM_SOLVER_FCG). In this case, a good preconditioner is a multilevel
+algorithm such as an algebraic multigrid (AMG). Different multigrid techniques
+are available when using code_saturne depending on the installation
+configuration (PETSc and/or HYPRE libraries). They are listing in \ref
+cs_param_precond_type_t
+
+### Multigrid preconditioner
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_sles_settings
 
 If the external library PETSc is available, one uses its algebraic multigrid,
-otherwise one uses the in-house solver. Here an conjugate gradient (CG) with a
-diagonal preconditionning (`jacobi`).
+otherwise one uses the in-house solver. Here a flexible conjugate gradient
+(`fcg`) with a diagonal preconditionning (`jacobi`).
 
-### Set the strategy to solve the Navier-Stokes system
+The in-house multigrid algorithm can be easily tuned thanks to the function
+\ref cs_param_sles_amg_inhouse More advanced settings can also be added using
+the function \ref cs_param_sles_amg_inhouse_advanced
 
-Here is another example settings a strategy to solve a saddle-point problem
-arising from a Navier-Stokes equation with a monolithic velocity-pressure
-coupling. One assumes that the library is an installed dependency (see the
-installation guide for more details).
-
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_alu
-
-This is an advanced usage of the MUMPS settings.
 
 
 To go further

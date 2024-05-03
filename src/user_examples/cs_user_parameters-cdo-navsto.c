@@ -79,6 +79,7 @@ static const cs_real_t _2pi  = 2*_PI, _pis  = _PI*_PI;
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [param_cdo_navsto_vel_function] */
 static inline void
 __vel(const cs_real_3_t pxyz,
       cs_real_3_t       res)
@@ -149,6 +150,7 @@ _vel_def(cs_real_t           time,
 
   }
 }
+/*! [param_cdo_navsto_vel_function] */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -335,7 +337,17 @@ cs_user_parameters(cs_domain_t    *domain)
 
 #if defined(HAVE_MUMPS)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+#else
+    bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
+#endif
+  }
+  /*! [param_cdo_navsto_sles_alu] */
 
+  /*! [param_cdo_navsto_sles_mumps] */
+  {
+    /* Parameters related to the momentum equation */
+
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
     cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(mom_eqp);
 
     cs_param_sles_mumps(slesp,
@@ -356,11 +368,8 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_param_saddle_t  *saddlep = cs_equation_param_get_saddle_param(mom_eqp);
 
     cs_param_sles_copy_from(slesp, saddlep->xtra_sles_param);
-#else
-    bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
-#endif
   }
-  /*! [param_cdo_navsto_sles_alu] */
+  /*! [param_cdo_navsto_sles_mumps] */
 }
 
 /*----------------------------------------------------------------------------*/

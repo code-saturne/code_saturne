@@ -484,6 +484,35 @@ cs_user_parameters(cs_domain_t   *domain)
   }
   /*! [param_cdo_conv_numerics] */
 
+  /*! [param_cdo_conv_schemes] */
+  {
+    cs_equation_param_t  *eqp1 = cs_equation_param_by_name("Eq1");
+
+    /* Set the advection scheme */
+
+    cs_equation_param_set(eqp1, CS_EQKEY_ADV_SCHEME, "mix_centered_upwind");
+
+    /* Set the portion of upwinding to add to a centered scheme. The same
+       portion is added in the whole domain */
+
+    cs_equation_param_set(eqp1, CS_EQKEY_ADV_UPWIND_PORTION, "0.45");
+
+    /* It's possible to set automatically the upwinding portion using a
+       Schafertter-Gummel scheme or Samarskii scheme. These two advection
+       schemes differs on the weighting function computing the portion of
+       upwinding. In both cases, one uses an estimation of the local Péclet
+       number to know if one needs more upwinding or not. */
+
+    cs_equation_param_t  *eqp_sg = cs_equation_param_by_name("Eq2_SG");
+
+    cs_equation_param_set(eqp_sg, CS_EQKEY_ADV_SCHEME, "sg");
+
+    cs_equation_param_t  *eqp_sa = cs_equation_param_by_name("Eq2_SA");
+
+    cs_equation_param_set(eqp_sa, CS_EQKEY_ADV_SCHEME, "samarskii");
+  }
+  /*! [param_cdo_conv_schemes] */
+
   /*! [param_cdo_diff_numerics] */
   {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
@@ -494,6 +523,39 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
   }
   /*! [param_cdo_diff_numerics] */
+
+  /*! [param_cdo_time_schemes] */
+  {
+    cs_equation_param_t  *eqp1 = cs_equation_param_by_name("Eq1");
+
+    /* Set the time scheme */
+
+    cs_equation_param_set(eqp1, CS_EQKEY_TIME_SCHEME, "theta_scheme");
+
+    /* When a theta-scheme is used. It is possible to specify the value of the
+       theta weighting (value should be between 0 and 1 */
+
+    cs_equation_param_set(eqp1, CS_EQKEY_TIME_THETA, "0.57");
+  }
+  /*! [param_cdo_time_schemes] */
+
+  /*! [param_cdo_time_hodge] */
+  {
+    cs_equation_param_t  *eqp_fe = cs_equation_param_by_name("Eq_FE_like");
+
+    /* Set the algorithm to build the Hodge operator related to the unsteady
+       term. This is the same as defining the mass matrix in Finite Element
+       schemes */
+
+    cs_equation_param_set(eqp_fe, CS_EQKEY_HODGE_TIME_ALGO, "wbs");
+
+    /* The other choice */
+
+    cs_equation_param_t  *eqp_fv = cs_equation_param_by_name("Eq_FV_like");
+
+    cs_equation_param_set(eqp_fv, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
+  }
+  /*! [param_cdo_time_hodge] */
 
   /*! [param_cdo_sles_settings] */
   {

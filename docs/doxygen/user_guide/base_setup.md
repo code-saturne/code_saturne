@@ -35,7 +35,7 @@ documentation. It is also recommended to check the
 - \subpage base_setup_mass_injection
 - \subpage gui_user_law_editor
 - \subpage base_var_modify_end_time_step
-- [CDO schemes](@ref cs_ug_cdo_hho)
+- [CDO schemes](@ref cs_ug_cdo_hho_base)
 
 
 <!-- ----------------------------------------------------------------------- -->

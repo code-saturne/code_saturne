@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_solidification_cdo Solidification modelling or melting of solid with CDO schemes
+\page cs_ug_cdo_solidification Solidification modelling or melting of solid with CDO schemes
 
 [TOC]
 
@@ -48,7 +48,7 @@ cases, editing the function \ref cs_user_parameters and defining
 functions to describe the boundary conditions or the material
 properties should be necessary.
 
-Model of solidification and its options {#cs_solidification_cdo_model}
+Model of solidification and its options {#cs_ug_cdo_solidification_model}
 =======================================
 
 Several models are available according to the type of phenomena at stake.
@@ -81,7 +81,7 @@ function \ref cs_solidification_activate):
   alloy is considered. One also handles the eutectic transformation
   when the solidification path reaches the eutectic plateau.
 
-Model options {#cs_solidification_cdo_model_options}
+Model options {#cs_ug_cdo_solidification_model_options}
 -------------
 
 Besides the main solidification model, one can specify several
@@ -101,7 +101,7 @@ parameter of the function \ref cs_solidification_activate):
   concentration is treated with a source term related to an explicit
   advection of the quantity \f$ (C_m - C_l) \f$.
 
-Automatic post-processing {#cs_solidification_cdo_post}
+Automatic post-processing {#cs_ug_cdo_solidification_post}
 -------------------------
 
 Here are listed the available quantities which can be automatically
@@ -120,7 +120,7 @@ The following options make sense only when the
 - \ref CS_SOLIDIFICATION_POST_SEGREGATION_INDEX
 
 
-Activate the solidification module {#cs_solidification_cdo_activate}
+Activate the solidification module {#cs_ug_cdo_solidification_activate}
 ==================================
 
 The first step when settings a solidification model relying on CDO
@@ -182,10 +182,10 @@ without a velocity field in the "liquid" area.
 \snippet cs_user_parameters-cdo-solidification.c param_cdo_activate_solidification_voller_no_vel
 
 
-Model settings {#cs_solidification_cdo_set_model}
+Model settings {#cs_ug_cdo_solidification_set_model}
 ==============
 
-Set a strategy {#cs_solidification_cdo_strategy}
+Set a strategy {#cs_ug_cdo_solidification_strategy}
 --------------
 
 Excepted for the Stefan model, it is possible to change the strategy
@@ -209,14 +209,14 @@ Here is an example to set the strategy:
 \snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_strategy
 
 
-Stefan model {#cs_solidification_cdo_set_stefan}
+Stefan model {#cs_ug_cdo_solidification_set_stefan}
 ------------
 
   The Stefan model handles the solidification process with the approximation
   that the liquidus and solidus temperature are the same. Thus, the transition
   from the solid to liquid or from the liquid to solid is rough.
 
-Voller and Prakash model {#cs_solidification_cdo_set_voller}
+Voller and Prakash model {#cs_ug_cdo_solidification_set_voller}
 ------------------------
 
 The main function to set a Voller and Prakash model is \ref
@@ -243,7 +243,7 @@ CS_SOLIDIFICATION_NO_VELOCITY_FIELD has been set).
 
 \snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_voller_no_vel
 
-Non-linear Voller and Prakash model {#cs_solidification_cdo_set_voller_nl}
+Non-linear Voller and Prakash model {#cs_ug_cdo_solidification_set_voller_nl}
 -----------------------------------
 
 The setting of the non-linear variant of the Voller and Prakash model relies
@@ -260,7 +260,7 @@ the non-linear iterative algorithm for instance.
 \snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_nl_voller_advanced
 
 
-Binary alloy model {#cs_solidification_cdo_set_binary}
+Binary alloy model {#cs_ug_cdo_solidification_set_binary}
 ------------------
 
 The main function to set a binary alloy model is
@@ -293,7 +293,7 @@ located inside \ref cs_user_model after calling \ref cs_solidification_activate
 
 \snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_binary_alloy
 
-###  Advanced usage {#cs_solidification_cdo_set_binary_x}
+###  Advanced usage {#cs_ug_cdo_solidification_set_binary_x}
 
 To access more settings, it is possible to retrieve the structure
 managing the binary alloy model and to specify advanced parameter
@@ -303,7 +303,7 @@ settings.
 
 
 
-Property settings {#cs_solidification_cdo_set_property}
+Property settings {#cs_ug_cdo_solidification_set_property}
 =================
 
 The creation of all properties used the solidification model is made
@@ -330,7 +330,7 @@ that predefined properties have a macro to store their name. Here are used:
 snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_properties
 
 
-Equation settings {#cs_solidification_cdo_set_eq}
+Equation settings {#cs_ug_cdo_solidification_set_eq}
 =================
 
 The last step is to set the initial condition and the boundary

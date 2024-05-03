@@ -74,7 +74,7 @@
     - \ref cs_user_boundary_conditions_examples "User boundary conditions definitions",
     - \ref cs_user_extra_operations_examples "User extra operations",
     - \ref cs_user_initialization "Physical fields user initialization",
-    - [CDO schemes](@ref cs_ug_cdo_hho)
+    - [CDO schemes](@ref cs_ug_cdo_hho_base)
     - and so on ...
 
   \section additional_doc Additional documentation

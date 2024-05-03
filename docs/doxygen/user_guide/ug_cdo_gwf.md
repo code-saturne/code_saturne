@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_gwf_cdo Groundwater flow module using CDO schemes
+\page cs_ug_cdo_gwf Groundwater flow module using CDO schemes
 
 [TOC]
 

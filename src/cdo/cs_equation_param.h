@@ -941,8 +941,8 @@ typedef struct {
  *             schemes
  *
  * \var CS_EQKEY_HODGE_DIFF_COEF
- * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
- * "cost".
+ * This key is only useful if the key CS_EQKEY_HODGE_DIFF_ALGO is set to
+ * "cost" or "ocs".
  * keyval is either a name or a value:
  * - "dga" corresponds to the value \f$ 1./3. \f$
  * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
