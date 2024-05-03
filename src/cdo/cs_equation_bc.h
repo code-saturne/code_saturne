@@ -3,7 +3,7 @@
 
 /*============================================================================
  * Functions to handle the evaluation of boundary conditions when building the
- * algebraic system in CDO/HHO schemes
+ * algebraic system in CDO/HHO/MAC schemes
  *============================================================================*/
 
 /*
@@ -32,9 +32,10 @@
 
 #include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
 #include "cs_cdo_local.h"
+#include "cs_cdo_quantities.h"
 #include "cs_equation_param.h"
+#include "cs_macfb_builder.h"
 #include "cs_time_step.h"
 #include "cs_xdef_eval.h"
 
@@ -167,7 +168,7 @@ cs_equation_bc_set_cw_eb(const cs_cell_mesh_t         *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Set the BC into a cellwise view of the current system.
- *          Case of Face-based schemes
+ *          Case of CDO Face-based schemes
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -185,6 +186,27 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
                          const cs_real_t               dir_values[],
                          cs_cell_sys_t                *csys,
                          cs_cell_builder_t            *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the BC into a cellwise view of the current system.
+ *          Case of MAC Face-based schemes
+ *
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      dir_values  Dirichlet values associated to each face
+ * \param[in, out] macb        pointer to a cs_macfb_builder_t strucuture
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_equation_bc_set_cw_macfb(const cs_cell_mesh_t      *cm,
+                                 const cs_equation_param_t *eqp,
+                                 const cs_cdo_bc_face_t    *face_bc,
+                                 const cs_real_t            dir_values[],
+                                 cs_macfb_builder_t        *macb,
+                                 cs_cell_sys_t             *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1419,9 +1419,13 @@ cs_cdofb_monolithic_sles_gkb_inhouse(const cs_navsto_param_t  *nsp,
   /* Sanity checks */
 
   if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_GKB)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: ALU algorithm is expected.\n"
-              "%s: Please check your settings.\n", __func__, __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: GKB algorithm is expected.\n"
+              "%s: Please check your settings.\n",
+              __func__,
+              __func__);
 
 #if defined(DEBUG) && !defined(NDEBUG)
   cs_cdo_system_helper_t  *sh = solver->system_helper;

@@ -38,6 +38,7 @@ Makefile.in
 /cs_config.h.in
 /configure
 /stamp-h.in
+.vscode/*
 
 # /config/
 /config/compile

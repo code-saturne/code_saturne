@@ -32,8 +32,8 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_toolbox.h"
-#include "cs_equation_param.h"
 #include "cs_equation_builder.h"
+#include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_restart.h"
@@ -81,9 +81,9 @@ typedef struct _cs_equation_t cs_equation_t;
 
 typedef struct {
 
-  cs_equation_param_t     *param;
-  cs_equation_builder_t   *builder;
-  void                    *scheme_context;
+  cs_equation_param_t   *param;
+  cs_equation_builder_t *builder;
+  void                  *scheme_context;
 
 } cs_equation_core_t;
 
@@ -99,8 +99,7 @@ typedef struct {
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_equation_get_n_equations(void);
+int cs_equation_get_n_equations(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -113,8 +112,7 @@ cs_equation_get_n_equations(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_t *
-cs_equation_by_name(const char    *eqname);
+cs_equation_t *cs_equation_by_name(const char *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -127,8 +125,7 @@ cs_equation_by_name(const char    *eqname);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_t *
-cs_equation_by_field_name(const char    *field_name);
+cs_equation_t *cs_equation_by_field_name(const char *field_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -143,9 +140,7 @@ cs_equation_by_field_name(const char    *field_name);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_has_field_name(const cs_equation_t  *eq,
-                           const char           *fld_name);
+bool cs_equation_has_field_name(const cs_equation_t *eq, const char *fld_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -162,8 +157,7 @@ cs_equation_has_field_name(const cs_equation_t  *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_param_t *
-cs_equation_param_by_name(const char    *eqname);
+cs_equation_param_t *cs_equation_param_by_name(const char *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -177,8 +171,7 @@ cs_equation_param_by_name(const char    *eqname);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_param_t *
-cs_equation_param_by_field_name(const char    *field_name);
+cs_equation_param_t *cs_equation_param_by_field_name(const char *field_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -191,8 +184,7 @@ cs_equation_param_by_field_name(const char    *field_name);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_param_t *
-cs_equation_get_param(const cs_equation_t    *eq);
+cs_equation_param_t *cs_equation_get_param(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -205,8 +197,7 @@ cs_equation_get_param(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_t *
-cs_equation_by_id(int   eq_id);
+cs_equation_t *cs_equation_by_id(int eq_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -218,8 +209,7 @@ cs_equation_by_id(int   eq_id);
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
-cs_equation_get_name(const cs_equation_t    *eq);
+const char *cs_equation_get_name(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -231,8 +221,7 @@ cs_equation_get_name(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_equation_get_id(const cs_equation_t    *eq);
+int cs_equation_get_id(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -244,8 +233,7 @@ cs_equation_get_id(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_field_t *
-cs_equation_get_field(const cs_equation_t    *eq);
+cs_field_t *cs_equation_get_field(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -258,8 +246,7 @@ cs_equation_get_field(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_equation_get_field_id(const cs_equation_t    *eq);
+int cs_equation_get_field_id(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -274,8 +261,7 @@ cs_equation_get_field_id(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_range_set_t *
-cs_equation_get_range_set(const cs_equation_t    *eq);
+const cs_range_set_t *cs_equation_get_range_set(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -289,9 +275,8 @@ cs_equation_get_range_set(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gnum_t
-cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
-                              const cs_cdo_quantities_t   *cdoq);
+cs_gnum_t cs_equation_get_global_n_dofs(const cs_equation_t       *eq,
+                                        const cs_cdo_quantities_t *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -304,8 +289,7 @@ cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_field_t *
-cs_equation_get_boundary_flux(const cs_equation_t    *eq);
+cs_field_t *cs_equation_get_boundary_flux(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -317,8 +301,7 @@ cs_equation_get_boundary_flux(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t
-cs_equation_get_flag(const cs_equation_t    *eq);
+cs_flag_t cs_equation_get_flag(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -326,12 +309,10 @@ cs_equation_get_flag(const cs_equation_t    *eq);
  *
  * \param[in, out] eq       pointer to a cs_equation_t structure
  * \param[in]      flag     new flag to set
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_set_flag(cs_equation_t    *eq,
-                     cs_flag_t         flag);
+void cs_equation_set_flag(cs_equation_t *eq, cs_flag_t flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -346,10 +327,9 @@ cs_equation_set_flag(cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_add_build_hook(cs_equation_t               *eq,
-                           void                        *context,
-                           cs_equation_build_hook_t    *func);
+void cs_equation_add_build_hook(cs_equation_t            *eq,
+                                void                     *context,
+                                cs_equation_build_hook_t *func);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -362,8 +342,7 @@ cs_equation_add_build_hook(cs_equation_t               *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_builder_t *
-cs_equation_get_builder(const cs_equation_t    *eq);
+cs_equation_builder_t *cs_equation_get_builder(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -376,8 +355,7 @@ cs_equation_get_builder(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-void *
-cs_equation_get_scheme_context(const cs_equation_t    *eq);
+void *cs_equation_get_scheme_context(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -390,8 +368,7 @@ cs_equation_get_scheme_context(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_core_t
-cs_equation_get_core_structure(const cs_equation_t    *eq);
+cs_equation_core_t cs_equation_get_core_structure(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -405,8 +382,7 @@ cs_equation_get_core_structure(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_source_term_array(const cs_equation_t    *eq);
+cs_real_t *cs_equation_get_source_term_array(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -418,8 +394,7 @@ cs_equation_get_source_term_array(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_is_steady(const cs_equation_t    *eq);
+bool cs_equation_is_steady(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -432,8 +407,7 @@ cs_equation_is_steady(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_uses_new_mechanism(const cs_equation_t    *eq);
+bool cs_equation_uses_new_mechanism(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -449,12 +423,11 @@ cs_equation_uses_new_mechanism(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_t *
-cs_equation_add(const char            *eqname,
-                const char            *varname,
-                cs_equation_type_t     eqtype,
-                int                    dim,
-                cs_param_bc_type_t     default_bc);
+cs_equation_t *cs_equation_add(const char        *eqname,
+                               const char        *varname,
+                               cs_equation_type_t eqtype,
+                               int                dim,
+                               cs_param_bc_type_t default_bc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -469,11 +442,10 @@ cs_equation_add(const char            *eqname,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_t *
-cs_equation_add_user(const char            *eqname,
-                     const char            *varname,
-                     int                    dim,
-                     cs_param_bc_type_t     default_bc);
+cs_equation_t *cs_equation_add_user(const char        *eqname,
+                                    const char        *varname,
+                                    int                dim,
+                                    cs_param_bc_type_t default_bc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -494,22 +466,20 @@ cs_equation_add_user(const char            *eqname,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_t *
-cs_equation_add_user_tracer(const char            *eqname,
-                            const char            *varname,
-                            int                    dim,
-                            cs_param_bc_type_t     default_bc,
-                            cs_property_t         *time_pty,
-                            cs_adv_field_t        *adv,
-                            cs_property_t         *diff_pty);
+cs_equation_t *cs_equation_add_user_tracer(const char        *eqname,
+                                           const char        *varname,
+                                           int                dim,
+                                           cs_param_bc_type_t default_bc,
+                                           cs_property_t     *time_pty,
+                                           cs_adv_field_t    *adv,
+                                           cs_property_t     *diff_pty);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_destroy_all(void);
+void cs_equation_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -520,8 +490,7 @@ cs_equation_destroy_all(void);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_needs_steady_state_solve(void);
+bool cs_equation_needs_steady_state_solve(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -530,8 +499,7 @@ cs_equation_needs_steady_state_solve(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_log_monitoring(void);
+void cs_equation_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -543,10 +511,9 @@ cs_equation_log_monitoring(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_get_count(int      *n_equations,
-                      int      *n_predef_equations,
-                      int      *n_user_equations);
+void cs_equation_get_count(int *n_equations,
+                           int *n_predef_equations,
+                           int *n_user_equations);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -554,8 +521,7 @@ cs_equation_get_count(int      *n_equations,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_log_setup(void);
+void cs_equation_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -566,9 +532,7 @@ cs_equation_log_setup(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_set_default_param(cs_equation_key_t      key,
-                              const char            *keyval);
+void cs_equation_set_default_param(cs_equation_key_t key, const char *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -576,38 +540,38 @@ cs_equation_set_default_param(cs_equation_key_t      key,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_set_sles(void);
+void cs_equation_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set shared pointers to the main structures. Associate these
  *        structures among the activated class of discretization schemes.
  *
- * \param[in] mesh             pointer to a mesh structure
- * \param[in] connect          pointer to a cs_cdo_connect_t structure
- * \param[in] cdoq             pointer to additional mesh quantities struct.
- * \param[in] time_step        pointer to a time step structure
- * \param[in] cb_scheme_flag   metadata for cell-based schemes
- * \param[in] eb_scheme_flag   metadata for edge-based schemes
- * \param[in] fb_scheme_flag   metadata for face_based schemes
- * \param[in] vb_scheme_flag   metadata for vertex-based schemes
- * \param[in] vcb_scheme_flag  metadata for vertex+cell-based schemes
- * \param[in] hho_scheme_flag  metadata for HHO schemes
+ * \param[in] mesh              pointer to a mesh structure
+ * \param[in] connect           pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq              pointer to additional mesh quantities struct.
+ * \param[in] time_step         pointer to a time step structure
+ * \param[in] cb_scheme_flag    metadata for cell-based schemes
+ * \param[in] eb_scheme_flag    metadata for edge-based schemes
+ * \param[in] fb_scheme_flag    metadata for face_based schemes
+ * \param[in] vb_scheme_flag    metadata for vertex-based schemes
+ * \param[in] vcb_scheme_flag   metadata for vertex+cell-based schemes
+ * \param[in] hho_scheme_flag   metadata for HHO schemes
+ * \param[in] mac_scheme_flag   metadata for MAC schemes
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_init_sharing(const cs_mesh_t            *mesh,
-                         const cs_cdo_connect_t     *connect,
-                         const cs_cdo_quantities_t  *cdoq,
-                         const cs_time_step_t       *time_step,
-                         cs_flag_t                   cb_scheme_flag,
-                         cs_flag_t                   eb_scheme_flag,
-                         cs_flag_t                   fb_scheme_flag,
-                         cs_flag_t                   vb_scheme_flag,
-                         cs_flag_t                   vcb_scheme_flag,
-                         cs_flag_t                   hho_scheme_flag);
+void cs_equation_init_sharing(const cs_mesh_t           *mesh,
+                              const cs_cdo_connect_t    *connect,
+                              const cs_cdo_quantities_t *cdoq,
+                              const cs_time_step_t      *time_step,
+                              cs_flag_t                  cb_scheme_flag,
+                              cs_flag_t                  eb_scheme_flag,
+                              cs_flag_t                  fb_scheme_flag,
+                              cs_flag_t                  vb_scheme_flag,
+                              cs_flag_t                  vcb_scheme_flag,
+                              cs_flag_t                  hho_scheme_flag,
+                              cs_flag_t                  mac_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -619,16 +583,17 @@ cs_equation_init_sharing(const cs_mesh_t            *mesh,
  * \param[in] vb_scheme_flag     metadata for Vb schemes
  * \param[in] vcb_scheme_flag    metadata for V+C schemes
  * \param[in] hho_scheme_flag    metadata for HHO schemes
+ * \param[in] mac_scheme_flag    metadata for MAC schemes
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_finalize_sharing(cs_flag_t    cb_scheme_flag,
-                             cs_flag_t    eb_scheme_flag,
-                             cs_flag_t    fb_scheme_flag,
-                             cs_flag_t    vb_scheme_flag,
-                             cs_flag_t    vcb_scheme_flag,
-                             cs_flag_t    hho_scheme_flag);
+void cs_equation_finalize_sharing(cs_flag_t cb_scheme_flag,
+                                  cs_flag_t eb_scheme_flag,
+                                  cs_flag_t fb_scheme_flag,
+                                  cs_flag_t vb_scheme_flag,
+                                  cs_flag_t vcb_scheme_flag,
+                                  cs_flag_t hho_scheme_flag,
+                                  cs_flag_t mac_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -641,8 +606,7 @@ cs_equation_finalize_sharing(cs_flag_t    cb_scheme_flag,
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_set_functions(void);
+bool cs_equation_set_functions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -651,8 +615,7 @@ cs_equation_set_functions(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_lock_settings(void);
+void cs_equation_lock_settings(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -672,9 +635,7 @@ cs_equation_lock_settings(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_predefined_create_field(int               n_previous,
-                                    cs_equation_t    *eq);
+void cs_equation_predefined_create_field(int n_previous, cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -682,8 +643,7 @@ cs_equation_predefined_create_field(int               n_previous,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_user_create_fields(void);
+void cs_equation_user_create_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -693,8 +653,7 @@ cs_equation_user_create_fields(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_define_builders(const cs_mesh_t     *mesh);
+void cs_equation_define_builders(const cs_mesh_t *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -702,8 +661,7 @@ cs_equation_define_builders(const cs_mesh_t     *mesh);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_define_context_structures(void);
+void cs_equation_define_context_structures(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -715,9 +673,8 @@ cs_equation_define_context_structures(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_define_core_structure(const cs_equation_t    *eq,
-                                  cs_equation_core_t    **p_core);
+void cs_equation_define_core_structure(const cs_equation_t *eq,
+                                       cs_equation_core_t **p_core);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -729,9 +686,8 @@ cs_equation_define_core_structure(const cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_init_field_values(const cs_mesh_t             *mesh,
-                              const cs_time_step_t        *ts);
+void cs_equation_init_field_values(const cs_mesh_t      *mesh,
+                                   const cs_time_step_t *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -743,9 +699,7 @@ cs_equation_init_field_values(const cs_mesh_t             *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
-                               cs_equation_t              *eq);
+void cs_equation_solve_steady_state(const cs_mesh_t *mesh, cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -758,10 +712,7 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_solve(bool                        cur2prev,
-                  const cs_mesh_t            *mesh,
-                  cs_equation_t              *eq);
+void cs_equation_solve(bool cur2prev, const cs_mesh_t *mesh, cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -773,8 +724,7 @@ cs_equation_solve(bool                        cur2prev,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_solve_steady_state_wrapper(const char    *eqname);
+void cs_equation_solve_steady_state_wrapper(const char *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -787,9 +737,7 @@ cs_equation_solve_steady_state_wrapper(const char    *eqname);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_solve_wrapper(bool                        cur2prev,
-                          const char                 *eqname);
+void cs_equation_solve_wrapper(bool cur2prev, const char *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -801,9 +749,7 @@ cs_equation_solve_wrapper(bool                        cur2prev,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_build_system(const cs_mesh_t  *mesh,
-                         cs_equation_t    *eq);
+void cs_equation_build_system(const cs_mesh_t *mesh, cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -814,8 +760,7 @@ cs_equation_build_system(const cs_mesh_t  *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_solve_deprecated(cs_equation_t  *eq);
+void cs_equation_solve_deprecated(cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -828,8 +773,7 @@ cs_equation_solve_deprecated(cs_equation_t  *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_property_t *
-cs_equation_get_diffusion_property(const cs_equation_t    *eq);
+cs_property_t *cs_equation_get_diffusion_property(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -842,8 +786,7 @@ cs_equation_get_diffusion_property(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_property_t *
-cs_equation_get_time_property(const cs_equation_t    *eq);
+cs_property_t *cs_equation_get_time_property(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -858,9 +801,8 @@ cs_equation_get_time_property(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_property_t *
-cs_equation_get_reaction_property(const cs_equation_t    *eq,
-                                  const int               reaction_id);
+cs_property_t *cs_equation_get_reaction_property(const cs_equation_t *eq,
+                                                 const int reaction_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -873,8 +815,7 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_time_scheme_t
-cs_equation_get_time_scheme(const cs_equation_t    *eq);
+cs_param_time_scheme_t cs_equation_get_time_scheme(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -888,8 +829,7 @@ cs_equation_get_time_scheme(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_equation_get_theta_time_val(const cs_equation_t    *eq);
+cs_real_t cs_equation_get_theta_time_val(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -902,8 +842,7 @@ cs_equation_get_theta_time_val(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_space_scheme_t
-cs_equation_get_space_scheme(const cs_equation_t    *eq);
+cs_param_space_scheme_t cs_equation_get_space_scheme(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -916,8 +855,7 @@ cs_equation_get_space_scheme(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_equation_get_space_poly_degree(const cs_equation_t    *eq);
+int cs_equation_get_space_poly_degree(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -929,8 +867,7 @@ cs_equation_get_space_poly_degree(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_equation_get_var_dim(const cs_equation_t    *eq);
+int cs_equation_get_var_dim(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -942,8 +879,7 @@ cs_equation_get_var_dim(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_type_t
-cs_equation_get_type(const cs_equation_t    *eq);
+cs_equation_type_t cs_equation_get_type(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -957,9 +893,8 @@ cs_equation_get_type(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_equation_get_time_eval(const cs_time_step_t     *ts,
-                          const cs_equation_t      *eq);
+double cs_equation_get_time_eval(const cs_time_step_t *ts,
+                                 const cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -971,8 +906,7 @@ cs_equation_get_time_eval(const cs_time_step_t     *ts,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_current_to_previous(const cs_equation_t    *eq);
+void cs_equation_current_to_previous(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -985,10 +919,9 @@ cs_equation_current_to_previous(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
-                                  cs_cell_sys_t         **csys,
-                                  cs_cell_builder_t     **cb);
+void cs_equation_get_cellwise_builders(const cs_equation_t *eq,
+                                       cs_cell_sys_t      **csys,
+                                       cs_cell_builder_t  **cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1002,9 +935,7 @@ cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_cell_values(const cs_equation_t    *eq,
-                            bool                    previous);
+cs_real_t *cs_equation_get_cell_values(const cs_equation_t *eq, bool previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1018,9 +949,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_face_values(const cs_equation_t    *eq,
-                            bool                    previous);
+cs_real_t *cs_equation_get_face_values(const cs_equation_t *eq, bool previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1034,9 +963,7 @@ cs_equation_get_face_values(const cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_edge_values(const cs_equation_t    *eq,
-                            bool                    previous);
+cs_real_t *cs_equation_get_edge_values(const cs_equation_t *eq, bool previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1050,9 +977,8 @@ cs_equation_get_edge_values(const cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_vertex_values(const cs_equation_t    *eq,
-                              bool                    previous);
+cs_real_t *cs_equation_get_vertex_values(const cs_equation_t *eq,
+                                         bool                 previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1068,11 +994,10 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_quantities_t  *cdoq,
-                               const cs_equation_t        *eq,
-                               cs_real_t                  *result);
+void cs_equation_integrate_variable(const cs_cdo_connect_t    *connect,
+                                    const cs_cdo_quantities_t *cdoq,
+                                    const cs_equation_t       *eq,
+                                    cs_real_t                 *result);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1087,10 +1012,9 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
-                                       const cs_equation_t   *eq,
-                                       cs_real_t             *diff_flux);
+void cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
+                                            const cs_equation_t *eq,
+                                            cs_real_t           *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1105,12 +1029,11 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
-                                      const char            *ml_name,
-                                      const cs_real_3_t      direction,
-                                      cs_real_t             *diff_flux,
-                                      cs_real_t             *conv_flux);
+void cs_equation_compute_flux_across_plane(const cs_equation_t *eq,
+                                           const char          *ml_name,
+                                           const cs_real_3_t    direction,
+                                           cs_real_t           *diff_flux,
+                                           cs_real_t           *conv_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1153,15 +1076,14 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
-                                   const cs_equation_param_t   *eqp,
-                                   const cs_property_t         *diff_pty,
-                                   const cs_real_t             *dof_vals,
-                                   const cs_real_t             *cell_vals,
-                                   cs_flag_t                    location,
-                                   cs_real_t                    t_eval,
-                                   cs_real_t                   *diff_flux);
+void cs_equation_compute_diffusive_flux(const cs_equation_t       *eq,
+                                        const cs_equation_param_t *eqp,
+                                        const cs_property_t       *diff_pty,
+                                        const cs_real_t           *dof_vals,
+                                        const cs_real_t           *cell_vals,
+                                        cs_flag_t                  location,
+                                        cs_real_t                  t_eval,
+                                        cs_real_t                 *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1172,9 +1094,8 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
-                                       cs_real_t             *v_gradient);
+void cs_equation_compute_vtx_field_gradient(const cs_equation_t *eq,
+                                            cs_real_t           *v_gradient);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1187,10 +1108,9 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_compute_peclet(const cs_equation_t        *eq,
-                           const cs_time_step_t       *ts,
-                           cs_real_t                   peclet[]);
+void cs_equation_compute_peclet(const cs_equation_t  *eq,
+                                const cs_time_step_t *ts,
+                                cs_real_t             peclet[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1201,8 +1121,7 @@ cs_equation_compute_peclet(const cs_equation_t        *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_read_extra_restart(cs_restart_t   *restart);
+void cs_equation_read_extra_restart(cs_restart_t *restart);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1213,8 +1132,7 @@ cs_equation_read_extra_restart(cs_restart_t   *restart);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_write_extra_restart(cs_restart_t   *restart);
+void cs_equation_write_extra_restart(cs_restart_t *restart);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1227,11 +1145,10 @@ cs_equation_write_extra_restart(cs_restart_t   *restart);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_post_balance(const cs_mesh_t            *mesh,
-                         const cs_cdo_connect_t     *connect,
-                         const cs_cdo_quantities_t  *cdoq,
-                         const cs_time_step_t       *ts);
+void cs_equation_post_balance(const cs_mesh_t           *mesh,
+                              const cs_cdo_connect_t    *connect,
+                              const cs_cdo_quantities_t *cdoq,
+                              const cs_time_step_t      *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1247,12 +1164,11 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_apply_stiffness(cs_equation_t          *eq,
-                            const cs_property_t    *property,
-                            const cs_real_t        *pot,
-                            cs_flag_t               loc_res,
-                            cs_real_t              *res);
+void cs_equation_apply_stiffness(cs_equation_t       *eq,
+                                 const cs_property_t *property,
+                                 const cs_real_t     *pot,
+                                 cs_flag_t            loc_res,
+                                 cs_real_t           *res);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1261,8 +1177,7 @@ cs_equation_apply_stiffness(cs_equation_t          *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_extra_post(void);
+void cs_equation_extra_post(void);
 
 /*----------------------------------------------------------------------------*/
 

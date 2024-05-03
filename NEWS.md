@@ -23,6 +23,7 @@ Release 8.2.0 (2024-06-17)
   coupling of the Navier-Stokes equations.
 - V-cycle is now the default option when an AMG technique is set
   inside the CDO/HHO framework (previously it was a K-cycle)
+- Add MAC scheme for Stokes problem on cartesian grids (using CDO framework)
 
 ### User changes:
 

@@ -232,6 +232,22 @@ _set_scheme_flags(cs_domain_t    *domain)
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
+    case CS_SPACE_SCHEME_MACFB:
+      quant_flag |= CS_CDO_QUANTITIES_MAC_SCHEME;
+      cc->mac_scheme_flag |= CS_FLAG_SCHEME_POLY0;
+
+      /* Always build quantities related to scalar-valued equations (in
+         particular the scalar-valued interface can be useful */
+
+      cc->mac_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      if (vardim == 3) {
+        cc->mac_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
+      }
+      else if (vardim > 3) {
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      }
+      break;
+
     default:
       bft_error(__FILE__, __LINE__, 0,
                 _(" Undefined type of scheme to solve for eq. %s."
@@ -273,6 +289,11 @@ _set_scheme_flags(cs_domain_t    *domain)
     case CS_SPACE_SCHEME_HHO_P2:
       quant_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
       cc->hho_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_MACFB:
+      quant_flag |= CS_CDO_QUANTITIES_MAC_SCHEME;
+      cc->mac_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
       break;
 
     default:
@@ -605,13 +626,14 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
      Update mesh structure with range set structures */
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
-  domain->connect = cs_cdo_connect_build(domain->mesh,
+  domain->connect              = cs_cdo_connect_build(domain->mesh,
                                          cc->eb_scheme_flag,
                                          cc->fb_scheme_flag,
                                          cc->cb_scheme_flag,
                                          cc->vb_scheme_flag,
                                          cc->vcb_scheme_flag,
-                                         cc->hho_scheme_flag);
+                                         cc->hho_scheme_flag,
+                                         cc->mac_scheme_flag);
 
   /* Build additional mesh quantities in a separate structure */
 
@@ -628,6 +650,8 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
     cdo_quantities_flag |= CS_CDO_QUANTITIES_VB_SCHEME;
   if (cc->vcb_scheme_flag)
     cdo_quantities_flag |= CS_CDO_QUANTITIES_VCB_SCHEME;
+  if (cc->mac_scheme_flag)
+    cdo_quantities_flag |= CS_CDO_QUANTITIES_MAC_SCHEME;
 
   cs_cdo_quantities_set(cdo_quantities_flag);
 
@@ -657,7 +681,8 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                            cc->fb_scheme_flag,
                            cc->vb_scheme_flag,
                            cc->vcb_scheme_flag,
-                           cc->hho_scheme_flag);
+                           cc->hho_scheme_flag,
+                           cc->mac_scheme_flag);
 
   cs_equation_system_init_sharing(domain->mesh,
                                   domain->connect,
@@ -681,7 +706,8 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                       cc->cb_scheme_flag,
                       cc->vb_scheme_flag,
                       cc->vcb_scheme_flag,
-                      cc->hho_scheme_flag);
+                      cc->hho_scheme_flag,
+                      cc->mac_scheme_flag);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -63,6 +63,7 @@
 #include "cs_hho_scaleq.h"
 #include "cs_hho_vecteq.h"
 #include "cs_log.h"
+#include "cs_macfb_vecteq.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_post.h"
@@ -89,7 +90,7 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
-#define CS_EQUATION_DBG  0
+#define CS_EQUATION_DBG 0
 
 /*============================================================================
  * Type definitions
@@ -99,10 +100,10 @@ BEGIN_C_DECLS
  * Local variables
  *============================================================================*/
 
-static int  _n_equations = 0;
-static int  _n_predef_equations = 0;
-static int  _n_user_equations = 0;
-static cs_equation_t  **_equations = NULL;
+static int             _n_equations        = 0;
+static int             _n_predef_equations = 0;
+static int             _n_user_equations   = 0;
+static cs_equation_t **_equations          = NULL;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -110,21 +111,18 @@ static cs_equation_t  **_equations = NULL;
  * Private variables
  *============================================================================*/
 
-static const char _err_empty_eq[] =
-  N_(" %s: Stop setting an empty cs_equation_t structure.\n"
-     " Please check your settings.\n");
+static const char _err_empty_eq[]
+  = N_(" %s: Stop setting an empty cs_equation_t structure.\n"
+       " Please check your settings.\n");
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
-solve_steady_state_cdo_equation(const char       *eqname);
+void solve_steady_state_cdo_equation(const char *eqname);
 
-void
-solve_cdo_equation(bool         cur2prev,
-                   const char  *eqname);
+void solve_cdo_equation(bool cur2prev, const char *eqname);
 
 /*============================================================================
  * Private function prototypes
@@ -144,10 +142,10 @@ solve_cdo_equation(bool         cur2prev,
 /*----------------------------------------------------------------------------*/
 
 static inline void *
-_init_context_do_nothing(cs_equation_param_t    *eqp,
-                         int                     var_id,
-                         int                     bflux_id,
-                         cs_equation_builder_t  *eqb)
+_init_context_do_nothing(cs_equation_param_t   *eqp,
+                         int                    var_id,
+                         int                    bflux_id,
+                         cs_equation_builder_t *eqb)
 {
   CS_NO_WARN_IF_UNUSED(eqp);
   CS_NO_WARN_IF_UNUSED(var_id);
@@ -168,7 +166,7 @@ _init_context_do_nothing(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 static inline void *
-_free_context_minimum(void  *scheme_context)
+_free_context_minimum(void *scheme_context)
 {
   BFT_FREE(scheme_context);
   return NULL;
@@ -187,11 +185,11 @@ _free_context_minimum(void  *scheme_context)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_post_balance_at_vertices(const cs_equation_t   *eq,
-                          const cs_time_step_t  *ts,
-                          const char            *tag,
-                          char                  *label,
-                          const cs_real_t       *values)
+_post_balance_at_vertices(const cs_equation_t  *eq,
+                          const cs_time_step_t *ts,
+                          const char           *tag,
+                          char                 *label,
+                          const cs_real_t      *values)
 
 {
   sprintf(label, "%s.Balance.%s", eq->param->name, tag);
@@ -220,23 +218,22 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 static void
-_prepare_fb_solving(void       *eq_to_cast,
-                    cs_real_t  *p_x[])
+_prepare_fb_solving(void *eq_to_cast, cs_real_t *p_x[])
 {
-  cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
-  cs_equation_param_t  *eqp = eq->param;
-  cs_equation_builder_t  *eqb = eq->builder;
+  cs_equation_t         *eq  = (cs_equation_t *)eq_to_cast;
+  cs_equation_param_t   *eqp = eq->param;
+  cs_equation_builder_t *eqb = eq->builder;
 
-  const cs_range_set_t  *rset = cs_equation_builder_get_range_set(eqb, 0);
-  const cs_matrix_t *matrix = cs_equation_builder_get_matrix(eqb, 0);
-  const cs_lnum_t  n_dofs = eqp->dim * rset->n_elts[1];
-  const cs_real_t  *f_values = eq->get_face_values(eq->scheme_context, false);
-  const int  stride = 1;  /* Since the global numbering is adapted in each
-                             case (scalar-, vector-valued equations) */
+  const cs_range_set_t *rset   = cs_equation_builder_get_range_set(eqb, 0);
+  const cs_matrix_t    *matrix = cs_equation_builder_get_matrix(eqb, 0);
+  const cs_lnum_t       n_dofs = eqp->dim * rset->n_elts[1];
+  const cs_real_t *f_values    = eq->get_face_values(eq->scheme_context, false);
+  const int        stride = 1; /* Since the global numbering is adapted in each
+                                  case (scalar-, vector-valued equations) */
 
   assert(f_values != NULL);
 
-  cs_real_t  *x = NULL;
+  cs_real_t *x = NULL;
   BFT_MALLOC(x, CS_MAX(n_dofs, cs_matrix_get_n_columns(matrix)), cs_real_t);
 
   /* x and the right-hand side are a "gathered" view of field->val and the
@@ -247,31 +244,28 @@ _prepare_fb_solving(void       *eq_to_cast,
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
-    cs_cdo_system_helper_t  *sh = eqb->system_helper;
+    cs_cdo_system_helper_t *sh = eqb->system_helper;
 
     /* Compact numbering to fit the algebraic decomposition */
 
     cs_range_set_gather(rset,
-                        CS_REAL_TYPE,  /* type */
-                        stride,        /* stride */
-                        f_values,      /* in: size = n_dofs */
-                        x);            /* out: size = n_sles_gather_elts */
+                        CS_REAL_TYPE, /* type */
+                        stride,       /* stride */
+                        f_values,     /* in: size = n_dofs */
+                        x);           /* out: size = n_sles_gather_elts */
 
-    cs_interface_set_sum(rset->ifs,
-                         n_dofs, stride, false, CS_REAL_TYPE,
-                         sh->rhs);
+    cs_interface_set_sum(
+      rset->ifs, n_dofs, stride, false, CS_REAL_TYPE, sh->rhs);
 
     cs_range_set_gather(rset,
-                        CS_REAL_TYPE,  /* type */
-                        stride,        /* stride */
-                        sh->rhs,       /* in: size = n_dofs */
-                        sh->rhs);      /* out: size = n_sles_gather_elts */
-
+                        CS_REAL_TYPE, /* type */
+                        stride,       /* stride */
+                        sh->rhs,      /* in: size = n_dofs */
+                        sh->rhs);     /* out: size = n_sles_gather_elts */
   }
   else { /* Serial mode *** without periodicity *** */
 
     cs_array_real_copy(n_dofs, f_values, x);
-
   }
 
   /* Return pointers */
@@ -289,7 +283,7 @@ _prepare_fb_solving(void       *eq_to_cast,
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_scal_hho_function_pointers(cs_equation_t  *eq)
+_set_scal_hho_function_pointers(cs_equation_t *eq)
 {
   if (eq == NULL)
     return;
@@ -299,27 +293,27 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
 
   /* New functions */
 
-  eq->init_field_values = cs_hho_scaleq_init_values;
-  eq->solve = NULL;
+  eq->init_field_values  = cs_hho_scaleq_init_values;
+  eq->solve              = NULL;
   eq->solve_steady_state = NULL;
 
-  eq->postprocess = cs_hho_scaleq_extra_post;
-  eq->read_restart = cs_hho_scaleq_read_restart;
+  eq->postprocess   = cs_hho_scaleq_extra_post;
+  eq->read_restart  = cs_hho_scaleq_read_restart;
   eq->write_restart = cs_hho_scaleq_write_restart;
 
   /* Function pointers to retrieve values at mesh locations */
 
   eq->get_vertex_values = NULL;
-  eq->get_edge_values = NULL;
-  eq->get_face_values = cs_hho_scaleq_get_face_values;
-  eq->get_cell_values = cs_hho_scaleq_get_cell_values;
+  eq->get_edge_values   = NULL;
+  eq->get_face_values   = cs_hho_scaleq_get_face_values;
+  eq->get_cell_values   = cs_hho_scaleq_get_cell_values;
 
   /* Deprecated functions */
 
-  eq->set_dir_bc = NULL;
-  eq->build_system = cs_hho_scaleq_build_system;
+  eq->set_dir_bc      = NULL;
+  eq->build_system    = cs_hho_scaleq_build_system;
   eq->prepare_solving = _prepare_fb_solving;
-  eq->update_field = cs_hho_scaleq_update_field;
+  eq->update_field    = cs_hho_scaleq_update_field;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -332,7 +326,7 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_vect_hho_function_pointers(cs_equation_t  *eq)
+_set_vect_hho_function_pointers(cs_equation_t *eq)
 {
   if (eq == NULL)
     return;
@@ -342,26 +336,26 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
 
   /* New functions */
 
-  eq->init_field_values = cs_hho_vecteq_init_values;
-  eq->solve = NULL;
+  eq->init_field_values  = cs_hho_vecteq_init_values;
+  eq->solve              = NULL;
   eq->solve_steady_state = NULL;
 
-  eq->postprocess = cs_hho_vecteq_extra_post;
-  eq->read_restart = cs_hho_vecteq_read_restart;
+  eq->postprocess   = cs_hho_vecteq_extra_post;
+  eq->read_restart  = cs_hho_vecteq_read_restart;
   eq->write_restart = cs_hho_vecteq_write_restart;
 
   /* Function pointers to retrieve values at mesh locations */
 
   eq->get_vertex_values = NULL;
-  eq->get_edge_values = NULL;
-  eq->get_face_values = cs_hho_vecteq_get_face_values;
-  eq->get_cell_values = cs_hho_vecteq_get_cell_values;
+  eq->get_edge_values   = NULL;
+  eq->get_face_values   = cs_hho_vecteq_get_face_values;
+  eq->get_cell_values   = cs_hho_vecteq_get_cell_values;
 
   /* Deprecated functions */
 
-  eq->build_system = cs_hho_vecteq_build_system;
+  eq->build_system    = cs_hho_vecteq_build_system;
   eq->prepare_solving = _prepare_fb_solving;
-  eq->update_field = cs_hho_vecteq_update_field;
+  eq->update_field    = cs_hho_vecteq_update_field;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -374,8 +368,7 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
 /*----------------------------------------------------------------------------*/
 
 static void
-_add_field(int               n_previous,
-           cs_equation_t    *eq)
+_add_field(int n_previous, cs_equation_t *eq)
 {
   if (eq == NULL)
     return;
@@ -383,11 +376,11 @@ _add_field(int               n_previous,
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
 
-  cs_equation_param_t  *eqp = eq->param;
+  cs_equation_param_t *eqp = eq->param;
 
   /* Redundant definition to handle C/FORTRAN */
 
-  bool  previous;
+  bool previous;
   if (n_previous == 0)
     previous = false;
   else if (n_previous > 0)
@@ -395,16 +388,20 @@ _add_field(int               n_previous,
   else {
 
     previous = false; /* avoid a compiler warning */
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Expected value for n_previous is > -1. Here %d\n"
               "%s: Eq. \"%s\"\n",
-              __func__, n_previous, __func__, eqp->name);
-
+              __func__,
+              n_previous,
+              __func__,
+              eqp->name);
   }
 
   /* Associate a predefined mesh_location_id to this field */
 
-  int  location_id = -1; /* Initialize values to avoid a warning */
+  int location_id = -1; /* Initialize values to avoid a warning */
 
   switch (eqp->space_scheme) {
   case CS_SPACE_SCHEME_CDOVB:
@@ -417,21 +414,30 @@ _add_field(int               n_previous,
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
+  case CS_SPACE_SCHEME_MACFB:
     location_id = cs_mesh_location_get_id_by_name("cells");
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Space scheme for eq. \"%s\" is incompatible with a field.\n"
               "%s: Stop adding a cs_field_t structure.\n",
-              __func__, eqp->name, __func__);
+              __func__,
+              eqp->name,
+              __func__);
     break;
   }
 
   if (location_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Invalid mesh location id (= -1) for the field associated"
-              " to Eq. \"%s\"\n", __func__, eqp->name);
+              " to Eq. \"%s\"\n",
+              __func__,
+              eqp->name);
 
   /* Store the related field id */
 
@@ -451,8 +457,8 @@ _add_field(int               n_previous,
 
     location_id = cs_mesh_location_get_id_by_name("boundary_faces");
 
-    char  *bdy_flux_name = NULL;
-    int  len = strlen(eq->varname) + strlen("_normal_boundary_flux") + 2;
+    char *bdy_flux_name = NULL;
+    int   len = strlen(eq->varname) + strlen("_normal_boundary_flux") + 2;
 
     BFT_MALLOC(bdy_flux_name, len, char);
     sprintf(bdy_flux_name, "%s_normal_boundary_flux", eq->varname);
@@ -460,19 +466,18 @@ _add_field(int               n_previous,
     /* If a scalar: the scalar diffusive flux across the boundary
      * If a vector: the vector dot the normal of the boundary face */
 
-    int  flx_dim = (eqp->dim > 5) ? 3 : 1;
-    cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
-                                                        0, /* field_mask */
-                                                        location_id,
-                                                        flx_dim,
-                                                        previous);
+    int         flx_dim      = (eqp->dim > 5) ? 3 : 1;
+    cs_field_t *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
+                                                       0, /* field_mask */
+                                                       location_id,
+                                                       flx_dim,
+                                                       previous);
 
     eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
     cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"),
-                         post_flag);
+    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"), post_flag);
 
     BFT_FREE(bdy_flux_name);
 
@@ -514,23 +519,22 @@ cs_equation_get_n_equations(void)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_by_name(const char    *eqname)
+cs_equation_by_name(const char *eqname)
 {
-  cs_equation_t  *eq = NULL;
+  cs_equation_t *eq = NULL;
   if (eqname == NULL)
     return eq;
 
-  size_t  len_in = strlen(eqname);
+  size_t len_in = strlen(eqname);
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *_eq = _equations[i];
+    cs_equation_t *_eq = _equations[i];
     assert(_eq != NULL);
-    cs_equation_param_t  *eqp = _eq->param;
+    cs_equation_param_t *eqp = _eq->param;
     assert(eqp != NULL && eqp->name != NULL);
     if (strlen(eqp->name) == len_in)
       if (strcmp(eqname, eqp->name) == 0)
         return _eq;
-
   }
 
   return eq;
@@ -548,14 +552,14 @@ cs_equation_by_name(const char    *eqname)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_by_field_name(const char    *field_name)
+cs_equation_by_field_name(const char *field_name)
 {
   if (field_name == NULL)
     return NULL;
 
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
+    cs_equation_t *eq = _equations[i];
     assert(eq != NULL);
 
     if (cs_equation_has_field_name(eq, field_name))
@@ -580,13 +584,12 @@ cs_equation_by_field_name(const char    *field_name)
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_has_field_name(const cs_equation_t  *eq,
-                           const char           *fld_name)
+cs_equation_has_field_name(const cs_equation_t *eq, const char *fld_name)
 {
   if (eq == NULL)
     return false;
 
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  cs_field_t *fld = cs_field_by_id(eq->field_id);
   if (fld == NULL)
     return false;
 
@@ -612,13 +615,13 @@ cs_equation_has_field_name(const cs_equation_t  *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_param_by_name(const char    *eqname)
+cs_equation_param_by_name(const char *eqname)
 {
   cs_equation_param_t *eq_param = NULL;
 
   if (eqname != NULL) {
 
-    cs_equation_t  *eq = cs_equation_by_name(eqname);
+    cs_equation_t *eq = cs_equation_by_name(eqname);
     if (eq != NULL)
       eq_param = eq->param;
 
@@ -627,7 +630,6 @@ cs_equation_param_by_name(const char    *eqname)
       if (f != NULL)
         eq_param = cs_field_get_equation_param(f);
     }
-
   }
 
   return eq_param;
@@ -646,12 +648,12 @@ cs_equation_param_by_name(const char    *eqname)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_param_by_field_name(const char    *field_name)
+cs_equation_param_by_field_name(const char *field_name)
 {
   if (field_name == NULL)
     return NULL;
 
-  cs_equation_t  *eq = cs_equation_by_field_name(field_name);
+  cs_equation_t *eq = cs_equation_by_field_name(field_name);
 
   if (eq == NULL)
     return NULL;
@@ -671,7 +673,7 @@ cs_equation_param_by_field_name(const char    *field_name)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_get_param(const cs_equation_t    *eq)
+cs_equation_get_param(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
@@ -691,14 +693,13 @@ cs_equation_get_param(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_by_id(int   eq_id)
+cs_equation_by_id(int eq_id)
 {
   if (eq_id < 0 || eq_id > _n_equations - 1)
     return NULL;
 
   return _equations[eq_id];
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -711,9 +712,9 @@ cs_equation_by_id(int   eq_id)
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_equation_get_name(const cs_equation_t    *eq)
+cs_equation_get_name(const cs_equation_t *eq)
 {
-  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+  cs_equation_param_t *eqp = cs_equation_get_param(eq);
   if (eqp == NULL)
     return NULL;
   else
@@ -731,14 +732,13 @@ cs_equation_get_name(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_equation_get_id(const cs_equation_t    *eq)
+cs_equation_get_id(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return -1;
   else
     return eq->id;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -751,7 +751,7 @@ cs_equation_get_id(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_field_t *
-cs_equation_get_field(const cs_equation_t    *eq)
+cs_equation_get_field(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
@@ -771,7 +771,7 @@ cs_equation_get_field(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_equation_get_field_id(const cs_equation_t    *eq)
+cs_equation_get_field_id(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return -1;
@@ -793,14 +793,14 @@ cs_equation_get_field_id(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 const cs_range_set_t *
-cs_equation_get_range_set(const cs_equation_t    *eq)
+cs_equation_get_range_set(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
 
   else { /* Equation has been allocated */
 
-    cs_equation_builder_t  *eqb = eq->builder;
+    cs_equation_builder_t *eqb = eq->builder;
 
     if (eqb == NULL)
       return NULL;
@@ -808,7 +808,6 @@ cs_equation_get_range_set(const cs_equation_t    *eq)
 
       return cs_equation_builder_get_range_set(eqb, 0);
     }
-
   }
 
   return NULL;
@@ -827,8 +826,8 @@ cs_equation_get_range_set(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
-                              const cs_cdo_quantities_t   *cdoq)
+cs_equation_get_global_n_dofs(const cs_equation_t       *eq,
+                              const cs_cdo_quantities_t *cdoq)
 {
   if (eq == NULL || cdoq == NULL)
     return 0;
@@ -866,20 +865,27 @@ cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
 
   case CS_SPACE_SCHEME_HHO_P1:
     if (cs_glob_n_ranks > 1)
-      return CS_N_DOFS_FACE_1ST*cdoq->n_g_faces
-        + CS_N_DOFS_CELL_1ST*cdoq->n_g_cells;
+      return CS_N_DOFS_FACE_1ST * cdoq->n_g_faces
+             + CS_N_DOFS_CELL_1ST * cdoq->n_g_cells;
     else
-      return (cs_gnum_t)(CS_N_DOFS_FACE_1ST*cdoq->n_faces
-                         + CS_N_DOFS_CELL_1ST*cdoq->n_cells);
+      return (cs_gnum_t)(CS_N_DOFS_FACE_1ST * cdoq->n_faces
+                         + CS_N_DOFS_CELL_1ST * cdoq->n_cells);
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
     if (cs_glob_n_ranks > 1)
-      return CS_N_DOFS_FACE_2ND*cdoq->n_g_faces
-        + CS_N_DOFS_CELL_2ND*cdoq->n_g_cells;
+      return CS_N_DOFS_FACE_2ND * cdoq->n_g_faces
+             + CS_N_DOFS_CELL_2ND * cdoq->n_g_cells;
     else
-      return (cs_gnum_t)(CS_N_DOFS_FACE_2ND*cdoq->n_faces
-                         + CS_N_DOFS_CELL_2ND*cdoq->n_cells);
+      return (cs_gnum_t)(CS_N_DOFS_FACE_2ND * cdoq->n_faces
+                         + CS_N_DOFS_CELL_2ND * cdoq->n_cells);
+    break;
+
+  case CS_SPACE_SCHEME_MACFB:
+    if (cs_glob_n_ranks > 1)
+      return cdoq->n_g_faces;
+    else
+      return (cs_gnum_t)(cdoq->n_faces);
     break;
 
   default:
@@ -899,7 +905,7 @@ cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_field_t *
-cs_equation_get_boundary_flux(const cs_equation_t    *eq)
+cs_equation_get_boundary_flux(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
@@ -921,7 +927,7 @@ cs_equation_get_boundary_flux(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_builder_t *
-cs_equation_get_builder(const cs_equation_t    *eq)
+cs_equation_get_builder(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
@@ -941,7 +947,7 @@ cs_equation_get_builder(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_equation_get_scheme_context(const cs_equation_t    *eq)
+cs_equation_get_scheme_context(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
@@ -961,17 +967,16 @@ cs_equation_get_scheme_context(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_core_t
-cs_equation_get_core_structure(const cs_equation_t    *eq)
+cs_equation_get_core_structure(const cs_equation_t *eq)
 {
-  cs_equation_core_t  core =
-    { .param = NULL, .builder = NULL, .scheme_context = NULL };
+  cs_equation_core_t core
+    = { .param = NULL, .builder = NULL, .scheme_context = NULL };
 
   if (eq != NULL) {
 
-    core.param = eq->param;
-    core.builder = eq->builder;
+    core.param          = eq->param;
+    core.builder        = eq->builder;
     core.scheme_context = eq->scheme_context;
-
   }
 
   return core;
@@ -990,20 +995,20 @@ cs_equation_get_core_structure(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_source_term_array(const cs_equation_t    *eq)
+cs_equation_get_source_term_array(const cs_equation_t *eq)
 {
-  cs_real_t  *source_term = NULL;
+  cs_real_t *source_term = NULL;
 
   if (eq != NULL) {
 
-    const cs_equation_param_t  *eqp = eq->param;
+    const cs_equation_param_t *eqp = eq->param;
 
     assert(eq->scheme_context != NULL);
     assert(eqp != NULL);
 
-    if (eqp->dim == 1) {        /* scalar-valued case */
+    if (eqp->dim == 1) { /* scalar-valued case */
 
-      switch(eqp->space_scheme) {
+      switch (eqp->space_scheme) {
 
       case CS_SPACE_SCHEME_CDOVB:
         return cs_cdovb_scaleq_get_source_term_values(eq->scheme_context);
@@ -1015,16 +1020,21 @@ cs_equation_get_source_term_array(const cs_equation_t    *eq)
         return cs_cdovcb_scaleq_get_source_term_values(eq->scheme_context);
 
       default:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
-
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  "%s: (Eq. %s). Not implemented.",
+                  __func__,
+                  eqp->name);
       }
-
     }
     else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Case not handled yet. Eq. \"%s\"\n", __func__, eqp->name);
-
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: Case not handled yet. Eq. \"%s\"\n",
+                __func__,
+                eqp->name);
   }
 
   return source_term;
@@ -1042,7 +1052,7 @@ cs_equation_get_source_term_array(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_equation_get_diffusion_property(const cs_equation_t    *eq)
+cs_equation_get_diffusion_property(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
@@ -1064,7 +1074,7 @@ cs_equation_get_diffusion_property(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_equation_get_time_property(const cs_equation_t    *eq)
+cs_equation_get_time_property(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return NULL;
@@ -1088,13 +1098,13 @@ cs_equation_get_time_property(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_equation_get_reaction_property(const cs_equation_t    *eq,
-                                  const int               reaction_id)
+cs_equation_get_reaction_property(const cs_equation_t *eq,
+                                  const int            reaction_id)
 {
   if (eq == NULL)
     return NULL;
 
-  const cs_equation_param_t  *eqp = eq->param;
+  const cs_equation_param_t *eqp = eq->param;
   if (reaction_id < 0 || reaction_id > eqp->n_reaction_terms - 1)
     return NULL;
 
@@ -1113,7 +1123,7 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_param_time_scheme_t
-cs_equation_get_time_scheme(const cs_equation_t    *eq)
+cs_equation_get_time_scheme(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return CS_TIME_N_SCHEMES;
@@ -1136,9 +1146,9 @@ cs_equation_get_time_scheme(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_equation_get_theta_time_val(const cs_equation_t    *eq)
+cs_equation_get_theta_time_val(const cs_equation_t *eq)
 {
-  cs_real_t  theta = -1;
+  cs_real_t theta = -1;
 
   if (eq == NULL)
     return theta;
@@ -1166,7 +1176,6 @@ cs_equation_get_theta_time_val(const cs_equation_t    *eq)
     default:
       break;
     }
-
   }
 
   return theta;
@@ -1184,7 +1193,7 @@ cs_equation_get_theta_time_val(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_param_space_scheme_t
-cs_equation_get_space_scheme(const cs_equation_t    *eq)
+cs_equation_get_space_scheme(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return CS_SPACE_N_SCHEMES;
@@ -1206,7 +1215,7 @@ cs_equation_get_space_scheme(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_equation_get_space_poly_degree(const cs_equation_t    *eq)
+cs_equation_get_space_poly_degree(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return -1;
@@ -1227,7 +1236,7 @@ cs_equation_get_space_poly_degree(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_equation_get_var_dim(const cs_equation_t    *eq)
+cs_equation_get_var_dim(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return 0;
@@ -1248,7 +1257,7 @@ cs_equation_get_var_dim(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_type_t
-cs_equation_get_type(const cs_equation_t    *eq)
+cs_equation_get_type(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return CS_EQUATION_N_TYPES;
@@ -1271,32 +1280,29 @@ cs_equation_get_type(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 double
-cs_equation_get_time_eval(const cs_time_step_t     *ts,
-                          const cs_equation_t      *eq)
+cs_equation_get_time_eval(const cs_time_step_t *ts, const cs_equation_t *eq)
 {
   assert(ts != NULL);
-  double  time_eval = ts->t_cur; /* default value */
+  double time_eval = ts->t_cur; /* default value */
 
   if (eq == NULL)
     return time_eval;
 
   /* Define the time at which one evaluates the properties */
 
-  const double  dt_cur = ts->dt[0];
-  cs_param_time_scheme_t  time_scheme = cs_equation_get_time_scheme(eq);
+  const double           dt_cur      = ts->dt[0];
+  cs_param_time_scheme_t time_scheme = cs_equation_get_time_scheme(eq);
 
   switch (time_scheme) {
 
   case CS_TIME_SCHEME_CRANKNICO:
-    time_eval = ts->t_cur + 0.5*dt_cur;
+    time_eval = ts->t_cur + 0.5 * dt_cur;
     break;
 
-  case CS_TIME_SCHEME_THETA:
-    {
-      double  theta = cs_equation_get_theta_time_val(eq);
-      time_eval = ts->t_cur + theta*dt_cur;
-    }
-    break;
+  case CS_TIME_SCHEME_THETA: {
+    double theta = cs_equation_get_theta_time_val(eq);
+    time_eval    = ts->t_cur + theta * dt_cur;
+  } break;
 
   case CS_TIME_SCHEME_EULER_IMPLICIT:
   case CS_TIME_SCHEME_BDF2:
@@ -1324,9 +1330,9 @@ cs_equation_get_time_eval(const cs_time_step_t     *ts,
 /*----------------------------------------------------------------------------*/
 
 cs_flag_t
-cs_equation_get_flag(const cs_equation_t    *eq)
+cs_equation_get_flag(const cs_equation_t *eq)
 {
-  cs_flag_t  ret_flag = 0;
+  cs_flag_t ret_flag = 0;
 
   if (eq == NULL)
     return ret_flag;
@@ -1342,18 +1348,18 @@ cs_equation_get_flag(const cs_equation_t    *eq)
  *
  * \param[in, out] eq       pointer to a cs_equation_t structure
  * \param[in]      flag     new flag to set
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_flag(cs_equation_t    *eq,
-                     cs_flag_t         flag)
+cs_equation_set_flag(cs_equation_t *eq, cs_flag_t flag)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(eq->param != NULL);
 
-  eq->param->flag = flag;;
+  eq->param->flag = flag;
+  ;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1370,34 +1376,37 @@ cs_equation_set_flag(cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_build_hook(cs_equation_t               *eq,
-                           void                        *context,
-                           cs_equation_build_hook_t    *func)
+cs_equation_add_build_hook(cs_equation_t            *eq,
+                           void                     *context,
+                           cs_equation_build_hook_t *func)
 {
   if (eq == NULL)
     return;
 
-  cs_equation_param_t  *eqp = eq->param;
+  cs_equation_param_t *eqp = eq->param;
   assert(eqp != NULL);
 
   if (eq->builder == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Initialization of equation %s has not been done yet.\n"
               " Please call this operation later in"
               " cs_user_extra_operations_initialize() for instance.",
-              __func__, eqp->name);
+              __func__,
+              eqp->name);
 
-  cs_equation_builder_t   *eqb = eq->builder;
+  cs_equation_builder_t *eqb = eq->builder;
 
-  eqb->hook_context = context;
+  eqb->hook_context  = context;
   eqb->hook_function = func;
   eqp->flag |= CS_EQUATION_BUILD_HOOK;
 
   /* Add an entry in the setup log file (this is done after the main setup
    * log but one needs to initialize equations before calling this function) */
 
-  cs_log_printf(CS_LOG_SETUP, " Equation %s: Add a user hook function\n",
-                eqp->name);
+  cs_log_printf(
+    CS_LOG_SETUP, " Equation %s: Add a user hook function\n", eqp->name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1411,7 +1420,7 @@ cs_equation_add_build_hook(cs_equation_t               *eq,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_is_steady(const cs_equation_t    *eq)
+cs_equation_is_steady(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return true;
@@ -1436,23 +1445,23 @@ cs_equation_is_steady(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
+cs_equation_uses_new_mechanism(const cs_equation_t *eq)
 {
   if (eq == NULL)
     return false;
   assert(eq->param != NULL);
 
   if (eq->param->dim == 1) {
-    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)  ||
-        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVCB) ||
-        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)  ||
-        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOCB))
+    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)
+        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVCB)
+        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
+        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOCB))
       return true;
   }
   else if (eq->param->dim == 3) {
-    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB) ||
-        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB) ||
-        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOEB))
+    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)
+        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
+        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOEB))
       return true;
   }
 
@@ -1474,30 +1483,40 @@ cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_add(const char            *eqname,
-                const char            *varname,
-                cs_equation_type_t     eqtype,
-                int                    dim,
-                cs_param_bc_type_t     default_bc)
+cs_equation_add(const char        *eqname,
+                const char        *varname,
+                cs_equation_type_t eqtype,
+                int                dim,
+                cs_param_bc_type_t default_bc)
 {
   if (varname == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _(" %s: No variable name associated to an equation structure.\n"
-                " Check your initialization."), __func__);
+                " Check your initialization."),
+              __func__);
   if (eqname == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _(" %s No equation name associated to an equation structure.\n"
-                " Check your initialization."), __func__);
+                " Check your initialization."),
+              __func__);
   if (cs_equation_by_name(eqname) != NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _(" %s: Stop adding a new equation.\n"
-                " Equation name %s is already defined."), __func__, eqname);
+                " Equation name %s is already defined."),
+              __func__,
+              eqname);
 
-  cs_equation_t  *eq = NULL;
+  cs_equation_t *eq = NULL;
 
   BFT_MALLOC(eq, 1, cs_equation_t);
 
-  int  eq_id = _n_equations;
+  int eq_id = _n_equations;
   _n_equations++;
   BFT_REALLOC(_equations, _n_equations, cs_equation_t *);
   _equations[eq_id] = eq;
@@ -1518,29 +1537,31 @@ cs_equation_add(const char            *eqname,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: This type of equation is not handled.\n"
-              " Stop adding a new equation.", __func__);
+              " Stop adding a new equation.",
+              __func__);
     break;
-
   }
 
   eq->id = eq_id;
 
   /* Store varname */
 
-  size_t  len = strlen(varname);
+  size_t len = strlen(varname);
   BFT_MALLOC(eq->varname, len + 1, char);
   strncpy(eq->varname, varname, len + 1); /* Last character is '\0' */
 
   eq->param = cs_equation_param_create(eqname, eqtype, dim, default_bc);
 
-  eq->field_id = -1;           /* This field is created in a second step */
-  eq->boundary_flux_id = -1;   /* Not always defined (done in a second step) */
+  eq->field_id         = -1; /* This field is created in a second step */
+  eq->boundary_flux_id = -1; /* Not always defined (done in a second step) */
 
   /* Builder structure for this equation */
 
-  eq->builder = NULL;
+  eq->builder        = NULL;
   eq->scheme_context = NULL;
 
   /* Pointers of function */
@@ -1550,32 +1571,32 @@ cs_equation_add(const char            *eqname,
 
   /* Extra-operations */
 
-  eq->compute_balance = NULL;
-  eq->apply_stiffness = NULL;
-  eq->postprocess = NULL;
+  eq->compute_balance     = NULL;
+  eq->apply_stiffness     = NULL;
+  eq->postprocess         = NULL;
   eq->current_to_previous = NULL;
 
   /* Restart */
 
-  eq->read_restart = NULL;
+  eq->read_restart  = NULL;
   eq->write_restart = NULL;
 
   /* Function pointers to retrieve values at mesh locations */
 
   eq->get_vertex_values = NULL;
-  eq->get_edge_values = NULL;
-  eq->get_face_values = NULL;
-  eq->get_cell_values = NULL;
+  eq->get_edge_values   = NULL;
+  eq->get_face_values   = NULL;
+  eq->get_cell_values   = NULL;
 
   /* New functions */
 
-  eq->init_field_values = NULL;
-  eq->solve = NULL;
+  eq->init_field_values  = NULL;
+  eq->solve              = NULL;
   eq->solve_steady_state = NULL;
 
   /* Deprecated functions (only for HHO schemes) */
 
-  eq->set_dir_bc = NULL;
+  eq->set_dir_bc   = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
 
@@ -1587,7 +1608,7 @@ cs_equation_add(const char            *eqname,
                                            eqname,
                                            eqname);
 
-  return  eq;
+  return eq;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1604,31 +1625,34 @@ cs_equation_add(const char            *eqname,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_add_user(const char            *eqname,
-                     const char            *varname,
-                     int                    dim,
-                     cs_param_bc_type_t     default_bc)
+cs_equation_add_user(const char        *eqname,
+                     const char        *varname,
+                     int                dim,
+                     cs_param_bc_type_t default_bc)
 {
   if (eqname == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Empty equation name.", __func__);
   if (varname == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Empty variable name.", __func__);
 
-  if ((default_bc != CS_PARAM_BC_HMG_DIRICHLET) &&
-      (default_bc != CS_PARAM_BC_HMG_NEUMANN))
-    bft_error(__FILE__, __LINE__, 0,
+  if ((default_bc != CS_PARAM_BC_HMG_DIRICHLET)
+      && (default_bc != CS_PARAM_BC_HMG_NEUMANN))
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _(" %s: Invalid type of boundary condition by default.\n"
                 " Valid choices are CS_PARAM_BC_HMG_DIRICHLET or"
-                " CS_PARAM_BC_HMG_NEUMANN"), __func__);
+                " CS_PARAM_BC_HMG_NEUMANN"),
+              __func__);
 
   /* Add a new user equation */
 
-  cs_equation_t  *eq =
-    cs_equation_add(eqname,                /* equation name */
-                    varname,               /* variable name */
-                    CS_EQUATION_TYPE_USER, /* type of equation */
-                    dim,                   /* dimension of the variable */
-                    default_bc);           /* default BC */
+  cs_equation_t *eq
+    = cs_equation_add(eqname,                /* equation name */
+                      varname,               /* variable name */
+                      CS_EQUATION_TYPE_USER, /* type of equation */
+                      dim,                   /* dimension of the variable */
+                      default_bc);           /* default BC */
 
   return eq;
 }
@@ -1653,15 +1677,15 @@ cs_equation_add_user(const char            *eqname,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_add_user_tracer(const char            *eqname,
-                            const char            *varname,
-                            int                    dim,
-                            cs_param_bc_type_t     default_bc,
-                            cs_property_t         *time_pty,
-                            cs_adv_field_t        *adv,
-                            cs_property_t         *diff_pty)
+cs_equation_add_user_tracer(const char        *eqname,
+                            const char        *varname,
+                            int                dim,
+                            cs_param_bc_type_t default_bc,
+                            cs_property_t     *time_pty,
+                            cs_adv_field_t    *adv,
+                            cs_property_t     *diff_pty)
 {
-  cs_equation_t  *eq = cs_equation_add_user(eqname, varname, dim, default_bc);
+  cs_equation_t *eq = cs_equation_add_user(eqname, varname, dim, default_bc);
   assert(eq != NULL);
 
   /* Add an advection term */
@@ -1696,7 +1720,7 @@ cs_equation_destroy_all(void)
 
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
+    cs_equation_t *eq = _equations[i];
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
@@ -1721,8 +1745,8 @@ cs_equation_destroy_all(void)
 
   BFT_FREE(_equations);
 
-  _n_equations = 0;
-  _n_user_equations = 0;
+  _n_equations        = 0;
+  _n_user_equations   = 0;
   _n_predef_equations = 0;
 }
 
@@ -1740,7 +1764,7 @@ cs_equation_needs_steady_state_solve(void)
 {
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_t *eq = _equations[eq_id];
 
     if (cs_equation_is_steady(eq))
       return true;
@@ -1765,28 +1789,31 @@ cs_equation_log_monitoring(void)
   if (_n_equations < 1)
     return;
 
-  bool  output = false;
+  bool output = false;
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
-    const cs_equation_param_t  *eqp = eq->param;
+    cs_equation_t             *eq  = _equations[i];
+    const cs_equation_param_t *eqp = eq->param;
 
     if (eqp->flag & CS_EQUATION_INSIDE_SYSTEM)
       continue;
     else
       output = true;
-
   }
 
   if (!output)
     return;
 
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n%-36s %9s %9s %9s\n",
-                " ", "Build", "Solve", "Extra");
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n%-36s %9s %9s %9s\n",
+                " ",
+                "Build",
+                "Solve",
+                "Extra");
 
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
+    cs_equation_t *eq = _equations[i];
 
     /* Display high-level timer counter related to the current equation before
        deleting the structure */
@@ -1810,13 +1837,13 @@ cs_equation_log_monitoring(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_get_count(int      *n_equations,
-                      int      *n_predef_equations,
-                      int      *n_user_equations)
+cs_equation_get_count(int *n_equations,
+                      int *n_predef_equations,
+                      int *n_user_equations)
 {
-  *n_equations = _n_equations;
+  *n_equations        = _n_equations;
   *n_predef_equations = _n_predef_equations;
-  *n_user_equations = _n_user_equations;
+  *n_user_equations   = _n_user_equations;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1831,9 +1858,9 @@ cs_equation_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "\nSettings for equations\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
-  for (int  eq_id = 0; eq_id < _n_equations; eq_id++) {
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_t *eq = _equations[eq_id];
     assert(eq->param != NULL);
 
     if (eq->main_ts_id > -1)
@@ -1841,7 +1868,8 @@ cs_equation_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   "Summary of settings for \"%s\" eq. (variable: \"%s\")\n",
-                  eq->param->name, eq->varname);
+                  eq->param->name,
+                  eq->varname);
     cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h2);
 
     cs_equation_param_log(eq->param);
@@ -1862,15 +1890,14 @@ cs_equation_log_setup(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_default_param(cs_equation_key_t      key,
-                              const char            *keyval)
+cs_equation_set_default_param(cs_equation_key_t key, const char *keyval)
 {
   if (_n_equations == 0)
     return;
 
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_t *eq = _equations[eq_id];
     if (eq == NULL)
       continue;
 
@@ -1899,8 +1926,8 @@ cs_equation_set_sles(void)
 
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    cs_equation_t  *eq = _equations[eq_id];
-    cs_equation_param_t  *eqp = eq->param;
+    cs_equation_t       *eq  = _equations[eq_id];
+    cs_equation_param_t *eqp = eq->param;
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
@@ -1932,20 +1959,22 @@ cs_equation_set_sles(void)
  * \param[in] vb_scheme_flag   metadata for vertex-based schemes
  * \param[in] vcb_scheme_flag  metadata for vertex+cell-based schemes
  * \param[in] hho_scheme_flag  metadata for HHO schemes
+ * \param[in] mac_scheme_flag  metadata for MAC schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_sharing(const cs_mesh_t            *mesh,
-                         const cs_cdo_connect_t     *connect,
-                         const cs_cdo_quantities_t  *cdoq,
-                         const cs_time_step_t       *time_step,
-                         cs_flag_t                   cb_scheme_flag,
-                         cs_flag_t                   eb_scheme_flag,
-                         cs_flag_t                   fb_scheme_flag,
-                         cs_flag_t                   vb_scheme_flag,
-                         cs_flag_t                   vcb_scheme_flag,
-                         cs_flag_t                   hho_scheme_flag)
+cs_equation_init_sharing(const cs_mesh_t           *mesh,
+                         const cs_cdo_connect_t    *connect,
+                         const cs_cdo_quantities_t *cdoq,
+                         const cs_time_step_t      *time_step,
+                         cs_flag_t                  cb_scheme_flag,
+                         cs_flag_t                  eb_scheme_flag,
+                         cs_flag_t                  fb_scheme_flag,
+                         cs_flag_t                  vb_scheme_flag,
+                         cs_flag_t                  vcb_scheme_flag,
+                         cs_flag_t                  hho_scheme_flag,
+                         cs_flag_t                  mac_scheme_flag)
 {
   if (vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
 
@@ -1962,10 +1991,10 @@ cs_equation_init_sharing(const cs_mesh_t            *mesh,
 
   if (eb_scheme_flag > 0) {
 
-      /* This is a vector-valued equation but the DoF is scalar-valued since
-       * it is a circulation associated to each edge */
+    /* This is a vector-valued equation but the DoF is scalar-valued since
+     * it is a circulation associated to each edge */
 
-    if (eb_scheme_flag  & CS_FLAG_SCHEME_SCALAR)
+    if (eb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
       cs_cdoeb_vecteq_init_sharing(cdoq, connect, time_step);
 
   } /* Edge-based class of discretization schemes */
@@ -1999,6 +2028,14 @@ cs_equation_init_sharing(const cs_mesh_t            *mesh,
       cs_hho_vecteq_init_sharing(hho_scheme_flag, cdoq, connect, time_step);
 
   } /* Higher-order face-based class of discretization schemes */
+
+  if (mac_scheme_flag > 0) {
+
+    if (cs_flag_test(mac_scheme_flag,
+                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR))
+      cs_macfb_vecteq_init_sharing(cdoq, connect, time_step);
+
+  } /* Face-based class of discretization schemes */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2011,16 +2048,18 @@ cs_equation_init_sharing(const cs_mesh_t            *mesh,
  * \param[in] vb_scheme_flag     metadata for Vb schemes
  * \param[in] vcb_scheme_flag    metadata for V+C schemes
  * \param[in] hho_scheme_flag    metadata for HHO schemes
+ * \param[in] mac_scheme_flag    metadata for MAC schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_finalize_sharing(cs_flag_t    cb_scheme_flag,
-                             cs_flag_t    eb_scheme_flag,
-                             cs_flag_t    fb_scheme_flag,
-                             cs_flag_t    vb_scheme_flag,
-                             cs_flag_t    vcb_scheme_flag,
-                             cs_flag_t    hho_scheme_flag)
+cs_equation_finalize_sharing(cs_flag_t cb_scheme_flag,
+                             cs_flag_t eb_scheme_flag,
+                             cs_flag_t fb_scheme_flag,
+                             cs_flag_t vb_scheme_flag,
+                             cs_flag_t vcb_scheme_flag,
+                             cs_flag_t hho_scheme_flag,
+                             cs_flag_t mac_scheme_flag)
 {
   /* Free common local structures specific to a numerical scheme */
 
@@ -2050,6 +2089,9 @@ cs_equation_finalize_sharing(cs_flag_t    cb_scheme_flag,
 
   if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR)
     cs_hho_vecteq_finalize_sharing();
+
+  if (mac_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+    cs_macfb_vecteq_finalize_sharing();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2067,18 +2109,18 @@ cs_equation_set_functions(void)
   if (_n_equations == 0)
     return true;
 
-  const char  s_err_msg[] =
-    "%s: Only the scalar-valued case is handled for this scheme.\n";
-  const char  sv_err_msg[] =
-    "%s: Only the scalar-valued and vector-valued case are handled"
-    "for this scheme.\n";
+  const char s_err_msg[]
+    = "%s: Only the scalar-valued case is handled for this scheme.\n";
+  const char sv_err_msg[]
+    = "%s: Only the scalar-valued and vector-valued case are handled"
+      "for this scheme.\n";
 
-  bool  all_are_steady = true;
+  bool all_are_steady = true;
 
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    cs_equation_t  *eq = _equations[eq_id];
-    cs_equation_param_t  *eqp = eq->param;
+    cs_equation_t       *eq  = _equations[eq_id];
+    cs_equation_param_t *eqp = eq->param;
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
@@ -2090,21 +2132,21 @@ cs_equation_set_functions(void)
 
     /* Set function pointers */
 
-    switch(eqp->space_scheme) {
+    switch (eqp->space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
       if (eqp->dim == 1) {
 
-        eq->init_context = cs_cdovb_scaleq_init_context;
-        eq->free_context = cs_cdovb_scaleq_free_context;
+        eq->init_context      = cs_cdovb_scaleq_init_context;
+        eq->free_context      = cs_cdovb_scaleq_free_context;
         eq->init_field_values = cs_cdovb_scaleq_init_values;
 
         /* Deprecated pointers (Only for HHO schemes) */
 
-        eq->set_dir_bc = NULL;
-        eq->build_system = NULL;
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
         eq->prepare_solving = NULL;
-        eq->update_field = NULL;
+        eq->update_field    = NULL;
 
         /* New mechanism */
 
@@ -2123,11 +2165,13 @@ cs_equation_set_functions(void)
           case CS_TIME_SCHEME_CRANKNICO:
           case CS_TIME_SCHEME_BDF2:
           default:
-            bft_error(__FILE__, __LINE__, 0,
+            bft_error(__FILE__,
+                      __LINE__,
+                      0,
                       "%s: Eq. %s. This time scheme is not yet implemented",
-                      __func__, eqp->name);
+                      __func__,
+                      eqp->name);
           }
-
         }
         else {
 
@@ -2147,81 +2191,88 @@ cs_equation_set_functions(void)
 
           case CS_TIME_SCHEME_BDF2:
           default:
-            bft_error(__FILE__, __LINE__, 0,
+            bft_error(__FILE__,
+                      __LINE__,
+                      0,
                       "%s: Eq. %s. This time scheme is not yet implemented",
-                      __func__, eqp->name);
+                      __func__,
+                      eqp->name);
           }
 
         } /* Incremental solve or not */
 
-        eq->compute_balance = cs_cdovb_scaleq_balance;
-        eq->apply_stiffness = cs_cdovb_scaleq_apply_stiffness;
-        eq->postprocess = cs_cdovb_scaleq_extra_post;
+        eq->compute_balance     = cs_cdovb_scaleq_balance;
+        eq->apply_stiffness     = cs_cdovb_scaleq_apply_stiffness;
+        eq->postprocess         = cs_cdovb_scaleq_extra_post;
         eq->current_to_previous = cs_cdovb_scaleq_current_to_previous;
 
-        eq->read_restart = NULL;
+        eq->read_restart  = NULL;
         eq->write_restart = NULL;
 
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = cs_cdovb_scaleq_get_vertex_values;
-        eq->get_edge_values = NULL;
-        eq->get_face_values = NULL;
-        eq->get_cell_values = cs_cdovb_scaleq_get_cell_values;
+        eq->get_edge_values   = NULL;
+        eq->get_face_values   = NULL;
+        eq->get_cell_values   = cs_cdovb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdovb_scaleq_get;
-
       }
       else if (eqp->dim == 3) {
 
-        eq->init_context = cs_cdovb_vecteq_init_context;
-        eq->free_context = cs_cdovb_vecteq_free_context;
+        eq->init_context      = cs_cdovb_vecteq_init_context;
+        eq->free_context      = cs_cdovb_vecteq_free_context;
         eq->init_field_values = cs_cdovb_vecteq_init_values;
 
         /* Deprecated pointers (Only for HHO schemes) */
 
-        eq->set_dir_bc = NULL;
-        eq->build_system = NULL;
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
         eq->prepare_solving = NULL;
-        eq->update_field = NULL;
+        eq->update_field    = NULL;
 
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
 
         eq->solve_steady_state = cs_cdovb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
-        eq->solve = eq->solve_steady_state;
+          eq->solve = eq->solve_steady_state;
           break;
         case CS_TIME_SCHEME_BDF2:
         case CS_TIME_SCHEME_EULER_IMPLICIT:
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
         default:
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
         }
 
-        eq->postprocess = cs_cdovb_vecteq_extra_post;
+        eq->postprocess         = cs_cdovb_vecteq_extra_post;
         eq->current_to_previous = cs_cdovb_vecteq_current_to_previous;
 
-        eq->read_restart = NULL;
+        eq->read_restart  = NULL;
         eq->write_restart = NULL;
 
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = cs_cdovb_vecteq_get_vertex_values;
-        eq->get_edge_values = NULL;
-        eq->get_face_values = NULL;
-        eq->get_cell_values = cs_cdovb_vecteq_get_cell_values;
+        eq->get_edge_values   = NULL;
+        eq->get_face_values   = NULL;
+        eq->get_cell_values   = cs_cdovb_vecteq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdovb_vecteq_get;
-
       }
       else
         bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
@@ -2231,23 +2282,26 @@ cs_equation_set_functions(void)
     case CS_SPACE_SCHEME_CDOVCB:
       if (eqp->dim == 1) {
 
-        eq->init_context = cs_cdovcb_scaleq_init_context;
-        eq->free_context = cs_cdovcb_scaleq_free_context;
+        eq->init_context      = cs_cdovcb_scaleq_init_context;
+        eq->free_context      = cs_cdovcb_scaleq_free_context;
         eq->init_field_values = cs_cdovcb_scaleq_init_values;
 
         /* Deprecated pointers (Only for HHO schemes) */
 
-        eq->set_dir_bc = NULL;
-        eq->build_system = NULL;
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
         eq->prepare_solving = NULL;
-        eq->update_field = NULL;
+        eq->update_field    = NULL;
 
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
 
         eq->solve_steady_state = cs_cdovcb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2266,26 +2320,28 @@ cs_equation_set_functions(void)
 
         case CS_TIME_SCHEME_BDF2:
         default:
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
         }
 
-        eq->postprocess = cs_cdovcb_scaleq_extra_post;
+        eq->postprocess         = cs_cdovcb_scaleq_extra_post;
         eq->current_to_previous = cs_cdovcb_scaleq_current_to_previous;
 
-        eq->read_restart = cs_cdovcb_scaleq_read_restart;
+        eq->read_restart  = cs_cdovcb_scaleq_read_restart;
         eq->write_restart = cs_cdovcb_scaleq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = cs_cdovcb_scaleq_get_vertex_values;
-        eq->get_edge_values = NULL;
-        eq->get_face_values = NULL;
-        eq->get_cell_values = cs_cdovcb_scaleq_get_cell_values;
+        eq->get_edge_values   = NULL;
+        eq->get_face_values   = NULL;
+        eq->get_cell_values   = cs_cdovcb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdovcb_scaleq_get;
-
       }
       else
         bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
@@ -2295,23 +2351,26 @@ cs_equation_set_functions(void)
     case CS_SPACE_SCHEME_CDOFB:
       if (eqp->dim == 1) {
 
-        eq->init_context = cs_cdofb_scaleq_init_context;
-        eq->free_context = cs_cdofb_scaleq_free_context;
+        eq->init_context      = cs_cdofb_scaleq_init_context;
+        eq->free_context      = cs_cdofb_scaleq_free_context;
         eq->init_field_values = cs_cdofb_scaleq_init_values;
 
         /* Deprecated pointers (Only for HHO schemes) */
 
-        eq->set_dir_bc = NULL;
-        eq->build_system = NULL;
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
         eq->prepare_solving = NULL;
-        eq->update_field = NULL;
+        eq->update_field    = NULL;
 
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
 
         eq->solve_steady_state = cs_cdofb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2330,48 +2389,53 @@ cs_equation_set_functions(void)
 
         case CS_TIME_SCHEME_BDF2:
         default:
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
         }
 
-        eq->compute_balance = cs_cdofb_scaleq_balance;
-        eq->apply_stiffness = NULL;
-        eq->postprocess = cs_cdofb_scaleq_extra_post;
+        eq->compute_balance     = cs_cdofb_scaleq_balance;
+        eq->apply_stiffness     = NULL;
+        eq->postprocess         = cs_cdofb_scaleq_extra_post;
         eq->current_to_previous = cs_cdofb_scaleq_current_to_previous;
 
-        eq->read_restart = cs_cdofb_scaleq_read_restart;
+        eq->read_restart  = cs_cdofb_scaleq_read_restart;
         eq->write_restart = cs_cdofb_scaleq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = NULL;
-        eq->get_edge_values = NULL;
-        eq->get_face_values = cs_cdofb_scaleq_get_face_values;
-        eq->get_cell_values = cs_cdofb_scaleq_get_cell_values;
+        eq->get_edge_values   = NULL;
+        eq->get_face_values   = cs_cdofb_scaleq_get_face_values;
+        eq->get_cell_values   = cs_cdofb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdofb_scaleq_get;
-
       }
       else if (eqp->dim == 3) {
 
-        eq->init_context = cs_cdofb_vecteq_init_context;
-        eq->free_context = cs_cdofb_vecteq_free_context;
+        eq->init_context      = cs_cdofb_vecteq_init_context;
+        eq->free_context      = cs_cdofb_vecteq_free_context;
         eq->init_field_values = cs_cdofb_vecteq_init_values;
 
         /* Deprecated pointers (Only for HHO schemes) */
 
-        eq->set_dir_bc = NULL;
-        eq->build_system = NULL;
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
         eq->prepare_solving = NULL;
-        eq->update_field = NULL;
+        eq->update_field    = NULL;
 
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
 
         eq->solve_steady_state = cs_cdofb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2390,29 +2454,35 @@ cs_equation_set_functions(void)
 
         case CS_TIME_SCHEME_BDF2:
           eq->solve = NULL; /* cs_cdofb_vecteq_solve_bdf2 */
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
           break;
 
         default:
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
         }
 
-        eq->postprocess = cs_cdofb_vecteq_extra_post;
+        eq->postprocess         = cs_cdofb_vecteq_extra_post;
         eq->current_to_previous = cs_cdofb_vecteq_current_to_previous;
 
-        eq->read_restart = cs_cdofb_vecteq_read_restart;
+        eq->read_restart  = cs_cdofb_vecteq_read_restart;
         eq->write_restart = cs_cdofb_vecteq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = NULL;
-        eq->get_edge_values = NULL;
-        eq->get_face_values = cs_cdofb_vecteq_get_face_values;
-        eq->get_cell_values = cs_cdofb_vecteq_get_cell_values;
+        eq->get_edge_values   = NULL;
+        eq->get_face_values   = cs_cdofb_vecteq_get_face_values;
+        eq->get_cell_values   = cs_cdofb_vecteq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdofb_vecteq_get;
       }
@@ -2424,23 +2494,26 @@ cs_equation_set_functions(void)
     case CS_SPACE_SCHEME_CDOCB:
       if (eqp->dim == 1) {
 
-        eq->init_context = cs_cdocb_scaleq_init_context;
-        eq->free_context = cs_cdocb_scaleq_free_context;
+        eq->init_context      = cs_cdocb_scaleq_init_context;
+        eq->free_context      = cs_cdocb_scaleq_free_context;
         eq->init_field_values = cs_cdocb_scaleq_init_values;
 
         /* Deprecated pointers (Only for HHO schemes) */
 
-        eq->set_dir_bc = NULL;
-        eq->build_system = NULL;
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
         eq->prepare_solving = NULL;
-        eq->update_field = NULL;
+        eq->update_field    = NULL;
 
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
 
         eq->solve_steady_state = cs_cdocb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2449,28 +2522,30 @@ cs_equation_set_functions(void)
           break;
 
         default:
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
         }
 
-        eq->compute_balance = cs_cdocb_scaleq_balance;
-        eq->apply_stiffness = NULL;
-        eq->postprocess = cs_cdocb_scaleq_extra_post;
+        eq->compute_balance     = cs_cdocb_scaleq_balance;
+        eq->apply_stiffness     = NULL;
+        eq->postprocess         = cs_cdocb_scaleq_extra_post;
         eq->current_to_previous = cs_cdocb_scaleq_current_to_previous;
 
-        eq->read_restart = NULL;
+        eq->read_restart  = NULL;
         eq->write_restart = NULL;
 
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = NULL;
-        eq->get_edge_values = NULL;
-        eq->get_face_values = NULL;
-        eq->get_cell_values = cs_cdocb_scaleq_get_cell_values;
+        eq->get_edge_values   = NULL;
+        eq->get_face_values   = NULL;
+        eq->get_cell_values   = cs_cdocb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdocb_scaleq_get;
-
       }
       else
         bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
@@ -2483,23 +2558,26 @@ cs_equation_set_functions(void)
         /* This is a vector-valued equation but the DoF is scalar-valued since
          * it is a circulation associated to each edge */
 
-        eq->init_context = cs_cdoeb_vecteq_init_context;
-        eq->free_context = cs_cdoeb_vecteq_free_context;
+        eq->init_context      = cs_cdoeb_vecteq_init_context;
+        eq->free_context      = cs_cdoeb_vecteq_free_context;
         eq->init_field_values = cs_cdoeb_vecteq_init_values;
 
         /* Deprecated pointers (Only for HHO schemes) */
 
-        eq->set_dir_bc = NULL;
-        eq->build_system = NULL;
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
         eq->prepare_solving = NULL;
-        eq->update_field = NULL;
+        eq->update_field    = NULL;
 
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
 
         eq->solve_steady_state = cs_cdoeb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2508,26 +2586,28 @@ cs_equation_set_functions(void)
           break;
 
         default:
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+                    __func__,
+                    eqp->name);
         }
 
-        eq->postprocess = cs_cdoeb_vecteq_extra_post;
+        eq->postprocess         = cs_cdoeb_vecteq_extra_post;
         eq->current_to_previous = cs_cdoeb_vecteq_current_to_previous;
 
-        eq->read_restart = cs_cdoeb_vecteq_read_restart;
+        eq->read_restart  = cs_cdoeb_vecteq_read_restart;
         eq->write_restart = cs_cdoeb_vecteq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = NULL;
-        eq->get_edge_values = cs_cdoeb_vecteq_get_edge_values;
-        eq->get_face_values = NULL;
-        eq->get_cell_values = cs_cdoeb_vecteq_get_cell_values;
+        eq->get_edge_values   = cs_cdoeb_vecteq_get_edge_values;
+        eq->get_face_values   = NULL;
+        eq->get_cell_values   = cs_cdoeb_vecteq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdoeb_vecteq_get;
-
       }
       else
         bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
@@ -2536,9 +2616,12 @@ cs_equation_set_functions(void)
 
     case CS_SPACE_SCHEME_HHO_P0:
       if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: Eq. %s. Incremental form is not available.\n",
-                  __func__, eqp->name);
+                  __func__,
+                  eqp->name);
 
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
@@ -2549,9 +2632,12 @@ cs_equation_set_functions(void)
 
     case CS_SPACE_SCHEME_HHO_P1:
       if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: Eq. %s. Incremental form is not available.\n",
-                  __func__, eqp->name);
+                  __func__,
+                  eqp->name);
 
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
@@ -2566,9 +2652,12 @@ cs_equation_set_functions(void)
 
     case CS_SPACE_SCHEME_HHO_P2:
       if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: Eq. %s. Incremental form is not available.\n",
-                  __func__, eqp->name);
+                  __func__,
+                  eqp->name);
 
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
@@ -2581,10 +2670,86 @@ cs_equation_set_functions(void)
 
       break;
 
+    case CS_SPACE_SCHEME_MACFB:
+      if (eqp->dim == 3) {
+
+        eq->init_context      = cs_macfb_vecteq_init_context;
+        eq->free_context      = cs_macfb_vecteq_free_context;
+        eq->init_field_values = cs_macfb_vecteq_init_values;
+
+        /* Deprecated pointers */
+
+        eq->set_dir_bc      = NULL;
+        eq->build_system    = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field    = NULL;
+
+        /* New mechanism */
+
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
+                    "%s: Eq. %s. Incremental form is not available.\n",
+                    __func__,
+                    eqp->name);
+
+        eq->solve_steady_state = cs_macfb_vecteq_solve_steady_state;
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = eq->solve_steady_state;
+          break;
+
+        case CS_TIME_SCHEME_EULER_IMPLICIT:
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+        case CS_TIME_SCHEME_BDF2:
+          eq->solve = NULL; /* cs_cdofb_vecteq_solve_bdf2 */
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__,
+                    eqp->name);
+          break;
+
+        default:
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__,
+                    eqp->name);
+        }
+
+        eq->postprocess         = cs_macfb_vecteq_extra_post;
+        eq->current_to_previous = cs_macfb_vecteq_current_to_previous;
+
+        eq->read_restart  = cs_macfb_vecteq_read_restart;
+        eq->write_restart = cs_macfb_vecteq_write_restart;
+
+        /* Function pointers to retrieve values at mesh locations */
+
+        eq->get_vertex_values = NULL;
+        eq->get_edge_values   = NULL;
+        eq->get_face_values   = cs_macfb_vecteq_get_face_values;
+        eq->get_cell_values   = NULL;
+
+        eq->get_cw_build_structures = cs_macfb_vecteq_get;
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
+
+      break;
+
     default:
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 _(" %s: Eq. %s. Invalid scheme for the space discretization.\n"
-                  " Please check your settings."), __func__, eqp->name);
+                  " Please check your settings."),
+                __func__,
+                eqp->name);
       break;
     }
 
@@ -2611,8 +2776,8 @@ cs_equation_lock_settings(void)
 
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    cs_equation_t  *eq = _equations[eq_id];
-    cs_equation_param_t  *eqp = eq->param;
+    cs_equation_t       *eq  = _equations[eq_id];
+    cs_equation_param_t *eqp = eq->param;
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
@@ -2649,19 +2814,22 @@ cs_equation_lock_settings(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_predefined_create_field(int               n_previous,
-                                    cs_equation_t    *eq)
+cs_equation_predefined_create_field(int n_previous, cs_equation_t *eq)
 {
   if (eq == NULL)
     return;
 
-  cs_equation_param_t  *eqp = eq->param;
+  cs_equation_param_t *eqp = eq->param;
 
   if (eqp->type == CS_EQUATION_TYPE_USER)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Only predefined equation are managed with this function.\n"
               "%s: Eq. \"%s\"\n",
-              __func__, __func__, eqp->name);
+              __func__,
+              __func__,
+              eqp->name);
 
   if (n_previous < 0)
     n_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
@@ -2680,16 +2848,16 @@ cs_equation_user_create_fields(void)
 {
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_t *eq = _equations[eq_id];
 
     assert(eq != NULL);
 
-    cs_equation_param_t  *eqp = eq->param;
+    cs_equation_param_t *eqp = eq->param;
 
-    if (eqp->type !=  CS_EQUATION_TYPE_USER)
+    if (eqp->type != CS_EQUATION_TYPE_USER)
       continue;
 
-    int  n_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
+    int n_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
 
     _add_field(n_previous, eq);
 
@@ -2705,7 +2873,7 @@ cs_equation_user_create_fields(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_define_builders(const cs_mesh_t       *mesh)
+cs_equation_define_builders(const cs_mesh_t *mesh)
 {
   for (int i = 0; i < _n_equations; i++) {
 
@@ -2748,10 +2916,8 @@ cs_equation_define_context_structures(void)
     /* Not initialized here if it is a restart */
 
     if (eq->scheme_context == NULL)
-      eq->scheme_context = eq->init_context(eq->param,
-                                            eq->field_id,
-                                            eq->boundary_flux_id,
-                                            eq->builder);
+      eq->scheme_context = eq->init_context(
+        eq->param, eq->field_id, eq->boundary_flux_id, eq->builder);
 
     /* The following step should be done after the setup stage so that the
        modelling options have set the default flags if needed */
@@ -2761,7 +2927,7 @@ cs_equation_define_context_structures(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-  }  /* Loop on equations */
+  } /* Loop on equations */
 
   /* The system helper is defined during the definition of the scheme context.
    * When all system helper have been defined, one can allocate or update the
@@ -2781,10 +2947,10 @@ cs_equation_define_context_structures(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_define_core_structure(const cs_equation_t    *eq,
-                                  cs_equation_core_t    **p_core)
+cs_equation_define_core_structure(const cs_equation_t *eq,
+                                  cs_equation_core_t **p_core)
 {
-  cs_equation_core_t  *core = (p_core == NULL) ? NULL : *p_core;
+  cs_equation_core_t *core = (p_core == NULL) ? NULL : *p_core;
 
   if (eq == NULL)
     return;
@@ -2792,8 +2958,8 @@ cs_equation_define_core_structure(const cs_equation_t    *eq,
   if (core == NULL)
     BFT_MALLOC(core, 1, cs_equation_core_t);
 
-  core->param = eq->param;
-  core->builder = eq->builder;
+  core->param          = eq->param;
+  core->builder        = eq->builder;
   core->scheme_context = eq->scheme_context;
 
   *p_core = core;
@@ -2810,8 +2976,7 @@ cs_equation_define_core_structure(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_field_values(const cs_mesh_t             *mesh,
-                              const cs_time_step_t        *ts)
+cs_equation_init_field_values(const cs_mesh_t *mesh, const cs_time_step_t *ts)
 {
   /* Loop on all equations */
 
@@ -2823,27 +2988,33 @@ cs_equation_init_field_values(const cs_mesh_t             *mesh,
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
 
-    const cs_equation_param_t  *eqp = eq->param;
+    const cs_equation_param_t *eqp = eq->param;
 
 #if defined(DEBUG) && !defined(NDEBUG)
     /* Check that the main structure for an equation have been defined */
 
     if (eq->builder == NULL)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: A builder structure is expected for eq. \"%s\"\n",
-                __func__, eqp->name);
+                __func__,
+                eqp->name);
 
     if (eq->scheme_context == NULL)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: A context structure is expected for eq. \"%s\"\n",
-                __func__, eqp->name);
+                __func__,
+                eqp->name);
 #endif
 
     /* Assign an initial value for the variable fields */
 
     if (ts->nt_cur < 1)
-      eq->init_field_values(ts->t_cur, eq->field_id,
-                            mesh, eqp, eq->builder, eq->scheme_context);
+      eq->init_field_values(
+        ts->t_cur, eq->field_id, mesh, eqp, eq->builder, eq->scheme_context);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -2862,12 +3033,11 @@ cs_equation_init_field_values(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_build_system(const cs_mesh_t  *mesh,
-                         cs_equation_t    *eq)
+cs_equation_build_system(const cs_mesh_t *mesh, cs_equation_t *eq)
 {
   assert(eq != NULL);
 
-  const cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  const cs_field_t *fld = cs_field_by_id(eq->field_id);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2890,41 +3060,41 @@ cs_equation_build_system(const cs_mesh_t  *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_deprecated(cs_equation_t  *eq)
+cs_equation_solve_deprecated(cs_equation_t *eq)
 {
   if (eq == NULL)
     return;
 
-  cs_timer_t  t0 = cs_timer_time();
+  cs_timer_t t0 = cs_timer_time();
 
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
-  cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
-  cs_equation_builder_t  *eqb = eq->builder;
-  cs_cdo_system_helper_t  *sh = eqb->system_helper;
+  int                     n_iters  = 0;
+  double                  residual = DBL_MAX;
+  cs_sles_t              *sles     = cs_sles_find_or_add(eq->field_id, NULL);
+  cs_field_t             *fld      = cs_field_by_id(eq->field_id);
+  cs_equation_builder_t  *eqb      = eq->builder;
+  cs_cdo_system_helper_t *sh       = eqb->system_helper;
 
-  cs_real_t  *x = NULL;
+  cs_real_t *x = NULL;
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
 
-  const cs_equation_param_t  *eqp = eq->param;
-  const cs_param_sles_t  *slesp = eqp->sles_param;
+  const cs_equation_param_t *eqp   = eq->param;
+  const cs_param_sles_t     *slesp = eqp->sles_param;
 
   /* Handle parallelism (the the x array and for the rhs) */
 
   eq->prepare_solving(eq, &x);
 
   assert(fld != NULL);
-  cs_solving_info_t  s_info;
+  cs_solving_info_t s_info;
   cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &s_info);
 
-  s_info.n_it = 0;
+  s_info.n_it     = 0;
   s_info.res_norm = DBL_MAX;
   s_info.rhs_norm = 1.0; /* No renormalization by default (TODO) */
 
-  const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    matrix,
@@ -2934,37 +3104,41 @@ cs_equation_solve_deprecated(cs_equation_t  *eq)
                                                    &(s_info.res_norm),
                                                    sh->rhs,
                                                    x,
-                                                   0,      /* aux. size */
-                                                   NULL);  /* aux. buffers */
+                                                   0,     /* aux. size */
+                                                   NULL); /* aux. buffers */
 
   if (slesp->verbosity > 0 && cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,
                   "  <%s/sles_cvg> code %-d n_iters %d residual % -8.4e\n",
-                  eqp->name, code, n_iters, residual);
+                  eqp->name,
+                  code,
+                  n_iters,
+                  residual);
 
   cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &s_info);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
-    const cs_range_set_t  *rset = cs_equation_get_range_set(eq);
+    const cs_range_set_t *rset = cs_equation_get_range_set(eq);
 
     cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, // type and stride
+                         CS_REAL_TYPE,
+                         1, // type and stride
                          x,
                          x);
 
     cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, // type and stride
+                         CS_REAL_TYPE,
+                         1, // type and stride
                          sh->rhs,
                          sh->rhs);
-
   }
 
   /* Copy current field values to previous values */
 
   cs_field_current_to_previous(fld);
 
-  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t0, &t1);
 
   /* Define the new field value for the current time */
@@ -2978,7 +3152,7 @@ cs_equation_solve_deprecated(cs_equation_t  *eq)
 
   BFT_FREE(x);
   cs_sles_free(sles);
-  cs_cdo_system_helper_reset(sh);  /* free rhs and matrix */
+  cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2992,8 +3166,7 @@ cs_equation_solve_deprecated(cs_equation_t  *eq)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
-                               cs_equation_t              *eq)
+cs_equation_solve_steady_state(const cs_mesh_t *mesh, cs_equation_t *eq)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
@@ -3028,9 +3201,7 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(bool                        cur2prev,
-                  const cs_mesh_t            *mesh,
-                  cs_equation_t              *eq)
+cs_equation_solve(bool cur2prev, const cs_mesh_t *mesh, cs_equation_t *eq)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
@@ -3043,12 +3214,8 @@ cs_equation_solve(bool                        cur2prev,
    * The linear solver is called inside and the field value is updated inside
    */
 
-  eq->solve(cur2prev,
-            mesh,
-            eq->field_id,
-            eq->param,
-            eq->builder,
-            eq->scheme_context);
+  eq->solve(
+    cur2prev, mesh, eq->field_id, eq->param, eq->builder, eq->scheme_context);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -3065,9 +3232,9 @@ cs_equation_solve(bool                        cur2prev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_steady_state_wrapper(const char    *eqname)
+cs_equation_solve_steady_state_wrapper(const char *eqname)
 {
-  cs_equation_t  *eq = cs_equation_by_name(eqname);
+  cs_equation_t *eq = cs_equation_by_name(eqname);
 
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
@@ -3103,10 +3270,9 @@ cs_equation_solve_steady_state_wrapper(const char    *eqname)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_wrapper(bool                        cur2prev,
-                          const char                 *eqname)
+cs_equation_solve_wrapper(bool cur2prev, const char *eqname)
 {
-  cs_equation_t  *eq = cs_equation_by_name(eqname);
+  cs_equation_t *eq = cs_equation_by_name(eqname);
 
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
@@ -3140,7 +3306,7 @@ cs_equation_solve_wrapper(bool                        cur2prev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_current_to_previous(const cs_equation_t    *eq)
+cs_equation_current_to_previous(const cs_equation_t *eq)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
@@ -3169,12 +3335,12 @@ cs_equation_current_to_previous(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
-                                  cs_cell_sys_t         **csys,
-                                  cs_cell_builder_t     **cb)
+cs_equation_get_cellwise_builders(const cs_equation_t *eq,
+                                  cs_cell_sys_t      **csys,
+                                  cs_cell_builder_t  **cb)
 {
   *csys = NULL;
-  *cb = NULL;
+  *cb   = NULL;
 
   if (eq == NULL)
     return;
@@ -3196,13 +3362,12 @@ cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_cell_values(const cs_equation_t    *eq,
-                            bool                    previous)
+cs_equation_get_cell_values(const cs_equation_t *eq, bool previous)
 {
   if (eq == NULL)
     return NULL;
 
-  cs_real_t  *c_values = NULL;
+  cs_real_t *c_values = NULL;
   if (eq->get_cell_values != NULL)
     c_values = eq->get_cell_values(eq->scheme_context, previous);
 
@@ -3222,13 +3387,12 @@ cs_equation_get_cell_values(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_face_values(const cs_equation_t    *eq,
-                            bool                    previous)
+cs_equation_get_face_values(const cs_equation_t *eq, bool previous)
 {
   if (eq == NULL)
     return NULL;
 
-  cs_real_t  *f_values = NULL;
+  cs_real_t *f_values = NULL;
   if (eq->get_face_values != NULL)
     f_values = eq->get_face_values(eq->scheme_context, previous);
 
@@ -3248,13 +3412,12 @@ cs_equation_get_face_values(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_edge_values(const cs_equation_t    *eq,
-                            bool                    previous)
+cs_equation_get_edge_values(const cs_equation_t *eq, bool previous)
 {
   if (eq == NULL)
     return NULL;
 
-  cs_real_t  *e_values = NULL;
+  cs_real_t *e_values = NULL;
   if (eq->get_edge_values != NULL)
     e_values = eq->get_edge_values(eq->scheme_context, previous);
 
@@ -3274,13 +3437,12 @@ cs_equation_get_edge_values(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_vertex_values(const cs_equation_t    *eq,
-                              bool                    previous)
+cs_equation_get_vertex_values(const cs_equation_t *eq, bool previous)
 {
   if (eq == NULL)
     return NULL;
 
-  cs_real_t  *v_values = NULL;
+  cs_real_t *v_values = NULL;
   if (eq->get_vertex_values != NULL)
     v_values = eq->get_vertex_values(eq->scheme_context, previous);
 
@@ -3302,10 +3464,10 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_quantities_t  *cdoq,
-                               const cs_equation_t        *eq,
-                               cs_real_t                  *result)
+cs_equation_integrate_variable(const cs_cdo_connect_t    *connect,
+                               const cs_cdo_quantities_t *cdoq,
+                               const cs_equation_t       *eq,
+                               cs_real_t                 *result)
 {
   /* Initialize the value to return */
 
@@ -3314,87 +3476,89 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
   if (eq == NULL)
     return;
 
-  const cs_equation_param_t  *eqp = eq->param;
+  const cs_equation_param_t *eqp = eq->param;
   assert(eqp != NULL);
   if (eqp->dim > 1)
-    bft_error(__FILE__, __LINE__, 0, "%s: (Eq. %s) Not implemented",
-              __func__, eqp->name);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: (Eq. %s) Not implemented",
+              __func__,
+              eqp->name);
 
   /* Scalar-valued equation */
 
   switch (eqp->space_scheme) {
 
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
-      const cs_adjacency_t  *c2v = connect->c2v;
+  case CS_SPACE_SCHEME_CDOVB: {
+    const cs_real_t      *p_v = cs_equation_get_vertex_values(eq, false);
+    const cs_adjacency_t *c2v = connect->c2v;
 
-      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-        cs_real_t  int_cell = 0.;
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          int_cell += cdoq->pvol_vc[j] * p_v[c2v->ids[j]];
+      cs_real_t int_cell = 0.;
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id + 1]; j++)
+        int_cell += cdoq->pvol_vc[j] * p_v[c2v->ids[j]];
 
-        *result += int_cell;
+      *result += int_cell;
 
-      } /* Loop on cells */
+    } /* Loop on cells */
 
-    }
-    break;
+  } break;
 
-  case CS_SPACE_SCHEME_CDOVCB:
-    {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
-      const cs_adjacency_t  *c2v = connect->c2v;
+  case CS_SPACE_SCHEME_CDOVCB: {
+    const cs_real_t      *p_v = cs_equation_get_vertex_values(eq, false);
+    const cs_real_t      *p_c = cs_equation_get_cell_values(eq, false);
+    const cs_adjacency_t *c2v = connect->c2v;
 
-      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-        /* Shares between cell and vertex unknowns:
-           - the cell unknown stands for 1/4 of the cell volume
-           - the vertex unknown stands for 3/4 of the dual cell volume
-         */
+      /* Shares between cell and vertex unknowns:
+         - the cell unknown stands for 1/4 of the cell volume
+         - the vertex unknown stands for 3/4 of the dual cell volume
+       */
 
-        cs_real_t  int_cell = 0.25*cdoq->cell_vol[c_id]*p_c[c_id];
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          int_cell += 0.75*cdoq->pvol_vc[j] * p_v[c2v->ids[j]];
+      cs_real_t int_cell = 0.25 * cdoq->cell_vol[c_id] * p_c[c_id];
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id + 1]; j++)
+        int_cell += 0.75 * cdoq->pvol_vc[j] * p_v[c2v->ids[j]];
 
-        *result += int_cell;
+      *result += int_cell;
 
-      } /* Loop on cells */
+    } /* Loop on cells */
 
-    }
-    break;
+  } break;
 
-  case CS_SPACE_SCHEME_CDOFB:
-    {
-      const cs_real_t  *p_f = cs_equation_get_face_values(eq, false);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
-      const cs_adjacency_t  *c2f = connect->c2f;
+  case CS_SPACE_SCHEME_CDOFB: {
+    const cs_real_t      *p_f = cs_equation_get_face_values(eq, false);
+    const cs_real_t      *p_c = cs_equation_get_cell_values(eq, false);
+    const cs_adjacency_t *c2f = connect->c2f;
 
-      assert(cdoq->pvol_fc != NULL); /* Sanity check */
+    assert(cdoq->pvol_fc != NULL); /* Sanity check */
 
-      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-        /* Shares between cell and face unknowns (assuming stab.coeff = 1/3):
-           - the cell unknown stands for 1/4 of the cell volume
-           - the face unknown stands for 3/4 of the dual cell volume
-         */
+      /* Shares between cell and face unknowns (assuming stab.coeff = 1/3):
+         - the cell unknown stands for 1/4 of the cell volume
+         - the face unknown stands for 3/4 of the dual cell volume
+       */
 
-        cs_real_t  int_cell = 0.25*cdoq->cell_vol[c_id]*p_c[c_id];
-        for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
-          int_cell += 0.75*cdoq->pvol_fc[j] * p_f[c2f->ids[j]];
+      cs_real_t int_cell = 0.25 * cdoq->cell_vol[c_id] * p_c[c_id];
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id + 1]; j++)
+        int_cell += 0.75 * cdoq->pvol_fc[j] * p_f[c2f->ids[j]];
 
-        *result += int_cell;
+      *result += int_cell;
 
-      } /* Loop on cells */
+    } /* Loop on cells */
 
-    }
-    break;
+  } break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: (Eq. %s). Not implemented.",
+              __func__,
+              eqp->name);
 
   } /* End of switch */
 
@@ -3417,9 +3581,9 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
-                                       const cs_equation_t   *eq,
-                                       cs_real_t             *diff_flux)
+cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
+                                       const cs_equation_t *eq,
+                                       cs_real_t           *diff_flux)
 {
   if (diff_flux == NULL)
     return;
@@ -3427,63 +3591,51 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
 
-  const cs_equation_param_t  *eqp = eq->param;
+  const cs_equation_param_t *eqp = eq->param;
 
   assert(eqp != NULL);
   if (eqp->dim > 1)
-    bft_error(__FILE__, __LINE__, 0, "%s: (Eq. %s) Not implemented",
-              __func__, eqp->name);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: (Eq. %s) Not implemented",
+              __func__,
+              eqp->name);
 
   /* Scalar-valued equation */
 
   switch (eqp->space_scheme) {
 
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
+  case CS_SPACE_SCHEME_CDOVB: {
+    const cs_real_t *p_v = cs_equation_get_vertex_values(eq, false);
 
-      cs_cdovb_scaleq_boundary_diff_flux(t_eval,
-                                         eqp,
-                                         p_v,
-                                         eq->builder,
-                                         eq->scheme_context,
-                                         diff_flux);
-    }
-    break;
+    cs_cdovb_scaleq_boundary_diff_flux(
+      t_eval, eqp, p_v, eq->builder, eq->scheme_context, diff_flux);
+  } break;
 
-  case CS_SPACE_SCHEME_CDOVCB:
-    {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
+  case CS_SPACE_SCHEME_CDOVCB: {
+    const cs_real_t *p_v = cs_equation_get_vertex_values(eq, false);
+    const cs_real_t *p_c = cs_equation_get_cell_values(eq, false);
 
-      cs_cdovcb_scaleq_boundary_diff_flux(t_eval,
-                                          eqp,
-                                          p_v,
-                                          p_c,
-                                          eq->builder,
-                                          eq->scheme_context,
-                                          diff_flux);
-    }
-    break;
+    cs_cdovcb_scaleq_boundary_diff_flux(
+      t_eval, eqp, p_v, p_c, eq->builder, eq->scheme_context, diff_flux);
+  } break;
 
-  case CS_SPACE_SCHEME_CDOFB:
-    {
-      const cs_real_t  *p_f = cs_equation_get_face_values(eq, false);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
+  case CS_SPACE_SCHEME_CDOFB: {
+    const cs_real_t *p_f = cs_equation_get_face_values(eq, false);
+    const cs_real_t *p_c = cs_equation_get_cell_values(eq, false);
 
-      cs_cdofb_scaleq_boundary_diff_flux(t_eval,
-                                         eqp,
-                                         p_f,
-                                         p_c,
-                                         eq->builder,
-                                         eq->scheme_context,
-                                         diff_flux);
-    }
-    break;
+    cs_cdofb_scaleq_boundary_diff_flux(
+      t_eval, eqp, p_f, p_c, eq->builder, eq->scheme_context, diff_flux);
+  } break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: (Eq. %s). Not implemented.",
+              __func__,
+              eqp->name);
 
   } /* End of switch */
 }
@@ -3502,32 +3654,35 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
-                                      const char            *ml_name,
-                                      const cs_real_3_t      direction,
-                                      cs_real_t             *diff_flux,
-                                      cs_real_t             *conv_flux)
+cs_equation_compute_flux_across_plane(const cs_equation_t *eq,
+                                      const char          *ml_name,
+                                      const cs_real_3_t    direction,
+                                      cs_real_t           *diff_flux,
+                                      cs_real_t           *conv_flux)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
 
   /* Get the mesh location id from its name */
 
-  const int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
+  const int ml_id = cs_mesh_location_get_id_by_name(ml_name);
   if (ml_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Invalid mesh location name %s.\n"
               " This mesh location is not already defined.\n",
-              __func__, ml_name);
+              __func__,
+              ml_name);
 
-  const char  emsg[] = "%s: Computation of the diffusive and convective flux"
-    " across a plane\n is not available for equation %s\n";
+  const char emsg[] = "%s: Computation of the diffusive and convective flux"
+                      " across a plane\n is not available for equation %s\n";
 
   /* Retrieve the field from its id */
 
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  cs_field_t *fld = cs_field_by_id(eq->field_id);
 
-  cs_equation_param_t  *eqp = eq->param;
+  cs_equation_param_t *eqp = eq->param;
   assert(eqp != NULL && fld != NULL);
 
   if (eqp->dim > 1)
@@ -3544,7 +3699,8 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
                                       ml_id,
                                       eq->builder,
                                       eq->scheme_context,
-                                      diff_flux, conv_flux);
+                                      diff_flux,
+                                      conv_flux);
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
@@ -3554,7 +3710,8 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
                                        ml_id,
                                        eq->builder,
                                        eq->scheme_context,
-                                       diff_flux, conv_flux);
+                                       diff_flux,
+                                       conv_flux);
     break;
 
   default:
@@ -3605,19 +3762,19 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
-                                   const cs_equation_param_t   *eqp,
-                                   const cs_property_t         *diff_pty,
-                                   const cs_real_t             *dof_vals,
-                                   const cs_real_t             *cell_vals,
-                                   cs_flag_t                    location,
-                                   cs_real_t                    t_eval,
-                                   cs_real_t                   *diff_flux)
+cs_equation_compute_diffusive_flux(const cs_equation_t       *eq,
+                                   const cs_equation_param_t *eqp,
+                                   const cs_property_t       *diff_pty,
+                                   const cs_real_t           *dof_vals,
+                                   const cs_real_t           *cell_vals,
+                                   cs_flag_t                  location,
+                                   cs_real_t                  t_eval,
+                                   cs_real_t                 *diff_flux)
 {
-  const char  fmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
-    " This functionality is not available for this scheme.";
-  const char  lmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
-    " This mesh location is not available for this scheme.";
+  const char fmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
+                      " This functionality is not available for this scheme.";
+  const char lmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
+                      " This mesh location is not available for this scheme.";
 
   if (diff_flux == NULL)
     return;
@@ -3626,16 +3783,18 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
 
   /* Which set of equation parameters to use ? */
 
-  const cs_equation_param_t  *used_eqp;
+  const cs_equation_param_t *used_eqp;
   if (eqp != NULL) {
 
     used_eqp = eqp;
     if (used_eqp->space_scheme != eq->param->space_scheme)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: Eq. \"%s\" Stop computing the diffusive flux.\n"
                 "  Different space discretizations are considered.",
-                __func__, used_eqp->name);
-
+                __func__,
+                used_eqp->name);
   }
   else
     used_eqp = eq->param;
@@ -3646,7 +3805,7 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
 
   /* Which property to use ? */
 
-  const cs_property_t  *used_property;
+  const cs_property_t *used_property;
   if (diff_pty == NULL)
     used_property = used_eqp->diffusion_property;
   else
@@ -3656,30 +3815,20 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
 
   switch (used_eqp->space_scheme) {
 
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      /* Which values to consider ? */
+  case CS_SPACE_SCHEME_CDOVB: {
+    /* Which values to consider ? */
 
-      const cs_real_t  *used_values;
+    const cs_real_t *used_values;
 
-      if (dof_vals != NULL)
-        used_values = dof_vals;
-      else
-        used_values = cs_equation_get_vertex_values(eq, false);
+    if (dof_vals != NULL)
+      used_values = dof_vals;
+    else
+      used_values = cs_equation_get_vertex_values(eq, false);
 
-      /* Compute the diffusive flux */
+    /* Compute the diffusive flux */
 
-      if (cs_flag_test(location, cs_flag_primal_cell))
-        cs_cdovb_scaleq_diff_flux_in_cells(used_values,
-                                           used_eqp,
-                                           used_property,
-                                           t_eval,
-                                           eq->builder,
-                                           eq->scheme_context,
-                                           diff_flux);
-
-      else if (cs_flag_test(location, cs_flag_dual_face_byc))
-        cs_cdovb_scaleq_diff_flux_dfaces(used_values,
+    if (cs_flag_test(location, cs_flag_primal_cell))
+      cs_cdovb_scaleq_diff_flux_in_cells(used_values,
                                          used_eqp,
                                          used_property,
                                          t_eval,
@@ -3687,50 +3836,47 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
                                          eq->scheme_context,
                                          diff_flux);
 
-      else
-        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+    else if (cs_flag_test(location, cs_flag_dual_face_byc))
+      cs_cdovb_scaleq_diff_flux_dfaces(used_values,
+                                       used_eqp,
+                                       used_property,
+                                       t_eval,
+                                       eq->builder,
+                                       eq->scheme_context,
+                                       diff_flux);
+
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+  } break;
+
+  case CS_SPACE_SCHEME_CDOVCB: {
+    /* Which values to consider ? */
+
+    const cs_real_t *used_dof_values;
+    const cs_real_t *used_cell_values;
+
+    if (dof_vals != NULL) {
+
+      used_dof_values  = dof_vals;
+      used_cell_values = cell_vals;
+
+      if (cell_vals == NULL)
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  "%s: Need cell values with this set of options.",
+                  __func__);
     }
-    break;
+    else {
 
-  case CS_SPACE_SCHEME_CDOVCB:
-    {
-      /* Which values to consider ? */
+      used_dof_values  = cs_equation_get_vertex_values(eq, false);
+      used_cell_values = cs_equation_get_cell_values(eq, false);
+    }
 
-      const cs_real_t  *used_dof_values;
-      const cs_real_t  *used_cell_values;
+    /* Compute the diffusive flux */
 
-      if (dof_vals != NULL) {
-
-        used_dof_values = dof_vals;
-        used_cell_values = cell_vals;
-
-        if (cell_vals == NULL)
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Need cell values with this set of options.",
-                    __func__);
-
-      }
-      else {
-
-        used_dof_values = cs_equation_get_vertex_values(eq, false);
-        used_cell_values = cs_equation_get_cell_values(eq, false);
-
-      }
-
-      /* Compute the diffusive flux */
-
-      if (cs_flag_test(location, cs_flag_primal_cell))
-        cs_cdovcb_scaleq_diff_flux_in_cells(used_dof_values,
-                                            used_cell_values,
-                                            used_eqp,
-                                            used_property,
-                                            t_eval,
-                                            eq->builder,
-                                            eq->scheme_context,
-                                            diff_flux);
-
-      else if (cs_flag_test(location, cs_flag_dual_face_byc))
-        cs_cdovcb_scaleq_diff_flux_dfaces(used_dof_values,
+    if (cs_flag_test(location, cs_flag_primal_cell))
+      cs_cdovcb_scaleq_diff_flux_in_cells(used_dof_values,
                                           used_cell_values,
                                           used_eqp,
                                           used_property,
@@ -3738,40 +3884,9 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
                                           eq->builder,
                                           eq->scheme_context,
                                           diff_flux);
-      else
-        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
-    }
-    break;
 
-  case CS_SPACE_SCHEME_CDOFB:
-    {
-      /* Which values to consider ? */
-
-      const cs_real_t  *used_dof_values;
-      const cs_real_t  *used_cell_values;
-
-      if (dof_vals != NULL) {
-
-        used_dof_values = dof_vals;
-        used_cell_values = cell_vals;
-
-        if (cell_vals == NULL)
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Need cell values with this set of options.",
-                    __func__);
-
-      }
-      else {
-
-        used_dof_values = cs_equation_get_face_values(eq, false);
-        used_cell_values = cs_equation_get_cell_values(eq, false);
-
-      }
-
-      /* Compute the diffusive flux */
-
-      if (cs_flag_test(location, cs_flag_primal_face))
-        cs_cdofb_scaleq_diff_flux_faces(used_dof_values,
+    else if (cs_flag_test(location, cs_flag_dual_face_byc))
+      cs_cdovcb_scaleq_diff_flux_dfaces(used_dof_values,
                                         used_cell_values,
                                         used_eqp,
                                         used_property,
@@ -3779,31 +3894,67 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
                                         eq->builder,
                                         eq->scheme_context,
                                         diff_flux);
-      else
-        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+  } break;
+
+  case CS_SPACE_SCHEME_CDOFB: {
+    /* Which values to consider ? */
+
+    const cs_real_t *used_dof_values;
+    const cs_real_t *used_cell_values;
+
+    if (dof_vals != NULL) {
+
+      used_dof_values  = dof_vals;
+      used_cell_values = cell_vals;
+
+      if (cell_vals == NULL)
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  "%s: Need cell values with this set of options.",
+                  __func__);
     }
-    break;
+    else {
 
-  case CS_SPACE_SCHEME_CDOCB:
-    {
-      /* No need to compute the flux. This is an output of the scheme. One
-         handles only the case where one gets the flux from the equation
-         context (all behaviors by default are expected) */
-
-      const cs_real_t  *used_values = NULL;
-      assert(dof_vals == NULL && diff_pty == NULL);
-
-      if (cs_flag_test(location, cs_flag_primal_face))
-        cs_cdocb_scaleq_diff_flux_faces(used_values,
-                                        used_eqp,
-                                        t_eval,
-                                        eq->builder,
-                                        eq->scheme_context,
-                                        diff_flux);
-      else
-        bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+      used_dof_values  = cs_equation_get_face_values(eq, false);
+      used_cell_values = cs_equation_get_cell_values(eq, false);
     }
-    break;
+
+    /* Compute the diffusive flux */
+
+    if (cs_flag_test(location, cs_flag_primal_face))
+      cs_cdofb_scaleq_diff_flux_faces(used_dof_values,
+                                      used_cell_values,
+                                      used_eqp,
+                                      used_property,
+                                      t_eval,
+                                      eq->builder,
+                                      eq->scheme_context,
+                                      diff_flux);
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+  } break;
+
+  case CS_SPACE_SCHEME_CDOCB: {
+    /* No need to compute the flux. This is an output of the scheme. One
+       handles only the case where one gets the flux from the equation
+       context (all behaviors by default are expected) */
+
+    const cs_real_t *used_values = NULL;
+    assert(dof_vals == NULL && diff_pty == NULL);
+
+    if (cs_flag_test(location, cs_flag_primal_face))
+      cs_cdocb_scaleq_diff_flux_faces(used_values,
+                                      used_eqp,
+                                      t_eval,
+                                      eq->builder,
+                                      eq->scheme_context,
+                                      diff_flux);
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, used_eqp->name);
+  } break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, fmsg, __func__, used_eqp->name);
@@ -3821,30 +3972,34 @@ cs_equation_compute_diffusive_flux(const cs_equation_t         *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
-                                       cs_real_t             *v_gradient)
+cs_equation_compute_vtx_field_gradient(const cs_equation_t *eq,
+                                       cs_real_t           *v_gradient)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(v_gradient != NULL);
 
-  const cs_equation_param_t  *eqp = eq->param;
+  const cs_equation_param_t *eqp = eq->param;
 
   /* Retrieve the field from its id */
 
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  cs_field_t *fld = cs_field_by_id(eq->field_id);
 
   switch (eqp->space_scheme) {
   case CS_SPACE_SCHEME_CDOVCB:
-    cs_cdovcb_scaleq_vtx_gradient(fld->val, eq->builder, eq->scheme_context,
-                                  v_gradient);
+    cs_cdovcb_scaleq_vtx_gradient(
+      fld->val, eq->builder, eq->scheme_context, v_gradient);
     break;
 
-  case CS_SPACE_SCHEME_CDOVB:   /* --> wall distance */
+  case CS_SPACE_SCHEME_CDOVB: /* --> wall distance */
   default:
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Invalid type of scheme for equation %s when computing"
-              " the gradient at vertices", __func__, eqp->name);
+              " the gradient at vertices",
+              __func__,
+              eqp->name);
     break;
   }
 }
@@ -3861,15 +4016,15 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_peclet(const cs_equation_t        *eq,
-                           const cs_time_step_t       *ts,
-                           cs_real_t                   peclet[])
+cs_equation_compute_peclet(const cs_equation_t  *eq,
+                           const cs_time_step_t *ts,
+                           cs_real_t             peclet[])
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(peclet != NULL);
 
-  const cs_equation_param_t  *eqp = eq->param;
+  const cs_equation_param_t *eqp = eq->param;
 
   /* Check if the computation of the Peclet number is requested */
 
@@ -3877,25 +4032,29 @@ cs_equation_compute_peclet(const cs_equation_t        *eq,
     return;
 
   if (eqp->diffusion_property == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Computation of the Peclet number is requested for\n"
               " equation %s but no diffusion property is set.\n",
-              __func__, eqp->name);
+              __func__,
+              eqp->name);
   if (eqp->adv_field == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Computation of the Peclet number is requested for\n"
               " equation %s but no advection field is set.\n",
-              __func__, eqp->name);
+              __func__,
+              eqp->name);
 
-  if (eq->main_ts_id > -1)    /* Activate timer statistics */
+  if (eq->main_ts_id > -1) /* Activate timer statistics */
     cs_timer_stats_start(eq->main_ts_id);
 
   /* Compute the Peclet number in each cell */
 
-  cs_advection_get_peclet(eqp->adv_field,
-                          eqp->diffusion_property,
-                          ts->t_cur,
-                          peclet);
+  cs_advection_get_peclet(
+    eqp->adv_field, eqp->diffusion_property, ts->t_cur, peclet);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -3911,11 +4070,11 @@ cs_equation_compute_peclet(const cs_equation_t        *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_read_extra_restart(cs_restart_t   *restart)
+cs_equation_read_extra_restart(cs_restart_t *restart)
 {
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
+    cs_equation_t *eq = _equations[i];
     assert(eq != NULL); /* Sanity check */
 
     if (eq->read_restart != NULL)
@@ -3934,11 +4093,11 @@ cs_equation_read_extra_restart(cs_restart_t   *restart)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_write_extra_restart(cs_restart_t   *restart)
+cs_equation_write_extra_restart(cs_restart_t *restart)
 {
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
+    cs_equation_t *eq = _equations[i];
     assert(eq != NULL); /* Sanity check */
 
     if (eq->write_restart != NULL)
@@ -3959,19 +4118,19 @@ cs_equation_write_extra_restart(cs_restart_t   *restart)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_post_balance(const cs_mesh_t            *mesh,
-                         const cs_cdo_connect_t     *connect,
-                         const cs_cdo_quantities_t  *cdoq,
-                         const cs_time_step_t       *ts)
+cs_equation_post_balance(const cs_mesh_t           *mesh,
+                         const cs_cdo_connect_t    *connect,
+                         const cs_cdo_quantities_t *cdoq,
+                         const cs_time_step_t      *ts)
 {
   CS_NO_WARN_IF_UNUSED(connect);
   CS_NO_WARN_IF_UNUSED(cdoq);
 
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
+    cs_equation_t *eq = _equations[i];
     assert(eq != NULL); /* Sanity check */
-    const cs_equation_param_t  *eqp = eq->param;
+    const cs_equation_param_t *eqp = eq->param;
 
     /* Check if the computation of the balance is requested */
 
@@ -3979,60 +4138,55 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
       continue;
 
     if (eq->compute_balance == NULL)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: Balance for equation %s is requested but\n"
                 " this functionality is not available yet.\n",
-                __func__, eqp->name);
+                __func__,
+                eqp->name);
 
-    if (eq->main_ts_id > -1)    /* Activate timer statistics */
+    if (eq->main_ts_id > -1) /* Activate timer statistics */
       cs_timer_stats_start(eq->main_ts_id);
 
-    cs_cdo_balance_t  *b = eq->compute_balance(eqp,
-                                               eq->builder,
-                                               eq->scheme_context);
+    cs_cdo_balance_t *b
+      = eq->compute_balance(eqp, eq->builder, eq->scheme_context);
 
     char *postlabel = NULL;
-    int len = strlen(eqp->name) + 13 + 1;
+    int   len       = strlen(eqp->name) + 13 + 1;
     BFT_MALLOC(postlabel, len, char);
 
     switch (eqp->space_scheme) {
 
-    case CS_SPACE_SCHEME_CDOVB:
-      {
-        sprintf(postlabel, "%s.Balance", eqp->name);
+    case CS_SPACE_SCHEME_CDOVB: {
+      sprintf(postlabel, "%s.Balance", eqp->name);
 
-        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                                 CS_POST_WRITER_DEFAULT,
-                                 postlabel,
-                                 eqp->dim,
-                                 false,
-                                 false,
-                                 CS_POST_TYPE_cs_real_t,
-                                 b->balance,
-                                 ts);
+      cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                               CS_POST_WRITER_DEFAULT,
+                               postlabel,
+                               eqp->dim,
+                               false,
+                               false,
+                               CS_POST_TYPE_cs_real_t,
+                               b->balance,
+                               ts);
 
-        if (cs_equation_param_has_diffusion(eqp))
-          _post_balance_at_vertices(eq, ts, "Diff", postlabel,
-                                    b->diffusion_term);
+      if (cs_equation_param_has_diffusion(eqp))
+        _post_balance_at_vertices(eq, ts, "Diff", postlabel, b->diffusion_term);
 
-        if (cs_equation_param_has_convection(eqp))
-          _post_balance_at_vertices(eq, ts, "Adv", postlabel,
-                                    b->advection_term);
+      if (cs_equation_param_has_convection(eqp))
+        _post_balance_at_vertices(eq, ts, "Adv", postlabel, b->advection_term);
 
-        if (cs_equation_param_has_time(eqp))
-          _post_balance_at_vertices(eq, ts, "Time", postlabel,
-                                    b->unsteady_term);
+      if (cs_equation_param_has_time(eqp))
+        _post_balance_at_vertices(eq, ts, "Time", postlabel, b->unsteady_term);
 
-        if (cs_equation_param_has_reaction(eqp))
-          _post_balance_at_vertices(eq, ts, "Reac", postlabel,
-                                    b->reaction_term);
+      if (cs_equation_param_has_reaction(eqp))
+        _post_balance_at_vertices(eq, ts, "Reac", postlabel, b->reaction_term);
 
-        if (cs_equation_param_has_sourceterm(eqp))
-          _post_balance_at_vertices(eq, ts, "Src", postlabel,
-                                    b->source_term);
+      if (cs_equation_param_has_sourceterm(eqp))
+        _post_balance_at_vertices(eq, ts, "Src", postlabel, b->source_term);
 
-      }
-      break;
+    } break;
 
     default:
       break;
@@ -4042,8 +4196,8 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
        is a mesh modification. In particular, a removal of the 2D extruded
        border faces */
 
-    bool  use_parent = (mesh->n_g_b_faces_all > mesh->n_g_b_faces) ?
-      false : true;
+    bool use_parent
+      = (mesh->n_g_b_faces_all > mesh->n_g_b_faces) ? false : true;
 
     sprintf(postlabel, "%s.BdyFlux", eqp->name);
 
@@ -4053,13 +4207,13 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
                       CS_POST_WRITER_DEFAULT,
                       postlabel,
                       1,
-                      true,                /* interlace */
+                      true, /* interlace */
                       use_parent,
                       CS_POST_TYPE_cs_real_t,
-                      NULL,                /* values on cells */
-                      NULL,                /* values at internal faces */
-                      b->boundary_term,    /* values at border faces */
-                      ts);                 /* time step structure */
+                      NULL,             /* values on cells */
+                      NULL,             /* values at internal faces */
+                      b->boundary_term, /* values at border faces */
+                      ts);              /* time step structure */
 
     /* Free buffers */
 
@@ -4087,11 +4241,11 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_apply_stiffness(cs_equation_t          *eq,
-                            const cs_property_t    *property,
-                            const cs_real_t        *pot,
-                            cs_flag_t               loc_res,
-                            cs_real_t              *res)
+cs_equation_apply_stiffness(cs_equation_t       *eq,
+                            const cs_property_t *property,
+                            const cs_real_t     *pot,
+                            cs_flag_t            loc_res,
+                            cs_real_t           *res)
 {
   if (eq == NULL)
     return;
@@ -4099,31 +4253,29 @@ cs_equation_apply_stiffness(cs_equation_t          *eq,
   /* Preliminary checkings */
 
   if (pot == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Input array not allocated.\n",
-              __func__);
+    bft_error(
+      __FILE__, __LINE__, 0, "%s: Input array not allocated.\n", __func__);
   if (res == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Resulting array not allocated.\n",
-              __func__);
+    bft_error(
+      __FILE__, __LINE__, 0, "%s: Resulting array not allocated.\n", __func__);
   if (eq->apply_stiffness == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Function not defined for this equation \"%s\".\n",
-              __func__, cs_equation_get_name(eq));
+              __func__,
+              cs_equation_get_name(eq));
 
   /* Perform the requested operation */
 
-  if (eq->main_ts_id > -1)    /* Activate timer statistics */
+  if (eq->main_ts_id > -1) /* Activate timer statistics */
     cs_timer_stats_start(eq->main_ts_id);
 
- eq->apply_stiffness(eq->param,
-                      eq->builder,
-                      eq->scheme_context,
-                      property,
-                      pot,
-                      loc_res,
-                      res);
+  eq->apply_stiffness(
+    eq->param, eq->builder, eq->scheme_context, property, pot, loc_res, res);
 
- if (eq->main_ts_id > -1)
-   cs_timer_stats_stop(eq->main_ts_id);
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4138,19 +4290,17 @@ cs_equation_extra_post(void)
 {
   for (int i = 0; i < _n_equations; i++) {
 
-    cs_equation_t  *eq = _equations[i];
+    cs_equation_t *eq = _equations[i];
     assert(eq != NULL); /* Sanity check */
-    const cs_equation_param_t  *eqp = eq->param;
+    const cs_equation_param_t *eqp = eq->param;
 
-    if (eq->main_ts_id > -1)    /* Activate timer statistics */
+    if (eq->main_ts_id > -1) /* Activate timer statistics */
       cs_timer_stats_start(eq->main_ts_id);
     assert(eq->postprocess != NULL);
 
     /* Perform post-processing specific to a numerical scheme */
 
-    eq->postprocess(eqp,
-                    eq->builder,
-                    eq->scheme_context);
+    eq->postprocess(eqp, eq->builder, eq->scheme_context);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

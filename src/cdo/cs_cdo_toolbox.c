@@ -43,6 +43,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_cdo_local.h"
 #include "cs_log.h"
+#include "cs_macfb_builder.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_xdef_eval.h"
@@ -111,17 +112,19 @@ static const cs_cdo_connect_t  *cs_shared_connect;
  * \param[in]  vb_flag      metadata for Vertex-based schemes
  * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
  * \param[in]  hho_flag     metadata for HHO schemes
+ * \param[in]  mac_flag     metadata for MAC schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
-                    cs_flag_t                     eb_flag,
-                    cs_flag_t                     fb_flag,
-                    cs_flag_t                     cb_flag,
-                    cs_flag_t                     vb_flag,
-                    cs_flag_t                     vcb_flag,
-                    cs_flag_t                     hho_flag)
+cs_cdo_toolbox_init(const cs_cdo_connect_t *connect,
+                    cs_flag_t               eb_flag,
+                    cs_flag_t               fb_flag,
+                    cs_flag_t               cb_flag,
+                    cs_flag_t               vb_flag,
+                    cs_flag_t               vcb_flag,
+                    cs_flag_t               hho_flag,
+                    cs_flag_t               mac_flag)
 {
   assert(connect != NULL); /* Sanity check */
 
@@ -183,7 +186,7 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 
   } /* Edge-based schemes */
 
-  if (fb_flag > 0 || cb_flag > 0 || hho_flag > 0) {
+  if (fb_flag > 0 || cb_flag > 0 || hho_flag > 0 || mac_flag > 0) {
 
     if (cs_flag_test(fb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR) ||
         cs_flag_test(cb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR) ||
@@ -201,9 +204,11 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 
     } /* Scalar-valued CDO-Fb or HHO-P0 */
 
-    if (cs_flag_test(fb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR) ||
-        cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR) ||
-        cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
+    if (cs_flag_test(fb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)
+        || cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR)
+        || cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)
+        || cs_flag_test(mac_flag,
+                        CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
 
       assert((CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECT) &&
              (CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECP0));
@@ -239,6 +244,10 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
 
   cs_cdo_toolbox_work_buffer_size = wb_size;
   BFT_MALLOC(cs_cdo_toolbox_work_buffer, wb_size, double);
+
+  /* Allocate MAC builder */
+
+  cs_macfb_builder_initialize();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -257,6 +266,10 @@ cs_cdo_toolbox_finalize(void)
   /* Free cell-wise and face-wise view of a mesh */
 
   cs_cdo_local_finalize();
+
+  /* Free MAC builder */
+
+  cs_macfb_builder_finalize();
 
   /* Free common buffer */
 

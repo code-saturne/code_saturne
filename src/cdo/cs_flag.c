@@ -56,6 +56,8 @@ const cs_flag_t  cs_flag_primal_vtx  = CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
 const cs_flag_t  cs_flag_primal_edge = CS_FLAG_PRIMAL | CS_FLAG_EDGE;
 const cs_flag_t  cs_flag_primal_face = CS_FLAG_PRIMAL | CS_FLAG_FACE;
 const cs_flag_t  cs_flag_primal_cell = CS_FLAG_PRIMAL | CS_FLAG_CELL;
+const cs_flag_t  cs_flag_mac_primal_face
+  = CS_FLAG_PRIMAL | CS_FLAG_FACE | CS_FLAG_MAC_LOC;
 
 const cs_flag_t  cs_flag_dual_vtx  = CS_FLAG_DUAL | CS_FLAG_VERTEX;
 const cs_flag_t  cs_flag_dual_edge = CS_FLAG_DUAL | CS_FLAG_EDGE;

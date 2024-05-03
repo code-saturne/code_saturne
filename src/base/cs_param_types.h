@@ -206,6 +206,10 @@ typedef void
  * \var CS_SPACE_SCHEME_HHO_P2
  * Hybrid High Order (HHO) schemes
  * HHO scheme with face-based positioning (k=2 up to order 4)
+ *
+ * \var CS_SPACE_SCHEME_MACFB
+ * MAC scheme with face-based positioning
+ * faces)
  */
 
 typedef enum {
@@ -219,6 +223,7 @@ typedef enum {
   CS_SPACE_SCHEME_HHO_P0,
   CS_SPACE_SCHEME_HHO_P1,
   CS_SPACE_SCHEME_HHO_P2,
+  CS_SPACE_SCHEME_MACFB,
 
   CS_SPACE_N_SCHEMES
 

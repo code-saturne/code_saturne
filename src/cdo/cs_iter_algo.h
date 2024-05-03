@@ -33,6 +33,7 @@
 #include "cs_math.h"
 #include "cs_param_sles.h"
 #include "cs_param_types.h"
+#include "cs_sdm.h"
 #include "cs_sles.h"
 
 /*----------------------------------------------------------------------------*/

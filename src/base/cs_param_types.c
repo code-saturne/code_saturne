@@ -78,18 +78,18 @@ const char cs_med_sepline[50] =
  * Global static variables
  *============================================================================*/
 
-static const char
-cs_param_space_scheme_name[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
-  { N_("Legacy Finite Volume"),
-    N_("CDO vertex-based"),
-    N_("CDO vertex+cell-based"),
-    N_("CDO edge-based"),
-    N_("CDO face-based"),
-    N_("CDO cell-based"),
-    N_("HHO-P0"),
-    N_("HHO-P1"),
-    N_("HHO-P2")
-  };
+static const char cs_param_space_scheme_name[CS_SPACE_N_SCHEMES]
+                                            [CS_BASE_STRING_LEN]
+  = { N_("Legacy Finite Volume"),
+      N_("CDO vertex-based"),
+      N_("CDO vertex+cell-based"),
+      N_("CDO edge-based"),
+      N_("CDO face-based"),
+      N_("CDO cell-based"),
+      N_("HHO-P0"),
+      N_("HHO-P1"),
+      N_("HHO-P2"),
+      N_("MAC face-based") };
 
 static const char
 cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
@@ -206,10 +206,9 @@ cs_param_dotprod_name[CS_PARAM_N_DOTPROD_TYPES][CS_BASE_STRING_LEN] =
 bool
 cs_param_space_scheme_is_face_based(cs_param_space_scheme_t    scheme)
 {
-  if (scheme == CS_SPACE_SCHEME_CDOFB  ||
-      scheme == CS_SPACE_SCHEME_HHO_P0 ||
-      scheme == CS_SPACE_SCHEME_HHO_P1 ||
-      scheme == CS_SPACE_SCHEME_HHO_P2)
+  if (scheme == CS_SPACE_SCHEME_CDOFB || scheme == CS_SPACE_SCHEME_HHO_P0
+      || scheme == CS_SPACE_SCHEME_HHO_P1 || scheme == CS_SPACE_SCHEME_HHO_P2
+      || scheme == CS_SPACE_SCHEME_MACFB)
     return true;
   else
     return false;
@@ -238,6 +237,7 @@ cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
+  case CS_SPACE_SCHEME_MACFB:
     return cs_param_space_scheme_name[scheme];
 
   default:

@@ -149,6 +149,7 @@ _create_cdo_context(void)
   cc->cb_scheme_flag  = 0;
 
   cc->hho_scheme_flag = 0;
+  cc->mac_scheme_flag = 0;
 
   return cc;
 }

@@ -869,6 +869,26 @@ cs_math_sym_33_determinant(const cs_real_6_t   m)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the average of two vector of dimension 3
+ *
+ * \param[in]     u    vector of 3 real values
+ * \param[in]     v    vector of 3 real values
+ * \param[out]    uv   average of u an v := (u+v)/2
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline void
+cs_math_3_average(const cs_real_3_t u,
+                  const cs_real_3_t v,
+                  cs_real_t         uv[restrict 3])
+{
+  uv[0] = (u[0] + v[0]) / 2.0;
+  uv[1] = (u[1] + v[1]) / 2.0;
+  uv[2] = (u[2] + v[2]) / 2.0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the cross product of two vectors of 3 real values.
  *
  * \param[in]     u    vector of 3 real values

@@ -50,10 +50,13 @@
 #include "cs_cdofb_monolithic_sles.h"
 #include "cs_cdofb_navsto.h"
 #include "cs_cdofb_predco.h"
-#include "cs_hho_stokes.h"
 #include "cs_evaluate.h"
 #include "cs_flag.h"
+#include "cs_hho_stokes.h"
 #include "cs_log.h"
+#include "cs_macfb_monolithic.h"
+#include "cs_macfb_monolithic_sles.h"
+#include "cs_macfb_navsto.h"
 #include "cs_navsto_coupling.h"
 #include "cs_post.h"
 #include "cs_volume_zone.h"
@@ -84,7 +87,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_NAVSTO_SYSTEM_DBG  0
+#define CS_NAVSTO_SYSTEM_DBG 0
 
 /*============================================================================
  * Type definitions
@@ -96,15 +99,15 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
-static const char _err_empty_ns[] =
-  " Stop execution. The structure related to the Navier-Stokes system is"
-  " empty.\n Please check your settings.\n";
+static const char _err_empty_ns[]
+  = " Stop execution. The structure related to the Navier-Stokes system is"
+    " empty.\n Please check your settings.\n";
 
-static const char _err_invalid_coupling[] =
-  " %s: Invalid case for the coupling algorithm.\n";
+static const char _err_invalid_coupling[]
+  = " %s: Invalid case for the coupling algorithm.\n";
 
-static int  cs_navsto_system_solid_enforcement_id = -1;
-static cs_navsto_system_t  *cs_navsto_system = NULL;
+static int                 cs_navsto_system_solid_enforcement_id = -1;
+static cs_navsto_system_t *cs_navsto_system                      = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -121,12 +124,12 @@ static cs_navsto_system_t  *cs_navsto_system = NULL;
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-_has_symmetry(const cs_navsto_param_t    *nsp)
+_has_symmetry(const cs_navsto_param_t *nsp)
 {
   if (nsp == NULL)
     return false;
 
-  const cs_boundary_t  *bdy = nsp->boundaries;
+  const cs_boundary_t *bdy = nsp->boundaries;
 
   if (bdy->default_type == CS_BOUNDARY_SYMMETRY)
     return true;
@@ -149,8 +152,8 @@ _has_symmetry(const cs_navsto_param_t    *nsp)
 /*----------------------------------------------------------------------------*/
 
 static void
-_handle_non_linearities_settings(const cs_equation_param_t  *mom_eqp,
-                                 cs_navsto_param_t          *nsp)
+_handle_non_linearities_settings(const cs_equation_param_t *mom_eqp,
+                                 cs_navsto_param_t         *nsp)
 {
   if (nsp == NULL || mom_eqp == NULL)
     return;
@@ -163,8 +166,8 @@ _handle_non_linearities_settings(const cs_equation_param_t  *mom_eqp,
         nsp->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
     }
     else {
-      assert(mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED ||
-             mom_eqp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
+      assert(mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED
+             || mom_eqp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
       nsp->nl_algo_type = CS_PARAM_NL_ALGO_NONE;
     }
     break;
@@ -193,8 +196,7 @@ _handle_non_linearities_settings(const cs_equation_param_t  *mom_eqp,
 /*----------------------------------------------------------------------------*/
 
 static bool
-_has_weak_bc(const cs_navsto_param_t    *nsp,
-             const cs_equation_param_t  *mom_eqp)
+_has_weak_bc(const cs_navsto_param_t *nsp, const cs_equation_param_t *mom_eqp)
 {
   if (nsp == NULL)
     return false;
@@ -205,8 +207,8 @@ _has_weak_bc(const cs_navsto_param_t    *nsp,
   if (_has_symmetry(nsp))
     return true;
 
-  if (mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-      mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+  if (mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
+      || mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
     return true;
 
   return false;
@@ -223,7 +225,7 @@ _has_weak_bc(const cs_navsto_param_t    *nsp,
 static cs_navsto_system_t *
 _allocate_navsto_system(void)
 {
-  cs_navsto_system_t  *navsto = NULL;
+  cs_navsto_system_t *navsto = NULL;
 
   BFT_MALLOC(navsto, 1, cs_navsto_system_t);
 
@@ -240,8 +242,8 @@ _allocate_navsto_system(void)
 
   /* Advection field */
 
-  navsto->adv_field = NULL;
-  navsto->mass_flux_array = NULL;
+  navsto->adv_field           = NULL;
+  navsto->mass_flux_array     = NULL;
   navsto->mass_flux_array_pre = NULL;
 
   /* Related modules */
@@ -250,16 +252,16 @@ _allocate_navsto_system(void)
 
   /* Post-processing fields */
 
-  navsto->plot_writer = NULL;
+  navsto->plot_writer         = NULL;
   navsto->velocity_divergence = NULL;
-  navsto->pressure_gradient = NULL;
-  navsto->mass_density = NULL;
-  navsto->mass_flux_balance = NULL;
-  navsto->kinetic_energy = NULL;
-  navsto->velocity_gradient = NULL;
-  navsto->vorticity = NULL;
-  navsto->helicity = NULL;
-  navsto->enstrophy = NULL;
+  navsto->pressure_gradient   = NULL;
+  navsto->mass_density        = NULL;
+  navsto->mass_flux_balance   = NULL;
+  navsto->kinetic_energy      = NULL;
+  navsto->velocity_gradient   = NULL;
+  navsto->vorticity           = NULL;
+  navsto->helicity            = NULL;
+  navsto->enstrophy           = NULL;
 
   /* Stream function is associated to the variable field of an equation
      So the treatment is different */
@@ -269,16 +271,16 @@ _allocate_navsto_system(void)
   /* Additional data fitting the choice of the coupling model */
 
   navsto->coupling_context = NULL;
-  navsto->scheme_context = NULL;
+  navsto->scheme_context   = NULL;
 
   /* Function pointers */
 
   navsto->init_scheme_context = NULL;
   navsto->free_scheme_context = NULL;
-  navsto->init_velocity = NULL;
-  navsto->init_pressure = NULL;
-  navsto->compute_steady = NULL;
-  navsto->compute= NULL;
+  navsto->init_velocity       = NULL;
+  navsto->init_pressure       = NULL;
+  navsto->compute_steady      = NULL;
+  navsto->compute             = NULL;
 
   return navsto;
 }
@@ -316,29 +318,32 @@ cs_navsto_system_is_activated(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_update_model(bool   with_thermal)
+cs_navsto_system_update_model(bool with_thermal)
 {
   if (cs_navsto_system == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: The main structure for the Navier-Stokes equations is not"
               " allocated.\n"
-              " Please check your settings", __func__);
+              " Please check your settings",
+              __func__);
 
-  cs_navsto_param_t  *nsp = cs_navsto_system->param;
+  cs_navsto_param_t *nsp = cs_navsto_system->param;
 
   if (with_thermal) { /* Thermal system is switch on and relies on the mass flux
                          for the advection */
 
-    if ((nsp->model_flag & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
-                            CS_NAVSTO_MODEL_BOUSSINESQ)) == 0) {
+    if ((nsp->model_flag
+         & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER
+            | CS_NAVSTO_MODEL_BOUSSINESQ))
+        == 0) {
 
       /* Thermal system is linked to the Navier-Stokes one but nothing has been
        * set. Add the "minimal" flag. */
 
       nsp->model_flag |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
-
     }
-
   }
 }
 
@@ -357,32 +362,32 @@ cs_navsto_system_update_model(bool   with_thermal)
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_system_t *
-cs_navsto_system_activate(const cs_boundary_t           *boundaries,
-                          cs_navsto_param_model_t        model,
-                          cs_navsto_param_model_flag_t   model_flag,
-                          cs_navsto_param_coupling_t     algo_coupling,
-                          cs_navsto_param_post_flag_t    post_flag)
+cs_navsto_system_activate(const cs_boundary_t         *boundaries,
+                          cs_navsto_param_model_t      model,
+                          cs_navsto_param_model_flag_t model_flag,
+                          cs_navsto_param_coupling_t   algo_coupling,
+                          cs_navsto_param_post_flag_t  post_flag)
 {
   if (model == CS_NAVSTO_N_MODELS)
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Invalid model for Navier-Stokes.\n",
               __func__);
 
   /* Allocate an empty structure */
 
-  cs_navsto_system_t  *navsto = _allocate_navsto_system();
+  cs_navsto_system_t *navsto = _allocate_navsto_system();
 
   /* Initialize the set of parameters */
 
-  navsto->param = cs_navsto_param_create(boundaries,
-                                         model,
-                                         model_flag,
-                                         algo_coupling,
-                                         post_flag);
+  navsto->param = cs_navsto_param_create(
+    boundaries, model, model_flag, algo_coupling, post_flag);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
 
-  cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
+  cs_param_bc_type_t default_bc = CS_PARAM_N_BC_TYPES;
   switch (boundaries->default_type) {
 
   case CS_BOUNDARY_WALL:
@@ -393,16 +398,16 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid boundary default type\n",
-              __func__);
+    bft_error(
+      __FILE__, __LINE__, 0, " %s: Invalid boundary default type\n", __func__);
     break;
 
   } /* End of switch */
 
   /* Advection field related to the resolved velocity */
 
-  cs_advection_field_status_t  adv_status =
-    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+  cs_advection_field_status_t adv_status
+    = CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
 
   if (cs_navsto_param_is_steady(navsto->param))
     adv_status |= CS_ADVECTION_FIELD_STEADY;
@@ -414,22 +419,21 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   switch (navsto->param->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->coupling_context =
-      cs_navsto_ac_create_context(default_bc, navsto->param);
+    navsto->coupling_context
+      = cs_navsto_ac_create_context(default_bc, navsto->param);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    navsto->coupling_context =
-      cs_navsto_monolithic_create_context(default_bc, navsto->param);
+    navsto->coupling_context
+      = cs_navsto_monolithic_create_context(default_bc, navsto->param);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
-    navsto->coupling_context =
-      cs_navsto_projection_create_context(default_bc, navsto->param);
+    navsto->coupling_context
+      = cs_navsto_projection_create_context(default_bc, navsto->param);
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     break;
-
   }
 
   if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
@@ -440,8 +444,8 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                                                  1,
                                                  CS_PARAM_BC_HMG_NEUMANN);
 
-    cs_equation_param_t  *eqp =
-      cs_equation_get_param(navsto->stream_function_eq);
+    cs_equation_param_t *eqp
+      = cs_equation_get_param(navsto->stream_function_eq);
     assert(eqp != NULL);
 
     /* Default settings for this equation */
@@ -456,7 +460,6 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
      * system */
 
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
-
   }
 
   /* Create the main structure to handle the turbulence modelling */
@@ -479,7 +482,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 void
 cs_navsto_system_destroy(void)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t *navsto = cs_navsto_system;
 
   if (navsto == NULL)
     return;
@@ -501,29 +504,32 @@ cs_navsto_system_destroy(void)
   if (navsto->plot_writer != NULL)
     cs_time_plot_finalize(&navsto->plot_writer);
 
-  cs_navsto_param_t  *nsp = navsto->param;
+  cs_navsto_param_t *nsp = navsto->param;
 
   /* Free the context according to the model choice */
 
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->coupling_context =
-      cs_navsto_ac_free_context(navsto->coupling_context);
+    navsto->coupling_context
+      = cs_navsto_ac_free_context(navsto->coupling_context);
     break;
 
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    navsto->coupling_context =
-      cs_navsto_monolithic_free_context(navsto->coupling_context);
+    navsto->coupling_context
+      = cs_navsto_monolithic_free_context(navsto->coupling_context);
 
     if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
       cs_cdofb_monolithic_finalize_common();
     }
+    else if (nsp->space_scheme == CS_SPACE_SCHEME_MACFB) {
+      cs_macfb_monolithic_finalize_common();
+    }
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    navsto->coupling_context =
-      cs_navsto_projection_free_context(navsto->coupling_context);
+    navsto->coupling_context
+      = cs_navsto_projection_free_context(navsto->coupling_context);
     break;
 
   default:
@@ -559,7 +565,7 @@ cs_navsto_system_destroy(void)
 cs_navsto_param_t *
 cs_navsto_system_get_param(void)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t *navsto = cs_navsto_system;
 
   if (navsto == NULL)
     return NULL;
@@ -578,13 +584,13 @@ cs_navsto_system_get_param(void)
 cs_equation_t *
 cs_navsto_system_get_momentum_eq(void)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t *navsto = cs_navsto_system;
 
   if (navsto == NULL)
     return NULL;
 
-  cs_navsto_param_t  *nsp = navsto->param;
-  cs_equation_t  *eq = NULL;
+  cs_navsto_param_t *nsp = navsto->param;
+  cs_equation_t     *eq  = NULL;
 
   switch (nsp->coupling) {
 
@@ -601,7 +607,6 @@ cs_navsto_system_get_momentum_eq(void)
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     break;
-
   }
 
   return eq;
@@ -619,9 +624,10 @@ cs_navsto_system_get_momentum_eq(void)
 cs_adv_field_t *
 cs_navsto_get_adv_field(void)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   return ns->adv_field;
 }
@@ -638,13 +644,14 @@ cs_navsto_get_adv_field(void)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_navsto_get_mass_flux(bool   previous)
+cs_navsto_get_mass_flux(bool previous)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_real_t  *mass_flux = ns->mass_flux_array;
+  cs_real_t *mass_flux = ns->mass_flux_array;
   if (previous)
     mass_flux = ns->mass_flux_array_pre;
 
@@ -662,45 +669,50 @@ cs_navsto_get_mass_flux(bool   previous)
 void
 cs_navsto_system_init_setup(void)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_navsto_param_t  *nsp = ns->param;
+  cs_navsto_param_t *nsp = ns->param;
 
   /* Plotter output:
    * By default: there is at least the norm of the velocity field divergence */
 
-  const char  **labels;
-  int  n_plotter_outputs = 1;
+  const char **labels;
+  int          n_plotter_outputs = 1;
 
   /* Set field metadata */
 
-  const int  log_key = cs_field_key_id("log");
-  const int  post_key = cs_field_key_id("post_vis");
-  const bool  has_previous = cs_navsto_param_is_steady(nsp) ? false : true;
-  int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
+  const int  log_key      = cs_field_key_id("log");
+  const int  post_key     = cs_field_key_id("post_vis");
+  const bool has_previous = cs_navsto_param_is_steady(nsp) ? false : true;
+  int        field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
 
   /* Set the location id to define a mesh location support */
 
-  int  location_id = -1;
+  int location_id = -1;
   switch (nsp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
+  case CS_SPACE_SCHEME_MACFB:
     location_id = cs_mesh_location_get_id_by_name("cells");
     break; /* Face-based scheme family */
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space discretization scheme.", __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Invalid space discretization scheme.",
+              __func__);
   }
 
   /* Create if needed velocity and pressure fields */
 
-  const int  field_post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  const int field_post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
   /* Handle the velocity field */
 
@@ -732,7 +744,7 @@ cs_navsto_system_init_setup(void)
    * Up to now, always defined the divergence of the velocity field. This
    * should be changed in the future */
 
-  int  p_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
+  int p_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
 
   nsp->post_flag |= CS_NAVSTO_POST_VELOCITY_DIVERGENCE;
 
@@ -751,7 +763,7 @@ cs_navsto_system_init_setup(void)
 
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
-    n_plotter_outputs += 1;   /* Integral of the kinetic energy is monitored */
+    n_plotter_outputs += 1; /* Integral of the kinetic energy is monitored */
 
     ns->kinetic_energy = cs_field_find_or_create("kinetic_energy",
                                                  p_mask,
@@ -763,12 +775,11 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->kinetic_energy, log_key, 1);
     cs_field_set_key_int(ns->kinetic_energy, post_key, field_post_flag);
-
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_MASS_DENSITY) {
 
-    n_plotter_outputs += 1;   /* Integral of the mass density is monitored */
+    n_plotter_outputs += 1; /* Integral of the mass density is monitored */
 
     ns->mass_density = cs_field_find_or_create("mass_density",
                                                p_mask,
@@ -780,7 +791,6 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->mass_density, log_key, 1);
     cs_field_set_key_int(ns->mass_density, post_key, field_post_flag);
-
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE) {
@@ -795,7 +805,6 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->mass_flux_balance, log_key, 1);
     cs_field_set_key_int(ns->mass_flux_balance, post_key, field_post_flag);
-
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT) {
@@ -809,7 +818,6 @@ cs_navsto_system_init_setup(void)
     /* Set the default value for keys related to post-processing */
 
     cs_field_set_key_int(ns->pressure_gradient, post_key, field_post_flag);
-
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION)
@@ -817,7 +825,7 @@ cs_navsto_system_init_setup(void)
 
   if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
 
-    n_plotter_outputs += 1;   /* Integral of the helicity is monitored */
+    n_plotter_outputs += 1; /* Integral of the helicity is monitored */
 
     nsp->post_flag |= CS_NAVSTO_POST_VORTICITY; /* automatic */
     ns->helicity = cs_field_find_or_create("helicity",
@@ -830,12 +838,11 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->helicity, log_key, 1);
     cs_field_set_key_int(ns->helicity, post_key, field_post_flag);
-
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
 
-    n_plotter_outputs += 1;   /* Integral of the enstrophy is monitored */
+    n_plotter_outputs += 1; /* Integral of the enstrophy is monitored */
 
     nsp->post_flag |= CS_NAVSTO_POST_VORTICITY; /* automatic */
     ns->enstrophy = cs_field_find_or_create("enstrophy",
@@ -848,7 +855,6 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->enstrophy, log_key, 1);
     cs_field_set_key_int(ns->enstrophy, post_key, field_post_flag);
-
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_VORTICITY) {
@@ -863,7 +869,6 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->vorticity, log_key, 1);
     cs_field_set_key_int(ns->vorticity, post_key, field_post_flag);
-
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_GRADIENT) {
@@ -878,7 +883,6 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->velocity_gradient, log_key, 1);
     cs_field_set_key_int(ns->velocity_gradient, post_key, field_post_flag);
-
   }
 
   /* Time plot monitor of global quantities predefined by the automatic
@@ -889,7 +893,7 @@ cs_navsto_system_init_setup(void)
     assert(n_plotter_outputs > 0);
     BFT_MALLOC(labels, n_plotter_outputs, const char *);
 
-    int  n_cols = 0;
+    int n_cols = 0;
 
     if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE)
       labels[n_cols++] = "vel_div_norm";
@@ -935,17 +939,13 @@ cs_navsto_system_init_setup(void)
     cs_navsto_monolithic_init_setup(nsp, ns->adv_field, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
-    cs_navsto_projection_init_setup(nsp,
-                                    ns->adv_field,
-                                    location_id,
-                                    has_previous,
-                                    ns->coupling_context);
+    cs_navsto_projection_init_setup(
+      nsp, ns->adv_field, location_id, has_previous, ns->coupling_context);
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     break;
-
   }
 
   /* Initialize the turbulence modelling */
@@ -965,40 +965,47 @@ cs_navsto_system_init_setup(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
-                                const cs_cdo_connect_t     *connect,
-                                const cs_cdo_quantities_t  *quant,
-                                const cs_time_step_t       *time_step)
+cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
+                                const cs_cdo_connect_t    *connect,
+                                const cs_cdo_quantities_t *quant,
+                                const cs_time_step_t      *time_step)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_navsto_param_t  *nsp = ns->param;
+  cs_navsto_param_t *nsp = ns->param;
   assert(connect != NULL && quant != NULL && nsp != NULL);
 
   /* Setup checkings */
 
-  if ((nsp->model_flag & (CS_NAVSTO_MODEL_BOUSSINESQ |
-                          CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER)) > 0) {
+  if ((nsp->model_flag
+       & (CS_NAVSTO_MODEL_BOUSSINESQ | CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER))
+      > 0) {
 
     if (cs_thermal_system_is_activated() == false)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 " %s: The Navier-Stokes module is activated with options"
                 " that imply a thermal module.\n"
                 " Please check that cs_thermal_system_activate() has been"
-                " called.\n", __func__);
+                " called.\n",
+                __func__);
 
     /* Check that an advection term has been set */
 
-    cs_equation_param_t  *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
+    cs_equation_param_t *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
     if (cs_equation_param_has_convection(eqp) == false)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 " %s: No advection field is associated with the thermal"
                 " equation\n whereas the Navier-Stokes is associated with"
                 " the thermal equation.\n"
-                " Please check your settings.", __func__);
-
+                " Please check your settings.",
+                __func__);
   }
 
   /* Remaining boundary conditions:
@@ -1017,26 +1024,26 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO_P0:
-    {
-      BFT_MALLOC(ns->mass_flux_array, quant->n_faces, cs_real_t);
-      cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array);
+  case CS_SPACE_SCHEME_MACFB: {
+    BFT_MALLOC(ns->mass_flux_array, quant->n_faces, cs_real_t);
+    cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array);
 
-      BFT_MALLOC(ns->mass_flux_array_pre, quant->n_faces, cs_real_t);
-      cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array_pre);
+    BFT_MALLOC(ns->mass_flux_array_pre, quant->n_faces, cs_real_t);
+    cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array_pre);
 
-      cs_flag_t loc_flag =
-        CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
+    cs_flag_t loc_flag
+      = CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
 
-      cs_advection_field_def_by_array(ns->adv_field,
-                                      loc_flag,
-                                      ns->mass_flux_array,
-                                      false); /* not owner */
-    }
-    break;
+    cs_advection_field_def_by_array(
+      ns->adv_field, loc_flag, ns->mass_flux_array, false); /* not owner */
+  } break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space discretization scheme.", __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Invalid space discretization scheme.",
+              __func__);
 
   } /* End of switch on space_scheme */
 
@@ -1058,13 +1065,12 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     break;
-
   }
 
   /* Settings with respect to the discretization scheme */
 
-  cs_equation_param_t  *mom_eqp =
-    cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
+  cs_equation_param_t *mom_eqp
+    = cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
 
   switch (nsp->space_scheme) {
 
@@ -1080,9 +1086,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       ns->init_scheme_context = cs_cdofb_ac_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_ac_free_scheme_context;
-      ns->init_velocity = NULL;
-      ns->init_pressure = cs_cdofb_navsto_init_pressure;
-      ns->compute_steady = NULL;
+      ns->init_velocity       = NULL;
+      ns->init_pressure       = cs_cdofb_navsto_init_pressure;
+      ns->compute_steady      = NULL;
 
       switch (mom_eqp->time_scheme) {
 
@@ -1096,15 +1102,20 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
       case CS_TIME_SCHEME_BDF2:
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: Time scheme not implemented for the AC coupling",
                   __func__);
         break;
 
       case CS_TIME_SCHEME_STEADY:
       default:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid time scheme for the AC coupling", __func__);
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  "%s: Invalid time scheme for the AC coupling",
+                  __func__);
         break;
 
       } /* Switch */
@@ -1117,8 +1128,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       ns->init_scheme_context = cs_cdofb_monolithic_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_monolithic_free_scheme_context;
-      ns->init_velocity = NULL;
-      ns->init_pressure = cs_cdofb_navsto_init_pressure;
+      ns->init_velocity       = NULL;
+      ns->init_pressure       = cs_cdofb_navsto_init_pressure;
 
       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
         ns->compute_steady = cs_cdofb_monolithic_steady;
@@ -1132,16 +1143,14 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       if (_has_weak_bc(nsp, mom_eqp)) {
 
-        const cs_param_saddle_t  *saddlep = mom_eqp->saddle_param;
-        const double  gamma =
-          cs_param_saddle_get_augmentation_coef(saddlep);
+        const cs_param_saddle_t *saddlep = mom_eqp->saddle_param;
+        const double gamma = cs_param_saddle_get_augmentation_coef(saddlep);
 
         if (gamma > 1) {
-          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU ||
-              saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
+          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU
+              || saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
             mom_eqp->weak_pena_bc_coeff *= gamma;
         }
-
       }
 
       switch (mom_eqp->time_scheme) {
@@ -1164,15 +1173,17 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       case CS_TIME_SCHEME_BDF2:
       default:
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: Invalid time scheme for the monolithic coupling",
                   __func__);
         break;
 
       } /* Switch */
 
-      cs_cdofb_monolithic_init_sharing(mom_eqp,
-                                       mesh, quant, connect, time_step);
+      cs_cdofb_monolithic_init_sharing(
+        mom_eqp, mesh, quant, connect, time_step);
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
@@ -1180,21 +1191,27 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       ns->init_scheme_context = cs_cdofb_predco_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_predco_free_scheme_context;
-      ns->init_velocity = NULL;
-      ns->init_pressure = cs_cdofb_navsto_init_pressure;
-      ns->compute_steady = NULL;
+      ns->init_velocity       = NULL;
+      ns->init_pressure       = cs_cdofb_navsto_init_pressure;
+      ns->compute_steady      = NULL;
 
       if (nsp->nl_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: The projection coupling algorithm "
-                  "can not be used with a non-linear algorithm", __func__);
+                  "can not be used with a non-linear algorithm",
+                  __func__);
 
       switch (mom_eqp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: The projection coupling algorithm "
-                  "can be used only in unsteady problems", __func__);
+                  "can be used only in unsteady problems",
+                  __func__);
         break;
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
@@ -1205,9 +1222,12 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       case CS_TIME_SCHEME_CRANKNICO:
       case CS_TIME_SCHEME_BDF2:
       default:
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: Invalid time scheme for the projection coupling"
-                  " algorithm", __func__);
+                  " algorithm",
+                  __func__);
         break;
 
       } /* Switch */
@@ -1218,7 +1238,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     default:
       bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
       break;
-
     }
     break; /* Lowest-order face-based schemes */
 
@@ -1227,9 +1246,81 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     /* TODO: set function pointers */
     break; /* HHO schemes */
 
+  case CS_SPACE_SCHEME_MACFB:
+
+    /* Setup functions and data according to the type of coupling */
+
+    switch (nsp->coupling) {
+
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
+      /* ============================= */
+
+      ns->init_scheme_context = cs_macfb_monolithic_init_scheme_context;
+      ns->free_scheme_context = cs_macfb_monolithic_free_scheme_context;
+      ns->init_velocity       = NULL;
+      ns->init_pressure       = cs_macfb_navsto_init_pressure;
+
+      if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+        ns->compute_steady = cs_macfb_monolithic_steady;
+      else
+        ns->compute_steady = cs_macfb_monolithic_steady_nl;
+
+      /* When a weak enforcement is used and also an augmentation of the linear
+         system, one scales the weak penalization coefficient by the
+         augmentation scaling in order to keep a weak penalization which is not
+         dominated by the augmentation */
+
+      if (_has_weak_bc(nsp, mom_eqp)) {
+
+        const cs_param_saddle_t *saddlep = mom_eqp->saddle_param;
+        const double gamma = cs_param_saddle_get_augmentation_coef(saddlep);
+
+        if (gamma > 1) {
+          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU
+              || saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
+            mom_eqp->weak_pena_bc_coeff *= gamma;
+        }
+      }
+
+      switch (mom_eqp->time_scheme) {
+
+      case CS_TIME_SCHEME_STEADY:
+        if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+          ns->compute = cs_macfb_monolithic_steady;
+        else
+          ns->compute = cs_macfb_monolithic_steady_nl;
+        break; /* Nothing to set */
+
+      case CS_TIME_SCHEME_EULER_IMPLICIT:
+      case CS_TIME_SCHEME_THETA:
+      case CS_TIME_SCHEME_CRANKNICO:
+      case CS_TIME_SCHEME_BDF2:
+      default:
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  "%s: Invalid time scheme for the monolithic coupling",
+                  __func__);
+        break;
+
+      } /* Switch */
+
+      cs_macfb_monolithic_init_sharing(
+        mom_eqp, mesh, quant, connect, time_step);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+      break;
+    }
+    break; /* MAC face-based schemes */
+
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space discretization scheme.", __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Invalid space discretization scheme.",
+              __func__);
   }
 
   if (fabs(nsp->reference_pressure) > 0 && nsp->n_pressure_ic_defs == 0) {
@@ -1237,7 +1328,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     /* Initialize the initial pressure to the reference pressure */
 
     cs_navsto_add_pressure_ic_by_value(nsp, NULL, &(nsp->reference_pressure));
-
   }
 
   /* Add default post-processing related to the Navier-Stokes system */
@@ -1246,9 +1336,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
 
-    cs_equation_param_t  *eqp = cs_equation_get_param(ns->stream_function_eq);
+    cs_equation_param_t *eqp = cs_equation_get_param(ns->stream_function_eq);
     assert(eqp != NULL);
-    cs_field_t  *w = cs_field_by_name("vorticity");
+    cs_field_t *w = cs_field_by_name("vorticity");
 
     /* Add a Laplacian term: -div.grad */
 
@@ -1266,8 +1356,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   /* Finalize the setting of the turbulence modelling */
 
-  cs_turbulence_finalize_setup(mesh, connect, quant, time_step,
-                               ns->turbulence);
+  cs_turbulence_finalize_setup(mesh, connect, quant, time_step, ns->turbulence);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1280,17 +1369,22 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_define_context(const cs_mesh_t             *mesh)
+cs_navsto_system_define_context(const cs_mesh_t *mesh)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   const cs_navsto_param_t *nsp = ns->param;
   assert(nsp != NULL);
-  if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space discretization scheme.", __func__);
+  if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB
+      && nsp->space_scheme != CS_SPACE_SCHEME_MACFB)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Invalid space discretization scheme.",
+              __func__);
 
   /* Allocate then define an array of boundary types for each boundary face */
 
@@ -1320,20 +1414,25 @@ cs_navsto_system_define_context(const cs_mesh_t             *mesh)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_init_values(const cs_mesh_t             *mesh,
-                             const cs_cdo_connect_t      *connect,
-                             const cs_cdo_quantities_t   *quant,
-                             const cs_time_step_t        *time_step)
+cs_navsto_system_init_values(const cs_mesh_t           *mesh,
+                             const cs_cdo_connect_t    *connect,
+                             const cs_cdo_quantities_t *quant,
+                             const cs_time_step_t      *time_step)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   const cs_navsto_param_t *nsp = ns->param;
   assert(nsp != NULL);
-  if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space discretization scheme.", __func__);
+  if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB
+      && nsp->space_scheme != CS_SPACE_SCHEME_MACFB)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Invalid space discretization scheme.",
+              __func__);
 
   if (time_step->nt_cur < 1) {
 
@@ -1346,7 +1445,6 @@ cs_navsto_system_init_values(const cs_mesh_t             *mesh,
 
     if (ns->init_pressure != NULL)
       ns->init_pressure(nsp, quant, time_step, ns->pressure);
-
   }
 
   if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
@@ -1356,17 +1454,32 @@ cs_navsto_system_init_values(const cs_mesh_t             *mesh,
       /* The call to the initialization of the cell pressure should be done
          before */
 
-      cs_real_t  *pr_f = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
+      cs_real_t *pr_f = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
 
       cs_cdofb_navsto_init_face_pressure(nsp, connect, time_step, pr_f);
-
     }
 
     /* Initialize the mass flux values */
 
-    const cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
-    const cs_real_t  *face_vel = cs_equation_get_face_values(mom_eq, false);
+    const cs_equation_t *mom_eq   = cs_navsto_system_get_momentum_eq();
+    const cs_real_t     *face_vel = cs_equation_get_face_values(mom_eq, false);
     cs_cdofb_navsto_mass_flux(nsp, quant, face_vel, ns->mass_flux_array);
+  }
+  else if (nsp->space_scheme == CS_SPACE_SCHEME_MACFB) {
+
+    if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {
+
+      /* The call to the initialization of the cell pressure should be done
+         before */
+
+      bft_error(__FILE__, __LINE__, 0, "%s: Coupling not available.", __func__);
+    }
+
+    /* Initialize the mass flux values */
+
+    const cs_equation_t *mom_eq   = cs_navsto_system_get_momentum_eq();
+    const cs_real_t     *face_vel = cs_equation_get_face_values(mom_eq, false);
+    cs_macfb_navsto_mass_flux(nsp, quant, face_vel, ns->mass_flux_array);
 
   } /* Face-based schemes */
 
@@ -1385,12 +1498,13 @@ cs_navsto_system_init_values(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
-                                 cs_lnum_t          solid_cell_ids[])
+cs_navsto_system_set_solid_cells(cs_lnum_t n_solid_cells,
+                                 cs_lnum_t solid_cell_ids[])
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   /* Do not exit the function if n_elts = 0 since there is a parallel
      synchronization to count the global number of cells to enforce in the next
@@ -1398,18 +1512,19 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
 
   /* The momentum equation has to enforce a zero-velocity */
 
-  cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
-  cs_real_t  zero_velocity[3] = {0, 0, 0};
+  cs_equation_t       *mom_eq           = cs_navsto_system_get_momentum_eq();
+  cs_equation_param_t *mom_eqp          = cs_equation_get_param(mom_eq);
+  cs_real_t            zero_velocity[3] = { 0, 0, 0 };
 
   if (cs_navsto_system_solid_enforcement_id < 0)
     cs_navsto_system_solid_enforcement_id = mom_eqp->n_enforcements;
-  cs_equation_add_or_replace_cell_enforcement(mom_eqp,
-                      cs_navsto_system_solid_enforcement_id,
-                                              n_solid_cells,
-                                              solid_cell_ids,
-                                              zero_velocity,
-                                              NULL);
+  cs_equation_add_or_replace_cell_enforcement(
+    mom_eqp,
+    cs_navsto_system_solid_enforcement_id,
+    n_solid_cells,
+    solid_cell_ids,
+    zero_velocity,
+    NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1425,16 +1540,17 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_update(const cs_mesh_t             *mesh,
-                        const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *quant,
-                        const cs_time_step_t        *time_step)
+cs_navsto_system_update(const cs_mesh_t           *mesh,
+                        const cs_cdo_connect_t    *connect,
+                        const cs_cdo_quantities_t *quant,
+                        const cs_time_step_t      *time_step)
 {
   CS_NO_WARN_IF_UNUSED(mesh);
 
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   /* Synchronize the cell pressure before doing something */
 
@@ -1443,13 +1559,9 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
   /* Update quantities relative to turbulence (e.g. turbulence
    * viscosity...) */
 
-  cs_turbulence_t  *tbs = ns->turbulence;
+  cs_turbulence_t *tbs = ns->turbulence;
   if (tbs->update != NULL)
-    tbs->update(mesh,
-                connect,
-                quant,
-                time_step,
-                tbs);
+    tbs->update(mesh, connect, quant, time_step, tbs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1465,24 +1577,26 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
-                                      const cs_cdo_connect_t      *connect,
-                                      const cs_cdo_quantities_t   *quant,
-                                      const cs_time_step_t        *time_step)
+cs_navsto_system_compute_steady_state(const cs_mesh_t           *mesh,
+                                      const cs_cdo_connect_t    *connect,
+                                      const cs_cdo_quantities_t *quant,
+                                      const cs_time_step_t      *time_step)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  cs_navsto_param_t  *nsp = ns->param;
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  cs_navsto_param_t *nsp = ns->param;
   if (!cs_navsto_param_is_steady(nsp))
     return;
 
-  cs_turbulence_t  *tbs = ns->turbulence;
+  cs_turbulence_t *tbs = ns->turbulence;
 
   /* First resolve the thermal system if needed */
 
-  cs_equation_t  *th_eq = cs_thermal_system_get_equation();
+  cs_equation_t *th_eq = cs_thermal_system_get_equation();
 
   if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
@@ -1499,48 +1613,46 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
     /* Build and solve the turbulence variable system */
 
     if (tbs->compute_steady != NULL)
-      tbs->compute_steady(mesh,
-                          connect,
-                          quant,
-                          time_step,
-                          tbs);
+      tbs->compute_steady(mesh, connect, quant, time_step, tbs);
 
     /* Solve the thermal equation */
 
     if (cs_equation_param_has_time(cs_equation_get_param(th_eq)) == false)
       cs_thermal_system_compute_steady_state(mesh, connect, quant, time_step);
-
   }
-  else if (cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_BOUSSINESQ) &&
-           cs_flag_test(nsp->model_flag,
-                        CS_NAVSTO_MODEL_WITH_SOLIDIFICATION) == false) {
+  else if (cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_BOUSSINESQ)
+           && cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_WITH_SOLIDIFICATION)
+                == false) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 
     assert(th_eq != NULL);
     if (cs_equation_param_has_time(cs_equation_get_param(th_eq)))
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 " %s: Steady-state computation for Navier-Stokes with a"
                 " Boussinesq approximation\n"
                 " whereas an unsteady thermal equation is set.\n"
-                " Please check your settings.", __func__);
+                " Please check your settings.",
+                __func__);
 
-    cs_real_t  *th_var = cs_equation_get_cell_values(th_eq, false);
+    cs_real_t *th_var = cs_equation_get_cell_values(th_eq, false);
 
-    cs_real_t  *th_var_iter_prev = NULL;
+    cs_real_t *th_var_iter_prev = NULL;
 
     BFT_MALLOC(th_var_iter_prev, quant->n_cells, cs_real_t);
     cs_array_real_copy(quant->n_cells, th_var, th_var_iter_prev);
 
-    cs_real_t  inv_tref = cs_thermal_system_get_reference_temperature();
+    cs_real_t inv_tref = cs_thermal_system_get_reference_temperature();
 
     if (fabs(inv_tref) > cs_math_zero_threshold)
-      inv_tref = 1./inv_tref;
+      inv_tref = 1. / inv_tref;
     else
       inv_tref = 1.;
 
-    cs_real_t  delta_th_tolerance = 1 + nsp->delta_thermal_tolerance;
-    int  iter = 0;
+    cs_real_t delta_th_tolerance = 1 + nsp->delta_thermal_tolerance;
+    int       iter               = 0;
 
     do {
 
@@ -1559,17 +1671,13 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
       /* Build and solve the turbulence variable system */
 
       if (tbs->compute_steady != NULL)
-        tbs->compute_steady(mesh,
-                            connect,
-                            quant,
-                            time_step,
-                            tbs);
+        tbs->compute_steady(mesh, connect, quant, time_step, tbs);
 
       /* Check convergence */
 
-      cs_real_t  delta = -1;
+      cs_real_t delta = -1;
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-        cs_real_t  _delta = fabs(th_var[c_id] - th_var_iter_prev[c_id]);
+        cs_real_t _delta       = fabs(th_var[c_id] - th_var_iter_prev[c_id]);
         th_var_iter_prev[c_id] = th_var[c_id];
         if (_delta > delta)
           delta = _delta;
@@ -1583,19 +1691,20 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
       if (nsp->verbosity > 0 && cs_log_default_is_active())
         cs_log_printf(CS_LOG_DEFAULT,
                       "### Boussinesq.Iteration: %2d | delta_th_var= %5.3e\n",
-                      iter, delta_th_tolerance);
+                      iter,
+                      delta_th_tolerance);
 
-    }
-    while ( (delta_th_tolerance > nsp->delta_thermal_tolerance) &&
-            (iter < nsp->n_max_outer_iter) );
+    } while ((delta_th_tolerance > nsp->delta_thermal_tolerance)
+             && (iter < nsp->n_max_outer_iter));
 
-    cs_log_printf(CS_LOG_DEFAULT, " Steady algorithm exits.\n"
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " Steady algorithm exits.\n"
                   " Number of iterations: %d\n"
                   " Tolerance on the thermal variable: %5.3e\n",
-                  iter, delta_th_tolerance);
+                  iter,
+                  delta_th_tolerance);
 
     BFT_FREE(th_var_iter_prev);
-
   }
   else {
 
@@ -1609,11 +1718,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
      * */
 
     if (tbs->compute_steady != NULL)
-      tbs->compute_steady(mesh,
-                          connect,
-                          quant,
-                          time_step,
-                          tbs);
+      tbs->compute_steady(mesh, connect, quant, time_step, tbs);
   }
 }
 
@@ -1629,18 +1734,21 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t             *mesh,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_time_step_t        *time_step)
+cs_navsto_system_compute(const cs_mesh_t           *mesh,
+                         const cs_cdo_connect_t    *connect,
+                         const cs_cdo_quantities_t *quant,
+                         const cs_time_step_t      *time_step)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_log_printf(CS_LOG_DEFAULT, "cs_navsto_system_compute\n");
 
-  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  cs_navsto_system_t *ns = cs_navsto_system;
 
-  const cs_navsto_param_t  *nsp = ns->param;
+  if (ns == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_turbulence_t  *tbs = ns->turbulence;
+  const cs_navsto_param_t *nsp = ns->param;
+
+  cs_turbulence_t *tbs = ns->turbulence;
 
   /* Update variable, properties according to the new computed variables */
 
@@ -1650,7 +1758,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
     /* First resolve the thermal system if needed */
 
-    cs_equation_t  *th_eq = cs_thermal_system_get_equation();
+    cs_equation_t *th_eq = cs_thermal_system_get_equation();
 
     assert(th_eq != NULL);
 
@@ -1662,23 +1770,17 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       /* Build and solve the turbulence variable system */
 
       if (tbs->compute != NULL)
-        tbs->compute(mesh,
-                     connect,
-                     quant,
-                     time_step,
-                     tbs);
-
+        tbs->compute(mesh, connect, quant, time_step, tbs);
     }
 
     /* Solve the thermal equation */
 
     if (cs_equation_param_has_time(cs_equation_get_param(th_eq)))
       cs_thermal_system_compute(true, mesh, connect, quant, time_step);
-
   }
-  else if (cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_BOUSSINESQ) &&
-           cs_flag_test(nsp->model_flag,
-                        CS_NAVSTO_MODEL_WITH_SOLIDIFICATION) == false) {
+  else if (cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_BOUSSINESQ)
+           && cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_WITH_SOLIDIFICATION)
+                == false) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 
@@ -1687,7 +1789,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
     /* First resolve the thermal system if needed */
 
-    cs_equation_t  *th_eq = cs_thermal_system_get_equation();
+    cs_equation_t *th_eq = cs_thermal_system_get_equation();
 
     assert(th_eq != NULL);
 
@@ -1704,13 +1806,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       /* Build and solve the turbulence variable system */
 
       if (tbs->compute != NULL)
-        tbs->compute(mesh,
-                     connect,
-                     quant,
-                     time_step,
-                     tbs);
-
-
+        tbs->compute(mesh, connect, quant, time_step, tbs);
     }
     else { /* Thermal system is declared as steady. So, this is equivalent to a
               standard Navier-Stokes iteration */
@@ -1718,9 +1814,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       /* Build and solve the Navier-Stokes system */
 
       ns->compute(mesh, nsp, ns->scheme_context);
-
     }
-
   }
   else {
 
@@ -1734,12 +1828,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
     /* Build and solve the turbulence variable system */
 
     if (tbs->compute != NULL)
-      tbs->compute(mesh,
-                   connect,
-                   quant,
-                   time_step,
-                   tbs);
-
+      tbs->compute(mesh, connect, quant, time_step, tbs);
   }
 }
 
@@ -1755,50 +1844,92 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
-                          const cs_cdo_connect_t      *connect,
-                          const cs_cdo_quantities_t   *quant,
-                          const cs_time_step_t        *time_step)
+cs_navsto_system_extra_op(const cs_mesh_t           *mesh,
+                          const cs_cdo_connect_t    *connect,
+                          const cs_cdo_quantities_t *quant,
+                          const cs_time_step_t      *time_step)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t *navsto = cs_navsto_system;
 
-  if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (navsto == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  const cs_navsto_param_t  *nsp = navsto->param;
+  const cs_navsto_param_t *nsp = navsto->param;
 
   switch (nsp->space_scheme) {
 
-  case CS_SPACE_SCHEME_CDOFB:
-    {
-      /* Get the current values not the previous one */
+  case CS_SPACE_SCHEME_CDOFB: {
+    /* Get the current values not the previous one */
 
-      bool  need_prev = false;
+    bool need_prev = false;
 
-      /* Mass flux is a scalar associated to each face (first interior faces
-         then border faces */
+    /* Mass flux is a scalar associated to each face (first interior faces
+       then border faces */
 
-      const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
+    const cs_real_t *mass_flux = cs_navsto_get_mass_flux(need_prev);
 
-      const cs_adv_field_t  *adv = cs_navsto_get_adv_field();
-      const cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
-      const cs_real_t  *u_face = cs_equation_get_face_values(eq, need_prev);
-      const cs_real_t  *u_cell = navsto->velocity->val;
-      cs_real_t  *p_cell = navsto->pressure->val;
+    const cs_adv_field_t *adv    = cs_navsto_get_adv_field();
+    const cs_equation_t  *eq     = cs_navsto_system_get_momentum_eq();
+    const cs_real_t      *u_face = cs_equation_get_face_values(eq, need_prev);
+    const cs_real_t      *u_cell = navsto->velocity->val;
+    cs_real_t            *p_cell = navsto->pressure->val;
 
-      /* Synchronize the cell pressure before doing something */
+    /* Synchronize the cell pressure before doing something */
 
-      if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT)
-        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, p_cell);
+    if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT)
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, p_cell);
 
-      cs_cdofb_navsto_extra_op(nsp, mesh, quant, connect, time_step,
-                               navsto->plot_writer,
-                               adv, mass_flux, p_cell, u_cell, u_face);
-    }
-    break;
+    cs_cdofb_navsto_extra_op(nsp,
+                             mesh,
+                             quant,
+                             connect,
+                             time_step,
+                             navsto->plot_writer,
+                             adv,
+                             mass_flux,
+                             p_cell,
+                             u_cell,
+                             u_face);
+  } break;
+  case CS_SPACE_SCHEME_MACFB: {
+    /* Get the current values not the previous one */
+
+    const bool need_prev = false;
+
+    /* Mass flux is a scalar associated to each face (first interior faces
+       then border faces */
+
+    const cs_real_t *mass_flux = cs_navsto_get_mass_flux(need_prev);
+
+    const cs_adv_field_t *adv    = cs_navsto_get_adv_field();
+    const cs_equation_t  *eq     = cs_navsto_system_get_momentum_eq();
+    const cs_real_t      *u_face = cs_equation_get_face_values(eq, need_prev);
+
+    cs_real_t *p_cell = navsto->pressure->val;
+
+    /* Synchronize the cell pressure before doing something */
+
+    if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT)
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, p_cell);
+
+    cs_macfb_navsto_extra_op(nsp,
+                             mesh,
+                             quant,
+                             connect,
+                             time_step,
+                             navsto->plot_writer,
+                             adv,
+                             mass_flux,
+                             p_cell,
+                             u_face);
+  } break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space discretization scheme.", __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Invalid space discretization scheme.",
+              __func__);
     break;
 
   } /* End of switch */
@@ -1829,17 +1960,17 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_extra_post(void                      *input,
-                            int                        mesh_id,
-                            int                        cat_id,
-                            int                        ent_flag[5],
-                            cs_lnum_t                  n_cells,
-                            cs_lnum_t                  n_i_faces,
-                            cs_lnum_t                  n_b_faces,
-                            const cs_lnum_t            cell_ids[],
-                            const cs_lnum_t            i_face_ids[],
-                            const cs_lnum_t            b_face_ids[],
-                            const cs_time_step_t      *time_step)
+cs_navsto_system_extra_post(void                 *input,
+                            int                   mesh_id,
+                            int                   cat_id,
+                            int                   ent_flag[5],
+                            cs_lnum_t             n_cells,
+                            cs_lnum_t             n_i_faces,
+                            cs_lnum_t             n_b_faces,
+                            const cs_lnum_t       cell_ids[],
+                            const cs_lnum_t       i_face_ids[],
+                            const cs_lnum_t       b_face_ids[],
+                            const cs_time_step_t *time_step)
 {
   CS_NO_WARN_IF_UNUSED(n_cells);
   CS_NO_WARN_IF_UNUSED(n_i_faces);
@@ -1848,11 +1979,11 @@ cs_navsto_system_extra_post(void                      *input,
   CS_NO_WARN_IF_UNUSED(i_face_ids);
   CS_NO_WARN_IF_UNUSED(b_face_ids);
 
-  cs_navsto_system_t  *ns = (cs_navsto_system_t *)input;
+  cs_navsto_system_t *ns = (cs_navsto_system_t *)input;
   if (ns == NULL)
     return;
 
-  const cs_navsto_param_t  *nsp = ns->param;
+  const cs_navsto_param_t *nsp = ns->param;
 
   /* Post-processing of the boundary mass flux */
 
@@ -1861,46 +1992,43 @@ cs_navsto_system_extra_post(void                      *input,
     switch (nsp->space_scheme) {
 
     case CS_SPACE_SCHEME_CDOFB:
-    case CS_SPACE_SCHEME_HHO_P0:
-      {
-        /* Get the current values not the previous one */
+    case CS_SPACE_SCHEME_MACFB:
+    case CS_SPACE_SCHEME_HHO_P0: {
+      /* Get the current values not the previous one */
 
-        bool  need_prev = false;
+      bool need_prev = false;
 
-        /* In case of postprocessing of the border faces, one has to check if
-           there is a mesh modification. In particular, a removal of 2D
-           extruded border faces*/
+      /* In case of postprocessing of the border faces, one has to check if
+         there is a mesh modification. In particular, a removal of 2D
+         extruded border faces*/
 
-        bool  use_parent =
-          (cs_glob_mesh->n_g_b_faces_all > cs_glob_mesh->n_g_b_faces) ?
-          false : true;
+      bool use_parent
+        = (cs_glob_mesh->n_g_b_faces_all > cs_glob_mesh->n_g_b_faces) ? false
+                                                                      : true;
 
-        /* Mass flux is a scalar associated to each face (first interior faces
-           then border faces */
+      /* Mass flux is a scalar associated to each face (first interior faces
+         then border faces */
 
-        const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
-        const cs_real_t  *mass_bflux = mass_flux + cs_glob_mesh->n_i_faces;
+      const cs_real_t *mass_flux  = cs_navsto_get_mass_flux(need_prev);
+      const cs_real_t *mass_bflux = mass_flux + cs_glob_mesh->n_i_faces;
 
-        cs_post_write_var(mesh_id,
-                          CS_POST_WRITER_DEFAULT,
-                          "boundary_mass_flux",
-                          1,
-                          false,                  /* interlace */
-                          use_parent,             /* true = original mesh */
-                          CS_POST_TYPE_cs_real_t,
-                          NULL,                   /* values on cells */
-                          NULL,                   /* values at internal faces */
-                          mass_bflux,             /* values at border faces */
-                          time_step);             /* time step structure */
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "boundary_mass_flux",
+                        1,
+                        false,      /* interlace */
+                        use_parent, /* true = original mesh */
+                        CS_POST_TYPE_cs_real_t,
+                        NULL,       /* values on cells */
+                        NULL,       /* values at internal faces */
+                        mass_bflux, /* values at border faces */
+                        time_step); /* time step structure */
 
-      }
-      break;
+    } break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid space scheme\n", __func__);
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme\n", __func__);
       break;
-
     }
 
   } /* Boundary mesh type */
@@ -1916,43 +2044,41 @@ cs_navsto_system_extra_post(void                      *input,
       /* Nothing to do up to now */
       break;
 
-    case CS_NAVSTO_COUPLING_PROJECTION:
-      {
-        cs_navsto_projection_t  *cc
-          = (cs_navsto_projection_t *)ns->coupling_context;
+    case CS_NAVSTO_COUPLING_PROJECTION: {
+      cs_navsto_projection_t *cc
+        = (cs_navsto_projection_t *)ns->coupling_context;
 
-        const cs_field_t  *velp = cc->predicted_velocity;
+      const cs_field_t *velp = cc->predicted_velocity;
 
-        /* Post-process the predicted velocity */
+      /* Post-process the predicted velocity */
 
-        cs_post_write_var(mesh_id,
-                          CS_POST_WRITER_DEFAULT,
-                          velp->name,
-                          3,
-                          true,           // interlace
-                          true,           // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          velp->val,      // values on cells
-                          NULL,           // values at internal faces
-                          NULL,           // values at border faces
-                          time_step);     // time step management struct.
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        velp->name,
+                        3,
+                        true, // interlace
+                        true, // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        velp->val,  // values on cells
+                        NULL,       // values at internal faces
+                        NULL,       // values at border faces
+                        time_step); // time step management struct.
 
-        /* Post-process the source term of the correction equation on the
-           pressure increment (-div(velp_f) */
+      /* Post-process the source term of the correction equation on the
+         pressure increment (-div(velp_f) */
 
-        cs_post_write_var(mesh_id,
-                          CS_POST_WRITER_DEFAULT,
-                          "-DivVelPred",
-                          1,
-                          true,       // interlace
-                          true,       // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          cc->div_st, // values on cells
-                          NULL,       // values at internal faces
-                          NULL,       // values at border faces
-                          time_step); // time step management struct.
-      }
-      break;
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "-DivVelPred",
+                        1,
+                        true, // interlace
+                        true, // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        cc->div_st, // values on cells
+                        NULL,       // values at internal faces
+                        NULL,       // values at border faces
+                        time_step); // time step management struct.
+    } break;
 
     default:
       bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
@@ -1971,12 +2097,12 @@ cs_navsto_system_extra_post(void                      *input,
 void
 cs_navsto_system_log_setup(void)
 {
-  cs_navsto_system_t  *ns = cs_navsto_system;
+  cs_navsto_system_t *ns = cs_navsto_system;
 
   if (ns == NULL)
     return;
 
-  const cs_navsto_param_t  *nsp = ns->param;
+  const cs_navsto_param_t *nsp = ns->param;
 
   cs_log_printf(CS_LOG_SETUP, "\n");
   cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h1);
@@ -1991,15 +2117,15 @@ cs_navsto_system_log_setup(void)
 
   if (_has_symmetry(nsp)) {
 
-    const char  navsto[16] = "  * NavSto |";
+    const char navsto[16] = "  * NavSto |";
 
-    cs_equation_param_t  *mom_eqp =
-      cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
+    cs_equation_param_t *mom_eqp
+      = cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
 
     cs_log_printf(CS_LOG_SETUP,
                   "%s Weak penalization coeff. in momentum: %5.1e\n",
-                  navsto, mom_eqp->weak_pena_bc_coeff);
-
+                  navsto,
+                  mom_eqp->weak_pena_bc_coeff);
   }
 }
 

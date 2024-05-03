@@ -77,14 +77,15 @@ struct _cs_sdm_t {
   cs_flag_t   flag;        /* Metadata */
 
   /* Row-related members */
-  int         n_max_rows;  // max number of entities by primal cells
+  int         n_max_rows;  // max number of entries in a row
   int         n_rows;      // current number of entities
 
   /* Column-related members. Not useful if the matrix is square */
   int         n_max_cols;  // max number of entries in a column
   int         n_cols;      // current number of columns
 
-  cs_real_t  *val;         // small dense matrix (size: n_max_rows*n_max_cols)
+  cs_real_t *val; // small dense matrix (size: n_max_rows*n_max_cols)
+                  // storage is row-major
 
   /* Structure describing the matrix in terms of blocks */
   cs_sdm_block_t   *block_desc;
@@ -920,6 +921,44 @@ void
 cs_sdm_add_mult(cs_sdm_t        *mat,
                 cs_real_t        alpha,
                 const cs_sdm_t  *add);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a block of a matrix into a sub-matrix starting from (r_id, c_id)
+ *        with a size of nr rows and nc cols
+ *
+ * \param[in, out] mat   local matrix storing the result
+ * \param[in]     r_id  row index
+ * \param[in]     c_id  column index
+ * \param[in]     nr    number of rows to extract
+ * \param[in]     nc    number of column to extract
+ * \param[in]     add   values to add to mat
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_sdm_add_block(cs_sdm_t       *mat,
+                      const short int r_id,
+                      const short int c_id,
+                      const short int nr,
+                      const short int nc,
+                      const cs_sdm_t *add);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a block of a matrix into a sub-matrix starting from (0, 0)
+ *        with a size of nr rows and nc cols
+ *
+ * \param[in, out] mat   local matrix storing the result
+ * \param[in]     nr    number of rows to extract
+ * \param[in]     nc    number of column to extract
+ * \param[in]     add   values to add to mat
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_sdm_add_block_topleft(cs_sdm_t       *mat,
+                              const short int nr,
+                              const short int nc,
+                              const cs_sdm_t *add);
 
 /*----------------------------------------------------------------------------*/
 /*!

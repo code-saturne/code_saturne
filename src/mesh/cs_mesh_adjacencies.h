@@ -332,6 +332,48 @@ cs_adjacency_compose(int                      n_c_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Create a new cs_adjacency_t structure from the concatenation of
+ *          two cs_adjacency_t structures: A -> B created by
+ *          two different compositions: (1) A -> B = A -> C + C -> B
+ *                                      (2) A -> B = A -> D + D -> B
+ *
+ *  The resulting structure describes A -> B.
+ *  It does not rely on a stride and has no sgn member and duplicated elements
+ *  are removed
+ *
+ * \param[in]  a2b_1     adjacency A -> B (1)
+ * \param[in]  a2b_2     adjacency A -> B (2)
+ *
+ *\return  a pointer to the cs_adjacency_t structure A -> B
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *cs_adjacency_concatenate(const cs_adjacency_t *a2b_1,
+                                         const cs_adjacency_t *a2b_2);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a new cs_adjacency_t structure from the difference of
+ *          two cs_adjacency_t structures: A -> B created by
+ *          two different compositions: (1) A -> B = A -> C + C -> B
+ *                                      (2) A -> B = A -> D + D -> B
+ *
+ *  The resulting structure describes (1)\(2).
+ *  It does not rely on a stride and has no sgn member and duplicated elements
+ *  are removed
+ *
+ * \param[in]  a2b_1     adjacency A -> B (1)
+ * \param[in]  a2b_2     adjacency A -> B (2)
+ *
+ *\return  a pointer to the cs_adjacency_t structure A -> B
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *cs_adjacency_difference(const cs_adjacency_t *a2b_1,
+                                        const cs_adjacency_t *a2b_2);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Create a new cs_adjacency_t structure from a one corresponding to
  *          A -> B. The resulting structure deals with B -> A
  *

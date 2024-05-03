@@ -76,6 +76,7 @@
 #include "cs_hho_vecteq.h"
 #include "cs_hodge.h"
 #include "cs_iter_algo.h"
+#include "cs_macfb_vecteq.h"
 #include "cs_maxwell.h"
 #include "cs_mesh_deform.h"
 #include "cs_navsto_coupling.h"

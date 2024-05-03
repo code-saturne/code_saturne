@@ -709,7 +709,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   if (_cdo_ts_id < 0)
     _cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
 
-  /* Store the fact that the CDO/HHO module is activated */
+  /* Store the fact that the CDO/HHO/MAC module is activated */
 
   cs_param_cdo_log();
 
@@ -947,7 +947,8 @@ cs_cdo_finalize(cs_domain_t    *domain)
                                domain->cdo_context->fb_scheme_flag,
                                domain->cdo_context->vb_scheme_flag,
                                domain->cdo_context->vcb_scheme_flag,
-                               domain->cdo_context->hho_scheme_flag);
+                               domain->cdo_context->hho_scheme_flag,
+                               domain->cdo_context->mac_scheme_flag);
 
   /* Free memory related to advection fields */
 

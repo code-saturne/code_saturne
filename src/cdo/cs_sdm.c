@@ -1123,6 +1123,63 @@ cs_sdm_add_mult(cs_sdm_t        *mat,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add a block of a matrix into a sub-matrix starting from (r_id, c_id)
+ *        with a size of nr rows and nc cols
+ *
+ * \param[in, out] mat   local matrix storing the result
+ * \param[in]     r_id  row index
+ * \param[in]     c_id  column index
+ * \param[in]     nr    number of rows to extract
+ * \param[in]     nc    number of column to extract
+ * \param[in]     add   values to add to mat
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_add_block(cs_sdm_t       *mat,
+                 const short int r_id,
+                 const short int c_id,
+                 const short int nr,
+                 const short int nc,
+                 const cs_sdm_t *add)
+{
+  /* Sanity checks */
+  assert(mat != NULL && add != NULL);
+  assert(r_id >= 0 && c_id >= 0);
+  assert((r_id + nr) <= mat->n_rows);
+  assert((c_id + nc) <= mat->n_cols);
+  assert(nr <= add->n_rows);
+  assert(nc <= add->n_cols);
+
+  const cs_real_t *_dest = mat->val + c_id + r_id * mat->n_cols;
+  for (short int i = 0; i < nr; i++, _dest += mat->n_cols) {
+    memcpy(_dest, add->val + i * add->n_cols, sizeof(cs_real_t) * nc);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a block of a matrix into a sub-matrix starting from (0, 0)
+ *        with a size of nr rows and nc cols
+ *
+ * \param[in, out] mat   local matrix storing the result
+ * \param[in]     nr    number of rows to extract
+ * \param[in]     nc    number of column to extract
+ * \param[in]     add   values to add to mat
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_add_block_topleft(cs_sdm_t       *mat,
+                         const short int nr,
+                         const short int nc,
+                         const cs_sdm_t *add)
+{
+  cs_sdm_add_block(mat, 0, 0, nr, nc, add);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define a new matrix by adding the given matrix with its transpose.
  *          Keep the transposed matrix for a future use.
  *

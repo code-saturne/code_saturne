@@ -67,7 +67,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_NAVSTO_PARAM_DBG  0
+#define CS_NAVSTO_PARAM_DBG 0
 
 /*============================================================================
  * Type definitions
@@ -515,12 +515,18 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "hho_p2") == 0) {
       nsp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
     }
+    else if (strcmp(val, "mac_fb") == 0) {
+      nsp->space_scheme = CS_SPACE_SCHEME_MACFB;
+    }
     else {
       const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 _(" %s: Invalid val %s related to key CS_NSKEY_SPACE_SCHEME\n"
-                  " Choice between hho_{p0, p1, p2} or cdo_fb"),
-                __func__, _val);
+                  " Choice between hho_{p0, p1, p2}, cdo_fb or mac_fb"),
+                __func__,
+                _val);
     }
     break;
 

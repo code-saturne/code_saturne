@@ -142,20 +142,20 @@ cs_param_cdo_log(void)
 
   case CS_PARAM_CDO_MODE_ONLY:
     cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
-                  "\n -msg- CDO/HHO module is in a stand-alone mode\n");
+                  "\n -msg- CDO/HHO/MAC module is activated *** Experimental ***"
+                  "\n -msg- CDO/HHO/MAC module is in a stand-alone mode\n");
     break;
 
   case CS_PARAM_CDO_MODE_WITH_FV:
     cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
+                  "\n -msg- CDO/HHO/MAC module is activated *** Experimental ***"
                   "\n -msg- CDO/HHO module with FV schemes mode\n");
     break;
 
   default:
   case CS_PARAM_CDO_MODE_OFF:
     cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is not activated\n");
+                  "\n -msg- CDO/HHO/MAC module is not activated\n");
     break;
 
   } /* Switch on CDO mode */
