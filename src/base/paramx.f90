@@ -258,6 +258,7 @@ module paramx
   integer :: cs_f_user_head_losses
 
   integer :: cs_user_boundary_conditions, cs_user_cooling_towers,     &
+             cs_user_combustion,                                      &
              cs_user_extra_operations, cs_user_initialization,        &
              cs_user_mass_source_terms,                               &
              cs_user_metal_structures_source_terms,                   &

@@ -736,7 +736,7 @@ In the case of **gas combustion** or **pulverized coal combustion**, time averag
 \image html gui_coal_solution_control.png "Calculation control - Volume solution control"
 
 For **gas combustion**, the
-\ref cs_user_parameters and \ref cs_user_combustion functions, called at calculation
+\ref cs_user_parameters and \ref cs_user_finalize_setup functions, called at calculation
 start, can be used to:
 
 - set the relaxation coefficient of the density \ref srrom.
@@ -744,7 +744,7 @@ start, can be used to:
 - set the dynamic viscosity of Enthaly.
 
 - set the value of the constant \ref cebu of the Eddy Break Up model (only in
-\ref cs_user_combustion).
+\ref cs_user_finalize_setup).
 
 <!-- ----------------------------------------------------------------------- -->
 

@@ -21,6 +21,10 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Remove cs_user_combustion subroutine, as associated settings may now be
+  defined in standard user-defined functions (cs_user_parameters and
+  cs_user_finalize_setup).
+
 - Add a calculator mode to the mathematical expressions editor of the GUI.
   The layout also contains a combobox with the available fields and/or
   notebook parameters.

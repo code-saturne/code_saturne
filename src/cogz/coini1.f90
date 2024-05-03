@@ -186,8 +186,6 @@ else if (ippmod(islfm).ne.-1) then
   roref = ro0
 endif
 
-! On met les constantes a -GRAND pour obliger l'utilisateur a les definir
-!  (ou les laisser) dans cs_user_combustion.
 ! --> Constante modele EBU par defaut
 cebu   =-grand
 
@@ -222,9 +220,6 @@ if (ippmod(icoebu).ge.0) then
 else if (ippmod(icod3p).ge.0) then
   call uicpi2(tinoxy, tinfue)
 endif
-
-! User subroutines
-call cs_user_combustion
 
 !===============================================================================
 ! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
@@ -294,8 +289,7 @@ endif
 '@                                                            ',/)
  9990 format(                                                     &
 '                                                             ',/,&
-' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                        (cs_user_combustion).',/)
+' Pas d erreur detectee lors de la verification des donnees  .',/)
  9991 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -310,7 +304,6 @@ endif
 '@                                                            ',/,&
 '@  Se reporter aux impressions precedentes pour plus de      ',/,&
 '@    renseignements.                                         ',/,&
-'@  Verifier cs_user_combustion.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

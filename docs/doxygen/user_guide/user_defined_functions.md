@@ -204,11 +204,6 @@ functions which will be able to access those elements.
 
 ### For specific models
 
-- \ref cs_user_combustion (in \ref cs_user_parameters.f90)
-
-  Allows specifying calculation options specific to the selected
-  gas combustion model.
-
 - \ref cs_user_atmospheric_model.f90
 
   Contains several user subroutines used to define atmospheric
