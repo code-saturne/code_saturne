@@ -174,7 +174,7 @@ do iel = 1, ncel
   ! ------------------------
   ! law: rho = P / ( R_mixture * T_mixture(K) )
 
-  ! Boussines / anelastic approximation
+  ! Boussinesq / anelastic approximation
   if (idilat.eq.0) then
     ! Compute T in Celisus
     cpro_tempc(iel) = tliq - tkelvi
