@@ -760,10 +760,19 @@ if (nscal.ge.1) then
     if (ibeta.ge.0) then
       iok1 = 0
       call field_get_val_s(ibeta, cpro_beta)
-      do iel = 1, ncel
-        if (cpro_beta(iel).lt.0.d0) iok1 = 1
+      call field_get_name(ibeta, chaine)
+      ii = 1
+      varmn(ii) = cpro_beta(1)
+      do iel = 2, ncel
+        varmn(ii) = min(varmn(ii),cpro_beta(iel))
       enddo
-      if (iok1.eq.1) write(nfecra,9013)
+      if (irangp.ge.0) then
+        call parmin (varmn(ii))
+      endif
+      if (varmn(ii).lt.0.d0) then
+        write(nfecra,9011)chaine(1:16),varmn(ii)
+        iok = iok + 1
+      endif
     endif
   enddo
 
@@ -1044,26 +1053,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 9013  format( &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING : ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',  /,&
-'@    =========',                                               /,&
-'@    INCOHERENCY BETWEEN PARAMETERS and the volumic thermal'  ,/,&
-'@    expansion coefficient Beta'                              ,/,&
-'@',                                                            /,&
-'@  The density has been declared variable (IROVAR=1) but',     /,&
-'@     the value of Beta has not been modified     ',           /,&
-'@     in GUI or cs_user_physical_properties',                  /,&
-'@',                                                            /,&
-'@  The calculation will not be run',                           /,&
-'@',                                                            /,&
-'@  Check the interface or cs_user_physical_properties.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@', /)
-
 
  9111  format(                                                    &
 '@',                                                            /,&
