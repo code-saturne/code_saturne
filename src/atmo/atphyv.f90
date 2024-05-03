@@ -326,7 +326,7 @@ do iel = 1, ncel
     a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
   elseif (iturb.eq.60) then
     ep = cvar_omg(iel)*cvar_k(iel)*cmu
-    a_coeff = a_const*cvar_k(iel)**3/cvar_ep(iel)**2 ! 2 cmu/c2 * k**3 / eps**2
+    a_coeff = a_const*cvar_k(iel)**3/ep**2 ! 2 cmu/c2 * k**3 / eps**2
   elseif (iturb.eq.70) then
     ! using cvar_nusa(iel) = cmu*xkent**2/xeent
     ! FIXME: There is no good way to calculate tke and eps from nusa.
