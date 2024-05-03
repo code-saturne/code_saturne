@@ -133,8 +133,7 @@ static cs_matrix_fill_type_t  *_ext_fill_type = NULL;
 
 /* Tuning options */
 
-static int    _n_min_products = 50;
-static double _t_measure = 0.5;
+static int    _n_min_products = 30;
 
 /* Pointer to global (block-based) numbering, if used */
 
@@ -811,7 +810,7 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
     return;
 
   if (_matrix_variant_tuned[m->type][m->fill_type] == NULL
-      && (_t_measure > 0 || _n_min_products > 0)) {
+      && (_n_min_products > 0)) {
 
     cs_matrix_t *m_t = _get_matrix(m->type);
     cs_matrix_t m_t_save = *m_t;
@@ -823,8 +822,7 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
     _matrix_variant_tuned[m->type][m->fill_type]
       = cs_matrix_variant_tuned(m_t,
                                 1,
-                                _n_min_products,
-                                _t_measure);
+                                _n_min_products);
 
     *m_t = m_t_save;
 
@@ -840,46 +838,34 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
  *
  * If this function is not called, defaults are:
  *  - minimum of 10 runs
- *  - minimum of 0.5 seconds of running
  *
  * parameters:
- *   n_min_products <-- minimum number of expected SpM.V products for
- *                      coefficients assign amortization.
- *   t_measure      <-- minimum running time per measure
+ *   n_min_products <-- minimum number of SpM.V products for tuning.
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_tuning_runs(int     n_min_products,
-                          double  t_measure)
+cs_matrix_set_tuning_runs(int  n_min_products)
 {
   if (!_initialized)
     _initialize_api();
 
   _n_min_products = n_min_products;
-  _t_measure = t_measure;
 }
 
 /*----------------------------------------------------------------------------
  * Get number of matrix computation runs for tuning.
  *
- * parameters:
- *   n_min_products --> minimum number of expected SpM.V products for
- *                      coefficients assign amortization.
- *   t_measure      --> minimum running time per measure, or NULL
+ * return:
+ *   minimum number of SpM.V calls for tuning
  *----------------------------------------------------------------------------*/
 
-void
-cs_matrix_get_tuning_runs(int     *n_min_products,
-                          double  *t_measure)
+int
+cs_matrix_get_tuning_runs(void)
 {
   if (!_initialized)
     _initialize_api();
 
-  if (n_min_products != NULL)
-    *n_min_products = _n_min_products;
-
-  if (t_measure != NULL)
-    *t_measure = _t_measure;
+  return _n_min_products;
 }
 
 /*----------------------------------------------------------------------------*/

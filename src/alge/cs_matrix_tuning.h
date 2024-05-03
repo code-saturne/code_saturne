@@ -70,7 +70,6 @@ BEGIN_C_DECLS
  * \param[in]  m           associated matrix
  * \param[in]  verbosity   verbosity level
  * \param[in]  n_measure   minimum number of measuring runs
- * \param[in]  t_measure   minimum measure time
  *
  * \returns  pointer to tuning results structure
  */
@@ -79,8 +78,7 @@ BEGIN_C_DECLS
 cs_matrix_variant_t *
 cs_matrix_variant_tuned(const cs_matrix_t  *m,
                         int                 verbosity,
-                        int                 n_measure,
-                        double              t_measure);
+                        int                 n_measure);
 
 /*----------------------------------------------------------------------------*/
 

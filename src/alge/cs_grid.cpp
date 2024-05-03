@@ -5960,15 +5960,11 @@ cs_grid_coarsen(const cs_grid_t      *f,
                           "==========================\n"),
                         f->level + 1, cs_matrix_fill_type_name[mft]);
 
-          int n_min_products;
-          double t_measure;
-
-          cs_matrix_get_tuning_runs(&n_min_products, &t_measure);
+          int n_min_products = cs_matrix_get_tuning_runs();
 
           coarse_mv = cs_matrix_variant_tuned(c->matrix,
                                               1,
-                                              n_min_products,
-                                              t_measure);
+                                              n_min_products);
 
           _grid_tune_variant[k] = coarse_mv;
 

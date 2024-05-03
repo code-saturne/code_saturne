@@ -223,30 +223,23 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m);
  *
  * If this function is not called, defaults are:
  *  - minimum of 10 runs
- *  - minimum of 0.5 seconds of running
  *
  * parameters:
- *   n_min_products <-- minimum number of expected SpM.V products for
- *                      coefficients assign amortization.
- *   t_measure      <-- minimum running time per measure
+ *   n_min_products <-- minimum number of SpM.V products for tuning.
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_tuning_runs(int     n_min_products,
-                          double  t_measure);
+cs_matrix_set_tuning_runs(int     n_min_products);
 
 /*----------------------------------------------------------------------------
  * Get number of matrix computation runs for tuning.
  *
- * parameters:
- *   n_min_products --> minimum number of expected SpM.V products for
- *                      coefficients assign amortization.
- *   t_measure      --> minimum running time per measure, or NULL
+ * return:
+ *   minimum number of SpM.V calls for tuning
  *----------------------------------------------------------------------------*/
 
-void
-cs_matrix_get_tuning_runs(int     *n_min_products,
-                          double  *t_measure);
+int
+cs_matrix_get_tuning_runs(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

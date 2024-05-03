@@ -122,7 +122,6 @@ BEGIN_C_DECLS
  * parameters:
  *   m           <-- matrix to tune
  *   n_measure   <-- minimum number of measures
- *   t_measure   <-- minimum time for each measure
  *   n_variants  <-- number of variants in array
  *   m_variant   <-- array of matrix variants
  *   spmv_cost   --> SpMV cost
@@ -131,16 +130,14 @@ BEGIN_C_DECLS
 static void
 _matrix_tune_test(const cs_matrix_t     *m,
                   int                    n_measure,
-                  double                 t_measure,
                   int                    n_variants,
                   cs_matrix_variant_t   *m_variant,
                   double                 spmv_cost[])
 {
-  int  n_runs, run_id, v_id;
-  double  wt0, wt1, wtu;
+  const int n_runs = (n_measure > 0) ? n_measure : 1;
 
   double test_sum = 0.0;
-  cs_real_t  *x = NULL, *y = NULL;
+  cs_real_t *x = NULL, *y = NULL;
 
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
@@ -162,7 +159,7 @@ _matrix_tune_test(const cs_matrix_t     *m,
   /* Loop on variant types */
   /*-----------------------*/
 
-  for (v_id = 0; v_id < n_variants; v_id++) {
+  for (int v_id = 0; v_id < n_variants; v_id++) {
 
     const cs_matrix_variant_t *v = m_variant + v_id;
 
@@ -186,37 +183,39 @@ _matrix_tune_test(const cs_matrix_t     *m,
           m_t.vector_multiply_h[m->fill_type][op_type] = vector_multiply;
 #endif
 
-        wt0 = cs_timer_wtime(), wt1 = wt0;
-        run_id = 0, n_runs = (n_measure > 0) ? n_measure : 1;
+        /* First, "untimed" run in case SpMV involves library initialization
+           time, which can weigh on measure */
+        if (op_type == 0)
+          cs_matrix_vector_multiply(&m_t, x, y);
+        else
+          cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
 
-        while (run_id < n_runs) {
-          while (run_id < n_runs) {
-            if (run_id % 8)
-              test_sum = 0;
-            if (op_type == 0)
-              cs_matrix_vector_multiply(&m_t, x, y);
-            else
-              cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
-            test_sum += y[n-1];
-            run_id++;
-          }
-          wt1 = cs_timer_wtime();
-          double wt_r0 = wt1 - wt0;
+        /* Now, time for a few runs */
+        cs_timer_t wt0 = cs_timer_time();
+        test_sum = 0;
+
+        for (int run_id = 0; run_id < n_runs; run_id++) {
+          if (op_type == 0)
+            cs_matrix_vector_multiply(&m_t, x, y);
+          else
+            cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
+          test_sum += y[n-1];
+        }
+        cs_timer_t wt1 = cs_timer_time();
+        cs_timer_counter_t wt_d = cs_timer_diff(&wt0, &wt1);
+        double wt_r0 = wt_d.nsec * 1e-9;
 
 #if defined(HAVE_MPI)
 
-          if (cs_glob_n_ranks > 1) {
-            double _wt_r0 = wt_r0;
-            MPI_Allreduce(&_wt_r0, &wt_r0, 1, MPI_DOUBLE, MPI_MAX,
-                          cs_glob_mpi_comm);
-          }
+        if (cs_glob_n_ranks > 1) {
+          double _wt_r0 = wt_r0;
+          MPI_Allreduce(&_wt_r0, &wt_r0, 1, MPI_DOUBLE, MPI_MAX,
+                        cs_glob_mpi_comm);
+        }
 
 #endif /* defined(HAVE_MPI) */
 
-          if (wt_r0 < t_measure)
-            n_runs *= 2;
-        }
-        wtu = (wt1 - wt0) / n_runs;
+        cs_real_t wtu = wt_r0 / n_runs;
         spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = wtu;
 
         if (m_t.destroy_adaptor != NULL)
@@ -374,7 +373,6 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
  * \param[in]  m           associated matrix
  * \param[in]  verbosity   verbosity level
  * \param[in]  n_measure   minimum number of measuring runs
- * \param[in]  t_measure   minimum measure time
  *
  * \returns  pointer to tuning results structure
  */
@@ -383,8 +381,7 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
 cs_matrix_variant_t *
 cs_matrix_variant_tuned(const cs_matrix_t  *m,
                         int                 verbosity,
-                        int                 n_measure,
-                        double              t_measure)
+                        int                 n_measure)
 {
   int  n_variants = 0, n_r_variants = 1;
   cs_matrix_variant_t  *r_variant = NULL;
@@ -412,7 +409,6 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
 
     _matrix_tune_test(m,
                       n_measure,
-                      t_measure,
                       n_variants,
                       m_variant,
                       spmv_cost);

@@ -1146,7 +1146,7 @@ cs_benchmark(int  mpi_trace_mode)
 
   size_t ii;
 
-  int n_time_runs = (mpi_trace_mode) ? 1 : 10;
+  int n_time_runs = (mpi_trace_mode) ? 1 : 30;
 
   cs_real_t *x = NULL, *y = NULL;
   cs_real_t *da = NULL, *xa = NULL;

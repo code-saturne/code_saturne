@@ -78,8 +78,7 @@ cs_user_matrix_tuning(void)
 
   /* Set tuning runs (defaults) */
 
-  cs_matrix_set_tuning_runs(20,   /* n_min_products */
-                            0.5); /* t_measure */
+  cs_matrix_set_tuning_runs(10);   /* n_products */
 
   /* Force default for selected types */
 

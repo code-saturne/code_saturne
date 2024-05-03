@@ -1161,6 +1161,10 @@ _matrix_time_test(int                          n_time_runs,
           v->matrix_vector_n_ops[f_id][op_id] +=  (nnz-n_rows)
                                                  *(eb_size*eb_size);
 
+        /* First, "untimed" run in case SpMV involves library initialization
+           time, which can weigh on measure */
+        vector_multiply(m, op_id, false, x, y);
+
         int mpi_flag_max = (cs_glob_n_ranks > 1) ? 2 : 1;
 
         for (int mpi_flag = 0; mpi_flag < mpi_flag_max; mpi_flag++) {
