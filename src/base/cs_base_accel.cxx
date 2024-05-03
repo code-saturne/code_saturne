@@ -82,6 +82,7 @@
 #endif
 
 static bool _initialized = false;
+static bool _ignore_prefetch = false;
 
 /*! Default "host+device" allocation mode */
 /*----------------------------------------*/
@@ -171,6 +172,13 @@ _initialize(void)
 
   if (cs_get_device_id() < 0)
     cs_alloc_mode = CS_ALLOC_HOST;
+
+  const char s[] = "CS_HD_IGNORE_PREFETCH";
+  if (getenv(s) != NULL) {
+    int i = atoi(getenv(s));
+    if (i > 0)
+      _ignore_prefetch = true;
+  }
 }
 
 #if defined(SYCL_LANGUAGE_VERSION)
@@ -1240,6 +1248,9 @@ cs_sync_h2d(const void  *ptr)
     break;
 
   case CS_ALLOC_HOST_DEVICE_SHARED:
+    if (_ignore_prefetch)
+      return;
+
     #if defined(HAVE_CUDA)
     {
       cs_cuda_prefetch_h2d(me.device_ptr, me.size);
@@ -1412,6 +1423,9 @@ cs_sync_d2h(void  *ptr)
     break;
 
   case CS_ALLOC_HOST_DEVICE_SHARED:
+    if (_ignore_prefetch)
+      return;
+
     #if defined(HAVE_CUDA)
     {
       cs_cuda_prefetch_d2h(me.host_ptr, me.size);
