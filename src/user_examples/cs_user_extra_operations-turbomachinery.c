@@ -139,7 +139,6 @@ _findpt_r(cs_domain_t          *domain,
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
-
   /*! [loc_def_init] */
 
   /* Mesh-related variables */
@@ -326,9 +325,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
         }
 
         /* Broadcast to other ranks in parallel */
-        cs_parall_bcast(rank_id, 1, CS_DOUBLE, &xtheta);
-        cs_parall_bcast(rank_id, 1, CS_DOUBLE, &xvr);
-        cs_parall_bcast(rank_id, 1, CS_DOUBLE, &xvt);
+        cs_real_t bp[] = {xtheta, xvr, xvt};
+        cs_parall_bcast(rank_id, 3, CS_REAL_TYPE, bp);
+        xtheta = bp[0], xvr = bp[1], xvt = bp[2];
 
         if (cs_glob_rank_id <= 0) {
           fprintf(f1,"  %17.9e%17.9e\n", xtheta, xvr);
@@ -346,5 +345,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /*! [extra_tbm_velocity_cylinder] */
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

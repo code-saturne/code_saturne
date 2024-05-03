@@ -75,9 +75,6 @@ BEGIN_C_DECLS
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
-
-  /* Local variables */
-
   /*! [local_variables] */
 
   cs_lnum_t n_faces;
@@ -120,7 +117,6 @@ cs_user_extra_operations(cs_domain_t     *domain)
    *
    * The scalar considered if the enthalpy. We will also use the
    * specific heat (to obtain balances in Joules)
-   *
    *
    * Domain and associated boundary colors:
    * - 2, 3, 4, 7 : adiabatic walls
@@ -377,18 +373,20 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /* Sum of values on all ranks (parallel calculations) */
 
-  cs_parall_sum(1, CS_DOUBLE, &vol_balance);
-  cs_parall_sum(1, CS_DOUBLE, &div_balance);
-  cs_parall_sum(1, CS_DOUBLE, &a_wall_balance);
-  cs_parall_sum(1, CS_DOUBLE, &h_wall_balance);
-  cs_parall_sum(1, CS_DOUBLE, &sym_balance);
-  cs_parall_sum(1, CS_DOUBLE, &in_balance);
-  cs_parall_sum(1, CS_DOUBLE, &out_balance);
-  cs_parall_sum(1, CS_DOUBLE, &mass_i_balance);
-  cs_parall_sum(1, CS_DOUBLE, &mass_o_balance);
+  double b_tot[9] = {
+    vol_balance, div_balance, a_wall_balance, h_wall_balance,
+    sym_balance, in_balance, out_balance, mass_i_balance, mass_o_balance
+  };
 
-  /* --> Total balance
-         ------------- */
+  cs_parall_sum(9, CS_DOUBLE, b_tot);
+
+  vol_balance = b_tot[0], div_balance = b_tot[1];
+  a_wall_balance = b_tot[2], h_wall_balance = b_tot[3];
+  sym_balance = b_tot[4], in_balance = b_tot[5], out_balance = b_tot[6];
+  mass_i_balance = b_tot[7], mass_o_balance = b_tot[8];
+
+  /* Total balance
+     ------------- */
 
   /* We add the different contributions calculated above */
 
@@ -397,7 +395,6 @@ cs_user_extra_operations(cs_domain_t     *domain)
               + mass_o_balance;
 
   /*! [computation] */
-
 
   /* 3. Write the balance at time step n
     ==================================== */
@@ -420,7 +417,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
     mass_i_balance, mass_o_balance, tot_balance);
 
   /*! [writing] */
-
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

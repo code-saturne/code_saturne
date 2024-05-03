@@ -289,7 +289,7 @@ _create_1d_sample_(user_profile_t  *profile,
   /*Total selected cells weigth could be calculated once and not for each layer
    * but keep as this because of current code structure (avoid de create a
    * dedicated function and re compute each cell weight*/
-  cs_parall_sum(1, CS_DOUBLE, &sel_cells_weight);
+  cs_parall_sum(1, CS_REAL_TYPE, &sel_cells_weight);
   profile->sel_cells_weigth = sel_cells_weight;
 
   BFT_FREE(selected_cells);
@@ -352,7 +352,7 @@ _compute_sample_moment(cs_real_t *sample,
     variance += w_n[iel] * pow(sample[iel] - mu, 2.0);
 
   /* Sum over all MPI ranks */
-  cs_parall_sum(1, CS_DOUBLE, &variance);
+  cs_parall_sum(1, CS_REAL_TYPE, &variance);
 
   sigma = pow(variance, 1.0 / 2.0);
 
@@ -448,7 +448,7 @@ _fill_histogram_classes_u_bandwidth(user_histogram_t  *histogram,
 
   /*Sum height classes over all MPI ranks*/
 
-  cs_parall_sum(n_bins, CS_DOUBLE, histogram->h_i);
+  cs_parall_sum(n_bins, CS_REAL_TYPE, histogram->h_i);
 
   /*update histogram*/
   histogram->n_bins = n_bins;
@@ -1090,9 +1090,10 @@ _set_stl_layers_seeds(user_profile_t  *profile,
   cs_real_3_t closest_point_coord[2];
 
   /* Initialiaze values of closest_point_coord */
-  for (int jj = 0; jj < 2; jj++)
+  for (int jj = 0; jj < 2; jj++) {
     for (int k = 0; k < 3; k++)
-      closest_point_coord[jj][k] = -1.E20;
+      closest_point_coord[jj][k] = -1.e20;
+  }
 
   /* For each target point, find the closest cell center in the cell sell over
      all ranks Doing so, the seeds are in the fluid domain */
@@ -1107,7 +1108,7 @@ _set_stl_layers_seeds(user_profile_t  *profile,
         closest_point_coord[jj][k] = point_coord[3 * point_id[jj] + k];
     }
 
-    cs_parall_max(3, CS_DOUBLE, closest_point_coord[jj]);
+    cs_parall_max(3, CS_REAL_TYPE, closest_point_coord[jj]);
   }
 
   BFT_MALLOC(stl_mesh->seed_coords, 3 * (n_layers - 1), cs_real_t);
@@ -2639,7 +2640,7 @@ user_profile_compute(user_profile_t  *profile)
     for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
       profile->weigth[l_id] += weights[iel];
 
-    cs_parall_sum(1, CS_DOUBLE, &profile->weigth[l_id]);
+    cs_parall_sum(1, CS_REAL_TYPE, &profile->weigth[l_id]);
 
     user_histogram_compute(histogram, sample, weights, n_elts_sample);
 
@@ -2652,8 +2653,8 @@ user_profile_compute(user_profile_t  *profile)
   }
 
   /*update min and max field over all layer and all MPI ranks*/
-  cs_parall_min(1, CS_DOUBLE, &min_field);
-  cs_parall_max(1, CS_DOUBLE, &max_field);
+  cs_parall_min(1, CS_REAL_TYPE, &min_field);
+  cs_parall_max(1, CS_REAL_TYPE, &max_field);
 
   profile->min_field = min_field;
   profile->max_field = max_field;

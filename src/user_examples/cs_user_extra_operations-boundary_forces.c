@@ -106,7 +106,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
       }
 
       /* parallel sum */
-      cs_parall_sum(3, CS_DOUBLE, total_b_forces);
+      cs_parall_sum(3, CS_REAL_TYPE, total_b_forces);
     }
   }
   /*! [boundary_forces_ex1] */
@@ -136,7 +136,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
     BFT_FREE(p_b_val);
 
     /* parallel sum */
-    cs_parall_sum(3, CS_DOUBLE, total_b_p_forces);
+    cs_parall_sum(3, CS_REAL_TYPE, total_b_p_forces);
   }
   /*! [boundary_forces_ex2] */
 }
