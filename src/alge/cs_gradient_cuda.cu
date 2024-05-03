@@ -1677,7 +1677,6 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
   if (_grad_d != NULL) {
     size_t size = n_cells * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
-    printf("copy\n");
   }
   else
     cs_sync_d2h(grad);
