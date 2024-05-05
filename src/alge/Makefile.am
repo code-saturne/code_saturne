@@ -183,16 +183,16 @@ $(FCFLAGS_DBG) $(FCFLAGS_HOT) $(FCFLAGS_SHARED)
 libcsalge_a_SOURCES = \
 cs_bad_cells_regularisation.c \
 cs_balance.c \
-cs_balance_by_zone.cxx \
+cs_balance_by_zone.cpp \
 cs_benchmark.cpp \
 cs_benchmark_matrix.cpp \
 cs_blas.c \
 cs_bw_time_diff.c \
 cs_cell_to_vertex.c \
-cs_convection_diffusion.cxx \
+cs_convection_diffusion.cpp \
 cs_divergence.c \
 cs_face_viscosity.c \
-cs_gradient.cxx \
+cs_gradient.cpp \
 cs_gradient_boundary.c \
 cs_grid.c \
 cs_matrix.c \
