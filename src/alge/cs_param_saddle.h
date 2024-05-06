@@ -165,13 +165,13 @@ typedef enum {
  * a constant. In this situation, MUMPS can breakdown since there is a non
  * empty kernel.
  *
- * \CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM
+ * \var CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM
  * Transform the saddle-point problem into an equivalent system without a zero
  * block for the (2,2) block. This transformation allows one to consider
  * standard preconditionner and iterative Krylov solver. This is an
  * experimental feature (only tested in sequential run)
  *
- * \CS_PARAM_SADDLE_SOLVER_UZAWA_CG
+ * \var CS_PARAM_SADDLE_SOLVER_UZAWA_CG
  * Resolution using an uzawa algorithm optimized using a conjugate gradient
  * reformulation. Two systems are solved at each iteration (one related to the
  * velocity block, one related to the Schur complement approximation - size of
@@ -578,8 +578,8 @@ cs_param_saddle_get_name(const cs_param_saddle_t  *saddlep);
 /*!
  * \brief Set the name of the saddle-point system.
  *
- * \param[in]      basename   prefix for the naming of the Schur system
- * \param[in, out] saddlep    pointer to the structure to update
+ * \param[in]      name     name associated to this saddle-point system
+ * \param[in, out] saddlep  pointer to the structure to update
  */
 /*----------------------------------------------------------------------------*/
 

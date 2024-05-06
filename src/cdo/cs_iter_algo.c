@@ -473,7 +473,7 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
  *
  * \param[in] type       type of iterative algorithm
  * \param[in] verbosity  level of information to print
- * \param[in] param      set of parameters driving the convergence of the
+ * \param[in] cvg_param  set of parameters driving the convergence of the
  *                       iterative algorithm
  *
  * \return a pointer to the new allocated structure
@@ -565,9 +565,10 @@ cs_iter_algo_reset(cs_iter_algo_t      *algo)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Reset a cs_iter_algo_t structure
+ * \brief Free the members (arrays and matrix) associated to the context
+ *        structure of an Anderson acceleration
  *
- * \param[in, out] algo           pointer to a cs_iter_algo_t
+ * \param[in, out] c   pointer to an Anderson context structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -608,12 +609,12 @@ cs_iter_algo_set_verbosity(cs_iter_algo_t     *algo,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define the criteria related the convergence of the given iterative
+ * \brief Define the criteria related to the convergence of the given iterative
  *        algorithm
  *
- * \param[in, out] algo     pointer to the structure to update
- * \param[in]      param    set of parameters driving the convergence of the
- *                          iterative algorithm
+ * \param[in, out] algo       pointer to the structure to update
+ * \param[in]      cvg_param  set of parameters driving the convergence of the
+ *                            iterative algorithm
  */
 /*----------------------------------------------------------------------------*/
 
@@ -726,8 +727,8 @@ cs_iter_algo_set_normalization(cs_iter_algo_t   *algo,
 /*!
  * \brief Set the convergence status of the given structure
  *
- * \param[in, out] algo   pointer to the structure to update
- * \param[in]      value  normalization to apply
+ * \param[in, out] algo        pointer to the structure to update
+ * \param[in]      cvg_status  status to set
  */
 /*----------------------------------------------------------------------------*/
 

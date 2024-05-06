@@ -481,15 +481,15 @@ cs_sles_it_set_breakdown_threshold(double  threshold);
  *
  * Currently, this mechanism is used by default for solvers which may exhibit
  * breakdown, such as BiCGstab and 3-layer conjugate residual solvers, which
- * may fall back to a a more robust preconditioned GMRES solver.
+ * may fall back to a more robust preconditioned GMRES solver.
  *
  * For those solvers, the default threshold is \ref CS_SLES_MAX_ITERATION,
  * meaning that reaching breakdown will lead to the use of the
  * fallback mechanism.
  *
- * \param[in, out]  context    pointer to iterative solver info and context
- * \param[in]       threshold  convergence level under which fallback is used
- * \param[in]       n_iter_max  maximum number of iterations fo fallback solver
+ * \param[in, out] context     pointer to iterative solver info and context
+ * \param[in]      threshold   convergence level under which fallback is used
+ * \param[in]      n_iter_max  maximum number of iterations fo fallback solver
  */
 /*----------------------------------------------------------------------------*/
 

@@ -275,12 +275,12 @@ cs_param_sles_create(int          field_id,
 /*!
  * \brief Free a \ref cs_param_sles_t structure
  *
- * \param[in, out] slesp    pointer to a \cs_param_sles_t structure to free
+ * \param[in, out] p_slesp  pointer to a \ref cs_param_sles_t structure to free
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_free(cs_param_sles_t   **p_slesp)
+cs_param_sles_free(cs_param_sles_t  **p_slesp)
 {
   if (p_slesp == NULL)
     return;

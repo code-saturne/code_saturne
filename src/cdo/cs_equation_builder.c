@@ -384,13 +384,11 @@ cs_equation_builder_reset(cs_equation_builder_t  *eqb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update the default flags used to know which quantities have to be
- *        built by each cs_cell_mesh_t structure before building the linear
- *        system
+ * \brief Update the flags with the default flags. These flags are used to know
+ *        which quantities have to be built by each cs_cell_mesh_t structure
+ *        before building the linear system
  *
- * \param[in] msh_flag    flag for all cells
- * \param[in] bdy_flag    flag for all boundary cells
- * \param[in] src_flag    flag for cells with source terms
+ * \param[in] eqb  pointer to an equation builer
  */
 /*----------------------------------------------------------------------------*/
 

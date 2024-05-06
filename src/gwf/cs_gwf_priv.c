@@ -152,16 +152,16 @@ _compute_v_weighted_boundary_fluxes(const cs_real_t      *xv,
  * \brief Retrieve the values of (potential) fields needed for the update of
  *        the Darcy velocity/fluxes.
  *
- * \param[in]  eq         pointer to an equation structure
- * \param[out] dof_vals   double pointer to the values (degrees of freedom)
- * \param[out] cell_vals  double pointer to the values (cell values)
+ * \param[in]  eq           pointer to an equation structure
+ * \param[out] p_dof_vals   double pointer to the values (degrees of freedom)
+ * \param[out] p_cell_vals  double pointer to the values (cell values)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_get_value_pointers(const cs_equation_t       *eq,
-                          cs_real_t                **p_dof_vals,
-                          cs_real_t                **p_cell_vals)
+cs_gwf_get_value_pointers(const cs_equation_t   *eq,
+                          cs_real_t            **p_dof_vals,
+                          cs_real_t            **p_cell_vals)
 {
   cs_real_t  *dof_vals = NULL, *cell_vals = NULL;
 

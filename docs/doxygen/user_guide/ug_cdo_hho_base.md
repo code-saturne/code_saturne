@@ -159,8 +159,9 @@ Domain boundaries {#ug_cdo_sec_domain_boundaries}
 -------------------
 
 Domain boundaries are useful for the (Navier-)Stokes equations or for the
- computation of the wall distance. Several types of domain boundaries can be
- defined. They are gathered in \ref cs_domain_boundary_type_t
+computation of the wall distance. Several types of domain boundaries can be
+defined. They are gathered in \ref cs_boundary_type_t (a flag built from a set
+of predefined bits)
 
 The definition of the domain boundaries for CDO/HHO schemes is performed in two
 steps: (1) set the default boundary and then add other boundaries which do not
@@ -329,8 +330,8 @@ definition of the function pointer \ref cs_analytic_func_t)
 
 ### GWF module
 
-Here is another example extracted from \ref cs_user_parameters-cdo-gwf.c but
-this is readily applicable to any equation.
+Here is another example extracted from the file `cs_user_parameters-cdo-gwf.c`
+(in src/user_examples) but this is readily applicable to any equation.
 
 \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_set_ic
 
@@ -526,7 +527,7 @@ The available advection schemes are listed in the description of the key
 
 When the equation to solve is unsteady, one has to specify a time
 discretization scheme. Available time schemes are listed in the description of
-the key \ref \CS_EQKEY_TIME_SCHEME
+the key \ref CS_EQKEY_TIME_SCHEME
 By default, a first order implicit Euler scheme is used. To modify this default
 settings, please proceed as follows:
 

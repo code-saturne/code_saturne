@@ -157,7 +157,7 @@ _scalar_v2c(cs_lnum_t                    c_id,
  *        defined on primal vertices.
  *        Case of scalar-valued arrays.
  *
- * \param[in]      c_id       cell id
+ * \param[in]      f_id       face id
  * \param[in]      f2e        face -> edges connectivity
  * \param[in]      e2v        edge -> vertices connectivity
  * \param[in]      cdoq       pointer to the additional quantities struct.

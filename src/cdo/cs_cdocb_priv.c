@@ -50,7 +50,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_equation_param.c
+  \file cs_cdocb_priv.c
 
   \brief Common functions for CDO cell-based schemes which are not visible by
          default from user-defined functions

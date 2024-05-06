@@ -174,8 +174,11 @@ These two functions have a similar set of parameters:
    user-defined soil model
 
   - \ref CS_GWF_SOIL_SATURATED
-  - \ref CS_GWF_SOIL_GENUCHTEN
-  - \ref CS_GWF_SOIL_USER
+  - \ref CS_GWF_SOIL_VGM_SINGLE_PHASE : Van Genuchten closure law with
+    a single-phase hydraulic model
+  - \ref CS_GWF_SOIL_VGM_TWO_PHASE : Van Genuchten closure law with a
+    two-phase hydraulic model (two phase flows in a porous media)
+  - \ref CS_GWF_SOIL_USER : User-defined soil behavior
 
 
 Examples of settings for a predefined soil model
@@ -196,12 +199,12 @@ permeability_
 \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_define_aniso_saturated_soil
 
 
-### Case of a Van Genuchten-Mualen model
+### Case of a Van Genuchten-Mualen model (single-phase)
 
 Soils which behave according to a Van Genuchten-Mualen model are specified in
-two steps: a call to \ref cs_gwf_add_iso_soil and then a call to \ref
-cs_gwf_soil_set_genuchten_param to specifiy the parameters associated to this
-model.
+two steps: a call to \ref cs_gwf_add_iso_soil and then a call to
+\ref cs_gwf_soil_set_vgm_spf_param to specifiy the parameters associated to
+this model.
 
 **Example 3:** _Soil relying on a Van Genuchten-Mualen and considering a
 isotropic permeability_
@@ -219,15 +222,15 @@ user-defined soil. In this case, the add of the new soil is made as follows
 
 2. Add a new soil (\ref cs_gwf_add_iso_soil or \ref cs_gwf_add_aniso_soil )
 
-3. Call \ref cs_gwf_soil_set_user to specify the structure to use, the function
-   to update quantities related to the hydraulic model and if needed a function
-   to free the structure storing the soil parameters.
+3. Call \ref cs_gwf_soil_set_user_model_param to specify the structure
+   to use, the function to update quantities related to the hydraulic
+   model and if needed a function to free the structure storing the
+   soil parameters.
 
 These three steps are performed inside the function \ref cs_user_model
 
 Here is a complete example of a user-defined soil model (called hereafter Tracy
-since it has been designed by F. T. Tracy in [this
-article](https://doi.org/10.1016/0022-1694(94)02674-Z)).
+since it has been designed by F. T. Tracy in [this article](https://doi.org/10.1016/0022-1694(94)02674-Z)).
 
 ### Define a structure to store the model parameters
 

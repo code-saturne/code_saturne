@@ -2635,7 +2635,7 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
  * \brief Free main memory consuming part of the context structure associated
  *        to an ALU algorithm
  *
- * \param[in, out] p_ctx  double pointer to the context structure to clean
+ * \param[in, out] ctx  pointer to the context structure to clean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2780,7 +2780,7 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
  *        block preconditioner used in combination with a Krylov solver such as
  *        MINRES or GCR.
  *
- * \param[in, out] p_ctx  double pointer to the context structure to free
+ * \param[in, out] ctx  pointer to the context structure to free
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2909,7 +2909,7 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
  * \brief Free the main memory consuming part of the context structure
  *        associated to the GKB algorithm
  *
- * \param[in, out] p_ctx  double pointer to the context structure to clean
+ * \param[in, out] ctx  pointer to the context structure to clean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3116,7 +3116,7 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
  * \brief Free main memory consuming part of the context structure associated
  *        to a Uzawa-CG algorithm
  *
- * \param[in, out] p_ctx  double pointer to the context structure to clean
+ * \param[in, out] ctx  pointer to the context structure to clean
  */
 /*----------------------------------------------------------------------------*/
 

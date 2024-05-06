@@ -527,8 +527,8 @@ cs_param_saddle_get_name(const cs_param_saddle_t  *saddlep)
 /*!
  * \brief Set the name of the saddle-point system.
  *
- * \param[in]      basename   prefix for the naming of the Schur system
- * \param[in, out] saddlep    pointer to the structure to update
+ * \param[in]      name     name associated to this saddle-point system
+ * \param[in, out] saddlep  pointer to the structure to update
  */
 /*----------------------------------------------------------------------------*/
 

@@ -3034,15 +3034,14 @@ _pressure_correction_fv(int                   iterns,
  *                 - Hodge \cdot GRAD \left(\delta p \right)
  * \f]
  *
- * \param[in] vel     velocity
- * \param[in] coefav  boundary condition array for the variable (explicit part)
- * \param[in] coefbv  boundary condition array for the variable (implicit part)
+ * \param[in] vel          velocity values
+ * \param[in] bc_coeffs_v  boundary condition coefficients
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_pressure_correction_cdo(cs_real_t             vel[restrict][3],
-                         cs_field_bc_coeffs_t *bc_coeffs_v)
+_pressure_correction_cdo(cs_real_t              vel[restrict][3],
+                         cs_field_bc_coeffs_t  *bc_coeffs_v)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;

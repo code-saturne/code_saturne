@@ -94,7 +94,7 @@ typedef enum {
 
 } cs_param_amg_boomer_coarsen_algo_t;
 
-/*! \enum cs_param_amg_boomer_interp_type_t
+/*! \enum cs_param_amg_boomer_interp_algo_t
  *  \brief Type of algorithm used in boomerAMG to coarsen a level. Only a
  *  selection of algorithms is available here. Values are those given in HYPRE
  */
@@ -198,7 +198,7 @@ typedef struct {
 
 /*! \enum cs_param_amg_inhouse_coarsen_t
  *  \brief Type of algorithm used in the in-house algorithm to coarsen each
- *  level. This enum avoids using the associated \ref cs_grid_coarsen_t type
+ *  level. This enum avoids using the associated \ref cs_grid_coarsening_t type
  *  which includes higher level headers.
  */
 
