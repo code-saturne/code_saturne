@@ -792,9 +792,6 @@ typedef enum {
  * \var CS_PARAM_SOLVER_JACOBI
  * Jacobi (diagonal relaxation)
  *
- * \var CS_PARAM_SOLVER_MINRES
- * Mininal residual algorithm
- *
  * \var CS_PARAM_SOLVER_MUMPS
  * MUMPS sparse direct solver
  *
@@ -821,7 +818,6 @@ typedef enum {
   CS_PARAM_SOLVER_GCR,
   CS_PARAM_SOLVER_GMRES,            /*!< Only with PETSc */
   CS_PARAM_SOLVER_JACOBI,
-  CS_PARAM_SOLVER_MINRES,           /*!< Only with PETSc */
   CS_PARAM_SOLVER_MUMPS,            /*!< Only with PETSc or MUMPS */
   CS_PARAM_SOLVER_SYM_GAUSS_SEIDEL,
   CS_PARAM_SOLVER_USER_DEFINED,

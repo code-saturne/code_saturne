@@ -574,26 +574,8 @@ cs_param_sles_set_solver(const char       *keyval,
   else if (strcmp(keyval, "fgmres") == 0) {
 
     slesp->solver = CS_PARAM_SOLVER_FGMRES;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = true;
-
-  }
-  else if (strcmp(keyval, "jacobi") == 0 ||
-           strcmp(keyval, "diag") == 0 ||
-           strcmp(keyval, "diagonal") == 0) {
-
-    slesp->solver = CS_PARAM_SOLVER_JACOBI;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->precond = CS_PARAM_PRECOND_NONE;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    slesp->flexible = false;
-
-  }
-  else if (strcmp(keyval, "minres") == 0) {
-
-    slesp->solver = CS_PARAM_SOLVER_MINRES;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->flexible = false;
+    slesp->flexible = true;
 
     cs_param_solver_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
@@ -606,6 +588,17 @@ cs_param_sles_set_solver(const char       *keyval,
                 __func__, sles_name, "CS_EQKEY_SOLVER");
     else
       slesp->solver_class = ret_class;
+
+  }
+  else if (strcmp(keyval, "jacobi") == 0 ||
+           strcmp(keyval, "diag") == 0 ||
+           strcmp(keyval, "diagonal") == 0) {
+
+    slesp->solver = CS_PARAM_SOLVER_JACOBI;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    slesp->flexible = false;
 
   }
   else if (strcmp(keyval, "mumps") == 0) {

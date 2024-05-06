@@ -121,7 +121,6 @@ _system_should_be_sym(cs_param_solver_type_t  solver)
 
   case CS_PARAM_SOLVER_CG:
   case CS_PARAM_SOLVER_FCG:
-  case CS_PARAM_SOLVER_MINRES:
     return true;
 
   default:
@@ -917,10 +916,6 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
 
   case CS_PARAM_SOLVER_GMRES:     /* Preconditioned GMRES */
     KSPSetType(ksp, KSPLGMRES);
-    break;
-
-  case CS_PARAM_SOLVER_MINRES:    /* Minimal residual */
-    KSPSetType(ksp, KSPMINRES);
     break;
 
   case CS_PARAM_SOLVER_MUMPS:     /* Direct solver (factorization) */

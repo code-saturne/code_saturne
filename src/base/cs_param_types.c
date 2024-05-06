@@ -551,9 +551,6 @@ cs_param_get_solver_name(cs_param_solver_type_t  solver)
   case CS_PARAM_SOLVER_JACOBI:
     return "Jacobi";
     break;
-  case CS_PARAM_SOLVER_MINRES:
-    return "MinRes";
-    break;
   case CS_PARAM_SOLVER_MUMPS:
     return "MUMPS";
     break;
