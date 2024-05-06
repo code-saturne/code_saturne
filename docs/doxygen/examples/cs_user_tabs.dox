@@ -69,6 +69,8 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
 
 \section example_numerical_param Numerical parameters
    - \subpage cs_user_performance_tuning
+   - [Modify the numerical parameters of equations solved using CDO/HHO schemes](@ref cs_ug_cdo_hho_base_set_eqparam)
+   - [Modify the numerical settings specific to the Navier-Stokes equations when solved with CDO schemes](@ref cs_ug_cdo_navsto_set_param)
 
 \section example_calculation_control Calculation control and postprocessing
    - \subpage cs_user_postprocess

@@ -557,7 +557,7 @@ cs_user_parameters(cs_domain_t   *domain)
   }
   /*! [param_cdo_time_hodge] */
 
-  /*! [param_cdo_sles_settings] */
+  /*! [param_cdo_sles_settings1] */
   {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
 
@@ -572,10 +572,41 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
 #endif
+
+    /* Manage the stopping criteria */
+
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_MAX_ITER, "2500");
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-12");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_ATOL, "1e-15");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_DTOL, "1e2");
   }
-  /*! [param_cdo_sles_settings] */
+
+  /*! [param_cdo_sles_settings1] */
+
+  /*! [param_cdo_sles_amg_type] */
+  {
+    /* First example with a K-cycle settings */
+    /* ------------------------------------- */
+
+    cs_equation_param_t  *eqp0 = cs_equation_param_by_name("Eq_Kcycle");
+
+    cs_equation_param_set(eqp0, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp0, CS_EQKEY_AMG_TYPE, "k_cycle");
+
+    /* Second example with boomer AMG from the HYPRE's library */
+    /* ------------------------------------------------------- */
+
+    cs_equation_param_t  *eqp1 = cs_equation_param_by_name("Eq_Boomer");
+
+    cs_equation_param_set(eqp1, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp1, CS_EQKEY_AMG_TYPE, "bamg");
+
+    /* If one wants to access BoomerAMG through the PETSc library, add this
+       line. Warning: PETSc should be installed with the HYPRE library */
+
+    cs_equation_param_set(eqp1, CS_EQKEY_SOLVER_FAMILY, "petsc");
+  }
+  /*! [param_cdo_sles_amg_type] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -663,21 +694,56 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
   /*! [param_cdo_add_terms] */
   {
-    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
-    cs_property_t  *rhocp = cs_property_by_name("rho.cp");
-    cs_property_t  *conductivity = cs_property_by_name("conductivity");
-    cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
+    /* Retrieve the set of equation parameters of the equation to modify */
 
-    /* Activate the unsteady term */
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
+
+    /* Add an unsteady term (draw a link between this equation and a
+       property) */
+
+    cs_property_t  *rhocp = cs_property_by_name("rho.cp");
+
     cs_equation_add_time(eqp, rhocp);
 
-    /* Activate the diffusion term */
+    /* Add a diffusion term (draw a link between this equation and a
+       property) */
+
+    cs_property_t  *conductivity = cs_property_by_name("conductivity");
+
     cs_equation_add_diffusion(eqp, conductivity);
 
-    /* Activate advection effect */
+    /* Add an advection term (draw a link between this equation and an
+       advection field) */
+
+    cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
+
     cs_equation_add_advection(eqp, adv);
   }
   /*! [param_cdo_add_terms] */
+
+    /*! [param_cdo_add_terms_2] */
+  {
+    /* Retrieve the set of equation parameters of the equation to modify */
+
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+
+    /* Add a curl-curl term (draw a link between this equation and a
+       property) */
+
+    cs_property_t  *mu = cs_property_by_name("mu");
+
+    cs_equation_add_curlcurl(eqp,
+                             mu,
+                             false); /* reciprocal of the property */
+
+    /* Add a grad-div term (draw a link between this equation and a
+       property) */
+
+    cs_property_t  *gamma = cs_property_by_name("gamma");
+
+    cs_equation_add_graddiv(eqp, gamma);
+  }
+  /*! [param_cdo_add_terms_2] */
 
   /*! [param_cdo_add_simple_source_terms] */
   {

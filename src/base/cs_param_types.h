@@ -727,9 +727,9 @@ typedef enum {
 
   CS_PARAM_PRECOND_NONE,
 
+  CS_PARAM_PRECOND_AMG,
   CS_PARAM_PRECOND_BJACOB_ILU0,        /*!< Only with PETSc */
   CS_PARAM_PRECOND_BJACOB_SGS,         /*!< Only with PETSc */
-  CS_PARAM_PRECOND_AMG,
   CS_PARAM_PRECOND_DIAG,
   CS_PARAM_PRECOND_GKB_CG,             /*!< Only with PETSc */
   CS_PARAM_PRECOND_GKB_GMRES,          /*!< Only with PETSc */

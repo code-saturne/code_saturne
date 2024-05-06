@@ -174,8 +174,8 @@ typedef struct {
  *  level or solving the coarse level. Only the most relevant algorithms are
  *  available here.
  *
- * This enum avoids using \ref cs_sles_it_type_t and to include higher level
- * headers with loop cycle issue.
+ * This enum avoids using \ref cs_sles_it_type_t which includes higher level
+ * headers leading to loop cycle issues.
  */
 
  typedef enum {

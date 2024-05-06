@@ -47,12 +47,6 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_coupling.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -105,6 +99,40 @@ void
 cs_user_parameters(cs_domain_t    *domain)
 {
   CS_NO_WARN_IF_UNUSED(domain);
+
+  /*! [cdo_sles_solver_family] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEqName");
+
+    /* Specify that this is an in-house solvers (default choice) */
+
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "saturne");
+
+    /* Use solver/preconditioner available in the MUMPS library */
+
+#if defined(HAVE_MUMPS)
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "mumps");
+#else
+    bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
+#endif
+
+    /* Use solver/preconditioner available in the PETSc library */
+
+#if defined(HAVE_PETSC)
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+#else
+    bft_error(__FILE__, __LINE__, 0, "%s: PETSc is not available\n", __func__);
+#endif
+
+    /* Use solver/preconditioner available in the HYPRE library */
+
+#if defined(HAVE_HYPRE)
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "hypre");
+#else
+    bft_error(__FILE__, __LINE__, 0, "%s: HYPRE is not available\n", __func__);
+#endif
+  }
+  /*! [cdo_sles_solver_family] */
 
   /*
      Example: Use MUMPS to solve the saddle-point problem arising from CDO
@@ -319,6 +347,40 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled");
   }
   /*! [cdo_sles_navsto_minres] */
+
+  /*! [cdo_sles_boomer] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "boomer");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
+
+    /* Set the main parameters of the BoomerAMG algorithm */
+
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(eqp);
+
+    cs_param_sles_boomeramg(slesp,
+                            /* n_down_iter, down smoother */
+                            2, CS_PARAM_AMG_BOOMER_HYBRID_SSOR,
+                            /* n_up_iter, up smoother */
+                            2, CS_PARAM_AMG_BOOMER_HYBRID_SSOR,
+                            /* coarse solver */
+                            CS_PARAM_AMG_BOOMER_GAUSS_ELIM,
+                            /* coarsening algorithm */
+                            CS_PARAM_AMG_BOOMER_COARSEN_PMIS);
+
+    /* Set advanced parameters for BoomerAMG */
+
+    cs_param_sles_boomeramg_advanced(slesp,
+                                     0.5, /* strong threshold */
+                                     CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC,
+                                     8,   /* Pmax */
+                                     2,   /* n_agg_levels */
+                                     2);  /* n_agg_paths */
+  }
+  /*! [cdo_sles_boomer] */
 }
 
 /*----------------------------------------------------------------------------*/

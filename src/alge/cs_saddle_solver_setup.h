@@ -36,7 +36,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_param_saddle_setup.h
+  \file cs_saddle_solver_setup.h
 
   \brief Routines to handle the setup of SLES relying on a \ref
          cs_param_saddle_t structure

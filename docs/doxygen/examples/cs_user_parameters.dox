@@ -437,8 +437,8 @@
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
 
-  When an advection is defined, it is possible to retrieve it and then set a
-  post-processing operation as follows:
+  When an advection field is defined, it is possible to retrieve it and then
+  set a post-processing operation as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_post
 

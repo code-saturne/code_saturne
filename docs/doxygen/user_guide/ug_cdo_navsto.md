@@ -146,7 +146,7 @@ where the function `_src_def` is defined as follows
 \snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_st_function
 
 
-Settings done in cs_user_parameters()
+Settings done in cs_user_parameters() {#cs_ug_cdo_navsto_set_param}
 ===================
 
 The rationale is similar to the one detailed in [this section](@ref cs_ug_cdo_hho_base_user_param).
@@ -156,17 +156,19 @@ Here are listed some specificities related to the NavSto module.
 Set the strategy to solve the Navier-Stokes system when a monolithic coupling is used
 -------------------
 
-When a *monolithic* velocity-pressure is set, the linear system to solve
-is a _saddle-point_ problem. This class of linear systems needs
-specific choices of preconditioner/solver. Some examples of settings
-involving differents strategies of resolution are presented hereafter.
+When a *monolithic* velocity-pressure is set, the linear system to solve is a
+_saddle-point_ problem. This class of linear systems needs specific choices of
+preconditioner/solver. The default settings is not always the optimal choice in
+terms of efficiency. Some examples of settings involving differents strategies
+of resolution are presented hereafter.
 
 ### Augmented Lagrangian Uzawa algorithm (ALU)
 
 Here is another example settings a strategy to solve a saddle-point problem
 arising from a Navier-Stokes equation with a monolithic velocity-pressure
-coupling. One assumes that the library is an installed dependency (see the
-installation guide for more details).
+coupling. One assumes that the external libraries have been installed and have
+been configured with code_saturne (see the installation guide for more
+details).
 
 \snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_alu
 
@@ -175,7 +177,8 @@ Since the velocity block is _augmented_ by the term
 by `CS_EQKEY_SADDLE_AUGMENT_SCALING`), the resulting linear system is hard to
 solve for an iterative method (or one needs a very specific preconditionner for
 \f$H(\mathsf{div})\f$).  Our strategy is to consider the sparse direct solver
-MUMPS. Here is an example of an advanced usage of the MUMPS settings.
+MUMPS \cite MUMPS01. Here is an example of an advanced usage of the MUMPS
+settings.
 
 \snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_mumps
 
@@ -189,6 +192,7 @@ calling
 
   cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(eqp);
 ```
+
 This will be useful for more advanced settings.
 The function \ref cs_param_sles_mumps allows one to set the two
 following main parameters:
@@ -209,6 +213,46 @@ parameter is set to 3). According to your MUMPS installation, we can have
 access to external libraries such as (PT-)Scotch ou (Par)Metis to speed-up the
 _analysis_ step.
 
+Here is a second example.
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_alu_mumps
+
+
+
+### Golub-Kahan Bidiagonalization algorithm (GKB)
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_kcycle
+
+The linear system may be augmented to improve the convergence rate of the
+algorithm (but the system is harder to solve). Here is another example:
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_mumps
+
+
+
+### Block preconditioners with a Krylov solver
+
+The two in-house Krylov solvers available with block preconditioning are
+- **Minres** (Minimal residual) algorithm for symmetric indefinite systems such
+  as systems encountered in the case of Stokes systems
+- **GCR** (Generalized conjugate residual) algorithm for general indefinite
+  systems. This is a flexible solver (preconditioner may vary between two
+  iterations).
+
+These two algorithms are optimized to handle saddle-point problems in
+code_saturne since the (1,2) and (2,1) which are transposed is stored only
+once. Moreover, this block is stored in an unassembled way.
+
+Other block preconditioners with a Krylov solver can be set using the external
+librairy [PETSc](https://petsc.org)
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_minres
+
+
+
+### Uzawa algorithm with a CG acceleration
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_uzacg
 
 
 To go further

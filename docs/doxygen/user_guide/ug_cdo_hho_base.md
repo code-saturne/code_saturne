@@ -375,7 +375,7 @@ and the activation of optional features:
 \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_advfield
 
 
-Definition of source terms
+Definition of source terms {#cs_ug_cdo_hho_base_source_term}
 ---------------------
 
 ### User-defined equation
@@ -403,10 +403,18 @@ and the function for the memory management of a \ref cs_xdef_t structure is
 Add diffusion, advection, etc. to a user-defined equation
 ---------------------
 
-Add terms like a diffusion term, an advection term, unsteady term, reaction
-terms or source terms.
+Add terms to an equation like a diffusion term, an advection term,
+unsteady term, reaction terms.
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_add_terms
+
+In some cases, one can also add less common terms such as a
+\f$\mathsf{\underline{grad}\cdot div}\f$ or
+\f$\mathsf{\underline{curl}\cdot\underline{curl} }\f$ (only available
+with **CDO edge_based** schemes).
+
+\snippet cs_user_parameters-cdo-condif.c param_cdo_add_terms_2
+
 
 
 
@@ -462,50 +470,21 @@ One gives some examples for some of them.
 
 ### Set the space discretization scheme
 
-The key is \ref CS_EQKEY_SPACE_SCHEME with the possible value
-- `"cdo_vb"` or `"cdovb"` to use a **CDO vertex-based discretization** (degrees
-  of freedom are located at the mesh vertices). One value per vertex in the case
-  of scalar-valued equation and three values per vertex in the case of a
-  vector-valued equation.
-- `"cdo_vcb"` or `"cdovcb"` to use a **CDO vertex+cell-based discretization**
-  (degrees of freedom are located at the mesh vertices and at the mesh
-  cells). One value per vertex and per cell in the case of scalar-valued
-  equation and three values per vertex and pêr cell in the case of a
-  vector-valued equation. Thanks to a static condensation operation, the
-  algebraic system is reduced to only vertex unknows.
-- `"cdo_fb"` or `"cdofb"` to use a **CDO face-based discretization** (degrees of
-  freedom are located at interior and boundary faces and at mesh cell). One
-  value per face and mesh cell in the case of scalar-valued equation and three
-  values per face and mesh cell in the case of a vector-valued equation. Thanks
-  to a static condensation operation, the algebraic system is reduced to only
-  face unknows.
-- `"cdo_cb"` or `"cdocb"` to use a **CDO cell-based discretization** (degrees of
-  freedom are located at mesh cells for the potential and at faces for the
-  flux). Only scalar-valued equation are possible. One value per cell for the
-  potential. One value per face for the flux unknown (the normal component of
-  the flux).
-- `"cdo_eb"` or `"cdoeb"` to use **CDO edge-based discretization** (degrees of
-  freedom are located at mesh edges, one scalar per edge corresponding to the
-  circulation). Only vector-valued equation are handled with this
-  discretization.
-- `"hho_p0"` to use **HHO(k=0)** discretization relying on \f$P_0\f$ polynomial
-  approximation. (degrees of freedom are located at interior and boundary faces
-  and at mesh cells). One value per face and per mesh cell in the case of
-  scalar-valued equation and three values per face and mesh cell in the case of
-  a vector-valued equation.  Thanks to a static condensation operation, the
-  algebraic system is reduced to only face unknows.
-- `"hho_p1"` to use **HHO(k=1)** discretization relying on \f$P_1\f$ polynomial
-  approximation. (degrees of freedom are located at interior and boundary faces
-  and at mesh cells). Three values per face and four values per cell in the case
-  of scalar-valued equation and nine values per face and 12 values per cell in
-  the case of a vector-valued equation.  Thanks to a static condensation
-  operation, the algebraic system is reduced to only face unknows.
-- `"hho_p2"` to use **HHO(k=2)** discretization relying on \f$P_2\f$ polynomial
-  approximation. (degrees of freedom are located at interior and boundary faces
-  and at mesh cells). Six values per face and ten values per cell in the case of
-  scalar-valued equation and 18 values per face and 30 values per cell in the
-  case of a vector-valued equation. Thanks to a static condensation operation,
-  the algebraic system is reduced to only face unknows.
+The key is \ref CS_EQKEY_SPACE_SCHEME with the possible value gathered in the
+following table
+
+key_value | description
+:--- | :---
+`"cdo_vb"` or `"cdovb"` | Switch to a **CDO vertex-based discretization** (degrees of freedom are located at the mesh vertices). One value per vertex in the case of scalar-valued equation and three values per vertex in the case of a vector-valued equation.
+`"cdo_vcb"` or `"cdovcb"` | Switch to a **CDO vertex+cell-based discretization** (degrees of freedom are located at the mesh vertices and at the mesh cells). One value per vertex and per cell in the case of scalar-valued equation and three values per vertex and pêr cell in the case of a vector-valued equation. Thanks to a static condensation operation, the algebraic system is reduced to only vertex unknows.
+`"cdo_fb"` or `"cdofb"` | Switch to a **CDO face-based discretization** (degrees of freedom are located at interior and boundary faces and at mesh cell). One value per face and mesh cell in the case of scalar-valued equation and three values per face and mesh cell in the case of a vector-valued equation. Thanks to a static condensation operation, the algebraic system is reduced to only face unknows.
+`"cdo_cb"` or `"cdocb"` | Switch to a **CDO cell-based discretization** (degrees of freedom are located at mesh cells for the potential and at faces for the flux). Only scalar-valued equation are possible. One value per cell for the potential. One value per face for the flux unknown (the normal component of the flux).
+`"cdo_eb"` or `"cdoeb"` | Switch to **CDO edge-based discretization** (degrees of freedom are located at mesh edges, one scalar per edge corresponding to the circulation). Only vector-valued equation are handled with this discretization.
+`"hho_p0"` | Switch to a **HHO(k=0)** discretization relying on \f$P_0\f$ polynomial approximation. (degrees of freedom are located at interior and boundary faces and at mesh cells). One value per face and per mesh cell in the case of scalar-valued equation and three values per face and mesh cell in the case of a vector-valued equation.  Thanks to a static condensation operation, the algebraic system is reduced to only face unknows.
+`"hho_p1"` | Switch to a **HHO(k=1)** discretization relying on \f$P_1\f$ polynomial approximation. (degrees of freedom are located at interior and boundary faces and at mesh cells). Three values per face and four values per cell in the case of scalar-valued equation and nine values per face and 12 values per cell in the case of a vector-valued equation.  Thanks to a static condensation operation, the algebraic system is reduced to only face unknows.
+`"hho_p2"` | Switch to a **HHO(k=2)** discretization relying on \f$P_2\f$ polynomial approximation. (degrees of freedom are located at interior and boundary faces and at mesh cells). Six values per face and ten values per cell in the case of scalar-valued equation and 18 values per face and 30 values per cell in the case of a vector-valued equation. Thanks to a static condensation operation, the algebraic system is reduced to only face unknows.
+
+An example of usage:
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_numerics
 
@@ -550,32 +529,179 @@ part. This is done using the key \ref CS_EQKEY_HODGE_DIFF_COEF
 \snippet cs_user_parameters-cdo-condif.c param_cdo_diff_numerics
 
 
-Linear algebra settings
+Linear algebra settings {#cs_ug_cdo_hho_base_linalg}
 -------------------
 
 Several examples are detailed hereafter to specify a solver different from the
-default one. Available linear solvers are listed in \ref cs_param_solver_type_t
-; the preconditioner in \ref cs_param_precond_type_t
+default one integrated to code_saturne.
+
+
+### A first example
 
 For a symmetric positive definite (SPD) system, the solver of choice is the
 conjugate gradient (\ref CS_PARAM_SOLVER_CG) or its flexible variant (\ref
 CS_PARAM_SOLVER_FCG). In this case, a good preconditioner is a multilevel
 algorithm such as an algebraic multigrid (AMG). Different multigrid techniques
 are available when using code_saturne depending on the installation
-configuration (PETSc and/or HYPRE libraries). They are listing in \ref
-cs_param_precond_type_t
+configuration (in-house implementations or algorithms available from PETSc
+and/or HYPRE libraries).
 
-### Multigrid preconditioner
+Here is a first example:
+\snippet cs_user_parameters-cdo-condif.c param_cdo_sles_settings1
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_sles_settings
+If the external library [PETSc](https://petsc.org) is available, one uses its
+algebraic multigrid, otherwise one uses the in-house solver. Here a flexible
+conjugate gradient (`fcg`) with a diagonal preconditionning (`jacobi`).
 
-If the external library PETSc is available, one uses its algebraic multigrid,
-otherwise one uses the in-house solver. Here a flexible conjugate gradient
-(`fcg`) with a diagonal preconditionning (`jacobi`).
 
-The in-house multigrid algorithm can be easily tuned thanks to the function
+### Set the family of solvers
+
+Some of the choices are only available with external libraries. The external
+libraries which can be linked to code_saturne are:
+- [HYPRE library](https://hypre.readthedocs.io)
+- [MUMPS](https://mumps-solver.org), a robust sparse direct solver \cite MUMPS01
+- [PETSc](https://petsc.org)
+
+\ref CS_EQKEY_SOLVER_FAMILY allows one to specify the family of linear solvers
+to consider. This can be useful if an automatic switch is not done or when
+there are several possibilities (for instance when using HYPRE solver either
+directly from the library or through the PETSc library or using the MUMPS
+solver either directly or through the PETSc library).
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_solver_family
+
+
+### Set the solver {#cs_ug_cdo_hho_base_solver}
+
+Available linear solvers are listed in \ref cs_param_solver_type_t and can be
+set using the key \ref CS_EQKEY_SOLVER
+
+key value | description | type | family
+:--- | :--- | :--- | :---:
+`"amg"` | Algebraic MultiGrid (AMG) iterative solver. This is a good choice to achieve a scalable solver related to symmetric positive definite system when used with the default settings. Usually, a better choice is to use it as a preconditioner of a Krylov solver (for instance a conjugate gradient). For convection-dominated systems, one needs to adapt the smoothers, the coarsening algorithm or the coarse solver. | \ref CS_PARAM_SOLVER_AMG |  saturne, PETSc, HYPRE
+`"bicgs"`, `"bicgstab"` | stabilized BiCG algorithm (for non-symmetric linear systems). It may lead to breakdown. | \ref CS_PARAM_SOLVER_BICGS | saturne, PETSc
+`"bicgstab2"` | variant of the stabilized BiCG algorithm (for non-symmetric linear systems). It may lead to breakdown. It should be more robust than the BiCGstab algorithm | \ref CS_PARAM_SOLVER_BICGS2 | saturne, PETSc
+`"cg"`| Conjuguate gradient algorithm for symmetric positive definite (SPD) linear systems | \ref CS_PARAM_SOLVER_CG  | saturne, PETSc, HYPRE
+`"cr3"`| 3-layer conjuguate residual algorithm for non-symmetric linear systems | \ref CS_PARAM_SOLVER_CR3  | saturne
+`"fcg"` | Flexible version of the conjuguate gradient algorithm. This is useful when the preconditioner changes between two successive iterations | \ref CS_PARAM_SOLVER_FCG | saturne, PETSc
+`"fgmres"` | Flexible Generalized Minimal Residual: robust and flexible iterative solver. More efficient solver can be found on easy-to-solve systems. Additional settings related to the number of directions stored before restarting the algorithm (cf. the key \ref CS_EQKEY_SOLVER_RESTART) | \ref CS_PARAM_SOLVER_FGMRES | PETSc
+`"gauss_seidel"`, `"gs"` | Gauss-Seidel algorithm (Jacobi on interfaces between MPI ranks in case of parallel computing). No preconditioner. | \ref CS_PARAM_SOLVER_GAUSS_SEIDEL | saturne, PETSc, HYPRE
+`"gcr"` | Generalized Conjugate Residual: **robust** and flexible iterative solver. More efficient solver can be found on easy-to-solve systems. This is close to a FGMRES algorithm. Additional settings related to the number of directions stored before restarting the algorithm (cf. the key \ref CS_EQKEY_SOLVER_RESTART). This is the **default solver for a user-defined equation**. | \ref CS_PARAM_SOLVER_GCR | saturne, PETSc
+`"gmres"` | Generalized Conjugate Residual: **robust** iterative solver. More efficient solver can be found on easy-to-solve systems. Additional settings related to the number of directions stored before restarting the algorithm (cf. the key \ref CS_EQKEY_SOLVER_RESTART) | \ref CS_PARAM_SOLVER_GMRES | saturne, PETSc, HYPRE
+`"jacobi"`, `"diag"`, `"diagonal"` | Jacobi algorithm = reciprocal of the diagonal values (**simplest iterative solver**). This is an efficient solver if the linear system is dominated by the diagonal. No preconditioner. | \ref CS_PARAM_SOLVER_JACOBI | saturne, PETSc, HYPRE
+`"mumps"` | sparse direct solver from the MUMPS library (cf. \cite MUMPS01). This is the most robust solver but it may require a huge memory (especially for 3D problems). By default, it performs a LU factorization on general matrices using double precision. More options are available using the function \ref cs_param_sles_mumps and the function \ref cs_param_sles_mumps_advanced. More options are available through the user-defined function \ref cs_user_sles_mumps_hook | \ref CS_PARAM_SOLVER_MUMPS | mumps, PETSc (according to the configuration)
+`"sym_gauss_seidel"`, `"sgs"` | Symmetric Gauss-Seidel algorithm. Jacobi on interfaces between MPI ranks in case of parallel computing). No preconditioner. | \ref CS_PARAM_SOLVER_SYM_GAUSS_SEIDEL | saturne, PETSc
+`"user"` | User-defined iterative solver (rely on the function \ref cs_user_sles_it_solver) | \ref CS_PARAM_SOLVER_USER_DEFINED | saturne
+
+
+### Set the preconditioner {#cs_ug_cdo_hho_base_precond}
+
+Available preconditioners are listed in \ref cs_param_precond_type_t and can be
+set using the key \ref CS_EQKEY_PRECOND
+
+key value | description | type | family
+:--- | :--- | :--- | :---:
+`"amg"` | Algebraic MultiGrid (AMG) iterative solver. See [this section](@ref cs_ug_cdo_hho_base_amg) for more details. | \ref CS_PARAM_PRECOND_AMG |  saturne, PETSc, HYPRE
+`"block_jacobi"`, `"bjacobi"` | Block Jacobi with an ILU(0) factorization in each block. By default, there is one block per MPI rank. | \ref CS_PARAM_PRECOND_BJACOB_ILU0 | PETSc
+`"bjacobi_sgs"`, `"bjacobi_ssor"` | Block Jacobi with a SSOR algorithm in each block. By default, there is one block per MPI rank. For a sequential run, this is the SSOr algorithm. | \ref CS_PARAM_PRECOND_BJACOB_SGS | PETSc
+`"diag"`, `"jacobi"` | Diagonal preconditioning | \ref CS_PARAM_PRECOND_DIAG | saturne, PETSc, HYPRE
+`"ilu0"` | Incomplete LU factorization (zero fill-in meaning that the same sparsity level is used). | \ref CS_PARAM_PRECOND_ILU0 | PETSc, HYPRE
+`"icc0"` | Incomplete Choleski factorization (zero fill-in meaning that the same sparsity level is used). For SPD matrices. | \ref CS_PARAM_PRECOND_ICC0 | PETSc, HYPRE
+`"mumps"` | the sparse direct solver MUMPS used as preconditioner. Please refer to [the MUMPS section](@ref cs_ug_cdo_hho_base_mumps) for more details. | \ref CS_PARAM_PRECOND_MUMPS | mumps
+`"none"` | No preconditioner. | \ref CS_PARAM_PRECOND_NONE | saturne, PETSc, HYPRE
+`"poly1"` | 1st order Neumann polynomial preconditioning | \ref CS_PARAM_PRECOND_POLY1 | saturne
+`"poly2"` | 2nd order Neumann polynomial preconditioning | \ref CS_PARAM_PRECOND_POLY2 | saturne
+`"ssor"` | Symmetric Successive OverRelaxation (SSOR) algorithm. In case of parallel computations, each MPI rank performs a SSOR on the local matrix. | \ref CS_PARAM_PRECOND_SSOR | PETSc
+
+
+
+
+### Algebraic multigrids {#cs_ug_cdo_hho_base_amg}
+
+Algebraic multigrids (AMG) can be used either as a solver or as a
+preconditioner. According to this choice, the settings of the main components
+should be different. The main options related to an AMG algorithm are:
+- The choice of the cycle (`V`, `W`, `K` for instance)
+- The choice of the down and/or up smoothers (type and number of sweeps)
+- The choice of the coarse solver
+- The choice of the coarsening algorithm
+
+AMG algorithm is a good choice to achieve a scalable solver. The default
+settings are related to a symmetric positive definite (SPD) system. Usually, a
+better efficiency is reached when the AMG is used as a preconditioner of a
+Krylov solver rather than as a solver. For convection-dominated systems, one
+needs to adapt the main ingredients.
+
+Several multigrid algorithms are available in code_saturne. The default one is
+the in-house `V-cycle`. Use the key \ref CS_EQKEY_AMG_TYPE to change the type of
+multigrid. Possible values for this key are gathered in the next table.
+
+key value | description
+:--- | :---
+`"v_cycle"` | This is the default choice. This corresponds to an in-house V-cycle detailed in \cite MeFoH09 The main ingredients can set using the functions \ref cs_param_sles_amg_inhouse and \ref cs_param_sles_amg_inhouse_advanced Please refer to [this section](@ref cs_ug_cdo_hho_base_amg_inhouse) for more details.
+`"k_cycle"` or `"kamg"` | Switch to a K-cycle strategy. This type of cycle has been detailed in \cite Notay05 Be aware that a lot of work can be done in the coarsest levels yielding more communications between MPI ranks during a parallel computation. The main ingredients can set using the functions \ref cs_param_sles_amg_inhouse and \ref cs_param_sles_amg_inhouse_advanced Please refer to [this section](@ref cs_ug_cdo_hho_base_amg_inhouse) for more details.
+`"boomer"`, `"bamg"` or "boomer_v" | Switch to use the V-cycle of the BoomerAMG algorithm from the [HYPRE library](https://hypre.readthedocs.io)  Please refer to [this section](@ref cs_ug_cdo_hho_base_amg_boomer) for more details on the way to set the main ingredients.
+`"boomer_w"` or `"bamg_w"` | Switch to a W-cycle and the BoomerAMG algorithm from the [HYPRE library](https://hypre.readthedocs.io). Please refer to [this section](@ref cs_ug_cdo_hho_base_amg_boomer) for more details on the way to set the main ingredients.
+`"gamg"` or `"gamg_v"` | Switch to a V-cycle and the GAMG algorithm from the [PETSc](https://petsc.org) library. iGAMG means "Geometric Algebraic multigrid. Please refer to [this section](@ref cs_ug_cdo_hho_base_amggamg) for more details on the way to set the main ingredients.
+`"gamg_w"` | Switch to a W-cycle and the GAMG algorithm from the [PETSc](https://petsc.org) library. GAMG means "Geometric Algebraic multigrid. Please refer to [this section](@ref cs_ug_cdo_hho_base_amg_gamg) for more details on the way to set the main ingredients.
+
+
+#### In-house multigrids {#cs_ug_cdo_hho_base_amg_inhouse}
+
+The in-house multigrid algorithms can be easily tuned thanks to the function
 \ref cs_param_sles_amg_inhouse More advanced settings can also be added using
 the function \ref cs_param_sles_amg_inhouse_advanced
+
+\snippet cs_user_parameters-linear_solvers.c sles_kamg_momentum
+
+In the case of an advanced settings, it is possible to keep the default
+settings associated to a parameter using the value \ref CS_CDO_KEEP_DEFAULT
+
+It is also possible to access directly the structures and set the
+parameters. Here is an example of a such usage:
+
+\snippet cs_user_parameters-linear_solvers.c sles_mgp_1
+
+or
+
+\snippet cs_user_parameters-linear_solvers.c sles_mgp_2
+
+In order to get the best efficiency in case of HPC computations, parallel grid
+merging can be optimized as follows:
+
+\snippet cs_user_parameters-linear_solvers.c sles_mg_parall
+
+
+#### BoomerAMG {#cs_ug_cdo_hho_base_amg_boomer}
+
+The main ingredients of the BoomerAMG algorithm are defined thanks to the
+functions \ref cs_param_sles_boomeramg and \ref cs_param_sles_boomeramg_advanced
+for additional parameters.
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_boomer
+
+We strongly invite users to read the HYPRE documentation and especially the
+part dedicated to BoomerAMG to understand the different choices
+[BoomerAMG documentation(https://hypre.readthedocs.io/en/latest/solvers-boomeramg.html)
+
+HYPRE setting functions can be called thanks to a lower-level API (relying on a
+setup hook function). Here is an example of a such usage
+
+\snippet cs_user_parameters-linear_solvers.c sles_hypre_hook_1
+
+#### GAMG {#cs_ug_cdo_hho_base_amg_gamg}
+
+Up to now, the advanced settings of GAMG is possible inside \ref cs_user_linear_solvers
+Here is an example of a such usage
+
+\snippet cs_user_parameters-linear_solvers.c sles_petsc_gamg_1
+
+
+### Sparse direct solver: MUMPS {#cs_ug_cdo_hho_base_mumps}
+
+For the hardest to solve linear systems or in order to check a numerical
+scheme, it may be useful to solve the linear systems with a direct solver. In
+code_saturne, this is possible using the MUMPS library.
 
 
 

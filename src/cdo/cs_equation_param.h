@@ -851,7 +851,6 @@ typedef struct {
  * \var CS_EQKEY_AMG_TYPE
  * Specify which type of algebraic multigrid (AMG) to choose.
  * Available choices are:
- * - "none" --> (default) No predefined AMG solver
  * - "boomer"/"boomer_v"/"bamg" --> Boomer AMG V-cycle multigrid. The HYPRE
                                     library is needed in this case during the
                                     installation process.
@@ -967,71 +966,41 @@ typedef struct {
  * reconstruction of potential-like degrees of freedom and needs a correct
  * computation of the cell barycenter
  *
- * \var CS_EQKEY_SOLVER (deprecated variant)
+ * \var CS_EQKEY_ITSOL
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER instead)
  * \var CS_EQKEY_SOLVER
- * Specify the iterative solver for solving the linear system related to an
- * equation. Avalaible choices are:\n
- * - "amg"           --> Algebraic MultiGrid iterative solver.
- *                       Good choice for a scalable solver related to symmetric
- *                       positive definite system.
- * - "jacobi","diag"
- *    or "diagonal"  --> Jacobi algorithm: simpliest iterative solver
- * - "gauss_seidel"
- *    or "gs"        --> Gauss-Seidel algorithm
- * - "cg"            --> conjuguate gradient algorithm
- * - "cr3"           --> a 3-layer conjugate residual solver (when "cs" is
- *                       chosen as the solver family)
- * - "fcg"           --> flexible version of the conjuguate gradient
- *                       algorithm used when the preconditioner can change
- *                       iteration by iteration
- * - "bicgs",        --> stabilized Bi-CG algorithm (for non-symmetric linear
- *   "bicgstab"          systems).
- * - "bicgstab2"     --> variant of the stabilized Bi-CG algorithm (for
- *                       non-symmetric linear systems)
- * - "gcr"           --> robust and flexible iterative solver. Not the best
- *                       choice if the system is easy to solve
- * - "gmres"         --> robust iterative solver. Not the best choice if the
- *                       system is easy to solve
- * - "fgmres"        --> Flexible gmres (only with PETSc installation up to
- *                       now). An evolutive preconditioner can be used with
- *                       this solver. This is a very robust iterative solver.
- *                       Not the best choice if the system is easy to solve
- * - "minres"        --> Solver of choice for symmetric indefinite systems
- * - "mumps"         --> Direct solver (MUMPS or PETSc)
- *                       By default, it performs a LU factorization on general
- *                       matrices. More options are available using the function
- *                       \ref cs_param_sles_mumps and the function
- *                       \ref cs_param_sles_mumps_advanced
- * - "sym_gauss_seidel" or "sgs" --> Symmetric Gauss-Seidel algorithm
- * - "user"          --> User-defined iterative solver (rely on the function
- *                       cs_user_sles_it_solver())
- * - "none"          --> No solver.
+ * Specify the solver for the resolution of the linear system related to an
+ * equation. Please refer to the section \ref cs_ug_cdo_hho_base_solver of the
+ * user guide for more details
  *
- * \var CS_EQKEY_ITSOL_ATOL (deprecated variant)
+ * \var CS_EQKEY_ITSOL_ATOL
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER_ATOL instead)
  * \var CS_EQKEY_SOLVER_ATOL
  * Absolute tolerance factor for stopping the iterative process during the
  * iterative resolution of a linear system related to an equation. Most
  * iterative solver are not using this tolerance (the relative tolerance is
- * always used). PETSc solvers use this information for instance.Please refer
+ * always used). PETSc solvers use this information for instance. Please refer
  * to \ref CS_EQKEY_SOLVER_RTOL\n
  * - Example: "1e-14"
  *
- * \var CS_EQKEY_ITSOL_DTOL (deprecated variant)
+ * \var CS_EQKEY_ITSOL_DTOL
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER_DTOL instead)
  * \var CS_EQKEY_SOLVER_DTOL
  * Divergence tolerance factor for stopping the iterative process during the
  * iterative resolution of a linear system related to an equation. Most
  * iterative solver are not using this tolerance (the relative tolerance is
  * always used). PETSc solvers use this information for instance. Please refer
  * to \ref CS_EQKEY_SOLVER_RTOL\n
-
  * - Example: "1e3"
  *
- * \var CS_EQKEY_ITSOL_MAX_ITER (deprecated variant)
+ * \var CS_EQKEY_ITSOL_MAX_ITER
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER_MAX_ITER instead)
  * \var CS_EQKEY_SOLVER_MAX_ITER
  * Maximum number of iterations for solving the linear system
  * - Example: "2000"
  *
- * \var CS_EQKEY_ITSOL_RESNORM_TYPE (deprecated variant)
+ * \var CS_EQKEY_ITSOL_RESNORM_TYPE
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER_RESNORM_TYPE instead)
  * \var CS_EQKEY_SOLVER_RESNORM_TYPE
  * Normalized or not the residual before testing if one continues iterating
  * for solving the linear system. This normalization is performed before
@@ -1045,7 +1014,8 @@ typedef struct {
  * "weighted_rhs" or "weighted"
  * "filtered_rhs" or "filtered_rhs"
  *
- * \var CS_EQKEY_ITSOL_RESTART (deprecated variant)
+ * \var CS_EQKEY_ITSOL_RESTART
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER_RESTART instead)
  * \var CS_EQKEY_SOLVER_RESTART
  * Maximum number of iterations before restarting a Krylov solver
  * Only useful with GMRES, flexible GMRES or GCR solvers.
@@ -1053,50 +1023,28 @@ typedef struct {
  * buffer of double with a size equal to restart*sizeof(solution array)
  * - Example: "20"
  *
- * \var CS_EQKEY_ITSOL_RTOL (deprecated variant)
- * \var CS_EQKEY_ITSOL_EPS (deprecated)
+ * \var CS_EQKEY_ITSOL_RTOL
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER_RTOL instead)
+ * \var CS_EQKEY_ITSOL_EPS
+ * --> deprecated key (use \ref CS_EQKEY_SOLVER_RTOL instead)
  * \var CS_EQKEY_SOLVER_RTOL
  * Relative tolerance factor for stopping the iterative process during the
  * iterative resolution of a linear system related to an equation.\n
  * - Example: "1e-10"
  *
  * \var CS_EQKEY_PRECOND
- * Specify the preconditioner associated to an iterative solver. Be careful
- * some options are only available with a given solver class. Be sure that your
- * installation has been installed with the appropriate library.\n
- * Available choices are:
- * - "none": no preconditioner is used
- * - "jacobi" or "diag": diagonal preconditoner
- * - "block_jacobi"/"bjacobi": Block Jacobi with ILU(0) in each block. A block
- *                             is the matrix associated to a rank. (Only with
- *                             PETSc)
- * - "bjacobi_sgs"/"bjacobi_ssor": Block Jacobi with Symm. Gauss-Seidel in each
- *                             block. A block is the matrix associated to a
- *                             rank. (Only with PETSc)
- * - "poly1": Neumann polynomial of order 1 (only with code_saturne)
- * - "poly2": Neumann polynomial of order 2 (only with code_saturne)
- * - "ssor": symmetric successive over-relaxation (only with PETSC)
- * - "ilu0": incomplete LU factorization (only with PETSc)
- * - "icc0": incomplete Cholesky factorization (for symmetric matrices and
- *           only with PETSc)
- * - "lu": LU factorization (only with PETSc). It may use MUMPS if PETSc is
- *         built with MUMPS
- * - "amg": algebraic multigrid technique (see \ref CS_EQKEY_AMG_TYPE for
-            additional settings)
- * - "amg_block"/"block_amg: algebraic multigrid by block (useful for
- *                vector-valued equations). By default, a diagonal block
- *                preconditioning is used if nothing else is set.
-
- * - "mumps": Direct solver (only MUMPS)
- *            By default, it performs a LU factorization on general matrices.
- *            More options are available using the functions
- *            \ref cs_param_sles_mumps and \ref cs_param_sles_mumps_advanced
+ * Specify the preconditioner associated to an iterative solver. Please refer
+ * to the section \ref cs_ug_cdo_hho_base_precond of the user guide for more
+ * details. Be careful since some options are only available with a given
+ * family of solvers. If this is the case, be sure that your installation has
+ * been installed with the appropriate library.
  *
  * \var CS_EQKEY_PRECOND_BLOCK_TYPE
- * Specify the type of block preconditioner associated to a preconditioner.
- * When "full" is specified. That means that the smallest possible blocks are
- * considered. Be careful: Most of these options are available only with
- * PETSc/HYPRE.\n
+ * Specify the type of block preconditioner associated to a
+ * preconditioner. Useful for a vector-valued equation for instance, where each
+ * component can be associated to a block.  Warning: Most of these options are
+ * available only with PETSc/HYPRE.\n
+ *
  * Available choices are:
  * - "none": no block preconditioner (default choice)
  * - "diag": diagonal (or additive) block preconditoner
