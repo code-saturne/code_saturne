@@ -157,6 +157,16 @@ void
 cs_at_source_term_for_inlet(cs_real_3_t   st_exp[]);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief  Prepare for the cressman interpolation of the variables
+ *
+ * \param[in]   the_time          current time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_summon_cressman(cs_real_t the_time);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Compute the vaporization source term
   * \f$ \Gamma_V \left(\alpha, p\right) = m^+ + m^- \f$ using the
   * Merkle model:

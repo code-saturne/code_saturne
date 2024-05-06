@@ -267,7 +267,14 @@ static cs_atmo_imbrication_t _atmo_imbrication = {
   .cressman_eps = false,
   .cressman_theta = false,
   .vertical_influence_radius = 100.0,
-  .horizontal_influence_radius = 8500.0
+  .horizontal_influence_radius = 8500.0,
+  .id_u     = -1,
+  .id_v     = -1,
+  .id_qw    = -1,
+  .id_nc    = -1,
+  .id_tke   = -1,
+  .id_eps   = -1,
+  .id_theta = -1
 };
 
 /*============================================================================
@@ -433,7 +440,14 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
                                    bool      **cressman_eps,
                                    bool      **cressman_theta,
                                    cs_real_t **vertical_influence_radius,
-                                   cs_real_t **horizontal_influence_radius);
+                                   cs_real_t **horizontal_influence_radius,
+                                   int       **id_u,
+                                   int       **id_v,
+                                   int       **id_qw,
+                                   int       **id_nc,
+                                   int       **id_tke,
+                                   int       **id_eps,
+                                   int       **id_theta);
 
 /*============================================================================
  * Private function definitions
@@ -1972,10 +1986,18 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
                                    bool      **cressman_eps,
                                    bool      **cressman_theta,
                                    cs_real_t **vertical_influence_radius,
-                                   cs_real_t **horizontal_influence_radius)
+                                   cs_real_t **horizontal_influence_radius,
+                                   int       **id_u,
+                                   int       **id_v,
+                                   int       **id_qw,
+                                   int       **id_nc,
+                                   int       **id_tke,
+                                   int       **id_eps,
+                                   int       **id_theta)
 {
   *imbrication_flag = &(_atmo_imbrication.imbrication_flag);
   *imbrication_verbose = &(_atmo_imbrication.imbrication_verbose);
+
   *cressman_u = &(_atmo_imbrication.cressman_u);
   *cressman_v = &(_atmo_imbrication.cressman_v);
   *cressman_qw = &(_atmo_imbrication.cressman_qw);
@@ -1983,8 +2005,17 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
   *cressman_tke = &(_atmo_imbrication.cressman_tke);
   *cressman_eps = &(_atmo_imbrication.cressman_eps);
   *cressman_theta = &(_atmo_imbrication.cressman_theta);
+
   *vertical_influence_radius = &(_atmo_imbrication.vertical_influence_radius);
   *horizontal_influence_radius = &(_atmo_imbrication.horizontal_influence_radius);
+
+  *id_u     = &(_atmo_imbrication.id_u);
+  *id_v     = &(_atmo_imbrication.id_v);
+  *id_qw    = &(_atmo_imbrication.id_qw);
+  *id_nc    = &(_atmo_imbrication.id_nc);
+  *id_tke   = &(_atmo_imbrication.id_tke);
+  *id_eps   = &(_atmo_imbrication.id_eps);
+  *id_theta = &(_atmo_imbrication.id_theta);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

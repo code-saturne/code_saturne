@@ -485,6 +485,15 @@ typedef struct {
   cs_real_t vertical_influence_radius;
   cs_real_t horizontal_influence_radius;
 
+  /*! additional variables */
+  int id_u;
+  int id_v;
+  int id_qw;
+  int id_nc;
+  int id_tke;
+  int id_eps;
+  int id_theta;
+
 } cs_atmo_imbrication_t;
 
 /*============================================================================

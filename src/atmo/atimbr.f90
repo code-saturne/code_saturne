@@ -145,20 +145,21 @@ double precision, dimension(:,:,:), allocatable :: coordinates_th
 double precision, dimension(:,:,:), allocatable :: influence_param_th
 double precision, dimension(:,:,:), allocatable :: coordinates_dyn
 double precision, dimension(:,:,:), allocatable :: influence_param_dyn
-integer id_u
-integer id_v
-integer id_tke
-integer id_eps
-integer id_theta
-integer id_qw
-integer id_nc
+integer(c_int), pointer ::  id_u
+integer(c_int), pointer ::  id_v
+integer(c_int), pointer ::  id_qw
+integer(c_int), pointer ::  id_nc
+integer(c_int), pointer ::  id_tke
+integer(c_int), pointer ::  id_eps
+integer(c_int), pointer ::  id_theta
 
 interface
 
   subroutine cs_f_atmo_get_pointers_imbrication(p_imbrication_flag,       &
     p_imbrication_verbose, p_cressman_u, p_cressman_v, p_cressman_qw,     &
     p_cressman_nc, p_cressman_tke, p_cressman_eps, p_cressman_theta,      &
-    p_vertical_influence_radius, p_horizontal_influence_radius)           &
+    p_vertical_influence_radius, p_horizontal_influence_radius,           &
+    p_id_u, p_id_v, p_id_nc, p_id_qw, p_id_tke, p_id_eps, p_id_theta)     &
     bind(C, name='cs_f_atmo_get_pointers_imbrication')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -167,6 +168,8 @@ interface
       type(c_ptr), intent(out) :: p_horizontal_influence_radius, p_cressman_v
       type(c_ptr), intent(out) :: p_cressman_nc, p_cressman_tke, p_cressman_eps
       type(c_ptr), intent(out) :: p_vertical_influence_radius, p_cressman_theta
+      type(c_ptr), intent(out) :: p_id_u, p_id_v, p_id_nc, p_id_qw, p_id_tke
+      type(c_ptr), intent(out) :: p_id_eps, p_id_theta
     end subroutine cs_f_atmo_get_pointers_imbrication
 
 end interface
@@ -189,14 +192,17 @@ subroutine atmo_init_imbrication()
   type(c_ptr) :: c_horizontal_influence_radius, c_cressman_v
   type(c_ptr) :: c_cressman_nc, c_cressman_tke, c_cressman_eps
   type(c_ptr) :: c_vertical_influence_radius, c_cressman_theta
+  type(c_ptr) :: c_id_u, c_id_v, c_id_qw, c_id_nc, c_id_tke, c_id_eps, c_id_theta
 
   call cs_f_atmo_get_pointers_imbrication(c_imbrication_flag,                &
        c_imbrication_verbose, c_cressman_u, c_cressman_v, c_cressman_qw,     &
        c_cressman_nc, c_cressman_tke, c_cressman_eps, c_cressman_theta,      &
-       c_vertical_influence_radius, c_horizontal_influence_radius)
+       c_vertical_influence_radius, c_horizontal_influence_radius,           &
+       c_id_u, c_id_v, c_id_qw,c_id_nc, c_id_tke, c_id_eps, c_id_theta)
 
   call c_f_pointer(c_imbrication_flag, imbrication_flag)
   call c_f_pointer(c_imbrication_verbose, imbrication_verbose)
+
   call c_f_pointer(c_cressman_u, cressman_u)
   call c_f_pointer(c_cressman_v, cressman_v)
   call c_f_pointer(c_cressman_qw, cressman_qw)
@@ -204,8 +210,17 @@ subroutine atmo_init_imbrication()
   call c_f_pointer(c_cressman_tke, cressman_tke)
   call c_f_pointer(c_cressman_eps, cressman_eps)
   call c_f_pointer(c_cressman_theta, cressman_theta)
+
   call c_f_pointer(c_vertical_influence_radius, vertical_influence_radius)
   call c_f_pointer(c_horizontal_influence_radius, horizontal_influence_radius)
+
+  call c_f_pointer(c_id_u, id_u)
+  call c_f_pointer(c_id_v, id_v)
+  call c_f_pointer(c_id_qw, id_qw)
+  call c_f_pointer(c_id_nc, id_nc)
+  call c_f_pointer(c_id_tke, id_tke)
+  call c_f_pointer(c_id_eps, id_eps)
+  call c_f_pointer(c_id_theta, id_theta)
 
 end subroutine atmo_init_imbrication
 
@@ -1874,25 +1889,29 @@ end subroutine activate_imbrication
 !> \param[in]   the_time        current time
 !-------------------------------------------------------------------------------
 
-subroutine summon_cressman(the_time)
+subroutine summon_cressman(the_time) &
+  bind(C, name='cs_summon_cressman')
+  use, intrinsic :: iso_c_binding
+  implicit none
 
-use, intrinsic :: iso_c_binding
-implicit none
+  procedure() :: mestcr, mesmap
 
-procedure() :: mestcr, mesmap
+  ! Arguments
+  real(c_double), value :: the_time
 
-double precision the_time
-logical first_call
-data first_call /.true./
-save first_call
-integer lb1, ub1
-integer lb2, ub2
-integer nbmes
-integer i,j
-integer, dimension(:,:), allocatable :: ones
+  ! Local variables
 
-if (first_call) then
-  if (cressman_u) then
+  logical first_call
+  data first_call /.true./
+  save first_call
+  integer lb1, ub1
+  integer lb2, ub2
+  integer nbmes
+  integer i,j
+  integer, dimension(:,:), allocatable :: ones
+
+  if (first_call) then
+    if (cressman_u) then
     call mestcr("u"//c_null_char, 1,0, id_u)
   endif
   if (cressman_v) then
