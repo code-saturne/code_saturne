@@ -2799,7 +2799,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 #if defined(HAVE_CUDA)
 
   if (accel) {
-
     cs_gradient_scalar_lsq_cuda(m,
                                 fvq,
                                 halo_type,
@@ -2813,7 +2812,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                                 grad);
 
     return;
-
   }
 
 #endif
@@ -3811,6 +3809,32 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     b_poro_duq = &_f_ext;
   }
 
+  bool warped_correction = (  cs_glob_mesh_quantities_flag
+                            & CS_BAD_CELLS_WARPED_CORRECTION) ? true : false;
+
+#if defined(HAVE_CUDA)
+  bool accel = (cs_get_device_id() > -1 && hyd_p_flag == 0) ? true : false;
+
+  if (accel) {
+    const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
+
+    cs_gradient_strided_gg_r_cuda(m,
+                                  madj,
+                                  fvq,
+                                  CS_HALO_EXTENDED,
+                                  inc,
+                                  cs_glob_porous_model,
+                                  warped_correction,
+                                  (const cs_real_t (*)[1])coefap,
+                                  (const cs_real_t (*)[1][1])coefbp,
+                                  (const cs_real_t (*)[1])c_var,
+                                  c_weight,
+                                  (const cs_real_t (*)[1][3])r_grad,
+                                  (cs_real_t (*)[1][3])grad);
+    return;
+  }
+#endif
+
   /* Initialize gradient */
   /*---------------------*/
 
@@ -4093,16 +4117,17 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     grad[c_id][1] *= dvol;
     grad[c_id][2] *= dvol;
 
-    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
-      cs_real_3_t gradpa;
+    if (warped_correction) {
+      cs_real_t gradpa[3];
       for (cs_lnum_t i = 0; i < 3; i++) {
         gradpa[i] = grad[c_id][i];
         grad[c_id][i] = 0.;
       }
 
-      for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++)
           grad[c_id][i] += corr_grad_lin[c_id][i][j] * gradpa[j];
+      }
     }
   }
 
@@ -7047,7 +7072,6 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
                                  cocg,
                                  grad);
 
-    _sync_strided_gradient_halo<stride>(m, halo_type, grad);
     return;
   }
 
@@ -8647,8 +8671,14 @@ _gradient_scalar(const char                    *var_name,
   case CS_GRADIENT_GREEN_LSQ:
     {
       cs_real_3_t  *restrict r_grad;
-      if (gradient_type == CS_GRADIENT_GREEN_LSQ)
-        CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
+        cs_alloc_mode_t amode = CS_ALLOC_HOST;
+#if defined(HAVE_CUDA)
+        if (cs_get_device_id() > -1 && hyd_p_flag == 0)
+          amode = CS_ALLOC_DEVICE;
+#endif
+        CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_3_t, amode);
+      }
       else
         r_grad = grad;
 
@@ -8942,46 +8972,20 @@ _gradient_vector(const char                     *var_name,
     break;
 
   case CS_GRADIENT_LSQ:
-
-    if (_use_legacy_strided_lsq_gradient) {
-      _lsq_vector_gradient(mesh,
-                           madj,
-                           fvq,
-                           halo_type,
-                           inc,
-                           bc_coeffs_v,
-                           var,
-                           c_weight,
-                           grad);
-    }
-    else {
-      lsq_strided_gradient_t<3> *gradient_f;
-      if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
-        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER>;
-      else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
-        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC>;
-      else
-        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
-      gradient_f(mesh,
-                 madj,
-                 fvq,
-                 halo_type,
-                 inc,
-                 n_r_sweeps,
-                 epsilon,
-                 bc_coeffs_v,
-                 var,
-                 c_weight,
-                 _get_c_iter_try(var_name),
-                 grad);
-    }
-
-    break;
-
+    [[fallthrough]];
   case CS_GRADIENT_GREEN_LSQ:
     {
-      cs_real_33_t *restrict r_gradv;
-      CS_MALLOC_HD(r_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+      cs_real_33_t *restrict r_grad;
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
+        cs_alloc_mode_t amode = CS_ALLOC_HOST;
+#if defined(HAVE_CUDA)
+        if (cs_get_device_id() > -1)
+          amode = CS_ALLOC_DEVICE;
+#endif
+        CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_33_t, amode);
+      }
+      else
+        r_grad = grad;
 
       if (_use_legacy_strided_lsq_gradient) {
         _lsq_vector_gradient(mesh,
@@ -8992,7 +8996,7 @@ _gradient_vector(const char                     *var_name,
                              bc_coeffs_v,
                              var,
                              c_weight,
-                             r_gradv);
+                             r_grad);
       }
       else {
         lsq_strided_gradient_t<3> *gradient_f;
@@ -9013,21 +9017,23 @@ _gradient_vector(const char                     *var_name,
                    var,
                    c_weight,
                    _get_c_iter_try(var_name),
-                   r_gradv);
+                   r_grad);
       }
 
-      _reconstruct_strided_gradient<3>(mesh,
-                                       madj,
-                                       fvq,
-                                       halo_type,
-                                       inc,
-                                       bc_coeffs_v,
-                                       var,
-                                       c_weight,
-                                       r_gradv,
-                                       grad);
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
+        _reconstruct_strided_gradient<3>(mesh,
+                                         madj,
+                                         fvq,
+                                         halo_type,
+                                         inc,
+                                         bc_coeffs_v,
+                                         var,
+                                         c_weight,
+                                         r_grad,
+                                         grad);
 
-      CS_FREE_HD(r_gradv);
+        CS_FREE_HD(r_grad);
+      }
     }
     break;
 
@@ -9171,47 +9177,20 @@ _gradient_tensor(const char                 *var_name,
     break;
 
   case CS_GRADIENT_LSQ:
-
-    if (_use_legacy_strided_lsq_gradient) {
-      _lsq_tensor_gradient(mesh,
-                           madj,
-                           fvq,
-                           halo_type,
-                           inc,
-                           bc_coeffs_ts,
-                           var,
-                           NULL, /* c_weight */
-                           grad);
-    }
-    else {
-      lsq_strided_gradient_t<6> *gradient_f;
-      if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER)
-        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER>;
-      else if (cs_glob_e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC)
-        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_SCATTER_ATOMIC>;
-      else
-        gradient_f = _lsq_strided_gradient<CS_E2N_SUM_GATHER>;
-      gradient_f(mesh,
-                 madj,
-                 fvq,
-                 halo_type,
-                 inc,
-                 n_r_sweeps,
-                 epsilon,
-                 bc_coeffs_ts,
-                 var,
-                 NULL, /* c_weight */
-                 _get_c_iter_try(var_name),
-                 grad);
-    }
-
-    break;
-
+    [[fallthrough]];
   case CS_GRADIENT_GREEN_LSQ:
     {
       cs_real_63_t *restrict r_grad;
-      CS_MALLOC_HD(r_grad, mesh->n_cells_with_ghosts, cs_real_63_t,
-                   cs_alloc_mode);
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
+        cs_alloc_mode_t amode = CS_ALLOC_HOST;
+#if defined(HAVE_CUDA)
+        if (cs_get_device_id() > -1)
+          amode = CS_ALLOC_DEVICE;
+#endif
+        CS_MALLOC_HD(r_grad, mesh->n_cells_with_ghosts, cs_real_63_t, amode);
+      }
+      else
+        r_grad = grad;
 
       if (_use_legacy_strided_lsq_gradient) {
         _lsq_tensor_gradient(mesh,
@@ -9246,18 +9225,20 @@ _gradient_tensor(const char                 *var_name,
                    r_grad);
       }
 
-      _reconstruct_strided_gradient<6>(mesh,
-                                       madj,
-                                       fvq,
-                                       halo_type,
-                                       inc,
-                                       bc_coeffs_ts,
-                                       var,
-                                       NULL, /* c_weight */
-                                       r_grad,
-                                       grad);
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
+        _reconstruct_strided_gradient<6>(mesh,
+                                         madj,
+                                         fvq,
+                                         halo_type,
+                                         inc,
+                                         bc_coeffs_ts,
+                                         var,
+                                         NULL, /* c_weight */
+                                         r_grad,
+                                         grad);
 
-      CS_FREE_HD(r_grad);
+        CS_FREE_HD(r_grad);
+      }
     }
     break;
 

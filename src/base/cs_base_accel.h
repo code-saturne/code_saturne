@@ -685,6 +685,41 @@ cs_sync_d2h(void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Synchronize data from device to host, only if needed.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * No operation occurs if the provided pointer was not allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_d2h_if_needed(void  *ptr);
+
+#else
+
+static inline void
+cs_sync_d2h_if_needed(void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Prefetch data from host to device.
  *
  * This function should only be used on arrays using shared host and device

@@ -1236,9 +1236,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   int device_id;
   cudaGetDevice(&device_id);
 
-  cudaStream_t stream, stream1;
-  cudaStreamCreate(&stream1);
-  cudaStreamCreate(&stream);
+  cudaStream_t stream = cs_cuda_get_stream(0);
+  cudaStream_t stream1 = cs_cuda_get_stream(1);
 
   cs_real_4_t *rhsv;
   CS_CUDA_CHECK(cudaMalloc(&rhsv, n_cells_ext * sizeof(cs_real_4_t)));
@@ -1294,7 +1293,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   const cs_real_t *restrict weight
     = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->weight);
 
-  cudaStreamDestroy(stream1);
   cudaStreamSynchronize(0);
 
   _init_rhsv<<<gridsize_ext, blocksize, 0, stream>>>
@@ -1421,8 +1419,9 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   _compute_gradient_lsq_s<<<gridsize, blocksize, 0, stream>>>
     (n_cells, grad_d, cocg, rhsv);
 
+  cs_sync_scalar_gradient_halo_d(m, halo_type, grad_d);
+
   cudaStreamSynchronize(stream);
-  cudaStreamDestroy(stream);
 
   /* Sync to host */
   if (_grad_d != NULL) {
@@ -1430,7 +1429,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
-    cs_sync_d2h(grad);
+    cs_sync_d2h_if_needed(grad);
 
   if (_grad_d != NULL)
     CS_CUDA_CHECK(cudaFree(_grad_d));
@@ -1443,15 +1442,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     CS_CUDA_CHECK(cudaFree(_coefb_d));
 
   CS_CUDA_CHECK(cudaFree(rhsv));
-
-  /* Synchronize halos (TODO move this to device) */
-
-  if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, (cs_real_t *)grad, 3);
-    if (m->have_rotation_perio)
-      cs_halo_perio_sync_var_vect(m->halo, CS_HALO_STANDARD, (cs_real_t *)grad,
-                                  3);
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1675,11 +1665,11 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
 
   /* Sync to host */
   if (_grad_d != NULL) {
-    size_t size = n_cells * sizeof(cs_real_t) * stride * 3;
+    size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
-    cs_sync_d2h(grad);
+    cs_sync_d2h_if_needed(grad);
 
   if (cs_glob_timer_kernels_flag > 0) {
     CS_CUDA_CHECK(cudaEventRecord(e_stop, stream));
@@ -1847,7 +1837,7 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
   cs_sync_or_copy_h2d(c_weight, n_cells_ext, device_id, stream,
                       &c_weight_d, &_c_weight_d);
 
-  grad_t *r_grad_d = (grad_t *)cs_get_device_ptr((void *)r_grad);
+  grad_t *r_grad_d = (grad_t *)cs_get_device_ptr_const((const void *)r_grad);
 
   const cs_lnum_2_t *restrict i_face_cells = NULL;
   const cs_lnum_t *restrict b_face_cells = NULL;
@@ -1979,7 +1969,7 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
-    cs_sync_d2h(grad);
+    cs_sync_d2h_if_needed(grad);
 
   if (cs_glob_timer_kernels_flag > 0) {
     CS_CUDA_CHECK(cudaEventRecord(e_stop, stream));
