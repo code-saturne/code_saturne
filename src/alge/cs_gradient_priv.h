@@ -79,6 +79,34 @@ typedef cs_real_t  cs_cocg_33_t[3][3];
  *   grad           --> gradient of a variable
  *----------------------------------------------------------------------------*/
 
+inline static void
+cs_sync_scalar_gradient_halo_d(const cs_mesh_t         *m,
+                               cs_halo_type_t           halo_type,
+                               cs_real_t (*restrict grad)[3])
+{
+  if (m->halo != NULL) {
+    cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, 3, (cs_real_t *)grad);
+
+    if (m->have_rotation_perio) {
+      cs_sync_d2h((void  *)grad);
+      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
+      cs_sync_h2d((void  *)grad);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize strided gradient ghost cell values on accelerator device.
+ *
+ * template parameters:
+ *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   halo_type      <-- halo type (extended or not)
+ *   grad           --> gradient of a variable
+ *----------------------------------------------------------------------------*/
+
 template <cs_lnum_t stride>
 static void
 cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
