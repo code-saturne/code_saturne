@@ -82,7 +82,6 @@ libcscomb_a_SOURCES = \
 cs_coal.c \
 cs_coal_boundary_conditions.c \
 cs_coal_bt2h.f90 \
-cs_coal_fp2st.f90 \
 cs_coal_ht_convert.c \
 cs_coal_masstransfer.f90 \
 cs_coal_noxst.c \

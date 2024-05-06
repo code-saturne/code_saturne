@@ -49,6 +49,7 @@
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
+#include "cs_gradient.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -56,6 +57,7 @@
 #include "cs_physical_model.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -98,6 +100,255 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute variance source terms for pulverized coal flame.
+ *
+ * Production and dissipation source term for variance
+ * (explicit and implicit balance).
+ *
+ * \param[in]      fld_scal  pointer to scalar field
+ * \param[in,out]  smbrs     explicit second member
+ * \param[in,out]  rovsdt    implicit diagonal part
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_coal_fp2st(const cs_field_t  *fld_scal,
+            cs_real_t          smbrs[],
+            cs_real_t          rovsdt[])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  const cs_coal_model_t *cm = cs_glob_coal_model;
+
+  /* Initialization
+     -------------- */
+
+  const int krvarfl = cs_field_key_id("variance_dissipation");
+  const cs_real_t rvarfl = cs_field_get_key_double(fld_scal, krvarfl);
+
+  cs_real_t *f1f2;
+  BFT_MALLOC(f1f2, n_cells_ext, cs_real_t);
+  cs_array_real_fill_zero(n_cells, f1f2);
+
+  // The variance is not associated to a scalar but to f1+f2
+
+  const cs_real_t *cvara_scal = fld_scal->val_pre;
+
+  // Physical quantities
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *visct = CS_F_(mu_t)->val;
+
+  const cs_real_t *cpro_rom1 = cs_field_by_id(cm->irom1)->val;
+
+  const cs_real_t *cvara_k = NULL;
+  const cs_real_t *cvara_ep = NULL;
+  const cs_real_t *cvara_omg = NULL;
+  const cs_real_6_t *cvara_rij = NULL;
+
+  if (   cs_glob_turb_model->itytur == 2
+      || cs_glob_turb_model->itytur == 5) {
+    cvara_k = CS_F_(k)->val_pre;
+    cvara_ep = CS_F_(eps)->val_pre;
+  }
+  else if (cs_glob_turb_model->itytur == 3) {
+    cvara_rij = (const cs_real_6_t *)(CS_F_(k)->val_pre);
+    cvara_ep = CS_F_(eps)->val_pre;
+  }
+  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+    cvara_k = CS_F_(k)->val_pre;
+    cvara_omg = CS_F_(omg)->val_pre;
+  }
+
+  /* Account for production and dissipation source terms by gradients
+     ---------------------------------------------------------------- */
+
+  if (   cs_glob_turb_model->itytur == 2
+      || cs_glob_turb_model->itytur == 3
+      || cs_glob_turb_model->itytur == 5
+      || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+
+    // For lack of information on F1M+F2M, we take the same options as for F1M[0].
+
+    const cs_equation_param_t *eqp
+      = cs_field_get_equation_param_const(cs_field_by_id(cm->if1m[0]));
+
+    // Compute x1
+
+    cs_real_t *x1;
+    BFT_MALLOC(x1, n_cells_ext, cs_real_t);
+    cs_array_real_set_scalar(n_cells_ext, 1.0, x1);
+
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      const cs_real_t xmash = cm->xmash[class_id];
+      const cs_real_t *cvar_xchcl = cs_field_by_id(cm->ixch[class_id])->val;
+      const cs_real_t *cvar_xckcl = cs_field_by_id(cm->ixck[class_id])->val;
+      const cs_real_t *cvar_xnpcl = cs_field_by_id(cm->inp[class_id])->val;
+      const cs_real_t *cvar_xwtcl = NULL;
+      if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
+        cvar_xwtcl = cs_field_by_id(cm->ixwt[class_id])->val;
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        x1[c_id] -= (  cvar_xchcl[c_id]
+                     + cvar_xckcl[c_id]
+                     + cvar_xnpcl[c_id]*xmash);
+        if (cvar_xwtcl != NULL)
+          x1[c_id] -= cvar_xwtcl[c_id];
+      }
+    }
+
+    // Compute F=F1+F2
+
+    for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
+      const cs_real_t *cvar_f1m_c = cs_field_by_id(cm->if1m[coal_id])->val;
+      const cs_real_t *cvar_f2m_c = cs_field_by_id(cm->if2m[coal_id])->val;
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        f1f2[c_id] += cvar_f1m_c[c_id] + cvar_f2m_c[c_id];
+      }
+    }
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      f1f2[c_id] /= x1[c_id];
+    }
+
+    // Compute gradient of f1f2
+
+    cs_halo_type_t halo_type = CS_HALO_STANDARD;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+    cs_gradient_type_by_imrgra(eqp->imrgra,
+                               &gradient_type,
+                               &halo_type);
+
+    cs_real_3_t *grad;
+    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+    cs_gradient_scalar("f1f2",
+                       gradient_type,
+                       halo_type,
+                       1.,            /* inc */
+                       eqp->nswrgr,
+                       0,             /* iphydp */
+                       1,             /* w_stride */
+                       eqp->verbosity,
+                       (cs_gradient_limit_t)eqp->imligr,
+                       eqp->epsrgr,
+                       eqp->climgr,
+                       NULL,          /* f_ext */
+                       NULL,          /* bc_coeffs */
+                       f1f2,
+                       NULL,          /* c_weight */
+                       NULL,          /* cpl */
+                       grad);
+
+    const int ksigmas = cs_field_key_id("turbulent_schmidt");
+    cs_real_t turb_schmidt = cs_field_get_key_double(fld_scal, ksigmas);
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cs_real_t xk = 0, xe = 0;
+      if (cvara_rij != NULL) {
+        xk = 0.5 * (  cvara_rij[c_id][0]
+                    + cvara_rij[c_id][1]
+                    + cvara_rij[c_id][2]);
+        xe = cvara_ep[c_id];
+      }
+      else if (cvara_ep != NULL) {
+        xk = cvara_k[c_id];
+        xe = cvara_ep[c_id];
+      }
+      else if (cvara_omg != NULL) {
+        xk = cvara_k[c_id];
+        xe = cs_turb_cmu * xk * cvara_omg[c_id];
+      }
+
+      cs_real_t rhovst = cpro_rom1[c_id]*xe/(xk*rvarfl)*cell_f_vol[c_id];
+      rovsdt[c_id] += fmax(0, rhovst);
+      smbrs[c_id] += (  2.0 * visct[c_id] * cell_f_vol[c_id] / turb_schmidt
+                      * cs_math_3_square_norm(grad[c_id]) * x1[c_id])
+                     - rhovst * cvara_scal[c_id];
+
+    }
+
+    BFT_FREE(grad);
+    BFT_FREE(x1);
+
+  }
+
+  /* Account for source terms relative to interfacial exchanges
+     ---------------------------------------------------------- */
+
+  // 2 versions available
+  //   iold = 1 => old version
+  //   iold = 2 => new version
+
+  const int iold = 1;
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    const cs_real_t *cvar_xchcl = cs_field_by_id(cm->ixch[class_id])->val;
+    const cs_real_t *cpro_cgd1 = cs_field_by_id(cm->igmdv1[class_id])->val;
+    const cs_real_t *cpro_cgd2 = cs_field_by_id(cm->igmdv2[class_id])->val;
+
+    const cs_real_t diamdv = cm->diam20[class_id];
+
+    if (iold == 1) {
+      const cs_real_t *cvar_xnpcl = cs_field_by_id(cm->inp[class_id])->val;
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t gdev  = -crom[c_id] * (cpro_cgd1[c_id] + cpro_cgd2[c_id])
+                                      * cvar_xchcl[c_id];
+
+        if (cvar_xnpcl[c_id] > cs_coal_epsilon) {
+          cs_real_t  fsd =  1.0 - (1.0-f1f2[c_id])
+                           * exp((cvar_xchcl[c_id]*(  cpro_cgd1[c_id]
+                                                    + cpro_cgd2[c_id]))
+                                 / (  2.0 * cs_math_pi *2.77e-4 * diamdv
+                                    * cvar_xnpcl[c_id] * crom[c_id]));
+          cs_real_t fdev = 1.0;
+
+          /* Explicit ST */
+
+          if (  (fsd - f1f2[c_id]) * (2.0*fdev - fsd - f1f2[c_id])
+              > cs_coal_epsilon) {
+            smbrs[c_id] +=   cell_f_vol[c_id] * gdev
+                           * (fsd - f1f2[c_id]) * (2.0*fdev - fsd - f1f2[c_id]);
+          }
+
+        }
+      }
+    }
+    else  { /* if iold == 2 */
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t gdev  = -crom[c_id] * (cpro_cgd1[c_id] + cpro_cgd2[c_id])
+                                      * cvar_xchcl[c_id];
+
+        cs_real_t aux = gdev * cs_math_pow2(1.0 - f1f2[c_id]);
+
+        /* Implicit ST: for now implicit in simple manner */
+
+        cs_real_t rhovst = 0;
+        if (fabs(f1f2[c_id] * (1.0-f1f2[c_id])) > cs_coal_epsilon) {
+          rhovst =   aux*cvara_scal[c_id]
+                   / cs_math_pow2(f1f2[c_id] * (1-f1f2[c_id]))
+                   * cell_f_vol[c_id];
+        }
+        rovsdt[c_id] += fmax(0., rhovst);
+
+        /* Explicit ST */
+
+        smbrs[c_id] += aux*cell_f_vol[c_id] - rhovst*cvara_scal[c_id];
+      }
+    }
+  } /* Loop on classes */
+
+  // Free memory
+  BFT_FREE(f1f2);
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1032,10 +1283,7 @@ cs_coal_source_terms_scalar(int        fld_id,
     if (eqp->verbosity >= 1)
       bft_printf(_(log_st_fmt), fld_scal->name);
 
-    const int keysca = cs_field_key_id("scalar_id");
-    const int scalar_id = cs_field_get_key_int(fld_scal, keysca);
-
-    cs_coal_fp2st(scalar_id, smbrs, rovsdt);
+    _coal_fp2st(fld_scal, smbrs, rovsdt);
 
   }
 
