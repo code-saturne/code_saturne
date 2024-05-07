@@ -1005,8 +1005,10 @@ cs_get_device_ptr_const_pf(const void  *ptr)
 
   /* Prefetch if shared */
 
-  else if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED)
-    cs_prefetch_h2d(me.host_ptr, me.size);
+  else if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+    if (_ignore_prefetch == false)
+      cs_prefetch_h2d(me.host_ptr, me.size);
+  }
 
   return me.device_ptr;
 }

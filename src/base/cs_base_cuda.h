@@ -460,9 +460,7 @@ cs_sync_or_copy_h2d(const T        *val_h,
     else {
       _val_d = (const T *)cs_get_device_ptr_const((const void *)val_h);
 
-      if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
-        cudaMemPrefetchAsync(val_h, size, device_id, stream);
-      else
+      if (alloc_mode != CS_ALLOC_HOST_DEVICE_SHARED)
         cs_sync_h2d(val_h);
     }
 
