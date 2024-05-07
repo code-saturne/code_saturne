@@ -22,6 +22,14 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+endif
+
 # Main part
 
 AM_CPPFLAGS = \
@@ -67,6 +75,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_combustion_gas.h \
 cs_soot_model.h \
+cs_steady_laminar_flamelet_source_terms.h \
 cs_cogz_headers.h
 
 # Library source files
@@ -75,6 +84,7 @@ noinst_LIBRARIES = libcscogz.a
 libcscogz_a_SOURCES = \
 cs_combustion_gas.c \
 cs_soot_model.c \
+cs_steady_laminar_flamelet_source_terms.c \
 coini1.f90 \
 colecd.f90 \
 coprop.f90 \
@@ -105,7 +115,6 @@ pdfpp4.f90 \
 cs_steady_laminar_flamelet_init.f90 \
 cs_steady_laminar_flamelet_bcond.f90 \
 cs_steady_laminar_flamelet_physical_prop.f90 \
-cs_steady_laminar_flamelet_source_terms.f90 \
 cs_steady_laminar_flamelet_verify.f90 \
 cs_steady_laminar_flamelet_read_base.f90
 

@@ -112,6 +112,13 @@ interface
     real(c_double), intent(inout) :: cmax, cmid, cmin
   end subroutine max_mid_min_progvar
 
+  subroutine combustion_reconstruct_variance(iprev)  &
+    bind(C, name='cs_f_combustion_reconstruct_variance')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: iprev
+  end subroutine combustion_reconstruct_variance
+
 end interface
 
 if (ntcabs_prev .eq. ntcabs) then
@@ -1117,7 +1124,8 @@ end subroutine
 !> Calculation of reconstructed variance of mixture fraction
 !-------------------------------------------------------------------------------
 
-subroutine combustion_reconstruct_variance(iprev)
+subroutine combustion_reconstruct_variance(iprev) &
+  bind(C, name='cs_f_combustion_reconstruct_variance')
 
 !===============================================================================
 ! Module files
@@ -1143,7 +1151,7 @@ use pointe
 
 implicit none
 integer          iel
-integer          iprev
+integer(c_int) :: iprev
 
 double precision, pointer, dimension(:) :: fm, fp2m, fsqm
 

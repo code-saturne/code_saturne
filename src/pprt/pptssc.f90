@@ -111,6 +111,14 @@ integer           ivar, f_id
 
 interface
 
+  subroutine cs_steady_laminar_flamelet_source_terms(scal_id, smbrs, rovsdt) &
+    bind(C, name='cs_steady_laminar_flamelet_source_terms')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: scal_id
+    real(c_double), dimension(*) :: smbrs, rovsdt
+  end subroutine cs_steady_laminar_flamelet_source_terms
+
   subroutine cs_coal_source_terms_scalar(fld_id, smbrs, rovsdt) &
     bind(C, name='cs_coal_source_terms_scalar')
     use, intrinsic :: iso_c_binding
