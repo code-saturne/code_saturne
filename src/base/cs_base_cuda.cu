@@ -690,6 +690,7 @@ cs_base_cuda_select_default_device(void)
   cs_glob_cuda_device_id = device_id;
 
   cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+  cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE;
 
   /* Also query some device properties */
 

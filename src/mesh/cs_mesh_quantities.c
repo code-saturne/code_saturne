@@ -185,6 +185,8 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
 
+  const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
+
   const cs_lnum_t  *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -205,8 +207,7 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   if (fvq->corr_grad_lin_det == NULL)
     BFT_MALLOC(fvq->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
   if (fvq->corr_grad_lin == NULL)
-    CS_MALLOC_HD(fvq->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t,
-                 cs_alloc_mode);
+    CS_MALLOC_HD(fvq->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t, amode);
 
   cs_real_t    *restrict corr_grad_lin_det = fvq->corr_grad_lin_det;
   cs_real_33_t *restrict corr_grad_lin     = fvq->corr_grad_lin;
@@ -2622,13 +2623,15 @@ _compute_unit_normals(const cs_mesh_t       *m,
   const cs_real_3_t *i_face_normal = (const cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
 
+  const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
+
   /* If this is not an update, allocate members of the structure */
 
   if (mq->i_face_u_normal == NULL)
-    CS_MALLOC_HD(mq->i_face_u_normal, n_i_faces, cs_nreal_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->i_face_u_normal, n_i_faces, cs_nreal_3_t, amode);
 
   if (mq->b_face_u_normal == NULL)
-    CS_MALLOC_HD(mq->b_face_u_normal, n_b_faces, cs_nreal_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->b_face_u_normal, n_b_faces, cs_nreal_3_t, amode);
 
 # pragma omp parallel for  if (n_i_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_i_faces; i++) {
@@ -3076,31 +3079,33 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
   cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
   cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
+  const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
+
   /* If this is not an update, allocate members of the structure */
 
   if (mq->cell_cen == NULL)
-    CS_MALLOC_HD(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t, amode);
 
   if (mq->cell_vol == NULL)
-    CS_MALLOC_HD(mq->cell_vol, n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->cell_vol, n_cells_with_ghosts, cs_real_t, amode);
 
   if (mq->i_face_normal == NULL)
-    CS_MALLOC_HD(mq->i_face_normal, n_i_faces*3, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->i_face_normal, n_i_faces*3, cs_real_t, amode);
 
   if (mq->b_face_normal == NULL)
-    CS_MALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, amode);
 
   if (mq->i_face_cog == NULL)
     BFT_MALLOC(mq->i_face_cog, n_i_faces*3, cs_real_t);
 
   if (mq->b_face_cog == NULL)
-    CS_MALLOC_HD(mq->b_face_cog, n_b_faces*3, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->b_face_cog, n_b_faces*3, cs_real_t, amode);
 
   if (mq->i_face_surf == NULL)
     BFT_MALLOC(mq->i_face_surf, n_i_faces, cs_real_t);
 
   if (mq->b_face_surf == NULL)
-    CS_MALLOC_HD(mq->b_face_surf, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->b_face_surf, n_b_faces, cs_real_t, amode);
 
   /* Compute face centers of gravity, normals, and surfaces */
 
@@ -4466,6 +4471,8 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   cs_lnum_t  n_b_faces = m->n_b_faces;
   cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
+  const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
+
   /* Update the number of passes */
 
   _n_computations++;
@@ -4488,12 +4495,12 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   if (mq->c_disable_flag == NULL) {
     if (mq->has_disable_flag == 1) {
       cs_lnum_t n_cells_ext = n_cells_with_ghosts;
-      CS_MALLOC_HD(mq->c_disable_flag, n_cells_ext, int, cs_alloc_mode);
+      CS_MALLOC_HD(mq->c_disable_flag, n_cells_ext, int, amode);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
         mq->c_disable_flag[cell_id] = 0;
     }
     else {
-      CS_MALLOC_HD(mq->c_disable_flag, 1, int, cs_alloc_mode);
+      CS_MALLOC_HD(mq->c_disable_flag, 1, int, amode);
       mq->c_disable_flag[0] = 0;
     }
   }
@@ -4506,22 +4513,22 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
     BFT_MALLOC(mq->i_dist, n_i_faces, cs_real_t);
 
   if (mq->b_dist == NULL)
-    CS_MALLOC_HD(mq->b_dist, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->b_dist, n_b_faces, cs_real_t, amode);
 
   if (mq->weight == NULL)
-    CS_MALLOC_HD(mq->weight, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->weight, n_i_faces, cs_real_t, amode);
 
   if (mq->i_f_weight == NULL)
-    CS_MALLOC_HD(mq->i_f_weight, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->i_f_weight, n_i_faces, cs_real_t, amode);
 
   if (mq->dijpf == NULL)
     BFT_MALLOC(mq->dijpf, n_i_faces*dim, cs_real_t);
 
   if (mq->diipb == NULL)
-    CS_MALLOC_HD(mq->diipb, n_b_faces*dim, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->diipb, n_b_faces*dim, cs_real_t, amode);
 
   if (mq->dofij == NULL)
-    CS_MALLOC_HD(mq->dofij, n_i_faces*dim, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(mq->dofij, n_i_faces*dim, cs_real_t, amode);
 
   if (mq->diipf == NULL)
     BFT_MALLOC(mq->diipf, n_i_faces*dim, cs_real_t);

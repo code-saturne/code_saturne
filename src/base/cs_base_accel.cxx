@@ -88,6 +88,7 @@ static bool _ignore_prefetch = false;
 /*----------------------------------------*/
 
 cs_alloc_mode_t  cs_alloc_mode = CS_ALLOC_HOST;
+cs_alloc_mode_t  cs_alloc_mode_read_mostly = CS_ALLOC_HOST;
 
 /* Keep track of active device id using OpenMP; usually queried dynamically,
    but saving the value in this variable can be useful when debugging */
@@ -170,8 +171,10 @@ _initialize(void)
 
   _initialized = true;
 
-  if (cs_get_device_id() < 0)
+  if (cs_get_device_id() < 0) {
     cs_alloc_mode = CS_ALLOC_HOST;
+    cs_alloc_mode_read_mostly = CS_ALLOC_HOST;
+  }
 
   const char s[] = "CS_HD_IGNORE_PREFETCH";
   if (getenv(s) != NULL) {
@@ -1737,6 +1740,7 @@ cs_sycl_select_default_device(void)
     if (q.get_device().is_gpu()) {
       device_id = 0;
       cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+      cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE;
     }
   }
   catch (sycl::exception const& ex) {
@@ -1800,8 +1804,10 @@ cs_omp_target_select_default_device(void)
 
   cs_glob_omp_target_device_id = device_id;
 
-  if (device_id >= 0)
+  if (device_id >= 0) {
     cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+    cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE;
+  }
 
   /* Also detect whether MPI is device-aware,
      when this can be set dynamically. */

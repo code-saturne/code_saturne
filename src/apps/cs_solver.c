@@ -414,7 +414,7 @@ _run(void)
     cs_mesh_adjacencies_update_mesh();
 
 #if defined(HAVE_ACCEL)
-    cs_preprocess_mesh_update_device(cs_alloc_mode);
+    cs_preprocess_mesh_update_device();
 #endif
 
   }

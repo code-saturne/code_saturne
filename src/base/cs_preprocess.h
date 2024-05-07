@@ -99,15 +99,13 @@ cs_preprocess_mesh_update_fortran(void);
 /*!
  * \brief Map some mesh arrays for use on device.
  *
- * More elements may be mapped dependin on which arrays are used in
+ * More elements may be mapped depending on which arrays are used in
  * accelerated algorithms.
- *
- * \param[in]  alloc_mode  chosen allocation mode
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_preprocess_mesh_update_device(cs_alloc_mode_t  alloc_mode);
+cs_preprocess_mesh_update_device(void);
 
 /*----------------------------------------------------------------------------*/
 

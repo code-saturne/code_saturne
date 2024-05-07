@@ -142,12 +142,14 @@ BEGIN_C_DECLS
 #if defined(HAVE_ACCEL)
 
 extern cs_alloc_mode_t  cs_alloc_mode;
+extern cs_alloc_mode_t  cs_alloc_mode_read_mostly;
 
 extern int cs_mpi_device_support;
 
 #else
 
 #define cs_alloc_mode CS_ALLOC_HOST
+#define cs_alloc_mode_read_mostly CS_ALLOC_HOST
 
 #define cs_mpi_device_support 0;
 
