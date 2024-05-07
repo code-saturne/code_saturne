@@ -42,7 +42,7 @@
 #include <mkl_cblas.h>
 #include <mkl_spblas.h>
 
-#elif defined((CS_HAVE_CBLAS)
+#elif defined(CS_HAVE_CBLAS)
 #include <cblas.h>
 
 #endif
