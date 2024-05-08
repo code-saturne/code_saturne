@@ -361,8 +361,7 @@ _compute_cocg_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
                                 const cs_lnum_t   b_cells[],
                                 const cs_lnum_t   cell_b_faces_idx[],
                                 const cs_lnum_t   cell_b_faces[],
-                                const cs_real_t   b_face_normal[][3],
-                                const cs_real_t   b_face_surf[],
+                                const cs_real_t   b_face_u_normal[][3],
                                 const cs_real_t   b_dist[],
                                 const cs_real_t   diipb[][3],
                                 const cs_real_t   coefap[],
@@ -385,11 +384,10 @@ _compute_cocg_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
 
     cs_real_t unddij = 1. / b_dist[f_id];
     cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
-    cs_real_t udbfs  = 1. / b_face_surf[f_id];
     cs_real_t dddij[3];
-    dddij[0] = udbfs * b_face_normal[f_id][0] + umcbdd * diipb[f_id][0];
-    dddij[1] = udbfs * b_face_normal[f_id][1] + umcbdd * diipb[f_id][1];
-    dddij[2] = udbfs * b_face_normal[f_id][2] + umcbdd * diipb[f_id][2];
+    dddij[0] = b_face_u_normal[f_id][0] + umcbdd * diipb[f_id][0];
+    dddij[1] = b_face_u_normal[f_id][1] + umcbdd * diipb[f_id][1];
+    dddij[2] = b_face_u_normal[f_id][2] + umcbdd * diipb[f_id][2];
 
     unddij *= (coefap[f_id] * inc + (coefbp[f_id] - 1.) * rhsv[c_id][3]);
 
@@ -455,8 +453,7 @@ _compute_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
                            const cs_lnum_t   b_cells[],
                            const cs_lnum_t   cell_b_faces_idx[],
                            const cs_lnum_t   cell_b_faces[],
-                           const cs_real_t   b_face_normal[][3],
-                           const cs_real_t   b_face_surf[],
+                           const cs_real_t   b_face_u_normal[][3],
                            const cs_real_t   b_dist[],
                            const cs_real_t   diipb[][3],
                            const cs_real_t   coefap[],
@@ -478,11 +475,10 @@ _compute_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
 
     cs_real_t unddij = 1. / b_dist[f_id];
     cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
-    cs_real_t udbfs  = 1. / b_face_surf[f_id];
     cs_real_t dddij[3];
-    dddij[0] = udbfs * b_face_normal[f_id][0] + umcbdd * diipb[f_id][0];
-    dddij[1] = udbfs * b_face_normal[f_id][1] + umcbdd * diipb[f_id][1];
-    dddij[2] = udbfs * b_face_normal[f_id][2] + umcbdd * diipb[f_id][2];
+    dddij[0] = b_face_u_normal[f_id][0] + umcbdd * diipb[f_id][0];
+    dddij[1] = b_face_u_normal[f_id][1] + umcbdd * diipb[f_id][1];
+    dddij[2] = b_face_u_normal[f_id][2] + umcbdd * diipb[f_id][2];
 
     unddij *= (coefap[f_id] * inc + (coefbp[f_id] - 1.) * rhsv[c_id][3]);
 
@@ -1282,16 +1278,17 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_cen);
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->b_face_normal);
+  const cs_real_3_t *restrict b_face_u_normal
+    = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf
+                                     (fvq->b_face_u_normal);
   const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->b_face_surf);
+    = cs_get_device_ptr_const_pf(fvq->b_face_surf);
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->b_dist);
+    = cs_get_device_ptr_const_pf(fvq->b_dist);
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->diipb);
   const cs_real_t *restrict weight
-    = (const cs_real_t *restrict)cs_get_device_ptr_const_pf(fvq->weight);
+    = cs_get_device_ptr_const_pf(fvq->weight);
 
   cudaStreamSynchronize(0);
 
@@ -1328,8 +1325,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
        b_cells,
        cell_b_faces_idx,
        cell_b_faces,
-       b_face_normal,
-       b_face_surf,
+       b_face_u_normal,
        b_dist,
        diipb,
        coefa_d,
@@ -1358,8 +1354,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
          b_cells,
          cell_b_faces_idx,
          cell_b_faces,
-         b_face_normal,
-         b_face_surf,
+         b_face_u_normal,
          b_dist,
          diipb,
          coefa_d,
@@ -1379,8 +1374,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
          b_cells,
          cell_b_faces_idx,
          cell_b_faces,
-         b_face_normal,
-         b_face_surf,
+         b_face_u_normal,
          b_dist,
          diipb,
          coefa_d,

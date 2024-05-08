@@ -2395,8 +2395,8 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *restrict)fvq->cell_f_cen;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict b_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
 
   cs_cocg_6_t  *restrict cocgb = NULL, *restrict cocg = NULL;
 
@@ -2533,9 +2533,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
       cs_lnum_t ii = b_face_cells[f_id];
 
-      cs_real_3_t normal;
-      /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalize(b_face_normal[f_id], normal);
+      const cs_real_t *normal = b_face_u_normal[f_id];
 
       cocg[ii][0] += normal[0] * normal[0];
       cocg[ii][1] += normal[1] * normal[1];
