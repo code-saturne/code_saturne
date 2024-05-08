@@ -49,18 +49,18 @@
  *============================================================================*/
 
 #define CS_CUDA_CHECK(a) { \
-    cudaError_t ret_code = a; \
-    if (cudaSuccess != ret_code) { \
+    cudaError_t _l_ret_code = a; \
+    if (cudaSuccess != _l_ret_code) { \
       bft_error(__FILE__, __LINE__, 0, "[CUDA error] %d: %s\n  running: %s", \
-                ret_code, ::cudaGetErrorString(ret_code), #a); \
+                _l_ret_code, ::cudaGetErrorString(_l_ret_code), #a); \
     } \
   }
 
 #define CS_CUDA_CHECK_CALL(a, file_name, line_num) { \
-    cudaError_t ret_code = a; \
-    if (cudaSuccess != ret_code) { \
+    cudaError_t _l_ret_code = a; \
+    if (cudaSuccess != _l_ret_code) { \
       bft_error(file_name, line_num, 0, "[CUDA error] %d: %s\n  running: %s", \
-                ret_code, ::cudaGetErrorString(ret_code), #a); \
+                _l_ret_code, ::cudaGetErrorString(_l_ret_code), #a); \
     } \
   }
 
