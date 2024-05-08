@@ -206,8 +206,10 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
 
   if (fvq->corr_grad_lin_det == NULL)
     BFT_MALLOC(fvq->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
-  if (fvq->corr_grad_lin == NULL)
+  if (fvq->corr_grad_lin == NULL) {
     CS_MALLOC_HD(fvq->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t, amode);
+    cs_mem_advise_set_read_mostly(fvq->corr_grad_lin);
+  }
 
   cs_real_t    *restrict corr_grad_lin_det = fvq->corr_grad_lin_det;
   cs_real_33_t *restrict corr_grad_lin     = fvq->corr_grad_lin;
@@ -2627,11 +2629,15 @@ _compute_unit_normals(const cs_mesh_t       *m,
 
   /* If this is not an update, allocate members of the structure */
 
-  if (mq->i_face_u_normal == NULL)
+  if (mq->i_face_u_normal == NULL) {
     CS_MALLOC_HD(mq->i_face_u_normal, n_i_faces, cs_nreal_3_t, amode);
+    cs_mem_advise_set_read_mostly(mq->i_face_u_normal);
+  }
 
-  if (mq->b_face_u_normal == NULL)
+  if (mq->b_face_u_normal == NULL) {
     CS_MALLOC_HD(mq->b_face_u_normal, n_b_faces, cs_nreal_3_t, amode);
+    cs_mem_advise_set_read_mostly(mq->b_face_u_normal);
+  }
 
 # pragma omp parallel for  if (n_i_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_i_faces; i++) {
@@ -3083,29 +3089,43 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 
   /* If this is not an update, allocate members of the structure */
 
-  if (mq->cell_cen == NULL)
+  if (mq->cell_cen == NULL) {
     CS_MALLOC_HD(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->cell_cen);
+  }
 
-  if (mq->cell_vol == NULL)
+  if (mq->cell_vol == NULL) {
     CS_MALLOC_HD(mq->cell_vol, n_cells_with_ghosts, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->cell_vol);
+  }
 
-  if (mq->i_face_normal == NULL)
+  if (mq->i_face_normal == NULL) {
     CS_MALLOC_HD(mq->i_face_normal, n_i_faces*3, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->i_face_normal);
+  }
 
-  if (mq->b_face_normal == NULL)
+  if (mq->b_face_normal == NULL) {
     CS_MALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->b_face_normal);
+  }
 
-  if (mq->i_face_cog == NULL)
+  if (mq->i_face_cog == NULL) {
     BFT_MALLOC(mq->i_face_cog, n_i_faces*3, cs_real_t);
+  }
 
-  if (mq->b_face_cog == NULL)
+  if (mq->b_face_cog == NULL) {
     CS_MALLOC_HD(mq->b_face_cog, n_b_faces*3, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->b_face_cog);
+  }
 
-  if (mq->i_face_surf == NULL)
+  if (mq->i_face_surf == NULL) {
     BFT_MALLOC(mq->i_face_surf, n_i_faces, cs_real_t);
+  }
 
-  if (mq->b_face_surf == NULL)
+  if (mq->b_face_surf == NULL) {
     CS_MALLOC_HD(mq->b_face_surf, n_b_faces, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->b_face_surf);
+  }
 
   /* Compute face centers of gravity, normals, and surfaces */
 
@@ -4503,38 +4523,53 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
       CS_MALLOC_HD(mq->c_disable_flag, 1, int, amode);
       mq->c_disable_flag[0] = 0;
     }
+    cs_mem_advise_set_read_mostly(mq->c_disable_flag);
   }
 
   mq->min_f_vol = mq->min_vol;
   mq->max_f_vol = mq->max_vol;
   mq->tot_f_vol = mq->tot_vol;
 
-  if (mq->i_dist == NULL)
+  if (mq->i_dist == NULL) {
     BFT_MALLOC(mq->i_dist, n_i_faces, cs_real_t);
+  }
 
-  if (mq->b_dist == NULL)
+  if (mq->b_dist == NULL) {
     CS_MALLOC_HD(mq->b_dist, n_b_faces, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->b_dist);
+  }
 
-  if (mq->weight == NULL)
+  if (mq->weight == NULL) {
     CS_MALLOC_HD(mq->weight, n_i_faces, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->weight);
+  }
 
-  if (mq->i_f_weight == NULL)
+  if (mq->i_f_weight == NULL) {
     CS_MALLOC_HD(mq->i_f_weight, n_i_faces, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->i_f_weight);
+  }
 
-  if (mq->dijpf == NULL)
+  if (mq->dijpf == NULL) {
     BFT_MALLOC(mq->dijpf, n_i_faces*dim, cs_real_t);
+  }
 
-  if (mq->diipb == NULL)
+  if (mq->diipb == NULL) {
     CS_MALLOC_HD(mq->diipb, n_b_faces*dim, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->diipb);
+  }
 
-  if (mq->dofij == NULL)
+  if (mq->dofij == NULL) {
     CS_MALLOC_HD(mq->dofij, n_i_faces*dim, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->dofij);
+  }
 
-  if (mq->diipf == NULL)
+  if (mq->diipf == NULL) {
     BFT_MALLOC(mq->diipf, n_i_faces*dim, cs_real_t);
+  }
 
-  if (mq->djjpf == NULL)
+  if (mq->djjpf == NULL) {
     BFT_MALLOC(mq->djjpf, n_i_faces*dim, cs_real_t);
+  }
 
   if (mq->b_sym_flag == NULL) {
     BFT_MALLOC(mq->b_sym_flag, n_b_faces, int);

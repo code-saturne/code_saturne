@@ -581,6 +581,44 @@ cs_set_alloc_mode(void             **host_ptr,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]   ptr   pointer to allocation
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_mem_advise_set_read_mostly(void  *ptr);
+
+#else
+
+#define cs_mem_advise_set_read_mostly(ptr);
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]   ptr   pointer to allocation
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_mem_advise_unset_read_mostly(void  *ptr);
+
+#else
+
+#define cs_mem_advise_unset_read_mostly(ptr);
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Synchronize data from host to device.
  *
  * If separate pointers are used on the host and device,

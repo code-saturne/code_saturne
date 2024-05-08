@@ -1182,6 +1182,60 @@ cs_set_alloc_mode(void             **host_ptr,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]   ptr   pointer to allocation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_advise_set_read_mostly(void  *ptr)
+{
+  if (ptr == nullptr)
+    return;
+
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+
+  if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+
+#if defined(HAVE_CUDA)
+
+    cs_cuda_mem_set_advise_read_mostly(me.device_ptr, me.size);
+
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]   ptr   pointer to allocation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_advise_unset_read_mostly(void  *ptr)
+{
+  if (ptr == nullptr)
+    return;
+
+  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+
+  if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+
+#if defined(HAVE_CUDA)
+
+    cs_cuda_mem_unset_advise_read_mostly(me.device_ptr, me.size);
+
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Synchronize data from host to device.
  *
  * If separate pointers are used on the host and device,
@@ -1740,7 +1794,7 @@ cs_sycl_select_default_device(void)
     if (q.get_device().is_gpu()) {
       device_id = 0;
       cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
-      cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE;
+      cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE_SHARED;
     }
   }
   catch (sycl::exception const& ex) {
@@ -1806,7 +1860,7 @@ cs_omp_target_select_default_device(void)
 
   if (device_id >= 0) {
     cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
-    cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE;
+    cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE_SHARED;
   }
 
   /* Also detect whether MPI is device-aware,

@@ -27,7 +27,7 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
@@ -483,6 +483,44 @@ cs_cuda_get_host_ptr(const void  *ptr)
   return host_ptr;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]    ptr   pointer to allocation
+ * \param [size]  size   associated data size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_mem_set_advise_read_mostly(const void  *ptr,
+                                   size_t       size)
+{
+  CS_CUDA_CHECK(cudaMemAdvise(ptr,
+                              size,
+                              cudaMemAdviseSetReadMostly,
+                              cs_glob_cuda_device_id))
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]    ptr   pointer to allocation
+ * \param [size]  size   associated data size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_mem_unset_advise_read_mostly(const void  *ptr,
+                                     size_t       size)
+{
+  CS_CUDA_CHECK(cudaMemAdvise(ptr,
+                              size,
+                              cudaMemAdviseUnsetReadMostly,
+                              cs_glob_cuda_device_id))
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 END_C_DECLS
@@ -690,7 +728,7 @@ cs_base_cuda_select_default_device(void)
   cs_glob_cuda_device_id = device_id;
 
   cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
-  cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE;
+  cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE_SHARED;
 
   /* Also query some device properties */
 

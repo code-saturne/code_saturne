@@ -115,6 +115,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
   CS_FREE(ma->cell_cells_idx);
   CS_MALLOC_HD(ma->cell_cells_idx, n_cells + 1, cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_cells_idx);
 
   cs_lnum_t *c2c_idx = ma->cell_cells_idx;
 
@@ -146,6 +147,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
   CS_FREE(ma->cell_cells);
   CS_MALLOC_HD(ma->cell_cells, c2c_idx[n_cells], cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_cells);
 
   cs_lnum_t *c2c = ma->cell_cells;
 
@@ -197,6 +199,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
     BFT_FREE(tmp_c2c_idx);
     CS_REALLOC_HD(c2c, c2c_idx[n_cells], cs_lnum_t, alloc_mode);
+    cs_mem_advise_set_read_mostly(c2c);
 
     ma->cell_cells = c2c;
 
@@ -232,8 +235,11 @@ _update_cell_i_faces(cs_mesh_adjacencies_t  *ma)
 
   CS_FREE(ma->cell_i_faces);
   CS_MALLOC_HD(ma->cell_i_faces, n_elts, cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_i_faces);
+
   CS_FREE(ma->cell_i_faces_sgn);
   CS_MALLOC_HD(ma->cell_i_faces_sgn, n_elts, short int, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_i_faces_sgn);
 
   cs_lnum_t *c2i = ma->cell_i_faces;
   short int *sgn = ma->cell_i_faces_sgn;
@@ -305,6 +311,7 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
 
   CS_FREE(ma->cell_b_faces_idx);
   CS_MALLOC_HD(ma->cell_b_faces_idx, n_cells + 1, cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_b_faces_idx);
   cs_lnum_t *c2b_idx = ma->cell_b_faces_idx;
 
   cs_lnum_t *c2b_count;
@@ -326,6 +333,7 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
 
   CS_FREE(ma->cell_b_faces);
   CS_MALLOC_HD(ma->cell_b_faces, c2b_idx[n_cells], cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_b_faces);
   cs_lnum_t *c2b = ma->cell_b_faces;
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
@@ -364,6 +372,7 @@ _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
 
   CS_FREE(ma->cell_hb_faces_idx);
   CS_MALLOC_HD(ma->cell_hb_faces_idx, n_cells + 1, cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_hb_faces_idx);
   cs_lnum_t *c2b_idx = ma->cell_hb_faces_idx;
 
   cs_lnum_t *c2b_count;
@@ -385,6 +394,7 @@ _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
 
   CS_FREE(ma->cell_hb_faces);
   CS_MALLOC_HD(ma->cell_hb_faces, c2b_idx[n_cells], cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_hb_faces);
   cs_lnum_t *c2b = ma->cell_hb_faces;
 
   for (cs_lnum_t i = n_b_faces; i < n_b_faces_all; i++) {
@@ -820,27 +830,35 @@ cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode)
     CS_REALLOC_HD(ma->cell_cells_idx, n_cells+1, cs_lnum_t, alloc_mode);
     CS_REALLOC_HD(ma->cell_cells, ma->cell_cells_idx[n_cells], cs_lnum_t,
                   alloc_mode);
+    cs_mem_advise_set_read_mostly(ma->cell_cells_idx);
+    cs_mem_advise_set_read_mostly(ma->cell_cells);
   }
 
   if (ma->cell_i_faces != NULL) {
     CS_REALLOC_HD(ma->cell_i_faces, ma->cell_cells_idx[n_cells], cs_lnum_t,
                   alloc_mode);
+    cs_mem_advise_set_read_mostly(ma->cell_i_faces);
   }
   if (ma->cell_i_faces_sgn != NULL) {
     CS_REALLOC_HD(ma->cell_i_faces_sgn, ma->cell_cells_idx[n_cells], short int,
                   alloc_mode);
+    cs_mem_advise_set_read_mostly(ma->cell_i_faces_sgn);
   }
 
   {
     CS_REALLOC_HD(ma->cell_b_faces_idx, n_cells+1, cs_lnum_t, alloc_mode);
     CS_REALLOC_HD(ma->cell_b_faces, ma->cell_b_faces_idx[n_cells], cs_lnum_t,
                   alloc_mode);
+    cs_mem_advise_set_read_mostly(ma->cell_b_faces_idx);
+    cs_mem_advise_set_read_mostly(ma->cell_b_faces);
   }
 
   if (ma->cell_hb_faces_idx != NULL) {
     CS_REALLOC_HD(ma->cell_hb_faces_idx, n_cells+1, cs_lnum_t, alloc_mode);
     CS_REALLOC_HD(ma->cell_hb_faces, ma->cell_b_faces_idx[n_cells], cs_lnum_t,
                   alloc_mode);
+    cs_mem_advise_set_read_mostly(ma->cell_hb_faces_idx);
+    cs_mem_advise_set_read_mostly(ma->cell_hb_faces);
   }
 }
 

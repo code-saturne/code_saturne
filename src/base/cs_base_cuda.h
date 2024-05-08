@@ -100,7 +100,7 @@ extern int  cs_glob_cuda_n_mp;  /* Number of multiprocessors */
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Allocate n bytes of CUDA device memory.
  *
  * This function simply wraps cudaMalloc, which could probably be
@@ -126,7 +126,7 @@ cs_cuda_mem_malloc_device(size_t        n,
                           int           line_num);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Allocate n bytes of host memory using CUDA.
  *
  * This function simply wraps cudaMallocHost, which could probably be
@@ -152,7 +152,7 @@ cs_cuda_mem_malloc_host(size_t        n,
                         int           line_num);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Allocate n bytes of CUDA managed memory.
  *
  * This function simply wraps cudaMallocManaged, which could probably be
@@ -178,7 +178,7 @@ cs_cuda_mem_malloc_managed(size_t        n,
                            int           line_num);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free CUDA memory associated with a given pointer.
  *
  * This function simply wraps cudaFree, which could probably be
@@ -204,7 +204,7 @@ cs_cuda_mem_free(void         *p,
                  int           line_num);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free CUDA-allocated host memory associated with a given pointer.
  *
  * This function simply wraps cudaFreeHost, which could probably be
@@ -230,7 +230,7 @@ cs_cuda_mem_free_host(void         *p,
                       int           line_num);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy data from host to device.
  *
  * This is simply a wrapper over cudaMemcpy.
@@ -249,7 +249,7 @@ cs_cuda_copy_h2d(void         *dst,
                  size_t        size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy data from host to device, possibly returning on the host
  *        before the copy is finished.
  *
@@ -271,7 +271,7 @@ cs_cuda_copy_h2d_async(void        *dst,
                        size_t       size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy data from device to host.
  *
  * This is simply a wrapper over cudaMemcpy.
@@ -292,7 +292,7 @@ cs_cuda_copy_d2h(void        *dst,
                  size_t       size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy data from host to device.
  *
  * This is simply a wrapper over cudaMemcpy.
@@ -313,7 +313,7 @@ cs_cuda_copy_d2h_async(void        *dst,
                        size_t       size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Prefetch data from host to device.
  *
  * This is simply a wrapper over cudaMemPrefetchAsync.
@@ -333,7 +333,7 @@ cs_cuda_prefetch_h2d(void    *dst,
                      size_t   size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Prefetch data from device to host.
  *
  * This is simply a wrapper over cudaMemPrefetchAsync.
@@ -353,7 +353,7 @@ cs_cuda_prefetch_d2h(void    *dst,
                      size_t   size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy data from device to device.
  *
  * This is simply a wrapper over cudaMemcpy.
@@ -372,7 +372,7 @@ cs_cuda_copy_d2d(void        *dst,
                  size_t       size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get host pointer for a managed or device pointer.
  *
  * This function can be called with a pointer inside an allocated block of
@@ -391,6 +391,32 @@ cs_cuda_copy_d2d(void        *dst,
 
 void *
 cs_cuda_get_host_ptr(const void  *ptr);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]    ptr   pointer to allocation
+ * \param [size]  size  associated data size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_mem_set_advise_read_mostly(const void  *ptr,
+                                   size_t       size);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Advise memory system that a given allocation will be mostly read.
+ *
+ * \param [in]    ptr    pointer to allocation
+ * \param [size]  size   associated data size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_mem_unset_advise_read_mostly(const void  *ptr,
+                                   size_t       size);
 
 /*=============================================================================
  * Inline function prototypes
@@ -504,7 +530,7 @@ cs_cuda_get_stream(int  stream_id);
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Log information on available CUDA devices.
  *
  * \param[in]  log_id  id of log file in which to print information
@@ -515,7 +541,7 @@ void
 cs_base_cuda_device_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Log information on available CUDA version.
  *
  * \param[in]  log_id  id of log file in which to print information
@@ -526,7 +552,7 @@ void
 cs_base_cuda_version_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Log information on CUDA compiler.
  *
  * \param[in]  log_id  id of log file in which to print information
@@ -537,7 +563,7 @@ void
 cs_base_cuda_compiler_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set CUDA device based on MPI rank and number of devices.
  *
  * \param[in]  comm            associated MPI communicator
@@ -551,7 +577,7 @@ int
 cs_base_cuda_select_default_device(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return currently selected CUDA devices.
  *
  * \return  selected device id, or -1 if no usable device is available

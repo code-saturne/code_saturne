@@ -566,16 +566,23 @@ cs_preprocess_mesh_update_device()
 
   {
     CS_REALLOC_HD(m->i_face_cells, n_i_faces, cs_lnum_2_t, alloc_mode);
-    CS_REALLOC_HD(m->b_face_cells, n_b_faces, cs_lnum_t, alloc_mode);
+    cs_mem_advise_set_read_mostly(m->i_face_cells);
 
-    if (m->b_cells != NULL)
+    CS_REALLOC_HD(m->b_face_cells, n_b_faces, cs_lnum_t, alloc_mode);
+    cs_mem_advise_set_read_mostly(m->b_face_cells);
+
+    if (m->b_cells != NULL) {
       CS_REALLOC_HD(m->b_cells, n_b_cells, cs_lnum_t, alloc_mode);
+      cs_mem_advise_set_read_mostly(m->b_cells);
+    }
   }
 
   if (m->cell_cells_idx != NULL) {
     CS_REALLOC_HD(m->cell_cells_idx, n_cells+1, cs_lnum_t, alloc_mode);
+    cs_mem_advise_set_read_mostly(m->cell_cells_idx);
     CS_REALLOC_HD(m->cell_cells_lst, m->cell_cells_idx[n_cells], cs_lnum_t,
                   alloc_mode);
+    cs_mem_advise_set_read_mostly(m->cell_cells_lst);
   }
 
   /* Additional adjacencies
