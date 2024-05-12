@@ -107,7 +107,6 @@ const cs_ctwr_option_t *cs_glob_ctwr_option = &_ctwr_option;
 static int               _n_ct_zones_max = 0;
 static int               _n_ct_zones     = 0;
 static cs_ctwr_zone_t  **_ct_zone   = NULL;
-const cs_ctwr_zone_t *cs_glob_ctwr_zone = &_ct_zone;
 
 /* Restart file */
 
