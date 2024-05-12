@@ -798,7 +798,7 @@ cs_coal_noxst(const  int        indpdf[],
           }
 
           for (int i = 0; i < CS_COAL_NOXST_NPART; i++)
-            cpro_exp3[c_id] += 0.5d * dgs * (val[i] + val[i+1]);
+            cpro_exp3[c_id] += 0.5 * dgs * (val[i] + val[i+1]);
         }
         else
           cpro_exp3[c_id] = 0.;
