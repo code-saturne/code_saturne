@@ -18,6 +18,8 @@ Master (not on release branches yet)
 - Mutualize saddle-point solvers between CDO cell-based schemes for
   scalar-valued equation and CDO face-based schemes for the monolothic
   coupling of the Navier-Stokes equations.
+- V-cycle is now the default option when an AMG technique is set
+  inside the CDO/HHO framework (previously it was a K-cycle)
 
 ### User changes:
 
@@ -66,6 +68,11 @@ Master (not on release branches yet)
 
 - Compressible flows: remove uscfx1 and uscfx2 user-defined functions.
   Standard functions such as cs_user_parameters can be used instead.
+
+- Documentation: reshape the documentation related to CDO/HHO
+  schemes. Add new pages explaining how to set a CDO face-based scheme
+  for solving Stokes and Navier-Stokes equations. Add several examples
+  for settings the linear solvers inside the CDO framework.
 
 ### Studymanager:
 
