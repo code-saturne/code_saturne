@@ -2463,7 +2463,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
   for (short int v = 0; v < n_sysc*n_sysc; v++) cons->val[v] = 0;
 #endif
 
-  /* Stabilization coefficent * |beta_c| */
+  /* Stabilization coefficient * |beta_c| */
 
   const double  stab_coef = eqp->cip_scaling_coef * adv_cell.meas;
 
@@ -2603,7 +2603,7 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
   for (short int v = 0; v < n_sysc*n_sysc; v++) cons->val[v] = 0;
 #endif
 
-  /* Stabilization coefficent * |beta_c| */
+  /* Stabilization coefficient * |beta_c| */
 
   const double  stab_coef = eqp->cip_scaling_coef * adv_cell.meas;
 

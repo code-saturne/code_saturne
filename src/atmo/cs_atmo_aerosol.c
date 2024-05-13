@@ -560,7 +560,7 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
             /* alphaV/G */
             cs_real_t coefavg = (aa1*vel[c_id][2] + aa4*refrad[c_id])/aa3;
 
-            /* coefficent zeta */
+            /* coefficient zeta */
             cs_real_t coefzeta = 2*coefa/3*sqrt(coefavg);
 
             /* coefficient eta - Ntot [m^(-3)] */

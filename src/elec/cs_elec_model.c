@@ -216,7 +216,7 @@ BEGIN_C_DECLS
   \var  cs_data_elec_t::xlabel
         thermal conductivity
   \var  cs_data_elec_t::xkabel
-        absorption coefficent
+        absorption coefficient
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

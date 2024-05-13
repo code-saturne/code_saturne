@@ -97,7 +97,7 @@
   Using an eddy-viscosity model (see \ref turbulence), this option is
   recommended and is hence a default setting. Of course, this option has no
   effect for second moment closure or large eddy simulations. Note that the
-  coefficent mcav of the reboud correction (see \ref cavitation.f90) can also
+  coefficient mcav of the reboud correction (see \ref cavitation.f90) can also
   be adjusted in the \ref cs_user_parameters function.
 
   \subsection cavit_numerics Numerical options

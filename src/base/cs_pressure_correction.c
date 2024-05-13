@@ -3515,7 +3515,7 @@ cs_pressure_correction_cdo_init_setup(void)
 
  /* Activate the diffusion term
   * ---------------------------
-  * Diffusivity coefficent for pressure correction equation is represented by
+  * Diffusivity coefficient for pressure correction equation is represented by
   * time step.Thus the diffusion is added after the field dt is created.
   */
 

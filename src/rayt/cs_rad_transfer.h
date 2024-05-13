@@ -136,23 +136,23 @@ typedef struct {
   int           nrphas;
   int           iimpar;
   int           verbosity; /*!< Radiance resolution verbosity */
-  int           imodak; /*!< Absorption coefficent computation
-                             0: without modak
-                             1: with modak */
-  int           imoadf; /*!< ADF model:
-                             0: not used
-                             1: with wavelength interval of a 8
-                             2: with wavelength interval of a 50 */
+  int           imodak;    /*!< Absorption coefficient computation
+                                0: without modak
+                                1: with modak */
+  int           imoadf;    /*!< ADF model:
+                                0: not used
+                                1: with wavelength interval of a 8
+                                2: with wavelength interval of a 50 */
   int           iwrp1t;
-  int           imfsck; /*!< FSCK model (0: off, 1: on) */
+  int           imfsck;    /*!< FSCK model (0: off, 1: on) */
   double        xnp1mx;
-  int           idiver; /*!< Explicit radiative source term computation mode
-                             -1: no renormalization
-                             0: Semi-analytic (mandatory if transparent)
-                             1: Conservative
-                             2: Corrected semi-analytic (to be conservative)
-                             REMARK: if transparent, idiver = -1
-                             automatically in DOM */
+  int           idiver;    /*!< Explicit radiative source term computation mode
+                               -1: no renormalization
+                                0: Semi-analytic (mandatory if transparent)
+                                1: Conservative
+                                2: Corrected semi-analytic (to be conservative)
+                               REMARK: if transparent, idiver = -1
+                               automatically in DOM */
   int           i_quadrature;
   int           ndirec;
   int           ndirs;

@@ -2704,7 +2704,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     cofbf_vel[f_id][2][0] = cofbf_vel[f_id][0][2];
     cofbf_vel[f_id][2][1] = cofbf_vel[f_id][1][2];
 
-    /* In case of transient turbomachinery computations, save the coefficents
+    /* In case of transient turbomachinery computations, save the coefficients
        associated to turbulent wall velocity BC, in order to update the wall
        velocity after the geometry update
        (between prediction and correction step) */

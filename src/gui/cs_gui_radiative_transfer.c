@@ -155,7 +155,7 @@ _radiative_transfer_char_post(cs_tree_node_t  *tn_rt,
  * parameters:
  *   tn_rt   <-- tree node associated to radiative transfers
  *   param   <-- name of parameter "absorption coefficient"
- *   keyword --> value of the type of the coefficent
+ *   keyword --> value of the type of the coefficient
  *----------------------------------------------------------------------------*/
 
 static void
