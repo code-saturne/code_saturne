@@ -685,9 +685,9 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection operator attached to a cell with a CDO
- *          vertex+cell-based scheme when the advection field is cellwise
- *          constant
+ * \brief Compute the convection operator attached to a cell with a CDO
+ *        vertex+cell-based scheme when the advection field is cellwise
+ *        constant
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure

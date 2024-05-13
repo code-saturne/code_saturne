@@ -2450,9 +2450,9 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection operator attached to a cell with a CDO
- *          vertex+cell-based scheme when the advection field is cellwise
- *          constant
+ * \brief Compute the convection operator attached to a cell with a CDO
+ *        vertex+cell-based scheme when the advection field is cellwise
+ *        constant
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
@@ -2470,9 +2470,11 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
                             cs_cell_builder_t           *cb)
 {
   CS_NO_WARN_IF_UNUSED(diff_pty);
+
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB);
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP ||
+         eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW);
   assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
                        CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_FEQ |
