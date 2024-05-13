@@ -134,20 +134,20 @@ solve_cdo_equation(bool         cur2prev,
 /*!
  * \brief Set the initial values for the variable related to an equation
  *
- * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
- * \param[in]      var_id      id of the variable field
- * \param[in]      bflux_id    id of the boundary flux field
- * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
+ * \param[in, out] eqp       set of parameters related an equation
+ * \param[in]      var_id    id of the variable field
+ * \param[in]      bflux_id  id of the boundary flux field
+ * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t struct.
  *
  * \return a pointer to a new allocated scheme context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void *
-_init_context_do_nothing(const cs_equation_param_t  *eqp,
-                         int                         var_id,
-                         int                         bflux_id,
-                         cs_equation_builder_t      *eqb)
+_init_context_do_nothing(cs_equation_param_t    *eqp,
+                         int                     var_id,
+                         int                     bflux_id,
+                         cs_equation_builder_t  *eqb)
 {
   CS_NO_WARN_IF_UNUSED(eqp);
   CS_NO_WARN_IF_UNUSED(var_id);

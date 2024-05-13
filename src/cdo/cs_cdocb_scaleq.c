@@ -997,7 +997,7 @@ cs_cdocb_scaleq_finalize_sharing(void)
  * \brief Initialize a cs_cdocb_scaleq_t structure storing data useful for
  *        building and managing such a scheme
  *
- * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqp       set of parameters related an equation
  * \param[in]      var_id    id of the variable field
  * \param[in]      bflux_id  id of the boundary flux field
  * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t struct.
@@ -1007,10 +1007,10 @@ cs_cdocb_scaleq_finalize_sharing(void)
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdocb_scaleq_init_context(const cs_equation_param_t  *eqp,
-                             int                         var_id,
-                             int                         bflux_id,
-                             cs_equation_builder_t      *eqb)
+cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
+                             int                     var_id,
+                             int                     bflux_id,
+                             cs_equation_builder_t  *eqb)
 {
   assert(eqp != NULL && eqb != NULL);
 

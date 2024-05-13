@@ -56,20 +56,20 @@ BEGIN_C_DECLS
  * \brief Initialize a scheme data structure used during the building of the
  *        algebraic system
  *
- * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
- * \param[in]      var_id      id of the variable field
- * \param[in]      bflux_id    id of the boundary flux field
- * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
+ * \param[in, out] eqp       set of parameters related to an equation
+ * \param[in]      var_id    id of the variable field
+ * \param[in]      bflux_id  id of the boundary flux field
+ * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t struct.
  *
  * \return a pointer to a new allocated scheme context structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_init_context_t)(const cs_equation_param_t  *eqp,
-                             int                         var_id,
-                             int                         bflux_id,
-                             cs_equation_builder_t      *eqb);
+(cs_equation_init_context_t)(cs_equation_param_t    *eqp,
+                             int                     var_id,
+                             int                     bflux_id,
+                             cs_equation_builder_t  *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
