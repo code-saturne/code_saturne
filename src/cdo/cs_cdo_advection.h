@@ -196,28 +196,6 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the value of the stabilization coefficient used in CIP scheme
- *
- * \param[in]  new_value     value of the stabilization coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_set_cip_coef(double     new_value);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the value of the stabilization coefficient used in CIP scheme
- *
- * \return   the value the stabilization coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_cdo_advection_get_cip_coef(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Perform preprocessing such as the computation of the advection flux
  *         at the expected location in order to be able to build the advection
  *         matrix. Follow the prototype given by cs_cdofb_adv_open_hook_t

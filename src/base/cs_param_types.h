@@ -322,11 +322,11 @@ typedef enum {
  *
  * \var CS_PARAM_ADVECTION_SCHEME_CIP
  * Continuous Interior Penalty discretization. Only available for
- * \ref CS_SPACE_SCHEME_CDOVCB
+ * \ref CS_SPACE_SCHEME_CDOVCB space discretization.
  *
  * \var CS_PARAM_ADVECTION_SCHEME_CIP_CW
  * Continuous Interior Penalty discretization. Only available for
- * \ref CS_SPACE_SCHEME_CDOVCB
+ * \ref CS_SPACE_SCHEME_CDOVCB space discretization.
  * Variant with a cellwise constant approximation of the advection field
  *
  * \var CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND

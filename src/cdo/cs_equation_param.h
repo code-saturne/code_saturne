@@ -648,7 +648,13 @@ typedef struct {
    * Value between 0. and 1. (0: centered scheme, 1: pure upwind scheme)
    * Introduce a constant portion of upwinding in a centered scheme
    * Only useful if the advection scheme is set to
-   * CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND
+   * \ref CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND
+   *
+   * \var cip_scaling_coef
+   * Value of the scaling coefficient in front of the stabilization term when a
+   * CIP scheme is used (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP or
+   * \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW). By default, this is set to -1.0 and
+   * later modified automatically if not modified by a user. Should be > 0.
    *
    * \var adv_field
    * Pointer to the \ref cs_adv_field_t structure associated to the advection
@@ -667,6 +673,8 @@ typedef struct {
   cs_param_advection_strategy_t         adv_strategy;
   cs_param_advection_extrapol_t         adv_extrapol;
   cs_real_t                             upwind_portion;
+  double                                cip_scaling_coef;
+
   cs_adv_field_t                       *adv_field;
   cs_property_t                        *adv_scaling_property;
 
@@ -802,6 +810,10 @@ typedef struct {
 
 /*! \enum cs_equation_key_t
  *  \brief List of available keys for setting the parameters of an equation
+ *
+ * \var CS_EQKEY_ADV_CIP_COEF
+ * Set the value of the stabilization scaling coefficient when a CIP advection
+ * scheme is used. This value should be > 0
  *
  * \var CS_EQKEY_ADV_EXTRAPOL
  * Choice in the way to extrapolate the advection field when building the
@@ -1172,6 +1184,7 @@ typedef struct {
 
 typedef enum {
 
+  CS_EQKEY_ADV_CIP_COEF,
   CS_EQKEY_ADV_EXTRAPOL,
   CS_EQKEY_ADV_FORMULATION,
   CS_EQKEY_ADV_SCHEME,

@@ -123,6 +123,11 @@ _set_key(cs_equation_param_t   *eqp,
 
   switch(key) {
 
+  case CS_EQKEY_ADV_CIP_COEF:
+    eqp->cip_scaling_coef = atof(keyval);
+
+    break;
+
   case CS_EQKEY_ADV_EXTRAPOL:
     if (strcmp(keyval, "none") == 0)
       eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
@@ -965,6 +970,8 @@ cs_equation_param_create(const char            *name,
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
   eqp->upwind_portion = 0.15;
+  eqp->cip_scaling_coef = -1.0;  // Automatic settings
+
 
   /* Description of the discretization of the reaction term.
      No reaction term by default */
@@ -1955,7 +1962,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     else if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP ||
              eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW)
       cs_log_printf(CS_LOG_SETUP, "  * %s | CIP.coef: %f\n",
-                    eqname, cs_cdo_advection_get_cip_coef());
+                    eqname, eqp->cip_scaling_coef);
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Strategy: %s\n",
                   eqname,

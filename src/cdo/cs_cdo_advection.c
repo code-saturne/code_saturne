@@ -128,18 +128,6 @@ typedef void
                               double                      *diag);
 
 /*============================================================================
- * Local variables
- *============================================================================*/
-
-/*============================================================================
- * Private constant variables
- *============================================================================*/
-
-/* Advanced developer parameters (stabilization coefficient) */
-
-static double  cs_cip_stab_coef = 1e-2;
-
-/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -1213,34 +1201,6 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Set the value of the stabilization coefficient used in CIP scheme
- *
- * \param[in]  new_value     value of the stabilization coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_set_cip_coef(double     new_value)
-{
-  cs_cip_stab_coef = new_value;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the value of the stabilization coefficient used in CIP scheme
- *
- * \return   the value the stabilization coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_cdo_advection_get_cip_coef(void)
-{
-  return cs_cip_stab_coef;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2505,7 +2465,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
 
   /* Stabilization coefficent * |beta_c| */
 
-  const double  stab_coef = cs_cip_stab_coef * adv_cell.meas;
+  const double  stab_coef = eqp->cip_scaling_coef * adv_cell.meas;
 
   /* Temporary buffers
      bgc  stored in cb->values (size n_fc)
@@ -2645,7 +2605,7 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
 
   /* Stabilization coefficent * |beta_c| */
 
-  const double  stab_coef = cs_cip_stab_coef * adv_cell.meas;
+  const double  stab_coef = eqp->cip_scaling_coef * adv_cell.meas;
 
   /* Temporary buffers:
      bgc  stored in cb->values (size n_fc)

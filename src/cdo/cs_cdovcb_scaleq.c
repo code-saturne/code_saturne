@@ -821,15 +821,19 @@ _update_cell_fields(cs_timer_counter_t      *tce,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Update the value of stabilization coefficient in given situation
+ * \brief Update the value of stabilization coefficient for CIP advection
+ *        scheme
  *
- * \param[in]  eqp    pointer to a cs_equation_param_t  structure
+ * \param[in, out] eqp  set of parameters related an equation
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_cip_coef(const cs_equation_param_t  *eqp)
+_set_cip_coef(cs_equation_param_t  *eqp)
 {
+  if (eqp->cip_scaling_coef > 0)
+    return; /* user-defined */
+
   const double  gseed = 1e-1;  /* Default value to multiply according to the
                                   problem and the ratio of diameters */
 
@@ -840,9 +844,9 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
   const double  hf_min = cdoq->face_info.h_min;
   const double  hcMm = hc_max * hc_min;
   const double  hfMm = hf_min * hf_max;
-  const double  rho_fc = hcMm / hfMm;
+  const double  hratio_fc = hcMm / hfMm;
 
-  double  gamma = gseed * hc_max * hc_max * rho_fc;
+  double  gamma = gseed * hc_max * hc_max * hratio_fc;
 
   /* If not pure convection */
 
@@ -851,7 +855,7 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
       cs_equation_param_has_time(eqp))
     gamma *= 0.1;
 
-  cs_cdo_advection_set_cip_coef(gamma);
+  eqp->cip_scaling_coef = gamma;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
