@@ -476,7 +476,7 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
     /* Set the advection formulation
-       - "u.grad(Y)" for a "non-servative" or gradient formulation
+       - "u.grad(Y)" for a "non-conservative" or gradient formulation
        - "div(u.Y)" for a "conservtive" or divergence formulation
     */
 
@@ -493,15 +493,16 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_equation_param_set(eqp1, CS_EQKEY_ADV_SCHEME, "mix_centered_upwind");
 
     /* Set the portion of upwinding to add to a centered scheme. The same
-       portion is added in the whole domain */
+       portion is added in the whole domain (contrary to the "sg" or
+       "samarskii" advection scheme) */
 
     cs_equation_param_set(eqp1, CS_EQKEY_ADV_UPWIND_PORTION, "0.45");
 
     /* It's possible to set automatically the upwinding portion using a
-       Schafertter-Gummel scheme or Samarskii scheme. These two advection
-       schemes differs on the weighting function computing the portion of
+       Scharfetter-Gummel scheme or the Samarskii scheme. These two advection
+       schemes differ on the weighting function used to compute the portion of
        upwinding. In both cases, one uses an estimation of the local Péclet
-       number to know if one needs more upwinding or not. */
+       number to evaluate the needed portion of upwinding. */
 
     cs_equation_param_t  *eqp_sg = cs_equation_param_by_name("Eq2_SG");
 
@@ -510,6 +511,15 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_equation_param_t  *eqp_sa = cs_equation_param_by_name("Eq2_SA");
 
     cs_equation_param_set(eqp_sa, CS_EQKEY_ADV_SCHEME, "samarskii");
+
+    /* In case of a CDO-VCb schemes, one sets a CIP scheme and then modify the
+       scaling coefficient in front of the stabilization term */
+
+    cs_equation_param_t  *eqp_vcb = cs_equation_param_by_name("Eq3_CIP");
+
+    cs_equation_param_set(eqp_vcb, CS_EQKEY_ADV_SCHEME, "cip");
+
+    cs_equation_param_set(eqp_vcb, CS_EQKEY_ADV_CIP_COEF, "1");
   }
   /*! [param_cdo_conv_schemes] */
 
