@@ -380,6 +380,13 @@ public:
     this->use_gpu_ = use_gpu;
   }
 
+  //! Check whether we are trying to run on GPU
+
+  bool
+  use_gpu(void) {
+    return (device_ >= 0 && use_gpu_);
+  }
+
 public:
 
   //! Try to launch on the GPU and return false if not available
@@ -483,6 +490,13 @@ public:
   void
   set_use_gpu(bool  use_gpu) {
     this->use_gpu_ = use_gpu;
+  }
+
+  //! Check whether we are trying to run on GPU
+
+  bool
+  use_gpu(void) {
+    return (is_gpu && use_gpu_);
   }
 
 public:
@@ -593,6 +607,13 @@ public:
 
   void
   set_use_gpu([[maybe_unused]] bool  use_gpu) {
+  }
+
+  //! Check whether we are trying to run on GPU
+
+  bool
+  use_gpu(void) {
+    return false;
   }
 
   void

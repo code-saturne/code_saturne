@@ -56,6 +56,7 @@
 #include "cs_blas.h"
 #include "cs_bad_cells_regularisation.h"
 #include "cs_boundary_conditions.h"
+#include "cs_dispatch.h"
 #include "cs_equation_param.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
@@ -68,7 +69,6 @@
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
-//#include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
@@ -605,6 +605,54 @@ _beta_limiter_num(cs_field_t                 *f,
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
+ *   on_device,     <-- is data on device (GPU) ?
+ *   halo_type      <-- halo type (extended or not)
+ *   grad           --> gradient of a variable
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+_sync_strided_gradient_halo(const cs_mesh_t         *m,
+                            [[maybe_unused]] bool    on_device,
+                            cs_halo_type_t           halo_type,
+                            cs_real_t (*restrict grad)[stride][3])
+{
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, stride*3,
+                   (cs_real_t *)grad);
+  else
+#endif
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, stride*3);
+
+  if (m->have_rotation_perio) {
+#if defined(HAVE_ACCEL)
+    if (on_device)
+      cs_sync_d2h((void  *)grad);
+#endif
+    if (stride == 1)
+      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
+    else if (stride == 3)
+      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
+    else if (stride == 6)
+      cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                           halo_type,
+                                           (cs_real_t *)grad);
+#if defined(HAVE_ACCEL)
+    if (on_device)
+      cs_sync_h2d((void  *)grad);
+#endif
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize strided gradient ghost cell values.
+ *
+ * template parameters:
+ *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
  *   halo_type      <-- halo type (extended or not)
  *   grad           --> gradient of a variable
  *----------------------------------------------------------------------------*/
@@ -639,6 +687,7 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
  * This function assumes the input gradient and pvar values have already
  * been synchronized.
  *
+ * \param[in]     ctx          Reference to dispatch context
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -651,13 +700,15 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
 
 template <cs_lnum_t stride>
 static void
-_slope_test_gradient_strided(const int                   inc,
-                             const cs_halo_type_t        halo_type,
-                             const cs_real_t             grad[restrict][stride][3],
-                             cs_real_t                   grdpa[restrict][stride][3],
-                             const cs_real_t             pvar[restrict][stride],
-                             const cs_field_bc_coeffs_t *bc_coeffs_v,
-                             const cs_real_t            *i_massflux)
+_slope_test_gradient_strided
+  (cs_dispatch_context         &ctx,
+   const int                    inc,
+   const cs_halo_type_t         halo_type,
+   const cs_real_t              grad[restrict][stride][3],
+   cs_real_t                    grdpa[restrict][stride][3],
+   const cs_real_t              pvar[restrict][stride],
+   const cs_field_bc_coeffs_t  *bc_coeffs_v,
+   const cs_real_t             *i_massflux)
 {
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
@@ -686,110 +737,95 @@ _slope_test_gradient_strided(const int                   inc,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           face_id++) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_real_t difv[3], djfv[3];
+    cs_real_t difv[3], djfv[3];
 
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
-        for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
-          difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
-          djfv[jsou] = i_face_cog[face_id][jsou] - cell_cen[jj][jsou];
-        }
+    for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
+      difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
+      djfv[jsou] = i_face_cog[face_id][jsou] - cell_cen[jj][jsou];
+    }
 
-        /* x-y-z component, p = u, v, w */
+    /* x-y-z component, p = u, v, w */
 
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
-          cs_real_t pif = pvar[ii][isou];
-          cs_real_t pjf = pvar[jj][isou];
-          for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
-            pif = pif + grad[ii][isou][jsou]*difv[jsou];
-            pjf = pjf + grad[jj][isou][jsou]*djfv[jsou];
-          }
+    for (cs_lnum_t isou = 0; isou < stride; isou++) {
+      cs_real_t pif = pvar[ii][isou];
+      cs_real_t pjf = pvar[jj][isou];
+      for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
+        pif = pif + grad[ii][isou][jsou]*difv[jsou];
+        pjf = pjf + grad[jj][isou][jsou]*djfv[jsou];
+      }
 
-          cs_real_t pfac = pjf;
-          if (i_massflux[face_id] > 0.) pfac = pif;
+      cs_real_t pfac = pjf;
+      if (i_massflux[face_id] > 0.) pfac = pif;
 
-          /* U gradient */
+      /* U gradient */
 
-          cs_real_t vfac[3];
+      cs_real_t vfac[3];
 
-          for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
-            vfac[jsou] = pfac*i_f_face_normal[face_id][jsou];
+      for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
+        vfac[jsou] = pfac*i_f_face_normal[face_id][jsou];
 
-            grdpa[ii][isou][jsou] = grdpa[ii][isou][jsou] + vfac[jsou];
-            grdpa[jj][isou][jsou] = grdpa[jj][isou][jsou] - vfac[jsou];
-          }
-        }
-
+        cs_dispatch_sum(&grdpa[ii][isou][jsou], vfac[jsou], i_sum_type);
+        cs_dispatch_sum(&grdpa[jj][isou][jsou], -vfac[jsou], i_sum_type);
       }
     }
-  }
 
-# pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-    for (cs_lnum_t face_id = b_group_index[t_id*2];
-         face_id < b_group_index[t_id*2 + 1];
-         face_id++) {
+  });
 
-      cs_real_t diipbv[3];
-      cs_lnum_t ii = b_face_cells[face_id];
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    cs_real_t diipbv[3];
+    cs_lnum_t ii = b_face_cells[face_id];
+
+    for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
+      diipbv[jsou] = diipb[face_id][jsou];
+
+    /* x-y-z components, p = u, v, w */
+
+    for (cs_lnum_t isou = 0; isou < stride; isou++) {
+      cs_real_t pfac = inc*coefa[face_id][isou];
+      /*coefu is a matrix */
+      for (cs_lnum_t jsou =  0; jsou < stride; jsou++)
+        pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
+                                            + grad[ii][jsou][0]*diipbv[0]
+                                            + grad[ii][jsou][1]*diipbv[1]
+                                            + grad[ii][jsou][2]*diipbv[2]);
 
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
-        diipbv[jsou] = diipb[face_id][jsou];
-
-      /* x-y-z components, p = u, v, w */
-
-      for (cs_lnum_t isou = 0; isou < stride; isou++) {
-        cs_real_t pfac = inc*coefa[face_id][isou];
-        /*coefu is a matrix */
-        for (cs_lnum_t jsou =  0; jsou < stride; jsou++)
-          pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
-                                              + grad[ii][jsou][0]*diipbv[0]
-                                              + grad[ii][jsou][1]*diipbv[1]
-                                              + grad[ii][jsou][2]*diipbv[2]);
-
-        for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
-          grdpa[ii][isou][jsou] += pfac*b_f_face_normal[face_id][jsou];
-      }
-
+        cs_dispatch_sum(&grdpa[ii][isou][jsou],
+                        pfac*b_f_face_normal[face_id][jsou],
+                        b_sum_type);
     }
-  }
 
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+  });
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     cs_real_t unsvol = 1./cell_vol[cell_id];
     for (cs_lnum_t isou = 0; isou < stride; isou++) {
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
         grdpa[cell_id][isou][jsou] = grdpa[cell_id][isou][jsou]*unsvol;
     }
-  }
+  });
 
   /* Handle parallelism and periodicity */
 
   if (m->halo != NULL)
-    _sync_strided_gradient_halo<stride>(m, halo_type, grdpa);
+    _sync_strided_gradient_halo<stride>(m,
+                                        ctx.use_gpu(),
+                                        halo_type,
+                                        grdpa);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 BEGIN_C_DECLS
-
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
 
 /*============================================================================
  * Public function definitions
@@ -4043,6 +4079,10 @@ cs_convection_diffusion_vector(int                         idtvar,
   int coupling_id = -1;
   cs_internal_coupling_t *cpl = NULL;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+
   /*==========================================================================*/
 
   /* 1. Initialization */
@@ -4050,7 +4090,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   /* Allocate work arrays */
 
   CS_MALLOC_HD(grad, n_cells_ext, cs_real_33_t, cs_alloc_mode);
-  BFT_MALLOC(grdpa, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(grdpa, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   /* Choose gradient type */
 
@@ -4155,30 +4195,29 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   }
   else {
-#   pragma omp parallel for
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       for (int isou = 0; isou < 3; isou++) {
         for (int jsou = 0; jsou < 3; jsou++)
           grad[cell_id][isou][jsou] = 0.;
       }
-    }
+    });
   }
 
   /* ======================================================================
      ---> Compute uncentered gradient grdpa for the slope test
      ======================================================================*/
 
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     for (int jsou = 0; jsou < 3; jsou++) {
       for (int isou = 0; isou < 3; isou++)
         grdpa[cell_id][isou][jsou] = 0.;
     }
-  }
+  });
 
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-    _slope_test_gradient_strided<3>(inc,
+    _slope_test_gradient_strided<3>(ctx,
+                                    inc,
                                     halo_type,
                                     (const cs_real_33_t *)grad,
                                     grdpa,
@@ -5596,7 +5635,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   }
 
   /* Free memory */
-  BFT_FREE(grdpa);
+  CS_FREE_HD(grdpa);
   CS_FREE_HD(grad);
 }
 
@@ -5724,6 +5763,10 @@ cs_convection_diffusion_tensor(int                          idtvar,
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id, eqp);
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+
   /*==========================================================================*/
 
   /* 1. Initialization */
@@ -5844,7 +5887,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
 
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-    _slope_test_gradient_strided<6>(inc,
+    _slope_test_gradient_strided<6>(ctx,
+                                    inc,
                                     halo_type,
                                     (const cs_real_63_t *)grad,
                                     grdpa,

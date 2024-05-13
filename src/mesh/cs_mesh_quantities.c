@@ -3110,7 +3110,8 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
   }
 
   if (mq->i_face_cog == NULL) {
-    BFT_MALLOC(mq->i_face_cog, n_i_faces*3, cs_real_t);
+    CS_MALLOC_HD(mq->i_face_cog, n_i_faces*3, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->i_face_cog);
   }
 
   if (mq->b_face_cog == NULL) {
