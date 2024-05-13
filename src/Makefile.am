@@ -79,7 +79,6 @@ atmo/sshaerosol.f90 \
 cfbl/cfpoin.f90 \
 cfbl/cs_cf_bindings.f90 \
 comb/cs_coal_incl.f90 \
-comb/cs_fuel_incl.f90 \
 comb/cpincl.f90 \
 ctwr/ctincl.f90 \
 lagr/lagran.f90 \
