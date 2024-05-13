@@ -157,8 +157,6 @@ enddo
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usipph (cs_user_parameters.f90)                  ',/,&
-'@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  1002 format(                                                     &
@@ -174,8 +172,6 @@ enddo
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier usipph (cs_user_parameters.f90)                  ',/,&
-'@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  1001 format(                                                     &
@@ -189,8 +185,6 @@ enddo
 '@    LE MOMENT.                                              ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier usipph (cs_user_parameters.f90)                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -206,9 +200,6 @@ enddo
 '@    UTILISER PLUTOT UN MODELE TURBOMACHINE.                 ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier usipph (cs_user_parameters.f90) ou definir un    ',/,&
-'@    rotor de turbomachine (cs_user_turbomachinery.f90)      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

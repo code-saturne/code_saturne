@@ -1523,7 +1523,7 @@ atmospheric application:
    canopy modelling, wind turbine wake modelling... [examples](@ref user_source_terms)
  - cs_user_parameters.f90: to activate the Cressman interpolation.
    For example, it is used to impose inhomogeneous boundary conditions.
-   [examples](@ref cs_f_user_parameters_h_usati1)
+   [examples](@ref cs_f_user_parameters_h_usipsu)
  - cs_user_extra_operations.c to generate vertical profiles for post processing.
    [examples](@ref cs_user_extra_operations_examples_mean_profiles)
  - cs_user_boundary_conditions.f90: showq how to set up the boundary conditions and to set

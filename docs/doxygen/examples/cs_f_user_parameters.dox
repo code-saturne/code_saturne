@@ -32,47 +32,21 @@
   User subroutines for input of calculation parameters (Fortran modules).
     These subroutines are called in all cases.
 
-  If the code_saturne GUI is used, this file is not required (but may be
-    used to override parameters entered through the GUI, and to set
-    parameters not accessible through the GUI).
-
-  Several routines are present in the file, each destined to defined
+  Several routines are present in the file, each destined to define
     specific parameters.
 
   To modify the default value of parameters which do not appear in the
     examples provided, code should be placed as follows:
+    - \b usppmo for numerical and physical options
+           (deprecated, replaced by \ref cs_user_model).
     - \ref cs_f_user_parameters_h_usipsu "usipsu" for numerical and physical options
-    - \ref cs_f_user_parameters_h_usipes "usipes" for input-output related options
-    - \ref cs_f_user_parameters_h_usipph "usipph" for additional input of parameters
-    - \ref cs_f_user_parameters_h_usati1 "usipsu" for calculation options for the atmospheric module
+           (deprecated, replaced by \ref cs_user_parameters).
+    - \b usipes for input-output related options
+           (deprecated, replaced by \ref cs_user_finalize_setup).
 
-  As a convention, "specific physics" defers to the following modules only:
-    pulverized coal, gas combustion, electric arcs.
+  \section cs_f_user_parameters_h_usipsu  Calculation options for the atmospheric module (usipsu)
 
-  In addition, specific routines are provided for the definition of some
-    "specific physics" options.
-    These routines are described at the end of this file and will be activated
-    when the corresponding option is selected in the \ref usppmo routine.
-
-  \section cs_f_user_parameters_h_usipsu  General options (usipsu)
-
-  \section cs_f_user_parameters_h_usipes Postprocessing options (usipes)
-
-  The \ref usipes routine can be found in the \ref cs_user_parameters.f90 file,
-  and is used for setting of postprocessing options, as it is called once
-  all fields are defined.
-
-  \snippet cs_user_parameters.f90 usipes
-
-  \section cs_f_user_parameters_h_usipph Additional input of parameters (usipph)
-
-  The \ref usipph routine can be found in the \ref cs_user_parameters.f90 file.
-
-  \snippet cs_user_parameters.f90 usipph
-
-  \section cs_f_user_parameters_h_usati1 Calculation options for the atmospheric module
-
-  To be added in the generic \ref usipsu routine can be found in the \ref cs_user_parameters.f90 file.
+  In the following example, options for the atmospheric module are set:
 
   \snippet cs_user_parameters.f90 usati1
 

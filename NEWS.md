@@ -24,6 +24,7 @@ Master (not on release branches yet)
 ### User changes:
 
 - Removed Fortran versions of user-defined subroutines.
+  * `usipph` (replaced by `cs_user_model` and `cs_user_parameters`).
   * `usphyv` (replaced by `cs_user_physical_properties`).
   * `ustssc` (replaced by `cs_user_source_terms`).
   * `cs_user_combustion` (associated settings may now be

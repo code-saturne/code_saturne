@@ -106,69 +106,6 @@ end subroutine usppmo
 
 !===============================================================================
 
-!> \brief User subroutine for input of model selection parameters.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]      ixmlpu       indicates if the XML file from the GUI is used
-!>                              used (1: yes, 0: no
-!> \param[in, out] iturb        turbulence model
-!> \param[in, out] itherm       thermal model
-!> \param[in, out] iale         ALE module
-!______________________________________________________________________________!
-
-subroutine usipph &
- ( ixmlpu, iturb , itherm, iale )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use entsor, only: nfecra ! No other module should appear here
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer ixmlpu
-integer iturb, itherm, iale
-
-! Local variables
-
-!===============================================================================
-
-!>    In this subroutine, only the parameters which already appear may
-!>    be set, to the exclusion of any other.
-!>
-!>    If we are not using the code_saturne GUI:
-!>    All the parameters which appear in this subroutine must be set.
-!>
-!>    If we are using the code_saturne GUI:
-!>    parameters protected by a test of the form:
-!>
-!>      if (ixmlpu.eq.0) then
-!>         ...
-!>      endif
-!>
-!>    should already have been defined using the GUI, so only
-!>    experts should consider removing the test and adapting them here.
-
-!===============================================================================
-
-!----
-! Formats
-!----
-
-return
-end subroutine usipph
-
-!===============================================================================
-
 !> \brief User subroutine for the input of additional user parameters.
 !
 !>  This subroutine allows setting parameters

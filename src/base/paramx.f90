@@ -268,8 +268,9 @@ module paramx
              cs_user_atmo_soil, cs_user_physical_properties_smagorinsky_c
 
 
-  integer :: usalcl, usatdv, usati1, usatph, usatsoil, uscfx1,        &
-             uscfx2, ushist, usphyv, usporo, ussmag, usstr1, usstr2,  &
+  integer :: usalcl, usatdv, usati1, usatph, usatsoil,                &
+             uscfx1, uscfx2, usipph, ushist,                          &
+             usphyv, usporo, ussmag, usstr1, usstr2,                  &
              ustsnv, ustssc, ustsvv, usthht, usvosy, usvpst, usvist
 
 end module paramx

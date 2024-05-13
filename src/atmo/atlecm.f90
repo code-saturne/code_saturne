@@ -345,7 +345,7 @@ endif
 !===============================================================================
 ! If ihpm = 0 (default): bottom to top Laplace integration based on pressure at
 ! sea level (pmer(itp))
-! If ihpm = 1 (usati1): top to bottom Laplace integration based on pressure at
+! If ihpm = 1 (usipsu): top to bottom Laplace integration based on pressure at
 ! the top of the domain (ztmet(nbmaxt)) for the standard atmosphere
 
 if (imode.eq.1) then

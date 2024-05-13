@@ -93,7 +93,7 @@ integer, dimension(:), pointer :: elt_ids
 
 !===============================================================================
 
-procedure() :: varpos, usppmo, uialin, usipph, fldvar, csivis
+procedure() :: varpos, usppmo, uialin, fldvar, csivis
 procedure() :: atini1, solcat, csidtv, csiphy, fldprp, cstime, usipsu
 procedure() :: indsui
 
@@ -273,10 +273,6 @@ call cs_gui_turb_model
 
 ! constant or variable specific heat, volume viscosity, ...
 call csfpva
-
-! Other models selection through user Fortran subroutine
-
-call usipph(1, iturb, itherm, iale)
 
 call csidtv()
 
