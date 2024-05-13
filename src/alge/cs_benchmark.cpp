@@ -347,7 +347,7 @@ _mat_vec_exdiag_native_v2(bool                 accel,
 
   cs_dispatch_context ctx;
   if (accel == false)
-    ctx.set_n_min_for_gpu(100000000);
+    ctx.set_use_gpu(false);
 
   cs_dispatch_sum_type_t sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
 

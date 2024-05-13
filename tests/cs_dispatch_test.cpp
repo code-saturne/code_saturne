@@ -84,11 +84,11 @@ cs_dispatch_test(void)
   for (int i = 0; i < 3; i++) {
 
     if (i == 1) {
-      ctx.set_n_min_for_gpu(200);
+      ctx.set_use_gpu(false);
       ctx.set_n_min_for_cpu_threads(20);
     }
     else if (i == 2) {
-      ctx.set_n_min_for_gpu(20);
+      ctx.set_use_gpu(true);
     }
 
     ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {

@@ -298,7 +298,7 @@ private:
   cudaStream_t  stream_;      /*!< Associated CUDA stream */
   int           device_;      /*!< Associated CUDA device id */
 
-  cs_lnum_t  n_min_for_device_;  /*!< Run on CPU under this threshold */
+  bool          use_gpu_;     /*!< Run on GPU if available */
 
 public:
 
@@ -306,7 +306,7 @@ public:
 
   cs_device_context(void)
     : grid_size_(0), block_size_(256), stream_(cs_cuda_get_stream(0)),
-      device_(0), n_min_for_device_(0)
+      device_(0), use_gpu_(true)
   {
     device_ = cs_base_cuda_get_device();
   }
@@ -316,14 +316,14 @@ public:
                     cudaStream_t  stream,
                     int           device)
     : grid_size_(grid_size), block_size_(block_size), stream_(stream),
-      device_(device), n_min_for_device_(0)
+      device_(device), use_gpu_(true)
   {}
 
   cs_device_context(long          grid_size,
                     long          block_size,
                     cudaStream_t  stream)
     : grid_size_(grid_size), block_size_(block_size), stream_(stream),
-      device_(0), n_min_for_device_(0)
+      device_(0), use_gpu_(true)
   {
     device_ = cs_base_cuda_get_device();
   }
@@ -331,14 +331,14 @@ public:
   cs_device_context(long  grid_size,
                     long  block_size)
     : grid_size_(grid_size), block_size_(block_size),
-       stream_(cs_cuda_get_stream(0)), device_(0), n_min_for_device_(0)
+       stream_(cs_cuda_get_stream(0)), device_(0), use_gpu_(true)
   {
     device_ = cs_base_cuda_get_device();
   }
 
   cs_device_context(cudaStream_t  stream)
     : grid_size_(0), block_size_(256), stream_(stream), device_(0),
-      n_min_for_device_(0)
+      use_gpu_(true)
   {
     device_ = cs_base_cuda_get_device();
   }
@@ -373,11 +373,11 @@ public:
     this->device_ = device;
   }
 
-  //! Set minimum number of elements threshold for GPU execution
+  //! Set or unset execution on GPU
 
   void
-  set_n_min_for_gpu(cs_lnum_t  n) {
-    this->n_min_for_device_ = n;
+  set_use_gpu(bool  use_gpu) {
+    this->use_gpu_ = use_gpu;
   }
 
 public:
@@ -386,7 +386,7 @@ public:
   template <class F, class... Args>
   bool
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-    if (device_ < 0 || n < n_min_for_device_) {
+    if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
@@ -406,7 +406,7 @@ public:
   bool
   parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     const cs_lnum_t n = m->n_i_faces;
-    if (device_ < 0 || n < n_min_for_device_) {
+    if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
@@ -431,8 +431,7 @@ public:
   bool
   try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
                                         cs_dispatch_sum_type_t  &st) {
-    const cs_lnum_t n = m->n_i_faces;
-    if (device_ < 0 || n < n_min_for_device_) {
+    if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
@@ -444,8 +443,7 @@ public:
   bool
   try_get_parallel_for_b_faces_sum_type(const cs_mesh_t         *m,
                                         cs_dispatch_sum_type_t  &st) {
-    const cs_lnum_t n = m->n_b_faces;
-    if (device_ < 0 || n < n_min_for_device_) {
+    if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
@@ -461,10 +459,6 @@ public:
  * Context to execute loops with SYCL on the device
  */
 
-/*!
- * Context to execute loops with CUDA on the device
- */
-
 class cs_device_context : public cs_dispatch_context_mixin<cs_device_context> {
 
 private:
@@ -472,23 +466,23 @@ private:
   sycl::queue      &queue_;      /*!< Associated SYCL queue */
   bool              is_gpu;      /*!< Is the associated device à GPU ? */
 
-  cs_lnum_t  n_min_for_device_;  /*!< Run on host under this threshold */
+  bool              use_gpu_;    /*!< Run on GPU ? */
 
 public:
 
   //! Constructor
 
   cs_device_context(void)
-    : queue_(cs_glob_sycl_queue), is_gpu(false), n_min_for_device_(0)
+    : queue_(cs_glob_sycl_queue), is_gpu(false), use_gpu_(true)
   {
     is_gpu = queue_.get_device().is_gpu();
   }
 
-  //! Set minimum number of elements threshold for GPU execution
+  //! Set or unset execution on GPU
 
   void
-  set_n_min_for_gpu(cs_lnum_t  n) {
-    this->n_min_for_device_ = n;
+  set_use_gpu(bool  use_gpu) {
+    this->use_gpu_ = use_gpu;
   }
 
 public:
@@ -497,7 +491,7 @@ public:
   template <class F, class... Args>
   bool
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-    if (is_gpu == false || n < n_min_for_device_) {
+    if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
@@ -511,7 +505,7 @@ public:
   bool
   parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     const cs_lnum_t n = m->n_i_faces;
-    if (is_gpu == false || n < n_min_for_device_) {
+    if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
@@ -531,7 +525,7 @@ public:
   try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
                                         cs_dispatch_sum_type_t  &st) {
     const cs_lnum_t n = m->n_i_faces;
-    if (is_gpu == false || n < n_min_for_device_) {
+    if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
@@ -544,7 +538,7 @@ public:
   try_get_parallel_for_b_faces_sum_type(const cs_mesh_t         *m,
                                         cs_dispatch_sum_type_t  &st) {
     const cs_lnum_t n = m->n_b_faces;
-    if (is_gpu == false || n < n_min_for_device_) {
+    if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
@@ -575,7 +569,7 @@ public:
      in final cs_dispatch_context even when CUDA is not available,
      and without requireing a static cast of the form
 
-     static_cast<cs_device_context&>(ctx).set_n_min_for_gpu(200);
+     static_cast<cs_device_context&>(ctx).set_use_gpu(true);
   */
 
   void
@@ -598,7 +592,7 @@ public:
   /* Fill-in for device methods */
 
   void
-  set_n_min_for_gpu([[maybe_unused]] int  n) {
+  set_use_gpu([[maybe_unused]] bool  use_gpu) {
   }
 
   void
