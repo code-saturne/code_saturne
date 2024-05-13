@@ -35,7 +35,7 @@ subroutine ebutss &
 !   SUR UN PAS DE TEMPS
 
 ! ATTENTION : LE TRAITEMENT DES TERMES SOURCES EST DIFFERENT
-! ---------   DE CELUI DE USTSSC.F
+! ---------   DE CELUI DE cs_user_source_terms.
 
 ! ON RESOUT ROVSDT*D(VAR) = SMBRS
 

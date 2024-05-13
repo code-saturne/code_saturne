@@ -504,12 +504,6 @@ class cs_compile(object):
             if f_base == 'cs_user_physical_properties.f90':
                 o_name = "cs_f_user_physical_properties.o"
                 cmd += ["-o", o_name]
-            if f_base == 'cs_user_porosity.f90':
-                o_name = "cs_f_user_porosity.o"
-                cmd += ["-o", o_name]
-            if f_base == 'cs_user_source_terms.f90':
-                o_name = "cs_f_user_source_terms.o"
-                cmd += ["-o", o_name]
             if opt_fcflags != None:
                 cmd += separate_args(opt_fcflags)
             for d in f_include_dirs:
