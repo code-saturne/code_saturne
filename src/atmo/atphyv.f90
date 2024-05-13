@@ -98,7 +98,7 @@ endif
 ! This routine computes the density and the thermodynamic temperature.
 ! The computations may require the pressure profile which is here taken from
 ! the meteo file. If no meteo file is used, the user can
-! give the laws for RHO and T in cs_user_physical_properties.f90
+! give the laws for RHO and T in cs_user_physical_properties.
 
 !===============================================================================
 

@@ -269,7 +269,7 @@ module paramx
 
 
   integer :: usalcl, usatdv, usati1, usatph, usatsoil, uscfx1,        &
-             uscfx2, ushist, usporo, ussmag, usstr1, usstr2, ustsnv,  &
-             ustssc, ustsvv, usthht, usvosy, usvpst, usvist
+             uscfx2, ushist, usphyv, usporo, ussmag, usstr1, usstr2,  &
+             ustsnv, ustssc, ustsvv, usthht, usvosy, usvpst, usvist
 
 end module paramx

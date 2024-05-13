@@ -44,8 +44,8 @@
   - excepted if they are read from a restart file.
 
   Modification of the behaviour law of physical quantities (rom, viscl,
-  viscls, cp) is not done here. It is the purpose of the user subroutine
-  usphyv.
+  viscls, cp) is not done here. It is the purpose of the
+  cs_user_physical_properties user-defined function.
 
  Cells identification
 

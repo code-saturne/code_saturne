@@ -76,10 +76,10 @@ AM_LDFLAGS =
 # for by automake
 
 EXTRA_DIST = cs_user_modules.f90 \
-cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
+cs_user_boundary_conditions.f90 \
+cs_user_extra_operations.f90 \
 cs_user_initialization.f90  \
-cs_user_parameters.f90 \
-cs_user_physical_properties.f90
+cs_user_parameters.f90
 
 # Library source files
 
@@ -139,24 +139,17 @@ cs_user_f_initialization = $(top_srcdir)/src/user/cs_user_initialization.f90
 cs_f_user_initialization.$(OBJEXT): $(cs_user_f_initialization)
 	$(FCCOMPILE) -c -o cs_f_user_initialization.$(OBJEXT)  $(cs_user_f_initialization)
 
-cs_user_f_physical_properties = $(top_srcdir)/src/user/cs_user_physical_properties.f90
-
-cs_f_user_physical_properties.$(OBJEXT): $(cs_user_f_physical_properties)
-	$(FCCOMPILE) -c -o cs_f_user_physical_properties.$(OBJEXT)  $(cs_user_f_physical_properties)
-
 noinst_LIBRARIES = libcsuser.a
 libcsuser_a_SOURCES = $(userfiles)
 libcsuser_a_LIBADD = cs_f_user_parameters.$(OBJEXT) cs_f_user_extra_operations.$(OBJEXT) \
-cs_f_user_initialization.$(OBJEXT) cs_f_user_physical_properties.$(OBJEXT) \
-cs_f_user_boundary_conditions.$(OBJEXT)
+cs_f_user_initialization.$(OBJEXT) cs_f_user_boundary_conditions.$(OBJEXT)
 
 userdir = $(pkgdatadir)/user_sources/REFERENCE
 user_DATA = $(userfiles) cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_parameters.f90 \
 cs_user_extra_operations.f90 \
-cs_user_initialization.f90 \
-cs_user_physical_properties.f90
+cs_user_initialization.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

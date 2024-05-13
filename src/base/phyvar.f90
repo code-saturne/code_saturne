@@ -130,7 +130,7 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 procedure() :: cs_physical_properties1, cs_physical_properties2
-procedure() :: uiphyv, usphyv
+procedure() :: uiphyv
 
 interface
 
@@ -240,8 +240,6 @@ endif
 !   ======================
 
 call uiphyv()
-
-call usphyv(nvar, nscal, mbrom, dt)
 
 ! C version
 

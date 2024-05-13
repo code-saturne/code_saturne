@@ -501,9 +501,6 @@ class cs_compile(object):
             if f_base == 'cs_user_initialization.f90':
                 o_name = "cs_f_user_initialization.o"
                 cmd += ["-o", o_name]
-            if f_base == 'cs_user_physical_properties.f90':
-                o_name = "cs_f_user_physical_properties.o"
-                cmd += ["-o", o_name]
             if opt_fcflags != None:
                 cmd += separate_args(opt_fcflags)
             for d in f_include_dirs:

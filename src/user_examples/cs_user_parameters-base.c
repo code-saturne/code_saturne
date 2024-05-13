@@ -1029,8 +1029,7 @@ cs_user_parameters(cs_domain_t *domain)
        or variable (irovar=1, ivivar=1, icp=0)
 
      For those properties we choose as variable, the corresponding law
-       must be defined in cs_user_physical_properties
-       (incs_user_physical_properties.f90);
+       must be defined in cs_user_physical_properties.
        if they are constant, they take values ro0, viscl0, and cp0.
     */
 
