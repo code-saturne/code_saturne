@@ -10590,9 +10590,9 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
-  /* Contribution from hidden boundary faces */
+  /* Contribution from hidden boundary faces, if present */
 
-  if (ma->cell_hb_faces_idx != NULL)
+  if (ma->cell_hb_faces_idx != nullptr)
     _add_hb_faces_cocg_lsq_cell(c_id,
                                 ma->cell_hb_faces_idx,
                                 ma->cell_hb_faces,
@@ -10600,7 +10600,15 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
                                 (const cs_real_3_t *)fvq->b_face_normal,
                                 cocg);
 
-  /* Contribution from boundary faces */
+  /* Contribution from boundary conditions */
+
+  const cs_real_t *bc_coeff_a = nullptr;
+  const cs_real_t *bc_coeff_b = nullptr;
+
+  if (bc_coeffs != nullptr) {
+    bc_coeff_a = bc_coeffs->a;
+    bc_coeff_b = bc_coeffs->b;
+  }
 
   for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -10622,79 +10630,73 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dsij[ll] = udbfs * b_face_normal[f_id][ll];
 
-    if (bc_coeffs != NULL) {
+    if (bc_coeff_a != NULL && bc_coeff_b != nullptr) { /* Known face BC's */
 
-      const cs_real_t *bc_coeff_a = bc_coeffs->a;
-      const cs_real_t *bc_coeff_b = bc_coeffs->b;
+      cs_real_t unddij = 1. / b_dist[f_id];
+      cs_real_t umcbdd = (1. -bc_coeff_b[f_id]) * unddij;
 
-      if (bc_coeff_a != NULL && bc_coeff_b != NULL) { /* Known face BC's */
+      cs_real_t pfac =  (  bc_coeff_a[f_id] + (bc_coeff_b[f_id] -1.)
+                         * var[c_id]) * unddij;
 
-        cs_real_t unddij = 1. / b_dist[f_id];
-        cs_real_t umcbdd = (1. -bc_coeff_b[f_id]) * unddij;
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        dsij[ll] += umcbdd*diipb[f_id][ll];
 
-        cs_real_t pfac =  (  bc_coeff_a[f_id] + (bc_coeff_b[f_id] -1.)
-                             * var[c_id]) * unddij;
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        rhsv[ll] += dsij[ll] * pfac;
 
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dsij[ll] += umcbdd*diipb[f_id][ll];
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhsv[ll] += dsij[ll] * pfac;
-
-        cocg[0] += dsij[0] * dsij[0];
-        cocg[1] += dsij[1] * dsij[1];
-        cocg[2] += dsij[2] * dsij[2];
-        cocg[3] += dsij[0] * dsij[1];
-        cocg[4] += dsij[1] * dsij[2];
-        cocg[5] += dsij[0] * dsij[2];
-
-      }
-      else if (bc_coeff_a != NULL) { /* Known face values */
-
-        const cs_real_3_t *restrict b_f_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
-
-        cs_real_t dc[3];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        cs_real_t pfac = (bc_coeff_a[f_id] - var[c_id]) * ddc;
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhsv[ll] += dc[ll] * pfac;
-
-        cocg[0] += dc[0]*dc[0]*ddc;
-        cocg[1] += dc[1]*dc[1]*ddc;
-        cocg[2] += dc[2]*dc[2]*ddc;
-        cocg[3] += dc[0]*dc[1]*ddc;
-        cocg[4] += dc[1]*dc[2]*ddc;
-        cocg[5] += dc[0]*dc[2]*ddc;
-
-      }
-      else { /* Assign cell values as face values (homogeneous Neumann);
-                as above, pfac cancels out, so does contribution to RHS */
-
-        const cs_real_3_t *restrict b_f_face_cog
-          = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
-
-        cs_real_t dc[3];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
-
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        cocg[0] += dc[0]*dc[0]*ddc;
-        cocg[1] += dc[1]*dc[1]*ddc;
-        cocg[2] += dc[2]*dc[2]*ddc;
-        cocg[3] += dc[0]*dc[1]*ddc;
-        cocg[4] += dc[1]*dc[2]*ddc;
-        cocg[5] += dc[0]*dc[2]*ddc;
-
-      }
+      cocg[0] += dsij[0] * dsij[0];
+      cocg[1] += dsij[1] * dsij[1];
+      cocg[2] += dsij[2] * dsij[2];
+      cocg[3] += dsij[0] * dsij[1];
+      cocg[4] += dsij[1] * dsij[2];
+      cocg[5] += dsij[0] * dsij[2];
 
     }
+    else if (bc_coeff_a != nullptr) { /* Known face values */
+
+      const cs_real_3_t *restrict b_f_face_cog
+        = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+
+      cs_real_t dc[3];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+
+      cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+      cs_real_t pfac = (bc_coeff_a[f_id] - var[c_id]) * ddc;
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        rhsv[ll] += dc[ll] * pfac;
+
+      cocg[0] += dc[0]*dc[0]*ddc;
+      cocg[1] += dc[1]*dc[1]*ddc;
+      cocg[2] += dc[2]*dc[2]*ddc;
+      cocg[3] += dc[0]*dc[1]*ddc;
+      cocg[4] += dc[1]*dc[2]*ddc;
+      cocg[5] += dc[0]*dc[2]*ddc;
+
+    }
+    else { /* Assign cell values as face values (homogeneous Neumann);
+              as above, pfac cancels out, so does contribution to RHS */
+
+      const cs_real_3_t *restrict b_f_face_cog
+        = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+
+      cs_real_t dc[3];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dc[ii] = b_f_face_cog[f_id][ii] - cell_f_cen[c_id][ii];
+
+      cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+      cocg[0] += dc[0]*dc[0]*ddc;
+      cocg[1] += dc[1]*dc[1]*ddc;
+      cocg[2] += dc[2]*dc[2]*ddc;
+      cocg[3] += dc[0]*dc[1]*ddc;
+      cocg[4] += dc[1]*dc[2]*ddc;
+      cocg[5] += dc[0]*dc[2]*ddc;
+
+    }
+
   } // end of contribution from boundary cells
 
   /* Invert */
