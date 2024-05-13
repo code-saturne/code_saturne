@@ -1202,9 +1202,9 @@ cs_mem_advise_set_read_mostly(void  *ptr)
 
     cs_cuda_mem_set_advise_read_mostly(me.device_ptr, me.size);
 
-  }
-
 #endif
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1229,9 +1229,9 @@ cs_mem_advise_unset_read_mostly(void  *ptr)
 
     cs_cuda_mem_unset_advise_read_mostly(me.device_ptr, me.size);
 
-  }
-
 #endif
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
