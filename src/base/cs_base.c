@@ -2687,7 +2687,7 @@ cs_base_finalize_sequence(void)
  * to be of the form:
  * <prefix>/study_name/case_name/RESU/run_id
  *
- * or, in the case o a coupled run:
+ * or, in the case of a coupled run:
  * <prefix>/study_name/RESU_COUPLING/run_id/case_name
  *
  * If some names cannot be queried, NULL is returned.
