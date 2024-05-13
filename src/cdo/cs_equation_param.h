@@ -813,27 +813,14 @@ typedef struct {
  *
  * \var CS_EQKEY_ADV_FORMULATION
  * Kind of formulation of the advective term. There are two possible choices:
- * - "conservative"
- * - "non_conservative"
+ * - "conservative" (also called "divergence" formulation)
+ * - "non_conservative" (also called "gradient" formulation)
  *
  * \var CS_EQKEY_ADV_SCHEME
- * Type of numerical scheme for the advective term. The available choices
- * depend on the space discretization scheme.
- * - "upwind" (cf. \ref CS_PARAM_ADVECTION_SCHEME_UPWIND)
- * - "centered" (cf. \ref CS_PARAM_ADVECTION_SCHEME_CENTERED)
- * - "mix_centered_upwind" or "hybrid_centered_upwind"
- *   (cf. \ref CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND)
- * - "samarskii" --> switch smoothly between an upwind and a centered scheme
- *   thanks to a weight depending on the Peclet number. (cf.
- * \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII). Only for CDO-Vb schemes.
- * - "sg" --> closely related to "samarskii" but with a different definition of
- *   the weight (cf. \ref CS_PARAM_ADVECTION_SCHEME_SG). Only for CDO-Vb schemes
- * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
- *   Enable a better accuracy. (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP)
- * - "cip_cw" --> means "continuous interior penalty" (only for CDOVCB schemes).
- *   Enable a better accuracy.
- *   Consider a cellwise approximation of the advection field.
- *   (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW)
+ * Specify the type of numerical scheme for the advective term. The available
+ * choices depend on the space discretization scheme.
+ * Please refer to the section \ref cs_ug_cdo_hho_base_adv_scheme of the user
+ * guide for more details
  *
  * \var CS_EQKEY_ADV_STRATEGY
  * Strategy used to handle the advection term

@@ -88,8 +88,8 @@ To get started
 
 A simple example relying on the resolution of the Laplace equation (steady
 isotropic diffusion equation with Dirichlet boundary conditions) in a cube with
-CDO schemes is available [here](@ref cs_cdo_laplacian). This is a a good
-starting point for beginers.
+CDO schemes is available [here](@ref cs_cdo_laplacian). This is a good starting
+point for beginers.
 
 
 Case settings for CDO/HHO schemes
@@ -427,8 +427,8 @@ Settings done in cs_user_parameters() {#cs_ug_cdo_hho_base_user_param}
 Logging options
 ----------------
 
-The management of the level and frequency of details written by the code can be
-specified for CDO/HHO schemes as follows:
+The management of the level and frequency of details written by the solver can
+be specified for CDO/HHO schemes as follows:
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_output
 
@@ -493,14 +493,30 @@ CDO-Eb. CDO-Fb are also detailed in \cite Mila20. CDO-VCb are detailed in
 \cite Cant16
 
 
-### Set the advection scheme
+### Set the advection scheme {#cs_ug_cdo_hho_base_adv_scheme}
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_conv_numerics
 
 The available advection schemes are listed in the description of the key
 \ref CS_EQKEY_ADV_SCHEME
 
+
+key value | description | type | available with
+:--- | :--- | :--- | :---:
+`"upwind"` | first order upwind scheme (convergence rate is equal to 0.5 on pure advection problem with a solution having a low regularity). This is the most robust choice. This yields a high-level of numerical diffusion. Thus, when the Péclet number (ratio between convection and diffusion) is low, a centered scheme or a scheme with less upwinding is a better choice in terms of accuracy | \ref CS_PARAM_ADVECTION_SCHEME_UPWIND | `CDO vb`, `CDO fb`
+`"centered"` | second-order scheme on sufficiently regular solution. Dispersivity issue can occur with this scheme. This is not a good choice when the problem is dominated by the convection term. | \ref CS_PARAM_ADVECTION_SCHEME_CENTERED | `CDO vb`, `CDO fb`
+`"mix_centered_upwind"`, `"hybrid_centered_upwind"`| This is a hybrid advection scheme mixing an upwind and a centered advection scheme. The portion of upwinding (between 0. and 1.) is set thanks to the key \ref CS_EQKEY_ADV_UPWIND_PORTION By default, the value `0.15` is used (`0.25` when the GWF module is activated). | \ref CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND | `CDO vb`
+`"cip"` | "Continuous Interior Penalty" scheme detailed in \cite Cant16 This scheme is only available with a `non conservative` or `gradient` formulation of the advective term. A switch to this formulation is automatically done. This a second-order scheme on regular solutions with a built-in stabilization relying on the jump of the gradient. The scaling in front of the stabilization term is computed automatically but it can be modified by the user thanks to the key \ref CS_EQKEY_ADV_CIP_COEF | \ref CS_PARAM_ADVECTION_SCHEME_CIP | `CDO vcb`
+`"cip_cw"` | Same as the `"cip"` but the advective field is assumed to be constant in each cell. This enables further optimizations when building the advection matrix. | \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW | `CDO vcb`
+`"samarskii"` | This scheme shares some similarities with a `"hybrid_centered_upwind"` scheme since a portion of upwinding is added to a centered scheme. This portion smoothly varies between mesh cells according to the evaluation of a local Péclet number. A function (the _samarskii_ one) relates the Péclet number to the level of upwinding. | \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII | `CDO vb`
+`"sg"` | SG means "Scharfetter Gummel". This is as a Samarskii scheme. The difference holds in the function computing the portion of upwinding from a local Péclet number. | \ref CS_PARAM_ADVECTION_SCHEME_SG | `CDO vb`
+
+Here is a second set of examples
+
 \snippet cs_user_parameters-cdo-condif.c param_cdo_conv_schemes
+
+There is no advection scheme available with `HHO` schemes or `CDO cb` and `CDO eb`
+schemes up to now.
 
 ### Set the time scheme
 
@@ -554,7 +570,7 @@ algebraic multigrid, otherwise one uses the in-house solver. Here a flexible
 conjugate gradient (`fcg`) with a diagonal preconditionning (`jacobi`).
 
 
-### Set the family of solvers
+### Set the family of linear solvers
 
 Some of the choices are only available with external libraries. The external
 libraries which can be linked to code_saturne are:
@@ -571,7 +587,7 @@ solver either directly or through the PETSc library).
 \snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_solver_family
 
 
-### Set the solver {#cs_ug_cdo_hho_base_solver}
+### Set the linear solver {#cs_ug_cdo_hho_base_solver}
 
 Available linear solvers are listed in \ref cs_param_solver_type_t and can be
 set using the key \ref CS_EQKEY_SOLVER
