@@ -1961,7 +1961,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                     eqname, 100*eqp->upwind_portion);
     else if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP ||
              eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW)
-      cs_log_printf(CS_LOG_SETUP, "  * %s | CIP.coef: %f\n",
+      cs_log_printf(CS_LOG_SETUP, "  * %s | CIP.coef: %.2e\n",
                     eqname, eqp->cip_scaling_coef);
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Strategy: %s\n",
