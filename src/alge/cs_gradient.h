@@ -141,8 +141,8 @@ cs_gradient_free_quantities(void);
  *                                 hydrostatic pressure
  * \param[in]       bc_coeffs      boundary condition structure
  * \param[in, out]  var            gradient's base variable
- * \param[in, out]  c_weight       cell variable weight, or NULL
- * \param[in]       cpl            associated internal coupling, or NULL
+ * \param[in, out]  c_weight       cell variable weight, or nullptr
+ * \param[in]       cpl            associated internal coupling, or nullptr
  * \param[out]      grad           gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -182,8 +182,8 @@ cs_gradient_scalar(const char                    *var_name,
  * \param[in]       clip_coeff      clipping coefficient
  * \param[in]       bc_coeffs_v     boundary condition structure
  * \param[in, out]  var             gradient's base variable
- * \param[in, out]  c_weight        cell variable weight, or NULL
- * \param[in]       cpl             associated internal coupling, or NULL
+ * \param[in, out]  c_weight        cell variable weight, or nullptr
+ * \param[in]       cpl             associated internal coupling, or nullptr
  * \param[out]      gradv           gradient
                                     (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -265,8 +265,8 @@ cs_gradient_tensor(const char                 *var_name,
  *                              hydrostatic pressure
  * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
- * \param[in]   cpl             associated internal coupling, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
+ * \param[in]   cpl             associated internal coupling, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -310,8 +310,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   clip_coeff      clipping coefficient
  * \param[in]   bc_coeffs_v     boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
- * \param[in]   cpl             associated internal coupling, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
+ * \param[in]   cpl             associated internal coupling, or nullptr
  * \param[out]  grad            gradient
                                 (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -382,8 +382,8 @@ cs_gradient_tensor_synced_input(const char                 *var_name,
  *
  * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
  * arrays must be given. If boundary values are known, bc_coeff_a
- * can point to the boundary values array, and bc_coeff_b set to NULL.
- * If bc_coeff_a is NULL, bc_coeff_b is ignored.
+ * can point to the boundary values array, and bc_coeff_b set to nullptr.
+ * If bc_coeff_a is nullptr, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -391,7 +391,7 @@ cs_gradient_tensor_synced_input(const char                 *var_name,
  * \param[in]   halo_type       halo type
  * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -416,8 +416,8 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  *
  * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
  * arrays must be given. If boundary values are known, bc_coeff_a
- * can point to the boundary values array, and bc_coeff_b set to NULL.
- * If bc_coeff_a is NULL, bc_coeff_b is ignored.
+ * can point to the boundary values array, and bc_coeff_b set to nullptr.
+ * If bc_coeff_a is nullptr, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -425,7 +425,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  * \param[in]   halo_type       halo type
  * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -450,8 +450,8 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
  *
  * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
  * arrays must be given. If boundary values are known, bc_coeff_a
- * can point to the boundary values array, and bc_coeff_b set to NULL.
- * If bc_coeff_a is NULL, bc_coeff_b is ignored.
+ * can point to the boundary values array, and bc_coeff_b set to nullptr.
+ * If bc_coeff_a is nullptr, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -459,7 +459,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
  * \param[in]   halo_type       halo type
  * \param[in]   bc_coeffs_ts    boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
