@@ -336,7 +336,7 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
 
 #if defined(HAVE_MUMPS)
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "mumps");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "mumps");
 #else
     bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
 #endif
