@@ -1776,6 +1776,9 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   bool  force_values = (eqp->flag & CS_EQUATION_FORCE_VALUES) ? true : false;
   bool  inside_system = (eqp->flag & CS_EQUATION_INSIDE_SYSTEM) ? true : false;
 
+  // General information
+  // ===================
+
   cs_log_printf(CS_LOG_SETUP,
                 "  * %s | Terms: unsteady:%s, convection:%s, diffusion:%s\n",
                 eqname, cs_base_strtf(unsteady), cs_base_strtf(convection),
@@ -1806,7 +1809,8 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   cs_log_printf(CS_LOG_SETUP, "  * %s | Verbosity:          %d\n",
                 eqname, eqp->verbosity);
 
-  /* Boundary conditions */
+  // Boundary conditions
+  // ===================
 
   cs_log_printf(CS_LOG_SETUP, "\n### %s | Boundary condition settings\n",
                 eqname);
@@ -1843,7 +1847,8 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     }
   }
 
-  /* Time settings */
+  // Time settings
+  // =============
 
   if (unsteady) {
 
@@ -1878,7 +1883,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     sprintf(prefix, "        Time Hodge op. ");
     cs_hodge_param_log(prefix, eqp->time_property, eqp->time_hodgep);
 
-  } /* Unsteady term */
+  } // Unsteady term
+
+  // Diffusion term
+  // ==============
 
   if (diffusion) {
 
@@ -1889,7 +1897,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     sprintf(prefix, "        Diffusion Hodge op. ");
     cs_hodge_param_log(prefix, eqp->diffusion_property, eqp->diffusion_hodgep);
 
-  } /* Diffusion term */
+  }
+
+  // curl-curl term
+  // ==============
 
   if (curlcurl) {
 
@@ -1900,7 +1911,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     sprintf(prefix, "        Curl-curl Hodge op. ");
     cs_hodge_param_log(prefix, eqp->curlcurl_property, eqp->curlcurl_hodgep);
 
-  } /* Curl-curl term */
+  }
+
+  // grad-div term
+  // =============
 
   if (graddiv) {
 
@@ -1911,7 +1925,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     sprintf(prefix, "        Grad-Div Hodge op. ");
     cs_hodge_param_log(prefix, eqp->graddiv_property, eqp->graddiv_hodgep);
 
-  } /* Curl-curl term */
+  }
+
+  // Advection term
+  // ==============
 
   if (convection) {
 
@@ -1947,7 +1964,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                   eqname,
                   cs_param_get_advection_extrapol_name(eqp->adv_extrapol));
 
-  } /* Advection term */
+  }
+
+  // Reaction term(s)
+  // ================
 
   if (reaction) {
 
@@ -1958,7 +1978,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     sprintf(prefix, "        Reaction Hodge op. ");
     cs_hodge_param_log(prefix, NULL, eqp->reaction_hodgep);
 
-  } /* Reaction terms */
+  }
+
+  // Source term(s)
+  // ==============
 
   if (source_term) {
 
@@ -1971,9 +1994,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
       cs_xdef_log_setup(prefix, eqp->source_terms[s_id]);
     }
 
-  } /* Source terms */
+  }
 
-  /* Interior enforcement(s) */
+  // Interior enforcement(s)
+  // =======================
 
   cs_log_printf(CS_LOG_SETUP,
                 "\n### %s | Number of interior enforcements: %d\n",
@@ -1986,7 +2010,8 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
   }
 
-  /* Incremental process: Log parameters */
+  // Non-linear algorithm
+  // ====================
 
   if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
@@ -2017,9 +2042,10 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
     }
 
-  } /* There is an incremental resolution */
+  }
 
-  /* SLES information */
+  // SLES information
+  // ================
 
   cs_param_saddle_log(eqp->saddle_param);
   cs_param_sles_log(eqp->sles_param);

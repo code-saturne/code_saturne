@@ -757,7 +757,6 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
                            int                          bflux_id,
                            cs_equation_builder_t       *eqb)
 {
-  /* Sanity checks */
   assert(eqp != NULL);
   if (eqp->dim != 3)
     bft_error(__FILE__, __LINE__, 0, " Expected: vector-valued HHO equation.");
@@ -774,6 +773,7 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->bflux_field_id = bflux_id;
 
   /* Mesh flag to know what to build */
+
   eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
     CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ |
     CS_FLAG_COMP_EV | CS_FLAG_COMP_DIAM;
@@ -802,6 +802,7 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* System dimension */
+
   eqc->n_dofs = eqc->n_face_dofs * n_faces;
   eqc->n_max_loc_dofs = eqc->n_face_dofs*connect->n_max_fbyc + eqc->n_cell_dofs;
 
@@ -854,15 +855,18 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqb->system_helper = sh;
 
   /* Values of each DoF related to the cells */
+
   const cs_lnum_t  n_cell_dofs = n_cells * eqc->n_cell_dofs;
   BFT_MALLOC(eqc->cell_values, n_cell_dofs, cs_real_t);
   memset(eqc->cell_values, 0, sizeof(cs_real_t)*n_cell_dofs);
 
   /* Values at each face (interior and border) i.e. take into account BCs */
+
   BFT_MALLOC(eqc->face_values, eqc->n_dofs, cs_real_t);
   memset(eqc->face_values, 0, sizeof(cs_real_t)*eqc->n_dofs);
 
   /* Source term */
+
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -874,6 +878,7 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Members related to the static condensation.
      The transposed of acf_tilda is stored to speed-up the computation of
      the static condensation */
+
   BFT_MALLOC(eqc->rc_tilda, n_cell_dofs, cs_real_t);
   memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cell_dofs);
 
@@ -895,6 +900,7 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   BFT_FREE(row_block_sizes);
 
   /* Handle boundary conditions */
+
   const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
   BFT_MALLOC(eqc->bf2def_ids, n_b_faces, short int);
 

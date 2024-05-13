@@ -760,7 +760,6 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
                            int                          bflux_id,
                            cs_equation_builder_t       *eqb)
 {
-  /* Sanity checks */
   assert(eqp != NULL);
   if (eqp->dim != 1)
     bft_error(__FILE__, __LINE__, 0, " Expected: scalar-valued HHO equation.");

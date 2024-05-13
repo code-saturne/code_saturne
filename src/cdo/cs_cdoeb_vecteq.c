@@ -611,8 +611,8 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
 {
   assert(eqp != NULL && eqb != NULL);
 
-  /* This is a vector-valued equation but the DoF is scalar-valued since
-   * it is a circulation associated to each edge */
+  /* This is a vector-valued equation but the DoF is scalar-valued since it is
+   * a circulation associated to each edge */
 
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOEB || eqp->dim != 3)
     bft_error(__FILE__, __LINE__, 0,

@@ -334,7 +334,7 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
  *
  *         Case of an advection term without a diffusion operator. In this
  *         situation, a numerical issue may arise if an internal or a border
- *         face is such that there is no advective flux. A specil treatment
+ *         face is such that there is no advective flux. A special treatment
  *         is performed to tackle this issue.
  *
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
