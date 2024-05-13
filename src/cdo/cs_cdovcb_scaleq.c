@@ -830,7 +830,7 @@ _update_cell_fields(cs_timer_counter_t      *tce,
 static void
 _set_cip_coef(const cs_equation_param_t  *eqp)
 {
-  const double  gseed = 1e-2;  /* Default value to multiply according to the
+  const double  gseed = 1e-1;  /* Default value to multiply according to the
                                   problem and the ratio of diameters */
 
   const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
@@ -842,7 +842,7 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
   const double  hfMm = hf_min * hf_max;
   const double  rho_fc = hcMm / hfMm;
 
-  double  gamma = 10 * gseed * hc_max * hc_max * rho_fc;
+  double  gamma = gseed * hc_max * hc_max * rho_fc;
 
   /* If not pure convection */
 
