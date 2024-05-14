@@ -806,6 +806,8 @@ _slope_test_gradient_strided
 
   });
 
+  // ctx.wait(); not needed here as long as kernels run in order.
+
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     cs_real_t unsvol = 1./cell_vol[cell_id];
     for (cs_lnum_t isou = 0; isou < stride; isou++) {
@@ -813,6 +815,8 @@ _slope_test_gradient_strided
         grdpa[cell_id][isou][jsou] = grdpa[cell_id][isou][jsou]*unsvol;
     }
   });
+
+  ctx.wait();
 
   /* Handle parallelism and periodicity */
 
@@ -4057,7 +4061,6 @@ cs_convection_diffusion_vector(int                         idtvar,
     b_f_face_factor = fvq->b_f_face_factor;
   }
 
-  cs_gnum_t n_upwind;
   int iupwin = 0;
 
   cs_real_33_t *grad, *grdpa;
@@ -4214,6 +4217,8 @@ cs_convection_diffusion_vector(int                         idtvar,
     }
   });
 
+  ctx.wait();
+
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
     _slope_test_gradient_strided<3>(ctx,
@@ -4231,7 +4236,15 @@ cs_convection_diffusion_vector(int                         idtvar,
      ---> Contribution from interior faces
      ======================================================================*/
 
-  n_upwind = 0;
+  short *i_upwind = nullptr;
+  if (iwarnp >= 2 && iconvp == 1) {
+    cs_lnum_t n_i_faces = m->n_i_faces;
+    CS_MALLOC_HD(i_upwind, n_i_faces, short, cs_alloc_mode);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      i_upwind[face_id] = 0;
+    });
+    ctx.wait();
+  }
 
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
@@ -4250,7 +4263,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     if (idtvar < 0) {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for reduction(+:n_upwind)
+#       pragma omp parallel for
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
           for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -4260,8 +4273,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_lnum_t jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
-            if (ii < n_cells) {
-              n_upwind++;
+            if (i_upwind != nullptr && ii < n_cells) {
+              i_upwind[face_id] = 1;
             }
 
             cs_real_t fluxi[3], fluxj[3] ;
@@ -4352,7 +4365,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for reduction(+:n_upwind)
+#       pragma omp parallel for
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
           for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -4362,8 +4375,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_lnum_t jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
-            if (ii < n_cells) {
-              n_upwind++;
+            if (i_upwind != nullptr && ii < n_cells) {
+              i_upwind[face_id] = 1;
             }
 
             cs_real_t fluxi[3], fluxj[3] ;
@@ -4702,7 +4715,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     if (idtvar < 0) {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for reduction(+:n_upwind)
+#       pragma omp parallel for
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
           for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -4813,7 +4826,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     else {
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for reduction(+:n_upwind)
+#       pragma omp parallel for
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
           for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -4903,8 +4916,9 @@ cs_convection_diffusion_vector(int                         idtvar,
             if (upwind_switch) {
 
               /* in parallel, face will be counted by one and only one rank */
-              if (ii < n_cells)
-                n_upwind++;
+              if (i_upwind != nullptr && ii < n_cells) {
+                i_upwind[face_id] = 1;
+              }
 
               if (v_slope_test != NULL) {
                 v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
@@ -4938,14 +4952,20 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   } /* iupwin */
 
-  if (iwarnp >= 2 && iconvp == 1) {
-
-    /* Sum number of clippings */
+  if (iwarnp >= 2 && i_upwind != nullptr) {
+    cs_gnum_t n_upwind = 0;
+    const cs_lnum_t n_i_faces = m->n_i_faces;
+#   pragma omp parallel for reduction(+:n_upwind)
+    for (int i = 0; i < n_i_faces; i++) {
+      n_upwind += i_upwind[i];
+    }
     cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
+
+    CS_FREE_HD(i_upwind);
   }
 
   /* ======================================================================
