@@ -718,8 +718,8 @@ _needs_solving(const  char        *name,
   }
   else
     *residual = HUGE_VAL; /* actually unknown, since we did not multiply
-                            by A (we might as well enter the solver,
-                            and expect to have vx = 0 most of the time) */
+                             by A (we might as well enter the solver,
+                             and expect to have vx = 0 most of the time) */
 
   return retval;
 }

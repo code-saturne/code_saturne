@@ -1283,7 +1283,7 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
  * Arrays written are freed by this function.
  *
  * The full matrix is written, whether symmetric or not. Row and column
- * coordinats are 1-to-n based.
+ * coordinates are 1-to-n based.
  *
  * File format:
  *   - number of matrix entries (1 integer of type cs_gnum_t).
@@ -1425,7 +1425,7 @@ _write_matrix_g(const cs_matrix_t  *m,
  * Arrays written are freed by this function.
  *
  * The full matrix is written, whether symmetric or not. Row and column
- * coordinats are 1-to-n based.
+ * coordinates are 1-to-n based.
  *
  * File format:
  *   - number of matrix entries (1 integer of type cs_gnum_t).

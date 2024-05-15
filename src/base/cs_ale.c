@@ -1741,8 +1741,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
       break;
 
     case CS_BOUNDARY_ALE_SLIDING:
-      cs_equation_add_sliding_condition(eqp,
-                                        z->name);
+      cs_equation_add_sliding_condition(eqp, z->name);
       break;
 
     default:
