@@ -969,7 +969,7 @@ typedef struct {
  * --> deprecated key (use \ref CS_EQKEY_SOLVER instead)
  * \var CS_EQKEY_SOLVER
  * Specify the solver for the resolution of the linear system related to an
- * equation. Please refer to the section \ref cs_ug_cdo_hho_base_solver of the
+ * equation. Please refer to the section \ref cs_ug_cdo_sles_solver of the
  * user guide for more details
  *
  * \var CS_EQKEY_ITSOL_ATOL
@@ -1033,7 +1033,7 @@ typedef struct {
  *
  * \var CS_EQKEY_PRECOND
  * Specify the preconditioner associated to an iterative solver. Please refer
- * to the section \ref cs_ug_cdo_hho_base_precond of the user guide for more
+ * to the section \ref cs_ug_cdo_sles_precond of the user guide for more
  * details. Be careful since some options are only available with a given
  * family of solvers. If this is the case, be sure that your installation has
  * been installed with the appropriate library.

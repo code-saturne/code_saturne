@@ -134,6 +134,59 @@ cs_user_parameters(cs_domain_t    *domain)
   }
   /*! [cdo_sles_solver_family] */
 
+  /*! [cdo_sles_user_simple] */
+  {
+    /*
+      Example: Use a BiCGstab iterative solver with a 1st order Neumann
+               polynomial preconditioner is used to solve a user-defined
+               equation
+    */
+
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEqName");
+
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "bicgs");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "poly1");
+  }
+  /*! [cdo_sles_user_simple] */
+
+  /*! [cdo_sles_user_mumps] */
+  {
+    /*
+      Example: Use MUMPS to solve a user-defined equation
+    */
+
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+
+#if defined(HAVE_MUMPS)
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "mumps");
+#else
+    bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
+#endif
+  }
+  /*! [cdo_sles_user_mumps] */
+
+  /*! [cdo_sles_user_mumps_advanced] */
+  {
+    /* Parameters related to a user-defined equation */
+
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(eqp);
+
+    cs_param_sles_mumps(slesp,
+                        false,                     /* single-precision ? */
+                        CS_PARAM_MUMPS_FACTO_LU);  /* type of factorization */
+
+    cs_param_sles_mumps_advanced(slesp,
+                                 CS_PARAM_MUMPS_ANALYSIS_QAMD,
+                                 1,  /* size of the block for analysis */
+                                 -1, /* pct memory increase < 0 --> not used */
+                                 0,  /* BLR compression: 0 --> not used */
+                                 1,  /* iterative refinement steps */
+                                 CS_PARAM_MUMPS_MEMORY_AUTO,
+                                 true); /* advanced optimizations */
+  }
+  /*! [cdo_sles_user_mumps_advanced] */
+
   /*
      Example: Use MUMPS to solve the saddle-point problem arising from CDO
      -------  schemes for (Navier-)Stokes
@@ -432,6 +485,7 @@ cs_user_linear_solvers(void)
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [mumps_user_hook] */
 void
 cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
                         void                    *context,
@@ -439,8 +493,6 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
 {
   CS_UNUSED(slesp);
   CS_UNUSED(context);
-
-  /*! [sles_mumps_advanced_hook] */
 
   DMUMPS_STRUC_C  *mumps = pmumps;
   assert(mumps != NULL);
@@ -457,9 +509,8 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
   mumps->CNTL(4) = 0.0;    /* Static pivoting */
 
   mumps->ICNTL(58) = 2;    /* Symbolic factorization {0, 1, or 2}*/
-
-  /*! [sles_mumps_advanced_hook] */
 }
+/*! [mumps_user_hook] */
 #endif  /* HAVE_MUMPS */
 
 /*----------------------------------------------------------------------------*/
