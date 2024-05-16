@@ -75,6 +75,16 @@ typedef enum {
 
 /* Numerical constants */
 
+#if defined(__NVCC__) && defined(__CUDA_ARCH__)
+
+/* On GPU, global variables are usually not accessible. */
+
+#define cs_math_epzero 1e-12
+
+#else
+
+/* General constants accessible on CPU */
+
 extern const cs_real_t cs_math_zero_threshold;
 extern const cs_real_t cs_math_1ov3;
 extern const cs_real_t cs_math_2ov3;
@@ -93,6 +103,8 @@ static const cs_real_33_t cs_math_33_identity = {{1., 0., 0.,},
                                                  {0., 1., 0.},
                                                  {0., 0., 1.}};
 static const cs_real_6_t cs_math_sym_33_identity  = {1., 1., 1., 0. ,0., 0.};
+
+#endif
 
 /*=============================================================================
  * Inline static functions
@@ -139,7 +151,7 @@ cs_math_binom(int  n,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_fabs(cs_real_t  x)
 {
   cs_real_t ret = (x <  0) ? -x : x;
@@ -157,7 +169,7 @@ cs_math_fabs(cs_real_t  x)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_fmin(cs_real_t  x,
              cs_real_t  y)
 {
@@ -176,7 +188,7 @@ cs_math_fmin(cs_real_t  x,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_fmax(cs_real_t  x,
              cs_real_t  y)
 {
@@ -198,7 +210,7 @@ cs_math_fmax(cs_real_t  x,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_clamp(cs_real_t x,
               cs_real_t xmin,
               cs_real_t xmax)
@@ -218,7 +230,7 @@ cs_math_clamp(cs_real_t x,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_sq(cs_real_t  x)
 {
   return x*x;
@@ -234,7 +246,7 @@ cs_math_sq(cs_real_t  x)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_pow2(cs_real_t  x)
 {
   return x*x;
@@ -250,7 +262,7 @@ cs_math_pow2(cs_real_t  x)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_pow3(cs_real_t  x)
 {
   return x*x*x;
@@ -266,7 +278,7 @@ cs_math_pow3(cs_real_t  x)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_pow4(cs_real_t  x)
 {
   return (x*x)*(x*x);
@@ -282,7 +294,7 @@ cs_math_pow4(cs_real_t  x)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_pow5(cs_real_t  x)
 {
   return x*(x*x)*(x*x);
@@ -300,7 +312,7 @@ cs_math_pow5(cs_real_t  x)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_distance(const cs_real_t  xa[3],
                    const cs_real_t  xb[3])
 {
@@ -325,7 +337,7 @@ cs_math_3_distance(const cs_real_t  xa[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_distance_dot_product(const cs_real_t  xa[3],
                                const cs_real_t  xb[3],
                                const cs_real_t  xc[3])
@@ -345,7 +357,7 @@ cs_math_3_distance_dot_product(const cs_real_t  xa[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_square_distance(const cs_real_t  xa[3],
                           const cs_real_t  xb[3])
 {
@@ -367,7 +379,7 @@ cs_math_3_square_distance(const cs_real_t  xa[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_dot_product(const cs_real_t  u[3],
                       const cs_real_t  v[3])
 {
@@ -388,7 +400,7 @@ cs_math_3_dot_product(const cs_real_t  u[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_33_3_dot_product(const cs_real_t  n1[3],
                            const cs_real_t  t[3][3],
                            const cs_real_t  n2[3])
@@ -416,7 +428,7 @@ cs_math_3_33_3_dot_product(const cs_real_t  n1[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_sym_33_3_dot_product(const cs_real_t  n1[3],
                                const cs_real_t  t[6],
                                const cs_real_t  n2[3])
@@ -436,7 +448,7 @@ cs_math_3_sym_33_3_dot_product(const cs_real_t  n1[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_norm(const cs_real_t  v[3])
 {
   return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
@@ -452,7 +464,7 @@ cs_math_3_norm(const cs_real_t  v[3])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_square_norm(const cs_real_t v[3])
 {
   cs_real_t v2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
@@ -471,7 +483,7 @@ cs_math_3_square_norm(const cs_real_t v[3])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_3_normalise(const cs_real_t  vin[3],
                     cs_real_t        vout[3])
 {
@@ -495,7 +507,7 @@ cs_math_3_normalise(const cs_real_t  vin[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_3_normalize(const cs_real_t  vin[3],
                     cs_real_t        vout[3])
 {
@@ -521,7 +533,7 @@ cs_math_3_normalize(const cs_real_t  vin[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_3_normalize_threshold(const cs_real_t vin[3],
                               const cs_real_t thres,
                               cs_real_t       vout[3])
@@ -546,7 +558,7 @@ cs_math_3_normalize_threshold(const cs_real_t vin[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_3_orthogonal_projection(const cs_real_t  n[3],
                                 const cs_real_t  v[3],
                                 cs_real_t        vout[restrict 3])
@@ -567,7 +579,7 @@ cs_math_3_orthogonal_projection(const cs_real_t  n[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_3_normal_scaling(const cs_real_t  n[3],
                          cs_real_t        factor,
                          cs_real_t        v[3])
@@ -589,7 +601,7 @@ cs_math_3_normal_scaling(const cs_real_t  n[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_normal_scaling_add(const cs_real_t  n[3],
                               cs_real_t        factor,
                               cs_real_t        t[3][3])
@@ -614,7 +626,7 @@ cs_math_33_normal_scaling_add(const cs_real_t  n[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_3_product(const cs_real_t  m[3][3],
                      const cs_real_t  v[3],
                      cs_real_t        mv[restrict 3])
@@ -635,7 +647,7 @@ cs_math_33_3_product(const cs_real_t  m[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_3_product_add(const cs_real_t  m[3][3],
                          const cs_real_t  v[3],
                          cs_real_t        mv[restrict 3])
@@ -656,7 +668,7 @@ cs_math_33_3_product_add(const cs_real_t  m[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33t_3_product(const cs_real_t  m[3][3],
                       const cs_real_t  v[3],
                       cs_real_t        mv[restrict 3])
@@ -678,7 +690,7 @@ cs_math_33t_3_product(const cs_real_t  m[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_sym_33_3_product(const cs_real_t  m[6],
                          const cs_real_t  v[3],
                          cs_real_t        mv[restrict 3])
@@ -700,7 +712,7 @@ cs_math_sym_33_3_product(const cs_real_t  m[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_sym_33_3_product_add(const cs_real_t  m[6],
                              const cs_real_t  v[3],
                              cs_real_t        mv[restrict 3])
@@ -722,7 +734,7 @@ cs_math_sym_33_3_product_add(const cs_real_t  m[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_sym_33_sym_33_product_trace(const cs_real_t  m1[6],
                                     const cs_real_t  m2[6])
 {
@@ -741,7 +753,7 @@ cs_math_sym_33_sym_33_product_trace(const cs_real_t  m1[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_33_trace(const cs_real_t  t[3][3])
 {
   return (t[0][0] + t[1][1] + t[2][2]);
@@ -757,7 +769,7 @@ cs_math_33_trace(const cs_real_t  t[3][3])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_6_trace(const cs_real_t  t[6])
 {
   return (t[0] + t[1] + t[2]);
@@ -774,7 +786,7 @@ cs_math_6_trace(const cs_real_t  t[6])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_66_6_product(const cs_real_t  m[6][6],
                      const cs_real_t  v[6],
                      cs_real_t        mv[restrict 6])
@@ -796,7 +808,7 @@ cs_math_66_6_product(const cs_real_t  m[6][6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_66_6_product_add(const cs_real_t  m[6][6],
                          const cs_real_t  v[6],
                          cs_real_t        mv[restrict 6])
@@ -817,7 +829,7 @@ cs_math_66_6_product_add(const cs_real_t  m[6][6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_33_determinant(const cs_real_t   m[3][3])
 {
   const cs_real_t  com0 = m[1][1]*m[2][2] - m[2][1]*m[1][2];
@@ -837,7 +849,7 @@ cs_math_33_determinant(const cs_real_t   m[3][3])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_sym_33_determinant(const cs_real_6_t   m)
 {
   const cs_real_t  com0 = m[1]*m[2] - m[4]*m[4];
@@ -861,7 +873,7 @@ cs_math_sym_33_determinant(const cs_real_6_t   m)
 #pragma optimization_level 0 /* Bug with O1 or above with icc 15.0.1 20141023 */
 #endif
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_3_cross_product(const cs_real_t  u[3],
                         const cs_real_t  v[3],
                         cs_real_t        uv[restrict 3])
@@ -887,7 +899,7 @@ cs_math_3_cross_product(const cs_real_t  u[3],
 #pragma optimization_level 0 /* Bug with O1 or above with icc 15.0.1 20141023 */
 #endif
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_3_triple_product(const cs_real_t  u[3],
                          const cs_real_t  v[3],
                          const cs_real_t  w[3])
@@ -909,7 +921,7 @@ cs_math_3_triple_product(const cs_real_t  u[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_3_orthonormal_basis(const cs_real_t vect[3],
                             cs_real_t       axes[3][3])
 {
@@ -946,7 +958,7 @@ cs_math_3_orthonormal_basis(const cs_real_t vect[3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_inv_cramer(const cs_real_t  in[3][3],
                       cs_real_t        out[3][3])
 {
@@ -978,7 +990,7 @@ cs_math_33_inv_cramer(const cs_real_t  in[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_inv_cramer_in_place(cs_real_t  a[3][3])
 {
   cs_real_t a00 = a[1][1]*a[2][2] - a[2][1]*a[1][2];
@@ -1013,7 +1025,7 @@ cs_math_33_inv_cramer_in_place(cs_real_t  a[3][3])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_inv_cramer_sym_in_place(cs_real_t  a[3][3])
 {
   cs_real_t a00 = a[1][1]*a[2][2] - a[2][1]*a[1][2];
@@ -1048,7 +1060,7 @@ cs_math_33_inv_cramer_sym_in_place(cs_real_t  a[3][3])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_sym_33_inv_cramer(const cs_real_t  s[6],
                           cs_real_t        sout[restrict 6])
 {
@@ -1081,7 +1093,7 @@ cs_math_sym_33_inv_cramer(const cs_real_t  s[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_product(const cs_real_t  m1[3][3],
                    const cs_real_t  m2[3][3],
                    cs_real_t        mout[3][3])
@@ -1110,7 +1122,7 @@ cs_math_33_product(const cs_real_t  m1[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_transform_r_to_a(const cs_real_t  m[3][3],
                             const cs_real_t  q[3][3],
                             cs_real_t        mout[3][3])
@@ -1154,7 +1166,7 @@ cs_math_33_transform_r_to_a(const cs_real_t  m[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_sym_33_transform_r_to_a(const cs_real_t  m[6],
                                 const cs_real_t  q[3][3],
                                 cs_real_t        mout[6])
@@ -1194,7 +1206,7 @@ cs_math_sym_33_transform_r_to_a(const cs_real_t  m[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_transform_a_to_r(const cs_real_t  m[3][3],
                             const cs_real_t  q[3][3],
                             cs_real_t        mout[3][3])
@@ -1238,7 +1250,7 @@ cs_math_33_transform_a_to_r(const cs_real_t  m[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_sym_33_transform_a_to_r(const cs_real_t  m[6],
                                 const cs_real_t  q[3][3],
                                 cs_real_t        mout[6])
@@ -1279,7 +1291,7 @@ cs_math_sym_33_transform_a_to_r(const cs_real_t  m[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_extract_sym_ant(const cs_real_t  m[3][3],
                            cs_real_t        m_sym[3][3],
                            cs_real_t        m_ant[3][3])
@@ -1318,7 +1330,7 @@ cs_math_33_extract_sym_ant(const cs_real_t  m[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_33_main_invariant_2(const cs_real_t  m[3][3])
 {
   /* sym = 0.5 (m + m_transpose) */
@@ -1340,7 +1352,7 @@ cs_math_33_main_invariant_2(const cs_real_t  m[3][3])
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_33_product_add(const cs_real_t  m1[3][3],
                        const cs_real_t  m2[3][3],
                        cs_real_t        mout[restrict 3][3])
@@ -1374,7 +1386,7 @@ cs_math_33_product_add(const cs_real_t  m1[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_sym_33_product(const cs_real_t s1[6],
                        const cs_real_t s2[6],
                        cs_real_t       sout[restrict 6])
@@ -1403,7 +1415,7 @@ cs_math_sym_33_product(const cs_real_t s1[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
                                  cs_real_t        sout[restrict 6][6])
 {
@@ -1455,7 +1467,7 @@ cs_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_math_sym_33_double_product(const cs_real_t  s1[6],
                               const cs_real_t  s2[6],
                               const cs_real_t  s3[6],
@@ -1510,7 +1522,7 @@ cs_math_sym_33_double_product(const cs_real_t  s1[6],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_nvec3(const cs_real_3_t    v,
          cs_nvec3_t          *qv)
 {
@@ -1545,7 +1557,7 @@ cs_nvec3(const cs_real_3_t    v,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+CS_F_HOST_DEVICE void
 cs_math_3_length_unitv(const cs_real_t    xa[3],
                        const cs_real_t    xb[3],
                        cs_real_t         *len,

@@ -85,7 +85,7 @@ cs_sync_scalar_halo(const cs_mesh_t  *m,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t
+CS_F_HOST_DEVICE inline static cs_real_t
 cs_nvd_scheme_scalar(const cs_nvd_type_t  limiter,
                      const cs_real_t      nvf_p_c,
                      const cs_real_t      nvf_r_f,
@@ -270,7 +270,7 @@ cs_nvd_scheme_scalar(const cs_nvd_type_t  limiter,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t
+CS_F_HOST_DEVICE inline static cs_real_t
 cs_nvd_vof_scheme_scalar(cs_nvd_type_t    limiter,
                          const cs_real_t  i_face_u_normal[3],
                          cs_real_t        nvf_p_c,
@@ -403,7 +403,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t    limiter,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_slope_test(const cs_real_t   pi,
               const cs_real_t   pj,
               const cs_real_t   distf,
@@ -468,7 +468,7 @@ cs_slope_test(const cs_real_t   pi,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_slope_test_strided(const cs_real_t   pi[stride],
                       const cs_real_t   pj[stride],
                       const cs_real_t   distf,
@@ -534,7 +534,7 @@ cs_slope_test_strided(const cs_real_t   pi[stride],
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_compute_quantities(const cs_real_t    bldfrp,
                         const cs_real_3_t  diipf,
                         const cs_real_3_t  djjpf,
@@ -580,7 +580,7 @@ cs_i_compute_quantities(const cs_real_t    bldfrp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_compute_quantities_strided(const cs_real_t  bldfrp,
                                 const cs_real_t  diipf[3],
                                 const cs_real_t  djjpf[3],
@@ -593,12 +593,11 @@ cs_i_compute_quantities_strided(const cs_real_t  bldfrp,
                                 cs_real_t        pip[stride],
                                 cs_real_t        pjp[stride])
 {
-  cs_real_t dpvf[3];
-
   /* x-y-z components, p = u, v, w */
 
   for (int isou = 0; isou < stride; isou++) {
 
+    cs_real_t dpvf[3];
     for (int jsou = 0; jsou < 3; jsou++)
       dpvf[jsou] = 0.5*( gradi[isou][jsou]
                        + gradj[isou][jsou]);
@@ -632,7 +631,7 @@ cs_i_compute_quantities_strided(const cs_real_t  bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_relax_c_val(const double     relaxp,
                  const cs_real_t  pia,
                  const cs_real_t  pja,
@@ -674,7 +673,7 @@ cs_i_relax_c_val(const double     relaxp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_relax_c_val_strided(cs_real_t        relaxp,
                          const cs_real_t  pia[stride],
                          const cs_real_t  pja[stride],
@@ -705,7 +704,7 @@ cs_i_relax_c_val_strided(cs_real_t        relaxp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_upwind_f_val(const cs_real_t  p,
                 cs_real_t       *pf)
 {
@@ -725,7 +724,7 @@ cs_upwind_f_val(const cs_real_t  p,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_upwind_f_val_strided(const cs_real_t  p[stride],
                         cs_real_t        pf[stride])
 {
@@ -744,7 +743,7 @@ cs_upwind_f_val_strided(const cs_real_t  p[stride],
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_centered_f_val(double      pnd,
                   cs_real_t   pip,
                   cs_real_t   pjp,
@@ -768,7 +767,7 @@ cs_centered_f_val(double      pnd,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_centered_f_val_strided(double           pnd,
                           const cs_real_t  pip[stride],
                           const cs_real_t  pjp[stride],
@@ -790,7 +789,7 @@ cs_centered_f_val_strided(double           pnd,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_solu_f_val(const cs_real_t   cell_cen[3],
               const cs_real_t   i_face_cog[3],
               const cs_real_t   grad[3],
@@ -822,7 +821,7 @@ cs_solu_f_val(const cs_real_t   cell_cen[3],
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_solu_f_val_strided(const cs_real_t  cell_cen[3],
                       const cs_real_t  i_face_cog[3],
                       const cs_real_t  grad[stride][3],
@@ -853,7 +852,7 @@ cs_solu_f_val_strided(const cs_real_t  cell_cen[3],
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_blend_f_val(const double     blencp,
                const cs_real_t  p,
                cs_real_t       *pf)
@@ -877,7 +876,7 @@ cs_blend_f_val(const double     blencp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_blend_f_val_strided(const double     blencp,
                        const cs_real_t  p[stride],
                        cs_real_t        pf[stride])
@@ -909,7 +908,7 @@ cs_blend_f_val_strided(const double     blencp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_conv_flux(const int       iconvp,
                const cs_real_t thetap,
                const int       imasac,
@@ -957,7 +956,7 @@ cs_i_conv_flux(const int       iconvp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_conv_flux_strided(int              iconvp,
                        cs_real_t        thetap,
                        int              imasac,
@@ -999,7 +998,7 @@ cs_i_conv_flux_strided(int              iconvp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_diff_flux(const int        idiffp,
                const cs_real_t  thetap,
                const cs_real_t  pip,
@@ -1033,7 +1032,7 @@ cs_i_diff_flux(const int        idiffp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_diff_flux_strided(int             idiffp,
                        cs_real_t       thetap,
                        const cs_real_t  pip[stride],
@@ -1076,7 +1075,7 @@ cs_i_diff_flux_strided(int             idiffp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_steady_upwind(const cs_real_t   bldfrp,
                       const cs_real_t   relaxp,
                       const cs_real_t   diipf[3],
@@ -1163,7 +1162,7 @@ cs_i_cd_steady_upwind(const cs_real_t   bldfrp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_steady_upwind_strided(const cs_real_t  bldfrp,
                               const cs_real_t  relaxp,
                               const cs_real_t  diipf[3],
@@ -1235,7 +1234,7 @@ cs_i_cd_steady_upwind_strided(const cs_real_t  bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_upwind(const cs_real_t   bldfrp,
                         const cs_real_t   diipf[3],
                         const cs_real_t   djjpf[3],
@@ -1289,7 +1288,7 @@ cs_i_cd_unsteady_upwind(const cs_real_t   bldfrp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_upwind_strided(const cs_real_t  bldfrp,
                                 const cs_real_t  diipf[3],
                                 const cs_real_t  djjpf[3],
@@ -1302,22 +1301,25 @@ cs_i_cd_unsteady_upwind_strided(const cs_real_t  bldfrp,
                                 cs_real_t        pip[stride],
                                 cs_real_t        pjp[stride])
 {
-  cs_real_t recoi[stride], recoj[stride];
+  /* x-y-z components, p = u, v, w */
 
-  cs_i_compute_quantities_strided<stride>(bldfrp,
-                                          diipf,
-                                          djjpf,
-                                          gradi,
-                                          gradj,
-                                          pi,
-                                          pj,
-                                          recoi,
-                                          recoj,
-                                          pip,
-                                          pjp);
+  for (int isou = 0; isou < stride; isou++) {
 
-  cs_upwind_f_val_strided<stride>(pi, pif);
-  cs_upwind_f_val_strided<stride>(pj, pjf);
+    cs_real_t dpvf[3];
+    for (int jsou = 0; jsou < 3; jsou++)
+      dpvf[jsou] = 0.5*(gradi[isou][jsou] + gradj[isou][jsou]);
+
+    /* reconstruction only if IRCFLP = 1 */
+
+    pip[isou] = pi[isou] + bldfrp*(cs_math_3_dot_product(dpvf, diipf));
+    pjp[isou] = pj[isou] + bldfrp*(cs_math_3_dot_product(dpvf, djjpf));
+
+  }
+
+  for (int isou = 0; isou < stride; isou++) {
+    pif[isou] = pi[isou];
+    pjf[isou] = pj[isou];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1355,7 +1357,7 @@ cs_i_cd_unsteady_upwind_strided(const cs_real_t  bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_steady(const cs_real_t   bldfrp,
                const int         ischcp,
                const double      relaxp,
@@ -1540,7 +1542,7 @@ cs_i_cd_steady(const cs_real_t   bldfrp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_steady_strided(cs_real_t        bldfrp,
                        int              ischcp,
                        double           relaxp,
@@ -1674,7 +1676,7 @@ cs_i_cd_steady_strided(cs_real_t        bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady(const cs_real_t    bldfrp,
                  const int          ischcp,
                  const double       blencp,
@@ -1837,7 +1839,7 @@ cs_i_cd_unsteady(const cs_real_t    bldfrp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_strided(cs_real_t        bldfrp,
                          int              ischcp,
                          double           blencp,
@@ -1859,19 +1861,20 @@ cs_i_cd_unsteady_strided(cs_real_t        bldfrp,
                          cs_real_t        pjp[stride])
 
 {
-  cs_real_t recoi[stride], recoj[stride];
+  /* x-y-z components, p = u, v, w */
 
-  cs_i_compute_quantities_strided<stride>(bldfrp,
-                                          diipf,
-                                          djjpf,
-                                          gradi,
-                                          gradj,
-                                          pi,
-                                          pj,
-                                          recoi,
-                                          recoj,
-                                          pip,
-                                          pjp);
+  for (int isou = 0; isou < stride; isou++) {
+
+    cs_real_t dpvf[3];
+    for (int jsou = 0; jsou < 3; jsou++)
+      dpvf[jsou] = 0.5*(gradi[isou][jsou] + gradj[isou][jsou]);
+
+    /* reconstruction only if IRCFLP = 1 */
+
+    pip[isou] = pi[isou] + bldfrp*(cs_math_3_dot_product(dpvf, diipf));
+    pjp[isou] = pj[isou] + bldfrp*(cs_math_3_dot_product(dpvf, djjpf));
+
+  }
 
   if (ischcp == 1) {
 
@@ -1984,7 +1987,7 @@ cs_i_cd_unsteady_strided(cs_real_t        bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_steady_slope_test(bool              *upwind_switch,
                           const int          iconvp,
                           const cs_real_t    bldfrp,
@@ -2237,7 +2240,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_steady_slope_test_strided(bool             *upwind_switch,
                                   int               iconvp,
                                   cs_real_t         bldfrp,
@@ -2416,7 +2419,7 @@ cs_i_cd_steady_slope_test_strided(bool             *upwind_switch,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                             const int          iconvp,
                             const cs_real_t    bldfrp,
@@ -2575,7 +2578,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_central_downwind_cells(const cs_lnum_t    ii,
                           const cs_lnum_t    jj,
                           const cs_real_t    i_massflux,
@@ -2614,7 +2617,7 @@ cs_central_downwind_cells(const cs_lnum_t    ii,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
                      const double         beta,
                      const cs_real_3_t    cell_cen_c,
@@ -2744,7 +2747,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_slope_test_strided(bool             *upwind_switch,
                                     int               iconvp,
                                     cs_real_t         bldfrp,
@@ -2877,7 +2880,7 @@ cs_i_cd_unsteady_slope_test_strided(bool             *upwind_switch,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_compute_quantities(const cs_real_3_t  diipb,
                         const cs_real_3_t  gradi,
                         const cs_real_t    bldfrp,
@@ -2903,7 +2906,7 @@ cs_b_compute_quantities(const cs_real_3_t  diipb,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_compute_quantities_strided(const cs_real_t  diipb[3],
                                 const cs_real_t  gradi[stride][3],
                                 const cs_real_t  bldfrp,
@@ -2929,7 +2932,7 @@ cs_b_compute_quantities_strided(const cs_real_t  diipb[3],
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_relax_c_val(const double     relaxp,
                  const cs_real_t  pi,
                  const cs_real_t  pia,
@@ -2958,7 +2961,7 @@ cs_b_relax_c_val(const double     relaxp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_relax_c_val_strided(const double     relaxp,
                          const cs_real_t  pi[stride],
                          const cs_real_t  pia[stride],
@@ -2998,7 +3001,7 @@ cs_b_relax_c_val_strided(const double     relaxp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_imposed_conv_flux(int         iconvp,
                        cs_real_t   thetap,
                        int         imasac,
@@ -3072,7 +3075,7 @@ cs_b_imposed_conv_flux(int         iconvp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_imposed_conv_flux_strided(int              iconvp,
                                cs_real_t        thetap,
                                int              imasac,
@@ -3153,7 +3156,7 @@ cs_b_imposed_conv_flux_strided(int              iconvp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_upwind_flux(const int        iconvp,
                  const cs_real_t  thetap,
                  const int        imasac,
@@ -3210,7 +3213,7 @@ cs_b_upwind_flux(const int        iconvp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_upwind_flux_strided(int              iconvp,
                          cs_real_t        thetap,
                          int              imasac,
@@ -3260,7 +3263,7 @@ cs_b_upwind_flux_strided(int              iconvp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_diff_flux(const int        idiffp,
                const cs_real_t  thetap,
                const int        inc,
@@ -3293,7 +3296,7 @@ cs_b_diff_flux(const int        idiffp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_diff_flux_strided(int              idiffp,
                        cs_real_t        thetap,
                        int              inc,
@@ -3329,7 +3332,7 @@ cs_b_diff_flux_strided(int              idiffp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_cd_steady(const cs_real_t    bldfrp,
                const double       relaxp,
                const cs_real_3_t  diipb,
@@ -3374,7 +3377,7 @@ cs_b_cd_steady(const cs_real_t    bldfrp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_cd_steady_strided(cs_real_t        bldfrp,
                        double           relaxp,
                        const cs_real_t  diipb[3],
@@ -3412,7 +3415,7 @@ cs_b_cd_steady_strided(cs_real_t        bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_cd_unsteady(const cs_real_t    bldfrp,
                  const cs_real_3_t  diipb,
                  const cs_real_3_t  gradi,
@@ -3446,7 +3449,7 @@ cs_b_cd_unsteady(const cs_real_t    bldfrp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_cd_unsteady_strided(cs_real_t        bldfrp,
                          const cs_real_t  diipb[3],
                          const cs_real_t  gradi[stride][3],
@@ -3477,7 +3480,7 @@ cs_b_cd_unsteady_strided(cs_real_t        bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_diff_flux_coupling(int         idiffp,
                         cs_real_t   pi,
                         cs_real_t   pj,
@@ -3504,7 +3507,7 @@ cs_b_diff_flux_coupling(int         idiffp,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_b_diff_flux_coupling_strided(int              idiffp,
                                 const cs_real_t  pi[stride],
                                 const cs_real_t  pj[stride],
