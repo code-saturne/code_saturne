@@ -880,7 +880,11 @@ cs_dispatch_sum(T                       *dest,
     for (size_t i = 0; i < dim; i++) {
       v[i].get() = src[i];
     }
-    sum_v::ref(dest).conflict_free_add(-1u, v);
+
+    sum_v &vs = reinterpret_cast<sum_v &>(*dest);
+    vs.conflict_free_add(-1u, v);
+
+    //sum_v::ref(dest).conflict_free_add(-1u, v);
 #else
     for (size_t i = 0; i < dim; i++) {
       atomicAdd(&dest[i], src[i]);

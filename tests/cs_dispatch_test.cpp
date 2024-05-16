@@ -76,10 +76,12 @@ cs_dispatch_test(void)
   //cs_dispatch_context ctx(cs_device_context(), {});
   cs_dispatch_context ctx;
 
-  cs_real_t *a0, *a1;
   cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE_SHARED;
+  cs_real_t *a0, *a1;
   CS_MALLOC_HD(a0, n, cs_real_t, amode);
   CS_MALLOC_HD(a1, n, cs_real_t, amode);
+  cs_real_3_t *a2;
+  CS_MALLOC_HD(a2, n/10, cs_real_3_t, amode);
 
   for (int i = 0; i < 3; i++) {
 
@@ -106,6 +108,30 @@ cs_dispatch_test(void)
 
     for (cs_lnum_t ii = 0; ii < n/10; ii++) {
       std::cout << ii << " " << a0[ii] << " " << a1[ii] << std::endl;
+    }
+
+    for (cs_lnum_t ii = 0; ii < n/10; ii++) {
+      a2[ii][0] = 0;
+      a2[ii][1] = 0;
+      a2[ii][2] = 0;
+    }
+
+    ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+#if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
+      cs_real_t s[3] = {0, -1, -2};
+#else
+      cs_real_t s[3] = {0, 1, 2};
+#endif
+
+      cs_dispatch_sum<3>(a2[ii/10], s, CS_DISPATCH_SUM_ATOMIC);
+    });
+
+    ctx.wait();
+
+    for (cs_lnum_t ii = 0; ii < n/10; ii++) {
+      std::cout << ii << " " << a2[ii][0]
+                      << " " << a2[ii][1]
+                      << " " << a2[ii][2] << std::endl;
     }
   }
 
