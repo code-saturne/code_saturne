@@ -244,10 +244,6 @@ if (ntcabs.le.1.or.ntcabs.eq.ntpabs+1) then
     mom_a(3, level_id) = mom(3, level_id)
     dpdt_met(level_id) = 0.d0
   enddo
-
-  ! Initialisation of the momentum source term with an initial momentum balance
-!  call cs_balance_vector(idtvar, ivarfl(iu), imasac, inc, ivisse, )
-
 endif
 
 ! Delta of pressure integrated over a time step for each level

@@ -2395,35 +2395,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function cs_balance_vector
-
-    subroutine cs_balance_vector(idtvar, f_id, imasac, inc, ivisep,          &
-                                 vcopt, pvar, pvara, coefav, coefbv, cofafv, &
-                                 cofbfv, i_massflux, b_massflux, i_visc,     &
-                                 b_visc, secvif, secvib, viscel,             &
-                                 weighf, weighb, icvflb, icvfli,             &
-                                 i_pvar, b_pvar,smbrp)                       &
-      bind(C, name='cs_balance_vector')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: idtvar, f_id, imasac, inc
-      integer(c_int), value :: ivisep
-      type(c_ptr), value :: vcopt
-      real(kind=c_double), dimension(*), intent(in) :: pvar, pvara, coefav
-      real(kind=c_double), dimension(*), intent(in) :: coefbv, cofafv, cofbfv
-      real(kind=c_double), dimension(*), intent(in) :: i_massflux, b_massflux
-      real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc, viscel
-      real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
-      real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
-      integer(c_int), value :: icvflb
-      integer(c_int), dimension(*), intent(in) :: icvfli
-      type(c_ptr), value :: i_pvar, b_pvar
-      !real(kind=c_double), dimension(*), intent(inout) :: i_pvar, b_pvar
-      real(kind=c_double), dimension(*), intent(inout) :: smbrp
-    end subroutine cs_balance_vector
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function computing the sound velocity square
 
     subroutine cs_thermal_model_c_square(cp, temp,                  &

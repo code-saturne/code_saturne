@@ -558,7 +558,6 @@ cs_immersed_boundary_wall_functions(int         f_id,
   /* velocity */
   if (f == CS_F_(vel) && eqp->idiff > 0) {
     /* cast to 3D vectors for readability */
-    cs_real_3_t   *_st_exp = (cs_real_3_t *)st_exp;
     cs_real_33_t  *_st_imp = (cs_real_33_t *)st_imp;
 
     cs_gnum_t nsubla = 0;
