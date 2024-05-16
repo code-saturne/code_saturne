@@ -186,20 +186,11 @@ cs_user_zones(void)
   }
   /*! [user_zones_volume_1] */
 
+  /* Example:
+   * Define zone of cells neighbouring the boundary G3 */
   /*! [user_zones_volume_2] */
   {
-    char name[128], criteria[128];
-
-    for (int i = 0; i < 3; i++) {
-
-      double s_coords[] = {0, 0, 2.0*i};
-
-      snprintf(name, 127, "source_%d", i);
-      snprintf(criteria, 127, "sphere[%f, %f, %f, 0.5]",
-               s_coords[0], s_coords[1], s_coords[2]);
-
-      cs_volume_zone_define_by_func("G3_B", _g3_boundary_cells, NULL, 0);
-    }
+    cs_volume_zone_define_by_func("G3_B", _g3_boundary_cells, NULL, 0);
   }
   /*! [user_zones_volume_2] */
 
