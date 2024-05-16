@@ -78,6 +78,8 @@ BEGIN_C_DECLS
 
 /* Numerical constants */
 
+#if !(defined(__NVCC__) && defined(__CUDA_ARCH__))
+
 const cs_real_t cs_math_zero_threshold = FLT_MIN;
 const cs_real_t cs_math_1ov3 = 1./3.;
 const cs_real_t cs_math_2ov3 = 2./3.;
@@ -98,6 +100,8 @@ const cs_real_t cs_math_big_r = 1.e12;
 
 /*! \f$ \pi \f$ value with 20 digits */
 const cs_real_t cs_math_pi = 3.14159265358979323846;
+
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -230,18 +234,21 @@ void
 cs_math_sym_33_eigen(const cs_real_t  m[6],
                      cs_real_t        eig_vals[3])
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_1ov6 = 1./6.;
+
   cs_real_t  e, e1, e2, e3;
 
   cs_real_t  p1 = cs_math_3_square_norm((const cs_real_t *)(m+3));
   cs_real_t  d2 = cs_math_3_square_norm((const cs_real_t *)m);
 
   cs_real_t  tr = (m[0] + m[1] + m[2]);
-  cs_real_t  tr_third = cs_math_1ov3 * tr;
+  cs_real_t  tr_third = c_1ov3 * tr;
 
   e1 = m[0] - tr_third, e2 = m[1] - tr_third, e3 = m[2] - tr_third;
   cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2.*p1;
 
-  cs_real_t  p = sqrt(p2*cs_math_1ov6);
+  cs_real_t  p = sqrt(p2*c_1ov6);
 
   if (p1 > cs_math_epzero*d2 && p > 0.) { /* m is not diagonal */
 
@@ -269,8 +276,8 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
       cos_theta_2pi3 = -0.5;
     }
     else {
-      cos_theta = cos(cs_math_1ov3*acos(r));
-      cos_theta_2pi3 = cos(cs_math_1ov3*(acos(r) + 2.*cs_math_pi));
+      cos_theta = cos(c_1ov3*acos(r));
+      cos_theta_2pi3 = cos(c_1ov3*(acos(r) + 2.*cs_math_pi));
     }
 
     /* eigenvalues computed should satisfy e1 < e2 < e3 */
@@ -317,6 +324,9 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
                  cs_real_t          *eig_ratio,
                  cs_real_t          *eig_max)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_1ov6 = 1./6.;
+
   cs_real_t  e, e1, e2, e3;
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
@@ -334,13 +344,13 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
 
     cs_real_t  theta;
     cs_real_t  n[3][3];
-    cs_real_t  tr = cs_math_1ov3*(m[0][0] + m[1][1] + m[2][2]);
+    cs_real_t  tr = c_1ov3*(m[0][0] + m[1][1] + m[2][2]);
 
     e1 = m[0][0] - tr, e2 = m[1][1] - tr, e3 = m[2][2] - tr;
     cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2*p1;
 
     assert(p2 > 0);
-    cs_real_t  p = sqrt(p2*cs_math_1ov6);
+    cs_real_t  p = sqrt(p2*c_1ov6);
     cs_real_t  ovp = 1./p;
 
     for (int  i = 0; i < 3; i++) {
@@ -356,15 +366,15 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
     cs_real_t  r = 0.5 * cs_math_33_determinant((const cs_real_t (*)[3])n);
 
     if (r <= -1)
-      theta = cs_math_1ov3*cs_math_pi;
+      theta = c_1ov3*cs_math_pi;
     else if (r >= 1)
       theta = 0.;
     else
-      theta = cs_math_1ov3*acos(r);
+      theta = c_1ov3*acos(r);
 
     /* eigenvalues computed should satisfy e1 < e2 < e3 */
     e3 = tr + 2*p*cos(theta);
-    e1 = tr + 2*p*cos(theta + 2*cs_math_pi*cs_math_1ov3);
+    e1 = tr + 2*p*cos(theta + 2*cs_math_pi*c_1ov3);
     e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
 
   }
@@ -432,12 +442,12 @@ cs_math_3_length_unitv(const cs_real_t    xa[3],
  */
 /*----------------------------------------------------------------------------*/
 
-inline double
+double
 cs_math_surftri(const cs_real_t  xv[3],
                 const cs_real_t  xe[3],
                 const cs_real_t  xf[3])
 {
-  cs_real_3_t  u, v, cp;
+  cs_real_t u[3], v[3], cp[3];
 
   for (int k = 0; k < 3; k++) {
     u[k] = xe[k] - xv[k];
@@ -468,6 +478,8 @@ cs_math_voltet(const cs_real_t   xv[3],
                const cs_real_t   xf[3],
                const cs_real_t   xc[3])
 {
+  constexpr cs_real_t c_1ov6 = 1./6.;
+
   double  lev, lef, lec;
   cs_real_3_t  uev, uef, uec, ucp;
 
@@ -476,7 +488,7 @@ cs_math_voltet(const cs_real_t   xv[3],
   cs_math_3_length_unitv(xe, xc, &lec, uec);
   cs_math_3_cross_product(uev, uef, ucp);
 
-  return  cs_math_1ov6 *lev*lef*lec* fabs(cs_math_3_dot_product(ucp, uec));
+  return  c_1ov6 *lev*lef*lec* fabs(cs_math_3_dot_product(ucp, uec));
 }
 
 /*----------------------------------------------------------------------------*/

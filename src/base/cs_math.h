@@ -36,6 +36,10 @@
 #include <assert.h>
 #include <math.h>
 
+#if defined(__NVCC__) && defined(__CUDA_ARCH__)
+#include <float.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -79,7 +83,11 @@ typedef enum {
 
 /* On GPU, global variables are usually not accessible. */
 
+#define cs_math_zero_threshold FLT_MIN
 #define cs_math_epzero 1e-12
+#define cs_math_infinite_r 1.e30
+#define cs_math_big_r 1.e12
+#define cs_math_pi 3.14159265358979323846
 
 #else
 
@@ -483,7 +491,7 @@ cs_math_3_square_norm(const cs_real_t v[3])
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline void
+static inline void
 cs_math_3_normalise(const cs_real_t  vin[3],
                     cs_real_t        vout[3])
 {

@@ -266,7 +266,7 @@ cs_ht_convert.c \
 cs_interface.c \
 cs_io.c \
 cs_log.c \
-cs_math.c \
+cs_math.cpp \
 cs_rank_neighbors.c \
 cs_map.c \
 cs_order.c \
