@@ -1903,6 +1903,11 @@ cs_matrix_dump_vector(const cs_lnum_t     n_rows,
 
   _write_header_simple(f);
 
+  /* Write the number of rows (may be useful for the treatment by an external
+     tool) */
+
+  cs_file_write_global(f, &n_g_rows, sizeof(cs_gnum_t), 1);
+
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     _write_vector_g(n_l_rows, x, f);
@@ -1946,6 +1951,12 @@ cs_matrix_dump(const cs_matrix_t  *matrix,
   f = cs_file_open_default(filename, CS_FILE_MODE_WRITE);
 
   _write_header_simple(f);
+
+  /* Write the number of rows (may be useful for the treatment by an external
+     tool) */
+
+  cs_file_write_global(f, &n_g_rows, sizeof(cs_gnum_t), 1);
+
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
