@@ -1186,6 +1186,15 @@ class domain(base_domain):
                 self.mesh_input = None
             return
 
+        # In case of simple restart with staged data, mesh is already present
+        if self.data_is_staged and self.preprocess_on_restart == False \
+           and self.restart_mesh_input == None:
+            if self.restart_input:
+                restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input.csm')
+                if os.path.exists(restart_input_mesh):
+                    self.mesh_input = restart_input_mesh
+                    return
+
         # Check if cartesian mesh is to be used
         if self.param != None:
             from code_saturne.model.XMLengine import Case
