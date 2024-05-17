@@ -85,6 +85,12 @@ Master (not on release branches yet)
 
 ### Bug fixes:
 
+- Fix issues when restarting without additional preprocessing:
+  - When using "code_saturne submit", the behavior was different from
+    "code_saturne run" and unwanted extra preprocessing could occur.
+  - In all cases, the `mesh_input.csm` from a previous run was not
+    linked into that of the new run, so preprocessing would be needed
+    every other run.
 - Boundary layer insertion: limiter could reduce insertion at wrong
   vertices due to incorrect indirection.
 
