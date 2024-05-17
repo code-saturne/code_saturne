@@ -409,7 +409,7 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline void
+CS_F_HOST_DEVICE void
 cs_math_3_length_unitv(const cs_real_t    xa[3],
                        const cs_real_t    xb[3],
                        cs_real_t         *len,
