@@ -50,6 +50,7 @@
 #include "cs_atmo.h"
 #include "cs_at_data_assim.h"
 #include "cs_bad_cells_regularisation.h"
+#include "cs_base_accel.h"
 #include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
@@ -2932,7 +2933,7 @@ _velocity_prediction(const cs_mesh_t             *m,
      ------------------------------ */
 
   cs_real_3_t *smbr;
-  BFT_MALLOC(smbr, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(smbr, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   /* If source terms are extrapolated in time */
   if (cs_glob_time_scheme->isno2t > 0) {
@@ -3244,7 +3245,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   BFT_FREE(fimp);
-  BFT_FREE(smbr);
+  CS_FREE_HD(smbr);
   BFT_FREE(eswork);
 
   /* Finalaze estimators + logging */
@@ -3851,16 +3852,16 @@ cs_solve_navier_stokes(const int   iterns,
     BFT_MALLOC(trava, n_cells_ext, cs_real_3_t);
 
   if (vp_model->ivisse == 1) {
-    BFT_MALLOC(secvif, n_i_faces, cs_real_t);
-    BFT_MALLOC(secvib, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(secvib, n_b_faces, cs_real_t, cs_alloc_mode);
   }
 
   if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
-    BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-    BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
     if (irijnu_1) {
-      BFT_MALLOC(wvisfi, n_i_faces, cs_real_t);
-      BFT_MALLOC(wvisbi, n_b_faces, cs_real_t);
+      CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(wvisbi, n_b_faces, cs_real_t, cs_alloc_mode);
       viscfi = wvisfi;
       viscbi = wvisbi;
     }
@@ -3870,11 +3871,11 @@ cs_solve_navier_stokes(const int   iterns,
     }
   }
   else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-    BFT_MALLOC(viscb, n_b_faces, cs_real_t);
-    BFT_MALLOC(viscf, 9*n_i_faces, cs_real_t);
+    CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, cs_alloc_mode);
     if (irijnu_1) {
-      BFT_MALLOC(wvisbi, n_b_faces, cs_real_t);
-      BFT_MALLOC(wvisfi, 9*n_i_faces, cs_real_t);
+      CS_MALLOC_HD(wvisbi, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, cs_alloc_mode);
       viscfi = wvisfi;
       viscbi = wvisbi;
     }
@@ -3998,19 +3999,19 @@ cs_solve_navier_stokes(const int   iterns,
     BFT_FREE(da_uu);
     BFT_FREE(dfrcxt);
 
-    BFT_FREE(viscb);
-    BFT_FREE(viscf);
+    CS_FREE_HD(viscb);
+    CS_FREE_HD(viscf);
 
-    BFT_FREE(secvib);
-    BFT_FREE(secvif);
+    CS_FREE_HD(secvib);
+    CS_FREE_HD(secvif);
 
     BFT_FREE(grdphd);
 
     BFT_FREE(cpro_rho_tc);
     BFT_FREE(bpro_rho_tc);
 
-    BFT_FREE(wvisfi);
-    BFT_FREE(wvisbi);
+    CS_FREE_HD(wvisfi);
+    CS_FREE_HD(wvisbi);
 
     BFT_FREE(uvwk);
 

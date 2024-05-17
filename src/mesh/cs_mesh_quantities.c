@@ -1563,10 +1563,9 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
       if (pb1[cell_id] > 0 && pb2[cell_id] == 0) {
-
-          cell_cen[cell_id][0] = cdgbis[cell_id][0];
-          cell_cen[cell_id][1] = cdgbis[cell_id][1];
-          cell_cen[cell_id][2] = cdgbis[cell_id][2];
+        cell_cen[cell_id][0] = cdgbis[cell_id][0];
+        cell_cen[cell_id][1] = cdgbis[cell_id][1];
+        cell_cen[cell_id][2] = cdgbis[cell_id][2];
       }
     }
 
@@ -3029,16 +3028,16 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   mq->cell_f_vol = NULL;
 
   BFT_FREE(mq->i_face_normal);
-  CS_FREE_HD(mq->b_face_normal);
+  BFT_FREE(mq->b_face_normal);
   mq->i_f_face_normal = NULL;
   mq->b_f_face_normal = NULL;
   mq->c_w_face_normal = NULL;
 
-  BFT_FREE(mq->i_face_cog);
+  CS_FREE_HD(mq->i_face_cog);
   CS_FREE_HD(mq->b_face_cog);
   mq->b_f_face_cog = NULL;
   mq->c_w_face_cog = NULL;
-  BFT_FREE(mq->i_face_surf);
+  CS_FREE_HD(mq->i_face_surf);
   CS_FREE_HD(mq->b_face_surf);
   mq->c_w_face_surf = NULL;
 
@@ -3048,18 +3047,18 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   mq->i_f_face_factor = NULL;
   mq->b_f_face_factor = NULL;
 
-  BFT_FREE(mq->i_dist);
+  CS_FREE_HD(mq->i_dist);
   CS_FREE_HD(mq->b_dist);
   mq->c_w_dist_inv = NULL;
 
   CS_FREE_HD(mq->weight);
   CS_FREE_HD(mq->i_f_weight);
 
-  BFT_FREE(mq->dijpf);
+  CS_FREE_HD(mq->dijpf);
   CS_FREE_HD(mq->diipb);
   BFT_FREE(mq->dofij);
-  BFT_FREE(mq->diipf);
-  BFT_FREE(mq->djjpf);
+  CS_FREE_HD(mq->diipf);
+  CS_FREE_HD(mq->djjpf);
 
   BFT_FREE(mq->corr_grad_lin_det);
   BFT_FREE(mq->corr_grad_lin);
@@ -3120,7 +3119,8 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
   }
 
   if (mq->i_face_surf == NULL) {
-    BFT_MALLOC(mq->i_face_surf, n_i_faces, cs_real_t);
+    CS_MALLOC_HD(mq->i_face_surf, n_i_faces, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->i_face_surf);
   }
 
   if (mq->b_face_surf == NULL) {
@@ -4532,7 +4532,8 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   mq->tot_f_vol = mq->tot_vol;
 
   if (mq->i_dist == NULL) {
-    BFT_MALLOC(mq->i_dist, n_i_faces, cs_real_t);
+    CS_MALLOC_HD(mq->i_dist, n_i_faces, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->i_dist);
   }
 
   if (mq->b_dist == NULL) {
@@ -4551,7 +4552,8 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   }
 
   if (mq->dijpf == NULL) {
-    BFT_MALLOC(mq->dijpf, n_i_faces*dim, cs_real_t);
+    CS_MALLOC_HD(mq->dijpf, n_i_faces*dim, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->dijpf);
   }
 
   if (mq->diipb == NULL) {
@@ -4565,11 +4567,13 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   }
 
   if (mq->diipf == NULL) {
-    BFT_MALLOC(mq->diipf, n_i_faces*dim, cs_real_t);
+    CS_MALLOC_HD(mq->diipf, n_i_faces*dim, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->diipf);
   }
 
   if (mq->djjpf == NULL) {
-    BFT_MALLOC(mq->djjpf, n_i_faces*dim, cs_real_t);
+    CS_MALLOC_HD(mq->djjpf, n_i_faces*dim, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->djjpf);
   }
 
   if (mq->b_sym_flag == NULL) {

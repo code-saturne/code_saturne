@@ -1903,8 +1903,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
 
       if (have_flux_bc) {
-        BFT_MALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t);
+        CS_MALLOC_HD(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t,
+                     cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t,
+                     cs_alloc_mode);
       }
       else {
         f->bc_coeffs->af = NULL;
@@ -1946,12 +1948,14 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       CS_REALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
 
       if (have_flux_bc) {
-        BFT_REALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t);
+        CS_REALLOC_HD(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t,
+                      cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t,
+                      cs_alloc_mode);
       }
       else {
-        BFT_FREE(f->bc_coeffs->af);
-        BFT_FREE(f->bc_coeffs->bf);
+        CS_FREE_HD(f->bc_coeffs->af);
+        CS_FREE_HD(f->bc_coeffs->bf);
       }
 
       if (have_mom_bc) {

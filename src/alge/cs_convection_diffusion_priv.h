@@ -593,11 +593,12 @@ cs_i_compute_quantities_strided(const cs_real_t  bldfrp,
                                 cs_real_t        pip[stride],
                                 cs_real_t        pjp[stride])
 {
+  cs_real_t dpvf[3];
+
   /* x-y-z components, p = u, v, w */
 
   for (int isou = 0; isou < stride; isou++) {
 
-    cs_real_t dpvf[3];
     for (int jsou = 0; jsou < 3; jsou++)
       dpvf[jsou] = 0.5*( gradi[isou][jsou]
                        + gradj[isou][jsou]);
@@ -1301,25 +1302,22 @@ cs_i_cd_unsteady_upwind_strided(const cs_real_t  bldfrp,
                                 cs_real_t        pip[stride],
                                 cs_real_t        pjp[stride])
 {
-  /* x-y-z components, p = u, v, w */
+  cs_real_t recoi[stride], recoj[stride];
 
-  for (int isou = 0; isou < stride; isou++) {
+  cs_i_compute_quantities_strided<stride>(bldfrp,
+                                          diipf,
+                                          djjpf,
+                                          gradi,
+                                          gradj,
+                                          pi,
+                                          pj,
+                                          recoi,
+                                          recoj,
+                                          pip,
+                                          pjp);
 
-    cs_real_t dpvf[3];
-    for (int jsou = 0; jsou < 3; jsou++)
-      dpvf[jsou] = 0.5*(gradi[isou][jsou] + gradj[isou][jsou]);
-
-    /* reconstruction only if IRCFLP = 1 */
-
-    pip[isou] = pi[isou] + bldfrp*(cs_math_3_dot_product(dpvf, diipf));
-    pjp[isou] = pj[isou] + bldfrp*(cs_math_3_dot_product(dpvf, djjpf));
-
-  }
-
-  for (int isou = 0; isou < stride; isou++) {
-    pif[isou] = pi[isou];
-    pjf[isou] = pj[isou];
-  }
+  cs_upwind_f_val_strided<stride>(pi, pif);
+  cs_upwind_f_val_strided<stride>(pj, pjf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1861,20 +1859,19 @@ cs_i_cd_unsteady_strided(cs_real_t        bldfrp,
                          cs_real_t        pjp[stride])
 
 {
-  /* x-y-z components, p = u, v, w */
+  cs_real_t recoi[stride], recoj[stride];
 
-  for (int isou = 0; isou < stride; isou++) {
-
-    cs_real_t dpvf[3];
-    for (int jsou = 0; jsou < 3; jsou++)
-      dpvf[jsou] = 0.5*(gradi[isou][jsou] + gradj[isou][jsou]);
-
-    /* reconstruction only if IRCFLP = 1 */
-
-    pip[isou] = pi[isou] + bldfrp*(cs_math_3_dot_product(dpvf, diipf));
-    pjp[isou] = pj[isou] + bldfrp*(cs_math_3_dot_product(dpvf, djjpf));
-
-  }
+  cs_i_compute_quantities_strided<stride>(bldfrp,
+                                          diipf,
+                                          djjpf,
+                                          gradi,
+                                          gradj,
+                                          pi,
+                                          pj,
+                                          recoi,
+                                          recoj,
+                                          pip,
+                                          pjp);
 
   if (ischcp == 1) {
 

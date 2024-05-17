@@ -53,6 +53,7 @@
 
 #include "cs_ale.h"
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_blas.h"
 #include "cs_boundary.h"
 #include "cs_cf_thermo.h"
@@ -2413,7 +2414,7 @@ cs_boundary_conditions_create(void)
 
   /* boundary conditions type by boundary face */
 
-  BFT_MALLOC(_bc_type, n_b_faces, int);
+  CS_MALLOC_HD(_bc_type, n_b_faces, int, cs_alloc_mode);
   for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
     _bc_type[ii] = default_type;
   }
