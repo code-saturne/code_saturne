@@ -3,6 +3,13 @@ Release 8.1.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix issues when restarting without additional preprocessing:
+  - When using "code_saturne submit", the behavior was different from
+    "code_saturne run" and unwanted extra preprocessing could occur.
+  - In all cases, the `mesh_input.csm` from a previous run was not
+    linked into that of the new run, so preprocessing would be needed
+    every other run.
+
 - Fix configure test for MEDCoupling when MEDCoupling is only compiled in
   static mode. Error was due to wrong order of MEDCoupling libraries used
   in the link command.

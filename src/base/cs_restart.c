@@ -1558,7 +1558,8 @@ _update_mesh_checkpoint(void)
 
     /* Move mesh_output if present */
 
-    const char opath_i[] = "mesh_input.csm";
+    const char *opath_i[2] = {"mesh_input.csm",
+                              "restart/mesh_input.csm"};
     const char opath_o[] = "mesh_output.csm";
     const char npath[] = "checkpoint/mesh_input.csm";
 
@@ -1579,19 +1580,24 @@ _update_mesh_checkpoint(void)
        unless the (advanced) user has explicitely deactivated that
        output, in which case we abide by that choice) */
 
-    else if (cs_glob_mesh->modified < 1 && cs_file_isreg(opath_i)) {
+    else if (cs_glob_mesh->modified < 1) {
 
 #if defined(HAVE_LINKAT) && defined(HAVE_FCNTL_H)
 
-      int retval = linkat(AT_FDCWD, opath_i,
-                          AT_FDCWD, npath, AT_SYMLINK_FOLLOW);
+      for (int i = 0; i < 2; i++) {
+        if (cs_file_isreg(opath_i[i])) {
+          int retval = linkat(AT_FDCWD, opath_i[i],
+                              AT_FDCWD, npath, AT_SYMLINK_FOLLOW);
 
-      if (retval != 0) {
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("Failure hard-linking %s to %s:\n"
-                     "%s\n"),
-                   opath_i, npath, strerror(errno));
+          if (retval != 0) {
+            cs_base_warn(__FILE__, __LINE__);
+            bft_printf(_("Failure hard-linking %s to %s:\n"
+                         "%s\n"),
+                       opath_i[i], npath, strerror(errno));
 
+          }
+          break;
+        }
       }
 
 #endif
