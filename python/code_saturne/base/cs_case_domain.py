@@ -188,9 +188,10 @@ class base_domain:
             if name == 'user_locals':
                 s = getattr(self, name)
                 r = {}
-                for k in s:
-                    if k[0] != '_' and k != 'self':
-                        r[k] = s[k]
+                if s != None:
+                    for k in s:
+                        if k[0] != '_' and k != 'self':
+                            r[k] = s[k]
                 a[name] = r
             elif  hasattr(self, name):
                 a[name] = getattr(self, name)
