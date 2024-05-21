@@ -1145,6 +1145,10 @@ typedef struct {
  * Level of details written by the code for the resolution of the linear system
  * - Examples: "0", "1", "2" or higher
  *
+ * \var CS_EQKEY_SOLVER_NO_OP
+ * Set if the solver can be skipt if some specific situation
+ * - Exmaples: "true" or "false
+ *
  * \var CS_EQKEY_SPACE_SCHEME
  * Set the space discretization scheme. Available choices are:
  * - "cdo_vb"  or "cdovb" for CDO vertex-based scheme
@@ -1213,6 +1217,7 @@ typedef enum {
   CS_EQKEY_SOLVER_ATOL,
   CS_EQKEY_SOLVER_DTOL,
   CS_EQKEY_SOLVER_MAX_ITER,
+  CS_EQKEY_SOLVER_NO_OP,
   CS_EQKEY_SOLVER_RESNORM_TYPE,
   CS_EQKEY_SOLVER_RESTART,
   CS_EQKEY_SOLVER_RTOL,

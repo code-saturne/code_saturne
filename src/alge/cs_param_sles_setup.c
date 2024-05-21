@@ -2006,6 +2006,10 @@ _set_saturne_sles(bool                 use_field_id,
 
   } /* Switch on the preconditioner */
 
+  /* Last step */
+
+  cs_sles_set_allow_no_op(sles, slesp->allow_no_op);
+
   /* In case of high verbosity, additional outputs are generated */
 
   if (slesp->verbosity > 3) {

@@ -87,6 +87,13 @@ typedef struct {
 
   cs_param_resnorm_type_t    resnorm_type;
 
+  /*! \var allow_no_op
+   *  allow one to not call the solve function in some specific situations
+   *  Please refer to \ref _needs_solving for more details
+   */
+
+  bool                       allow_no_op;
+
   /*! \var cvg_param
    *  Structure storing the parameters to know if an iterative process has to
    *  stop (convergence or divergence).

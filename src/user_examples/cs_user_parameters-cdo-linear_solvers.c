@@ -149,6 +149,17 @@ cs_user_parameters(cs_domain_t    *domain)
   }
   /*! [cdo_sles_user_simple] */
 
+  /*! [cdo_sles_allow_no_op] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEqName");
+
+    /* In case of a in-house solver, allow one to skip the solve in some
+       specific situation rhs and solution nearly equal to zero */
+
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_NO_OP, "true");
+  }
+  /*! [cdo_sles_allow_no_op] */
+
   /*! [cdo_sles_user_mumps] */
   {
     /*

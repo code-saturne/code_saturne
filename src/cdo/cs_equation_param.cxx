@@ -418,6 +418,13 @@ _set_key(cs_equation_param_t   *eqp,
     eqp->sles_param->cvg_param.n_max_iter = atoi(keyval);
     break;
 
+  case CS_EQKEY_SOLVER_NO_OP:
+    if (strcmp(keyval, "true") == 0)
+      eqp->sles_param->allow_no_op = true;
+    else
+      eqp->sles_param->allow_no_op = false;
+    break;
+
   case CS_EQKEY_ITSOL_EPS:  /* kept for backward compatibility */
   case CS_EQKEY_ITSOL_RTOL:
     cs_base_warn(__FILE__, __LINE__);

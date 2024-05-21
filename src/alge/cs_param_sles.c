@@ -259,6 +259,7 @@ cs_param_sles_create(int          field_id,
 
   slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
   slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
+  slesp->allow_no_op = false;
 
   slesp->cvg_param =  (cs_param_convergence_t) {
     .n_max_iter = 10000, /* max. number of iterations */
@@ -412,6 +413,9 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
       cs_log_printf(CS_LOG_SETUP, "None\n");
       break;
     }
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Allow no operation:      %s",
+                  slesp->name, cs_base_strtf(slesp->allow_no_op));
 
   } /* Iterative solver */
 
