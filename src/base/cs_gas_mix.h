@@ -186,6 +186,19 @@ void
 cs_gas_mix_finalize(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fills physical properties which are variable in time
+ *        for the gas mixtures modelling with or without steam
+ *        inside the fluid domain. In presence of steam, this one
+ *        is deduced from the noncondensable gases transported
+ *        as scalars (by means of the mass fraction of each species).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_physical_properties(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

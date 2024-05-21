@@ -201,6 +201,15 @@ implicit none
 
 !===============================================================================
 
+interface
+
+  subroutine cs_gas_mix_physical_properties () &
+    bind(C, name='cs_gas_mix_physical_properties')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gas_mix_physical_properties
+
+end interface
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
@@ -212,7 +221,7 @@ implicit none
 ! Gas mixture modelling in presence of noncondensable gases or/and
 ! condensable gas as stream.
 if (ippmod(igmix).ge.0) then
-  call cs_gas_mix_physical_properties
+  call cs_gas_mix_physical_properties()
 endif
 
 ! Compressible

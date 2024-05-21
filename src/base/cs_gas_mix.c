@@ -33,6 +33,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,10 +48,16 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_field.h"
+#include "cs_field_pointer.h"
+#include "cs_math.h"
 #include "cs_parall.h"
+#include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_post.h"
+#include "cs_thermal_model.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -155,7 +162,122 @@ cs_f_gas_mix_species_to_field_id(int sp_id);
  * Private function definitions
  *============================================================================*/
 
-/* Log values of the structure */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dynamic viscosity and
+ *        conductivity coefficient associated to each gas species.
+ *
+ * TODO: replace name with enum to avoid test on string, as this
+ *       function is called in a loop.
+ *
+ * \param[in]     name          name of the field associated to the gas species
+ * \param[in]     tk            temperature variable in kelvin
+ * \param[in]     spro          constants used for the physcial laws
+ * \param[out]    mu            dynamic viscosity associated to the gas species
+ * \param[out]    lambda        conductivity coefficient of the gas species
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_mu_lambda(const char                       *name,
+                   const cs_real_t                   tk,
+                   const cs_gas_mix_species_prop_t   spro,
+                   cs_real_t                        *mu,
+                   cs_real_t                        *lambda)
+{
+  cs_real_t _mu;
+  cs_real_t _lambda;
+  const cs_real_t tkelvin = cs_physical_constants_celsius_to_kelvin;
+
+  /*  The viscosity law  and conductivity expressionfor each species is
+   * defined as:
+   *
+   * 1/. for Steam species:
+   *      mu = mu_a.(tk - tkelvi), with a law in (°C) unit
+   *      lambda = lambda_a .(tk-tkelvi) + lambda_b, with a law in (°C) unit
+   * 2/. for Helium species:
+   *     mu = mu_a .(tk/tkelvi)**c + mu_b, with nodim. law
+   *     lambda = lambda_a .(tk/tkelvi)**c + lambda_b, with nodim. law
+   * 3/. for Hydrogen species:
+   *      mu = mu_a .(tk-tkelvi) + mu_b, with t (°C)
+   *      lambda = lambda_a .tk + lambda_b, with tk (°K)
+   * 4/. for Oxygen and Nitrogen species :
+   *      mu = mu_a .(tk) + mu_b, with t in (°K)
+   *      lambda = lambda_a .(tk) + lambda_b, with t (°K) */
+
+  if (strcmp(name, "y_h2o_g") == 0) {
+    _mu     = spro.mu_a    *(tk-tkelvin) + spro.mu_b;
+    _lambda = spro.lambda_a*(tk-tkelvin) + spro.lambda_b;
+  }
+  else if (strcmp(name, "y_he") == 0) {
+    _mu     = spro.mu_a     * pow(tk/tkelvin, 0.7);
+    _lambda = spro.lambda_a * pow(tk/tkelvin, 0.7);
+  }
+  else if (strcmp(name, "y_h2") == 0) {
+    _mu     = spro.mu_a     * (tk-tkelvin) + spro.mu_b;
+    _lambda = spro.lambda_a * tk + spro.lambda_b;
+  }
+  else if (   strcmp(name, "y_o2") == 0
+           || strcmp(name, "y_n2") == 0) {
+    _mu     = spro.mu_a     * tk + spro.mu_b;
+    _lambda = spro.lambda_a * tk + spro.lambda_b;
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: no predefined properties for field %s."),
+              __func__, name);
+
+  *mu = _mu;
+  *lambda = _lambda;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sutherland law for viscosity and thermal conductivity
+ *
+ * The viscosity law for each specie is defined as below:
+ *
+ * mu = mu_ref*(T/T_ref)**(3/2)*(T_ref+S1)/(T+S1)
+ *
+ * The conductivity expression for each specie is defined as:
+ *
+ *  lambda = lambda_ref*(T/T_ref)**(3/2)*(T_ref+S2)/(T+S2)
+ *
+ * S1 and S2 are respectively Sutherland temperature for conductivity and
+ * Sutherland temperature for viscosity of the considered specie
+ * T_ref is a reference temperature, equal to 273K for a perfect gas.
+ * For steam (H20), Tref has not the same value in the two formulae.
+ * Available species : O2, N2, H2, H20 and  He
+ * The values for the parameters come from F.M. White's book
+ * "Viscous Fluid Flow"
+ *
+ * \param[in]     tk            temperature variable in kelvin
+ * \param[in]     spro          constants used for the physcial laws
+ * \param[out]    mu            dynamic viscosity associated to the gas species
+ * \param[out]    lambda        conductivity coefficient of the gas species
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_mu_lambda_suth(const cs_real_t                  tk,
+                        const cs_gas_mix_species_prop_t  spro,
+                        cs_real_t                        *mu,
+                        cs_real_t                        *lambda)
+{
+  const cs_real_t smu = spro.smu;
+  const cs_real_t slam = spro.slam;
+  const cs_real_t muref = spro.muref;
+  const cs_real_t lamref = spro.lamref;
+  const cs_real_t trefmu = spro.trefmu;
+  const cs_real_t treflam = spro.treflam;
+
+  *mu =  muref * pow(tk / trefmu, 1.5) * ((trefmu+smu) / (tk+smu));
+  *lambda = lamref * pow(tk / treflam, 1.5) * ((treflam+slam) / (tk+slam));
+}
+
+/*----------------------------------------------------------------------------*/
+/* Log values of the structure                                                */
+/*----------------------------------------------------------------------------*/
 
 static void
 _log_func_gas_mix_species_prop(const void *t)
@@ -177,7 +299,9 @@ _log_func_gas_mix_species_prop(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt, "slam    ", _t->slam);
 }
 
-/* Log default values of the structure */
+/*----------------------------------------------------------------------------*/
+/* Log default values of the structure                                        */
+/*----------------------------------------------------------------------------*/
 
 static void
 _log_func_default_gas_mix_species_prop(const void *t)
@@ -663,6 +787,357 @@ cs_gas_mix_add_property_fields(void)
 
   cs_field_set_key_int(f, keyvis, 0);
   cs_field_set_key_int(f, keylog, 1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fills physical properties which are variable in time
+ *        for the gas mixtures modelling with or without steam
+ *        inside the fluid domain. In presence of steam, this one
+ *        is deduced from the noncondensable gases transported
+ *        as scalars (by means of the mass fraction of each species).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_physical_properties(void)
+{
+  if (   (cs_glob_fluid_properties->icp < 0)
+      && (cs_glob_fluid_properties->irovar < 1)
+      && (cs_glob_fluid_properties->ivivar < 1)  ) {
+
+    if (cs_glob_fluid_properties->icp < 0)
+      bft_error(__FILE__, __LINE__, 0,
+              _("Inconsistent calculation data icp = %d\n"
+                "The calculation will not be run.\n"
+                "Modify cs_user_parameters or cs_user_physical_properties.\n"),
+                cs_glob_fluid_properties->icp);
+
+    bft_error(__FILE__, __LINE__, 0,
+              _("Inconsistent calculation data for irovar = %d or ivivar = %d\n"),
+              cs_glob_fluid_properties->irovar,
+              cs_glob_fluid_properties->ivivar);
+  }
+
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  const cs_field_t *th_f = cs_thermal_model_field();
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  int ifcvsl = cs_field_get_key_int(th_f, kivisl);
+
+  /*  Initializations
+      --------------- */
+
+  cs_real_t *tempk = NULL;
+  cs_real_t *lambda = NULL;
+  cs_real_t *cpro_rho = NULL;
+  const cs_real_t *cvar_enth = NULL;
+
+  /* Specific heat value */
+  cs_real_t *cpro_cp = CS_F_(cp)->val;
+
+  /* Molecular dynamic viscosity value */
+  cs_real_t *cpro_viscl = CS_F_(mu)->val;
+
+  /* Lambda/Cp value */
+  cs_real_t *cpro_venth = cs_field_by_id(ifcvsl)->val;
+
+  cs_real_t *steam_binary_diffusion
+    = cs_field_by_name("steam_binary_diffusion")->val;
+  cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+  cs_real_t *mol_mas_ncond = cs_field_by_name("mol_mas_ncond")->val;
+
+  /* Deduce mass fraction (y_d) which is
+   * y_h2o_g in presence of steam or
+   * y_he/y_h2 with noncondensable gases */
+  const cs_field_t *f = NULL;
+  cs_gas_mix_species_prop_t s_d;
+  const int k_id = cs_gas_mix_get_field_key();
+
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] == CS_GAS_MIX_AIR_HELIUM)
+    f = cs_field_by_name("y_he");
+  else if (cs_glob_physical_model_flag[CS_GAS_MIX] == CS_GAS_MIX_AIR_HYDROGEN)
+    f = cs_field_by_name("y_h2");
+  else if (   (cs_glob_physical_model_flag[CS_GAS_MIX] >= CS_GAS_MIX_AIR_STEAM)
+           && (cs_glob_physical_model_flag[CS_GAS_MIX] <  CS_GAS_MIX_HELIUM_AIR))
+    f = cs_field_by_name("y_h2o_g");
+  else
+    f = cs_field_by_name("y_o2");
+
+  cs_real_t *y_d = f->val;
+  cs_field_get_key_struct(f, k_id, &s_d);
+  /* Storage the previous value of the deduced mass fraction ya_d */
+  cs_array_real_copy(n_cells_ext, y_d, f->val_pre);
+
+  /* In compressible, the density is updated after the pressure step */
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
+    cvar_enth = th_f->val;
+    cpro_rho  = CS_F_(rho)->val;
+    tempk     = cs_field_by_name("tempk")->val;
+    BFT_MALLOC(lambda, n_cells_ext, cs_real_t);
+  }
+  else {
+    tempk = CS_F_(t_kelvin)->val;
+    ifcvsl = cs_field_get_key_int(CS_F_(t_kelvin), kivisl);
+    lambda = cs_field_by_id(ifcvsl)->val;
+  }
+
+  /* Define the physical properties for the gas mixture with:
+   *   - the density (rho_m) and specific heat (cp_m) of the gas mixture function
+   *     temperature and species scalar (yk),
+   *   - the dynamic viscosity (mu_m) and conductivity coefficient (lbd_m) of
+   *     the gas mixture function ot the enthalpy and species scalars,
+   *   - the diffusivity coefficients of the scalars (Dk, D_enh).
+   ------------------------------------------------------------------------------*/
+
+  cs_real_t pressure = cs_glob_fluid_properties->p0;
+  if (cs_glob_velocity_pressure_model->idilat == 3)
+    pressure = cs_glob_fluid_properties->pther;
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+    const cs_real_t x_0 = 0.0;
+    const cs_real_t x_1 = 1.0;
+
+    // Initialization
+    y_d[c_id] = x_1;
+
+    // Thermal conductivity
+    lambda[c_id] = x_0;
+
+    // Mixture specific heat
+    cpro_cp[c_id] = x_0;
+
+    // Mixture molecular diffusivity
+    cpro_viscl[c_id] = x_0;
+
+    // Mixture molar mass
+    mix_mol_mas[c_id] = x_0;
+
+    mol_mas_ncond[c_id] = x_0;
+    steam_binary_diffusion[c_id] = x_0;
+
+    /* Mass fraction array of the different species */
+    for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
+      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
+      const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+      const cs_real_t *cvar_yk = f_spe->val;
+
+      cs_gas_mix_species_prop_t s_k;
+      cs_field_get_key_struct(f_spe, k_id, &s_k);
+
+      y_d[c_id] -= cvar_yk[c_id];
+      mix_mol_mas[c_id] += cvar_yk[c_id]/s_k.mol_mas;
+      mol_mas_ncond[c_id] += cvar_yk[c_id] / s_k.mol_mas;
+    }
+
+    // Clipping
+    y_d[c_id] = cs_math_fmax(y_d[c_id], x_0);
+
+    // Finalize the computation of the Mixture molar mass
+    mix_mol_mas[c_id] += y_d[c_id]/s_d.mol_mas;
+    mix_mol_mas[c_id] = x_1/mix_mol_mas[c_id];
+    mol_mas_ncond[c_id] = (x_1 - y_d[c_id])/mol_mas_ncond[c_id];
+
+    for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+      /* Mixture specific heat function of species specific heat (cpk)
+       * and mass fraction of each gas species (yk), as below:
+       *             -----------------------------
+       * - noncondensable gases and the mass fraction deduced:
+       *             cp_m[c_id] = Sum( yk.cpk)_k[0, n_species_solved]
+       *                        + y_d.cp_d
+       *             -----------------------------
+       * remark: the mass fraction deduced depending of the
+       *         modelling chosen by the user.
+       *         with:
+       *             - CS_GAS_MIX = CS_GAS_MIX_AIR_HELIUM or
+       *               CS_GAS_MIX_AIR_HYDROGEN, a noncondensable gas
+       *             - CS_GAS_MIX > CS_GAS_MIX_AIR_STEAM, a condensable gas (steam) */
+      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
+      const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+      if (spe_id == _gas_mix.n_species_solved)
+        f_spe = f;
+      const cs_real_t *cvar_yk = f_spe->val;
+
+      cs_gas_mix_species_prop_t s_k;
+      cs_field_get_key_struct(f_spe, k_id, &s_k);
+      cpro_cp[c_id] += cvar_yk[c_id]*s_k.cp;
+    }
+
+  }
+
+  /* gas mixture density function of the temperature, pressure
+   * and the species scalars with taking into account the
+   * dilatable effects, as below:
+   * ----------------------------
+   * - with inlet/outlet conditions:
+   *   [idilat=2]: rho= p0/(R. temp(1/sum[y_i/M_i]))
+   * - with only wall conditions:
+   *   [idilat=3]: rho= pther/(R. temp(1/sum[y_i/M_i]))
+   *                          ----------------------
+   *         i ={1, .. ,N} : species scalar number
+   *         y_i           : mass fraction of each species
+   *         M_i           : molar fraction [kg/mole]
+   *         R             : ideal gas constant [J/mole/K]
+   *         p0            : atmos. pressure (Pa)
+   *         pther         : pressure (Pa) integrated on the
+   *                         fluid domain */
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+      // Evaluate the temperature thanks to the enthalpy
+      tempk[c_id] = cvar_enth[c_id]/ cpro_cp[c_id];
+      cpro_rho[c_id]
+        = pressure*mix_mol_mas[c_id]/(cs_physical_constants_r*tempk[c_id]);
+    }
+
+  /* Dynamic viscosity and conductivity coefficient
+   * the physical properties associated to the gas
+   * mixture with or without condensable gas */
+
+  /* Loop on all species */
+  for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+
+    const cs_field_t *f_spe = f;
+    if (spe_id < _gas_mix.n_species_solved) {
+      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
+      f_spe = cs_field_by_id(f_spe_id);
+    }
+
+    cs_gas_mix_species_prop_t s_i;
+    const cs_real_t *cvar_yi = f_spe->val;
+    cs_field_get_key_struct(f_spe, k_id, &s_i);
+
+    cs_real_t  mu_i, lambda_i,  mu_j, lambda_j;
+
+    const int ivsuth = cs_glob_fluid_properties->ivsuth;
+    if (ivsuth == 1) {
+      if (   (strcmp(f_spe->name, "y_he")    != 0)
+          && (strcmp(f_spe->name, "y_h2")    != 0)
+          && (strcmp(f_spe->name, "y_o2")    != 0)
+          && (strcmp(f_spe->name, "y_n2")    != 0)
+          && (strcmp(f_spe->name, "y_h2o_g") != 0)   )
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s: no predefined properties for field %s."),
+                  __func__, f_spe->name);
+    }
+
+    /* TODO: use local arrays to store s_j and field name or identifiers,
+     *       so as to avoid querying them for each field for each cell. */
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+      if (ivsuth == 0)
+        _compute_mu_lambda(f_spe->name, tempk[c_id], s_i,
+                           &mu_i, &lambda_i);
+      else
+        _compute_mu_lambda_suth(tempk[c_id], s_i,
+                                &mu_i, &lambda_i);
+
+      cs_real_t xsum_mu = 0.0, xsum_lambda = 0.0;
+
+      for (int s_id = 0; s_id < _gas_mix.n_species_solved + 1; s_id++) {
+
+        const cs_field_t *f_s = f;
+        if (s_id < _gas_mix.n_species_solved) {
+          const int f_s_id = _gas_mix.species_to_field_id[s_id];
+          f_s = cs_field_by_id(f_s_id);
+        }
+
+        cs_gas_mix_species_prop_t s_j;
+        const cs_real_t *cvar_yj = f_s->val;
+        cs_field_get_key_struct(f_s, k_id, &s_j);
+
+        if (ivsuth == 0)
+          _compute_mu_lambda(f_s->name, tempk[c_id], s_j,
+                             &mu_j, &lambda_j);
+        else
+          _compute_mu_lambda_suth(tempk[c_id], s_j,
+                                  &mu_j, &lambda_j);
+
+        const cs_real_t phi_mu
+          =   (1.0/sqrt(8.0))
+            * pow(1.0 + s_i.mol_mas/s_j.mol_mas, -0.5)
+            * pow(1.0 + pow(mu_i/mu_j, 0.5)
+            * pow(s_j.mol_mas/s_i.mol_mas, 0.25), 2);
+
+        const cs_real_t phi_lambda
+          =   (1.0/sqrt(8.0))
+            * pow(1.0 + s_i.mol_mas/s_j.mol_mas, -0.5)
+            * pow(1.0 + pow(lambda_i/lambda_j, 0.5)
+            * pow(s_j.mol_mas / s_i.mol_mas, 0.25), 2);
+
+        const cs_real_t x_k = cvar_yj[c_id]*mix_mol_mas[c_id]/s_j.mol_mas;
+        xsum_mu += x_k * phi_mu;
+        xsum_lambda += x_k * phi_lambda;
+      }
+
+      /* Mixture viscosity defined as function of the scalars
+         ----------------------------------------------------- */
+      const cs_real_t x_k
+        = cvar_yi[c_id]*mix_mol_mas[c_id]/s_i.mol_mas;
+      cpro_viscl[c_id] = cpro_viscl[c_id] + x_k * mu_i / xsum_mu;
+
+      lambda[c_id] += x_k * lambda_i / xsum_lambda;
+
+    } //loop on cells
+  } // end of loop on species
+
+  /* Dynamic viscosity and conductivity coefficient
+   * the physical properties filled for the gas mixture */
+
+  /* Same diffusivity for all the scalars except the enthalpy */
+  for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
+
+    const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
+    const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+    ifcvsl = cs_field_get_key_int(f_spe, kivisl);
+    cs_real_t *cpro_vyk = cs_field_by_id(ifcvsl)->val;
+
+    cs_array_real_copy(n_cells, cpro_viscl, cpro_vyk);
+  }
+
+  const cs_real_t patm = 101320.0;
+
+  /* Steam binary diffusion */
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+    cs_real_t x_ncond_tot = 0.0;
+    const cs_real_t ratio_tkpr = pow(tempk[c_id], 1.75)/pressure;
+
+    for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
+      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
+      const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+
+      const cs_real_t *cvar_yi = f_spe->val;
+      cs_gas_mix_species_prop_t s_i;
+      cs_field_get_key_struct(f_spe, k_id, &s_i);
+
+      const cs_real_t y_k = cvar_yi[c_id];
+      const cs_real_t x_k = y_k * mix_mol_mas[c_id] / s_i.mol_mas;
+      const cs_real_t xmab
+        = sqrt(2.0/( 1.0 / (s_d.mol_mas*1000.0) +1.0 / (s_i.mol_mas*1000.0)));
+      const cs_real_t xvab
+        = pow(pow(s_d.vol_dif, 1.0/3.0) + pow(s_i.vol_dif, 1.0/3.0), 2.0);
+      const cs_real_t a1 = 1.43e-7 / (xmab * xvab) * patm;
+      steam_binary_diffusion[c_id] += x_k / (a1 * ratio_tkpr);
+      x_ncond_tot += x_k;
+    }
+
+    steam_binary_diffusion[c_id] = x_ncond_tot / steam_binary_diffusion[c_id];
+
+  }
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
+      cpro_venth[c_id] = lambda[c_id]/cpro_cp[c_id];
+
+    BFT_FREE(lambda);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
