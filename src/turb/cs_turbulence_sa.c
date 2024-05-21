@@ -127,7 +127,7 @@ _vort_trace(cs_real_t   vort[],
   /* Allocate a temporary for the gradient calculation */
 
   cs_real_33_t *grad_vel;
-  BFT_MALLOC(grad_vel, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(grad_vel, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   cs_field_gradient_vector(CS_F_(vel),
                            true, // use_previous_t
@@ -144,10 +144,10 @@ _vort_trace(cs_real_t   vort[],
 
   }
 
-  BFT_FREE(grad_vel);
+  CS_FREE_HD(grad_vel);
 
   cs_real_3_t *grad_nu;
-  BFT_MALLOC(grad_nu, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(grad_nu, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_field_gradient_scalar(CS_F_(nusa),
                            true,   /* use_previous_t */
@@ -158,7 +158,7 @@ _vort_trace(cs_real_t   vort[],
     tr_gr_nu[i] = cs_math_3_square_norm(grad_nu[i]);
   }
 
-  BFT_FREE(grad_nu);
+  CS_FREE_HD(grad_nu);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -470,8 +470,8 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   BFT_MALLOC(vort, n_cells_ext, cs_real_t);
   BFT_MALLOC(tr_gr_u, n_cells_ext, cs_real_t);
   BFT_MALLOC(tr_gr_nu, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rhs_sa, n_cells_ext, cs_real_t);
-  BFT_MALLOC(imp_sa, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rhs_sa, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(imp_sa, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Compute the vorticity omega, the trace of the velocity gradient
      and the gradient of nusa */
@@ -615,8 +615,8 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   /* Solving of the transport equation on nusa */
 
   cs_real_t *viscf, *viscb;
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   if (eqp_nusa->idiff >= 1) {
     const cs_real_t dsigma = 1.0 / cs_turb_csasig;
@@ -655,7 +655,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
   cs_real_t *dpvar;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_equation_param_t _eqp_nusa = *eqp_nusa;
 
@@ -691,11 +691,11 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   /* Clip values */
   _clip(n_cells);
 
-  BFT_FREE(rhs_sa);
-  BFT_FREE(imp_sa);
-  BFT_FREE(dpvar);
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
+  CS_FREE_HD(rhs_sa);
+  CS_FREE_HD(imp_sa);
+  CS_FREE_HD(dpvar);
+  CS_FREE_HD(viscf);
+  CS_FREE_HD(viscb);
 }
 
 /*----------------------------------------------------------------------------*/

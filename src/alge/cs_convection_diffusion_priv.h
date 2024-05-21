@@ -2631,14 +2631,20 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
                      cs_real_t           *pjf)
 {
   /* distance between face center and central cell center */
-  cs_real_t dist_fc;
-  cs_real_3_t nfc;
-  cs_math_3_length_unitv(cell_cen_c, i_face_cog, &dist_fc, nfc);
+  /* Distance between face center and central cell center */
+  cs_real_t dist_fc = cs_math_3_distance(cell_cen_c, i_face_cog);
 
-  /* unit vector and distance between central and downwind cells centers */
-  cs_real_t dist_dc;
-  cs_real_3_t ndc;
-  cs_math_3_length_unitv(cell_cen_c, cell_cen_d, &dist_dc, ndc);
+  /* Unit vector and distance between central and downwind cells centers */
+  cs_real_t diff[3] = {cell_cen_d[0] - cell_cen_c[0],
+                       cell_cen_d[1] - cell_cen_c[1],
+                       cell_cen_d[2] - cell_cen_c[2]};
+
+  cs_real_t dist_dc = cs_math_3_norm(diff);
+  cs_real_t invl = 1./dist_dc;
+
+  cs_real_t ndc[3] = {invl*diff[0],
+                      invl*diff[1],
+                      invl*diff[2]};
 
   /* Place the upwind point on the line that joins
      the two cells on the upwind side and the same

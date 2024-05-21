@@ -256,8 +256,8 @@ _gradfi_dot_gradk(const  cs_lnum_t   n_cells,
   cs_real_3_t *grad_phi;
   cs_real_3_t *grad_k;
 
-  BFT_MALLOC(grad_phi, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(grad_k, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(grad_phi, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(grad_k, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_field_gradient_scalar(CS_F_(phi),
                            true,     /* use previous t */
@@ -274,8 +274,8 @@ _gradfi_dot_gradk(const  cs_lnum_t   n_cells,
   }
 
   /* Free memory */
-  BFT_FREE(grad_phi);
-  BFT_FREE(grad_k);
+  CS_FREE_HD(grad_phi);
+  CS_FREE_HD(grad_k);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -323,11 +323,11 @@ _solve_eq_fbr_al(const int         istprv,
   cs_real_t  *w2, *visel, *w5, *viscf, *viscb;
 
   /* Allocate temporary arrays */
-  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
   BFT_MALLOC(visel, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w5, n_cells_ext, cs_real_t);
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w5, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_field_t *f = NULL;
 
@@ -628,11 +628,12 @@ _solve_eq_fbr_al(const int         istprv,
                                      NULL);
 
   /* Free memory */
-  BFT_FREE(w2);
   BFT_FREE(visel);
-  BFT_FREE(w5);
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
+
+  CS_FREE_HD(w2);
+  CS_FREE_HD(w5);
+  CS_FREE_HD(viscf);
+  CS_FREE_HD(viscb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -692,9 +693,9 @@ _solve_eq_phi(const int           istprv,
   cs_real_t *w2, *viscf, *viscb;
 
   /* Allocate temporary arrays */
-  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_field_t *f_phi = CS_F_(phi);
 
@@ -1059,9 +1060,9 @@ _solve_eq_phi(const int           istprv,
                                      NULL,
                                      NULL);
 
-  BFT_FREE(w2);
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
+  CS_FREE_HD(w2);
+  CS_FREE_HD(viscf);
+  CS_FREE_HD(viscb);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1110,7 +1111,7 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
   cs_real_t *rhs;
   cs_real_t *rovsdt;
 
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Map field arrays */
@@ -1170,7 +1171,7 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
   /* Compute grad(phi).grad(k) */
 
   cs_real_t *grad_pk;
-  BFT_MALLOC(grad_pk, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(grad_pk, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   _gradfi_dot_gradk(n_cells, n_cells_ext, grad_pk);
 
@@ -1208,8 +1209,8 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
                 rovsdt,
                 c_st_phi_p);
 
-  BFT_FREE(grad_pk);
-  BFT_FREE(rhs);
+  CS_FREE_HD(grad_pk);
+  CS_FREE_HD(rhs);
   BFT_FREE(rovsdt);
 
   /* Clipping */
@@ -1302,7 +1303,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
     else if (f_vg != NULL)
       gradv = (cs_real_33_t *)f_vg->val;
     else {
-      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
       gradv = _gradv;
     }
   }
@@ -1335,7 +1336,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   }
 
   /* Free memory */
-  BFT_FREE(_gradv);
+  CS_FREE_HD(_gradv);
 
   /* Calculation of viscosity
    * ========================= */

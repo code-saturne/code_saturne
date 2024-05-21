@@ -245,7 +245,7 @@ cs_balance_scalar(int                         idtvar,
                                      b_visc,
                                      smbrp);
     } else {
-    /* The convective part is multiplied by Cp for the temperature */
+      /* The convective part is multiplied by Cp for the temperature */
       cs_convection_diffusion_thermal(idtvar,
                                       f_id,
                                       eqp_loc,

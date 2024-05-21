@@ -200,23 +200,23 @@ cs_turbulence_kw(int              phase_id,
   /* Allocate temporary arrays for the turbulence resolution */
 
   cs_real_t *viscf, *viscb;
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *smbrk, *smbrw;
-  BFT_MALLOC(smbrk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(smbrw, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(smbrk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(smbrw, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t *tinstk, *tinstw, *xf1;
-  BFT_MALLOC(tinstk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(tinstw, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(tinstk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(tinstw, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(xf1, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
 
   cs_real_t *w1, *dpvar, *gdkgdw, *prodk, *prodw;
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
   BFT_MALLOC(gdkgdw, n_cells_ext, cs_real_t);
   BFT_MALLOC(prodk, n_cells_ext, cs_real_t);
   BFT_MALLOC(prodw, n_cells_ext, cs_real_t);
@@ -424,8 +424,8 @@ cs_turbulence_kw(int              phase_id,
   /* Allocate temporary arrays for gradients calculation */
 
   cs_real_3_t *gradk, *grado;
-  BFT_MALLOC(gradk, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(grado, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(gradk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(grado, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   bool use_previous_t = true;
 
@@ -528,7 +528,7 @@ cs_turbulence_kw(int              phase_id,
     eqp_u_loc.iconv = 0;
 
     cs_real_3_t *vel_laplacian;
-    BFT_MALLOC(vel_laplacian, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(vel_laplacian, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)vel_laplacian);
 
     cs_balance_vector(cs_glob_time_step_options->idtvar,
@@ -580,8 +580,8 @@ cs_turbulence_kw(int              phase_id,
     gdkgdw[c_id] = cs_math_3_dot_product(gradk[c_id], grado[c_id]);
 
   /* Free memory */
-  BFT_FREE(gradk);
-  BFT_FREE(grado);
+  CS_FREE_HD(gradk);
+  CS_FREE_HD(grado);
 
   /* Compute the weight f1 (stored in xf1)
      ===================================== */
@@ -706,7 +706,7 @@ cs_turbulence_kw(int              phase_id,
     /* Allocate a temporary array for the gradient calculation */
 
     cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
     /* Buoyancy production
        ------------------- */
@@ -804,7 +804,7 @@ cs_turbulence_kw(int              phase_id,
     }
 
     /* Free memory */
-    BFT_FREE(grad);
+    CS_FREE_HD(grad);
   }
   else {
     cs_array_real_fill_zero(n_cells, grad_dot_g);
@@ -1687,18 +1687,20 @@ cs_turbulence_kw(int              phase_id,
 
   /* Cleanup */
 
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
-  BFT_FREE(smbrk);
-  BFT_FREE(smbrw);
-  BFT_FREE(tinstk);
-  BFT_FREE(tinstw);
+  CS_FREE_HD(viscf);
+  CS_FREE_HD(viscb);
+  CS_FREE_HD(smbrk);
+  CS_FREE_HD(smbrw);
+  CS_FREE_HD(tinstk);
+  CS_FREE_HD(tinstw);
+  CS_FREE_HD(dpvar);
+
   BFT_FREE(xf1);
   BFT_FREE(w1);
   BFT_FREE(grad_dot_g);
   BFT_FREE(usimpk);
   BFT_FREE(usimpw);
-  BFT_FREE(dpvar);
+
   BFT_FREE(prodk);
   BFT_FREE(prodw);
 

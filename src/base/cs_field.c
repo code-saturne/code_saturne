@@ -1973,8 +1973,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        BFT_MALLOC(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t);
+        CS_MALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
       }
       else {
         f->bc_coeffs->ac = NULL;
@@ -2018,12 +2018,12 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        BFT_REALLOC(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t);
+        CS_REALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
       }
       else {
-        BFT_FREE(f->bc_coeffs->ac);
-        BFT_FREE(f->bc_coeffs->bc);
+        CS_FREE_HD(f->bc_coeffs->ac);
+        CS_FREE_HD(f->bc_coeffs->bc);
       }
 
       if (have_exch_bc) {
@@ -2387,14 +2387,14 @@ cs_field_destroy_all(void)
       BFT_FREE(f->grad);
 
     if (f->bc_coeffs != NULL) {
-      BFT_FREE(f->bc_coeffs->a);
-      BFT_FREE(f->bc_coeffs->b);
-      BFT_FREE(f->bc_coeffs->af);
-      BFT_FREE(f->bc_coeffs->bf);
+      CS_FREE_HD(f->bc_coeffs->a);
+      CS_FREE_HD(f->bc_coeffs->b);
+      CS_FREE_HD(f->bc_coeffs->af);
+      CS_FREE_HD(f->bc_coeffs->bf);
       BFT_FREE(f->bc_coeffs->ad);
       BFT_FREE(f->bc_coeffs->bd);
-      BFT_FREE(f->bc_coeffs->ac);
-      BFT_FREE(f->bc_coeffs->bc);
+      CS_FREE_HD(f->bc_coeffs->ac);
+      CS_FREE_HD(f->bc_coeffs->bc);
       BFT_FREE(f->bc_coeffs->hint);
       BFT_FREE(f->bc_coeffs->_hext);
       BFT_FREE(f->bc_coeffs);

@@ -772,7 +772,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
   cs_field_t *f;
 
-  BFT_MALLOC(c_mass_var, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(c_mass_var, n_cells_ext, cs_real_6_t, cs_alloc_mode);
   BFT_MALLOC(b_mass_var, m->n_b_faces, cs_real_6_t);
 
   cs_field_bc_coeffs_t bc_coeffs_ts_loc;
@@ -1167,7 +1167,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
   }
 
-  BFT_FREE(c_mass_var);
+  CS_FREE_HD(c_mass_var);
   BFT_FREE(b_mass_var);
 
   coefaq = NULL;
