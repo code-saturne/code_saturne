@@ -212,10 +212,12 @@ cs_mesh_deform_activate(void)
 
     cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
-    /* System to solve is SPD by construction */
+    /* System to solve is SPD by construction and it happens that there is
+       nothing to do in a direction */
 
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_NO_OP, "true");
 
   }
 }
