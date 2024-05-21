@@ -552,7 +552,7 @@ class Setup:
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
 
         # MED library
-        # Note: alternative address: ftp://ftp.cea.fr/pub/salome/prerequisites/med-5.0.0.tar.gz
+        # Note: alternative address: https://www.code-saturne.org/releases/external/med-5.0.0.tar.bz2
 
         self.packages['med'] = \
             Package(name="MED",
@@ -560,7 +560,7 @@ class Setup:
                     package="med",
                     version="5.0.0",
                     archive="med-5.0.0.tar.bz2",
-                    url="https://www.code-saturne.org/releases/external/%s")
+                    url="https://files.salome-platform.org/Salome/medfile/%s")
 
         p = self.packages['med']
         p.config_opts = "--with-med_int=long --disable-fortran --disable-python"
