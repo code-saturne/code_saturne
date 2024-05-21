@@ -210,7 +210,8 @@ cs_dbg_print_local_scalar_msr_matrix(const char          *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump a linear system
+ * \brief  In debug mode, dump a linear system stored in a MSR format into the
+ *         listing file (should be a small system)
  *
  * \param[in] eqname     name of the equation related to the current system
  * \param[in] size       number of elements in array
@@ -225,15 +226,33 @@ cs_dbg_print_local_scalar_msr_matrix(const char          *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_dbg_dump_linear_system(const char        *eqname,
-                          cs_lnum_t          size,
-                          int                verbosity,
-                          const cs_real_t    x[],
-                          const cs_real_t    b[],
-                          const cs_lnum_t    row_index[],
-                          const cs_lnum_t    col_id[],
-                          const cs_real_t    xval[],
-                          const cs_real_t    dval[]);
+cs_dbg_dump_msr_system(const char        *eqname,
+                       cs_lnum_t          size,
+                       int                verbosity,
+                       const cs_real_t    x[],
+                       const cs_real_t    b[],
+                       const cs_lnum_t    row_index[],
+                       const cs_lnum_t    col_id[],
+                       const cs_real_t    xval[],
+                       const cs_real_t    dval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Binary dump (matrix, rhs and solution) of a matrix, its right-hand
+ *        side and the solution array
+ *
+ * \param[in] basename  name of the system
+ * \param[in] matrix    matrix to dump
+ * \param[in] b         right-hand side to dump or NULL
+ * \param[in] x         solution array to dump or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_binary_dump_system(const char         *basename,
+                          const cs_matrix_t  *matrix,
+                          const cs_real_t    *rhs,
+                          const cs_real_t    *sol);
 
 /*----------------------------------------------------------------------------*/
 

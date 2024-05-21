@@ -41,6 +41,7 @@
 #include "bft_mem.h"
 
 #include "cs_log.h"
+#include "cs_matrix_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -371,7 +372,8 @@ cs_dbg_print_local_scalar_msr_matrix(const char          *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump a linear system
+ * \brief  In debug mode, dump a linear system stored in a MSR format into the
+ *         listing file (should be a small system)
  *
  * \param[in] eqname     name of the equation related to the current system
  * \param[in] size       number of elements in array
@@ -386,15 +388,15 @@ cs_dbg_print_local_scalar_msr_matrix(const char          *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_dbg_dump_linear_system(const char        *eqname,
-                          cs_lnum_t          size,
-                          int                verbosity,
-                          const cs_real_t    x[],
-                          const cs_real_t    b[],
-                          const cs_lnum_t    row_index[],
-                          const cs_lnum_t    col_id[],
-                          const cs_real_t    xval[],
-                          const cs_real_t    dval[])
+cs_dbg_dump_msr_system(const char        *eqname,
+                       cs_lnum_t          size,
+                       int                verbosity,
+                       const cs_real_t    x[],
+                       const cs_real_t    b[],
+                       const cs_lnum_t    row_index[],
+                       const cs_lnum_t    col_id[],
+                       const cs_real_t    xval[],
+                       const cs_real_t    dval[])
 {
   cs_log_printf(CS_LOG_DEFAULT, "\nDUMP LINEAR SYSTEM FOR THE EQUATION >> %s\n",
                 eqname);
@@ -469,6 +471,55 @@ cs_dbg_dump_linear_system(const char        *eqname,
     }
 
   } /* verbosity */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Binary dump (matrix, rhs and solution) of a matrix, its right-hand
+ *        side and the solution array
+ *
+ * \param[in] basename  name of the system
+ * \param[in] matrix    matrix to dump
+ * \param[in] b         right-hand side to dump
+ * \param[in] x         solution array to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_binary_dump_system(const char         *basename,
+                          const cs_matrix_t  *matrix,
+                          const cs_real_t    *rhs,
+                          const cs_real_t    *sol)
+{
+  if (matrix == NULL)
+    return;
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(matrix);
+  const cs_lnum_t  diag_block_size = cs_matrix_get_diag_block_size(matrix);
+
+  int  len = strlen(basename) + 4;
+  char  *name = NULL;
+
+  BFT_MALLOC(name, len + 1, char);
+
+  sprintf(name, "%s_mat", basename);
+  cs_matrix_dump(matrix, name);
+
+  if (rhs != NULL) {
+
+    sprintf(name, "%s_rhs", basename);
+    cs_matrix_dump_vector(n_rows, diag_block_size, rhs, name);
+
+  }
+
+  if (sol != NULL) {
+
+    sprintf(name, "%s_sol", basename);
+    cs_matrix_dump_vector(n_rows, diag_block_size, sol, name);
+
+  }
+
+  BFT_FREE(name);
 }
 
 /*----------------------------------------------------------------------------*/

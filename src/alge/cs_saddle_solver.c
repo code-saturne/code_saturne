@@ -59,6 +59,11 @@
 #include "cs_parameters.h"
 #include "cs_saddle_system.h"
 
+
+#if 1  /* Set to 1 if systems have to be exported into a binary file */
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -3297,6 +3302,10 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   cs_iter_algo_update_inner_iters(algo, n_iter);
   cs_iter_algo_set_normalization(algo, normalization);
 
+#if 1 /* Export the saddle-point system for analysis */
+  cs_dbg_binary_dump_system(saddlep->xtra_sles_param->name, m11, ctx->rhs, x1);
+#endif
+
   /* Main loop */
   /* ========= */
 
@@ -3353,6 +3362,12 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
                                         solver->main_sles,
                                         x1_incr,
                                         ctx->rhs);
+
+#if 1 /* Export the saddle-point system for analysis */
+    if (cs_iter_algo_get_n_iter(algo) == 1)
+      cs_dbg_binary_dump_system(saddlep->block11_sles_param->name, m11,
+                                ctx->rhs, x1_incr);
+#endif
 
     cs_iter_algo_update_inner_iters(algo, n_iter);
 
@@ -4290,6 +4305,10 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
                                                     sol,
                                                     0,      /* aux. size */
                                                     NULL);  /* aux. buffers */
+
+#if 0 /* Export the saddle-point system for analysis */
+  cs_dbg_binary_dump_system(saddlep->name, matrix, b, sol);
+#endif
 
   /* Store metadata for monitoring */
 
