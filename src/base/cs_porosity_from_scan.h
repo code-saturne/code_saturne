@@ -83,6 +83,7 @@ typedef struct {
   cs_lnum_t *source_c_ids;
   cs_lnum_t threshold;
   cs_real_t porosity_threshold;
+  cs_real_t convection_porosity_threshold;
 } cs_porosity_from_scan_opt_t;
 
 /*============================================================================
