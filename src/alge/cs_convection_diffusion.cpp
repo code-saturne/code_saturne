@@ -1285,7 +1285,7 @@ _convection_diffusion_strided_unsteady
 
       // Diffusive flux
 
-      cs_real_t t_i_visc = idiffp * i_visc[f_id] * thetap;
+      cs_real_t t_i_visc = idiffp * i_visc[face_id] * thetap;
       for (cs_lnum_t isou = 0; isou < stride; isou++) {
         fluxi[isou] += t_i_visc*(pip[isou] -pjp[isou]);
         fluxj[isou] += t_i_visc*(pip[isou] -pjp[isou]);
@@ -1469,7 +1469,7 @@ _convection_diffusion_strided_unsteady
 
         // Diffusive flux
 
-        cs_real_t t_i_visc = idiffp * i_visc[f_id] * thetap;
+        cs_real_t t_i_visc = idiffp * i_visc[face_id] * thetap;
         for (cs_lnum_t isou = 0; isou < stride; isou++) {
           fluxi[isou] += t_i_visc*(pip[isou] -pjp[isou]);
           fluxj[isou] += t_i_visc*(pip[isou] -pjp[isou]);
@@ -1659,7 +1659,7 @@ _convection_diffusion_strided_unsteady
 
         // Diffusive flux
 
-        cs_real_t t_i_visc = idiffp * i_visc[f_id] * thetap;
+        cs_real_t t_i_visc = idiffp * i_visc[face_id] * thetap;
         for (cs_lnum_t isou = 0; isou < stride; isou++) {
           fluxi[isou] += t_i_visc*(pip[isou] -pjp[isou]);
           fluxj[isou] += t_i_visc*(pip[isou] -pjp[isou]);
@@ -2115,7 +2115,7 @@ _convection_diffusion_strided_unsteady
       /* Trace of velocity gradient */
       double grdtrv = (grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2]);
       double secvis = b_secvis[face_id]; /* - 2/3 * mu */
-      double mult = secvis * grdtrv * b_f_face_surf[f_id];
+      double mult = secvis * grdtrv * b_f_face_surf[face_id];
 
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
         double flux = mult * b_face_u_normal[face_id][isou];
@@ -6335,7 +6335,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       /* Trace of velocity gradient */
       double grdtrv = (grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2]);
       double secvis = b_secvis[face_id]; /* - 2/3 * mu */
-      double mult = secvis * grdtrv * b_f_face_surf[f_id];
+      double mult = secvis * grdtrv * b_f_face_surf[face_id];
 
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
