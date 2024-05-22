@@ -52,6 +52,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_math.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
@@ -884,12 +885,12 @@ cs_gas_mix_physical_properties(void)
   }
 
   /* Define the physical properties for the gas mixture with:
-   *   - the density (rho_m) and specific heat (cp_m) of the gas mixture function
-   *     temperature and species scalar (yk),
-   *   - the dynamic viscosity (mu_m) and conductivity coefficient (lbd_m) of
-   *     the gas mixture function ot the enthalpy and species scalars,
-   *   - the diffusivity coefficients of the scalars (Dk, D_enh).
-   ------------------------------------------------------------------------------*/
+   *  - the density (rho_m) and specific heat (cp_m) of the gas mixture
+   *    function temperature and species scalar (yk),
+   *  - the dynamic viscosity (mu_m) and conductivity coefficient (lbd_m) of
+   *    the gas mixture function ot the enthalpy and species scalars,
+   *  - the diffusivity coefficients of the scalars (Dk, D_enh).
+   ---------------------------------------------------------------------------*/
 
   cs_real_t pressure = cs_glob_fluid_properties->p0;
   if (cs_glob_velocity_pressure_model->idilat == 3)
@@ -949,12 +950,12 @@ cs_gas_mix_physical_properties(void)
        *             cp_m[c_id] = Sum( yk.cpk)_k[0, n_species_solved]
        *                        + y_d.cp_d
        *             -----------------------------
-       * remark: the mass fraction deduced depending of the
-       *         modelling chosen by the user.
-       *         with:
-       *             - CS_GAS_MIX = CS_GAS_MIX_AIR_HELIUM or
-       *               CS_GAS_MIX_AIR_HYDROGEN, a noncondensable gas
-       *             - CS_GAS_MIX > CS_GAS_MIX_AIR_STEAM, a condensable gas (steam) */
+       * remark:
+       *   The mass fraction is deduced depending of the
+       *    modelling chosen by the user, with:
+       *      - CS_GAS_MIX = CS_GAS_MIX_AIR_HELIUM or
+       *        CS_GAS_MIX_AIR_HYDROGEN, a noncondensable gas
+       *      - CS_GAS_MIX > CS_GAS_MIX_AIR_STEAM, a condensable gas (steam) */
       const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
       const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
       if (spe_id == _gas_mix.n_species_solved)
@@ -1151,6 +1152,142 @@ cs_gas_mix_finalize(void)
 {
   BFT_FREE(_gas_mix.species_to_field_id);
   _gas_mix.n_species = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialization of calculation variables for gas mixture modelling
+ *        in presence of the steam gas or another gas used as variable deduced
+ *        and not solved.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_initialization(void)
+{
+  if (cs_glob_fluid_properties->icp < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Inconsistent calculation data icp = %d\n"
+                "The calculation will not be run.\n"
+                "Modify cs_user_parameters or cs_user_physical_properties.\n"),
+              cs_glob_fluid_properties->icp);
+
+  /* If this is restarted computation, do not reinitialize values */
+  if (cs_glob_time_step->nt_prev > 0)
+    return;
+
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  /* Initializations
+     ---------------- */
+  cs_real_t *cvar_enth = NULL;
+
+  /* Specific heat value */
+  cs_real_t *cpro_cp = CS_F_(cp)->val;
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
+    cvar_enth = cs_thermal_model_field()->val;
+
+  /* Deduced species (h2o_g) with steam gas
+   * or Helium or Hydrogen  with noncondensable gases */
+  const cs_field_t *f = NULL;
+  cs_gas_mix_species_prop_t s_d;
+  const int k_id = cs_gas_mix_get_field_key();
+
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] == CS_GAS_MIX_AIR_HELIUM)
+    f = cs_field_by_name("y_he");
+  else if (cs_glob_physical_model_flag[CS_GAS_MIX] == CS_GAS_MIX_AIR_HYDROGEN)
+    f = cs_field_by_name("y_h2");
+  else if (   (cs_glob_physical_model_flag[CS_GAS_MIX] >= CS_GAS_MIX_AIR_STEAM)
+           && (cs_glob_physical_model_flag[CS_GAS_MIX] <  CS_GAS_MIX_HELIUM_AIR))
+    f = cs_field_by_name("y_h2o_g");
+  else
+    f = cs_field_by_name("y_o2");
+
+  cs_real_t *y_d = f->val;
+  cs_field_get_key_struct(f, k_id, &s_d);
+
+  cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+
+  int iok = 0;
+  cs_real_t vol_d = 0.0;
+  const cs_real_t t0 = cs_glob_fluid_properties->t0;
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+    y_d[c_id] = 1.;
+    cpro_cp[c_id] = 0.;
+    mix_mol_mas[c_id] = 0.;
+  }
+
+  for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
+    const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
+    const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+    const cs_real_t *cvar_yk = f_spe->val;
+
+    cs_gas_mix_species_prop_t s_k;
+    cs_field_get_key_struct(f_spe, k_id, &s_k);
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+      if ((cvar_yk[c_id] > 1.0) || (cvar_yk[c_id] < 0.0))
+        iok++;
+      y_d[c_id] -= cvar_yk[c_id];
+      cpro_cp[c_id] += cvar_yk[c_id]*s_k.cp;
+      mix_mol_mas[c_id] += cvar_yk[c_id]/s_k.mol_mas;
+    }
+  }
+
+  /* Finalization and check */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+    if ((y_d[c_id] > 1.0) || (y_d[c_id] < 0.0))
+      iok++;
+
+    y_d[c_id] = cs_math_fmin(cs_math_fmax(y_d[c_id], 0.0), 1.0);
+
+    // specific heat (Cp_m0) of the gas mixture
+    cpro_cp[c_id] += y_d[c_id]*s_d.cp;
+
+    if (cvar_enth != NULL)
+      cvar_enth[c_id] = cpro_cp[c_id]*t0;
+
+    mix_mol_mas[c_id] += y_d[c_id]/s_d.mol_mas;
+    mix_mol_mas[c_id]  = 1.0/mix_mol_mas[c_id];
+
+    /* Gas deduced and Total gas volumes injected */
+    vol_d += cell_vol[c_id]*(y_d[c_id]/s_d.mol_mas)*mix_mol_mas[c_id];
+
+  }
+
+  cs_parall_sum(1, CS_REAL_TYPE, &vol_d);
+  const cs_real_t volgas = cs_glob_mesh_quantities->tot_vol;
+
+  /* Print to the log to check the variables intialization
+     ----------------------------------------------------- */
+
+  bft_printf("----------------------------------------------------------\n"
+             "**     Gas mixture : Check variables initialization     **\n"
+             "----------------------------------------------------------\n"
+             "   Total   gas Volume: %10.17le\n"
+             "   Deduced gas Volume: %10.17le\n", volgas , vol_d);
+
+  if (iok > 0)
+     bft_error(__FILE__, __LINE__, 0,
+              _("Abort in the variables initialization.\n"
+                " The variables initialization is incomplete or\n"
+                " incoherent with the parameters value of the calculation.\n"
+                "The calculation will not be run (%d,' errors). \n"
+                "Refer to the previous warnings for further information."
+                "Pay attention to the initialization of, \n "
+                "                              the time-step\n"
+                "                              the turbulence\n"
+                "                              the scalars and variances\n"
+                "                              the time averages\n\n"
+                "Verify the initialization and the restart file."
+                "In the case where the values read in the restart file"
+                "are incorrect, they may be modified with"
+                "cs_user_initialization.c or with the interface."), iok);
 }
 
 /*----------------------------------------------------------------------------*/

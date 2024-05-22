@@ -187,6 +187,17 @@ cs_gas_mix_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialization of calculation variables for gas mixture modelling
+ *        in presence of the steam gas or another gas used as variable deduced
+ *        and not solved.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_initialization(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Fills physical properties which are variable in time
  *        for the gas mixtures modelling with or without steam
  *        inside the fluid domain. In presence of steam, this one

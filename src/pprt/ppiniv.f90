@@ -185,6 +185,12 @@ interface
     implicit none
   end subroutine cs_ctwr_fields_init1
 
+  subroutine cs_gas_mix_initialization()  &
+    bind(C, name='cs_gas_mix_initialization')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gas_mix_initialization
+
 end interface
 
 !===============================================================================
