@@ -1324,9 +1324,9 @@ _convection_diffusion_strided_unsteady
 
     switch(ischcp) {
     case 0:
-      [[fallthrough]]
+      [[fallthrough]];
     case 1:
-      [[fallthrough]]
+      [[fallthrough]];
     case 3:
       ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
@@ -1511,7 +1511,7 @@ _convection_diffusion_strided_unsteady
 
     switch(ischcp) {
     case 0:
-      [[fallthrough]]
+      [[fallthrough]];
     case 1:
       ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
