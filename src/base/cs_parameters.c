@@ -419,7 +419,6 @@ static cs_equation_param_t _equation_param_default
    .ircflu = 1,
    .iwgrec = 0,
    .icoupl = -1,
-   .theta = 1.,
    .blencv = 1.,
    .blend_st = 0.,
    .epsilo = 1.e-5,
