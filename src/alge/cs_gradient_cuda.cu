@@ -1006,7 +1006,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
-      _grad[lidx][i][j] = grad[c_id1][i][j];
+      _grad[lidx][i][j] = 0;
     }
   }
 
@@ -1774,8 +1774,8 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
                               const cs_real_t    (*restrict r_grad)[stride][3],
                               cs_real_t          (*restrict grad)[stride][3])
 {
-  const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_SCATTER_ATOMIC;
-  //const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_GATHER;
+  //const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_SCATTER_ATOMIC;
+  const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_GATHER;
 
   using grad_t = cs_real_t[stride][3];
 
@@ -1879,15 +1879,18 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
 
   /* Initialization */
 
-  cudaMemset(grad_d, 0, n_cells_ext * sizeof(cs_real_t)*stride*3);
+
+  if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
+    cudaMemsetAsync(grad_d, 0, n_cells_ext * sizeof(cs_real_t)*stride*3, stream);
+  }
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_init, stream));
 
+  /* Interior faces contribution */
+
   const unsigned int blocksize = 256;
   int gridsize;
-
-  /* Interior faces contribution */
 
   if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
     gridsize = cs_cuda_grid_size(m->n_i_faces * stride, blocksize);

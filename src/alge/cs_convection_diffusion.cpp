@@ -1172,6 +1172,7 @@ _convection_diffusion_strided_unsteady
       }
     });
   }
+  cs_mem_advise_set_read_mostly(grad);
 
   /* ======================================================================
      Compute uncentered gradient grdpa for the slope test
@@ -1196,6 +1197,7 @@ _convection_diffusion_strided_unsteady
                                          bc_coeffs,
                                          i_massflux);
   }
+  cs_mem_advise_set_read_mostly(grdpa);
 
   /* ======================================================================
      Contribution from interior faces
