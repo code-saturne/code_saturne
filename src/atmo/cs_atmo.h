@@ -320,7 +320,7 @@ typedef struct {
   cs_real_t meteo_wstar0;
   /*! Meteo wind direction */
   cs_real_t meteo_angle;
-  /*! Meteo reference temperature at 2m */
+  /*! Meteo reference temperature (ground temperature) */
   cs_real_t meteo_t0;
   /*! Meteo reference temperature 1 */
   cs_real_t meteo_t1;

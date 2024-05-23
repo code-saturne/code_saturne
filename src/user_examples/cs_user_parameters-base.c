@@ -256,7 +256,7 @@ cs_user_model(void)
   at_opt->meteo_ustar0 = 1.;
   /* Velocity direction (degrees from North) */
   at_opt->meteo_angle = 270.;
-  /* Temperature at 2m (K) */
+  /* Reference temperature at ground level  (K) */
   at_opt->meteo_t0 = 288.;
   /* Pressure at sea level (Pa) */
   at_opt->meteo_psea = 1.01325e5;
