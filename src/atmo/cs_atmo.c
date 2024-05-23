@@ -2828,7 +2828,6 @@ cs_atmo_init_meteo_profiles(void)
       && (aopt->meteo_evapor < 0.5*DBL_MAX)) {
     aopt->meteo_qwstar = aopt->meteo_evapor / (ustar0 * phys_pro->ro0);
   }
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   /* Note: rvsra - 1 = 0.61 */
   aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g)
                       - (phys_pro->rvsra - 1.) * theta0 * aopt->meteo_qwstar;
