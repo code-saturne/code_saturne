@@ -415,7 +415,6 @@ findpt.f90 \
 fldini.f90 \
 fldvar.f90 \
 fldprp.f90 \
-idrbla.f90 \
 impini.f90 \
 iniini.f90 \
 initi1.f90 \
