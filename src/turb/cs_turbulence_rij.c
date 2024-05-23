@@ -274,17 +274,19 @@ _compute_up_rhop(int        phase_id,
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_rho_b = CS_F_(rho_b);
 
   if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);
     f_eps = CS_FI_(eps, phase_id);
     f_rho = CS_FI_(rho, phase_id);
+    f_rho_b = CS_FI_(rho_b, phase_id);
   }
 
   const cs_real_t *cvara_ep = f_eps->val_pre;
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
   cs_real_t *rho = f_rho->val;
-  cs_real_t *rho_b = CS_F_(rho_b)->val;
+  cs_real_t *rho_b = f_rho_b->val;
 
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
@@ -703,9 +705,13 @@ _gravity_st_epsilon(int              phase_id,
 
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
+  cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_mu = CS_F_(mu);
   if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);
     f_eps = CS_FI_(eps, phase_id);
+    f_rho = CS_FI_(rho, phase_id);
+    f_mu = CS_FI_(mu, phase_id);
   }
 
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
@@ -714,8 +720,8 @@ _gravity_st_epsilon(int              phase_id,
 
   const cs_real_t *g = cs_glob_physical_constants->gravity;
 
-  const cs_real_t *crom = CS_F_(rho)->val;
-  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *crom = f_rho->val;
+  const cs_real_t *viscl = f_mu->val;
 
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
