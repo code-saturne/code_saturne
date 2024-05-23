@@ -373,6 +373,27 @@ public:
     return (device_ >= 0 && use_gpu_);
   }
 
+  //! Check preferred allocation mode depending on execution policy
+
+  cs_alloc_mode_t
+  alloc_mode(void) {
+    cs_alloc_mode_t amode
+      = (device_ >= 0 && use_gpu_) ? CS_ALLOC_DEVICE : CS_ALLOC_HOST;
+    return (amode);
+  }
+
+  cs_alloc_mode_t
+  alloc_mode(bool readable_on_cpu) {
+    cs_alloc_mode_t amode = CS_ALLOC_HOST;
+    if (device_ >= 0 && use_gpu_) {
+      if (readable_on_cpu)
+        amode = CS_ALLOC_HOST_DEVICE_SHARED;
+      else
+        amode = CS_ALLOC_DEVICE;
+    }
+    return (amode);
+  }
+
 public:
 
   //! Try to launch on the GPU and return false if not available
@@ -483,6 +504,22 @@ public:
   bool
   use_gpu(void) {
     return (is_gpu && use_gpu_);
+  }
+
+  //! Check preferred allocation mode depending on execution policy
+
+  cs_alloc_mode_t
+  alloc_mode(void) {
+    cs_alloc_mode_t amode
+      = (device_ >= 0 && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+    return (amode);
+  }
+
+  cs_alloc_mode_t
+  alloc_mode([[maybe_unused]] bool readable_on_cpu) {
+    cs_alloc_mode_t amode
+      = (device_ >= 0 && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+    return (amode);
   }
 
 public:
@@ -600,6 +637,18 @@ public:
   bool
   use_gpu(void) {
     return false;
+  }
+
+  //! Check preferred allocation mode depending on execution policy
+
+  cs_alloc_mode_t
+  alloc_mode(void) {
+    return CS_ALLOC_HOST;
+  }
+
+  cs_alloc_mode_t
+  alloc_mode([[maybe_unused]] bool readable_on_cpu) {
+    return CS_ALLOC_HOST;
   }
 
   void
