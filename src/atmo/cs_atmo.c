@@ -2828,8 +2828,10 @@ cs_atmo_init_meteo_profiles(void)
       && (aopt->meteo_evapor < 0.5*DBL_MAX)) {
     aopt->meteo_qwstar = aopt->meteo_evapor / (ustar0 * phys_pro->ro0);
   }
+  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+  /* Note: rvsra - 1 = 0.61 */
   aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g)
-                      - 0.61 * theta0 * aopt->meteo_qwstar;
+                      - (phys_pro->rvsra - 1.) * theta0 * aopt->meteo_qwstar;
     if ((aopt->meteo_zu1 < 0. && aopt->meteo_u1 > 0.)
       || (aopt->meteo_zu2 < 0. && aopt->meteo_u2 > 0.))
     bft_error(__FILE__,
@@ -2890,7 +2892,9 @@ cs_atmo_init_meteo_profiles(void)
       cs_real_t ustaru  = kappa * du1u2 / (cs_mo_psim(z2, z1, dlmos));
       cs_real_t tstaru  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmos));
       cs_real_t qwstaru = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmos));
-      dlmou = kappa * (g / tmoy) * (tstaru + 0.61 * tmoy * qwstaru)
+      /* Note: rvsra - 1 = 0.61 */
+      dlmou = kappa * (g / tmoy) * (tstaru
+                                   + (phys_pro->rvsra - 1.) * tmoy * qwstaru)
               / (ustaru * ustaru);
       err = dlmou - dlmos;
     }
