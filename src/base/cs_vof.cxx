@@ -1518,14 +1518,14 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
   /* Allocate temporary arrays */
 
   cs_real_t *i_visc, *b_visc, *smbrs, *rovsdt;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
-  BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(smbrs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Allocate work arrays */
   cs_real_t *dpvar;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Boundary conditions */
   cs_field_bc_coeffs_t *bc_coeffs_vof = volf2->bc_coeffs;
@@ -1837,11 +1837,11 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
 
   /* Free memory */
 
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
-  BFT_FREE(smbrs);
   BFT_FREE(rovsdt);
-  BFT_FREE(dpvar);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+  CS_FREE_HD(smbrs);
+  CS_FREE_HD(dpvar);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -3339,10 +3339,10 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
   /* Boundary conditions for delta P */
   cs_field_bc_coeffs_t bc_coeffs_dp;
   cs_field_bc_coeffs_init(&bc_coeffs_dp);
-  BFT_MALLOC(bc_coeffs_dp.a,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_dp.af, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_dp.b,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_dp.bf, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_dp.a,  n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_dp.af, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_dp.b,  n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_dp.bf, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *coefap = bc_coeffs_dp.a;
   cs_real_t *cofafp = bc_coeffs_dp.af;
@@ -3357,7 +3357,7 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
   cs_real_t *xinvro, *rovsdt, *rhs;
   BFT_MALLOC(xinvro, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Initialization of the variable to solve from the interior cells */
 
@@ -3370,8 +3370,8 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
 
   /* Allocate work arrays */
   cs_real_t *viscf, *viscb;
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   /* Viscosity (k_t := 1/rho ) */
 
@@ -3427,7 +3427,7 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
   eqp_loc.blend_st = 0;  /* Warning, may be overwritten if a field */
 
   cs_real_t *dpvar;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   const char var_name[] = "Prhydro";
 
@@ -3455,7 +3455,7 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
                                      NULL,   /* xcpp */
                                      NULL);  /* eswork */
 
-  BFT_FREE(dpvar);
+  CS_FREE_HD(dpvar);
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -3484,17 +3484,17 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
 
   /* Free memory */
 
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
+  CS_FREE_HD(viscf);
+  CS_FREE_HD(viscb);
 
   BFT_FREE(xinvro);
   BFT_FREE(rovsdt);
-  BFT_FREE(rhs);
+  CS_FREE_HD(rhs);
 
-  BFT_FREE(coefap);
-  BFT_FREE(cofafp);
-  BFT_FREE(coefbp);
-  BFT_FREE(cofbfp);
+  CS_FREE_HD(coefap);
+  CS_FREE_HD(cofafp);
+  CS_FREE_HD(coefbp);
+  CS_FREE_HD(cofbfp);
 }
 
 /*============================================================================
@@ -4015,6 +4015,9 @@ cs_solve_navier_stokes(const int   iterns,
 
     BFT_FREE(uvwk);
 
+    CS_FREE_HD(viscb);
+    CS_FREE_HD(viscf);
+
     return;
   }
 
@@ -4052,11 +4055,11 @@ cs_solve_navier_stokes(const int   iterns,
 
       /* Resize temporary internal faces arrays */
 
-      BFT_FREE(viscf);
+      CS_FREE_HD(viscf);
       if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION)
-        BFT_MALLOC(viscf, n_i_faces, cs_real_t);
+        CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
       else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION)
-        BFT_MALLOC(viscf, 9*n_i_faces, cs_real_t);
+        CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, cs_alloc_mode);
 
       if (wvisfi != NULL) {
         BFT_FREE(viscfi);
@@ -4635,8 +4638,8 @@ cs_solve_navier_stokes(const int   iterns,
 
   BFT_FREE(uvwk);
 
-  BFT_FREE(viscb);
-  BFT_FREE(viscf);
+  CS_FREE_HD(viscb);
+  CS_FREE_HD(viscf);
 
   BFT_FREE(cpro_rho_k1);
 }

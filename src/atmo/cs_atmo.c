@@ -3301,7 +3301,7 @@ cs_atmo_z_ground_compute(void)
 
   cs_real_t *rovsdt = NULL, *dpvar = NULL;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
     rovsdt[cell_id] = 0.;
@@ -3312,7 +3312,7 @@ cs_atmo_z_ground_compute(void)
    * =============== */
 
   cs_real_t *rhs = NULL;
-  BFT_MALLOC(rhs, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rhs[cell_id] = 0.;
@@ -3385,9 +3385,11 @@ cs_atmo_z_ground_compute(void)
   }
 
   /* Free memory */
-  BFT_FREE(dpvar);
-  BFT_FREE(rhs);
   BFT_FREE(rovsdt);
+
+  CS_FREE_HD(rhs);
+  CS_FREE_HD(dpvar);
+
 }
 
 /*----------------------------------------------------------------------------*/

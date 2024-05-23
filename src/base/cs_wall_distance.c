@@ -200,8 +200,8 @@ cs_wall_distance(int iterns)
                               f_w_dist->val_pre;
 
   cs_real_t *smbrp, *rovsdt;
-  BFT_MALLOC(smbrp, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(smbrp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* RHS */
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -335,11 +335,11 @@ cs_wall_distance(int iterns)
 
   /* Allocate temporary arrays for the species resolution */
   cs_real_t *dpvar, *i_visc, *b_visc, *i_mass_flux, *b_mass_flux;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
-  BFT_MALLOC(i_mass_flux, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_mass_flux, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_mass_flux, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_mass_flux, n_b_faces, cs_real_t, cs_alloc_mode);
 
   /* Allocate work arrays */
   cs_real_t *w1;
@@ -607,13 +607,14 @@ cs_wall_distance(int iterns)
      _dismin, _dismax);
 
   /* Free memory */
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
-  BFT_FREE(dpvar);
-  BFT_FREE(smbrp);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+  CS_FREE_HD(dpvar);
+  CS_FREE_HD(smbrp);
+  CS_FREE_HD(i_mass_flux);
+  CS_FREE_HD(b_mass_flux);
+
   BFT_FREE(rovsdt);
-  BFT_FREE(i_mass_flux);
-  BFT_FREE(b_mass_flux);
   BFT_FREE(w1);
 
 }
@@ -751,15 +752,15 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   /* Allocate temporary arrays for the distance resolution */
   cs_real_t *dvarp, *smbdp, *rovsdp, *dpvar, *viscap;
-  BFT_MALLOC(dvarp, n_cells_ext, cs_real_t);
-  BFT_MALLOC(smbdp, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dvarp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(smbdp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(rovsdp, n_cells_ext, cs_real_t);
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
   BFT_MALLOC(viscap, n_cells_ext, cs_real_t);
 
   cs_real_t *i_visc, *b_visc;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   /* Boundary conditions
      ------------------- */
@@ -1082,12 +1083,13 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   }
 
   /* Free memory */
-  BFT_FREE(dvarp);
-  BFT_FREE(smbdp);
+  CS_FREE_HD(dvarp);
+  CS_FREE_HD(smbdp);
+  CS_FREE_HD(dpvar);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+
   BFT_FREE(rovsdp);
-  BFT_FREE(dpvar);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
   BFT_FREE(viscap);
 
 }

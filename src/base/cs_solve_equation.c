@@ -478,7 +478,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
   const int scalar_turb_flux_model_type = scalar_turb_flux_model / 10;
 
   cs_real_6_t *vistet;
-  BFT_MALLOC(vistet, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(vistet, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
   cs_real_t *_weighb = NULL;
   cs_real_2_t *_weighf = NULL;
@@ -543,9 +543,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
 
   /* Symmetric tensor diffusivity (GGDH) */
   else if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
-    BFT_MALLOC(_weighb, n_b_faces, cs_real_t);
-    BFT_MALLOC(_weighf, n_i_faces, cs_real_2_t);
-    BFT_MALLOC(_viscce, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(_weighb, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
+    CS_MALLOC_HD(_viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     const cs_real_6_t *visten = NULL;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
     const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
@@ -626,7 +626,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
                                          viscb);
   }
 
-  BFT_FREE(vistet);
+  CS_FREE_HD(vistet);
 
   *weighb = (cs_real_t *)_weighb;
   *weighf = (cs_real_2_t *)_weighf;
@@ -730,9 +730,9 @@ _diffusion_terms_vector(const cs_field_t            *f,
   /* Symmetric tensor diffusivity (GGDH) */
   else if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
 
-    BFT_MALLOC(_weighb, n_b_faces, cs_real_t);
-    BFT_MALLOC(_weighf, n_i_faces, cs_real_2_t);
-    BFT_MALLOC(_viscce, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(_weighb, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
+    CS_MALLOC_HD(_viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
     const cs_real_6_t *visten = NULL;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
@@ -920,7 +920,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   cs_real_t *fimp, *rhs;
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(fimp, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  //BFT_MALLOC(fimp, n_cells_ext, cs_real_t);
 
   cs_array_real_fill_zero(n_cells, rhs);
   cs_array_real_fill_zero(n_cells, fimp);
@@ -1295,7 +1296,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   int imucpp = 0, iscacp;
 
   cs_real_t *xcpp = NULL;
-  BFT_MALLOC(xcpp, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   const int kscavr = cs_field_key_id("first_moment_id");
   const int iscavr = cs_field_get_key_int(f, kscavr);
@@ -1354,7 +1355,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
      associated dimensions. */
 
   cs_real_t *w1;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  //BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
   if (ncesmp > 0) {
     cs_real_t *srcmas;
@@ -1440,7 +1442,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   /* Initialize turbulent diffusivity for SGDH model */
   cs_real_t *sgdh_diff;
-  BFT_MALLOC(sgdh_diff, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(sgdh_diff, n_cells_ext, cs_real_t, cs_alloc_mode);
+  //BFT_MALLOC(sgdh_diff, n_cells_ext, cs_real_t);
 
   _init_sgdh_diff(f, sgdh_diff);
 
@@ -1573,7 +1576,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   cs_real_t *cvark_var = NULL, *wcvark_var = NULL;
   if (iterns >= 1) {
-    BFT_MALLOC(wcvark_var, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(wcvark_var, n_cells_ext, cs_real_t, cs_alloc_mode);
     cvark_var = wcvark_var;
     cs_array_real_copy(n_cells_ext, cvar_var, cvark_var);
   }
@@ -1621,9 +1624,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   CS_FREE_HD(dpvar);
   if (weighb != NULL) {
-    BFT_FREE(weighb);
-    BFT_FREE(weighf);
-    BFT_FREE(viscce);
+    CS_FREE_HD(weighb);
+    CS_FREE_HD(weighf);
+    CS_FREE_HD(viscce);
   }
 
   /* When solving internal energy, compute the temperature */
@@ -1808,11 +1811,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
                l2errork, l2errork*dl2norm, l2norm);
   }
 
-  BFT_FREE(wcvark_var);
-  BFT_FREE(xcpp);
-  CS_FREE_HD(rhs);
-  BFT_FREE(fimp);
   BFT_FREE(dtr);
+
+  CS_FREE_HD(fimp);
+  CS_FREE_HD(rhs);
+  CS_FREE_HD(wcvark_var);
+  CS_FREE_HD(xcpp);
 }
 
 /*----------------------------------------------------------------------------*/

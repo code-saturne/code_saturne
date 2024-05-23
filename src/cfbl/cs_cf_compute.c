@@ -525,17 +525,17 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Allocate temporary arrays for the mass resolution */
 
   cs_real_t *i_visc, *wflmas, *ivolfl;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(wflmas, n_i_faces, cs_real_t);
   BFT_MALLOC(ivolfl, n_i_faces, cs_real_t);
 
   cs_real_t *b_visc, *wflmab, *bvolfl;
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(wflmab, n_b_faces, cs_real_t);
   BFT_MALLOC(bvolfl, n_b_faces, cs_real_t);
 
   cs_real_t *smbrs, *rovsdt;
-  BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(smbrs, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
@@ -546,7 +546,7 @@ cs_cf_convective_mass_flux(int  iterns)
   BFT_MALLOC(w8, n_cells_ext, cs_real_t);
   BFT_MALLOC(w9, n_cells_ext, cs_real_t);
   BFT_MALLOC(w10, n_cells_ext, cs_real_t);
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_field_t *f_p = CS_F_(p);
   cs_field_t *e_tot = CS_F_(e_tot);
@@ -588,8 +588,8 @@ cs_cf_convective_mass_flux(int  iterns)
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_shallow_copy(f_p->bc_coeffs, &bc_coeffs_loc);
-  BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *wbfa  = bc_coeffs_loc.a;
   cs_real_t *wbfb  = bc_coeffs_loc.b;
@@ -864,13 +864,15 @@ cs_cf_convective_mass_flux(int  iterns)
 
   }
 
-  BFT_FREE(c2);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
   BFT_FREE(smbrs);
-  BFT_FREE(rovsdt);
+  BFT_FREE(dpvar);
   BFT_FREE(wflmas);
   BFT_FREE(wflmab);
+
+  BFT_FREE(c2);
+  BFT_FREE(rovsdt);
   BFT_FREE(ivolfl);
   BFT_FREE(bvolfl);
   BFT_FREE(w1);
@@ -878,7 +880,6 @@ cs_cf_convective_mass_flux(int  iterns)
   BFT_FREE(w8);
   BFT_FREE(w9);
   BFT_FREE(w10);
-  BFT_FREE(dpvar);
 
   wbfa = NULL;
   wbfb = NULL;

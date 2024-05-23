@@ -129,9 +129,10 @@ cs_dilatable_scalar_diff_st(int iterns)
   /* Memory allocation */
   cs_real_t *vistot, *i_visc, *b_visc, *xcpp;
   BFT_MALLOC(vistot, n_cells_ext, cs_real_t);
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
-  BFT_MALLOC(xcpp, n_cells_ext, cs_real_t);
+
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   const cs_real_t *cpro_cp = NULL;
   if (icp >= 0)
@@ -301,10 +302,12 @@ cs_dilatable_scalar_diff_st(int iterns)
   } /* end loop on fields */
 
   /* Free memory */
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+  CS_FREE_HD(xcpp);
+
   BFT_FREE(vistot);
-  BFT_FREE(xcpp);
+
 }
 
 /*---------------------------------------------------------------------------- */

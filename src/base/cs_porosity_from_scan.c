@@ -1129,9 +1129,9 @@ cs_compute_porosity_from_scan(void)
   /* Local variables */
   cs_real_t *rovsdt, *pvar, *dpvar, *rhs;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(pvar, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(rhs, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(pvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   /* Loop over sources */
   for (int s_id = 0; s_id < nb_sources; s_id++) {
@@ -1415,10 +1415,10 @@ cs_compute_porosity_from_scan(void)
   BFT_FREE(_porosity_from_scan_opt.sources);
   BFT_FREE(_porosity_from_scan_opt.source_c_ids);
 
-  BFT_FREE(pvar);
-  BFT_FREE(dpvar);
-  BFT_FREE(rhs);
   BFT_FREE(rovsdt);
+  CS_FREE_HD(pvar);
+  CS_FREE_HD(dpvar);
+  CS_FREE_HD(rhs);
 }
 
 /*----------------------------------------------------------------------------*/

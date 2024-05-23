@@ -548,14 +548,14 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *dam, *xam, *rhs, *res;
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
   BFT_MALLOC(xam, m->n_i_faces, cs_real_t);
-  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(res, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t *phia, *iflux, *bflux, *dphi;
   BFT_MALLOC(phia, n_cells_ext, cs_real_t);
   BFT_MALLOC(iflux, m->n_i_faces, cs_real_t);
   BFT_MALLOC(bflux, m->n_b_faces, cs_real_t);
-  BFT_MALLOC(dphi, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dphi, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_3_t *wrk;
   BFT_MALLOC(wrk, n_cells_ext, cs_real_3_t);
@@ -1648,8 +1648,8 @@ _pressure_correction_fv(int                   iterns,
 
     cs_real_t *cpro_tsrho = cs_field_by_name("dila_st")->val;
 
-    BFT_MALLOC(velflx, n_i_faces, cs_real_t);
-    BFT_MALLOC(velflb, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(velflx, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(velflb, n_b_faces, cs_real_t, cs_alloc_mode);
 
     /* 1. The RHS contains rho div(u*) and not div(rho u*) */
 
@@ -2867,8 +2867,8 @@ _pressure_correction_fv(int                   iterns,
 
   } /* End if weaky compressible algorithm (idilat = 5) */
 
-  BFT_FREE(velflx);
-  BFT_FREE(velflb);
+  CS_FREE_HD(velflx);
+  CS_FREE_HD(velflb);
 
   /* Update the pressure field
      ========================= */
@@ -2999,10 +2999,8 @@ _pressure_correction_fv(int                   iterns,
   BFT_FREE(wrk);
   BFT_FREE(res);
   BFT_FREE(phia);
-  BFT_FREE(dphi);
   BFT_FREE(_cpro_divu);
   BFT_FREE(gradp);
-  CS_FREE_HD(rhs);
   BFT_FREE(rovsdt);
   BFT_FREE(weighf);
   BFT_FREE(weighb);
@@ -3012,6 +3010,8 @@ _pressure_correction_fv(int                   iterns,
   BFT_FREE(rhs0);
   BFT_FREE(xdtsro);
   BFT_FREE(tpusro);
+  CS_FREE_HD(rhs);
+  CS_FREE_HD(dphi);
 
   BFT_FREE(cpro_rho_tc);
   BFT_FREE(bpro_rho_tc);

@@ -290,10 +290,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_real_t *adxk = NULL, *adxkm1 = NULL, *dpvarm1 = NULL, *rhs0 = NULL;
 
   if (iswdyp >= 1) {
-    BFT_MALLOC(adxk, n_cells_ext, cs_real_t);
-    BFT_MALLOC(adxkm1, n_cells_ext, cs_real_t);
-    BFT_MALLOC(dpvarm1, n_cells_ext, cs_real_t);
-    BFT_MALLOC(rhs0, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(adxk, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(adxkm1, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(dpvarm1, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(rhs0, n_cells_ext, cs_real_t, cs_alloc_mode);
   }
 
   /* Symmetric matrix, except if advection */
@@ -311,8 +311,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
-  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xam, isym*n_i_faces, cs_real_t);
+  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xam, isym*n_i_faces, cs_real_t, cs_alloc_mode);
 
   cs_matrix_wrapper_scalar(iconvp,
                            idiffp,
@@ -404,7 +404,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
-  BFT_MALLOC(smbini, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(smbini, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_lnum_t has_dc = mq->has_disable_flag;
 # pragma omp parallel if(n_cells > CS_THR_MIN)
@@ -942,7 +942,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       smbrp[iel] = smbini[iel] - rovsdt[iel]*dpvar[iel];
 
-    inc    = 1;
+    inc = 1;
 
     /* Without relaxation even for a stationnary computation */
 
@@ -981,15 +981,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_sles_free_native(f_id, var_name);
 
   /*  Free memory */
-  BFT_FREE(dam);
-  BFT_FREE(xam);
+  CS_FREE_HD(dam);
+  CS_FREE_HD(xam);
+  CS_FREE_HD(smbini);
 
-  BFT_FREE(smbini);
   if (iswdyp >= 1) {
-    BFT_FREE(adxk);
-    BFT_FREE(adxkm1);
-    BFT_FREE(dpvarm1);
-    BFT_FREE(rhs0);
+    CS_FREE_HD(adxk);
+    CS_FREE_HD(adxkm1);
+    CS_FREE_HD(dpvarm1);
+    CS_FREE_HD(rhs0);
   }
 }
 
