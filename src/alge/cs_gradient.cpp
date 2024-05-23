@@ -5538,6 +5538,12 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
   /* Initialize gradient */
   /*---------------------*/
 
+  std::chrono::high_resolution_clock::time_point t_start, t_init, t_i_faces, \
+    t_b_faces, t_rescale, t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   /* Initialization */
 
 # pragma omp parallel for
@@ -5547,6 +5553,9 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
         grad[c_id][i][j] = 0.0;
     }
   }
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_init = std::chrono::high_resolution_clock::now();
 
   /* Interior faces contribution */
 
@@ -5611,6 +5620,9 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
 
   } /* End of loop on thread groups */
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_i_faces = std::chrono::high_resolution_clock::now();
+
   /* Boundary face treatment */
 
 # pragma omp parallel for  if (n_b_cells > CS_THR_MIN)
@@ -5657,6 +5669,9 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
 
   } /* loop on boundary cells */
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_b_faces = std::chrono::high_resolution_clock::now();
+
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t dvol;
@@ -5686,6 +5701,9 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
     }
   }
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_rescale = std::chrono::high_resolution_clock::now();
+
   /* Periodicity and parallelism treatment */
 
   if (m->halo != nullptr) {
@@ -5698,6 +5716,37 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
                                              halo_type,
                                              (cs_real_t *)grad);
     }
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s<%d>", cs_glob_rank_id, __func__, stride);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_init - t_start);
+    printf(", init = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_i_faces - t_init);
+    printf(", i_faces = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_b_faces - t_i_faces);
+    printf(", b_faces = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_rescale - t_b_faces);
+    printf(", rescale = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_rescale);
+    printf(", halo = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
   }
 }
 
