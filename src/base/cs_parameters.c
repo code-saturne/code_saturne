@@ -2006,6 +2006,7 @@ cs_parameters_output_complete(void)
   const int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
+
     if (f->type & CS_FIELD_PROPERTY) {
       if (cs_field_is_key_set(f, k_vis) == false) {
         int flag = CS_POST_ON_LOCATION;
@@ -2013,6 +2014,34 @@ cs_parameters_output_complete(void)
       }
       if (cs_field_is_key_set(f, k_log) == false)
         cs_field_set_key_int(f, k_log, 1);
+    }
+
+    /* Build clipping field for post-processing */
+    if (f->type & CS_FIELD_VARIABLE
+        && !(f->type & CS_FIELD_CDO)) {
+
+      int k_clipping_id = cs_field_key_id("clipping_id");
+      int clip_id = cs_field_get_key_int(f, k_clipping_id);
+
+      if (clip_id >= 0) {
+
+        /* Now create matching field
+           Build name and label */
+
+        int field_type = CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS;
+        cs_field_t *f_c = cs_field_create_by_composite_name(f->name,
+                                                            "clipped",
+                                                            field_type,
+                                                            CS_MESH_LOCATION_CELLS,
+                                                            f->dim,
+                                                            false);
+
+
+        cs_field_set_key_int(f_c, k_vis, CS_POST_ON_LOCATION);
+        cs_field_set_key_int(f, k_clipping_id, f_c->id);
+
+      }
+
     }
   }
 }

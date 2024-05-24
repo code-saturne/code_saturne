@@ -78,7 +78,7 @@ implicit none
 integer          ii, ivar
 integer          iflid, kcvlim, ifctsl, clip_id
 integer          kdflim
-integer          kturt, kfturt, kislts, keyvar, kclipp, kfturt_alpha
+integer          kturt, kfturt, kislts, keyvar, kfturt_alpha
 integer          turb_flux_model, turb_flux_model_type
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
@@ -491,38 +491,6 @@ do f_id = 0, nfld - 1
           call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
           call field_set_key_int(f_id, kislts, ifctsl)
         endif
-      endif
-
-    endif ! CDO ?
-  endif ! VARIABLE ?
-enddo
-
-! Postprocessing of clippings
-
-call field_get_key_id("clipping_id", kclipp)
-
-itycat = FIELD_POSTPROCESS
-ityloc = 1 ! cells
-
-do f_id = 0, nfld - 1
-  call field_get_type(f_id, f_type)
-  ! Is the field of type FIELD_VARIABLE ?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    ! Is this field not managed by CDO ?
-    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
-
-      call field_get_key_int(f_id, kclipp, clip_id)
-      if (clip_id.ge.0) then
-
-        ! Now create matching field
-        ! Build name and label
-        call field_get_name(f_id, f_name)
-
-        call field_get_dim(f_id, f_dim)
-        name  = trim(f_name) // '_clipped'
-        call field_create(name, itycat, ityloc, f_dim, inoprv, clip_id)
-        call field_set_key_int(clip_id, keyvis, POST_ON_LOCATION)
-        call field_set_key_int(f_id, kclipp, clip_id)
       endif
 
     endif ! CDO ?

@@ -265,6 +265,28 @@ cs_field_create(const char   *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create a field descriptor.
+ *
+ * \param[in]  name_prefix   first part of field name
+ * \param[in]  name_suffix   second part of field name
+ * \param[in]  location_id   id of associated location
+ * \param[in]  dim           field dimension (number of components)
+ * \param[in]  has_previous  maintain values at the previous time step ?
+ *
+ * \return  pointer to new field.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field_create_by_composite_name(const char   *name_prefix,
+                                  const char   *name_suffix,
+                                  int           type_flag,
+                                  int           location_id,
+                                  int           dim,
+                                  bool          has_previous);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return a field matching a given name and attributes,
  *        creating it if necessary.
  *

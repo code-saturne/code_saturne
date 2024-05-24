@@ -1632,16 +1632,6 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_post_slop_test] */
 
-  /* Example: post-process clippings for Rij tensor */
-  /*------------------------------------------------*/
-
-  /*! [param_var_rij_clipping] */
-
-  cs_field_set_key_int(CS_F_(rij), cs_field_key_id("clipping_id"), 1);
-  cs_field_set_key_int(CS_F_(eps), cs_field_key_id("clipping_id"), 1);
-
-  /*! [param_var_rij_clipping] */
-
   /* Example: post-process the Q-criterion on the whole domain mesh */
   /*----------------------------------------------------------------*/
 
@@ -1888,6 +1878,16 @@ cs_user_finalize_setup(cs_domain_t     *domain)
                                 CS_POST_ON_LOCATION | CS_POST_MONITOR);
   }
   /*! [setup_post_lum] */
+
+  /* Example: post-process clippings for Rij tensor */
+  /*------------------------------------------------*/
+
+  /*! [param_var_rij_clipping] */
+
+  cs_field_set_key_int(CS_F_(rij), cs_field_key_id("clipping_id"), 1);
+  cs_field_set_key_int(CS_F_(eps), cs_field_key_id("clipping_id"), 1);
+
+  /*! [param_var_rij_clipping] */
 
   /* Example: define 1-D radiative transfer mesh for
    * the atmospheric module */
