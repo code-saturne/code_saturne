@@ -4139,6 +4139,9 @@ _convection_diffusion_unsteady_strided
       cs_real_t pip[stride], pjp[stride];
       cs_real_t _pi[stride], _pj[stride];
 
+      const var_t &pvar_i = _pvar[ii];
+      const var_t &pvar_j = _pvar[jj];
+
       for (int i = 0; i < stride; i++) {
         _pi[i]  = _pvar[ii][i];
         _pj[i]  = _pvar[jj][i];
@@ -4174,7 +4177,7 @@ _convection_diffusion_unsteady_strided
 
       /* No relaxation in following expressions */
 
-      // Convective flux (pij == _pi, pjf == _pj as we are upwind)
+      // Convective flux (pif == _pi, pjf == _pj as we are upwind)
 
       if (iconvp) {
         cs_real_t _i_massflux = i_massflux[face_id];
@@ -4183,9 +4186,9 @@ _convection_diffusion_unsteady_strided
 
         for (cs_lnum_t isou = 0; isou < stride; isou++) {
           fluxi[isou] +=   thetap*(flui*_pi[isou] + fluj*_pj[isou])
-                         - imasac*_i_massflux*_pi[isou];
+                         - imasac*_i_massflux*pvar_i[isou];
           fluxj[isou] +=   thetap*(flui*_pi[isou] + fluj*_pj[isou])
-                         - imasac*_i_massflux*_pj[isou];
+                         - imasac*_i_massflux*pvar_j[isou];
         }
       }
 
@@ -4248,6 +4251,9 @@ _convection_diffusion_unsteady_strided
         cs_real_t pip[stride], pjp[stride];
         cs_real_t pif[stride], pjf[stride];
         cs_real_t _pi[stride], _pj[stride];
+
+        const var_t &pvar_i = _pvar[ii];
+        const var_t &pvar_j = _pvar[jj];
 
         for (int i = 0; i < stride; i++) {
           _pi[i]  = _pvar[ii][i];
@@ -4367,9 +4373,9 @@ _convection_diffusion_unsteady_strided
 
           for (cs_lnum_t isou = 0; isou < stride; isou++) {
             fluxi[isou] +=   thetap*(flui*pif[isou] + fluj*pjf[isou])
-                           - imasac*_i_massflux*_pi[isou];
+                           - imasac*_i_massflux*pvar_i[isou];
             fluxj[isou] +=   thetap*(flui*pif[isou] + fluj*pjf[isou])
-                           - imasac*_i_massflux*_pj[isou];
+                           - imasac*_i_massflux*pvar_j[isou];
           }
         }
 
@@ -4433,6 +4439,9 @@ _convection_diffusion_unsteady_strided
         cs_real_t pif[stride], pjf[stride];
         bool upwind_switch = false;
         cs_real_t _pi[stride], _pj[stride];
+
+        const var_t &pvar_i = _pvar[ii];
+        const var_t &pvar_j = _pvar[jj];
 
         for (int i = 0; i < stride; i++) {
           _pi[i]  = _pvar[ii][i];
@@ -4557,9 +4566,9 @@ _convection_diffusion_unsteady_strided
 
           for (cs_lnum_t isou = 0; isou < stride; isou++) {
             fluxi[isou] +=   thetap*(flui*pif[isou] + fluj*pjf[isou])
-                           - imasac*_i_massflux*_pi[isou];
+                           - imasac*_i_massflux*pvar_i[isou];
             fluxj[isou] +=   thetap*(flui*pif[isou] + fluj*pjf[isou])
-                           - imasac*_i_massflux*_pj[isou];
+                           - imasac*_i_massflux*pvar_j[isou];
           }
         }
 
@@ -7053,6 +7062,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     printf(", total = %ld\n", elapsed.count());
   }
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the convection/diffusion terms of a transport
