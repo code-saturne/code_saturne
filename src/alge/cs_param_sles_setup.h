@@ -114,7 +114,8 @@ cs_param_sles_setup_petsc_cmd(bool         use_prefix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a couple (preconditioner, solver) in PETSc
+ * \brief Set a KSP structure in PETSc. This is equivalent to set a solver and
+ *        its related preconditioner
  *
  * \param[in]      label  label to identify this (part of) system
  * \param[in, out] slesp  pointer to a set of SLES parameters

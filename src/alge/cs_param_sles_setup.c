@@ -862,9 +862,8 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the PETSc solver
+ * \brief Set the PETSc solver (KSP structure)
  *
- * \param[in]      prefix  label to identify this (part of) system
  * \param[in]      slesp   pointer to SLES parameters
  * \param[in, out] ksp     pointer to PETSc KSP context
  */
@@ -874,7 +873,7 @@ static void
 _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
                          KSP               ksp)
 {
-  /* No choice otherwise PETSc yields an error */
+  /* No choice otherwise PETSc may yield to an error */
 
   slesp->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -2957,7 +2956,8 @@ cs_param_sles_setup_petsc_cmd(bool         use_prefix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a couple (preconditioner, solver) in PETSc
+ * \brief Set a KSP structure in PETSc. This is equivalent to set a solver and
+ *        its related preconditioner
  *
  * \param[in]      label  label to identify this (part of) system
  * \param[in, out] slesp  pointer to a set of SLES parameters

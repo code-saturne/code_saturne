@@ -630,15 +630,22 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
   assert(solver->n2_scatter_dofs == quant->n_cells);
   assert(solver->n1_scatter_dofs == 3*quant->n_faces);
 
-  /* Buffers of size n2_scatter_dofs */
+  cs_cdo_system_helper_t  *sh = solver->system_helper;
 
-  BFT_MALLOC(ctx->res2, solver->n2_scatter_dofs, cs_real_t);
-  BFT_MALLOC(ctx->m21x1, solver->n2_scatter_dofs, cs_real_t);
+  ctx->m11 = cs_cdo_system_get_matrix(sh, 0);
+  ctx->b11_max_size = CS_MAX(cs_matrix_get_n_columns(ctx->m11),
+                             solver->n1_scatter_dofs);
 
   /* Buffers of size n1_scatter_dofs */
 
   BFT_MALLOC(ctx->b1_tilda, solver->n1_scatter_dofs, cs_real_t);
   BFT_MALLOC(ctx->rhs, solver->n1_scatter_dofs, cs_real_t);
+  BFT_MALLOC(ctx->dzk, solver->n1_scatter_dofs, cs_real_t);
+
+  /* Buffers of size n2_scatter_dofs */
+
+  BFT_MALLOC(ctx->res2, solver->n2_scatter_dofs, cs_real_t);
+  BFT_MALLOC(ctx->m21x1, solver->n2_scatter_dofs, cs_real_t);
 
   /* Since gk is used as a variable in a cell system, one has to take into
      account extra-space for synchronization */
@@ -648,7 +655,6 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
     size = CS_MAX(size, connect->n_cells_with_ghosts);
   BFT_MALLOC(ctx->gk, size, cs_real_t);
 
-  BFT_MALLOC(ctx->dzk, solver->n1_scatter_dofs, cs_real_t);
 
   ctx->inv_m22 = _get_scaled_diag_m22(nsp, ctx->pty_22);
 }
@@ -1583,9 +1589,9 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
               "%s: Uzawa-CG algorithm is expected.\n"
               "%s: Please check your settings.\n", __func__, __func__);
 
-#if defined(DEBUG) && !defined(NDEBUG)
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
+#if defined(DEBUG) && !defined(NDEBUG)
   assert(sh != NULL);
   assert(sh->n_blocks == 2);
   if (sh->type != CS_CDO_SYSTEM_SADDLE_POINT)
@@ -1608,6 +1614,10 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
   cs_saddle_solver_context_uzawa_cg_t  *ctx = solver->context;
   assert(ctx != NULL);
 
+  /* Update the context after the matrix building */
+
+  _uzawa_cg_init_context(nsp, solver, ctx);
+
   /* Prepare the solution array at faces. It has to be allocated to a greater
    * size in case of parallelism in order to allow for a correct matrix-vector
    * product */
@@ -1621,7 +1631,6 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
   else
     x1 = u_f;
 
-  _uzawa_cg_init_context(nsp, solver, ctx);
 
   /* 1. Build the schur approximation */
   /* -------------------------------- */

@@ -153,7 +153,7 @@ typedef struct {
 
   /* SLES associated to the transformation of the right-hand side */
 
-  cs_sles_t  *xtra_sles;
+  cs_sles_t  *init_sles;
 
   /* Function pointers for computing operations needed in the algorithm */
   /* ------------------------------------------------------------------ */
@@ -272,7 +272,7 @@ typedef struct {
 
   /* Optional SLES to perform the transformation of the right hand-side */
 
-  cs_sles_t  *xtra_sles;
+  cs_sles_t  *init_sles;
 
   /* Function pointers */
 
@@ -322,8 +322,6 @@ typedef struct {
 
   /* Auxiliary buffers */
 
-  cs_real_t  *inv_m22;  /* reciprocal of the mass matrix for the (2,2) block;
-                         * buffer of size n2_dofs */
   cs_real_t  *res2;     /* buffer of size n2_dofs */
   cs_real_t  *m21x1;    /* buffer of size n2_dofs */
   cs_real_t  *gk;       /* buffer of size n2_dofs */
@@ -352,6 +350,8 @@ typedef struct {
   /* SLES structure associated to the Schur complement. It depends on the type
      of Schur complement approximation used */
 
+  cs_real_t             *inv_m22;  /* reciprocal of the mass matrix for the
+                                    * (2,2) block; buffer of size n2_dofs */
   cs_matrix_t           *schur_matrix;
   cs_sles_t             *schur_sles;
 
@@ -365,6 +365,7 @@ typedef struct {
   cs_real_t             *m11_inv_diag;
 
   cs_sles_t             *xtra_sles;
+  cs_sles_t             *init_sles;
 
   /* Shared pointers */
 

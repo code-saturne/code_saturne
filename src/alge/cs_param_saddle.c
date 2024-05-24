@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -98,6 +99,153 @@ cs_param_saddle_schur_approx_name[CS_PARAM_SADDLE_N_SCHUR_APPROX]
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define a \ref cs_param_sles_t structure for an extra system used in
+ *        the construction of the approximation of the Schur complement
+ *
+ * \param[in] saddlep   set of parameters managing a saddle-point problem
+ *
+ * \return the pointer to the newly defined set of parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_sles_t *
+_init_xtra_slesp(const cs_param_saddle_t  *saddlep)
+{
+  if (saddlep == NULL)
+    return NULL;
+
+  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
+  const char  *basename = cs_param_saddle_get_name(saddlep);
+
+  int  len = strlen(basename) + strlen("_b11_xtra");
+  char  *name = NULL;
+  BFT_MALLOC(name, len + 1, char);
+  sprintf(name, "%s_b11_xtra", basename);
+
+  /* One starts from a copy of the (1, 1) block settings */
+
+  cs_param_sles_t  *xtra_slesp = cs_param_sles_create(-1, name);
+
+  cs_param_sles_copy_from(b11_slesp, xtra_slesp);
+
+  /* By default, a coarse approximation should be sufficient */
+
+  xtra_slesp->cvg_param.rtol = 1e-3;
+  xtra_slesp->cvg_param.n_max_iter = 50;
+
+  BFT_FREE(name);
+
+  return xtra_slesp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy a \ref cs_param_sles_t structure from an existing one. Case of
+ *        the set of parameters associated to the additional SLES system.
+ *
+ * \param[in] slesp_ref     set of parameters managing a SLES (the ref. one)
+ * \param[in] saddlep_dest  set of parameters managing a saddle-point problem
+ *
+ * \return the pointer to the newly defined set of parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_sles_t *
+_copy_xtra_slesp(const cs_param_sles_t    *slesp_ref,
+                 const cs_param_saddle_t  *saddlep_dest)
+{
+  if (slesp_ref == NULL)
+    return NULL;
+
+  cs_param_sles_t  *slesp_dest = _init_xtra_slesp(saddlep_dest);
+
+  cs_param_sles_copy_from(slesp_ref, slesp_dest);
+
+  return slesp_dest;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a \ref cs_param_sles_t structure for a system solved during
+ *        the first step (transformation or initial resolution). The starting
+ *        point is the settings for the (1,1) block.
+ *
+ * \param[in] saddlep  set of parameters managing a saddle-point problem
+ *
+ * \return the pointer to the newly defined set of parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_sles_t *
+_init_init_slesp(const cs_param_saddle_t  *saddlep)
+{
+  if (saddlep == NULL)
+    return NULL;
+
+  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
+  const char  *basename = saddlep->block11_sles_param->name;
+
+  int  len = strlen(basename) + strlen("_init");
+  char  *name = NULL;
+  BFT_MALLOC(name, len + 1, char);
+  sprintf(name, "%s_init", basename);
+
+  /* One starts from a copy of the (1, 1) block settings */
+
+  cs_param_sles_t  *init_slesp = cs_param_sles_create(-1, name);
+
+  cs_param_sles_copy_from(b11_slesp, init_slesp);
+
+  /* One needs a more accurate approximation to solve the initial system or to
+     transform the system at the initial step */
+
+  double  min_tol_threshold = 1e-14;
+  double  tol = fmin(0.1 * b11_slesp->cvg_param.rtol,
+                     0.1 * saddlep->cvg_param.rtol);
+
+  tol = fmin(tol, 10*saddlep->cvg_param.atol);
+
+  /* Avoid a too small tolerance if algo->cvg_param.atol is very small */
+
+  tol = fmax(tol, min_tol_threshold);
+
+  init_slesp->cvg_param.rtol = tol;
+  init_slesp->cvg_param.atol = fmin(saddlep->cvg_param.atol,
+                                    b11_slesp->cvg_param.atol);
+
+  BFT_FREE(name);
+
+  return init_slesp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy a \ref cs_param_sles_t structure from an existing one. Case of
+ *        the set of parameters associated to the initial system.
+ *
+ * \param[in] slesp_ref     set of parameters managing a SLES (the ref. one)
+ * \param[in] saddlep_dest  set of parameters managing a saddle-point problem
+ *
+ * \return the pointer to the newly defined set of parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_sles_t *
+_copy_init_slesp(const cs_param_sles_t    *slesp_ref,
+                 const cs_param_saddle_t  *saddlep_dest)
+{
+  if (slesp_ref == NULL)
+    return NULL;
+
+  cs_param_sles_t  *slesp_dest = _init_init_slesp(saddlep_dest);
+
+  cs_param_sles_copy_from(slesp_ref, slesp_dest);
+
+  return slesp_dest;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a \ref cs_param_sles_t structure for the Schur complement
  *        system
  *
@@ -121,107 +269,123 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
   BFT_MALLOC(name, len + 1, char);
   sprintf(name, "%s_schur_approx", basename);
 
-  cs_param_sles_t  *schurp =  cs_param_sles_create(-1, name);
+  cs_param_sles_t  *schurp = cs_param_sles_create(-1, name);
 
-  schurp->precond = CS_PARAM_PRECOND_AMG;    /* preconditioner */
-  schurp->solver = CS_PARAM_SOLVER_FCG;      /* iterative solver */
-  schurp->amg_type = CS_PARAM_AMG_INHOUSE_K; /* no predefined AMG type */
-  schurp->cvg_param.rtol = 1e-4;             /* relative tolerance to stop an
-                                                iterative solver */
+  int ierr = cs_param_sles_set_solver("fcg", schurp);
+  if (ierr != EXIT_SUCCESS)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Error raised during the setup of the solver dedicated\n"
+              "to the Schur complement approximation (%s).",
+              __func__, schurp->name);
+
+  ierr = cs_param_sles_set_amg_type("amg", schurp);
+  assert(ierr == EXIT_SUCCESS);
+
+  schurp->cvg_param.rtol = 1e-4; /* relative tolerance to stop the iterative
+                                    solver */
 
   saddlep->schur_sles_param = schurp;
+
+  /* Extra solve needed to compute the Schur approximation with some
+     settings */
+
+  cs_param_sles_t  *xtra_slesp = NULL;
+  if (saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE ||
+      saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE)
+    xtra_slesp = _init_xtra_slesp(saddlep);
+
+  /* Associate the parameter structure to the context structure */
+
+  switch (saddlep->solver) {
+
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    {
+      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+
+      if (ctxp->xtra_sles_param != NULL)
+        cs_param_sles_free(&(ctxp->xtra_sles_param));
+
+      ctxp->xtra_sles_param = xtra_slesp;
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+      if (ctxp->xtra_sles_param != NULL)
+        cs_param_sles_free(&(ctxp->xtra_sles_param));
+
+      ctxp->xtra_sles_param = xtra_slesp;
+    }
+    break;
+
+  default:
+    assert(xtra_slesp == NULL); /* There should be no xtra_slesp */
+    break;
+  }
+
   BFT_FREE(name);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a \ref cs_param_sles_t structure for an extra system used in
- *        the construction of the approximation of the Schur complement
+ * \brief Release structure associated to a context
  *
- * \param[in] saddlep   set of parameters managing a saddle-point problem
+ * \param[in, out] saddlep        set of parameters for solving a saddle-point
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_xtra_slesp(cs_param_saddle_t  *saddlep)
+_free_context(cs_param_saddle_t  *saddlep)
 {
   if (saddlep == NULL)
     return;
-
-  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
-
-  if (saddlep->xtra_sles_param != NULL)
-    cs_param_sles_free(&(saddlep->xtra_sles_param));
-
-  const char  *basename = cs_param_saddle_get_name(saddlep);
-
-  int  len = strlen(basename) + strlen("_b11_xtra");
-  char  *name = NULL;
-  BFT_MALLOC(name, len + 1, char);
-  sprintf(name, "%s_b11_xtra", basename);
-
-  cs_param_sles_t  *xtra_slesp = cs_param_sles_create(-1, name);
-
-  cs_param_sles_copy_from(b11_slesp, xtra_slesp);
-
-  /* Coarse approximation should be sufficient */
-
-  xtra_slesp->cvg_param.rtol = 1e-3;
-  xtra_slesp->cvg_param.n_max_iter = 50;
-
-  saddlep->xtra_sles_param = xtra_slesp;
-  BFT_FREE(name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a \ref cs_param_sles_t structure for an extra system used in
- *        the transformation of the initial system
- *
- * \param[in] saddlep   set of parameters managing a saddle-point problem
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_init_xtra_transfo_slesp(cs_param_saddle_t  *saddlep)
-{
-  if (saddlep == NULL)
+  if (saddlep->context == NULL)
     return;
 
-  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
+  switch (saddlep->solver) {
 
-  if (saddlep->xtra_sles_param != NULL)
-    cs_param_sles_free(&(saddlep->xtra_sles_param));
+  case CS_PARAM_SADDLE_SOLVER_ALU:
+    {
+      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
 
-  const char  *basename = saddlep->block11_sles_param->name;
+      cs_param_sles_free(&(ctxp->init_sles_param));
+    }
+    break;
 
-  int  len = strlen(basename) + strlen(":Transfo");
-  char  *name = NULL;
-  BFT_MALLOC(name, len + 1, char);
-  sprintf(name, "%s:Transfo", basename);
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    {
+      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
 
-  cs_param_sles_t  *xtra_slesp = cs_param_sles_create(-1, name);
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
+    }
+    break;
 
-  cs_param_sles_copy_from(b11_slesp, xtra_slesp);
+  case CS_PARAM_SADDLE_SOLVER_GKB:
+    {
+      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
 
-  /* One needs a more accurate approximation */
+      cs_param_sles_free(&(ctxp->init_sles_param));
+    }
+    break;
 
-  double  min_tol_threshold = 1e-14;
-  double  tol = fmin(0.1 * b11_slesp->cvg_param.rtol,
-                     0.1 * saddlep->cvg_param.rtol);
+  case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
 
-  tol = fmin(tol, 10*saddlep->cvg_param.atol);
+      cs_param_sles_free(&(ctxp->init_sles_param));
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
+    }
+    break;
 
-  /* Avoid a too small tolerance if algo->cvg_param.atol is very small */
+  default:
+    /* Nothing else to free */
+    break;
 
-  tol = fmax(tol, min_tol_threshold);
+  }
 
-  xtra_slesp->cvg_param.rtol = tol;
-  xtra_slesp->cvg_param.atol = fmin(saddlep->cvg_param.atol,
-                                    b11_slesp->cvg_param.atol);
-
-  saddlep->xtra_sles_param = xtra_slesp;
-  BFT_FREE(name);
+  BFT_FREE(saddlep->context);
 }
 
 /*============================================================================
@@ -258,7 +422,7 @@ cs_param_saddle_set_restart_range(cs_param_saddle_t  *saddlep,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Restart range not taken into account.\n"
-                  "%s: Saddle-point solver not relevant.",
+                  "%s: Change the saddle-point solver to do that.",
                   __func__, __func__);
     break;
   }
@@ -453,7 +617,6 @@ cs_param_saddle_create(void)
 
   saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
   saddlep->schur_sles_param = NULL;
-  saddlep->xtra_sles_param = NULL;
 
   /* By default, no context is set */
 
@@ -483,15 +646,130 @@ cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
     return;
 
   BFT_FREE(saddlep->name);
-  BFT_FREE(saddlep->context);
 
   cs_param_sles_free(&(saddlep->schur_sles_param));
-  cs_param_sles_free(&(saddlep->xtra_sles_param));
 
   /* block11_sles_param is shared */
 
+  _free_context(saddlep);
+
   BFT_FREE(saddlep);
   *p_saddlep = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to the approximation of the Schur complement. This is
+ *        only useful for solving a saddle-point problem relying on an
+ *        elaborated approximation of the Schur complement.
+ *
+ * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_param_saddle_get_schur_sles_param(const cs_param_saddle_t  *saddlep)
+{
+  if (saddlep == NULL)
+    return NULL;
+
+  return saddlep->schur_sles_param;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to an extra-operation specific to a saddle-point solver
+ *        It returns a non NULL pointer only for some sadlle-point solver
+ *        relying on a more elaborated Schur complement approximation.
+ *
+ * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep)
+{
+  if (saddlep == NULL)
+    return NULL;
+
+  switch (saddlep->solver) {
+
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    {
+      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+
+      return ctxp->xtra_sles_param;
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+      return ctxp->xtra_sles_param;
+    }
+    break;
+
+  default:
+    return NULL;
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to the initial saddle-point problem. It returns a non
+ *        NULL pointer only for some sadlle-point solver.
+ *
+ * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_param_saddle_get_init_sles_param(const cs_param_saddle_t  *saddlep)
+{
+  if (saddlep == NULL)
+    return NULL;
+
+  switch (saddlep->solver) {
+
+  case CS_PARAM_SADDLE_SOLVER_ALU:
+    {
+      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+
+      return ctxp->init_sles_param;
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_GKB:
+    {
+      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+
+      return ctxp->init_sles_param;
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+      return ctxp->init_sles_param;
+    }
+    break;
+
+  default:
+    return NULL;
+    break;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -636,28 +914,38 @@ cs_param_saddle_set_schur_approx(const char          *keyval,
 
   if (strcmp(keyval, "none") == 0)
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
+
   else if (strcmp(keyval, "diag_inv") == 0) {
+
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE;
     _init_schur_slesp(saddlep);
+
   }
   else if (strcmp(keyval, "identity") == 0)
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_IDENTITY;
+
   else if (strcmp(keyval, "lumped_inv") == 0) {
+
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE;
     _init_schur_slesp(saddlep);
-    _init_xtra_slesp(saddlep);
+
   }
   else if (strcmp(keyval, "mass") == 0 ||
            strcmp(keyval, "mass_scaled") == 0)
+
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED;
+
   else if (strcmp(keyval, "mass_scaled_diag_inv") == 0) {
+
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE;
     _init_schur_slesp(saddlep);
+
   }
   else if (strcmp(keyval, "mass_scaled_lumped_inv") == 0) {
+
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE;
     _init_schur_slesp(saddlep);
-    _init_xtra_slesp(saddlep);
+
   }
   else
     return ierr;
@@ -748,10 +1036,6 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
 
-    /* Initialize an extra-SLES for the transformation of the system */
-
-    _init_xtra_transfo_slesp(saddlep);
-
     /* Context structure dedicated to this algorithm */
 
     cs_param_saddle_context_alu_t  *ctxp = NULL;
@@ -760,11 +1044,15 @@ cs_param_saddle_set_solver(const char          *keyval,
     /* Default value for this context */
 
     ctxp->augmentation_scaling = 100;
-    ctxp->dedicated_xtra_sles = false;
+    ctxp->dedicated_init_sles = false;
 
-    if (saddlep->context != NULL)
-      BFT_FREE(saddlep->context);
+    /* Initialize an additional set of SLES parameters for the transformation
+       of the system (this is different from defining a dedicated cs_sles_t
+       structure). */
 
+    ctxp->init_sles_param = _init_init_slesp(saddlep);
+
+    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -782,10 +1070,9 @@ cs_param_saddle_set_solver(const char          *keyval,
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
     ctxp->n_stored_directions = 30;    /* default value */
+    ctxp->xtra_sles_param = NULL;      /* It should remain to NULL */
 
-    if (saddlep->context != NULL)
-      BFT_FREE(saddlep->context);
-
+    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -794,14 +1081,19 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_GCR;
     saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
 
+    /* Additional default settings with this choice of solver */
+
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_UPPER;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED;
+
     cs_param_saddle_context_block_krylov_t  *ctxp = NULL;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
     ctxp->n_stored_directions = 30;    /* default value */
+    ctxp->xtra_sles_param = NULL;      /* It depends on the type of Schur
+                                          approximation */
 
-    if (saddlep->context != NULL)
-      BFT_FREE(saddlep->context);
-
+    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -812,10 +1104,6 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
 
-    /* Initialize an extra-SLES for the transformation of the system */
-
-    _init_xtra_transfo_slesp(saddlep);
-
     /* Context structure dedicated to this algorithm */
 
     cs_param_saddle_context_gkb_t  *ctxp = NULL;
@@ -823,11 +1111,15 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     ctxp->augmentation_scaling = 0;  /* default value */
     ctxp->truncation_threshold = 5;  /* default value */
-    ctxp->dedicated_xtra_sles = false;
+    ctxp->dedicated_init_sles = false;
 
-    if (saddlep->context != NULL)
-      BFT_FREE(saddlep->context);
+    /* Initialize an additional set of SLES parameters for the transformation
+       of the system (this is different from defining a dedicated cs_sles_t
+       structure). */
 
+    ctxp->init_sles_param = _init_init_slesp(saddlep);
+
+    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -836,11 +1128,22 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_MINRES;
     saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
 
+    /* Additional default settings with this choice of solver */
+
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_DIAG;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED;
+
+    /* This should be a used for solving a Stokes problem. Thus, there is no
+       need for an elaborated Schur approximation (a scaled mass matrix is
+       sufficient) */
+
   }
   else if (strcmp(keyval, "mumps") == 0) {
 
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_MUMPS;
     saddlep->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
 
     cs_param_solver_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_MUMPS);
@@ -863,9 +1166,7 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     ctxp->scaling_coef = 1.0;  /* default value */
 
-    if (saddlep->context != NULL)
-      BFT_FREE(saddlep->context);
-
+    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -873,9 +1174,30 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_UZAWA_CG;
     saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED;
 
-    cs_sles_set_epzero(1e-15);
+    /* Context structure dedicated to this algorithm */
 
+    cs_param_saddle_context_uzacg_t  *ctxp = NULL;
+    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_uzacg_t);
+
+    ctxp->xtra_sles_param = NULL;  /* It depends on the type of Schur
+                                      approximation used */
+
+    ctxp->dedicated_init_sles = false;
+
+    /* Initialize an additional set of SLES parameters for the initial
+       transformation of the system (this is different from defining a
+       dedicated cs_sles_t structure). The same SLES can be shared but with
+       different settings w.r.t. the stopping convergence criteria. */
+
+    ctxp->init_sles_param = _init_init_slesp(saddlep);
+
+    cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
+
+    _free_context(saddlep); /* If one switches from one solver to another one */
+    saddlep->context = ctxp;
   }
   else
     return ierr;
@@ -908,29 +1230,6 @@ cs_param_saddle_try_init_schur_sles_param(cs_param_saddle_t  *saddlep)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize a \ref cs_param_sles_t structure for the Schur
- *        approximation nested inside a \ref cs_param_saddle_t structure. By
- *        default, this member is not allocated. Do nothing if the related
- *        structure is already allocated.
- *
- * \param[in, out] saddlep    pointer to the structure to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_saddle_try_init_xtra_sles_param(cs_param_saddle_t  *saddlep)
-{
-  if (saddlep == NULL)
-    return;
-
-  if (saddlep->xtra_sles_param != NULL)
-    return; /* Initialization has already been performed */
-
-  _init_xtra_slesp(saddlep);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Copy a cs_param_saddle_t structure from ref to dest
  *
  * \param[in]      ref     reference structure to be copied
@@ -955,13 +1254,15 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
   dest->cvg_param.dtol = ref->cvg_param.dtol;
   dest->cvg_param.n_max_iter = ref->cvg_param.n_max_iter;
 
+  /* Shared pointer */
+
   dest->block11_sles_param = ref->block11_sles_param;
 
   if (ref->schur_sles_param != NULL) {
 
     if (dest->name == NULL)
-      cs_param_saddle_set_name("automatic", dest); /* Avoid using the same
-                                                      name */
+      cs_param_saddle_set_name("auto_schur", dest); /* Avoid using the same
+                                                       name */
 
     cs_param_saddle_try_init_schur_sles_param(dest);
 
@@ -969,15 +1270,74 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
 
   }
 
-  if (ref->xtra_sles_param != NULL) {
+  /* Copy the associated context */
 
-    if (dest->name == NULL)
-      cs_param_saddle_set_name("automatic", dest); /* Avoid using the same
-                                                      name */
+  switch (ref->solver) {
 
-    cs_param_saddle_try_init_xtra_sles_param(dest);
+  case CS_PARAM_SADDLE_SOLVER_ALU:
+    {
+      cs_param_saddle_context_alu_t  *ctxp_ref = ref->context;
+      cs_param_saddle_context_alu_t  *ctxp_dest = NULL;
 
-    cs_param_sles_copy_from(ref->xtra_sles_param, dest->xtra_sles_param);
+      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_alu_t);
+
+      ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
+      ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
+
+      ctxp_dest->init_sles_param = _copy_init_slesp(ctxp_ref->init_sles_param,
+                                                    dest);
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_FGMRES:
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    {
+      cs_param_saddle_context_block_krylov_t  *ctxp_ref = ref->context;
+      cs_param_saddle_context_block_krylov_t  *ctxp_dest = NULL;
+
+      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_block_krylov_t);
+
+      ctxp_ref->n_stored_directions = ctxp_ref->n_stored_directions;
+
+      ctxp_dest->xtra_sles_param = _copy_xtra_slesp(ctxp_ref->xtra_sles_param,
+                                                    dest);
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_GKB:
+    {
+      cs_param_saddle_context_gkb_t  *ctxp_ref = ref->context;
+      cs_param_saddle_context_gkb_t  *ctxp_dest = NULL;
+
+      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_gkb_t);
+
+      ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
+      ctxp_dest->truncation_threshold = ctxp_ref->truncation_threshold;
+      ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
+
+      ctxp_dest->init_sles_param = _copy_init_slesp(ctxp_ref->init_sles_param,
+                                                    dest);
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp_ref = ref->context;
+      cs_param_saddle_context_uzacg_t  *ctxp_dest = NULL;
+
+      ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
+
+      ctxp_dest->init_sles_param = _copy_init_slesp(ctxp_ref->init_sles_param,
+                                                    dest);
+
+      ctxp_dest->xtra_sles_param = _copy_xtra_slesp(ctxp_ref->xtra_sles_param,
+                                                    dest);
+    }
+    break;
+
+  default:
+    /* Nothing else to free */
+    break;
 
   }
 }
@@ -999,8 +1359,6 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
   if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_NONE)
     return;
 
-  bool  log_xtra_slesp = false;
-
   const char  *basename = cs_param_saddle_get_name(saddlep);
 
   char  *prefix = NULL;
@@ -1008,7 +1366,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
   BFT_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", basename);
 
-  /* Log */
+  /* Start the logging */
 
   cs_log_printf(CS_LOG_SETUP,
                 "\n### Setup for the saddle-point system: \"%s\"\n", basename);
@@ -1029,10 +1387,8 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
                     "%s ALU parameters: gamma=%5.2e\n",
                     prefix, ctxp->augmentation_scaling);
       cs_log_printf(CS_LOG_SETUP,
-                    "%s ALU parameters: use_xtra_sles=%s\n",
-                    prefix, cs_base_strtf(ctxp->dedicated_xtra_sles));
-
-      log_xtra_slesp = true; /* Transformation of the RHS */
+                    "%s ALU parameters: dedicated_init_sles=%s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
@@ -1041,7 +1397,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
       cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
 
       cs_log_printf(CS_LOG_SETUP,
-                    "%s Solver: Generalized Conjugate Residual (GCR)\n",
+                    "%s Solver: Flexible GMRES (FGMRES)\n",
                     prefix);
       cs_log_printf(CS_LOG_SETUP,
                     "%s FGMRES parameters: n_stored_directions=%d\n",
@@ -1073,8 +1429,9 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
                     " gamma=%5.2e; trunctation_threshold=%d\n",
                     prefix, ctxp->augmentation_scaling,
                     ctxp->truncation_threshold);
-
-      log_xtra_slesp = true;    /* Transformation of the RHS */
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s GKB parameters: dedicated_init_sles=%s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
@@ -1098,7 +1455,15 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
-    cs_log_printf(CS_LOG_SETUP, "%s Solver: Uzawa-CG\n", prefix);
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+      cs_log_printf(CS_LOG_SETUP, "%s Solver: Uzawa-CG\n", prefix);
+
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Uzawa-CG parameters: dedicated_init_sles=%s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+    }
     break;
 
   default:
@@ -1172,16 +1537,8 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
     break;
 
   case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
-  case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
-    cs_log_printf(CS_LOG_SETUP, "%s Schur approx.: %s.\n", prefix,
-                  cs_param_saddle_schur_approx_name[saddlep->schur_approx]);
-
-    /* SLES parameters associated to the Schur complement */
-
-    cs_param_sles_log(saddlep->schur_sles_param);
-    break;
-
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
+  case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     cs_log_printf(CS_LOG_SETUP, "%s Schur approx.: %s.\n", prefix,
                   cs_param_saddle_schur_approx_name[saddlep->schur_approx]);
@@ -1189,8 +1546,6 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
     /* SLES parameters associated to the Schur complement */
 
     cs_param_sles_log(saddlep->schur_sles_param);
-
-    log_xtra_slesp = true;    /* Calculation of the lumped inverse */
     break;
 
   default:
@@ -1200,9 +1555,47 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
   }
 
   /* Additional SLES parameters for some settings */
+  /* -------------------------------------------- */
 
-  if (log_xtra_slesp)
-    cs_param_sles_log(saddlep->xtra_sles_param);
+  switch (saddlep->solver) {
+
+  case CS_PARAM_SADDLE_SOLVER_ALU:
+    {
+      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+
+      cs_param_sles_log(ctxp->init_sles_param);
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    {
+      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+
+      cs_param_sles_log(ctxp->xtra_sles_param);
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_GKB:
+    {
+      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+
+      cs_param_sles_log(ctxp->init_sles_param);
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+      cs_param_sles_log(ctxp->init_sles_param);
+      cs_param_sles_log(ctxp->xtra_sles_param);
+    }
+    break;
+
+  default:
+    break; /* Do nothing */
+
+  }
 
   BFT_FREE(prefix);
 }

@@ -1733,17 +1733,18 @@ _gkb_transform_system(cs_saddle_solver_t              *solver,
 
   cs_array_real_fill_zero(n1_dofs, ctx->v);
 
-  cs_sles_t  *xtra_sles =
-    (ctxp->dedicated_xtra_sles) ? ctx->xtra_sles : solver->main_sles;
-  assert(xtra_sles != NULL);
+  cs_sles_t  *init_sles =
+    (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
+  assert(init_sles != NULL);
+  cs_param_sles_t  *init_slesp = cs_param_saddle_get_init_sles_param(saddlep);
 
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
-                                           saddlep->xtra_sles_param,
+                                           init_slesp,
                                            m11,
                                            rset,
                                            normalization,
                                            true, /* rhs_redux, */
-                                           xtra_sles,
+                                           init_sles,
                                            ctx->v,
                                            ctx->rhs_tilda);
 
@@ -2395,10 +2396,13 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
   BFT_MALLOC(rhs, b11_size, cs_real_t);
   cs_array_real_set_scalar(b11_size, 1., rhs);
 
+  cs_param_sles_t  *slesp = cs_param_saddle_get_xtra_sles_param(solver->param);
+  assert(slesp != NULL);
+
   /* Solve m11.x = 1 */
 
   *n_iter = cs_cdo_solve_scalar_system(b11_size,
-                                       solver->param->xtra_sles_param,
+                                       slesp,
                                        m11,
                                        b11_rset,
                                        1,     /* no normalization */
@@ -2604,15 +2608,9 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
   const cs_param_saddle_t  *saddlep = solver->param;
   const cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
 
-  ctx->xtra_sles = NULL;
-
-  if (ctxp->dedicated_xtra_sles) {
-
-    const cs_param_sles_t  *xtra_slesp = saddlep->xtra_sles_param;
-
-    ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
-
-  }
+  ctx->init_sles = NULL;
+  if (ctxp->dedicated_init_sles)
+    ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
   /* Rk: Setting the function for computing the b11 norm is done by the calling
    * since it depends on the type of system to solve and especially the
@@ -2653,7 +2651,7 @@ cs_saddle_solver_context_alu_clean
   if (ctx == NULL)
     return;
 
-  cs_sles_free(ctx->xtra_sles);
+  cs_sles_free(ctx->init_sles);
 
   BFT_FREE(ctx->inv_m22);
   BFT_FREE(ctx->res2);
@@ -2758,11 +2756,19 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-    ctx->schur_sles = cs_sles_find_or_add(-1, saddlep->schur_sles_param->name);
+    {
+      cs_param_sles_t  *schur_slesp =
+        cs_param_saddle_get_schur_sles_param(saddlep);
+      assert(schur_slesp != NULL);
 
-    if (saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE ||
-      saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE)
-      ctx->xtra_sles = cs_sles_find_or_add(-1, saddlep->xtra_sles_param->name);
+      ctx->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
+      cs_param_sles_t  *xtra_slesp =
+        cs_param_saddle_get_xtra_sles_param(saddlep);
+
+      if (xtra_slesp != NULL)
+        ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
+    }
     break;
 
   default:
@@ -2874,15 +2880,14 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
 
   ctx->rhs_tilda = NULL;
 
-  /* Extra SLES if needed */
-
-  ctx->xtra_sles = NULL;
-
   const cs_param_saddle_t  *saddlep = solver->param;
   cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
 
-  if (ctxp->dedicated_xtra_sles)
-    ctx->xtra_sles = cs_sles_find_or_add(-1, saddlep->xtra_sles_param->name);
+  /* Extra SLES if needed */
+
+  ctx->init_sles = NULL;
+  if (ctxp->dedicated_init_sles)
+    ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
   /* Rk: Setting the function for computing the b11 norm is done by the calling
    * since it depends on the type of system to solve and especially the
@@ -2923,6 +2928,8 @@ cs_saddle_solver_context_gkb_clean(cs_saddle_solver_context_gkb_t  *ctx)
 {
   if (ctx == NULL)
     return;
+
+  cs_sles_free(ctx->init_sles);
 
   ctx->alpha = 0.0;
   ctx->beta = 0.0;
@@ -2988,9 +2995,6 @@ cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver)
   cs_saddle_solver_context_notay_t  *ctx = NULL;
   BFT_MALLOC(ctx, 1, cs_saddle_solver_context_notay_t);
 
-  const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
-
   /* Function pointer */
 
   ctx->m12_vector_multiply = NULL;
@@ -3047,14 +3051,14 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
    */
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
-  const cs_cdo_system_block_t  *vel_block = sh->blocks[0];
-  const cs_cdo_system_dblock_t  *vel_dblock = vel_block->block_pointer;
+  const cs_cdo_system_block_t  *b11 = sh->blocks[0];
+  const cs_cdo_system_dblock_t  *b11_dblock = b11->block_pointer;
 
   /* One assumes that up to now, the (1,1)-block is associated to only one
      matrix */
 
   ctx->m11 = NULL; /* To be set later */
-  ctx->b11_range_set = vel_dblock->range_set;
+  ctx->b11_range_set = b11_dblock->range_set;
   ctx->b11_max_size = 0; /* To be set later */
   ctx->b22_max_size = b22_max_size;
 
@@ -3068,8 +3072,8 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
    * transposed part of the (1,2)-block by definition of the saddle-point
    * system */
 
-  const cs_cdo_system_block_t  *block21 = sh->blocks[1];
-  const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
+  const cs_cdo_system_block_t  *b21 = sh->blocks[1];
+  const cs_cdo_system_ublock_t  *b21_ublock = b21->block_pointer;
 
   ctx->m21_val = b21_ublock->values;
   ctx->m21_adj = b21_ublock->adjacency;
@@ -3082,6 +3086,7 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
   ctx->schur_matrix = NULL;
   ctx->schur_sles = NULL;
   ctx->xtra_sles = NULL;
+  ctx->init_sles = NULL;
 
   ctx->m11_inv_diag = NULL;
   ctx->inv_m22 = NULL;
@@ -3090,6 +3095,11 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
      preconditioner */
 
   const cs_param_saddle_t  *saddlep = solver->param;
+  const cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+  ctx->init_sles = NULL;
+  if (ctxp->dedicated_init_sles)
+    ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
   switch (saddlep->schur_approx) {
 
@@ -3097,17 +3107,27 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-    ctx->schur_sles = cs_sles_find_or_add(-1, saddlep->schur_sles_param->name);
+    {
+      cs_param_sles_t  *schur_slesp =
+        cs_param_saddle_get_schur_sles_param(saddlep);
+      assert(schur_slesp != NULL);
 
-    if (saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE ||
-      saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE)
-      ctx->xtra_sles = cs_sles_find_or_add(-1, saddlep->xtra_sles_param->name);
+      ctx->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
+      cs_param_sles_t  *xtra_slesp =
+        cs_param_saddle_get_xtra_sles_param(saddlep);
+
+      if (xtra_slesp != NULL)
+        ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
+    }
     break;
 
   default:
     /*  CS_PARAM_SADDLE_SCHUR_NONE,
         CS_PARAM_SADDLE_SCHUR_IDENTITY,
         CS_PARAM_SADDLE_SCHUR_MASS_SCALED */
+
+    ctx->schur_sles = NULL;
     break;
   }
 
@@ -3146,6 +3166,7 @@ cs_saddle_solver_context_uzawa_cg_clean
 
   cs_sles_free(ctx->schur_sles);
   cs_sles_free(ctx->xtra_sles);
+  cs_sles_free(ctx->init_sles);
 
   BFT_FREE(ctx->schur_diag);
   BFT_FREE(ctx->schur_xtra);
@@ -3201,6 +3222,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU);
   const cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
   const double  gamma = ctxp->augmentation_scaling;
+  const cs_param_sles_t  *init_slesp = ctxp->init_sles_param;
 
   cs_iter_algo_t  *algo = solver->algo;
 
@@ -3210,9 +3232,9 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   cs_saddle_solver_context_alu_t  *ctx = solver->context;
   assert(ctx != NULL);
 
-  cs_sles_t  *xtra_sles =
-    (ctxp->dedicated_xtra_sles) ? ctx->xtra_sles : solver->main_sles;
-  assert(xtra_sles != NULL);
+  cs_sles_t  *init_sles =
+    ctxp->dedicated_init_sles ? ctx->init_sles : solver->main_sles;
+  assert(init_sles != NULL);
 
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
@@ -3227,8 +3249,11 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   /* ------------------ */
   /* --- ALGO BEGIN --- */
 
-  /* Transformation of the initial right-hand side */
-  /* --------------------------------------------- */
+  /* Initialization
+   * ==============
+   *
+   * Transformation of the initial right-hand side
+   * --------------------------------------------- */
 
   cs_real_t  *btilda_c = ctx->m21x1;
 
@@ -3253,16 +3278,13 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
 
   }
 
-  /* Update the modify right-hand side: b1_tilda = b1 + gamma*m12.W^-1.b_c */
+  /* Build b1_tilda = b1 + gamma*m12.W^-1.b_c */
 
 # pragma omp parallel for if (n1_dofs > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {
     ctx->b1_tilda[i1] *= gamma;
     ctx->b1_tilda[i1] += b1[i1];
   }
-
-  /* Initialization */
-  /* ============== */
 
   /* Compute the RHS for the Uzawa system: rhs = b1_tilda - b12.x2 */
 
@@ -3290,12 +3312,12 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
-                                           saddlep->xtra_sles_param,
+                                           init_slesp,
                                            m11,
                                            rset,
                                            normalization,
                                            false, /* rhs_redux */
-                                           xtra_sles,
+                                           init_sles,
                                            x1,
                                            ctx->rhs);
 
@@ -3303,7 +3325,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   cs_iter_algo_set_normalization(algo, normalization);
 
 #if 0 /* Export the saddle-point system for analysis */
-  cs_dbg_binary_dump_system(transfo_slesp->name, m11, ctx->rhs, x1);
+  cs_dbg_binary_dump_system(init_slesp->name, m11, ctx->rhs, x1);
 #endif
 
   /* Main loop */
@@ -3528,7 +3550,6 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   /* Compute M12(x2) */
 
-  cs_saddle_solver_context_notay_t  *ctx = solver->context;
   cs_real_t  *m12_x2 = NULL, *mat_diag = NULL;
 
   BFT_MALLOC(m12_x2, n1_dofs, cs_real_t);
@@ -4389,9 +4410,13 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
   cs_iter_algo_t  *algo = solver->algo;
   cs_cdo_system_helper_t  *sh = solver->system_helper;
   cs_saddle_solver_context_uzawa_cg_t  *ctx = solver->context;
+  cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+  const cs_param_sles_t  *init_slesp = ctxp->init_sles_param;
 
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_UZAWA_CG);
   assert(ctx != NULL);
+  assert(init_slesp != NULL);
 
   /* ------------------ */
   /* --- ALGO BEGIN --- */
@@ -4400,6 +4425,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
   const cs_lnum_t  n2_elts = solver->n2_elts;
   const cs_range_set_t  *rset = ctx->b11_range_set;
+  const cs_matrix_t  *m11 = ctx->m11;
 
   cs_real_t  *rhs1 = sh->rhs_array[0];
   cs_real_t  *rhs2 = sh->rhs_array[1];
@@ -4437,21 +4463,24 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
 
+  cs_sles_t  *init_sles =
+    (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
+  assert(init_sles != NULL);
+
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
-                                           saddlep->xtra_sles_param,
-                                           ctx->m11,
+                                           init_slesp,
+                                           m11,
                                            rset,
                                            normalization,
                                            false, /* rhs_redux */
-                                           solver->main_sles,
+                                           init_sles,
                                            x1,
                                            ctx->rhs);
 
   cs_iter_algo_update_inner_iters(algo, n_iter);
 
 #if 0 /* Export the saddle-point system for analysis */
-  cs_dbg_binary_dump_system(saddlep->xtra_sles_param->name, ctx->m11, ctx->rhs,
-                            x1);
+  cs_dbg_binary_dump_system(saddlep->xtra_sles_param->name, m11, ctx->rhs, x1);
 #endif
 
   /* Set pointers used in this algorithm */
@@ -4465,8 +4494,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
   /* Compute the first residual rk0 (in fact the velocity divergence) */
 
-  ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val,
-                           rk);
+  ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val, rk);
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
@@ -4510,8 +4538,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
     /* Define the rhs for this system */
 
     cs_array_real_fill_zero(n1_dofs, ctx->rhs);
-    ctx->m12_vector_multiply(n2_elts, dk, ctx->m21_adj, ctx->m21_val,
-                             ctx->rhs);
+    ctx->m12_vector_multiply(n2_elts, dk, ctx->m21_adj, ctx->m21_val, ctx->rhs);
 
     if (rset->ifs != NULL)
       cs_interface_set_sum(rset->ifs,
@@ -4531,7 +4558,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
     n_iter = cs_cdo_solve_scalar_system(n1_dofs,
                                         saddlep->block11_sles_param,
-                                        ctx->m11,
+                                        m11,
                                         rset,
                                         normalization,
                                         false, /* rhs_redux -->already done */

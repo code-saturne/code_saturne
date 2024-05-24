@@ -1698,38 +1698,6 @@ cs_equation_param_get_saddle_param(cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
- *        is associated to the approximation of the Schur complement. This is
- *        only useful for solving a saddle-point problem relying on an
- *        elaborated approximation of the Schur complement.
- *
- * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
- *
- * \return a pointer to a cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_sles_t *
-cs_equation_param_get_schur_sles_param(cs_equation_param_t  *eqp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
- *        is associated to an extra-operation specific to a saddle-point solver
- *        This is only useful when using ALU, GKB or Krylov solver with
- *        elaborated Schur complement approximation.
- *
- * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
- *
- * \return a pointer to a cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_sles_t *
-cs_equation_param_get_xtra_sles_param(cs_equation_param_t  *eqp);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.

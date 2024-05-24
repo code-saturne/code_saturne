@@ -362,12 +362,6 @@ cs_user_parameters(cs_domain_t    *domain)
                                  0,  /* iterative refinement steps */
                                  CS_PARAM_MUMPS_MEMORY_CONSTRAINED,
                                  true); /* advanced optimizations */
-
-    /* Set the solver for the transformation system */
-
-    cs_param_saddle_t  *saddlep = cs_equation_param_get_saddle_param(mom_eqp);
-
-    cs_param_sles_copy_from(slesp, saddlep->xtra_sles_param);
   }
   /*! [param_cdo_navsto_sles_mumps] */
 }

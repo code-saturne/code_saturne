@@ -135,10 +135,6 @@ cs_cdocb_init_default_param(cs_equation_param_t  *eqp)
   cs_equation_param_set(eqp, CS_EQKEY_SADDLE_AUGMENT_SCALING, "100");
   cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "mumps");
 
-  /* Set the solver for the transformation system (copy from the main one) */
-
-  cs_param_sles_copy_from(b11_slesp, saddlep->xtra_sles_param);
-
   /* Advanced settings */
 
   cs_param_sles_mumps(b11_slesp,

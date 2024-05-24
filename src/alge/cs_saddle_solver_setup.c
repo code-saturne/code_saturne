@@ -520,12 +520,11 @@ _notay_hook(void  *context,
   cs_saddle_solver_t  *solver = context;
 
   const cs_param_saddle_t  *saddlep = solver->param;
+  const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
+  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
 
 #if defined(HAVE_PETSC)
   KSP  ksp = ksp_struct;
-
-  const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
-  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -536,9 +535,6 @@ _notay_hook(void  *context,
                   __func__, b11_slesp->name);
 
   /* Build IndexSet structures to extract block matrices */
-
-  const cs_cdo_system_helper_t  *sh = solver->system_helper;
-  const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
 
   IS  is1 = NULL, is2 = NULL;
   _build_is_for_fieldsplit(solver, &is1, &is2);
@@ -705,17 +701,17 @@ _gkb_setup(cs_saddle_solver_t  *solver,
                   " Please modify your settings.",
                   __func__, ierr, saddlep->name);
 
-      /* SLES for the transformation of the right hand-side */
+      /* SLES for the initial transformation of the right hand-side */
 
       cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
 
-      if (ctxp->dedicated_xtra_sles) {
+      if (ctxp->dedicated_init_sles) {
 
-        ierr = cs_param_sles_setup(false, saddlep->xtra_sles_param);
+        ierr = cs_param_sles_setup(false, ctxp->init_sles_param);
 
         if (ierr < 0)
           bft_error(__FILE__, __LINE__, 0,
-                    "%s: Error %d detected during the setup of the extra SLES"
+                    "%s: Error %d detected during the setup of the initial SLES"
                     " of a saddle-point problem with GKB.\n"
                     " Please modify your settings.",
                     __func__, ierr);
@@ -815,7 +811,8 @@ _schur_complement_setup(cs_param_saddle_t  *saddlep)
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     {
-      cs_param_sles_t  *xtra_slesp = saddlep->xtra_sles_param;
+      cs_param_sles_t  *xtra_slesp =
+        cs_param_saddle_get_xtra_sles_param(saddlep);
       assert(xtra_slesp != NULL);
 
       ierr = cs_param_sles_setup(false, xtra_slesp);
@@ -880,15 +877,15 @@ _setup(cs_saddle_solver_t  *solver,
                   " Please modify your settings.",
                   __func__, ierr);
 
-      /* SLES for the transformation of the right hand-side */
+      /* SLES for the initial transformation of the right hand-side */
 
-      if (ctxp->dedicated_xtra_sles) {
+      if (ctxp->dedicated_init_sles) {
 
-        ierr = cs_param_sles_setup(false, saddlep->xtra_sles_param);
+        ierr = cs_param_sles_setup(false, ctxp->init_sles_param);
 
         if (ierr < 0)
           bft_error(__FILE__, __LINE__, 0,
-                    "%s: Error %d detected during the setup of the extra SLES"
+                    "%s: Error %d detected during the setup of the initial SLES"
                     " of a saddle-point problem with ALU.\n"
                     " Please modify your settings.",
                     __func__, ierr);

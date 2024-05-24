@@ -359,18 +359,6 @@ typedef struct {
 
   cs_param_sles_t                *schur_sles_param;
 
-  /*! \var xtra_sles_param
-   * Set of parameters only used in some situations such as the need to solve
-   * approximately the A.x = 1 linear system (A is the (1,1)-block
-   * maatrix). This is a complemntary step in the approximation of the Schur
-   * complement.
-   *
-   * By default, this is a copy of the \ref block11_sles_param with less
-   * restrictive convergence criteria
-   */
-
-  cs_param_sles_t                *xtra_sles_param;
-
   /*! @} */
 
   /* Additional parameters which are advanced/developper settings */
@@ -378,6 +366,7 @@ typedef struct {
   void                           *context;
 
 } cs_param_saddle_t;
+
 
 /* Set of advanced settings according to the type of saddle-point solver */
 /* ===================================================================== */
@@ -392,15 +381,25 @@ typedef struct {
    *  This is only useful when a ALU algorithm is used.
    */
 
-  double  augmentation_scaling;
+  double            augmentation_scaling;
 
-  /* \var dedicated_xtra_sles
+  /* \var dedicated_init_sles
    * Define an additional SLES to perform the resolution associated to the
-   * transformation of the right-hand side. By default, this is false */
+   * transformation of the right-hand side. By default, this is false in order
+   * to not compute two setup steps in one call. */
 
-  bool    dedicated_xtra_sles;
+  bool              dedicated_init_sles;
+
+  /*! \var init_sles_param
+   * The initial transformation of the linear system requires a more accurate
+   * resolution. Thus, one adds a dedicated \ref cs_param_sles_t structure for
+   * this purpose)
+   */
+
+  cs_param_sles_t  *init_sles_param;
 
 } cs_param_saddle_context_alu_t;
+
 
 /* Block preconditioner algorithm with a Krylov solver */
 /* --------------------------------------------------- */
@@ -412,9 +411,22 @@ typedef struct {
    *  quantity is useful when a GCR or FMGRES is used.
    */
 
-  int  n_stored_directions;
+  int               n_stored_directions;
+
+  /*! \var xtra_sles_param
+   * Set of parameters only used in some situations such as the need to solve
+   * approximately the A.x = 1 linear system (A is the (1,1)-block
+   * matrix). This is a complementary step in the approximation of the Schur
+   * complement.
+   *
+   * By default, this is a copy of the \ref block11_sles_param with less
+   * restrictive convergence criteria
+   */
+
+  cs_param_sles_t  *xtra_sles_param;
 
 } cs_param_saddle_context_block_krylov_t;
+
 
 /* GKB algorithm */
 /* ------------- */
@@ -423,25 +435,36 @@ typedef struct {
 
   /*! \var augmentation_scaling
    *  Value of the scaling coefficient in front of the augmented system.
-   *  This is only useful when a GKB algorithm is used.
+   *  This is only useful when a GKB algorithm is used. By default, there is
+   *  no augmentation.
    */
 
-  double  augmentation_scaling;
+  double            augmentation_scaling;
 
   /*! \var truncation_threshold
    *  Default number of values used to estimation the residual in the energy
    *  norm.
    */
 
-  int     truncation_threshold;
+  int               truncation_threshold;
 
-  /* \var dedicated_xtra_sles
+  /* \var dedicated_init_sles
    * Define an additional SLES to perform the resolution associated to the
-   * transformation of the right-hand side. By default, this is false */
+   * transformation of the right-hand side. By default, this is false in order
+   * to not compute two setup steps in one call. */
 
-  bool    dedicated_xtra_sles;
+  bool              dedicated_init_sles;
+
+  /*! \var init_sles_param
+   * The initial transformation of the linear system requires a more accurate
+   * resolution. Thus, one adds a dedicated \ref cs_param_sles_t structure for
+   * this purpose)
+   */
+
+  cs_param_sles_t  *init_sles_param;
 
 } cs_param_saddle_context_gkb_t;
+
 
 /* Notay's algebraic transformation */
 /* -------------------------------- */
@@ -456,6 +479,38 @@ typedef struct {
   double  scaling_coef;
 
 } cs_param_saddle_context_notay_t;
+
+/* Uzawa-CG algorithm */
+/* ------------------ */
+
+typedef struct {
+
+  /* \var dedicated_init_sles
+   * Define an additional SLES to perform the initial resolution. By default,
+   * this is false in order to not compute two setup steps in one call. */
+
+  bool              dedicated_init_sles;
+
+  /*! \var init_sles_param
+   * The initial linear system requires a more accurate resolution. Thus, one
+   * adds a dedicated \ref cs_param_sles_t structure for this purpose)
+   */
+
+  cs_param_sles_t  *init_sles_param;
+
+  /*! \var xtra_sles_param
+   * Set of parameters only used in some situations such as the need to solve
+   * approximately the A.x = 1 linear system (A is the (1,1)-block
+   * matrix). This is a complementary step in the approximation of the Schur
+   * complement.
+   *
+   * By default, this is a copy of the \ref block11_sles_param with less
+   * restrictive convergence criteria
+   */
+
+  cs_param_sles_t  *xtra_sles_param;
+
+} cs_param_saddle_context_uzacg_t;
 
 
 /*============================================================================
@@ -679,17 +734,50 @@ cs_param_saddle_try_init_schur_sles_param(cs_param_saddle_t  *saddlep);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize a \ref cs_param_sles_t structure for the Schur
- *        approximation nested inside a \ref cs_param_saddle_t structure. By
- *        default, this member is not allocated. Do nothing if the related
- *        structure is already allocated.
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to the approximation of the Schur complement. This is
+ *        only useful for solving a saddle-point problem relying on an
+ *        elaborated approximation of the Schur complement.
  *
- * \param[in, out] saddlep    pointer to the structure to update
+ * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_param_saddle_try_init_xtra_sles_param(cs_param_saddle_t  *saddlep);
+cs_param_sles_t *
+cs_param_saddle_get_schur_sles_param(const cs_param_saddle_t  *saddlep);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to an extra-operation specific to a saddle-point solver
+ *        It returns a non NULL pointer only for some sadlle-point solver
+ *        relying on a more elaborated Schur complement approximation.
+ *
+ * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
+ *        is associated to the initial saddle-point problem. It returns a non
+ *        NULL pointer only for some sadlle-point solver.
+ *
+ * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
+ *
+ * \return a pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_t *
+cs_param_saddle_get_init_sles_param(const cs_param_saddle_t  *saddlep);
 
 /*----------------------------------------------------------------------------*/
 /*!

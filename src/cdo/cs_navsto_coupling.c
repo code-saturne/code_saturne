@@ -416,13 +416,6 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "alu");
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_AUGMENT_SCALING, "100");
     cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "mumps");
-
-    /* Set the solver for the transformation system (copy from the main one) */
-
-    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(mom_eqp);
-    cs_param_saddle_t  *saddlep = cs_equation_param_get_saddle_param(mom_eqp);
-
-    cs_param_sles_copy_from(slesp, saddlep->xtra_sles_param);
 #else
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "gcr");
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_PRECOND, "sgs");
