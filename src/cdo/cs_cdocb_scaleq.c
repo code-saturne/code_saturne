@@ -776,7 +776,7 @@ _scb_steady_build(const cs_equation_param_t  *eqp,
                                         cb,
                                         csys->source);
 
-        csys->rhs[cm->n_fc] += csys->source[cm->n_fc];
+        csys->rhs[cm->n_fc] -= csys->source[cm->n_fc];
 
       }
 

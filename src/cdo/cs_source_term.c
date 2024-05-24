@@ -557,6 +557,7 @@ cs_source_term_set_default_flag(cs_param_space_scheme_t    scheme,
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_CDOCB:
     *state_flag = CS_FLAG_STATE_DENSITY;
     *meta_flag = cs_flag_primal_cell; /* Predefined mask */
     break;
