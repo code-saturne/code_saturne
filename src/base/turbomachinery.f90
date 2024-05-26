@@ -88,37 +88,6 @@ module turbomachinery
       type(c_ptr), intent(out) :: coftur2, hfltur2
     end subroutine map_turbomachinery_arrays
 
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating mesh for turbomachinery
-
-    subroutine turbomachinery_update_mesh(t_elapsed)            &
-      bind(C, name='cs_turbomachinery_update_mesh')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), intent(out) :: t_elapsed
-    end subroutine turbomachinery_update_mesh
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function resetting face fields for turbomachinery
-
-    subroutine turbomachinery_reinit_i_face_fields() &
-      bind(C, name='cs_turbomachinery_reinit_i_face_fields')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine turbomachinery_reinit_i_face_fields
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function resizing owned cell fields for turbomachinery
-
-    subroutine turbomachinery_resize_cell_fields() &
-      bind(C, name='cs_turbomachinery_resize_cell_fields')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine turbomachinery_resize_cell_fields
-
   end interface
 
 contains
