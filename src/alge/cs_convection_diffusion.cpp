@@ -2215,6 +2215,12 @@ _convection_diffusion_scalar_unsteady
       cs_real_t pif, pjf;
       cs_real_t pip, pjp;
 
+#if defined(__INTEL_LLVM_COMPILER)
+      // Silence unitialized variables warning due do compiler ignoring
+      // initializations in inlined functions.
+      pif = 0., pjf = 0.;
+#endif
+
       /* Beta blending coefficient ensuring positivity of the scalar */
       if (isstpp == 2) {
         beta = cs_math_fmax(cs_math_fmin(cv_limiter[ii], cv_limiter[jj]),

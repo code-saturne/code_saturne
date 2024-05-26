@@ -2859,7 +2859,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
 
   if (!exclude_diag && mc->d_val != NULL) {
     const cs_lnum_t n_rows = matrix->n_rows;
-    const double *restrict da = mc->d_val;
+    const cs_real_t *restrict da = mc->d_val;
     switch (matrix->db_size) {
     case 1:
       {
@@ -2999,7 +2999,7 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
 
   if (!exclude_diag && mc->d_val != NULL) {
     const cs_lnum_t n_rows = matrix->n_rows;
-    const double *restrict da = mc->d_val;
+    const cs_real_t *restrict da = mc->d_val;
     switch (matrix->db_size) {
     case 1:
       {
@@ -4399,8 +4399,8 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #if defined(HAVE_MKL_SPARSE_IE) && defined(HAVE_SYCL)
         _spmv[0] = _mat_vec_p_l_dist_mkl_sycl;
         _spmv[1] = _mat_vec_p_l_dist_mkl_sycl;
-        _spmv_xy_hd[0] = 'g';
-        _spmv_xy_hd[1] = 'g';
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
 #else
         retcode = 2;
 #endif

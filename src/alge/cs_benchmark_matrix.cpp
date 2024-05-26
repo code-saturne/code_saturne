@@ -656,7 +656,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#if defined(HAVE_SYCL)
+#if defined(HAVE_SYCL) && 0 // HD allocation not for distributed matrix yet
     _variant_add("Distributed, MKL SYCL offload",
                  NULL,
                  CS_MATRIX_DIST,

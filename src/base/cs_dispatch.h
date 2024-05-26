@@ -511,14 +511,14 @@ public:
   cs_alloc_mode_t
   alloc_mode(void) {
     cs_alloc_mode_t amode
-      = (device_ >= 0 && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+      = (is_gpu && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
     return (amode);
   }
 
   cs_alloc_mode_t
   alloc_mode([[maybe_unused]] bool readable_on_cpu) {
     cs_alloc_mode_t amode
-      = (device_ >= 0 && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+      = (is_gpu && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
     return (amode);
   }
 
@@ -561,7 +561,6 @@ public:
   bool
   try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
                                         cs_dispatch_sum_type_t  &st) {
-    const cs_lnum_t n = m->n_i_faces;
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
@@ -574,7 +573,6 @@ public:
   bool
   try_get_parallel_for_b_faces_sum_type(const cs_mesh_t         *m,
                                         cs_dispatch_sum_type_t  &st) {
-    const cs_lnum_t n = m->n_b_faces;
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
