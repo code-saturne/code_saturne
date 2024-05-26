@@ -242,7 +242,7 @@ cs_wall_functions_1scale_log(cs_real_t    l_visc,
     ustarwer = pow(fabs(vel) / cs_turb_apow / pow(ydvisc, cs_turb_bpow),
                    cs_turb_dpow);
     ustarmin = exp(-cs_turb_cstlog * cs_turb_xkappa)/ydvisc;
-    ustaro = CS_MAX(ustarwer, ustarmin);
+    ustaro = cs_math_fmax(ustarwer, ustarmin);
     *ustar = (cs_turb_xkappa * vel + ustaro)
            / (log(ydvisc * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
 
@@ -504,18 +504,21 @@ cs_wall_functions_2scales_log(cs_real_t   l_visc,
     *ypup = *yplus / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
     /* Mixing length viscosity */
     ml_visc = cs_turb_xkappa * l_visc * *yplus;
-    rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
+    rcprod = cs_math_fmin(cs_turb_xkappa,
+                          cs_math_fmax(1., sqrt(ml_visc / t_visc)) / *yplus);
     *cofimp = 1. - *ypup / cs_turb_xkappa * ( 2. * rcprod - 1. / (2. * *yplus));
 
     *nlogla += 1;
 
   /* viscous sub-layer */
-  } else {
+  }
+  else {
 
     if (*yplus > 1.e-12) {
       *ustar = fabs(vel / *yplus); /* FIXME remove that: its is here only to
                                       be fully equivalent to the former code. */
-    } else {
+    }
+    else {
       *ustar = 0.;
     }
     *ypup = 1.;
@@ -605,7 +608,9 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
 
   /* Mixing length viscosity */
   ml_visc = cs_turb_xkappa * l_visc * (*yplus + *dplus);
-  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / (*yplus + *dplus));
+  rcprod = cs_math_fmin(cs_turb_xkappa,
+                          cs_math_fmax(1., sqrt(ml_visc / t_visc))
+                        / (*yplus + *dplus));
 
   *ustar = vel / (log(*yplus + *dplus) / cs_turb_xkappa + cs_turb_cstlog);
   *ypup = *yplus / (log(*yplus + *dplus) / cs_turb_xkappa + cs_turb_cstlog);
@@ -723,7 +728,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
     *uk = sqrt(sqrt((1.-cs_turb_crij2)/cs_turb_crij1 * rnnb * kinetic_en));
 
   /* Set a low threshold value in case tangential velocity is zero */
-  *yplus = CS_MAX(*uk * y / l_visc, 1.e-4);
+  *yplus = cs_math_fmax(*uk * y / l_visc, 1.e-4);
 
   /* Dimensionless roughness */
   cs_real_t krp = *uk * kr / l_visc;
@@ -909,16 +914,20 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
 
   }
 
-  cs_real_t uplus = log(*yplus + *dplus) / cs_turb_xkappa + cs_turb_cstlog + shift_vel;
+  cs_real_t uplus =   log(*yplus + *dplus)
+                    / cs_turb_xkappa + cs_turb_cstlog + shift_vel;
   *ustar = vel / uplus;
 #if 0
-  bft_printf("uet=%f, u=%f, uplus=%f, yk=%f, duplus=%f\n", *ustar, vel, uplus, *yplus, 1./uplus);
+  bft_printf("uet=%f, u=%f, uplus=%f, yk=%f, duplus=%f\n",
+             *ustar, vel, uplus, *yplus, 1./uplus);
 #endif
   *ypup = *yplus / uplus;
 
   /* Mixing length viscosity, compatible with both regimes */
   ml_visc = cs_turb_xkappa * l_visc * (*yplus + *dplus);
-  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / (*yplus + *dplus));
+  rcprod = cs_math_fmin(cs_turb_xkappa,
+                          cs_math_fmax(1., sqrt(ml_visc / t_visc))
+                        / (*yplus + *dplus));
   *cofimp = 1. - *yplus / (cs_turb_xkappa * uplus)
           * ( 2. * rcprod - 1. / (2. * *yplus + *dplus));
 
@@ -1033,7 +1042,7 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  l_visc,
     1. Initializations
     ==========================================================================*/
 
-  (*htur) = CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
+  (*htur) = cs_math_fmax(yplus, epzero) / cs_math_fmax(yplus+dplus, epzero);
 
   prlm1 = 0.1;
 
@@ -1058,7 +1067,8 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  l_visc,
   if (prl <= prlm1) {
     (*yplim)   = prt/(prl*cs_turb_xkappa);
     if (yplus > (*yplim)) {
-      tplus = prl*(*yplim) + prt/cs_turb_xkappa * (log((yplus+dplus)/(*yplim)) + shift_temp);
+      tplus = prl*(*yplim) +   prt/cs_turb_xkappa
+                             * (log((yplus+dplus)/(*yplim)) + shift_temp);
       (*htur) = prl * yplus / tplus;
     }
 
@@ -1128,12 +1138,12 @@ cs_wall_functions_s_vdriest(cs_real_t  prl,
   if (yplus <= 0.1)
     *htur = 1.;
   else {
-    cs_real_t ypint = CS_MIN(yplus, ypmax);
+    cs_real_t ypint = cs_math_fmin(yplus, ypmax);
 
     /* The number of sub-intervals is taken proportional to yplus and equal to
      * ninter_max if yplus=ypmax */
 
-    int npeff = CS_MAX((int)(ypint / ypmax * (double)(ninter_max)), 1);
+    int npeff = cs_math_fmax((int)(ypint / ypmax * (double)(ninter_max)), 1);
 
     double dy = ypint / (double)(npeff);
     cs_real_t stplus = 0.;
@@ -1202,7 +1212,7 @@ cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
   const double ypluli = cs_glob_wall_functions->ypluli;
   const double epzero = cs_math_epzero;
 
-  (*htur) = CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
+  (*htur) = cs_math_fmax(yplus,epzero)/cs_math_fmax(yplus+dplus,epzero);
 
   /* Shift of the temperature profile due to roughness */
   cs_real_t shift_temp = -log(1. + hp);
