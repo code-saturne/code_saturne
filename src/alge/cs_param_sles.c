@@ -488,10 +488,8 @@ int
 cs_param_sles_set_solver(const char       *keyval,
                          cs_param_sles_t  *slesp)
 {
-  int  ierr = 0;
-
   if (slesp == NULL)
-    return ierr;
+    return EXIT_FAILURE;
 
   const char  *sles_name = slesp->name;
 
@@ -661,9 +659,9 @@ cs_param_sles_set_solver(const char       *keyval,
 
   }
   else
-    ierr = 1;
+    return EXIT_FAILURE;
 
-  return ierr;
+  return EXIT_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -681,7 +679,7 @@ int
 cs_param_sles_set_precond(const char       *keyval,
                           cs_param_sles_t  *slesp)
 {
-  int  ierr = 0;
+  int  ierr = EXIT_SUCCESS;
 
   if (slesp == NULL)
     return ierr;
@@ -950,7 +948,7 @@ cs_param_sles_set_precond(const char       *keyval,
 
   }
   else
-    ierr = 1;
+    ierr = EXIT_FAILURE;
 
   /* Default when using PETSc */
 
@@ -1076,10 +1074,8 @@ int
 cs_param_sles_set_amg_type(const char       *keyval,
                            cs_param_sles_t  *slesp)
 {
-  int  ierr = 0;
-
   if (slesp == NULL)
-    return ierr;
+    return EXIT_FAILURE;
 
   const char  *sles_name = slesp->name;
 
@@ -1188,10 +1184,19 @@ cs_param_sles_set_amg_type(const char       *keyval,
     slesp->flexible = true;
 
   }
-  else
-    slesp->amg_type = CS_PARAM_AMG_NONE;
+  else {
 
-  return ierr;
+    slesp->amg_type = CS_PARAM_AMG_NONE;  /* Avoid an error */
+
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Undefined AMG type.\n"
+                  "%s: Set AMG type to \"CS_PARAM_AMG_NONE\".",
+                  __func__, __func__);
+
+  }
+
+  return EXIT_SUCCESS;  /* Equal to 0 */
 }
 
 /*----------------------------------------------------------------------------*/
