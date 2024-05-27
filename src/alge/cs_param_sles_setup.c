@@ -1243,7 +1243,7 @@ _petsc_amg_block_boomer_hook(void     *context,
 
   for (PetscInt id = 0; id < n_split; id++) {
 
-    sprintf(prefix, "%s_fieldsplit_%c", slesp->name, xyz[id]);
+    sprintf(prefix, "%s_fieldsplit_%c_", slesp->name, xyz[id]);
 
     _petsc_cmd(true, prefix, "ksp_type", "preonly");
 
