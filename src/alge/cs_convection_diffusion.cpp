@@ -4501,8 +4501,8 @@ _convection_diffusion_unsteady_strided
      ======================================================================*/
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-    for (cs_lnum_t jsou = 0; jsou < stride; jsou++) {
-      for (cs_lnum_t isou = 0; isou < 3; isou++)
+    for (cs_lnum_t isou = 0; isou < stride; isou++) {
+      for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
         grdpa[cell_id][isou][jsou] = 0.;
     }
   });
