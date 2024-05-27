@@ -1788,14 +1788,14 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
       box_min_coord[coo_id]
-        = CS_MIN(box_min_coord[coo_id],
-                 point_coordinates[point_id][coo_id]
-                 - length_scale[point_id][coo_id]);
+        = cs_math_fmin(box_min_coord[coo_id],
+                         point_coordinates[point_id][coo_id]
+                       - length_scale[point_id][coo_id]);
 
       box_max_coord[coo_id]
-        = CS_MAX(box_max_coord[coo_id],
-                 point_coordinates[point_id][coo_id]
-                 + length_scale[point_id][coo_id]);
+        = cs_math_fmax(box_max_coord[coo_id],
+                         point_coordinates[point_id][coo_id]
+                       + length_scale[point_id][coo_id]);
 
     }
 

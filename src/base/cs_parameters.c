@@ -2017,7 +2017,7 @@ cs_parameters_output_complete(void)
     }
 
     /* Build clipping field for post-processing */
-    if (f->type & CS_FIELD_VARIABLE
+    if (   f->type & CS_FIELD_VARIABLE
         && !(f->type & CS_FIELD_CDO)) {
 
       int k_clipping_id = cs_field_key_id("clipping_id");
@@ -2029,12 +2029,13 @@ cs_parameters_output_complete(void)
            Build name and label */
 
         int field_type = CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS;
-        cs_field_t *f_c = cs_field_create_by_composite_name(f->name,
-                                                            "clipped",
-                                                            field_type,
-                                                            CS_MESH_LOCATION_CELLS,
-                                                            f->dim,
-                                                            false);
+        cs_field_t *f_c
+          = cs_field_create_by_composite_name(f->name,
+                                              "clipped",
+                                              field_type,
+                                              CS_MESH_LOCATION_CELLS,
+                                              f->dim,
+                                              false);
 
 
         cs_field_set_key_int(f_c, k_vis, CS_POST_ON_LOCATION);

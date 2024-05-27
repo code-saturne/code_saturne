@@ -360,8 +360,8 @@ _clip(cs_lnum_t  n_cells)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t xnu = cvar_nusa[c_id];
-    xnu_min = CS_MIN(xnu_min, xnu);
-    xnu_max = CS_MAX(xnu_max, xnu);
+    xnu_min = cs_math_fmin(xnu_min, xnu);
+    xnu_max = cs_math_fmax(xnu_max, xnu);
   }
 
   /* "Standard" clipping  NUSA > 0 */

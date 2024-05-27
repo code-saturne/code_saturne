@@ -315,8 +315,8 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
               rhs[kk][ll] += dc[ll] * pfac;
           }
           for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
-            var_min[ll] = CS_MIN(var_min[ll], var_j[ll]);
-            var_max[ll] = CS_MAX(var_max[ll], var_j[ll]);
+            var_min[ll] = cs_math_fmin(var_min[ll], var_j[ll]);
+            var_max[ll] = cs_math_fmax(var_max[ll], var_j[ll]);
           }
 
         }
@@ -352,8 +352,8 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
           }
 
           for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
-            var_min[ll] = CS_MIN(var_min[ll], var_j[ll]);
-            var_max[ll] = CS_MAX(var_max[ll], var_j[ll]);
+            var_min[ll] = cs_math_fmin(var_min[ll], var_j[ll]);
+            var_max[ll] = cs_math_fmax(var_max[ll], var_j[ll]);
           }
         }
       }
@@ -410,8 +410,8 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
       }
 
       for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
-        var_min[ll] = CS_MIN(var_min[ll], var_f[ll]);
-        var_max[ll] = CS_MAX(var_max[ll], var_f[ll]);
+        var_min[ll] = cs_math_fmin(var_min[ll], var_f[ll]);
+        var_max[ll] = cs_math_fmax(var_max[ll], var_f[ll]);
         if (fabs(var_f[ll] - a[ll]) > 1e-24)
           coeff_b_contrib = true;
       }
@@ -924,8 +924,8 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
           cocg[5] += dc[0]*dc[2]*ddc;
 
           cs_real_t var_j = var[c_id1];
-          var_min = CS_MIN(var_min, var_j);
-          var_max = CS_MAX(var_max, var_j);
+          var_min = cs_math_fmin(var_min, var_j);
+          var_max = cs_math_fmax(var_max, var_j);
 
           cs_real_t pfac = (var_j - var_i) * ddc;
           for (cs_lnum_t ll = 0; ll < 3; ll++)
@@ -956,8 +956,8 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                               / (c_weight[c_id] + c_weight[c_id1]);
 
           cs_real_t var_j = var[c_id1];
-          var_min = CS_MIN(var_min, var_j);
-          var_max = CS_MAX(var_max, var_j);
+          var_min = cs_math_fmin(var_min, var_j);
+          var_max = cs_math_fmax(var_max, var_j);
 
           cs_real_t pfac = (var_j - var_i) * ddc;
           for (cs_lnum_t ll = 0; ll < 3; ll++)
@@ -993,8 +993,8 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
       /* Use unreconstructed value for limiter */
       cs_real_t var_f = a + b*var_i;
-      var_min = CS_MIN(var_min, var_f);
-      var_max = CS_MAX(var_max, var_f);
+      var_min = cs_math_fmin(var_min, var_f);
+      var_max = cs_math_fmax(var_max, var_f);
 
       cs_real_t unddij = 1. / b_dist[c_f_id];
       cs_real_t umcbdd = (1. - b) * unddij;
@@ -1248,8 +1248,8 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
 
       /* Use unreconstructed value for limiter */
       cs_real_t var_f = a + b*var_i;
-      var_min = CS_MIN(var_min, var_f);
-      var_max = CS_MAX(var_max, var_f);
+      var_min = cs_math_fmin(var_min, var_f);
+      var_max = cs_math_fmax(var_max, var_f);
 
       cs_real_t unddij = 1. / b_dist[c_f_id];
       cs_real_t umcbdd = (1. - b) * unddij;

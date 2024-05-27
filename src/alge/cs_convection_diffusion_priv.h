@@ -308,7 +308,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t    limiter,
       blend = 1.;
     } else {
       ratio = dotp/denom;
-      blend = CS_MIN(1., pow(ratio, .5));
+      blend = cs_math_fmin(1., pow(ratio, .5));
     }
 
     /* Blending */
@@ -323,15 +323,15 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t    limiter,
   } else if (limiter == CS_NVD_VOF_CICSAM) { /* M-CICSAM scheme */
     /* High order scheme : HYPER-C + SUPERBEE */
     if (c_courant <= .3) {
-      high_order = CS_MIN(1., nvf_p_c/(c_courant+cs_math_epzero));
+      high_order = cs_math_fmin(1., nvf_p_c/(c_courant+cs_math_epzero));
     } else if (c_courant <= .6) {
-      high_order = CS_MIN(1., nvf_p_c/.3);
+      high_order = cs_math_fmin(1., nvf_p_c/.3);
     } else if (c_courant <= .7) {
       cs_real_t superbee = cs_nvd_scheme_scalar(CS_NVD_SUPERBEE,
                                                 nvf_p_c,
                                                 nvf_r_f,
                                                 nvf_r_c);
-      high_order =  10.*(  (.7-c_courant)*CS_MIN(1., nvf_p_c/.3)
+      high_order =  10.*(  (.7-c_courant)*cs_math_fmin(1., nvf_p_c/.3)
                          + (c_courant-.6)*superbee);
     }
     else {
@@ -352,7 +352,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t    limiter,
       blend = 1.;
     } else {
       ratio = dotp/denom;
-      blend = CS_MIN(1., pow(ratio, 2.));
+      blend = cs_math_fmin(1., pow(ratio, 2.));
     }
 
     /* Blending */
@@ -375,7 +375,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t    limiter,
       blend = 1.;
     } else {
       ratio = dotp/denom;
-      blend = CS_MIN(1., pow(ratio, 4.));
+      blend = cs_math_fmin(1., pow(ratio, 4.));
     }
 
     /* Blending */
@@ -2659,7 +2659,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
   const cs_real_t grad2c = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
 
   cs_real_t p_u = p_c + (grad2c*dist_cu - gradc)*dist_cu;
-  p_u = CS_MAX(CS_MIN(p_u, local_max_c), local_min_c);
+  p_u = cs_math_fmax(cs_math_fmin(p_u, local_max_c), local_min_c);
 
   /* Compute the normalised distances */
   const cs_real_t nvf_r_f = (dist_fc+dist_cu)/dist_du;
@@ -2699,7 +2699,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
       }
 
       *pif = p_u + nvf_p_f*(p_d - p_u);
-      *pif = CS_MAX(CS_MIN(*pif, local_max_c), local_min_c);
+      *pif = cs_math_fmax(cs_math_fmin(*pif, local_max_c), local_min_c);
 
       cs_blend_f_val(beta,
                      p_c,

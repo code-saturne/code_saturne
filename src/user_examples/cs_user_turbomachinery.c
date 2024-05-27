@@ -162,7 +162,8 @@ cs_user_turbomachinery_set_rotation_velocity(void)
     int rotor_num = 1;
     double two_pi = 2. * acos(-1.);
     double rotation_velocity = -1470. * two_pi / 60.;
-    double rotor_vel = rotation_velocity * CS_MIN(cs_glob_time_step->t_cur / 0.2, 1.);
+    double rotor_vel =   rotation_velocity
+                       * cs_math_fmin(cs_glob_time_step->t_cur / 0.2, 1.);
 
     cs_turbomachinery_set_rotation_velocity(rotor_num,
                                             rotor_vel);
