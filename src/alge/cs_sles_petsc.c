@@ -1359,6 +1359,10 @@ cs_sles_petsc_free(void  *context)
   t0 = cs_timer_time();
 
   cs_sles_petsc_t  *c  = context;
+
+  if (c == NULL)
+    return;
+
   cs_sles_petsc_setup_t *sd = c->setup_data;
 
   if (sd != NULL) {
@@ -1374,10 +1378,9 @@ cs_sles_petsc_free(void  *context)
 
     PetscLogStagePop();
 
-  }
-
-  if (c->setup_data != NULL)
     BFT_FREE(c->setup_data);
+
+  }
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
