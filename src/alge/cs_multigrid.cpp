@@ -52,12 +52,14 @@
 #include "cs_base.h"
 #include "cs_base_accel.h"
 #include "cs_blas.h"
+#include "cs_dispatch.h"
 #include "cs_file.h"
 #include "cs_grid.h"
 #include "cs_halo.h"
 #include "cs_log.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
+#include "cs_matrix_spmv_cuda.h"
 #include "cs_matrix_util.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -263,8 +265,10 @@ struct _cs_multigrid_t {
   cs_multigrid_type_t     type;     /* Multigrid type */
   cs_multigrid_subtype_t  subtype;  /* Multigrid subtype */
 
-  int        aggregation_limit;  /* Maximum allowed fine rows per coarse cell */
-  int        coarsening_type;    /* Coarsening traversal type */
+  int                     aggregation_limit;  /* Maximum allowed fine rows
+                                                 per coarse cell */
+  cs_grid_coarsening_t    coarsening_type;    /* Coarsening traversal type */
+
   int        n_levels_max;       /* Maximum number of grid levels */
   cs_gnum_t  n_g_rows_min;       /* Global number of rows on coarse grids
                                     under which no coarsening occurs */
@@ -927,7 +931,8 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
     if (mg->caller_n_ranks > 1) {
       cs_gnum_t tot_sizes[3], max_sizes[3];
-      cs_gnum_t loc_sizes[3] = {n_rows, n_rows_with_ghosts, n_entries};
+      cs_gnum_t loc_sizes[3] = {
+        (cs_gnum_t)n_rows, (cs_gnum_t)n_rows_with_ghosts, (cs_gnum_t)n_entries};
       MPI_Allreduce(loc_sizes, tot_sizes, 3, CS_MPI_GNUM, MPI_SUM,
                     mg->caller_comm);
       MPI_Allreduce(loc_sizes, max_sizes, 3, CS_MPI_GNUM, MPI_MAX,
@@ -1046,7 +1051,7 @@ _cs_multigrid_post_function(void                  *mgh,
   int ii;
   size_t name_len;
   char *var_name = NULL;
-  cs_multigrid_t *mg = mgh;
+  cs_multigrid_t *mg = (cs_multigrid_t *)mgh;
   const char *base_name = NULL;
 
   /* Return if necessary structures inconsistent or have been destroyed */
@@ -1195,7 +1200,7 @@ _multigrid_pc_setup(void               *context,
 
   cs_multigrid_setup(context, name, a, verbosity);
 
-  cs_multigrid_t  *mg = context;
+  cs_multigrid_t  *mg = (cs_multigrid_t  *)context;
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
   BFT_REALLOC(mgd->pc_name, strlen(name) + 1, char);
@@ -1222,7 +1227,7 @@ _multigrid_pc_setup_k_sub(void               *context,
 {
   CS_UNUSED(accel);
 
-  cs_multigrid_t  *mg = context;
+  cs_multigrid_t  *mg = (cs_multigrid_t *)context;
   cs_multigrid_t  *parent = mg->p_mg;
   cs_multigrid_setup_data_t *p_mgd = parent->setup_data;
 
@@ -1236,7 +1241,7 @@ _multigrid_pc_setup_k_sub(void               *context,
   }
 #endif
 
-  _setup_k_cycle_hpc_sub(context, name, a, n_ranks, verbosity);
+  _setup_k_cycle_hpc_sub(mg, name, a, n_ranks, verbosity);
 
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
@@ -1260,9 +1265,10 @@ _multigrid_setup_k_local_smoothe(void               *context,
                                  const cs_matrix_t  *a,
                                  int                 verbosity)
 {
-  _setup_k_cycle_hpc_sub(context, name, a, 1, verbosity);
+  cs_multigrid_t  *mg = (cs_multigrid_t *)context;
 
-  cs_multigrid_t  *mg = context;
+  _setup_k_cycle_hpc_sub(mg, name, a, 1, verbosity);
+
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
   BFT_REALLOC(mgd->pc_name, strlen(name) + 1, char);
@@ -1287,7 +1293,7 @@ _multigrid_pc_tolerance_t(void    *context,
                           double   precision,
                           double   r_norm)
 {
-  cs_multigrid_t  *mg = context;
+  cs_multigrid_t  *mg = (cs_multigrid_t *)context;
 
   mg->pc_precision = precision;
   mg->pc_r_norm = r_norm;
@@ -1317,7 +1323,7 @@ _multigrid_pc_apply(void                *context,
   int     n_iter;
   double  residual;
 
-  cs_multigrid_t  *mg = context;
+  cs_multigrid_t  *mg = (cs_multigrid_t *)context;
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
   const cs_matrix_t  *a = cs_grid_get_matrix(mgd->grid_hierarchy[0]);
@@ -1327,23 +1333,34 @@ _multigrid_pc_apply(void                *context,
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size;
 
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+  bool use_gpu = (amode > CS_ALLOC_HOST) ? true : false;
+
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(use_gpu);
+
   /* If preconditioner is "in-place", use additional buffer */
 
   if (x_in == NULL) {
     if (mgd->pc_aux == NULL) {
       const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size;
-      BFT_MALLOC(mgd->pc_aux, n_cols, cs_real_t);
+      CS_MALLOC_HD(mgd->pc_aux, n_cols, cs_real_t, amode);
     }
     cs_real_t *restrict _rhs = mgd->pc_aux;
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       _rhs[ii] = x_out[ii];
+      x_out[ii] = 0.;
+    });
+
     rhs = _rhs;
   }
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    x_out[ii] = 0.;
+  else {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      x_out[ii] = 0.;
+    });
+  }
+  ctx.wait();
 
   cs_sles_convergence_state_t  cvg = cs_multigrid_solve(context,
                                                         mgd->pc_name,
@@ -1785,7 +1802,7 @@ _multigrid_setup_sles_k_cycle_bottom(cs_multigrid_t  *mg,
   mg_sles->setup_func(mg_sles->context, _name, m, verbosity - 2);
 #if defined(HAVE_MPI)
   if (mg_sles->solve_func == cs_sles_it_solve) {
-    cs_sles_it_t  *context = mg_sles->context;
+    cs_sles_it_t  *context = (cs_sles_it_t  *)(mg_sles->context);
     cs_sles_it_set_mpi_reduce_comm(context,
                                    MPI_COMM_NULL,
                                    MPI_COMM_NULL);
@@ -1816,12 +1833,12 @@ _multigrid_setup_sles_k_cycle_bottom(cs_multigrid_t  *mg,
 
   if (mg->lv_mg[2] != NULL) {
     cs_sles_pc_t *pc = _pc_create_from_mg_sub(mg->lv_mg[2]);
-    cs_sles_it_transfer_pc(mg_sles->context, &pc);
+    cs_sles_it_transfer_pc((cs_sles_it_t *)mg_sles->context, &pc);
   }
 
 #if defined(HAVE_MPI)
   {
-    cs_sles_it_t  *context = mg_sles->context;
+    cs_sles_it_t  *context = (cs_sles_it_t *)(mg_sles->context);
     cs_sles_it_set_mpi_reduce_comm(context,
                                    cs_grid_get_comm(mgd->grid_hierarchy[1]),
                                    mg->comm);
@@ -1926,9 +1943,13 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
            are of the cs_sles_it type */
         if (j == 1) {
           if (   mg->info.type[0] != CS_SLES_N_IT_TYPES
-              && mg->info.type[0] < CS_SLES_N_SMOOTHER_TYPES)
-            cs_sles_it_set_shareable(mgd->sles_hierarchy[i*2 + 1].context,
-                                     mgd->sles_hierarchy[i*2].context);
+              && mg->info.type[0] < CS_SLES_N_SMOOTHER_TYPES) {
+            cs_sles_it_t *c1
+              = (cs_sles_it_t *)(mgd->sles_hierarchy[i*2 + 1].context);
+            cs_sles_it_t *c0
+              = (cs_sles_it_t *)(mgd->sles_hierarchy[i*2].context);
+            cs_sles_it_set_shareable(c1, c0);
+          }
         }
       }
     }
@@ -1955,7 +1976,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
       mg_sles->setup_func(mg_sles->context, _name, m, verbosity - 2);
 #if defined(HAVE_MPI)
       if (mg_sles->solve_func == cs_sles_it_solve) {
-        cs_sles_it_t  *context = mg_sles->context;
+        cs_sles_it_t  *context = (cs_sles_it_t *)mg_sles->context;
         MPI_Comm lv_comm = cs_grid_get_comm(mgd->grid_hierarchy[i]);
         cs_sles_it_set_mpi_reduce_comm(context,
                                        lv_comm,
@@ -1994,12 +2015,12 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
     if (mg->lv_mg[2] != NULL) {
       cs_sles_pc_t *pc = _pc_create_from_mg_sub(mg->lv_mg[2]);
-      cs_sles_it_transfer_pc(mg_sles->context, &pc);
+      cs_sles_it_transfer_pc((cs_sles_it_t *)mg_sles->context, &pc);
     }
 
 #if defined(HAVE_MPI)
     {
-      cs_sles_it_t  *context = mg_sles->context;
+      cs_sles_it_t  *context = (cs_sles_it_t *)mg_sles->context;
       cs_sles_it_set_mpi_reduce_comm(context,
                                      cs_grid_get_comm(mgd->grid_hierarchy[i]),
                                      mg->comm);
@@ -2048,7 +2069,7 @@ _setup_hierarchy(void             *context,
                  int               verbosity)
 
 {
-  cs_multigrid_t  *mg = context;
+  cs_multigrid_t  *mg = (cs_multigrid_t *)context;
 
   cs_timer_t t0, t1, t2;
 
@@ -2798,8 +2819,8 @@ _level_names_init(const char  *name,
   size_t ptr_size = n_levels*sizeof(char *)*2;
   ptr_size = CS_SIMD_SIZE(ptr_size);
 
-  char *_buffer = buffer;
-  char **_lv_names = buffer;
+  char *_buffer = (char *)buffer;
+  char **_lv_names = (char **)buffer;
   const size_t name_len = strlen(name) + strlen(":descent:") + w + 1;
 
   /* Second part: buffers */
@@ -2858,7 +2879,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                    void                 *aux_vectors)
 {
   int level, coarsest_level;
-  cs_lnum_t ii;
   cs_timer_t t0, t1;
 
   cs_lnum_t db_size = 1;
@@ -2879,7 +2899,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
   cs_multigrid_level_info_t  *lv_info = NULL;
 
-  cs_real_t *_aux_vectors = aux_vectors;
+  cs_real_t *_aux_vectors = (cs_real_t *)aux_vectors;
   cs_real_t *restrict wr = NULL;
   cs_real_t *restrict vx_lv = NULL;
 
@@ -2887,6 +2907,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   const cs_grid_t *f = NULL, *c= NULL;
 
   bool end_cycle = false;
+
+  cs_dispatch_context ctx;
 
   /* Initialization */
 
@@ -2923,7 +2945,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   }
 
   if (_aux_r_size >= wr_size && amode <= CS_ALLOC_HOST) {
-    wr = aux_vectors;
+    wr = (cs_real_t *)aux_vectors;
     _aux_vectors = wr + wr_size;
     _aux_r_size -= wr_size;
   }
@@ -2957,6 +2979,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     /* Smoother pass */
 
     _matrix = cs_grid_get_matrix(f);
+    cs_alloc_mode_t amode_l = cs_matrix_get_alloc_mode(_matrix);
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
 
@@ -2977,8 +3000,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       mg->plot_time_stamp += n_iter+1;
 
     if (mg_sles->solve_func == cs_sles_it_solve)
-      _initial_residual
-        = cs_sles_it_get_last_initial_residual(mg_sles->context);
+      _initial_residual = cs_sles_it_get_last_initial_residual
+                            ((const cs_sles_it_t *)mg_sles->context);
     else
       _initial_residual = HUGE_VAL;
 
@@ -3001,16 +3024,26 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
        (regarding timing, this stage is part of the descent smoother) */
 
 #if defined(HAVE_ACCEL)
-    if (cs_matrix_get_alloc_mode(_matrix) > CS_ALLOC_HOST)
+    bool use_gpu = (amode_l > CS_ALLOC_HOST) ? true : false;
+    ctx.set_use_gpu(use_gpu);
+
+    if (use_gpu) {
+#if defined(HAVE_CUDA)
+      cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+      if (stream != 0)
+        ctx.set_cuda_stream(stream);
+#endif
       cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
+    }
     else
 #endif
       cs_matrix_vector_multiply(_matrix, vx_lv, wr);
 
     _n_rows = n_rows*db_size;
-#   pragma omp parallel for if(_n_rows > CS_THR_MIN)
-    for (ii = 0; ii < _n_rows; ii++)
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       wr[ii] = rhs_lv[ii] - wr[ii];
+    });
+    ctx.wait();
 
     /* Convergence test in beginning of cycle (fine mesh) */
 
@@ -3018,7 +3051,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
       cvg = _convergence_test(mg,
                               lv_names[0],
-                              n_rows*db_size,
+                              _n_rows,
                               mg->info.n_max_cycles,
                               cycle_id,
                               verbosity,
@@ -3052,7 +3085,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     /* Prepare for next level */
 
-    cs_grid_restrict_row_var(f, c, wr, mgd->rhs_vx[(level+1)*2]);
+    cs_grid_restrict_row_var(ctx, f, c, wr, mgd->rhs_vx[(level+1)*2]);
 
     cs_grid_get_info(c,
                      NULL,
@@ -3072,9 +3105,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*2 + 1];
 
     _n_rows = n_rows*db_size;
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < _n_rows; ii++)
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx_lv1[ii] = 0.0;
+    });
+    ctx.wait();
 
     t0 = cs_timer_time();
     cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t1, &t0);
@@ -3123,8 +3157,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
 
     if (mg_sles->solve_func == cs_sles_it_solve)
-      _initial_residual
-        = cs_sles_it_get_last_initial_residual(mg_sles->context);
+      _initial_residual = cs_sles_it_get_last_initial_residual
+                            ((const cs_sles_it_t *)mg_sles->context);
     else
       _initial_residual = HUGE_VAL;
 
@@ -3169,12 +3203,12 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       t0 = cs_timer_time();
 
       cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*2 + 1];
-      cs_grid_prolong_row_var(c, f, vx_lv1, wr);
+      cs_grid_prolong_row_var(ctx,
+                              c, f,
+                              true,  /* increment */
+                              vx_lv1, vx_lv);
 
       _n_rows = n_rows*db_size;
-#     pragma omp parallel for if(n_rows > CS_THR_MIN)
-      for (ii = 0; ii < _n_rows; ii++)
-        vx_lv[ii] += wr[ii];
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t0, &t1);
@@ -3211,8 +3245,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
         _lv_info_update_stage_iter(lv_info->n_it_as_smoothe, n_iter);
 
         if (mg_sles->solve_func == cs_sles_it_solve)
-          _initial_residual
-            = cs_sles_it_get_last_initial_residual(mg_sles->context);
+          _initial_residual = cs_sles_it_get_last_initial_residual
+                                ((const cs_sles_it_t *)mg_sles->context);
         else
           _initial_residual = HUGE_VAL;
 
@@ -3345,6 +3379,17 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   rhs_lv = rhs;
   vx_lv = vx;
 
+  cs_dispatch_context ctx_f, ctx_c;
+
+#if defined(HAVE_ACCEL)
+  bool f_use_gpu = (cs_matrix_get_alloc_mode(f_matrix) > CS_ALLOC_HOST)
+    ? true : false;
+  bool c_use_gpu = (cs_matrix_get_alloc_mode(c_matrix) > CS_ALLOC_HOST)
+    ? true : false;
+  ctx_f.set_use_gpu(f_use_gpu);
+  ctx_c.set_use_gpu(c_use_gpu);
+#endif
+
   /* Descent
      ------- */
 
@@ -3354,9 +3399,10 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   cs_real_t *restrict rt_lv = mgd->rhs_vx[level*na];
   assert(rt_lv != NULL);
 
-# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
+  ctx_f.parallel_for(_f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     vx_lv[ii] = 0.0;
+  });
+  ctx_f.wait();
 
   cs_multigrid_level_info_t  *lv_info = mg->lv_info + level;
   t0 = cs_timer_time();
@@ -3394,15 +3440,20 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   /* Compute new residual */
 
 #if defined(HAVE_ACCEL)
-  if (cs_matrix_get_alloc_mode(f_matrix) > CS_ALLOC_HOST)
+  if (f_use_gpu) {
+#if defined(HAVE_CUDA)
+    cs_matrix_spmv_cuda_set_stream(0);
+#endif
     cs_matrix_vector_multiply_d(f_matrix, vx_lv, rt_lv);
+  }
   else
 #endif
     cs_matrix_vector_multiply(f_matrix, vx_lv, rt_lv);
 
-# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
+  ctx_f.parallel_for(_f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     rt_lv[ii] = rhs_lv[ii] - rt_lv[ii];
+  });
+  ctx_f.wait();
 
   /* Convergence test in beginning of cycle (fine mesh) */
 
@@ -3444,12 +3495,13 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*na + 4];
   cs_real_t *restrict rhs_lv1 = mgd->rhs_vx[(level+1)*na + 5];
 
-# pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < _c_n_rows; i++)
+  ctx_c.parallel_for(_c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
     vx_lv1[i] = 0.0;
+  });
+  ctx_c.wait();
 
   /* Restriction of rt_lv into the next level rhs */
-  cs_grid_restrict_row_var(f, c, rt_lv, rhs_lv1);
+  cs_grid_restrict_row_var(ctx_f, f, c, rt_lv, rhs_lv1);
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t0, &t1);
@@ -3517,7 +3569,16 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     cs_real_t *restrict v_lv1 = mgd->rhs_vx[(level+1)*na + 6];
     cs_real_t *restrict rt_lv1 = mgd->rhs_vx[(level+1)*na + 7];
 
-    cs_matrix_vector_multiply(c_matrix, vx_lv1, v_lv1);
+#if defined(HAVE_ACCEL)
+    if (c_use_gpu) {
+#if defined(HAVE_CUDA)
+      cs_matrix_spmv_cuda_set_stream(0);
+#endif
+      cs_matrix_vector_multiply_d(c_matrix, vx_lv1, rt_lv1);
+    }
+    else
+#endif
+      cs_matrix_vector_multiply(c_matrix, vx_lv1, v_lv1);
 
     /* Coefficients for the Krylov iteration */
 
@@ -3540,9 +3601,10 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
     /* Test for the second coarse resolution */
     if (rt_lv1_norm < trsh * trsh * r_lv1_norm) {
-#     pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < _c_n_rows; i++)
+      ctx_c.parallel_for(_c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
         vx_lv1[i] = ar1 * vx_lv1[i];
+      });
+      ctx_c.wait();
     }
     else {
 
@@ -3550,11 +3612,11 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
       cs_real_t *restrict vx2_lv1 = mgd->rhs_vx[(level+1)*na + 8];
       cs_real_t *restrict w_lv1 = mgd->rhs_vx[(level+1)*na + 9];
 
-#     pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < _c_n_rows; i++) {
+      ctx_c.parallel_for(_c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
         vx2_lv1[i] = 0.0;
         w_lv1[i] = 0.0;
-      }
+      });
+      ctx_c.wait();
 
       t0 = cs_timer_time();
       cs_timer_counter_add_diff(&(lv_info->t_tot[6]), &t1, &t0);
@@ -3576,7 +3638,16 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
       t1 = cs_timer_time();
 
-      cs_matrix_vector_multiply(c_matrix, vx2_lv1, w_lv1);
+#if defined(HAVE_ACCEL)
+      if (c_use_gpu) {
+#if defined(HAVE_CUDA)
+        cs_matrix_spmv_cuda_set_stream(0);
+#endif
+        cs_matrix_vector_multiply_d(c_matrix, vx2_lv1, w_lv1);
+      }
+      else
+#endif
+        cs_matrix_vector_multiply(c_matrix, vx2_lv1, w_lv1);
 
       /* Krylov iteration */
 
@@ -3590,9 +3661,10 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
       cs_real_t ar2 = alpha2 / rho2;
       cs_real_t ar1_ar2 = ar1 - (gamma / rho1) * ar2;
 
-#     pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < _c_n_rows; i++)
+      ctx_c.parallel_for(_c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
         vx_lv1[i] = ar1_ar2 * vx_lv1[i] + ar2 * vx2_lv1[i];
+      });
+      ctx_c.wait();
 
       vx2_lv1 = NULL;
       w_lv1 = NULL;
@@ -3616,22 +3688,34 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   cs_real_t *restrict z1_lv = mgd->rhs_vx[level*na + 2];
   cs_real_t *restrict z2_lv = mgd->rhs_vx[level*na + 3];
 
-# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
+  ctx_f.parallel_for(_f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     z2_lv[ii] = 0.0;
+  });
+  ctx_f.wait();
 
   /* Prolongation */
-  cs_grid_prolong_row_var(c, f, vx_lv1, z1_lv);
+  cs_grid_prolong_row_var(ctx_f, c, f, false, vx_lv1, z1_lv);
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t0, &t1);
   lv_info->n_calls[5] += 1;
 
   /* New residual */
-  cs_matrix_vector_multiply(f_matrix, z1_lv, rb_lv);
-# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
+#if defined(HAVE_ACCEL)
+  if (f_use_gpu) {
+#if defined(HAVE_CUDA)
+    cs_matrix_spmv_cuda_set_stream(0);
+#endif
+    cs_matrix_vector_multiply_d(f_matrix, z1_lv, rb_lv);
+  }
+  else
+#endif
+    cs_matrix_vector_multiply(f_matrix, z1_lv, rb_lv);
+
+  ctx_f.parallel_for(_f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     rb_lv[ii] = rt_lv[ii] - rb_lv[ii];
+  });
+  ctx_f.wait();
 
   t0 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t1, &t0);
@@ -3664,9 +3748,10 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     _log_residual(mg, cycle_id, lv_names[level*2 + 1],
                   c_matrix, rb_lv, z2_lv);
 
-# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
+  ctx_f.parallel_for(_f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     vx_lv[ii] += z1_lv[ii] + z2_lv[ii];
+  });
+  ctx_f.wait();
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[6]), &t0, &t1);
@@ -3951,7 +4036,7 @@ cs_multigrid_copy(const void  *context)
 
   if (context != NULL) {
 
-    const cs_multigrid_t *c = context;
+    const cs_multigrid_t *c = (const cs_multigrid_t *)context;
     d = cs_multigrid_create(c->type);
 
     /* Beginning of cs_multigrid_info_t contains settings, the rest logging */
@@ -3980,7 +4065,7 @@ void
 cs_multigrid_log(const void  *context,
                  cs_log_t     log_type)
 {
-  const cs_multigrid_t  *mg = context;
+  const cs_multigrid_t *mg = (const cs_multigrid_t *)context;
 
   if (log_type == CS_LOG_SETUP)
     _multigrid_setup_log(mg);
@@ -4009,13 +4094,14 @@ cs_multigrid_log(const void  *context,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_multigrid_set_coarsening_options(cs_multigrid_t  *mg,
-                                    int              aggregation_limit,
-                                    int              coarsening_type,
-                                    int              n_max_levels,
-                                    cs_gnum_t        min_g_rows,
-                                    double           p0p1_relax,
-                                    int              postprocess)
+cs_multigrid_set_coarsening_options
+  (cs_multigrid_t       *mg,
+   int                   aggregation_limit,
+   cs_grid_coarsening_t  coarsening_type,
+   int                   n_max_levels,
+   cs_gnum_t             min_g_rows,
+   double                p0p1_relax,
+   int                   postprocess_block_size)
 {
   if (mg == NULL)
     return;
@@ -4025,7 +4111,7 @@ cs_multigrid_set_coarsening_options(cs_multigrid_t  *mg,
   mg->n_levels_max = n_max_levels;
   mg->n_g_rows_min = min_g_rows;
 
-  mg->post_row_max = postprocess;
+  mg->post_row_max = postprocess_block_size;
 
   mg->p0p1_relax = p0p1_relax;
 }
@@ -4201,7 +4287,7 @@ cs_multigrid_setup_conv_diff(void               *context,
                              int                 verbosity)
 
 {
-  cs_multigrid_t  *mg = context;
+  cs_multigrid_t  *mg = (cs_multigrid_t *)context;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -4295,7 +4381,7 @@ cs_multigrid_solve(void                *context,
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
-  cs_multigrid_t *mg = context;
+  cs_multigrid_t *mg = (cs_multigrid_t *)context;
   cs_multigrid_info_t *mg_info = &(mg->info);
 
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
@@ -4329,7 +4415,7 @@ cs_multigrid_solve(void                *context,
   size_t  lv_names_size = _level_names_size(name, mg->setup_data->n_levels);
   size_t  _aux_size =   lv_names_size
                       + n_rows * 6 * db_size * sizeof(cs_real_t);
-  unsigned char *_aux_buf = aux_vectors;
+  unsigned char *_aux_buf = (unsigned char *)aux_vectors;
 
   if (_aux_size > aux_size)
     BFT_MALLOC(_aux_buf, _aux_size, unsigned char);
@@ -4441,7 +4527,7 @@ cs_multigrid_solve(void                *context,
 void
 cs_multigrid_free(void  *context)
 {
-  cs_multigrid_t *mg = context;
+  cs_multigrid_t *mg = (cs_multigrid_t *)context;
 
   cs_timer_t t0, t1;
 
@@ -4554,7 +4640,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
   if (state >= CS_SLES_MAX_ITERATION)
     return false;
 
-  const cs_multigrid_t  *mg = cs_sles_get_context(sles);
+  const cs_multigrid_t  *mg = (cs_multigrid_t *)cs_sles_get_context(sles);
   const char *name = cs_sles_get_name(sles);
 
   cs_multigrid_setup_data_t *mgd = mg->setup_data;

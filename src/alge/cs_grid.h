@@ -34,6 +34,7 @@
 
 #include "cs_base.h"
 
+#include "cs_dispatch.h"
 #include "cs_halo.h"
 #include "cs_matrix.h"
 
@@ -298,14 +299,14 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_coarsen(const cs_grid_t  *f,
-                int               coarsening_type,
-                int               aggregation_limit,
-                int               verbosity,
-                int               merge_stride,
-                int               merge_rows_mean_threshold,
-                cs_gnum_t         merge_rows_glob_threshold,
-                double            relaxation_parameter);
+cs_grid_coarsen(const cs_grid_t      *f,
+                cs_grid_coarsening_t  coarsening_type,
+                int                   aggregation_limit,
+                int                   verbosity,
+                int                   merge_stride,
+                int                   merge_rows_mean_threshold,
+                cs_gnum_t             merge_rows_glob_threshold,
+                double                relaxation_parameter);
 
 /*----------------------------------------------------------------------------
  * Create coarse grid with only one row per rank from fine grid.
@@ -323,41 +324,6 @@ cs_grid_t *
 cs_grid_coarsen_to_single(const cs_grid_t  *f,
                           int               merge_stride,
                           int               verbosity);
-
-/*----------------------------------------------------------------------------
- * Compute coarse row variable values from fine row values
- *
- * parameters:
- *   f       <-- Fine grid structure
- *   c       <-- Fine grid structure
- *   f_var   <-- Variable defined on fine grid rows
- *   c_var   --> Variable defined on coarse grid rows
- *
- * returns:
- *   coarse grid structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_restrict_row_var(const cs_grid_t  *f,
-                         const cs_grid_t  *c,
-                         const cs_real_t  *f_var,
-                         cs_real_t        *c_var);
-
-/*----------------------------------------------------------------------------
- * Compute fine row variable values from coarse row values
- *
- * parameters:
- *   c       <-- Fine grid structure
- *   f       <-- Fine grid structure
- *   c_var   --> Variable defined on coarse grid rows
- *   f_var   <-- Variable defined on fine grid rows
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_prolong_row_var(const cs_grid_t  *c,
-                        const cs_grid_t  *f,
-                        cs_real_t        *c_var,
-                        cs_real_t        *f_var);
 
 /*----------------------------------------------------------------------------
  * Project coarse grid row numbers to base grid.
@@ -438,6 +404,55 @@ cs_grid_finalize(void);
 
 void
 cs_grid_dump(const cs_grid_t  *g);
+
+END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------
+ * Compute coarse row variable values from fine row values
+ *
+ * parameters:
+ *   ctx     <-> Reference to dispatch context
+ *   f       <-- Fine grid structure
+ *   c       <-- Fine grid structure
+ *   f_var   <-- Variable defined on fine grid rows
+ *   c_var   --> Variable defined on coarse grid rows
+ *
+ * returns:
+ *   coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_restrict_row_var(cs_dispatch_context  &ctx,
+                         const cs_grid_t  *f,
+                         const cs_grid_t  *c,
+                         const cs_real_t  *f_var,
+                         cs_real_t        *c_var);
+
+/*----------------------------------------------------------------------------
+ * Compute fine row variable values from coarse row values
+ *
+ * parameters:
+ *   ctx       <-> Reference to dispatch context
+ *   c         <-- Fine grid structure
+ *   f         <-- Fine grid structure
+ *   increment <-- if true, add value to f_var; otherwise, overwrite it
+ *   c_var     <-- Variable defined on coarse grid rows
+ *   f_var     <-> Variable defined on fine grid rows
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_prolong_row_var(cs_dispatch_context  &ctx,
+                        const cs_grid_t      *c,
+                        const cs_grid_t      *f,
+                        bool                  increment,
+                        cs_real_t            *c_var,
+                        cs_real_t            *f_var);
+
+#endif
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes

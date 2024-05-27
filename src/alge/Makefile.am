@@ -194,7 +194,7 @@ cs_divergence.c \
 cs_face_viscosity.c \
 cs_gradient.cpp \
 cs_gradient_boundary.c \
-cs_grid.c \
+cs_grid.cpp \
 cs_matrix.c \
 cs_matrix_assembler.c \
 cs_matrix_building.c \
@@ -202,8 +202,8 @@ cs_matrix_default.c \
 cs_matrix_spmv.cpp \
 cs_matrix_tuning.c \
 cs_matrix_util.c \
-cs_multigrid.c \
-cs_multigrid_smoother.c \
+cs_multigrid.cpp \
+cs_multigrid_smoother.cpp \
 cs_param_amg.c \
 cs_param_mumps.c \
 cs_param_saddle.c \

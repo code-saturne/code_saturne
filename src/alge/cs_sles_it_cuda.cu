@@ -993,6 +993,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   double residual = -1.;
 
+    residual = convergence->precision * convergence->r_norm * 2;
+
   /* Allocate or map work arrays
      --------------------------- */
 
@@ -1097,6 +1099,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
       _sync_reduction_sum(c, stream, 1, res);
       residual = sqrt(*res); /* Actually, residual of previous iteration */
     }
+    else
+      cudaStreamSynchronize(stream);
 
     /* Convergence test */
     if (n_iter == 1)
@@ -1250,8 +1254,10 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       <blocksize><<<gridsize, blocksize, 0, stream>>>
       (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
 
-  cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-    (gridsize, sum_block, res);
+  if (convergence->precision > 0. || c->plot != NULL) {
+    cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+      (gridsize, sum_block, res);
+  }
 
   cudaStreamEndCapture(stream, &graph);
   cudaError_t status = cudaGraphInstantiate(&graph_exec, graph, &graph_node,
@@ -1288,14 +1294,20 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       _block_jacobi_compute_vx_and_residual
         <blocksize><<<gridsize, blocksize, 0, stream>>>
         (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
-    cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-      (gridsize, sum_block, res);
+
+    if (convergence->precision > 0. || c->plot != NULL) {
+      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+        (gridsize, sum_block, res);
+    }
 
 #endif /* _USE_GRAPH */
 
-    _sync_reduction_sum(c, stream, 1, res);
-
-    residual = sqrt(*res); /* Actually, residual of previous iteration */
+    if (convergence->precision > 0. || c->plot != NULL) {
+      _sync_reduction_sum(c, stream, 1, res);
+      residual = sqrt(*res); /* Actually, residual of previous iteration */
+    }
+    else
+      cudaStreamSynchronize(stream);
 
     /* Convergence test */
     if (n_iter == 1)

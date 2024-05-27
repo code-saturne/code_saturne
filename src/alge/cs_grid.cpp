@@ -454,7 +454,8 @@ _coarse_init(const cs_grid_t *f)
   c->db_size = f->db_size;
   c->eb_size = f->eb_size;
 
-  BFT_MALLOC(c->coarse_row, f->n_cols_ext, cs_lnum_t);
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(f->matrix);
+  CS_MALLOC_HD(c->coarse_row, f->n_cols_ext, cs_lnum_t, amode);
 
 # pragma omp parallel for if(f->n_cols_ext > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < f->n_cols_ext; ii++)
@@ -5391,7 +5392,7 @@ cs_grid_destroy(cs_grid_t **grid)
 
     BFT_FREE(g->_face_cell);
 
-    BFT_FREE(g->coarse_row);
+    CS_FREE_HD(g->coarse_row);
 
     if (g->_halo != NULL)
       cs_halo_destroy(&(g->_halo));
@@ -5687,14 +5688,14 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_coarsen(const cs_grid_t  *f,
-                int               coarsening_type,
-                int               aggregation_limit,
-                int               verbosity,
-                int               merge_stride,
-                int               merge_rows_mean_threshold,
-                cs_gnum_t         merge_rows_glob_threshold,
-                double            relaxation_parameter)
+cs_grid_coarsen(const cs_grid_t      *f,
+                cs_grid_coarsening_t  coarsening_type,
+                int                   aggregation_limit,
+                int                   verbosity,
+                int                   merge_stride,
+                int                   merge_rows_mean_threshold,
+                cs_gnum_t             merge_rows_glob_threshold,
+                double                relaxation_parameter)
 {
   int recurse = 0;
   cs_lnum_t isym = 2;
@@ -6007,7 +6008,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
     /* Project coarsening */
 
     _project_coarse_row_to_parent(cc);
-    BFT_FREE(cc->coarse_row);
+    CS_FREE_HD(cc->coarse_row);
     cc->coarse_row = c->coarse_row;
     c->coarse_row = NULL;
 
@@ -6159,183 +6160,6 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
   /* Return new (coarse) grid */
 
   return c;
-}
-
-/*----------------------------------------------------------------------------
- * Compute coarse row variable values from fine row values
- *
- * parameters:
- *   f       <-- Fine grid structure
- *   c       <-- Fine grid structure
- *   f_var   <-- Variable defined on fine grid rows
- *   c_var   --> Variable defined on coarse grid rows
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_restrict_row_var(const cs_grid_t  *f,
-                         const cs_grid_t  *c,
-                         const cs_real_t  *f_var,
-                         cs_real_t        *c_var)
-{
-  cs_lnum_t f_n_rows = f->n_rows;
-  cs_lnum_t c_n_cols_ext = c->n_elts_r[1];
-
-  const cs_lnum_t *coarse_row;
-  const cs_lnum_t db_size = f->db_size;
-
-  assert(f != NULL);
-  assert(c != NULL);
-  assert(c->coarse_row != NULL || f_n_rows == 0);
-  assert(f_var != NULL || f_n_rows == 0);
-  assert(c_var != NULL || c_n_cols_ext == 0);
-
-  /* Set coarse values */
-
-  coarse_row = c->coarse_row;
-
-  cs_lnum_t _c_n_cols_ext = c_n_cols_ext*db_size;
-
-# pragma omp parallel for  if(_c_n_cols_ext > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _c_n_cols_ext; ii++)
-    c_var[ii] = 0.;
-
-  if (db_size == 1) {
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      cs_lnum_t i = coarse_row[ii];
-      if (i >= 0)
-        c_var[i] += f_var[ii];
-    }
-  }
-  else {
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      cs_lnum_t i = coarse_row[ii];
-      if (i >= 0) {
-        for (cs_lnum_t j = 0; j < db_size; j++)
-          c_var[i*db_size+j] += f_var[ii*db_size+j];
-      }
-    }
-  }
-
-#if defined(HAVE_MPI)
-
-  /* If grid merging has taken place, gather coarse data */
-
-  if (c->merge_sub_size > 1) {
-
-    MPI_Comm  comm = cs_glob_mpi_comm;
-    static const int tag = 'r'+'e'+'s'+'t'+'r'+'i'+'c'+'t';
-
-    /* Append data */
-
-    if (c->merge_sub_rank == 0) {
-      int rank_id;
-      MPI_Status status;
-      assert(cs_glob_rank_id == c->merge_sub_root);
-      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
-        cs_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
-                            - c->merge_cell_idx[rank_id]);
-        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Recv(c_var + c->merge_cell_idx[rank_id]*db_size,
-                 n_recv*db_size, CS_MPI_REAL, dist_rank, tag, comm, &status);
-      }
-    }
-    else
-      MPI_Send(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
-               c->merge_sub_root, tag, comm);
-  }
-
-#endif /* defined(HAVE_MPI) */
-}
-
-/*----------------------------------------------------------------------------
- * Compute fine row variable values from coarse row values
- *
- * parameters:
- *   c       <-- Fine grid structure
- *   f       <-- Fine grid structure
- *   c_var   <-- Variable defined on coarse grid rows
- *   f_var   --> Variable defined on fine grid rows
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_prolong_row_var(const cs_grid_t  *c,
-                        const cs_grid_t  *f,
-                        cs_real_t        *c_var,
-                        cs_real_t        *f_var)
-{
-  const cs_lnum_t *coarse_row;
-  const cs_real_t *_c_var = c_var;
-
-  const cs_lnum_t db_size = f->db_size;
-
-  cs_lnum_t f_n_rows = f->n_rows;
-
-  assert(f != NULL);
-  assert(c != NULL);
-  assert(c->coarse_row != NULL || f_n_rows == 0);
-  assert(f_var != NULL);
-  assert(c_var != NULL || c->n_cols_ext == 0);
-
-#if defined(HAVE_MPI)
-
-  /* If grid merging has taken place, scatter coarse data */
-
-  if (c->merge_sub_size > 1) {
-
-    MPI_Comm  comm = cs_glob_mpi_comm;
-    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
-
-    /* Append data */
-
-    if (c->merge_sub_rank == 0) {
-      int rank_id;
-      assert(cs_glob_rank_id == c->merge_sub_root);
-      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
-        cs_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
-                            - c->merge_cell_idx[rank_id]);
-        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Send(c_var + c->merge_cell_idx[rank_id]*db_size,
-                 n_send*db_size, CS_MPI_REAL, dist_rank, tag, comm);
-      }
-    }
-    else {
-      MPI_Status status;
-      MPI_Recv(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
-               c->merge_sub_root, tag, comm, &status);
-    }
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  /* Set fine values (possible penalization at first level) */
-
-  coarse_row = c->coarse_row;
-
-  if (db_size == 1) {
-#   pragma omp parallel if(f_n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      cs_lnum_t ic = coarse_row[ii];
-      if (ic >= 0) {
-        f_var[ii] = _c_var[ic];
-      }
-      else
-        f_var[ii] = 0;
-    }
-  }
-  else {
-#   pragma omp parallel if(f_n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      cs_lnum_t ic = coarse_row[ii];
-      if (ic >= 0) {
-        for (cs_lnum_t i = 0; i < db_size; i++)
-          f_var[ii*db_size+i] = _c_var[ic*db_size+i];
-      }
-      else {
-        for (cs_lnum_t i = 0; i < db_size; i++)
-          f_var[ii*db_size+i] = 0;
-      }
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -6541,6 +6365,9 @@ cs_grid_project_var(const cs_grid_t  *g,
 
   if (g->level > 0) {
 
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(false);
+
     /* Allocate temporary arrays */
 
     BFT_MALLOC(tmp_var_2, n_max_rows*db_size, cs_real_t);
@@ -6549,8 +6376,10 @@ cs_grid_project_var(const cs_grid_t  *g,
 
       cs_lnum_t n_parent_rows = _g->parent->n_rows;
 
-      cs_grid_prolong_row_var(_g,
+      cs_grid_prolong_row_var(ctx,
+                              _g,
                               _g->parent,
+                              false,
                               tmp_var_1,
                               tmp_var_2);
 
@@ -6768,3 +6597,243 @@ cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*----------------------------------------------------------------------------
+ * Compute coarse row variable values from fine row values
+ *
+ * parameters:
+ *   ctx     <-> Reference to dispatch context
+ *   f       <-- Fine grid structure
+ *   c       <-- Fine grid structure
+ *   f_var   <-- Variable defined on fine grid rows
+ *   c_var   --> Variable defined on coarse grid rows
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_restrict_row_var(cs_dispatch_context  &ctx,
+                         const cs_grid_t      *f,
+                         const cs_grid_t      *c,
+                         const cs_real_t      *f_var,
+                         cs_real_t            *c_var)
+{
+  cs_lnum_t f_n_rows = f->n_rows;
+  cs_lnum_t c_n_cols_ext = c->n_elts_r[1];
+
+  const cs_lnum_t *coarse_row;
+  const cs_lnum_t db_size = f->db_size;
+
+  assert(f != NULL);
+  assert(c != NULL);
+  assert(c->coarse_row != NULL || f_n_rows == 0);
+  assert(f_var != NULL || f_n_rows == 0);
+  assert(c_var != NULL || c_n_cols_ext == 0);
+
+  /* Set coarse values */
+
+  coarse_row = c->coarse_row;
+
+  cs_lnum_t _c_n_cols_ext = c_n_cols_ext*db_size;
+
+  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_SIMPLE;
+  if (ctx.use_gpu())
+    sum_type = CS_DISPATCH_SUM_ATOMIC;
+#if defined(HAVE_OPENMP)
+  else if (ctx.n_min_for_cpu_threads() <= f_n_rows)
+    sum_type = CS_DISPATCH_SUM_ATOMIC;
+#endif
+
+  ctx.parallel_for(_c_n_cols_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+    c_var[ii] = 0.;
+  });
+
+  if (db_size == 1) {
+    ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cs_lnum_t i = coarse_row[ii];
+      if (i >= 0)
+        cs_dispatch_sum(&(c_var[i]), f_var[ii], sum_type);
+    });
+  }
+  else {
+    switch(db_size) {
+    case 3:
+      ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        cs_lnum_t i = coarse_row[ii];
+        if (i >= 0) {
+          cs_real_t tmp[3];
+          for (cs_lnum_t j = 0; j < 3; j++)
+            tmp[j] = f_var[ii*db_size+j];
+          cs_dispatch_sum<3>(&(c_var[i*db_size]), tmp, sum_type);
+        }
+      });
+      break;
+    default:
+      ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        cs_lnum_t i = coarse_row[ii];
+        if (i >= 0) {
+          for (cs_lnum_t j = 0; j < db_size; j++)
+            cs_dispatch_sum(&(c_var[i*db_size+j]),
+                            f_var[ii*db_size+j],
+                            sum_type);
+        }
+      });
+    }
+  }
+  ctx.wait();
+
+#if defined(HAVE_MPI)
+
+  /* If grid merging has taken place, gather coarse data */
+
+  if (c->merge_sub_size > 1) {
+
+    MPI_Comm  comm = cs_glob_mpi_comm;
+    static const int tag = 'r'+'e'+'s'+'t'+'r'+'i'+'c'+'t';
+
+    /* Append data */
+
+    if (c->merge_sub_rank == 0) {
+      int rank_id;
+      MPI_Status status;
+      assert(cs_glob_rank_id == c->merge_sub_root);
+      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
+        cs_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
+                            - c->merge_cell_idx[rank_id]);
+        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
+        MPI_Recv(c_var + c->merge_cell_idx[rank_id]*db_size,
+                 n_recv*db_size, CS_MPI_REAL, dist_rank, tag, comm, &status);
+      }
+    }
+    else
+      MPI_Send(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
+               c->merge_sub_root, tag, comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
+}
+
+/*----------------------------------------------------------------------------
+ * Compute fine row variable values from coarse row values
+ *
+ * parameters:
+ *   ctx       <-> Reference to dispatch context
+ *   c         <-- Fine grid structure
+ *   f         <-- Fine grid structure
+ *   increment <-- if true, add value to f_var; otherwise, overwrite it
+ *   c_var     <-- Variable defined on coarse grid rows
+ *   f_var     <-> Variable defined on fine grid rows
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_prolong_row_var(cs_dispatch_context  &ctx,
+                        const cs_grid_t      *c,
+                        const cs_grid_t      *f,
+                        bool                  increment,
+                        cs_real_t            *c_var,
+                        cs_real_t            *f_var)
+{
+  const cs_lnum_t *coarse_row;
+  const cs_real_t *_c_var = c_var;
+
+  const cs_lnum_t db_size = f->db_size;
+
+  cs_lnum_t f_n_rows = f->n_rows;
+
+  assert(f != NULL);
+  assert(c != NULL);
+  assert(c->coarse_row != NULL || f_n_rows == 0);
+  assert(f_var != NULL);
+  assert(c_var != NULL || c->n_cols_ext == 0);
+
+#if defined(HAVE_MPI)
+
+  /* If grid merging has taken place, scatter coarse data */
+
+  if (c->merge_sub_size > 1) {
+
+    MPI_Comm  comm = cs_glob_mpi_comm;
+    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
+
+    /* Append data */
+
+    if (c->merge_sub_rank == 0) {
+      int rank_id;
+      assert(cs_glob_rank_id == c->merge_sub_root);
+      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
+        cs_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
+                            - c->merge_cell_idx[rank_id]);
+        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
+        MPI_Send(c_var + c->merge_cell_idx[rank_id]*db_size,
+                 n_send*db_size, CS_MPI_REAL, dist_rank, tag, comm);
+      }
+    }
+    else {
+      MPI_Status status;
+      MPI_Recv(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
+               c->merge_sub_root, tag, comm, &status);
+    }
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  /* Set fine values (possible penalization at first level) */
+
+  coarse_row = c->coarse_row;
+
+  /* Increment mode */
+
+  if (increment) {
+
+    if (db_size == 1) {
+      ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        cs_lnum_t ic = coarse_row[ii];
+        if (ic >= 0) {
+          f_var[ii] += _c_var[ic];
+        }
+      });
+    }
+    else {
+      ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        cs_lnum_t ic = coarse_row[ii];
+        if (ic >= 0) {
+          for (cs_lnum_t i = 0; i < db_size; i++)
+            f_var[ii*db_size+i] += _c_var[ic*db_size+i];
+        }
+      });
+    }
+
+  }
+
+  /* Overwrite mode */
+
+  else {
+    if (db_size == 1) {
+      ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        cs_lnum_t ic = coarse_row[ii];
+        if (ic >= 0) {
+          f_var[ii] = _c_var[ic];
+        }
+        else
+          f_var[ii] = 0;
+      });
+    }
+    else {
+      ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        cs_lnum_t ic = coarse_row[ii];
+        if (ic >= 0) {
+          for (cs_lnum_t i = 0; i < db_size; i++)
+            f_var[ii*db_size+i] = _c_var[ic*db_size+i];
+        }
+        else {
+          for (cs_lnum_t i = 0; i < db_size; i++)
+            f_var[ii*db_size+i] = 0;
+        }
+      });
+    }
+
+  }
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+

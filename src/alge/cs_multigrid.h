@@ -182,13 +182,14 @@ cs_multigrid_copy(const void  *context);
  *----------------------------------------------------------------------------*/
 
 void
-cs_multigrid_set_coarsening_options(cs_multigrid_t  *mg,
-                                    int              aggregation_limit,
-                                    int              coarsening_type,
-                                    int              n_max_levels,
-                                    cs_gnum_t        min_g_rows,
-                                    double           p0p1_relax,
-                                    int              postprocess_block_size);
+cs_multigrid_set_coarsening_options
+  (cs_multigrid_t       *mg,
+   int                   aggregation_limit,
+   cs_grid_coarsening_t  coarsening_type,
+   int                   n_max_levels,
+   cs_gnum_t             min_g_rows,
+   double                p0p1_relax,
+   int                   postprocess_block_size);
 
 /*----------------------------------------------------------------------------
  * Set multigrid parameters for associated iterative solvers.

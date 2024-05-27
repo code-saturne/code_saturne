@@ -183,6 +183,12 @@ public:
     this->n_min_for_threads = n;
   }
 
+  /*! Get minimum number of elements threshold for CPU multithread execution */
+  cs_lnum_t
+  n_min_for_cpu_threads(void) {
+    return this->n_min_for_threads;
+  }
+
   // Iterate using a plain omp parallel for
   template <class F, class... Args>
   bool
@@ -350,6 +356,13 @@ public:
   void
   set_cuda_stream(int  stream_id) {
     this->stream_ = cs_cuda_get_stream(stream_id);
+  }
+
+  //! Get associated stream
+
+  cudaStream_t
+  cuda_stream(void) {
+    return this->stream_;
   }
 
   //! Change CUDA device

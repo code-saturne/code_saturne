@@ -163,7 +163,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -325,7 +325,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -490,7 +490,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -647,7 +647,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -802,7 +802,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     vxm1 = _aux_vectors;
     rk = _aux_vectors + wa_size;
@@ -964,7 +964,7 @@ _jacobi(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     rk = _aux_vectors;
   }
@@ -1061,7 +1061,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     rk  = _aux_vectors;
     vxx = _aux_vectors + wa_size;
@@ -1151,7 +1151,7 @@ _block_jacobi(cs_sles_it_t              *c,
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = (cs_real_t *)aux_vectors;
 
     rk  = _aux_vectors;
     vxx = _aux_vectors + wa_size;
@@ -2049,7 +2049,7 @@ cs_multigrid_smoother_setup(void               *context,
                             const cs_matrix_t  *a,
                             int                 verbosity)
 {
-  cs_sles_it_t  *c = context;
+  cs_sles_it_t  *c = (cs_sles_it_t *)context;
 
 #if defined(HAVE_ACCEL)
   bool on_device = (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST) ?
@@ -2139,19 +2139,57 @@ cs_multigrid_smoother_setup(void               *context,
     break;
 
   case CS_SLES_JACOBI:
-    if (diag_block_size == 1)
+    if (diag_block_size == 1) {
       c->solve = _jacobi;
-    else if (diag_block_size == 3)
+#if defined(HAVE_CUDA)
+      if (on_device) {
+        c->solve = cs_sles_it_cuda_jacobi;
+      }
+#endif
+    }
+    else if (diag_block_size == 3) {
       c->solve = _block_3_jacobi;
-    else
+#if defined(HAVE_CUDA)
+      if (on_device) {
+        c->solve = cs_sles_it_cuda_block_jacobi;
+      }
+#endif
+    }
+    else {
       c->solve = _block_jacobi;
+#if defined(HAVE_CUDA)
+      if (on_device) {
+        c->solve = cs_sles_it_cuda_block_jacobi;
+      }
+#endif
+    }
     break;
 
   case CS_SLES_P_GAUSS_SEIDEL:
     c->solve = _p_gauss_seidel;
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      if (diag_block_size == 1)
+        c->solve = cs_sles_it_cuda_jacobi;
+      else
+        c->solve = cs_sles_it_cuda_block_jacobi;
+      c->type == CS_SLES_JACOBI;
+      c->n_max_iter *= 2;
+    }
+#endif
     break;
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
     c->solve = _p_sym_gauss_seidel_msr;
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      if (diag_block_size == 1)
+        c->solve = cs_sles_it_cuda_jacobi;
+      else
+        c->solve = cs_sles_it_cuda_block_jacobi;
+      c->type == CS_SLES_JACOBI;
+      c->n_max_iter *= 3;
+    }
+#endif
     break;
 
   case CS_SLES_TS_F_GAUSS_SEIDEL:
@@ -2211,7 +2249,7 @@ cs_multigrid_smoother_solve(void                *context,
                             size_t               aux_size,
                             void                *aux_vectors)
 {
-  cs_sles_it_t  *c = context;
+  cs_sles_it_t  *c = (cs_sles_it_t *)context;
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 

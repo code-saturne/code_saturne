@@ -229,7 +229,8 @@ _convergence_test(cs_sles_it_t              *c,
 
   /* If converged */
 
-  if (residual < convergence->precision * convergence->r_norm) {
+  if (   convergence->precision > 0
+      && residual < convergence->precision * convergence->r_norm) {
     if (verbosity > 1)
       bft_printf(_(final_fmt), n_iter, residual, residual/convergence->r_norm,
                  convergence->r_norm, s->initial_residual);
