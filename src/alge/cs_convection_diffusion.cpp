@@ -2050,6 +2050,7 @@ _convection_diffusion_scalar_unsteady
       grad[cell_id][1] = 0.;
       grad[cell_id][2] = 0.;
     });
+    ctx.wait();
   }
 
   /* Compute gradients used in convection schemes */
@@ -2066,6 +2067,8 @@ _convection_diffusion_scalar_unsteady
         gradst[cell_id][1] = 0.;
         gradst[cell_id][2] = 0.;
       });
+
+      ctx.wait();
 
       cs_slope_test_gradient(f_id,
                              inc,
@@ -2088,6 +2091,8 @@ _convection_diffusion_scalar_unsteady
         gradup[cell_id][1] = 0.;
         gradup[cell_id][2] = 0.;
       });
+
+      ctx.wait();
 
       cs_upwind_gradient(f_id,
                          inc,
@@ -2112,9 +2117,8 @@ _convection_diffusion_scalar_unsteady
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       i_upwind[face_id] = 0;
     });
+    ctx.wait();
   }
-
-  ctx.wait();
 
   /* --> Pure upwind flux
      =====================*/
@@ -5940,6 +5944,10 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                const cs_real_t             b_visc[],
                                cs_real_t         *restrict rhs)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_field_t *f = nullptr;
   if (f_id != -1)
     f = cs_field_by_id(f_id);
@@ -5953,20 +5961,34 @@ cs_convection_diffusion_scalar(int                         idtvar,
        i_massflux, b_massflux,
        i_visc, b_visc,
        nullptr, rhs);
-    return;
   }
+  else {
 
   /* The following function, for the steady (idtvar < 0 case) is deprecated
      ---------------------------------------------------------------------- */
 
-  _convection_diffusion_scalar_steady
-    (f, eqp, icvflb, inc,
-     pvar, pvara,
-     icvfli,
-     bc_coeffs,
-     i_massflux, b_massflux,
-     i_visc, b_visc,
-     nullptr, rhs);
+    _convection_diffusion_scalar_steady
+      (f, eqp, icvflb, inc,
+       pvar, pvara,
+       icvfli,
+       bc_coeffs,
+       i_massflux, b_massflux,
+       i_visc, b_visc,
+       nullptr, rhs);
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+      <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
