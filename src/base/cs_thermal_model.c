@@ -1150,10 +1150,10 @@ cs_thermal_model_pdivu(cs_real_t         smbrs[restrict])
 
     const cs_real_3_t *gradp = NULL, *gradphi = NULL;
 
-    cs_field_t *f_pg = cs_field_by_name_try("algo:pressure_gradient");
+    cs_field_t *f_pg = cs_field_by_name_try("algo:gradient_pressure");
     if (f_pg != NULL)
       gradp = (const cs_real_3_t *)f_pg->val;
-    cs_field_t *f_pig = cs_field_by_name_try("algo:pressure_increment_gradient");
+    cs_field_t *f_pig = cs_field_by_name_try("algo:gradient_pressure_increment");
     if (f_pig != NULL)
       gradphi = (const cs_real_3_t *)f_pig->val;
 
@@ -1337,9 +1337,9 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
 
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
     cs_real_3_t *gradp
-      = (cs_real_3_t *)cs_field_by_name("algo:pressure_gradient")-> val;
+      = (cs_real_3_t *)cs_field_by_name("algo:gradient_pressure")-> val;
     cs_real_3_t *gradphi
-      = (cs_real_3_t *)cs_field_by_name("algo:pressure_increment_gradient")-> val;
+      = (cs_real_3_t *)cs_field_by_name("algo:gradient_pressure_increment")-> val;
     cs_real_t gammagp = phys_pro->cp0/(phys_pro->cp0  - phys_pro->r_pg_cnst);
 
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {

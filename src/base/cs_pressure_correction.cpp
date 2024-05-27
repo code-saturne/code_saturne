@@ -3494,7 +3494,7 @@ cs_pressure_correction_cdo_init_setup(void)
   const int  field_post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
   prcdo->pressure_gradient =
-    cs_field_find_or_create("algo:pressure_gradient",
+    cs_field_find_or_create("algo:gradient_pressure",
                             CS_FIELD_INTENSIVE,
                             CS_MESH_LOCATION_CELLS,
                             3,
@@ -3504,7 +3504,7 @@ cs_pressure_correction_cdo_init_setup(void)
   cs_field_set_key_int(prcdo->pressure_gradient, log_key, field_post_flag);
 
   prcdo->pressure_incr_gradient =
-    cs_field_find_or_create("algo:pressure_increment_gradient",
+    cs_field_find_or_create("algo:gradient_pressure_increment",
                             CS_FIELD_INTENSIVE,
                             CS_MESH_LOCATION_CELLS,
                             3,

@@ -165,7 +165,7 @@ _tsepls(int       phase_id,
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -650,7 +650,7 @@ cs_turbulence_ke(int              phase_id,
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
 
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -2499,7 +2499,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;

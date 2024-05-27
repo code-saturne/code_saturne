@@ -1040,7 +1040,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -1056,8 +1056,18 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   /* Compute scalar gradient */
 
-  cs_real_3_t *gradt;
-  BFT_MALLOC(gradt, n_cells_ext, cs_real_3_t);
+  cs_real_3_t *gradt = NULL, *_gradt = NULL;
+  {
+    cs_field_t *f_tg = cs_field_by_composite_name_try("algo:gradient",
+                                                      f->name);
+
+    if (f_tg != NULL)
+      gradt = (cs_real_3_t *)f_tg->val;
+    else {
+      BFT_MALLOC(_gradt, n_cells_ext, cs_real_3_t);
+      gradt = _gradt;
+    }
+  }
 
   cs_field_gradient_scalar(f,
                            true,     /* use previous t   */
@@ -1223,7 +1233,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
   }
 
   BFT_FREE(grad_al);
-  BFT_FREE(gradt);
+  BFT_FREE(_gradt);
   BFT_FREE(_gradv);
   BFT_FREE(thflxf);
   BFT_FREE(thflxb);

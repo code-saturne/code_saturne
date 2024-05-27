@@ -1318,7 +1318,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
     /* Pressure increment gradient */
 
     cs_real_3_t *cpro_gradp = NULL, *gradp = NULL;
-    cs_field_t *f_inc = cs_field_by_name_try("algo:pressure_increment_gradient");
+    cs_field_t *f_inc = cs_field_by_name_try("algo:gradient_pressure_increment");
     if (f_inc != NULL)
       cpro_gradp = (cs_real_3_t *)f_inc->val;
     else {
@@ -2208,7 +2208,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   /* Pressure gradient */
   cs_real_3_t *grad = NULL, *cpro_gradp = NULL;
-  f = cs_field_by_name_try("algo:pressure_gradient");
+  f = cs_field_by_name_try("algo:gradient_pressure");
   if (f != NULL)
     cpro_gradp = (cs_real_3_t *)f->val;
   else {

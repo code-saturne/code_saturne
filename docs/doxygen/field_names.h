@@ -62,10 +62,14 @@
     Velocity field after the prediction step, cell-based field of dimension 3.
   - <tt> algo:predicted_vel_divergence </tt>
     Divergence of the velocity field after the prediction step, cell-based field of dimension 1.
-  - <tt> algo:pressure_gradient </tt>
-    Pressure gradient, cell-based field of dimension 1.
-  - <tt> algo:pressure_increment_gradient </tt>
-    Pressure of the increment solved in the correction step, cell-based field of dimension 1.
+  - <tt> algo:gradient_pressure </tt>
+    Pressure gradient, cell-based field of dimension 3.
+  - <tt> algo:gradient_ </tt> supplemented with a transported field name
+    Field gradient, cell-based field of dimension 3x the dimension of the corresponding field.
+  - <tt> algo:gradient_velocity</tt>
+    Velocity gradient, cell-based field of dimension 3x3.
+  - <tt> algo:gradient_pressure_increment </tt>
+    Gradient of the pressure increment solved in the correction step, cell-based field of dimension 3.
   - <tt> algo:rij_divergence </tt>
     Divergence of the Reynolds stress in the momentum equation for  Reynolds stress RANS models, cell-based field of dimension 3.
   - <tt> algo:rij_production </tt>

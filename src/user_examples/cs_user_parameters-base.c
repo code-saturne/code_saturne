@@ -1548,7 +1548,7 @@ cs_user_parameters(cs_domain_t *domain)
                              1,
                              CS_MESH_LOCATION_CELLS);
 
-  cs_parameters_add_property("algo:pressure_gradient",
+  cs_parameters_add_property("algo:gradient_pressure",
                              3,
                              CS_MESH_LOCATION_CELLS);
 
