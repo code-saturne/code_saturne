@@ -895,7 +895,6 @@ cs_param_sles_set_precond(const char       *keyval,
   }
   else if (strcmp(keyval, "mumps") == 0) {
 
-    slesp->flexible = false;
     slesp->precond = CS_PARAM_PRECOND_MUMPS;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
@@ -910,6 +909,7 @@ cs_param_sles_set_precond(const char       *keyval,
                 " Please check your installation settings.\n",
                 __func__, sles_name, "CS_EQKEY_PRECOND");
 
+    cs_param_sles_mumps_reset(slesp);
 
   }
   else if (strcmp(keyval, "poly1") == 0) {
