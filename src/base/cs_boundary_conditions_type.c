@@ -389,7 +389,7 @@ cs_boundary_conditions_type(bool  init,
     cs_log_separator(CS_LOG_DEFAULT);
   }
 
-  /* rcodcl1 arrrays have been initialized as cs_math_infinite_r so as to
+  /* rcodcl1 arrays have been initialized as cs_math_infinite_r so as to
      check what the user has modified. Those not modified are reset to zero
      here. CS_OUTLET, CS_FREE_INLET and CS_INLET are handled later.
      ====================================================================== */
@@ -1192,12 +1192,16 @@ cs_boundary_conditions_type(bool  init,
     cs_field_t *f_yplus = cs_field_by_name_try("yplus");
     cs_field_t *f_zground = cs_field_by_name_try("z_ground");
 
+    const int kscavr = cs_field_key_id("first_moment_id");
+
     int inlet_types[2] = {CS_INLET, CS_CONVECTIVE_INLET};
     int inlet_codes[2] = {1, 13};
 
     for (int field_id = 0; field_id < n_fields; field_id++) {
 
       cs_field_t *f = cs_field_by_id(field_id);
+      /* Is field f a variance? */
+      const int iscavr = cs_field_get_key_int(f, kscavr);
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
@@ -1272,6 +1276,15 @@ cs_boundary_conditions_type(bool  init,
                   rcodcl3[k*n_b_faces+f_id] = 0.;
                 }
               }
+              /* for variance, if nothing is specified, Dirichlet 0 */
+              else if(iscavr != -1) {
+                icodcl[f_id] = inlet_code;
+                for (cs_lnum_t k = 0; k < f->dim; k++) {
+                  rcodcl1[k*n_b_faces+f_id] = 0.;
+                  rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
+                  rcodcl3[k*n_b_faces+f_id] = 0.;
+                }
+              }
               else {
                 bc_type[f_id] = - abs(bc_type[f_id]);
                 if (err_flags[0] < 2) {
@@ -1339,7 +1352,7 @@ cs_boundary_conditions_type(bool  init,
      mass flux).
      If there is no user-provided values, use a homogeneous  Neumann. */
 
-  /* Free inlet (Bernoulli, a dirichlet is needed on the other
+  /* Free inlet (Bernoulli, a Dirichlet is needed on the other
      variables than velocity and pressure, already treated)
      Free outlet (homogeneous Neumann) */
 
