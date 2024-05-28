@@ -1058,6 +1058,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
     if (eqp->iconv > 0)
       cs_upwind_gradient(field_id,
+                         ctx,
                          inc,
                          halo_type,
                          f->bc_coeffs,
@@ -2566,6 +2567,10 @@ cs_flux_through_surface(const char         *scalar_name,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  /* not yet ported to GPU */
+
   const int *bc_type = cs_glob_bc_type;
 
   const cs_field_t *f = cs_field_by_name_try(scalar_name);
@@ -2577,10 +2582,6 @@ cs_flux_through_surface(const char         *scalar_name,
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
-
-  /* Parallel or device dispatch */
-  cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);  /* balance_by_zone case not ported to GPU */
 
   /* initialize output */
 
@@ -2786,6 +2787,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
     if (eqp->iconv > 0)
       cs_upwind_gradient(f->id,
+                         ctx,
                          1, /* inc */
                          CS_HALO_STANDARD,
                          f->bc_coeffs,

@@ -285,6 +285,7 @@ _beta_limiter_denom(cs_field_t                 *f,
   else if (ischcp == 2) {
 
     cs_upwind_gradient(f->id,
+                       ctx,
                        inc,
                        halo_type,
                        f->bc_coeffs,
@@ -294,6 +295,7 @@ _beta_limiter_denom(cs_field_t                 *f,
                        grdpa);
 
     cs_upwind_gradient(f->id,
+                       ctx,
                        inc,
                        halo_type,
                        f->bc_coeffs,
@@ -1165,6 +1167,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
       }
 
       cs_upwind_gradient(f_id,
+                         ctx,
                          inc,
                          halo_type,
                          bc_coeffs,
@@ -2092,6 +2095,7 @@ _convection_diffusion_scalar_unsteady
       ctx.wait();
 
       cs_upwind_gradient(f_id,
+                         ctx,
                          inc,
                          halo_type,
                          bc_coeffs,
@@ -5507,6 +5511,109 @@ cs_get_v_slope_test(int                        f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the beta blending coefficient of the
+ * beta limiter (ensuring preservation of a given min/max pair of values).
+ *
+ * \param[in]     f_id         field id
+ * \param[in]     inc          "not an increment" flag
+ * \param[in]     rovsdt       rho * volume / dt
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_beta_limiter_building(int                   f_id,
+                         int                   inc,
+                         const cs_real_t       rovsdt[])
+{
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+
+  /* Get options from the field */
+
+  cs_field_t *f = cs_field_by_id(f_id);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+
+  if (eqp->isstpc != 2)
+    return;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_halo_t *halo = m->halo;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_real_t* cpro_beta = cs_field_by_id(
+      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id")))->val;
+
+  cs_real_t *denom_inf, *num_inf, *denom_sup, *num_sup;
+  CS_MALLOC_HD(denom_inf, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(denom_sup, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(num_inf,   n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(num_sup,   n_cells_ext, cs_real_t, cs_alloc_mode);
+
+  /* computation of the denominator for the inferior and upper bound */
+
+  _beta_limiter_denom(f,
+                      ctx,
+                      eqp,
+                      inc,
+                      denom_inf,
+                      denom_sup);
+
+  /* computation of the numerator for the inferior and upper bound */
+
+  _beta_limiter_num(f,
+                    ctx,
+                    eqp,
+                    inc,
+                    rovsdt,
+                    num_inf,
+                    num_sup);
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+    /* Treatment of the lower bound */
+    cs_real_t beta_inf;
+    if (denom_inf[c_id] <= num_inf[c_id]) {
+      beta_inf = 1.;
+    }
+    else if (denom_inf[c_id] <= cs_math_fabs(num_inf[c_id])) {
+      beta_inf = -1.;
+    }
+    else {
+      beta_inf = num_inf[c_id]/denom_inf[c_id]; //FIXME division by 0
+      beta_inf = cs_math_fmin(beta_inf, 1.);
+    }
+
+    /* Treatment of the upper bound */
+    cs_real_t beta_sup;
+    if (denom_sup[c_id] <= num_sup[c_id]) {
+      beta_sup = 1.;
+    }
+    else if (denom_sup[c_id] <= cs_math_fabs(num_sup[c_id])) {
+      beta_sup = -1.;
+    }
+    else {
+      beta_sup = num_sup[c_id]/denom_sup[c_id]; //FIXME division by 0
+      beta_sup = cs_math_fmin(beta_sup, 1.);
+    }
+
+    cpro_beta[c_id] = cs_math_fmin(beta_inf, beta_sup);
+  });
+
+  ctx.wait();
+
+  /* Synchronize variable */
+  if (halo != NULL)
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_beta);
+
+  CS_FREE_HD(denom_inf);
+  CS_FREE_HD(denom_sup);
+  CS_FREE_HD(num_inf);
+  CS_FREE_HD(num_sup);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -5950,6 +6057,7 @@ cs_face_convection_scalar(int                         idtvar,
       }
 
       cs_upwind_gradient(f_id,
+                         ctx,
                          inc,
                          halo_type,
                          bc_coeffs,
@@ -11666,6 +11774,7 @@ cs_slope_test_gradient(int                         f_id,
  *        (observed in the litterature).
  *
  * \param[in]     f_id         field index
+ * \param[in]     ctx          Reference to dispatch context
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     bc_coeffs    boundary condition structure for the variable
@@ -11678,6 +11787,7 @@ cs_slope_test_gradient(int                         f_id,
 
 void
 cs_upwind_gradient(const int                     f_id,
+                   cs_dispatch_context          &ctx,
                    const int                     inc,
                    const cs_halo_type_t          halo_type,
                    const cs_field_bc_coeffs_t   *bc_coeffs,
@@ -11711,69 +11821,58 @@ cs_upwind_gradient(const int                     f_id,
   const cs_real_3_t *restrict b_face_u_normal
     = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
 
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+  /* Parallel or device dispatch */
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           face_id++) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
-        cs_real_t pif = pvar[ii];
-        cs_real_t pjf = pvar[jj];
+    cs_real_t pif = pvar[ii];
+    cs_real_t pjf = pvar[jj];
 
-        cs_real_t pfac = pjf;
-        if (i_massflux[face_id] > 0.) pfac = pif;
-        pfac *= i_face_surf[face_id];
+    cs_real_t pfac = (i_massflux[face_id] > 0.) ? pif : pjf;
+    pfac *= i_face_surf[face_id];
 
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          cs_real_t pfack = pfac*i_face_u_normal[face_id][k];
-          grdpa[ii][k] += pfack;
-          grdpa[jj][k] -= pfack;
-        }
-
-      }
+    cs_real_t vfac_i[3], vfac_j[3];
+    for (cs_lnum_t k = 0; k < 3; k++) {
+      vfac_i[k] = pfac*i_face_u_normal[face_id][k];
+      vfac_j[k] = - vfac_i[k];
     }
-  }
 
-# pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-    for (cs_lnum_t face_id = b_group_index[t_id*2];
-         face_id < b_group_index[t_id*2 + 1];
-         face_id++) {
+    cs_dispatch_sum<3>(grdpa[ii], vfac_i, i_sum_type);
+    cs_dispatch_sum<3>(grdpa[jj], vfac_j, i_sum_type);
 
-      cs_lnum_t ii = b_face_cells[face_id];
+  });
 
-      cs_real_t pfac = pvar[ii];
-      if (b_massflux[face_id] < 0)
-        pfac = inc*coefap[face_id] + coefbp[face_id] * pvar[ii];
-      pfac *= b_face_surf[face_id];
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-      grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_u_normal[face_id][0];
-      grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_u_normal[face_id][1];
-      grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_u_normal[face_id][2];
+    cs_lnum_t ii = b_face_cells[face_id];
 
-    }
-  }
+    cs_real_t pfac = (b_massflux[face_id] < 0) ?
+                      inc*coefap[face_id] + coefbp[face_id] * pvar[ii] :
+                      pvar[ii];
 
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t vfac[3];
+    for (cs_lnum_t k = 0; k < 3; k++)
+      vfac[k] = pfac * b_face_surf[face_id] * b_face_u_normal[face_id][k];
+
+    cs_dispatch_sum<3>(grdpa[ii], vfac, b_sum_type);
+  });
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
 
     cs_real_t unsvol = 1./cell_vol[cell_id];
 
-    grdpa[cell_id][0] = grdpa[cell_id][0]*unsvol;
-    grdpa[cell_id][1] = grdpa[cell_id][1]*unsvol;
-    grdpa[cell_id][2] = grdpa[cell_id][2]*unsvol;
+    grdpa[cell_id][0] *= unsvol;
+    grdpa[cell_id][1] *= unsvol;
+    grdpa[cell_id][2] *= unsvol;
 
-  }
+  });
+
+  ctx.wait();
 
   /* Synchronization for parallelism or periodicity */
 
@@ -11782,109 +11881,6 @@ cs_upwind_gradient(const int                     f_id,
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grdpa, 3);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the beta blending coefficient of the
- * beta limiter (ensuring preservation of a given min/max pair of values).
- *
- * \param[in]     f_id         field id
- * \param[in]     inc          "not an increment" flag
- * \param[in]     rovsdt       rho * volume / dt
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_beta_limiter_building(int                   f_id,
-                         int                   inc,
-                         const cs_real_t       rovsdt[])
-{
-  /* Parallel or device dispatch */
-  cs_dispatch_context ctx;
-
-  /* Get options from the field */
-
-  cs_field_t *f = cs_field_by_id(f_id);
-  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
-
-  if (eqp->isstpc != 2)
-    return;
-
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_halo_t *halo = m->halo;
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-
-  cs_real_t* cpro_beta = cs_field_by_id(
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id")))->val;
-
-  cs_real_t *denom_inf, *num_inf, *denom_sup, *num_sup;
-  CS_MALLOC_HD(denom_inf, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(denom_sup, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(num_inf,   n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(num_sup,   n_cells_ext, cs_real_t, cs_alloc_mode);
-
-  /* computation of the denominator for the inferior and upper bound */
-
-  _beta_limiter_denom(f,
-                      ctx,
-                      eqp,
-                      inc,
-                      denom_inf,
-                      denom_sup);
-
-  /* computation of the numerator for the inferior and upper bound */
-
-  _beta_limiter_num(f,
-                    ctx,
-                    eqp,
-                    inc,
-                    rovsdt,
-                    num_inf,
-                    num_sup);
-
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-
-    /* Treatment of the lower bound */
-    cs_real_t beta_inf;
-    if (denom_inf[c_id] <= num_inf[c_id]) {
-      beta_inf = 1.;
-    }
-    else if (denom_inf[c_id] <= cs_math_fabs(num_inf[c_id])) {
-      beta_inf = -1.;
-    }
-    else {
-      beta_inf = num_inf[c_id]/denom_inf[c_id]; //FIXME division by 0
-      beta_inf = cs_math_fmin(beta_inf, 1.);
-    }
-
-    /* Treatment of the upper bound */
-    cs_real_t beta_sup;
-    if (denom_sup[c_id] <= num_sup[c_id]) {
-      beta_sup = 1.;
-    }
-    else if (denom_sup[c_id] <= cs_math_fabs(num_sup[c_id])) {
-      beta_sup = -1.;
-    }
-    else {
-      beta_sup = num_sup[c_id]/denom_sup[c_id]; //FIXME division by 0
-      beta_sup = cs_math_fmin(beta_sup, 1.);
-    }
-
-    cpro_beta[c_id] = cs_math_fmin(beta_inf, beta_sup);
-  });
-
-  ctx.wait();
-
-  /* Synchronize variable */
-  if (halo != NULL)
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_beta);
-
-  CS_FREE_HD(denom_inf);
-  CS_FREE_HD(denom_sup);
-  CS_FREE_HD(num_inf);
-  CS_FREE_HD(num_sup);
 }
 
 #endif
