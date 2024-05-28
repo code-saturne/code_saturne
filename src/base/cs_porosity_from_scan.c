@@ -1128,7 +1128,7 @@ cs_compute_porosity_from_scan(void)
 
   /* Local variables */
   cs_real_t *rovsdt, *pvar, *dpvar, *rhs;
-  BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(rovsdt, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(pvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
@@ -1293,7 +1293,7 @@ cs_compute_porosity_from_scan(void)
   cs_porous_model_set_has_disable_flag(0);
   // Correction of orientation c_w_face_normal to point towards the solid region
   cs_real_3_t *grdporo;
-  BFT_MALLOC(grdporo, m->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC_HD(grdporo, m->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
 
   int imrgra = eqp->imrgra;
   eqp->imrgra = 7;
@@ -1409,13 +1409,13 @@ cs_compute_porosity_from_scan(void)
 
   /* Free memory */
 
-  BFT_FREE(grdporo);
   BFT_FREE(_porosity_from_scan_opt.output_name);
   BFT_FREE(_porosity_from_scan_opt.file_names);
   BFT_FREE(_porosity_from_scan_opt.sources);
   BFT_FREE(_porosity_from_scan_opt.source_c_ids);
 
-  BFT_FREE(rovsdt);
+  CS_FREE_HD(grdporo);
+  CS_FREE_HD(rovsdt);
   CS_FREE_HD(pvar);
   CS_FREE_HD(dpvar);
   CS_FREE_HD(rhs);

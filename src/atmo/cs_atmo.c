@@ -536,7 +536,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   bool symmetric = true;
 
   cs_real_3_t *next_fext;
-  BFT_MALLOC(next_fext, m->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC_HD(next_fext, m->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     next_fext[cell_id][0] = f_ext[cell_id][0] + dfext[cell_id][0];
     next_fext[cell_id][1] = f_ext[cell_id][1] + dfext[cell_id][1];
@@ -576,14 +576,14 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
   cs_real_t *rovsdt;
-  BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(rovsdt, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rovsdt[cell_id] = 0.;
 
   /* Faces viscosity */
   cs_real_t *c_visc;
-  BFT_MALLOC(c_visc, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(c_visc, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     c_visc[cell_id] = 1.;
@@ -624,7 +624,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                     c_visc);
 
   cs_real_t *divergfext;
-  BFT_MALLOC(divergfext, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(divergfext, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   cs_divergence(m,
                 1, /* init */
@@ -744,10 +744,10 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_sles_free_native(f_id, "");
 
-  BFT_FREE(divergfext);
-  BFT_FREE(next_fext);
-  BFT_FREE(rovsdt);
-  BFT_FREE(c_visc);
+  CS_FREE_HD(divergfext);
+  CS_FREE_HD(next_fext);
+  CS_FREE_HD(rovsdt);
+  CS_FREE_HD(c_visc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3303,7 +3303,7 @@ cs_atmo_z_ground_compute(void)
    * ====== */
 
   cs_real_t *rovsdt = NULL, *dpvar = NULL;
-  BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(rovsdt, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
@@ -3388,7 +3388,7 @@ cs_atmo_z_ground_compute(void)
   }
 
   /* Free memory */
-  BFT_FREE(rovsdt);
+  CS_FREE_HD(rovsdt);
 
   CS_FREE_HD(rhs);
   CS_FREE_HD(dpvar);
@@ -3517,8 +3517,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
   cs_real_t *i_massflux = NULL;
   cs_real_t *b_massflux = NULL;
-  BFT_MALLOC(i_massflux, m->n_i_faces, cs_real_t);
-  BFT_MALLOC(b_massflux, m->n_b_faces, cs_real_t);
+  CS_MALLOC_HD(i_massflux, m->n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_massflux, m->n_b_faces, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
     i_massflux[face_id] = 0.;
@@ -3527,10 +3527,10 @@ cs_atmo_hydrostatic_profiles_compute(void)
     b_massflux[face_id] = 0.;
 
   cs_real_t *i_viscm = NULL;
-  BFT_MALLOC(i_viscm, m->n_i_faces, cs_real_t);
+  CS_MALLOC_HD(i_viscm, m->n_i_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *b_viscm = NULL;
-  BFT_MALLOC(b_viscm, m->n_b_faces, cs_real_t);
+  CS_MALLOC_HD(b_viscm, m->n_b_faces, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
     i_viscm[face_id] = 0.;
@@ -3539,8 +3539,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
     b_viscm[face_id] = 0.;
 
   cs_real_3_t *f_ext, *dfext;
-  BFT_MALLOC(f_ext, m->n_cells_with_ghosts, cs_real_3_t);
-  BFT_MALLOC(dfext, m->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC_HD(f_ext, m->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(dfext, m->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
 
   /* dfext is actually a dummy used to copy _hydrostatic_pressure_compute */
   /* f_ext is initialized with an initial density */
@@ -3558,16 +3558,16 @@ cs_atmo_hydrostatic_profiles_compute(void)
    * ======= */
 
   cs_real_t *dam = NULL;
-  BFT_MALLOC(dam, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(dam, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   cs_real_t *xam = NULL;
-  BFT_MALLOC(xam, m->n_i_faces, cs_real_t);
+  CS_MALLOC_HD(xam, m->n_i_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *rhs = NULL;
-  BFT_MALLOC(rhs, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   cs_real_t *dpvar = NULL;
-  BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     dpvar[cell_id] = 0.;
@@ -3628,16 +3628,16 @@ cs_atmo_hydrostatic_profiles_compute(void)
   }
 
   /* Free memory */
-  BFT_FREE(dpvar);
-  BFT_FREE(rhs);
-  BFT_FREE(i_viscm);
-  BFT_FREE(b_viscm);
-  BFT_FREE(xam);
-  BFT_FREE(dam);
-  BFT_FREE(f_ext);
-  BFT_FREE(dfext);
-  BFT_FREE(b_massflux);
-  BFT_FREE(i_massflux);
+  CS_FREE_HD(dpvar);
+  CS_FREE_HD(rhs);
+  CS_FREE_HD(i_viscm);
+  CS_FREE_HD(b_viscm);
+  CS_FREE_HD(xam);
+  CS_FREE_HD(dam);
+  CS_FREE_HD(f_ext);
+  CS_FREE_HD(dfext);
+  CS_FREE_HD(b_massflux);
+  CS_FREE_HD(i_massflux);
 }
 
 /*----------------------------------------------------------------------------*/

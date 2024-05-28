@@ -200,7 +200,7 @@ cs_wall_distance(int iterns)
                               f_w_dist->val_pre;
 
   cs_real_t *smbrp, *rovsdt;
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(smbrp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* RHS */
@@ -324,8 +324,8 @@ cs_wall_distance(int iterns)
     if (ndircp == 0)
       cs_array_real_set_scalar(n_cells, cs_math_big_r, wall_dist);
 
-    BFT_FREE(smbrp);
-    BFT_FREE(rovsdt);
+    CS_FREE_HD(smbrp);
+    CS_FREE_HD(rovsdt);
 
     return;
   }
@@ -343,7 +343,7 @@ cs_wall_distance(int iterns)
 
   /* Allocate work arrays */
   cs_real_t *w1;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Initialize variables to avoid compiler warnings */
 
@@ -544,7 +544,7 @@ cs_wall_distance(int iterns)
 
   /* Allocate a temporary array for the gradient calculation */
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   /* Compute current gradient */
 
@@ -577,7 +577,7 @@ cs_wall_distance(int iterns)
      counter);
 
   /* Free memory */
-  BFT_FREE(grad);
+  CS_FREE_HD(grad);
 
   /* Compute bounds and print info
      ----------------------------- */
@@ -613,9 +613,8 @@ cs_wall_distance(int iterns)
   CS_FREE_HD(smbrp);
   CS_FREE_HD(i_mass_flux);
   CS_FREE_HD(b_mass_flux);
-
-  BFT_FREE(rovsdt);
-  BFT_FREE(w1);
+  CS_FREE_HD(rovsdt);
+  CS_FREE_HD(w1);
 
 }
 
@@ -755,8 +754,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   CS_MALLOC_HD(dvarp, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(smbdp, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(rovsdp, n_cells_ext, cs_real_t);
-  BFT_MALLOC(viscap, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rovsdp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscap, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t *i_visc, *b_visc;
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
@@ -1088,9 +1087,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   CS_FREE_HD(dpvar);
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
-
-  BFT_FREE(rovsdp);
-  BFT_FREE(viscap);
+  CS_FREE_HD(rovsdp);
+  CS_FREE_HD(viscap);
 
 }
 

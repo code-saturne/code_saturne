@@ -232,10 +232,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   int iwarnp = eqp->verbosity;
   int iswdyp = eqp->iswdyn;
   int ndircp = eqp->ndircl;
-  double epsrsp = eqp->epsrsm;
-  double epsilp = eqp->epsilo;
-  double relaxp = eqp->relaxv;
-  double thetap = eqp->theta;
+  cs_real_t epsrsp = eqp->epsrsm;
+  cs_real_t epsilp = eqp->epsilo;
+  cs_real_t relaxp = eqp->relaxv;
+  cs_real_t thetap = eqp->theta;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -244,10 +244,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   int isym, inc, isweep, niterf, nswmod;
   int lvar, imasac, key_sinfo_id;
-  double residu, rnorm, ressol;
-  double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk;
+  cs_real_t residu, rnorm, ressol;
+  cs_real_t thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk;
 
-  double rnorm2 = 0, alph = 0, beta = 0;
+  cs_real_t rnorm2 = 0, alph = 0, beta = 0;
 
   cs_solving_info_t sinfo;
 
@@ -257,6 +257,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_real_t *w1 = NULL;
 
   bool conv_diff_mg = false;
+
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  /* not yet ported to GPU */
 
   /*============================================================================
    * 0.  Initialization
@@ -496,10 +500,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        for ghost values. */
 
     /* Allocate a temporary array */
-    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     cs_real_t *w2;
-    BFT_MALLOC(w2, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar);
 
@@ -517,7 +521,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                      w2,
                                      w1);
 
-    BFT_FREE(w2);
+    CS_FREE_HD(w2);
 
     if (iwarnp >= 2) {
       bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(n_cells, w1, w1)));
@@ -538,7 +542,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   sinfo.rhs_norm = rnorm;
 
   /* Free memory */
-  BFT_FREE(w1);
+  CS_FREE_HD(w1);
 
   /* Warning: for weight matrix, one and only one sweep is done. */
   nswmod = CS_MAX(eqp->nswrsm, 1);
@@ -833,14 +837,14 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       /* rebuild before-last value of variable */
       cs_real_t *prev_s_pvar;
-      BFT_MALLOC(prev_s_pvar, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(prev_s_pvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 #     pragma omp parallel for  if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         prev_s_pvar[iel] = pvar[iel]-dpvar[iel];
       }
 
       cs_real_2_t *i_flux2;
-      BFT_MALLOC(i_flux2, n_i_faces, cs_real_2_t);
+      CS_MALLOC_HD(i_flux2, n_i_faces, cs_real_2_t, cs_alloc_mode);
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
         i_flux2[face_id][0] = 0.;
         i_flux2[face_id][1] = 0.;
@@ -886,7 +890,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                 b_massflux,
                                 i_flux2,
                                 b_flux->val);
-      BFT_FREE(prev_s_pvar);
+      CS_FREE_HD(prev_s_pvar);
 
       /* last increment in upwind to fulfill exactly the considered
          balance equation */
@@ -923,7 +927,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        * Note that the two sides are equal if imasac=0 */
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
         i_flux->val[face_id] += i_flux2[face_id][0];
-      BFT_FREE(i_flux2);
+      CS_FREE_HD(i_flux2);
     }
   }
 

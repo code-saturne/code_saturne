@@ -219,7 +219,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   *indhyd = 1;
 
   cs_real_3_t *next_fext = NULL;
-  BFT_MALLOC(next_fext, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(next_fext, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -244,8 +244,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   cs_real_t *rovsdt = NULL, *viscce = NULL;
 
-  BFT_MALLOC(viscce, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_array_real_fill_zero(n_cells, rovsdt);
   cs_array_set_value_real(n_cells, 1, 1, viscce);
@@ -292,7 +292,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                     viscce);
 
   cs_real_t *div_fext = NULL;
-  BFT_MALLOC(div_fext, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(div_fext, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_divergence(m, 1, iflux, bflux, div_fext);
 
@@ -395,10 +395,10 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   cs_sles_free_native(f->id, NULL);
 
-  BFT_FREE(viscce);
-  BFT_FREE(rovsdt);
-  BFT_FREE(div_fext);
-  BFT_FREE(next_fext);
+  CS_FREE_HD(viscce);
+  CS_FREE_HD(rovsdt);
+  CS_FREE_HD(div_fext);
+  CS_FREE_HD(next_fext);
 }
 
 /*----------------------------------------------------------------------------*/

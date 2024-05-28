@@ -152,11 +152,11 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   cs_real_t *w1;
   cs_real_3_t *tsexp, *gavinj, *vel0;
   cs_real_33_t *tsimp;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(tsexp, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(vel0, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(tsimp, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(tsexp, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(gavinj, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(vel0, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(tsimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(CS_F_(p));
@@ -164,19 +164,19 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   cs_real_t *i_visc = NULL, *b_visc = NULL;
   cs_real_6_t *viscce = NULL;
   if (eqp_vel->idften & CS_ISOTROPIC_DIFFUSION) {
-    BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-    BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
   }
   else if (eqp_vel->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-    BFT_MALLOC(i_visc, 9*n_i_faces, cs_real_t);
-    BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
-    BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(i_visc, 9*n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
   }
 
   cs_real_t *secvib = NULL, *secvif = NULL;
   if (vp_model->ivisse == 1) {
-    BFT_MALLOC(secvif, n_i_faces, cs_real_t);
-    BFT_MALLOC(secvib, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(secvib, n_b_faces, cs_real_t, cs_alloc_mode);
   }
 
   /* Density */
@@ -464,16 +464,16 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                b_mass_flux);
 
   /* Free memory */
-  BFT_FREE(w1);
-  BFT_FREE(tsexp);
-  BFT_FREE(gavinj);
-  BFT_FREE(tsimp);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
-  BFT_FREE(secvif);
-  BFT_FREE(secvib);
-  BFT_FREE(viscce);
-  BFT_FREE(vel0);
+  CS_FREE_HD(w1);
+  CS_FREE_HD(tsexp);
+  CS_FREE_HD(gavinj);
+  CS_FREE_HD(tsimp);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+  CS_FREE_HD(secvif);
+  CS_FREE_HD(secvib);
+  CS_FREE_HD(viscce);
+  CS_FREE_HD(vel0);
 
   coefbv = NULL;
   cs_field_bc_coeffs_free_copy(bc_coeffs_vel, &bc_coeffs_v_loc);
@@ -525,26 +525,26 @@ cs_cf_convective_mass_flux(int  iterns)
 
   cs_real_t *i_visc, *wflmas, *ivolfl;
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(wflmas, n_i_faces, cs_real_t);
-  BFT_MALLOC(ivolfl, n_i_faces, cs_real_t);
+  CS_MALLOC_HD(wflmas, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(ivolfl, n_i_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *b_visc, *wflmab, *bvolfl;
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(wflmab, n_b_faces, cs_real_t);
-  BFT_MALLOC(bvolfl, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(wflmab, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bvolfl, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *smbrs, *rovsdt;
   CS_MALLOC_HD(smbrs, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Allocate work arrays */
 
   cs_real_t *w1, *w7, *w8, *w9, *w10, *dpvar;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w7, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w8, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w9, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w10, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w7, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w8, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w9, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w10, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_field_t *f_p = CS_F_(p);
@@ -664,7 +664,7 @@ cs_cf_convective_mass_flux(int  iterns)
      Varpos has been modified for that. */
 
   cs_real_t *c2;
-  BFT_MALLOC(c2, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(c2, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_cf_thermo_c_square(cpro_cp,
                         cpro_cv,
@@ -865,20 +865,20 @@ cs_cf_convective_mass_flux(int  iterns)
 
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
-  BFT_FREE(smbrs);
-  BFT_FREE(dpvar);
-  BFT_FREE(wflmas);
-  BFT_FREE(wflmab);
+  CS_FREE_HD(smbrs);
+  CS_FREE_HD(dpvar);
+  CS_FREE_HD(wflmas);
+  CS_FREE_HD(wflmab);
 
-  BFT_FREE(c2);
-  BFT_FREE(rovsdt);
-  BFT_FREE(ivolfl);
-  BFT_FREE(bvolfl);
-  BFT_FREE(w1);
-  BFT_FREE(w7);
-  BFT_FREE(w8);
-  BFT_FREE(w9);
-  BFT_FREE(w10);
+  CS_FREE_HD(c2);
+  CS_FREE_HD(rovsdt);
+  CS_FREE_HD(ivolfl);
+  CS_FREE_HD(bvolfl);
+  CS_FREE_HD(w1);
+  CS_FREE_HD(w7);
+  CS_FREE_HD(w8);
+  CS_FREE_HD(w9);
+  CS_FREE_HD(w10);
 
   wbfa = NULL;
   wbfb = NULL;
@@ -931,23 +931,23 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
 
   /* Allocate temporary arrays */
   cs_real_t *i_visc, *i_mass_flux;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(i_mass_flux, n_i_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_mass_flux, n_i_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *b_mass_flux, *b_visc;
-  BFT_MALLOC(b_mass_flux, n_b_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(b_mass_flux, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_loc.b,  n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
   cs_real_t *coefbt = bc_coeffs_loc.b;
   cs_real_t *cofbft = bc_coeffs_loc.bf;
 
   /* Allocate work arrays */
   cs_real_t *w1;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Compute CFL condition associated to the pressure equation
      --------------------------------------------------------- */
@@ -992,7 +992,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
 
   /* Compute the square of the sound celerity */
   cs_real_t *c2;
-  BFT_MALLOC(c2, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(c2, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_cf_thermo_c_square(cpro_cp,
                         cpro_cv,
@@ -1022,14 +1022,14 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   }
 
   /* Free memory */
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
-  BFT_FREE(w1);
-  BFT_FREE(c2);
-  BFT_FREE(coefbt);
-  BFT_FREE(cofbft);
-  BFT_FREE(i_mass_flux);
-  BFT_FREE(b_mass_flux);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+  CS_FREE_HD(w1);
+  CS_FREE_HD(c2);
+  CS_FREE_HD(coefbt);
+  CS_FREE_HD(cofbft);
+  CS_FREE_HD(i_mass_flux);
+  CS_FREE_HD(b_mass_flux);
 }
 
 /*---------------------------------------------------------------------------- */

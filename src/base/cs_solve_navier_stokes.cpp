@@ -207,10 +207,10 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   cs_field_bc_coeffs_t bc_coeffs_pot;
   cs_field_bc_coeffs_init(&bc_coeffs_pot);
-  BFT_MALLOC(bc_coeffs_pot.a, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_pot.b, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_pot.af, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_pot.bf, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_pot.a, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_pot.b, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_pot.af, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_pot.bf, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *clapot = bc_coeffs_pot.a;
   cs_real_t *clbpot = bc_coeffs_pot.b;
@@ -233,7 +233,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   }
 
   cs_real_t *divu;
-  BFT_MALLOC(divu, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(divu, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Right Hand side
      --------------- */
@@ -266,7 +266,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /* Source term associated to the mass aggregation */
 
   cs_real_t *rhs;
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t drom = crom[cell_id] - croma[cell_id];
@@ -285,14 +285,14 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /* Unsteady term */
 
   cs_real_t *pot;
-  BFT_MALLOC(pot, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(pot, n_cells_ext, cs_real_t, cs_alloc_mode);
   cs_array_real_fill_zero(n_cells, pot);
 
   /* Face diffusibility scalar */
 
   cs_real_t *i_visc, *b_visc;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(CS_F_(p));
@@ -311,8 +311,8 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   }
 
   cs_real_t *dam, *xam;
-  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xam, n_i_faces, cs_real_t);
+  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xam, n_i_faces, cs_real_t, cs_alloc_mode);
 
   cs_matrix_wrapper_scalar(eqp->iconv,
                            eqp->idiff,
@@ -519,23 +519,23 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   cs_sles_free_native(-1, name);
 
-  BFT_FREE(dam);
-  BFT_FREE(xam);
+  CS_FREE_HD(dam);
+  CS_FREE_HD(xam);
 
-  BFT_FREE(divu);
-  BFT_FREE(rhs);
+  CS_FREE_HD(divu);
+  CS_FREE_HD(rhs);
 
   BFT_FREE(pot);
   BFT_FREE(pota);
   BFT_FREE(dpot);
 
-  BFT_FREE(clapot);
-  BFT_FREE(clbpot);
-  BFT_FREE(cfapot);
-  BFT_FREE(cfbpot);
+  CS_FREE_HD(clapot);
+  CS_FREE_HD(clbpot);
+  CS_FREE_HD(cfapot);
+  CS_FREE_HD(cfbpot);
 
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3355,8 +3355,8 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
    * ----------------------------------------------------- */
 
   cs_real_t *xinvro, *rovsdt, *rhs;
-  BFT_MALLOC(xinvro, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(xinvro, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Initialization of the variable to solve from the interior cells */
@@ -3487,8 +3487,8 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
   CS_FREE_HD(viscf);
   CS_FREE_HD(viscb);
 
-  BFT_FREE(xinvro);
-  BFT_FREE(rovsdt);
+  CS_FREE_HD(xinvro);
+  CS_FREE_HD(rovsdt);
   CS_FREE_HD(rhs);
 
   CS_FREE_HD(coefap);
