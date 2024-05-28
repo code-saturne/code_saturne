@@ -1356,7 +1356,7 @@ class case:
 
                 if n_procs:
                     b = cs_exec_environment.batch_info()
-                    if b.batch_type is None:
+                    if b.batch_type is None and mpiexec_mpmd:
                         mpi_cmd += '-n '+ str(n_procs) + ' '
 
             else:
