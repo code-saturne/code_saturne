@@ -123,7 +123,7 @@ _clip_v2f(cs_lnum_t  n_cells,
 
   int kclipp = cs_field_key_id("clipping_id");
 
-  cs_gnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
+  cs_lnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
 
   /* Postprocess clippings ? */
   cs_real_t *cpro_phi_clipped = NULL;
@@ -191,12 +191,13 @@ _clip_v2f(cs_lnum_t  n_cells,
     }
   }
 
-  cs_parall_counter(nclp, 2);
+  cs_gnum_t g_nclp1 = (cs_gnum_t)nclp[1];
+  cs_parall_counter(&g_nclp1, 1);
 
-  if (nclp[1] > 0)
+  if (g_nclp1 > 0)
     cs_log_warning(_("Warning: variable phi, maximum physical value of 2 "
                      "exceeded for, %llu cells"),
-                  (unsigned long long)nclp[1]);
+                   (unsigned long long)g_nclp1);
 
   cs_lnum_t nclpmn[1] = {nclp[0]}, nclpmx[1] = {nclp[1]};
   cs_log_iteration_clipping_field(CS_F_(phi)->id,
@@ -226,8 +227,6 @@ _clip_v2f(cs_lnum_t  n_cells,
         nclp[1] += 1;
       }
     }
-
-    cs_parall_counter(nclp, 2);
 
     nclpmn[0] = nclp[0], nclpmx[0] = nclp[1];
     cs_log_iteration_clipping_field(CS_F_(alp_bl)->id,
