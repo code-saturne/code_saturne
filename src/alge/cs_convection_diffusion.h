@@ -33,13 +33,50 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+
 #include "cs_base.h"
+#include "cs_dispatch.h"
 #include "cs_halo.h"
 #include "cs_math.h"
 #include "cs_mesh_quantities.h"
 #include "cs_equation_param.h"
 
 /*----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
+ * \param[in]     f_id         field id
+ * \param[in]     ctx          Reference to dispatch context
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     bc_coeffs    boundary condition structure for the variable
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_slope_test_gradient(int                         f_id,
+                       cs_dispatch_context        &ctx,
+                       int                         inc,
+                       cs_halo_type_t              halo_type,
+                       const cs_real_3_t          *grad,
+                       cs_real_3_t                *grdpa,
+                       const cs_real_t            *pvar,
+                       const cs_field_bc_coeffs_t *bc_coeffs,
+                       const cs_real_t            *i_massflux);
+
+#endif
 
 BEGIN_C_DECLS
 
@@ -114,34 +151,6 @@ cs_cell_courant_number(const int   f_id,
 cs_real_t *
 cs_get_v_slope_test(int                        f_id,
                     const cs_equation_param_t  eqp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the upwind gradient used in the slope tests.
- *
- * This function assumes the input gradient and pvar values have already
- * been synchronized.
- *
- * \param[in]     f_id         field id
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     grad         standard gradient
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
- * \param[in]     bc_coeffs    boundary condition structure for the variable
- * \param[in]     i_massflux   mass flux at interior faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_slope_test_gradient(int                         f_id,
-                       int                         inc,
-                       cs_halo_type_t              halo_type,
-                       const cs_real_3_t          *grad,
-                       cs_real_3_t                *grdpa,
-                       const cs_real_t            *pvar,
-                       const cs_field_bc_coeffs_t *bc_coeffs,
-                       const cs_real_t            *i_massflux);
 
 /*----------------------------------------------------------------------------*/
 /*

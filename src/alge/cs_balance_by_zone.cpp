@@ -799,6 +799,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   const int *bc_type = cs_glob_bc_type;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  /* balance_by_zone case not ported to GPU */
+
   /* initialize output */
 
   for (int i = 0; i < CS_BALANCE_N_TERMS; i++)
@@ -1031,6 +1035,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     /* Slope test gradient */
     if (eqp->iconv > 0)
       cs_slope_test_gradient(field_id,
+                             ctx,
                              inc,
                              halo_type,
                              (const cs_real_3_t *)grad,
@@ -2573,6 +2578,10 @@ cs_flux_through_surface(const char         *scalar_name,
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  /* balance_by_zone case not ported to GPU */
+
   /* initialize output */
 
   cs_real_t  _balance[CS_BALANCE_N_TERMS];
@@ -2754,6 +2763,7 @@ cs_flux_through_surface(const char         *scalar_name,
     /* Slope test gradient */
     if (eqp->iconv > 0)
       cs_slope_test_gradient(f->id,
+                             ctx,
                              1, /* inc */
                              CS_HALO_STANDARD,
                              (const cs_real_3_t *)grad,

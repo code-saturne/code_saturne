@@ -956,6 +956,10 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
   const int *bc_type = cs_glob_bc_type;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  /* steady case not ported to GPU */
+
   /* Local variables */
 
   const int f_id = (f != nullptr) ? f->id : -1;
@@ -1146,6 +1150,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
       }
 
       cs_slope_test_gradient(f_id,
+                             ctx,
                              inc,
                              halo_type,
                              (const cs_real_3_t *)grad,
@@ -2071,6 +2076,7 @@ _convection_diffusion_scalar_unsteady
       ctx.wait();
 
       cs_slope_test_gradient(f_id,
+                             ctx,
                              inc,
                              halo_type,
                              (const cs_real_3_t *)grad,
@@ -5509,154 +5515,6 @@ cs_get_v_slope_test(int                        f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the upwind gradient used in the slope tests.
- *
- * This function assumes the input gradient and pvar values have already
- * been synchronized.
- *
- * \param[in]     f_id         field id
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     grad         standard gradient
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
- * \param[in]     bc_coeffs    boundary condition structure for the variable
- * \param[in]     i_massflux   mass flux at interior faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_slope_test_gradient(int                         f_id,
-                       int                         inc,
-                       cs_halo_type_t              halo_type,
-                       const cs_real_3_t          *grad,
-                       cs_real_3_t                *grdpa,
-                       const cs_real_t            *pvar,
-                       const cs_field_bc_coeffs_t *bc_coeffs,
-                       const cs_real_t            *i_massflux)
-{
-  CS_UNUSED(f_id);
-
-  cs_real_t *coefap = bc_coeffs->a;
-  cs_real_t *coefbp = bc_coeffs->b;
-
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_halo_t  *halo = m->halo;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_cells = m->n_cells;
-
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_t *restrict i_face_surf
-    = (const cs_real_t *restrict)fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
-  const cs_real_3_t *restrict i_face_u_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
-  const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
-
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           face_id++) {
-
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
-
-        cs_real_t difx = i_face_cog[face_id][0] - cell_cen[ii][0];
-        cs_real_t dify = i_face_cog[face_id][1] - cell_cen[ii][1];
-        cs_real_t difz = i_face_cog[face_id][2] - cell_cen[ii][2];
-        cs_real_t djfx = i_face_cog[face_id][0] - cell_cen[jj][0];
-        cs_real_t djfy = i_face_cog[face_id][1] - cell_cen[jj][1];
-        cs_real_t djfz = i_face_cog[face_id][2] - cell_cen[jj][2];
-
-        cs_real_t pif =   pvar[ii]
-                        + difx*grad[ii][0]+dify*grad[ii][1]+difz*grad[ii][2];
-        cs_real_t pjf =   pvar[jj]
-                        + djfx*grad[jj][0]+djfy*grad[jj][1]+djfz*grad[jj][2];
-
-        cs_real_t pfac = pjf;
-        if (i_massflux[face_id] > 0.) pfac = pif;
-
-        pfac *= i_face_surf[face_id];
-
-        cs_real_t pfac1 = pfac*i_face_u_normal[face_id][0];
-        cs_real_t pfac2 = pfac*i_face_u_normal[face_id][1];
-        cs_real_t pfac3 = pfac*i_face_u_normal[face_id][2];
-
-        grdpa[ii][0] = grdpa[ii][0] + pfac1;
-        grdpa[ii][1] = grdpa[ii][1] + pfac2;
-        grdpa[ii][2] = grdpa[ii][2] + pfac3;
-
-        grdpa[jj][0] = grdpa[jj][0] - pfac1;
-        grdpa[jj][1] = grdpa[jj][1] - pfac2;
-        grdpa[jj][2] = grdpa[jj][2] - pfac3;
-
-      }
-    }
-  }
-
-# pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-    for (cs_lnum_t face_id = b_group_index[t_id*2];
-         face_id < b_group_index[t_id*2 + 1];
-         face_id++) {
-
-      cs_lnum_t ii = b_face_cells[face_id];
-
-      cs_real_t pfac = inc*coefap[face_id] + coefbp[face_id]
-        * (pvar[ii] + cs_math_3_dot_product(grad[ii], diipb[face_id]));
-      pfac *= b_face_surf[face_id];
-
-      grdpa[ii][0] += pfac*b_face_u_normal[face_id][0];
-      grdpa[ii][1] += pfac*b_face_u_normal[face_id][1];
-      grdpa[ii][2] += pfac*b_face_u_normal[face_id][2];
-
-    }
-  }
-
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
-    cs_real_t unsvol = 1./cell_vol[cell_id];
-
-    grdpa[cell_id][0] *= unsvol;
-    grdpa[cell_id][1] *= unsvol;
-    grdpa[cell_id][2] *= unsvol;
-
-  }
-
-  /* Synchronization for parallelism or periodicity */
-
-  if (halo != NULL) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, CS_HALO_STANDARD, (cs_real_t *)grdpa, 3);
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute the upwind gradient used in the pure SOLU schemes
  *        (observed in the litterature).
  *
@@ -6095,6 +5953,10 @@ cs_face_convection_scalar(int                         idtvar,
 
   const int *bc_type = cs_glob_bc_type;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  /* not yet ported to GPU */
+
   /* Local variables */
 
   char var_name[64];
@@ -6297,6 +6159,7 @@ cs_face_convection_scalar(int                         idtvar,
       }
 
       cs_slope_test_gradient(f_id,
+                             ctx,
                              inc,
                              halo_type,
                              (const cs_real_3_t *)grad,
@@ -11892,3 +11755,142 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
+ * \param[in]     f_id         field id
+ * \param[in]     ctx          Reference to dispatch context
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     bc_coeffs    boundary condition structure for the variable
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_slope_test_gradient(int                         f_id,
+                       cs_dispatch_context        &ctx,
+                       int                         inc,
+                       cs_halo_type_t              halo_type,
+                       const cs_real_3_t          *grad,
+                       cs_real_3_t                *grdpa,
+                       const cs_real_t            *pvar,
+                       const cs_field_bc_coeffs_t *bc_coeffs,
+                       const cs_real_t            *i_massflux)
+{
+  CS_UNUSED(f_id);
+
+  cs_real_t *coefap = bc_coeffs->a;
+  cs_real_t *coefbp = bc_coeffs->b;
+
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_halo_t  *halo = m->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_t *restrict i_face_surf
+    = (const cs_real_t *restrict)fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_u_normal;
+  const cs_real_3_t *restrict b_face_u_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
+
+    cs_real_t difv[3] = {i_face_cog[face_id][0] - cell_cen[ii][0],
+                         i_face_cog[face_id][1] - cell_cen[ii][1],
+                         i_face_cog[face_id][2] - cell_cen[ii][2]};
+
+    cs_real_t djfv[3] = {i_face_cog[face_id][0] - cell_cen[jj][0],
+                         i_face_cog[face_id][1] - cell_cen[jj][1],
+                         i_face_cog[face_id][2] - cell_cen[jj][2]};
+
+    cs_real_t pif = pvar[ii] + cs_math_3_dot_product(difv, grad[ii]);
+    cs_real_t pjf = pvar[jj] + cs_math_3_dot_product(djfv, grad[jj]);
+
+    cs_real_t pfac = (i_massflux[face_id] > 0.) ? pif : pjf;
+    pfac *= i_face_surf[face_id];
+
+    cs_real_t vfac_i[3], vfac_j[3];
+    for (cs_lnum_t k = 0; k < 3; k++) {
+      vfac_i[k] = pfac*i_face_u_normal[face_id][k];
+      vfac_j[k] = - vfac_i[k];
+    }
+
+    cs_dispatch_sum<3>(grdpa[ii], vfac_i, i_sum_type);
+    cs_dispatch_sum<3>(grdpa[jj], vfac_j, i_sum_type);
+
+  });
+
+  ctx.wait();
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    cs_lnum_t ii = b_face_cells[face_id];
+
+    cs_real_t pfac = inc*coefap[face_id] + coefbp[face_id]
+      * (pvar[ii] + cs_math_3_dot_product(grad[ii], diipb[face_id]));
+
+    cs_real_t vfac[3] = {pfac*b_face_surf[face_id]*b_face_u_normal[face_id][0],
+                         pfac*b_face_surf[face_id]*b_face_u_normal[face_id][1],
+                         pfac*b_face_surf[face_id]*b_face_u_normal[face_id][2]};
+
+    cs_dispatch_sum<3>(grdpa[ii], vfac, b_sum_type);
+
+  });
+
+  ctx.wait();
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+
+    cs_real_t unsvol = 1./cell_vol[cell_id];
+
+    grdpa[cell_id][0] *= unsvol;
+    grdpa[cell_id][1] *= unsvol;
+    grdpa[cell_id][2] *= unsvol;
+
+  });
+
+  ctx.wait();
+
+  /* Synchronization for parallelism or periodicity */
+
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(halo, CS_HALO_STANDARD, (cs_real_t *)grdpa, 3);
+  }
+
+}
+
+#endif

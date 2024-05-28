@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  ! \file cs_drift_scalar_convective_flux_compute.c
+  ! \file cs_drift_convective_flux.cpp
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -136,7 +136,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const int icla = cs_field_get_key_int(f_sc, keyccl);
 
   const cs_real_t *dt = CS_F_(dt)->val;
-  const cs_turb_model_type_t iturb  = cs_glob_turb_model->iturb;
+  const int iturb  = cs_glob_turb_model->iturb;
   const int itytur = cs_glob_turb_model->itytur;
   const int n_fields = cs_field_n_fields();
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;

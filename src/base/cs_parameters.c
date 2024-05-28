@@ -47,7 +47,6 @@
 #include "bft_printf.h"
 
 #include "cs_at_opt_interp.h"
-#include "cs_convection_diffusion.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_gradient.h"

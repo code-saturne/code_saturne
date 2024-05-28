@@ -179,7 +179,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   const int ksinfo = cs_field_key_id("solving_info");
   cs_field_t *f = cs_field_by_name_try("hydrostatic_pressure");
-  cs_solving_info_t *sinfo = cs_field_get_key_struct_ptr(f, ksinfo);
+  cs_solving_info_t *sinfo =
+    static_cast<cs_solving_info_t*>(cs_field_get_key_struct_ptr(f, ksinfo));
   const cs_equation_param_t *eqp_pr = cs_field_get_equation_param_const(f);
 
   if (iterns < 2)
@@ -583,9 +584,9 @@ _pressure_correction_fv(int                   iterns,
     vitenp = (cs_real_6_t *)(cs_field_by_name("dttens")->val);
 
   /* Index of the field */
+  const int ksinfo = cs_field_key_id("solving_info");
   cs_solving_info_t *sinfo
-    = cs_field_get_key_struct_ptr(f_p,
-                                  cs_field_key_id("solving_info"));
+    = static_cast<cs_solving_info_t*>(cs_field_get_key_struct_ptr(f_p, ksinfo));
 
   cs_field_t *f_weight = NULL;
   if (eqp_p->iwgrec == 1) {
@@ -2525,7 +2526,7 @@ _pressure_correction_fv(int                   iterns,
                        0,             /* iphydp */
                        1,             /* w_stride */
                        eqp_p->verbosity,
-                       eqp_u->imligr,
+                       static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                        eqp_u->epsrgr,
                        eqp_u->climgr,
                        NULL,          /* f_ext */
@@ -3090,10 +3091,9 @@ _pressure_correction_cdo(cs_real_t              vel[restrict][3],
   cs_real_t  *c_visc = dt;
 
   /* Index of the field */
-
+  const int ksinfo = cs_field_key_id("solving_info");
   cs_solving_info_t  *sinfo
-    = cs_field_get_key_struct_ptr(f_p,
-                                  cs_field_key_id("solving_info"));
+    = static_cast<cs_solving_info_t*>(cs_field_get_key_struct_ptr(f_p, ksinfo));
 
   /* Physical quantities */
 

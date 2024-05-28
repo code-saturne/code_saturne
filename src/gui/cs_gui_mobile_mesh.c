@@ -51,7 +51,6 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
-#include "cs_convection_diffusion.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_gui.h"

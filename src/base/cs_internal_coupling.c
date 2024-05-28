@@ -64,7 +64,6 @@
 #include "cs_mesh_boundary.h"
 #include "cs_mesh_group.h"
 #include "cs_mesh_quantities.h"
-#include "cs_convection_diffusion.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"

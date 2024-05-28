@@ -94,7 +94,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_equation_iterative_solve.c
+/*! \file cs_equation_iterative_solve.cpp
  *
  * \brief This file gathers functions that solve advection diffusion equations
  * with source terms for one time step for a scalar, vector or tensor variable.

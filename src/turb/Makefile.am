@@ -77,14 +77,14 @@ cs_turbulence_headers.h
 noinst_LIBRARIES = libcsturb.a
 
 libcsturb_a_SOURCES = \
-cs_les_balance.c \
+cs_les_balance.cpp \
 cs_les_filter.c \
 cs_les_inflow.c \
 cs_les_mu_t.c \
 cs_turbulence_bc.c \
 cs_turbulence_inflow.c \
 cs_turbulence_init.c \
-cs_turbulence_ke.c \
+cs_turbulence_ke.cpp \
 cs_turbulence_kw.c \
 cs_turbulence_ml.c \
 cs_turbulence_model.c \
@@ -92,7 +92,7 @@ cs_turbulence_rij.c \
 cs_turbulence_rit.c \
 cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
-cs_turbulence_v2f.c \
+cs_turbulence_v2f.cpp \
 cs_turbulence_htles.c
 
 clean-local:

@@ -46,7 +46,6 @@
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_main.h"
-#include "cs_convection_diffusion.h"
 #include "cs_domain.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"

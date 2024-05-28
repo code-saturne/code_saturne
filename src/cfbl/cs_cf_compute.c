@@ -70,7 +70,6 @@
 #include "cs_prototypes.h"
 #include "cs_turbulence_model.h"
 #include "cs_velocity_pressure.h"
-//#include "cs_vof.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

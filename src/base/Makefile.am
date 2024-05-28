@@ -326,10 +326,10 @@ cs_time_step_compute.c \
 cs_control.c \
 cs_coupling.c \
 cs_dilatable_scalar_diff_st.c \
-cs_drift_convective_flux.c \
+cs_drift_convective_flux.cpp \
 cs_ext_library_info.c \
 cs_ext_neighborhood.c \
-cs_equation_iterative_solve.c \
+cs_equation_iterative_solve.cpp \
 cs_fan.c \
 cs_field.c \
 cs_field_default.c \
@@ -367,7 +367,7 @@ cs_post_default.c \
 cs_post_util.c \
 cs_preprocess.c \
 cs_preprocessor_data.c \
-cs_pressure_correction.c \
+cs_pressure_correction.cpp \
 cs_probe.c \
 cs_random.c \
 cs_range_set.c \
@@ -385,7 +385,7 @@ cs_selector.c \
 cs_selector_f2c.f90 \
 cs_solid_zone.c \
 cs_solve_equation.c \
-cs_solve_navier_stokes.c \
+cs_solve_navier_stokes.cpp \
 cs_solve_transported_variables.c \
 cs_sort.c \
 cs_sort_partition.c \
@@ -406,7 +406,7 @@ cs_velocity_pressure.c \
 cs_vof.cxx \
 cs_volume_mass_injection.c \
 cs_volume_zone.c \
-cs_wall_distance.c \
+cs_wall_distance.cpp \
 cs_wall_functions.c \
 cs_xdef_eval_at_zone.c \
 distpr2.f90 \

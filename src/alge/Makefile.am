@@ -182,7 +182,7 @@ $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCFLAGS_DBG) $(FCFLAGS_HOT) $(FCFLAGS_SHARED)
 libcsalge_a_SOURCES = \
 cs_bad_cells_regularisation.c \
-cs_balance.c \
+cs_balance.cpp \
 cs_balance_by_zone.cpp \
 cs_benchmark.cpp \
 cs_benchmark_matrix.cpp \

@@ -50,7 +50,6 @@
 #include "cs_blas.h"
 #include "cs_halo.h"
 #include "cs_base.h"
-#include "cs_convection_diffusion.h"
 #include "cs_equation.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
