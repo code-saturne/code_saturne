@@ -838,10 +838,10 @@ cs_user_model(void)
   /* Compute the absorption coefficient through a model (if different from 0),
      or use a constant absorption coefficient (if 0).
      Useful ONLY when gas or coal combustion is activated
-     - imodak = 1: ADF model with 8 wave length intervals
-     - imodak = 2: Magnussen et al. and Kent and Honnery models */
+     - imgrey = 1: ADF model with 8 wave length intervals
+     - imgrey = 2: Magnussen et al. and Kent and Honnery models */
 
-  rt_params->imodak = 2;
+  rt_params->imgrey = 2;
 
   /* Compute the absorption coefficient via ADF model
      Useful ONLY when coal combustion is activated
@@ -857,6 +857,13 @@ cs_user_model(void)
      imfsck = 0: not activated */
 
   rt_params->imfsck = 1;
+
+  /* Compute the absorption coefficient through RCFSK model (if 1)
+     Available ONLY when gas combustion is activated
+      imrcfsk = 1: activated
+      imrcfsk = 0: not activated */
+
+  rt_params->imrcfsk = 0;
 
   /* Activate  3D radiative models for  atmospheric flows
        atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR: direct solar

@@ -77,7 +77,7 @@ class GasCombustionModel(Variables, Model):
                          "3-peak_adiabatic", "3-peak_enthalpy",
                          "4-peak_adiabatic", "4-peak_enthalpy")
 
-        self.sootModels = ('off', 'constant_soot_yield', 'moss')
+        self.sootModels = ('off', 'constant_soot_yield', 'moss', 'smoke')
 
 
     def defaultGasCombustionValues(self):
@@ -403,6 +403,7 @@ class GasCombustionModel(Variables, Model):
         self.default['soot_model']               = 'off'
         self.default['soot_density']             = 0.0
         self.default['soot_fraction']            = 0.0
+        self.default['lsp_fuel']                 = 0.0
         return self.default
 
     @Variables.noUndo
@@ -446,11 +447,17 @@ class GasCombustionModel(Variables, Model):
         self.isInList(model, self.sootModels)
         node  = self.node_gas.xmlInitChildNode('soot_model', 'model')
         node['model'] = model
+        if model == 'smoke':
+            self.node_gas.xmlRemoveChild('soot_fraction')
         if model == 'moss':
             self.node_gas.xmlRemoveChild('soot_fraction')
+            self.node_gas.xmlRemoveChild('lsp_fuel')
+        if model == 'constant_soot_yield':
+            self.node_gas.xmlRemoveChild('lsp_fuel')
         if model == 'off':
             self.node_gas.xmlRemoveChild('soot_density')
             self.node_gas.xmlRemoveChild('soot_fraction')
+            self.node_gas.xmlRemoveChild('lsp_fuel')
 
     @Variables.noUndo
     def getSootDensity(self):
@@ -493,6 +500,26 @@ class GasCombustionModel(Variables, Model):
         self.isPositiveFloat(val)
         self.node_soot = self.node_gas.xmlGetNode('soot_model')
         self.node_soot.xmlSetData('soot_fraction', val)
+
+    @Variables.noUndo
+    def getSootLspFuel(self):
+        """
+        Return value of lsp fuel
+        """
+        val = self.node_gas.xmlGetDouble('lsp_fuel')
+        if val is None:
+            val = self._defaultValues()['lsp_fuel']
+            self.setSootLspFuel(val)
+        return val
+
+    @Variables.undoGlobal
+    def setSootLspFuel(self, val):
+        """
+        Put value of lsp fuel
+        """
+        self.isPositiveFloat(val)
+        self.node_soot = self.node_gas.xmlGetNode('soot_model')
+        self.node_soot.xmlSetData('lsp_fuel', val)
 
 #-------------------------------------------------------------------------------
 # Gas combustion test case

@@ -549,6 +549,11 @@ _diffusion_terms_scalar(const cs_field_t           *f,
       cs_array_real_copy(n_cells, cpro_viscls, w1);
 
     if (idifftp > 0) {
+      if (f == CS_F_(fsm)) {
+        // TODO check if we can simply set visls_0 to 0 for this- field instead.
+        cs_array_set_value_real(n_cells, 1, 0., w1);
+      }
+
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         w1[c_id] += xcpp[c_id]*sgdh_diff[c_id];

@@ -75,6 +75,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_combustion_gas.h \
+cs_combustion_bsh.h \
 cs_soot_model.h \
 cs_steady_laminar_flamelet_source_terms.h \
 cs_cogz_headers.h
@@ -84,6 +85,7 @@ cs_cogz_headers.h
 noinst_LIBRARIES = libcscogz.a
 libcscogz_a_SOURCES = \
 cs_combustion_gas.c \
+cs_combustion_bsh.c \
 cs_soot_model.c \
 cs_steady_laminar_flamelet_source_terms.c \
 coini1.f90 \

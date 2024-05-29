@@ -180,23 +180,6 @@ if(irangp.ge.0) then
   call parcmx(ioxy)
 endif
 
-! Fuel inlet at TINFUE: HINFUE calculation
-if (ifue.eq.1) then
-  coefg(1) = 1.d0
-  coefg(2) = zero
-  coefg(3) = zero
-  hinfue = cs_gas_combustion_t_to_h(coefg, tinfue)
-endif
-
-! Oxidant inlet at TINOXY: HINOXY calculation
-if (ioxy.eq.1) then
-  coefg(1) = zero
-  coefg(2) = 1.d0
-  coefg(3) = zero
-  hinoxy = cs_gas_combustion_t_to_h(coefg, tinoxy)
-endif
-
-
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)

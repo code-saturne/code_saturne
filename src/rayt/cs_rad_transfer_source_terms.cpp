@@ -55,6 +55,7 @@
 #include "cs_physical_model.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_rad_transfer.h"
 #include "cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------
@@ -115,7 +116,8 @@ cs_rad_transfer_source_terms(cs_real_t  rhs[],
       ||    cs_glob_thermal_model->thermal_variable
          == CS_THERMAL_MODEL_ENTHALPY) {
 
-    const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
     /* Implicit part   */
     cs_real_t *rad_st_impl = CS_FI_(rad_ist, 0)->val;
@@ -127,7 +129,7 @@ cs_rad_transfer_source_terms(cs_real_t  rhs[],
       const cs_real_t *pottemp = CS_F_(t)->val;
       const cs_real_t *tempc = cs_field_by_name("real_temperature")->val;
       const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
-      for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         rad_st_impl[c_id] = CS_MAX(-rad_st_impl[c_id], 0.0);
         cs_real_t cor_factor = pottemp[c_id] / (tempc[c_id] + tkelvi);
         fimp[c_id] += cor_factor * rad_st_impl[c_id] * cell_vol[c_id];
@@ -135,14 +137,17 @@ cs_rad_transfer_source_terms(cs_real_t  rhs[],
       }
     }
     else {
-      for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++) {
+      /* FIXME ? in Renuda commit fro rfsck model, implicit part
+         (rad_st_imp and fimp were ignored when
+         cs_glob_rad_transfer_params->imrcfsk == 1
+         but this did not seem consistent */
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         rad_st_impl[c_id] = CS_MAX(-rad_st_impl[c_id], 0.0);
         fimp[c_id] += rad_st_impl[c_id] * cell_vol[c_id];
         rhs[c_id] += rad_st_expl[c_id] * cell_vol[c_id];
       }
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

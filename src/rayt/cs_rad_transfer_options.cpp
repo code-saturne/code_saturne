@@ -31,11 +31,11 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
 #include <float.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -58,17 +58,17 @@
 #include "cs_restart.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_thermal_model.h"
 #include "cs_time_control.h"
 #include "cs_timer.h"
-#include "cs_thermal_model.h"
 
 #include "cs_coal.h"
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
 
 #include "cs_rad_transfer.h"
-#include "cs_rad_transfer_fields.h"
 #include "cs_rad_transfer_dir.h"
+#include "cs_rad_transfer_fields.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -125,8 +125,7 @@ cs_rad_transfer_options(void)
 
   /* ->  Restart computation (read restart) */
 
-  rt_params->restart
-    = (cs_restart_present()) ? 1 : 0;
+  rt_params->restart = (cs_restart_present()) ? 1 : 0;
 
   /* ->  Explicit radiative source term computation mode
    *            = 0 => Semi-analytic (mandatory if transparent)
@@ -146,27 +145,27 @@ cs_rad_transfer_options(void)
   if (rt_params->imfsck == 1)
     rt_params->nwsgg = 7;
 
+  if (rt_params->imrcfsk == 1)
+    rt_params->nwsgg = 10;
+
   /* Add bands for Direct Solar, diFUse solar and InfraRed
    * and for solar: make the distinction between UV-visible (absorbed by O3)
    * and Solar IR (SIR) absobed by H2O
    * if activated */
   {
-    if (rt_params->atmo_model
-        != CS_RAD_ATMO_3D_NONE)
+    if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
       rt_params->nwsgg = 0;
 
     /* Fields for atmospheric Direct Solar (DR) model
      * (SIR only if SUV is not activated) */
-    if (rt_params->atmo_model
-        & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
       rt_params->atmo_dr_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
 
     /* Fields for atmospheric Direct Solar (DR) model
      * (SUV band) */
-    if (rt_params->atmo_model
-        & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND) {
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND) {
       rt_params->atmo_dr_o3_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
@@ -210,9 +209,21 @@ cs_rad_transfer_options(void)
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Radiative module"),
-                                "cs_glob_rad_transfer_params->imodak",
-                                cs_glob_rad_transfer_params->imodak,
+                                "cs_glob_rad_transfer_params->imgrey",
+                                cs_glob_rad_transfer_params->imgrey,
                                 0, 3);
+
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Radiative module"),
+                                "cs_glob_rad_transfer_params->imfsck",
+                                cs_glob_rad_transfer_params->imfsck,
+                                0, 2);
+
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Radiative module"),
+                                "cs_glob_rad_transfer_params->imrcfsk",
+                                cs_glob_rad_transfer_params->imrcfsk,
+                                0, 2);
 
   /* Verifications */
 
@@ -272,7 +283,6 @@ cs_rad_transfer_options(void)
   /* Quadrature initialization */
 
   cs_rad_transfer_dir();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -328,10 +338,10 @@ cs_rad_transfer_log_setup(void)
          cs_glob_rad_transfer_params->ndirec);
   }
 
-  const char *imodak_value_str[]
-    = {N_("0 (do not use Modak)"),
-       N_("1 (Modak absorption coefficient)"),
-       N_("2 (Magnussen, Kent and Honnery models")};
+  const char *imgrey_value_str[]
+    = {N_("0 (do not use the grey body model)"),
+       N_("1 (Classical grey body model - Modak)"),
+       N_("2 (New grey body model - Magnussen, Kent and Honnery models")};
 
   const char *imoadf_value_str[]
     = {N_("0 (no AFD model)"),
@@ -342,6 +352,10 @@ cs_rad_transfer_log_setup(void)
     = {N_("0 (no FSCK model)"),
        N_("1 (FSCK model activated)"),
        N_("2 (FSCK model activated with tabulated properties)")};
+
+  const char *imrcfsk_value_str[]
+    = {N_("0 (no RCFSK model)"),
+       N_("1 (RCFSK model activated)")};
 
   const char *idiver_value_str[]
     = {N_("-1 (no renormalization)"),
@@ -354,12 +368,12 @@ cs_rad_transfer_log_setup(void)
           "   corrected for global conservation)")};
 
   cs_log_printf(CS_LOG_SETUP,
-                  _("    idiver:        %s\n"),
+                _("    idiver:        %s\n"),
                 _(idiver_value_str[cs_glob_rad_transfer_params->idiver+1]));
 
   cs_log_printf(CS_LOG_SETUP,
-                  _("    imodak:        %s\n"),
-                _(imodak_value_str[cs_glob_rad_transfer_params->imodak]));
+                _("    imgrey:        %s\n"),
+                _(imgrey_value_str[cs_glob_rad_transfer_params->imgrey]));
 
   const char *iimpar_value_str[]
     = {N_("0 (do not log wall temperature)"),
@@ -367,7 +381,7 @@ cs_rad_transfer_log_setup(void)
        N_("2 (detailed wall temperature compute log)")};
 
   cs_log_printf(CS_LOG_SETUP,
-                  _("    iimpar:        %s\n"),
+                _("    iimpar:        %s\n"),
                 _(iimpar_value_str[cs_glob_rad_transfer_params->iimpar]));
 
   const char *iimlum_value_str[]
@@ -382,12 +396,16 @@ cs_rad_transfer_log_setup(void)
                 _(iimlum_value_str[iimlum]));
 
   cs_log_printf(CS_LOG_SETUP,
-                  _("    imoadf:        %s\n"),
+                _("    imoadf:        %s\n"),
                 _(imoadf_value_str[cs_glob_rad_transfer_params->imoadf]));
 
   cs_log_printf(CS_LOG_SETUP,
-                  _("    imfsck:        %s\n"),
+                _("    imfsck:        %s\n"),
                 _(imfsck_value_str[cs_glob_rad_transfer_params->imfsck]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    imrcfsk:       %s\n"),
+                _(imrcfsk_value_str[cs_glob_rad_transfer_params->imrcfsk]));
 
   if (cs_glob_rad_transfer_params->atmo_model) {
 
@@ -401,36 +419,29 @@ cs_rad_transfer_log_setup(void)
 
     if (  cs_glob_rad_transfer_params->atmo_model
         & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND)
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    Direct solar O3 atmospheric 3D model on\n"
-           "      band id = %d\n"),
-         cs_glob_rad_transfer_params->atmo_dr_o3_id);
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Direct solar O3 atmospheric 3D model on\n"
+                      "      band id = %d\n"),
+                    cs_glob_rad_transfer_params->atmo_dr_o3_id);
 
-    if (  cs_glob_rad_transfer_params->atmo_model
-        & CS_RAD_ATMO_3D_DIFFUSE_SOLAR)
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    Diffuse solar atmospheric 3D model on\n"
-           "      band id = %d\n"),
-         cs_glob_rad_transfer_params->atmo_df_id);
+    if (cs_glob_rad_transfer_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR)
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Diffuse solar atmospheric 3D model on\n"
+                      "      band id = %d\n"),
+                    cs_glob_rad_transfer_params->atmo_df_id);
 
-   if (  cs_glob_rad_transfer_params->atmo_model
+    if (cs_glob_rad_transfer_params->atmo_model
         & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND)
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    Diffuse solar O3 atmospheric 3D model on\n"
-           "      band id = %d\n"),
-         cs_glob_rad_transfer_params->atmo_df_o3_id);
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Diffuse solar O3 atmospheric 3D model on\n"
+                      "      band id = %d\n"),
+                    cs_glob_rad_transfer_params->atmo_df_o3_id);
 
-    if (  cs_glob_rad_transfer_params->atmo_model
-        & CS_RAD_ATMO_3D_INFRARED)
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    Infra-red atmospheric 3D model on\n"
-           "      band id = %d\n"),
-         cs_glob_rad_transfer_params->atmo_ir_id);
-
+    if (cs_glob_rad_transfer_params->atmo_model & CS_RAD_ATMO_3D_INFRARED)
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Infra-red atmospheric 3D model on\n"
+                      "      band id = %d\n"),
+                    cs_glob_rad_transfer_params->atmo_ir_id);
   }
 }
 

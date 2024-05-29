@@ -468,6 +468,16 @@ cs_combustion_gas_log_setup(void)
                     "    rosoot: %14.5e (Soot density)\n\n"),
                   cm->rosoot);
     break;
+  case 2:
+    /* Smoke Point model */
+    cs_log_printf(CS_LOG_SETUP, _("    isoot:     2 (Smoke Point model)\n\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Parameter for the soot model:\n"
+                    "    rosoot: %14.5e (Soot density)\n"
+                    "    lsp_fuel: %14.5e (Laminar smoke point)\n\n"),
+                  cm->rosoot,
+                  cm->lsp_fuel);
+    break;
   default:
     break;
   }

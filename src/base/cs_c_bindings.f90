@@ -1047,6 +1047,44 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function to compute the Burke Schumann combustion model
+
+    subroutine cs_burke_schumann() &
+       bind(C, name='cs_burke_schumann')
+       use, intrinsic :: iso_c_binding
+       implicit none
+    end subroutine cs_burke_schumann
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to compute the enthalpy using the Burke Schumann
+    ! combustion model
+
+    function cs_compute_burke_schumann_enthalpy(t, yspec) &
+       bind(C, name="cs_compute_burke_schumann_enthalpy")
+       use, intrinsic :: iso_c_binding
+       implicit none
+       real(c_double) :: cs_compute_burke_schumann_enthalpy
+       real(c_double), intent(in), value :: t
+       real(c_double), intent(in), dimension(*) :: yspec
+    end function cs_compute_burke_schumann_enthalpy
+
+   !---------------------------------------------------------------------------
+
+   ! Interface to C function to compute the fluid properties using the
+   ! Burke Schumann combustion model
+
+    subroutine cs_compute_burke_schumann_properties(z_m_0, zvar_0, xr_m_0, phi_t) &
+       bind(C, name="cs_compute_burke_schumann_properties")
+       use, intrinsic :: iso_c_binding
+       real(c_double), intent(in), value :: z_m_0
+       real(c_double), intent(in), value :: zvar_0
+       real(c_double), intent(in), value :: xr_m_0
+       real(c_double), intent(inout), dimension(*) :: phi_t
+    end subroutine cs_compute_burke_schumann_properties
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function updating scalar array ghost values.
 
     subroutine synsca(var)  &

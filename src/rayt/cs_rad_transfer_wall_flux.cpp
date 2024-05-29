@@ -161,6 +161,7 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
 
   int       *i_buf;
   cs_real_t *r_buf;
+  cs_real_t  rdptmp[5];
   const size_t  buf_stride = n_zones;
 
   BFT_MALLOC(i_buf, n_zones, int);
@@ -173,7 +174,6 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
   cs_real_t  *flunet = r_buf + buf_stride*3;
   cs_real_t  *radios = r_buf + buf_stride*4;
   cs_real_t  *surft  = r_buf + buf_stride*5;
-  cs_real_t  *rdptmp = r_buf + buf_stride*6;
 
   for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
     indtp[log_z_id]  = 0;

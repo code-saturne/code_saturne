@@ -2152,7 +2152,7 @@ Bug fixes:
 
 - Allow mesh joining when no vertices are modified.
 
-- Allow use of Modak absorption using the GUI for gas combustion.
+- Allow use of Grey Body absorption using the GUI for gas combustion.
 
 - Fix turbulent exchange coefficient of condensation in case of forced
   convection (the wall function computes Sch*y+/Y+ and not y+/Y+).
@@ -2336,7 +2336,10 @@ Physical modelling:
   with iadded_mass=1).
 
 - Add FSCK radiative model for coal combustion.
-  Activate it in cs_user_parameters.f90 with imfsck=1.
+  Activate it in cs_user_parameters.f90 with imfsck=1 or using the GUI.
+
+- Add RCFSK radiative model for gas combustion.
+  Activate it in cs_user_parameters.f90 with imrcfsk=1 or using the GUI.
 
 - Add a wall function for the velocity based on scalable wall function
   which is valid for both rough and smooth walls (activate it with

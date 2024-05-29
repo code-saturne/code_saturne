@@ -301,7 +301,7 @@ class ThermalRadiationModel(Variables, Model):
         """
         Put value of attribute type of 'absorption_coefficient' markup
         """
-        self.isInList(type, ('constant', 'variable', 'formula', 'modak'))
+        self.isInList(type, ('constant', 'variable', 'formula', 'modak', 'new_grey_body', 'spectral_model'))
         node  = self.node_ray.xmlInitNode('absorption_coefficient', 'type')
         node['type'] = type
 

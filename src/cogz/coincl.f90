@@ -191,7 +191,7 @@ module coincl
   !     ROSOOT: soot density
 
   integer(c_int), pointer, save :: isoot
-  real(c_double), pointer, save :: xsoot, rosoot
+  real(c_double), pointer, save :: xsoot, rosoot, lsp_fuel
 
   ! --- Temperature/Enthalpy conversion
 
@@ -299,6 +299,10 @@ module coincl
   !> pointer for soot mass fraction in isca (isoot = 1)
   integer, save :: ifsm
 
+  !> Burke Schumann combustion model constants
+  integer, parameter :: n_z = 80, n_xr = 5, n_zvar = 10
+  integer, parameter :: n_var_bsh = 7, nvar_turb = 10
+
   !> \}
 
   !=============================================================================
@@ -319,6 +323,7 @@ module coincl
     subroutine cs_f_coincl_get_pointers(p_isoot, p_use_janaf, &
                                         p_coefeg, p_compog,   &
                                         p_xsoot, p_rosoot,    &
+                                        p_lsp_fuel,           &
                                         p_hinfue, p_hinoxy,   &
                                         p_pcigas, p_tinfue,   &
                                         p_tinoxy,             &
@@ -328,7 +333,7 @@ module coincl
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_isoot, p_use_janaf
-      type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot
+      type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot, p_lsp_fuel
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
       type(c_ptr), intent(out) :: p_tinoxy
       type(c_ptr), intent(out) :: p_fmin, p_fmax, p_hmin, p_hmax
@@ -376,15 +381,16 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_isoot, c_use_janaf,                  &
-                   c_coefeg, c_compog, c_xsoot,           &
-                   c_rosoot, c_hinfue, c_hinoxy,          &
-                   c_pcigas, c_tinfue, c_tinoxy,          &
+    type(c_ptr) :: c_isoot, c_use_janaf,                     &
+                   c_coefeg, c_compog, c_xsoot,              &
+                   c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy, &
+                   c_pcigas, c_tinfue, c_tinoxy,             &
                    c_fmin, c_fmax, c_hmin, c_hmax
 
     call cs_f_coincl_get_pointers(c_isoot, c_use_janaf,         &
                                   c_coefeg, c_compog,           &
                                   c_xsoot,  c_rosoot,           &
+                                  c_lsp_fuel,                   &
                                   c_hinfue, c_hinoxy,           &
                                   c_pcigas, c_tinfue, c_tinoxy, &
                                   c_fmin, c_fmax, c_hmin, c_hmax)
@@ -395,6 +401,7 @@ contains
     call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
     call c_f_pointer(c_xsoot, xsoot)
     call c_f_pointer(c_rosoot, rosoot)
+    call c_f_pointer(c_lsp_fuel, lsp_fuel)
     call c_f_pointer(c_hinfue, hinfue)
     call c_f_pointer(c_hinoxy, hinoxy)
     call c_f_pointer(c_pcigas, pcigas)

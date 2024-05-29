@@ -1,5 +1,5 @@
 /*============================================================================
- * Radiation solver MODAK library.
+ * Radiation solver Grey Body library (Modak's model).
  *============================================================================*/
 
 /* This file is part of code_saturne, a general-purpose CFD tool.
@@ -559,21 +559,21 @@ _absorb(cs_real_t  ts,
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("\n"
-                    "Modak model error:\n"
+                    "Modak grey body model error:\n"
                     "  the product path*Ts/T*pCO2 or path*Ts/T*pH2O\n"
                     "  is greater than 5.98 atm.meters."));
     }
     else
       bft_error(__FILE__, __LINE__, 0,
                 _("\n"
-                  "Modak model error:\n"
+                  "Modak grey body model error:\n"
                   "  the sum of partial pressures of CO2 and H2O gases\n"
                   "  is greater than 1 atmosphere."));
   }
   else
     bft_error(__FILE__, __LINE__, 0,
               _("\n"
-                "Modak model error:\n"
+                "Modak grey body model error:\n"
                 "  the mixture temperature Te or blackbody temperature Ts\n"
                 "  is out of domain validity bounds."));
 

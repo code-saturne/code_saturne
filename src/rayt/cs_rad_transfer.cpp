@@ -99,10 +99,10 @@ BEGIN_C_DECLS
         - 0: no display
         - 1: standard
         - 2: complete
-  \var  cs_rad_transfer_params_t::imodak
-        When gas or coal combustion is activated, \ref imodak indicates whether
+  \var  cs_rad_transfer_params_t::imgrey
+        When gas or coal combustion is activated, \ref imgrey indicates whether
         the absorption coefficient shall be calculated "automatically" (=1)
-        or read from the data file (=0).
+        using Modak's model or read from the data file (=0).
   \var  cs_rad_transfer_params_t::imoadf
         ADF model:
         - 0 no ADF model
@@ -114,6 +114,10 @@ BEGIN_C_DECLS
         FSCK model:
         - 0 no FSCK model
         - 1 FSCK model activated
+  \var  cs_rad_transfer_params_t::imrcfsk
+        RCFSK model:
+        - 0 no RCFSK model
+        - 1 RCFSK model activated
   \var  cs_rad_transfer_params_t::xnp1mx
         For the P-1 model, percentage of cells for which we allow the optical
         thickness to exceed unity, although this should be avoided.
@@ -221,10 +225,11 @@ cs_rad_transfer_params_t _rt_params = {
   .nrphas = 1,
   .iimpar = 1,
   .verbosity = 0,
-  .imodak = 0,
+  .imgrey = 0,
   .imoadf = 0,
   .iwrp1t = 0,
   .imfsck = 0,
+  .imrcfsk = 0,
   .xnp1mx = 10.,
   .idiver = -1,
   .i_quadrature = 1,

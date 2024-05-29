@@ -838,6 +838,11 @@ cs_gui_physical_model_select(void)
             cm->isoot = 1;
             cs_gui_node_get_child_real(tn_soot, "soot_density",
                                        &(cm->rosoot));}
+          else if (cs_gui_strcmp(model_soot, "smoke")) {
+            cm->isoot = 2;
+            cs_gui_node_get_child_real(tn_soot, "soot_density", &(cm->rosoot));
+            cs_gui_node_get_child_real(tn_soot, "lsp_fuel", &(cm->lsp_fuel));
+          }
         }
 
         /* Read name of thermochemistry data file */

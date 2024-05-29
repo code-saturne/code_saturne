@@ -1,8 +1,8 @@
-#ifndef __CS_RAD_TRANSFER_DOM_H__
-#define __CS_RAD_TRANSFER_DOM_H__
+#ifndef __CS_COMBUSTION_BSH_HEADERS_H__
+#define __CS_COMBUSTION_BSH_HEADERS_H__
 
 /*============================================================================
- * Radiation solver boundary conditions treatment.
+ * Burke Schumann combustion model.
  *============================================================================*/
 
 /*
@@ -28,48 +28,69 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+
+#include "cs_combustion_gas.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Local Macro definitions
+/*============================================================================
+ * Global variables
  *============================================================================*/
 
-/*============================================================================
- * Type definition
- *============================================================================*/
+/*! Burke Schumann combustion model thermal coefficients */
 
-/*============================================================================
- *  Global variables
- *============================================================================*/
+extern cs_real_t coeff_therm[7][2][5];
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief Solve the radiative transfer equation.
- *
- * Two types of method are available:
- * - Discrete Ordinates Methods (DOM)
- * - P-1 approximation (only recommended for pulverized coal)
- *
- * \param[in, out]  bc_type  boundary face types
+/*!
+ * \brief Compute the fluid properties from the Burke-Schumann combustion model.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_solve(int  bc_type[]);
+cs_compute_burke_schumann_properties(cs_real_t  z_m_0,
+                                     cs_real_t  zvar_0,
+                                     cs_real_t  xr_m_0,
+                                     cs_real_t *phi_t);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the parameters needed for the Burke-Schumann combustion
+ * model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_burke_schumann(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculate enthalpy using the Burke-Schumann model.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t cs_compute_burke_schumann_enthalpy
+(
+  cs_real_t t,
+  cs_real_t yspec[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS]
+);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_DOM_H__ */
+#endif /* __CS_COMBUSTION_BSH_HEADERS_H__ */

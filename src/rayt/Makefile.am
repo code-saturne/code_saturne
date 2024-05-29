@@ -79,6 +79,7 @@ cs_rad_transfer_options.h \
 cs_rad_transfer_wall_flux.h \
 cs_rad_transfer_bcs.h \
 cs_rad_transfer_fsck.h \
+cs_rad_transfer_rcfsk.h \
 cs_rad_transfer_adf_models.h \
 cs_rad_transfer_pun.h \
 cs_rad_transfer_solve.h \
@@ -100,7 +101,8 @@ cs_rad_transfer_options.cpp \
 cs_rad_transfer_bcs.cpp \
 cs_rad_transfer_wall_flux.cpp \
 cs_rad_transfer_fsck.cpp \
-cs_rad_transfer_adf_models.cpp\
+cs_rad_transfer_rcfsk.cpp \
+cs_rad_transfer_adf_models.cpp \
 cs_rad_transfer_pun.cpp \
 cs_rad_transfer_solve.cpp \
 cs_rad_transfer_modak.cpp \

@@ -75,6 +75,29 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute absorption coefficient for the case of gas combustion.
+ *
+ * For the P-1 model, this function also checks whether the medium's optical
+ * length is at least of the order of unity.
+ *
+ * \param[in]   tempk      gas phase temperature at cells (in Kelvin)
+ * \param[out]  cpro_cak0  medium (gas) Absorption coefficient
+ * \param[out]  kgas       radiation coefficients of the gray gases at cells
+ *                         (per gas)
+ * \param[out]  agas       weights of the gray gases at cells (per gas)
+ * \param[out]  agasb      weights of the gray gases at boundary faces (per gas)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
+                                 cs_real_t        cpro_cak0[],
+                                 cs_real_t        kgas[],
+                                 cs_real_t        agas[],
+                                 cs_real_t        agasb[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check the absorption validity fo the P-1 approximation.
  *
  * For the P-1 model, the medium's optical length should be at least of

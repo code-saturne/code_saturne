@@ -2,7 +2,7 @@
 #define __CS_RAD_TRANSFER_MODAK_H__
 
 /*============================================================================
- * Radiation solver operations.
+ * Radiation solver Grey Body library (Modak's model).
  *============================================================================*/
 
 /*

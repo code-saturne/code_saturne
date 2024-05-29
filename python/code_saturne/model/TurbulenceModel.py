@@ -176,6 +176,7 @@ class TurbulenceModel(Variables, Model):
 
         if self.node_gas and self.node_gas['model'] != 'off':
             turbList = self.RANSmodels()
+            turbList.insert(0, "off")
 
         if self.node_coal and self.node_coal['model'] != 'off':
             turbList = ('off', 'k-epsilon', 'k-epsilon-PL')

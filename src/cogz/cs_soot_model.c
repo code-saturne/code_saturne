@@ -52,11 +52,8 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
-//#include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
-//#include "cs_parameters.h"
 #include "cs_parall.h"
-//#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -262,12 +259,17 @@ cs_soot_production(int        f_id,
   }
   else if (isoot == 2) {
 
+    const cs_real_t lsp_c2h4 = 0.106, af_c2h4 = 4.e-5;
     cs_real_t fst = cm->fs[0];
-    cs_real_t a0 = 120., as = 160.e3, af = 4.e-5;
-    cs_real_t gama = 2.25, tact = 2000., yft = 1.;
-    cs_real_t lspref = 0.11, lspfuel = 0.16, rcto0 = 0.58;
-    cs_real_t yg[n_gas_g], ye[n_gas_e], xe[n_gas_e];
-    cs_real_t *cvar_ys = CS_F_(fsm)->val;
+    cs_real_t a0 = 120., as = 160.e3;
+    cs_real_t gama = 2.25, tact = 2000., yft = 1., rcto0 = 0.6;
+
+    /* lsp_fuel set by the user */
+    const cs_real_t lsp_fuel = cm->lsp_fuel;
+    cs_real_t *cvar_ys  = CS_F_(fsm)->val;
+    const cs_real_t zso = 1.25 * fst;
+    const cs_real_t zsf   = 2.50 * fst;
+    const cs_real_t afuel = af_c2h4 * lsp_c2h4 / lsp_fuel;
 
     if (f_id == CS_F_(fsm)->id) {
 
@@ -278,22 +280,17 @@ cs_soot_production(int        f_id,
       cs_array_real_fill_zero(n_cells, wso);
       cs_array_real_fill_zero(n_cells, wsf);
 
-      cs_real_t rfst = (1. / fst - 1.) / (2. + 0.5 * (8. / 3.));
-      cs_real_t zso = rcto0 / (rcto0 + rfst);
-
-      /* zso= 1.25D0*fst */
-      cs_real_t zsf = 2.5 * fst;
-      cs_real_t afuel = af * lspref / lspfuel;
-
       const cs_real_t *cvar_fm = CS_F_(fm)->val;
 
-      # pragma omp parallel for
+      #pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-        cs_real_t fm = cvar_fm[c_id];
-        cs_real_t rho = crom[c_id]; // Mixture density (kg/m3)
-        cs_real_t temp = cvar_temp[c_id]; // Temperature
-        cs_real_t zetas = cvar_ys[c_id]; // fraction massique de suies (SU)
+        const cs_real_t fm    = cvar_fm[c_id];
+        const cs_real_t rho   = crom[c_id];      // Mixture density (kg/m3)
+        const cs_real_t temp  = cvar_temp[c_id]; // Temperature
+        const cs_real_t zetas = cvar_ys[c_id];   // Soot Mass Fraction
+
+        cs_real_t yg[n_gas_g], ye[n_gas_e], xe[n_gas_e];
 
         yg[0] = cvar_ym1[c_id];
         yg[1] = cvar_ym2[c_id];
@@ -301,7 +298,7 @@ cs_soot_production(int        f_id,
 
         cs_combustion_gas_yg2xye(yg, ye, xe);
 
-        cs_real_t cxo2 = xe[1];
+        const cs_real_t cxo2 = rho * ye[1] / cm->wmole[1];
 
         if ((fm >= zso) && (fm <= zsf)) {
           wsf[c_id] =   afuel * pow(rho, 2) * (yft *(fm - fst)

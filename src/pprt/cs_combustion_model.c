@@ -33,8 +33,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,8 +42,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
 #include "bft_error.h"
+#include "bft_mem.h"
 #include "bft_printf.h"
 #include "cs_base.h"
 #include "cs_file.h"
@@ -56,8 +56,9 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_combustion_gas.h"
 #include "cs_coal.h"
+#include "cs_combustion_bsh.h"
+#include "cs_combustion_gas.h"
 
 #include "cs_combustion_model.h"
 
@@ -131,6 +132,7 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **compog,
                          double  **xsoot,
                          double  **rosoot,
+                         double  **lsp_fuel,
                          double  **hinfue,
                          double  **hinoxy,
                          double  **pcigas,
@@ -257,6 +259,7 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **compog,
                          double  **xsoot,
                          double  **rosoot,
+                         double  **lsp_fuel,
                          double  **hinfue,
                          double  **hinoxy,
                          double  **pcigas,
@@ -273,6 +276,7 @@ cs_f_coincl_get_pointers(int     **isoot,
   *compog = NULL;
   *xsoot  = NULL;
   *rosoot = NULL;
+  *lsp_fuel = NULL;
   *hinfue = NULL;
   *tinfue = NULL;
   *hinoxy = NULL;
@@ -288,11 +292,12 @@ cs_f_coincl_get_pointers(int     **isoot,
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
     *isoot  = &(cm->isoot);
-    *use_janaf  = &(cm->use_janaf);
+    *use_janaf = &(cm->use_janaf);
     *coefeg = &(cm->coefeg[0][0]);
     *compog = &(cm->compog[0][0]);
     *xsoot  = &(cm->xsoot);
     *rosoot = &(cm->rosoot);
+    *lsp_fuel = &(cm->lsp_fuel);
     *hinfue = &(cm->hinfue);
     *tinfue = &(cm->tinfue);
     *hinoxy = &(cm->hinoxy);
@@ -477,6 +482,14 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
     }
   }
 
+  for (int ne = 0; ne < ncoel; ne++) {
+    for (int inicff = 0; inicff < 2; inicff++) {
+      for (int injcff = 0; injcff < 7; injcff++) {
+        coeff_therm[injcff][inicff][ne] = 0.0;
+      }
+    }
+  }
+
   char *s = cs_file_gets(buf, 127, impjnf, &line);  /* dummy read for 1st line */
 
   /* Read temperature data */
@@ -518,8 +531,10 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
       if (strcmp(nomcoel[ne], nomesp) == 0) {
         icoeff[ne] = 1;
         for (int inicff = 0; inicff < 2; inicff++) {
-          for (int injcff = 0; injcff < 7; injcff++)
+          for (int injcff = 0; injcff < 7; injcff++) {
             coeff[injcff][inicff][ne] = wcoeff[injcff][inicff];
+            coeff_therm[injcff][inicff][ne] = wcoeff[injcff][inicff];
+          }
         }
       }
     }
@@ -529,6 +544,16 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
   /* Finish reading if all data has beeen stored */
 
   impjnf = cs_file_free(impjnf);
+
+  for (int ne = 0; ne < ncoel; ne++) {
+    for (int inicff = 0; inicff < 2; inicff++) {
+      for (int injcff = 0; injcff < 7; injcff++) {
+        coeff_therm[injcff][inicff][ne] = cs_physical_constants_r
+                                          * coeff_therm[injcff][inicff][ne]
+                                          / wmolce[ne];
+      }
+    }
+  }
 
   /* Test and possible stop */
 

@@ -31,11 +31,11 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
 #include <float.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -56,8 +56,8 @@
 #include "cs_parameters.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
-#include "cs_timer.h"
 #include "cs_time_step.h"
+#include "cs_timer.h"
 
 #include "cs_rad_transfer.h"
 
@@ -155,7 +155,7 @@ _line_to_array(FILE       *radfile,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief number of segents
+ * \brief number of segments
  *
  * \param[in]     trad          Reference temperature
  * \param[in]     t             Local Temperature
@@ -220,7 +220,7 @@ _gridposnbsg1(cs_real_t  trad,
   }
   /* linear in x */
   else {
-    if (i < 0) //not possible...
+    if (i < 0) // not possible...
       i = 0;
     else if (i > nconc - 2)
       i = nconc - 2;
@@ -267,7 +267,7 @@ _gridposnbsg1(cs_real_t  trad,
   }
   /* linear in x */
   else {
-    if (i < 0) //not possible...
+    if (i < 0) // not possible...
       i = 0;
     else if (i > nconc - 2)
       i = nconc - 2;
@@ -298,10 +298,10 @@ _gridposnbsg1(cs_real_t  trad,
       ita[3] = i + 2;
     }
     else if (i == 0) {
-      ita[0]  = 0;
-      ita[1]  = 1;
-      ita[2]  = 2;
-      ita[3]  = 3;
+      ita[0] = 0;
+      ita[1] = 1;
+      ita[2] = 2;
+      ita[3] = 3;
     }
     else if (i == nt - 1) {
       ita[0] = nt - 4;
@@ -315,7 +315,7 @@ _gridposnbsg1(cs_real_t  trad,
   /* linear in t */
   else {
     if (i < 0)
-      i  = 0;
+      i = 0;
     else if (i > nt - 2)
       i = nt - 2;
     ita[0] = i;
@@ -362,7 +362,7 @@ _gridposnbsg1(cs_real_t  trad,
   /* linear in t */
   else {
     if (i < 0)
-        i = 0;
+      i = 0;
     else if (i > nt - 1) {
       i = nt - 1;
     }
@@ -415,8 +415,7 @@ _seval(int       n,
     i = 0;
 
   /*  Binary search */
-  if (   u < x[i]
-      || u > x[i + 1]) {
+  if (u < x[i] || u > x[i + 1]) {
     i = 0;
     int j = n;
     int k = (j + i)/2;
@@ -495,31 +494,29 @@ _splmi(int        n,
       al[0] =  (  pow((h[0] + h[1]), 2.0) * y[1]
                 - pow (h[0], 2.0) * y[2]
                 - h[1] * (2.0 * h[0] + h[1]) * y[0])
-             / (h[1] * (h[0] + h[1]) * (y[1] - y[0]));
+              / (h[1] * (h[0] + h[1]) * (y[1] - y[0]));
 
     for (int i = 1; i < nm1; i++) {
       if (CS_ABS(delta[0]) < eps)
         al[i] =  (  pow(h[i - 1], 2.0) * y[i + 1]
-                  + (pow (h[i], 2.0) - pow (h[i - 1], 2.0)) * y[i]
-                  - pow (h[i], 2.0) * y[i - 1])
-               / (h[i - 1] * (h[i] + h[i - 1]) * (y[i + 1] - y[i]));
-
+                  + (pow(h[i], 2.0) - pow(h[i - 1], 2.0)) * y[i]
+                  -  pow(h[i], 2.0) * y[i - 1])
+                / (h[i - 1] * (h[i] + h[i - 1]) * (y[i + 1] - y[i]));
     }
 
     int nm2 = n - 2;
     for (int i = 0; i < nm2; i++) {
       if (CS_ABS(delta[0]) < eps)
-        be[i] =  (  pow(h[i], 2.0) * y[i + 2]
-                  + (pow (h[i + 1], 2.0) - pow (h[i], 2.0)) * y[i + 1]
-                  - pow (h[i + 1], 2.0) * y[i])
-               / (h[i + 1] * (h[i] + h[i + 1]) * (y[i + 1] - y[i]));
-
+        be[i] = (pow(h[i], 2.0) * y[i + 2]
+                 + (pow(h[i + 1], 2.0) - pow(h[i], 2.0)) * y[i + 1]
+                 - pow(h[i + 1], 2.0) * y[i])
+                / (h[i + 1] * (h[i] + h[i + 1]) * (y[i + 1] - y[i]));
     }
 
     if (CS_ABS(delta[0]) < eps) {
       be[n - 2] =  (  h[n - 3] * (2.0 * h[n - 2] + h[n - 3]) * y[n - 1]
-                     - pow((h[n - 2] + h[n - 3]), 2.0) * y[n - 2]
-                     + pow (h[n - 2], 2.0) * y[n - 3])
+                    - pow((h[n - 2] + h[n - 3]), 2.0) * y[n - 2]
+                    + pow(h[n - 2], 2.0) * y[n - 3])
                   / (h[n - 3] * (h[n - 2] + h[n - 3]) * (y[n - 1] - y[n - 2]));
     }
 
@@ -533,18 +530,17 @@ _splmi(int        n,
                                 / (al[i] + be[i] - 2.0) / 3.0;
 
         if (phi < 0.0) {
-          cs_real_t ti = 3.0 / sqrt (pow (al[i], 2.0) + pow (be[i], 2.0));
+          cs_real_t ti = 3.0 / sqrt(pow(al[i], 2.0) + pow(be[i], 2.0));
           al[i] = ti * al[i];
           be[i] = ti * be[i];
         }
-
       }
     }
 
     /* Calculate spline coefficients */
 
     for (int i = 0; i < nm1; i++) {
-      d[i] = (al[i] + be[i] - 2.0) * delta[i] / (pow (h[i], 2.0));
+      d[i] = (al[i] + be[i] - 2.0) * delta[i] / (pow(h[i], 2.0));
       c[i] = (3.0 - 2.0 * al[i] - be[i]) * delta[i] / (h[i]);
       b[i] = al[i] * delta[i];
       if (b[i] * delta[i] < 0.0) {
@@ -557,7 +553,6 @@ _splmi(int        n,
     b[n - 1] = be[n - 2] * delta[n - 2];
     c[n - 1] = 0.0;
     d[n - 1] = 0.0;
-
   }
   else if (n == 2) {
 
@@ -567,7 +562,6 @@ _splmi(int        n,
     b[1] = b[0];
     c[1] = 0.0;
     d[1] = 0.0;
-
   }
 }
 
@@ -585,12 +579,12 @@ _splmi(int        n,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_simple_interpg (int        nxy,
-                 cs_real_t  xx[],
-                 cs_real_t  yy[],
-                 int        ni,
-                 cs_real_t  xi[],
-                 cs_real_t  yi[])
+_simple_interpg(int        nxy,
+                cs_real_t  xx[],
+                cs_real_t  yy[],
+                int        ni,
+                cs_real_t  xi[],
+                cs_real_t  yi[])
 {
   int ibgn = 0;
 
@@ -605,7 +599,6 @@ _simple_interpg (int        nxy,
       else if (xi[iq] > xx[nxy])
         yi[iq] = yy[nxy];
 
-
       /* interpolate */
       if (CS_ABS(xi[iq] - xx[i]) / (xx[i] + 1e-15) < 0.001) {
         yi[iq] = yy[i];
@@ -614,7 +607,7 @@ _simple_interpg (int        nxy,
       }
       else if (xx[i] > xi[iq]) {
         yi[iq] =   yy[i - 1]
-                + (yy[i] - yy[i - 1]) * (xi[iq] - xx[i - 1])
+                 + (yy[i] - yy[i - 1]) * (xi[iq] - xx[i - 1])
                                       / CS_MAX(1e-09, (xx[i] - xx[i - 1]));
         ibgn = i;
         break;
@@ -649,8 +642,8 @@ _interpolation4d(cs_real_t trad,
                  cs_real_t gdb[],
                  cs_real_t kdb[])
 {
-  int     itx[4][4];
-  int     nix, nit;
+  int itx[4][4];
+  int nix, nit;
 
   cs_real_t *karray, *kint1, *kint2, *kint3;
   BFT_MALLOC(karray, ng*4*4*4*4, cs_real_t);
@@ -671,31 +664,26 @@ _interpolation4d(cs_real_t trad,
     gdb[i] = gi[i];
 
   /* number of interpolation points along t & x: 2 linear or 4 spline */
-  _gridposnbsg1(trad,
-                t,
-                xco2,
-                xh2o,
-                interp_method,
-                itx);
+  _gridposnbsg1(trad, t, xco2, xh2o, interp_method, itx);
 
   /* spline over x */
   if (interp_method == im2dspline)
-    nix  = 4;
+    nix = 4;
   else
-    nix  = 2;
+    nix = 2;
 
   /* spline over t */
   if (interp_method != 0)
-    nit  = 4;
+    nit = 4;
   else
-    nit  = 2;
+    nit = 2;
 
   /* Attribute interpolation point indexes along T & x */
 
   int itrada[4] = {0, 0, 0, 0};
   int ita[4]    = {0, 0, 0, 0};
-  int ico2a[4] = {0, 0, 0, 0};
-  int ih2oa[4] = {0, 0, 0, 0};
+  int ico2a[4]  = {0, 0, 0, 0};
+  int ih2oa[4]  = {0, 0, 0, 0};
 
   for (int i = 0; i < nit; i++) {
     itrada[i] = itx[0][i];
@@ -716,12 +704,12 @@ _interpolation4d(cs_real_t trad,
                    + ico2*4
                    + it*4*4
                    + itrad*4*4*4
-                   + ig*4*4*4*4] =
-              kmfs[  ih2oa[ih2o]
-                   + ico2a[ico2]*nconc
-                   + ita[it]*nconc*nconc
-                   + itrada[itrad]*nconc*nconc*nt
-                   + ig*nconc*nconc*nt*nt];
+                   + ig*4*4*4*4]
+              = kmfs[  ih2oa[ih2o]
+                     + ico2a[ico2]*nconc
+                     + ita[it]*nconc*nconc
+                     + itrada[itrad]*nconc*nconc*nt
+                     + ig*nconc*nconc*nt*nt];
           }
         }
       }
@@ -830,12 +818,12 @@ _interpolation4d(cs_real_t trad,
         kg_t2[2] = tt[ita[2]];
         kg_t2[3] = tt[ita[3]];
         int nargs = 4;
-        _splmi (nargs,
-                kg_t2,
-                &kint2[0 + itrad*4 + ig*4*4],
-                b,
-                c,
-                d);
+        _splmi(nargs,
+               kg_t2,
+               &kint2[0 + itrad*4 + ig*4*4],
+               b,
+               c,
+               d);
         kint3[itrad + ig*4] = _seval(nargs,
                                      t,
                                      kg_t2,
@@ -871,13 +859,7 @@ _interpolation4d(cs_real_t trad,
              b,
              c,
              d);
-      kdb[ig] = _seval(nargs,
-                       trad,
-                       kg_t2,
-                       &kint3[0 + ig*4],
-                       b,
-                       c,
-                       d);
+      kdb[ig] = _seval(nargs, trad, kg_t2, &kint3[0 + ig*4], b, c, d);
     }
   }
   else {
@@ -963,7 +945,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     BFT_MALLOC(wv,    nband, cs_real_t);
     BFT_MALLOC(dwv,   nband, cs_real_t);
 
-    BFT_MALLOC(kmfs, nconc * nconc * nt *nt *ng, cs_real_t);
+    BFT_MALLOC(kmfs, nconc * nconc * nt * nt * ng, cs_real_t);
 
     /* Read k-distributions */
     {
@@ -1093,8 +1075,8 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 
       for (int j = 0; j < m; j++) {
         if (unfinished[j]) {
-          p1[j]    = 1.0;
-          p2[j]    = 0.0;
+          p1[j] = 1.0;
+          p2[j] = 0.0;
         }
       }
 
@@ -1128,9 +1110,11 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     }
 
     if (its == maxit)
-      cs_log_printf(CS_LOG_DEFAULT, "Maximum number of iterations during GAULEG");
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "Maximum number of iterations during GAULEG");
 
-    /* Scale the root to the desired interval, and put in its symmetric counterpart. */
+    /* Scale the root to the desired interval, and put in its symmetric
+     * counterpart. */
 
     for (int j = 0; j < m; j++) {
       gq[j]         = xm - xl * z[j];
@@ -1141,7 +1125,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 
     for (int j = 0; j < m; j++) {
       cs_glob_rad_transfer_params->wq[j]
-        = 2.0 * xl / ((1.0 - pow (z[j], 2.0)) * pow (pp[j], 2.0));
+        = 2.0 * xl / ((1.0 - pow(z[j], 2.0)) * pow(pp[j], 2.0));
       cs_glob_rad_transfer_params->wq[n - j + 1]
         = cs_glob_rad_transfer_params->wq[j];
     }
@@ -1189,9 +1173,8 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
         }
       }
     }
-    cs_real_t kpt4dv =  kp
-                      * pow(teloc[iel], 4.0)
-                      * cs_glob_mesh_quantities->cell_vol[iel];
+    cs_real_t kpt4dv =  kp * pow(teloc[iel], 4.0)
+                           * cs_glob_mesh_quantities->cell_vol[iel];
     sum1 += kpt4dv * teloc[iel];
     sum2 += kpt4dv;
   }
@@ -1230,13 +1213,13 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
       kfsk[i] = 0.;
       gfsk[i] = 0.;
     }
-    _interpolation4d (tref,
-                      teloc[iel],
-                      pco2[iel],
-                      ph2o[iel],
-                      interp_method,
-                      gfsk,
-                      kfsk);
+    _interpolation4d(tref,
+                     teloc[iel],
+                     pco2[iel],
+                     ph2o[iel],
+                     interp_method,
+                     gfsk,
+                     kfsk);
     /* [m^-1] */
     for (int i = 0; i < ng; i++)
       kfsk[i] *= 100.0;
@@ -1273,9 +1256,11 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     kfskref,
                     gfsk);
     as[0]  = (gfsk[1] - gfsk[0]) / (gfskref[1] - gfskref[0] + 1e-15);
-    as[ng-1] = (gfsk[ng-1] - gfsk[ng - 2]) / (gfskref[ng-1] - gfskref[ng - 2] + 1e-15);
+    as[ng-1] =   (gfsk[ng-1] - gfsk[ng - 2])
+               / (gfskref[ng-1] - gfskref[ng - 2] + 1e-15);
     for (int k = 1; k < ng - 1; k++)
-      as[k] = (gfsk[k + 1] - gfsk[k - 1]) / (gfskref[k + 1] - gfskref[k - 1] + 1e-15);
+      as[k] =    (gfsk[k + 1] - gfsk[k - 1])
+               / (gfskref[k + 1] - gfskref[k - 1] + 1e-15);
     _simple_interpg(ng,
                     gfskref,
                     as,
@@ -1307,7 +1292,8 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     as[0]  = (gfsk[1] - gfsk[0]) / (gfskref[1] - gfskref[0] + 1e-15);
     as[ng] = (gfsk[ng] - gfsk[ng - 1]) / (gfskref[ng] - gfskref[ng - 1] + 1e-15);
     for (int k = 1; k < ng - 1; k++)
-      as[k] = (gfsk[k + 1] - gfsk[k - 1]) / (gfskref[k + 1] - gfskref[k - 1] + 1e-15);
+      as[k] =   (gfsk[k + 1] - gfsk[k - 1])
+              / (gfskref[k + 1] - gfskref[k - 1] + 1e-15);
     _simple_interpg(ng,
                     gfskref,
                     as,

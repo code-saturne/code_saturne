@@ -504,13 +504,36 @@ _cs_rad_transfer_sol(int       gg_id,
 
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = nullptr;
-  if (   rt_params->imoadf >= 1
-      || rt_params->imfsck >= 1
+  if (   rt_params->imoadf  >= 1
+      || rt_params->imfsck  >= 1
+      || rt_params->imrcfsk == 1
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
   cs_equation_param_t *eqp =
     cs_field_get_equation_param(CS_FI_(radiance, gg_id));
+
+  /* For the case of the RCFSK scheme specify the equation parameters */
+  if (rt_params->imrcfsk == 1) {
+
+    eqp->verbosity  = rt_params->verbosity - 1;
+    eqp->iconv      = 1; /* Pure convection */
+    eqp->istat      = -1;
+    eqp->ndircl     = 1; /* There are Dirichlet BCs */
+    eqp->idiff      = 0; /* no face diffusion */
+    eqp->idifft     = -1;
+    eqp->isstpc     = 0;
+    eqp->nswrsm     = 1; /* One sweep is sufficient because of the upwind scheme */
+    eqp->imrgra     = cs_glob_space_disc->imrgra;
+    eqp->blencv     = 0;         /* Pure upwind...*/
+    eqp->epsrsm     = 1e-08;     /* TODO: try with default (1e-07) */
+
+    if (rt_params->dispersion) {
+      eqp->idiff  = 1; /* Added face diffusion */
+      eqp->nswrgr  = 20;
+      eqp->nswrsm  = 2;
+    }
+  }
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -1090,12 +1113,6 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
   BFT_FREE(net_flux_distant);
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Solve the radiative transfer equation.
@@ -1108,8 +1125,8 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_rad_transfer_solve(int  bc_type[])
+static void
+_rad_transfer_solve(int bc_type[])
 {
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
@@ -1127,7 +1144,8 @@ cs_rad_transfer_solve(int  bc_type[])
   cs_lnum_t n_b_faces   = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_i_faces   = cs_glob_mesh->n_i_faces;
 
-  cs_real_3_t *b_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  cs_real_3_t *b_face_normal
+    = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
   const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
@@ -1143,14 +1161,14 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* Allocate temporary arrays for the radiative equations resolution */
   cs_real_t *viscf, *viscb, *rhs, *rovsdt;
-  BFT_MALLOC(viscf,  n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb,  n_b_faces, cs_real_t);
-  BFT_MALLOC(rhs,  n_cells_ext, cs_real_t);
+  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
+  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate specific arrays for the radiative transfer module */
   cs_real_t *tempk, *flurds, *flurdb;
-  BFT_MALLOC(tempk,  n_cells * rt_params->nrphas, cs_real_t);
+  BFT_MALLOC(tempk, n_cells * rt_params->nrphas, cs_real_t);
   BFT_MALLOC(flurds, n_i_faces, cs_real_t);
   BFT_MALLOC(flurdb, n_b_faces, cs_real_t);
 
@@ -1249,7 +1267,7 @@ cs_rad_transfer_solve(int  bc_type[])
                     "      ----------------------------------------\n"));
 
   /* Constants initialization */
-  cs_real_t onedpi  = 1.0 / cs_math_pi;
+  cs_real_t onedpi = 1.0 / cs_math_pi;
 
   /* Bulk absorption:
    * Radiation absorbed by the gas phase and the solid phase
@@ -1297,7 +1315,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
     /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
      * for the gas phase and the solid/droplet phase (all classes) */
-    emim[cell_id]  = 0.0;
+    emim[cell_id] = 0.0;
 
     /* radiative flux vector */
     cpro_q[cell_id][0] = 0.0;
@@ -1314,7 +1332,7 @@ cs_rad_transfer_solve(int  bc_type[])
   }
 
   /* In case of grey gas radiation properties (kgi != f(lambda))
-     * agi must be set to 1. */
+   * agi must be set to 1. */
   for (int i = 0; i < nwsgg; i++) {
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       kgi[n_cells*i + cell_id] = 0.0;
@@ -1440,8 +1458,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
     cs_gui_rad_transfer_absorption(ckg);
 
-    if (   rt_params->type == CS_RAD_TRANSFER_P1
-        && ipadom <= 3)
+    if (rt_params->type == CS_RAD_TRANSFER_P1 && ipadom <= 3)
       cs_rad_transfer_absorption_check_p1(ckg);
 
     _internal_coupling_zero_solid_absorption(ckg);
@@ -1465,8 +1482,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
     cs_real_t ckmin = 0.0;
 
-    if (   rt_params->imoadf == 0
-        && rt_params->imfsck == 0) {
+    if (rt_params->imoadf == 0 && rt_params->imfsck == 0) {
 
       ckmin = ckg[0];
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -1601,7 +1617,7 @@ cs_rad_transfer_solve(int  bc_type[])
     }
 
     snprintf(f_name, 63, "spectral_emission_%02d", gg_id + 1);
-    cs_field_t *f_emi  = cs_field_by_name_try(f_name);
+    cs_field_t *f_emi = cs_field_by_name_try(f_name);
 
     /* P-1 radiation model
        ------------------- */
@@ -1634,7 +1650,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
       /* -> Gas phase: Implicit source term in the transport eqn. of theta4 */
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        rovsdt[cell_id] =  3.0 * ckg[cell_id] * cell_vol[cell_id];
+        rovsdt[cell_id] = 3.0 * ckg[cell_id] * cell_vol[cell_id];
 
       /* -> Coal solid phase or fuel droplets: */
       /* Implicit source term in the transport eqn. of theta4   */
@@ -1750,8 +1766,8 @@ cs_rad_transfer_solve(int  bc_type[])
         if (gg_id == rt_params->atmo_df_id) {
 
           snprintf(f_name, 63, "spectral_absorption_%02d",
-              rt_params->atmo_dr_id + 1);
-          cs_field_t *f_abs_dr  = cs_field_by_name_try(f_name);
+                   rt_params->atmo_dr_id + 1);
+          cs_field_t *f_abs_dr = cs_field_by_name_try(f_name);
           /* Emission initialized by direct absorption S0
            * Note: radiance is "1/pi * direct flux"
            * */
@@ -1761,8 +1777,8 @@ cs_rad_transfer_solve(int  bc_type[])
         if (gg_id == rt_params->atmo_df_o3_id) {
 
           snprintf(f_name, 63, "spectral_absorption_%02d",
-              rt_params->atmo_dr_o3_id + 1);
-          cs_field_t *f_abs_dr  = cs_field_by_name_try(f_name);
+                   rt_params->atmo_dr_o3_id + 1);
+          cs_field_t *f_abs_dr = cs_field_by_name_try(f_name);
           /* Emission initialized by direct absorption S0 * dtau/dz */
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
             f_emi->val[cell_id] = f_abs_dr->val[cell_id] * onedpi;
@@ -1771,15 +1787,17 @@ cs_rad_transfer_solve(int  bc_type[])
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] = f_emi->val[cell_id] * cell_vol[cell_id];
 
-      } else if (   pm_flag[CS_COMBUSTION_3PT] == -1
-                 && pm_flag[CS_COMBUSTION_EBU] == -1) {
+      }
+      else if (   pm_flag[CS_COMBUSTION_3PT] == -1
+               && pm_flag[CS_COMBUSTION_EBU] == -1) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          rhs[cell_id] =  c_stefan * ckg[cell_id]
-                                     * cs_math_pow4(tempk[cell_id])
-                                     * agi[n_cells*gg_id + cell_id]
-                                     * cell_vol[cell_id]
-                                     * onedpi;
-      } else {
+          rhs[cell_id] = c_stefan * ckg[cell_id]
+                                    * cs_math_pow4(tempk[cell_id])
+                                    * agi[n_cells*gg_id + cell_id]
+                                    * cell_vol[cell_id]
+                                    * onedpi;
+      }
+      else {
         cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -1964,7 +1982,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       /* Emitted intensity    */
-      cpro_lumin[cell_id]  += (int_rad_domega[cell_id] * wq[gg_id]);
+      cpro_lumin[cell_id] += (int_rad_domega[cell_id] * wq[gg_id]);
 
       /* Flux vector components    */
       cpro_q[cell_id][0] += iqpar[cell_id][0] * wq[gg_id];
@@ -2002,12 +2020,8 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* Basic definition for net flux */
 
-  //TODO compute net flux per band and global one...
-  _compute_net_flux(bc_type,
-                    twall,
-                    f_qinci->val,
-                    f_eps->val,
-                    f_fnet->val);
+  // TODO compute net flux per band and global one...
+  _compute_net_flux(bc_type, twall, f_qinci->val, f_eps->val, f_fnet->val);
 
   /*---> Reading of User data
    * CAREFUL: The user has access to the radiation coefficient (field f_cak1)
@@ -2059,7 +2073,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     int izone = b_face_class_id[ifac];
-    flux[izone]  += f_fnet->val[ifac] * b_face_surf[ifac];
+    flux[izone] += f_fnet->val[ifac] * b_face_surf[ifac];
     iflux[izone] = 1;
   }
 
@@ -2289,6 +2303,545 @@ cs_rad_transfer_solve(int  bc_type[])
   BFT_FREE(agi);
   BFT_FREE(w_gg);
   BFT_FREE(iqpar);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve the radiative transfer equation for the case of
+ *        the RCFSK model.
+ *
+ *  One type of method is available:
+ *  - Discretes Ordinates Methods (DOM)
+ *
+ *  \param[in, out]  bc_type  boundary face types
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rad_transfer_rcfsk_solve(int  bc_type[])
+{
+  /* Shorter notation */
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  const int                *pm_flag   = cs_glob_physical_model_flag;
+
+  const int nwsgg = rt_params->nwsgg;
+
+  /* Physical constants */
+  cs_real_t       tkelvi   = cs_physical_constants_celsius_to_kelvin;
+  const cs_real_t c_stefan = cs_physical_constants_stephan;
+
+  /* Mesh params */
+  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces   = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t n_i_faces   = cs_glob_mesh->n_i_faces;
+
+  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+  const cs_real_t *cell_vol    = cs_glob_mesh_quantities->cell_vol;
+
+  /* Number of passes */
+  ipadom++;
+
+  if (ipadom > 1
+      && cs_time_control_is_active(&(rt_params->time_control),
+                                   cs_glob_time_step)
+           == false)
+    return;
+
+  /* Allocate temporary arrays for the radiative equations resolution */
+  cs_real_t *viscf, *viscb, *rhs, *rovsdt;
+  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
+  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+
+  /* Allocate specific arrays for the radiative transfer module */
+  cs_real_t *flurds, *flurdb;
+  BFT_MALLOC(flurds, n_i_faces, cs_real_t);
+  BFT_MALLOC(flurdb, n_b_faces, cs_real_t);
+
+  /* Allocate work arrays */
+  /* Absorption coefficient of the bulk phase */
+  cs_real_t *ckmix;
+  BFT_MALLOC(ckmix, n_cells_ext, cs_real_t);
+
+  /* Map field arrays */
+  cs_field_t *f_tempb = CS_F_(t_b);
+  cs_field_t *f_qinci = CS_F_(qinci);
+  cs_field_t *f_xlam  = CS_F_(xlam);
+  cs_field_t *f_epa   = CS_F_(epa);
+  cs_field_t *f_eps   = CS_F_(emissivity);
+  cs_field_t *f_fnet  = CS_F_(fnet);
+
+  /* ADF model parameters */
+  /* Irradiating spectral flux density */
+  cs_field_t *f_qinsp = cs_field_by_name("spectral_rad_incident_flux");
+  cs_real_t *tempk = cs_field_by_name("temperature")->val;
+
+  /* Radiation coefficient kgi and corresponding weight agi
+     of the i-th grey gas
+     (the sum over the grey gases is  CS_FI_(rad_cak, 0)->val) */
+  cs_real_t *kgi, *agi;
+  BFT_MALLOC(kgi, n_cells_ext * nwsgg, cs_real_t);
+  BFT_MALLOC(agi, n_cells_ext * nwsgg, cs_real_t);
+
+  cs_real_t *int_rad_domega;
+  BFT_MALLOC(int_rad_domega, n_cells_ext, cs_real_t);
+
+  /* Flux density components   */
+  cs_real_3_t *iqpar;
+  BFT_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
+
+  /* Irradiating flux density at walls.
+     Careful: Should not be confused with qinci */
+  cs_real_t *iqpato;
+  BFT_MALLOC(iqpato, n_b_faces, cs_real_t);
+
+  /* Weight of the i-th grey gas at walls     */
+  cs_real_t *w_gg;
+  BFT_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
+
+  /* Wall temperature */
+  cs_real_t xptk;
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+    xptk = tkelvi;
+  else
+    xptk = 0.0;
+
+  cs_real_t *twall;
+  BFT_MALLOC(twall, n_b_faces, cs_real_t);
+
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    if (bc_type[ifac] == CS_SMOOTHWALL || bc_type[ifac] == CS_ROUGHWALL)
+      twall[ifac] = f_tempb->val[ifac] + xptk;
+    else
+      twall[ifac] = 0.0;
+  }
+
+  /* Initializations
+     --------------- */
+
+  int verbosity = rt_params->verbosity;
+  if (cs_log_default_is_active() == false)
+    verbosity -= 2;
+
+  if (verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("   ** Information on the radiative source term\n"
+                    "      ----------------------------------------\n"));
+
+  /* Constants initialization */
+  cs_real_t onedpi = 1.0 / cs_math_pi;
+
+  /* Bulk absorption:
+   * Radiation absorbed by the gas phase and the solid phase
+     (all particles classes) */
+  cs_real_t *absom = CS_FI_(rad_abs, 0)->val;
+
+  /* Bulk emission by the gas phase and the solid phase
+     (all particles classes)*/
+  cs_real_t *emim = CS_FI_(rad_emi, 0)->val;
+
+  /* Bulk implicit source term */
+  cs_real_t *rad_istm = CS_FI_(rad_ist, 0)->val;
+
+  /* Bulk explicit source term */
+  cs_real_t *rad_estm = CS_FI_(rad_est, 0)->val;
+
+  /* Medium (gas) absorption coefficient */
+  cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
+
+  /* Work arrays */
+  cs_real_t *int_abso = NULL, *int_emi, *int_rad_ist;
+  BFT_MALLOC(int_emi, n_cells_ext, cs_real_t);
+  BFT_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
+
+  cs_real_t   *cpro_lumin = CS_F_(rad_energy)->val;
+  cs_real_3_t *cpro_q     = (cs_real_3_t *)(CS_F_(rad_q)->val);
+
+  /* Work arrays */
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    /* Radiation coefficient k of the gas phase */
+    ckg[cell_id] = 0.0;
+
+    /* Bulk Implicit ST due to emission
+     * for the gas phase and the solid/droplet phase (all classes) */
+    rad_istm[cell_id] = 0.0;
+
+    /* Explicit ST due to emission and absorption */
+    rad_estm[cell_id] = 0.0;
+
+    /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
+     * for the gas phase and the solid/droplet phase (all classes) */
+    absom[cell_id] = 0.0;
+
+    /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
+     * for the gas phase and the solid/droplet phase (all classes) */
+    emim[cell_id] = 0.0;
+
+    /* radiative flux vector */
+    cpro_q[cell_id][0] = 0.0;
+    cpro_q[cell_id][1] = 0.0;
+    cpro_q[cell_id][2] = 0.0;
+
+    /* Total emitted intensity   */
+    cpro_lumin[cell_id] = 0.0;
+
+    /* Radiation coefficient of the bulk phase:
+     * for the gas phase and the solid/droplet phase (all classes) */
+    ckmix[cell_id] = 0.0;
+  }
+
+  /* In case of grey gas radiation properties (kgi != f(lambda))
+   * agi must be set to 1. */
+  for (int i = 0; i < nwsgg; i++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      kgi[n_cells * i + cell_id] = 0.0;
+      agi[n_cells * i + cell_id] = 1.0;
+    }
+  }
+
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    iqpato[ifac] = 0.0;
+    /* In case of grey gas radiation properties (kgi != f(lambda))
+     * w_gg must be set to 1. */
+    for (int i = 0; i < nwsgg; i++) {
+      w_gg[ifac + i * n_b_faces] = 1.0;
+    }
+  }
+
+  if (pm_flag[CS_COMBUSTION_SLFM] >= 0)
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+      for (int i = 0; i < nwsgg; i++)
+        w_gg[ifac + i * n_b_faces] = 0.0;
+
+  /* Upward/Downward atmospheric integration */
+  /* Postprocessing atmospheric upward and downward flux */
+  if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
+    cs_field_t *f_up   = cs_field_by_name_try("rad_flux_up");
+    cs_field_t *f_down = cs_field_by_name_try("rad_flux_down");
+    cs_field_set_values(f_up, 0.);
+    cs_field_set_values(f_down, 0.);
+  }
+
+  /* Absorption coefficient for different modules */
+
+  if (pm_flag[CS_COMBUSTION_3PT] >= 0)
+    cs_rad_transfer_rcfsk_absorption(tempk, ckg, kgi, agi, w_gg);
+
+  if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
+    for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
+      char f_name[64];
+      snprintf(f_name, 63, "spectral_absorption_coeff_%2d", gg_id + 1);
+      cs_field_t *f_kgabs = cs_field_by_name_try(f_name);
+
+      if (f_kgabs != NULL)
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          kgi[n_cells * gg_id + cell_id] = f_kgabs->val[cell_id];
+    }
+  }
+
+  /* Solving the ETR.
+     Loop over all gray gases. In case of the basic radiation models
+     of code_saturne, nwsgg=1 */
+
+  cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
+
+  for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
+
+    /* Get BC coeffs */
+    cs_field_bc_coeffs_t *bc_coeffs_rad = CS_FI_(radiance, gg_id)->bc_coeffs;
+
+    /* Use absorption field if existing */
+    char f_name[64];
+    snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
+    cs_field_t *f_abs = cs_field_by_name_try(f_name);
+
+    if (f_abs != NULL)
+      int_abso = f_abs->val;
+    else if (int_abso == NULL)
+      BFT_MALLOC(int_abso, n_cells_ext, cs_real_t);
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      ckg[cell_id] = kgi[n_cells * gg_id + cell_id];
+
+    /* -> Gas phase: Implicit source term of the ETR */
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      rovsdt[cell_id] = ckg[cell_id] * cell_vol[cell_id];
+
+    snprintf(f_name, 63, "spectral_emission_%02d", gg_id + 1);
+    cs_field_t *f_emi = cs_field_by_name_try(f_name);
+
+    /* -> Gas phase: Explicit source term of the ETR */
+    if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
+      if (f_emi != NULL) {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rhs[cell_id] = f_emi->val[cell_id] * cell_vol[cell_id];
+      }
+    }
+    else if (pm_flag[CS_COMBUSTION_3PT] == -1) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+        rhs[cell_id] = c_stefan * ckg[cell_id] * cs_math_pow4(tempk[cell_id])
+                       * agi[n_cells * gg_id + cell_id] * cell_vol[cell_id]
+                       * onedpi;
+    }
+    else if (pm_flag[CS_COMBUSTION_3PT] >= 0) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+        rhs[cell_id] = c_stefan * ckg[cell_id] * cpro_t4m[cell_id]
+                       * agi[n_cells * gg_id + cell_id] * cell_vol[cell_id]
+                       * onedpi;
+    }
+
+    /* TODO: add USER function here */
+
+    /* Update boundary condition coefficients:
+     * default ones, identical for each directions, may be overwritten
+     * afterwards */
+    cs_rad_transfer_bc_coeffs(bc_type,
+                              NULL, /*no specific direction */
+                              ckmix,
+                              cs_field_by_name("emissivity")->val,
+                              w_gg,
+                              gg_id,
+                              bc_coeffs_rad);
+
+    /* Solving */
+    _cs_rad_transfer_sol(gg_id,
+                         w_gg,
+                         tempk,
+                         ckg,
+                         bc_type,
+                         bc_coeffs_rad,
+                         flurds,
+                         flurdb,
+                         viscf,
+                         viscb,
+                         rhs,
+                         rovsdt,
+                         iqpar,
+                         int_rad_domega,
+                         int_abso,
+                         int_emi,
+                         int_rad_ist);
+
+    /* Summing up the quantities of each grey gas    */
+
+    /* Total absorption */
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      absom[cell_id] += ckg[cell_id] * int_rad_domega[cell_id];
+
+    /* Total Emission  */
+    if (pm_flag[CS_COMBUSTION_3PT] >= 0) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        emim[cell_id] -= ckg[cell_id] * 4.0 * c_stefan * cpro_t4m[cell_id]
+                         * agi[n_cells * gg_id + cell_id];
+      }
+    }
+    else if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
+      if (f_emi != NULL)
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          emim[cell_id] += -4.0 * cs_math_pi * f_emi->val[cell_id];
+    }
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      /* Total Emitted intensity    */
+      cpro_lumin[cell_id] += int_rad_domega[cell_id];
+
+      /* Flux vector components    */
+      cpro_q[cell_id][0] += iqpar[cell_id][0];
+      cpro_q[cell_id][1] += iqpar[cell_id][1];
+      cpro_q[cell_id][2] += iqpar[cell_id][2];
+    }
+
+    /* Total spectral flux densities */
+
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+      iqpato[ifac] += f_qinsp->val[gg_id + ifac * nwsgg];
+
+    if (f_abs == NULL && gg_id == nwsgg - 1)
+      BFT_FREE(int_abso);
+
+  } /* end loop on grey gas */
+
+  BFT_FREE(int_rad_domega);
+
+  /* Calculation of divQr */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+    rad_estm[cell_id] = absom[cell_id] + emim[cell_id];
+
+  /* The total radiative flux is copied in bqinci
+   * a) for post-processing reasons and
+   * b) in order to calculate bfnet */
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+    f_qinci->val[ifac] = iqpato[ifac];
+
+  /* Net radiative flux at walls: computation and integration */
+
+  /* -> Initialization to a non-admissible value for testing after
+   *    cs_user_rad_transfer_net_flux   */
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+    f_fnet->val[ifac] = -cs_math_big_r;
+
+  /* Basic definition for net flux */
+  _compute_net_flux(bc_type,
+                    twall,
+                    f_qinci->val,
+                    f_eps->val,
+                    f_fnet->val);
+
+  /*---> Reading of User data
+   * CAREFUL: The user has access to the radiation coefficient (field f_cak1)
+   * in cs_user_rad_transfer_net_flux.
+   * However, only when the standard radiation models of code_saturne are
+   * applied, this table contains the true value given by the user.
+   * Thus, the radiation coefficient in cs_user_rad_transfer_net_flux must
+   * be used with caution.
+   * In its present version cs_user_rad_transfer_net_flux does NOT use the
+   * radiation coefficient, and thus, cs_user_rad_transfer_net_flux can
+   * still be called here, even if the ADF model is activated.
+   */
+
+  cs_user_rad_transfer_net_flux(bc_type,
+                                twall,
+                                f_qinci->val,
+                                f_xlam->val,
+                                f_epa->val,
+                                f_eps->val,
+                                ckg,
+                                f_fnet->val);
+
+  /* Check net flux */
+  cs_real_t xlimit = -cs_math_big_r * 0.1;
+
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    if (f_fnet->val[ifac] <= xlimit)
+      bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+  }
+
+  cs_boundary_conditions_error(bc_type, "Net flux BC values");
+
+  /* Integrate net flux net on different boundary zones */
+
+  cs_boundary_zone_update_face_class_id();
+  const int  n_zones         = cs_boundary_zone_max_class_or_zone_id() + 1;
+  const int *b_face_class_id = cs_boundary_zone_face_class_or_zone_id();
+
+  int *iflux;
+  BFT_MALLOC(iflux, n_zones, int);
+
+  cs_real_t *flux;
+  BFT_MALLOC(flux, n_zones, cs_real_t);
+
+  for (int izone = 0; izone < n_zones; izone++) {
+    flux[izone]  = 0.0;
+    iflux[izone] = 0;
+  }
+
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    int izone    = b_face_class_id[ifac];
+    flux[izone]  = flux[izone] + f_fnet->val[ifac] * b_face_surf[ifac];
+    iflux[izone] = 1;
+  }
+
+  if (cs_glob_rank_id >= 0) {
+    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
+    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
+  }
+
+  if (verbosity > 0) {
+
+    cs_log_printf(
+      CS_LOG_DEFAULT,
+      _("\n"
+        "Zone         Radiative net flux (Watt) (outward-facing unit normal)\n"
+        "--------------------------------------\n"));
+
+    for (int izone = 0; izone < n_zones; izone++) {
+
+      if (iflux[izone] == 1)
+        cs_log_printf(
+          CS_LOG_DEFAULT, _("%6d             %11.4e\n"), izone, flux[izone]);
+    }
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+
+  }
+
+  /* -> Integrate net flux density at boundaries */
+  if (verbosity > 0) {
+    cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
+    cs_parall_sum(1, CS_REAL_TYPE, &aa);
+
+    cs_log_printf(
+      CS_LOG_DEFAULT,
+      _("Net radiative flux on all boundaries:      Fnet = %11.4e Watt\n"),
+      aa);
+  }
+
+  /* Internal coupling contribution */
+  if (cs_internal_coupling_n_couplings() > 0) {
+    cs_internal_coupling_t *cpl = NULL;
+
+    cs_field_t *tf = cs_thermal_model_field();
+    if (tf != NULL) {
+      const int coupling_key_id = cs_field_key_id("coupling_entity");
+      int       coupling_id     = cs_field_get_key_int(tf, coupling_key_id);
+      if (coupling_id >= 0)
+        cpl = cs_internal_coupling_by_id(coupling_id);
+    }
+
+    if (cpl != NULL)
+      _net_flux_internal_coupling_contribution(cpl, f_fnet->val);
+  }
+
+  if (verbosity > 0)
+    cs_log_separator(CS_LOG_DEFAULT);
+
+  /* Free memory */
+
+  BFT_FREE(iflux);
+  BFT_FREE(flux);
+  BFT_FREE(iqpato);
+  BFT_FREE(viscf);
+  BFT_FREE(viscb);
+  BFT_FREE(rhs);
+  BFT_FREE(rovsdt);
+  BFT_FREE(flurds);
+  BFT_FREE(flurdb);
+  BFT_FREE(int_emi);
+  BFT_FREE(int_rad_ist);
+  BFT_FREE(ckmix);
+  BFT_FREE(twall);
+  BFT_FREE(kgi);
+  BFT_FREE(agi);
+  BFT_FREE(w_gg);
+  BFT_FREE(iqpar);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve the radiative transfer equation.
+ *
+ *  \param[in, out]  bc_type  boundary face types
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rad_transfer_solve(int bc_type[])
+{
+  if (cs_glob_rad_transfer_params->imrcfsk == 1) {
+    _rad_transfer_rcfsk_solve(bc_type);
+  }
+  else {
+    _rad_transfer_solve(bc_type);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

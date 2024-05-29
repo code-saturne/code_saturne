@@ -175,6 +175,10 @@ _radiative_transfer_type(cs_tree_node_t  *tn_rt,
       *keyword = 2;
     else if (cs_gui_strcmp(type, "modak"))
       *keyword = 3;
+    else if (cs_gui_strcmp(type, "new_grey_body"))
+      *keyword = 4;
+    else if (cs_gui_strcmp(type, "spectral_model"))
+      *keyword = 5;
     else {
       bft_error (__FILE__, __LINE__, 0,
                  _("unknow type %s\n"), type);
@@ -292,7 +296,19 @@ cs_gui_radiative_transfer_parameters(void)
       int ac_type = 0;
       _radiative_transfer_type(tn0, "absorption_coefficient", &ac_type);
       if (ac_type == 3)
-        cs_glob_rad_transfer_params->imodak = 1;
+        cs_glob_rad_transfer_params->imgrey = 1;
+      else if (ac_type == 4)
+        cs_glob_rad_transfer_params->imgrey = 2;
+      else if (ac_type == 5) {
+        if (   (cs_glob_physical_model_flag[CS_COMBUSTION_3PT]  >= 0)
+            || (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0)) {
+          cs_glob_rad_transfer_params->imrcfsk = 1;
+          cs_glob_rad_transfer_params->imfsck  = 0;
+        } else {
+          cs_glob_rad_transfer_params->imrcfsk = 0;
+          cs_glob_rad_transfer_params->imfsck  = 1;
+        }
+      }
     }
     cs_gui_node_get_child_int
       (tn0, "frequency",
@@ -313,8 +329,8 @@ cs_gui_radiative_transfer_parameters(void)
     bft_printf("--iimpar = %d\n", cs_glob_rad_transfer_params->iimpar);
     bft_printf("--verbosity = %d\n", cs_glob_rad_transfer_params->verbosity);
     bft_printf("--absorption coefficient type: %d\n", ac_type);
-    bft_printf("--absorption coefficient by modak: %i\n",
-               cs_glob_rad_transfer_params->imodak);
+    bft_printf("--absorption coefficient by grey body model: %i\n",
+               cs_glob_rad_transfer_params->imgrey);
   }
 #endif
 }

@@ -1,8 +1,8 @@
-#ifndef __CS_RAD_TRANSFER_DOM_H__
-#define __CS_RAD_TRANSFER_DOM_H__
+#ifndef __CS_RAD_TRANSFER_RCFSK_H__
+#define __CS_RAD_TRANSFER_RCFSK_H__
 
 /*============================================================================
- * Radiation solver boundary conditions treatment.
+ * Radiation solver operations.
  *============================================================================*/
 
 /*
@@ -31,8 +31,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -54,22 +52,32 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief Solve the radiative transfer equation.
+/*!
+ *  \brief Determine the radiation coefficients of the RCFSK model
+ *         as well as the corresponding weights. This is applicable
+ *         for the case of gas combustion only.
  *
- * Two types of method are available:
- * - Discrete Ordinates Methods (DOM)
- * - P-1 approximation (only recommended for pulverized coal)
- *
- * \param[in, out]  bc_type  boundary face types
+ * \param[in]     pco2        CO2 volume fraction
+ * \param[in]     ph2o        H2O volume fraction
+ * \param[in]     fvsloc      soot volume fraction
+ * \param[in]     teloc       gas temperature
+ * \param[out]    kloc        radiation coefficient of the i different gases
+ * \param[out]    aloc        weights of the i different gases in cells
+ * \param[out]    alocb       weights of the i different gases at boundaries
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_solve(int  bc_type[]);
+cs_rad_transfer_rcfsk(const cs_real_t  *pco2,
+                      const cs_real_t  *ph2o,
+                      const cs_real_t  *fvsloc,
+                      const cs_real_t  *teloc,
+                      cs_real_t        *kloc,
+                      cs_real_t        *aloc,
+                      cs_real_t        *alocb);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_DOM_H__ */
+#endif /* __CS_RAD_TRANSFER_RCFSK_H__ */

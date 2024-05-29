@@ -76,6 +76,7 @@ use ppincl
 use mesh
 use field
 use cs_c_bindings
+use iso_c_binding
 
 !===============================================================================
 
@@ -83,8 +84,9 @@ implicit none
 
 ! Local variables
 
-integer          iel, igg
-double precision coefg(ngazgm), hair, tinitk
+integer          ii, iel, igg
+double precision coefg(ngazgm), hair
+double precision ye(ngaze), yg(ngazg), ytot
 
 double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
@@ -96,7 +98,11 @@ double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
 
 call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
 call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
-if (ippmod(icod3p).eq.1) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
+if (ippmod(icod3p).eq.1) then
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+endif
+
 if (isoot.ge.1) then
   call field_get_val_s(ivarfl(isca(inpm)), cvar_npm)
   call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
@@ -115,12 +121,24 @@ if ( isuite.eq.0 ) then
 
   ! ---> Initialization a with air at T0
 
-  ! Air enthalpy HAIR at TINIK
-  tinitk   = t0
-  coefg(1) = zero
-  coefg(2) = 1.d0
-  coefg(3) = zero
-  hair = cs_gas_combustion_t_to_h(coefg, tinitk)
+  yg(1) = 0.d0
+  yg(2) = 1.d0
+  yg(3) = 0.d0
+
+  do ii = 1, ngaze-1
+    ye(ii) = 0.d0
+    do igg = 1 ,ngazg
+        ye(ii) = ye(ii) + coefeg(ii,igg) * yg(igg)
+    enddo
+  enddo
+
+  ytot = 0.d0
+  do ii = 1, ngaze-1
+    ytot = ytot + ye(ii)
+  enddo
+  ye(ngaze) = 1.d0 - ytot
+
+  hair = cs_compute_burke_schumann_enthalpy(t0, ye)
 
   do iel = 1, ncel
 
@@ -141,20 +159,6 @@ if ( isuite.eq.0 ) then
 
   enddo
 
-  ! ---> User initialization, HINFUE and HINOXY are needed
-
-  ! Oxidant enthalpy HINOXY at TINOXY
-  coefg(1) = zero
-  coefg(2) = 1.d0
-  coefg(3) = zero
-  hinoxy = cs_gas_combustion_t_to_h(coefg, tinoxy)
-
-  ! Fuel enthalpy HINFUE at TINFUE
-  coefg(1) = 1.d0
-  coefg(2) = zero
-  coefg(3) = zero
-  hinfue = cs_gas_combustion_t_to_h(coefg, tinfue)
-
   ! ---> Parallelism and periodic exchange
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(cvar_fm)
@@ -170,13 +174,12 @@ if ( isuite.eq.0 ) then
 
 endif
 
-
 !----
 ! FORMATS
 !----
 
 !----
-! Fin
+! End
 !----
 
 return

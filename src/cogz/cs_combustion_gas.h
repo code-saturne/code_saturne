@@ -199,6 +199,7 @@ typedef struct {
 
   double  xsoot;                   /*!< soot fraction production (isoot = 0) */
   double  rosoot;                  /*!< soot density */
+  double  lsp_fuel;                /*!< Laminar smoke point length */
 
   /*! molar mass of global species */
   double  wmolg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];

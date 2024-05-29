@@ -263,7 +263,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.modelThermal.setItem(str_model=model)
 
         # Fluid Radiation model
-        #----------------
+        # ---------------
         self.__setFluidRadiation__(model)
 
         # inter-particles radiation model
@@ -271,7 +271,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.__setParticlesRadiation__()
 
         # Soot model
-        #----------------
+        # ---------------
 
         # Only activate soot for code_saturne (for which it is available).
         # Otherwise it may lead to the spurious apparition of pages for NCFD
@@ -371,13 +371,19 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         self.modelAbsorption.addItem('constant', 'constant')
         self.modelAbsorption.addItem('user function (cs_user_rad_transfer_absorption)', 'variable')
-        self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
+        self.modelAbsorption.addItem('Classical Gray Body Model', 'modak')
+        self.modelAbsorption.addItem('New Gray Body Model', 'new_grey_body')
+        self.modelAbsorption.addItem("Spectral Model", "spectral_model")
 
         if self.coal_or_gas != "off":
             self.modelAbsorption.disableItem(str_model='variable')
             self.modelAbsorption.enableItem(str_model='modak')
+            self.modelAbsorption.enableItem(str_model='new_grey_body')
+            self.modelAbsorption.enableItem(str_model="spectral_model")
         else:
             self.modelAbsorption.disableItem(str_model='modak')
+            self.modelAbsorption.disableItem(str_model='new_grey_body')
+            self.modelAbsorption.disableItem(str_model="spectral_model")
             self.modelAbsorption.enableItem(str_model='variable')
 
         # Initialization
@@ -425,17 +431,19 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         # Combo models
 
-        self.modelSoot   = ComboModel(self.comboBoxSoot, 3, 1)
+        self.modelSoot   = ComboModel(self.comboBoxSoot, 4, 1)
 
         self.modelSoot.addItem("None", 'off')
         self.modelSoot.addItem("Constant soot yield", 'constant_soot_yield')
         self.modelSoot.addItem("2 equations model of Moss et al.", 'moss')
+        self.modelSoot.addItem("Smoke Point model", 'smoke')
 
         # Connections
 
         self.comboBoxSoot.activated[str].connect(self.slotSoot)
         self.lineEditSootDensity.textChanged[str].connect(self.slotSootDensity)
         self.lineEditSootFraction.textChanged[str].connect(self.slotSootFraction)
+        self.lineEditLspFuel.textChanged[str].connect(self.slotLspFuel)
 
         # Validator
 
@@ -444,6 +452,9 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         validatorSootFraction = DoubleValidator(self.lineEditSootFraction, min=0.0, max=1.0)
         self.lineEditSootFraction.setValidator(validatorSootFraction)
+
+        validatorLspFuel = DoubleValidator(self.lineEditLspFuel, min=0.0)
+        self.lineEditLspFuel.setValidator(validatorLspFuel)
 
         # Initialization
 
@@ -559,6 +570,14 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.lineEditCoeff.hide()
             self.lineEditCoeff.setDisabled(True)
             self.label.hide()
+        elif typeCoeff == 'new_grey_body':
+            self.lineEditCoeff.hide()
+            self.lineEditCoeff.setDisabled(True)
+            self.label.hide()
+        elif typeCoeff == 'spectral_model':
+            self.lineEditCoeff.hide()
+            self.lineEditCoeff.setDisabled(True)
+            self.label.hide()
         else:
             self.lineEditCoeff.setDisabled(True)
 
@@ -610,6 +629,10 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.labelSootFractionbis.hide()
             self.lineEditSootFraction.hide()
 
+            self.labelLspFuel.hide()
+            self.lineEditLspFuel.hide()
+            self.label_5.hide()
+
         elif model == 'constant_soot_yield':
 
             self.labelSootDensity.show()
@@ -622,12 +645,36 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.lineEditSootFraction.show()
             self.lineEditSootFraction.setText(str(self.gas.getSootFraction()))
 
+            self.labelLspFuel.hide()
+            self.lineEditLspFuel.hide()
+            self.label_5.hide()
+
         elif model == 'moss':
 
             self.labelSootDensity.show()
             self.lineEditSootDensity.show()
             self.lineEditSootDensity.setText(str(self.gas.getSootDensity()))
             self.label_4.show()
+
+            self.labelSootFraction.hide()
+            self.labelSootFractionbis.hide()
+            self.lineEditSootFraction.hide()
+
+            self.labelLspFuel.hide()
+            self.lineEditLspFuel.hide()
+            self.label_5.hide()
+
+        elif model == 'smoke':
+
+            self.labelSootDensity.show()
+            self.lineEditSootDensity.show()
+            self.lineEditSootDensity.setText(str(self.gas.getSootDensity()))
+            self.label_4.show()
+
+            self.labelLspFuel.show()
+            self.lineEditLspFuel.show()
+            self.lineEditLspFuel.setText(str(self.gas.getSootLspFuel()))
+            self.label_5.show()
 
             self.labelSootFraction.hide()
             self.labelSootFractionbis.hide()
@@ -648,6 +695,14 @@ class ThermalView(QWidget, Ui_ThermalForm):
         if self.lineEditSootFraction.validator().state == QValidator.Acceptable:
             c  = from_qvariant(text, float)
             self.gas.setSootFraction(c)
+
+    @pyqtSlot(str)
+    def slotLspFuel(self, text):
+        """
+        """
+        if self.lineEditLspFuel.validator().state == QValidator.Acceptable:
+            c  = from_qvariant(text, float)
+            self.gas.setSootLspFuel(c)
 
 #-------------------------------------------------------------------------------
 # Testing part

@@ -136,15 +136,16 @@ typedef struct {
   int           nrphas;
   int           iimpar;
   int           verbosity; /*!< Radiance resolution verbosity */
-  int           imodak;    /*!< Absorption coefficient computation
-                                0: without modak
-                                1: with modak */
+  int           imgrey;    /*!< Absorption coefficient computation
+                                0: without the Grey Body model
+                                1: with the Grey Body model */
   int           imoadf;    /*!< ADF model:
                                 0: not used
                                 1: with wavelength interval of a 8
                                 2: with wavelength interval of a 50 */
   int           iwrp1t;
   int           imfsck;    /*!< FSCK model (0: off, 1: on) */
+  int           imrcfsk;   /*!< RCFSK model (0: off, 1: on) */
   double        xnp1mx;
   int           idiver;    /*!< Explicit radiative source term computation mode
                                -1: no renormalization

@@ -111,7 +111,7 @@ module radiat
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function handling resolution
+    ! Interface to C function handling radiation
 
     subroutine cs_rad_transfer_solve(bc_type)  &
       bind(C, name='cs_rad_transfer_solve')

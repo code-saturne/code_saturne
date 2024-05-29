@@ -502,7 +502,9 @@ cs_rad_transfer_add_property_fields(void)
     cs_field_pointer_map(CS_ENUMF_(qinci), f);
   }
 
-  if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1
+  if (   rt_params->imoadf >= 1
+      || rt_params->imfsck >= 1
+      || rt_params->imrcfsk >= 1
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
     f = cs_field_create("spectral_rad_incident_flux",
                         field_type,

@@ -63,6 +63,7 @@
 #include "cs_rad_transfer_modak.h"
 #include "cs_rad_transfer_adf_models.h"
 #include "cs_rad_transfer_fsck.h"
+#include "cs_rad_transfer_rcfsk.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -136,7 +137,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   /* Initialization */
 
-  if (   rt_params->imodak >= 1
+  if (   rt_params->imgrey >= 1
       || rt_params->imoadf >= 1
       || rt_params->imfsck >= 1) {
     BFT_MALLOC(w1, n_cells_ext, cs_real_t);
@@ -159,7 +160,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
-    if (rt_params->imodak > 0) {
+    if (rt_params->imgrey > 0) {
 
       const int n_gas_e = cm->n_gas_el_comp;
       const int n_gas_g = cm->n_gas_species;
@@ -184,7 +185,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       if (CS_F_(t) != nullptr)
         cpro_temp = CS_F_(t)->val;
       else
-        cpro_temp = CS_FI_(t,0)->val;
+        cpro_temp = CS_FI_(t, 0)->val;
 
       const cs_real_t *cpro_ym1 = cs_field_by_name("ym_fuel")->val;
       const cs_real_t *cpro_ym2 = cs_field_by_name("ym_oxyd")->val;
@@ -221,12 +222,12 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         cs_combustion_gas_yg2xye(yi, yk, xk);
         xpro = (xk[2] + xk[3]);
         w3[cell_id] = ys * crom[cell_id] / rosoot;
-        if (rt_params->imodak == 2) {
+        if (rt_params->imgrey == 2) {
           cpro_cak0[cell_id]
-            = 1225. * w3[cell_id] * cpro_temp[cell_id] +0.1 * xpro;
+            = 1225. * w3[cell_id] * cpro_temp[cell_id] + 0.1 * xpro;
         }
       }
-      if (rt_params->imodak == 1) {
+      if (rt_params->imgrey == 1) {
         cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
       }
 
@@ -244,7 +245,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
             kgas[n_cells*gg_id + cell_id] = f_kgabs->val[cell_id];
       }
     }
-    else { /* if (rt_params->imodak != 1) */
+    else { /* if (rt_params->imgrey != 1) */
       const cs_real_t *cpro_ckabs = cs_field_by_name("kabs")->val;
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         cpro_cak0[cell_id] = cpro_ckabs[cell_id];
@@ -264,27 +265,27 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
     const int ico2 = cm->ico2 - 1;
     const int ih2o = cm->ih2o - 1;
 
-    if (   rt_params->imodak == 1
+    if (   rt_params->imgrey == 1
         || rt_params->imoadf >= 1
         || rt_params->imfsck >= 1) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         /* CO2 volume concentration */
-        w1[cell_id] = cpro_mmel[cell_id]/wmole[ico2] *cpro_yco2[cell_id];
+        w1[cell_id] = cpro_mmel[cell_id]/wmole[ico2] * cpro_yco2[cell_id];
         /* H2O volume concentration */
         w2[cell_id] = cpro_mmel[cell_id]/wmole[ih2o] * cpro_yh2o[cell_id];
         /* soot volume fraction */
         w3[cell_id] = 0;
       }
 
-      if (rt_params->imodak == 1)
+      if (rt_params->imgrey == 1)
         cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
 
       else if (rt_params->imoadf == 1)
         cs_rad_transfer_adf08(w1, w2, tempk, kgas, agas, agasb);
 
       else if (rt_params->imoadf == 2)
-        cs_rad_transfer_adf50(w1, w2,tempk, kgas, agas, agasb);
+        cs_rad_transfer_adf50(w1, w2, tempk, kgas, agas, agasb);
 
       else if (rt_params->imfsck >= 1)
         cs_rad_transfer_fsck(w1, w2, tempk, kgas, agas, agasb);
@@ -407,7 +408,101 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
     BFT_FREE(w3);
 
   }
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute absorption coefficient for the case of the RCFSK model.
+ *
+ * \param[in]   tempk      gas phase temperature at cells (in Kelvin)
+ * \param[out]  cpro_cak0  medium (gas) Absorption coefficient
+ * \param[out]  kgas       radiation coefficients of the gray gases at cells
+ *                         (per gas)
+ * \param[out]  agas       weights of the gray gases at cells (per gas)
+ * \param[out]  agasb      weights of the gray gases at boundary faces (per gas)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
+                                 cs_real_t        cpro_cak0[],
+                                 cs_real_t        kgas[],
+                                 cs_real_t        agas[],
+                                 cs_real_t        agasb[])
+{
+  cs_real_t *w1 = NULL, *w2 = NULL, *w3 = NULL;
+
+  const cs_mesh_t *m           = cs_glob_mesh;
+  const int        n_cells     = m->n_cells;
+  const int        n_cells_ext = m->n_cells_with_ghosts;
+  const int       *pm_flag     = cs_glob_physical_model_flag;
+
+  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  /* Initialization */
+
+  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
+  BFT_MALLOC(w3, n_cells_ext, cs_real_t);
+
+  cs_real_t *crom = CS_F_(rho)->val;
+
+  const cs_real_t xsoot  = cm->xsoot;
+  const cs_real_t rosoot = cm->rosoot;
+
+  cs_real_t *cvar_fsm = NULL;
+  if (cm->isoot >= 1)
+    cvar_fsm = CS_F_(fsm)->val;
+
+  /* Absorption coefficient of gas mix (m-1)
+     --------------------------------------- */
+
+  /* Gas combustion:
+     - diffusion flame */
+
+  if (pm_flag[CS_COMBUSTION_3PT] >= 0) {
+
+    const cs_real_t *cpro_ym1 = cs_field_by_name("ym_fuel")->val;
+    const cs_real_t *cpro_ym2 = cs_field_by_name("ym_oxyd")->val;
+    const cs_real_t *cpro_ym3 = cs_field_by_name("ym_prod")->val;
+
+    const double *restrict wmolg = cm->wmolg;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+      cs_real_t xm
+        = 1.
+          / (cpro_ym1[cell_id] / wmolg[0] + cpro_ym2[cell_id] / wmolg[1]
+             + cpro_ym3[cell_id] / wmolg[2]);
+      w1[cell_id] = cpro_ym3[cell_id] * xm / wmolg[2] * cm->xco2;
+      w2[cell_id] = cpro_ym3[cell_id] * xm / wmolg[2] * cm->xh2o;
+
+      /* Soot model */
+
+      cs_real_t ys;
+      if (cm->isoot == 0 && cm->iic > 0)
+        ys = cpro_ym3[cell_id] * cm->coefeg[2][cm->iic - 1];
+      else if (cm->isoot == 0)
+        ys = xsoot * cpro_ym3[cell_id];
+      else if (cm->isoot >= 1)
+        ys = cvar_fsm[cell_id];
+      else
+        ys = 0;
+
+      /* Calculation of soot volume fraction */
+      w3[cell_id] = ys * crom[cell_id] / rosoot;
+    }
+
+    /* Calculation of the absorption coefficient using the RCFSK scheme */
+    cs_rad_transfer_rcfsk(w1, w2, w3, tempk, kgas, agas, agasb);
+
+  }
+
+  /* Free temporary memory */
+
+  BFT_FREE(w1);
+  BFT_FREE(w2);
+  BFT_FREE(w3);
 }
 
 /*----------------------------------------------------------------------------*/
