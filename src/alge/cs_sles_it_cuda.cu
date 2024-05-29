@@ -993,6 +993,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   double residual = -1.;
 
+  if (convergence->precision < 0);
     residual = convergence->precision * convergence->r_norm * 2;
 
   /* Allocate or map work arrays
