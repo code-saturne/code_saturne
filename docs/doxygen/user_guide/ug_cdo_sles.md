@@ -42,7 +42,7 @@ algebra in code_saturne, please consider to edit the function \ref
 cs_user_linear_solvers For a Finite Volume scheme, this is the main
 way to proceed.
 
-# Solve a linear system
+# Solve a linear system {#cs_ug_cdo_sles_set}
 
 Several examples are detailed hereafter to modify the default settings
 related to a linear solver.
@@ -365,13 +365,37 @@ One considers the following type of saddle-point systems \f$\mathsf{Mx = b}\f$ w
 where \f$A\f$ is a square non-singular matrix (symmetric or not
 according to the numerical and/or modelling choices).
 
+The key `CS_EQKEY_SADDLE_SOLVER` enables to set the solver (or the strategy) to
+solve the saddle-point problem associated to an equation. More details are
+gathered in the following table.
+
+key value | description | type | family
+:--- | :--- | :--- | :---:
+`"none"` | No solver. No saddle-point system to solve. | \ref CS_PARAM_SADDLE_SOLVER_NONE | saturne
+`"alu"` | Uzawa algorithm with an Augmented Lagrangian acceleration. Segregated technique. | \ref CS_PARAM_SADDLE_SOLVER_ALU | saturne
+`"fgmres"` | Flexible GMRES Krylov solver on the full system. Possibility to consider block preconditioning. The choice to approximate the Schur complement has an impact on the effeciency of the algorithm. Monolithic technique. | \ref CS_PARAM_SADDLE_SOLVER_FGMRES | PETSc
+`"gcr"` | GCR (Generalized Conjugate Residual) Krylov solver on the full system along with block preconditioning. The choice to approximate the Schur complement has an impact on the effeciency of the algorithm. Monolithic technique. | \ref CS_PARAM_SADDLE_SOLVER_GCR | saturne
+`"gkb"` | Golub-Kahan bidiagonalization.  An augmentation of the (1,1) block is possible. Use this technique on **symmetric** saddle-point systems. Segregated technique. | \ref CS_PARAM_SADDLE_SOLVER_GKB | saturne
+`"minres"` | MINRES Krylov solver on the full system along with block preconditioning. Close to the choice `"gcr"` but only for **symmetric** saddle-point systems. Monolithic technique. | \ref CS_PARAM_SADDLE_SOLVER_MINRES | saturne
+`"mumps"` | MUMPS sparse direct solver on the full system. Monolithic technique. | \ref CS_PARAM_SADDLE_SOLVER_MUMPS | MUMPS
+`"notay"` | Notay's algebraic transformation. Monolithic technique relying on a FMGRES on the modified system. Block preconditioning can be specified on the transformed blocks. (Experimental) | \ref CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM | PETSc
+`"uzawa_cg"` | Uzawa algorithm accelerated by a CG technique. Only for **symmetric** saddle-point systems. The choice to approximate the Schur complement has an impact on the effeciency of the algorithm. Segregated technique. | \ref CS_PARAM_SADDLE_SOLVER_UZAWA_CG | saturne
+
+In segregated technique, the (1,1)-block solver refers to the main solver. It
+can be set following the rationale described in \ref cs_ug_cdo_sles_set In
+monolothic technique, the (1,1)-block solver refers to the approximation of
+this block for preconditioning.  Moreover, for some strategies, additional SLES
+such as the Schur complement system can also be specified using the same
+rationale described in \ref cs_ug_cdo_sles_set.
+
 
 
 ## Augmented Lagrangian Uzawa algorithm (ALU)
 
 Here is a first example to set a saddle-point solver. One assumes that
-the external libraries have been installed and have been configured
-with code_saturne (see the installation guide for more details).
+the external library MUMPS has been installed and has been configured
+with code_saturne (see the installation guide for more details
+[here](@ref cs_dg_build_system)).
 
 \snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_alu
 
@@ -396,19 +420,9 @@ Here is a second example.
 \snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_alu_mumps
 
 
-
-## Golub-Kahan Bidiagonalization algorithm (GKB)
-
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_kcycle
-
-The linear system may be augmented to improve the convergence rate of the
-algorithm (but the system is harder to solve). Here is another example:
-
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_mumps
-
-
-
 ## Block preconditioners with a Krylov solver
+
+### In-house solvers
 
 The two in-house Krylov solvers available with block preconditioning are
 - **Minres** (Minimal residual) algorithm for symmetric indefinite systems such
@@ -421,16 +435,45 @@ These two algorithms are optimized to handle saddle-point problems in
 code_saturne since the (1,2) and (2,1) which are transposed is stored only
 once. Moreover, this block is stored in an unassembled way.
 
-Other block preconditioners with a Krylov solver can be set using the external
-librairy [PETSc](https://petsc.org)
-
 \snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_minres
 
+### PETSc solvers
 
+Other block preconditioners with a Krylov solver can be set using the external
+librairy [PETSc](https://petsc.org). The two main differences (in addition to
+the use of the PETSc library) are:
+1. The Krylov solver is a flexible GMRES algorithm
+2. The Schur complement approximation can differ since one hinges on the
+   choices available in PETSc. Please refer to the PETSc documentation for more
+   details.
+
+One uses the `FIELDSPLIT` functionnality to set the block preconditioning strategy.
+
+
+
+## Golub-Kahan Bidiagonalization algorithm (GKB)
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_kcycle
+
+The linear system may be augmented to improve the convergence rate of the
+algorithm (but the system is harder to solve). Here is another example:
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_mumps
+
+## Notay's algebraic transformation (Experimental)
+
+Here is an example in the case of a saddle-point system stemming from the
+Navier-Stokes equations.
+
+\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_notay
 
 ## Uzawa algorithm with a CG acceleration
 
 \snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_uzacg
+
+
+
+
 
 
 
@@ -445,3 +488,12 @@ function \ref cs_user_linear_solvers, add the following lines for
 instance:
 
 \snippet cs_user_parameters-cdo-linear_solvers.c linear_solver_immediate_exit
+
+## Allow no operation
+
+An immediate exit is possible (i.e. there is no solve) when the norm of the
+right-hand side is equal to zero or very close to zero (\ref cs_sles_set_epzero).
+To allow this kind of behavior for the SLES associated to an equation, one has
+to set the key `CS_EQKEY_SOLVER_NO_OP` to `true`.
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_allow_no_op

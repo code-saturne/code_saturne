@@ -364,6 +364,35 @@ cs_user_parameters(cs_domain_t    *domain)
                                  true); /* advanced optimizations */
   }
   /*! [param_cdo_navsto_sles_mumps] */
+
+  /*! [param_cdo_navsto_sles_notay] */
+  {
+    /* Parameters related to the momentum equation */
+
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
+
+    /* Linear algebra settings for the saddle-point system.
+     *  Notay's algebraic transformation is an experimental feature
+     *  The main solver is a FGMRES on the full saddle-point problem.
+     */
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "notay");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_MAX_ITER, "1000");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_RTOL, "1e-8");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_ATOL, "1e-14");
+
+    /* Set the solver for the (1,1)-block preconditioner --> the velocity block
+       in the case of the Navier-Stokes system */
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fgmres");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "upper");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_RTOL, "1e-2");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_MAX_ITER, "100");
+
+  }
+  /*! [param_cdo_navsto_sles_notay] */
 }
 
 /*----------------------------------------------------------------------------*/

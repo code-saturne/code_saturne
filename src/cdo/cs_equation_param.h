@@ -1111,18 +1111,13 @@ typedef struct {
  * "mass+lumped_inv" for a combination of "mass" and "lumped_inv"
  *
  * \var CS_EQKEY_SADDLE_SOLVER
- * Strategy/solver used to solve a saddle-point system.\n Read the description
+
+ * Set the strategy/solver used to solve a saddle-point system.\n Read the description
  * of the structure \ref cs_param_saddle_t for more details.
- * Available choices are:
- * - "none" No solver (default --> no saddle-point system)
- * - "alu" Augmented Lagrangien Uzawa
- * - "fgmres"  Flexible GMRES iterative solver (external library)
- * - "gcr"  GCR iterative solver
- * - "gkb" Golub-Kahan bidiagonalization
- * - "minres" MINRES iterative solver
- * - "mumps" MUMPS sparse direct solver (external library)
- * - "notay" Notay's transformation of saddle-point
- * - "uzawa_cg"  Uzawa algorithm accelerated by a CG-like technique.
+
+ * Specify the solver for the resolution of the linear system related to an
+ * equation. Please refer to the section \ref cs_ug_cdo_sles_saddle of the
+ * user guide for more details.
  *
  * \var CS_EQKEY_SADDLE_SOLVER_CLASS
  * Strategy/solver used to solve a saddle-point system.\n
