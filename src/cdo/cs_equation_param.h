@@ -1049,7 +1049,7 @@ typedef struct {
  * - "diag": diagonal (or additive) block preconditoner
  * - "lower": lower triangular (multiplicative) block preconditioner
  * - "upper": upper triangular (multiplicative) block preconditioner
- * - "symm": symmetric Gauss-Seidel block preconditioner
+ * - "symm"/"sgs": symmetric Gauss-Seidel block preconditioner
  *
  * \var CS_EQKEY_SADDLE_ATOL
  * Absolute tolerance under which the iterative process stops when solving a

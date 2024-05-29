@@ -492,7 +492,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "lower") == 0)
       eqp->sles_param->precond_block_type =
         CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR;
-    else if (strcmp(keyval, "symm") == 0)
+    else if (strcmp(keyval, "symm") == 0 || strcmp(keyval, "sgs") == 0)
       eqp->sles_param->precond_block_type =
         CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL;
     else if (strcmp(keyval, "upper") == 0)
