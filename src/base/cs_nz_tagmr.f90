@@ -232,6 +232,12 @@ interface
     implicit none
   end subroutine cs_f_wall_condensation_0d_thermal_solve
 
+  subroutine cs_wall_condensation_1d_thermal_mesh_initialize() &
+    bind(C, name="cs_wall_condensation_1d_thermal_mesh_initialize")
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_wall_condensation_1d_thermal_mesh_initialize
+
 end interface
 
 
@@ -342,7 +348,7 @@ contains
       call c_f_pointer(c_ztmur, ztmur, [nfbpcd, znmurx])
 
       !1-D mesh generated and temperature initialization
-      call cs_mesh_tagmr(nfbpcd, izzftcd)
+      call cs_wall_condensation_1d_thermal_mesh_initialize()
 
     endif
 

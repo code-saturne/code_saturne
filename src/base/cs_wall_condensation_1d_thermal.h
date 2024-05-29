@@ -166,6 +166,17 @@ void
 cs_wall_condensation_0d_thermal_solve(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Used to generate the 1-D mesh and initialize
+ *        the temperature field of the thermal model
+ *        coupled with condensation model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_1d_thermal_mesh_initialize(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -350,7 +350,6 @@ cs_log_iteration.c \
 cs_log_setup.c \
 cs_mobile_structures.c \
 cs_measures_util.c \
-cs_mesh_tagmr.f90 \
 cs_notebook.c \
 cs_numbering.c \
 cs_opts.c \

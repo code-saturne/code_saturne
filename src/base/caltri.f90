@@ -389,9 +389,6 @@ endif
 
 call cs_1d_wall_thermal_check(iappel, isuit1)
 
-! Free memory if relevant
-if (nfpt1t.eq.0) call cs_1d_wall_thermal_finalize
-
 ! Formats
  2002 format(                                    &
  /,/,'MASS SOURCE TERMS TREATMENT ACTIVATED ',/, &
@@ -1157,7 +1154,7 @@ if (icondb.gt.0 .or.icondv.eq.0) then
   call finalize_nz_mesh_tagmr
 endif
 
-if (nfpt1d.gt.0) then
+if (nfpt1d.gt.0 .or. nfpt1t.eq.0) then
   call cs_1d_wall_thermal_finalize
 endif
 

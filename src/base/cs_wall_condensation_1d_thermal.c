@@ -168,6 +168,56 @@ void cs_f_wall_condensation_0d_thermal_get_pointers(cs_real_t   **volume_thickne
  * Private function definitions
  *============================================================================*/
 
+static void
+_log_debug()
+{
+  const cs_lnum_t nfbpcd = cs_glob_wall_condensation->nfbpcd;
+  const cs_lnum_t *izzftcd = cs_glob_wall_condensation->izzftcd;
+
+  cs_real_t *zdxp = _wall_cond_1d_thermal.zdxp;
+
+  const int znmurx = _wall_cond_1d_thermal.znmurx;
+  const cs_lnum_t *znmur  = _wall_cond_1d_thermal.znmur;
+  const cs_real_t *zdxmin = _wall_cond_1d_thermal.zdxmin;
+  const cs_real_t *zepais = _wall_cond_1d_thermal.zepais;
+
+  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+
+    const cs_lnum_t iz = izzftcd[ii];
+    const cs_real_t _zdxmin = zdxmin[iz];
+    const cs_real_t _zepais = zepais[iz];
+    const cs_lnum_t _znmur  = znmur[iz] - 1;
+
+    int iter = 0;
+    cs_real_t r1 = 2.0;
+    cs_real_t delta = 1.e5;
+    const cs_real_t epsi = 0.0001;
+
+    while (delta > epsi && iter < 100) {
+      iter ++;
+      const cs_real_t r0 = r1;
+      r1 = pow( 1.0 + (_zepais*(r0-1.0))/_zdxmin, 1.0/(cs_real_t)_znmur );
+      const cs_real_t epai1 = _zdxmin*(pow(r1, _znmur)-1.0)/(r1-1.0);
+      delta = fabs(epai1 - _zepais)/_zepais;
+    }
+
+    bft_printf("------------------------------------------------\n"
+               "1-D mesh generation of the thermal model\n"
+               "this one is coupled with the condensation model.\n"
+               "------------------------------------------------\n"
+               "     geometric ratio : %10.07le\n", r1);
+
+    cs_real_t r0 = 0.0;
+    for (cs_lnum_t kk = 0; kk < _znmur; kk++) {
+      r0 += zdxp[kk + iz*znmurx];
+      if (kk == 0)
+        bft_printf("     cell id     cell size      distance to the wall\n");
+      bft_printf("           %d          %10.07le        %10.07le\n",
+                 kk, zdxp[kk + iz*znmurx], r0);
+    }
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -238,7 +288,6 @@ void cs_f_wall_condensation_0d_thermal_get_pointers(cs_real_t   **volume_thickne
  * \brief  Create the context for wall condensation models.
  *
  * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nvar     number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -506,6 +555,101 @@ cs_wall_condensation_0d_thermal_solve()
     bft_printf(" Min/Max heat propagation characteristic time:"
                " %15.7e   %15.7e\n", tau_min, tau_max);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Used to generate the 1-D mesh and initialize
+ *        the temperature field of the thermal model
+ *        coupled with condensation model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_1d_thermal_mesh_initialize(void)
+{
+  const cs_lnum_t nfbpcd = cs_glob_wall_condensation->nfbpcd;
+  const cs_lnum_t *izzftcd = cs_glob_wall_condensation->izzftcd;
+
+  cs_real_t *zdxp = _wall_cond_1d_thermal.zdxp;
+
+  const int znmurx = _wall_cond_1d_thermal.znmurx;
+  const int nzones =  _wall_cond_1d_thermal.nzones;
+  const cs_lnum_t *znmur  = _wall_cond_1d_thermal.znmur;
+  const cs_real_t *zdxmin = _wall_cond_1d_thermal.zdxmin;
+  const cs_real_t *zepais = _wall_cond_1d_thermal.zepais;
+
+  int iter = 0;
+  bool bug_iter = false;
+  bool log_debug = false;
+
+# pragma omp parallel for reduction(+:iter) if (nfbpcd > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+
+    const cs_lnum_t iz = izzftcd[ii];
+    const cs_lnum_t _znmur  = znmur[iz] - 1;
+
+    /* Generate a homegeneous 1-D mesh with constant space step
+         -------------------------------------------------------- */
+    if (   (zdxmin[iz] <= 0.0)
+        || (zdxmin[iz] > zepais[iz]/(cs_real_t)(_znmur))  ) {
+      for (cs_lnum_t kk = 0; kk < _znmur; kk++)
+        zdxp[iz + kk*nzones] = zepais[iz]/(cs_real_t)_znmur;
+    }
+    /* Generate a heterogeneous 1-D mesh with variable space step
+       ---------------------------------------------------------- */
+    else {
+      /* Compute the geometric ratio with a iterative method */
+      iter = 0;
+      cs_real_t r1 = 2.0;
+      cs_real_t delta = 1.e5;
+      const cs_real_t epsi = 0.0001;
+
+      while (delta > epsi && iter < 100) {
+        iter ++;
+        const cs_real_t r0 = r1;
+        r1 = pow( 1.0 + (zepais[iz]*(r0-1.0))/zdxmin[iz], 1.0/(cs_real_t)_znmur );
+        const cs_real_t epai1 = zdxmin[iz]*(pow(r1, _znmur)-1.0)/(r1-1.0);
+        delta = fabs(epai1 - zepais[iz])/zepais[iz];
+      }
+
+      /* Compute the final 1-D mesh of the thermal model  */
+      zdxp[iz] = zdxmin[iz];
+      for (cs_lnum_t kk = 1; kk < _znmur; kk++)
+        zdxp[iz + kk*nzones] = zdxp[iz + (kk-1)*nzones]*r1;
+    }
+
+    if (iter > 99)
+      bug_iter = true;
+
+  } // end loop on faces with condensation source terms
+
+  if (bug_iter)
+     bft_error(__FILE__, __LINE__, 0,
+              _("Error with the 1-D mesh Generation.\n"));
+
+  /* FIXME add verbosity control, or log only total/mean values. */
+  if (log_debug)
+    _log_debug();
+
+  /* If this is restarted computation, do not reinitialize values */
+  if (cs_glob_time_step->nt_prev > 0)
+    return;
+
+  /* Initialization of the 1D temperature field for the
+     thermal model which is coupled with the condensation model */
+
+  cs_real_t *ztmur = _wall_cond_1d_thermal.ztmur;
+  const cs_real_t *ztpar0 = _wall_cond_1d_thermal.ztpar0;
+
+# pragma omp parallel for if (nfbpcd > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+    const cs_lnum_t iz = izzftcd[ii];
+
+    for (cs_lnum_t kk = 0; kk < znmur[iz]; kk++)
+      ztmur[kk + ii*znmurx] = ztpar0[iz];
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
