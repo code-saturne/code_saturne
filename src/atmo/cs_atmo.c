@@ -2723,8 +2723,11 @@ cs_atmo_init_meteo_profiles(void)
 
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
-  bool is_humid = (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2 );
-  aopt->meteo_qwstar = is_humid ? aopt->meteo_qwstar : 0;
+  bool is_humid = (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2);
+
+  if (!is_humid)
+    aopt->meteo_qwstar = 0.;
+
   if (aopt->meteo_ustar0 <= 0. && aopt->meteo_uref <= 0. && aopt->meteo_u1 <= 0.
       && aopt->meteo_u2 <= 0.)
     bft_error(__FILE__,
@@ -2824,14 +2827,19 @@ cs_atmo_init_meteo_profiles(void)
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
   cs_real_t ustar0 = aopt->meteo_ustar0;
-  if (is_humid && (aopt->meteo_qwstar > 0.5*DBL_MAX)
-      && (aopt->meteo_evapor < 0.5*DBL_MAX)) {
+
+  /* Compute qwstar from evaporation */
+  if ((aopt->meteo_qwstar > 0.5*DBL_MAX) && (aopt->meteo_evapor < 0.5*DBL_MAX))
     aopt->meteo_qwstar = aopt->meteo_evapor / (ustar0 * phys_pro->ro0);
-  }
+
+  /* Deduce evaporation */
+  if (aopt->meteo_evapor > 0.5*DBL_MAX)
+    aopt->meteo_evapor = aopt->meteo_qwstar * (ustar0 * phys_pro->ro0);
+
   /* Note: rvsra - 1 = 0.61 */
   aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g)
                       - (phys_pro->rvsra - 1.) * theta0 * aopt->meteo_qwstar;
-    if ((aopt->meteo_zu1 < 0. && aopt->meteo_u1 > 0.)
+  if ((aopt->meteo_zu1 < 0. && aopt->meteo_u1 > 0.)
       || (aopt->meteo_zu2 < 0. && aopt->meteo_u2 > 0.))
     bft_error(__FILE__,
               __LINE__,
@@ -2909,6 +2917,7 @@ cs_atmo_init_meteo_profiles(void)
     aopt->meteo_ustar0 = kappa * du1u2 / (cs_mo_psim(z2, z1, dlmou));
     aopt->meteo_tstar  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmou));
     aopt->meteo_qwstar = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmou));
+    aopt->meteo_evapor = aopt->meteo_qwstar * (ustar0 * phys_pro->ro0);
     aopt->meteo_qw0    = qw1
       - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
     aopt->meteo_t0     = t1
