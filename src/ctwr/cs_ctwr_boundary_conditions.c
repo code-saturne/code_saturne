@@ -95,6 +95,7 @@ cs_ctwr_bcond(void)
 
   /* Fluid properties and physical variables */
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+  cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
   cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
   cs_field_t *y_l_r= cs_field_by_name("y_l_r");
@@ -106,7 +107,28 @@ cs_ctwr_bcond(void)
   cs_real_t tkelvin = cs_physical_constants_celsius_to_kelvin;
 
   const cs_real_t xhum = air_prop->humidity0;
-  const cs_real_t t0 =  cs_glob_fluid_properties->t0;
+  cs_real_t ref_temp = phys_pro->t0;
+
+  int code_dir = 1;
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    cs_atmo_option_t *aopt = cs_glob_atmo_option;
+
+    /* Express Dirichlet directly in term of theta and not in real
+     * temperature */
+    code_dir = -1;
+
+    cs_real_t pref = cs_glob_atmo_constants->ps;
+    cs_real_t rair = phys_pro->r_pg_cnst;
+    cs_real_t cp0 = phys_pro->cp0;
+    cs_real_t rscp = rair/cp0;
+    cs_real_t clatev = phys_pro->clatev;
+
+    /* Ref temperature is potential temperature */
+    ref_temp = (aopt->meteo_t0 - clatev/cp0 * aopt->meteo_ql0)
+                   * pow(pref/ aopt->meteo_psea, rscp);
+
+  }
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -122,26 +144,26 @@ cs_ctwr_bcond(void)
        * Assuming humid air is at conditions '0' */
 
       /* For humid air temperature */
-      if (t_h->bc_coeffs->icodcl[face_id] == 0){
-        t_h->bc_coeffs->icodcl[face_id] = 1;
-        t_h->bc_coeffs->rcodcl1[face_id] = t0 - tkelvin;
+      if (t_h->bc_coeffs->icodcl[face_id] == 0) {
+        t_h->bc_coeffs->icodcl[face_id] = code_dir;
+        t_h->bc_coeffs->rcodcl1[face_id] = ref_temp;
       }
 
       /* For water mass fraction */
-      if (ym_w->bc_coeffs->icodcl[face_id] == 0){
+      if (ym_w->bc_coeffs->icodcl[face_id] == 0) {
         ym_w->bc_coeffs->icodcl[face_id] = 1;
         ym_w->bc_coeffs->rcodcl1[face_id] = xhum / (1 + xhum);
       }
 
       /* For injected liquid in the packing*/
-      if (y_l_p->bc_coeffs->icodcl[face_id] == 0){
+      if (y_l_p->bc_coeffs->icodcl[face_id] == 0) {
         y_l_p->bc_coeffs->icodcl[face_id] = 1;
         y_l_p->bc_coeffs->rcodcl1[face_id] = 0.;
       }
 
       /* For injected liquid enthalpy in the packing*/
-      if (yh_l_p->bc_coeffs->icodcl[face_id] == 0){
-        cs_real_t t_l = cs_glob_fluid_properties->t0 - tkelvin;
+      if (yh_l_p->bc_coeffs->icodcl[face_id] == 0) {
+        cs_real_t t_l = phys_pro->t0 - tkelvin;
         cs_real_t b_h_l = cs_liq_t_to_h(t_l);
 
         /* Y_l . h_l is transported (not only h_l) */
