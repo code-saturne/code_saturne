@@ -1854,6 +1854,42 @@ cs_base_mem_finalize(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Restore signal handlers in case they were modified by another application.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_signal_restore(void)
+{
+  if (_cs_base_sighandlers_set == true) {
+
+#if defined(SIGHUP)
+    if (cs_glob_rank_id <= 0)
+      signal(SIGHUP, _cs_base_sig_fatal);
+#endif
+
+    signal(SIGABRT, _cs_base_sig_fatal);
+
+    if (cs_glob_rank_id <= 0) {
+      signal(SIGINT, _cs_base_sig_fatal);
+      signal(SIGTERM, _cs_base_sig_fatal);
+    }
+
+    signal(SIGFPE, _cs_base_sig_fatal);
+    signal(SIGSEGV, _cs_base_sig_fatal);
+
+#if defined(SIGBUS)
+    if (cs_glob_rank_id <= 0)
+      signal(SIGBUS, _cs_base_sig_fatal);
+#endif
+
+#if defined(SIGXCPU)
+    if (cs_glob_rank_id <= 0)
+      signal(SIGXCPU, _cs_base_sig_fatal);
+#endif
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Print summary of running time, including CPU and elapsed times.
  *----------------------------------------------------------------------------*/
 

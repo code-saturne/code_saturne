@@ -234,6 +234,13 @@ void
 cs_base_mem_finalize(void);
 
 /*----------------------------------------------------------------------------
+ * Restore signal handlers in case they were modified by another application.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_signal_restore(void);
+
+/*----------------------------------------------------------------------------
  * Print summary of running time, including CPU and elapsed times.
  *----------------------------------------------------------------------------*/
 

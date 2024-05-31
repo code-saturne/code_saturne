@@ -611,6 +611,7 @@ cs_sles_petsc_create(const char                  *matrix_type,
       PETSC_COMM_WORLD = MPI_COMM_SELF;
 #endif
     PetscInitializeNoArguments();
+    cs_base_signal_restore();
   }
 
   if (_viewer == NULL) {

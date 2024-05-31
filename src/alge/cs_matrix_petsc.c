@@ -1522,6 +1522,7 @@ cs_matrix_petsc_ensure_init(void)
     }
 #endif
     PetscInitializeNoArguments();
+    cs_base_signal_restore();
   }
 
   PetscPushErrorHandler(PetscAbortErrorHandler, NULL);

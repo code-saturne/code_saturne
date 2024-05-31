@@ -578,6 +578,8 @@ _init_coprocessor(void)
     if (!mpi_flag)
       _processor->Initialize();
 
+    cs_base_signal_restore();
+
     vtkFileOutputWindow *log_output = vtkFileOutputWindow::New();
     if (mpi_rank < 1)
       log_output->SetFileName("./catalyst.log");
