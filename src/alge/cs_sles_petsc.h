@@ -235,6 +235,8 @@ cs_sles_petsc_setup(void               *context,
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
+ * \param[in]       vx_ini         initial system solution
+ *                                 (vx if nonzero, nullptr if zero)
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
@@ -254,6 +256,7 @@ cs_sles_petsc_solve(void                *context,
                     int                 *n_iter,
                     double              *residual,
                     const cs_real_t     *rhs,
+                    cs_real_t           *vx_ini,
                     cs_real_t           *vx,
                     size_t               aux_size,
                     void                *aux_vectors);

@@ -101,7 +101,9 @@ BEGIN_C_DECLS
  *   a             <-- linear equation matrix
  *   convergence   <-- convergence information structure
  *   rhs           <-- right hand side
- *   vx            --> system solution
+ *   vx_ini        <-- initial system solution
+ *                     (vx if nonzero, nullptr if zero)
+ *   vx            <-> system solution
  *   aux_size      <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors   --- optional working area (allocation otherwise)
  *
@@ -115,6 +117,7 @@ typedef cs_sles_convergence_state_t
                       cs_lnum_t                  diag_block_size,
                       cs_sles_it_convergence_t  *convergence,
                       const cs_real_t           *rhs,
+                      cs_real_t                 *restrict vx_ini,
                       cs_real_t                 *restrict vx,
                       size_t                     aux_size,
                       void                      *aux_vectors);

@@ -118,6 +118,7 @@ typedef void
  *   n_iter        --> number of "equivalent" iterations
  *   residual      --> residual
  *   rhs           <-- right hand side
+ *   vx_ini        <-- initial solution (vx if nonzero, nullptr if zero)
  *   vx            <-- system solution
  *   aux_size      <-- number of elements in aux_vectors
  *   aux_vectors   <-- optional working area (internal allocation if NULL)
@@ -136,6 +137,7 @@ typedef cs_sles_convergence_state_t
                    int                 *n_iter,
                    double              *residual,
                    const cs_real_t     *rhs,
+                   cs_real_t           *vx_ini,
                    cs_real_t           *vx,
                    size_t               aux_size,
                    void                *aux_vectors);

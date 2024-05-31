@@ -1129,6 +1129,8 @@ cs_sles_petsc_setup(void               *context,
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
+ * \param[in]       vx_ini         initial system solution
+ *                                 (vx if nonzero, nullptr if zero)
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
@@ -1148,6 +1150,7 @@ cs_sles_petsc_solve(void                *context,
                     int                 *n_iter,
                     double              *residual,
                     const cs_real_t     *rhs,
+                    cs_real_t           *vx_ini,
                     cs_real_t           *vx,
                     size_t               aux_size,
                     void                *aux_vectors)
@@ -1189,6 +1192,12 @@ cs_sles_petsc_solve(void                *context,
 
   const PetscInt _n_rows = n_rows*db_size;
   cs_matrix_coeffs_petsc_t *coeffs = NULL;
+
+  if (vx_ini != vx) {
+#   pragma omp parallel for if(_n_rows > CS_THR_MIN)
+    for (PetscInt i = 0; i < _n_rows; i++)
+      vx[i] = 0;
+  }
 
   if (sd->share_a) {
 

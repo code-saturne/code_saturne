@@ -160,6 +160,8 @@ BEGIN_C_DECLS
   \param[out]      n_iter         number of "equivalent" iterations
   \param[out]      residual       residual
   \param[in]       rhs            right hand side
+  \param[in]       vx_ini         initial system solution
+                                  (vx if nonzero, nullptr if zero)
   \param[out]      vx             system solution
   \param[in]       aux_size       number of elements in aux_vectors
   \param           aux_vectors    optional working area
@@ -1757,6 +1759,7 @@ cs_sles_solve(cs_sles_t           *sles,
                              n_iter,
                              residual,
                              rhs,
+                             vx,
                              vx,
                              aux_size,
                              aux_vectors);

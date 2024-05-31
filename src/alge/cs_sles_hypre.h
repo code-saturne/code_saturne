@@ -237,6 +237,8 @@ cs_sles_hypre_setup(void               *context,
  *   n_iter        --> number of iterations
  *   residual      --> residual
  *   rhs           <-- right hand side
+ *   vx_ini        <-- initial system solution
+ *                     (vx if nonzero, nullptr if zero)
  *   vx            <-> system solution
  *   aux_size      <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors   --- optional working area (internal allocation if NULL)
@@ -255,6 +257,7 @@ cs_sles_hypre_solve(void                *context,
                     int                 *n_iter,
                     double              *residual,
                     const cs_real_t     *rhs,
+                    cs_real_t           *vx_ini,
                     cs_real_t           *vx,
                     size_t               aux_size,
                     void                *aux_vectors);

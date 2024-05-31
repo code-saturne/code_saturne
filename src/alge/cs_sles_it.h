@@ -112,6 +112,8 @@ extern const char *cs_sles_it_type_name[];
  *   diag_block_size <-- diagonal block size (unused here)
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -126,6 +128,7 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
                        cs_lnum_t                  diag_block_size,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
+                       cs_real_t                 *restrict vx_ini,
                        cs_real_t                 *restrict vx,
                        size_t                     aux_size,
                        void                      *aux_vectors);
@@ -247,6 +250,7 @@ cs_sles_it_setup(void               *context,
  *   n_iter        --> number of iterations
  *   residual      --> residual
  *   rhs           <-- right hand side
+ *   vx_ini        <-- initial solution (vx if nonzero, nullptr if zero)
  *   vx            <-> system solution
  *   aux_size      <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors   --- optional working area (internal allocation if NULL)
@@ -266,6 +270,7 @@ cs_sles_it_solve(void                *context,
                  double              *residual,
                  const cs_real_t     *rhs,
                  cs_real_t           *vx,
+                 cs_real_t           *vx_ini,
                  size_t               aux_size,
                  void                *aux_vectors);
 

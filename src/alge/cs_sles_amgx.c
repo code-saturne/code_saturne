@@ -1369,6 +1369,8 @@ cs_sles_amgx_setup(void               *context,
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
+ * \param[in]       vx_ini         initial system solution
+ *                                 (vx if nonzero, nullptr if zero)
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
@@ -1388,6 +1390,7 @@ cs_sles_amgx_solve(void                *context,
                    int                 *n_iter,
                    double              *residual,
                    const cs_real_t     *rhs,
+                   cs_real_t           *vx_ini,
                    cs_real_t           *vx,
                    size_t               aux_size,
                    void                *aux_vectors)
@@ -1469,11 +1472,21 @@ cs_sles_amgx_solve(void                *context,
   if (amode_rhs < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)rhs, n_bytes);
 
-  retval = AMGX_vector_upload(x, n_rows, db_size, vx);
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-              "AMGX_vector_upload", retval, err_str);
+  if (vx_ini != vx) {
+    retval = AMGX_vector_set_zero(x, n_rows, db_size);
+    if (retval != AMGX_RC_OK) {
+      AMGX_get_error_string(retval, err_str, 4096);
+      bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+                "AMGX_vector_set_zero", retval, err_str);
+    }
+  }
+  else {
+    retval = AMGX_vector_upload(x, n_rows, db_size, vx);
+    if (retval != AMGX_RC_OK) {
+      AMGX_get_error_string(retval, err_str, 4096);
+      bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+                "AMGX_vector_upload", retval, err_str);
+    }
   }
 
   retval = AMGX_vector_upload(b, n_rows, db_size, rhs);

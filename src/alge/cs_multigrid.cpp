@@ -1330,18 +1330,18 @@ _multigrid_pc_apply(void                *context,
 
   const cs_real_t *rhs = x_in;
 
-  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
-  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size;
-
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
-  bool use_gpu = (amode > CS_ALLOC_HOST) ? true : false;
-
-  cs_dispatch_context ctx;
-  ctx.set_use_gpu(use_gpu);
-
   /* If preconditioner is "in-place", use additional buffer */
 
   if (x_in == NULL) {
+    const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size;
+
+    cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+    bool use_gpu = (amode > CS_ALLOC_HOST) ? true : false;
+
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(use_gpu);
+
     if (mgd->pc_aux == NULL) {
       const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size;
       CS_MALLOC_HD(mgd->pc_aux, n_cols, cs_real_t, amode);
@@ -1350,17 +1350,11 @@ _multigrid_pc_apply(void                *context,
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       _rhs[ii] = x_out[ii];
-      x_out[ii] = 0.;
     });
+    ctx.wait();
 
     rhs = _rhs;
   }
-  else {
-    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-      x_out[ii] = 0.;
-    });
-  }
-  ctx.wait();
 
   cs_sles_convergence_state_t  cvg = cs_multigrid_solve(context,
                                                         mgd->pc_name,
@@ -1371,6 +1365,7 @@ _multigrid_pc_apply(void                *context,
                                                         &n_iter,
                                                         &residual,
                                                         rhs,
+                                                        nullptr,
                                                         x_out,
                                                         0,
                                                         NULL);
@@ -2855,6 +2850,8 @@ _level_names_init(const char  *name,
  *   initial_residual <-> initial residual
  *   residual         <-> residual
  *   rhs              <-- right hand side
+ *   vx_ini           <-- initial system solution
+ *                        (vx if nonzero, nullptr if zero)
  *   vx               --> system solution
  *   aux_size         <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors      --- optional working area (allocation otherwise)
@@ -2874,6 +2871,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                    double               *initial_residual,
                    double               *residual,
                    const cs_real_t      *rhs,
+                   cs_real_t            *vx_ini,
                    cs_real_t            *vx,
                    size_t                aux_size,
                    void                 *aux_vectors)
@@ -2959,8 +2957,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   /* map arrays for rhs and vx;
      for the finest level, simply point to input and output arrays */
 
-  mgd->rhs_vx[0] = NULL; /* Use _rhs_level when necessary to avoid
-                            const warning */
+  mgd->rhs_vx[0] = nullptr; /* Use _rhs_level when necessary to avoid
+                               const warning */
   mgd->rhs_vx[1] = vx;
 
   /* Descent */
@@ -2973,13 +2971,18 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     rhs_lv = (level == 0) ? rhs : mgd->rhs_vx[level*2];
     vx_lv = mgd->rhs_vx[level*2 + 1];
+    cs_real_t *restrict vx_lv_ini
+      = (level == 0) ? vx_ini : nullptr;
 
     c = mgd->grid_hierarchy[level+1];
 
     /* Smoother pass */
 
     _matrix = cs_grid_get_matrix(f);
+
+#if defined(HAVE_ACCEL)
     cs_alloc_mode_t amode_l = cs_matrix_get_alloc_mode(_matrix);
+#endif
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
 
@@ -2992,6 +2995,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                 &n_iter,
                                 &_residual,
                                 rhs_lv,
+                                vx_lv_ini,
                                 vx_lv,
                                 _aux_r_size*sizeof(cs_real_t),
                                 _aux_vectors);
@@ -3099,16 +3103,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                      &n_g_rows);
 
     f = c;
-
-    /* Initialize correction */
-
-    cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*2 + 1];
-
     _n_rows = n_rows*db_size;
-    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-      vx_lv1[ii] = 0.0;
-    });
-    ctx.wait();
 
     t0 = cs_timer_time();
     cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t1, &t0);
@@ -3147,6 +3142,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                 &n_iter,
                                 &_residual,
                                 rhs_lv,
+                                nullptr,
                                 vx_lv,
                                 _aux_r_size*sizeof(cs_real_t),
                                 _aux_vectors);
@@ -3235,6 +3231,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                     &n_iter,
                                     &_residual,
                                     rhs_lv,
+                                    vx_lv,
                                     vx_lv,
                                     _aux_r_size*sizeof(cs_real_t),
                                     _aux_vectors);
@@ -3399,11 +3396,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   cs_real_t *restrict rt_lv = mgd->rhs_vx[level*na];
   assert(rt_lv != NULL);
 
-  ctx_f.parallel_for(_f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-    vx_lv[ii] = 0.0;
-  });
-  ctx_f.wait();
-
   cs_multigrid_level_info_t  *lv_info = mg->lv_info + level;
   t0 = cs_timer_time();
 
@@ -3420,6 +3412,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               &n_iter,
                               &_residual,
                               rhs_lv,
+                              nullptr,
                               vx_lv,
                               _aux_r_size*sizeof(cs_real_t),
                               aux_vectors);
@@ -3495,11 +3488,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*na + 4];
   cs_real_t *restrict rhs_lv1 = mgd->rhs_vx[(level+1)*na + 5];
 
-  ctx_c.parallel_for(_c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-    vx_lv1[i] = 0.0;
-  });
-  ctx_c.wait();
-
   /* Restriction of rt_lv into the next level rhs */
   cs_grid_restrict_row_var(ctx_f, f, c, rt_lv, rhs_lv1);
 
@@ -3527,6 +3515,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               &n_iter,
                               residual,
                               rhs_lv1,
+                              nullptr,
                               vx_lv1,
                               _aux_r_size*sizeof(cs_real_t),
                               aux_vectors);
@@ -3613,7 +3602,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
       cs_real_t *restrict w_lv1 = mgd->rhs_vx[(level+1)*na + 9];
 
       ctx_c.parallel_for(_c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-        vx2_lv1[i] = 0.0;
         w_lv1[i] = 0.0;
       });
       ctx_c.wait();
@@ -3734,6 +3722,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                             &n_iter,
                             &_residual,
                             rb_lv,
+                            z2_lv,
                             z2_lv,
                             _aux_r_size*sizeof(cs_real_t),
                             aux_vectors);
@@ -4353,6 +4342,8 @@ cs_multigrid_setup_conv_diff(void               *context,
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
+ * \param[in]       vx_ini         initial system solution
+ *                                 (vx if nonzero, nullptr if zero)
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       size of aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
@@ -4372,6 +4363,7 @@ cs_multigrid_solve(void                *context,
                    int                 *n_iter,
                    double              *residual,
                    const cs_real_t     *rhs,
+                   cs_real_t           *vx_ini,
                    cs_real_t           *vx,
                    size_t               aux_size,
                    void                *aux_vectors)
@@ -4440,6 +4432,7 @@ cs_multigrid_solve(void                *context,
   if (mg->type == CS_MULTIGRID_V_CYCLE) {
     for (n_cycles = 0; cvg == CS_SLES_ITERATING; n_cycles++) {
       int cycle_id = n_cycles+1;
+      cs_real_t *_vx_ini = (n_cycles > 0) ? vx : vx_ini;
       cvg = _multigrid_v_cycle(mg,
                                lv_names,
                                verbosity,
@@ -4450,6 +4443,7 @@ cs_multigrid_solve(void                *context,
                                &initial_residual,
                                residual,
                                rhs,
+                               _vx_ini,
                                vx,
                                _aux_size - lv_names_size,
                                _aux_buf + lv_names_size);

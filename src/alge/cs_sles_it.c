@@ -348,6 +348,8 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -362,6 +364,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
                     cs_lnum_t                  diag_block_size,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
+                    cs_real_t                 *restrict vx_ini,
                     cs_real_t                 *restrict vx,
                     size_t                     aux_size,
                     void                      *aux_vectors)
@@ -402,11 +405,20 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   /* Residual and descent direction */
 
-  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] -= rhs[ii];
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      rk[ii] = -rhs[ii];
+      vx[ii] = 0.;
+    }
+  }
 
   /* Preconditioning */
 
@@ -544,6 +556,8 @@ _conjugate_gradient(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -558,6 +572,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
                              cs_lnum_t                  diag_block_size,
                              cs_sles_it_convergence_t  *convergence,
                              const cs_real_t           *rhs,
+                             cs_real_t                 *restrict vx_ini,
                              cs_real_t                 *restrict vx,
                              size_t                     aux_size,
                              void                      *aux_vectors)
@@ -598,13 +613,25 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
   /* Residual and descent direction */
 
-  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx)
+    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel if(n_rows > CS_THR_MIN)
   {
-#   pragma omp for nowait
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      rk[ii] = rhs[ii] - rk[ii];
+    if (vx_ini == vx) {
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        rk[ii] = rhs[ii] - rk[ii];
+    }
+    else {
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        vx[ii] = 0;
+
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        rk[ii] = rhs[ii];
+    }
 
 #   pragma omp for nowait
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
@@ -713,6 +740,8 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -727,6 +756,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
                        cs_lnum_t                  diag_block_size,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
+                       cs_real_t                 *restrict vx_ini,
                        cs_real_t                 *restrict vx,
                        size_t                     aux_size,
                        void                      *aux_vectors)
@@ -768,11 +798,20 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
   /* Residual and descent direction */
 
-  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] -= rhs[ii];
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      vx[ii] = 0;
+      rk[ii] = -rhs[ii];
+    }
+  }
 
   /* Preconditioning */
 
@@ -911,6 +950,8 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
  *   diag_block_size <-- block size of element ii, ii
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -925,6 +966,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                        cs_lnum_t                  diag_block_size,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
+                       cs_real_t                 *restrict vx_ini,
                        cs_real_t                 *restrict vx,
                        size_t                     aux_size,
                        void                      *aux_vectors)
@@ -966,11 +1008,20 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   /* Residual and descent direction */
 
-  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] -= rhs[ii];
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      vx[ii] = 0;
+      rk[ii] = -rhs[ii];
+    }
+  }
 
   /* Preconditionning */
 
@@ -1103,6 +1154,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
  *   diag_block_size <-- block size of element ii, ii
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1117,6 +1170,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
                         cs_lnum_t                  diag_block_size,
                         cs_sles_it_convergence_t  *convergence,
                         const cs_real_t           *rhs,
+                        cs_real_t                 *restrict vx_ini,
                         cs_real_t                 *restrict vx,
                         size_t                     aux_size,
                         void                      *aux_vectors)
@@ -1155,26 +1209,26 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
   /* Residual and descent direction */
 
-  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] -= rhs[ii];
+  }
+  else {
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      vx[ii] = 0;
+      rk[ii] = -rhs[ii];
+    }
+  }
 
   /* Descent direction */
   /*-------------------*/
 
-#if defined(HAVE_OPENMP)
-
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = rk[ii];
-
-#else
-
-  memcpy(dk, rk, n_rows * sizeof(cs_real_t));
-
-#endif
 
   rk_rkm1 = _dot_product_xx(c, rk);
   residual = sqrt(rk_rkm1);
@@ -1287,6 +1341,8 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
  *   diag_block_size <-- block size of element ii, ii
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1301,6 +1357,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            cs_lnum_t                  diag_block_size,
                            cs_sles_it_convergence_t  *convergence,
                            const cs_real_t           *rhs,
+                           cs_real_t                 *restrict vx_ini,
                            cs_real_t                 *restrict vx,
                            size_t                     aux_size,
                            void                      *aux_vectors)
@@ -1341,11 +1398,20 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   /* Residual and descent direction */
 
-  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    rk[ii] = rk[ii] - rhs[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] = rk[ii] - rhs[ii];
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      vx[ii] = 0;
+      rk[ii] = - rhs[ii];
+    }
+  }
 
   /* Descent direction */
   /*-------------------*/
@@ -1472,6 +1538,8 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
  *   diag_block_size <-- block size of element ii, ii
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1486,12 +1554,12 @@ _conjugate_residual_3(cs_sles_it_t              *c,
                       cs_lnum_t                  diag_block_size,
                       cs_sles_it_convergence_t  *convergence,
                       const cs_real_t           *rhs,
+                      cs_real_t                 *restrict vx_ini,
                       cs_real_t                 *restrict vx,
                       size_t                     aux_size,
                       void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
   double  residual;
   double  ak, bk, ck, dk, ek, denom, alpha, tau;
   cs_real_t *_aux_vectors;
@@ -1527,7 +1595,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     zk = _aux_vectors + wa_size*5;
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
       vxm1[ii] = vx[ii];
       rkm1[ii] = 0.0;
     }
@@ -1538,11 +1606,20 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
   /* Residual */
 
-  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] -= rhs[ii];
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      rk[ii] = -rhs[ii];
+      vx[ii] = 0.;
+    }
+  }
 
   residual = _dot_product(c, rk, rk);
   residual = sqrt(residual);
@@ -1566,7 +1643,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     _dot_products_xy_yz(c, rk, zk, rkm1, &ak, &bk);
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       tmp[ii] = rk[ii] - rkm1[ii];
 
     _dot_products_xy_yz(c, rk, tmp, rkm1, &ck, &dk);
@@ -1593,13 +1670,13 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 #   pragma omp parallel firstprivate(alpha, tau, c0, c1) if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         cs_real_t trk = rk[ii];
         rk[ii] = alpha*rk[ii] + c0*rkm1[ii] + c1*zk[ii];
         rkm1[ii] = trk;
       }
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         cs_real_t tvx = vx[ii];
         vx[ii] = alpha*vx[ii] + c0*vxm1[ii] + c1*wk[ii];
         vxm1[ii] = tvx;
@@ -1639,6 +1716,8 @@ _conjugate_residual_3(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1653,6 +1732,7 @@ _jacobi(cs_sles_it_t              *c,
         cs_lnum_t                  diag_block_size,
         cs_sles_it_convergence_t  *convergence,
         const cs_real_t           *rhs,
+        cs_real_t                 *restrict vx_ini,
         cs_real_t                 *restrict vx,
         size_t                     aux_size,
         void                      *aux_vectors)
@@ -1688,12 +1768,68 @@ _jacobi(cs_sles_it_t              *c,
 
   const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-    rk[ii] = vx[ii];
+  cvg = CS_SLES_ITERATING;
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  if (vx_ini != vx) {
+    assert(vx_ini == NULL);
+    n_iter += 1;
+
+    double  res2 = 0.0;
+
+    if (convergence->precision > 0. || c->plot != NULL) {
+
+#     pragma omp parallel for reduction(+:res2) if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        vx[ii] = rhs[ii]*ad_inv[ii];
+        double r = rhs[ii];
+        res2 += (r*r);
+        rk[ii] = vx[ii];
+      }
+
+#if defined(HAVE_MPI)
+
+      if (c->comm != MPI_COMM_NULL) {
+        double _sum;
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        res2 = _sum;
+      }
+
+#endif /* defined(HAVE_MPI) */
+
+      residual = sqrt(res2); /* Actually, residual of previous iteration */
+
+    }
+    else {
+
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        vx[ii] = rhs[ii]*ad_inv[ii];
+        rk[ii] = vx[ii];
+      }
+
+    }
+
+    /* Convergence test */
+
+    if (n_iter == 1)
+      c->setup_data->initial_residual = residual;
+
+    cvg = _convergence_test(c, n_iter, residual, convergence);
+
   }
 
-  cvg = CS_SLES_ITERATING;
+  /* Case with vx != 0
+     ----------------- */
+
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      rk[ii] = vx[ii];
+    }
+  }
 
   /* Current iteration */
   /*-------------------*/
@@ -1767,6 +1903,8 @@ _jacobi(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size (unused here)
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              --> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1781,6 +1919,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
                 cs_lnum_t                  diag_block_size,
                 cs_sles_it_convergence_t  *convergence,
                 const cs_real_t           *rhs,
+                cs_real_t                 *restrict vx_ini,
                 cs_real_t                 *restrict vx,
                 size_t                     aux_size,
                 void                      *aux_vectors)
@@ -1823,6 +1962,55 @@ _block_3_jacobi(cs_sles_it_t              *c,
   const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
 
   cvg = CS_SLES_ITERATING;
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  if (vx_ini != vx) {
+    assert(vx_ini == NULL);
+
+    n_iter += 1;
+    res2 = 0.0;
+
+    /* Compute vx <- diag^-1 . (vxx - rhs) and residual. */
+#   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
+      for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        rk[3*ii + jj] = 0;
+        vxx[3*ii + jj] = 0;
+      }
+      _fw_and_bw_lu33(ad_inv + 9*ii,
+                      vx + 3*ii,
+                      vxx + 3*ii,
+                      rhs + 3*ii);
+      for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        register double r = 0.0;
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          r +=    ad[ii*9 + jj*3 + kk]
+               * (vx[ii*3 + kk] - rk[ii*3 + kk]);
+        res2 += (r*r);
+      }
+    }
+
+#if defined(HAVE_MPI)
+
+    if (c->comm != MPI_COMM_NULL) {
+      double _sum;
+      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      res2 = _sum;
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+    residual = sqrt(res2); /* Actually, residual of previous iteration */
+
+    if (n_iter == 1)
+      c->setup_data->initial_residual = residual;
+
+    /* Convergence test */
+
+    cvg = _convergence_test(c, n_iter, residual, convergence);
+  }
 
   /* Current iteration */
   /*-------------------*/
@@ -1891,6 +2079,8 @@ _block_3_jacobi(cs_sles_it_t              *c,
  *   diag_block_size <-- block size of diagonal elements
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              --> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1905,6 +2095,7 @@ _block_jacobi(cs_sles_it_t              *c,
               cs_lnum_t                  diag_block_size,
               cs_sles_it_convergence_t  *convergence,
               const cs_real_t           *rhs,
+              cs_real_t                 *restrict vx_ini,
               cs_real_t                 *restrict vx,
               size_t                     aux_size,
               void                      *aux_vectors)
@@ -1945,6 +2136,57 @@ _block_jacobi(cs_sles_it_t              *c,
   const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
 
   cvg = CS_SLES_ITERATING;
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  if (vx_ini != vx) {
+    assert(vx_ini == NULL);
+
+    n_iter += 1;
+    res2 = 0.0;
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+
+#   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
+      for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+        rk[db_size*ii + jj] = 0;
+        vxx[db_size*ii + jj] = 0;
+      }
+      _fw_and_bw_lu(ad_inv + db_size_2*ii,
+                    db_size,
+                    vx + db_size*ii,
+                    vxx + db_size*ii,
+                    rhs + db_size*ii);
+      for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+        register double r = 0.0;
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          r +=    ad[ii*db_size_2 + jj*db_size + kk]
+               * (vx[ii*db_size + kk] - rk[ii*db_size + kk]);
+        res2 += (r*r);
+      }
+    }
+
+#if defined(HAVE_MPI)
+
+    if (c->comm != MPI_COMM_NULL) {
+      double _sum;
+      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      res2 = _sum;
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+    residual = sqrt(res2); /* Actually, residual of previous iteration */
+
+    if (n_iter == 1)
+      c->setup_data->initial_residual = residual;
+
+    /* Convergence test */
+
+    cvg = _convergence_test(c, n_iter, residual, convergence);
+  }
 
   /* Current iteration */
   /*-------------------*/
@@ -2068,6 +2310,8 @@ _breakdown(cs_sles_it_t                 *c,
  *   diag_block_size <-- block size of diagonal elements
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -2082,6 +2326,7 @@ _bi_cgstab(cs_sles_it_t              *c,
            cs_lnum_t                  diag_block_size,
            cs_sles_it_convergence_t  *convergence,
            const cs_real_t           *rhs,
+           cs_real_t                 *restrict vx_ini,
            cs_real_t                 *restrict vx,
            size_t                     aux_size,
            void                      *aux_vectors)
@@ -2129,12 +2374,22 @@ _bi_cgstab(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  cs_matrix_vector_multiply(a, vx, res0);
+  if (vx == vx_ini) {
+    cs_matrix_vector_multiply(a, vx, res0);
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-    res0[ii] = -res0[ii] + rhs[ii];
-    rk[ii] = res0[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      res0[ii] = -res0[ii] + rhs[ii];
+      rk[ii] = res0[ii];
+    }
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      vx[ii] = 0;
+      res0[ii] = rhs[ii];
+      rk[ii] = rhs[ii];
+    }
   }
 
   alpha = 1.0;
@@ -2269,6 +2524,8 @@ _bi_cgstab(cs_sles_it_t              *c,
  *   diag_block_size <-- block size of element ii, ii
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -2283,6 +2540,7 @@ _bicgstab2(cs_sles_it_t              *c,
            cs_lnum_t                  diag_block_size,
            cs_sles_it_convergence_t  *convergence,
            const cs_real_t           *rhs,
+           cs_real_t                 *restrict vx_ini,
            cs_real_t                 *restrict vx,
            size_t                     aux_size,
            void                      *aux_vectors)
@@ -2336,13 +2594,24 @@ _bicgstab2(cs_sles_it_t              *c,
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
-  cs_matrix_vector_multiply(a, vx, res0);
+  if (vx == vx_ini) {
+    cs_matrix_vector_multiply(a, vx, res0);
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-    res0[ii] = -res0[ii] + rhs[ii];
-    rk[ii] = res0[ii];
-    qk[ii] = rk[ii];
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      res0[ii] = -res0[ii] + rhs[ii];
+      rk[ii] = res0[ii];
+      qk[ii] = rk[ii];
+    }
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      vx[ii] = 0;
+      res0[ii] = rhs[ii];
+      rk[ii] = rhs[ii];
+      qk[ii] = rhs[ii];
+    }
   }
 
   ro_0    = 1.0;
@@ -2622,6 +2891,8 @@ _solve_diag_sup_halo(cs_real_t  *restrict a,
  *   diag_block_size <-- diagonal block size (unused here)
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -2641,6 +2912,7 @@ _gcr(cs_sles_it_t              *c,
      cs_lnum_t                  diag_block_size,
      cs_sles_it_convergence_t  *convergence,
      const cs_real_t           *rhs,
+     cs_real_t                 *restrict vx_ini,
      cs_real_t                 *restrict vx,
      size_t                     aux_size,
      void                      *aux_vectors)
@@ -2650,6 +2922,7 @@ _gcr(cs_sles_it_t              *c,
   cs_real_t *_aux_vectors = NULL, *alpha = NULL;
   cs_real_t *restrict rk, *restrict zk, *restrict ck;
   cs_real_t *restrict gkj, *restrict gkj_inv;
+  cs_real_t *_vx = vx_ini;
 
   /* In case of the standard GCR, n_k_per_restart --> Inf,
    * or stops until convergence*/
@@ -2697,11 +2970,22 @@ _gcr(cs_sles_it_t              *c,
     /* Initialize iterative calculation */
     /*----------------------------------*/
 
-    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+    if (_vx == vx) {
+      cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      rk[ii] -= rhs[ii];
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        rk[ii] -= rhs[ii];
+    }
+    else {
+      assert(vx_ini == NULL);
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        vx[ii] = 0;
+        rk[ii] = -rhs[ii];
+      }
+      _vx = vx;
+    }
 
     double residual = sqrt(_dot_product_xx(c, rk));
 
@@ -2837,6 +3121,8 @@ _gcr(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size (unused here)
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -2851,6 +3137,7 @@ _gmres(cs_sles_it_t              *c,
        cs_lnum_t                  diag_block_size,
        cs_sles_it_convergence_t  *convergence,
        const cs_real_t           *rhs,
+       cs_real_t                 *restrict vx_ini,
        cs_real_t                 *restrict vx,
        size_t                     aux_size,
        void                      *aux_vectors)
@@ -2863,6 +3150,7 @@ _gmres(cs_sles_it_t              *c,
   cs_real_t *restrict _givens_coeff, *restrict _beta;
   cs_real_t *restrict dk, *restrict gk;
   cs_real_t *restrict bk, *restrict fk, *restrict krk;
+  cs_real_t *_vx = vx_ini;
 
   cs_lnum_t krylov_size_max = c->restart_interval;
   unsigned n_iter = 0;
@@ -2933,13 +3221,23 @@ _gmres(cs_sles_it_t              *c,
 
     /* Compute  rk <- a*vx (vx = x0) */
 
-    cs_matrix_vector_multiply(a, vx, dk);
+    if (_vx == vx) {
+      cs_matrix_vector_multiply(a, vx, dk);
 
-    /* Compute  rk <- rhs - rk (r0 = b-A*x0) */
+      /* Compute  rk <- rhs - rk (r0 = b-A*x0) */
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      dk[ii] = rhs[ii] - dk[ii];
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        dk[ii] = rhs[ii] - dk[ii];
+    }
+    else {
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        vx[ii] = 0;
+        dk[ii] = rhs[ii];
+      }
+      _vx = vx;
+    }
 
     if (n_iter == 0) {
       residual = sqrt(_dot_product_xx(c, dk));
@@ -3077,6 +3375,8 @@ _gmres(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (unused here)
@@ -3091,6 +3391,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                             cs_lnum_t                  diag_block_size,
                             cs_sles_it_convergence_t  *convergence,
                             const cs_real_t           *rhs,
+                            cs_real_t                 *restrict vx_ini,
                             cs_real_t                 *restrict vx)
 {
   cs_sles_convergence_state_t cvg;
@@ -3123,12 +3424,21 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    n_iter += 1;
-
     /* Synchronize ghost cells first */
 
-    if (halo != NULL)
+    if (n_iter == 0 && vx_ini != vx) {
+      const cs_lnum_t _n_cols = cs_matrix_get_n_columns(a)*diag_block_size;
+#     pragma omp parallel for if(_n_cols > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < _n_cols; ii++) {
+        vx[ii] = 0;
+      }
+    }
+
+    else if (halo != NULL) {
       cs_matrix_pre_vector_multiply_sync(a, vx);
+    }
+
+    n_iter += 1;
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
@@ -3238,6 +3548,8 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (unused here)
@@ -3252,6 +3564,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
                     cs_lnum_t                  diag_block_size,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
+                    cs_real_t                 *restrict vx_ini,
                     cs_real_t                 *restrict vx)
 {
   cs_sles_convergence_state_t cvg;
@@ -3282,12 +3595,19 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    n_iter += 1;
-
     /* Synchronize ghost cells first */
 
-    if (halo != NULL)
+    if (n_iter == 0 && vx_ini != vx) {
+      const cs_lnum_t _n_cols = cs_matrix_get_n_columns(a)*diag_block_size;
+#     pragma omp parallel for if(_n_cols > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < _n_cols; ii++) {
+        vx[ii] = 0;
+      }
+    }
+    else if (halo != NULL)
       cs_matrix_pre_vector_multiply_sync(a, vx);
+
+    n_iter += 1;
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
@@ -3399,6 +3719,8 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   rhs             <-- right hand side
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
@@ -3414,6 +3736,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                         cs_lnum_t                  diag_block_size,
                         cs_sles_it_convergence_t  *convergence,
                         const cs_real_t           *rhs,
+                        cs_real_t                 *restrict vx_ini,
                         cs_real_t                 *restrict vx,
                         size_t                     aux_size,
                         void                      *aux_vectors)
@@ -3462,7 +3785,14 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Synchronize ghost cells first */
 
-    if (halo != NULL)
+    if (n_iter == 0 && vx_ini != vx) {
+      const cs_lnum_t _n_cols = cs_matrix_get_n_columns(a)*diag_block_size;
+#     pragma omp parallel for if(_n_cols > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < _n_cols; ii++) {
+        vx[ii] = 0;
+      }
+    }
+    else if (halo != NULL)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual: forward step */
@@ -3633,6 +3963,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (unused here)
@@ -3647,6 +3979,7 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                 cs_lnum_t                  diag_block_size,
                 cs_sles_it_convergence_t  *convergence,
                 const cs_real_t           *rhs,
+                cs_real_t                 *restrict vx_ini,
                 cs_real_t                 *restrict vx,
                 size_t                     aux_size,
                 void                      *aux_vectors)
@@ -3683,6 +4016,7 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                                       diag_block_size,
                                       convergence,
                                       rhs,
+                                      vx_ini,
                                       vx);
 
   else
@@ -3691,6 +4025,7 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                               diag_block_size,
                               convergence,
                               rhs,
+                              vx_ini,
                               vx);
 
   return cvg;
@@ -3775,6 +4110,7 @@ _fallback(cs_sles_it_t                    *c,
                          residual,
                          rhs,
                          vx,
+                         vx,
                          aux_size,
                          aux_vectors);
 
@@ -3804,6 +4140,8 @@ _fallback(cs_sles_it_t                    *c,
  *   diag_block_size <-- diagonal block size (unused here)
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial solution (vx if nonzero,
+ *                       nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -3818,6 +4156,7 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
                        cs_lnum_t                  diag_block_size,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
+                       cs_real_t                 *restrict vx_ini,
                        cs_real_t                 *restrict vx,
                        size_t                     aux_size,
                        void                      *aux_vectors)
@@ -3829,6 +4168,7 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
   CS_UNUSED(diag_block_size);
   CS_UNUSED(convergence);
   CS_UNUSED(rhs);
+  CS_UNUSED(vx_ini);
   CS_UNUSED(vx);
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
@@ -4399,6 +4739,8 @@ cs_sles_it_setup(void               *context,
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
+ * \param[in]       vx_ini         initial system solution
+ *                                 (vx if nonzero, nullptr if zero)
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
@@ -4418,6 +4760,7 @@ cs_sles_it_solve(void                *context,
                  int                 *n_iter,
                  double              *residual,
                  const cs_real_t     *rhs,
+                 cs_real_t           *vx_ini,
                  cs_real_t           *vx,
                  size_t               aux_size,
                  void                *aux_vectors)
@@ -4494,6 +4837,7 @@ cs_sles_it_solve(void                *context,
 
     const cs_real_t *_rhs = rhs;
     cs_real_t       *_vx = vx;
+    cs_real_t       *_vx_ini = vx_ini;
 
 #if defined(HAVE_ACCEL)
 
@@ -4528,8 +4872,11 @@ cs_sles_it_solve(void                *context,
       }
       else if (amode_rhs < CS_ALLOC_HOST_DEVICE_SHARED) {
         cs_sync_h2d(rhs);
-        _rhs = cs_get_device_ptr(rhs);
+        _rhs = cs_get_device_ptr_const(rhs);
       }
+
+      if (vx_ini == vx)
+        _vx_ini = _vx;
     }
 
 #endif
@@ -4538,7 +4885,7 @@ cs_sles_it_solve(void                *context,
 
     cvg = c->solve(c,
                    a, diag_block_size, &convergence,
-                   _rhs, _vx,
+                   _rhs, _vx_ini, _vx,
                    aux_size, aux_vectors);
 
 #if defined(HAVE_ACCEL)

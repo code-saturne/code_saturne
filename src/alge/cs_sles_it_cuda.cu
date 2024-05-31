@@ -140,7 +140,6 @@ _warp_reduce_sum(volatile T  *stmp,
  * parameters:
  *   n_rows    <-- number of rows
  *   ad_inv    <-- inverse of diagonal
- *   ad        <-- diagonal
  *   rhs       <-- right hand side
  *   vx        <-> solution at current iteration
  *   rk        <-> solution at previous iteraton
@@ -150,7 +149,6 @@ template <size_t block_size>
 __global__ static void
 _jacobi_compute_vx(cs_lnum_t          n_rows,
                    const cs_real_t   *restrict ad_inv,
-                   const cs_real_t   *restrict ad,
                    const cs_real_t   *rhs,
                    cs_real_t         *restrict vx,
                    cs_real_t         *restrict rk)
@@ -159,6 +157,34 @@ _jacobi_compute_vx(cs_lnum_t          n_rows,
 
   if (ii < n_rows) {
     vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
+    rk[ii] = vx[ii];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk for Jacobi solver when initial Vx is zero.
+ *
+ * parameters:
+ *   n_rows    <-- number of rows
+ *   ad_inv    <-- inverse of diagonal
+ *   ad        <-- diagonal
+ *   rhs       <-- right hand side
+ *   vx        <-> solution at current iteration
+ *   rk        <-> solution at previous iteraton
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_jacobi_compute_vx_ini0(cs_lnum_t          n_rows,
+                        const cs_real_t   *restrict ad_inv,
+                        const cs_real_t   *rhs,
+                        cs_real_t         *restrict vx,
+                        cs_real_t         *restrict rk)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (ii < n_rows) {
+    vx[ii] = rhs[ii]*ad_inv[ii];
     rk[ii] = vx[ii];
   }
 }
@@ -199,6 +225,50 @@ _jacobi_compute_vx_and_residual(cs_lnum_t          n_rows,
   if (ii < n_rows) {
     vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
     double r = ad[ii] * (vx[ii]-rk[ii]);
+    sdata[tid] = r*r;
+    rk[ii] = vx[ii];
+  }
+  else
+    sdata[tid] = 0.0;
+
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi solver
+ * when the initial value of Vx is zero.
+ *
+ * This call must be followed by
+ * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ *  (grid_size, sum_block, _r_reduce);
+ * Also, block_size must be a power of 2.
+ *
+ * parameters:
+ *   n_rows    <-- number of rows
+ *   ad_inv    <-- inverse of diagonal
+ *   rhs       <-- right hand side
+ *   vx        <-> solution at current iteration
+ *   rk        <-> solution at previous iteraton
+ *   sum_block --> contribution to residual
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_rows,
+                                     const cs_real_t   *restrict ad_inv,
+                                     const cs_real_t   *rhs,
+                                     cs_real_t         *restrict vx,
+                                     cs_real_t         *restrict rk,
+                                     double            *sum_block)
+{
+  __shared__ double sdata[block_size];
+
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t tid = threadIdx.x;
+
+  if (ii < n_rows) {
+    vx[ii] = rhs[ii]*ad_inv[ii];
+    double r = rhs[ii];
     sdata[tid] = r*r;
     rk[ii] = vx[ii];
   }
@@ -278,6 +348,67 @@ _block_3_jacobi_compute_vx_and_residual(cs_lnum_t          n_b_rows,
       #pragma unroll
       for (cs_lnum_t kk = 0; kk < 3; kk++)
         r +=  ad[ii*9 + jj*3 + kk] * (vx[ii*3 + kk] - rk[ii*3 + kk]);
+
+      sdata[tid] += (r*r);
+    }
+
+    #pragma unroll
+    for (cs_lnum_t kk = 0; kk < 3; kk++)
+      rk[ii*3 + kk] = vx[ii*3 + kk];
+  }
+
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi with
+ * 3x3 block-diagonal matrix when Vx is initially 0.
+ *
+ * This call must be followed by
+ * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ *  (grid_size, sum_block, _r_reduce);
+ * Also, block_size must be a power of 2.
+ *
+ * parameters:
+ *   n_b_rows  <-- number of block rows
+ *   ad_inv    <-- inverse of diagonal
+ *   ad        <-- diagonal
+ *   rhs       <-- right hand side
+ *   vx        <-> 1st part of RHS (c - b) in, solution at current iteration
+ *   rk        <-> solution at previous iteraton
+ *   sum_block --> contribution to residual
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_block_3_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_b_rows,
+                                             const cs_real_t   *restrict ad_inv,
+                                             const cs_real_t   *restrict ad,
+                                             const cs_real_t   *rhs,
+                                             cs_real_t         *restrict vx,
+                                             cs_real_t         *restrict rk,
+                                             double            *sum_block)
+{
+  __shared__ cs_real_t sdata[block_size];
+
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t tid = threadIdx.x;
+  sdata[tid] = 0.0;
+
+  if (ii < n_b_rows) {
+    #pragma unroll
+    for (cs_lnum_t kk = 0; kk < 3; kk++) {
+      vx[ii*3 + kk] = 0;
+    }
+
+    _fw_and_bw_lu33_cuda(ad_inv + 9*ii, vx + 3*ii, rhs + 3*ii);
+
+    #pragma unroll
+    for (cs_lnum_t jj = 0; jj < 3; jj++) {
+      double r = 0.0;
+      #pragma unroll
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        r +=  ad[ii*9 + jj*3 + kk] * vx[ii*3 + kk];
 
       sdata[tid] += (r*r);
     }
@@ -384,13 +515,73 @@ _block_jacobi_compute_vx_and_residual(cs_lnum_t          n_b_rows,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi with
+ * block-diagonal matrix when Vx is initially 0.
+ *
+ * parameters:
+ *   n_b_rows  <-- number of block rows
+ *   ad_inv    <-- inverse of diagonal
+ *   ad        <-- diagonal
+ *   rhs       <-- right hand side
+ *   vx        <-> 1st part of RHS (c - b) in, solution at current iteration
+ *   rk        <-> solution at previous iteraton
+ *   sum_block --> contribution to residual
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_block_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_b_rows,
+                                           cs_lnum_t          db_size,
+                                           const cs_real_t   *restrict ad_inv,
+                                           const cs_real_t   *restrict ad,
+                                           const cs_real_t   *rhs,
+                                           cs_real_t         *restrict vx,
+                                           cs_real_t         *restrict rk,
+                                           double            *sum_block)
+{
+  __shared__ cs_real_t sdata[block_size];
+
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t tid = threadIdx.x;
+  sdata[tid] = 0.0;
+
+  cs_lnum_t n = db_size;
+  cs_lnum_t nn = db_size*db_size;
+
+  if (ii < n_b_rows) {
+    #pragma unroll
+    for (cs_lnum_t kk = 0; kk < n; kk++) {
+      vx[ii*n + kk] = 0;
+    }
+
+    _fw_and_bw_lu_cuda(ad_inv + nn*ii, n, vx + n*ii, rhs + n*ii);
+
+    #pragma unroll
+    for (cs_lnum_t jj = 0; jj < n; jj++) {
+      double r = 0.0;
+      #pragma unroll
+      for (cs_lnum_t kk = 0; kk < n; kk++)
+        r +=  ad[ii*nn + jj*n + kk] * vx[ii*n + kk];
+
+      sdata[tid] += (r*r);
+    }
+
+    #pragma unroll
+    for (cs_lnum_t kk = 0; kk < n; kk++)
+      rk[ii*n + kk] = vx[ii*n + kk];
+  }
+
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+}
+
+/*----------------------------------------------------------------------------
  * FCG initialization: rk <- rhs -rk; qk = 0.
  *
  * parameters:
  *   n         <-- number of elements
  *   rhs       <-- vector of elements
  *   rk        <-> vector of elements
- *   qk        <-> vector of elements
+ *   qk        --> vector of elements
  *----------------------------------------------------------------------------*/
 
 __global__ static void
@@ -403,6 +594,33 @@ _fcg_init(cs_lnum_t         n,
 
   if (ii < n) {
     rk[ii] = rhs[ii] - rk[ii];
+    qk[ii] = 0.;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * FCG initialization when inital solution is zero: vx <- 0; rk <- rhs; qk = 0.
+ *
+ * parameters:
+ *   n         <-- number of elements
+ *   rhs       <-- vector of elements
+ *   vx        --> vector of elements
+ *   rk        --> vector of elements
+ *   qk        --> vector of elements
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_fcg_init_vx0(cs_lnum_t         n,
+              const cs_real_t  *restrict rhs,
+              cs_real_t        *restrict vx,
+              cs_real_t        *restrict rk,
+              cs_real_t        *restrict qk)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (ii < n) {
+    vx[ii] = 0.;
+    rk[ii] = rhs[ii];
     qk[ii] = 0.;
   }
 }
@@ -513,6 +731,50 @@ _ymx_dot_yy(cs_lnum_t          n,
     y[ii] = y[ii] - x[ii];
     double r = y[ii];
     sdata[tid] += r*r;
+
+    ii += grid_size;
+  }
+
+  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+}
+
+/*----------------------------------------------------------------------------
+ * Set x to 0 and y to -r and compute stage 1 of resulting y.y.
+ *
+ * This call must be followed by
+ * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ *  (grid_size, sum_block, _r_reduce);
+ * Also, block_size must be a power 2.
+ *
+ * parameters:
+ *   n         <-- number of elements
+ *   r         <-- vector of elements
+ *   x         <-- vector of elements
+ *   y         <-> vector of elements
+ *   sum_block --> contribution to residual
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_x0_ymr_dot_yy(cs_lnum_t          n,
+               const cs_real_t   *restrict r,
+               cs_real_t         *restrict x,
+               cs_real_t         *restrict y,
+               double            *sum_block)
+{
+  __shared__ double sdata[block_size];
+
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t tid = threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
+
+  sdata[tid] = 0.0;
+
+  while (ii < n) {
+    x[ii] = 0;
+    y[ii] = -r[ii];
+    double rii = r[ii];
+    sdata[tid] += rii*rii;
 
     ii += grid_size;
   }
@@ -939,6 +1201,8 @@ BEGIN_C_DECLS
  *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -953,7 +1217,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
                        cs_lnum_t                  diag_block_size,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
-                       cs_real_t                 *restrict vx,
+                       cs_real_t                 *vx_ini,
+                       cs_real_t                 *vx,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
@@ -978,7 +1243,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
   cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
 
-  if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED)
+  if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
     cudaMemPrefetchAsync(vx, vec_size, device_id, stream_pf);
 
   if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
@@ -1022,11 +1287,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   cs_real_t *restrict rk = _aux_vectors;
 
-  cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
-                  cudaMemcpyDeviceToDevice, stream);
-
   const unsigned int blocksize = 256;
-
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
 
   double *sum_block, *res;
@@ -1034,6 +1295,38 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   if (local_stream)
     cs_matrix_spmv_cuda_set_stream(stream);
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  if (vx_ini != vx) {
+
+    n_iter += 1;
+
+    if (convergence->precision > 0. || c->plot != NULL) {
+      _jacobi_compute_vx_and_residual_ini0
+        <blocksize><<<gridsize, blocksize, 0, stream>>>
+          (n_rows, ad_inv, rhs, vx, rk, sum_block);
+      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+        (gridsize, sum_block, res);
+      _sync_reduction_sum(c, stream, 1, res);
+      residual = sqrt(*res); /* Actually, residual of previous iteration */
+    }
+    else {
+      _jacobi_compute_vx_ini0<blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, rhs, vx, rk);
+      cudaStreamSynchronize(stream);
+    }
+
+    /* Convergence test */
+    if (n_iter == 1)
+      c->setup_data->initial_residual = residual;
+    cvg = cs_sles_it_convergence_test(c, n_iter, residual, convergence);
+
+  }
+  else
+    cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
+                    cudaMemcpyDeviceToDevice, stream);
 
 #if _USE_GRAPH == 1
 
@@ -1054,7 +1347,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   }
   else {
     _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
-      (n_rows, ad_inv, ad, rhs, vx, rk);
+      (n_rows, ad_inv, rhs, vx, rk);
   }
 
   cudaStreamEndCapture(stream, &graph);
@@ -1141,6 +1434,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
  *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1155,6 +1450,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
                              cs_lnum_t                  diag_block_size,
                              cs_sles_it_convergence_t  *convergence,
                              const cs_real_t           *rhs,
+                             cs_real_t                 *restrict vx_ini,
                              cs_real_t                 *restrict vx,
                              size_t                     aux_size,
                              void                      *aux_vectors)
@@ -1221,9 +1517,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   cs_real_t *restrict rk = _aux_vectors;
 
-  cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
-                  cudaMemcpyDeviceToDevice, stream);
-
   const unsigned int blocksize = 256;
   cs_lnum_t n_b_rows = n_rows / diag_block_size;
 
@@ -1234,6 +1527,44 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   if (local_stream)
     cs_matrix_spmv_cuda_set_stream(stream);
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  if (vx_ini != vx) {
+
+    n_iter += 1;
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+
+    if (diag_block_size == 3)
+      _block_3_jacobi_compute_vx_and_residual_ini0
+        <blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_b_rows, ad_inv, ad, rhs, vx, rk, sum_block);
+    else
+      _block_jacobi_compute_vx_and_residual_ini0
+        <blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
+
+    if (convergence->precision > 0. || c->plot != NULL) {
+      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+        (gridsize, sum_block, res);
+      _sync_reduction_sum(c, stream, 1, res);
+      residual = sqrt(*res); /* Actually, residual of previous iteration */
+    }
+    else
+      cudaStreamSynchronize(stream);
+
+    /* Convergence test */
+    if (n_iter == 1)
+      c->setup_data->initial_residual = residual;
+    cvg = cs_sles_it_convergence_test(c, n_iter, residual, convergence);
+
+  }
+
+  else
+    cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
+                    cudaMemcpyDeviceToDevice, stream);
 
 #if _USE_GRAPH == 1
 
@@ -1352,6 +1683,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1366,6 +1699,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
                     cs_lnum_t                  diag_block_size,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
+                    cs_real_t                 *restrict vx_ini,
                     cs_real_t                 *restrict vx,
                     size_t                     aux_size,
                     void                      *aux_vectors)
@@ -1448,10 +1782,15 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
   /* Residual and descent direction */
 
-  cs_matrix_vector_multiply_d(a, vx, rk);  /* rk = A.x0 */
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply_d(a, vx, rk);  /* rk = A.x0 */
 
-  _fcg_init<<<gridsize, blocksize, 0, stream>>>
-    (n_rows, rhs, rk, qk);
+    _fcg_init<<<gridsize, blocksize, 0, stream>>>
+      (n_rows, rhs, rk, qk);
+  }
+  else
+    _fcg_init_vx0<<<gridsize, blocksize, 0, stream>>>
+      (n_rows, rhs, vx, rk, qk);
 
   double rho_km1 = 0;
 
@@ -1538,6 +1877,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
  *   diag_block_size <-- diagonal block size (unused here)
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area (allocation otherwise)
@@ -1552,7 +1893,8 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
                     cs_lnum_t                  diag_block_size,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
-                    cs_real_t                 *restrict vx,
+                    cs_real_t                 *vx_ini,
+                    cs_real_t                 *vx,
                     size_t                     aux_size,
                     void                      *aux_vectors)
 {
@@ -1657,6 +1999,8 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 
   /* Current Restart */
 
+  cs_real_t *_vx = vx_ini;
+
   while (cvg == CS_SLES_ITERATING) {
 
     unsigned n_c_iter = 0;
@@ -1664,10 +2008,16 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     /* Initialize iterative calculation */
     /*----------------------------------*/
 
-    cs_matrix_vector_multiply_d(a, vx, rk);  /* rk = A.x0 */
+    if (_vx == vx) {
+      cs_matrix_vector_multiply_d(a, vx, rk);  /* rk = A.x0 */
 
-    _ymx_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
-      (n_rows, rhs, rk, sum_block);
+      _ymx_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
+        (n_rows, rhs, rk, sum_block);
+    }
+    else {
+      _x0_ymr_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
+        (n_rows, rhs, vx, rk, sum_block);
+    }
 
     cs_blas_cuda_reduce_single_block
       <blocksize_rsb, 1><<<1, blocksize_rsb, 0, stream>>>
