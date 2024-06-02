@@ -56,6 +56,7 @@
 #include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_convection_diffusion.h"
+#include "cs_dispatch.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_halo.h"
@@ -1183,16 +1184,24 @@ cs_equation_iterative_solve_vector(int                   idtvar,
       eb_size = 3;
   }
 
+  /* Parallel or device dispatch */
+
+  cs_dispatch_context ctx;
+  if (idtvar < 0)
+    ctx.set_use_gpu(false);  /* steady case not ported to GPU */
+
+  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+
   /* Allocate temporary arrays */
-  BFT_MALLOC(dam, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(smbini, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(dam, n_cells_ext, cs_real_33_t, amode);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_3_t, amode);
+  CS_MALLOC_HD(smbini, n_cells_ext, cs_real_3_t, amode);
 
   if (iswdyp >= 1) {
-    BFT_MALLOC(adxk, n_cells_ext, cs_real_3_t);
-    BFT_MALLOC(adxkm1, n_cells_ext, cs_real_3_t);
-    BFT_MALLOC(dpvarm1, n_cells_ext, cs_real_3_t);
-    BFT_MALLOC(rhs0, n_cells_ext, cs_real_3_t);
+   CS_MALLOC_HD(adxk, n_cells_ext, cs_real_3_t, amode);
+   CS_MALLOC_HD(adxkm1, n_cells_ext, cs_real_3_t, amode);
+   CS_MALLOC_HD(dpvarm1, n_cells_ext, cs_real_3_t, amode);
+   CS_MALLOC_HD(rhs0, n_cells_ext, cs_real_3_t, amode);
   }
 
   cs_real_3_t *i_pvar = NULL;
@@ -1243,7 +1252,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   /*  be careful here, xam is interleaved*/
 
   cs_lnum_t eb_stride = eb_size*eb_size;
-  BFT_MALLOC(xam, eb_stride*isym*n_faces, cs_real_t);
+  CS_MALLOC_HD(xam, eb_stride*isym*n_faces, cs_real_t, amode);
 
   /*==========================================================================
    * 1.  Building of the "simplified" matrix
@@ -1274,25 +1283,21 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    * are disabled
    * If a whole line of the matrix is 0, the diagonal is set to 1 */
   if (mq->has_disable_flag == 1) {
-#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        if (CS_ABS(dam[cell_id][i][i]) < DBL_MIN)
           dam[cell_id][i][i] += 1.;
-        }
-      }
-    }
+    });
   }
 
   /*  For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
-#   pragma omp parallel for  if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
         for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
           dam[iel][isou][jsou] /= relaxp;
       }
-    }
+    });
   }
 
   /*===========================================================================
@@ -1353,23 +1358,21 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
   cs_lnum_t has_dc = mq->has_disable_flag;
-# pragma omp parallel if(n_cells > CS_THR_MIN)
-  {
-#   pragma omp for nowait
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (cs_lnum_t isou = 0; isou < 3; isou++) {
-        smbini[cell_id][isou] = smbrp[cell_id][isou];
-        smbrp[cell_id][isou] = 0.;
-      }
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+    for (cs_lnum_t isou = 0; isou < 3; isou++) {
+      smbini[cell_id][isou] = smbrp[cell_id][isou];
+      smbrp[cell_id][isou] = 0.;
     }
+  });
 
-    /* pvar is initialized on n_cells_ext to avoid a synchronization */
-#   pragma omp for nowait
-    for (cs_lnum_t iel = 0; iel < n_cells_ext; iel++) {
-      for (cs_lnum_t isou = 0; isou < 3; isou++)
-        pvar[iel][isou] = pvark[iel][isou];
-    }
-  }
+  /* pvar is initialized on n_cells_ext to avoid a synchronization */
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
+    for (cs_lnum_t isou = 0; isou < 3; isou++)
+      pvar[iel][isou] = pvark[iel][isou];
+  });
+
+  /* Synchronize before next major operation */
+  ctx.wait();
 
   /* In the following, cs_balance_vector is called with inc=1,
    * except for Weight Matrix (nswrsp=-1) */
@@ -1421,18 +1424,16 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     if (f != NULL) {
       cs_real_3_t *cpro_cv_df_v = (cs_real_3_t *)f->val;
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         for (cs_lnum_t isou = 0; isou < 3; isou++)
           cpro_cv_df_v[iel][isou] = smbrp[iel][isou];
-      }
+      });
     }
   }
 
   /* Dynamic relaxation*/
   if (iswdyp >= 1) {
-#   pragma omp parallel for  if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
         rhs0[iel][isou] = smbrp[iel][isou];
         smbini[iel][isou] = smbini[iel][isou]
@@ -1445,14 +1446,13 @@ cs_equation_iterative_solve_vector(int                   idtvar,
         adxk[iel][isou] = 0.;
         dpvar[iel][isou] = 0.;
       }
-    }
+    });
 
     /* ||A.dx^0||^2 = 0 */
     nadxk = 0.;
   }
   else {
-#   pragma omp parallel for  if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
         smbini[iel][isou] = smbini[iel][isou]
                           -fimp[iel][isou][0]*(pvar[iel][0] - pvara[iel][0])
@@ -1460,8 +1460,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                           -fimp[iel][isou][2]*(pvar[iel][2] - pvara[iel][2]);
         smbrp[iel][isou] += smbini[iel][isou];
       }
-    }
+    });
   }
+
+  ctx.wait();
 
   /* --- Convergence test */
   residu = sqrt(cs_gdot(3*n_cells, (cs_real_t *)smbrp, (cs_real_t *)smbrp));
@@ -1470,8 +1472,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    *    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE) */
 
   /* Allocate a temporary array */
-  BFT_MALLOC(w1, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(w2, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_3_t, amode);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_3_t, amode);
 
   cs_real_t *pvar_i;
   BFT_MALLOC(pvar_i, n_cells_ext, cs_real_t);
@@ -1502,7 +1504,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    (cs_real_t *)w2,
                                    (cs_real_t *)w1);
 
-  BFT_FREE(w2);
+  ctx.wait(); // matrix vector multiply uses the same stream as the ctx
+
+  CS_FREE_HD(w2);
 
   if (iwarnp >= 2) {
     const cs_real_t *_w1 = (cs_real_t *)w1, *_smbrp = (cs_real_t *)smbrp;
@@ -1511,22 +1515,27 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                sqrt(cs_gdot(3*n_cells, _smbrp, _smbrp)));
   }
 
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     for (int i = 0; i < 3; i++)
       w1[cell_id][i] += smbrp[cell_id][i];
-    /* Remove contributions from penalized cells */
-    if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-      for (int i = 0; i < 3; i++)
-        w1[cell_id][i] = 0.;
+  });
+
+  if (has_dc == 1) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      /* Remove contributions from penalized cells */
+      if (mq->c_disable_flag[cell_id] != 0)
+        for (int i = 0; i < 3; i++)
+          w1[cell_id][i] = 0.;
+    });
   }
+  ctx.wait();
 
   double  rnorm2 = cs_gdot(3*n_cells, (cs_real_t *)w1, (cs_real_t *)w1);
   rnorm = sqrt(rnorm2);
   sinfo.rhs_norm = rnorm;
 
   /* Free memory */
-  BFT_FREE(w1);
+  CS_FREE_HD(w1);
 
   /* Warning: for Weight Matrix, one and only one sweep is done. */
   nswmod = CS_MAX(eqp->nswrsm, 1);
@@ -1543,21 +1552,21 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     /*  Dynamic relaxation of the system */
     if (iswdyp >= 1) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
           dpvarm1[iel][isou] = dpvar[iel][isou];
           dpvar[iel][isou] = 0.;
         }
-      }
+      });
     }
     else {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         for (cs_lnum_t isou = 0; isou < 3; isou++)
           dpvar[iel][isou] = 0.;
-      }
+      });
     }
+
+    ctx.wait();
 
     /*  Solver residual */
     ressol = residu;
@@ -1591,13 +1600,14 @@ cs_equation_iterative_solve_vector(int                   idtvar,
       /* Computation of the variable relaxation coefficient */
       lvar = -1;
 
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
           adxkm1[iel][isou] = adxk[iel][isou];
           adxk[iel][isou] = - rhs0[iel][isou];
         }
-      }
+      });
+
+      ctx.wait();
 
       cs_balance_vector(idtvar,
                         lvar,
@@ -1680,25 +1690,22 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     /* --- Update the solution with the increment */
 
     if (iswdyp <= 0) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         for (cs_lnum_t isou = 0; isou < 3; isou++)
           pvar[iel][isou] += dpvar[iel][isou];
-      }
+      });
     }
     else if (iswdyp == 1) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         for (cs_lnum_t isou = 0; isou < 3; isou++)
           pvar[iel][isou] += alph*dpvar[iel][isou];
-      }
+      });
     }
     else if (iswdyp >= 2) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         for (cs_lnum_t isou = 0; isou < 3; isou++)
           pvar[iel][isou] += alph*dpvar[iel][isou] + beta*dpvarm1[iel][isou];
-      }
+      });
     }
 
     /* --> Handle parallelism and periodicity */
@@ -1709,8 +1716,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     /* --- Update the right hand and compute the new residual */
 
     if (iswdyp <= 0) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         /* smbini already contains unsteady terms and mass source terms
          * of the RHS updated at each sweep */
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -1720,11 +1726,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                             - fimp[iel][isou][2]*dpvar[iel][2];
           smbrp[iel][isou] = smbini[iel][isou];
         }
-      }
+      });
     }
     else if (iswdyp == 1) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         /* smbini already contains unsteady terms and mass source terms
          * of the RHS updated at each sweep */
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -1734,11 +1739,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                             - fimp[iel][isou][2]*alph*dpvar[iel][2];
           smbrp[iel][isou] = smbini[iel][isou];
         }
-      }
+      });
     }
     else if (iswdyp == 2) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
         /* smbini already contains unsteady terms and mass source terms
          * of the RHS updated at each sweep */
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -1751,8 +1755,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                                 + beta*dpvarm1[iel][2]);
           smbrp[iel][isou] = smbini[iel][isou];
         }
-      }
+      });
     }
+
+    ctx.wait();
 
     /* Increment face value with theta * face_value at current time step
      * if needed
@@ -1845,13 +1851,14 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     /* smbini already contains unsteady terms and mass source terms
        of the RHS updated at each sweep */
 
-#   pragma omp parallel for  if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
       for (cs_lnum_t isou = 0; isou < 3; isou++)
         smbrp[iel][isou] = smbini[iel][isou] - fimp[iel][isou][0]*dpvar[iel][0]
                                              - fimp[iel][isou][1]*dpvar[iel][1]
                                              - fimp[iel][isou][2]*dpvar[iel][2];
-    }
+    });
+
+    ctx.wait();
 
     inc = 1;
 
@@ -1883,11 +1890,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     /* Contribution of the current component to the L2 norm stored in eswork */
 
-#   pragma omp parallel for  if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t iel) {
       for (cs_lnum_t isou = 0; isou < 3; isou++)
         eswork[iel][isou] = pow(smbrp[iel][isou] / cell_vol[iel],2);
-    }
+    });
   }
 
   /*==========================================================================
@@ -1897,22 +1903,24 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   cs_sles_free_native(f_id, var_name);
 
   /* Save diagonal in case we want to use it */
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
         fimp[cell_id][i][j] = dam[cell_id][i][j];
-  }
+  });
+
+  ctx.wait();
 
   /* Free memory */
-  BFT_FREE(dam);
-  BFT_FREE(xam);
-  BFT_FREE(smbini);
-  BFT_FREE(dpvar);
+  CS_FREE_HD(dam);
+  CS_FREE_HD(xam);
+  CS_FREE_HD(smbini);
+  CS_FREE_HD(dpvar);
   if (iswdyp >= 1) {
-    BFT_FREE(adxk);
-    BFT_FREE(adxkm1);
-    BFT_FREE(dpvarm1);
-    BFT_FREE(rhs0);
+    CS_FREE_HD(adxk);
+    CS_FREE_HD(adxkm1);
+    CS_FREE_HD(dpvarm1);
+    CS_FREE_HD(rhs0);
   }
 }
 
