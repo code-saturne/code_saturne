@@ -1784,7 +1784,7 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
   cs_lnum_t          n_cells     = mesh->n_cells;
   const cs_real_t   *volume = mesh_quantities->cell_vol;
 
-  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
