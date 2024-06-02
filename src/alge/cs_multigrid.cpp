@@ -1918,7 +1918,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
     int n_ops = 2;
     if (i == 0) {
-      if (mg->type == CS_MULTIGRID_V_CYCLE)
+      if (mg->type == CS_MULTIGRID_V_CYCLE && mg->info.n_max_cycles > 1)
         n_ops = 1;
     }
 
@@ -3278,6 +3278,422 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 }
 
 /*----------------------------------------------------------------------------
+ * Single multigrid V-cycle for preconditioning.
+ *
+ * parameters:
+ *   mg               <-- multigrid system
+ *   lv_names         <-- names of linear systems
+ *                        (indexed as mg->setup_data->sles_hierarchy)
+ *   verbosity        <-- verbosity level
+ *   n_equiv_iter     <-> equivalent number of iterations
+ *   precision        <-- solver precision
+ *   r_norm           <-- residual normalization
+ *   initial_residual <-> initial residual
+ *   residual         <-> residual
+ *   rhs              <-- right hand side
+ *   vx_ini           <-- initial system solution
+ *                        (vx if nonzero, nullptr if zero)
+ *   vx               --> system solution
+ *   aux_size         <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors      --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence status
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_multigrid_v_cycle_pc(cs_multigrid_t       *mg,
+                      const char          **lv_names,
+                      int                   verbosity,
+                      int                  *n_equiv_iter,
+                      double                precision,
+                      double                r_norm,
+                      double               *initial_residual,
+                      double               *residual,
+                      const cs_real_t      *rhs,
+                      cs_real_t            *vx_ini,
+                      cs_real_t            *vx,
+                      size_t                aux_size,
+                      void                 *aux_vectors)
+{
+  int level, coarsest_level;
+  cs_timer_t t0, t1;
+
+  cs_lnum_t db_size = 1;
+  cs_lnum_t eb_size = 1;
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING, c_cvg = CS_SLES_ITERATING;
+  int n_iter = 0;
+  double _residual = -1.;
+  double _initial_residual = 0.;
+
+  size_t _aux_r_size = aux_size / sizeof(cs_real_t);
+  cs_lnum_t n_rows = 0, n_cols_ext = 0;
+  cs_lnum_t _n_rows = 0;
+  cs_gnum_t n_g_rows = 0;
+  cs_real_t r_norm_l = r_norm;
+
+  double denom_n_g_rows_0 = 1.0;
+
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+  cs_multigrid_level_info_t  *lv_info = NULL;
+
+  cs_real_t *_aux_vectors = (cs_real_t *)aux_vectors;
+  cs_real_t *restrict wr = NULL;
+  cs_real_t *restrict vx_lv = NULL;
+
+  const int cycle_id = 1;
+  const cs_real_t *restrict rhs_lv = NULL;
+  const cs_grid_t *f = NULL, *c= NULL;
+
+  bool end_cycle = false;
+
+  cs_dispatch_context ctx;
+
+  /* Initialization */
+
+  coarsest_level = mgd->n_levels - 1;
+
+  f = mgd->grid_hierarchy[0];
+
+  cs_grid_get_info(f,
+                   NULL,
+                   NULL,
+                   &db_size,
+                   &eb_size,
+                   NULL,
+                   &n_rows,
+                   &n_cols_ext,
+                   NULL,
+                   &n_g_rows);
+
+  denom_n_g_rows_0 = 1.0 / n_g_rows;
+
+  const cs_matrix_t *_matrix = cs_grid_get_matrix(f);
+  cs_alloc_mode_t amode_f = cs_matrix_get_alloc_mode(_matrix);
+
+  /* Allocate wr or use working area
+     (note the finest grid could have less elements than a coarser
+     grid to wich rank merging has been applied, hence the test below) */
+
+  size_t wr_size = n_cols_ext*db_size;
+  for (level = 1; level < (int)(mgd->n_levels); level++) {
+    cs_lnum_t n_cols_max
+      = cs_grid_get_n_cols_max(mgd->grid_hierarchy[level]);
+    wr_size = CS_MAX(wr_size, (size_t)(n_cols_max*db_size));
+    wr_size = CS_SIMD_SIZE(wr_size);
+  }
+
+  if (_aux_r_size >= wr_size && amode_f <= CS_ALLOC_HOST) {
+    wr = (cs_real_t *)aux_vectors;
+    _aux_vectors = wr + wr_size;
+    _aux_r_size -= wr_size;
+  }
+  else {
+    if (amode_f <= CS_ALLOC_HOST)
+      BFT_MALLOC(wr, wr_size, cs_real_t);
+    else
+      CS_MALLOC_HD(wr, wr_size, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
+  }
+
+  /* map arrays for rhs and vx;
+     for the finest level, simply point to input and output arrays */
+
+  mgd->rhs_vx[0] = nullptr; /* Use _rhs_level when necessary to avoid
+                               const warning */
+  mgd->rhs_vx[1] = vx;
+
+  /* Descent */
+  /*---------*/
+
+  for (level = 0; level < coarsest_level; level++) {
+
+    lv_info = mg->lv_info + level;
+    t0 = cs_timer_time();
+
+    rhs_lv = (level == 0) ? rhs : mgd->rhs_vx[level*2];
+    vx_lv = mgd->rhs_vx[level*2 + 1];
+    cs_real_t *restrict vx_lv_ini
+      = (level == 0) ? vx_ini : nullptr;
+
+    c = mgd->grid_hierarchy[level+1];
+
+    /* Smoother pass */
+
+    _matrix = cs_grid_get_matrix(f);
+
+    _n_rows = n_rows*db_size;
+
+#if defined(HAVE_ACCEL)
+    cs_alloc_mode_t amode_p = amode_f;
+    amode_f = cs_matrix_get_alloc_mode(_matrix);
+    if (amode_p > CS_ALLOC_HOST && amode_f == CS_ALLOC_HOST)
+      cs_prefetch_d2h(vx_lv, _n_rows);
+#endif
+
+    cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
+
+    c_cvg = mg_sles->solve_func(mg_sles->context,
+                                lv_names[level*2],
+                                _matrix,
+                                verbosity - 4, /* verbosity */
+                                precision*mg->info.precision_mult[0],
+                                r_norm_l,
+                                &n_iter,
+                                &_residual,
+                                rhs_lv,
+                                vx_lv_ini,
+                                vx_lv,
+                                _aux_r_size*sizeof(cs_real_t),
+                                _aux_vectors);
+
+    if (mg->plot_time_stamp > -1)
+      mg->plot_time_stamp += n_iter+1;
+
+    if (mg_sles->solve_func == cs_sles_it_solve)
+      _initial_residual = cs_sles_it_get_last_initial_residual
+                            ((const cs_sles_it_t *)mg_sles->context);
+    else
+      _initial_residual = HUGE_VAL;
+
+    if (level == 0)
+      *initial_residual = _initial_residual;
+
+    if (verbosity > 1)
+      _log_residual(mg, cycle_id, lv_names[level*2],
+                    _matrix, rhs_lv, vx_lv);
+
+    if (c_cvg < CS_SLES_BREAKDOWN) {
+      end_cycle = true;
+      break;
+    }
+
+    /* Restrict residual
+       TODO: get residual from cs_sles_solve(). This optimisation would
+       require adding an argument and exercising caution to ensure the
+       correct sign and meaning of the residual
+       (regarding timing, this stage is part of the descent smoother) */
+
+#if defined(HAVE_ACCEL)
+    bool use_gpu = (amode_f > CS_ALLOC_HOST) ? true : false;
+    ctx.set_use_gpu(use_gpu);
+
+    if (use_gpu) {
+#if defined(HAVE_CUDA)
+      cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+      if (stream != 0)
+        ctx.set_cuda_stream(stream);
+#endif
+      cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
+    }
+    else
+#endif
+      cs_matrix_vector_multiply(_matrix, vx_lv, wr);
+
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      wr[ii] = rhs_lv[ii] - wr[ii];
+    });
+    ctx.wait();
+
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(lv_info->t_tot[2]), &t0, &t1);
+    lv_info->n_calls[2] += 1;
+    _lv_info_update_stage_iter(lv_info->n_it_ds_smoothe, n_iter);
+    *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
+
+    /* Prepare for next level */
+
+    cs_grid_restrict_row_var(ctx, f, c, wr, mgd->rhs_vx[(level+1)*2]);
+
+    cs_grid_get_info(c,
+                     NULL,
+                     NULL,
+                     NULL,
+                     NULL,
+                     NULL,
+                     &n_rows,
+                     &n_cols_ext,
+                     NULL,
+                     &n_g_rows);
+
+    f = c;
+    _n_rows = n_rows*db_size;
+
+    t0 = cs_timer_time();
+    cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t1, &t0);
+    lv_info->n_calls[4] += 1;
+
+  } /* End of loop on levels (descent) */
+
+  if (end_cycle == false) {
+
+    /* Resolve coarsest level to convergence */
+    /*---------------------------------------*/
+
+    assert(level == coarsest_level);
+    assert(c == mgd->grid_hierarchy[coarsest_level]);
+
+    /* coarsest level == 0 should never happen, but we play it safe */
+    rhs_lv = (level == 0) ?  rhs : mgd->rhs_vx[coarsest_level*2];
+    vx_lv = mgd->rhs_vx[level*2 + 1];
+
+    _matrix = cs_grid_get_matrix(c);
+
+    cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
+
+    _initial_residual = _residual;
+
+    lv_info = mg->lv_info + level;
+
+    t0 = cs_timer_time();
+
+    c_cvg = mg_sles->solve_func(mg_sles->context,
+                                lv_names[level*2],
+                                _matrix,
+                                verbosity - 3,
+                                precision*mg->info.precision_mult[2],
+                                r_norm_l,
+                                &n_iter,
+                                &_residual,
+                                rhs_lv,
+                                nullptr,
+                                vx_lv,
+                                _aux_r_size*sizeof(cs_real_t),
+                                _aux_vectors);
+
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(lv_info->t_tot[1]), &t0, &t1);
+    lv_info->n_calls[1] += 1;
+    _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
+
+    if (mg_sles->solve_func == cs_sles_it_solve)
+      _initial_residual = cs_sles_it_get_last_initial_residual
+                            ((const cs_sles_it_t *)mg_sles->context);
+    else
+      _initial_residual = HUGE_VAL;
+
+    *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
+
+    if (verbosity > 1)
+      _log_residual(mg, cycle_id, lv_names[level*2],
+                    _matrix, rhs_lv, vx_lv);
+
+    if (c_cvg < CS_SLES_BREAKDOWN)
+      end_cycle = true;
+
+  }
+
+  if (end_cycle == false) {
+
+    /* Ascent */
+    /*--------*/
+
+    for (level = coarsest_level - 1; level > -1; level--) {
+
+      vx_lv = mgd->rhs_vx[level*2 + 1];
+
+      lv_info = mg->lv_info + level;
+
+      c = mgd->grid_hierarchy[level+1];
+      f = mgd->grid_hierarchy[level];
+
+      cs_grid_get_info(f,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       &n_rows,
+                       &n_cols_ext,
+                       NULL,
+                       &n_g_rows);
+
+      /* Prolong correction */
+
+      t0 = cs_timer_time();
+
+      cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*2 + 1];
+      cs_grid_prolong_row_var(ctx,
+                              c, f,
+                              true,  /* increment */
+                              vx_lv1, vx_lv);
+
+      _n_rows = n_rows*db_size;
+
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t0, &t1);
+      lv_info->n_calls[5] += 1;
+
+      rhs_lv = (level == 0) ? rhs : mgd->rhs_vx[level*2];
+
+      _matrix = cs_grid_get_matrix(f);
+
+#if defined(HAVE_ACCEL)
+      cs_alloc_mode_t amode_p = amode_f;
+      amode_f = cs_matrix_get_alloc_mode(_matrix);
+      if (amode_p == CS_ALLOC_HOST && amode_f > CS_ALLOC_HOST)
+        cs_prefetch_h2d(vx_lv, _n_rows);
+#endif
+
+      cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2 + 1]);
+
+      c_cvg = mg_sles->solve_func(mg_sles->context,
+                                  lv_names[level*2+1],
+                                  _matrix,
+                                  verbosity - 4, /* verbosity */
+                                  precision*mg->info.precision_mult[1],
+                                  r_norm_l,
+                                  &n_iter,
+                                  &_residual,
+                                  rhs_lv,
+                                  vx_lv,
+                                  vx_lv,
+                                  _aux_r_size*sizeof(cs_real_t),
+                                  _aux_vectors);
+
+      t0 = cs_timer_time();
+      cs_timer_counter_add_diff(&(lv_info->t_tot[3]), &t1, &t0);
+      lv_info->n_calls[3] += 1;
+      _lv_info_update_stage_iter(lv_info->n_it_as_smoothe, n_iter);
+
+      if (mg_sles->solve_func == cs_sles_it_solve)
+        _initial_residual = cs_sles_it_get_last_initial_residual
+                              ((const cs_sles_it_t *)mg_sles->context);
+      else
+        _initial_residual = HUGE_VAL;
+
+      if (level == 0)
+        *residual = _residual;
+
+      *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
+
+      if (verbosity > 1)
+        _log_residual(mg, cycle_id, lv_names[level*2+1],
+                      _matrix, rhs_lv, vx_lv);
+
+      if (c_cvg < CS_SLES_BREAKDOWN)
+        break;
+
+    } /* End loop on levels (ascent) */
+
+  } /* End of tests on end_cycle */
+
+  mgd->exit_level = level;
+  mgd->exit_residual = _residual;
+  if (level == 0)
+    mgd->exit_initial_residual = *initial_residual;
+  else
+    mgd->exit_initial_residual = _initial_residual;
+  mgd->exit_cycle_id = cycle_id;
+
+  /* Free memory */
+
+  if (wr != aux_vectors)
+    BFT_FREE(wr);
+
+  return CS_SLES_ITERATING;
+}
+
+/*----------------------------------------------------------------------------
  * Apply a multigrid K-cycle on the current level.
  *
  * This version of the multigrid cycle is a K-cycle, described by Y. Notay in
@@ -4430,23 +4846,40 @@ cs_multigrid_solve(void                *context,
   /* Cycle to solution */
 
   if (mg->type == CS_MULTIGRID_V_CYCLE) {
-    for (n_cycles = 0; cvg == CS_SLES_ITERATING; n_cycles++) {
-      int cycle_id = n_cycles+1;
-      cs_real_t *_vx_ini = (n_cycles > 0) ? vx : vx_ini;
-      cvg = _multigrid_v_cycle(mg,
-                               lv_names,
-                               verbosity,
-                               cycle_id,
-                               n_iter,
-                               precision,
-                               r_norm,
-                               &initial_residual,
-                               residual,
-                               rhs,
-                               _vx_ini,
-                               vx,
-                               _aux_size - lv_names_size,
-                               _aux_buf + lv_names_size);
+    if (mg->info.n_max_cycles == 1) {
+      cvg = _multigrid_v_cycle_pc(mg,
+                                  lv_names,
+                                  verbosity,
+                                  n_iter,
+                                  precision,
+                                  r_norm,
+                                  &initial_residual,
+                                  residual,
+                                  rhs,
+                                  vx_ini,
+                                  vx,
+                                  _aux_size - lv_names_size,
+                                  _aux_buf + lv_names_size);
+    }
+    else {
+      for (n_cycles = 0; cvg == CS_SLES_ITERATING; n_cycles++) {
+        int cycle_id = n_cycles+1;
+        cs_real_t *_vx_ini = (n_cycles > 0) ? vx : vx_ini;
+        cvg = _multigrid_v_cycle(mg,
+                                 lv_names,
+                                 verbosity,
+                                 cycle_id,
+                                 n_iter,
+                                 precision,
+                                 r_norm,
+                                 &initial_residual,
+                                 residual,
+                                 rhs,
+                                 _vx_ini,
+                                 vx,
+                                 _aux_size - lv_names_size,
+                                 _aux_buf + lv_names_size);
+      }
     }
   }
   else if (   mg->type >= CS_MULTIGRID_K_CYCLE
