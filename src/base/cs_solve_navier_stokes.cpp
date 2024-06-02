@@ -2453,7 +2453,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* Initialization of the implicit terms */
 
   cs_real_33_t *fimp = NULL;
-  BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(fimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   if (iappel == 1 && eqp_u->istat == 1) {
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -3244,7 +3244,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     }
   }
 
-  BFT_FREE(fimp);
+  CS_FREE_HD(fimp);
   CS_FREE_HD(smbr);
   BFT_FREE(eswork);
 
