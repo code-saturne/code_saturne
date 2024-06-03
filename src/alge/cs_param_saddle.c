@@ -1026,6 +1026,8 @@ cs_param_saddle_set_solver(const char          *keyval,
   if (saddlep == NULL)
     return ierr;
 
+  _free_context(saddlep); /* If one switches from one solver to another one */
+
   if (strcmp(keyval, "none") == 0)
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;
 
@@ -1052,7 +1054,6 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     ctxp->init_sles_param = _init_init_slesp(saddlep);
 
-    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -1072,7 +1073,6 @@ cs_param_saddle_set_solver(const char          *keyval,
     ctxp->n_stored_directions = 30;    /* default value */
     ctxp->xtra_sles_param = NULL;      /* It should remain to NULL */
 
-    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -1093,7 +1093,6 @@ cs_param_saddle_set_solver(const char          *keyval,
     ctxp->xtra_sles_param = NULL;      /* It depends on the type of Schur
                                           approximation */
 
-    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -1119,7 +1118,6 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     ctxp->init_sles_param = _init_init_slesp(saddlep);
 
-    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -1166,7 +1164,6 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     ctxp->scaling_coef = 1.0;  /* default value */
 
-    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
 
   }
@@ -1196,7 +1193,6 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
 
-    _free_context(saddlep); /* If one switches from one solver to another one */
     saddlep->context = ctxp;
   }
   else
