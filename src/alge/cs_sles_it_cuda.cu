@@ -1385,7 +1385,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     }
     else
       _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_rows, ad_inv, ad, rhs, vx, rk);
+        (n_rows, ad_inv, rhs, vx, rk);
 
 #endif /* _USE_GRAPH */
 
