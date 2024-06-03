@@ -6964,6 +6964,10 @@ cs_convection_diffusion_vector(int                         idtvar,
   short *bndcel = nullptr;
   cs_dispatch_context ctx_c;
   ctx_c.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
+#if defined(HAVE_CUDA)
+  if (ctx_c.use_gpu())
+    ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
 
   if (ivisep == 1 && eqp.idiff == 1) {
     const cs_lnum_t *restrict b_face_cells
