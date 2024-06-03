@@ -3510,10 +3510,13 @@ cs_atmo_hydrostatic_profiles_compute(void)
     if (idilat > 0)
       temp->val[cell_id] =   potemp->val[cell_id]
                            * pow((f->val[cell_id]/pref), rscp);
-    density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+        != CS_ATMO_CONSTANT_DENSITY)
+      density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
   }
 
-  if (has_restart == 1)
+  if (has_restart == 1 || cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+        == CS_ATMO_CONSTANT_DENSITY)
     return;
 
   /* Boussinesq hypothesis */
