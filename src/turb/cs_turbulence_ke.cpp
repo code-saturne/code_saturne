@@ -376,8 +376,8 @@ cs_turbulence_ke(int              phase_id,
   CS_MALLOC_HD(smbre, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t *tinstk, *tinste, *divu, *strain_sq;
-  BFT_MALLOC(tinstk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(tinste, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(tinstk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(tinste, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(divu, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(strain_sq, n_cells_ext, cs_real_t, cs_alloc_mode);
 
