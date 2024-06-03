@@ -463,6 +463,7 @@ _mumps_pc_apply(void                *context,
                                                          &residual,
                                                          rhs,
                                                          x_out,
+                                                         x_out,
                                                          0,
                                                          NULL);
 
