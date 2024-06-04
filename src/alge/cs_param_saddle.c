@@ -278,7 +278,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
               "to the Schur complement approximation (%s).",
               __func__, schurp->name);
 
-  ierr = cs_param_sles_set_amg_type("amg", schurp);
+  ierr = cs_param_sles_set_precond("amg", schurp);
   assert(ierr == EXIT_SUCCESS);
 
   schurp->cvg_param.rtol = 1e-4; /* relative tolerance to stop the iterative
