@@ -540,11 +540,6 @@ cs_saddle_system_b11_matvec(const cs_cdo_system_helper_t  *sh,
                       vec,             /* in:  size=n1_scatter_elts */
                       vec);            /* out: size=n1_gather_elts */
 
-  /* cs_range_set_gather(b11_rset, */
-  /*                     CS_REAL_TYPE, 1, /\* type and stride *\/ */
-  /*                     matvec,          /\* in:  size=n1_scatter_elts *\/ */
-  /*                     matvec);         /\* out: size=n1_gather_elts *\/ */
-
   cs_matrix_vector_multiply(m11, vec, matvec);
 
   /* gather view to scatter view (i.e. algebraic to mesh view) */

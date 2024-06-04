@@ -435,9 +435,9 @@ typedef struct {
 /*!
  * \brief Get the best available class of matrix w.r.t. the solver class
  *
- * \param[in] solver_class   family of solver to consider
+ * \param[in] solver_class  family of solver to consider
  *
- * \return the bast class of matrices which is available
+ * \return the best class of matrices which is available
  */
 /*----------------------------------------------------------------------------*/
 

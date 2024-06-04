@@ -987,9 +987,9 @@ cs_cdocb_scaleq_sles_block_krylov(cs_saddle_solver_t  *solver,
 
     ctx->schur_matrix =
       _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                        ctx->m11_inv_diag,
-                                        &(ctx->schur_diag),
-                                        &(ctx->schur_xtra));
+                                 ctx->m11_inv_diag,
+                                 &(ctx->schur_diag),
+                                 &(ctx->schur_xtra));
     break;
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
@@ -1005,9 +1005,9 @@ cs_cdocb_scaleq_sles_block_krylov(cs_saddle_solver_t  *solver,
 
       ctx->schur_matrix =
         _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                          m11_inv_lumped,
-                                          &(ctx->schur_diag),
-                                          &(ctx->schur_xtra));
+                                   m11_inv_lumped,
+                                   &(ctx->schur_diag),
+                                   &(ctx->schur_xtra));
 
       BFT_FREE(m11_inv_lumped);
     }
@@ -1025,27 +1025,27 @@ cs_cdocb_scaleq_sles_block_krylov(cs_saddle_solver_t  *solver,
                                                       ctx->b11_range_set);
     ctx->schur_matrix =
       _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                        ctx->m11_inv_diag,
-                                        &(ctx->schur_diag),
-                                        &(ctx->schur_xtra));
+                                 ctx->m11_inv_diag,
+                                 &(ctx->schur_diag),
+                                 &(ctx->schur_xtra));
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     {
       cs_real_t  *m11_inv_lumped =
         cs_saddle_solver_m11_inv_lumped(solver,
-                                            ctx->m11,
-                                            ctx->b11_range_set,
-                                            ctx->xtra_sles,
-                                            &n_xtra_iters);
+                                        ctx->m11,
+                                        ctx->b11_range_set,
+                                        ctx->xtra_sles,
+                                        &n_xtra_iters);
 
       algo_ctx->n_inner_iter += n_xtra_iters;
 
       ctx->schur_matrix =
         _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                          m11_inv_lumped,
-                                          &(ctx->schur_diag),
-                                          &(ctx->schur_xtra));
+                                   m11_inv_lumped,
+                                   &(ctx->schur_diag),
+                                   &(ctx->schur_xtra));
 
       ctx->m22_mass_diag = _get_scaled_diag_m22(ctx->pty_22);
 
