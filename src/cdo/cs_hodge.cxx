@@ -3845,7 +3845,8 @@ cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
 
         const cs_quant_t  pfq = cm->face[f];
         cs_math_33_3_product(ptyd->tensor, pfq.unitv, mv);
-        hmat->val[f*cm->n_fc+f] = pfq.meas * _dp3(mv, pfq.unitv)/cm->edge[f].meas;
+        hmat->val[f * cm->n_fc + f]
+          = pfq.meas * _dp3(mv, pfq.unitv) / cm->dedge[f].meas;
 
       } /* Loop on cell faces */
 

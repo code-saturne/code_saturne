@@ -98,6 +98,8 @@ Release 8.2.0 (2024-06-17)
     every other run.
 - Boundary layer insertion: limiter could reduce insertion at wrong
   vertices due to incorrect indirection.
+- Fix computation of Hodge operator with Voronoi algorithm and
+  anisotropic property (CDO framework)
 
 Release 8.1.0 (2023-12-13)
 --------------------------
