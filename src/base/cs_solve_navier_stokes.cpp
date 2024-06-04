@@ -61,6 +61,7 @@
 #include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
 #include "cs_ctwr_source_terms.h"
+#include "cs_dispatch.h"
 #include "cs_divergence.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
@@ -267,6 +268,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   cs_real_t *rhs;
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
+
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t drom = crom[cell_id] - croma[cell_id];
@@ -839,7 +841,8 @@ _div_rij(const cs_mesh_t     *m,
     cs_tensor_face_flux(m, mq,
                         -1, 1, 0, 1, 1,
                         eqp->imrgra, eqp->nswrgr,
-                        eqp->imligr, eqp->iwarni,
+                        static_cast<cs_gradient_limit_t>(eqp->imligr),
+                        eqp->iwarni,
                         eqp->epsrgr, eqp->climgr,
                         crom, brom,
                         (const cs_real_6_t *)f_rij->val,
@@ -884,7 +887,8 @@ _div_rij(const cs_mesh_t     *m,
     cs_tensor_face_flux(m, mq,
                         -1, 1, 0, 1, 1,
                         eqp->imrgra, eqp->nswrgr,
-                        eqp->imligr, eqp->iwarni,
+                        static_cast<cs_gradient_limit_t>(eqp->imligr),
+                        eqp->iwarni,
                         eqp->epsrgr, eqp->climgr,
                         crom, brom,
                         rij,
@@ -1001,7 +1005,7 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
                  1,  /* inc */
                  eqp_mesh->imrgra,
                  eqp_mesh->nswrgr,
-                 eqp_mesh->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_mesh->imligr),
                  eqp_mesh->iwarni,
                  eqp_mesh->epsrgr,
                  eqp_mesh->climgr,
@@ -2038,6 +2042,9 @@ _velocity_prediction(const cs_mesh_t             *m,
     brom = broma;
   }
 
+  cs_dispatch_context ctx;
+  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+
   /* Interpolation of rho^n-1/2 (stored in pcrom)
    * Interpolation of the mass flux at (n+1/2)
    * NB: the mass flux (n+1) is overwritten because not used after.
@@ -2047,7 +2054,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_real_t *cproa_rho_tc = NULL;
   if (   (eqp_u->theta < 1.0) && (iappel == 1)
       && (iterns > 1) && (vp_param->itpcol == 0)) {
-    BFT_MALLOC(cproa_rho_tc, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(cproa_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     /* Pointer to the previous mass fluxes */
     cs_real_t *imasfl_prev = cs_field_by_id(iflmas)->val_pre;
@@ -2057,21 +2064,25 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     if (fp->irovar == 1) {
       /* remap the density pointer: n-1/2 */
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
         cproa_rho_tc[c_id] =          theta  * croma[c_id]
                              + (1.0 - theta) * cromaa[c_id];
+      });
+
       pcrom = cproa_rho_tc;
     }
 
     /* Inner mass flux interpolation: n-1/2->n+1/2 */
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
       imasfl[f_id] =          theta  * imasfl[f_id]
                      + (1.0 - theta) * imasfl_prev[f_id];
+    });
 
     /* Boundary mass flux interpolation: n-1/2->n+1/2 */
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
       bmasfl[f_id] =          theta  * bmasfl[f_id]
                      + (1.0 - theta) * bmasfl_prev[f_id];
+    });
   }
 
   cs_real_6_t *viscce = NULL;
@@ -2120,7 +2131,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (f != NULL)
     tsexp = (cs_real_3_t *)f->val;
   else {
-    BFT_MALLOC(loctsexp, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(loctsexp, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     tsexp = loctsexp;
   }
 
@@ -2129,7 +2140,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (f != NULL)
     tsimp = (cs_real_33_t *)f->val;
   else {
-    BFT_MALLOC(loctsimp, n_cells_ext, cs_real_33_t);
+    CS_MALLOC_HD(loctsimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
     tsimp = loctsimp;
   }
   cs_array_real_fill_zero(3*n_cells, (cs_real_t *)tsexp);
@@ -2212,7 +2223,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (f != NULL)
     cpro_gradp = (cs_real_3_t *)f->val;
   else {
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     cpro_gradp = grad;
   }
 
@@ -2234,11 +2245,11 @@ _velocity_prediction(const cs_mesh_t             *m,
       /* Time interpolated density */
       if (eqp_u->theta < 1.0 && iterns > 1) {
         cs_real_t theta = eqp_u->theta;
-        BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
-#       pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+        CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
+        ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cpro_rho_tc[c_id] =          theta  * cpro_rho_mass[c_id]
                               + (1.0 - theta) * croma[c_id];
+        });
         wgrec_crom = cpro_rho_tc;
       }
       else
@@ -2257,24 +2268,25 @@ _velocity_prediction(const cs_mesh_t             *m,
     cs_real_t *cpro_wgrec_s = NULL;
     if (f_g->dim > 1) {
       cpro_wgrec_v = (cs_real_6_t *)f_g->val;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           cpro_wgrec_v[c_id][ii] = dt[c_id] / wgrec_crom[c_id];
 
         for (cs_lnum_t ii = 3; ii < 6; ii++)
           cpro_wgrec_v[c_id][ii] = 0;
-      }
+      });
+      ctx.wait();
       cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
     }
     else {
       cpro_wgrec_s = f_g->val;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cpro_wgrec_s[c_id] = dt[c_id] / wgrec_crom[c_id];
+      });
+      ctx.wait();
       cs_mesh_sync_var_scal(cpro_wgrec_s);
     }
-    BFT_FREE(cpro_rho_tc);
+    CS_FREE_HD(cpro_rho_tc);
   }
 
   cs_gradient_porosity_balance(1);
@@ -2326,29 +2338,27 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* FIXME : "rho g" will be second order only if extrapolated */
 
   if (vp_param->iphydr == 1) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t ii = 0; ii < 3; ii++)
         trav[c_id][ii] +=   (frcxt[c_id][ii] - cpro_gradp[c_id][ii])
                           * cell_f_vol[c_id];
+    });
   }
   else if (vp_param->iphydr == 2) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t rom = crom[c_id];
       for (cs_lnum_t ii = 0; ii < 3; ii++)
         trav[c_id][ii] +=   (  rom*gxyz[ii] - grdphd[c_id][ii]
                              - cpro_gradp[c_id][ii])
                           * cell_f_vol[c_id];
-    }
+    });
   }
   else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t rom = crom[c_id];
       for (cs_lnum_t ii = 0; ii < 3; ii++)
         trav[c_id][ii] += (rom*gxyz[ii] - cpro_gradp[c_id][ii])*cell_f_vol[c_id];
-    }
+    });
   }
   /* Boussinesq approximation */
   else if (vp_model->idilat == 0) {
@@ -2365,39 +2375,37 @@ _velocity_prediction(const cs_mesh_t             *m,
       tref = fp->t0*pow(cs_glob_atmo_constants->ps/fp->p0, rscp);
     }
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t drom = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref);
       for (cs_lnum_t ii = 0; ii < 3; ii++)
         trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii])
                           * cell_f_vol[c_id];
-    }
+    });
 
   }
   else {
     /* 2nd order */
     if (cs_glob_time_scheme->time_order == 2 && vp_param->itpcol == 1) {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t drom = (1.5*croma[c_id] - 0.5*cromaa[c_id] - fp->ro0);
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii] )
                             * cell_f_vol[c_id];
-      }
+      });
     }
 
     /* 1st order */
     else {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t drom = (crom[c_id] - fp->ro0);
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii] )
                             * cell_f_vol[c_id];
-      }
+      });
     }
   }
 
-  BFT_FREE(grad);
+  CS_FREE_HD(grad);
 
   /* For iappel = 1 (ie standard call without estimators)
    * trav gathers the source terms which will be recalculated
@@ -2424,17 +2432,18 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* If we extrapolate the S.T.: -theta*previous value */
     if (cs_glob_time_scheme->isno2t > 0) {
       if (vp_param->nterup == 1) {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           for (cs_lnum_t ii = 0; ii < 3; ii++)
-             trav[c_id][ii] -= thets*c_st_vel[c_id][ii];
-        }
+            trav[c_id][ii] -= thets*c_st_vel[c_id][ii];
+        });
       }
       else {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
+       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+         for (cs_lnum_t ii = 0; ii < 3; ii++)
             trava[c_id][ii] = - thets*c_st_vel[c_id][ii];
-        }
+        });
       }
+      ctx.wait();
       /* And we initialize the source term to fill it then */
       cs_array_real_fill_zero(3*n_cells, (cs_real_t *)c_st_vel);
 
@@ -2456,8 +2465,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   CS_MALLOC_HD(fimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   if (iappel == 1 && eqp_u->istat == 1) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t fimp_c = pcrom[c_id] / dt[c_id] * cell_f_vol[c_id];
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
@@ -2467,12 +2475,13 @@ _velocity_prediction(const cs_mesh_t             *m,
             fimp[c_id][ii][jj] = 0;
         }
       }
-    }
+    });
   }
   else
     cs_array_real_fill_zero(9*n_cells, (cs_real_t *)fimp);
 
-  BFT_FREE(cproa_rho_tc);
+  ctx.wait();
+  CS_FREE_HD(cproa_rho_tc);
 
   /* 2/3 rho * grad(k) for k-epsilon ou k-omega
    * Note: we do not take the gradient of (rho k), as this would make
@@ -2806,13 +2815,13 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (iterns == 1) {
     cs_real_3_t *trav_p = (vp_param->nterup > 1) ? trava : trav;
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++)
           trav_p[c_id][ii] += tsimp[c_id][ii][jj] * vela[c_id][jj];
       }
-    }
+    });
+    ctx.wait();
   }
 
   /* Explicit user source terms are added */
@@ -2827,7 +2836,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       cs_axpy(n_cells*3, 1, (cs_real_t *)tsexp, (cs_real_t *)trav);
   }
 
-  BFT_FREE(loctsexp);
+  CS_FREE_HD(loctsexp);
 
   /* Surface tension is added */
 
@@ -2850,17 +2859,17 @@ _velocity_prediction(const cs_mesh_t             *m,
               (cs_real_t *)tsimp, (cs_real_t *)fimp);
 
     else {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++) {
           for (cs_lnum_t jj = 0; jj < 3; jj++)
             fimp[c_id][ii][jj] += cs_math_fmax(-tsimp[c_id][ii][jj], 0.0);
         }
-      }
+      });
+      ctx.wait();
     }
   }
 
-  BFT_FREE(loctsimp);
+  CS_FREE_HD(loctsimp);
 
   /* Mass source terms
      ----------------- */
@@ -2939,19 +2948,17 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (cs_glob_time_scheme->isno2t > 0) {
     const cs_real_t thetp1 = 1.0 + thets;
     if (vp_param->nterup == 1) {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           smbr[c_id][ii] = trav[c_id][ii] + thetp1*c_st_vel[c_id][ii];
-      }
+      });
     }
     else {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           smbr[c_id][ii] =   trav[c_id][ii] + trava[c_id][ii]
                            + thetp1*c_st_vel[c_id][ii];
-      }
+      });
     }
   }
 
@@ -2961,13 +2968,14 @@ _velocity_prediction(const cs_mesh_t             *m,
       cs_array_real_copy(3*n_cells, (const cs_real_t *)trav, (cs_real_t *)smbr);
 
     else {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           smbr[c_id][ii] = trav[c_id][ii] + trava[c_id][ii];
-      }
+      });
     }
   }
+
+  ctx.wait();
 
   /* Lagrangian: coupling feedback
      -----------------------------
@@ -3027,12 +3035,12 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   cs_real_3_t *eswork = NULL;
   if (iespre != NULL)
-    BFT_MALLOC(eswork, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(eswork, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   if (iappel == 1) {
     /* Store fimp as the velocity matrix is stored in codtiv call */
     cs_real_33_t *fimpcp = NULL;
-    BFT_MALLOC(fimpcp, n_cells_ext, cs_real_33_t);
+    CS_MALLOC_HD(fimpcp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
     cs_array_real_copy(9*n_cells, (const cs_real_t *)fimp, (cs_real_t *)fimpcp);
 
     int iescap = 0;
@@ -3087,8 +3095,7 @@ _velocity_prediction(const cs_mesh_t             *m,
      * if needed (otherwise vitenp is used in cs_pressure_correction) */
     if (vp_param->rcfact == 1) {
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t tensor[6] = {fimp[c_id][0][0]/crom[c_id],
                                fimp[c_id][1][1]/crom[c_id],
                                fimp[c_id][2][2]/crom[c_id],
@@ -3100,7 +3107,9 @@ _velocity_prediction(const cs_mesh_t             *m,
 
         for (cs_lnum_t ii = 0; ii < 6; ii++)
            da_uu[c_id][ii] *= cell_f_vol[c_id];
-      }
+      });
+
+      ctx.wait();
 
       cs_mesh_sync_var_sym_tens(da_uu);
 
@@ -3116,7 +3125,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     if (vp_param->ipucou == 1) {
 
       cs_real_3_t *vect;
-      BFT_MALLOC(vect, n_cells_ext, cs_real_3_t);
+      CS_MALLOC_HD(vect, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -3162,30 +3171,28 @@ _velocity_prediction(const cs_mesh_t             *m,
                                          vect,
                                          NULL);
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t rom = crom[c_id];
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dttens[c_id][ii] = rom*vect[c_id][ii];
         for (cs_lnum_t ii = 3; ii < 6; ii++)
           dttens[c_id][ii] = 0;
-      }
+      });
 
-      BFT_FREE(vect);
+      CS_FREE_HD(vect);
     }
 
     /* The estimator on the predicted velocity is summed over the components */
     if (iespre != NULL) {
       c_estim = iespre->val;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           c_estim[c_id] += eswork[c_id][ii];
-      }
+      });
 
     }
 
-    BFT_FREE(fimpcp);
+    CS_FREE_HD(fimpcp);
   }
 
   /* End of the construction of the total estimator:
@@ -3236,17 +3243,16 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     c_estim = iestot->val;
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       c_estim[c_id] = 0;
       for (cs_lnum_t ii = 0; ii < 3; ii++)
         c_estim[c_id] += cs_math_pow2(smbr[c_id][ii] / cell_f_vol[c_id]);
-    }
+    });
   }
 
   CS_FREE_HD(fimp);
   CS_FREE_HD(smbr);
-  BFT_FREE(eswork);
+  CS_FREE_HD(eswork);
 
   /* Finalaze estimators + logging */
 
@@ -3260,9 +3266,10 @@ _velocity_prediction(const cs_mesh_t             *m,
      * square root (norm) or square root of the sum times the volume (L2 norm) */
     if (iespre != NULL) {
       c_estim = iespre->val;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         c_estim[c_id] = sqrt(c_estim[c_id] * cell_f_vol[c_id]);
+      });
+      ctx.wait();
     }
 
     /* Norm logging */
@@ -3291,9 +3298,10 @@ _velocity_prediction(const cs_mesh_t             *m,
     if (iestot != NULL) {
       c_estim = iestot->val;
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         c_estim[c_id] = sqrt(c_estim[c_id]*cell_f_vol[c_id]);
+      });
+      ctx.wait();
     }
   }
 }
@@ -3472,7 +3480,7 @@ _hydrostatic_pressure_prediction(cs_real_t  grdphd[][3],
                      0, /* hyd_p_flag */
                      1,             /* w_stride */
                      eqp_loc.verbosity,
-                     (cs_gradient_limit_t)eqp_loc.imligr,
+                     static_cast<cs_gradient_limit_t>(eqp_loc.imligr),
                      eqp_loc.epsrgr,
                      eqp_loc.climgr,
                      NULL, /* f_ext */
@@ -3685,7 +3693,7 @@ cs_solve_navier_stokes(const int   iterns,
 
     const cs_real_t *cell_f_vol = mq->cell_f_vol;
 
-    BFT_MALLOC(uvwk, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(uvwk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     cs_array_real_copy(n_cells*3, (const cs_real_t *)vel, (cs_real_t *)uvwk);
 
     /* Compute the L2 velocity norm
@@ -3754,8 +3762,8 @@ cs_solve_navier_stokes(const int   iterns,
     if (eqp_u->theta < 1.0 && vp_param->itpcol == 0) {
       croma = CS_F_(rho)->val_pre;
       broma = CS_F_(rho_b)->val_pre;
-      BFT_MALLOC(bpro_rho_tc, n_b_faces, cs_real_t);
-      BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(bpro_rho_tc, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
         cpro_rho_tc[c_id] =   eqp_u->theta * cpro_rho_mass[c_id]
@@ -3770,7 +3778,7 @@ cs_solve_navier_stokes(const int   iterns,
       brom = bpro_rho_tc;
     }
     else {
-      BFT_MALLOC(cpro_rho_k1, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, cs_alloc_mode);
       cs_array_real_copy(n_cells_ext, cpro_rho_mass, cpro_rho_k1);
       crom = cpro_rho_mass;
       cromk1 = cpro_rho_k1;  /* rho at time n+1/2,k-1 */
@@ -3798,7 +3806,7 @@ cs_solve_navier_stokes(const int   iterns,
 
   cs_real_3_t *grdphd = NULL;
   if (vp_param->iphydr == 2) {
-    BFT_MALLOC(grdphd, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     _hydrostatic_pressure_prediction(grdphd, iterns);
   }
 
@@ -3849,7 +3857,7 @@ cs_solve_navier_stokes(const int   iterns,
                                         variable. */
 
   if (vp_param->nterup > 1 && trava == NULL)
-    BFT_MALLOC(trava, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(trava, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   if (vp_model->ivisse == 1) {
     CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
@@ -3888,9 +3896,9 @@ cs_solve_navier_stokes(const int   iterns,
   cs_real_3_t *trav = NULL, *dfrcxt = NULL;
   cs_real_6_t *da_uu = NULL;
 
-  BFT_MALLOC(trav, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(da_uu, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(dfrcxt, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(trav, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   if (vp_param->iphydr == 1)
     frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
@@ -3968,7 +3976,7 @@ cs_solve_navier_stokes(const int   iterns,
                  1,  /* inc */
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_u->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
@@ -3995,9 +4003,9 @@ cs_solve_navier_stokes(const int   iterns,
                                 crom, brom,
                                 imasfl, bmasfl);
 
-    BFT_FREE(trav);
-    BFT_FREE(da_uu);
-    BFT_FREE(dfrcxt);
+    CS_FREE_HD(trav);
+    CS_FREE_HD(da_uu);
+    CS_FREE_HD(dfrcxt);
 
     CS_FREE_HD(viscb);
     CS_FREE_HD(viscf);
@@ -4005,15 +4013,15 @@ cs_solve_navier_stokes(const int   iterns,
     CS_FREE_HD(secvib);
     CS_FREE_HD(secvif);
 
-    BFT_FREE(grdphd);
+    CS_FREE_HD(grdphd);
 
-    BFT_FREE(cpro_rho_tc);
-    BFT_FREE(bpro_rho_tc);
+    CS_FREE_HD(cpro_rho_tc);
+    CS_FREE_HD(bpro_rho_tc);
 
     CS_FREE_HD(wvisfi);
     CS_FREE_HD(wvisbi);
 
-    BFT_FREE(uvwk);
+    CS_FREE_HD(uvwk);
 
     CS_FREE_HD(viscb);
     CS_FREE_HD(viscf);
@@ -4062,10 +4070,10 @@ cs_solve_navier_stokes(const int   iterns,
         CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, cs_alloc_mode);
 
       if (wvisfi != NULL) {
-        BFT_FREE(viscfi);
+        CS_FREE_HD(viscfi);
         if (eqp_u->idften == 1) {
           if (irijnu_1) {
-            BFT_MALLOC(wvisfi, n_i_faces, cs_real_t);
+            CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, cs_alloc_mode);
             viscfi = wvisfi;
           }
           else
@@ -4073,7 +4081,7 @@ cs_solve_navier_stokes(const int   iterns,
         }
         else if (eqp_u->idften == 6) {
           if (irijnu_1) {
-            BFT_MALLOC(wvisfi, 9*n_i_faces, cs_real_t);
+            CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, cs_alloc_mode);
             viscfi = wvisfi;
           }
           else
@@ -4082,8 +4090,8 @@ cs_solve_navier_stokes(const int   iterns,
       }
 
       if (secvif != NULL) {
-        BFT_FREE(secvif);
-        BFT_MALLOC(secvif, n_i_faces, cs_real_t);
+        CS_FREE_HD(secvif);
+        CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
       }
 
       /* Resize and reinitialize main internal faces properties array */
@@ -4135,7 +4143,7 @@ cs_solve_navier_stokes(const int   iterns,
         if (vp_param->iphydr == 1)
           frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
         else if (vp_param->iphydr == 2) {
-          BFT_REALLOC(grdphd, n_cells_ext, cs_real_3_t);
+          CS_REALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
           cs_mesh_sync_var_vect((cs_real_t *)grdphd);
         }
 
@@ -4167,7 +4175,7 @@ cs_solve_navier_stokes(const int   iterns,
           else {
             crom = cpro_rho_mass;
             /* rho at time n+1,k-1 */
-            BFT_REALLOC(cpro_rho_k1, n_cells_ext, cs_real_t);
+            CS_REALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, cs_alloc_mode);
             cs_array_real_copy(n_cells_ext, cpro_rho_mass, cpro_rho_k1);
             cromk1 = cpro_rho_k1;
           }
@@ -4190,9 +4198,9 @@ cs_solve_navier_stokes(const int   iterns,
           dttens = (cs_real_6_t *)f_dttens->val;
 
         if (vp_param->nterup > 1) {
-          BFT_REALLOC(velk, n_cells_ext, cs_real_3_t);
+          CS_REALLOC_HD(velk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
           cs_mesh_sync_var_vect((cs_real_t *)velk);
-          BFT_REALLOC(trava, n_cells_ext, cs_real_3_t);
+          CS_REALLOC_HD(trava, n_cells_ext, cs_real_3_t, cs_alloc_mode);
           cs_mesh_sync_var_vect((cs_real_t *)trava);
         }
         else {
@@ -4319,8 +4327,8 @@ cs_solve_navier_stokes(const int   iterns,
       croma = CS_F_(rho)->val_pre;
 
       if (cpro_rho_tc != NULL) {
-        BFT_FREE(cpro_rho_tc);
-        BFT_MALLOC(cpro_rho_tc, n_cells_ext, cs_real_t);
+        CS_FREE_HD(cpro_rho_tc);
+        CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
       }
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -4462,7 +4470,7 @@ cs_solve_navier_stokes(const int   iterns,
                  1,  /* inc */
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_u->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
@@ -4618,30 +4626,30 @@ cs_solve_navier_stokes(const int   iterns,
                  rs_ell[0] + rs_ell[1]);
   }
 
-  BFT_FREE(trav);
-  BFT_FREE(da_uu);
-  BFT_FREE(dfrcxt);
+  CS_FREE_HD(trav);
+  CS_FREE_HD(da_uu);
+  CS_FREE_HD(dfrcxt);
 
   if (iterns == vp_param->nterup)
-    BFT_FREE(trava);
+    CS_FREE_HD(trava);
 
-  BFT_FREE(secvib);
-  BFT_FREE(secvif);
+  CS_FREE_HD(secvib);
+  CS_FREE_HD(secvif);
 
-  BFT_FREE(grdphd);
+  CS_FREE_HD(grdphd);
 
-  BFT_FREE(bpro_rho_tc);
-  BFT_FREE(cpro_rho_tc);
+  CS_FREE_HD(bpro_rho_tc);
+  CS_FREE_HD(cpro_rho_tc);
 
-  BFT_FREE(wvisbi);
-  BFT_FREE(wvisfi);
+  CS_FREE_HD(wvisbi);
+  CS_FREE_HD(wvisfi);
 
-  BFT_FREE(uvwk);
+  CS_FREE_HD(uvwk);
 
   CS_FREE_HD(viscb);
   CS_FREE_HD(viscf);
 
-  BFT_FREE(cpro_rho_k1);
+  CS_FREE_HD(cpro_rho_k1);
 }
 
 /*----------------------------------------------------------------------------*/
