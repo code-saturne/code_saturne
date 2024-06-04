@@ -433,16 +433,16 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get the best available class of matrix w.r.t. the solver class
+ * \brief Get the best available class of matrix knowing the solver class
  *
  * \param[in] solver_class  family of solver to consider
  *
- * \return the best class of matrices which is available
+ * \return the best class of matrices which is available for this solver class
  */
 /*----------------------------------------------------------------------------*/
 
 static inline cs_cdo_system_matrix_class_t
-cs_cdo_system_get_matrix_class(cs_param_solver_class_t    solver_class)
+cs_cdo_system_which_matrix_class(cs_param_solver_class_t  solver_class)
 {
   switch (solver_class) {
 

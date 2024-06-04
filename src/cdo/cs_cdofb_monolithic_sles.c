@@ -706,7 +706,7 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
 {
   const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_param_sles_t  *block11_slesp = saddlep->block11_sles_param;
+  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
 
   /* Define the system helper */
 
@@ -739,7 +739,7 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
        */
 
       cs_cdo_system_matrix_class_t
-        matclass = cs_cdo_system_get_matrix_class(block11_slesp->solver_class);
+        matclass = cs_cdo_system_which_matrix_class(b11_slesp->solver_class);
 
       cs_cdo_system_block_t  *a =
         cs_cdo_system_add_dblock(sh, 0,                /* block id */
