@@ -5727,7 +5727,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
     isym = 1;
 
   c->relaxation = relaxation_parameter;
-  if (f->face_cell == NULL && c->relaxation > 0)
+  if (f->use_faces == false && c->relaxation > 0)
     c->relaxation = 0;
 
   /* Ensure default is available */
