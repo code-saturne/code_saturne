@@ -393,6 +393,120 @@ cs_user_parameters(cs_domain_t    *domain)
 
   }
   /*! [param_cdo_navsto_sles_notay] */
+
+  /*! [param_cdo_navsto_schur_mass_scaled] */
+  {
+    /* Parameters related to the momentum equation */
+
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
+
+    cs_equation_param_set(mom_eqp,
+                          CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled");
+
+    /* Nothing else to add for the approximation of the Schur complement */
+  }
+  /*! [param_cdo_navsto_schur_mass_scaled] */
+
+  /*! [param_cdo_navsto_schur_mass_scaled_diag_inv] */
+  {
+    /* Parameters related to the momentum equation */
+
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
+
+    cs_equation_param_set(mom_eqp,
+                          CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled_diag_inv");
+
+    cs_param_saddle_t  *saddlep = cs_equation_param_get_saddle_param(mom_eqp);
+
+    /* Retrieve the set of parameters to handle the system associated to the
+       Schur complement approximation */
+
+    cs_param_sles_t  *schur_slesp =
+      cs_param_saddle_get_schur_sles_param(saddlep);
+
+    /* Set the solver, its preconditionner and the stopping criteria */
+
+    int ierr = cs_param_sles_set_solver("fgmres", schur_slesp);
+    assert(ierr == 0);
+
+    ierr = cs_param_sles_set_precond("amg", schur_slesp);
+    assert(ierr == 0);
+
+    ierr = cs_param_sles_set_amg_type("boomer", schur_slesp);
+    assert(ierr == 0);
+
+    /* One uses CS_CDO_KEEP_DEFAULT as parameter to keep unchanged the default
+       settings */
+
+    cs_param_sles_set_cvg_param(schur_slesp,
+                                1e-2,                 /* rtol */
+                                CS_CDO_KEEP_DEFAULT,  /* atol */
+                                CS_CDO_KEEP_DEFAULT,  /* dtol */
+                                CS_CDO_KEEP_DEFAULT); /* max. iter. */
+  }
+  /*! [param_cdo_navsto_schur_mass_scaled_diag_inv] */
+
+  /*! [param_cdo_navsto_schur_lumped_inv] */
+  {
+    /* Parameters related to the momentum equation */
+
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
+
+    cs_equation_param_set(mom_eqp,
+                          CS_EQKEY_SADDLE_SCHUR_APPROX, "lumped_inv");
+
+    cs_param_saddle_t  *saddlep = cs_equation_param_get_saddle_param(mom_eqp);
+
+    /* Retrieve the set of parameters to handle the system associated to the
+       Schur complement approximation */
+
+    cs_param_sles_t  *schur_slesp =
+      cs_param_saddle_get_schur_sles_param(saddlep);
+
+    /* Set the solver, its preconditionner and the stopping criteria */
+
+    int ierr = cs_param_sles_set_solver("fcg", schur_slesp);
+    assert(ierr == 0);
+
+    ierr = cs_param_sles_set_precond("amg", schur_slesp);
+    assert(ierr == 0);
+
+    /* One uses CS_CDO_KEEP_DEFAULT as parameter to keep unchanged the default
+       settings */
+
+    cs_param_sles_set_cvg_param(schur_slesp,
+                                1e-2,                 /* rtol */
+                                CS_CDO_KEEP_DEFAULT,  /* atol */
+                                CS_CDO_KEEP_DEFAULT,  /* dtol */
+                                15);                  /* max. iter. */
+
+
+    ierr = cs_param_sles_set_amg_type("gamg", schur_slesp);
+    assert(ierr == 0);
+
+    /* Retrieve the additional system (the one used for the lumped inverse") */
+
+    cs_param_sles_t  *xtra_slesp = cs_param_saddle_get_xtra_sles_param(saddlep);
+
+    ierr = cs_param_sles_set_solver("fgmres", xtra_slesp);
+    assert(ierr == 0);
+
+    ierr = cs_param_sles_set_precond("amg", xtra_slesp);
+    assert(ierr == 0);
+
+    ierr = cs_param_sles_set_amg_type("boomer", xtra_slesp);
+    assert(ierr == 0);
+
+    ierr = cs_param_sles_set_precond_block_type("diag", xtra_slesp);
+    assert(ierr == 0);
+
+    cs_param_sles_set_cvg_param(xtra_slesp,
+                                1e-2,                 /* rtol */
+                                CS_CDO_KEEP_DEFAULT,  /* atol */
+                                CS_CDO_KEEP_DEFAULT,  /* dtol */
+                                20);                  /* max. iter. */
+  }
+  /*! [param_cdo_navsto_schur_lumped_inv] */
 }
 
 /*----------------------------------------------------------------------------*/

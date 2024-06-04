@@ -29,8 +29,8 @@ In code_saturne, a **SLES** means a **S** parse **L** inear **E** quation
 SLES is stored in the structure \ref cs_param_sles_t
 
 To access more advanced settings, it is possible to retrieve this
-structure when one has a pointer to a \ref cs_equation_param_t Simply
-write:
+structure when one has a pointer to a \ref cs_equation_param_t
+Simply write:
 ```c
   cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEqName");
 
@@ -473,8 +473,84 @@ Navier-Stokes equations.
 
 
 
+## Schur complement approximation
+
+The Schur complement related to the saddle-point system \f$\mathsf{Mx = b}\f$
+detailed above is
+\f$\mathsf{S} = \mathsf{-B\cdot A^{-1} \cdot B}\f$
+This is a square matrix. The cost to build exactly this matrix
+is prohibitive. Thus, one needs an approximation denoted by
+\f$\mathsf{\widetilde{S}}\f$
+
+An approximation of the Schur complement is needed by the following
+strategies:
+- Block preconditionner with a Krylov method as in `"fgmres"` (only
+  with PETSc), `"gcr"` or `"minres"`
+- Uzawa algorithm with a CG acceleration: `"uzawa_cg"`
+
+The efficiency of the strategy to solve the saddle-point problem is
+related to the quality of the approximation. Several types of
+approximation of the Schur complement are available and a synthesis of
+the different options is gathered in the following table.
+
+key value | description | related type | family
+:--- | :--- | :--- | :---:
+`"none"` | No approximation. The Schur complement approximation is not used. | \ref CS_PARAM_SADDLE_SCHUR_NONE | all
+`"diag_inv"` | \f$\mathsf{\widetilde{S}} = \mathsf{-B\cdot diag(A)^{-1} \cdot B}\f$ | \ref CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE | saturne, petsc
+`"identity"` | The identity matrix is used. | \ref CS_PARAM_SADDLE_SCHUR_IDENTITY | saturne, petsc
+`"lumped_inv"` | \f$\mathsf{\widetilde{S}} = \mathsf{-B\cdot L \cdot B}\f$ where \f$\mathsf{A\,L = 1}\f$, \f$\mathsf{1}\f$ is the vector fill with the value 1. | \ref CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE | saturne
+`"mass_scaled"` | The pressure mass matrix is used with a scaling coefficient. This scaling coefficient is related to the viscosity for instance when dealing with the Navier-Stokes system. | \ref CS_PARAM_SADDLE_SCHUR_MASS_SCALED | saturne
+`"mass_scaled_diag_inv"` | This is a combination of the `"mass_scaled"` and `"diag_inv"` approximation. | \ref CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE | saturne
+`"mass_scaled_lumped_inv"` | This is a combination of the `"mass_scaled"` and `"lumped_inv"` approximation. | \ref CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE | saturne
+
+To set the way to approximate the Schur complement use
+```c
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEquationName");
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, key_value);
+```
+
+For the Schur approximation implying the `"diag_inv"` or the
+`"lumped_inv"` approximation, one needs to build and then solve a
+linear system associated to the Schur approximation. In the case of
+the `"lumped_inv"`, an additionnal linear system is solved to define
+the vector \f$\mathsf{L}\f$ from the resolution of \f$\mathsf{A\,L =
+1}\f$. Please consider the examples below for more details.
+
+### Example 1: "mass_scaled"
+
+In the first example, one assumes that the saddle-point solver is
+associated to the structure \cs_equation_param_t nammed `mom_eqp`. For
+instance, one uses a `gcr` strategy for solving the saddle-point
+problem. This is one of the simpliest settings for the Schur
+complement approximation. The `"mass_scaled"` approximation is
+well-suited for solving the Stokes problem since the pressure mass
+matrix is a rather good approximation (in terms of spectral behavior)
+of the Schur complement.
+
+\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_schur_mass_scaled
 
 
+### Example 2: "mass_scaled_diag_inv"
+
+In the second example, one assumes that the saddle-point solver is
+associated to the structure \cs_equation_param_t nammed `mom_eqp`. One
+now considers a more elaborated approximation which needs to solve a
+system implying the Schur complement approximation.
+
+\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_schur_mass_scaled_diag_inv
+
+
+### Example 3: "lumped_inv"
+
+In the third and last example, one assumes that the saddle-point solver is
+associated to the structure \cs_equation_param_t nammed `mom_eqp`. One
+now considers a more elaborated approximation which needs to solve a
+system implying the Schur complement approximation and an additional
+system to build the Schur complement approximation (the system related
+to \f$\mathsf{A\,L = 1}\f$).
+
+\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_schur_lumped_inv
 
 
 # Additional settings

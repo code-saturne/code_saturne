@@ -42,7 +42,7 @@ discretizations dedicated to polyhedral meshes.  The capabilities of these
 schemes in terms of physical modelling are limited compared to the legacy FV
 schemes.
 
-Overview of physical models
+Overview
 ------------
 
 With **CDO schemes**, the resolution of the following models/equations are
@@ -82,6 +82,8 @@ available:
     - **Maxwell module**. This is an on-going work. Up to now, electro-static
       and magneto-static problems are available.
 
+Moreover, it is possible to setup advanced SLES (Sparse Linear Equation Solver)
+settings. More details are available [here](@ref cs_ug_cdo_sles)
 
 To get started
 ------------
@@ -548,8 +550,8 @@ part. This is done using the key \ref CS_EQKEY_HODGE_DIFF_COEF
 Linear algebra settings {#cs_ug_cdo_hho_base_linalg}
 -------------------
 
-Many options are available in code_saturne to specify the way to solve
-a linear system. This is detailed [here](@ref cs_ug_cdo_sles)
+Many options are available in code_saturne to specify the way to solve a linear
+system. This is detailed [here](@ref cs_ug_cdo_sles) for the CDO/HHO part.
 
 
 To go further
