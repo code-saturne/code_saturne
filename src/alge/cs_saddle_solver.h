@@ -486,25 +486,6 @@ cs_saddle_solver_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Retrieve the inverse of the diagonal of the (1,1)-block matrix
- *        The storage of a matrix is in a gather view and the resulting array is
- *        in scatter view.
- *
- * \param[in] b11_max_size  max size related to the (1,1) block
- * \param[in] m11           matrix related to the (1,1) block
- * \param[in] b11_rset      range set structure for the (1,1) block
- *
- * \return a pointer to the computed array (scatter view)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_saddle_solver_m11_inv_diag(cs_lnum_t              b11_max_size,
-                              const cs_matrix_t     *m11,
-                              const cs_range_set_t  *b11_rset);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Retrieve the lumped matrix the inverse of the diagonal of the
  *        (1,1)-block matrix. The storage of a matrix is in a gather view and
  *        the resulting array is in scatter view.

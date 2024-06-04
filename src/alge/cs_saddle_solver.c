@@ -2322,49 +2322,6 @@ cs_saddle_solver_log_monitoring(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Retrieve the inverse of the diagonal of the (1,1)-block matrix
- *        The storage of a matrix is in a gather view and the resulting array is
- *        in a scatter view.
- *
- * \param[in] b11_max_size  max size related to the (1,1) block
- * \param[in] m11           matrix related to the (1,1) block
- * \param[in] b11_rset      range set structure for the (1,1) block
- *
- * \return a pointer to the computed array (scatter view)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_saddle_solver_m11_inv_diag(cs_lnum_t              b11_max_size,
-                              const cs_matrix_t     *m11,
-                              const cs_range_set_t  *b11_rset)
-{
-  if (m11 == NULL)
-    return NULL;
-
-  const cs_lnum_t  n11_rows = cs_matrix_get_n_rows(m11);
-  const cs_real_t  *diag_m11 = cs_matrix_get_diagonal(m11);
-
-  assert(n11_rows <= b11_max_size);
-  cs_real_t  *inv_diag_m11 = NULL;
-  BFT_MALLOC(inv_diag_m11, b11_max_size, cs_real_t);
-
-# pragma omp parallel for if (n11_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n11_rows; i++)
-    inv_diag_m11[i] = 1./diag_m11[i];
-
-  /* Switch to a scatter view */
-
-  cs_range_set_scatter(b11_rset,
-                       CS_REAL_TYPE, 1, /* treated as scalar-valued up to now */
-                       inv_diag_m11,    /* gathered view */
-                       inv_diag_m11);   /* scatter view */
-
-  return inv_diag_m11;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Retrieve the lumped matrix the inverse of the diagonal of the
  *        (1,1)-block matrix. The storage of a matrix is in a gather view and
  *        the resulting array is in scatter view.

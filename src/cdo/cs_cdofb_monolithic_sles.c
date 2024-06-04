@@ -62,6 +62,7 @@
 #include "cs_parall.h"
 #include "cs_param_sles_setup.h"
 #include "cs_saddle_solver_setup.h"
+#include "cs_saddle_system.h"
 #include "cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -1188,9 +1189,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
   switch (saddlep->schur_approx) {
 
   case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
-    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
-                                                      ctx->m11,
-                                                      ctx->b11_range_set);
+    ctx->m11_inv_diag = cs_saddle_system_b11_inv_diag(ctx->b11_max_size, sh);
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,
@@ -1225,9 +1224,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
     ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
 
-    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
-                                                      ctx->m11,
-                                                      ctx->b11_range_set);
+    ctx->m11_inv_diag = cs_saddle_system_b11_inv_diag(ctx->b11_max_size, sh);
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,
@@ -1641,9 +1638,7 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
   switch (saddlep->schur_approx) {
 
   case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
-    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
-                                                      ctx->m11,
-                                                      ctx->b11_range_set);
+    ctx->m11_inv_diag = cs_saddle_system_b11_inv_diag(ctx->b11_max_size, sh);
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,
@@ -1672,9 +1667,7 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
-    ctx->m11_inv_diag = cs_saddle_solver_m11_inv_diag(ctx->b11_max_size,
-                                                      ctx->m11,
-                                                      ctx->b11_range_set);
+    ctx->m11_inv_diag = cs_saddle_system_b11_inv_diag(ctx->b11_max_size, sh);
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,

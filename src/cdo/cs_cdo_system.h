@@ -465,6 +465,35 @@ cs_cdo_system_which_matrix_class(cs_param_solver_class_t  solver_class)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the matrix class related to the given block_id
+ *        \ref CS_CDO_SYSTEM_MATRIX_NONE is returned if not stored in assembled
+ *        matrix structure (i.e. block of type equal to
+ *        \ref CS_CDO_SYSTEM_BLOCK_DEFAULT or \ref CS_CDO_SYSTEM_BLOCK_EXT
+ *
+ * \param[in] sh        pointer to a system helper structure
+ * \param[in] block_id  id of the block to work with
+ *
+ * \return the class of matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_cdo_system_matrix_class_t
+cs_cdo_system_get_matrix_class(const cs_cdo_system_helper_t  *sh,
+                               int                            block_id)
+{
+  if (sh == NULL)
+    return   CS_CDO_SYSTEM_MATRIX_NONE;
+  if (block_id < 0 || block_id >= sh->n_blocks)
+    return   CS_CDO_SYSTEM_MATRIX_NONE;
+
+  cs_cdo_system_block_t  *b = sh->blocks[block_id];
+
+  assert(b != NULL);
+  return b->info.matrix_class;
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

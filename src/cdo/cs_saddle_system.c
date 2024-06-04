@@ -474,22 +474,48 @@ cs_saddle_system_b11_inv_diag(cs_lnum_t                b11_max_size,
   if (sh == NULL)
     return NULL;
 
-  const cs_range_set_t  *b11_rset = cs_cdo_system_get_range_set(sh, 0);
   const cs_matrix_t  *m11 = cs_cdo_system_get_matrix(sh, 0);
   const cs_lnum_t  n11_rows = cs_matrix_get_n_rows(m11); /* gather view */
-  const cs_real_t  *diag_m11 = cs_matrix_get_diagonal(m11);
 
-  assert(n11_rows <= b11_max_size);
   cs_real_t  *inv_diag_m11 = NULL;
+  assert(n11_rows <= b11_max_size);
   BFT_MALLOC(inv_diag_m11, b11_max_size, cs_real_t);
 
-# pragma omp parallel for if (n11_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n11_rows; i++)
-    inv_diag_m11[i] = 1./diag_m11[i];
+  switch (cs_cdo_system_get_matrix_class(sh, 0)) {
+
+  case CS_CDO_SYSTEM_MATRIX_CS:
+    {
+      const cs_real_t  *diag_m11 = cs_matrix_get_diagonal(m11);
+
+#     pragma omp parallel for if (n11_rows > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n11_rows; i++)
+        inv_diag_m11[i] = 1./diag_m11[i];
+    }
+    break;
+
+  case CS_CDO_SYSTEM_MATRIX_HYPRE:
+  case CS_CDO_SYSTEM_MATRIX_PETSC:
+    {
+      /* Get diagonal is not available in this case. Avoid ending with an
+         error */
+
+      cs_matrix_copy_diagonal(m11, inv_diag_m11);
+
+#     pragma omp parallel for if (n11_rows > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n11_rows; i++)
+        inv_diag_m11[i] = 1./inv_diag_m11[i];
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid case.", __func__);
+    break;
+
+  }
 
   /* Switch to a scatter view */
 
-  cs_range_set_scatter(b11_rset,
+  cs_range_set_scatter(cs_cdo_system_get_range_set(sh, 0),
                        CS_REAL_TYPE, 1, /* treated as scalar-valued up to now */
                        inv_diag_m11,    /* gathered view */
                        inv_diag_m11);   /* scatter view */
