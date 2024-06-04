@@ -1201,6 +1201,70 @@ cs_param_sles_set_amg_type(const char       *keyval,
   return EXIT_SUCCESS;  /* Equal to 0 */
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the type of block preconditioner associated to this SLES from its
+ *        keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_precond_block_type(const char       *keyval,
+                                     cs_param_sles_t  *slesp)
+{
+  int ierr = EXIT_SUCCESS;
+
+  if (strcmp(keyval, "none") == 0)
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+  else if (strcmp(keyval, "diag") == 0) {
+
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
+
+    /* This is only available through PETSc */
+
+    ierr = cs_param_sles_set_solver_class("petsc", slesp);
+
+  }
+  else if (strcmp(keyval, "lower") == 0) {
+
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR;
+
+    /* This is only available through PETSc */
+
+    ierr = cs_param_sles_set_solver_class("petsc", slesp);
+
+  }
+  else if (strcmp(keyval, "symm") == 0 || strcmp(keyval, "sgs") == 0) {
+
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL;
+
+    /* This is only available through PETSc */
+
+    ierr = cs_param_sles_set_solver_class("petsc", slesp);
+
+  }
+  else if (strcmp(keyval, "upper") == 0) {
+
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR;
+
+    /* This is only available through PETSc */
+
+    ierr = cs_param_sles_set_solver_class("petsc", slesp);
+
+  }
+  else
+    return EXIT_FAILURE; /* Case not handled */
+
+  return ierr;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the convergence criteria for the given SLES parameters. One can

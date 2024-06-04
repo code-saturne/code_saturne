@@ -482,28 +482,15 @@ _set_key(cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_PRECOND");
     }
-    break; /* Precond */
+    break;
 
   case CS_EQKEY_PRECOND_BLOCK_TYPE:
-    if (strcmp(keyval, "none") == 0)
-      eqp->sles_param->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    else if (strcmp(keyval, "diag") == 0)
-      eqp->sles_param->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
-    else if (strcmp(keyval, "lower") == 0)
-      eqp->sles_param->precond_block_type =
-        CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR;
-    else if (strcmp(keyval, "symm") == 0 || strcmp(keyval, "sgs") == 0)
-      eqp->sles_param->precond_block_type =
-        CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL;
-    else if (strcmp(keyval, "upper") == 0)
-      eqp->sles_param->precond_block_type =
-        CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR;
-    else {
+    ierr = cs_param_sles_set_precond_block_type(keyval, eqp->sles_param);
 
+    if (ierr > 0) {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_PRECOND_BLOCK_TYPE");
-
     }
     break;
 

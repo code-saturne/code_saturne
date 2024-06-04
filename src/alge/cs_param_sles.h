@@ -234,6 +234,22 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the type of block preconditioner associated to this SLES from its
+ *        keyval
+ *
+ * \param[in]      keyval  value of the key
+ * \param[in, out] slesp   pointer to a cs_param_sles_t structure
+ *
+ * \return an error code (> 0) or 0 if there is no error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_sles_set_precond_block_type(const char       *keyval,
+                                     cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the convergence criteria for the given SLES parameters. One can
  *        use the parameter value CS_CDO_KEEP_DEFAULT to let unchange the
  *        settings.
