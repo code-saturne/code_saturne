@@ -1264,10 +1264,13 @@ cs_sles_hypre_solve(void                *context,
 void
 cs_sles_hypre_free(void  *context)
 {
+  cs_sles_hypre_t  *c  = context;
+
+  if (c == NULL) /* Nothing else to do */
+    return;
+
   cs_timer_t t0;
   t0 = cs_timer_time();
-
-  cs_sles_hypre_t  *c  = context;
 
   if (c->setup_data != NULL) {
 

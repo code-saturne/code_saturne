@@ -2737,13 +2737,13 @@ cs_sles_mumps_copy(const void   *context)
 void
 cs_sles_mumps_free(void  *context)
 {
-  cs_timer_t t0;
-  t0 = cs_timer_time();
-
   cs_sles_mumps_t  *c  = context;
 
-  if (c == NULL)
+  if (c == NULL) /* Nothing else to do */
     return;
+
+  cs_timer_t t0;
+  t0 = cs_timer_time();
 
   if (c->mumps_struct != NULL) {
 

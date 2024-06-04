@@ -1365,13 +1365,13 @@ cs_sles_petsc_solve(void                *context,
 void
 cs_sles_petsc_free(void  *context)
 {
-  cs_timer_t t0;
-  t0 = cs_timer_time();
-
   cs_sles_petsc_t  *c  = context;
 
   if (c == NULL)
     return;
+
+  cs_timer_t t0;
+  t0 = cs_timer_time();
 
   cs_sles_petsc_setup_t *sd = c->setup_data;
 
