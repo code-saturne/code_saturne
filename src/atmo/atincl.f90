@@ -147,9 +147,6 @@ integer(c_int), pointer, save :: nbmett
 !> numbers of time steps for the meteo profiles
 integer(c_int), pointer, save :: nbmetm
 
-!> read zone boundary conditions from profile
-integer(c_int), pointer, save :: iprofm(:)
-
 !> automatic inlet/outlet boundary condition flag
 !> (0: not auto (default); 1,2: auto)
 !> When meteo momentum source terms are activated (iatmst > 0),
@@ -678,11 +675,11 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: face_ids
     end subroutine cs_f_atmo_get_soil_zone
 
-    subroutine cs_f_boundary_conditions_get_atincl_pointers(p_iprofm, p_iautom) &
+    subroutine cs_f_boundary_conditions_get_atincl_pointers(p_iautom) &
       bind(C, name='cs_f_boundary_conditions_get_atincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_iprofm, p_iautom
+      type(c_ptr), intent(out) :: p_iautom
     end subroutine cs_f_boundary_conditions_get_atincl_pointers
 
   end interface
@@ -700,10 +697,9 @@ contains
     integer :: nfabor
 
     ! Local variables
-    type(c_ptr) :: p_iprofm, p_iautom
+    type(c_ptr) :: p_iautom
 
-    call cs_f_boundary_conditions_get_atincl_pointers(p_iprofm, p_iautom)
-    call c_f_pointer(p_iprofm, iprofm, [nozppm])
+    call cs_f_boundary_conditions_get_atincl_pointers(p_iautom)
     call c_f_pointer(p_iautom, iautom, [nfabor])
 
   end subroutine at_models_bc_map

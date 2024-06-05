@@ -196,8 +196,7 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
                                              double  **frmel);
 
 void
-cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
-                                             int **iautom);
+cs_f_boundary_conditions_get_atincl_pointers(int **iautom);
 
 /*============================================================================
  * Private function definitions
@@ -1747,13 +1746,8 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
 }
 
 void
-cs_f_boundary_conditions_get_atincl_pointers(int **iprofm,
-                                             int **iautom)
+cs_f_boundary_conditions_get_atincl_pointers(int **iautom)
 {
-  /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
-
-  *iprofm = cs_glob_bc_pm_info->iprofm + 1;
-
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
     *iautom = cs_glob_bc_pm_info->iautom;
   else
@@ -2378,7 +2372,7 @@ cs_boundary_conditions_create_legacy_zone_data(void)
     bc_pm_info->tkent[i]  = 0.;
     bc_pm_info->fment[i]  = 0.;
 
-    /* atmospheric flows */
+    /* atmospheric flows, GUI meteo profiles */
     bc_pm_info->iprofm[i] = 0;
   }
 

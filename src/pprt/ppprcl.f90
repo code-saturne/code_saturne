@@ -145,9 +145,6 @@ elseif ( ippmod(iatmos).ge.0  ) then
   do ifac = 1, nfabor
     izfppp(ifac) = 0
   enddo
-  do izone = 1, nozppm
-    iprofm(izone) = 0
-  enddo
 
 !     Initialisation des RCODCL(IFAC,.,1) à RINFIN
 !       pour savoir si l'utilisateur les a modifies (ils sont

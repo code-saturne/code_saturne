@@ -126,15 +126,6 @@ double precision, pointer, dimension(:)   :: bvar_temp_sol
 double precision, pointer, dimension(:)   :: bvar_tempp
 double precision, pointer, dimension(:)   :: bvar_total_water
 
-! arrays for cressman interpolation
-double precision , dimension(:),allocatable :: u_bord
-double precision , dimension(:),allocatable :: v_bord
-double precision , dimension(:),allocatable :: tke_bord
-double precision , dimension(:),allocatable :: eps_bord
-double precision , dimension(:),allocatable :: theta_bord
-double precision , dimension(:),allocatable :: qw_bord
-double precision , dimension(:),allocatable :: nc_bord
-
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
@@ -222,92 +213,85 @@ if (imbrication_flag) then
   call summon_cressman(ttcabs)
 
   if (cressman_u) then
-    allocate(u_bord(nfabor))
-    call mscrss(id_u,2,u_bord)
+    call mscrss(id_u,2,rcodcl(1,iu,1))
     if (imbrication_verbose) then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,ubord=", cdgfbo(1,ifac), &
              cdgfbo(2,ifac),                                               &
              cdgfbo(3,ifac),                                               &
-             u_bord(ifac)
+             rcodcl(ifac, iu, 1)
       enddo
     endif
   endif
 
   if (cressman_v) then
-    allocate(v_bord(nfabor))
-    call mscrss(id_v,2,v_bord)
+    call mscrss(id_v,2,rcodcl(1,iv,1))
     if(imbrication_verbose)then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,vbord=", cdgfbo(1,ifac), &
              cdgfbo(2,ifac),                                               &
              cdgfbo(3,ifac),                                               &
-             v_bord(ifac)
+             rcodcl(ifac, iv, 1)
       enddo
     endif
   endif
 
   if (cressman_tke) then
-    allocate(tke_bord(nfabor))
-    call mscrss(id_tke,2,tke_bord)
+    call mscrss(id_tke,2,rcodcl(1,ik,1))
     if(imbrication_verbose)then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,tkebord=",cdgfbo(1,ifac), &
              cdgfbo(2,ifac),                                                &
              cdgfbo(3,ifac),                                                &
-             tke_bord(ifac)
+             rcodcl(ifac, ik, 1)
       enddo
     endif
   endif
 
   if (cressman_eps) then
-    allocate(eps_bord(nfabor))
-    call mscrss(id_eps,2,eps_bord)
+    call mscrss(id_eps,2,rcodcl(1,iep,1))
     if(imbrication_verbose)then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,epsbord=",cdgfbo(1,ifac), &
              cdgfbo(2,ifac),                                                &
              cdgfbo(3,ifac),                                                &
-             eps_bord(ifac)
+             rcodcl(ifac,iep,1)
       enddo
     endif
   endif
 
   if (cressman_theta .and. ippmod(iatmos).ge.1) then
-    allocate(theta_bord(nfabor))
-    call mscrss(id_theta, 2, theta_bord)
+    call mscrss(id_theta, 2, rcodcl(1,isca(iscalt),1)
     if (imbrication_verbose) then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,thetabord=",cdgfbo(1,ifac), &
              cdgfbo(2,ifac),                                                  &
              cdgfbo(3,ifac),                                                  &
-             theta_bord(ifac)
+             rcodcl(ifac,isca(iscalt),1)
       enddo
     endif
   endif
 
   if (cressman_qw .and. ippmod(iatmos).ge.2) then
-    allocate(qw_bord(nfabor))
-    call mscrss(id_qw, 2, qw_bord)
+    call mscrss(id_qw, 2, rcodcl(1,isca(iymw),1))
     if (imbrication_verbose) then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,qwbord=",cdgfbo(1,ifac), &
              cdgfbo(2,ifac),                                               &
              cdgfbo(3,ifac),                                               &
-             qw_bord(ifac)
+             rcodcl(ifac,isca(iymw),1)
       enddo
     endif
   endif
 
   if (cressman_nc .and. ippmod(iatmos).ge.2) then
-    allocate(nc_bord(nfabor))
-    call mscrss(id_nc, 2, nc_bord)
+    call mscrss(id_nc, 2, rcodcl(1,isca(intdrp),1))
     if (imbrication_verbose) then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,ncbord=",cdgfbo(1,ifac), &
              cdgfbo(2,ifac),                                               &
              cdgfbo(3,ifac),                                               &
-             nc_bord(ifac)
+             rcodcl(ifac,isca(intdrp),1)
       enddo
     endif
   endif
@@ -315,8 +299,8 @@ if (imbrication_flag) then
 endif ! imbrication_flag
 
 ! ==============================================================================
-! the interpolated field u_bord,v_bord,  .. will replace the values from the
-! standard meteo profile
+! Note: the interpolated field are already in rcodcl(ifac,*,1)
+! .. and will replace the values from the standard meteo profile
 ! ==============================================================================
 
 call field_get_coefa_s(ivarfl(ipr), coefap)
@@ -326,17 +310,15 @@ do ifac = 1, nfabor
   izone = izfppp(ifac)
   iel = ifabor(ifac)
 
-  if (iprofm(izone).eq.1.and.imeteo.ge.1) then
-!     On recupere les valeurs du profil et on met a jour RCODCL s'il n'a pas
-!       ete modifie. Il servira si la face est une face d'entree ou si c'est une
-!       face de sortie (si le flux est rentrant).
+  ! If meteo profile is on, we take the value and store it in rcolcl if not
+  ! already modified
+  ! It will be used for inlet or backflows
+  if (imeteo.ge.1) then
     zent = cdgfbo(3,ifac)
 
     ! If specified by the user or by code-code coupling
     if (rcodcl(ifac,iu,1).lt.rinfin*0.5d0) then
       xuent = rcodcl(ifac,iu,1)
-    else if (imbrication_flag .and.cressman_u) then
-      xuent = u_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
       (nbmetd, nbmetm,                                               &
@@ -346,13 +328,11 @@ do ifac = 1, nfabor
     endif
 
     xwent = 0.d0
+    if (rcodcl(ifac,iw,1).lt.rinfin*0.5d0) then
+      xwent = rcodcl(ifac,iw,1)
+    endif
     if (rcodcl(ifac,iv,1).lt.rinfin*0.5d0) then
       xvent = rcodcl(ifac,iv,1)
-      if (rcodcl(ifac,iw,1).lt.rinfin*0.5d0) then
-        xwent = rcodcl(ifac,iw,1)
-      endif
-    else if (imbrication_flag .and.cressman_v) then
-      xvent = v_bord(ifac)
     else if (imeteo.eq.1) then
       call intprf &
       (nbmetd, nbmetm,                                               &
@@ -362,8 +342,10 @@ do ifac = 1, nfabor
       xwent = cpro_met_vel(3, iel)
     endif
 
-    if (imbrication_flag .and.cressman_tke) then
-      xkent = tke_bord(ifac)
+    if (ik.ge.1) then
+      if (rcodcl(ifac,ik,1).lt.rinfin*0.5d0) then
+        xkent = rcodcl(ifac,ik,1)
+      endif
     else if (imeteo.eq.1) then
       call intprf &
       (nbmetd, nbmetm,                                               &
@@ -371,14 +353,11 @@ do ifac = 1, nfabor
     else
       xkent = cpro_met_k(iel)
     endif
-    if (ik.ge.1) then
-      if (rcodcl(ifac,ik,1).lt.rinfin*0.5d0) then
-        xkent = rcodcl(ifac,ik,1)
-      endif
-    endif
 
-    if (imbrication_flag .and.cressman_eps) then
-      xeent = eps_bord(ifac)
+    if (iep.ge.1) then
+      if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
+        xeent = rcodcl(ifac,iep,1)
+      endif
     else if (imeteo.eq.1) then
       call intprf &
       (nbmetd, nbmetm,                                               &
@@ -386,17 +365,10 @@ do ifac = 1, nfabor
     else
       xeent = cpro_met_eps(iel)
     endif
-    if (iep.ge.1) then
-      if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
-        xeent = rcodcl(ifac,iep,1)
-      endif
-    endif
 
     if (ippmod(iatmos).ge.1) then
       if (rcodcl(ifac,isca(iscalt),1).lt.rinfin*0.5d0) then
         tpent = rcodcl(ifac,isca(iscalt),1)
-      else if(imbrication_flag .and.cressman_theta) then
-        tpent = theta_bord(ifac)
       else if (imeteo.eq.1) then
         call intprf &
           (nbmett, nbmetm,                                               &
@@ -450,9 +422,7 @@ do ifac = 1, nfabor
         !  Humid Atmosphere
         if ( ippmod(iatmos).eq.2 ) then
           if (rcodcl(ifac,isca(iymw),1).gt.rinfin*0.5d0)  then
-            if (imbrication_flag .and. cressman_qw)then
-              qvent = qw_bord(ifac)
-            else if (imeteo.eq.1) then
+            if (imeteo.eq.1) then
               call intprf &
                 (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
             else
@@ -462,9 +432,7 @@ do ifac = 1, nfabor
           endif
 
           if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then
-            if (imbrication_flag .and. cressman_nc) then
-              ncent = nc_bord(ifac)
-            else if (imeteo.eq.1) then
+            if (imeteo.eq.1) then
               call intprf &
                 (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
             else
@@ -662,33 +630,6 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
 
   enddo
 
-endif
-
-! ---------------------------------
-! clean up the 'imbrication'
-! ---------------------------------
-if (imbrication_flag)then
-  if(cressman_u) then
-    deallocate(u_bord)
-  endif
-  if(cressman_v) then
-    deallocate(v_bord)
-  endif
-  if(cressman_tke) then
-    deallocate(tke_bord)
-  endif
-  if(cressman_eps) then
-    deallocate(eps_bord)
-  endif
-  if(cressman_theta .and. ippmod(iatmos).ge.1 ) then
-    deallocate(theta_bord)
-  endif
-  if(cressman_qw .and. ippmod(iatmos).ge.2 ) then
-    deallocate(qw_bord)
-  endif
-  if(cressman_nc .and. ippmod(iatmos).ge.2 ) then
-    deallocate(nc_bord)
-  endif
 endif
 
 !--------

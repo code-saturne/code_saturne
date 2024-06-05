@@ -161,9 +161,6 @@ do ilelt = 1, nlelt
   ! - Zone to which the face belongs
   izfppp(ifac) = izone
 
-  ! - Boundary conditions are prescribed from the meteo profile
-  iprofm(izone) = 1
-
   ! - boundary condition type can be set to ientre or i_convective_inlet
 
   itypfb(ifac) = ientre
@@ -193,9 +190,6 @@ do ilelt = 1, nlelt
 
   ! - Zone to which the face belongs
   izfppp(ifac) = izone
-
-  ! - Boundary conditions are prescribed from the meteo profile
-  iprofm(izone) = 1
 
   ! - Assign inlet boundary conditions
   itypfb(ifac) = ientre
