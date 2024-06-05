@@ -190,7 +190,7 @@ cs_blas.c \
 cs_bw_time_diff.c \
 cs_cell_to_vertex.c \
 cs_convection_diffusion.cpp \
-cs_divergence.c \
+cs_divergence.cpp \
 cs_face_viscosity.c \
 cs_gradient.cpp \
 cs_gradient_boundary.c \

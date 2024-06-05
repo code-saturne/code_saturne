@@ -34,6 +34,7 @@
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_halo.h"
+#include "cs_gradient.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
@@ -120,7 +121,7 @@ cs_mass_flux(const cs_mesh_t             *m,
              int                          inc,
              int                          imrgra,
              int                          nswrgu,
-             int                          imligu,
+             cs_gradient_limit_t          imligu,
              int                          iwarnu,
              double                       epsrgu,
              double                       climgu,
@@ -319,7 +320,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                     int                          inc,
                     int                          imrgra,
                     int                          nswrgu,
-                    int                          imligu,
+                    cs_gradient_limit_t          imligu,
                     int                          iwarnu,
                     double                       epsrgu,
                     double                       climgu,
