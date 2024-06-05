@@ -226,6 +226,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    cs_real_t             eswork[])
 {
   /* Local variables */
+  cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   int iconvp = eqp->iconv;
@@ -239,13 +240,16 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_real_t thetap = eqp->theta;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   int *c_disable_flag = mq->c_disable_flag;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
+#if defined(HAVE_CUDA)
+  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
 
   int isym, inc, isweep, niterf, nswmod;
   int lvar, imasac, key_sinfo_id;
@@ -515,6 +519,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       w2[cell_id] = (pvar[cell_id]-p_mean);
     });
 
+    ctx.wait();
+
     cs_matrix_vector_native_multiply(symmetric,
                                      1,  /* db_size */
                                      1,  /* eb_size */
@@ -533,10 +539,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       w1[cell_id] += smbrp[cell_id];
       /* Remove contributions from penalized cells */
-      int is_disable = has_dc * c_disable_flag[has_dc * cell_id];
-      if (is_disable != 0)
+      if (has_dc * c_disable_flag[has_dc * cell_id] != 0)
         w1[cell_id] = 0.;
     });
+
     ctx.wait();
 
     rnorm2 = cs_gdot(n_cells, w1, w1);
@@ -694,36 +700,12 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                    nadxkm1, paxm1ax);
     }
 
-    /* --- Update the solution with the increment */
+    /* Update the solution with the increment, update the right hand side
+       and compute the new residual */
 
     if (iswdyp <= 0) {
       ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += dpvar[cell_id];
-      });
-    }
-    else if (iswdyp == 1) {
-      if (alph < 0.) break;
-      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        pvar[cell_id] += alph*dpvar[cell_id];
-      });
-    }
-    else if (iswdyp >= 2) {
-      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        pvar[cell_id] += alph*dpvar[cell_id] + beta*dpvarm1[cell_id];
-      });
-    }
-
-    ctx.wait();
-
-    /*  ---> Handle parallelism and periodicity */
-    if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0) {
-      cs_mesh_sync_var_scal(pvar);
-    }
-
-    /* --- Update the right hand side And compute the new residual */
-
-    if (iswdyp <= 0) {
-      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
         smbini[cell_id] -= rovsdt[cell_id]*dpvar[cell_id];
@@ -731,7 +713,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       });
     }
     else if (iswdyp == 1) {
+      if (alph < 0.) break;
       ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+        pvar[cell_id] += alph*dpvar[cell_id];
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
         smbini[cell_id] -= rovsdt[cell_id]*alph*dpvar[cell_id];
@@ -740,12 +724,20 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     }
     else if (iswdyp >= 2) {
       ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+        pvar[cell_id] += alph*dpvar[cell_id] + beta*dpvarm1[cell_id];
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
         smbini[cell_id]
           -= rovsdt[cell_id]*(alph*dpvar[cell_id]+beta*dpvarm1[cell_id]);
         smbrp[cell_id] = smbini[cell_id];
       });
+    }
+
+    ctx.wait();
+
+    /*  ---> Handle parallelism and periodicity */
+    if (cs_glob_rank_id >= 0 || m->n_init_perio > 0) {
+      cs_mesh_sync_var_scal(pvar);
     }
 
     /* Compute the beta (min/max) limiter */
@@ -840,8 +832,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /* flux is non-conservative with the steady algorithm but flux field is of
          dimension 1. Forbidden at parameters check */
 
-      cs_field_t *i_flux = cs_field_by_id(i_flux_id);
-      cs_field_t *b_flux = cs_field_by_id(b_flux_id);
+      cs_real_t *i_flux = cs_field_by_id(i_flux_id)->val;
+      cs_real_t *b_flux = cs_field_by_id(b_flux_id)->val;
 
       /* rebuild before-last value of variable */
       cs_real_t *prev_s_pvar;
@@ -852,7 +844,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       cs_real_2_t *i_flux2;
       CS_MALLOC_HD(i_flux2, n_i_faces, cs_real_2_t, cs_alloc_mode);
-      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         i_flux2[face_id][0] = 0.;
         i_flux2[face_id][1] = 0.;
       });
@@ -880,7 +872,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                   i_massflux,
                                   b_massflux,
                                   i_flux2,
-                                  b_flux->val);
+                                  b_flux);
 
         eqp->theta = thetap;
       }
@@ -900,13 +892,13 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                 i_massflux,
                                 b_massflux,
                                 i_flux2,
-                                b_flux->val);
+                                b_flux);
       CS_FREE_HD(prev_s_pvar);
 
       /* last increment in upwind to fulfill exactly the considered
          balance equation */
 
-      inc  = 0;
+      inc = 0;
 
       cs_equation_param_t eqp_loc;
       int k_id = cs_field_key_id("var_cal_opt");
@@ -930,14 +922,14 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                 i_massflux,
                                 b_massflux,
                                 i_flux2,
-                                b_flux->val);
+                                b_flux);
 
       /* FIXME diffusion part */
 
       /* Store the convectif flux,
        * Note that the two sides are equal if imasac=0 */
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        i_flux->val[face_id] += i_flux2[face_id][0];
+        i_flux[face_id] += i_flux2[face_id][0];
       });
       ctx.wait();
 
@@ -1172,7 +1164,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   cs_solving_info_t sinfo;
 
-  cs_field_t *f = NULL;;
+  cs_field_t *f = NULL;
 
   cs_real_t    *xam = NULL;
   cs_real_33_t *dam = NULL;;
@@ -1532,19 +1524,24 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                sqrt(cs_gdot(3*n_cells, _smbrp, _smbrp)));
   }
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-    for (int i = 0; i < 3; i++)
-      w1[cell_id][i] += smbrp[cell_id][i];
-  });
-
   if (has_dc == 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       /* Remove contributions from penalized cells */
+      for (cs_lnum_t i = 0; i < 3; i++)
+        w1[cell_id][i] += smbrp[cell_id][i];
+
       if (mq->c_disable_flag[cell_id] != 0)
-        for (int i = 0; i < 3; i++)
+        for (cs_lnum_t i = 0; i < 3; i++)
           w1[cell_id][i] = 0.;
     });
   }
+  else {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      for (int i = 0; i < 3; i++)
+        w1[cell_id][i] += smbrp[cell_id][i];
+    });
+  }
+
   ctx.wait();
 
   double  rnorm2 = cs_gdot(3*n_cells, (cs_real_t *)w1, (cs_real_t *)w1);
