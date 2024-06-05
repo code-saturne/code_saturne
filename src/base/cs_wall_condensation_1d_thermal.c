@@ -85,6 +85,7 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
 // TODO : to remove when the general 1D thermal model replaces
 // the condensation-specific 1D thermal model
 
@@ -154,28 +155,31 @@ void cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **      znmurx,
                                                          cs_real_t **ztmur);
 
 
-void cs_f_wall_condensation_0d_thermal_get_pointers(cs_real_t   **volume_thickness,
-                                                    cs_real_2_t **volume_t,
-                                                    cs_real_t   **volume_rho,
-                                                    cs_real_t   **volume_cp,
-                                                    cs_real_t   **volume_lambda,
-                                                    cs_real_t   **volume_mass,
-                                                    cs_real_t   **volume_surf,
-                                                    cs_real_t   **volume_measure,
-                                                    cs_real_t   **volume_t0);
+void
+cs_f_wall_condensation_0d_thermal_get_pointers
+  (cs_real_t   **volume_thickness,
+   cs_real_2_t **volume_t,
+   cs_real_t   **volume_rho,
+   cs_real_t   **volume_cp,
+   cs_real_t   **volume_lambda,
+   cs_real_t   **volume_mass,
+   cs_real_t   **volume_surf,
+   cs_real_t   **volume_measure,
+   cs_real_t   **volume_t0);
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 static void
-_log_debug()
+_log_debug(void)
 {
   const cs_lnum_t nfbpcd = cs_glob_wall_condensation->nfbpcd;
   const cs_lnum_t *izzftcd = cs_glob_wall_condensation->izzftcd;
 
   cs_real_t *zdxp = _wall_cond_1d_thermal.zdxp;
 
+  const int nzones = _wall_cond_1d_thermal.nzones;
   const int znmurx = _wall_cond_1d_thermal.znmurx;
   const cs_lnum_t *znmur  = _wall_cond_1d_thermal.znmur;
   const cs_real_t *zdxmin = _wall_cond_1d_thermal.zdxmin;
@@ -209,11 +213,11 @@ _log_debug()
 
     cs_real_t r0 = 0.0;
     for (cs_lnum_t kk = 0; kk < _znmur; kk++) {
-      r0 += zdxp[kk + iz*znmurx];
+      r0 += zdxp[iz + kk*nzones];
       if (kk == 0)
         bft_printf("     cell id     cell size      distance to the wall\n");
       bft_printf("           %d          %10.07le        %10.07le\n",
-                 kk, zdxp[kk + iz*znmurx], r0);
+                 kk, zdxp[iz + kk*nzones], r0);
     }
   }
 }
@@ -256,15 +260,16 @@ cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **      znmurx,
   *ztmur  = _wall_cond_1d_thermal.ztmur;
 }
 
-void cs_f_wall_condensation_0d_thermal_get_pointers(cs_real_t   **volume_thickness,
-                                                    cs_real_2_t **volume_t,
-                                                    cs_real_t   **volume_rho,
-                                                    cs_real_t   **volume_cp,
-                                                    cs_real_t   **volume_lambda,
-                                                    cs_real_t   **volume_mass,
-                                                    cs_real_t   **volume_surf,
-                                                    cs_real_t   **volume_measure,
-                                                    cs_real_t   **volume_t0)
+void cs_f_wall_condensation_0d_thermal_get_pointers
+  (cs_real_t   **volume_thickness,
+   cs_real_2_t **volume_t,
+   cs_real_t   **volume_rho,
+   cs_real_t   **volume_cp,
+   cs_real_t   **volume_lambda,
+   cs_real_t   **volume_mass,
+   cs_real_t   **volume_surf,
+   cs_real_t   **volume_measure,
+   cs_real_t   **volume_t0)
 {
   *volume_thickness    = _wall_cond_0d_thermal.volume_thickness;
   *volume_t            = _wall_cond_0d_thermal.volume_t;
@@ -580,7 +585,6 @@ cs_wall_condensation_1d_thermal_mesh_initialize(void)
   const cs_real_t *zepais = _wall_cond_1d_thermal.zepais;
 
   int iter = 0;
-  bool bug_iter = false;
   bool log_debug = false;
 
 # pragma omp parallel for reduction(+:iter) if (nfbpcd > CS_THR_MIN)
@@ -608,7 +612,8 @@ cs_wall_condensation_1d_thermal_mesh_initialize(void)
       while (delta > epsi && iter < 100) {
         iter ++;
         const cs_real_t r0 = r1;
-        r1 = pow( 1.0 + (zepais[iz]*(r0-1.0))/zdxmin[iz], 1.0/(cs_real_t)_znmur );
+        r1 = pow(1.0 + (zepais[iz]*(r0-1.0))/zdxmin[iz],
+                 1.0/(cs_real_t)_znmur );
         const cs_real_t epai1 = zdxmin[iz]*(pow(r1, _znmur)-1.0)/(r1-1.0);
         delta = fabs(epai1 - zepais[iz])/zepais[iz];
       }
@@ -619,12 +624,9 @@ cs_wall_condensation_1d_thermal_mesh_initialize(void)
         zdxp[iz + kk*nzones] = zdxp[iz + (kk-1)*nzones]*r1;
     }
 
-    if (iter > 99)
-      bug_iter = true;
-
   } // end loop on faces with condensation source terms
 
-  if (bug_iter)
+  if (iter > 99)
      bft_error(__FILE__, __LINE__, 0,
               _("Error with the 1-D mesh Generation.\n"));
 
@@ -645,10 +647,180 @@ cs_wall_condensation_1d_thermal_mesh_initialize(void)
 # pragma omp parallel for if (nfbpcd > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
     const cs_lnum_t iz = izzftcd[ii];
-
     for (cs_lnum_t kk = 0; kk < znmur[iz]; kk++)
-      ztmur[kk + ii*znmurx] = ztpar0[iz];
+      ztmur[ii + kk*nfbpcd] = ztpar0[iz];
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief The 1D thermal model to compute the temperature to impose
+ *        at the cold wall. This one is used by the COPAIN model to estimate
+ *        he heat flux at the wall where the condensation occurs.
+ *
+ *        Is used to compute at each face the
+ *        \f$T^{fb}_{\mbox{mur}} \f$ at cold wall.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_1d_thermal_compute_temperature(void)
+{
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
+
+  const cs_real_t *dt = CS_F_(dt)->val;
+
+  const cs_lnum_t nfbpcd = cs_glob_wall_condensation->nfbpcd;
+
+  const cs_lnum_t *ifbpcd = cs_glob_wall_condensation->ifbpcd;
+  const cs_lnum_t *izzftcd = cs_glob_wall_condensation->izzftcd;
+  const cs_lnum_t *iztag1d = cs_glob_wall_condensation->iztag1d;
+
+  const cs_real_t *flthr = cs_glob_wall_condensation->flthr;
+  const cs_real_t *dflthr = cs_glob_wall_condensation->dflthr;
+
+  cs_real_t *ztmur = _wall_cond_1d_thermal.ztmur;
+
+  const int znmurx = _wall_cond_1d_thermal.znmurx;
+  const int nzones =  _wall_cond_1d_thermal.nzones;
+  const cs_lnum_t *znmur = _wall_cond_1d_thermal.znmur;
+
+  const cs_real_t *zcpb = _wall_cond_1d_thermal.zcpb;
+  const cs_real_t *zrob = _wall_cond_1d_thermal.zrob;
+  const cs_real_t *zdxp = _wall_cond_1d_thermal.zdxp;
+  const cs_real_t *zhext  = _wall_cond_1d_thermal.zhext;
+  const cs_real_t *ztext  = _wall_cond_1d_thermal.ztext;
+  const cs_real_t *ztheta = _wall_cond_1d_thermal.ztheta;
+  const cs_real_t *zcondb = _wall_cond_1d_thermal.zcondb;
+
+  /* Resolution of the 1-D thermal problem coupled with condensation
+     ---------------------------------------------------------------*/
+
+  cs_real_t dtmur[znmurx];
+  cs_real_t da[znmurx], xsm[znmurx], xa[znmurx][2];
+
+  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+
+    const cs_lnum_t iz = izzftcd[ii];
+
+    if (iztag1d[iz] != 1)
+      continue;
+
+    const cs_lnum_t face_id = ifbpcd[ii];
+    const cs_lnum_t c_id = b_face_cells[face_id];
+
+    const cs_real_t rocp = zrob[iz]*zcpb[iz];
+    /* we recover the flow and the derivative of the flow (implicity) */
+    const cs_real_t phi = flthr[ii];
+    const cs_real_t dphi= dflthr[ii];
+
+    for (cs_lnum_t kk = 1; kk < znmur[iz]-1; kk++) {
+      const cs_real_t dxv
+        = 0.5*(zdxp[iz + (kk-1)*nzones] + zdxp[iz + kk*nzones]);
+
+      da[kk] = rocp/dt[c_id]
+             + ztheta[iz]*zcondb[iz]/(zdxp[iz + (kk-1)*nzones]*dxv)
+             + ztheta[iz]*zcondb[iz]/(zdxp[iz + kk*nzones]*dxv);
+      xa[kk][0] = -ztheta[iz]*zcondb[iz]/(zdxp[iz + (kk-1)*nzones]*dxv);
+      xa[kk][1] = -ztheta[iz]*zcondb[iz]/(zdxp[iz + kk*nzones]*dxv);
+      xsm[kk]
+        = zcondb[iz]*(  ztmur[ii+(kk+1)*nfbpcd]/(zdxp[iz  + kk*nzones]*dxv)
+                      - ztmur[ii+kk*nfbpcd]/(zdxp[iz  + kk*nzones]*dxv)
+                      - ztmur[ii+kk*nfbpcd]/(zdxp[iz+(kk-1)*nzones]*dxv)
+                      + ztmur[ii+(kk-1)*nfbpcd]/(zdxp[iz+(kk-1)*nzones]*dxv)  );
+    }
+
+    /* fluide side */
+    cs_real_t dx = zdxp[iz];
+    cs_real_t dx2 = zdxp[iz]*zdxp[iz];
+    da[0]  = rocp/dt[c_id] + ztheta[iz]*2.0*zcondb[iz]/dx2 + 2.0*dphi/dx;
+    xa[0][0] = 0.0;
+    xa[0][1] = -ztheta[iz]*2.0*zcondb[iz]/dx2;
+    xsm[0] =  2.0*zcondb[iz]/dx2*(ztmur[ii + nfbpcd] - ztmur[ii])
+           + (2.0/dx)*phi;
+
+    /* extern side */
+    const cs_lnum_t k = znmur[iz] - 1;
+    dx  = zdxp[iz+(k-1)*nzones];
+    dx2 = zdxp[iz+(k-1)*nzones]*zdxp[iz+(k-1)*nzones];
+    da[k] = rocp/dt[c_id] + ztheta[iz]*2.0*zcondb[iz]/dx2 + 2.0*zhext[iz]/dx;
+    xa[k][0] = -ztheta[iz]*2.0*zcondb[iz]/dx2;
+    xa[k][1] = 0.0;
+    xsm[k] =  2.0*zcondb[iz]/dx2*(ztmur[ii+(k-1)*nfbpcd]-ztmur[ii+k*nfbpcd])
+           - (2.0/dx)*zhext[iz]*(ztmur[ii+k*nfbpcd] - ztext[iz]);
+
+    /* Resolution on increment */
+    for (cs_lnum_t kk = 0; kk < znmur[iz]; kk++)
+      dtmur[kk] = 0.0;
+
+    dtmur[0] = (xsm[0]+xa[0][1]*dtmur[1])/da[0];
+    for (cs_lnum_t kk = 1; kk <  znmur[iz]-1; kk++)
+      // Not a real theta scheme:
+      // dtmur[kk+1] corresponds to the previous iteration
+      dtmur[kk]= (xsm[kk]+xa[kk][0]*dtmur[kk-1]+xa[kk][1]*dtmur[kk+1]) / da[kk];
+    dtmur[k] = (xsm[k]+xa[k][0]*dtmur[k-1])/da[k];
+
+    // Temperature update
+    for (cs_lnum_t kk = 0; kk < znmur[iz]; kk++)
+      ztmur[ii+kk*nfbpcd] += dtmur[kk];
+
+  } // end loop on faces with condensation source terms
+
+  if ( !(cs_log_default_is_active()) )
+    return;
+
+  cs_real_t tpminf[nzones], tpmaxf[nzones], tpminp[nzones], tpmaxp[nzones];
+
+  for (int z_id = 0; z_id < nzones; z_id++) {
+    tpminf[z_id] = +1.e20;
+    tpmaxf[z_id] = -1.e20;
+    tpminp[z_id] = +1.e20;
+    tpmaxp[z_id] = -1.e20;
+  }
+
+  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+    const cs_lnum_t iz = izzftcd[ii];
+
+    if (iztag1d[iz] != 1)
+      continue;
+
+    const cs_lnum_t kk = znmur[iz] - 1;
+    tpminf[iz] = cs_math_fmin(tpminf[iz], ztmur[ii]);
+    tpmaxf[iz] = cs_math_fmax(tpmaxf[iz], ztmur[ii]);
+    tpminp[iz] = cs_math_fmin(tpminp[iz], ztmur[ii+kk*nfbpcd]);
+    tpmaxp[iz] = cs_math_fmax(tpmaxp[iz], ztmur[ii+kk*nfbpcd]);
+  }
+
+  cs_parall_min(nzones, CS_REAL_TYPE, tpminf);
+  cs_parall_min(nzones, CS_REAL_TYPE, tpminp);
+  cs_parall_max(nzones, CS_REAL_TYPE, tpmaxf);
+  cs_parall_max(nzones, CS_REAL_TYPE, tpmaxp);
+
+  bft_printf("=====================================\n"
+             "Resolution of the 1-D thermal problem\n"
+             " coupled with the condensation model\n"
+             "=====================================\n"
+             "------------------------------------------"
+             "----------------------------------------------\n"
+             "time         izones     Tp_f  (min)      Tp_f"
+             "   (max)      Tp_ext(min)      Tp_ext (max)\n"
+             "(s)                      (C)             (C)"
+             "               (C)             (C)        \n"
+             "------------------------------------------"
+             "----------------------------------------------\n");
+
+  for (int z_id = 0; z_id < nzones; z_id++)
+    bft_printf("  %10.06f        %d      %10.06f        %10.06f        %10.06f"
+               "        %10.06f\n",
+               cs_glob_time_step->t_cur,
+               z_id,
+               tpminf[z_id],
+               tpmaxf[z_id],
+               tpminp[z_id],
+               tpmaxp[z_id]);
+  bft_printf("------------------------------------------"
+             "----------------------------------------------\n");
 
 }
 

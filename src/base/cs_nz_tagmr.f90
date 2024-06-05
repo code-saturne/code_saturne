@@ -305,6 +305,7 @@ contains
     use pointe
     use cs_nz_condensation
     use parall
+    use entsor
 
     implicit none
 

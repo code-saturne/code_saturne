@@ -393,7 +393,6 @@ cs_sys_coupling.c \
 cs_thermal_model.c \
 cs_time_table.c \
 cs_tagmri.f90 \
-cs_tagmro.f90 \
 cs_time_control.c \
 cs_time_moment.c \
 cs_time_plot.c \

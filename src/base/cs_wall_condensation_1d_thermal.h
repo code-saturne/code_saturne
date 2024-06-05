@@ -177,6 +177,20 @@ void
 cs_wall_condensation_1d_thermal_mesh_initialize(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief The 1D thermal model to compute the temperature to impose
+ *        at the cold wall. This one is used by the COPAIN model to estimate
+ *        he heat flux at the wall where the condensation occurs.
+ *
+ *        Is used to compute at each face the
+ *        \f$T^{fb}_{\mbox{mur}} \f$ at cold wall.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_1d_thermal_compute_temperature(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

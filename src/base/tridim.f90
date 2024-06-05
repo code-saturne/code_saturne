@@ -350,6 +350,11 @@ interface
     use, intrinsic :: iso_c_binding
   end subroutine cscloc
 
+  subroutine cs_wall_condensation_1d_thermal_compute_temperature() &
+    bind(C, name='cs_wall_condensation_1d_thermal_compute_temperature')
+    use, intrinsic :: iso_c_binding
+  end subroutine cs_wall_condensation_1d_thermal_compute_temperature
+
 end interface
 
 !===============================================================================
@@ -878,9 +883,7 @@ do while (iterns.le.nterup)
     ! 1-D thermal model coupling with condensation
     ! on a surface region
     if (nftcdt.gt.0.and.nztag1d.eq.1) then
-      call cs_tagmro &
-     ( nfbpcd , ifbpcd , izzftcd ,                  &
-       dt     )
+      call cs_wall_condensation_1d_thermal_compute_temperature()
     endif
 
      ! 0-D thermal model coupling with condensation
