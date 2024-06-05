@@ -609,8 +609,10 @@ _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
       cs_real_t rho_wall
         = pressure * mol_mas_int / (cs_physical_constants_r * t_wall);
       cs_real_t drho = fabs(rho_wall - rho) / rho; // different from Fortran
-      if (y_vap_int < y_vap_core)
-        theta = 1.33 * log(1.0 + spalding) / spalding;
+      if (y_vap_int < y_vap_core) {
+        cs_real_t B = (y_vap_int - y_vap_core) / (1.0 - y_vap_int);
+        theta = 1.33 * log(1.0 + B) / B;
+      }
       cs_real_t gr = _compute_grashof(gravity, drho, lcar_nc, mu / rho);
       cs_real_t nu = _compute_mac_adams(theta, gr, Pr);
       *hconv       = cp * lambda_over_cp * nu / lcar_nc;
