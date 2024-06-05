@@ -60,6 +60,7 @@ class AtmosphericFlowsModel(Variables, Model):
     dry                 = 'dry'
     humid               = 'humid'
     humid_ctwr          = 'humid_ctwr'
+    ctwr                = 'ctwr'
     read_meteo_data     = 'read_meteo_data'
     large_scale_meteo   = 'large_scale_meteo'
     act_chemistry       = 'activate_chemistry'
@@ -79,7 +80,8 @@ class AtmosphericFlowsModel(Variables, Model):
                                    AtmosphericFlowsModel.constant,
                                    AtmosphericFlowsModel.dry,
                                    AtmosphericFlowsModel.humid,
-                                   AtmosphericFlowsModel.humid_ctwr)
+                                   AtmosphericFlowsModel.humid_ctwr,
+                                   AtmosphericFlowsModel.ctwr)
 
         self.var_list_humid = [('ym_water', 'TotWater'),
                                ('number_of_droplets', 'TotDrop')]
@@ -132,11 +134,11 @@ class AtmosphericFlowsModel(Variables, Model):
         self.isInList(model, self.__atmosphericModel)
         self.__node_atmos[self.model] = model
         self.__updateScalarAndProperty()
-        if (model == "humid" or model == "dry" or model == "humid_ctwr"):
+        if (model == "humid" or model == "dry" or model == "humid_ctwr" or model == "ctwr"):
             NumericalParamGlobalModel(self.case).setHydrostaticPressure("on")
             if (model == "dry"):
                 ThermalScalarModel(self.case).setThermalModel('potential_temperature')
-            elif (model == "humid"):
+            elif (model == "humid" or model == "humid_ctwr"):
                 ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
             else:
                 ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
@@ -459,7 +461,7 @@ class AtmosphericFlowsModel(Variables, Model):
             for v in self.prop_list_dry:
                 self.setNewProperty(node, v[0], label=v[1])
 
-        elif model == AtmosphericFlowsModel.humid:
+        elif model == AtmosphericFlowsModel.humid or model == AtmosphericFlowsModel.humid_ctwr:
             self.__fluidProp.setPropertyMode('density', 'predefined_law')
             for v in self.var_list_humid:
                 self.setNewVariable(node, v[0], tpe="model", label=v[1])
@@ -467,7 +469,7 @@ class AtmosphericFlowsModel(Variables, Model):
                 self.setNewProperty(node, v[0], label=v[1])
 
 
-        elif model == AtmosphericFlowsModel.humid_ctwr:
+        elif model == AtmosphericFlowsModel.humid_ctwr or model == AtmosphericFlowsModel.ctwr:
             self.__fluidProp.setPropertyMode('density', 'predefined_law')
             for v in self.var_list_ctwr:
                 self.setNewVariable(node, v[0], tpe="model", label=v[1])

@@ -135,6 +135,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelAtmospheric.addItem(self.tr("dry atmosphere"  ), "dry")
         self.modelAtmospheric.addItem(self.tr("humid atmosphere"), "humid")
         self.modelAtmospheric.addItem(self.tr("humid atmosphere for cooling towers"), "humid_ctwr")
+        self.modelAtmospheric.addItem(self.tr("cooling towers only"), "ctwr")
 
         self.modelReactiveFlows.addItem(self.tr("Gas combustion"),
                                         "gas_combustion")

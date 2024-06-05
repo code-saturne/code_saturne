@@ -845,7 +845,14 @@ cs_gui_physical_model_select(void)
         cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_DRY;
       else if (cs_gui_strcmp(model_value, "humid"))
         cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_HUMID;
-      else if (cs_gui_strcmp(model_value, "humid_ctwr"))
+
+      /* Combination of the two modules */
+      else if (cs_gui_strcmp(model_value, "humid_ctwr")) {
+        cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_HUMID;
+      }
+      /* Cooling towers only */
+      else if (cs_gui_strcmp(model_value, "ctwr"))
         cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 1;
       else
         bft_error(__FILE__, __LINE__, 0,

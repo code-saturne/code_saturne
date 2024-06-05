@@ -546,12 +546,12 @@ class XMLinit(BaseXmlInit):
                         if n:
                             n.xmlRemoveNode()
                         ThermalScalarModel(self.case).setThermalModel('potential_temperature')
-                    if (mdl == "humid"):
+                    if (mdl == "humid" or mdl == "humid_ctwr"):
                         n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
                         if n:
                             n.xmlRemoveNode()
                         ThermalScalarModel(self.case).setThermalModel('liquid_potential_temperature')
-                    if (mdl == "humid_ctwr"):
+                    if (mdl == "ctwr"):
                         n = node.xmlGetNode('scalar', name="temperature_celsius")
                         if n:
                             n.xmlRemoveNode()
