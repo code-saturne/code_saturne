@@ -44,6 +44,22 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute cell reference pressure
+ *
+ * \param[in]     cell_id       Cell index
+ * \param[in]     p0            Fluid properties reference pressure
+ * \param[in]     ref_ressure   Atmospheric reference pressure
+ * \return        pphy            Reference pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_compute_reference_pressure(cs_lnum_t  cell_id,
+                                   cs_real_t   p0,
+                                   cs_field_t  *ref_pressure);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update the thermo physical properties fields for the humid air and
  *        the liquid
  *

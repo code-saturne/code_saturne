@@ -49,6 +49,7 @@
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
+#include "cs_ctwr_physical_properties.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
@@ -151,16 +152,22 @@ cs_ctwr_source_term(int              f_id,
   /* Water / air molar mass ratio */
   const cs_real_t molmassrat = air_prop->molmass_rat;
 
-  cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* Humid air
-                                                       (bulk) density */
-  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val; /* Humid air (bulk)
-                                                          velocity*/
+  cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
+  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
+
+  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val; /* Humid air velocity*/
+  cs_real_t *p_tot = cs_field_by_name("total_pressure")->val; /* Total pressure */
 
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */
 
-  cs_real_t *t_h = cs_field_by_name("temperature")->val; /* Humid air
-                                                            temperature */
+  cs_real_t *t_h = NULL;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
+  }
+  else{
+    t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
+  }
   cs_real_t *x = cs_field_by_name("humidity")->val; /* Humidity in air (bulk) */
   cs_real_t *x_s = cs_field_by_name("x_s")->val;
   cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;  /* Liquid velocity
@@ -171,10 +178,13 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t *y_l_p = CS_F_(y_l_pack)->val_pre;
 
   /* Variable and properties for rain drops */
-  cs_field_t *cfld_yp = cs_field_by_name("y_l_r");     /* Rain mass fraction */
-  cs_field_t *cfld_yh_rain = cs_field_by_name("yh_l_r"); /* Yp times Tp */
-  cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_y_l_r"); /* Rain drift
+  cs_field_t *cfld_yp = cs_field_by_name("ym_l_r");     /* Rain mass fraction */
+  cs_field_t *cfld_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
+  cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_ym_l_r"); /* Rain drift
                                                                      velocity */
+  /* Phases volume fractions */
+  cs_real_t *vol_f_c = cs_field_by_name("vol_f_c")->val; /* Vol frac. air */
+  cs_real_t *vol_f_r = cs_field_by_name("vol_f_r")->val; /* Vol frac. rain */
 
   /* Rain inner mass flux */
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
@@ -227,15 +237,22 @@ cs_ctwr_source_term(int              f_id,
     packing_cell[cell_id] = -1;
 
   /* Air / fluid properties */
+  cs_real_t cp_d = fp->cp0;
+  cs_real_t rscp = fp->r_pg_cnst / cp_d;
   cs_real_t cp_v = air_prop->cp_v;
   cs_real_t cp_l = air_prop->cp_l;
   cs_real_t hv0 = air_prop->hv0;
   cs_real_t rho_l = air_prop->rho_l;
   cs_real_t visc = fp->viscl0;
-  cs_real_t  p0 = fp->p0;
+  cs_real_t p0 = fp->p0;
+  cs_real_t ps = cs_glob_atmo_constants->ps;
   cs_real_t lambda_h = air_prop->lambda_h;
   cs_real_t droplet_diam  = air_prop->droplet_diam;
   cs_real_t sigma = air_prop->sigma;
+
+  /* Fields necessary for humid atmosphere model */
+  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
+  cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
 
   if (evap_model != CS_CTWR_NONE) {
 
@@ -253,9 +270,10 @@ cs_ctwr_source_term(int              f_id,
     horizontal[1] = vertical[1] -1.;
     horizontal[2] = vertical[2] -1.;
 
-    /* Phase change in the packing zones
-       Between the liquid film and the humid air
-       ========================================= */
+    /* =========================================
+     * PHASE CHANGE : PACKING ZONES
+     * Between the liquid film and the humid air
+     * ========================================= */
 
     for (int ict = 0; ict < *_n_ct_zones; ict++) {
 
@@ -279,14 +297,17 @@ cs_ctwr_source_term(int              f_id,
         if (ct->type != CS_CTWR_INJECTION)
           packing_cell[cell_id] = ict;
 
+    /* Compute cell reference pressure */
+        cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id, p0, meteo_pressure);
+
         /* For correlations, T_h cannot be greater than T_l */
         cs_real_t temp_h = CS_MIN(t_h[cell_id], t_l_p[cell_id]);
 
         /* Saturation humidity at humid air temperature */
-        cs_real_t x_s_th = cs_air_x_sat(temp_h, p0);
+        cs_real_t x_s_th = cs_air_x_sat(temp_h, pphy);
 
         /* Saturation humidity at injected liquid temperature */
-        cs_real_t x_s_tl = cs_air_x_sat(t_l_p[cell_id], p0);
+        cs_real_t x_s_tl = cs_air_x_sat(t_l_p[cell_id], pphy);
 
         /*--------------------------------------------*
          * Counter or cross flow packing zone         *
@@ -305,8 +326,8 @@ cs_ctwr_source_term(int              f_id,
         mass_flux_h = rho_h[cell_id] * v_air * (1. - ym_w[cell_id]);
 
         /* Liquid mass flux */
-        cs_real_t mass_flux_l = rho_h[cell_id] * y_l_p[cell_id] * vel_l[cell_id];
-        cs_real_t mass_flux_l_oy = rho_h[cell_id] * vel_l[cell_id];
+        cs_real_t mass_flux_l = rho_m[cell_id] * y_l_p[cell_id] * vel_l[cell_id];
+        cs_real_t mass_flux_l_oy = rho_m[cell_id] * vel_l[cell_id];
 
         /* Evaporation coefficient 'Beta_x' (kg/m2/s) times exchange surface
          * per unit of volume 'ai' (m2/m3)*/
@@ -314,7 +335,7 @@ cs_ctwr_source_term(int              f_id,
         cs_real_t beta_x_ai_oy = 0.;
 
         /* There is evaporation only if we have an injected liquid flow */
-        if (mass_flux_l > 0.){
+        if (mass_flux_l > 0.) {
           beta_x_ai = a_0 * mass_flux_l * pow((mass_flux_h/mass_flux_l), xnp);
           beta_x_ai_oy = a_0 * mass_flux_l_oy * pow((mass_flux_h/mass_flux_l), xnp);
         }
@@ -356,7 +377,6 @@ cs_ctwr_source_term(int              f_id,
 
         /* Water mass fraction equation except rain */
         else if (f_id == (CS_F_(ym_w)->id)) {
-          //TODO add mass_from_rain
           exp_st[cell_id] += vol_mass_source * (1. - f_var[cell_id]);
           imp_st[cell_id] += vol_mass_source;
         }
@@ -369,31 +389,41 @@ cs_ctwr_source_term(int              f_id,
 
         /* Humid air temperature equation */
         else if (f_id == (CS_F_(t)->id)) {
-          // FIXME source term for theta_l instead...
           /* Because the writing is in a non-conservative form */
           cs_real_t l_imp_st = vol_mass_source * cp_h;
           cs_real_t l_exp_st = 0.;
           cs_real_t le_f = _lewis_factor(evap_model, molmassrat,
                                          x[cell_id], x_s_tl);
+          cs_real_t coef = 1.;
+          cs_real_t t_shift = 0.;
+          if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+            /* Coefficient to convert T into theta_l */
+            coef = pow((ps / pphy), rscp);
+            t_shift = cs_physical_constants_celsius_to_kelvin;
+          }
+
           if (x[cell_id] <= x_s_th) {
-            /* Implicit term */
+            /* Implicit and explicit terms for temperature T */
             l_imp_st += vol_beta_x_ai * (le_f * cp_h
-                                          + (x_s_tl - x[cell_id]) * cp_v
-                                            / (1. + x[cell_id]));
-            l_exp_st = l_imp_st * (t_l_p[cell_id] - f_var[cell_id]);
+                                         + (x_s_tl - x[cell_id]) * cp_v
+                                           / (1. + x[cell_id]));
+            l_exp_st += l_imp_st * (coef * (t_l_p[cell_id] + t_shift)
+                                    - f_var[cell_id]);
           }
           else {
-            cs_real_t coeft = le_f * cp_h;
-            /* Implicit term */
-            l_imp_st += vol_beta_x_ai * (coeft + (x_s_tl - x_s_th) * cp_l
-                                                 / (1. + x[cell_id]));
-            /* Explicit term */
-            //FIXME : why does a hv0 term appears while we work on temperature ?
-            l_exp_st = vol_beta_x_ai * (coeft * t_l_p[cell_id]
+            /* Implicit and explicit terms for temperature T */
+            l_imp_st += vol_beta_x_ai * (le_f * cp_h + (x_s_tl - x_s_th) * cp_l
+                                        / (1. + x[cell_id]));
+            l_exp_st += vol_beta_x_ai * (le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
                                         + (x_s_tl - x_s_th)
-                                          * (cp_v * t_l_p[cell_id] + hv0)
-                                          / (1. + x[cell_id]))
-                       - l_imp_st * f_var[cell_id];
+                                           * (cp_v * coef * (t_l_p[cell_id] + t_shift))
+                                           / (1. + x[cell_id]))
+                                        - l_imp_st * f_var[cell_id];
+          }
+          /* If humid atmosphere model, temperature is liquid potential
+           * temperature theta_l */
+          if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+            l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
           }
           imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
           exp_st[cell_id] += l_exp_st;
@@ -418,6 +448,7 @@ cs_ctwr_source_term(int              f_id,
                                          molmassrat,
                                          x[cell_id],
                                          x_s_tl);
+
           /* Under saturated */
           if (x[cell_id] <= x_s_th) {
             /* Explicit term */
@@ -428,9 +459,8 @@ cs_ctwr_source_term(int              f_id,
           }
           /* Over saturated */
           else {
-            cs_real_t coefh = le_f * cp_h;
             /* Explicit term */
-            l_exp_st += vol_beta_x_ai * (coefh * (t_h[cell_id] - t_l_p[cell_id])
+            l_exp_st += vol_beta_x_ai * (le_f * cp_h * (t_h[cell_id] - t_l_p[cell_id])
                                          + (x_s_tl - x_s_th) / (1. + x[cell_id])
                                            * (cp_l * t_h[cell_id]
                                               - (cp_v * t_l_p[cell_id] + hv0)));
@@ -447,9 +477,10 @@ cs_ctwr_source_term(int              f_id,
 
     } /* end loop over all the packing zones */
 
-    /* Phase change in the whole domain
-       Between the rain drops and the humid air
-       ======================================== */
+    /* ========================================
+     *  PHASE CHANGE : RAIN ZONES (whole domain)
+     *  Between the rain drops and the humid air
+     * ========================================= */
 
     if (cfld_yp != NULL) {
       cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
@@ -459,14 +490,17 @@ cs_ctwr_source_term(int              f_id,
 
         if (y_rain[cell_id] > 0.) {
 
+          /* Compute cell reference pressure */
+          cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id, p0, meteo_pressure);
+
           /* For correlations, T_h cannot be greater than T_p */
           cs_real_t temp_h = CS_MIN(t_h[cell_id], t_l_r[cell_id]);
 
           /* Saturation humidity at the temperature of the humid air */
-          cs_real_t x_s_th = cs_air_x_sat(temp_h, p0);
+          cs_real_t x_s_th = cs_air_x_sat(temp_h, pphy);
 
           /* Saturation humidity at the temperature of the rain drop  */
-          cs_real_t x_s_tl = cs_air_x_sat(t_l_r[cell_id], p0);
+          cs_real_t x_s_tl = cs_air_x_sat(t_l_r[cell_id], pphy);
 
           cs_real_3_t *drift_vel_rain
             = (cs_real_3_t *restrict)(cfld_drift_vel->val);
@@ -510,8 +544,8 @@ cs_ctwr_source_term(int              f_id,
            * where alpha_p is the droplets volume fraction
            * - this kills transfer when there is only one phase (pure humid air
            *   or pure rain) */
-          cs_real_t vol_frac_rain = y_rain[cell_id] * rho_h[cell_id] / rho_l;
-          cs_real_t vol_frac_rain_oy = rho_h[cell_id] / rho_l;
+          cs_real_t vol_frac_rain = y_rain[cell_id] * rho_m[cell_id] / rho_l;
+          cs_real_t vol_frac_rain_oy = rho_m[cell_id] / rho_l;
 
           if (vol_frac_rain >= 1.0)
             vol_frac_rain = 1.0;
@@ -545,28 +579,20 @@ cs_ctwr_source_term(int              f_id,
           cs_real_t vol_mass_source_oy = mass_source_oy * cell_f_vol[cell_id];
 
           cs_real_t vol_beta_x_ai = beta_x_ai * cell_f_vol[cell_id];
-
-          /* Global mass source term for continuity (pressure) equation
-           * Note that if rain were already considered in the bulk, then inner
-           * mass transfer between liquid and vapor would disappear */
-
           //FIXME: Consider putting rain in the bulk
           //       --> implication on 'c' variables different from 'h'
           if (f_id == (CS_F_(p)->id)) {
-            /* Warning: not multiplied by Cell volume! no addition neither */
-            // FIXME: Addition needed to avoid deleting packing mass
-            //        source term ?
-            exp_st[cell_id] += mass_source;
-
             /* Saving evaporation rate for post-processing */
             evap_rate_rain[cell_id] = mass_source;
           }
-
           /* Water (vapor + condensate) in gas mass fraction equation
              except rain */
           else if (f_id == (CS_F_(ym_w)->id)) {
             exp_st[cell_id] += vol_mass_source * (1. - f_var[cell_id]);
             imp_st[cell_id] += vol_mass_source;
+
+            /* Saving evaporation rate for post-processing */
+            evap_rate_rain[cell_id] = mass_source;
           }
 
           /* Rain drop mass equation (solve in drift model form) */
@@ -578,25 +604,39 @@ cs_ctwr_source_term(int              f_id,
           /* Humid air temperature equation */
           else if (f_id == (CS_F_(t)->id)) {
             /* Because the writing is in a non-conservative form */
-            cs_real_t l_imp_st = vol_mass_source * cp_h;
+            cs_real_t l_imp_st = 0.; //vol_mass_source * cp_h;
             cs_real_t l_exp_st = 0.;
+
+            cs_real_t coef = 1.;
+            cs_real_t t_shift = 0.;
+            if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+              /* Coefficient to convert T into theta_l */
+              coef = pow((ps / pphy), rscp);
+              t_shift = cs_physical_constants_celsius_to_kelvin;
+            }
+
             if (x[cell_id] <= x_s_th) {
-              /* Implicit term */
+              /* Implicit and explicit terms for temperature T */
               l_imp_st += vol_beta_x_ai * (le_f * cp_h
                                            + (x_s_tl - x[cell_id]) * cp_v
                                              / (1. + x[cell_id]));
-              /* Explicit term */
-              l_exp_st = l_imp_st * (t_l_r[cell_id] - f_var[cell_id]);
+              l_exp_st = l_imp_st * (coef * (t_l_p[cell_id] + t_shift)
+                                     - f_var[cell_id]);
             }
             else {
-              cs_real_t coeft = le_f * cp_h;
-              /* Implicit term */
-              l_imp_st += vol_beta_x_ai * (coeft + (x_s_tl - x_s_th)
-                                                   * cp_l / (1. + x[cell_id]));
-              /* Explicit term */
-              l_exp_st = vol_beta_x_ai * (coeft * t_l_r[cell_id]
-                         + (x_s_tl - x_s_th) * (cp_v * t_l_r[cell_id] + hv0)
-                           / (1. + x[cell_id])) - l_imp_st * f_var[cell_id];
+              /* Implicit and explicit terms for temperature T */
+              l_imp_st += vol_beta_x_ai * (le_f * cp_h + (x_s_tl - x_s_th) * cp_l
+                  / (1. + x[cell_id]));
+              l_exp_st = vol_beta_x_ai * (le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
+                  + (x_s_tl - x_s_th)
+                  * (cp_v * coef * (t_l_p[cell_id] + t_shift ))
+                  / (1. + x[cell_id]))
+                - l_imp_st * f_var[cell_id];
+            }
+            /* If humid atmosphere model, temperature is liquid potential
+             * temperature theta_l */
+            if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+              l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
             }
             imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
             exp_st[cell_id] += l_exp_st;
@@ -605,44 +645,38 @@ cs_ctwr_source_term(int              f_id,
           /* Rain enthalpy equation (solve in drift model form)
            * NB: The actual variable being solved is y_rain x h_rain */
           else if (f_id == cfld_yh_rain->id) {
-          /* Liquid temperature in Kelvin */
-          cs_real_t t_l_k = t_l_r[cell_id]
-                            + cs_physical_constants_celsius_to_kelvin;
+            /* Liquid temperature in Kelvin */
+            cs_real_t t_l_k = t_l_r[cell_id]
+              + cs_physical_constants_celsius_to_kelvin;
 
-          cs_real_t l_exp_st = 0.;
+            cs_real_t l_exp_st = 0.;
+            cs_real_t l_imp_st = 0.;
 
-          /* Note: the solved variable is yl_r.hl_r so the source term associated
-           * to evaporation is: Gamma/y_lr * (yl_r.h_lr) */
-          /* Implicit term */
-          cs_real_t l_imp_st = vol_mass_source_oy;
-
-          l_exp_st -= l_imp_st * f_var[cell_id];
-
-          /* Under saturated */
-          if (x[cell_id] <= x_s_th) {
-            /* Explicit term */
-            l_exp_st -= vol_beta_x_ai * ((x_s_tl - x[cell_id])
-                                         * (cp_v * t_l_k + hv0)
-                                         + le_f * cp_h
-                                           * (t_l_r[cell_id] - t_h[cell_id]));
-          }
-          /* Over saturated */
-          else {
-            cs_real_t coefh = le_f * cp_h;
-            /* Explicit term */
-            l_exp_st += vol_beta_x_ai * (coefh * (t_h[cell_id] - t_l_r[cell_id])
-                                         + (x_s_tl - x_s_th) / (1. + x[cell_id])
-                                           * (cp_l * t_h[cell_id]
-                                              - (cp_v * t_l_r[cell_id] + hv0)));
-          }
-          /* Because we deal with an increment */
-          exp_st[cell_id] += l_exp_st;
-          imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
+            /* Under saturated */
+            if (x[cell_id] <= x_s_th) {
+              /* Explicit term */
+              l_exp_st -= vol_beta_x_ai * ((x_s_tl - x[cell_id])
+                  * (cp_v * t_l_k + hv0)
+                  + le_f * cp_h
+                  * (t_l_r[cell_id] - t_h[cell_id]));
+            }
+            /* Over saturated */
+            else {
+              cs_real_t coefh = le_f * cp_h;
+              /* Explicit term */
+              l_exp_st += vol_beta_x_ai * (coefh * (t_h[cell_id] - t_l_r[cell_id])
+                  + (x_s_tl - x_s_th) / (1. + x[cell_id])
+                  * (cp_l * t_h[cell_id]
+                    - (cp_v * t_l_r[cell_id] + hv0)));
+            }
+            /* Because we deal with an increment */
+            exp_st[cell_id] += l_exp_st;
+            imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
 
             /* Saving thermal power for post-processing */
-            if (t_l_r[cell_id] > 0.){
+            if (t_l_r[cell_id] > 0.) {
               thermal_power_rain[cell_id] = -(l_exp_st + l_imp_st * f_var[cell_id])
-                                             / cell_f_vol[cell_id];
+                / cell_f_vol[cell_id];
             }
           }
 
@@ -699,10 +733,9 @@ cs_ctwr_source_term(int              f_id,
             * liq_mass_frac[cell_id_leak] * sign * liq_mass_flow[face_id];
 
           /* Global bulk mass - continuity */
-          //FIXME - Ignore for now because drops are not in the bulk
           if (f_id == (CS_F_(p)->id)) {
             /* Warning: not multiplied by Cell volume! */
-            //exp_st[cell_id_rain] = mass_source;
+            exp_st[cell_id_rain] = vol_mass_source;
           }
 
           /* Injected liquid mass equation for rain zones
@@ -873,17 +906,18 @@ cs_ctwr_source_term(int              f_id,
     }
   }
 
-
   /* Source terms for rain drops velocity
    * ==================================== */
+
   if (ct_opt->solve_rain_velocity) {
+    /* Drops terminal relative velocity fields */
     int class_id = 1;
     char vg_lim_name[80];
     sprintf(vg_lim_name, "vg_lim_p_%02d", class_id);
-
-    /* Drops terminal velocity fields */
     cs_real_3_t *vg_lim_p = (cs_real_3_t *)cs_field_by_name(vg_lim_name)->val;
-    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_l_r");
+
+    /* Droplets velocity relaxation time */
+    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
     cs_real_t *cpro_taup = NULL;
     if (cfld_taup != NULL)
       cpro_taup = cfld_taup->val;
@@ -891,95 +925,75 @@ cs_ctwr_source_term(int              f_id,
     /* Continuous phase drift velocity */
     cs_real_3_t *vd_c = (cs_real_3_t *)cs_field_by_name("vd_c")->val;
 
-    /* Rain drift velocity variables */
     char f_name[80];
     sprintf(f_name, "v_p_%02d", class_id);
+    cs_real_3_t *cfld_drift
+      = (cs_real_3_t *)cs_field_by_name("drift_vel_ym_l_r")->val;
+    /* Rain drops velocity field */
     cs_field_t *f_vp = cs_field_by_name(f_name);
 
-    if (f_id == f_vp->id) {
-      cs_real_33_t *_imp_st = (cs_real_33_t *)imp_st;
-      cs_real_3_t *_exp_st = (cs_real_3_t *)exp_st;
-      cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
-      cs_real_3_t *vp = (cs_real_3_t *)f_vp->val;
+    /* Gravity norm */
+    cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
 
-      for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          /* Explicit source term */
-          _exp_st[cell_id][i] += rho_h[cell_id] * cell_f_vol[cell_id]
-                              * 1. / cpro_taup[cell_id]
-                              * (vel[cell_id][i] + vd_c[cell_id][i]
-                                  + vg_lim_p[cell_id][i] - vp[cell_id][i]);
-          /* Implicit source term: only diagonal terms */
-          _imp_st[cell_id][i][i] += rho_h[cell_id] * cell_f_vol[cell_id]
-                                       / cpro_taup[cell_id];
-        }
-      }
-    }
-    /* Interfacial pressure drop due to air / rain friction */
-    if (f_id == (CS_F_(vel)->id)) {
+    cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
+                           cs_glob_physical_constants->gravity[1],
+                           cs_glob_physical_constants->gravity[2]};
+
+    if (f_id == f_vp->id) {
       /* Casting implicit source term on a 3x3 symmetric matrix */
       cs_real_33_t *_imp_st = (cs_real_33_t *)imp_st;
       cs_real_3_t *_exp_st = (cs_real_3_t *)exp_st;
 
-      /* Rain mass fraction field */
-      cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
-      /* Rain drift and velocity fields */
-      sprintf(f_name, "vd_p_%02d", class_id);
-      cs_real_3_t *cfld_drift
-        = (cs_real_3_t *)cs_field_by_name("drift_vel_y_l_r")->val;
+      /* Rain drops velocity */
       cs_real_3_t *vp = (cs_real_3_t *)f_vp->val;
 
-      /* Gravity norm */
-      cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
+      /* Continuous phase velocity */
+      cs_real_3_t *v_c = (cs_real_3_t *)cs_field_by_name("v_c")->val;
+
+      /* Bulk mixture velocity */
+      cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+      /* Rain mass fraction field */
+      cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
+
       for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-        if (y_rain[cell_id] > 0.){
-          /* Droplet drift and absolute velocity */
-          cs_real_t drift = cs_math_3_norm(cfld_drift[cell_id]);
-          cs_real_t v_drop = cs_math_3_norm(vp[cell_id]);
 
-          /* Droplet Reynolds and Eotvos number */
-          cs_real_t re_d = rho_h[cell_id] * drift * droplet_diam / visc;
-          cs_real_t e_o = g * droplet_diam * (rho_l - rho_h[cell_id]) / sigma;
-          /* Sphere drag coefficient */
+        /* Air / droplets interfacial area density calculation */
+        cs_real_t ai_o_yp = 6.0 * rho_m[cell_id] / rho_l * (1.0 - vol_f_r[cell_id])
+                          / droplet_diam;
+        /* Relative velocity calculation */
+        cs_real_t u_rel[] = {vp[cell_id][0] - v_c[cell_id][0],
+                             vp[cell_id][1] - v_c[cell_id][1],
+                             vp[cell_id][2] - v_c[cell_id][2]};
+
+        /* Rain velocity calculation */
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          /* Explicit source term */
+          /* Gravity term */
+          _exp_st[cell_id][i] += rho_m[cell_id] * gravity[i] * cell_f_vol[cell_id];
+
+          /* Drag term*/
+          cs_real_t re_p = rho_h[cell_id] * cs_math_3_norm(u_rel) * droplet_diam / visc;
           cs_real_t cd = 0.;
-          if (re_d > 0.){
-            cd = (24. / re_d) * (1. + 0.15 * pow(re_d, 0.685));
+          if (re_p > 1.e-9) {
+            cd = (24./ re_p) * (1. + 0.15 * pow(re_p, 0.687));
           }
-          /* Droplet terminal velocity */
-          cs_real_t v_term = pow((4. * rho_l * droplet_diam * g)
-              / (3. * cd * rho_h[cell_id]), 0.5);
-          /* Droplet deformation / elongation */
-          cs_real_t e_tau = 1. / (1. + 0.148 * pow(e_o, 0.85));
-          //FIXME : check positivity of E
-          cs_real_t E =   1. - cs_math_pow2(CS_MIN(v_drop / v_term, 1.))
-                        * (1. - e_tau);
 
-          /* Total drag coefficient for deformed drop */
-          cs_real_t cd_tot = cd * (1. - 0.17185 * (1. - E)
-              + 6.692 * cs_math_pow2(1. - E)
-              - 6.605 * cs_math_pow3(1. - E));
+          _exp_st[cell_id][i] += - 1./8. * ai_o_yp * rho_h[cell_id] * cd
+                               * cs_math_3_norm(u_rel) * u_rel[i] * cell_f_vol[cell_id];
 
-          /* Air / droplets interfacial area density calculation */
-          cs_real_t vol_frac_rain = y_rain[cell_id] * rho_h[cell_id] / rho_l;
-          if (vol_frac_rain >= 1.0)
-            vol_frac_rain = 1.0;
-          cs_real_t a_i =  6.0 * vol_frac_rain * (1.0 - vol_frac_rain)
-            / droplet_diam;
+          //_exp_st[cell_id][i] += y_rain[cell_id] * rho_m[cell_id] * cell_f_vol[cell_id]
+          //                       * 1. / cpro_taup[cell_id]
+          //                       * (vel[cell_id][i] + vd_c[cell_id][i]
+          //                          + vg_lim_p[cell_id][i] - vp[cell_id][i]);
 
-          /* Droplet relaxation time */
-          cs_real_t tau_d = rho_l * cs_math_pow2(droplet_diam) / (18. * visc);
-          /* Final head loss coefficient */
-          cs_real_t k_drop = rho_l * (cd_tot * re_d / 24.) * droplet_diam * a_i
-            / (6. * tau_d);
-          for (int k = 0; k < 3; k++){
-            _imp_st[cell_id][k][k] += -cell_f_vol[cell_id] * k_drop;
-            _exp_st[cell_id][k] += cell_f_vol[cell_id] * k_drop * vp[cell_id][k];
-          }
+          /* Implicit source term: only diagonal terms */
+          //_imp_st[cell_id][i][i] += 1./8. * ai_o_yp * rho_h[cell_id] * cd
+                                    //* cs_math_3_norm(u_rel) * cell_f_vol[cell_id];
         }
       }
     }
-
-  } /* End of solve_rain variable check */
+ } /* End of solve_rain variable check */
 
   BFT_FREE(packing_cell);
 }

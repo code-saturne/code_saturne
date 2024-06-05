@@ -181,16 +181,16 @@ call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then
   call attycl(itypfb, izfppp, icodcl, rcodcl)
+endif
 
 ! Cooling towers
-elseif (ippmod(iaeros).ge.0) then
+if (ippmod(iaeros).ge.0) then
   call cs_ctwr_bcond()
+endif
 
 ! Compressible
-
-elseif (ippmod(icompf).ge.0) then
+if (ippmod(icompf).ge.0) then
   call cfxtcl(nvar, icodcl, itypfb, dt, rcodcl)
-
 endif
 
 if (init .eqv. .true.) return

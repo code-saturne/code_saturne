@@ -86,8 +86,8 @@ class AtmosphericFlowsModel(Variables, Model):
         self.var_list_humid = [('ym_water', 'TotWater'),
                                ('number_of_droplets', 'TotDrop')]
 
-        self.var_list_ctwr = [('y_l_r', 'Yl rain'),
-                              ('yh_l_r', 'Yl.hl rain'),
+        self.var_list_ctwr = [('ym_l_r', 'ym rain'),
+                              ('ymh_l_r', 'ym.hl rain'),
                               ('y_l_packing', 'Yl packing'),
                               ('yh_l_packing', 'Yl.hl packing'),
                               ('ym_water', 'ym water bulk')]

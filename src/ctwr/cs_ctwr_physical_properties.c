@@ -50,6 +50,7 @@
 
 #include "cs_air_props.h"
 #include "cs_atmo.h"
+#include "cs_atmo_profile_std.h"
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
@@ -59,6 +60,7 @@
 #include "cs_field_pointer.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
+#include "cs_intprf.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -88,6 +90,52 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute cell reference pressure
+ *
+ * \param[in]     cell_id       Cell index
+ * \param[in]     p0            Fluid properties reference pressure
+ * \param[in]     ref_ressure   Atmospheric reference pressure
+ * \return        pphy          Reference pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_compute_reference_pressure(cs_lnum_t  cell_id,
+                                   cs_real_t  p0,
+                                   cs_field_t *ref_pressure)
+{
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF) {
+    return p0;
+  }
+
+  else {
+    cs_real_t pphy = 0;
+    cs_real_t dum = 0;
+    if (cs_glob_atmo_option->meteo_profile == 0) {
+      cs_atmo_profile_std(cell_cen[cell_id][2], &pphy, &dum, &dum);
+    }
+    else if (cs_glob_atmo_option->meteo_profile == 1) {
+      int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;
+      int nbmetm = cs_glob_atmo_option->met_1d_ntimes;
+      pphy = cs_intprf(nbmett,
+          nbmetm,
+          cs_glob_atmo_option->z_temp_met,
+          cs_glob_atmo_option->time_met,
+          cs_glob_atmo_option->hyd_p_met,
+          cell_cen[cell_id][2],
+          cs_glob_time_step->t_cur);
+    }
+    else {
+      pphy = ref_pressure->val[cell_id];
+    }
+    return pphy;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reset the field variables based on the restart values
  *
  * \param[in]     rho0        Reference density of humid air
@@ -112,10 +160,17 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
   /* Initialize the fields - based on map */
   cs_real_t *cp_h = (cs_real_t *)CS_F_(cp)->val;     /* Humid air (bulk) Cp */
-  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* Humid air temperature */
+  cs_real_t *t_h = NULL;
+  cs_real_t *t_h_a = NULL;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
+    t_h_a = cs_field_by_name("real_temperature")->val_pre; /* Humid air temp */
+  }
+  else {
+    t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
+    t_h_a = cs_field_by_name("temperature")->val_pre; /* Humid air temp */
+  }
 
-  cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre; /* Humid air temperature
-                                                        at previous time step */
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* Humid air enthalpy */
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val;    /* Water mass fraction in
                                                         humid air */
@@ -133,9 +188,9 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
                                                             velocity */
 
   /* Rain variables */
-  cs_field_t *cfld_yp = cs_field_by_name_try("y_l_r"); /* Rain mass fraction */
-  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_l_r");
-  cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_y_l_r");
+  cs_field_t *cfld_yp = cs_field_by_name_try("ym_l_r"); /* Rain mass fraction */
+  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
+  cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_ym_l_r");
 
   cs_real_t *cpro_taup = NULL;
   if (cfld_taup != NULL)
@@ -196,16 +251,16 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
     /* Update humidity field */
 
     /* Clippings of water mass fraction */
-    if (ym_w[cell_id] < 0.0){
+    if (ym_w[cell_id] < 0.0) {
       ym_w[cell_id] = 0;
       nclip_yw_min += 1;
     }
 
-    if (ym_w[cell_id] >= 1.0){
+    if (ym_w[cell_id] >= 1.0) {
       ym_w[cell_id] = 1. - cs_math_epzero;
       nclip_yw_max += 1;
     }
-    x[cell_id] = ym_w[cell_id]/(1.0-ym_w[cell_id]);
+    x[cell_id] = ym_w[cell_id]/(1.0 - ym_w[cell_id]);
 
     /* Bulk humid air temperature at the reference temperature
        This is only calculated once at the beginning so same as
@@ -357,29 +412,52 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   const cs_lnum_t *b_face_cells
     = (const cs_lnum_t *)(cs_glob_mesh->b_face_cells);
   const cs_halo_t *halo = cs_glob_mesh->halo;
+  cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+
+  /* Fields necessary for humid atmosphere model */
+  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
+  cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
+  cs_field_t *real_temp = cs_field_by_name_try("real_temperature");
+  cs_field_t *beta_h = cs_field_by_name_try("thermal_expansion");
+
   /* Water / air molar mass ratio */
   const cs_real_t molmassrat = air_prop->molmass_rat;
 
-  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;    /* Humid air
+  cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val;    /* Humid air + rain
                                                          (bulk) density */
+  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air
+                                                                density */
+  cs_real_t rho_l = air_prop->rho_l; /* Liquid density */
   cs_real_t *cp_h = (cs_real_t *)CS_F_(cp)->val;      /* Humid air (bulk) Cp */
 
   /* Fields based on maps */
-  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* Humid air temperature */
+
+  cs_real_t *t_h = NULL;
+  cs_real_t *theta_liq = NULL;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
+    theta_liq = cs_field_by_name("temperature")->val; /* Liq. pot. temp. */
+  }
+  else
+    t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
+
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* Humid air enthalpy */
   cs_real_t *therm_diff_h = cs_field_by_name("thermal_conductivity")->val;
   cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
   cs_real_t *bpro_x1 = cs_field_by_name("b_x_c")->val;
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val;     /* Water mass fraction
                                                          in humid air */
+  cs_real_t *vol_f_c = cs_field_by_name("vol_f_c")->val; /* Vol frac.
+                                                              cont. phase */
   cs_real_t *x = (cs_real_t *)CS_F_(humid)->val;      /* Absolute humidity
                                                          in bulk air */
   cs_real_t *x_s = cs_field_by_name("x_s")->val;      /* Saturated humidity */
   cs_real_t *x_rel = cs_field_by_name("x_rel")->val;  /* Relative humidity */
 
-  /* Packing zone variables */
+/* Packing zone variables */
   cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;     /* Liquid temp */
   cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;  /* Liquid enthalpy */
   cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;   /* Ylp.hlp */
@@ -396,16 +474,16 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     = cs_field_by_name("inner_mass_flux_y_l_packing")->val; //FIXME
 
   /* Variable and properties for rain zones */
-  cs_field_t *cfld_yp = cs_field_by_name_try("y_l_r");   /* Rain scalar */
-  cs_real_t *ym_l_r = cs_field_by_name("ym_l_r")->val; /* Rain mass fraction */
+  cs_field_t *cfld_yp = cs_field_by_name_try("ym_l_r");   /* Rain mass fraction */
+  cs_real_t *vol_f_r = cs_field_by_name("vol_f_r")->val; /* Vol frac. rain */
 
-  cs_real_t *yh_l_r = cs_field_by_name("yh_l_r")->val; /* Ylr time hlr */
+  cs_real_t *ymh_l_r = cs_field_by_name("ymh_l_r")->val; /* Ylr time hlr */
   cs_real_t *h_l_r = cs_field_by_name("h_l_r")->val; /* Rain enthalpy */
   cs_real_t *t_l_r = cs_field_by_name("temp_l_r")->val; /* Rain temperature */
 
-  cs_real_t *y_l_r = NULL;
+  cs_real_t *ym_l_r = NULL;
   if (cfld_yp != NULL)
-    y_l_r = cfld_yp->val;
+    ym_l_r = cfld_yp->val;
 
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
@@ -415,38 +493,35 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   /* Clipping counters for water / humidity variables */
   int nclip_yw_min = 0;
   int nclip_yw_max = 0;
-  int nclip_yp_min = 0;
-  int nclip_yp_max = 0;
+  int nclip_yr_min = 0;
+  int nclip_yr_max = 0;
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     /* Clippings of water mass fraction */
-    if (ym_w[cell_id] < 0.0){
+    if (ym_w[cell_id] < 0.0) {
       ym_w[cell_id] = 0;
       nclip_yw_min += 1;
     }
-    if (ym_w[cell_id] >= 1.0){
+    if (ym_w[cell_id] >= 1.0) {
       ym_w[cell_id] = 1. - cs_math_epzero;
       nclip_yw_max += 1;
     }
-    if (y_l_r != NULL) {
-      if (y_l_r[cell_id] < 0.0){
-        y_l_r[cell_id] = 0;
-        nclip_yp_min += 1;
-      }
-      if ((ym_l_r[cell_id] + ym_w[cell_id]) >= 1.0){
-        ym_l_r[cell_id] = 1. - ym_w[cell_id] - cs_math_epzero;
-        nclip_yp_max += 1;
-      }
 
-      /* Recompute real rain mass fraction from Ylr */
-      if (y_l_r[cell_id] > 0.){
-        ym_l_r[cell_id] = y_l_r[cell_id] / (1 + y_l_r[cell_id]);
+    /* Clippings of rain mass fraction */
+    if (ym_l_r != NULL) {
+      if (ym_l_r[cell_id] < 0.0) {
+        ym_l_r[cell_id] = 0;
+        nclip_yr_min += 1;
+      }
+      if ((ym_l_r[cell_id] + ym_w[cell_id]) >= 1.0) {
+        ym_l_r[cell_id] = 1. - ym_w[cell_id] - cs_math_epzero;
+        nclip_yr_max += 1;
       }
 
       /* Recompute rain enthalpy and temperature from Ylr.hlr */
-      if (y_l_r[cell_id] > 1.e-4){
-        h_l_r[cell_id] = yh_l_r[cell_id]/y_l_r[cell_id];
+      if (ym_l_r[cell_id] > 1.e-4) {
+        h_l_r[cell_id] = ymh_l_r[cell_id]/ym_l_r[cell_id];
         t_l_r[cell_id] = cs_liq_h_to_t(h_l_r[cell_id]);
       }
       else {
@@ -460,10 +535,40 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
     //TODO not one for rain zones - Why not?
     //If it represents the humid air, then it should be one?  If it represents
-    //the dry air, then it should account for both y_l_r and ym_w
+    //the dry air, then it should account for both ym_l_r and ym_w
+    //
+
+    /* Compute cell reference pressure */
+    cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id, p0, meteo_pressure);
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+      cs_rho_humidair(ym_w[cell_id],
+                      theta_liq[cell_id],
+                      pphy,
+                      &(yw_liq->val[cell_id]),
+                      &(real_temp->val[cell_id]),
+                      &(rho_h[cell_id]),
+                      &(beta_h->val[cell_id]));
+    }
+    else {
+      rho_h[cell_id] = cs_air_rho_humidair(x[cell_id],
+                                           rho0,
+                                           pphy,
+                                           t0,
+                                           molmassrat,
+                                           t_h[cell_id]);
+    }
+
+    /* Homogeneous mixture density */
+    rho_m[cell_id] = 1. / ((1. - ym_l_r[cell_id])/rho_h[cell_id]
+                           + ym_l_r[cell_id]/rho_l);
+
+    /* Update volume fractions for each phase */
+    vol_f_c[cell_id] = cpro_x1[cell_id] * rho_m[cell_id] / rho_h[cell_id];
+
+    vol_f_r[cell_id] = ym_l_r[cell_id] * rho_m[cell_id] / rho_l;
 
     /* Update humidity field */
-    x[cell_id] = ym_w[cell_id]/(1.0 - ym_w[cell_id]);
+    x[cell_id] = ym_w[cell_id]/(1.0 - ym_w[cell_id] - ym_l_r[cell_id]);
 
     // FIXME for drops - This should be the proportion of 'gaseous' water
     // (dissolved and condensate) in the humid air:
@@ -494,21 +599,10 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     // Update the humid air enthalpy diffusivity lambda_h if solve for T_h?
     // Need to update since a_0 is variable as a function of T and humidity
     therm_diff_h[cell_id] = lambda_h;
-
-    /* Update the humid air density */
-    // Again, formally this should be the
-    // bulk density, including the rain drops
-    rho_h[cell_id] = cs_air_rho_humidair(x[cell_id],
-                                         rho0,
-                                         p0,
-                                         t0,
-                                         molmassrat,
-                                         t_h[cell_id]);
-
   }
 
   cs_gnum_t n_g_clip_count[4] = {nclip_yw_min, nclip_yw_max,
-                                 nclip_yp_min, nclip_yp_max};
+                                 nclip_yr_min, nclip_yr_max};
 
   cs_parall_sum(4, CS_GNUM_TYPE, n_g_clip_count);
 
@@ -536,13 +630,16 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
       cs_glob_physical_constants->gravity[1],
       cs_glob_physical_constants->gravity[2]};
-    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_l_r");
+    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
     cs_real_t *cpro_taup = NULL;
     if (cfld_taup != NULL)
       cpro_taup = cfld_taup->val;
 
     /* Continuous phase drift velocity */
     cs_field_t *vd_c = cs_field_by_name("vd_c");
+
+    /* Continuous phase velocity */
+    cs_field_t *v_c = cs_field_by_name("v_c");
 
     /* Rain drift velocity variables */
     char f_name[80];
@@ -562,15 +659,17 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       vd_c->val[cell_id * 3 + i] = 0.;
 
       /* Rain drops drift velocity calculation */
-      if (y_l_r[cell_id] > 1.e-7) {
+      if (ym_l_r[cell_id] > 1.e-9) {
+        //vp->val[cell_id*3 + i] /= CS_MAX(ym_l_r[cell_id], 1.0e-9);
         vd_p->val[cell_id*3 + i] = vp->val[cell_id*3 + i] - vel[cell_id][i];
       }
-      else {
+    else {
         vd_p->val[cell_id * 3 + i] = 0.;
       }
-      vd_c->val[cell_id * 3 + i] -= y_l_r[cell_id]
+      vd_c->val[cell_id * 3 + i] -= ym_l_r[cell_id]
         * vd_p->val[cell_id * 3 + i];
       vd_c->val[cell_id * 3 + i] /= cpro_x1[cell_id];
+      v_c->val[cell_id * 3 + i] = vel[cell_id][i] + vd_c->val[cell_id * 3 + i];
       }
     }
   }
@@ -594,7 +693,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       if (y_l_p[cell_id] > 0.) {
         h_l_p[cell_id] = yh_l_p[cell_id] / y_l_p[cell_id];
         t_l_p[cell_id] = cs_liq_h_to_t(h_l_p[cell_id]);
-        mf_l[cell_id] = y_l_p[cell_id] * rho_h[cell_id] * vel_l[cell_id];
+        mf_l[cell_id] = y_l_p[cell_id] * rho_m[cell_id] * vel_l[cell_id];
         ym_l_p[cell_id] = y_l_p[cell_id] / (1 + y_l_p[cell_id]);
       }
     }
@@ -650,7 +749,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_x1);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cp_h);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, h_h);
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_h);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_m);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, t_l_p);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, yh_l_p);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, h_l_p);

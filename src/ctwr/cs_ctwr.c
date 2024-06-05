@@ -94,6 +94,7 @@ static cs_ctwr_option_t  _ctwr_option = {
   .evap_model = CS_CTWR_NONE,
   .has_rain = false,
   .solve_rain_velocity = false,
+  .air_rain_friction = false,
   .rain_to_packing = false};
 
 const cs_ctwr_option_t *cs_glob_ctwr_option = &_ctwr_option;
@@ -746,7 +747,12 @@ cs_ctwr_log_balance(void)
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->i_face_normal;
   cs_real_t *p = (cs_real_t *)CS_F_(p)->val;        /* Pressure */
-  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;      /* Humid air temperature */
+  cs_real_t *t_h = NULL;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+    t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
+  else
+    t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
+
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;      /* Humid air enthalpy */
   cs_real_t *t_l = (cs_real_t *)CS_F_(t_l_pack)->val;    /* Liquid temperature */
   cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;    /* Liquid enthalpy */
