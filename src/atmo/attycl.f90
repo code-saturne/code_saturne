@@ -261,7 +261,7 @@ if (imbrication_flag) then
   endif
 
   if (cressman_theta .and. ippmod(iatmos).ge.1) then
-    call mscrss(id_theta, 2, rcodcl(1,isca(iscalt),1)
+    call mscrss(id_theta, 2, rcodcl(1,isca(iscalt),1))
     if (imbrication_verbose) then
       do ifac = 1, max(nfabor,100), 1
         write(nfecra,*)"attycl::xbord,ybord,zbord,thetabord=",cdgfbo(1,ifac), &
