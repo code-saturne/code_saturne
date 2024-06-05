@@ -2346,6 +2346,10 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   cs_param_mumps_t  *mumpsp = slesp->context_param;
 
+  if (mumpsp->advanced_optim)
+    mumps->ICNTL(13) = 1; /* Bypass ScaLAPACK excepted for PT-SCOTCH where it
+                             was observed that it delivers worse performances */
+
   /* Set the algorithm for the analysis step: renumbering and graph
      manipulations */
 
@@ -2376,6 +2380,9 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
     mumps->ICNTL(28) = 2;  /* parallel analysis */
     mumps->ICNTL(29) = 1;
     mumps->ICNTL(58) = 0;  /* No symbolic factorization */
+
+    /* Usage of ICNTL(13) = 1 brings worse performances */
+    mumps->ICNTL(13) = 0;
     break;
 
   case CS_PARAM_MUMPS_ANALYSIS_METIS:
