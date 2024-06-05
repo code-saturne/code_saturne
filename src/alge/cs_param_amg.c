@@ -374,12 +374,12 @@ cs_param_amg_boomer_log(const char                  *name,
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC:
     cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
-                  prefix, "extended+i (common C neighbor) (6)");
+                  prefix, "extended+i (ext+i-cc) (6)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I:
     cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
-                  prefix, "extended+i (no common C neighbor) (7)");
+                  prefix, "extended+i (ext+i) (7)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_FF1:
@@ -394,12 +394,12 @@ cs_param_amg_boomer_log(const char                  *name,
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_MATRIX:
     cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
-                  prefix, "extended+i (matrix form) (17)");
+                  prefix, "extended+i in matrix form (ext+i-mm) (17)");
     break;
 
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_E_MATRIX:
     cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_interpolation:  %s\n",
-                  prefix, "extended+e (matrix form) (18)");
+                  prefix, "extended+e in matrix form (ext+e-mm) (18)");
     break;
 
   default:

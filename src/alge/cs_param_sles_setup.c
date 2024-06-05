@@ -487,12 +487,10 @@ _petsc_pchypre_hook(const char             *prefix,
     bft_error(__FILE__, __LINE__, 0, "%s: Not available from PETSc.", __func__);
     break;
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I_CC:
-    sprintf(option, "%s", "ext+i");  /* Strange but the file
-                                        cf. src/ksp/pc/impls/hypre/hypre.c */
+    sprintf(option, "%s", "ext+i-cc");
     break;
   case CS_PARAM_AMG_BOOMER_INTERP_EXT_PLUS_I:
-    sprintf(option, "%s", "ext+i-cc"); /* Strange but the file
-                                          cf. src/ksp/pc/impls/hypre/hypre.c */
+    sprintf(option, "%s", "ext+i");
     break;
   case CS_PARAM_AMG_BOOMER_INTERP_FF1:
     sprintf(option, "%s", "FF1");
