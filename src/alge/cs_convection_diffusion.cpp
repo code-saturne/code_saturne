@@ -10758,6 +10758,15 @@ cs_face_diffusion_potential(const int                   f_id,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx_i, ctx_b;
+#if defined(HAVE_CUDA)
+  if (ctx_b.use_gpu())
+    ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+  cs_dispatch_sum_type_t i_sum_type = ctx_i.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx_b.get_parallel_for_b_faces_sum_type(m);
+
   /* Local variables */
 
   int w_stride = 1;
@@ -10772,14 +10781,13 @@ cs_face_diffusion_potential(const int                   f_id,
     ==========================================================================*/
 
   if (init >= 1) {
-#   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    ctx_i.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       i_massflux[face_id] = 0.;
-    }
-#   pragma omp parallel for if(n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    });
+
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       b_massflux[face_id] = 0.;
-    }
+    });
   }
   else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
@@ -10822,23 +10830,21 @@ cs_face_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-#   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    ctx_i.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
-    }
+      cs_dispatch_sum(&i_massflux[face_id], i_visc[face_id]*(pvar[ii] - pvar[jj]), i_sum_type);
+    });
 
     /* Mass flow through boundary faces */
 
-#   pragma omp parallel for if(n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    ctx_b.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
-      double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
+      cs_real_t pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
-      b_massflux[face_id] += b_visc[face_id]*pfac;
-    }
+      cs_dispatch_sum(&b_massflux[face_id], b_visc[face_id]*pfac, b_sum_type);
+    });
 
   }
 
@@ -10851,7 +10857,7 @@ cs_face_diffusion_potential(const int                   f_id,
 
     /* Allocate a work array for the gradient calculation */
     cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
     /* Compute gradient */
     if (iwgrp > 0) {
@@ -10903,44 +10909,46 @@ cs_face_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-#   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    ctx_i.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      double dpxf = 0.5*(  visel[ii]*grad[ii][0]
-                         + visel[jj]*grad[jj][0]);
-      double dpyf = 0.5*(  visel[ii]*grad[ii][1]
-                         + visel[jj]*grad[jj][1]);
-      double dpzf = 0.5*(  visel[ii]*grad[ii][2]
-                         + visel[jj]*grad[jj][2]);
+      cs_real_t dpxf = 0.5*(  visel[ii]*grad[ii][0]
+                            + visel[jj]*grad[jj][0]);
+      cs_real_t dpyf = 0.5*(  visel[ii]*grad[ii][1]
+                            + visel[jj]*grad[jj][1]);
+      cs_real_t dpzf = 0.5*(  visel[ii]*grad[ii][2]
+                            + visel[jj]*grad[jj][2]);
 
       /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
-      double dijx = diipf[face_id][0] - djjpf[face_id][0];
-      double dijy = diipf[face_id][1] - djjpf[face_id][1];
-      double dijz = diipf[face_id][2] - djjpf[face_id][2];
+      cs_real_t dijx = diipf[face_id][0] - djjpf[face_id][0];
+      cs_real_t dijy = diipf[face_id][1] - djjpf[face_id][1];
+      cs_real_t dijz = diipf[face_id][2] - djjpf[face_id][2];
 
-      i_massflux[face_id] =   i_massflux[face_id]
-                            + i_visc[face_id]*(pvar[ii] - pvar[jj])
-                            +    (dpxf *dijx + dpyf*dijy + dpzf*dijz)
-                               * i_f_face_surf[face_id]/i_dist[face_id];
-    }
+      cs_real_t f_mass_flux =   i_visc[face_id]*(pvar[ii] - pvar[jj])
+                              + (  dpxf *dijx + dpyf*dijy + dpzf*dijz)
+                                 * i_f_face_surf[face_id]/i_dist[face_id];
+
+      cs_dispatch_sum(&i_massflux[face_id], f_mass_flux, i_sum_type);
+    });
 
     /* Mass flow through boundary faces */
 
-#   pragma omp parallel for if(n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    ctx_b.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
       cs_lnum_t ii = b_face_cells[face_id];
 
       cs_real_t pip = pvar[ii] + cs_math_3_dot_product(grad[ii], diipb[face_id]);
       cs_real_t pfac = inc*cofafp[face_id] + cofbfp[face_id]*pip;
 
-      b_massflux[face_id] += b_visc[face_id]*pfac;
-    }
+      cs_dispatch_sum(&b_massflux[face_id], b_visc[face_id]*pfac, b_sum_type);
+    });
 
     /* Free memory */
-    BFT_FREE(grad);
+    CS_FREE_HD(grad);
   }
+  ctx_i.wait();
+  ctx_b.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -11457,11 +11465,6 @@ cs_diffusion_potential(const int                   f_id,
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -11475,6 +11478,11 @@ cs_diffusion_potential(const int                   f_id,
     = (const cs_real_3_t *restrict)fvq->djjpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
+
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   /* Local variables */
 
@@ -11492,17 +11500,17 @@ cs_diffusion_potential(const int                   f_id,
     ==========================================================================*/
 
   if (init >= 1) {
-#   pragma omp parallel for
-    for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       diverg[ii] = 0.;
-    }
+    });
   }
+
   else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t ii = n_cells; ii < n_cells_ext; ii++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       diverg[ii] = 0.;
-    }
+    });
   }
+
   else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
@@ -11540,40 +11548,28 @@ cs_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
-          diverg[ii] += i_massflux;
-          diverg[jj] -= i_massflux;
+      cs_real_t i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
+      cs_dispatch_sum(&diverg[ii], i_massflux, i_sum_type);
+      cs_dispatch_sum(&diverg[jj], -i_massflux, i_sum_type);
 
-        }
-      }
-    }
+    });
 
     /* Mass flow through boundary faces */
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
-        double pfac = inc*cofafp[face_id] +cofbfp[face_id]*pvar[ii];
+      cs_lnum_t ii = b_face_cells[face_id];
+      cs_real_t pfac = inc*cofafp[face_id] +cofbfp[face_id]*pvar[ii];
 
-        double b_massflux = b_visc[face_id]*pfac;
-        diverg[ii] += b_massflux;
+      cs_real_t b_massflux = b_visc[face_id]*pfac;
+      cs_dispatch_sum(&diverg[ii], b_massflux, b_sum_type);
 
-      }
-    }
+    });
 
   }
 
@@ -11584,7 +11580,7 @@ cs_diffusion_potential(const int                   f_id,
   if (nswrgp > 1) {
 
     /* Allocate a work array for the gradient calculation */
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
     /* Compute gradient */
     if (iwgrp > 0) {
@@ -11648,70 +11644,59 @@ cs_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
+      cs_real_t i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
 
-          if (mass_flux_rec_type == 0) {
-            /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
-            double dijx = diipf[face_id][0] - djjpf[face_id][0];
-            double dijy = diipf[face_id][1] - djjpf[face_id][1];
-            double dijz = diipf[face_id][2] - djjpf[face_id][2];
+      if (mass_flux_rec_type == 0) {
+        /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
+        cs_real_t dijx = diipf[face_id][0] - djjpf[face_id][0];
+        cs_real_t dijy = diipf[face_id][1] - djjpf[face_id][1];
+        cs_real_t dijz = diipf[face_id][2] - djjpf[face_id][2];
 
-            double dpxf = 0.5*(  visel[ii]*grad[ii][0]
-                               + visel[jj]*grad[jj][0]);
-            double dpyf = 0.5*(  visel[ii]*grad[ii][1]
-                               + visel[jj]*grad[jj][1]);
-            double dpzf = 0.5*(  visel[ii]*grad[ii][2]
-                               + visel[jj]*grad[jj][2]);
+        cs_real_t dpxf = 0.5*(  visel[ii]*grad[ii][0]
+                              + visel[jj]*grad[jj][0]);
+        cs_real_t dpyf = 0.5*(  visel[ii]*grad[ii][1]
+                              + visel[jj]*grad[jj][1]);
+        cs_real_t dpzf = 0.5*(  visel[ii]*grad[ii][2]
+                              + visel[jj]*grad[jj][2]);
 
             i_massflux += (dpxf*dijx + dpyf*dijy + dpzf*dijz)
                           *i_f_face_surf[face_id]/i_dist[face_id];
           }
           else {
-            i_massflux += i_visc[face_id]*
-                          ( cs_math_3_dot_product(grad[ii], diipf[face_id])
-                          - cs_math_3_dot_product(grad[jj], djjpf[face_id]));
+            i_massflux += i_visc[face_id]
+                          * (  cs_math_3_dot_product(grad[ii], diipf[face_id])
+                             - cs_math_3_dot_product(grad[jj], djjpf[face_id]));
           }
 
-          diverg[ii] += i_massflux;
-          diverg[jj] -= i_massflux;
+      cs_dispatch_sum(&diverg[ii], i_massflux, i_sum_type);
+      cs_dispatch_sum(&diverg[jj], -i_massflux, i_sum_type);
 
-        }
-      }
-    }
+    });
 
     /* Mass flow through boundary faces */
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
+      cs_lnum_t ii = b_face_cells[face_id];
 
-        double pip = pvar[ii] + cs_math_3_dot_product(grad[ii],
-                                                      diipb[face_id]);
-        double pfac = inc*cofafp[face_id] +cofbfp[face_id]*pip;
+      cs_real_t pip = pvar[ii] + cs_math_3_dot_product(grad[ii],
+                                                       diipb[face_id]);
+      cs_real_t pfac = inc*cofafp[face_id] +cofbfp[face_id]*pip;
+      cs_real_t b_massflux = b_visc[face_id]*pfac;
 
-        double b_massflux = b_visc[face_id]*pfac;
-        diverg[ii] += b_massflux;
+      cs_dispatch_sum(&diverg[ii], b_massflux, b_sum_type);
 
-      }
-    }
+    });
 
     /* Free memory */
-    BFT_FREE(grad);
+    CS_FREE_HD(grad);
   }
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

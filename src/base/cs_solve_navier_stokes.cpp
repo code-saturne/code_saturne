@@ -334,7 +334,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
      ------------------------------------------- */
 
   cs_real_t *pota, *dpot;
-  BFT_MALLOC(pota, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(pota, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(dpot, n_cells_ext, cs_real_t);
 
   /* pot     is the potential
@@ -526,7 +526,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   CS_FREE_HD(rhs);
 
   BFT_FREE(pot);
-  BFT_FREE(pota);
+  CS_FREE_HD(pota);
   BFT_FREE(dpot);
 
   CS_FREE_HD(clapot);

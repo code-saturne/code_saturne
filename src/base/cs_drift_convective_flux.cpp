@@ -228,7 +228,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   cs_real_t *w1, *viscce;
   cs_real_3_t *dudt;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(viscce, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(dudt, n_cells_ext, cs_real_3_t);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
@@ -776,7 +776,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     BFT_FREE(divflu);
   }
 
-  BFT_FREE(viscce);
+  CS_FREE_HD(viscce);
   BFT_FREE(dudt);
   BFT_FREE(w1);
   BFT_FREE(i_visc);

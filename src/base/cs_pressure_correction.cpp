@@ -553,7 +553,7 @@ _pressure_correction_fv(int                   iterns,
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t *phia, *iflux, *bflux, *dphi;
-  BFT_MALLOC(phia, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(phia, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(iflux, m->n_i_faces, cs_real_t);
   BFT_MALLOC(bflux, m->n_b_faces, cs_real_t);
   CS_MALLOC_HD(dphi, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -565,7 +565,7 @@ _pressure_correction_fv(int                   iterns,
 
   cs_real_t *adxk = NULL, *adxkm1 = NULL, *dphim1 = NULL, *rhs0 = NULL;
   if (eqp_p->iswdyn > 0) {
-    BFT_MALLOC(adxk, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(adxk, n_cells_ext, cs_real_t, cs_alloc_mode);
     BFT_MALLOC(adxkm1, n_cells_ext, cs_real_t);
     BFT_MALLOC(dphim1, n_cells_ext, cs_real_t);
     BFT_MALLOC(rhs0, n_cells_ext, cs_real_t);
@@ -1428,14 +1428,14 @@ _pressure_correction_fv(int                   iterns,
 
     cs_real_t *ipro_visc = NULL, *bpro_visc = NULL;
 
-    BFT_MALLOC(ipro_visc, n_i_faces, cs_real_t);
-    BFT_MALLOC(bpro_visc, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(ipro_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(bpro_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
     /* Scalar diffusivity */
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION && vp_param->rcfact == 0) {
 
       cs_real_t *cpro_visc;
-      BFT_MALLOC(cpro_visc, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(cpro_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         cpro_visc[c_id] = arak * c_visc[c_id];
@@ -1490,7 +1490,7 @@ _pressure_correction_fv(int                   iterns,
                           ipro_visc, bpro_visc,
                           cpro_visc, cpro_visc, cpro_visc);
 
-      BFT_FREE(cpro_visc);
+      CS_FREE_HD(cpro_visc);
 
     }
 
@@ -1580,8 +1580,8 @@ _pressure_correction_fv(int                   iterns,
       BFT_FREE(weighbtp);
     }
 
-    BFT_FREE(ipro_visc);
-    BFT_FREE(bpro_visc);
+    CS_FREE_HD(ipro_visc);
+    CS_FREE_HD(bpro_visc);
   }
 
   /*
@@ -2999,13 +2999,13 @@ _pressure_correction_fv(int                   iterns,
   BFT_FREE(wrk2);
   BFT_FREE(wrk);
   BFT_FREE(res);
-  BFT_FREE(phia);
+  CS_FREE_HD(phia);
   BFT_FREE(_cpro_divu);
   BFT_FREE(gradp);
   BFT_FREE(rovsdt);
   BFT_FREE(weighf);
   BFT_FREE(weighb);
-  BFT_FREE(adxk);
+  CS_FREE_HD(adxk);
   BFT_FREE(adxkm1);
   BFT_FREE(dphim1);
   BFT_FREE(rhs0);
