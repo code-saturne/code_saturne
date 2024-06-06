@@ -1788,8 +1788,10 @@ cs_sycl_select_default_device(void)
 
 #if defined(SYCL_LANGUAGE_VERSION)
 
+  sycl::property_list q_prop{sycl::property::queue::in_order()};
+
   try {
-    sycl::queue q{sycl::gpu_selector_v};
+    sycl::queue q{sycl::gpu_selector_v, q_prop};
     cs_glob_sycl_queue = q;
     if (q.get_device().is_gpu()) {
       device_id = 0;
@@ -1798,7 +1800,7 @@ cs_sycl_select_default_device(void)
     }
   }
   catch (sycl::exception const& ex) {
-    sycl::queue q{sycl::cpu_selector_v};
+    sycl::queue q{sycl::cpu_selector_v, q_prop};
     cs_glob_sycl_queue = q;
   }
 
