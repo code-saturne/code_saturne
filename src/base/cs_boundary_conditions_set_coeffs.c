@@ -92,6 +92,8 @@
 #include "cs_turbomachinery.h"
 #include "cs_velocity_pressure.h"
 #include "cs_vof.h"
+#include "cs_wall_condensation.h"
+#include "cs_wall_condensation_1d_thermal.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -121,9 +123,6 @@ cs_f_boundary_conditions_get_bc_type(void);
 void
 cs_f_ppprcl(int        itypfb[],
             cs_real_t  dt[]);
-
-void
-cs_f_tagmri(void);
 
 void
 cs_f_cou1di(void);
@@ -522,6 +521,78 @@ _boundary_condition_ale_type(const cs_mesh_t             *m,
   BFT_FREE(_rcodcl1_mesh_u);
 }
 
+/*----------------------------------------------------------------------------
+ * Compute boundary condition code for 1D thermal model
+ * coupled with condensation
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_condition_wall_condensation_1d_thermal(void)
+{
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+
+  const cs_real_t *ztpar = cs_glob_wall_condensation->ztpar;
+  const cs_real_t *ztmur = cs_glob_wall_cond_1d_thermal->ztmur;
+
+  const cs_lnum_t nfbpcd = cs_glob_wall_condensation->nfbpcd;
+  const cs_lnum_t *ifbpcd = cs_glob_wall_condensation->ifbpcd;
+  const cs_lnum_t *izzftcd = cs_glob_wall_condensation->izzftcd;
+  const cs_lnum_t *iztag1d = cs_glob_wall_condensation->iztag1d;
+
+  cs_field_t *th_f = cs_thermal_model_field();
+  int *icodcl = th_f->bc_coeffs->icodcl;
+  cs_real_t *rcodcl1 = th_f->bc_coeffs->rcodcl1;
+  cs_real_t *rcodcl2 = th_f->bc_coeffs->rcodcl2;
+  cs_real_t *rcodcl3 = th_f->bc_coeffs->rcodcl3;
+
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+# pragma omp parallel for if (nfbpcd > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+
+    const cs_lnum_t iz = izzftcd[ii];
+    const cs_lnum_t face_id = ifbpcd[ii];
+
+    icodcl[face_id] = 1;
+    rcodcl2[face_id] = cs_math_infinite_r;
+    rcodcl3[face_id] = 0.0;
+
+    if (iztag1d[iz] == 1)
+      rcodcl1[face_id] = ztmur[ii];
+    else
+      rcodcl1[face_id] = ztpar[iz];
+
+  }
+
+  // Possible conversion temperature -> enthalpy
+  if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_ENTHALPY)
+    return;
+
+  if (cs_glob_fluid_properties->icp < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Inconsistent calculation data icp = %d\n"
+                "The calculation will not be run.\n"
+                "Modify cs_user_parameters or cs_user_physical_properties.\n"),
+              cs_glob_fluid_properties->icp);
+
+  /* Specific heat value */
+  const cs_real_t *cpro_cp = CS_F_(cp)->val;
+
+# pragma omp parallel for if (nfbpcd > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+
+    const cs_lnum_t face_id = ifbpcd[ii];
+    const cs_lnum_t c_id = b_face_cells[face_id];
+
+    const cs_real_t temper = rcodcl1[face_id];
+    const cs_real_t enthal = (temper + tkelvi) * cpro_cp[c_id];
+
+    rcodcl1[face_id] = enthal;
+  }
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -756,7 +827,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     /* Coupling 1D thermal model with condensation modelling
        to take into account the solid temperature evolution over time */
     if (nftcdt > 0)
-      cs_f_tagmri();
+      _boundary_condition_wall_condensation_1d_thermal();
   }
 
   /* For internal coupling, set itypfb to wall function by default
