@@ -133,6 +133,21 @@ cs_dispatch_test(void)
                       << " " << a2[ii][1]
                       << " " << a2[ii][2] << std::endl;
     }
+
+    double s1 = 0;
+    ctx.parallel_for_reduce_sum
+      (n, s1, [=] CS_F_HOST_DEVICE (cs_lnum_t ii,
+                                    CS_DISPATCH_SUM_DOUBLE &sum) {
+#if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
+      {sum += (double)ii;}
+#else
+      {sum += -(double)ii;}
+#endif
+    });
+
+    ctx.wait();
+
+    std::cout << "reduction (sum)" << s1 << std::endl;
   }
 
 #ifdef __NVCC__

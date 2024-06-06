@@ -52,12 +52,23 @@
 
 #ifdef __NVCC__
 #include "cs_base_cuda.h"
+#include "cs_blas_cuda.h"
 #include "cs_alge_cuda.cuh"
 #endif
 
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
+
+#if defined(SYCL_LANGUAGE_VERSION)
+
+#define CS_DISPATCH_SUM_DOUBLE auto
+
+#else
+
+#define CS_DISPATCH_SUM_DOUBLE double
+
+#endif
 
 /*============================================================================
  * Type definitions
@@ -103,6 +114,13 @@ public:
   parallel_for_b_faces(const cs_mesh_t*  m,
                        F&&               f,
                        Args&&...         args);
+
+  // Parallel reduction with simple sum.
+  // Must be redefined by the child class
+  template <class F, class... Args>
+  decltype(auto)
+  parallel_for_reduce_sum
+    (cs_lnum_t n, double& sum, F&& f, Args&&... args) = delete;
 
   // Query sum type for assembly loop over all interior faces
   // Must be redefined by the child class
@@ -177,19 +195,19 @@ public:
 
 public:
 
-  /*! Set minimum number of elements threshold for CPU multithread execution */
+  //! Set minimum number of elements threshold for CPU multithread execution.
   void
   set_n_min_for_cpu_threads(cs_lnum_t  n) {
     this->n_min_for_threads = n;
   }
 
-  /*! Get minimum number of elements threshold for CPU multithread execution */
+  //! Get minimum number of elements threshold for CPU multithread execution.
   cs_lnum_t
   n_min_for_cpu_threads(void) {
     return this->n_min_for_threads;
   }
 
-  // Iterate using a plain omp parallel for
+  //! Iterate using a plain omp parallel for
   template <class F, class... Args>
   bool
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
@@ -200,8 +218,8 @@ public:
     return true;
   }
 
-  // Loop over the interior faces of a mesh using a specific numbering
-  // that avoids conflicts between threads.
+  //! Loop over the interior faces of a mesh using a specific numbering
+  //! that avoids conflicts between threads.
   template <class F, class... Args>
   bool
   parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
@@ -221,8 +239,8 @@ public:
     return true;
   }
 
-  // Loop over the boundary faces of a mesh using a specific numbering
-  // that avoids conflicts between threads.
+  //! Loop over the boundary faces of a mesh using a specific numbering
+  //! that avoids conflicts between threads.
   template <class F, class... Args>
   bool
   parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
@@ -236,6 +254,21 @@ public:
            f_id++) {
         f(f_id, args...);
       }
+    }
+    return true;
+  }
+
+  //! Plain OpenMP parallel reduction with simple sum.
+  template <class F, class... Args>
+  bool
+  parallel_for_reduce_sum(cs_lnum_t n,
+                          double&   sum,
+                          F&&       f,
+                          Args&&... args) {
+    sum = 0;
+#   pragma omp parallel for reduction(+:sum) if (n >= n_min_for_threads)
+    for (cs_lnum_t i = 0; i < n; ++i) {
+      f(i, sum, args...);
     }
     return true;
   }
@@ -272,6 +305,47 @@ __global__ void cs_cuda_kernel_parallel_for(cs_lnum_t n, F f, Args... args) {
   for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
        id += blockDim.x * gridDim.x) {
     f(id, args...);
+  }
+}
+
+/* Default kernel that loops over an integer range and calls a device functor.
+   This kernel uses a grid_size-stride loop and thus guarantees that all
+   integers are processed, even if the grid is smaller.
+   All arguments *must* be passed by value to avoid passing CPU references
+   to the GPU. */
+
+template <class F, class... Args>
+__global__ void
+cs_cuda_kernel_parallel_for_reduce_sum(cs_lnum_t   n,
+                                       double     *b_res,
+                                       F           f,
+                                       Args...     args) {
+  // grid_size-stride loop
+  extern double __shared__ stmp[];
+  const cs_lnum_t tid = threadIdx.x;
+
+  stmp[tid] = 0;
+
+  for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
+       id += blockDim.x * gridDim.x) {
+     f(id, stmp[tid], args...);
+  }
+
+  switch (blockDim.x) {
+  case 1024:
+    cs_blas_cuda_block_reduce_sum<1024, 1>(stmp, tid, b_res);
+    break;
+  case 512:
+    cs_blas_cuda_block_reduce_sum<512, 1>(stmp, tid, b_res);
+    break;
+  case 256:
+    cs_blas_cuda_block_reduce_sum<256, 1>(stmp, tid, b_res);
+    break;
+  case 128:
+    cs_blas_cuda_block_reduce_sum<128, 1>(stmp, tid, b_res);
+    break;
+  default:
+    assert(0);
   }
 }
 
@@ -448,6 +522,64 @@ public:
     return true;
   }
 
+  //! Launch kernel on the GPU with simple sum reduction
+  //! The reduction involves an implicit wait().
+  template <class F, class... Args>
+  bool
+  parallel_for_reduce_sum(cs_lnum_t n,
+                          double&   sum,
+                          F&&       f,
+                          Args&&... args) {
+    sum = 0;
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
+
+    long l_grid_size = grid_size_;
+    if (l_grid_size < 1) {
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+
+    double *r_grid_, *r_reduce_;
+    cs_blas_cuda_get_2_stage_reduce_buffers
+      (n, 1, l_grid_size, r_grid_, r_reduce_);
+
+    int smem_size = block_size_ * sizeof(double);
+    cs_cuda_kernel_parallel_for_reduce_sum
+      <<<l_grid_size, block_size_, smem_size, stream_>>>
+      (n, r_grid_, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+    switch (block_size_) {
+    case 1024:
+      cs_blas_cuda_reduce_single_block<1024, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 512:
+      cs_blas_cuda_reduce_single_block<512, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 256:
+      cs_blas_cuda_reduce_single_block<256, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 128:
+      cs_blas_cuda_reduce_single_block<128, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    default:
+      cs_assert(0);
+    }
+
+    cudaStreamSynchronize(stream_);
+    sum = r_reduce_[0];
+
+    return true;
+  }
+
   //! Synchronize associated stream
   void
   wait(void) {
@@ -560,6 +692,34 @@ public:
     }
 
     queue_.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+    return true;
+  }
+
+  //! Launch kernel with simple sum reduction.
+  template <class F, class... Args>
+  bool
+  parallel_for_reduce_sum(cs_lnum_t n,
+                          double&   sum_,
+                          F&&       f,
+                          Args&&... args) {
+    sum_ = 0;
+    if (is_gpu == false || use_gpu_ == false) {
+      return false;
+    }
+
+    // TODO: use persistent allocation as we do in CUDA BLAS to avoid
+    //       excess allocation/deallocation.
+    double *sum_ptr = (double *)sycl::malloc_shared(sizeof(double), queue_);
+
+    queue_.parallel_for(n,
+                        sycl::reduction(sum_ptr, 0., sycl::plus<double>()),
+                        static_cast<F&&>(f),
+                        static_cast<Args&&>(args)...).wait();
+
+    sum_ = sum_ptr[0];
+
+    sycl::free((void *)sum_ptr, queue_);
 
     return true;
   }
@@ -679,6 +839,16 @@ public:
     return false;
   }
 
+  // Abort execution if no execution method is available.
+  template <class F, class... Args>
+  bool parallel_for_reduce_sum([[maybe_unused]] cs_lnum_t  n,
+                               [[maybe_unused]] double&    sum,
+                               [[maybe_unused]] F&&        f,
+                               [[maybe_unused]] Args&&...  args) {
+    cs_assert(0);
+    return false;
+  }
+
 };
 
 /*!
@@ -703,7 +873,7 @@ public:
 public:
 
   template <class F, class... Args>
-  void parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  auto parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
@@ -726,6 +896,17 @@ public:
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
        || Contexts::parallel_for(n, f, args...), nullptr)...
+    };
+  }
+
+  template <class F, class... Args>
+  auto parallel_for_reduce_sum
+    (cs_lnum_t n, double& sum, F&& f, Args&&... args) {
+    bool launched = false;
+    [[maybe_unused]] decltype(nullptr) try_execute[] = {
+      (   launched = launched
+       || Contexts::parallel_for_reduce_sum(n, sum, f, args...),
+          nullptr)...
     };
   }
 
