@@ -108,6 +108,7 @@ cs_boundary_conditions_set_coeffs_turb.h \
 cs_boundary_conditions_type.h \
 cs_boundary_zone.h \
 cs_calcium.h \
+cs_compute_thermo_pressure_density.h \
 cs_time_step_compute.h \
 cs_control.h \
 cs_coupling.h \
@@ -310,6 +311,7 @@ cs_boundary_conditions_set_coeffs_turb.c \
 cs_boundary_conditions_type.c \
 cs_boundary_zone.c \
 cs_calcium.c \
+cs_compute_thermo_pressure_density.c \
 csc2cl.f90 \
 csc2ts.f90 \
 csccel.f90 \
@@ -423,7 +425,6 @@ majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \
 phyvar.f90 \
-pthrbm.f90 \
 schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \

@@ -355,6 +355,11 @@ interface
     use, intrinsic :: iso_c_binding
   end subroutine cs_wall_condensation_1d_thermal_compute_temperature
 
+  subroutine cs_compute_thermo_pressure_density() &
+    bind(C, name='cs_compute_thermo_pressure_density')
+    use, intrinsic :: iso_c_binding
+  end subroutine cs_compute_thermo_pressure_density
+
 end interface
 
 !===============================================================================
@@ -745,7 +750,7 @@ endif
 !===============================================================================
 
 if (idilat.eq.3.or.ipthrm.eq.1) then
-  call pthrbm(nvar, nfbpcd, ncmast, dt, spcond, svcond)
+  call cs_compute_thermo_pressure_density()
 endif
 
 !===============================================================================
