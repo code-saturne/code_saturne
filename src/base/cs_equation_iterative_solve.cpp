@@ -349,8 +349,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     });
   }
 
-  /* Implicit synchronization of ctx between this two loops (no need ctx.wait) */
-
   /* For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
