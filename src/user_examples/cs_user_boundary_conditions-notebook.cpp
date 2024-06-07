@@ -117,7 +117,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");
 
     cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
+                                   CS_BC_DIRICHLET,
                                    "inlet",                // zone name
                                    cs_flag_boundary_face,  // location flag
                                    _notebook_t_inlet,      // callback function

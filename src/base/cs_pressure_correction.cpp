@@ -3557,7 +3557,7 @@ cs_pressure_correction_cdo_activate(void)
                     "pressure_increment", /* associated variable field name */
                     CS_EQUATION_TYPE_PREDEFINED,
                     1,                        /* dimension of the unknown */
-                    CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
+                    CS_BC_SYMMETRY); /* default boundary */
 
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
@@ -3745,7 +3745,7 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
       }
 
       cs_equation_add_bc_by_array(eqp,
-                                  CS_PARAM_BC_DIRICHLET,
+                                  CS_BC_DIRICHLET,
                                   z->name,
                                   cs_flag_primal_face,
                                   prcdo->bdy_pressure_incr,

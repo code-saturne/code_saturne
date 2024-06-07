@@ -601,7 +601,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
                                     "phi",
                                     CS_EQUATION_TYPE_NAVSTO,
                                     1,
-                                    CS_PARAM_BC_HMG_NEUMANN);
+                                    CS_BC_SYMMETRY);
 
   /* Set the default solver settings */
   {
@@ -767,7 +767,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
     if (pdef->meta & CS_CDO_BC_DIRICHLET) {
       const cs_zone_t *z = cs_boundary_zone_by_id(pdef->z_id);
       cs_equation_add_bc_by_array(corr_eqp,
-                                  CS_PARAM_BC_DIRICHLET,
+                                  CS_BC_DIRICHLET,
                                   z->name,
                                   cs_flag_primal_face,
                                   nsc->bdy_pressure_incr,

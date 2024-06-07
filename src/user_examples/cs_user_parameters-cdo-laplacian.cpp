@@ -91,7 +91,7 @@ cs_user_model(void)
     cs_equation_add_user("Laplacian", /* equation name */
                          "potential", /* associated variable field name */
                          1,           /* dimension of the unknown */
-                      CS_PARAM_BC_HMG_NEUMANN); /* default boundary condition */
+                      CS_BC_SYMMETRY); /* default boundary condition */
   }
   /*! [param_cdo_laplacian_init] */
 }
@@ -129,8 +129,8 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     */
 
     cs_real_t  T0 = 0, T1 = 1;
-    cs_equation_add_bc_by_value(eqp, CS_PARAM_BC_DIRICHLET, "X0", &T0);
-    cs_equation_add_bc_by_value(eqp, CS_PARAM_BC_DIRICHLET, "X1", &T1);
+    cs_equation_add_bc_by_value(eqp, CS_BC_DIRICHLET, "X0", &T0);
+    cs_equation_add_bc_by_value(eqp, CS_BC_DIRICHLET, "X1", &T1);
   }
   /*! [param_cdo_laplacian_finalize] */
 }

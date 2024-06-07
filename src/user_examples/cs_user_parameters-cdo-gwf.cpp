@@ -536,12 +536,12 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   cs_real_t  right_val = 0.0, left_val = 1.0;
 
   cs_equation_add_bc_by_value(r_eqp,
-                              CS_PARAM_BC_DIRICHLET,
+                              CS_BC_DIRICHLET,
                               "left",       /* boundary zone name */
                               &left_val);   /* value to set */
 
   cs_equation_add_bc_by_value(r_eqp,
-                              CS_PARAM_BC_DIRICHLET,
+                              CS_BC_DIRICHLET,
                               "right",       /* boundary zone name */
                               &right_val);   /* value to set */
 
@@ -551,7 +551,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   cs_equation_param_t  *t_eqp = cs_equation_param_by_name("Tracer_01");
 
   cs_equation_add_bc_by_value(t_eqp,
-                              CS_PARAM_BC_DIRICHLET,
+                              CS_BC_DIRICHLET,
                               "left",      /* boundary zone name */
                               &left_val);  /* value to set */
 

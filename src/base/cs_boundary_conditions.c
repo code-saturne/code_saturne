@@ -2625,7 +2625,7 @@ cs_boundary_conditions_compute(int  bc_type[])
       cs_param_bc_type_t bc_type_l = (cs_param_bc_type_t)(def->meta);
       switch (bc_type_l) {
 
-      case CS_PARAM_BC_HMG_DIRICHLET:
+      case CS_BC_HMG_DIRICHLET:
         _compute_hmg_dirichlet_bc(mesh,
                                   boundaries,
                                   eqp,
@@ -2635,7 +2635,7 @@ cs_boundary_conditions_compute(int  bc_type[])
                                   f->bc_coeffs->rcodcl1);
         break;
 
-      case CS_PARAM_BC_DIRICHLET:
+      case CS_BC_DIRICHLET:
         _compute_dirichlet_bc(mesh,
                               boundaries,
                               f,
@@ -2649,14 +2649,14 @@ cs_boundary_conditions_compute(int  bc_type[])
                               eval_buf);
         break;
 
-      case CS_PARAM_BC_HMG_NEUMANN:
+      case CS_BC_SYMMETRY:
         _compute_hmg_neumann_bc(mesh,
                                 def,
                                 f->bc_coeffs->icodcl,
                                 f->bc_coeffs->rcodcl3);
         break;
 
-      case CS_PARAM_BC_NEUMANN:
+      case CS_BC_NEUMANN:
         _compute_neumann_bc(mesh,
                             eqp,
                             def,
@@ -2667,7 +2667,7 @@ cs_boundary_conditions_compute(int  bc_type[])
                             eval_buf);
         break;
 
-      case CS_PARAM_BC_ROBIN:
+      case CS_BC_ROBIN:
         {
           cs_lnum_t stride = 1 + f->dim + f->dim*f->dim;
           n_max_vals = stride * n_b_faces;
@@ -2691,7 +2691,7 @@ cs_boundary_conditions_compute(int  bc_type[])
         }
         break;
 
-      case CS_PARAM_BC_WALL_PRESCRIBED:
+      case CS_BC_WALL_MODELLED:
         _compute_dirichlet_bc(mesh,
                               boundaries,
                               f,
@@ -3125,7 +3125,7 @@ cs_boundary_conditions_open_set_velocity_by_value(const cs_zone_t  *z,
   cs_equation_remove_bc(eqp, c->zone->name);  /* Replace if already set */
 
   cs_equation_add_bc_by_value(eqp,
-                              CS_PARAM_BC_DIRICHLET,
+                              CS_BC_DIRICHLET,
                               c->zone->name,
                               c->vel_values);
 }
@@ -3162,7 +3162,7 @@ cs_boundary_conditions_open_set_velocity_by_normal_value(const  cs_zone_t  *z,
   cs_equation_remove_bc(eqp, c->zone->name);  /* Replace if already set */
 
   cs_equation_add_bc_by_dof_func(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
+                                 CS_BC_DIRICHLET,
                                  z->name,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
@@ -3217,7 +3217,7 @@ cs_boundary_conditions_open_set_velocity_by_func(const  cs_zone_t       *z,
   cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
 
   cs_equation_add_bc_by_dof_func(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
+                                 CS_BC_DIRICHLET,
                                  z->name,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
@@ -3342,7 +3342,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
   cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
 
   cs_equation_add_bc_by_dof_func(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
+                                 CS_BC_DIRICHLET,
                                  z->name,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
@@ -3440,7 +3440,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_func
   cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
 
   cs_equation_add_bc_by_dof_func(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
+                                 CS_BC_DIRICHLET,
                                  z->name,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
@@ -3513,7 +3513,7 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
   cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
 
   cs_equation_add_bc_by_dof_func(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
+                                 CS_BC_DIRICHLET,
                                  z->name,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
@@ -3604,7 +3604,7 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_func
   cs_equation_remove_bc(eqp, z->name);  /* Replace if already set */
 
   cs_equation_add_bc_by_dof_func(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
+                                 CS_BC_DIRICHLET,
                                  z->name,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,

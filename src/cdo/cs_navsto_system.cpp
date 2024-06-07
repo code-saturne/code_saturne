@@ -391,10 +391,10 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
   switch (boundaries->default_type) {
 
   case CS_BOUNDARY_WALL:
-    default_bc = CS_PARAM_BC_HMG_DIRICHLET;
+    default_bc = CS_BC_HMG_DIRICHLET;
     break;
   case CS_BOUNDARY_SYMMETRY:
-    default_bc = CS_PARAM_BC_SLIDING;
+    default_bc = CS_BC_SYMMETRY;
     break;
 
   default:
@@ -442,7 +442,7 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
                                                  "stream_function",
                                                  CS_EQUATION_TYPE_NAVSTO,
                                                  1,
-                                                 CS_PARAM_BC_HMG_NEUMANN);
+                                                 CS_BC_SYMMETRY);
 
     cs_equation_param_t *eqp
       = cs_equation_get_param(navsto->stream_function_eq);

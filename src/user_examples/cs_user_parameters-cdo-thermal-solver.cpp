@@ -244,14 +244,14 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     double  Tleft = -1;           /* Dirichlet BC value */
 
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_DIRICHLET,
+                                CS_BC_DIRICHLET,
                                 "left",
                                 &Tleft);
 
     double  WallFlux = 2;        /* Neumann BC value */
 
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_NEUMANN,
+                                CS_BC_NEUMANN,
                                 "wall",
                                 &WallFlux);
 
@@ -263,7 +263,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                            -2};   /* phi0 */
 
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_ROBIN,
+                                CS_BC_ROBIN,
                                 "right",
                                 RobinBCs);
 

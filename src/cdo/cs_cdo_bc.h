@@ -64,9 +64,10 @@ BEGIN_C_DECLS
 
 #define CS_CDO_BC_FULL_NEUMANN          (1 << 1)
 
-/*!  4: Homogeneous Neumann boundary conditions */
+/*!  4: Homogeneous Neumann boundary conditions
+        Apply a sliding condition (for vector-valued equations) */
 
-#define CS_CDO_BC_HMG_NEUMANN           (1 << 2)
+#define CS_CDO_BC_SYMMETRY              (1 << 2)
 
 /*!  8: Dirichlet boundary conditions */
 
@@ -80,17 +81,13 @@ BEGIN_C_DECLS
 
 #define CS_CDO_BC_ROBIN                 (1 << 5)
 
-/*!  64: Apply a sliding condition (for vector-valued equations) */
+/*! 64: Apply a Dirichlet on the tangential part of a vector-valued quantity */
 
-#define CS_CDO_BC_SLIDING               (1 << 6)
+#define CS_CDO_BC_TANGENTIAL_DIRICHLET  (1 << 6)
 
-/*! 128: Apply a Dirichlet on the tangential part of a vector-valued quantity */
+/*! 128: Apply a wall function/law to prescribe the value at a wall */
 
-#define CS_CDO_BC_TANGENTIAL_DIRICHLET  (1 << 7)
-
-/*! 256: Apply a wall function/law to prescribe the value at a wall */
-
-#define CS_CDO_BC_WALL_PRESCRIBED       (1 << 8)
+#define CS_CDO_BC_WALL_PRESCRIBED       (1 << 7)
 
 /*! @} */
 
@@ -190,8 +187,8 @@ cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
   case CS_CDO_BC_DIRICHLET:
     sprintf(desc, "%s", "Dirichlet");
     break;
-  case CS_CDO_BC_HMG_NEUMANN:
-    sprintf(desc, "%s", "Homogeneous Neumann");
+  case CS_CDO_BC_SYMMETRY:
+    sprintf(desc, "%s", "Homogeneous Neumann or Sliding for vectors");
     break;
   case CS_CDO_BC_NEUMANN:
     sprintf(desc, "%s", "Neumann");
@@ -201,9 +198,6 @@ cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
     break;
   case CS_CDO_BC_ROBIN:
     sprintf(desc, "%s", "Robin");
-    break;
-  case CS_CDO_BC_SLIDING:
-    sprintf(desc, "%s", "Sliding");
     break;
   case CS_CDO_BC_TANGENTIAL_DIRICHLET:
     sprintf(desc, "%s", "Dirichlet on the tangential component");
@@ -234,31 +228,32 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
 
   switch (bc_type) {
 
-  case CS_PARAM_BC_HMG_DIRICHLET:
+  case CS_BC_HMG_DIRICHLET:
     ret_flag = CS_CDO_BC_HMG_DIRICHLET;
     break;
-  case CS_PARAM_BC_DIRICHLET:
+  case CS_BC_DIRICHLET:
     ret_flag = CS_CDO_BC_DIRICHLET;
     break;
-  case CS_PARAM_BC_HMG_NEUMANN:
-    ret_flag = CS_CDO_BC_HMG_NEUMANN;
+  case CS_BC_SYMMETRY:
+    ret_flag = CS_CDO_BC_SYMMETRY;
     break;
-  case CS_PARAM_BC_NEUMANN:
+  case CS_BC_NEUMANN:
     ret_flag = CS_CDO_BC_NEUMANN;
     break;
-  case CS_PARAM_BC_NEUMANN_FULL:
+  case CS_BC_NEUMANN_FULL:
     ret_flag = CS_CDO_BC_FULL_NEUMANN;
     break;
-  case CS_PARAM_BC_ROBIN:
+  case CS_BC_GENERALIZED_SYM:
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid boundary condition CS_BC_GENERALIZED_SYM for CDO"));
+    break;
+  case CS_BC_ROBIN:
     ret_flag = CS_CDO_BC_ROBIN;
     break;
-  case CS_PARAM_BC_SLIDING:
-    ret_flag = CS_CDO_BC_SLIDING;
-    break;
-  case CS_PARAM_BC_CIRCULATION:
+  case CS_BC_CIRCULATION:
     ret_flag = CS_CDO_BC_TANGENTIAL_DIRICHLET;
     break;
-  case CS_PARAM_BC_WALL_PRESCRIBED:
+  case CS_BC_WALL_MODELLED:
     ret_flag = CS_CDO_BC_WALL_PRESCRIBED; /* TO BE CHECKED */
     break;
 
@@ -307,7 +302,7 @@ cs_cdo_bc_is_neumann(cs_flag_t    flag)
 {
   if (flag & CS_CDO_BC_NEUMANN)
     return true;
-  else if (flag & CS_CDO_BC_HMG_NEUMANN)
+  else if (flag & CS_CDO_BC_SYMMETRY)
     return true;
   else
     return false;
@@ -326,7 +321,7 @@ cs_cdo_bc_is_neumann(cs_flag_t    flag)
 static inline bool
 cs_cdo_bc_is_sliding(cs_flag_t    flag)
 {
-  if (flag & CS_CDO_BC_SLIDING)
+  if (flag & CS_CDO_BC_SYMMETRY)
     return true;
   else
     return false;

@@ -206,7 +206,7 @@ cs_mesh_deform_activate(void)
                       eq_name[i], /* associated variable field name */
                       CS_EQUATION_TYPE_PREDEFINED,
                       1,                        /* dimension of the unknown */
-                      CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
+                      CS_BC_SYMMETRY); /* default boundary */
 
     cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
@@ -274,7 +274,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
     for (int j = 0; j < _n_b_zones; j++) {
       const cs_zone_t *z = cs_boundary_zone_by_id(_b_zone_ids[j]);
       cs_equation_add_bc_by_analytic(eqp,
-                                     CS_PARAM_BC_DIRICHLET,
+                                     CS_BC_DIRICHLET,
                                      z->name,
                                      _define_displ_bcs,
                                      _cs_comp_id + i);

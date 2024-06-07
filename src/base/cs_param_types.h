@@ -439,60 +439,65 @@ typedef enum {
  * \enum cs_param_bc_type_t
  * Type of boundary condition to enforce.
  *
- * \var CS_PARAM_BC_HMG_DIRICHLET
+ * \var CS_BC_HMG_DIRICHLET
  * Homogeneous Dirichlet boundary conditions. The value of a variable is set
  * to zero.
  *
- * \var CS_PARAM_BC_DIRICHLET
+ * \var CS_BC_DIRICHLET
  * Dirichlet boundary conditions. The value of the variable is set to the user
  * requirements.
  *
- * \var CS_PARAM_BC_HMG_NEUMANN
+ * \var CS_BC_SYMMETRY
  * Homogeneous Neumann conditions. The value of the flux of variable is set
  * to zero.
  *
- * \var CS_PARAM_BC_NEUMANN
+ * \var CS_BC_NEUMANN
  * Neumann conditions (along the face normal). The value of the flux of
  * variable is set to the user requirements.
  *
- * \var CS_PARAM_BC_NEUMANN_FULL
+ * \var CS_BC_NEUMANN_FULL
  * Neumann conditions with full definition relative to all directions, i.e.
  * not only the normal direction. The value of the flux of variable is set to
  * the user requirements.
  *
- * \var CS_PARAM_BC_ROBIN
+ * \var CS_BC_ROBIN
  * Robin conditions.
  *
- * \var CS_PARAM_BC_SLIDING
+ * \var CS_BC_SYMMETRY
  * Sliding conditions. Homogeneous Dirichlet for the normal component and
  * homogeneous Neumann for the tangential components. Only available for
  * vector-valued equations.
  *
- * \var CS_PARAM_BC_CIRCULATION
+ * \var CS_BC_CIRCULATION
  * Set the tangential part of a vector-valued field. This is the part lying on
  * the boundary of a part of the computatinal domain. Nothing is prescribed for
  * the normal part of the vector-valued field.
  *
- * \var CS_PARAM_BC_WALL_PRESCRIBED
+ * \var CS_BC_WALL_MODELLED
  * Hybrid way to enforce the value at a wall. Use a wall function to prescribe
  * the wall value knowing the value at the associated cell center for instance
  */
 
 typedef enum {
 
-  CS_PARAM_BC_HMG_DIRICHLET = 0,
-  CS_PARAM_BC_DIRICHLET = 1,
-  CS_PARAM_BC_HMG_NEUMANN = 2,
-  CS_PARAM_BC_NEUMANN = 3,
-  CS_PARAM_BC_NEUMANN_FULL = 4,
-  CS_PARAM_BC_ROBIN = 5,
-  CS_PARAM_BC_SLIDING = 6,
-  CS_PARAM_BC_CIRCULATION = 7,
-  CS_PARAM_BC_WALL_PRESCRIBED = 8,
+  CS_BC_HMG_DIRICHLET = 0,
+  CS_BC_DIRICHLET = 1,
+  CS_BC_RADIATIVE_OUTLET = 2,
+  CS_BC_NEUMANN = 3,
+  CS_BC_SYMMETRY = 4,
+  CS_BC_WALL_MODELLED = 5,
+  CS_BC_ROUGH_WALL_MODELLED = 6,
+  CS_BC_NEUMANN_FULL = 7,
+  CS_BC_ROBIN = 9,
+  CS_BC_CIRCULATION = 11,
+  CS_BC_IMPOSED_TOT_FLUX = 13,
+  CS_BC_GENERALIZED_SYM = 14,
+  CS_BC_IMPOSED_EXCHANGE_COEF = 15,
 
   CS_PARAM_N_BC_TYPES
 
 } cs_param_bc_type_t;
+
 
 /*! \enum cs_param_bc_enforce_t
  * Type of method for enforcing the boundary conditions. According to the type

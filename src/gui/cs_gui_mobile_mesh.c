@@ -628,7 +628,7 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
                                           f_mesh_u->dim);
 
       cs_equation_add_bc_by_dof_func(eqp,
-                                     CS_PARAM_BC_DIRICHLET,
+                                     CS_BC_DIRICHLET,
                                      z->name,
                                      cs_flag_boundary_face,
                                      cs_gui_boundary_conditions_dof_func_meg,

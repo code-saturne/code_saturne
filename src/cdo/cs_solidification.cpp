@@ -3997,7 +3997,7 @@ cs_solidification_set_binary_alloy_model(const char *name,
   cs_equation_t  *eq = cs_equation_add(name, varname,
                                        CS_EQUATION_TYPE_SOLIDIFICATION,
                                        1,
-                                       CS_PARAM_BC_HMG_NEUMANN);
+                                       CS_BC_SYMMETRY);
 
   /* Set an upwind scheme by default since it could be a pure advection eq. */
 

@@ -1456,7 +1456,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
                                      var_name,
                                      CS_EQUATION_TYPE_GROUNDWATER,
                                      1, /* scalar-valued equation */
-                                     CS_PARAM_BC_HMG_NEUMANN);
+                                     CS_BC_SYMMETRY);
 
   tracer->model = tr_model;
   tracer->hydraulic_model = gwf_model;

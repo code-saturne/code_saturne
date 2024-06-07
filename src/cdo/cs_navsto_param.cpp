@@ -1264,7 +1264,7 @@ cs_navsto_set_symmetries(cs_navsto_param_t *nsp)
                                               1,    /* dim */
                                               bdy->zone_ids[i],
                                               CS_FLAG_STATE_UNIFORM, /* state */
-                                              CS_CDO_BC_SLIDING,
+                                              CS_CDO_BC_SYMMETRY,
                                               (void *)&zero);
 
       cs_equation_add_xdef_bc(eqp, d);
@@ -1316,7 +1316,7 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
                                               9,    /* dim */
                                               bdy->zone_ids[i],
                                               CS_FLAG_STATE_UNIFORM, /* state */
-                                              CS_CDO_BC_HMG_NEUMANN,
+                                              CS_CDO_BC_SYMMETRY,
                                               (void *)&zero);
       cs_equation_add_xdef_bc(eqp, d);
 
@@ -1396,7 +1396,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
                                            9, /* dim */
                                            z_id,
                                            CS_FLAG_STATE_UNIFORM, /* state */
-                                           CS_CDO_BC_HMG_NEUMANN,
+                                           CS_CDO_BC_SYMMETRY,
                                            (void *)zero);
 
   int  unew_id = nsp->n_velocity_bc_defs;

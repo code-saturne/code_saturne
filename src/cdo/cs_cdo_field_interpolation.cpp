@@ -122,7 +122,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
                         "scalar_c2v_field_interpolation",
                         CS_EQUATION_TYPE_PREDEFINED,
                         1,
-                        CS_PARAM_BC_HMG_NEUMANN);
+                        CS_BC_SYMMETRY);
 
     cs_equation_param_t  *eqp
       = cs_equation_get_param(_field_interpolation_scalar_c2v_eq);
@@ -148,7 +148,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
                         "scalar_c2f_field_interpolation",
                         CS_EQUATION_TYPE_PREDEFINED,
                         1,
-                        CS_PARAM_BC_HMG_NEUMANN);
+                        CS_BC_SYMMETRY);
 
     cs_equation_param_t  *eqp
       = cs_equation_get_param(_field_interpolation_scalar_c2f_eq);

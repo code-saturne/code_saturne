@@ -478,13 +478,13 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   /* Define the boundary conditions  */
 
   cs_equation_add_bc_by_analytic(eqp,
-                                 CS_PARAM_BC_DIRICHLET,
+                                 CS_BC_DIRICHLET,
                                  "left", // boundary zone name
                                  get_bc,
                                  soil);
 
   cs_equation_add_bc_by_value(eqp,
-                              CS_PARAM_BC_DIRICHLET,
+                              CS_BC_DIRICHLET,
                               "right", // boundary zone name
                               &(tp->h_r));
 

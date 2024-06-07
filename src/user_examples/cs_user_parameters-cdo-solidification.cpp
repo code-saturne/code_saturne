@@ -431,8 +431,8 @@ cs_user_finalize_setup(cs_domain_t   *domain)
      * Neumann boundary condition) */
 
     cs_real_t  Th = t_ref, Tc = -t_ref;
-    cs_equation_add_bc_by_value(th_eqp, CS_PARAM_BC_DIRICHLET, "left", &Tc);
-    cs_equation_add_bc_by_value(th_eqp, CS_PARAM_BC_DIRICHLET, "right", &Th);
+    cs_equation_add_bc_by_value(th_eqp, CS_BC_DIRICHLET, "left", &Tc);
+    cs_equation_add_bc_by_value(th_eqp, CS_BC_DIRICHLET, "right", &Th);
   }
   /*! [param_cdo_solidification_thermal_eq] */
 

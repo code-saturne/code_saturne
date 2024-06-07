@@ -1696,7 +1696,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
+    if (csys->bf_flag[f] & CS_CDO_BC_SYMMETRY) {
 
       /* Compute \int_f du/dn v and update the matrix */
 
@@ -1716,7 +1716,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 
     const short int  fi = csys->_f_ids[i];
 
-    if (csys->bf_flag[fi] & CS_CDO_BC_SLIDING) {
+    if (csys->bf_flag[fi] & CS_CDO_BC_SYMMETRY) {
 
       const cs_quant_t  pfq = cm->face[fi];
       const cs_real_t  *ni = pfq.unitv;
@@ -2193,7 +2193,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
+    if (csys->bf_flag[f] & CS_CDO_BC_SYMMETRY) {
 
       /* Compute the face-view of the mesh */
 

@@ -1224,7 +1224,7 @@ _sliding_wall(cs_tree_node_t   *tn_vp,
   }
 
   cs_equation_add_bc_by_value(eqp,
-                              CS_PARAM_BC_DIRICHLET,
+                              CS_BC_DIRICHLET,
                               z_name,
                               value);
 }
@@ -1425,7 +1425,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
 
   cs_param_bc_type_t bc_wall_prescribed
     = (cs_glob_turb_model->iturb > CS_TURB_NONE) ?
-      CS_PARAM_BC_WALL_PRESCRIBED : CS_PARAM_BC_DIRICHLET;
+      CS_BC_WALL_MODELLED : CS_BC_DIRICHLET;
 
   /* BC definition type ? */
 
@@ -1574,7 +1574,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
   cs_param_bc_type_t bc_wall_prescribed
     = (cs_glob_turb_model->iturb > CS_TURB_NONE) ?
-      CS_PARAM_BC_WALL_PRESCRIBED : CS_PARAM_BC_DIRICHLET;
+      CS_BC_WALL_MODELLED : CS_BC_DIRICHLET;
 
   /* Now handle standard scalar BC types */
 
@@ -1630,7 +1630,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
     else if (! strcmp(choice, "neumann"))
       cs_equation_add_bc_by_value(eqp,
-                                  CS_PARAM_BC_NEUMANN,
+                                  CS_BC_NEUMANN,
                                   z->name,
                                   value);
 
@@ -1673,7 +1673,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
         = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
       cs_equation_add_bc_by_dof_func(eqp,
-                                     CS_PARAM_BC_NEUMANN,
+                                     CS_BC_NEUMANN,
                                      z->name,
                                      cs_flag_boundary_face,
                                      cs_gui_boundary_conditions_dof_func_meg,
@@ -1690,7 +1690,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
         = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
       cs_equation_add_bc_by_dof_func(eqp,
-                                     CS_PARAM_BC_ROBIN,
+                                     CS_BC_ROBIN,
                                      z->name,
                                      cs_flag_boundary_face,
                                      _dof_meg_exchange_coefficient_profile,
@@ -1732,7 +1732,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
     }
 
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_ROBIN,
+                                CS_BC_ROBIN,
                                 z->name,
                                 value);
   }
@@ -1933,7 +1933,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
     cs_equation_param_t *eqp = cs_gui_get_equation_param("total_energy");
     cs_equation_remove_bc(eqp, z->name);
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_DIRICHLET,
+                                CS_BC_DIRICHLET,
                                 z->name,
                                 &te_in);
 
@@ -1951,7 +1951,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
     cs_equation_param_t *eqp = cs_gui_get_equation_param("total_energy");
     cs_equation_remove_bc(eqp, z->name);
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_DIRICHLET,
+                                CS_BC_DIRICHLET,
                                 z->name,
                                 &h_in);
 
@@ -1996,7 +1996,7 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
 
       if (cs_equation_find_bc(eqp, z_name) == NULL)  /* Ignore if already set */
         cs_equation_add_bc_by_value(eqp,
-                                    CS_PARAM_BC_DIRICHLET,
+                                    CS_BC_DIRICHLET,
                                     z_name,
                                     &value);
     }
@@ -2032,7 +2032,7 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
     cs_real_t value = 0;
     cs_gui_node_get_real(tn, &value);
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_DIRICHLET,
+                                CS_BC_DIRICHLET,
                                 z->name,
                                 &value);
   }
@@ -2041,7 +2041,7 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
     cs_real_t value[3] = {0, 0, 0};
     cs_gui_node_get_real(tn, value);
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_NEUMANN,
+                                CS_BC_NEUMANN,
                                 z->name,
                                 value);
   }
@@ -2055,7 +2055,7 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
       cs_gui_boundary_meg_context_t  *c
         = cs_gui_boundary_add_meg_context(z, "hydraulic_head", choice, 1);
       cs_equation_add_bc_by_dof_func(eqp,
-                                     CS_PARAM_BC_DIRICHLET,
+                                     CS_BC_DIRICHLET,
                                      z->name,
                                      cs_flag_boundary_face,
                                      cs_gui_boundary_conditions_dof_func_meg,
@@ -2091,7 +2091,7 @@ _boundary_imposed_pressure(cs_tree_node_t  *tn_bc,
 
   if (cs_equation_find_bc(eqp, z_name) == NULL)  /* Ignore if already set */
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_DIRICHLET,
+                                CS_BC_DIRICHLET,
                                 z_name,
                                 &value);
 }

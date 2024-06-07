@@ -437,7 +437,7 @@ static cs_equation_param_t _equation_param_default
    .relaxv = 1.,
    .b_gradient_r = 2,
 
-   .default_bc = CS_PARAM_BC_HMG_NEUMANN,
+   .default_bc = CS_BC_SYMMETRY,
    .n_bc_defs = 0,
    .bc_defs = NULL,
 

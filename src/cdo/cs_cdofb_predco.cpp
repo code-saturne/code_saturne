@@ -818,7 +818,7 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   sc->bf_type = fb_type;
   sc->pressure_bc =
-    cs_cdo_bc_face_define(CS_PARAM_BC_HMG_NEUMANN, /* Default */
+    cs_cdo_bc_face_define(CS_BC_SYMMETRY,          /* Default */
                           true,                    /* Steady BC up to now */
                           1,                       /* Dimension */
                           nsp->n_pressure_bc_defs,

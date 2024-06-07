@@ -493,8 +493,8 @@ typedef struct {
    *
    * \var default_bc
    * Default boundary condition related to this equation. Valid choices:
-   * - \ref CS_PARAM_BC_HMG_NEUMANN
-   * - \ref CS_PARAM_BC_HMG_DIRICHLET
+   * - \ref CS_BC_SYMMETRY
+   * - \ref CS_BC_HMG_DIRICHLET
    *
    * \var n_bc_defs
    * Number of boundary conditions which are defined for this equation

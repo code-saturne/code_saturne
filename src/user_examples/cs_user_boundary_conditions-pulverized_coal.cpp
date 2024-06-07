@@ -119,7 +119,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 
       cs_real_t val[1] = {1.0};
       cs_equation_add_bc_by_value(eqp,
-                                  CS_PARAM_BC_DIRICHLET,
+                                  CS_BC_DIRICHLET,
                                   z->name,
                                   val);
 

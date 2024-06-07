@@ -161,8 +161,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
   cs_flag_t  default_flag = cs_cdo_bc_get_flag(default_bc);
 
   if (!(default_flag & CS_CDO_BC_HMG_DIRICHLET) &&
-      !(default_flag & CS_CDO_BC_HMG_NEUMANN) &&
-      !(default_flag & CS_CDO_BC_SLIDING))
+      !(default_flag & CS_CDO_BC_SYMMETRY))
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Incompatible type of boundary condition by default.\n"
                 " Please modify your settings.\n"), __func__);
@@ -191,18 +190,15 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
     case CS_CDO_BC_FULL_NEUMANN:
       bc->n_nhmg_neu_faces += z->n_elts;
       break;
-    case CS_CDO_BC_HMG_NEUMANN:
-      bc->n_hmg_neu_faces += z->n_elts;
+    case CS_CDO_BC_SYMMETRY:
+      if (dim > 1)
+        /* For vector-valued equations only */
+        bc->n_sliding_faces += z->n_elts;
+      else
+        bc->n_hmg_neu_faces += z->n_elts;
       break;
     case CS_CDO_BC_ROBIN:
       bc->n_robin_faces += z->n_elts;
-      break;
-
-    /* For vector-valued equations only */
-
-    case CS_CDO_BC_SLIDING:
-      assert(dim > 1);
-      bc->n_sliding_faces += z->n_elts;
       break;
 
     /* For vector-valued equations only */
@@ -247,10 +243,11 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
       bc->flag[i] = default_flag;
       if (default_flag & CS_CDO_BC_HMG_DIRICHLET)
         bc->n_hmg_dir_faces++;
-      else if (default_flag & CS_CDO_BC_HMG_NEUMANN)
-        bc->n_hmg_neu_faces++;
-      else if (default_flag & CS_CDO_BC_SLIDING)
-        bc->n_sliding_faces++;
+      else if (default_flag & CS_CDO_BC_SYMMETRY)
+        if (dim > 1)
+          bc->n_sliding_faces++;
+        else
+          bc->n_hmg_neu_faces++;
       else
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid type of default boundary condition", __func__);
@@ -295,39 +292,38 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
     switch (bc->flag[i]) {
 
     case CS_CDO_BC_DIRICHLET:
-      bc->nhmg_dir_ids[shift[CS_PARAM_BC_DIRICHLET]] = i;
-      shift[CS_PARAM_BC_DIRICHLET] += 1;
+      bc->nhmg_dir_ids[shift[CS_BC_DIRICHLET]] = i;
+      shift[CS_BC_DIRICHLET] += 1;
       break;
     case CS_CDO_BC_HMG_DIRICHLET:
-      bc->hmg_dir_ids[shift[CS_PARAM_BC_HMG_DIRICHLET]] = i;
-      shift[CS_PARAM_BC_HMG_DIRICHLET] += 1;
+      bc->hmg_dir_ids[shift[CS_BC_HMG_DIRICHLET]] = i;
+      shift[CS_BC_HMG_DIRICHLET] += 1;
       break;
     case CS_CDO_BC_NEUMANN:
     case CS_CDO_BC_FULL_NEUMANN:
-      bc->nhmg_neu_ids[shift[CS_PARAM_BC_NEUMANN]] = i;
-      shift[CS_PARAM_BC_NEUMANN] += 1;
+      bc->nhmg_neu_ids[shift[CS_BC_NEUMANN]] = i;
+      shift[CS_BC_NEUMANN] += 1;
       break;
-    case CS_CDO_BC_HMG_NEUMANN:
-      bc->hmg_neu_ids[shift[CS_PARAM_BC_HMG_NEUMANN]] = i;
-      shift[CS_PARAM_BC_HMG_NEUMANN] += 1;
+    case CS_CDO_BC_SYMMETRY:
+      if (dim > 1) {
+        bc->sliding_ids[shift[CS_BC_SYMMETRY]] = i;
+        shift[CS_BC_SYMMETRY] += 1;
+      }
+      else {
+        bc->hmg_neu_ids[shift[CS_BC_SYMMETRY]] = i;
+        shift[CS_BC_SYMMETRY] += 1;
+      }
       break;
     case CS_CDO_BC_ROBIN:
-      bc->robin_ids[shift[CS_PARAM_BC_ROBIN]] = i;
-      shift[CS_PARAM_BC_ROBIN] += 1;
-      break;
-
-    /* For vector-valued equations only */
-
-    case CS_CDO_BC_SLIDING:
-      bc->sliding_ids[shift[CS_PARAM_BC_SLIDING]] = i;
-      shift[CS_PARAM_BC_SLIDING] += 1;
+      bc->robin_ids[shift[CS_BC_ROBIN]] = i;
+      shift[CS_BC_ROBIN] += 1;
       break;
 
     /* For vector-valued equations only */
 
     case CS_CDO_BC_TANGENTIAL_DIRICHLET:
-      bc->circulation_ids[shift[CS_PARAM_BC_CIRCULATION]] = i;
-      shift[CS_PARAM_BC_CIRCULATION] += 1;
+      bc->circulation_ids[shift[CS_BC_CIRCULATION]] = i;
+      shift[CS_BC_CIRCULATION] += 1;
       break;
 
     default:

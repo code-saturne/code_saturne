@@ -1537,7 +1537,7 @@ cs_ale_activate(void)
                     "mesh_velocity", /* associated variable field name */
                     CS_EQUATION_TYPE_PREDEFINED,
                     3,                        /* dimension of the unknown */
-                    CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
+                    CS_BC_SYMMETRY); /* default boundary */
 
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
@@ -1766,7 +1766,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
         cs_real_t  bc_value[3] = {0., 0., 0.};
 
         cs_equation_add_bc_by_value(eqp,
-                                    CS_PARAM_BC_HMG_DIRICHLET,
+                                    CS_BC_HMG_DIRICHLET,
                                     z->name,
                                     bc_value);
       }
@@ -1774,7 +1774,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
 
     case CS_BOUNDARY_ALE_IMPOSED_VEL:
       cs_equation_add_bc_by_array(eqp,
-                                  CS_PARAM_BC_DIRICHLET,
+                                  CS_BC_DIRICHLET,
                                   z->name,
                                   cs_flag_primal_vtx,
                                   _cdo_bc->vtx_values,
@@ -1787,7 +1787,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
 
     case CS_BOUNDARY_ALE_IMPOSED_DISP:
       cs_equation_add_bc_by_array(eqp,
-                                  CS_PARAM_BC_DIRICHLET,
+                                  CS_BC_DIRICHLET,
                                   z->name,
                                   cs_flag_primal_vtx,
                                   _cdo_bc->vtx_values,
@@ -1800,7 +1800,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
 
     case CS_BOUNDARY_ALE_FREE_SURFACE:
       cs_equation_add_bc_by_array(eqp,
-                                  CS_PARAM_BC_DIRICHLET,
+                                  CS_BC_DIRICHLET,
                                   z->name,
                                   cs_flag_primal_vtx,
                                   _cdo_bc->vtx_values,

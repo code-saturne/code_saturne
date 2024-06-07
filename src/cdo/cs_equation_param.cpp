@@ -2342,16 +2342,16 @@ cs_equation_add_bc_by_value(cs_equation_param_t      *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+      && bc_type == CS_BC_WALL_MODELLED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   /* Add a new cs_xdef_t structure */
 
   int  dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+  if (bc_type == CS_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
-  if (bc_type == CS_PARAM_BC_ROBIN) {
+  if (bc_type == CS_BC_ROBIN) {
 
     /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
@@ -2427,7 +2427,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t      *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+      && bc_type == CS_BC_WALL_MODELLED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   assert(cs_flag_test(loc, cs_flag_primal_face)   ||
@@ -2442,10 +2442,10 @@ cs_equation_add_bc_by_array(cs_equation_param_t      *eqp,
   if (loc == cs_flag_primal_face || loc == cs_flag_boundary_face)
     state_flag = CS_FLAG_STATE_FACEWISE;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+  if (bc_type == CS_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
-  if (bc_type == CS_PARAM_BC_ROBIN) {
+  if (bc_type == CS_BC_ROBIN) {
 
     /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
@@ -2533,10 +2533,10 @@ cs_equation_add_bc_by_field(cs_equation_param_t      *eqp,
   int  z_id = cs_boundary_zone_id_by_name(z_name);
 
   int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+  if (bc_type == CS_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
-  if (bc_type == CS_PARAM_BC_ROBIN) {
+  if (bc_type == CS_BC_ROBIN) {
 
     /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
@@ -2549,7 +2549,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t      *eqp,
   }
 
   if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+      && bc_type == CS_BC_WALL_MODELLED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   assert(field != nullptr);
@@ -2619,10 +2619,10 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t      *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+  if (bc_type == CS_BC_NEUMANN)
     dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
-  if (bc_type == CS_PARAM_BC_CIRCULATION) {
+  if (bc_type == CS_BC_CIRCULATION) {
 
     /* This is a vector-valued equation but the DoF is scalar-valued since
      * it is a circulation associated to each edge */
@@ -2634,7 +2634,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t      *eqp,
                 "%s: This situation is not handled.\n", __func__);
   }
 
-  if (bc_type == CS_PARAM_BC_ROBIN) {
+  if (bc_type == CS_BC_ROBIN) {
 
     /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
@@ -2645,8 +2645,8 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t      *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+      && bc_type == CS_BC_WALL_MODELLED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   int z_id = cs_boundary_zone_id_by_name(z_name);
@@ -2716,10 +2716,10 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t      *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+  if (bc_type == CS_BC_NEUMANN)
     dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
-  if (bc_type == CS_PARAM_BC_CIRCULATION) {
+  if (bc_type == CS_BC_CIRCULATION) {
 
     /* This is a vector-valued equation but the DoF is scalar-valued since
      * it is a circulation associated to each edge */
@@ -2731,7 +2731,7 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t      *eqp,
                 "%s: This situation is not handled.\n", __func__);
   }
 
-  if (bc_type == CS_PARAM_BC_ROBIN) {
+  if (bc_type == CS_BC_ROBIN) {
 
     /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
@@ -2742,8 +2742,8 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t      *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+      && bc_type == CS_BC_WALL_MODELLED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   int z_id = cs_boundary_zone_id_by_name(z_name);
@@ -2814,10 +2814,10 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t      *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+  if (bc_type == CS_BC_NEUMANN)
     dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
-  if (bc_type == CS_PARAM_BC_CIRCULATION) {
+  if (bc_type == CS_BC_CIRCULATION) {
 
     /* This is a vector-valued equation but the DoF is scalar-valued since
      * it is a circulation associated to each edge */
@@ -2829,7 +2829,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t      *eqp,
                 "%s: This situation is not handled.\n", __func__);
   }
 
-  if (bc_type == CS_PARAM_BC_ROBIN) {
+  if (bc_type == CS_BC_ROBIN) {
 
     /* FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta) */
 
@@ -2840,8 +2840,8 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t      *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
-      && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+      && bc_type == CS_BC_WALL_MODELLED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   int z_id = cs_boundary_zone_id_by_name(z_name);
@@ -3058,7 +3058,7 @@ cs_equation_add_sliding_condition(cs_equation_param_t *eqp,
                               1,
                               cs_boundary_zone_id_by_name(z_name),
                               CS_FLAG_STATE_UNIFORM,  /* state flag */
-                              CS_CDO_BC_SLIDING,      /* meta */
+                              CS_CDO_BC_SYMMETRY,      /* meta */
                               (void *)&val);
 
   eqp->bc_defs[eqp->n_bc_defs] = d;

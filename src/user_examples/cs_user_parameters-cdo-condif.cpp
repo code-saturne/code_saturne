@@ -296,23 +296,23 @@ cs_user_model(void)
     cs_equation_add_user("my_equation", /* name of the equation */
                          "my_variable", /* name of the associated variable */
                          1,             /* dimension of the variable */
-                         CS_PARAM_BC_HMG_NEUMANN); /* default BC */
+                         CS_BC_SYMMETRY); /* default BC */
 
     /* Add a new user equation.
      *   The default boundary condition has to be chosen among:
-     *    CS_PARAM_BC_HMG_DIRICHLET
-     *    CS_PARAM_BC_HMG_NEUMANN
+     *    CS_BC_HMG_DIRICHLET
+     *    CS_BC_SYMMETRY
      */
 
     cs_equation_add_user("AdvDiff.Upw", // equation name
                          "Pot.Upw",     // associated variable field name
                          1,             // dimension of the unknown
-                         CS_PARAM_BC_HMG_DIRICHLET); // default boundary
+                         CS_BC_HMG_DIRICHLET); // default boundary
 
     cs_equation_add_user("AdvDiff.SG",  // equation name
                          "Pot.SG",      // associated variable field name
                          1,             // dimension of the unknown
-                         CS_PARAM_BC_HMG_DIRICHLET); // default boundary
+                         CS_BC_HMG_DIRICHLET); // default boundary
   }
   /*! [param_cdo_add_user_equation] */
 
@@ -407,7 +407,7 @@ cs_user_model(void)
     cs_equation_add_user_tracer("MyTracerEq",  /* Eq. name */
                                 "MyTracerVar", /* Variable name */
                                 1,             /* Variable dim. */
-                                CS_PARAM_BC_HMG_NEUMANN,
+                                CS_BC_SYMMETRY,
                                 time_pty,
                                 adv_field,
                                 diff_pty);
@@ -710,8 +710,9 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
      -> eq is the structure related to the equation to set
      -> type of boundary condition:
-        CS_PARAM_BC_DIRICHLET, CS_PARAM_BC_HMG_DIRICHLET,
-        CS_PARAM_BC_NEUMANN_FULL, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
+        CS_BC_HMG_DIRICHLET, CS_BC_DIRICHLET, CS_BC_SYMMETRY,
+        CS_BC_NEUMANN, CS_BC_NEUMANN_FULL, CS_BC_ROBIN,
+        CS_BC_CIRCULATION, CS_BC_WALL_MODELLED:
 
      >> cs_equation_add_bc_by_value(eqp,
                                     bc_type,
@@ -724,7 +725,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
 
     cs_equation_add_bc_by_analytic(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
+                                   CS_BC_DIRICHLET,
                                    "boundary_faces",  // zone name
                                    _define_bcs,       // pointer to the function
                                    NULL);             // input structure

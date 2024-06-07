@@ -348,7 +348,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_real_t inlet_velocity[] = {1.5, 0, 0};
 
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_DIRICHLET,
+                                CS_BC_DIRICHLET,
                                 "inlet",           // zone name
                                 inlet_velocity);
 
@@ -362,7 +362,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("velocity");
 
     cs_equation_add_bc_by_analytic(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
+                                   CS_BC_DIRICHLET,
                                    "inlet",           // zone name
                                    _vel_profile,      // callback function
                                    NULL);             // input structure
@@ -377,7 +377,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar1");
 
     cs_equation_add_bc_by_analytic(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
+                                   CS_BC_DIRICHLET,
                                    "inlet",                 // zone name
                                    _scalar_inlet_profile,   // callback function
                                    f);                      // input structure
@@ -397,7 +397,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar1");
 
     cs_equation_add_bc_by_value(eqp,
-                                CS_PARAM_BC_ROBIN,
+                                CS_BC_ROBIN,
                                 "exchanger_wall",         // zone name
                                 robin_values);
     /*! [wall_scalar_exchange_const] */
@@ -411,7 +411,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar1");
 
     cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_ROBIN,
+                                   CS_BC_ROBIN,
                                    "exchanger_wall",         // zone name
                                    cs_flag_boundary_face,    // location flag
                                    _scalar_exchange_profile, // callback function
@@ -426,7 +426,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");
 
     cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_NEUMANN,
+                                   CS_BC_NEUMANN,
                                    "wall_top",             // zone name
                                    cs_flag_boundary_face,  // location flag
                                    _w_flux_top,            // callback function
@@ -442,7 +442,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");
 
     cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_NEUMANN,
+                                   CS_BC_NEUMANN,
                                    z->name,                // zone name
                                    cs_flag_boundary_face,  // location flag
                                    _w_flux_side,           // callback function

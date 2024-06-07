@@ -647,13 +647,13 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
                              "k", /* variable name */
                              CS_EQUATION_TYPE_NAVSTO, /* related to NS */
                              1,
-                             CS_PARAM_BC_HMG_NEUMANN);
+                             CS_BC_SYMMETRY);
 
   kec->eps = cs_equation_add("epsilon", /* equation name */
                              "epsilon", /* variable name */
                              CS_EQUATION_TYPE_NAVSTO,
                              1,
-                             CS_PARAM_BC_HMG_NEUMANN);
+                             CS_BC_SYMMETRY);
 
   /* Add new related properties which will be associated to discretization
      terms in tke and epsilon */

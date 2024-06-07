@@ -380,7 +380,7 @@ cs_maxwell_activate(cs_flag_t     model,
                                                "electric_potential",
                                                CS_EQUATION_TYPE_MAXWELL,
                                                1,
-                                               CS_PARAM_BC_HMG_NEUMANN);
+                                               CS_BC_SYMMETRY);
     cs_equation_param_t  *eqp = cs_equation_get_param(e_static);
 
     mxl->e_permeability = cs_property_add("electric_permeability",
@@ -411,7 +411,7 @@ cs_maxwell_activate(cs_flag_t     model,
                                                "magnetic_potential",
                                                CS_EQUATION_TYPE_MAXWELL,
                                                3,
-                                               CS_PARAM_BC_HMG_DIRICHLET);
+                                               CS_BC_HMG_DIRICHLET);
 
     cs_equation_param_t  *eqp = cs_equation_get_param(m_static);
 

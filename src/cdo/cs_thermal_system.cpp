@@ -445,7 +445,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
                          "enthalpy",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
-                         CS_PARAM_BC_HMG_NEUMANN);
+                         CS_BC_SYMMETRY);
 
 
   }
@@ -455,7 +455,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
                          "total_energy",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
-                         CS_PARAM_BC_HMG_NEUMANN);
+                         CS_BC_SYMMETRY);
 
     /* TODO */
     bft_error(__FILE__, __LINE__, 0, " %s: Not yet fully available.\n",
@@ -469,7 +469,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
                          "temperature",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
-                         CS_PARAM_BC_HMG_NEUMANN);
+                         CS_BC_SYMMETRY);
 
     /* Always add a diffusion term */
 

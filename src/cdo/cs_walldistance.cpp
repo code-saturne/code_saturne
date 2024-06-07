@@ -431,7 +431,7 @@ cs_walldistance_activate(void)
                     "WallDistance",              /* variable name */
                     CS_EQUATION_TYPE_PREDEFINED, /* type of the equation */
                     1,                           /* dimension of the variable */
-                    CS_PARAM_BC_HMG_NEUMANN);    /* default BC */
+                    CS_BC_SYMMETRY);    /* default BC */
 
   /* Set now the default numerical parameters for this equation */
 
@@ -480,7 +480,7 @@ cs_walldistance_setup(void)
   const char  bc_zone_name[] = CS_BOUNDARY_WALLS_NAME;
 
   cs_equation_add_bc_by_value(eqp,
-                              CS_PARAM_BC_DIRICHLET,
+                              CS_BC_DIRICHLET,
                               bc_zone_name,
                               &zero_value);
 

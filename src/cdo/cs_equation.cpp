@@ -1622,15 +1622,16 @@ cs_equation_add_user(const char         *eqname,
   if (varname == nullptr)
     bft_error(__FILE__, __LINE__, 0, " %s: Empty variable name.", __func__);
 
-  if ((default_bc != CS_PARAM_BC_HMG_DIRICHLET)
-      && (default_bc != CS_PARAM_BC_HMG_NEUMANN))
+  if (   (default_bc != CS_BC_HMG_DIRICHLET)
+      && (default_bc != CS_BC_SYMMETRY))
     bft_error(__FILE__,
               __LINE__,
               0,
               _(" %s: Invalid type of boundary condition by default.\n"
-                " Valid choices are CS_PARAM_BC_HMG_DIRICHLET or"
-                " CS_PARAM_BC_HMG_NEUMANN"),
+                " Valid choices are CS_BC_HMG_DIRICHLET or"
+                " CS_BC_SYMMETRY"),
               __func__);
+
 
   /* Add a new user equation */
 

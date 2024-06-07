@@ -4444,7 +4444,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
       switch (face_bc->flag[bf_id]) {
 
-      case CS_CDO_BC_HMG_NEUMANN:
+      case CS_CDO_BC_SYMMETRY:
         memset(_flx, 0, (idx[1]-idx[0])*sizeof(cs_real_t));
         break;
 

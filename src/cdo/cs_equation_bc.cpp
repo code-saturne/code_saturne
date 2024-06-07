@@ -515,14 +515,14 @@ cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
                                 csys->rob_values);
         break;
 
-      case CS_CDO_BC_SLIDING:
+      case CS_CDO_BC_SYMMETRY:
         csys->has_sliding = true;
         break;
 
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
         /* case CS_CDO_BC_DIRICHLET: */
-        /* case CS_CDO_BC_HMG_NEUMANN: */
+        /* case CS_CDO_BC_SYMMETRY: */
         break;
 
       } /* End of switch */
@@ -591,13 +591,13 @@ cs_equation_bc_set_cw_eb(const cs_cell_mesh_t         *cm,
       case CS_CDO_BC_FULL_NEUMANN:
       case CS_CDO_BC_NEUMANN:
       case CS_CDO_BC_ROBIN:
-      case CS_CDO_BC_SLIDING:
+      case CS_CDO_BC_SYMMETRY:
         bft_error(__FILE__, __LINE__, 0, "%s: Case not handled yet.", __func__);
         break;
 
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
-        /* case CS_CDO_BC_HMG_NEUMANN: */
+        /* case CS_CDO_BC_SYMMETRY: */
         break;
 
       } /* End of switch */
@@ -712,7 +712,7 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
                                 csys->rob_values);
         break;
 
-      case CS_CDO_BC_SLIDING:
+      case CS_CDO_BC_SYMMETRY:
         csys->has_sliding = true;
         break;
 
@@ -799,7 +799,7 @@ cs_equation_bc_set_cw_macfb(const cs_cell_mesh_t      *cm,
                   " %s: Robin not implemented.\n", __func__);
         break;
 
-      case CS_CDO_BC_SLIDING:
+      case CS_CDO_BC_SYMMETRY:
         csys->has_sliding = true;
         break;
 
@@ -959,7 +959,7 @@ cs_equation_bc_set_cw_cb(const cs_cell_mesh_t         *cm,
                                 csys->rob_values);
         break;
 
-      case CS_CDO_BC_SLIDING:
+      case CS_CDO_BC_SYMMETRY:
         csys->has_sliding = true;
         break;
 
@@ -2260,7 +2260,7 @@ cs_equation_bc_update_for_increment(cs_cell_sys_t  *csys)
     for (int i = 0; i < csys->n_dofs; i++) {
       if (csys->dof_flag[i] & CS_CDO_BC_NEUMANN) {
         csys->dof_flag[i] -= CS_CDO_BC_NEUMANN;
-        csys->dof_flag[i] |= CS_CDO_BC_HMG_NEUMANN;
+        csys->dof_flag[i] |= CS_CDO_BC_SYMMETRY;
       }
     }
 

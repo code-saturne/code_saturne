@@ -139,11 +139,11 @@ static const char
 cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
   { N_("Homogeneous Dirichlet"),
     N_("Dirichlet"),
-    N_("Homogeneous Neumann"),
+    N_("Symmetry"),
     N_("Neumann"),
     N_("Neumann (full)"),
     N_("Robin"),
-    N_("Sliding"),
+    N_("Circulation"),
     N_("Wall prescribed")
   };
 
@@ -387,15 +387,14 @@ const char *
 cs_param_get_bc_name(cs_param_bc_type_t    type)
 {
   switch (type) {
-  case CS_PARAM_BC_HMG_DIRICHLET:
-  case CS_PARAM_BC_DIRICHLET:
-  case CS_PARAM_BC_HMG_NEUMANN:
-  case CS_PARAM_BC_NEUMANN:
-  case CS_PARAM_BC_NEUMANN_FULL:
-  case CS_PARAM_BC_ROBIN:
-  case CS_PARAM_BC_SLIDING:
-  case CS_PARAM_BC_CIRCULATION:
-  case CS_PARAM_BC_WALL_PRESCRIBED:
+  case CS_BC_HMG_DIRICHLET:
+  case CS_BC_DIRICHLET:
+  case CS_BC_SYMMETRY:
+  case CS_BC_NEUMANN:
+  case CS_BC_NEUMANN_FULL:
+  case CS_BC_ROBIN:
+  case CS_BC_CIRCULATION:
+  case CS_BC_WALL_MODELLED:
     return cs_param_bc_type_name[type];
 
   default:
