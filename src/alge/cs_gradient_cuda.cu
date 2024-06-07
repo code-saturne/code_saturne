@@ -1010,7 +1010,6 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
     }
   }
 
-
   auto _pvar1 = pvar[c_id1];
   auto _r_grad1 = r_grad[c_id1];
 
@@ -1878,7 +1877,6 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
 
   /* Initialization */
-
 
   if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
     cudaMemsetAsync(grad_d, 0, n_cells_ext * sizeof(cs_real_t)*stride*3, stream);

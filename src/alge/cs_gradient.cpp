@@ -1052,7 +1052,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
     } /* End of (parallel) loop on blocks */
 
-    /* Now compute clip factor (kenrl common to scalar and strided clases */
+    /* Now compute clip factor (kernel common to scalar and strided clases */
 
     _gradient_update_face_clip_factor(m, ma, halo_type, factor, clip_factor);
 
