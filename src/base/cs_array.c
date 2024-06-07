@@ -180,7 +180,7 @@ cs_array_lnum_set_value(cs_lnum_t  size,
 /*!
  * \brief Assign the value "num" to an array on a selected subset of elements.
  *        if elt_ids = NULL, then one recovers the function
- *        cs_array_lnum_set_value
+ *        \ref cs_array_lnum_set_value
  *
  * \param[in]      n_elts   number of elements
  * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
@@ -204,6 +204,79 @@ cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
       a[elt_ids[ii]] = num;
   }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero to all elements of an array. Case of a int array.
+ *
+ * \param[in]      size    total number of elements to set to zero
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_int_fill_zero(cs_lnum_t  size,
+                       int        a[restrict])
+{
+  if (cs_glob_n_threads > 1) {
+#   pragma omp parallel for if (size > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < size; i++)
+      a[i] = 0;
+  }
+  else
+    memset(a, 0, size*size_of_lnum);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign the value "num" to all elements of an array. Case of a
+ *        int array.
+ *
+ * \param[in]      size    total number of elements to set
+ * \param[in]      num     value to set
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_int_set_value(cs_lnum_t  size,
+                       int        num,
+                       int        a[restrict])
+{
+# pragma omp parallel for if (size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < size; i++)
+    a[i] = num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign the value "num" to an array on a selected subset of elements.
+ *        if elt_ids = NULL, then one recovers the function
+ *        \ref cs_array_int_set_value
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      num      value to set
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_int_set_value_on_subset(cs_lnum_t        n_elts,
+                                 const cs_lnum_t  elt_ids[],
+                                 int              num,
+                                 int              a[restrict])
+{
+  if (elt_ids == NULL)
+    cs_array_int_set_value(n_elts, num, a);
+
+  else {
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+      a[elt_ids[ii]] = num;
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Copy an array ("ref") into another array ("dest") on possibly only a

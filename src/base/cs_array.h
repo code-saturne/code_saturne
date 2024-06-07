@@ -158,6 +158,53 @@ cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
                                   const cs_lnum_t  elt_ids[],
                                   cs_lnum_t        num,
                                   cs_lnum_t        a[restrict]);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero to all elements of an array. Case of a int array.
+ *
+ * \param[in]      size    total number of elements to set to zero
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_int_fill_zero(cs_lnum_t  size,
+                       int        a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign the value "num" to all elements of an array. Case of a
+ *        int array.
+ *
+ * \param[in]      size    total number of elements to set
+ * \param[in]      num     value to set
+ * \param[in, out] a       array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_int_set_value(cs_lnum_t  size,
+                       int        num,
+                       int        a[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign the value "num" to an array on a selected subset of elements.
+ *        if elt_ids = NULL, then one recovers the function
+ *        \ref cs_array_int_set_value
+ *
+ * \param[in]      n_elts   number of elements
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      num      value to set
+ * \param[in, out] a        array to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_int_set_value_on_subset(cs_lnum_t        n_elts,
+                                 const cs_lnum_t  elt_ids[],
+                                 int              num,
+                                 int              a[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
