@@ -499,7 +499,7 @@ cs_velocity_pressure_set_n_buoyant_scalars(void)
 {
   const int n_fields = cs_field_n_fields();
   const int key_sca = cs_field_key_id("scalar_id");
-  const int key_buo = cs_field_key_id("is_buoyant");
+  const int key_buo = cs_field_key_id("coupled_with_vel_p");
 
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);

@@ -181,7 +181,7 @@
   through a given equation of state) and add it in the velocity-pressure optional
   inner-iterations, one can set the dedicated keyword:
 
-  \snippet cs_user_parameters-base.c param_var_is_buoyant
+  \snippet cs_user_parameters-base.c param_var_coupled_with_vel_p
 
   If one wants to activate drift terms on a transported scalar:
 

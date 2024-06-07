@@ -108,7 +108,7 @@ integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
-integer          key_buoyant_id, is_buoyant_fld, st_prv_id
+integer          key_buoyant_id, coupled_with_vel_p_fld, st_prv_id
 
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
@@ -667,10 +667,10 @@ do f_id = 0, nfld - 1
         call field_current_to_previous(f_id)
       endif
       ! For buoyant scalar with source termes, current to previous for them
-      call field_get_key_id("is_buoyant", key_buoyant_id)
-      call field_get_key_int(f_id, key_buoyant_id, is_buoyant_fld)
+      call field_get_key_id("coupled_with_vel_p", key_buoyant_id)
+      call field_get_key_int(f_id, key_buoyant_id, coupled_with_vel_p_fld)
       call field_get_key_int(f_id, kstprv, st_prv_id)
-      if (is_buoyant_fld.eq.1.and.st_prv_id.ge.0.and.itrale.gt.1) then
+      if (coupled_with_vel_p_fld.eq.1.and.st_prv_id.ge.0.and.itrale.gt.1) then
         call field_get_key_int(f_id, kst, st_id)
         call field_get_val_s(st_id, cpro_scal_st)
         call field_get_key_int(f_id, kstprv, st_id)
@@ -1018,7 +1018,7 @@ do while (iterns.le.nterup)
       call phyvar(nvar, nscal, iterns, dt)
 
       ! Correct the scalar to ensure scalar conservation
-      call field_get_key_id("is_buoyant", key_buoyant_id)
+      call field_get_key_id("coupled_with_vel_p", key_buoyant_id)
       call field_get_val_s(icrom,crom)
       call field_get_id_try("density_mass",f_id)
       ! Correction only made for the collocated time-scheme (Li Ma phd)
@@ -1026,8 +1026,8 @@ do while (iterns.le.nterup)
         call field_get_val_s(f_id, cpro_rho_mass)
         do iscal = 1, nscal
           ivar = isca(iscal)
-          call field_get_key_int(ivarfl(ivar), key_buoyant_id, is_buoyant_fld)
-          if (is_buoyant_fld.eq.1) then
+          call field_get_key_int(ivarfl(ivar), key_buoyant_id, coupled_with_vel_p_fld)
+          if (coupled_with_vel_p_fld.eq.1) then
             call field_get_val_s(ivarfl(ivar),cvar_sca)
             do iel = 1, ncel
               cvar_sca(iel) = cvar_sca(iel)*cpro_rho_mass(iel)/crom(iel)

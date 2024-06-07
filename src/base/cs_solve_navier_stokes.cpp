@@ -2353,7 +2353,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* Boussinesq approximation */
   else if (vp_model->idilat == 0) {
 
-    /* FIXME make it dependant on the scalar and use is_buoyant field */
+    /* FIXME make it dependant on the scalar and use coupled_with_vel_p field */
     const cs_real_t *cvar_t = cs_thermal_model_field()->val;
     const cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
 

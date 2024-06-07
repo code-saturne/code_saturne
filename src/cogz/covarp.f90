@@ -71,7 +71,7 @@ implicit none
 
 integer        f_id, isc, ii, jj
 integer        kscmin, kscmax, kscavr
-integer        key_is_buoyant, key_turb_diff, key_sgs_sca_coef
+integer        key_coupled_with_vel_p, key_turb_diff, key_sgs_sca_coef
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
@@ -155,7 +155,7 @@ if (ippmod(islfm).ge.0) then
 
   ! Mixture fraction and its variance
 
-  call field_get_key_id("is_buoyant", key_is_buoyant)
+  call field_get_key_id("coupled_with_vel_p", key_coupled_with_vel_p)
   call field_get_key_id("turbulent_diffusivity_id", key_turb_diff)
   call field_get_key_id("sgs_scalar_flux_coef_id", key_sgs_sca_coef)
 
@@ -164,7 +164,7 @@ if (ippmod(islfm).ge.0) then
   f_id = ivarfl(isca(ifm))
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
-  call field_set_key_int(f_id, key_is_buoyant, 1)
+  call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
   call field_set_key_int(f_id, kivisl, 0)
 
   if (iturb.eq.41) then
@@ -177,7 +177,7 @@ if (ippmod(islfm).ge.0) then
 
     f_id = ivarfl(isca(ifp2m))
     call field_set_key_int(f_id, kscavr, ivarfl(isca(ifm)))
-    call field_set_key_int(f_id, key_is_buoyant, 1)
+    call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
 
   else if(mode_fp2m .eq. 1) then
     call add_model_scalar_field('mixture_fraction_2nd_moment', &
@@ -185,7 +185,7 @@ if (ippmod(islfm).ge.0) then
     f_id = ivarfl(isca(ifsqm))
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, 1.d0)
-    call field_set_key_int(f_id, key_is_buoyant, 1)
+    call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
     call field_set_key_int(f_id, kivisl, 0)
 
     if (iturb.eq.41) then
@@ -205,7 +205,7 @@ if (ippmod(islfm).ge.0) then
 
     call field_set_key_double(f_id, kscmin, -grand)
     call field_set_key_double(f_id, kscmax, grand)
-    call field_set_key_int(f_id, key_is_buoyant, 1)
+    call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
     call field_set_key_int(f_id, kivisl, 0)
 
     if (iturb.eq.41) then
@@ -222,7 +222,7 @@ if (ippmod(islfm).ge.0) then
     f_id = ivarfl(isca(ipvm))
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, grand)
-    call field_set_key_int(f_id, key_is_buoyant, 1)
+    call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
     call field_set_key_int(f_id, kivisl, 0)
 
     if (iturb.eq.41) then

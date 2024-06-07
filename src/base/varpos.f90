@@ -72,7 +72,7 @@ integer          iscal , id, ityloc, itycat, pflag
 integer          ii
 integer          iok
 integer          f_id, idftnp
-integer          key_buoyant_id, is_buoyant_fld, key_restart_file
+integer          key_buoyant_id, coupled_with_vel_p_fld, key_restart_file
 integer          keydri
 integer          kturt, turb_flux_model, kisso2t
 integer          ivar, iscdri, isso2t
@@ -92,7 +92,7 @@ procedure() :: add_source_term_prev_field
 !===============================================================================
 
 ! Key id for buoyant field (inside the Navier Stokes loop)
-call field_get_key_id("is_buoyant", key_buoyant_id)
+call field_get_key_id("coupled_with_vel_p", key_buoyant_id)
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id("scalar_time_scheme", kisso2t)
 call field_get_key_id("restart_file", key_restart_file)
@@ -409,8 +409,8 @@ if (nscal.ge.1) then
     call field_get_key_int(ivarfl(isca(ii)), kisso2t, isso2t)
     if (isso2t.gt.0) then
       ! For buoyant scalars, save the current user source term
-      call field_get_key_int(ivarfl(isca(ii)), key_buoyant_id, is_buoyant_fld)
-      if (is_buoyant_fld.eq.1) then
+      call field_get_key_int(ivarfl(isca(ii)), key_buoyant_id, coupled_with_vel_p_fld)
+      if (coupled_with_vel_p_fld.eq.1) then
         call add_source_term_field(ivarfl(isca(ii)))
       endif
       call add_source_term_prev_field(ivarfl(isca(ii)))

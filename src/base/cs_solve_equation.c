@@ -901,11 +901,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   /* Key id for buoyant field (inside the Navier Stokes loop) */
 
-  const int key_is_buoyant = cs_field_key_id_try("is_buoyant");
-  const int is_buoyant_fld = cs_field_get_key_int(f, key_is_buoyant);
+  const int key_coupled_with_vel_p = cs_field_key_id_try("coupled_with_vel_p");
+  const int coupled_with_vel_p_fld = cs_field_get_key_int(f, key_coupled_with_vel_p);
 
-  if (   (is_buoyant_fld == 1 && iterns == -1)
-      || (is_buoyant_fld == 0 && iterns != -1)) {
+  if (   (coupled_with_vel_p_fld == 1 && iterns == -1)
+      || (coupled_with_vel_p_fld == 0 && iterns != -1)) {
     return;
   }
 
@@ -1868,11 +1868,11 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* If the vector is buoyant, it is inside the Navier Stokes loop, and
      so iterns >=1; otherwise it is outside of the loop and iterns = -1. */
 
-  const int key_is_buoyant = cs_field_key_id_try("is_buoyant");
-  const int is_buoyant_fld = cs_field_get_key_int(f, key_is_buoyant);
+  const int key_coupled_with_vel_p = cs_field_key_id_try("coupled_with_vel_p");
+  const int coupled_with_vel_p_fld = cs_field_get_key_int(f, key_coupled_with_vel_p);
 
-  if (   (is_buoyant_fld == 1 && iterns == -1)
-      || (is_buoyant_fld == 0 && iterns != -1)) {
+  if (   (coupled_with_vel_p_fld == 1 && iterns == -1)
+      || (coupled_with_vel_p_fld == 0 && iterns != -1)) {
     return;
   }
 

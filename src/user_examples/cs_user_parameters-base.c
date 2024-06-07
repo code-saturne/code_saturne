@@ -1421,16 +1421,16 @@ cs_user_parameters(cs_domain_t *domain)
    * included in the velocity pressure inner loop  */
   /*----------------------------------------------*/
 
-  /*! [param_var_is_buoyant] */
+  /*! [param_var_coupled_with_vel_p] */
   {
     /* retrieve scalar field by its name */
     cs_field_t *sca1 = cs_field_by_name("scalar1");
 
-    int key_is_buoyant = cs_field_key_id("is_buoyant");
+    int key_coupled_with_vel_p = cs_field_key_id("coupled_with_vel_p");
 
-    cs_field_set_key_int(sca1, key_is_buoyant, 1);
+    cs_field_set_key_int(sca1, key_coupled_with_vel_p, 1);
   }
-  /*! [param_var_is_buoyant] */
+  /*! [param_var_coupled_with_vel_p] */
 
   /* Example: Scalar with a drift (key work "drift_scalar_model">0)
               or without drift

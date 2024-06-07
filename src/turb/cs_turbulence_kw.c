@@ -736,7 +736,7 @@ cs_turbulence_kw(int              phase_id,
                                1,    /* inc */
                                grad);
 
-      /* FIXME make it dependant on the scalar and use is_buoyant field */
+      /* FIXME make it dependant on the scalar and use coupled_with_vel_p field */
       cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
 
       /* - Beta grad(T) . g / Pr_T */
