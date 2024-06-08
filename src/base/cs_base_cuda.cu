@@ -83,6 +83,11 @@ int  cs_glob_cuda_n_mp = -1;
 static int            _cs_glob_cuda_n_streams = -1;
 static cudaStream_t  *_cs_glob_cuda_streams = nullptr;
 
+/* Allow graphs for kernel launches ? May interfere with profiling (nsys),
+   so can be deactivated. */
+
+bool cs_glob_cuda_allow_graph = false;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -740,6 +745,14 @@ cs_base_cuda_select_default_device(void)
     =   prop.multiProcessorCount
       * (prop.maxThreadsPerMultiProcessor / prop.maxThreadsPerBlock);
   cs_glob_cuda_n_mp = prop.multiProcessorCount;
+
+  /* Finally, determine whether we may use graphs for some kernel launches. */
+
+  const char s[] = "CS_CUDA_ALLOW_GRAPH";
+  if (getenv(s) != NULL) {
+    int i = atoi(getenv(s));
+    cs_glob_cuda_allow_graph = (i <= 0) ? false : true;
+  }
 
   return device_id;
 }

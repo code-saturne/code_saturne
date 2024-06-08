@@ -83,14 +83,6 @@ namespace cg = cooperative_groups;
 #define CS_SIMD_SIZE(s) (((s-1)/32+1)*32)
 #define CS_BLOCKSIZE 256
 
-/* Use graph capture ? */
-
-#if (CUDART_VERSION > 9020)
-#define _USE_GRAPH 1
-#else
-#define _USE_GRAPH 0
-#endif
-
 /*----------------------------------------------------------------------------
  * Compatibility macro for __ldg (load from generic memory) intrinsic,
  * forcing load from read-only texture cache.
@@ -1328,34 +1320,33 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
                     cudaMemcpyDeviceToDevice, stream);
 
-#if _USE_GRAPH == 1
-
-  /* Build graph for a portion of kernels used here. */
-
   cudaGraph_t graph;
   cudaGraphExec_t graph_exec = NULL;
-  cudaGraphNode_t graph_node;
-  cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
-  /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+  /* Capture graph for a portion of kernels used here. */
 
-  if (convergence->precision > 0. || c->plot != NULL) {
-    _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
-      (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-    cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-      (gridsize, sum_block, res);
+  if (cs_glob_cuda_allow_graph) {
+    cudaGraphNode_t graph_node;
+    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+
+    if (convergence->precision > 0. || c->plot != NULL) {
+      _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
+      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+        (gridsize, sum_block, res);
+    }
+    else {
+      _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, rhs, vx, rk);
+    }
+
+    cudaStreamEndCapture(stream, &graph);
+    cudaError_t status = cudaGraphInstantiate(&graph_exec, graph, &graph_node,
+                                              nullptr, 0);
+    assert(status == cudaSuccess);
   }
-  else {
-    _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
-      (n_rows, ad_inv, rhs, vx, rk);
-  }
-
-  cudaStreamEndCapture(stream, &graph);
-  cudaError_t status = cudaGraphInstantiate(&graph_exec, graph, &graph_node,
-                                            nullptr, 0);
-  assert(status == cudaSuccess);
-
-#endif /* _USE_GRAPH == 1 */
 
   /* Current iteration
      ----------------- */
@@ -1369,25 +1360,22 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, rk, vx);
 
-#if _USE_GRAPH == 1
-
-    cudaGraphLaunch(graph_exec, stream);
-
-#else
-
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
-    if (convergence->precision > 0. || c->plot != NULL) {
-      _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-        (gridsize, sum_block, res);
-    }
-    else
-      _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_rows, ad_inv, rhs, vx, rk);
+    if (cs_glob_cuda_allow_graph)
+      cudaGraphLaunch(graph_exec, stream);
 
-#endif /* _USE_GRAPH */
+    else {
+      if (convergence->precision > 0. || c->plot != NULL) {
+        _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
+          (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
+        cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+          (gridsize, sum_block, res);
+      }
+      else
+        _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
+          (n_rows, ad_inv, rhs, vx, rk);
+    }
 
     if (convergence->precision > 0. || c->plot != NULL) {
       _sync_reduction_sum(c, stream, 1, res);
@@ -1403,12 +1391,10 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   }
 
-#if _USE_GRAPH == 1
-
-  cudaGraphDestroy(graph);
-  cudaGraphExecDestroy(graph_exec);
-
-#endif
+  if (cs_glob_cuda_allow_graph) {
+    cudaGraphDestroy(graph);
+    cudaGraphExecDestroy(graph_exec);
+  }
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);
@@ -1566,55 +1552,14 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
                     cudaMemcpyDeviceToDevice, stream);
 
-#if _USE_GRAPH == 1
-
-  /* Build graph for a portion of kernels used here. */
-
   cudaGraph_t graph;
   cudaGraphExec_t graph_exec = NULL;
-  cudaGraphNode_t graph_node;
-  cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
-  /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+  /* Capture graph for a portion of kernels used here. */
 
-  if (diag_block_size == 3)
-    _block_3_jacobi_compute_vx_and_residual
-      <blocksize><<<gridsize, blocksize, 0, stream>>>
-      (n_b_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-  else
-    _block_jacobi_compute_vx_and_residual
-      <blocksize><<<gridsize, blocksize, 0, stream>>>
-      (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
-
-  if (convergence->precision > 0. || c->plot != NULL) {
-    cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-      (gridsize, sum_block, res);
-  }
-
-  cudaStreamEndCapture(stream, &graph);
-  cudaError_t status = cudaGraphInstantiate(&graph_exec, graph, &graph_node,
-                                            nullptr, 0);
-  assert(status == cudaSuccess);
-
-#endif /* _USE_GRAPH == 1 */
-
-  /* Current iteration
-     ----------------- */
-
-  while (cvg == CS_SLES_ITERATING) {
-
-    n_iter += 1;
-
-    /* SpmV done outside of graph capture as halo synchronization
-       currently synchonizes separate streams and may not be captured. */
-
-    cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, rk, vx);
-
-#if _USE_GRAPH == 1
-
-    cudaGraphLaunch(graph_exec, stream);
-
-#else
+  if (cs_glob_cuda_allow_graph) {
+    cudaGraphNode_t graph_node;
+    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
@@ -1632,7 +1577,44 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
         (gridsize, sum_block, res);
     }
 
-#endif /* _USE_GRAPH */
+    cudaStreamEndCapture(stream, &graph);
+    cudaError_t status = cudaGraphInstantiate(&graph_exec, graph, &graph_node,
+                                              nullptr, 0);
+    assert(status == cudaSuccess);
+  }
+
+  /* Current iteration
+     ----------------- */
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    n_iter += 1;
+
+    /* SpmV done outside of graph capture as halo synchronization
+       currently synchonizes separate streams and may not be captured. */
+
+    cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, rk, vx);
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+
+    if (cs_glob_cuda_allow_graph)
+      cudaGraphLaunch(graph_exec, stream);
+
+    else {
+      if (diag_block_size == 3)
+        _block_3_jacobi_compute_vx_and_residual
+          <blocksize><<<gridsize, blocksize, 0, stream>>>
+          (n_b_rows, ad_inv, ad, rhs, vx, rk, sum_block);
+      else
+        _block_jacobi_compute_vx_and_residual
+          <blocksize><<<gridsize, blocksize, 0, stream>>>
+          (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
+
+      if (convergence->precision > 0. || c->plot != NULL) {
+        cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+          (gridsize, sum_block, res);
+      }
+    }
 
     if (convergence->precision > 0. || c->plot != NULL) {
       _sync_reduction_sum(c, stream, 1, res);
@@ -1648,12 +1630,10 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   }
 
-#if _USE_GRAPH == 1
-
-  cudaGraphDestroy(graph);
-  cudaGraphExecDestroy(graph_exec);
-
-#endif
+  if (cs_glob_cuda_allow_graph) {
+    cudaGraphDestroy(graph);
+    cudaGraphExecDestroy(graph_exec);
+  }
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);

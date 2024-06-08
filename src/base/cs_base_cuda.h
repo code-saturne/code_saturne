@@ -91,6 +91,11 @@ extern int  cs_glob_cuda_max_block_size;
 extern int  cs_glob_cuda_max_blocks;
 extern int  cs_glob_cuda_n_mp;  /* Number of multiprocessors */
 
+/* Allow graphs for kernel launches ? May interfere with profiling (nsys),
+   so can be deactivated. */
+
+extern bool cs_glob_cuda_allow_graph;
+
 /*============================================================================
  * Semi-private function prototypes
  *
