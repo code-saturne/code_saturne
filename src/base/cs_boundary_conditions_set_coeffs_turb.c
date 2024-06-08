@@ -2250,7 +2250,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     const cs_real_t xnuii  = visclc / romc;
     const cs_real_t xnuit  = visctc / romc;
 
-    cs_real_t rttb;
+    cs_real_t rttb = 0;
     if (cvar_k != NULL) {
       ek = cvar_k[c_id];
       /* TODO: we could add 2*nu_T dv/dy to rnnb */
