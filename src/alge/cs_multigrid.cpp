@@ -41,6 +41,12 @@
 #include <mpi.h>
 #endif
 
+// #define PROFILE_MG_CUDA
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+#include <cuda_profiler_api.h>
+#include <nvToolsExt.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -3316,6 +3322,16 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
                       size_t                aux_size,
                       void                 *aux_vectors)
 {
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+  static int call_id = -1;
+  char nvtx_name[32];
+  call_id++;
+  if (call_id == 2) {
+    cudaProfilerStart();
+    nvtxMark("Enter multigrid cycle");
+  }
+#endif
+
   int level, coarsest_level;
   cs_timer_t t0, t1;
 
@@ -3432,6 +3448,11 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
 
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+    sprintf(nvtx_name, "Descent smoothe %d", level);
+    nvtxRangePushA(nvtx_name);
+#endif
+
     c_cvg = mg_sles->solve_func(mg_sles->context,
                                 lv_names[level*2],
                                 _matrix,
@@ -3445,6 +3466,10 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
                                 vx_lv,
                                 _aux_r_size*sizeof(cs_real_t),
                                 _aux_vectors);
+
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+    nvtxRangePop();
+#endif
 
     if (mg->plot_time_stamp > -1)
       mg->plot_time_stamp += n_iter+1;
@@ -3502,6 +3527,10 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
 
     /* Prepare for next level */
 
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+    sprintf(nvtx_name, "Restrict %d to %d", level, level +1);
+    nvtxRangePushA(nvtx_name);
+#endif
     cs_grid_restrict_row_var(ctx, f, c, wr, mgd->rhs_vx[(level+1)*2]);
 
     cs_grid_get_info(c,
@@ -3514,6 +3543,10 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
                      &n_cols_ext,
                      NULL,
                      &n_g_rows);
+
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+    nvtxRangePop();
+#endif
 
     f = c;
     _n_rows = n_rows*db_size;
@@ -3528,6 +3561,11 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
 
     /* Resolve coarsest level to convergence */
     /*---------------------------------------*/
+
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+    sprintf(nvtx_name, "Coarse solve (%d)", level);
+    nvtxRangePushA(nvtx_name);
+#endif
 
     assert(level == coarsest_level);
     assert(c == mgd->grid_hierarchy[coarsest_level]);
@@ -3580,6 +3618,9 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
     if (c_cvg < CS_SLES_BREAKDOWN)
       end_cycle = true;
 
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+    nvtxRangePop();
+#endif
   }
 
   if (end_cycle == false) {
@@ -3612,11 +3653,37 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
       t0 = cs_timer_time();
 
       cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*2 + 1];
+
+      _matrix = cs_grid_get_matrix(f);
+
+#if defined(HAVE_ACCEL)
+      cs_alloc_mode_t amode_p = amode_f;
+      amode_f = cs_matrix_get_alloc_mode(_matrix);
+      if (amode_f > CS_ALLOC_HOST) {
+        ctx.set_use_gpu(true);
+#if defined(HAVE_CUDA)
+        cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+        if (stream != 0)
+          ctx.set_cuda_stream(stream);
+#endif
+        if (amode_p == CS_ALLOC_HOST)
+          cs_prefetch_h2d(vx_lv1, _n_rows);
+      }
+#endif
+
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+      sprintf(nvtx_name, "Prolong %d to %d", level+1, level);
+      nvtxRangePushA(nvtx_name);
+#endif
+
       cs_grid_prolong_row_var(ctx,
                               c, f,
                               true,  /* increment */
                               vx_lv1, vx_lv);
 
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+      nvtxRangePop();
+#endif
       _n_rows = n_rows*db_size;
 
       t1 = cs_timer_time();
@@ -3625,16 +3692,12 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
 
       rhs_lv = (level == 0) ? rhs : mgd->rhs_vx[level*2];
 
-      _matrix = cs_grid_get_matrix(f);
-
-#if defined(HAVE_ACCEL)
-      cs_alloc_mode_t amode_p = amode_f;
-      amode_f = cs_matrix_get_alloc_mode(_matrix);
-      if (amode_p == CS_ALLOC_HOST && amode_f > CS_ALLOC_HOST)
-        cs_prefetch_h2d(vx_lv, _n_rows);
-#endif
-
       cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2 + 1]);
+
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+    sprintf(nvtx_name, "Ascent smoothe %d", level);
+    nvtxRangePushA(nvtx_name);
+#endif
 
       c_cvg = mg_sles->solve_func(mg_sles->context,
                                   lv_names[level*2+1],
@@ -3649,6 +3712,9 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
                                   vx_lv,
                                   _aux_r_size*sizeof(cs_real_t),
                                   _aux_vectors);
+#if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
+      nvtxRangePop();
+#endif
 
       t0 = cs_timer_time();
       cs_timer_counter_add_diff(&(lv_info->t_tot[3]), &t1, &t0);
@@ -3689,6 +3755,11 @@ _multigrid_v_cycle_pc(cs_multigrid_t       *mg,
 
   if (wr != aux_vectors)
     BFT_FREE(wr);
+
+  if (call_id == 2) {
+    nvtxMark("Exit multigrid cycle");
+    cudaProfilerStop();
+  }
 
   return CS_SLES_ITERATING;
 }
