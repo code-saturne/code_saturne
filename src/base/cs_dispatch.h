@@ -583,7 +583,8 @@ public:
   //! Synchronize associated stream
   void
   wait(void) {
-    cudaStreamSynchronize(stream_);
+    if (device_ > -1 && use_gpu_)
+      cudaStreamSynchronize(stream_);
   }
 
   // Get interior faces sum type associated with this context
@@ -727,7 +728,8 @@ public:
   //! Synchronize associated stream
   void
   wait(void) {
-    queue_.wait();
+    if (is_gpu == && use_gpu_)
+      queue_.wait();
   }
 
   // Get interior faces sum type associated with this context
