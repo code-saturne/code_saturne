@@ -156,7 +156,8 @@ cs_ctwr_fields_init0(void)
       bft_error(__FILE__,__LINE__, 0, _("Negative lambda or cp for liquid"));
 
     else
-      cs_field_set_key_double(yh_l_p, kvisl0, air_prop->lambda_l / air_prop->cp_l);
+      cs_field_set_key_double(yh_l_p, kvisl0,
+                              air_prop->lambda_l / air_prop->cp_l);
 
   }
 
@@ -240,7 +241,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   const cs_halo_t *halo = m->halo;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
-  cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   /* Fields necessary for humid atmosphere model */
@@ -252,8 +253,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   /* Initialize the fields - based on map */
   cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Air + rain (mixture)
                                                       density */
-  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
-
+  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val;
   cs_real_t *t_h = NULL;
   cs_real_t *t_h_a = NULL;
   cs_real_t *theta_liq = NULL;
@@ -272,8 +272,8 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   cs_real_t *x_s = cs_field_by_name("x_s")->val;
   cs_real_t *x = (cs_real_t *)CS_F_(humid)->val; /* Humidity in air (bulk) */
 
-  cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;   /* Liquid temperature */
-  cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;   /* Liquid enthalpy */
+  cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;  /* Liquid temperature */
+  cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;  /* Liquid enthalpy */
   cs_real_t *y_l_p = (cs_real_t *)CS_F_(y_l_pack)->val; /* Liquid mass per unit */
 
   /* Packing zone liquid vertical velocity component */
@@ -285,7 +285,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
   cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_ym_l_r");
 
-  cs_real_3_t *vel = CS_F_(vel)->val;
+  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
   cs_field_t *cfld_vc = cs_field_by_name_try("v_c");
   cs_real_3_t *v_c;
   if (cfld_vc != NULL)

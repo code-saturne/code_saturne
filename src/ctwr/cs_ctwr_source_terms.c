@@ -895,14 +895,6 @@ cs_ctwr_source_term(int              f_id,
           }
         }
       }
-      /* verifying if the heat transfer is activated in the lagrangian module */
-      if (cs_glob_lagr_source_terms->ltsthe == 1) {
-        for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
-          if (f_id == (CS_F_(t)->id)) {
-            cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
-          }
-        }
-      }
     }
   }
 
@@ -927,17 +919,11 @@ cs_ctwr_source_term(int              f_id,
 
     char f_name[80];
     sprintf(f_name, "v_p_%02d", class_id);
-    cs_real_3_t *cfld_drift
-      = (cs_real_3_t *)cs_field_by_name("drift_vel_ym_l_r")->val;
     /* Rain drops velocity field */
     cs_field_t *f_vp = cs_field_by_name(f_name);
 
-    /* Gravity norm */
-    cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
-
-    cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
-                           cs_glob_physical_constants->gravity[1],
-                           cs_glob_physical_constants->gravity[2]};
+    /* Gravity */
+    const cs_real_t *gravity = cs_glob_physical_constants->gravity;
 
     if (f_id == f_vp->id) {
       /* Casting implicit source term on a 3x3 symmetric matrix */
@@ -951,7 +937,7 @@ cs_ctwr_source_term(int              f_id,
       cs_real_3_t *v_c = (cs_real_3_t *)cs_field_by_name("v_c")->val;
 
       /* Bulk mixture velocity */
-      cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+      const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
       /* Rain mass fraction field */
       cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
