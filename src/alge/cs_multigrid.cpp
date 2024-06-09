@@ -366,6 +366,9 @@ static int _k_cycle_hpc_recurse_threshold = 256; /* under this size, coarsest
                                                     level solver does not
                                                     use k-cycle preconditioning */
 
+static int _grid_max_level_for_device = 1; /* grids over this level are
+                                              solved on host only */
+
 /*============================================================================
  * Private function prototypes for recursive
  *============================================================================*/
@@ -2220,11 +2223,16 @@ _setup_hierarchy(void             *context,
     if (verbosity > 2)
       bft_printf(_("\n   building level %2u grid\n"), mg->setup_data->n_levels);
 
+    cs_alloc_mode_t amode = cs_grid_get_alloc_mode(g);
+    if (mg->setup_data->n_levels > _grid_max_level_for_device)
+      amode = CS_ALLOC_HOST;
+
     if (mg->subtype == CS_MULTIGRID_BOTTOM)
-      g = cs_grid_coarsen_to_single(g, mg->merge_stride, verbosity);
+      g = cs_grid_coarsen_to_single(g, amode, mg->merge_stride, verbosity);
 
     else
       g = cs_grid_coarsen(g,
+                          amode,
                           mg->coarsening_type,
                           mg->aggregation_limit,
                           verbosity,
@@ -4293,6 +4301,18 @@ void
 cs_multigrid_finalize(void)
 {
   cs_grid_finalize();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set maximum grid level which should run on device (i.e. GPU).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_max_grid_level_for_device(int  level)
+{
+  _grid_max_level_for_device = level;
 }
 
 /*----------------------------------------------------------------------------*/

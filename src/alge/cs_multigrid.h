@@ -93,6 +93,13 @@ cs_multigrid_initialize(void);
 void
 cs_multigrid_finalize(void);
 
+/*----------------------------------------------------------------------------*
+ * Set maximum grid level which should run on device (i.e. GPU).
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_max_grid_level_for_device(int  level);
+
 /*----------------------------------------------------------------------------
  * Define and associate a multigrid sparse linear system solver
  * for a given field or equation name.

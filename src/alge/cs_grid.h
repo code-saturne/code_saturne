@@ -181,6 +181,19 @@ cs_grid_get_info(const cs_grid_t  *g,
                  cs_gnum_t        *n_g_rows);
 
 /*----------------------------------------------------------------------------
+ * Get memory allocation mode corresponding to a grid.
+ *
+ * parameters:
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   memory allocation typt
+ *----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_grid_get_alloc_mode(const cs_grid_t  *g);
+
+/*----------------------------------------------------------------------------
  * Get number of rows corresponding to a grid.
  *
  * parameters:
@@ -284,6 +297,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *
  * parameters:
  *   f                          <-- Fine grid structure
+ *   alloc_mode                 <-- Memory allocation mode
  *   coarsening_type            <-- Coarsening criteria type
  *   aggregation_limit          <-- Maximum allowed fine rows per coarse rows
  *   verbosity                  <-- Verbosity level
@@ -300,6 +314,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
 
 cs_grid_t *
 cs_grid_coarsen(const cs_grid_t      *f,
+                cs_alloc_mode_t       alloc_mode,
                 cs_grid_coarsening_t  coarsening_type,
                 int                   aggregation_limit,
                 int                   verbosity,
@@ -313,6 +328,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
  *
  * parameters:
  *   f            <-- Fine grid structure
+ *   alloc_mode   <-- Memory allocation mode
  *   merge_stride <-- Associated merge stride
  *   verbosity    <-- Verbosity level
  *
@@ -322,6 +338,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
 cs_grid_t *
 cs_grid_coarsen_to_single(const cs_grid_t  *f,
+                          cs_alloc_mode_t   alloc_mode,
                           int               merge_stride,
                           int               verbosity);
 

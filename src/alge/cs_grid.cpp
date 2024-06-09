@@ -112,6 +112,8 @@ struct _cs_grid_t {
 
   int                 level;        /* Level in multigrid hierarchy */
 
+  cs_alloc_mode_t     alloc_mode;   /* Preferred allocation mode */
+
   bool                conv_diff;    /* true if convection/diffusion case,
                                        false otherwise */
   bool                symmetric;    /* Symmetric matrix coefficients
@@ -259,8 +261,6 @@ const char *cs_grid_coarsening_type_name[]
 static int _grid_tune_max_level = 0;
 static int *_grid_tune_max_fill_level = NULL;
 static cs_matrix_variant_t **_grid_tune_variant = NULL;
-
-static int _grid_max_level_device = 1;
 
 /*============================================================================
  * Private function definitions
@@ -434,18 +434,21 @@ _create_grid(void)
  * then _coarsen must be called to complete the coarse grid.
  *
  * parameters:
- *   f <-- Pointer to fine (parent) grid structure
+ *   f          <-- Pointer to fine (parent) grid structure
+ *   alloc_mode <-- allocation mode
  *
  * returns:
  *   coarse grid structure
  *----------------------------------------------------------------------------*/
 
 static cs_grid_t *
-_coarse_init(const cs_grid_t *f)
+_coarse_init(const cs_grid_t  *f,
+             cs_alloc_mode_t   alloc_mode)
 {
   cs_grid_t *c = _create_grid();
 
   c->parent = f;
+  c->alloc_mode = alloc_mode;
 
   c->level = f->level + 1;
   c->symmetric = f->symmetric;
@@ -1189,7 +1192,10 @@ _coarsen_halo(const cs_grid_t   *f,
 
     cs_lnum_t *send_perio_lst, *perio_lst;
     BFT_MALLOC(send_perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
-    BFT_MALLOC(perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
+    CS_MALLOC_HD(perio_lst,
+                 c_halo->n_transforms*stride_n,
+                 cs_lnum_t,
+                 c->alloc_mode);
 
     for (int i = 0; i < c_halo->n_transforms; i++) {
 
@@ -1218,7 +1224,7 @@ _coarsen_halo(const cs_grid_t   *f,
     }
 
     BFT_FREE(c_halo->send_perio_lst);
-    BFT_FREE(c_halo->perio_lst);
+    CS_FREE(c_halo->perio_lst);
     c_halo->send_perio_lst = send_perio_lst;
     c_halo->perio_lst = perio_lst;
 
@@ -1342,12 +1348,14 @@ _coarsen(const cs_grid_t   *f,
  *
  * parameters:
  *   h                 <-> Pointer to halo structure
+ *   alloc_mode        <-- Memory allocation mode
  *   new_src_cell_num  <-> new list of cells the senders should provide
  *----------------------------------------------------------------------------*/
 
 static void
-_rebuild_halo_send_lists(cs_halo_t  *h,
-                         cs_lnum_t   new_src_cell_id[])
+_rebuild_halo_send_lists(cs_halo_t        *h,
+                         cs_alloc_mode_t   alloc_mode,
+                         cs_lnum_t         new_src_cell_id[])
 {
   cs_lnum_t start, length;
 
@@ -1434,7 +1442,7 @@ _rebuild_halo_send_lists(cs_halo_t  *h,
   h->n_send_elts[1] = h->n_send_elts[0];
 
   CS_MALLOC_HD(h->send_list, h->n_send_elts[0], cs_lnum_t,
-               cs_check_device_ptr(h->send_index));
+               alloc_mode);
 
   /* Receive data from distant ranks */
 
@@ -1973,7 +1981,7 @@ _append_halos(cs_grid_t   *g,
                      new_src_cell_id,
                      new_halo_cell_id);
 
-    _rebuild_halo_send_lists(h, new_src_cell_id);
+    _rebuild_halo_send_lists(h, g->alloc_mode, new_src_cell_id);
 
   }
 
@@ -4689,7 +4697,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Diagonal elements
      ----------------- */
 
-  BFT_MALLOC(c_d_val, c_n_rows*db_stride, cs_real_t);
+  CS_MALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, coarse_grid->alloc_mode);
 
   for (cs_lnum_t i = 0; i < c_n_rows*db_stride; i++)
     c_d_val[i] = 0.0;
@@ -4720,7 +4728,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Extradiagonal elements
      ---------------------- */
 
-  BFT_MALLOC(c_row_index, c_n_rows+1, cs_lnum_t);
+  CS_MALLOC_HD(c_row_index, c_n_rows+1, cs_lnum_t, coarse_grid->alloc_mode);
 
   /* Prepare to traverse fine rows by increasing associated coarse row */
 
@@ -4803,8 +4811,8 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 
   cs_lnum_t c_size = c_row_index[c_n_rows];
 
-  BFT_MALLOC(c_x_val, c_size*eb_stride, cs_real_t);
-  BFT_MALLOC(c_col_id, c_size, cs_lnum_t);
+  CS_MALLOC_HD(c_x_val, c_size*eb_stride, cs_real_t, coarse_grid->alloc_mode);
+  CS_MALLOC_HD(c_col_id, c_size, cs_lnum_t, coarse_grid->alloc_mode);
 
   /* Assignment pass */
 
@@ -4943,7 +4951,8 @@ _native_from_msr(cs_grid_t  *g)
                            &x_val);
 
   {
-    BFT_REALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
+    CS_FREE(g->_da);
+    BFT_MALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
     g->da = g->_da;
 
     for (cs_lnum_t i = 0; i < n_rows; i++) {
@@ -5014,6 +5023,7 @@ _msr_from_native(cs_grid_t  *g)
                                                 NULL);
 
   g->_matrix = cs_matrix_create(g->matrix_struct);
+  cs_matrix_set_alloc_mode(g->_matrix, g->alloc_mode);
 
   cs_matrix_set_coefficients(g->_matrix,
                              g->symmetric,
@@ -5082,6 +5092,8 @@ _build_coarse_matrix_null(cs_grid_t         *c,
 
   c->_matrix = cs_matrix_create(c->matrix_struct);
   c->matrix = c->_matrix;
+
+  cs_matrix_set_alloc_mode(c->_matrix, c->alloc_mode);
 
   cs_matrix_set_coefficients(c->_matrix,
                              c->symmetric,
@@ -5179,6 +5191,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 
   g = _create_grid();
 
+  g->alloc_mode = cs_matrix_get_alloc_mode(a);
   g->level = 0;
   g->conv_diff = conv_diff;
   g->symmetric = cs_matrix_is_symmetric(a);
@@ -5518,6 +5531,24 @@ cs_grid_get_info(const cs_grid_t  *g,
 }
 
 /*----------------------------------------------------------------------------
+ * Get memory allocation mode corresponding to a grid.
+ *
+ * parameters:
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   memory allocation typt
+ *----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_grid_get_alloc_mode(const cs_grid_t  *g)
+{
+  assert(g != NULL);
+
+  return g->alloc_mode;
+}
+
+/*----------------------------------------------------------------------------
  * Get number of rows corresponding to a grid.
  *
  * parameters:
@@ -5673,6 +5704,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *
  * parameters:
  *   f                          <-- Fine grid structure
+ *   alloc_mode                 <-- Memory allocation mode
  *   coarsening_type            <-- Coarsening criteria type
  *   aggregation_limit          <-- Maximum allowed fine rows per coarse rows
  *   verbosity                  <-- Verbosity level
@@ -5689,6 +5721,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
 
 cs_grid_t *
 cs_grid_coarsen(const cs_grid_t      *f,
+                cs_alloc_mode_t       alloc_mode,
                 cs_grid_coarsening_t  coarsening_type,
                 int                   aggregation_limit,
                 int                   verbosity,
@@ -5721,7 +5754,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   /* Initialization */
 
-  c = _coarse_init(f);
+  c = _coarse_init(f, alloc_mode);
 
   if (f->symmetric == true)
     isym = 1;
@@ -5921,8 +5954,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     c->_matrix = cs_matrix_create(c->matrix_struct);
 
-    if (c->level > _grid_max_level_device)
-      cs_matrix_set_alloc_mode(c->_matrix, CS_ALLOC_HOST);
+    cs_matrix_set_alloc_mode(c->_matrix, c->alloc_mode);
 
     cs_matrix_set_coefficients(c->_matrix,
                                c->symmetric,
@@ -5993,6 +6025,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     /* Build coarser grid from coarse grid */
     cs_grid_t *cc = cs_grid_coarsen(c,
+                                    c->alloc_mode,
                                     coarsening_type,
                                     aggregation_limit / recurse,
                                     verbosity,
@@ -6058,6 +6091,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
  *
  * parameters:
  *   f            <-- Fine grid structure
+ *   alloc_mode   <-- Memory allocation mode
  *   merge_stride <-- Associated merge stride
  *   verbosity    <-- Verbosity level
  *
@@ -6067,6 +6101,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
 cs_grid_t *
 cs_grid_coarsen_to_single(const cs_grid_t  *f,
+                          cs_alloc_mode_t   alloc_mode,
                           int               merge_stride,
                           int               verbosity)
 {
@@ -6089,7 +6124,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 
   /* Initialization */
 
-  c = _coarse_init(f);
+  c = _coarse_init(f, alloc_mode);
 
   if (f->symmetric == true)
     isym = 1;
@@ -6354,7 +6389,8 @@ cs_grid_project_var(const cs_grid_t  *g,
       n_max_rows = _g->n_rows;
   }
 
-  BFT_MALLOC(tmp_var_1, n_max_rows*db_size, cs_real_t);
+  cs_alloc_mode_t amode = cs_check_device_ptr(f_var);
+  CS_MALLOC_HD(tmp_var_1, n_max_rows*db_size, cs_real_t, amode);
   memcpy(tmp_var_1, c_var, g->n_rows*db_size*sizeof(cs_real_t));
 
   /* Project to finer levels */
@@ -6362,11 +6398,12 @@ cs_grid_project_var(const cs_grid_t  *g,
   if (g->level > 0) {
 
     cs_dispatch_context ctx;
-    ctx.set_use_gpu(false);
+    if (amode == CS_ALLOC_HOST)
+      ctx.set_use_gpu(false);
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_var_2, n_max_rows*db_size, cs_real_t);
+    CS_MALLOC_HD(tmp_var_2, n_max_rows*db_size, cs_real_t, amode);
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
