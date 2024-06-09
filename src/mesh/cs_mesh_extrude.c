@@ -796,7 +796,7 @@ _add_extruded_vertices(cs_mesh_t          *m,
       const cs_real_t *s_coo = m->vtx_coord + 3*v_id;
       const cs_lnum_t s_id = v_shift[i];
       cs_real_t *d_coo = m->vtx_coord + (n_vertices_ini + s_id)*3;
-      cs_real_t d_f = 1./n_layers_ini[i];
+      cs_real_t d_f = n_layers_ini[i] > 0 ? 1./n_layers_ini[i] : 0.;
       for (cs_lnum_t j = 0; j < n_layers[i]; j++) {
         for (cs_lnum_t k = 0; k < 3; k++)
           d_coo[j*3 + k] = s_coo[k] + d_f*(j+1)*coord_shift[i][k];
