@@ -4737,6 +4737,9 @@ cs_matrix_destroy(cs_matrix_t **matrix)
   if (m == NULL)
     return;
 
+  if (m->destroy_adaptor != NULL)
+    m->destroy_adaptor(m);
+
   m->destroy_coefficients(m);
 
   if (m->_structure != NULL) {
