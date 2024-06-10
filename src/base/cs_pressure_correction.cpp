@@ -549,17 +549,17 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *dam, *xam, *rhs, *res;
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
   BFT_MALLOC(xam, m->n_i_faces, cs_real_t);
-  BFT_MALLOC(res, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(res, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t *phia, *iflux, *bflux, *dphi;
   CS_MALLOC_HD(phia, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(iflux, m->n_i_faces, cs_real_t);
-  BFT_MALLOC(bflux, m->n_b_faces, cs_real_t);
+  CS_MALLOC_HD(iflux, m->n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bflux, m->n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dphi, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_3_t *wrk;
-  BFT_MALLOC(wrk, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(wrk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
   cs_real_3_t *wrk2;
   BFT_MALLOC(wrk2, n_cells_ext, cs_real_3_t);
 
@@ -600,7 +600,7 @@ _pressure_correction_fv(int                   iterns,
   if (f_divu != NULL)
     cpro_divu = f_divu->val;
   else {
-    BFT_MALLOC(_cpro_divu, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(_cpro_divu, n_cells_ext, cs_real_t, cs_alloc_mode);
     cpro_divu = _cpro_divu;
   }
 
@@ -1302,7 +1302,7 @@ _pressure_correction_fv(int                   iterns,
                  inc,
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_p->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
@@ -1666,7 +1666,7 @@ _pressure_correction_fv(int                   iterns,
                  1,  /* inc */
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_p->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
@@ -1712,7 +1712,7 @@ _pressure_correction_fv(int                   iterns,
                  1,  /* inc */
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_p->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
@@ -1786,7 +1786,7 @@ _pressure_correction_fv(int                   iterns,
         cs_real_t *bmasfla
           = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val_pre;
         cs_real_t *divu_prev;
-        BFT_MALLOC(divu_prev, n_cells_ext, cs_real_t);
+        CS_MALLOC_HD(divu_prev, n_cells_ext, cs_real_t, cs_alloc_mode);
 
         cs_divergence(m, 1, imasfla, bmasfla, divu_prev);
 
@@ -1796,7 +1796,7 @@ _pressure_correction_fv(int                   iterns,
           cpro_divu[c_id] +=  (1. + theta) *drom *cell_f_vol[c_id] /dt[c_id]
             + theta *divu_prev[c_id];
         }
-        BFT_FREE(divu_prev);
+        CS_FREE_HD(divu_prev);
       }
       else {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1873,7 +1873,7 @@ _pressure_correction_fv(int                   iterns,
                  1,  /* inc */
                  eqp_p->imrgra,
                  1,  /* nswrgu (to save time, no space reconstruction */
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_p->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
@@ -1885,8 +1885,8 @@ _pressure_correction_fv(int                   iterns,
     cs_divergence(m, 1, iflux, bflux, res);
   }
 
-  BFT_FREE(iflux);
-  BFT_FREE(bflux);
+  CS_FREE_HD(iflux);
+  CS_FREE_HD(bflux);
 
   /* Weakly compressible algorithm: semi analytic scheme */
   if (idilat >= 4) {
@@ -2636,7 +2636,7 @@ _pressure_correction_fv(int                   iterns,
                  1,  /* inc */
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_p->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
@@ -2997,10 +2997,10 @@ _pressure_correction_fv(int                   iterns,
   BFT_FREE(taui);
   BFT_FREE(taub);
   BFT_FREE(wrk2);
-  BFT_FREE(wrk);
-  BFT_FREE(res);
   CS_FREE_HD(phia);
-  BFT_FREE(_cpro_divu);
+  CS_FREE_HD(wrk);
+  CS_FREE_HD(res);
+  CS_FREE_HD(_cpro_divu);
   BFT_FREE(gradp);
   BFT_FREE(rovsdt);
   BFT_FREE(weighf);
@@ -3159,7 +3159,7 @@ _pressure_correction_cdo(cs_real_t              vel[restrict][3],
                  inc,
                  eqp_u->imrgra,
                  eqp_u->nswrgr,
-                 eqp_u->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
                  eqp_p->verbosity,
                  eqp_u->epsrgr,
                  eqp_u->climgr,
