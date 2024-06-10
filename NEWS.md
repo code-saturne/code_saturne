@@ -1682,7 +1682,7 @@ Physical modelling:
 
 - Atmospheric model: add new BCs for open-boundary flow such as atmospheric
   flows. It consists in changing the solved pressure. This change result
-  in adding a (constant over space) momentum source terme. This momentum
+  in adding a (constant over space) momentum source term. This momentum
   source term is designed to reach a target bulk momentum.
   The solved pressure has a zero Dirichlet as BC in case of constant
   density. In case of dry atmosphere, an hydrostatic pressure is

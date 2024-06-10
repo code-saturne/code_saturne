@@ -110,17 +110,17 @@ BEGIN_C_DECLS
   \var  cs_thermal_model_t::itpscl
         \deprecated alias/old name for temperature_scale
   \var  cs_thermal_model_t::has_kinetic_st
-        Take kinetic source terme in energy equation into account
+        Take kinetic source term in energy equation into account
         (see Amino, Flageul, Carissimo, Tiselj, Benhamadouche, Ferrand 2022)
         - 0 (default)
         - 1
   \var  cs_thermal_model_t::cflt
-        Take kinetic source terme in energy equation into account
+        Take kinetic source term in energy equation into account
         (see Amino, Flageul, Carissimo, Tiselj, Benhamadouche, Ferrand 2022)
         - false (default)
         - true
   \var  cs_thermal_model_t::cflp
-        Take kinetic source terme in energy equation into account
+        Take kinetic source term in energy equation into account
         (see Amino, Flageul, Carissimo, Tiselj, Benhamadouche, Ferrand 2022)
         - false (default)
         - true
