@@ -3056,14 +3056,14 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 
   CS_FREE_HD(mq->dijpf);
   CS_FREE_HD(mq->diipb);
-  BFT_FREE(mq->dofij);
+  CS_FREE_HD(mq->dofij);
   CS_FREE_HD(mq->diipf);
   CS_FREE_HD(mq->djjpf);
 
   BFT_FREE(mq->corr_grad_lin_det);
-  BFT_FREE(mq->corr_grad_lin);
-  BFT_FREE(mq->b_sym_flag);
-  BFT_FREE(mq->c_disable_flag);
+  CS_FREE_HD(mq->corr_grad_lin);
+  CS_FREE_HD(mq->b_sym_flag);
+  CS_FREE_HD(mq->c_disable_flag);
   BFT_FREE(mq->bad_cell_flag);
 }
 
@@ -4577,9 +4577,10 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   }
 
   if (mq->b_sym_flag == NULL) {
-    BFT_MALLOC(mq->b_sym_flag, n_b_faces, int);
+    CS_MALLOC_HD(mq->b_sym_flag, n_b_faces, int, amode);
     for (cs_lnum_t i = 0; i < n_b_faces; i++)
       mq->b_sym_flag[i] = 1;
+    cs_mem_advise_set_read_mostly(mq->b_sym_flag);
   }
 
   /* Compute some distances relative to faces and associated weighting */
