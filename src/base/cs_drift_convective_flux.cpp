@@ -607,7 +607,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                    1, /* inc */
                    eqp_sc->imrgra,
                    eqp_sc->nswrgr,
-                   eqp_sc->imligr,
+                   static_cast<cs_gradient_limit_t>(eqp_sc->imligr),
                    eqp_sc->verbosity,
                    eqp_sc->epsrgr,
                    eqp_sc->climgr,

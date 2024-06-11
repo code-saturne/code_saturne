@@ -236,7 +236,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                  1,       /* inc */
                  eqp_vel->imrgra,
                  eqp_vel->nswrgr,
-                 eqp_vel->imligr,
+                 (cs_gradient_limit_t)(eqp_vel->imligr),
                  eqp_vel->verbosity,
                  eqp_vel->epsrgr,
                  eqp_vel->climgr,
@@ -429,7 +429,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                0,       /* inc */
                eqp_p->imrgra,
                0,       /* nswrgp */
-               eqp_p->imligr,
+               (cs_gradient_limit_t)(eqp_p->imligr),
                eqp_p->verbosity,
                eqp_p->epsrgr,
                eqp_p->climgr,
@@ -452,7 +452,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                1,       /* inc */
                eqp_p->imrgra,
                0,       /* nswrgp */
-               eqp_p->imligr,
+               (cs_gradient_limit_t)(eqp_p->imligr),
                eqp_p->verbosity,
                eqp_p->epsrgr,
                eqp_p->climgr,
