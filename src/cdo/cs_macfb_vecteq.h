@@ -73,51 +73,6 @@ typedef struct _cs_macfb_t cs_macfb_vecteq_t;
  * Static inline public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the source term for a vector-valued MAC scheme
- *         and add it to the local rhs
- *         Mass matrix is optional. It can be set to NULL.
- *
- * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
- * \param[in]      macb        pointer to a cs_macfb_builder_t structure
- * \param[in]      t_eval      time at which the source term is evaluated
- * \param[in, out] cb          pointer to a \ref cs_cell_builder_t structure
- * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] csys        pointer to a \ref cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_macfb_vecteq_sourceterm(const cs_cell_mesh_t      *cm,
-                           const cs_equation_param_t *eqp,
-                           cs_macfb_builder_t        *macb,
-                           const cs_real_t            t_eval,
-                           cs_cell_builder_t         *cb,
-                           cs_equation_builder_t     *eqb,
-                           cs_cell_sys_t             *csys)
-{
-
-  /* Reset the local contribution */
-
-  memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
-
-  cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                  (cs_xdef_t *const *)eqp->source_terms,
-                                  cm,
-                                  eqb->source_mask,
-                                  eqb->compute_source,
-                                  t_eval,
-                                  macb,
-                                  cb,
-                                  csys->source);
-
-  for (short int f = 0; f < cm->n_fc; f++) {
-    csys->rhs[f] += csys->source[f];
-  }
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -267,6 +222,59 @@ void cs_macfb_vecteq_setup(cs_real_t                  t_eval,
                            const cs_mesh_t           *mesh,
                            const cs_equation_param_t *eqp,
                            cs_equation_builder_t     *eqb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize stuctures for a gven cell
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      eqb          pointer to a cs_equation_builder_t structure
+ * \param[in]      c_id         cell id
+ * \param[in]      vel_f_n      velocity face DoFs of the previous time step
+ * \param[in, out] cm           pointer to a cellwise view of the mesh
+ * \param[in, out] macb         pointer to a cs_macfb_builder_t structure
+ * \param[in, out] csys         pointer to a cellwise view of the system
+ * \param[in, out] cb           pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_macfb_vecteq_init_build(const cs_cdo_connect_t      *connect,
+                                const cs_cdo_quantities_t   *quant,
+                                const cs_equation_param_t   *eqp,
+                                const cs_equation_builder_t *eqb,
+                                const cs_lnum_t              c_id,
+                                const cs_real_t              vel_f_n[],
+                                cs_cell_mesh_t              *cm,
+                                cs_macfb_builder_t          *macb,
+                                cs_cell_sys_t               *csys,
+                                cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the source term for a vector-valued MAC scheme
+ *         and add it to the local rhs
+ *
+ * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      macb        pointer to a cs_macfb_builder_t structure
+ * \param[in]      t_eval      time at which the source term is evaluated
+ * \param[in]      coef        scaling of the time source (for theta schemes)
+ * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] cb          pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a \ref cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_macfb_vecteq_sourceterm(const cs_cell_mesh_t      *cm,
+                                const cs_equation_param_t *eqp,
+                                cs_macfb_builder_t        *macb,
+                                const cs_real_t            t_eval,
+                                const cs_real_t            coef,
+                                cs_equation_builder_t     *eqb,
+                                cs_cell_builder_t         *cb,
+                                cs_cell_sys_t             *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

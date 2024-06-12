@@ -2701,10 +2701,16 @@ cs_equation_set_functions(void)
           break;
 
         case CS_TIME_SCHEME_EULER_IMPLICIT:
+          eq->solve = cs_macfb_vecteq_solve_implicit;
+          break;
+
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_macfb_vecteq_solve_theta;
+          break;
+
         case CS_TIME_SCHEME_BDF2:
-          eq->solve = NULL; /* cs_cdofb_vecteq_solve_bdf2 */
+          eq->solve = NULL; /* cs_macfb_vecteq_solve_bdf2 */
           bft_error(__FILE__,
                     __LINE__,
                     0,

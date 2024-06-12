@@ -145,7 +145,7 @@ void *cs_macfb_monolithic_free_scheme_context(void *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
+ * \brief  Solve the steady Navier-Stokes system with a MAC face-based scheme
  *         using a monolithic approach.
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
@@ -160,7 +160,7 @@ void cs_macfb_monolithic_steady(const cs_mesh_t         *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
+ * \brief  Solve the steady Navier-Stokes system with a MAC face-based scheme
  *         using a monolithic approach and Picard iterations to solve the
  *         non-linearities arising from the advection term
  *
@@ -176,7 +176,7 @@ void cs_macfb_monolithic_steady_nl(const cs_mesh_t         *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ * \brief  Solve the unsteady Navier-Stokes system with a MAC face-based scheme
  *         using a monolithic approach.
  *         According to the settings, this function can handle either an
  *         implicit Euler time scheme or more generally a theta time scheme.
@@ -193,7 +193,7 @@ void cs_macfb_monolithic(const cs_mesh_t         *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ * \brief  Solve the unsteady Navier-Stokes system with a MAC face-based scheme
  *         using a monolithic approach.
  *         According to the settings, this function can handle either an
  *         implicit Euler time scheme or more generally a theta time scheme.

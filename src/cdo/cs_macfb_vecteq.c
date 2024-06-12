@@ -366,6 +366,121 @@ cs_macfb_vecteq_init_cell_system(const cs_cell_mesh_t        *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize stuctures for a gven cell
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      eqb          pointer to a cs_equation_builder_t structure
+ * \param[in]      c_id         cell id
+ * \param[in]      vel_f_n      velocity face DoFs of the previous time step
+ * \param[in, out] cm           pointer to a cellwise view of the mesh
+ * \param[in, out] macb         pointer to a cs_macfb_builder_t structure
+ * \param[in, out] csys         pointer to a cellwise view of the system
+ * \param[in, out] cb           pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_macfb_vecteq_init_build(const cs_cdo_connect_t      *connect,
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_equation_param_t   *eqp,
+                           const cs_equation_builder_t *eqb,
+                           const cs_lnum_t              c_id,
+                           const cs_real_t              vel_f_n[],
+                           cs_cell_mesh_t              *cm,
+                           cs_macfb_builder_t          *macb,
+                           cs_cell_sys_t               *csys,
+                           cs_cell_builder_t           *cb)
+{
+
+  /* Set the current cell flag */
+
+  cb->cell_flag = connect->cell_flag[c_id];
+
+  /* Set the local mesh structure for the current cell */
+
+  cs_cell_mesh_build(c_id,
+                     cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
+                     connect,
+                     quant,
+                     cm);
+
+  /* Set the local builder structure for the current cell */
+
+  cs_macfb_builder_cellwise_setup(cm, connect, quant, macb);
+
+  /* For the problem, the global system writes:
+   *
+   *     |        |         |
+   *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
+   *     |        |         |  A is csys->mat in what follows
+   *     |--------|---------|  The viscous part arising from the MAC-Fb
+   *     |        |         |  schemes for vector-valued variables and
+   *     |   B    |    0    |  additional terms as the linearized
+   *     |        |         |  convective term
+   *
+   * Set the local (i.e. cellwise) structures for the current cell
+   */
+
+  cs_macfb_vecteq_init_cell_system(cm,
+                                   eqp,
+                                   eqb,
+                                   vel_f_n,
+                                   NULL, /* no n-1 state is given */
+                                   macb,
+                                   csys,
+                                   cb);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the source term for a vector-valued MAC scheme
+ *         and add it to the local rhs
+ *
+ * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      macb        pointer to a cs_macfb_builder_t structure
+ * \param[in]      t_eval      time at which the source term is evaluated
+ * \param[in]      coef        scaling of the time source (for theta schemes)
+ * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] cb          pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a \ref cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_macfb_vecteq_sourceterm(const cs_cell_mesh_t      *cm,
+                           const cs_equation_param_t *eqp,
+                           cs_macfb_builder_t        *macb,
+                           const cs_real_t            t_eval,
+                           const cs_real_t            coef,
+                           cs_equation_builder_t     *eqb,
+                           cs_cell_builder_t         *cb,
+                           cs_cell_sys_t             *csys)
+{
+
+  /* Reset the local contribution */
+
+  memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
+
+  cs_source_term_compute_cellwise(eqp->n_source_terms,
+                                  (cs_xdef_t *const *)eqp->source_terms,
+                                  cm,
+                                  eqb->source_mask,
+                                  eqb->compute_source,
+                                  t_eval,
+                                  (void *)macb,
+                                  cb,
+                                  csys->source);
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    csys->rhs[f] += coef * csys->source[f];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build the local matrices arising from the diffusion term in the
  *          vector-valued CDO-Fb schemes.
  *
@@ -649,41 +764,17 @@ cs_macfb_vecteq_solve_steady_state(bool                       cur2prev,
 #pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      /* Set the current cell flag */
+      /* 1- Initialize structures */
 
-      cb->cell_flag = connect->cell_flag[c_id];
-
-      /* Set the local mesh structure for the current cell */
-
-      cs_cell_mesh_build(c_id,
-                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect,
-                         quant,
-                         cm);
-
-      /* Set the local builder structure for the current cell */
-
-      cs_macfb_builder_cellwise_setup(cm, connect, quant, macb);
-
-      /* Set the local (i.e. cellwise) structures for the current cell */
-
-      cs_macfb_vecteq_init_cell_system(cm,
-                                       eqp,
-                                       eqb,
-                                       eqc->face_values,
-                                       NULL, /* no n-1 state is given */
-                                       macb,
-                                       csys,
-                                       cb);
-
-      /* Build and add the diffusion/advection/reaction terms to the local
-         system. Mass matrix is computed inside if needed during the building */
+      cs_macfb_vecteq_init_build(
+        connect, quant, eqp, eqb, c_id, eqc->face_values, cm, macb, csys, cb);
 
       cs_macfb_vecteq_conv_diff_reac(
         eqp, eqb, eqc, cm, macb, diff_hodge->pty_data, csys, cb);
 
       if (cs_equation_param_has_sourceterm(eqp)) /* SOURCE TERM */
-        cs_macfb_vecteq_sourceterm(cm, eqp, macb, time_eval, cb, eqb, csys);
+        cs_macfb_vecteq_sourceterm(
+          cm, eqp, macb, time_eval, 1.0, eqb, cb, csys);
 
       /* Apply BOUNDARY CONDITIONS */
 
@@ -749,7 +840,7 @@ cs_macfb_vecteq_solve_steady_state(bool                       cur2prev,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build and solve the linear system arising from a vector diffusion
- *         equation with a CDO-Fb scheme and an implicit Euler scheme.
+ *         equation with a MAC-Fb scheme and an implicit Euler scheme.
  *         One works cellwise and then process to the assembly
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
@@ -781,7 +872,7 @@ cs_macfb_vecteq_solve_implicit(bool                       cur2prev,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build and solve the linear system arising from a vector diffusion
- *         equation with a CDO-Fb scheme and an implicit/explicit theta scheme.
+ *         equation with a MAC-Fb scheme and an implicit/explicit theta scheme.
  *         One works cellwise and then process to the assembly
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
@@ -812,7 +903,7 @@ cs_macfb_vecteq_solve_theta(bool                       cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Check if the generic structures for building a CDO-Fb scheme are
+ * \brief    Check if the generic structures for building a MAC-Fb scheme are
  *           allocated
  *
  * \return  true or false

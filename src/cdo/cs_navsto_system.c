@@ -1294,6 +1294,13 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       case CS_TIME_SCHEME_EULER_IMPLICIT:
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
+
+        if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+          ns->compute = cs_macfb_monolithic;
+        else
+          ns->compute = cs_macfb_monolithic_nl;
+        break;
+
       case CS_TIME_SCHEME_BDF2:
       default:
         bft_error(__FILE__,
