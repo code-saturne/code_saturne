@@ -83,6 +83,11 @@ cs_dispatch_test(void)
   cs_real_3_t *a2;
   CS_MALLOC_HD(a2, n/10, cs_real_3_t, amode);
 
+  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+#if defined(HAVE_ACCEL)
+  cs_device_context &d_ctx = static_cast<cs_device_context&>(ctx);
+#endif
+
   for (int i = 0; i < 3; i++) {
 
     if (i == 1) {
