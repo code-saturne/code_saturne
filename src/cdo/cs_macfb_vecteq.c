@@ -118,19 +118,19 @@ _cell_builder_create(const cs_cdo_connect_t *connect)
 {
   const int n_fc = connect->n_max_fbyc;
   assert(n_fc == 6);
-  const int n_dofs = n_fc + 1;
+  const int n_dofs = 30;
 
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
   /* Since it relies on the scalar case, n_fc should be enough */
 
-  BFT_MALLOC(cb->adv_fluxes, n_fc, double);
-  memset(cb->adv_fluxes, 0, n_fc * sizeof(double));
+  BFT_MALLOC(cb->adv_fluxes, n_dofs, double);
+  memset(cb->adv_fluxes, 0, n_dofs * sizeof(double));
 
   BFT_MALLOC(cb->ids, n_dofs, int);
   memset(cb->ids, 0, n_dofs * sizeof(int));
 
-  int size = CS_MAX(n_fc * n_dofs, 6 * n_dofs);
+  int size = n_fc * n_dofs;
   BFT_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size * sizeof(cs_real_t));
 
@@ -375,6 +375,7 @@ cs_macfb_vecteq_init_cell_system(const cs_cell_mesh_t        *cm,
  * \param[in]      diff_pty    pointer to a cs_property_data_t structure
  *                             for diffusion
  * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
@@ -383,24 +384,18 @@ cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
                           const cs_cell_mesh_t      *cm,
                           const cs_macfb_builder_t  *macb,
                           const cs_property_data_t  *diff_pty,
-                          cs_cell_sys_t             *csys)
+                          cs_cell_sys_t             *csys,
+                          cs_cell_builder_t         *cb)
 {
   if (cs_equation_param_has_diffusion(eqp)) {
 
     /* Compute the diffusion matrix */
 
-    cs_sdm_t *mat = cs_sdm_create(0, cm->n_fc, macb->n_dofs);
-    cs_real_t rhs[6];
-
-    cs_macfb_builder_diffusion(cm, macb, diff_pty, mat, rhs);
+    cs_macfb_builder_diffusion(cm, macb, diff_pty, cb->loc, csys->rhs);
 
     /* Add the local diffusion operator to the local system */
 
-    cs_sdm_add_block_topleft(csys->mat, cm->n_fc, macb->n_dofs, mat);
-    cs_array_real_padd(cm->n_fc, rhs, csys->rhs);
-
-    /* Free */
-    cs_sdm_free(mat);
+    cs_sdm_add_block_topleft(csys->mat, cm->n_fc, macb->n_dofs, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -424,37 +419,29 @@ cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_vecteq_convection(const cs_equation_param_t *eqp,
-                           const cs_macfb_vecteq_t   *eqc,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_macfb_builder_t  *macb,
-                           cs_cell_sys_t             *csys,
-                           cs_cell_builder_t         *cb)
+cs_macfb_vecteq_advection(const cs_equation_param_t *eqp,
+                          const cs_macfb_vecteq_t   *eqc,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_macfb_builder_t  *macb,
+                          cs_cell_sys_t             *csys,
+                          cs_cell_builder_t         *cb)
 {
   if (cs_equation_param_has_convection(eqp)
       && ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {
 
-    bft_error(__FILE__, __LINE__, 0, "Convection is not implemented.");
-
     /* Open hook: Compute the advection flux for the numerical scheme and store
    the advection fluxes across primal faces */
 
-    /* TODONP: Density is computed at cells and not at faces. To change */
+    eqc->advection_open(eqp, cm, macb, csys, eqc->advection_input, cb);
 
-    eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
+    /* Compute the local advection matrix */
 
-    /* Compute the convection matrix */
+    eqc->advection_main(eqp, cm, macb, eqc->advection_scheme, csys, cb);
 
-    cs_sdm_t *mat = cs_sdm_square_create(cm->n_fc);
+    /* Close hook: Modify if needed the computed advection matrix and update
+       the local system */
 
-    cs_macfb_builder_convection(cm, macb, cb->adv_fluxes, mat);
-
-    /* Add the local convection operator to the local system */
-
-    cs_sdm_add_block_topleft(csys->mat, cm->n_fc, cm->n_fc, mat);
-
-    /* Free */
-    cs_sdm_free(mat);
+    eqc->advection_close(cm, macb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -496,11 +483,11 @@ cs_macfb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
   /* Diffusion term */
 
-  cs_macfb_vecteq_diffusion(eqp, cm, macb, diff_pty, csys);
+  cs_macfb_vecteq_diffusion(eqp, cm, macb, diff_pty, csys, cb);
 
   /* Convection term */
 
-  cs_macfb_vecteq_convection(eqp, eqc, cm, macb, csys, cb);
+  cs_macfb_vecteq_advection(eqp, eqc, cm, macb, csys, cb);
 
   if (cs_equation_param_has_reaction(eqp)) { /* REACTION TERM
                                               * ============= */
@@ -1015,9 +1002,8 @@ cs_macfb_vecteq_init_context(cs_equation_param_t   *eqp,
 
   /* Diffusion term */
 
-  eqc->get_stiffness_matrix = NULL;
-  eqc->diffusion_hodge      = NULL;
-  eqc->enforce_robin_bc     = NULL;
+  eqc->diffusion_hodge  = NULL;
+  eqc->enforce_robin_bc = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
 

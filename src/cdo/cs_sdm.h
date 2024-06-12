@@ -387,6 +387,8 @@ cs_sdm_init(int         n_rows,
             cs_sdm_t   *mat)
 {
   assert(mat != NULL);
+  assert(n_rows <= mat->n_max_rows);
+  assert(n_cols <= mat->n_max_cols);
 
   mat->n_rows = n_rows;
   mat->n_cols = n_cols;
@@ -407,10 +409,7 @@ static inline void
 cs_sdm_square_init(int         n_rows,
                    cs_sdm_t   *mat)
 {
-  assert(mat != NULL);
-
-  mat->n_rows = mat->n_cols = n_rows; /* square matrix */
-  memset(mat->val, 0, n_rows*n_rows*sizeof(cs_real_t));
+  cs_sdm_init(n_rows, n_rows, mat);
 }
 
 /*----------------------------------------------------------------------------*/

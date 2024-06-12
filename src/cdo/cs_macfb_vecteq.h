@@ -279,6 +279,7 @@ void cs_macfb_vecteq_setup(cs_real_t                  t_eval,
  * \param[in]      diff_pty    pointer to a cs_property_data_t structure
  *                              for diffusion
  * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
@@ -286,7 +287,8 @@ void cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
                                const cs_cell_mesh_t      *cm,
                                const cs_macfb_builder_t  *macb,
                                const cs_property_data_t  *diff_pty,
-                               cs_cell_sys_t             *csys);
+                               cs_cell_sys_t             *csys,
+                               cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -302,12 +304,12 @@ void cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_vecteq_convection(const cs_equation_param_t *eqp,
-                                const cs_macfb_vecteq_t   *eqc,
-                                const cs_cell_mesh_t      *cm,
-                                const cs_macfb_builder_t  *macb,
-                                cs_cell_sys_t             *csys,
-                                cs_cell_builder_t         *cb);
+void cs_macfb_vecteq_advection(const cs_equation_param_t *eqp,
+                               const cs_macfb_vecteq_t   *eqc,
+                               const cs_cell_mesh_t      *cm,
+                               const cs_macfb_builder_t  *macb,
+                               cs_cell_sys_t             *csys,
+                               cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!

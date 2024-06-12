@@ -138,8 +138,9 @@ _mono_fields_to_previous(cs_macfb_monolithic_t *sc, cs_navsto_monolithic_t *cc)
 {
   const cs_cdo_quantities_t *cdoq = cs_shared_quant;
 
-  /* Cell unknows: pressure */
+  /* Cell unknows: velocity, pressure */
 
+  cs_field_current_to_previous(sc->velocity);
   cs_field_current_to_previous(sc->pressure);
 
   /* Face unknows: mass flux and face velocity */
@@ -213,7 +214,7 @@ _mono_update_related_cell_fields(const cs_navsto_param_t *nsp,
   if (sc->pressure_rescaling == CS_BOUNDARY_PRESSURE_RESCALING)
     cs_cdofb_navsto_rescale_pressure_to_ref(nsp, quant, pr_fld->val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_MONOLITHIC_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_MONOLITHIC_DBG > 2
   const cs_real_t *vel_f = mom_eqc->face_values;
   cs_dbg_darray_to_listing("FACE_VELOCITY", quant->n_faces, vel_f, 9);
 #endif
@@ -809,6 +810,7 @@ cs_macfb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
 
   /* Quick access to the main fields */
 
+  sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
 
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE)
@@ -1029,10 +1031,6 @@ cs_macfb_monolithic_free_scheme_context(void *scheme_context)
 
   BFT_FREE(sc);
 
-#if CS_MACFB_MONOLITHIC_DBG > 3
-  cs_log_printf(CS_LOG_DEFAULT, ">> Free Macfb monolithic context \n");
-#endif
-
   return NULL;
 }
 
@@ -1053,10 +1051,6 @@ cs_macfb_monolithic_steady(const cs_mesh_t         *mesh,
                            void                    *scheme_context)
 {
   cs_timer_t t_start = cs_timer_time();
-
-#if CS_MACFB_MONOLITHIC_DBG > 3
-  cs_log_printf(CS_LOG_DEFAULT, ">> %s:\n", __func__);
-#endif
 
   /* Retrieve high-level structures */
 
@@ -1168,10 +1162,180 @@ cs_macfb_monolithic_steady_nl(const cs_mesh_t         *mesh,
                               const cs_navsto_param_t *nsp,
                               void                    *scheme_context)
 {
-  bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
-  CS_UNUSED(nsp);
-  CS_UNUSED(mesh);
-  CS_UNUSED(scheme_context);
+  cs_timer_t t_start = cs_timer_time();
+
+  /* Retrieve high-level structures */
+
+  cs_macfb_monolithic_t  *sc = (cs_macfb_monolithic_t *)scheme_context;
+  cs_cdo_system_helper_t *sh = sc->system_helper;
+  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_equation_t          *mom_eq  = cc->momentum;
+  cs_macfb_vecteq_t      *mom_eqc = (cs_macfb_vecteq_t *)mom_eq->scheme_context;
+  cs_equation_param_t    *mom_eqp = mom_eq->param;
+  cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_iter_algo_t         *nl_algo = sc->nl_algo;
+
+  /*--------------------------------------------------------------------------
+   *                    INITIAL BUILD: START
+   *--------------------------------------------------------------------------*/
+
+  const cs_cdo_quantities_t *quant   = cs_shared_quant;
+  const cs_lnum_t            n_faces = quant->n_faces;
+  const cs_time_step_t      *ts      = cs_shared_time_step;
+  const cs_real_t            t_cur   = ts->t_cur;
+
+  /* Build an array storing the Dirichlet values at faces and DoF enforcement */
+
+  cs_macfb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb);
+
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
+
+  cs_real_t *rhs = NULL; /* Since it is NULL, sh get the ownership */
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
+
+  /* Main loop on cells to define the linear system to solve */
+
+  cs_real_t *u_f = mom_eqc->face_values;
+  cs_real_t *p_c = sc->pressure->val;
+
+  sc->steady_build(nsp,
+                   u_f,
+                   NULL, /* no value at time step n-1 */
+                   sc);
+
+  /* End of the system building */
+
+  cs_timer_t t_build_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_build_end);
+
+  /*--------------------------------------------------------------------------
+   *                   INITIAL BUILD: END
+   *--------------------------------------------------------------------------*/
+
+  /* Current to previous for main variable fields */
+
+  _mono_fields_to_previous(sc, cc);
+
+  /* Solve the linear system */
+
+  cs_timer_t t_solve_start = cs_timer_time();
+
+  cs_iter_algo_reset(nl_algo);
+
+  /* Solve the new system: * Update the value of u_f and p_c */
+
+  int last_inner_iter = sc->solve(nsp, sc->saddle_solver, u_f, p_c);
+
+  cs_iter_algo_update_inner_iters(nl_algo, last_inner_iter);
+
+  cs_timer_t t_solve_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
+
+  /* Make sure that the DoFs are correctly enforced after the resolution */
+
+  _mono_enforce_solid_face_velocity(u_f);
+
+  /* Compute the new current mass flux used as the advection field */
+
+  cs_macfb_navsto_mass_flux(nsp, quant, u_f, sc->mass_flux_array);
+
+  /* Set the normalization of the non-linear algo to the value of the first
+     mass flux norm */
+
+  double normalization
+    = sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
+
+  cs_iter_algo_set_normalization(nl_algo, normalization);
+
+  /*--------------------------------------------------------------------------
+   *                   PICARD ITERATIONS: START
+   *--------------------------------------------------------------------------*/
+
+  /* Check the convergence status and update the nl_algo structure related
+   * to the convergence monitoring */
+
+  while (
+    cs_macfb_navsto_nl_algo_cvg(
+      nsp->nl_algo_type, sc->mass_flux_array_pre, sc->mass_flux_array, nl_algo)
+    == CS_SLES_ITERATING) {
+
+    /* Main loop on cells to define the linear system to solve */
+
+    cs_timer_t t_build_start = cs_timer_time();
+
+    /* rhs set to zero and cs_sles_t structure is freed in order to do
+     * the setup once again since the matrix should be modified */
+
+    cs_cdo_system_helper_init_system(sh, &rhs);
+    cs_saddle_solver_clean(sc->saddle_solver);
+
+    sc->steady_build(nsp,
+                     /* A current to previous op. has been done */
+                     mom_eqc->face_values_pre,
+                     NULL, /* no value at time step n-1 */
+                     sc);
+
+    /* End of the system building */
+
+    t_build_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_build_start, &t_build_end);
+
+    /* Solve the new system: Update the value of u_f and p_c */
+
+    t_solve_start = cs_timer_time();
+
+    last_inner_iter = sc->solve(nsp, sc->saddle_solver, u_f, p_c);
+
+    cs_iter_algo_update_inner_iters(nl_algo, last_inner_iter);
+
+    t_solve_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
+
+    /* Make sure that the DoFs are correctly enforced after the resolution */
+
+    _mono_enforce_solid_face_velocity(u_f);
+
+    /* Compute the new mass flux used as the advection field */
+
+    cs_array_real_copy(n_faces, sc->mass_flux_array, sc->mass_flux_array_pre);
+
+    cs_macfb_navsto_mass_flux(nsp, quant, u_f, sc->mass_flux_array);
+
+  } /* Loop on non-linear iterations */
+
+    /*--------------------------------------------------------------------------
+     *                   PICARD ITERATIONS: END
+     *--------------------------------------------------------------------------*/
+
+    if (nsp->verbosity > 1 && cs_log_default_is_active()) {
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " -cvg- NavSto: cumulated_inner_iters: %d\n",
+                    cs_iter_algo_get_n_inner_iter(nl_algo));
+      cs_log_printf_flush(CS_LOG_DEFAULT);
+    }
+
+    cs_iter_algo_check_warning(__func__,
+                               mom_eqp->name,
+                               cs_param_get_nl_algo_label(nsp->nl_algo_type),
+                               nl_algo);
+
+    if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+      cs_iter_algo_release_anderson_arrays(nl_algo->context);
+
+    /* Now compute/update the velocity and pressure fields */
+
+    _mono_update_related_cell_fields(nsp, sc, mom_eqc);
+
+    /* Frees */
+
+    cs_saddle_solver_clean(sc->saddle_solver);
+    cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
+
+    cs_timer_t t_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
 }
 
 /*----------------------------------------------------------------------------*/

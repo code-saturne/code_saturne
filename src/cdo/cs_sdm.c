@@ -1151,9 +1151,14 @@ cs_sdm_add_block(cs_sdm_t       *mat,
   assert(nr <= add->n_rows);
   assert(nc <= add->n_cols);
 
-  const cs_real_t *_dest = mat->val + c_id + r_id * mat->n_cols;
-  for (short int i = 0; i < nr; i++, _dest += mat->n_cols) {
-    memcpy(_dest, add->val + i * add->n_cols, sizeof(cs_real_t) * nc);
+  cs_real_t *_dest = mat->val + c_id + r_id * mat->n_cols;
+  cs_real_t *_padd = add->val;
+  for (short int i = 0; i < nr; i++) {
+    for (short int j = 0; j < nc; j++) {
+      _dest[j] += _padd[j];
+    }
+    _dest += mat->n_cols;
+    _padd += add->n_cols;
   }
 }
 

@@ -373,9 +373,8 @@ cs_macfb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 
 #pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
-
-    const cs_real_t *fq = cs_quant_get_face_vector_area(f_id, quant);
-    mass_flux[f_id]     = rho_val * fq[quant->face_axis[f_id]] * face_vel[f_id];
+    mass_flux[f_id]
+      = rho_val * cs_quant_get_face_surf(f_id, quant) * face_vel[f_id];
   }
 }
 
@@ -1117,9 +1116,7 @@ cs_macfb_block_dirichlet_wsym(short int                  fb,
 /*!
  * \brief  Take into account a boundary defined as 'symmetry' (treated as a
  *         sliding BCs on the three velocity components.)
- *         A weak penalization technique (symmetrized Nitsche) is used.  One
- *         assumes that static condensation has not been performed yet and that
- *         the velocity-block has (n_fc + 1) blocks of size 3x3.
+ *         A weak penalization technique (symmetrized Nitsche) is used.
  *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       fb        face id in the cell mesh numbering

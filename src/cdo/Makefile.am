@@ -121,6 +121,7 @@ cs_hho_stokes.h \
 cs_hho_vecteq.h \
 cs_hodge.h \
 cs_iter_algo.h \
+cs_macfb_advection.h \
 cs_macfb_builder.h \
 cs_macfb_monolithic_priv.h \
 cs_macfb_monolithic_sles.h \
@@ -207,6 +208,7 @@ cs_hho_stokes.c \
 cs_hho_vecteq.c \
 cs_hodge.c \
 cs_iter_algo.c \
+cs_macfb_advection.c \
 cs_macfb_builder.c \
 cs_macfb_monolithic.c \
 cs_macfb_monolithic_sles.c \

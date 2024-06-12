@@ -168,6 +168,13 @@ struct _macfb_monolithic_t {
    * Fields for every main variable of the equation. Got from cs_navsto_system_t
    */
 
+  /*! \var velocity
+   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
+   *  the cell DoFs of the velocity
+   */
+
+  cs_field_t *velocity;
+
   /*! \var pressure
    *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
    *  the cell DoFs of the pressure

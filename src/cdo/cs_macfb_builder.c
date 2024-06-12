@@ -220,6 +220,7 @@ cs_macfb_builder_reset(cs_macfb_builder_t *macb)
     macb->f_sgn_axis[f] = 0;
     macb->f_vol_cv[f]   = -DBL_MAX;
     macb->f_h_cv[f]     = -DBL_MAX;
+    macb->f_opp_idx[f]  = -1;
   }
 
   for (short int f = 0; f < 24; f++) {
@@ -431,44 +432,46 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
   assert(macb->n_dofs <= macb->n_max_dofs);
   assert(macb->n_dofs == macb->n_fc);
 
-  // Find orthogonal faces
-  if (macb->n_fc < 30) {
-    /* loop on internal faces */
-    for (short int f = 0; f < 6; f++) {
+  /* loop on internal faces to find orthogonal faces */
+  for (short int f = 0; f < 6; f++) {
 
-      /* Loop on outer faces */
-      for (short int fj = 0; fj < 4; fj++) {
-        const short int shift_j = 4 * f + fj;
+    /* Find opposite face */
+    for (short int fj = 0; fj < 6; fj++) {
+      if (f != fj && macb->f_axis[f] == macb->f_axis[fj]) {
+        macb->f_opp_idx[f] = fj;
+        break;
+      }
+    }
 
-        /* Boundary edge ? */
-        if (macb->f2f_idx[shift_j] < 0) {
-          const cs_lnum_t ej_id = macb->f2e_ids[shift_j];
+    /* Loop on outer faces */
+    for (short int fj = 0; fj < 4; fj++) {
+      const short int shift_j = 4 * f + fj;
 
-          short int n_e_find = 0;
-          for (short int fk = 0; fk < macb->n_fc; fk++) {
-            /* Orthogonal direction */
-            if (macb->f_axis[f] != macb->f_axis[fk]) {
-              const cs_lnum_t fk_id = macb->f_ids[fk];
+      const cs_lnum_t ej_id = macb->f2e_ids[shift_j];
 
-              /* Boundary edges */
-              assert(f2e->idx[fk_id + 1] - f2e->idx[fk_id] == 4);
+      short int n_e_find = 0;
+      for (short int fk = 0; fk < macb->n_fc; fk++) {
+        /* Orthogonal direction */
+        if (macb->f_axis[f] != macb->f_axis[fk]) {
+          const cs_lnum_t fk_id = macb->f_ids[fk];
 
-              for (short int ek = 0; ek < 4; ek++) {
-                cs_lnum_t ek_id = f2e->ids[f2e->idx[fk_id] + ek];
-                if (ej_id == ek_id) {
-                  macb->f2fo_idx[2 * shift_j + n_e_find] = fk;
-                  n_e_find++;
-                  break;
-                }
-              }
-            }
-            if (n_e_find == 2) {
+          /* Boundary edges */
+          assert(f2e->idx[fk_id + 1] - f2e->idx[fk_id] == 4);
+
+          for (short int ek = 0; ek < 4; ek++) {
+            cs_lnum_t ek_id = f2e->ids[f2e->idx[fk_id] + ek];
+            if (ej_id == ek_id) {
+              macb->f2fo_idx[2 * shift_j + n_e_find] = fk;
+              n_e_find++;
               break;
             }
           }
-          assert(n_e_find > 0);
+        }
+        if (n_e_find == 2) {
+          break;
         }
       }
+      assert(n_e_find > 0);
     }
   }
 
@@ -573,6 +576,7 @@ cs_macfb_builder_diffusion(const cs_cell_mesh_t     *cm,
 
   const cs_property_t *pty = diff_pty->property;
 
+#if defined(DEBUG) && !defined(NDEBUG)
   if (!cs_property_is_constant(pty)) {
     bft_error(
       __FILE__, __LINE__, 0, _(" %s: Diffusion is not constant.\n"), __func__);
@@ -581,12 +585,12 @@ cs_macfb_builder_diffusion(const cs_cell_mesh_t     *cm,
     bft_error(
       __FILE__, __LINE__, 0, _(" %s: Diffusion is not isotropic.\n"), __func__);
   }
+#endif
 
   /* TODONP: compute value by face and not by cell */
   const cs_real_t mu = cs_property_get_cell_value(cm->c_id, 0.0, pty);
 
   /* Initialize objects */
-  cs_array_real_fill_zero(cm->n_fc, rhs);
   cs_sdm_init(cm->n_fc, macb->n_dofs, mat);
 
   /* Loop on inner faces */
@@ -608,18 +612,12 @@ cs_macfb_builder_diffusion(const cs_cell_mesh_t     *cm,
     mat->val[fi_shift + fi] = val_fi;
 
     /* extra-diagonal entry - opposite face */
-    for (short int fj = 0; fj < 6; fj++) {
-      if (fi != fj && macb->f_axis[fi] == macb->f_axis[fj]) {
-        assert(fi_shift + fj < cm->n_fc * macb->n_dofs);
-        mat->val[fi_shift + fj] = -val_fi;
-        break;
-      }
-    }
+    mat->val[fi_shift + macb->f_opp_idx[fi]] = -val_fi;
 
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
       const short int shift_j = 4 * fi + fj;
-      const cs_lnum_t fj_id   = macb->f2f_ids[shift_j];
+      const short int fj_idx  = macb->f2f_idx[shift_j];
 
       const cs_real_t val_fj = mu_fc * macb->f2f_surf_cv_c[shift_j]
                                / (macb->f2f_h[shift_j] * vol_cv);
@@ -628,9 +626,8 @@ cs_macfb_builder_diffusion(const cs_cell_mesh_t     *cm,
       assert(fi_shift + fi < cm->n_fc * macb->n_dofs);
       mat->val[fi_shift + fi] += val_fj;
 
-      if (fj_id >= 0) {
+      if (fj_idx >= 0) {
         /* extra-diagonal entry */
-        const short int fj_idx = macb->f2f_idx[shift_j];
 
         assert(fi_shift + fj_idx < cm->n_fc * macb->n_dofs);
         mat->val[fi_shift + fj_idx] = -val_fj;
@@ -645,57 +642,6 @@ cs_macfb_builder_diffusion(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MAC_BUILDER_DBG > 1
   if (cm->c_id == 0) {
     cs_log_printf(CS_LOG_DEFAULT, "Local MAC-fb diffusion matrix: \n");
-    cs_sdm_simple_dump(mat);
-  }
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator.
- *
- * \param[in]  cm         pointer to a cs_cell_mesh_t structure
- * \param[in]  macb       pointer to a cs_macfb_builder_t structure
- * \param[in]  fluxes     pointer to the normal fluxes (= rho*u)
- *                        at each primal face
- * \param[out]  mat       pointer to a cs_sdm_t structure. It is filled inside
- *                        the function. Have to preallocated.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_macfb_builder_convection(const cs_cell_mesh_t     *cm,
-                            const cs_macfb_builder_t *macb,
-                            const cs_real_t          *fluxes,
-                            cs_sdm_t                 *mat)
-{
-  /* Sanity checks */
-  assert(cm != NULL && fluxes != NULL && macb != NULL);
-  assert(cm->n_fc == 6);
-
-  /* Initialize objects */
-  cs_sdm_init(cm->n_fc, cm->n_fc, mat);
-
-  /* Loop on inner faces */
-  for (short int fi = 0; fi < cm->n_fc; fi++) {
-
-    const short int fi_shift = fi * cm->n_fc;
-
-    /* Face info */
-    const cs_real_t vol_cv  = macb->f_vol_cv[fi];
-    const cs_real_t coef_fi = fluxes[fi] / (2.0 * vol_cv);
-
-    for (short int fj = 0; fj < cm->n_fc; fj++) {
-
-      const cs_quant_t fqj = cm->face[fj];
-
-      mat->val[fi_shift + fj] = coef_fi * fqj.meas * macb->f_sgn_axis[fj];
-    }
-  }
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_MAC_BUILDER_DBG > 1
-  if (cm->c_id == 0) {
-    cs_log_printf(CS_LOG_DEFAULT, "Local MAC-fb convection matrix: \n");
     cs_sdm_simple_dump(mat);
   }
 #endif

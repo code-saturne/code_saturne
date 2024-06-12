@@ -72,8 +72,10 @@ typedef struct {
   cs_flag_cartesian_axis_t f_axis[30]; /*!< axis of local faces */
   short int f_sgn_axis[6]; /*!< axis incidence number between f and c */
 
-  cs_real_t f_vol_cv[6]; /*!< volume of the control volume for a face */
-  cs_real_t f_h_cv[6];   /*!< normal length of the control volume for a face */
+  cs_real_t f_vol_cv[6];  /*!< volume of the control volume for a face */
+  cs_real_t f_h_cv[6];    /*!< normal length of the control volume for a face */
+  short int f_opp_idx[6]; /*!< opposite face index to the
+                               face inside the cell */
 
   short int f2f_idx[24]; /*!< cellwise face->face index with same
                             direction and sharing an edge with the current face
@@ -216,23 +218,6 @@ void cs_macfb_builder_diffusion(const cs_cell_mesh_t     *cm,
                                 const cs_property_data_t *diff_pty,
                                 cs_sdm_t                 *mat,
                                 cs_real_t                *rhs);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator.
- *
- * \param[in]  cm         pointer to a cs_cell_mesh_t structure
- * \param[in]  macb       pointer to a cs_macfb_builder_t structure
- * \param[in]  fluxes     pointer to the normal fluxes at each primal face
- * \param[out]  mat       pointer to a cs_sdm_t structure. It is filled inside
- *                        the function. Have to preallocated.
- */
-/*----------------------------------------------------------------------------*/
-
-void cs_macfb_builder_convection(const cs_cell_mesh_t     *cm,
-                                 const cs_macfb_builder_t *macb,
-                                 const cs_real_t          *fluxes,
-                                 cs_sdm_t                 *mat);
 
 /*----------------------------------------------------------------------------*/
 

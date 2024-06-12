@@ -3146,6 +3146,106 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the value of the flux of the advection field across the
+ *         the dual faces of a cell
+ *         MAC face-based scheme
+ *
+ * \param[in]      macb       pointer to a cs_macfb_builder_t structure
+ * \param[in]      adv        pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] fluxes     array of values attached to primal faces of a cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_macb_dface_flux(const cs_macfb_builder_t *macb,
+                                   const cs_adv_field_t     *adv,
+                                   cs_real_t                 time_eval,
+                                   cs_real_t                *fluxes)
+{
+  CS_UNUSED(time_eval); /* Useful in case of analytic definition */
+
+  if (adv == NULL)
+    return;
+
+  if (fluxes == NULL) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: The array of local fluxes should be already allocated.",
+              __func__);
+    return;
+  }
+
+  cs_xdef_t *def = adv->definition;
+  assert(def != NULL); /* Sanity check */
+
+  if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX) {
+
+    memset(fluxes, 0, macb->n_max_dofs * sizeof(cs_real_t));
+
+    switch (def->type) {
+
+    case CS_XDEF_BY_ARRAY: {
+      const cs_real_t *xdef_fluxes = cs_xdef_array_get_values(def);
+
+      /* Retrieve the advection field */
+
+      /* Loop on inner faces */
+      for (short int fi = 0; fi < 6; fi++) {
+
+        fluxes[fi] = (xdef_fluxes[macb->f_ids[fi]]
+                      + xdef_fluxes[macb->f_ids[macb->f_opp_idx[fi]]])
+                     / 2.0;
+
+        /* Loop on outer faces */
+        for (short int fj = 0; fj < 4; fj++) {
+          const short int shift_j = 4 * fi + fj;
+
+          const short int f0 = macb->f2fo_idx[2 * shift_j + 0];
+          const short int f1 = macb->f2fo_idx[2 * shift_j + 1];
+
+          assert(f0 >= 0 && f0 < 6);
+
+          fluxes[6 + shift_j] = xdef_fluxes[macb->f_ids[f0]] / 2.0;
+
+          if (f1 >= 0) {
+            assert(f1 < macb->n_fc);
+
+            fluxes[6 + shift_j] += xdef_fluxes[macb->f_ids[f1]] / 2.0;
+          }
+        }
+      }
+    } break;
+
+    default:
+      bft_error(
+        __FILE__, __LINE__, 0, "%s: Invalid type of definition", __func__);
+
+    } /* End of switch def->type */
+  }
+  else {
+
+    assert(adv->status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR);
+    assert(def->dim == 3);
+
+    switch (def->type) {
+
+    default:
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: Incompatible type of definition.",
+                __func__);
+      break;
+
+    } /* def_type */
+
+  } /* Velocity vector */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   For each cs_adv_field_t structures, update the values of the
  *          related field(s)
  *

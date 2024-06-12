@@ -35,6 +35,7 @@
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_field.h"
+#include "cs_macfb_builder.h"
 #include "cs_mesh_location.h"
 #include "cs_param_types.h"
 #include "cs_property.h"
@@ -858,6 +859,24 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
                                  const cs_adv_field_t     *adv,
                                  cs_real_t                 time_eval,
                                  cs_real_t                *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
+ *         the dual faces of a cell
+ *         MAC face-based scheme
+ *
+ * \param[in]      macb       pointer to a cs_macfb_builder_t structure
+ * \param[in]      adv        pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] fluxes     array of values attached to primal faces of a cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_advection_field_macb_dface_flux(const cs_macfb_builder_t *macb,
+                                        const cs_adv_field_t     *adv,
+                                        cs_real_t                 time_eval,
+                                        cs_real_t                *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!

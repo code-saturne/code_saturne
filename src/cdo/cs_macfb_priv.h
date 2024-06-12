@@ -29,10 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_advection.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_builder.h"
 #include "cs_hodge.h"
+#include "cs_macfb_advection.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -73,7 +73,6 @@ struct _cs_macfb_t {
   /* Pointer of function to build the diffusion term */
 
   cs_hodge_t         **diffusion_hodge;
-  cs_hodge_compute_t  *get_stiffness_matrix;
   cs_cdo_enforce_bc_t *enforce_dirichlet;
   cs_cdo_enforce_bc_t *enforce_robin_bc;
   cs_cdo_enforce_bc_t *enforce_sliding;
@@ -83,10 +82,10 @@ struct _cs_macfb_t {
    * advection_scheme and after the build step, advection_close is called last
    */
 
-  cs_cdofb_adv_open_hook_t  *advection_open;
-  cs_cdofb_adv_build_t      *advection_main;
-  cs_cdofb_adv_close_hook_t *advection_close;
-  cs_cdofb_adv_scheme_t     *advection_scheme;
+  cs_macfb_adv_open_hook_t  *advection_open;
+  cs_macfb_adv_build_t      *advection_main;
+  cs_macfb_adv_close_hook_t *advection_close;
+  cs_macfb_adv_scheme_t     *advection_scheme;
 
   void *advection_input;
 
