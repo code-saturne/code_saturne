@@ -796,15 +796,17 @@ _slope_test_gradient_strided
       cs_real_t vfac[stride];
 
       /*coefu is a matrix */
-      for (cs_lnum_t jsou =  0; jsou < stride; jsou++) {
+      for (cs_lnum_t jsou = 0; jsou < stride; jsou++) {
         pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
                                             + grad[ii][jsou][0]*diipbv[0]
                                             + grad[ii][jsou][1]*diipbv[1]
                                             + grad[ii][jsou][2]*diipbv[2]);
-        vfac[jsou] = pfac * _b_f_face_surf * b_face_u_normal[face_id][jsou];
       }
 
-      cs_dispatch_sum<3>(grdpa[ii][isou], vfac, b_sum_type);
+      for (cs_lnum_t jsou = 0; jsou < stride; jsou++)
+        vfac[jsou] = pfac * _b_f_face_surf * b_face_u_normal[face_id][jsou];
+
+      cs_dispatch_sum<stride>(grdpa[ii][isou], vfac, b_sum_type);
     }
 
   });
