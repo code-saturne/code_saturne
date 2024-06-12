@@ -48,20 +48,8 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_blas.h"
 #include "cs_dispatch.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
 #include "cs_porous_model.h"
-#include "cs_prototypes.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1187,14 +1175,7 @@ cs_divergence(const cs_mesh_t          *m,
       diverg[cell_id] = 0.;
     });
   }
-  else if (init == 0 && n_cells_ext > n_cells) {
-
-#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++)
-      diverg[cell_id] = 0.;
-
-  }
-  else if (init != 0)
+  else if (init < 0)
     bft_error(__FILE__, __LINE__, 0, _("invalid value of init"));
 
 
@@ -1206,8 +1187,10 @@ cs_divergence(const cs_mesh_t          *m,
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 
-    cs_dispatch_sum(&diverg[ii], i_massflux[face_id], i_sum_type);
-    cs_dispatch_sum(&diverg[jj],-i_massflux[face_id], i_sum_type);
+    if (ii < n_cells)
+      cs_dispatch_sum(&diverg[ii], i_massflux[face_id], i_sum_type);
+    if (jj < n_cells)
+      cs_dispatch_sum(&diverg[jj],-i_massflux[face_id], i_sum_type);
   });
 
   /*==========================================================================
@@ -1270,15 +1253,7 @@ cs_tensor_divergence(const cs_mesh_t            *m,
       }
     });
   }
-  else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
-      for (int isou = 0; isou < 3; isou++) {
-        diverg[cell_id][isou] = 0.;
-      }
-    }
-  }
-  else if (init != 0) {
+  else if (init < 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
@@ -1297,8 +1272,10 @@ cs_tensor_divergence(const cs_mesh_t            *m,
       flux_m[isou] = -i_massflux[face_id][isou];
     }
 
-    cs_dispatch_sum<3>(diverg[ii], flux_p, i_sum_type);
-    cs_dispatch_sum<3>(diverg[jj], flux_m, i_sum_type);
+    if (ii < n_cells)
+      cs_dispatch_sum<3>(diverg[ii], flux_p, i_sum_type);
+    if (jj < n_cells)
+      cs_dispatch_sum<3>(diverg[jj], flux_m, i_sum_type);
 
   });
 

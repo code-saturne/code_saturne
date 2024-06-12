@@ -11506,14 +11506,7 @@ cs_diffusion_potential(const int                   f_id,
       diverg[ii] = 0.;
     });
   }
-
-  else if (init == 0 && n_cells_ext > n_cells) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-      diverg[ii] = 0.;
-    });
-  }
-
-  else if (init != 0) {
+  else if (init < 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
@@ -11556,8 +11549,11 @@ cs_diffusion_potential(const int                   f_id,
       cs_lnum_t jj = i_face_cells[face_id][1];
 
       cs_real_t i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
-      cs_dispatch_sum(&diverg[ii], i_massflux, i_sum_type);
-      cs_dispatch_sum(&diverg[jj], -i_massflux, i_sum_type);
+
+      if (ii < n_cells)
+        cs_dispatch_sum(&diverg[ii],  i_massflux, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum(&diverg[jj], -i_massflux, i_sum_type);
 
     });
 
@@ -11666,17 +11662,19 @@ cs_diffusion_potential(const int                   f_id,
         cs_real_t dpzf = 0.5*(  visel[ii]*grad[ii][2]
                               + visel[jj]*grad[jj][2]);
 
-            i_massflux += (dpxf*dijx + dpyf*dijy + dpzf*dijz)
-                          *i_f_face_surf[face_id]/i_dist[face_id];
-          }
-          else {
-            i_massflux += i_visc[face_id]
-                          * (  cs_math_3_dot_product(grad[ii], diipf[face_id])
-                             - cs_math_3_dot_product(grad[jj], djjpf[face_id]));
-          }
+        i_massflux +=  (dpxf*dijx + dpyf*dijy + dpzf*dijz)
+                      * i_f_face_surf[face_id]/i_dist[face_id];
+      }
+      else {
+        i_massflux +=   i_visc[face_id]
+                      * (  cs_math_3_dot_product(grad[ii], diipf[face_id])
+                         - cs_math_3_dot_product(grad[jj], djjpf[face_id]));
+      }
 
-      cs_dispatch_sum(&diverg[ii], i_massflux, i_sum_type);
-      cs_dispatch_sum(&diverg[jj], -i_massflux, i_sum_type);
+      if (ii < n_cells)
+        cs_dispatch_sum(&diverg[ii],  i_massflux, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum(&diverg[jj], -i_massflux, i_sum_type);
 
     });
 
