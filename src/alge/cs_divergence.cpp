@@ -191,7 +191,6 @@ cs_mass_flux(const cs_mesh_t             *m,
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
@@ -222,8 +221,8 @@ cs_mass_flux(const cs_mesh_t             *m,
   /* Discontinuous porous treatment */
 
   int is_p = 0; /* Is porous? */
-  cs_real_2_t *_i_f_face_factor;
-  cs_real_t *_b_f_face_factor;
+  cs_real_2_t *_i_f_face_factor = NULL;
+  cs_real_t *_b_f_face_factor = NULL;
 
   if (cs_glob_porous_model == 3) {
     i_f_face_factor = fvq->i_f_face_factor;
@@ -1175,7 +1174,6 @@ cs_divergence(const cs_mesh_t          *m,
   /* Parallel or device dispatch */
 
   cs_dispatch_context ctx;
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -1203,6 +1201,7 @@ cs_divergence(const cs_mesh_t          *m,
   /*==========================================================================
     2. Integration on internal faces
     ==========================================================================*/
+
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
@@ -1256,7 +1255,6 @@ cs_tensor_divergence(const cs_mesh_t            *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   cs_dispatch_context ctx;
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -1398,7 +1396,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   cs_real_t *i_poro_duq_0;
   cs_real_t *i_poro_duq_1;
   cs_real_t *b_poro_duq;
-  cs_real_t *_f_ext;
+  cs_real_t *_f_ext = NULL;
 
   int is_p = 0; /* Is porous ? */
   if (f_i_poro_duq_0 != NULL) {
