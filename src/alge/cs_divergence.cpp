@@ -1293,8 +1293,8 @@ cs_tensor_divergence(const cs_mesh_t            *m,
     cs_real_3_t flux_p, flux_m;
 
     for (int isou = 0; isou < 3; isou++) {
-      flux_p[isou] = i_massflux[face_id][isou];
-      flux_m[isou] = i_massflux[face_id][isou];
+      flux_p[isou] =  i_massflux[face_id][isou];
+      flux_m[isou] = -i_massflux[face_id][isou];
     }
 
     cs_dispatch_sum<3>(diverg[ii], flux_p, i_sum_type);
@@ -1410,7 +1410,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   else {
 
     CS_MALLOC_HD(_f_ext, 1, cs_real_t, amode);
-    _f_ext[0] = 1.;
+    _f_ext[0] = 0.;
     i_poro_duq_0 = _f_ext;
     i_poro_duq_1 = _f_ext;
     b_poro_duq = _f_ext;
