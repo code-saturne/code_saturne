@@ -48,6 +48,14 @@
 #endif
 namespace cg = cooperative_groups;
 
+/* Use graph capture ? */
+
+#if (CUDART_VERSION > 9020)
+#define HAVE_GRAPH_CAPTURE 1
+#else
+#define HAVE_GRAPH_CAPTURE 0
+#endif
+
 #include <cfloat>
 
 // #include "mpi-ext.h"
@@ -1260,7 +1268,6 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   cs_real_t *_aux_vectors = NULL;
   {
-    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
     const size_t n_wa = 1;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
@@ -1320,6 +1327,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
                     cudaMemcpyDeviceToDevice, stream);
 
+#if HAVE_GRAPH_CAPTURE > 0
+
   cudaGraph_t graph;
   cudaGraphExec_t graph_exec = NULL;
 
@@ -1348,6 +1357,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     assert(status == cudaSuccess);
   }
 
+#endif // HAVE_GRAPH_CAPTURE > 0
+
   /* Current iteration
      ----------------- */
 
@@ -1362,10 +1373,13 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
+#if HAVE_GRAPH_CAPTURE > 0
     if (cs_glob_cuda_allow_graph)
       cudaGraphLaunch(graph_exec, stream);
 
-    else {
+    else
+#endif // HAVE_GRAPH_CAPTURE > 0
+    {
       if (convergence->precision > 0. || c->plot != NULL) {
         _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
           (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
@@ -1391,10 +1405,12 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   }
 
+#if HAVE_GRAPH_CAPTURE > 0
   if (cs_glob_cuda_allow_graph) {
     cudaGraphDestroy(graph);
     cudaGraphExecDestroy(graph_exec);
   }
+#endif // HAVE_GRAPH_CAPTURE > 0
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);
@@ -1484,7 +1500,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   cs_real_t *_aux_vectors = NULL;
   {
-    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
     const size_t n_wa = 1;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
@@ -1552,6 +1567,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
                     cudaMemcpyDeviceToDevice, stream);
 
+#if HAVE_GRAPH_CAPTURE > 0
+
   cudaGraph_t graph;
   cudaGraphExec_t graph_exec = NULL;
 
@@ -1583,6 +1600,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     assert(status == cudaSuccess);
   }
 
+#endif // HAVE_GRAPH_CAPTURE > 0
+
   /* Current iteration
      ----------------- */
 
@@ -1597,10 +1616,13 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
+#if HAVE_GRAPH_CAPTURE > 0
     if (cs_glob_cuda_allow_graph)
       cudaGraphLaunch(graph_exec, stream);
 
-    else {
+    else
+#endif // HAVE_GRAPH_CAPTURE > 0
+    {
       if (diag_block_size == 3)
         _block_3_jacobi_compute_vx_and_residual
           <blocksize><<<gridsize, blocksize, 0, stream>>>
@@ -1630,10 +1652,12 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   }
 
+#if HAVE_GRAPH_CAPTURE > 0
   if (cs_glob_cuda_allow_graph) {
     cudaGraphDestroy(graph);
     cudaGraphExecDestroy(graph_exec);
   }
+#endif // HAVE_GRAPH_CAPTURE > 0
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     cudaFree(_aux_vectors);
@@ -1924,7 +1948,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 
   cs_real_t *_aux_vectors = NULL;
   {
-    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
     const size_t n_wa = 1 + n_k_per_restart * 2;
     wa_size = CS_SIMD_SIZE(n_cols);
 
