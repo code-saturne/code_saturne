@@ -1746,7 +1746,6 @@ cs_navsto_system_compute(const cs_mesh_t           *mesh,
                          const cs_cdo_quantities_t *quant,
                          const cs_time_step_t      *time_step)
 {
-  cs_log_printf(CS_LOG_DEFAULT, "cs_navsto_system_compute\n");
 
   cs_navsto_system_t *ns = cs_navsto_system;
 

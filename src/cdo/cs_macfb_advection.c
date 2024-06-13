@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_MACFB_ADVECTION_DBG 1
+#define CS_MACFB_ADVECTION_DBG 0
 
 /*=============================================================================
  * Local structure definitions
@@ -102,9 +102,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static inline short int
-_get_face_idx_upw(const short int *f_idx,
-                  const short int *fe_idx,
-                  const cs_real_t  flux)
+_get_face_idx_upw(const short int f_idx,
+                  const short int fe_idx,
+                  const cs_real_t flux)
 {
   return (flux >= 0.) ? f_idx : fe_idx;
 }

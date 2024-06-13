@@ -36,6 +36,7 @@
 #include "cs_cdo_quantities.h"
 #include "cs_equation_param.h"
 #include "cs_hodge.h"
+#include "cs_macfb_builder.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -867,6 +868,26 @@ cs_cdovb_diffusion_p0_face_flux(const short int           f,
                                 const cs_real_t           diff_tensor[3][3],
                                 const cs_real_t          *pot_values,
                                 cs_real_t                *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the diffusion operator for the MAC face-based scheme
+ *
+ * \param[in]  cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]  macb       pointer to a cs_macfb_builder_t structure
+ * \param[in]  diff_pty   pointer to a cs_property_data_t structure
+ * \param[out]  mat       pointer to a cs_sdm_t structure. It is filled inside
+ *                        the function. Have to preallocated.
+ * \param[out]  rhs       pointer to a cs_real_t array. It is filled inside the
+ *                        function. Have to preallocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
+                        const cs_macfb_builder_t *macb,
+                        const cs_property_data_t *diff_pty,
+                        cs_sdm_t                 *mat,
+                        cs_real_t                *rhs);
 
 /*----------------------------------------------------------------------------*/
 

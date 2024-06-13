@@ -3645,6 +3645,106 @@ cs_cdovb_diffusion_p0_face_flux(const short int           f,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the diffusion operator.
+ *
+ * \param[in]  cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]  macb       pointer to a cs_macfb_builder_t structure
+ * \param[in]  diff_pty   pointer to a cs_property_data_t structure
+ * \param[in,out]  mat    pointer to a cs_sdm_t structure. It is filled inside
+ *                        the function. Have to preallocated.
+ * \param[in,out]  rhs    pointer to a cs_real_t array. It is filled inside
+ * the function. Have to preallocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
+                   const cs_macfb_builder_t *macb,
+                   const cs_property_data_t *diff_pty,
+                   cs_sdm_t                 *mat,
+                   cs_real_t                *rhs)
+{
+  /* Sanity checks */
+  assert(cm != NULL && diff_pty != NULL && macb != NULL);
+
+  /* For the moment, we assume that the diffusion
+   *  is uniform and isotropic */
+
+  const cs_property_t *pty = diff_pty->property;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (!cs_property_is_constant(pty)) {
+    bft_error(
+      __FILE__, __LINE__, 0, _(" %s: Diffusion is not constant.\n"), __func__);
+  }
+  if (!cs_property_is_isotropic(pty)) {
+    bft_error(
+      __FILE__, __LINE__, 0, _(" %s: Diffusion is not isotropic.\n"), __func__);
+  }
+#endif
+
+  /* TODONP: compute value by face and not by cell */
+  const cs_real_t mu = cs_property_get_cell_value(cm->c_id, 0.0, pty);
+
+  /* Initialize objects */
+  cs_sdm_init(cm->n_fc, macb->n_dofs, mat);
+
+  /* Loop on inner faces */
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+
+    const short int fi_shift = fi * macb->n_dofs;
+
+    /* Face info */
+    const cs_quant_t fq     = cm->face[fi];
+    const cs_real_t  vol_cv = macb->f_vol_cv[fi];
+
+    /* compute property at fq_xc */
+    const cs_real_t mu_fc = mu;
+
+    const cs_real_t val_fi = mu_fc * fq.meas / (2.0 * cm->hfc[fi] * vol_cv);
+
+    /* diagonal entry */
+    assert(fi_shift + fi < cm->n_fc * macb->n_dofs);
+    mat->val[fi_shift + fi] = val_fi;
+
+    /* extra-diagonal entry - opposite face */
+    mat->val[fi_shift + macb->f_opp_idx[fi]] = -val_fi;
+
+    /* Loop on outer faces */
+    for (short int fj = 0; fj < 4; fj++) {
+      const short int shift_j = 4 * fi + fj;
+      const short int fj_idx  = macb->f2f_idx[shift_j];
+
+      const cs_real_t val_fj = mu_fc * macb->f2f_surf_cv_c[shift_j]
+                               / (macb->f2f_h[shift_j] * vol_cv);
+
+      /* diagonal entry */
+      assert(fi_shift + fi < cm->n_fc * macb->n_dofs);
+      mat->val[fi_shift + fi] += val_fj;
+
+      if (fj_idx >= 0) {
+        /* extra-diagonal entry */
+
+        assert(fi_shift + fj_idx < cm->n_fc * macb->n_dofs);
+        mat->val[fi_shift + fj_idx] = -val_fj;
+      }
+      else {
+        /* To close gradient reconstruction */
+        rhs[fi] += val_fj * macb->dir_values[shift_j];
+      }
+    }
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+  if (cm->c_id == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "Local MAC-fb diffusion matrix: \n");
+    cs_sdm_simple_dump(mat);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
 
 #undef _dp3
 

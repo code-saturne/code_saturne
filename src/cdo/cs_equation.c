@@ -2694,14 +2694,14 @@ cs_equation_set_functions(void)
                     __func__,
                     eqp->name);
 
-        eq->solve_steady_state = cs_macfb_vecteq_solve_steady_state;
+        eq->solve_steady_state = cs_macfb_vecteq_solve_steady_implicit;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
           eq->solve = eq->solve_steady_state;
           break;
 
         case CS_TIME_SCHEME_EULER_IMPLICIT:
-          eq->solve = cs_macfb_vecteq_solve_implicit;
+          eq->solve = cs_macfb_vecteq_solve_steady_implicit;
           break;
 
         case CS_TIME_SCHEME_THETA:

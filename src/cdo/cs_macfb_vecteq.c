@@ -225,6 +225,63 @@ _vfb_apply_bc(const cs_equation_param_t   *eqp,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve the linear system arising from a vector steady-state
+ *         diffusion equation with a MAC-Fb scheme
+ *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_solve_system(const bool                 cur2prev,
+              const cs_equation_param_t *eqp,
+              cs_equation_builder_t     *eqb,
+              cs_macfb_vecteq_t         *eqc,
+              cs_field_t                *fld)
+{
+  cs_cdo_system_helper_t *sh = eqb->system_helper;
+
+  const cs_lnum_t n_faces = cs_shared_quant->n_faces;
+
+  cs_timer_t ts = cs_timer_time();
+
+  if (cur2prev && eqc->face_values_pre != NULL)
+    cs_array_real_copy(n_faces, eqc->face_values, eqc->face_values_pre);
+
+  /* Solve the linear system (treated as a scalar-valued system) */
+
+  cs_real_t       normalization = 1.0; /* TODO */
+  cs_sles_t      *sles   = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t    *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t *range_set = cs_cdo_system_get_range_set(sh, 0);
+
+  cs_cdo_solve_scalar_system(n_faces,
+                             eqp->sles_param,
+                             matrix,
+                             range_set,
+                             normalization,
+                             true, /* rhs_redux */
+                             sles,
+                             eqc->face_values,
+                             sh->rhs);
+
+  cs_timer_t te = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &ts, &te);
+
+  /* Update fields */
+
+  cs_macfb_vecteq_update_fields(&(eqb->tce), fld, cur2prev);
+
+  /* Free remaining buffers */
+
+  cs_sles_free(sles);
+}
+
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -506,7 +563,7 @@ cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
 
     /* Compute the diffusion matrix */
 
-    cs_macfb_builder_diffusion(cm, macb, diff_pty, cb->loc, csys->rhs);
+    cs_macfb_diffusion(cm, macb, diff_pty, cb->loc, csys->rhs);
 
     /* Add the local diffusion operator to the local system */
 
@@ -622,6 +679,62 @@ cs_macfb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the matrix and rhs for a vector-valued MAC scheme
+ *          and Euler implicit. Values are added in place
+ *
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      macb        pointer to a cs_macfb_builder_t structure
+ * \param[in]      cb          pointer to a \ref cs_cell_builder_t structure
+ * \param[in]      dt          value of the time step
+ * \param[in, out] csys        pointer to a \ref cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_macfb_vecteq_euler_implicit_term(const cs_equation_param_t *eqp,
+                                    const cs_cell_mesh_t      *cm,
+                                    const cs_macfb_builder_t  *macb,
+                                    const cs_cell_builder_t   *cb,
+                                    const cs_real_t            dt,
+                                    cs_cell_sys_t             *csys)
+{
+  assert(csys != NULL);
+
+  cs_sdm_t *mat = csys->mat;
+
+  assert(mat->n_rows >= cm->n_fc);
+
+  const cs_lnum_t n_cols = mat->n_cols;
+
+  const cs_real_t inv_dt = 1. / dt;
+
+  /*TODONP not uniform in space*/
+  const cs_real_t rho
+    = cs_property_value_in_cell(cm, eqp->time_property, cb->t_pty_eval);
+
+  /* Loop on inner faces */
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+
+    cs_real_t val_fi = rho * macb->f_vol_cv[fi] * inv_dt;
+
+    /* if not a boundary face: divided by 2 since
+     * two cells share this face */
+
+    if (csys->bf_ids[fi] <= -1) {
+      val_fi *= 0.5;
+    }
+
+    /* diagonal entry */
+    mat->val[fi * n_cols + fi] += val_fi;
+
+    /* rhs */
+    csys->rhs[fi] += val_fi * csys->val_n[fi];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with MAC-fb scheme
  *
@@ -684,8 +797,10 @@ cs_macfb_vecteq_update_fields(cs_timer_counter_t *tce,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build and solve the linear system arising from a vector steady-state
- *         diffusion equation with a MAC-Fb scheme
+ * \brief  Build and solve the linear system arising from a vector diffusion
+ *         equation with a MAC-Fb scheme:
+ *           - steady scheme
+ *           - implicit Euler scheme
  *         One works cellwise and then process to the assembly
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
@@ -698,23 +813,23 @@ cs_macfb_vecteq_update_fields(cs_timer_counter_t *tce,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_vecteq_solve_steady_state(bool                       cur2prev,
-                                   const cs_mesh_t           *mesh,
-                                   const int                  field_id,
-                                   const cs_equation_param_t *eqp,
-                                   cs_equation_builder_t     *eqb,
-                                   void                      *context)
+cs_macfb_vecteq_solve_steady_implicit(bool                       cur2prev,
+                                      const cs_mesh_t           *mesh,
+                                      const int                  field_id,
+                                      const cs_equation_param_t *eqp,
+                                      cs_equation_builder_t     *eqb,
+                                      void                      *context)
 {
   cs_timer_t t0 = cs_timer_time();
 
   const cs_cdo_connect_t    *connect = cs_shared_connect;
   const cs_cdo_quantities_t *quant   = cs_shared_quant;
 
-  const cs_lnum_t       n_faces   = quant->n_faces;
+  cs_macfb_vecteq_t *eqc = (cs_macfb_vecteq_t *)context;
+
   const cs_time_step_t *ts        = cs_shared_time_step;
   const cs_real_t       time_eval = ts->t_cur + ts->dt[0];
 
-  cs_macfb_vecteq_t      *eqc = (cs_macfb_vecteq_t *)context;
   cs_field_t             *fld = cs_field_by_id(field_id);
   cs_cdo_system_helper_t *sh  = eqb->system_helper;
 
@@ -769,12 +884,18 @@ cs_macfb_vecteq_solve_steady_state(bool                       cur2prev,
       cs_macfb_vecteq_init_build(
         connect, quant, eqp, eqb, c_id, eqc->face_values, cm, macb, csys, cb);
 
+      /**/
       cs_macfb_vecteq_conv_diff_reac(
         eqp, eqb, eqc, cm, macb, diff_hodge->pty_data, csys, cb);
 
       if (cs_equation_param_has_sourceterm(eqp)) /* SOURCE TERM */
         cs_macfb_vecteq_sourceterm(
           cm, eqp, macb, time_eval, 1.0, eqb, cb, csys);
+
+      if (cs_equation_param_has_time(eqp)) {
+        assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
+        cs_macfb_vecteq_euler_implicit_term(eqp, cm, macb, cb, ts->dt[0], csys);
+      }
 
       /* Apply BOUNDARY CONDITIONS */
 
@@ -804,69 +925,11 @@ cs_macfb_vecteq_solve_steady_state(bool                       cur2prev,
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  if (cur2prev && eqc->face_values_pre != NULL)
-    cs_array_real_copy(n_faces, eqc->face_values, eqc->face_values_pre);
-
   /* Solve the linear system (treated as a scalar-valued system) */
 
-  cs_real_t       normalization = 1.0; /* TODO */
-  cs_sles_t      *sles   = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
-  cs_matrix_t    *matrix = cs_cdo_system_get_matrix(sh, 0);
-  cs_range_set_t *range_set = cs_cdo_system_get_range_set(sh, 0);
+  _solve_system(cur2prev, eqp, eqb, eqc, fld);
 
-  cs_cdo_solve_scalar_system(n_faces,
-                             eqp->sles_param,
-                             matrix,
-                             range_set,
-                             normalization,
-                             true, /* rhs_redux */
-                             sles,
-                             eqc->face_values,
-                             rhs);
-
-  cs_timer_t t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
-
-  /* Update fields */
-
-  cs_macfb_vecteq_update_fields(&(eqb->tce), fld, cur2prev);
-
-  /* Free remaining buffers */
-
-  cs_sles_free(sles);
   cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build and solve the linear system arising from a vector diffusion
- *         equation with a MAC-Fb scheme and an implicit Euler scheme.
- *         One works cellwise and then process to the assembly
- *
- * \param[in]      cur2prev   true="current to previous" operation is performed
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_id   id of the variable field related to this equation
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_macfb_vecteq_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_macfb_vecteq_solve_implicit(bool                       cur2prev,
-                               const cs_mesh_t           *mesh,
-                               const int                  field_id,
-                               const cs_equation_param_t *eqp,
-                               cs_equation_builder_t     *eqb,
-                               void                      *context)
-{
-  bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
-  CS_UNUSED(cur2prev);
-  CS_UNUSED(mesh);
-  CS_UNUSED(field_id);
-  CS_UNUSED(eqp);
-  CS_UNUSED(eqb);
-  CS_UNUSED(context);
 }
 
 /*----------------------------------------------------------------------------*/

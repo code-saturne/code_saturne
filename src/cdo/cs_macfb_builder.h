@@ -200,26 +200,6 @@ void cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
 void cs_macfb_builder_dump(const cs_macfb_builder_t *macb);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the diffusion operator.
- *
- * \param[in]  cm         pointer to a cs_cell_mesh_t structure
- * \param[in]  macb       pointer to a cs_macfb_builder_t structure
- * \param[in]  diff_pty   pointer to a cs_property_data_t structure
- * \param[out]  mat       pointer to a cs_sdm_t structure. It is filled inside
- *                        the function. Have to preallocated.
- * \param[out]  rhs       pointer to a cs_real_t array. It is filled inside the
- *                        function. Have to preallocated.
- */
-/*----------------------------------------------------------------------------*/
-
-void cs_macfb_builder_diffusion(const cs_cell_mesh_t     *cm,
-                                const cs_macfb_builder_t *macb,
-                                const cs_property_data_t *diff_pty,
-                                cs_sdm_t                 *mat,
-                                cs_real_t                *rhs);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

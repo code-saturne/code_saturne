@@ -278,6 +278,27 @@ void cs_macfb_vecteq_sourceterm(const cs_cell_mesh_t      *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the matrix and rhs for a vector-valued MAC scheme
+ *          and Euler implicit. Values are added in place
+ *
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      macb        pointer to a cs_macfb_builder_t structure
+ * \param[in]      cb          pointer to a \ref cs_cell_builder_t structure
+ * \param[in]      dt          value of the time step
+ * \param[in, out] csys        pointer to a \ref cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_macfb_vecteq_euler_implicit_term(const cs_equation_param_t *eqp,
+                                         const cs_cell_mesh_t      *cm,
+                                         const cs_macfb_builder_t  *macb,
+                                         const cs_cell_builder_t   *cb,
+                                         const cs_real_t            dt,
+                                         cs_cell_sys_t             *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build the local matrices arising from the diffusion term in the
  *          vector-valued MAC schemes.
  *
@@ -381,30 +402,10 @@ void cs_macfb_vecteq_update_fields(cs_timer_counter_t *tce,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build and solve the linear system arising from a vector steady-state
- *         diffusion equation with a MAC scheme
- *         One works cellwise and then process to the assembly
- *
- * \param[in]      cur2prev   true="current to previous" operation is performed
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_id   id of the variable field related to this equation
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_macfb_vecteq_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void cs_macfb_vecteq_solve_steady_state(bool                       cur2prev,
-                                        const cs_mesh_t           *mesh,
-                                        const int                  field_id,
-                                        const cs_equation_param_t *eqp,
-                                        cs_equation_builder_t     *eqb,
-                                        void                      *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build and solve the linear system arising from a vector diffusion
- *         equation with a MAC scheme and an implicit Euler scheme.
+ *         equation with a MAC-Fb scheme:
+ *           - steady scheme
+ *           - implicit Euler scheme
  *         One works cellwise and then process to the assembly
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
@@ -416,12 +417,12 @@ void cs_macfb_vecteq_solve_steady_state(bool                       cur2prev,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_vecteq_solve_implicit(bool                       cur2prev,
-                                    const cs_mesh_t           *mesh,
-                                    const int                  field_id,
-                                    const cs_equation_param_t *eqp,
-                                    cs_equation_builder_t     *eqb,
-                                    void                      *context);
+void cs_macfb_vecteq_solve_steady_implicit(bool                       cur2prev,
+                                           const cs_mesh_t           *mesh,
+                                           const int                  field_id,
+                                           const cs_equation_param_t *eqp,
+                                           cs_equation_builder_t     *eqb,
+                                           void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
