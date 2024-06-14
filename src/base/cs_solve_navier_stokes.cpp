@@ -1961,7 +1961,6 @@ _velocity_prediction(const cs_mesh_t             *m,
   const cs_time_step_options_t  *tso = cs_glob_time_step_options;
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
   const cs_vof_parameters_t *vof_param = cs_glob_vof_parameters;
-  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
   const cs_velocity_pressure_model_t
     *vp_model = cs_glob_velocity_pressure_model;
   const cs_velocity_pressure_param_t *vp_param = cs_glob_velocity_pressure_param;
@@ -1982,6 +1981,22 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   const cs_real_t ro0 = fp->ro0;
   const cs_real_t pred0 = fp->pred0;
+
+  cs_real_t *xyzp0, *gxyz;
+#if defined(HAVE_ACCEL)
+  CS_MALLOC_HD(xyzp0, 3, cs_real_t, cs_alloc_mode);
+  xyzp0[0] = fp->xyzp0[0];
+  xyzp0[1] = fp->xyzp0[1];
+  xyzp0[2] = fp->xyzp0[2];
+
+  CS_MALLOC_HD(gxyz, 3, cs_real_t, cs_alloc_mode);
+  gxyz[0] = cs_glob_physical_constants->gravity[0];
+  gxyz[1] = cs_glob_physical_constants->gravity[1];
+  gxyz[2] = cs_glob_physical_constants->gravity[2];
+#else
+  xyzp0 = (cs_real_t *)fp->xyzp0;
+  gxyz = (cs_real_t *)cs_glob_physical_constants->gravity;
+#endif
 
   /* Pointers to properties
    * Density at time n+1,iteration iterns+1 */
@@ -2328,7 +2343,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                                                     cpro_gradp[c_id]);
 
       cs_real_t pfac = coefa_p[f_id] + coefb_p[f_id]*pip;
-      pfac +=   ro0 * cs_math_3_distance_dot_product(fp->xyzp0,
+      pfac +=   ro0 * cs_math_3_distance_dot_product(xyzp0,
                                                      cdgfbo[f_id],
                                                      gxyz)
               - pred0;
