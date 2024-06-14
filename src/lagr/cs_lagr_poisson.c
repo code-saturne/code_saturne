@@ -93,12 +93,12 @@ diverv (cs_real_t                  *diverg,
   /* ====================================================================
    * 1. INITIALISATIONS
    * ====================================================================*/
-  cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
-  cs_lnum_t ncel   = cs_glob_mesh->n_cells;
+  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  cs_lnum_t n_cells   = cs_glob_mesh->n_cells;
 
   /* Allocate work arrays */
   cs_real_33_t *grad;
-  BFT_MALLOC(grad, ncelet, cs_real_33_t);
+  BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
 
   /* ====================================================================
    * Calcul du gradient de U
@@ -130,8 +130,8 @@ diverv (cs_real_t                  *diverg,
    * Calcul de la divergence du vecteur
    * ====================================================================*/
 
-  for (cs_lnum_t iel = 0; iel < ncel; iel++)
-    diverg[iel]  = grad[iel][0][0] + grad[iel][1][1] + grad[iel][2][2];
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    diverg[c_id]  = grad[c_id][0][0] + grad[c_id][1][1] + grad[c_id][2][2];
 
   /* Free memory     */
   BFT_FREE(grad);
@@ -152,12 +152,12 @@ _lageqp(cs_real_t   *vitessel,
    * 1. INITIALISATION
    * ====================================================================*/
 
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-  cs_lnum_t ncelet = m->n_cells_with_ghosts;
-  cs_lnum_t ncel   = m->n_cells;
-  cs_lnum_t nfac   = m->n_i_faces;
-  cs_lnum_t nfabor = m->n_b_faces;
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  cs_lnum_t n_cells = m->n_cells;
+  cs_lnum_t n_i_faces = m->n_i_faces;
+  cs_lnum_t n_b_faces = m->n_b_faces;
 
   cs_real_t *viscf, *viscb;
   cs_real_t *smbrs;
@@ -168,18 +168,18 @@ _lageqp(cs_real_t   *vitessel,
 
   /* Allocate temporary arrays */
 
-  BFT_MALLOC(viscf , nfac  , cs_real_t);
-  BFT_MALLOC(viscb , nfabor, cs_real_t);
-  BFT_MALLOC(smbrs , ncelet, cs_real_t);
-  BFT_MALLOC(rovsdt, ncelet, cs_real_t);
-  BFT_MALLOC(fmala , nfac  , cs_real_t);
-  BFT_MALLOC(fmalb , nfabor, cs_real_t);
-  BFT_MALLOC(phia  , ncelet, cs_real_t);
-  BFT_MALLOC(dpvar , ncelet, cs_real_t);
+  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
+  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  BFT_MALLOC(fmala, n_i_faces, cs_real_t);
+  BFT_MALLOC(fmalb, n_b_faces, cs_real_t);
+  BFT_MALLOC(phia, n_cells_ext, cs_real_t);
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
   cs_real_3_t *w;
-  BFT_MALLOC(w, ncelet, cs_real_3_t);
+  BFT_MALLOC(w, n_cells_ext, cs_real_3_t);
 
   bft_printf(_("   ** RESOLUTION POUR LA VARIABLE Pressure correction"));
 
@@ -187,15 +187,13 @@ _lageqp(cs_real_t   *vitessel,
    * 2. TERMES SOURCES
    * ==================================================================== */
 
-  /* --> Initialisation   */
+  /* --> Initialization   */
 
-  for (cs_lnum_t iel = 0; iel < ncel; iel++) {
-
-    smbrs[iel]  = 0.0;
-    rovsdt[iel] = 0.0;
-    phi[iel]    = 0.0;
-    phia[iel]   = 0.0;
-
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    smbrs[c_id]  = 0.0;
+    rovsdt[c_id] = 0.0;
+    phi[c_id]    = 0.0;
+    phia[c_id]   = 0.0;
   }
 
   /*     "VITESSE" DE DIFFUSION FACE     */
@@ -207,10 +205,10 @@ _lageqp(cs_real_t   *vitessel,
                     viscb);
 
   /* CALCUL  de div(Alpha Up) avant correction     */
-  for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     for (cs_lnum_t isou = 0; isou < 3; isou++)
-      w[isou][iel] = -vitessel[isou + iel * 3] * alphal[iel];
+      w[c_id][isou] = -vitessel[isou + c_id * 3] * alphal[c_id];
 
   }
 
@@ -220,27 +218,27 @@ _lageqp(cs_real_t   *vitessel,
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
-  BFT_MALLOC(bc_coeffs_v_loc.a, 3*nfabor, cs_real_t);
-  BFT_MALLOC(bc_coeffs_v_loc.b, 9*nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 
   cs_real_3_t  *coefaw = (cs_real_3_t  *)bc_coeffs_v_loc.a;
   cs_real_33_t *coefbw = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
-  for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    cs_lnum_t iel = m->b_face_cells[ifac];
+    cs_lnum_t c_id = m->b_face_cells[f_id];
 
     for (cs_lnum_t isou = 0; isou < 3; isou++)
-      coefaw[isou][ifac]  = w[isou][iel];
+      coefaw[f_id][isou]  = w[c_id][isou];
 
   }
 
-  for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
-        coefbw[jsou][isou][ifac] = 0.0;
+        coefbw[jsou][isou][f_id] = 0.0;
 
     }
 
@@ -249,8 +247,8 @@ _lageqp(cs_real_t   *vitessel,
   diverv(smbrs, w, &bc_coeffs_v_loc);
 
   /* Free memory */
-  BFT_FREE(coefaw);
-  BFT_FREE(coefbw);
+  BFT_FREE(bc_coeffs_v_loc.a);
+  BFT_FREE(bc_coeffs_v_loc.b);
 
   /* --> Boundary condition for PHI  */
   /*     ==============================  */
@@ -259,43 +257,43 @@ _lageqp(cs_real_t   *vitessel,
   cs_field_bc_coeffs_t bc_coeffs_phi_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_phi_loc);
 
-  BFT_MALLOC(bc_coeffs_phi_loc.a,  nfabor, cs_real_t);
-  BFT_MALLOC(bc_coeffs_phi_loc.b,  nfabor, cs_real_t);
-  BFT_MALLOC(bc_coeffs_phi_loc.af, nfabor, cs_real_t);
-  BFT_MALLOC(bc_coeffs_phi_loc.bf, nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_phi_loc.a,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_phi_loc.b,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_phi_loc.af, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_phi_loc.bf, n_b_faces, cs_real_t);
 
   cs_real_t *coefap = bc_coeffs_phi_loc.a;
   cs_real_t *coefbp = bc_coeffs_phi_loc.b;
   cs_real_t *cofafp = bc_coeffs_phi_loc.af;
   cs_real_t *cofbfp = bc_coeffs_phi_loc.bf;
 
-  for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    cs_lnum_t iel  = m->b_face_cells[ifac];
-    cs_real_t hint = alphal[iel] / fvq->b_dist[ifac];
+    cs_lnum_t c_id  = m->b_face_cells[f_id];
+    cs_real_t hint = alphal[c_id] / fvq->b_dist[f_id];
 
-    if (   itypfb[ifac] == CS_INLET
-        || itypfb[ifac] == CS_SMOOTHWALL
-        || itypfb[ifac] == CS_ROUGHWALL
-        || itypfb[ifac] == CS_SYMMETRY) {
+    if (   itypfb[f_id] == CS_INLET
+        || itypfb[f_id] == CS_SMOOTHWALL
+        || itypfb[f_id] == CS_ROUGHWALL
+        || itypfb[f_id] == CS_SYMMETRY) {
 
       /* Neumann Boundary Conditions    */
 
-      cs_boundary_conditions_set_neumann_scalar(ifac,
+      cs_boundary_conditions_set_neumann_scalar(f_id,
                                                 &bc_coeffs_phi_loc,
                                                 0.0,
                                                 hint);
-      coefap[ifac] = 0.0;
-      coefbp[ifac] = 1.0;
+      coefap[f_id] = 0.0;
+      coefbp[f_id] = 1.0;
 
     }
-    else if (itypfb[ifac] == CS_OUTLET) {
+    else if (itypfb[f_id] == CS_OUTLET) {
 
       /* Dirichlet Boundary Condition   */
 
-      cs_boundary_conditions_set_dirichlet_scalar(ifac,
+      cs_boundary_conditions_set_dirichlet_scalar(f_id,
                                                   &bc_coeffs_phi_loc,
-                                                  phia[iel],
+                                                  phia[c_id],
                                                   hint,
                                                   -1);
 
@@ -316,9 +314,9 @@ _lageqp(cs_real_t   *vitessel,
 
   /* Cancel mass fluxes */
 
-  for (cs_lnum_t ifac = 0; ifac < nfac; ifac++) {
-    fmala[ifac] = 0.0;
-    fmalb[ifac] = 0.0;
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    fmala[f_id] = 0.0;
+    fmalb[f_id] = 0.0;
   }
 
   /* In the theta-scheme case, set theta to 1 (order 1) */
@@ -397,14 +395,14 @@ _lageqp(cs_real_t   *vitessel,
 void
 cs_lagr_poisson(const int  itypfb[])
 {
-  cs_lnum_t ncel   = cs_glob_mesh->n_cells;
-  cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
-  cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
+  cs_lnum_t n_cells   = cs_glob_mesh->n_cells;
+  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   /* Allocate a temporary array     */
 
   cs_real_t *phil;
-  BFT_MALLOC(phil, ncelet, cs_real_t);
+  BFT_MALLOC(phil, n_cells_ext, cs_real_t);
 
   /* Initialization */
 
@@ -436,20 +434,20 @@ cs_lagr_poisson(const int  itypfb[])
   /* Compute gradient of phi corrector */
 
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, ncelet, cs_real_3_t);
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
 
-  BFT_MALLOC(bc_coeffs_loc.a,  nfabor, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.b,  nfabor, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
   cs_real_t *coefap = bc_coeffs_loc.a;
   cs_real_t *coefbp = bc_coeffs_loc.b;
 
-  for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
-    cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
-    coefap[ifac] = phil[iel];
-    coefbp[ifac] = 0.0;
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    cs_lnum_t c_id = cs_glob_mesh->b_face_cells[f_id];
+    coefap[f_id] = phil[c_id];
+    coefbp[f_id] = 0.0;
   }
 
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -483,11 +481,11 @@ cs_lagr_poisson(const int  itypfb[])
 
   /* Correct mean velocities */
 
-  for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    if (stat_weight->val[iel] > cs_glob_lagr_stat_options->threshold) {
+    if (stat_weight->val[c_id] > cs_glob_lagr_stat_options->threshold) {
       for (cs_lnum_t id = 0; id < 3; id++)
-        mean_vel->val[iel * 3 + id] += - grad[iel][id];
+        mean_vel->val[c_id * 3 + id] += - grad[c_id][id];
     }
 
   }
@@ -497,14 +495,14 @@ cs_lagr_poisson(const int  itypfb[])
   for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
     unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-    cs_lnum_t      iel  = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
+    cs_lnum_t      c_id  = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
-    if (iel >= 0) {
+    if (c_id >= 0) {
 
       cs_real_t *part_vel = cs_lagr_particle_attr(part, p_am, CS_LAGR_VELOCITY);
 
       for (cs_lnum_t id = 0; id < 3; id++)
-        part_vel[id] += -grad[id][iel];
+        part_vel[id] += -grad[c_id][id];
 
     }
 
