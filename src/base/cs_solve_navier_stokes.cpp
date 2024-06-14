@@ -2828,6 +2828,10 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   BFT_FREE(divt);
   BFT_FREE(icepdc);
+#if defined(HAVE_ACCEL)
+  CS_FREE_HD(gxyz);
+  CS_FREE_HD(xyzp0);
+#endif
 
   /* Solving of the 3x3xNcel coupled system
    ======================================== */
