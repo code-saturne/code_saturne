@@ -972,7 +972,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
         BFT_MALLOC(courant, n_cells_ext, cs_real_t);
-        cs_cell_courant_number(field_id, courant);
+        cs_cell_courant_number(f, ctx, courant);
       }
     }
 
@@ -2724,7 +2724,7 @@ cs_flux_through_surface(const char         *scalar_name,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
         BFT_MALLOC(courant, n_cells_ext, cs_real_t);
-        cs_cell_courant_number(field_id, courant);
+        cs_cell_courant_number(f, ctx, courant);
       }
     }
 

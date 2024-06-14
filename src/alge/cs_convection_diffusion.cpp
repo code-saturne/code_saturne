@@ -237,7 +237,7 @@ _beta_limiter_denom(cs_field_t                 *f,
     /* cell Courant number computation */
     if (limiter_choice >= CS_NVD_VOF_HRIC) {
       CS_MALLOC_HD(courant, n_cells_ext, cs_real_t, cs_alloc_mode);
-      cs_cell_courant_number(f->id, courant);
+      cs_cell_courant_number(f, ctx, courant);
     }
   }
 
@@ -1906,7 +1906,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
         BFT_MALLOC(courant, n_cells_ext, cs_real_t);
-        cs_cell_courant_number(f_id, courant);
+        cs_cell_courant_number(f, ctx, courant);
       }
     }
 
@@ -2636,7 +2636,7 @@ _convection_diffusion_scalar_unsteady
       }
       else if (limiter_choice >= CS_NVD_VOF_HRIC) {
         CS_MALLOC_HD(courant, n_cells_ext, cs_real_t, cs_alloc_mode);
-        cs_cell_courant_number(f_id, courant);
+        cs_cell_courant_number(f, ctx, courant);
       }
     }
 
@@ -3700,7 +3700,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
         CS_MALLOC_HD(courant, n_cells_ext, cs_real_t, cs_alloc_mode);
-        cs_cell_courant_number(f_id, courant);
+        cs_cell_courant_number(f, ctx, courant);
       }
     }
 
@@ -6952,91 +6952,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Public function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute the local cell Courant number as the maximum of all cell face based
- * Courant number at each cell.
- *
- * parameters:
- *   f_id        <-- field id (or -1)
- *   courant     --> cell Courant number
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_courant_number(const int   f_id,
-                       cs_real_t  *courant)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const cs_real_t *restrict vol
-    = (cs_real_t *restrict)fvq->cell_vol;
-
-  cs_field_t *f = cs_field_by_id(f_id);
-  const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const cs_real_t *restrict i_massflux
-    = cs_field_by_id( cs_field_get_key_int(f, kimasf) )->val;
-  const cs_real_t *restrict b_massflux
-    = cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
-
-  const cs_real_t *restrict dt
-    = (const cs_real_t *restrict)CS_F_(dt)->val;
-
-  /* Initialisation */
-
-# pragma omp parallel for
-  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
-    courant[ii] = 0.;
-  }
-
-  /* ---> Contribution from interior faces */
-
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-          face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-          face_id++) {
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
-
-        cs_real_t cnt = abs(i_massflux[face_id])*dt[ii]/vol[ii];
-        courant[ii] = cs_math_fmax(courant[ii], cnt); //FIXME may contain rho
-
-        cnt = abs(i_massflux[face_id])*dt[jj]/vol[jj];
-        courant[jj] = cs_math_fmax(courant[jj], cnt);
-      }
-    }
-  }
-
-  /* ---> Contribution from boundary faces */
-
-# pragma omp parallel for
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-    for (cs_lnum_t face_id = b_group_index[t_id*2];
-         face_id < b_group_index[t_id*2 + 1];
-         face_id++) {
-      cs_lnum_t ii = b_face_cells[face_id];
-
-      cs_real_t cnt = abs(b_massflux[face_id])*dt[ii]/vol[ii];
-      courant[ii] = cs_math_fmax(courant[ii], cnt);
-    }
-  }
-}
 
 /*----------------------------------------------------------------------------
  * Return pointer to slope test indicator field values if active.
@@ -12196,6 +12111,78 @@ END_C_DECLS
 
 #ifdef __cplusplus
 
+/*----------------------------------------------------------------------------
+ * Compute the local cell Courant number as the maximum of all cell face based
+ * Courant number at each cell.
+ *
+ * parameters:
+ *   f_id        <-- pointer to field
+ *   ctx         <-- reference to dispatch context
+ *   courant     --> cell Courant number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_courant_number(const cs_field_t    *f,
+                       cs_dispatch_context &ctx,
+                       cs_real_t           *courant)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  //cs_mesh_adjacencies_update_cell_i_faces();
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+  const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
+
+  const cs_real_t *restrict vol
+    = (cs_real_t *restrict)fvq->cell_vol;
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const cs_real_t *restrict i_massflux
+    = cs_field_by_id( cs_field_get_key_int(f, kimasf) )->val;
+  const cs_real_t *restrict b_massflux
+    = cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
+
+  const cs_real_t *restrict dt
+    = (const cs_real_t *restrict)CS_F_(dt)->val;
+
+  /* ---> Contribution from interior and boundary faces */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+    /* Initialization */
+    courant[c_id] = 0.;
+
+    /* Loop on interior faces */
+    const cs_lnum_t s_id_i = c2c_idx[c_id];
+    const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+      const cs_lnum_t face_id = cell_i_faces[cidx];
+      cs_real_t cnt = cs_math_fabs(i_massflux[face_id]*dt[c_id]/vol[c_id]);
+      courant[c_id] = cs_math_fmax(courant[c_id], cnt); //FIXME may contain rho
+    }
+
+    /* Loop on boundary faces */
+    const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+    const cs_lnum_t e_id_b = cell_b_faces_idx[c_id + 1];
+
+    for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+      const cs_lnum_t face_id = cell_b_faces[cidx];
+      cs_real_t cnt = cs_math_fabs(b_massflux[face_id]*dt[c_id]*vol[c_id]);
+      courant[c_id] = cs_math_fmax(courant[c_id], cnt);
+    }
+  });
+
+  ctx.wait();
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
@@ -12446,4 +12433,4 @@ cs_upwind_gradient(const int                     f_id,
   }
 }
 
-#endif
+#endif /* cplusplus */

@@ -44,68 +44,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the upwind gradient used in the slope tests.
- *
- * This function assumes the input gradient and pvar values have already
- * been synchronized.
- *
- * \param[in]     f_id         field id
- * \param[in]     ctx          Reference to dispatch context
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     grad         standard gradient
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
- * \param[in]     bc_coeffs    boundary condition structure for the variable
- * \param[in]     i_massflux   mass flux at interior faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_slope_test_gradient(int                         f_id,
-                       cs_dispatch_context        &ctx,
-                       int                         inc,
-                       cs_halo_type_t              halo_type,
-                       const cs_real_3_t          *grad,
-                       cs_real_3_t                *grdpa,
-                       const cs_real_t            *pvar,
-                       const cs_field_bc_coeffs_t *bc_coeffs,
-                       const cs_real_t            *i_massflux);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute the upwind gradient used in the pure SOLU schemes
- *        (observed in the litterature).
- *
- * \param[in]     f_id         field index
- * \param[in]     ctx          Reference to dispatch context
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     bc_coeffs    boundary condition structure for the variable
- * \param[in]     i_massflux   mass flux at interior faces
- * \param[in]     b_massflux   mass flux at boundary faces
- * \param[in]     pvar         values
- * \param[out]    grdpa        upwind gradient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_upwind_gradient(const int                     f_id,
-                   cs_dispatch_context          &ctx,
-                   const int                     inc,
-                   const cs_halo_type_t          halo_type,
-                   const cs_field_bc_coeffs_t   *bc_coeffs,
-                   const cs_real_t               i_massflux[],
-                   const cs_real_t               b_massflux[],
-                   const cs_real_t     *restrict pvar,
-                   cs_real_3_t         *restrict grdpa);
-
-#endif
-
 BEGIN_C_DECLS
 
 /*=============================================================================
@@ -150,20 +88,6 @@ typedef enum {
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute the local cell Courant number as the maximum of all cell face based
- * Courant number at each cell.
- *
- * parameters:
- *   f_id        <-- field id (or -1)
- *   courant     --> cell Courant number
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_courant_number(const int   f_id,
-                       cs_real_t  *courant);
 
 /*----------------------------------------------------------------------------
  * Return pointer to slope test indicator field values if active.
@@ -1044,5 +968,83 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
+ * \param[in]     f_id         field id
+ * \param[in]     ctx          Reference to dispatch context
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     bc_coeffs    boundary condition structure for the variable
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_slope_test_gradient(int                         f_id,
+                       cs_dispatch_context        &ctx,
+                       int                         inc,
+                       cs_halo_type_t              halo_type,
+                       const cs_real_3_t          *grad,
+                       cs_real_3_t                *grdpa,
+                       const cs_real_t            *pvar,
+                       const cs_field_bc_coeffs_t *bc_coeffs,
+                       const cs_real_t            *i_massflux);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute the upwind gradient used in the pure SOLU schemes
+ *        (observed in the litterature).
+ *
+ * \param[in]     f_id         field index
+ * \param[in]     ctx          Reference to dispatch context
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     bc_coeffs    boundary condition structure for the variable
+ * \param[in]     i_massflux   mass flux at interior faces
+ * \param[in]     b_massflux   mass flux at boundary faces
+ * \param[in]     pvar         values
+ * \param[out]    grdpa        upwind gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_upwind_gradient(const int                     f_id,
+                   cs_dispatch_context          &ctx,
+                   const int                     inc,
+                   const cs_halo_type_t          halo_type,
+                   const cs_field_bc_coeffs_t   *bc_coeffs,
+                   const cs_real_t               i_massflux[],
+                   const cs_real_t               b_massflux[],
+                   const cs_real_t     *restrict pvar,
+                   cs_real_3_t         *restrict grdpa);
+
+/*----------------------------------------------------------------------------
+ * Compute the local cell Courant number as the maximum of all cell face based
+ * Courant number at each cell.
+ *
+ * parameters:
+ *   f           <-- pointer to field
+ *   ctx         <-- reference to dispatch context
+ *   courant     --> cell Courant number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_courant_number(const cs_field_t     *f,
+                       cs_dispatch_context  &ctx,
+                       cs_real_t            *courant);
+
+#endif /* cplusplus */
 
 #endif /* __CS_CONVECTION_DIFFUSION_H__ */
