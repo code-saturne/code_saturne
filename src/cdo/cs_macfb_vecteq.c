@@ -1240,13 +1240,14 @@ cs_macfb_vecteq_init_context(cs_equation_param_t   *eqp,
     if (eqp->time_hodgep.algo == CS_HODGE_ALGO_VORONOI) {
       eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
     }
-    else if (eqp->time_hodgep.algo == CS_HODGE_ALGO_COST) {
-      if (eqp->do_lumping)
-        eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
-      else {
-        eqb->msh_flag |= CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
-        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
-      }
+    else {
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: Eq. %s: Invalid type of discretization for time"
+                " term\n",
+                __func__,
+                eqp->name);
     }
   }
 
@@ -1267,12 +1268,10 @@ cs_macfb_vecteq_init_context(cs_equation_param_t   *eqp,
   eqc->mass_hodgep.algo    = CS_HODGE_ALGO_VORONOI;
   eqc->mass_hodgep.coef    = 0.0;
 
-  eqc->get_mass_matrix = NULL;
   eqc->mass_hodge      = NULL;
 
   if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
 
-    eqc->get_mass_matrix = cs_hodge_fb_get;
     eqc->mass_hodge      = cs_hodge_init_context(connect,
                                             NULL,
                                             &(eqc->mass_hodgep),

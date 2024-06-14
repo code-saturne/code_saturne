@@ -93,7 +93,6 @@ struct _cs_macfb_t {
 
   cs_hodge_param_t    mass_hodgep;
   cs_hodge_t        **mass_hodge;
-  cs_hodge_compute_t *get_mass_matrix;
 };
 
 typedef struct _cs_macfb_t cs_macfb_priv_t;
