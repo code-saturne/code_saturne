@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 8.2.0 (unreleased)
+--------------------------
+
 ### Numerics:
 
 - Reshape the interface with the MUMPS library (sparse direct solver)
