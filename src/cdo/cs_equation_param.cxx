@@ -64,8 +64,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -845,7 +843,7 @@ cs_equation_param_create(const char            *name,
                          int                    dim,
                          cs_param_bc_type_t     default_bc)
 {
-  cs_equation_param_t  *eqp = NULL;
+  cs_equation_param_t *eqp = nullptr;
 
   BFT_MALLOC(eqp, 1, cs_equation_param_t);
 
@@ -913,7 +911,7 @@ cs_equation_param_create(const char            *name,
 
   eqp->default_bc = default_bc;
   eqp->n_bc_defs = 0;
-  eqp->bc_defs = NULL;
+  eqp->bc_defs              = nullptr;
   eqp->default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
   eqp->strong_pena_bc_coeff = _strong_pena_bc_coef_by_default;
   eqp->weak_pena_bc_coeff = _weak_pena_bc_coef_by_default;
@@ -921,11 +919,11 @@ cs_equation_param_create(const char            *name,
   /* Initial condition (zero value by default) */
 
   eqp->n_ic_defs = 0;
-  eqp->ic_defs = NULL;
+  eqp->ic_defs   = nullptr;
 
   /* Description of the time discretization (default values) */
 
-  eqp->time_property = NULL;
+  eqp->time_property = nullptr;
   eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
   eqp->do_lumping = false;
   eqp->time_hodgep = (cs_hodge_param_t) {
@@ -937,7 +935,7 @@ cs_equation_param_create(const char            *name,
 
   /* Description of the discretization of the diffusion term */
 
-  eqp->diffusion_property = NULL;
+  eqp->diffusion_property = nullptr;
   eqp->diffusion_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
     .type = CS_HODGE_TYPE_EPFD,
@@ -947,7 +945,7 @@ cs_equation_param_create(const char            *name,
 
   /* Description of the discretization of the curl-curl term */
 
-  eqp->curlcurl_property = NULL;
+  eqp->curlcurl_property = nullptr;
   eqp->curlcurl_hodgep = (cs_hodge_param_t) {
     .inv_pty = true,
     .type = CS_HODGE_TYPE_FPED,
@@ -957,7 +955,7 @@ cs_equation_param_create(const char            *name,
 
   /* Description of the discretization of the grad-div term */
 
-  eqp->graddiv_property = NULL;
+  eqp->graddiv_property = nullptr;
   eqp->graddiv_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
     .type = CS_HODGE_TYPE_EPFD,
@@ -967,8 +965,8 @@ cs_equation_param_create(const char            *name,
 
   /* Advection term */
 
-  eqp->adv_field = NULL;
-  eqp->adv_scaling_property = NULL;
+  eqp->adv_field            = nullptr;
+  eqp->adv_scaling_property = nullptr;
   eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
@@ -981,7 +979,7 @@ cs_equation_param_create(const char            *name,
      No reaction term by default */
 
   eqp->n_reaction_terms = 0;
-  eqp->reaction_properties = NULL;
+  eqp->reaction_properties = nullptr;
   eqp->reaction_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
     .type = CS_HODGE_TYPE_VPCD,
@@ -993,18 +991,18 @@ cs_equation_param_create(const char            *name,
      No source term by default */
 
   eqp->n_source_terms = 0;
-  eqp->source_terms = NULL;
+  eqp->source_terms   = nullptr;
 
   /* Mass injection in the volume term (always in the right-hand side)
      No volume mass injection term by default */
 
   eqp->n_volume_mass_injections = 0;
-  eqp->volume_mass_injections = NULL;
+  eqp->volume_mass_injections   = nullptr;
 
   /* Members of the structure handling the enforcement of (internal) DoFs */
 
   eqp->n_enforcements = 0;
-  eqp->enforcement_params = NULL;
+  eqp->enforcement_params = nullptr;
 
   /* Settings for driving the linear algebra */
 
@@ -1188,7 +1186,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
     if (dst->n_enforcements > 0)
       BFT_FREE(dst->enforcement_params);
 
-    dst->enforcement_params = NULL;
+    dst->enforcement_params = nullptr;
     dst->n_enforcements = 0;
 
   }
@@ -1248,10 +1246,10 @@ void
 cs_equation_param_copy_bc(const cs_equation_param_t   *ref,
                           cs_equation_param_t         *dst)
 {
-  if (ref == NULL)
+  if (ref == nullptr)
     return;
 
-  if (dst == NULL)
+  if (dst == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Structure is not allocated.\n"
               "%s: Stop copying a cs_equation_param_t structure.\n",
@@ -1285,7 +1283,7 @@ cs_equation_param_copy_bc(const cs_equation_param_t   *ref,
     if (dst->n_enforcements > 0)
       BFT_FREE(dst->enforcement_params);
 
-    dst->enforcement_params = NULL;
+    dst->enforcement_params = nullptr;
     dst->n_enforcements = 0;
 
   }
@@ -1308,7 +1306,7 @@ cs_equation_param_copy_bc(const cs_equation_param_t   *ref,
 void
 cs_equation_param_clear(cs_equation_param_t   *eqp)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   /* Information related to the definition of the boundary conditions */
@@ -1386,21 +1384,21 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
  *
  * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
  *
- * \return a NULL pointer
+ * \return a nullptr pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
 cs_equation_param_free(cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return NULL;
+  if (eqp == nullptr)
+    return nullptr;
 
   cs_equation_param_clear(eqp);
 
   BFT_FREE(eqp);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1419,9 +1417,9 @@ cs_equation_param_set(cs_equation_param_t   *eqp,
                       cs_equation_key_t      key,
                       const char            *keyval)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (keyval == NULL)
+  if (keyval == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: Eq: %s: Key value is empty",
               __func__, eqp->name);
   if (eqp->flag & CS_EQUATION_LOCKED)
@@ -1455,8 +1453,8 @@ cs_equation_param_set(cs_equation_param_t   *eqp,
 cs_param_sles_t *
 cs_equation_param_get_sles_param(cs_equation_param_t  *eqp)
 {
-  if (eqp == NULL)
-    return NULL;
+  if (eqp == nullptr)
+    return nullptr;
 
   return eqp->sles_param;
 }
@@ -1477,8 +1475,8 @@ cs_equation_param_get_sles_param(cs_equation_param_t  *eqp)
 cs_param_saddle_t *
 cs_equation_param_get_saddle_param(cs_equation_param_t  *eqp)
 {
-  if (eqp == NULL)
-    return NULL;
+  if (eqp == nullptr)
+    return nullptr;
 
   return eqp->saddle_param;
 }
@@ -1540,7 +1538,7 @@ void
 cs_equation_param_set_quadrature_to_all(cs_equation_param_t   *eqp,
                                         cs_quadrature_type_t   qtype)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   /* Apply the quadrature rule to all BC definitions */
@@ -1575,7 +1573,7 @@ cs_equation_param_set_quadrature_to_all(cs_equation_param_t   *eqp,
 void
 cs_equation_param_lock_settings(cs_equation_param_t   *eqp)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   eqp->flag |= CS_EQUATION_LOCKED;
@@ -1593,7 +1591,7 @@ cs_equation_param_lock_settings(cs_equation_param_t   *eqp)
 void
 cs_equation_param_unlock_settings(cs_equation_param_t   *eqp)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   eqp->flag -= CS_EQUATION_LOCKED;
@@ -1612,7 +1610,7 @@ cs_equation_param_unlock_settings(cs_equation_param_t   *eqp)
 void
 cs_equation_param_ensure_consistent_settings(cs_equation_param_t   *eqp)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   if (eqp->flag & CS_EQUATION_LOCKED)
@@ -1683,7 +1681,7 @@ cs_equation_param_ensure_consistent_settings(cs_equation_param_t   *eqp)
 void
 cs_equation_param_log(const cs_equation_param_t   *eqp)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   const char *eqname = eqp->name;
@@ -1821,7 +1819,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     }
 
     const char  *time_scheme = cs_param_get_time_scheme_name(eqp->time_scheme);
-    if (time_scheme != NULL) {
+    if (time_scheme != nullptr) {
       cs_log_printf(CS_LOG_SETUP, "\n  * %s | Time scheme: %s",
                     eqname, time_scheme);
       if (eqp->time_scheme == CS_TIME_SCHEME_THETA)
@@ -1892,7 +1890,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     cs_log_printf(CS_LOG_SETUP, "\n### %s | Advection term settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: \"%s\"\n",
                   eqname, cs_advection_field_get_name(eqp->adv_field));
-    if (eqp->adv_scaling_property != NULL)
+    if (eqp->adv_scaling_property != nullptr)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Scaling.Property: %s\n",
                     eqname, cs_property_get_name(eqp->adv_scaling_property));
 
@@ -1933,8 +1931,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                   eqname, eqp->n_reaction_terms);
 
     sprintf(prefix, "        Reaction Hodge op. ");
-    cs_hodge_param_log(prefix, NULL, eqp->reaction_hodgep);
-
+    cs_hodge_param_log(prefix, nullptr, eqp->reaction_hodgep);
   }
 
   // Source term(s)
@@ -1943,14 +1940,15 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   if (source_term) {
 
     cs_log_printf(CS_LOG_SETUP, "\n### %s | Source term settings\n", eqname);
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Source terms | Number of terms: %d\n",
-                  eqname, eqp->n_source_terms);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Source terms | Number of terms: %d\n",
+                  eqname,
+                  eqp->n_source_terms);
 
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++) {
       sprintf(prefix, "        Definition %3d", s_id);
       cs_xdef_log_setup(prefix, eqp->source_terms[s_id]);
     }
-
   }
 
   // Interior enforcement(s)
@@ -1958,13 +1956,13 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
   cs_log_printf(CS_LOG_SETUP,
                 "\n### %s | Number of interior enforcements: %d\n",
-                eqname, eqp->n_enforcements);
+                eqname,
+                eqp->n_enforcements);
 
   if (eqp->n_enforcements > 0) {
 
     for (int i = 0; i < eqp->n_enforcements; i++)
       cs_enforcement_param_log(eqname, eqp->enforcement_params[i]);
-
   }
 
   // Non-linear algorithm
@@ -1972,33 +1970,43 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
   if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
-    cs_log_printf(CS_LOG_SETUP, "### %s | Incremental algo: %s\n",
+    cs_log_printf(CS_LOG_SETUP,
+                  "### %s | Incremental algo: %s\n",
                   eqname,
                   cs_param_get_nl_algo_name(eqp->incremental_algo_type));
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Tolerances of the incremental algo:"
-                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n", eqname,
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Tolerances of the incremental algo:"
+                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
+                  eqname,
                   eqp->incremental_algo_cvg.rtol,
                   eqp->incremental_algo_cvg.atol,
                   eqp->incremental_algo_cvg.dtol);
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Max of non-linear iterations: %d\n",
-                  eqname, eqp->incremental_algo_cvg.n_max_iter);
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Relaxation factor: %.3f\n",
-                  eqname, eqp->incremental_relax_factor);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Max of non-linear iterations: %d\n",
+                  eqname,
+                  eqp->incremental_algo_cvg.n_max_iter);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Relaxation factor: %.3f\n",
+                  eqname,
+                  eqp->incremental_relax_factor);
 
     if (eqp->incremental_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-      const cs_iter_algo_param_aac_t  aap = eqp->incremental_anderson_param;
+      const cs_iter_algo_param_aac_t aap = eqp->incremental_anderson_param;
 
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Anderson param: max. dir: %d; "
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Anderson param: max. dir: %d; "
                     " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
-                    eqname, aap.n_max_dir, aap.starting_iter, aap.max_cond,
+                    eqname,
+                    aap.n_max_dir,
+                    aap.starting_iter,
+                    aap.max_cond,
                     aap.beta);
       cs_log_printf(CS_LOG_SETUP,
                     "  * %s | Anderson param: Dot product type: %s\n",
-                    eqname, cs_param_get_dotprod_type_name(aap.dp_type));
-
+                    eqname,
+                    cs_param_get_dotprod_type_name(aap.dp_type));
     }
-
   }
 
   // SLES information
@@ -2020,13 +2028,13 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_param_has_robin_bc(const cs_equation_param_t     *eqp)
+cs_equation_param_has_robin_bc(const cs_equation_param_t *eqp)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return false;
 
   for (int i = 0; i < eqp->n_bc_defs; i++) {
-    cs_xdef_t  *def = eqp->bc_defs[i];
+    cs_xdef_t *def = eqp->bc_defs[i];
     if (def->meta & CS_CDO_BC_ROBIN)
       return true;
   }
@@ -2043,7 +2051,7 @@ cs_equation_param_has_robin_bc(const cs_equation_param_t     *eqp)
  *         given zone with name z_name
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
+ * \param[in]       z_name    name of the associated zone (if nullptr or
  *                            "" all cells are considered)
  * \param[in]       val       pointer to the value
  *
@@ -2052,27 +2060,27 @@ cs_equation_param_has_robin_bc(const cs_equation_param_t     *eqp)
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
-                            const char             *z_name,
-                            cs_real_t              *val)
+cs_equation_add_ic_by_value(cs_equation_param_t *eqp,
+                            const char          *z_name,
+                            cs_real_t           *val)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
 
-  int  z_id = cs_volume_zone_id_by_name(z_name);
+  int z_id = cs_volume_zone_id_by_name(z_name);
 
-  cs_flag_t  meta_flag = 0;
+  cs_flag_t meta_flag = 0;
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        eqp->dim,
-                                        z_id,
-                                        CS_FLAG_STATE_UNIFORM, /* state flag */
-                                        meta_flag,
-                                        val);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                       eqp->dim,
+                                       z_id,
+                                       CS_FLAG_STATE_UNIFORM, /* state flag */
+                                       meta_flag,
+                                       val);
 
   /* Before incrementing the list of definitions, first verify that there
    * isn't an existing one on the same zone. If so, remove it.
@@ -2084,7 +2092,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
 
   /* Increment list of initial conditions for the equation parameters */
 
-  int  new_id = eqp->n_ic_defs;
+  int new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
   BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   eqp->ic_defs[new_id] = d;
@@ -2102,7 +2110,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
  *         returns the requested quantity
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
+ * \param[in]       z_name    name of the associated zone (if nullptr or
  *                            "" all cells are considered)
  * \param[in]       quantity  quantity to distribute over the mesh location
  *
@@ -2111,27 +2119,27 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
-                          const char             *z_name,
-                          double                  quantity)
+cs_equation_add_ic_by_qov(cs_equation_param_t *eqp,
+                          const char          *z_name,
+                          double               quantity)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
 
   int z_id = cs_volume_zone_id_by_name(z_name);
 
-  cs_flag_t  meta_flag = 0;
+  cs_flag_t meta_flag = 0;
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
-                                        eqp->dim,
-                                        z_id,
-                                        0, /* state flag */
-                                        meta_flag,
-                                        &quantity);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
+                                       eqp->dim,
+                                       z_id,
+                                       0, /* state flag */
+                                       meta_flag,
+                                       &quantity);
 
   /* Before incrementing the list of definitions, first verify that there
    * isn't an existing one on the same zone. If so, remove it.
@@ -2143,7 +2151,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
 
   /* Increment list of initial conditions for the equation parameters */
 
-  int  new_id = eqp->n_ic_defs;
+  int new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
   BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   eqp->ic_defs[new_id] = d;
@@ -2160,36 +2168,34 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
  *         name z_name is set according to an analytical function
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
-                               const char             *z_name,
-                               cs_analytic_func_t     *analytic,
-                               void                   *input)
+cs_equation_add_ic_by_analytic(cs_equation_param_t *eqp,
+                               const char          *z_name,
+                               cs_analytic_func_t  *analytic,
+                               void                *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
 
   int z_id = cs_volume_zone_id_by_name(z_name);
 
-  cs_flag_t  meta_flag = 0;
+  cs_flag_t meta_flag = 0;
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
-                                     .func = analytic,
-                                     .input = input,
-                                     .free_input = NULL };
+  cs_xdef_analytic_context_t ac
+    = { .z_id = z_id, .func = analytic, .input = input, .free_input = nullptr };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim, z_id,
@@ -2223,11 +2229,11 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
  *         Case of a definition by a DoF function.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      loc_flag  where information is computed
  * \param[in]      func      pointer to a DoF function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2240,7 +2246,7 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
                                cs_dof_func_t          *func,
                                void                   *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -2254,11 +2260,12 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
     meta_flag |= CS_FLAG_FULL_LOC;
 
   cs_xdef_dof_context_t context = {
-    .z_id = z_id,
+    .z_id         = z_id,
     .dof_location = loc_flag,
-    .func = func,
-    .input = input,
-    .free_input = NULL, };
+    .func         = func,
+    .input        = input,
+    .free_input   = nullptr,
+  };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim, z_id,
@@ -2299,7 +2306,7 @@ void
 cs_equation_add_xdef_bc(cs_equation_param_t        *eqp,
                         cs_xdef_t                  *xdef)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   int  new_id = eqp->n_bc_defs;
@@ -2329,7 +2336,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
                             const char                  *z_name,
                             cs_real_t                   *values)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
@@ -2414,7 +2421,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             bool                        is_owner,
                             bool                        full_length)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
@@ -2453,17 +2460,19 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   /* Add a new cs_xdef_t structure */
 
-  cs_xdef_array_context_t  input = {.z_id = z_id,
-                                    .stride = dim,
-                                    .value_location = loc,
-                                    .is_owner = is_owner,
-                                    .full_length = full_length,
-                                    .values = array,
-                                    /* Optional parameters */
-                                    .full2subset = NULL,
-                                    .n_list_elts = 0,
-                                    .elt_ids= NULL,
-                                    .adjacency = NULL,};
+  cs_xdef_array_context_t input = {
+    .z_id           = z_id,
+    .stride         = dim,
+    .value_location = loc,
+    .is_owner       = is_owner,
+    .full_length    = full_length,
+    .values         = array,
+    /* Optional parameters */
+    .full2subset = nullptr,
+    .n_list_elts = 0,
+    .elt_ids     = nullptr,
+    .adjacency   = nullptr,
+  };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
@@ -2516,7 +2525,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
                             const char                 *z_name,
                             cs_field_t                 *field)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   int  z_id = cs_boundary_zone_id_by_name(z_name);
@@ -2541,7 +2550,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
       && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
-  assert(field != NULL);
+  assert(field != nullptr);
   if (dim != field->dim)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid dimension for field %s\n", __func__, field->name);
@@ -2585,31 +2594,31 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      bc_type   type of boundary condition to add
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function defining the value
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
-                               const cs_param_bc_type_t    bc_type,
-                               const char                 *z_name,
-                               cs_analytic_func_t         *analytic,
-                               void                       *input)
+cs_equation_add_bc_by_analytic(cs_equation_param_t     *eqp,
+                               const cs_param_bc_type_t bc_type,
+                               const char              *z_name,
+                               cs_analytic_func_t      *analytic,
+                               void                    *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Set the value for dim */
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL )
-    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+    dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_CIRCULATION) {
 
@@ -2619,9 +2628,11 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
     if (eqp->dim == 3)
       dim = 1;
     else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: This situation is not handled.\n", __func__);
-
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: This situation is not handled.\n",
+                __func__);
   }
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
@@ -2631,23 +2642,23 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
     if (eqp->dim == 1)
       dim = 3;
     else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: This situation is not handled yet.\n", __func__);
-
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: This situation is not handled yet.\n",
+                __func__);
   }
 
-  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+  if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
       && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
-  int  z_id = cs_boundary_zone_id_by_name(z_name);
+  int z_id = cs_boundary_zone_id_by_name(z_name);
 
   /* Add a new cs_xdef_t structure */
 
-  cs_xdef_analytic_context_t  ac = {.z_id = z_id,
-                                    .func = analytic,
-                                    .input = input,
-                                    .free_input = NULL};
+  cs_xdef_analytic_context_t ac
+    = { .z_id = z_id, .func = analytic, .input = input, .free_input = nullptr };
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
@@ -2686,31 +2697,31 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
  *
  * \param[in, out] eqp      pointer to a cs_equation_param_t structure
  * \param[in]      bc_type  type of boundary condition to add
- * \param[in]      z_name   name of the associated zone (if NULL or "" if
+ * \param[in]      z_name   name of the associated zone (if nullptr or "" if
  *                          all cells are considered)
  * \param[in]      t_func   pointer to an analytic function defining the value
- * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input    nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
-                                const cs_param_bc_type_t    bc_type,
-                                const char                 *z_name,
-                                cs_time_func_t             *t_func,
-                                void                       *input)
+cs_equation_add_bc_by_time_func(cs_equation_param_t     *eqp,
+                                const cs_param_bc_type_t bc_type,
+                                const char              *z_name,
+                                cs_time_func_t          *t_func,
+                                void                    *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Set the value for dim */
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL )
-    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
+    dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_CIRCULATION) {
 
@@ -2720,9 +2731,11 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
     if (eqp->dim == 3)
       dim = 1;
     else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: This situation is not handled.\n", __func__);
-
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: This situation is not handled.\n",
+                __func__);
   }
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
@@ -2732,23 +2745,23 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
     if (eqp->dim == 1)
       dim = 3;
     else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: This situation is not handled yet.\n", __func__);
-
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: This situation is not handled yet.\n",
+                __func__);
   }
 
-  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+  if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
       && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
-  int  z_id = cs_boundary_zone_id_by_name(z_name);
+  int z_id = cs_boundary_zone_id_by_name(z_name);
 
   /* Add a new cs_xdef_t structure */
 
-  cs_xdef_time_func_context_t  tfc = {.z_id = z_id,
-                                      .func = t_func,
-                                      .input = input,
-                                      .free_input = NULL};
+  cs_xdef_time_func_context_t tfc
+    = { .z_id = z_id, .func = t_func, .input = input, .free_input = nullptr };
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
@@ -2786,25 +2799,25 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      bc_type   type of boundary condition to add
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      loc_flag  location where values are computed
  * \param[in]      func      pointer to cs_dof_func_t function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
-                               const cs_param_bc_type_t    bc_type,
-                               const char                 *z_name,
-                               cs_flag_t                   loc_flag,
-                               cs_dof_func_t              *func,
-                               void                       *input)
+cs_equation_add_bc_by_dof_func(cs_equation_param_t     *eqp,
+                               const cs_param_bc_type_t bc_type,
+                               const char              *z_name,
+                               cs_flag_t                loc_flag,
+                               cs_dof_func_t           *func,
+                               void                    *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Set the value for dim */
@@ -2812,7 +2825,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
   int dim = eqp->dim;
 
   if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
-    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
+    dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_CIRCULATION) {
 
@@ -2822,9 +2835,11 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
     if (eqp->dim == 3)
       dim = 1;
     else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: This situation is not handled.\n", __func__);
-
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: This situation is not handled.\n",
+                __func__);
   }
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
@@ -2834,24 +2849,26 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
     if (eqp->dim == 1)
       dim = 3;
     else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: This situation is not handled yet.\n", __func__);
-
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: This situation is not handled yet.\n",
+                __func__);
   }
 
-  if (   eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
+  if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY
       && bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
     bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
-  int  z_id = cs_boundary_zone_id_by_name(z_name);
+  int z_id = cs_boundary_zone_id_by_name(z_name);
 
   /* Add a new cs_xdef_t structure */
 
-  cs_xdef_dof_context_t  ctx = {.z_id = z_id,
-                               .dof_location = loc_flag,
-                               .func = func,
-                               .input = input,
-                               .free_input = NULL };
+  cs_xdef_dof_context_t ctx = { .z_id         = z_id,
+                                .dof_location = loc_flag,
+                                .func         = func,
+                                .input        = input,
+                                .free_input   = nullptr };
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
@@ -2887,25 +2904,24 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
  *         for the given equation param structure and zone.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  *
- * \return a pointer to the \ref cs_xdef_t structure if present, or NULL
-*/
+ * \return a pointer to the \ref cs_xdef_t structure if present, or nullptr
+ */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_find_bc(cs_equation_param_t   *eqp,
-                    const char            *z_name)
+cs_equation_find_bc(cs_equation_param_t *eqp, const char *z_name)
 {
-  if (eqp == NULL)
-    return NULL;
+  if (eqp == nullptr)
+    return nullptr;
 
   int z_id = -2;
 
-  if (z_name != NULL) {
-    const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
-    if (z != NULL)
+  if (z_name != nullptr) {
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(z_name);
+    if (z != nullptr)
       z_id = z->id;
   }
 
@@ -2917,7 +2933,7 @@ cs_equation_find_bc(cs_equation_param_t   *eqp,
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2929,23 +2945,22 @@ cs_equation_find_bc(cs_equation_param_t   *eqp,
  * silently.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_remove_bc(cs_equation_param_t   *eqp,
-                      const char            *z_name)
+cs_equation_remove_bc(cs_equation_param_t *eqp, const char *z_name)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   int z_id = -2;
 
-  if (z_name != NULL) {
-    const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
-    if (z != NULL)
+  if (z_name != nullptr) {
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(z_name);
+    if (z != nullptr)
       z_id = z->id;
   }
 
@@ -2963,8 +2978,8 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
 
   if (j > -1) {
     eqp->bc_defs[j] = cs_xdef_free(eqp->bc_defs[j]);
-    for (int i = j+1; i < eqp->n_bc_defs; i++) {
-      eqp->bc_defs[i-1] = eqp->bc_defs[i];
+    for (int i = j + 1; i < eqp->n_bc_defs; i++) {
+      eqp->bc_defs[i - 1] = eqp->bc_defs[i];
     }
     eqp->n_bc_defs -= 1;
     BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
@@ -2980,23 +2995,22 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
  * silently.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_remove_ic(cs_equation_param_t   *eqp,
-                      const char            *z_name)
+cs_equation_remove_ic(cs_equation_param_t *eqp, const char *z_name)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   int z_id = -2;
 
-  if (z_name != NULL) {
-    const cs_zone_t  *z = cs_volume_zone_by_name_try(z_name);
-    if (z != NULL)
+  if (z_name != nullptr) {
+    const cs_zone_t *z = cs_volume_zone_by_name_try(z_name);
+    if (z != nullptr)
       z_id = z->id;
   }
 
@@ -3014,8 +3028,8 @@ cs_equation_remove_ic(cs_equation_param_t   *eqp,
 
   if (j > -1) {
     eqp->ic_defs[j] = cs_xdef_free(eqp->ic_defs[j]);
-    for (int i = j+1; i < eqp->n_ic_defs; i++) {
-      eqp->ic_defs[i-1] = eqp->ic_defs[i];
+    for (int i = j + 1; i < eqp->n_ic_defs; i++) {
+      eqp->ic_defs[i - 1] = eqp->ic_defs[i];
     }
     eqp->n_ic_defs -= 1;
     BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
@@ -3034,21 +3048,20 @@ cs_equation_remove_ic(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
-                                  const char              *z_name)
+cs_equation_add_sliding_condition(cs_equation_param_t *eqp, const char *z_name)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
   if (eqp->dim < 3)
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid dimension of equation\n",
-              __func__);
+    bft_error(
+      __FILE__, __LINE__, 0, "%s: Invalid dimension of equation\n", __func__);
 
   /* Add two definitions: one for the normal component and one for the
      tangential component */
 
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs + 1, cs_xdef_t *);
 
-  cs_xdef_t  *d = NULL;
+  cs_xdef_t *d   = nullptr;
   cs_real_t  val = 0;
 
   /* Add the homogeneous Dirichlet on the normal component */
@@ -3080,9 +3093,9 @@ void
 cs_equation_add_diffusion(cs_equation_param_t   *eqp,
                           cs_property_t         *property)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (property == NULL)
+  if (property == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq. %s: Stop adding an empty property.",
               __func__, eqp->name);
@@ -3107,9 +3120,9 @@ cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
                          cs_property_t         *property,
                          int                    inversion)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (property == NULL)
+  if (property == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq. %s: Stop adding an empty property.",
               __func__, eqp->name);
@@ -3137,9 +3150,9 @@ void
 cs_equation_add_graddiv(cs_equation_param_t   *eqp,
                         cs_property_t         *property)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (property == NULL)
+  if (property == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq. %s: Stop adding an empty property.",
               __func__, eqp->name);
@@ -3163,9 +3176,9 @@ void
 cs_equation_add_time(cs_equation_param_t   *eqp,
                      cs_property_t         *property)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (property == NULL)
+  if (property == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq. %s: Stop adding an empty property.",
               __func__, eqp->name);
@@ -3188,9 +3201,9 @@ void
 cs_equation_add_advection(cs_equation_param_t   *eqp,
                           cs_adv_field_t        *adv_field)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (adv_field == NULL)
+  if (adv_field == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq: %s: Stop adding an empty advection field.",
               __func__, eqp->name);
@@ -3212,9 +3225,9 @@ void
 cs_equation_add_advection_scaling_property(cs_equation_param_t   *eqp,
                                            cs_property_t         *property)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (property == NULL)
+  if (property == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq. %s: Stop adding an empty property.",
               __func__, eqp->name);
@@ -3238,9 +3251,9 @@ int
 cs_equation_add_reaction(cs_equation_param_t   *eqp,
                          cs_property_t         *property)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (property == NULL)
+  if (property == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq. %s: Stop adding an empty property.",
               __func__, eqp->name);
@@ -3266,7 +3279,7 @@ cs_equation_add_reaction(cs_equation_param_t   *eqp,
  *         Case of a definition by a constant value
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or
+ * \param[in]      z_name    name of the associated zone (if nullptr or
  *                            "" all cells are considered)
  * \param[in]      val       pointer to the value
  *
@@ -3279,7 +3292,7 @@ cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
                                    const char             *z_name,
                                    cs_real_t              *val)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -3316,10 +3329,10 @@ cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
  *         Case of a definition by an analytical function
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      func      pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -3331,7 +3344,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
                                         cs_analytic_func_t     *func,
                                         void                   *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Define a flag according to the kind of space discretization */
@@ -3343,10 +3356,8 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
-                                     .func = func,
-                                     .input = input,
-                                     .free_input = NULL };
+  cs_xdef_analytic_context_t ac
+    = { .z_id = z_id, .func = func, .input = input, .free_input = nullptr };
 
   /* Add a new cs_xdef_t structure */
 
@@ -3371,11 +3382,11 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
  *         Case of a definition by a DoF function
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      loc_flag  location of element ids given as parameter
  * \param[in]      func      pointer to a DoF function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -3388,7 +3399,7 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
                                         cs_dof_func_t          *func,
                                         void                   *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -3403,11 +3414,11 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  context = {.z_id = z_id,
+  cs_xdef_dof_context_t context = { .z_id         = z_id,
                                     .dof_location = loc_flag,
-                                    .func = func,
-                                    .input = input,
-                                    .free_input = NULL};
+                                    .func         = func,
+                                    .input        = input,
+                                    .free_input   = nullptr };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim,
@@ -3430,7 +3441,7 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
  *         Case of a definition by an array.
  *
  * \param[in, out] eqp          pointer to a cs_equation_param_t structure
- * \param[in]      z_name       name of the associated zone (if NULL or "" if
+ * \param[in]      z_name       name of the associated zone (if nullptr or "" if
  *                              all cells are considered)
  * \param[in]      loc          information to know where are located values
  * \param[in]      array        pointer to an array
@@ -3454,7 +3465,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      bool                    is_owner,
                                      bool                    full_length)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -3474,17 +3485,19 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_array_context_t  ctx = {.z_id = z_id,
-                                  .stride = eqp->dim,
-                                  .value_location = loc,
-                                  .is_owner = is_owner,
-                                  .full_length = full_length,
-                                  .values = array,
-                                  /* Optional parameters */
-                                  .full2subset = NULL,
-                                  .n_list_elts = 0,
-                                  .elt_ids= NULL,
-                                  .adjacency = NULL,};
+  cs_xdef_array_context_t ctx = {
+    .z_id           = z_id,
+    .stride         = eqp->dim,
+    .value_location = loc,
+    .is_owner       = is_owner,
+    .full_length    = full_length,
+    .values         = array,
+    /* Optional parameters */
+    .full2subset = nullptr,
+    .n_list_elts = 0,
+    .elt_ids     = nullptr,
+    .adjacency   = nullptr,
+  };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         eqp->dim,
@@ -3512,7 +3525,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
  *         initializing a cs_xdef_t structure, using a constant value.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      val       pointer to the value
  *
@@ -3525,7 +3538,7 @@ cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
                                                const char           *z_name,
                                                double               *val)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -3561,7 +3574,7 @@ cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
  *         distributed over the associated zone's volume.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      quantity  pointer to quantity to distribute over the zone
  *
@@ -3574,7 +3587,7 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
                                              const char           *z_name,
                                              double               *quantity)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -3609,10 +3622,10 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
  *         initializing a cs_xdef_t structure, using an analytical function.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      func      pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -3624,7 +3637,7 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
                                                   cs_analytic_func_t    *func,
                                                   void                  *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -3635,10 +3648,8 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ctx = {.z_id = z_id,
-                                     .func = func,
-                                     .input = input,
-                                     .free_input = NULL };
+  cs_xdef_analytic_context_t ctx
+    = { .z_id = z_id, .func = func, .input = input, .free_input = nullptr };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
@@ -3663,11 +3674,11 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
  *         initializing a cs_xdef_t structure, using a DoF function.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ * \param[in]      z_name    name of the associated zone (if nullptr or "" if
  *                           all cells are considered)
  * \param[in]      loc_flag  where information is computed
  * \param[in]      func      pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -3680,7 +3691,7 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
                                                   cs_dof_func_t        *func,
                                                   void                 *input)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
@@ -3691,11 +3702,13 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  ctx = {.z_id = z_id,
-                                .dof_location = loc_flag,
-                                .func = func,
-                                .input = input,
-                                .free_input = NULL,};
+  cs_xdef_dof_context_t ctx = {
+    .z_id         = z_id,
+    .dof_location = loc_flag,
+    .func         = func,
+    .input        = input,
+    .free_input   = nullptr,
+  };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim,
@@ -3728,8 +3741,8 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
  * \param[in, out] eqp          pointer to a cs_equation_param_t structure
  * \param[in]      n_vertices   number of vertices to enforce
  * \param[in]      vertex_ids   list of vertices
- * \param[in]      ref_value    default values or ignored (may be NULL)
- * \param[in]      vtx_values   list of associated values, ignored if NULL
+ * \param[in]      ref_value    default values or ignored (may be nullptr)
+ * \param[in]      vtx_values   list of associated values, ignored if nullptr
  *
  * \return a pointer to a cs_enforcement_param_t structure
  */
@@ -3742,32 +3755,31 @@ cs_equation_add_vertex_dof_enforcement(cs_equation_param_t    *eqp,
                                        const cs_real_t         ref_value[],
                                        const cs_real_t         vtx_values[])
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB &&
       eqp->space_scheme != CS_SPACE_SCHEME_CDOVCB)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq: %s: Invalid space scheme.\n"
               "This should be a vertex-based one.", __func__, eqp->name);
-  if (ref_value == NULL && vtx_values == NULL)
+  if (ref_value == nullptr && vtx_values == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
 
-  cs_enforcement_param_t  *efp = NULL;
+  cs_enforcement_param_t *efp            = nullptr;
   int  enforcement_id = eqp->n_enforcements;
 
   eqp->n_enforcements++;
 
-  if (vtx_values == NULL) {
+  if (vtx_values == nullptr) {
 
-    assert(ref_value != NULL);
+    assert(ref_value != nullptr);
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_VERTICES,
                                       CS_ENFORCEMENT_BY_CONSTANT,
                                       eqp->dim,
                                       n_vertices,
                                       vertex_ids,
                                       ref_value);
-
   }
   else
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_VERTICES,
@@ -3777,8 +3789,8 @@ cs_equation_add_vertex_dof_enforcement(cs_equation_param_t    *eqp,
                                       vertex_ids,
                                       vtx_values);
 
-  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t *);
+  BFT_REALLOC(
+    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -3799,31 +3811,39 @@ cs_equation_add_vertex_dof_enforcement(cs_equation_param_t    *eqp,
  * \param[in, out] eqp           pointer to a cs_equation_param_t structure
  * \param[in]      n_edges       number of edges to enforce
  * \param[in]      edge_ids      list of edges
- * \param[in]      ref_value     default values or ignored (may be NULL)
- * \param[in]      edge_values   list of associated values, ignored if NULL
+ * \param[in]      ref_value     default values or ignored (may be nullptr)
+ * \param[in]      edge_values   list of associated values, ignored if nullptr
  *
  * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_enforcement_param_t *
-cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
-                                     cs_lnum_t               n_edges,
-                                     const cs_lnum_t         edge_ids[],
-                                     const cs_real_t         ref_value[],
-                                     const cs_real_t         edge_values[])
+cs_equation_add_edge_dof_enforcement(cs_equation_param_t *eqp,
+                                     cs_lnum_t            n_edges,
+                                     const cs_lnum_t      edge_ids[],
+                                     const cs_real_t      ref_value[],
+                                     const cs_real_t      edge_values[])
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOEB)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Eq: %s: Invalid space scheme.\n"
-              "This should be a edge-based one.", __func__, eqp->name);
-  if (ref_value == NULL && edge_values == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
+              "This should be a edge-based one.",
+              __func__,
+              eqp->name);
+  if (ref_value == nullptr && edge_values == nullptr)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Eq: %s: No enforcement value.\n",
+              __func__,
+              eqp->name);
 
-  cs_enforcement_param_t  *efp = NULL;
+  cs_enforcement_param_t *efp            = nullptr;
   int  enforcement_id = eqp->n_enforcements;
 
   eqp->n_enforcements++;
@@ -3831,16 +3851,15 @@ cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
   /* Edge-based schemes are related to a vector-valued equation but DoF are
      scalar-valued. They are circulation. */
 
-  if (edge_values == NULL) {
+  if (edge_values == nullptr) {
 
-    assert(ref_value != NULL);
+    assert(ref_value != nullptr);
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_EDGES,
                                       CS_ENFORCEMENT_BY_CONSTANT,
                                       1,
                                       n_edges,
                                       edge_ids,
                                       ref_value);
-
   }
   else
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_EDGES,
@@ -3850,8 +3869,8 @@ cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
                                       edge_ids,
                                       edge_values);
 
-  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t *);
+  BFT_REALLOC(
+    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -3872,46 +3891,53 @@ cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
  * \param[in, out] eqp           pointer to a cs_equation_param_t structure
  * \param[in]      n_faces       number of faces to enforce
  * \param[in]      face_ids      list of faces
- * \param[in]      ref_value     default values or ignored (may be NULL)
- * \param[in]      face_values   list of associated values, ignored if NULL
+ * \param[in]      ref_value     default values or ignored (may be nullptr)
+ * \param[in]      face_values   list of associated values, ignored if nullptr
  *
  * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_enforcement_param_t *
-cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
-                                     cs_lnum_t               n_faces,
-                                     const cs_lnum_t         face_ids[],
-                                     const cs_real_t         ref_value[],
-                                     const cs_real_t         face_values[])
+cs_equation_add_face_dof_enforcement(cs_equation_param_t *eqp,
+                                     cs_lnum_t            n_faces,
+                                     const cs_lnum_t      face_ids[],
+                                     const cs_real_t      ref_value[],
+                                     const cs_real_t      face_values[])
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB &&
-      eqp->space_scheme != CS_SPACE_SCHEME_HHO_P0)
-    bft_error(__FILE__, __LINE__, 0,
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB
+      && eqp->space_scheme != CS_SPACE_SCHEME_HHO_P0)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Eq: %s: Invalid space scheme.\n"
-              "This should be a face-based one.", __func__, eqp->name);
-  if (ref_value == NULL && face_values == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
+              "This should be a face-based one.",
+              __func__,
+              eqp->name);
+  if (ref_value == nullptr && face_values == nullptr)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Eq: %s: No enforcement value.\n",
+              __func__,
+              eqp->name);
 
-  cs_enforcement_param_t  *efp = NULL;
+  cs_enforcement_param_t *efp            = nullptr;
   int  enforcement_id = eqp->n_enforcements;
 
   eqp->n_enforcements++;
 
-  if (face_values == NULL) {
+  if (face_values == nullptr) {
 
-    assert(ref_value != NULL);
+    assert(ref_value != nullptr);
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_FACES,
                                       CS_ENFORCEMENT_BY_CONSTANT,
                                       eqp->dim,
                                       n_faces,
                                       face_ids,
                                       ref_value);
-
   }
   else
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_FACES,
@@ -3921,8 +3947,8 @@ cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
                                       face_ids,
                                       face_values);
 
-  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t *);
+  BFT_REALLOC(
+    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -3941,41 +3967,44 @@ cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
  * \param[in, out] eqp          pointer to a cs_equation_param_t structure
  * \param[in]      n_cells      number of selected cells
  * \param[in]      cell_ids     list of cell ids
- * \param[in]      ref_value    ignored if NULL
- * \param[in]      cell_values  list of associated values, ignored if NULL
+ * \param[in]      ref_value    ignored if nullptr
+ * \param[in]      cell_values  list of associated values, ignored if nullptr
  *
  * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_enforcement_param_t *
-cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
-                                 cs_lnum_t              n_cells,
-                                 const cs_lnum_t        cell_ids[],
-                                 const cs_real_t        ref_value[],
-                                 const cs_real_t        cell_values[])
+cs_equation_add_cell_enforcement(cs_equation_param_t *eqp,
+                                 cs_lnum_t            n_cells,
+                                 const cs_lnum_t      cell_ids[],
+                                 const cs_real_t      ref_value[],
+                                 const cs_real_t      cell_values[])
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (ref_value == NULL && cell_values == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
+  if (ref_value == nullptr && cell_values == nullptr)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Eq: %s: No enforcement value.\n",
+              __func__,
+              eqp->name);
 
-  cs_enforcement_param_t  *efp = NULL;
+  cs_enforcement_param_t *efp            = nullptr;
   int  enforcement_id = eqp->n_enforcements;
 
   eqp->n_enforcements++;
 
-  if (cell_values == NULL) {
+  if (cell_values == nullptr) {
 
-    assert(ref_value != NULL);
+    assert(ref_value != nullptr);
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_CELLS,
                                       CS_ENFORCEMENT_BY_CONSTANT,
                                       eqp->dim,
                                       n_cells,
                                       cell_ids,
                                       ref_value);
-
   }
   else
     efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_CELLS,
@@ -3985,8 +4014,8 @@ cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
                                       cell_ids,
                                       cell_values);
 
-  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t *);
+  BFT_REALLOC(
+    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -4007,8 +4036,8 @@ cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
  * \param[in]      enforcement_id  id of the enforcement to handle
  * \param[in]      n_cells         number of selected cells
  * \param[in]      cell_ids        list of cell ids
- * \param[in]      ref_value       ignored if NULL
- * \param[in]      cell_values     list of associated values, ignored if NULL
+ * \param[in]      ref_value       ignored if nullptr
+ * \param[in]      cell_values     list of associated values, ignored if nullptr
  *
  * \return a pointer to a cs_enforcement_param_t structure
  */
@@ -4022,13 +4051,17 @@ cs_equation_add_or_replace_cell_enforcement(cs_equation_param_t *eqp,
                                             const cs_real_t      ref_value[],
                                             const cs_real_t      cell_values[])
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (ref_value == NULL && cell_values == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
+  if (ref_value == nullptr && cell_values == nullptr)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Eq: %s: No enforcement value.\n",
+              __func__,
+              eqp->name);
 
-  cs_enforcement_param_t  *efp = NULL;
+  cs_enforcement_param_t *efp = nullptr;
 
   if (enforcement_id > eqp->n_enforcements)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid enforcement id.\n",
@@ -4046,9 +4079,9 @@ cs_equation_add_or_replace_cell_enforcement(cs_equation_param_t *eqp,
     assert(enforcement_id < eqp->n_enforcements);
     efp = eqp->enforcement_params[enforcement_id];
 
-    if (cell_values == NULL) {
+    if (cell_values == nullptr) {
 
-      assert(ref_value != NULL);
+      assert(ref_value != nullptr);
       cs_enforcement_param_reset(efp,
                                  CS_ENFORCEMENT_SELECTION_CELLS,
                                  CS_ENFORCEMENT_BY_CONSTANT,
@@ -4056,7 +4089,6 @@ cs_equation_add_or_replace_cell_enforcement(cs_equation_param_t *eqp,
                                  n_cells,
                                  cell_ids,
                                  ref_value);
-
     }
     else
       cs_enforcement_param_reset(efp,
@@ -4073,5 +4105,3 @@ cs_equation_add_or_replace_cell_enforcement(cs_equation_param_t *eqp,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -107,6 +107,17 @@ typedef enum {
 extern cs_param_cdo_mode_t  cs_glob_param_cdo_mode;
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Map Fortran pointers to global C structure members.
+ *----------------------------------------------------------------------------*/
+
+void cs_f_cdo_get_pointers(int **icdo);
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

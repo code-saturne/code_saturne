@@ -49,6 +49,15 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void cs_f_cdo_solve_steady_state_domain(void);
+
+void cs_f_cdo_solve_unsteady_state_domain(void);
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
