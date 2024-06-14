@@ -151,16 +151,25 @@ cs_macfb_advection_open_default(const cs_equation_param_t *eqp,
 
   if (eqp->adv_scaling_property != NULL) {
 
-    cs_real_t scaling = eqp->adv_scaling_property->ref_value;
-    if (cs_property_is_uniform(eqp->adv_scaling_property) == false) {
-      /* TODONP: scaling is computed at cells and not at faces. To change */
+    /* Loop on inner faces */
+    for (short int fi = 0; fi < 6; fi++) {
 
-      scaling = cs_property_value_in_cell(
-        cm, eqp->adv_scaling_property, cb->t_pty_eval);
+      cs_real_t scaling = eqp->adv_scaling_property->ref_value;
+      if (cs_property_is_uniform(eqp->adv_scaling_property) == false) {
+
+        scaling = cs_property_get_face_value(
+          cm->f_ids[fi], cb->t_pty_eval, eqp->adv_scaling_property);
+      }
+
+      cb->adv_fluxes[fi] *= scaling;
+
+      /* Loop on outer faces */
+      for (short int fj = 0; fj < 4; fj++) {
+        const short int shift_j = 4 * fi + fj;
+
+        cb->adv_fluxes[6 + shift_j] *= scaling;
+      }
     }
-
-    for (int f = 0; f < macb->n_max_dofs; f++)
-      cb->adv_fluxes[f] *= scaling;
 
   } /* Apply a scaling factor to the advective flux */
 }

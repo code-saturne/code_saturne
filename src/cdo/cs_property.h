@@ -1252,6 +1252,22 @@ cs_property_c2v_values(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the value of a property at the face center
+ *
+ * \param[in] f_id     id of the current face
+ * \param[in] t_eval   physical time at which one evaluates the term
+ * \param[in] pty      pointer to a cs_property_t structure
+ *
+ * \return the value of the property for the given face
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t cs_property_get_face_value(cs_lnum_t            f_id,
+                                     cs_real_t            t_eval,
+                                     const cs_property_t *pty);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the Fourier number in each cell
  *
  * \param[in]      pty       pointer to the diffusive property struct.

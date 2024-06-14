@@ -305,7 +305,7 @@ void cs_macfb_vecteq_euler_implicit_term(const cs_equation_param_t *eqp,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      macb        pointer to a cs_macfb_builder_t structure
- * \param[in]      diff_pty    pointer to a cs_property_data_t structure
+ * \param[in]      diff_pty    pointer to a cs_property_t structure
  *                              for diffusion
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -315,7 +315,7 @@ void cs_macfb_vecteq_euler_implicit_term(const cs_equation_param_t *eqp,
 void cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
                                const cs_cell_mesh_t      *cm,
                                const cs_macfb_builder_t  *macb,
-                               const cs_property_data_t  *diff_pty,
+                               const cs_property_t       *diff_pty,
                                cs_cell_sys_t             *csys,
                                cs_cell_builder_t         *cb);
 

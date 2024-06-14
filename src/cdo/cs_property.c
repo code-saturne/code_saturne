@@ -191,15 +191,13 @@ _add_new_b_def(cs_property_t     *pty)
 /*----------------------------------------------------------------------------*/
 
 static inline int
-_get_def_id(cs_lnum_t                c_id,
-            const cs_property_t     *pty)
+_get_cell_def_id(const cs_lnum_t c_id, const cs_property_t *pty)
 {
   if (pty->n_definitions > 1) {
 
     assert(pty->def_ids != NULL);
     assert(pty->def_ids[c_id] > -1);
     return pty->def_ids[c_id];
-
   }
   else
     return 0;
@@ -218,18 +216,20 @@ _get_def_id(cs_lnum_t                c_id,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-_get_cell_value(cs_lnum_t              c_id,
-                cs_real_t              t_eval,
-                const cs_property_t   *pty)
+_get_cell_value(const cs_lnum_t      c_id,
+                const cs_real_t      t_eval,
+                const cs_property_t *pty)
 {
-  int  def_id = _get_def_id(c_id, pty);
+  int def_id = _get_cell_def_id(c_id, pty);
 
   assert(pty->get_eval_at_cell[def_id] != NULL);
 
-  cs_xdef_t  *def = pty->defs[def_id];
+  cs_xdef_t *def    = pty->defs[def_id];
   cs_real_t  result = 0;
 
-  pty->get_eval_at_cell[def_id](1, &c_id, true, /* dense output */
+  pty->get_eval_at_cell[def_id](1,
+                                &c_id,
+                                true, /* dense output */
                                 cs_mesh,
                                 cs_cdo_connect,
                                 cs_cdo_quant,
@@ -238,6 +238,95 @@ _get_cell_value(cs_lnum_t              c_id,
                                 &result);
 
   return result;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the value of an analytical property at the face center
+ *
+ * \param[in] f_id     id of the current face
+ * \param[in] t_eval   physical time at which one evaluates the term
+ * \param[in] def      pointer to a cs_xdef_t structure
+ *
+ * \return the value of the property for the given face
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_get_face_value_analytic(cs_lnum_t f_id, cs_real_t t_eval, const cs_xdef_t *def)
+{
+  assert(def != NULL && def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
+
+  cs_xdef_analytic_context_t *cx = (cs_xdef_analytic_context_t *)def->context;
+  assert(cx != NULL);
+
+  /* Evaluate the function for this time at face barycenter */
+
+  const cs_real_t *f_xc = cs_quant_get_face_center(f_id, cs_cdo_quant);
+
+  cs_real_t result;
+
+  cx->func(t_eval, 1, NULL, f_xc, true, cx->input, &result);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the value of a property at the face center
+ *
+ * \param[in] f_id     id of the current face
+ * \param[in] t_eval   physical time at which one evaluates the term
+ * \param[in] pty      pointer to a cs_property_t structure
+ *
+ * \return the value of the property for the given face
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_get_face_value(cs_lnum_t f_id, cs_real_t t_eval, const cs_property_t *pty)
+{
+
+  const cs_adjacency_t *f2c = cs_cdo_connect->f2c;
+  assert(f2c != NULL);
+
+  const cs_lnum_t n_cells = f2c->idx[f_id + 1] - f2c->idx[f_id];
+  assert(n_cells == 1 || n_cells == 2);
+
+  const cs_lnum_t *c_ids = f2c->ids + f2c->idx[f_id];
+
+  /* Boundary face */
+  if (n_cells == 1) {
+    const int def_id = _get_cell_def_id(c_ids[0], pty);
+
+    const cs_xdef_t *def = pty->defs[def_id];
+
+    if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) {
+      return _get_face_value_analytic(f_id, t_eval, def);
+    }
+    return _get_cell_value(c_ids[0], t_eval, pty);
+  }
+  else {
+
+    /* If same analytical property */
+    if (_get_cell_def_id(c_ids[0], pty) == _get_cell_def_id(c_ids[1], pty)) {
+      const cs_xdef_t *def = pty->defs[_get_cell_def_id(c_ids[0], pty)];
+
+      if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) {
+        return _get_face_value_analytic(f_id, t_eval, def);
+      }
+    }
+
+    /* Average of shared cells scaled by cell volume */
+    cs_real_t result = 0., vol = 0.;
+    for (cs_lnum_t i_c = 0; i_c < n_cells; i_c++) {
+      const cs_lnum_t c_id  = c_ids[i_c];
+      const cs_real_t vol_c = cs_cdo_quant->cell_vol[c_id];
+
+      result += vol_c * _get_cell_value(c_id, t_eval, pty);
+      vol += vol_c;
+    }
+
+    return result / vol;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -259,7 +348,7 @@ _value_in_cell(const cs_cell_mesh_t   *cm,
                cs_real_t               t_eval)
 {
   cs_real_t  result = 0;
-  int  def_id = _get_def_id(cm->c_id, pty);
+  int         def_id = _get_cell_def_id(cm->c_id, pty);
   cs_xdef_t  *def = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell_cw[def_id] != NULL);
@@ -332,7 +421,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
                  const cs_property_t    *pty,
                  cs_real_t               tensor[3][3])
 {
-  int  def_id = _get_def_id(c_id, pty);
+  int         def_id = _get_cell_def_id(c_id, pty);
   cs_xdef_t  *def = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell[def_id] != NULL);
@@ -470,7 +559,7 @@ _tensor_in_cell(const cs_cell_mesh_t   *cm,
                 cs_real_t               t_eval,
                 cs_real_t               tensor[3][3])
 {
-  int  def_id = _get_def_id(cm->c_id, pty);
+  int         def_id = _get_cell_def_id(cm->c_id, pty);
   cs_xdef_t  *def = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell_cw[def_id] != NULL);
@@ -3720,7 +3809,7 @@ cs_property_c2v_values(const cs_cell_mesh_t   *cm,
   assert(cs_property_is_subcell(pty));
   assert(eval != NULL);
 
-  const cs_xdef_t  *def = pty->defs[_get_def_id(cm->c_id, pty)];
+  const cs_xdef_t *def = pty->defs[_get_cell_def_id(cm->c_id, pty)];
 
   switch(def->type) {
 
@@ -3822,6 +3911,66 @@ cs_property_c2v_values(const cs_cell_mesh_t   *cm,
     for (int i = 0; i < cm->n_vc; i++)
       eval[i] *= pty->scaling_factor;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the value of a property at the face center
+ *        by analytic if possible or by averaging value at cells center
+ *
+ * \param[in] f_id     id of the current face
+ * \param[in] t_eval   physical time at which one evaluates the term
+ * \param[in] pty      pointer to a cs_property_t structure
+ *
+ * \return the value of the property for the given face
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_property_get_face_value(cs_lnum_t            f_id,
+                           cs_real_t            t_eval,
+                           const cs_property_t *pty)
+{
+  cs_real_t result = 0;
+
+  if (pty == NULL)
+    return result;
+
+  if ((pty->type & CS_PROPERTY_ISO) == 0)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: Invalid type of property for this function.\n"
+              " Property %s has to be isotropic.",
+              __func__,
+              pty->name);
+
+  if (pty->type & CS_PROPERTY_BY_PRODUCT) {
+
+    assert(pty->related_properties != NULL);
+
+    const cs_property_t *pty_a = pty->related_properties[0];
+    result                     = _get_face_value(f_id, t_eval, pty_a);
+    if (pty_a->type & CS_PROPERTY_SCALED)
+      result *= pty_a->scaling_factor;
+
+    const cs_property_t *pty_b = pty->related_properties[1];
+    result *= _get_face_value(f_id, t_eval, pty_b);
+    if (pty_b->type & CS_PROPERTY_SCALED)
+      result *= pty_b->scaling_factor;
+  }
+  else {
+
+    if (cs_property_is_constant(pty))
+      result = pty->ref_value;
+    else
+      result = _get_face_value(f_id, t_eval, pty);
+  }
+
+  if (pty->type & CS_PROPERTY_SCALED)
+    result *= pty->scaling_factor;
+
+  return result;
+};
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -3650,7 +3650,7 @@ cs_cdovb_diffusion_p0_face_flux(const short int           f,
  *
  * \param[in]  cm         pointer to a cs_cell_mesh_t structure
  * \param[in]  macb       pointer to a cs_macfb_builder_t structure
- * \param[in]  diff_pty   pointer to a cs_property_data_t structure
+ * \param[in]  diff_pty   pointer to a cs_property_t structure
  * \param[in,out]  mat    pointer to a cs_sdm_t structure. It is filled inside
  *                        the function. Have to preallocated.
  * \param[in,out]  rhs    pointer to a cs_real_t array. It is filled inside
@@ -3661,31 +3661,12 @@ cs_cdovb_diffusion_p0_face_flux(const short int           f,
 void
 cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
                    const cs_macfb_builder_t *macb,
-                   const cs_property_data_t *diff_pty,
+                   const cs_property_t      *diff_pty,
                    cs_sdm_t                 *mat,
                    cs_real_t                *rhs)
 {
   /* Sanity checks */
   assert(cm != NULL && diff_pty != NULL && macb != NULL);
-
-  /* For the moment, we assume that the diffusion
-   *  is uniform and isotropic */
-
-  const cs_property_t *pty = diff_pty->property;
-
-#if defined(DEBUG) && !defined(NDEBUG)
-  if (!cs_property_is_constant(pty)) {
-    bft_error(
-      __FILE__, __LINE__, 0, _(" %s: Diffusion is not constant.\n"), __func__);
-  }
-  if (!cs_property_is_isotropic(pty)) {
-    bft_error(
-      __FILE__, __LINE__, 0, _(" %s: Diffusion is not isotropic.\n"), __func__);
-  }
-#endif
-
-  /* TODONP: compute value by face and not by cell */
-  const cs_real_t mu = cs_property_get_cell_value(cm->c_id, 0.0, pty);
 
   /* Initialize objects */
   cs_sdm_init(cm->n_fc, macb->n_dofs, mat);
@@ -3700,7 +3681,8 @@ cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
     const cs_real_t  vol_cv = macb->f_vol_cv[fi];
 
     /* compute property at fq_xc */
-    const cs_real_t mu_fc = mu;
+    const cs_real_t mu_fc
+      = cs_property_get_face_value(cm->f_ids[fi], 0.0, diff_pty);
 
     const cs_real_t val_fi = mu_fc * fq.meas / (2.0 * cm->hfc[fi] * vol_cv);
 

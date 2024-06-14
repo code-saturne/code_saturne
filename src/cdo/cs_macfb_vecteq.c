@@ -544,7 +544,7 @@ cs_macfb_vecteq_sourceterm(const cs_cell_mesh_t      *cm,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      macb        pointer to a cs_macfb_builder_t structure
- * \param[in]      diff_pty    pointer to a cs_property_data_t structure
+ * \param[in]      diff_pty    pointer to a cs_property_t structure
  *                             for diffusion
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -555,7 +555,7 @@ void
 cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
                           const cs_cell_mesh_t      *cm,
                           const cs_macfb_builder_t  *macb,
-                          const cs_property_data_t  *diff_pty,
+                          const cs_property_t       *diff_pty,
                           cs_cell_sys_t             *csys,
                           cs_cell_builder_t         *cb)
 {
@@ -655,7 +655,7 @@ cs_macfb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
   /* Diffusion term */
 
-  cs_macfb_vecteq_diffusion(eqp, cm, macb, diff_pty, csys, cb);
+  cs_macfb_vecteq_diffusion(eqp, cm, macb, diff_pty->property, csys, cb);
 
   /* Convection term */
 
@@ -709,14 +709,13 @@ cs_macfb_vecteq_euler_implicit_term(const cs_equation_param_t *eqp,
 
   const cs_real_t inv_dt = 1. / dt;
 
-  /*TODONP not uniform in space*/
-  const cs_real_t rho
-    = cs_property_value_in_cell(cm, eqp->time_property, cb->t_pty_eval);
-
   /* Loop on inner faces */
   for (short int fi = 0; fi < cm->n_fc; fi++) {
 
-    cs_real_t val_fi = rho * macb->f_vol_cv[fi] * inv_dt;
+    const cs_real_t rho_f = cs_property_get_face_value(
+      cm->f_ids[fi], cb->t_pty_eval, eqp->time_property);
+
+    cs_real_t val_fi = rho_f * macb->f_vol_cv[fi] * inv_dt;
 
     /* if not a boundary face: divided by 2 since
      * two cells share this face */
