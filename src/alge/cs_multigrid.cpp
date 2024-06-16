@@ -149,16 +149,19 @@ typedef struct _cs_multigrid_info_t {
 
   /* Settings */
 
-  cs_sles_it_type_t    type[3];             /* Descent/ascent smoothers
-                                               Coarse solver */
+  cs_sles_it_type_t    type[6];             /* Descent/ascent smoothers,
+                                               Coarse solver, on host
+                                               than device */
 
   bool                 is_pc;               /* True if used as preconditioner */
   int                  n_max_cycles;        /* Maximum allowed cycles */
 
-  int                  n_max_iter[3];       /* maximum iterations allowed
-                                               (descent/ascent/coarse) */
-  int                  poly_degree[3];      /* polynomial preconditioning degree
-                                               (descent/ascent/coarse) */
+  int                  n_max_iter[6];       /* maximum iterations allowed
+                                               (host descent/ascent/coarse,
+                                               device descent/ascent/coarse) */
+  int                  poly_degree[6];      /* polynomial preconditioning degree
+                                               (host descent/ascent/coarse,
+                                               device descent/ascent/coarse) */
 
   double               precision_mult[3];   /* solver precision multiplier
                                                (descent/ascent/coarse) */
@@ -402,6 +405,9 @@ _multigrid_info_init(cs_multigrid_info_t *info)
   info->type[0] = CS_SLES_PCG;
   info->type[1] = CS_SLES_PCG;
   info->type[2] = CS_SLES_PCG;
+  info->type[3] = CS_SLES_N_SMOOTHER_TYPES;
+  info->type[4] = CS_SLES_N_SMOOTHER_TYPES;
+  info->type[5] = CS_SLES_N_SMOOTHER_TYPES;
 
   info->is_pc        = false;
   info->n_max_cycles = 100;
@@ -409,10 +415,22 @@ _multigrid_info_init(cs_multigrid_info_t *info)
   info->n_max_iter[0] = 2;
   info->n_max_iter[1] = 10;
   info->n_max_iter[2] = 10000;
+  info->n_max_iter[3] = 0;
+  info->n_max_iter[4] = 0;
+  info->n_max_iter[5] = 0;
+
+  if (cs_get_device_id() > -1) {
+    info->n_max_iter[3] = 2;
+    info->n_max_iter[4] = 10;
+    info->n_max_iter[5] = 10000;
+  }
 
   info->poly_degree[0] = -1;
   info->poly_degree[1] = -1;
   info->poly_degree[2] = -1;
+  info->poly_degree[3] = -1;
+  info->poly_degree[4] = -1;
+  info->poly_degree[5] = -1;
 
   /* In theory, one should increase precision on coarsest mesh,
      but in practice, it is more efficient to have a lower precision,
@@ -512,44 +530,52 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
                               "Ascent smoother",
                               "Coarsest level solver"};
 
-  for (int i = 0; i < 3; i++) {
+  for (int j = 0; j < 3; j++) {
+    cs_log_printf(CS_LOG_SETUP, _("  %s:\n"), stage_name[j]);
 
-    if (   mg->info.type[i] != CS_SLES_N_IT_TYPES
-        && mg->info.type[i] < CS_SLES_N_SMOOTHER_TYPES) {
-      cs_log_printf(CS_LOG_SETUP,
-                    _("  %s:\n"
-                      "    Type:                            %s\n"),
-                    _(stage_name[i]),
-                    _(cs_sles_it_type_name[mg->info.type[i]]));
+    for (int k = 1; k > -1; k--) {
+      int i = j + k*3;
 
-      if (mg->info.poly_degree[i] > -1) {
-        cs_log_printf(CS_LOG_SETUP,
-                      _("    Preconditioning:                 "));
-        if (mg->info.poly_degree[i] == 0)
-          cs_log_printf(CS_LOG_SETUP, _("Jacobi\n"));
-        else if (mg->info.poly_degree[i] < 0) {
-          if (mg->lv_mg[i] != nullptr) {
-            cs_log_printf(CS_LOG_SETUP, "%s\n",
-                          _(cs_multigrid_type_name[mg->lv_mg[i]->type]));
+      if (   mg->info.type[i] != CS_SLES_N_IT_TYPES
+          && mg->info.type[i] < CS_SLES_N_SMOOTHER_TYPES) {
+        if (k == 1)
+          cs_log_printf(CS_LOG_SETUP,
+                        _("    Type (device):                   %s\n"),
+                        _(cs_sles_it_type_name[mg->info.type[i]]));
+        else
+          cs_log_printf(CS_LOG_SETUP,
+                        _("    Type:                            %s\n"),
+                        _(cs_sles_it_type_name[mg->info.type[i]]));
+
+        if (mg->info.poly_degree[i] > -1) {
+          cs_log_printf(CS_LOG_SETUP,
+                        _("      Preconditioning:               "));
+          if (mg->info.poly_degree[i] == 0)
+            cs_log_printf(CS_LOG_SETUP, _("Jacobi\n"));
+          else if (mg->info.poly_degree[i] < 0) {
+            if (mg->lv_mg[i] != nullptr) {
+              cs_log_printf(CS_LOG_SETUP, "%s\n",
+                            _(cs_multigrid_type_name[mg->lv_mg[i]->type]));
+            }
+            else
+              cs_log_printf(CS_LOG_SETUP, _("None\n"));
           }
           else
-            cs_log_printf(CS_LOG_SETUP, _("None\n"));
+            cs_log_printf(CS_LOG_SETUP, _("polynomial, degree %d\n"),
+                          mg->info.poly_degree[i]);
         }
-        else
-          cs_log_printf(CS_LOG_SETUP, _("polynomial, degree %d\n"),
-                        mg->info.poly_degree[i]);
+        cs_log_printf(CS_LOG_SETUP,
+                      _("      Maximum number of iterations:  %d\n"
+                        "      Precision multiplier:          %g\n"),
+                      mg->info.n_max_iter[i],
+                      mg->info.precision_mult[i%3]);
       }
-      cs_log_printf(CS_LOG_SETUP,
-                    _("    Maximum number of iterations:    %d\n"
-                      "    Precision multiplier:            %g\n"),
-                    mg->info.n_max_iter[i],
-                    mg->info.precision_mult[i]);
-    }
-    else if (mg->lv_mg[i] != nullptr) {
-      cs_log_printf(CS_LOG_SETUP, "  %s:\n", _(stage_name[i]));
-      _multigrid_setup_log(mg->lv_mg[i]);
-    }
+      else if (mg->lv_mg[j] != nullptr) {
+        cs_log_printf(CS_LOG_SETUP, "  %s:\n", _(stage_name[j]));
+        _multigrid_setup_log(mg->lv_mg[j]);
+      }
 
+    }
   }
 
   cs_log_printf(CS_LOG_SETUP,
@@ -591,26 +617,24 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                 _(cs_multigrid_type_name[mg->type]),
                 _(cs_grid_coarsening_type_name[mg->coarsening_type]));
 
-  if (   mg->info.type[0] != CS_SLES_N_IT_TYPES
-      && mg->info.type[0] < CS_SLES_N_SMOOTHER_TYPES) {
+  const char *stage_type_name[] =
+    {"Descent smoother              ",
+     "Ascent smoother               ",
+     "Coarsest level solver         ",
+     "Descent smoother (device)     ",
+     "Ascent smoother (device)      ",
+     "Coarsest level solver (device)"};
 
-    const char *descent_smoother_name = cs_sles_it_type_name[mg->info.type[0]];
-    const char *ascent_smoother_name = cs_sles_it_type_name[mg->info.type[1]];
+  for (int j = 0; j < 6; j++) {
+    int i = j/2 + 3*((j+1)%2);
 
-    if (mg->info.type[0] == mg->info.type[1])
+    if (   mg->info.type[i] != CS_SLES_N_IT_TYPES
+        && mg->info.type[i] < CS_SLES_N_SMOOTHER_TYPES) {
       cs_log_printf(CS_LOG_PERFORMANCE,
-                    _("    Smoother: %s\n"),
-                    _(descent_smoother_name));
-    else
-      cs_log_printf(CS_LOG_PERFORMANCE,
-                    _("    Descent smoother:     %s\n"
-                      "    Ascent smoother:      %s\n"),
-                    _(descent_smoother_name), _(ascent_smoother_name));
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("    Coarsest level solver:       %s\n"),
-                  _(cs_sles_it_type_name[mg->info.type[2]]));
-
+                  _("    %s : %s\n"),
+                  _(stage_type_name[i]),
+                    _(cs_sles_it_type_name[mg->info.type[i]]));
+    }
   }
 
   sprintf(tmp_s[0], "%-36s", "");
@@ -1939,14 +1963,19 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
         n_ops = 1;
     }
 
+    int k = 0;
+    if (   cs_get_device_id() > -1
+        && i <= _grid_max_level_for_device)
+      k = 3;
+
     for (int j = 0; j < n_ops; j++) {
-      if (   mg->info.type[j] != CS_SLES_N_IT_TYPES
-          && mg->info.type[j] < CS_SLES_N_SMOOTHER_TYPES) {
+      if (   mg->info.type[j+k] != CS_SLES_N_IT_TYPES
+          && mg->info.type[j+k] < CS_SLES_N_SMOOTHER_TYPES) {
         cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[i*2 + j]);
         mg_sles->context
-          = cs_multigrid_smoother_create(mg->info.type[j],
-                                         mg->info.poly_degree[j],
-                                         mg->info.n_max_iter[j]);
+          = cs_multigrid_smoother_create(mg->info.type[j+k],
+                                         mg->info.poly_degree[j+k],
+                                         mg->info.n_max_iter[j+k]);
         mg_sles->setup_func = cs_multigrid_smoother_setup;
         mg_sles->solve_func = cs_multigrid_smoother_solve;
         mg_sles->destroy_func = cs_sles_it_destroy;
@@ -2010,6 +2039,11 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
     i = n_levels - 1;
 
+    int k = 0;
+    if (   cs_get_device_id() > -1
+        && i <= _grid_max_level_for_device)
+      k = 3;
+
     g = mgd->grid_hierarchy[i];
     m = cs_grid_get_matrix(g);
 
@@ -2017,9 +2051,9 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[i*2]);
     mg_sles->context
-      = cs_sles_it_create(mg->info.type[2],
-                          mg->info.poly_degree[2],
-                          mg->info.n_max_iter[2],
+      = cs_sles_it_create(mg->info.type[2+k],
+                          mg->info.poly_degree[2+k],
+                          mg->info.n_max_iter[2+k],
                           false); /* stats not updated here */
     mg_sles->setup_func = cs_sles_it_setup;
     mg_sles->solve_func = cs_sles_it_solve;
@@ -4600,7 +4634,7 @@ cs_multigrid_log(const void  *context,
  * \param[in]       aggregation_limit  maximum allowed fine rows
  *                                     per coarse row
  * \param[in]       coarsening_type    coarsening type;
-*                                      see \ref cs_grid_coarsening_t
+ *                                     see \ref cs_grid_coarsening_t
  * \param[in]       n_max_levels       maximum number of grid levels
  * \param[in]       min_g_rows         global number of rows on coarse grids
  *                                     under which no coarsening occurs
@@ -4637,6 +4671,10 @@ cs_multigrid_set_coarsening_options
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set multigrid parameters for associated iterative solvers.
+ *
+ * On a GPU, some parameters may be replaced by the closest GPU equivalents.
+ * For finer control, use \ref cs_multigrid_set_coarsening_options_d after
+ * calling this function to modify parameters for solvers running on device.
  *
  * \param[in, out]  mg                      pointer to multigrid info
  *                                          and context
@@ -4704,12 +4742,122 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
   info->precision_mult[1] = precision_mult_ascent;
   info->precision_mult[2] = precision_mult_coarse;
 
-  for (int i = 0; i < 3; i++) {
+  if (cs_get_device_id() > -1) {
+    for (int i = 0; i < 3; i++) {
+      info->type[i+3] = info->type[i];
+      info->n_max_iter[i+3] = info->n_max_iter[i];
+      info->poly_degree[i+3] = info->poly_degree[i];
+      switch (info->type[i+3]) {
+      case CS_SLES_P_GAUSS_SEIDEL:
+        info->type[i+3] = CS_SLES_JACOBI;
+        info->n_max_iter[i+3] *= 2;
+        break;
+      case CS_SLES_P_SYM_GAUSS_SEIDEL:
+        info->type[i+3] = CS_SLES_JACOBI;
+        if (i == 0 && info->n_max_iter[i+3] == 1)
+          info->n_max_iter[i+3] = 2;
+        else
+          info->n_max_iter[i+3] *= 3;
+        break;
+      case CS_SLES_TS_F_GAUSS_SEIDEL:
+        info->type[i+3] = CS_SLES_JACOBI;
+        info->n_max_iter[i+3] = 2;
+        break;
+      case CS_SLES_TS_B_GAUSS_SEIDEL:
+        info->type[i+3] = CS_SLES_JACOBI;
+        info->n_max_iter[i+3] = 2;
+        break;
+      case CS_SLES_PCG:
+        info->type[i+3] = CS_SLES_FCG;
+        break;
+      case CS_SLES_BICGSTAB:
+        [[fallthrough]];
+      case CS_SLES_BICGSTAB2:
+        [[fallthrough]];
+      case CS_SLES_GMRES:
+        [[fallthrough]];
+      case CS_SLES_PCR3:
+        info->type[i+3] = CS_SLES_GCR;
+        break;
+      default:
+        break;
+      }
+    }
+  }
+
+  for (int i = 0; i < 6; i++) {
     switch(info->type[i]) {
     case CS_SLES_JACOBI:
     case CS_SLES_P_GAUSS_SEIDEL:
     case CS_SLES_P_SYM_GAUSS_SEIDEL:
       info->poly_degree[i] = -1;
+      break;
+    default:
+      break;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set multigrid device solver parameters for associated
+ *        iterative solvers.
+ *
+ * \param[in, out]  mg                      pointer to multigrid info
+ *                                          and context
+ * \param[in]       descent_smoother_type   type of smoother for descent
+ * \param[in]       ascent_smoother_type    type of smoother for ascent
+ * \param[in]       coarse_solver_type      type of solver for coarsest grid
+ * \param[in]       n_max_iter_descent      maximum iterations
+ *                                          per descent smoothing
+ * \param[in]       n_max_iter_ascent       maximum iterations
+ *                                          per ascent smoothing
+ * \param[in]       n_max_iter_coarse       maximum iterations
+ *                                          per coarsest solution
+ * \param[in]       poly_degree_descent     preconditioning polynomial degree
+ *                                          for descent phases (0: diagonal)
+ * \param[in]       poly_degree_ascent      preconditioning polynomial degree
+ *                                          for ascent phases (0: diagonal)
+ * \param[in]       poly_degree_coarse      preconditioning polynomial degree
+ *                                          for coarse solver (0: diagonal)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_solver_options_d(cs_multigrid_t     *mg,
+                                  cs_sles_it_type_t   descent_smoother_type,
+                                  cs_sles_it_type_t   ascent_smoother_type,
+                                  cs_sles_it_type_t   coarse_solver_type,
+                                  int                 n_max_iter_descent,
+                                  int                 n_max_iter_ascent,
+                                  int                 n_max_iter_coarse,
+                                  int                 poly_degree_descent,
+                                  int                 poly_degree_ascent,
+                                  int                 poly_degree_coarse)
+{
+  if (mg == nullptr || cs_get_device_id() < 0)
+    return;
+
+  cs_multigrid_info_t  *info = &(mg->info);
+
+  info->type[3] = descent_smoother_type;
+  info->type[4] = ascent_smoother_type;
+  info->type[5] = coarse_solver_type;
+
+  info->n_max_iter[3] = n_max_iter_descent;
+  info->n_max_iter[4] = n_max_iter_ascent;
+  info->n_max_iter[5] = n_max_iter_coarse;
+
+  info->poly_degree[3] = poly_degree_descent;
+  info->poly_degree[4] = poly_degree_ascent;
+  info->poly_degree[5] = poly_degree_coarse;
+
+  for (int i = 0; i < 3; i++) {
+    switch(info->type[i+3]) {
+    case CS_SLES_JACOBI:
+    case CS_SLES_P_GAUSS_SEIDEL:
+    case CS_SLES_P_SYM_GAUSS_SEIDEL:
+      info->poly_degree[i+3] = -1;
       break;
     default:
       break;

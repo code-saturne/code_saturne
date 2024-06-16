@@ -2329,29 +2329,9 @@ cs_multigrid_smoother_setup(void               *context,
 
   case CS_SLES_P_GAUSS_SEIDEL:
     c->solve = _p_gauss_seidel;
-#if defined(HAVE_CUDA)
-    if (on_device) {
-      if (diag_block_size == 1)
-        c->solve = cs_sles_it_cuda_jacobi;
-      else
-        c->solve = cs_sles_it_cuda_block_jacobi;
-      c->type = CS_SLES_JACOBI;
-      c->n_max_iter *= 2;
-    }
-#endif
     break;
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
     c->solve = _p_sym_gauss_seidel_msr;
-#if defined(HAVE_CUDA)
-    if (on_device) {
-      if (diag_block_size == 1)
-        c->solve = cs_sles_it_cuda_jacobi;
-      else
-        c->solve = cs_sles_it_cuda_block_jacobi;
-      c->type = CS_SLES_JACOBI;
-      c->n_max_iter *= 3;
-    }
-#endif
     break;
 
   case CS_SLES_TS_F_GAUSS_SEIDEL:

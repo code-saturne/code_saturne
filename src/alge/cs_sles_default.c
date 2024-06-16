@@ -211,15 +211,19 @@ _sles_default_native(int                f_id,
         multigrid = 1;
     }
     else {
-      if (coupling_id < 0) {
-        if (cs_get_device_id() > -1)
-          sles_it_type = CS_SLES_JACOBI;
-        else
-          sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
-      }
+      if (coupling_id < 0)
+        sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
       else
         sles_it_type = CS_SLES_BICGSTAB;
     }
+  }
+
+  if (cs_get_device_id() > -1) {
+    if (   sles_it_type == CS_SLES_P_GAUSS_SEIDEL
+        || sles_it_type == CS_SLES_P_SYM_GAUSS_SEIDEL)
+      sles_it_type = CS_SLES_JACOBI;
+    else if (sles_it_type == CS_SLES_BICGSTAB)
+      sles_it_type = CS_SLES_GCR;
   }
 
   if (multigrid == 1) {
@@ -260,7 +264,10 @@ _sles_default_native(int                f_id,
       cs_sles_it_set_fallback_threshold(context,
                                         CS_SLES_ITERATING,
                                         n_max_iter);
-      cs_sles_it_set_n_max_iter(context, _n_max_iter_default_jacobi);
+      int n_fallback_iter = _n_max_iter_default_jacobi;
+      if (sles_it_type == CS_SLES_JACOBI)
+        n_fallback_iter *= 2;
+      cs_sles_it_set_n_max_iter(context, n_fallback_iter);
     }
 
   }

@@ -201,6 +201,10 @@ cs_multigrid_set_coarsening_options
 /*----------------------------------------------------------------------------
  * Set multigrid parameters for associated iterative solvers.
  *
+ * On a GPU, some parameters may be replaced by the closest GPU equivalents.
+ * For finer control, use \ref cs_multigrid_set_coarsening_options_d after
+ * calling this function to modify parameters for solvers running on device.
+ *
  * parameters:
  *   mg                     <-> pointer to multigrid info and context
  *   descent_smoother_type  <-- type of smoother for descent
@@ -239,7 +243,44 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
                                 double              precision_mult_coarse);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Set multigrid device solver parameters for associated
+ *        iterative solvers.
+ *
+ * \param[in, out]  mg                      pointer to multigrid info
+ *                                          and context
+ * \param[in]       descent_smoother_type   type of smoother for descent
+ * \param[in]       ascent_smoother_type    type of smoother for ascent
+ * \param[in]       coarse_solver_type      type of solver for coarsest grid
+ * \param[in]       n_max_iter_descent      maximum iterations
+ *                                          per descent smoothing
+ * \param[in]       n_max_iter_ascent       maximum iterations
+ *                                          per ascent smoothing
+ * \param[in]       n_max_iter_coarse       maximum iterations
+ *                                          per coarsest solution
+ * \param[in]       poly_degree_descent     preconditioning polynomial degree
+ *                                          for descent phases (0: diagonal)
+ * \param[in]       poly_degree_ascent      preconditioning polynomial degree
+ *                                          for ascent phases (0: diagonal)
+ * \param[in]       poly_degree_coarse      preconditioning polynomial degree
+ *                                          for coarse solver (0: diagonal)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_solver_options_d(cs_multigrid_t     *mg,
+                                  cs_sles_it_type_t   descent_smoother_type,
+                                  cs_sles_it_type_t   ascent_smoother_type,
+                                  cs_sles_it_type_t   coarse_solver_type,
+                                  int                 n_max_iter_descent,
+                                  int                 n_max_iter_ascent,
+                                  int                 n_max_iter_coarse,
+                                  int                 poly_degree_descent,
+                                  int                 poly_degree_ascent,
+                                  int                 poly_degree_coarse);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Set the max. number of cycles for a multigrid
  *
  * \param[in, out]  mg              pointer to multigrid info and context
