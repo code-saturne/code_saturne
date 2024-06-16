@@ -12676,8 +12676,9 @@ cs_cell_courant_number(const cs_field_t    *f,
 
   const cs_lnum_t n_cells = m->n_cells;
 
+  cs_mesh_adjacencies_update_cell_i_faces();
+
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-  //cs_mesh_adjacencies_update_cell_i_faces();
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
   const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
