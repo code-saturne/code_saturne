@@ -69,6 +69,7 @@
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
+#include "cs_timer_stats.h"
 #include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
@@ -81,14 +82,6 @@
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Local macro definitions
- *============================================================================*/
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*! \file cs_balance.c
  *
@@ -96,6 +89,40 @@ BEGIN_C_DECLS
  * convection/diffusion terms of a transport equation of a field.
  */
 /*----------------------------------------------------------------------------*/
+
+/*=============================================================================
+ * Local macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+/* Timer statistics */
+
+static int _balance_stat_id = -1;
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize balance timers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_balance_initialize(void)
+{
+  int stats_root = cs_timer_stats_id_by_name("operations");
+
+  if (stats_root > -1) {
+    _balance_stat_id = cs_timer_stats_create("operations",
+                                             "balances",
+                                             "balances");
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -187,6 +214,8 @@ cs_balance_scalar(int                         idtvar,
                   const int                   icvfli[],
                   cs_real_t                   smbrp[])
 {
+  cs_timer_t t0 = cs_timer_time();
+
   /* Local variables */
   int iconvp = eqp->iconv;
   int idiffp = eqp->idiff;
@@ -318,6 +347,11 @@ cs_balance_scalar(int                         idtvar,
                                       smbrp);
     }
   }
+
+  cs_timer_t t1 = cs_timer_time();
+
+  if (_balance_stat_id > -1)
+    cs_timer_stats_add_diff(_balance_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -417,6 +451,8 @@ cs_balance_vector(int                         idtvar,
                   cs_real_3_t                 b_pvar[],
                   cs_real_3_t                 smbr[])
 {
+  cs_timer_t t0 = cs_timer_time();
+
   /* Local variables */
   int iconvp = eqp->iconv;
   int idiffp = eqp->idiff;
@@ -545,6 +581,11 @@ cs_balance_vector(int                         idtvar,
                                            smbr);
     }
   }
+
+  cs_timer_t t1 = cs_timer_time();
+
+  if (_balance_stat_id > -1)
+    cs_timer_stats_add_diff(_balance_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -625,6 +666,8 @@ cs_balance_tensor(int                         idtvar,
                   cs_real_6_t                 smbrp[])
 {
   CS_UNUSED(icvfli);
+
+  cs_timer_t t0 = cs_timer_time();
 
   /* Local variables */
   int iconvp = eqp->iconv;
@@ -720,6 +763,11 @@ cs_balance_tensor(int                         idtvar,
                                       smbrp);
     }
   }
+
+  cs_timer_t t1 = cs_timer_time();
+
+  if (_balance_stat_id > -1)
+    cs_timer_stats_add_diff(_balance_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

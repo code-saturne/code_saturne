@@ -47,8 +47,8 @@
 #include "cs_atmo.h"
 #include "cs_all_to_all.h"
 #include "cs_ast_coupling.h"
+#include "cs_balance.h"
 #include "cs_base.h"
-
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
 #include "cs_boundary_zone.h"
@@ -438,9 +438,10 @@ _run(void)
                                  cs_glob_mesh,
                                  cs_glob_mesh_quantities);
 
-    /* Initialize gradient computation */
+    /* Initialize balance and gradient timers and computation */
 
     cs_gradient_initialize();
+    cs_balance_initialize();
 
     if (opts.verif == false) {
 

@@ -48,6 +48,15 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize balance timers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_balance_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Wrapper to the function which adds the explicit part of the
  * convection/diffusion terms of a transport equation of
  * a scalar field \f$ \varia \f$.
