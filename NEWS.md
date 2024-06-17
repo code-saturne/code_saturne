@@ -1,4 +1,4 @@
-Release 8.2.0 (unreleased)
+Release 8.2.0 (2023-06-17)
 --------------------------
 
 ### Numerics:
