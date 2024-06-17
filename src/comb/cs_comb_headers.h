@@ -32,6 +32,8 @@
 #include "cs_coal.h"
 #include "cs_coal_boundary_conditions.h"
 #include "cs_coal_ht_convert.h"
+#include "cs_coal_source_terms.h"
+#include "cs_coal_read_data.h"
 
 /*----------------------------------------------------------------------------*/
 
