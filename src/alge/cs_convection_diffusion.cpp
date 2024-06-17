@@ -1104,7 +1104,7 @@ _slope_test_gradient_strided_h
 
     for (cs_lnum_t isou = 0; isou < stride; isou++) {
       cs_real_t pfac = inc*coefa[face_id][isou];
-      cs_real_t vfac[stride];
+      cs_real_t vfac[3];
 
       /*coefu is a matrix */
       for (cs_lnum_t jsou = 0; jsou < stride; jsou++) {
@@ -1113,13 +1113,10 @@ _slope_test_gradient_strided_h
                                             + grad[ii][jsou][1]*diipbv[1]
                                             + grad[ii][jsou][2]*diipbv[2]);
       }
-      for (cs_lnum_t jsou =  0; jsou < stride; jsou++)
+      for (cs_lnum_t jsou =  0; jsou < 3; jsou++)
         vfac[jsou] = pfac * _b_f_face_surf * b_face_u_normal[face_id][jsou];
 
-      for (cs_lnum_t jsou = 0; jsou < stride; jsou++)
-        vfac[jsou] = pfac * _b_f_face_surf * b_face_u_normal[face_id][jsou];
-
-      cs_dispatch_sum<stride>(grdpa[ii][isou], vfac, b_sum_type);
+      cs_dispatch_sum<3>(grdpa[ii][isou], vfac, b_sum_type);
     }
 
   });
@@ -1285,7 +1282,7 @@ _slope_test_gradient_strided_d
 
     for (cs_lnum_t isou = 0; isou < stride; isou++) {
       cs_real_t pfac = inc*coefa[face_id][isou];
-      cs_real_t vfac[stride];
+      cs_real_t vfac[3];
 
       /*coefu is a matrix */
       for (cs_lnum_t jsou =  0; jsou < stride; jsou++) {
@@ -1294,7 +1291,7 @@ _slope_test_gradient_strided_d
                                             + grad[ii][jsou][1]*diipbv[1]
                                             + grad[ii][jsou][2]*diipbv[2]);
       }
-      for (cs_lnum_t jsou =  0; jsou < stride; jsou++)
+      for (cs_lnum_t jsou =  0; jsou < 3; jsou++)
         vfac[jsou] = pfac * _b_f_face_surf_o_v * b_face_u_normal[face_id][jsou];
 
       cs_dispatch_sum<3>(grdpa[ii][isou], vfac, b_sum_type);
