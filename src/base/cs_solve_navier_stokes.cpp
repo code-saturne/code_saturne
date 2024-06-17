@@ -1982,20 +1982,24 @@ _velocity_prediction(const cs_mesh_t             *m,
   const cs_real_t ro0 = fp->ro0;
   const cs_real_t pred0 = fp->pred0;
 
-  cs_real_t *xyzp0, *gxyz;
+  const cs_real_t *xyzp0 = fp->xyzp0;
+  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
 #if defined(HAVE_ACCEL)
-  CS_MALLOC_HD(xyzp0, 3, cs_real_t, cs_alloc_mode);
-  xyzp0[0] = fp->xyzp0[0];
-  xyzp0[1] = fp->xyzp0[1];
-  xyzp0[2] = fp->xyzp0[2];
+  cs_real_t *_xyzp0 = nullptr, *_gxyz = nullptr;
+  if (cs_get_device_id() > -1) {
+    CS_MALLOC_HD(_xyzp0, 3, cs_real_t, cs_alloc_mode);
+    for (int i = 0; i < 3; i++)
+      _xyzp0[i] = fp->xyzp0[i];
+    cs_mem_advise_set_read_mostly(_xyzp0);
 
-  CS_MALLOC_HD(gxyz, 3, cs_real_t, cs_alloc_mode);
-  gxyz[0] = cs_glob_physical_constants->gravity[0];
-  gxyz[1] = cs_glob_physical_constants->gravity[1];
-  gxyz[2] = cs_glob_physical_constants->gravity[2];
-#else
-  xyzp0 = (cs_real_t *)fp->xyzp0;
-  gxyz = (cs_real_t *)cs_glob_physical_constants->gravity;
+    CS_MALLOC_HD(_gxyz, 3, cs_real_t, cs_alloc_mode);
+    for (int i = 0; i < 3; i++)
+      _gxyz[i] = cs_glob_physical_constants->gravity[i];
+    cs_mem_advise_set_read_mostly(_gxyz);
+
+    xyzp0 = _xyzp0;
+    gxyz = _gxyz;
+  }
 #endif
 
   /* Pointers to properties
@@ -2829,8 +2833,8 @@ _velocity_prediction(const cs_mesh_t             *m,
   BFT_FREE(divt);
   BFT_FREE(icepdc);
 #if defined(HAVE_ACCEL)
-  CS_FREE_HD(gxyz);
-  CS_FREE_HD(xyzp0);
+  CS_FREE_HD(_gxyz);
+  CS_FREE_HD(_xyzp0);
 #endif
 
   /* Solving of the 3x3xNcel coupled system
