@@ -1,7 +1,7 @@
 Master (not on release branches yet)
 ------------------------------------
 
-Release 8.2.0 (unreleased)
+Release 8.2.0 (2024-06-17)
 --------------------------
 
 ### Numerics:
