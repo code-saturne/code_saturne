@@ -139,11 +139,11 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 
     cs_cdo_local_cell_meshes[t_id] = cs_cell_mesh_create(connect);
     cs_cdo_local_face_meshes[t_id] = cs_face_mesh_create(connect->n_max_vbyf);
-    cs_cdo_local_face_meshes_light[t_id] =
-      cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
+    cs_cdo_local_face_meshes_light[t_id]
+      = cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
     BFT_MALLOC(cs_cdo_local_kbuf[t_id],
-               CS_MAX(connect->v_max_cell_range, connect->e_max_cell_range)+1,
+               CS_MAX(connect->v_max_cell_range, connect->e_max_cell_range) + 1,
                short int);
   }
 #else
@@ -152,8 +152,8 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 
   cs_cdo_local_cell_meshes[0] = cs_cell_mesh_create(connect);
   cs_cdo_local_face_meshes[0] = cs_face_mesh_create(connect->n_max_vbyf);
-  cs_cdo_local_face_meshes_light[0] =
-    cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
+  cs_cdo_local_face_meshes_light[0]
+    = cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
   BFT_MALLOC(cs_cdo_local_kbuf[0],
              CS_MAX(connect->v_max_cell_range, connect->e_max_cell_range)+1,
@@ -186,6 +186,7 @@ cs_cdo_local_finalize(void)
     cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[t_id]));
     cs_face_mesh_free(&(cs_cdo_local_face_meshes[t_id]));
     cs_face_mesh_light_free(&(cs_cdo_local_face_meshes_light[t_id]));
+
     BFT_FREE(cs_cdo_local_kbuf[t_id]);
 
   }
@@ -201,6 +202,7 @@ cs_cdo_local_finalize(void)
   BFT_FREE(cs_cdo_local_face_meshes);
   BFT_FREE(cs_cdo_local_face_meshes_light);
   BFT_FREE(cs_cdo_local_kbuf);
+  cs_cdo_local_n_structures = 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -702,7 +704,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
   for (short int f = 0; f < cm->n_max_fbyc; f++) {
     cm->f_ids[f] = -1;
     cm->f_sgn[f] = 0;
-    cm->f_diam[f] = -DBL_MAX;
+    cm->f_diam[f]    = -DBL_MAX;
     cm->hfc[f] = -DBL_MAX;
     cm->pvol_f[f] = -DBL_MAX;
     cm->face[f].meas = cm->dedge[f].meas = -DBL_MAX;
@@ -793,19 +795,40 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   if (cm->flag & cs_flag_need_f) {
 
     bft_printf(" %s | %6s | %9s | %3s | %35s | %35s |"
-               " %10s | %35s | %11s  %11s  %11s\n",
-               "f", "id", "surf", "sgn", "unit", "coords", "dlen", "dunitv",
-               "pfc",  "hfc", "diam");
+               " %10s | %35s | %9s | %9s | %10s | \n",
+               "f",
+               "id",
+               "surf",
+               "sgn",
+               "unit",
+               "coords",
+               "dlen",
+               "dunitv",
+               "pfc",
+               "hfc",
+               "diam");
     for (short int f = 0; f < cm->n_fc; f++) {
       cs_quant_t  pfq = cm->face[f];
       cs_nvec3_t  deq = cm->dedge[f];
       bft_printf("%2d | %6ld | %.3e | %3d | % .4e % .4e % .4e |"
                  " % .4e % .4e % .4e | %.4e | % .4e % .4e % .4e | %.3e |"
-                 " %.3e | %.3e\n",
-                 f, (long)cm->f_ids[f], pfq.meas, cm->f_sgn[f],
-                 pfq.unitv[0], pfq.unitv[1], pfq.unitv[2], pfq.center[0],
-                 pfq.center[1], pfq.center[2], deq.meas, deq.unitv[0],
-                 deq.unitv[1], deq.unitv[2], cm->pvol_f[f], cm->hfc[f],
+                 " %.3e | %.3e |\n",
+                 f,
+                 (long)cm->f_ids[f],
+                 pfq.meas,
+                 cm->f_sgn[f],
+                 pfq.unitv[0],
+                 pfq.unitv[1],
+                 pfq.unitv[2],
+                 pfq.center[0],
+                 pfq.center[1],
+                 pfq.center[2],
+                 deq.meas,
+                 deq.unitv[0],
+                 deq.unitv[1],
+                 deq.unitv[2],
+                 cm->pvol_f[f],
+                 cm->hfc[f],
                  cm->f_diam[f]);
     }
 

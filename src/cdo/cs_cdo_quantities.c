@@ -138,7 +138,7 @@ cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_BARYC_CENTER;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate and initialize a \ref cs_mesh_quantities_t structure
+ * \brief Allocate and initialize a \ref cs_cdo_quantities_t structure
  *
  * \return  a pointer to the newly allocated structure
  */
@@ -508,13 +508,61 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
 
   /* Compute the volume of the pyramid */
 
-  cs_flag_t  masks[4] = { CS_CDO_QUANTITIES_FB_SCHEME,
-                          CS_CDO_QUANTITIES_CB_SCHEME,
-                          CS_CDO_QUANTITIES_HHO_SCHEME,
-                          CS_CDO_QUANTITIES_VCB_SCHEME };
+  cs_flag_t masks[5] = { CS_CDO_QUANTITIES_FB_SCHEME,
+                         CS_CDO_QUANTITIES_CB_SCHEME,
+                         CS_CDO_QUANTITIES_HHO_SCHEME,
+                         CS_CDO_QUANTITIES_VCB_SCHEME,
+                         CS_CDO_QUANTITIES_MAC_SCHEME };
 
-  if (cs_flag_at_least(cs_cdo_quantities_flag, 4, masks))
+  if (cs_flag_at_least(cs_cdo_quantities_flag, 5, masks))
     cs_cdo_quantities_compute_pvol_fc(cdoq, topo->c2f, &(cdoq->pvol_fc));
+
+  /* Compute normal direction of faces */
+
+  cdoq->face_axis = NULL;
+  if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_MAC_SCHEME) {
+
+    BFT_MALLOC(cdoq->face_axis, cdoq->n_faces, cs_flag_cartesian_axis_t);
+
+    for (int f_id = 0; f_id < cdoq->n_faces; f_id++) {
+      cs_nreal_3_t normal;
+
+      if (f_id < cdoq->n_i_faces) { /* Interior face */
+
+        normal[0] = cdoq->i_face_u_normal[f_id][0];
+        normal[1] = cdoq->i_face_u_normal[f_id][1];
+        normal[2] = cdoq->i_face_u_normal[f_id][2];
+      }
+      else { /* Border face */
+
+        const cs_lnum_t bf_id = f_id - cdoq->n_i_faces;
+
+        normal[0] = cdoq->b_face_u_normal[bf_id][0];
+        normal[1] = cdoq->b_face_u_normal[bf_id][1];
+        normal[2] = cdoq->b_face_u_normal[bf_id][2];
+      }
+
+      if (fabs(normal[0]) > 0.9999) {
+        cdoq->face_axis[f_id] = CS_FLAG_X_AXIS;
+      }
+      else if (fabs(normal[1]) > 0.9999) {
+        cdoq->face_axis[f_id] = CS_FLAG_Y_AXIS;
+      }
+      else if (fabs(normal[2]) > 0.9999) {
+        cdoq->face_axis[f_id] = CS_FLAG_Z_AXIS;
+      }
+      else {
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  " %s: Normal (%f, %f, %f) is not parallel to an axis.",
+                  __func__,
+                  normal[0],
+                  normal[1],
+                  normal[2]);
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1103,17 +1151,19 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
   /* Shared quantities related to faces (interior and border) */
 
-  cdoq->n_i_faces = m->n_i_faces;
+  cdoq->n_i_faces       = m->n_i_faces;
   cdoq->i_face_u_normal = mq->i_face_u_normal;
-  cdoq->i_face_normal = mq->i_face_normal;
-  cdoq->i_face_center = mq->i_face_cog;
-  cdoq->i_face_surf = mq->i_face_surf;
+  cdoq->i_face_normal   = mq->i_face_normal;
+  cdoq->i_face_center   = mq->i_face_cog;
+  cdoq->i_face_surf     = mq->i_face_surf;
+  cdoq->i_dist          = mq->i_dist;
 
-  cdoq->n_b_faces = m->n_b_faces;
+  cdoq->n_b_faces       = m->n_b_faces;
   cdoq->b_face_u_normal = mq->b_face_u_normal;
-  cdoq->b_face_normal = mq->b_face_normal;
-  cdoq->b_face_center = mq->b_face_cog;
-  cdoq->b_face_surf = mq->b_face_surf;
+  cdoq->b_face_normal   = mq->b_face_normal;
+  cdoq->b_face_center   = mq->b_face_cog;
+  cdoq->b_face_surf     = mq->b_face_surf;
+  cdoq->b_dist          = mq->b_dist;
 
   cdoq->n_faces = m->n_i_faces + m->n_b_faces;
   cdoq->n_g_faces = m->n_g_i_faces + m->n_g_b_faces;
@@ -1222,6 +1272,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
 
   BFT_FREE(cdoq->dedge_vector);
   BFT_FREE(cdoq->pvol_fc);
+  BFT_FREE(cdoq->face_axis);
 
   /* Edge-related quantities */
 
@@ -1902,6 +1953,38 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the edge center for a primal edge (interior or border)
+ *
+ * \param[in]  e_id     id related to the edfe
+ * \param[in]  topo     pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
+ *
+ * \return a pointer to the edge center coordinates
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_quant_t
+cs_quant_get_edge_center(cs_lnum_t                  e_id,
+                         const cs_cdo_connect_t    *topo,
+                         const cs_cdo_quantities_t *cdoq)
+{
+
+  /* Get the two vertex ids related to the current edge */
+
+  const cs_lnum_t *v_ids = topo->e2v->ids + 2 * e_id;
+  const cs_real_t *xa    = cdoq->vtx_coord + 3 * v_ids[0];
+  const cs_real_t *xb    = cdoq->vtx_coord + 3 * v_ids[1];
+
+  cs_quant_t xe;
+  for (int k = 0; k < 3; k++) {
+    xe.center[k] = 0.5 * (xb[k] + xa[k]);
+  }
+
+  return xe;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the normalized vector associated to a primal edge
  *
  * \param[in]  e_id     id related to an edge
@@ -1909,7 +1992,7 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
  *
  * \return  a pointer to the edge normalized vector
  */
-/*----------------------------------------------------------------------------*/
+/*-------------------------------------------------cdoq---------------------------*/
 
 cs_nvec3_t
 cs_quant_set_edge_nvec(cs_lnum_t                    e_id,

@@ -65,6 +65,8 @@ typedef struct {
 
   cs_lnum_t              n_vertices;
 
+  cs_adjacency_t *e2f; /* edges --> faces connectivity */
+
   /* range set and interface set structures for scalar-valued vertex DoFs
      (these structures may be not allocated according to the settings) */
 
@@ -134,9 +136,13 @@ typedef struct {
 
   /* Adjacency related to linear systems (allocated only if needed) */
 
-  cs_adjacency_t        *v2v;    /* vertex to vertices through cells */
-  cs_adjacency_t        *f2f;    /* face to faces through cells */
-  cs_adjacency_t        *e2e;    /* edge to edges through cells */
+  cs_adjacency_t *v2v;    /* vertex to vertices through cells */
+  cs_adjacency_t *f2f;    /* face to faces through cells */
+  cs_adjacency_t *f2xf;   /* face to extended faces through cells + edges
+                           * for MAC scheme */
+  cs_adjacency_t *f2f_ed; /* face to faces through edges + same directions
+                           * for MAC scheme */
+  cs_adjacency_t *e2e;    /* edge to edges through cells */
 
 } cs_cdo_connect_t;
 
@@ -198,19 +204,20 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
  * \param[in]      vb_scheme_flag    metadata for Vertex-based schemes
  * \param[in]      vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  * \param[in]      hho_scheme_flag   metadata for HHO schemes
+ * \param[in]      mac_scheme_flag   metadata for MAC schemes
  *
  * \return a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_connect_t *
-cs_cdo_connect_build(cs_mesh_t      *mesh,
-                     cs_flag_t       eb_scheme_flag,
-                     cs_flag_t       fb_scheme_flag,
-                     cs_flag_t       cb_scheme_flag,
-                     cs_flag_t       vb_scheme_flag,
-                     cs_flag_t       vcb_scheme_flag,
-                     cs_flag_t       hho_scheme_flag);
+cs_cdo_connect_t *cs_cdo_connect_build(cs_mesh_t *mesh,
+                                       cs_flag_t  eb_scheme_flag,
+                                       cs_flag_t  fb_scheme_flag,
+                                       cs_flag_t  cb_scheme_flag,
+                                       cs_flag_t  vb_scheme_flag,
+                                       cs_flag_t  vcb_scheme_flag,
+                                       cs_flag_t  hho_scheme_flag,
+                                       cs_flag_t  mac_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

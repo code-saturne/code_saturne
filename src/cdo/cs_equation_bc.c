@@ -114,6 +114,42 @@ _init_cell_sys_bc(const cs_cdo_bc_face_t     *face_bc,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set members of the cs_cell_sys_t structure related to the boundary
+ *         conditions. Only the generic part is done here. The remaining part
+ *         is performed specifically for each scheme.
+ *         Only for MAC-fb scheme
+ *
+ * \param[in]      face_bc   pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      macb      pointer to a cs_mac cs_macfb_builder_t
+ * \param[in, out] csys      pointer to a cs_cell_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_init_cell_sys_macfb_bc(const cs_cdo_bc_face_t   *face_bc,
+                        const cs_cell_mesh_t     *cm,
+                        const cs_macfb_builder_t *macb,
+                        cs_cell_sys_t            *csys)
+{
+  for (short int f = 0; f < macb->n_fc; f++) {
+
+    const cs_lnum_t bf_id = macb->f_ids[f] - cm->bface_shift;
+
+    csys->bf_ids[f] = bf_id;
+
+    if (bf_id > -1) { /* This is a boundary face */
+
+      csys->bf_flag[f]               = face_bc->flag[bf_id];
+      csys->_f_ids[csys->n_bc_faces] = f;
+      csys->n_bc_faces++;
+    }
+
+  } /* Loop on cell faces */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the Dirichlet BC values to the face vertices.
  *        Case of vertex-based schemes
  *
@@ -576,7 +612,7 @@ cs_equation_bc_set_cw_eb(const cs_cell_mesh_t         *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Set the BC into a cellwise view of the current system.
- *          Case of Face-based schemes
+ *          Case of CDO Face-based schemes
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -691,6 +727,156 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
 
     } /* Boundary face */
   } /* Loop on cell faces */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the BC into a cellwise view of the current system.
+ *          Case of MAC Face-based schemes
+ *
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      dir_values  Dirichlet values associated to each faces
+ * \param[in, out] macb        pointer to a cs_macfb_builder_t strucuture
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_set_cw_macfb(const cs_cell_mesh_t      *cm,
+                            const cs_equation_param_t *eqp,
+                            const cs_cdo_bc_face_t    *face_bc,
+                            const cs_real_t            dir_values[],
+                            cs_macfb_builder_t        *macb,
+                            cs_cell_sys_t             *csys)
+{
+  /* Initialize the common part */
+
+  _init_cell_sys_macfb_bc(face_bc, cm, macb, csys);
+
+  const int d = eqp->dim;
+  assert(d == 3);
+
+  /* Identify which face is a boundary face */
+
+  for (short int f = 0; f < macb->n_fc; f++) {
+
+    const cs_lnum_t bf_id = csys->bf_ids[f];
+
+    if (bf_id > -1) { /* This a boundary face */
+
+      switch (csys->bf_flag[f]) {
+
+      case CS_CDO_BC_HMG_DIRICHLET:
+        csys->has_dirichlet = true;
+        csys->dof_flag[f] |= CS_CDO_BC_HMG_DIRICHLET;
+        break;
+
+      case CS_CDO_BC_DIRICHLET:
+        csys->has_dirichlet = true;
+        csys->dof_flag[f] |= CS_CDO_BC_DIRICHLET;
+        csys->dir_values[f] = dir_values[d * bf_id + macb->f_axis[f]];
+        break;
+
+      case CS_CDO_BC_NEUMANN:
+        csys->has_nhmg_neumann = true;
+        csys->dof_flag[f] |= CS_CDO_BC_NEUMANN;
+        bft_error(
+          __FILE__, __LINE__, 0, " %s: Neumman not implemented.\n", __func__);
+        break;
+
+      case CS_CDO_BC_FULL_NEUMANN:
+        csys->has_nhmg_neumann = true;
+        csys->dof_flag[f] |= CS_CDO_BC_NEUMANN;
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  " %s: Full Neumman not implemented.\n",
+                  __func__);
+        break;
+
+      case CS_CDO_BC_ROBIN:
+        csys->has_robin = true;
+        csys->dof_flag[f] |= CS_CDO_BC_ROBIN;
+
+        bft_error(
+          __FILE__, __LINE__, 0, " %s: Robin not implemented.\n", __func__);
+        break;
+
+      case CS_CDO_BC_SLIDING:
+        csys->has_sliding = true;
+        break;
+
+      default:
+        /* Nothing to do for instance in case of homogeneous Neumann */
+        break;
+
+      } /* End of switch */
+
+    } /* Boundary face */
+  }   /* Loop on cell faces */
+
+  /* Compute tangential velocity to close gradient */
+
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+
+    /* Loop on outer faces */
+    for (short int fj = 0; fj < 4; fj++) {
+      const short int shift_j = 4 * fi + fj;
+      const cs_lnum_t fj_id   = macb->f2f_ids[shift_j];
+
+      if (fj_id < 0) {
+        /* To close gradient reconstruction */
+        const short int f1 = macb->f2fo_idx[2 * shift_j + 0];
+        const short int f2 = macb->f2fo_idx[2 * shift_j + 1];
+
+        assert(f1 >= 0 && f1 < 6);
+
+        const cs_lnum_t bf1_id = csys->bf_ids[f1];
+        assert(bf1_id > -1);
+
+        cs_real_t vel_avg_bc = 0.0;
+
+        const cs_real_t h = macb->f_h_cv[fi];
+
+        if (csys->bf_flag[f1] & CS_CDO_BC_HMG_DIRICHLET
+            || csys->bf_flag[f1] & CS_CDO_BC_DIRICHLET) {
+
+          const cs_real_t h1 = cm->hfc[fi];
+          vel_avg_bc += h1 * dir_values[d * bf1_id + macb->f_axis[fi]];
+
+          if (f2 >= 0) {
+
+            assert(f2 < macb->n_fc);
+            const cs_lnum_t bf2_id = csys->bf_ids[f2];
+            assert(bf2_id > -1);
+
+            if (csys->bf_flag[f2] & CS_CDO_BC_HMG_DIRICHLET
+                || csys->bf_flag[f2] & CS_CDO_BC_DIRICHLET) {
+
+              const cs_real_t h2 = h - h1;
+              vel_avg_bc += h2 * dir_values[d * bf2_id + macb->f_axis[fi]];
+            }
+            else {
+              bft_error(
+                __FILE__, __LINE__, 0, "Only Dirichlet BC implemented.");
+            }
+          }
+        }
+        else {
+          bft_error(__FILE__, __LINE__, 0, "Only Dirichlet BC implemented.");
+        }
+
+        /* Average velocity */
+        vel_avg_bc /= h;
+        macb->dir_values[shift_j] = vel_avg_bc;
+
+        // cs_log_printf(CS_LOG_DEFAULT, ">> Vel: %d, %f \n", shift_j,
+        // vel_avg_bc);
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

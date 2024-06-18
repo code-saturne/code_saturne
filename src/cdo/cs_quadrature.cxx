@@ -226,6 +226,115 @@ cs_quadrature_edge_3pts(const cs_real_3_t  v1,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute quadrature points for an orthogonal hexahedron
+ *          Exact for polynomial function up to order 3
+ *
+ * \param[in]      vb       barycenter
+ * \param[in]      hx       length along x-dir
+ * \param[in]      hy       length along y-dir
+ * \param[in]      hz       length along z-dir
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weights
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_quadrature_hex_8pts(const cs_real_3_t vb,
+                       const double      hx,
+                       const double      hy,
+                       const double      hz,
+                       cs_real_3_t       gpts[],
+                       double           *w)
+{
+  // basis of the hexahedron
+  const cs_real_3_t p0 = { vb[0] - hx / 2., vb[1] - hy / 2., vb[2] - hz / 2. };
+  const cs_real_3_t px = { p0[0] + hx, p0[1], p0[2] };
+  const cs_real_3_t py = { p0[0], p0[1] + hy, p0[2] };
+  const cs_real_3_t pz = { p0[0], p0[1], p0[2] + hz };
+
+  // compute quadrature in each direction
+  cs_real_3_t gauss_pts_x[2], gauss_pts_y[2], gauss_pts_z[2];
+  double      weights_x[2], weights_y[2], weights_z[2];
+
+  /* Compute Gauss points and its unique weight */
+  cs_quadrature_edge_2pts(p0, px, hx, gauss_pts_x, weights_x);
+  cs_quadrature_edge_2pts(p0, py, hy, gauss_pts_y, weights_y);
+  cs_quadrature_edge_2pts(p0, pz, hz, gauss_pts_z, weights_z);
+
+  short int nb_pts = 0;
+  for (short int ix = 0; ix < 2; ix++) {
+    for (short int iy = 0; iy < 2; iy++) {
+      for (short int iz = 0; iz < 2; iz++) {
+        gpts[nb_pts][0] = gauss_pts_x[ix][0];
+        gpts[nb_pts][1] = gauss_pts_y[iy][1];
+        gpts[nb_pts][2] = gauss_pts_z[iz][2];
+        w[nb_pts]       = weights_x[ix] * weights_y[iy] * weights_z[iz];
+        nb_pts++;
+      }
+    }
+  }
+
+  assert(nb_pts == 8);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute quadrature points for an orthogonal hexahedron
+ *          Exact for polynomial function up to order 5
+ *
+ * \param[in]      vb       barycenter
+ * \param[in]      hx       length along x-dir
+ * \param[in]      hy       length along y-dir
+ * \param[in]      hz       length along z-dir
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weights
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_quadrature_hex_27pts(const cs_real_3_t vb,
+                        const double      hx,
+                        const double      hy,
+                        const double      hz,
+                        cs_real_3_t       gpts[],
+                        double            w[])
+{
+  {
+    // basis of the hexahedron
+    const cs_real_3_t p0
+      = { vb[0] - hx / 2., vb[1] - hy / 2., vb[2] - hz / 2. };
+    const cs_real_3_t px = { p0[0] + hx, p0[1], p0[2] };
+    const cs_real_3_t py = { p0[0], p0[1] + hy, p0[2] };
+    const cs_real_3_t pz = { p0[0], p0[1], p0[2] + hz };
+
+    // compute quadrature in each direction
+    cs_real_3_t gauss_pts_x[3], gauss_pts_y[3], gauss_pts_z[3];
+    double      weights_x[3], weights_y[3], weights_z[3];
+
+    /* Compute Gauss points and its unique weight */
+    cs_quadrature_edge_3pts(p0, px, hx, gauss_pts_x, weights_x);
+    cs_quadrature_edge_3pts(p0, py, hy, gauss_pts_y, weights_y);
+    cs_quadrature_edge_3pts(p0, pz, hz, gauss_pts_z, weights_z);
+
+    short int nb_pts = 0;
+    for (short int ix = 0; ix < 3; ix++) {
+      for (short int iy = 0; iy < 3; iy++) {
+        for (short int iz = 0; iz < 3; iz++) {
+          gpts[nb_pts][0] = gauss_pts_x[ix][0];
+          gpts[nb_pts][1] = gauss_pts_y[iy][1];
+          gpts[nb_pts][2] = gauss_pts_z[iz][2];
+          w[nb_pts]       = weights_x[ix] * weights_y[iy] * weights_z[iz];
+          nb_pts++;
+        }
+      }
+    }
+
+    assert(nb_pts == 27);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute quadrature points for a triangle (3 points)
  *          Exact for polynomial function up to order 2
  *

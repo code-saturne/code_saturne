@@ -165,10 +165,10 @@ _fill_e33_rows(int                 bi,
 /*----------------------------------------------------------------------------*/
 
 static inline int
-_l_binary_search(int              start_id,
-                 int              l_id_array_size,
-                 cs_lnum_t        l_id,
-                 const cs_lnum_t  l_id_array[])
+_l_binary_search(int             start_id,
+                 int             l_id_array_size,
+                 const cs_lnum_t l_id,
+                 const cs_lnum_t l_id_array[])
 {
   assert(start_id > -1);
   int  end_id = l_id_array_size - 1;
@@ -448,19 +448,31 @@ _set_col_idx_scal_loc(const cs_matrix_assembler_t     *ma,
    * Diagonal is treated separately */
 
   for (int j = 0; j < row->i; j++) { /* Lower part */
-    row->col_idx[j] = _l_binary_search(0,
-                                       n_l_cols,
-                         /* l_c_id */  row->col_g_id[j]-ma->l_range[0],
-                                       col_ids);
-    assert(row->col_idx[j] > -1);
+    if (fabs(row->val[j]) > 0.0) {
+      row->col_idx[j]
+        = _l_binary_search(0,
+                           n_l_cols,
+                           /* l_c_id */ row->col_g_id[j] - ma->l_range[0],
+                           col_ids);
+      assert(row->col_idx[j] > -1);
+    }
+    else {
+      row->col_idx[j] = 0;
+    }
   }
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper part */
-    row->col_idx[j] = _l_binary_search(0,
-                                       n_l_cols,
-                         /* l_c_id */  row->col_g_id[j]-ma->l_range[0],
-                                       col_ids);
-    assert(row->col_idx[j] > -1);
+    if (fabs(row->val[j]) > 0.0) {
+      row->col_idx[j]
+        = _l_binary_search(0,
+                           n_l_cols,
+                           /* l_c_id */ row->col_g_id[j] - ma->l_range[0],
+                           col_ids);
+      assert(row->col_idx[j] > -1);
+    }
+    else {
+      row->col_idx[j] = 0;
+    }
   }
 }
 
@@ -496,50 +508,60 @@ _set_col_idx_scal_locdist(const cs_matrix_assembler_t    *ma,
 
   for (int j = 0; j < row->i; j++) { /* Before the diag. */
 
-    const cs_gnum_t g_c_id = row->col_g_id[j];
+    if (fabs(row->val[j]) > 0.0) {
+      const cs_gnum_t g_c_id = row->col_g_id[j];
 
-    if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) { /* Local part */
+      if (g_c_id >= ma->l_range[0]
+          && g_c_id < ma->l_range[1]) { /* Local part */
 
-      row->col_idx[j] = _l_binary_search(0,
-                                         n_l_cols,
-                                         g_c_id - ma->l_range[0], /* l_c_id */
-                                         ma->c_id + l_start);
-      assert(row->col_idx[j] > -1);
+        row->col_idx[j] = _l_binary_search(0,
+                                           n_l_cols,
+                                           g_c_id - ma->l_range[0], /* l_c_id */
+                                           ma->c_id + l_start);
 
+        assert(row->col_idx[j] > -1);
+      }
+      else { /* Distant part */
+
+        /* column ids start and end of local row, so add n_l_cols */
+
+        row->col_idx[j]
+          = n_l_cols
+            + _g_binary_search(n_d_cols, g_c_id, ma->d_g_c_id + d_start);
+        assert(row->col_idx[j] > n_l_cols - 1);
+      }
     }
-    else { /* Distant part */
-
-      /* column ids start and end of local row, so add n_l_cols */
-
-      row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
-                                                    g_c_id,
-                                                    ma->d_g_c_id + d_start);
-
+    else {
+      row->col_idx[j] = 0;
     }
 
   } /* Loop on columns of the row */
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* After the diag. */
+    if (fabs(row->val[j]) > 0.0) {
+      const cs_gnum_t g_c_id = row->col_g_id[j];
 
-    const cs_gnum_t g_c_id = row->col_g_id[j];
+      if (g_c_id >= ma->l_range[0]
+          && g_c_id < ma->l_range[1]) { /* Local part */
 
-    if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) { /* Local part */
+        row->col_idx[j] = _l_binary_search(0,
+                                           n_l_cols,
+                                           g_c_id - ma->l_range[0], /* l_c_id */
+                                           ma->c_id + l_start);
+        assert(row->col_idx[j] > -1);
+      }
+      else { /* Distant part */
 
-      row->col_idx[j] = _l_binary_search(0,
-                                         n_l_cols,
-                                         g_c_id-ma->l_range[0], /* l_c_id */
-                                         ma->c_id + l_start);
-      assert(row->col_idx[j] > -1);
+        /* column ids start and end of local row, so add n_l_cols */
 
+        row->col_idx[j]
+          = n_l_cols
+            + _g_binary_search(n_d_cols, g_c_id, ma->d_g_c_id + d_start);
+        assert(row->col_idx[j] > n_l_cols - 1);
+      }
     }
-    else { /* Distant part */
-
-      /* column ids start and end of local row, so add n_l_cols */
-
-      row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
-                                                    g_c_id,
-                                                    ma->d_g_c_id + d_start);
-
+    else {
+      row->col_idx[j] = 0;
     }
 
   } /* Loop on columns of the row */
@@ -822,7 +844,9 @@ _assemble_scal_dist_row_threaded(cs_matrix_assembler_values_t     *mav,
   const cs_lnum_t  e_r_id = _g_binary_search(ma->coeff_send_n_rows,
                                              row->g_id,
                                              ma->coeff_send_row_g_id);
-  const cs_lnum_t  r_start = ma->coeff_send_index[e_r_id];
+  assert(e_r_id > -1);
+
+  const cs_lnum_t   r_start         = ma->coeff_send_index[e_r_id];
   const int  n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
   const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
 
@@ -840,29 +864,35 @@ _assemble_scal_dist_row_threaded(cs_matrix_assembler_values_t     *mav,
   /* Loop on extra-diagonal entries */
 
   for (int j = 0; j < row->i; j++) { /* Lower-part */
+    if (fabs(row->val[j]) > 0.0) {
 
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
+      const cs_lnum_t e_id
+        = r_start
+          + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
 
-    /* Now add values to send coefficients */
+      assert(e_id > r_start - 1);
+
+      /* Now add values to send coefficients */
 
 #   pragma omp atomic
     mav->coeff_send[e_id] += row->val[j];
-
+    }
   }
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
+    if (fabs(row->val[j]) > 0.0) {
 
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
+      const cs_lnum_t e_id
+        = r_start
+          + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
 
-    /* Now add values to send coefficients */
+      assert(e_id > r_start - 1);
+
+      /* Now add values to send coefficients */
 
 #   pragma omp atomic
     mav->coeff_send[e_id] += row->val[j];
-
+    }
   }
 }
 
@@ -896,6 +926,8 @@ _assemble_scal_dist_row_single(cs_matrix_assembler_values_t     *mav,
   const cs_lnum_t  e_r_id = _g_binary_search(ma->coeff_send_n_rows,
                                              row->g_id,
                                              ma->coeff_send_row_g_id);
+  assert(e_r_id > -1);
+
   const cs_lnum_t  r_start = ma->coeff_send_index[e_r_id];
   const int  n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
   const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
@@ -905,6 +937,7 @@ _assemble_scal_dist_row_single(cs_matrix_assembler_values_t     *mav,
   const cs_lnum_t  e_diag_id = r_start + _g_binary_search(n_e_rows,
                                                           row->g_id,
                                                           coeff_send_g_id);
+  assert(e_diag_id > r_start - 1);
 
   /* Now add values to send coefficients */
 
@@ -913,27 +946,33 @@ _assemble_scal_dist_row_single(cs_matrix_assembler_values_t     *mav,
   /* Loop on extra-diagonal entries */
 
   for (int j = 0; j < row->i; j++) { /* Lower-part */
+    if (fabs(row->val[j]) > 0.0) {
 
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
+      const cs_lnum_t e_id
+        = r_start
+          + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
 
-    /* Now add values to send coefficients */
+      assert(e_id > r_start - 1);
 
-    mav->coeff_send[e_id] += row->val[j];
+      /* Now add values to send coefficients */
 
+      mav->coeff_send[e_id] += row->val[j];
+    }
   }
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
+    if (fabs(row->val[j]) > 0.0) {
 
-    const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
-                                                      row->col_g_id[j],
-                                                      coeff_send_g_id);
+      const cs_lnum_t e_id
+        = r_start
+          + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
 
-    /* Now add values to send coefficients */
+      assert(e_id > r_start - 1);
 
-    mav->coeff_send[e_id] += row->val[j];
+      /* Now add values to send coefficients */
 
+      mav->coeff_send[e_id] += row->val[j];
+    }
   }
 }
 
@@ -1675,7 +1714,8 @@ cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
-  row->n_cols = m->n_rows;
+  assert(m->n_rows <= m->n_cols);
+  row->n_cols = m->n_cols;
 
   /* Switch to the global numbering */
 
@@ -1684,7 +1724,7 @@ cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
 
   /* Push each row of the cellwise matrix into the assembler */
 
-  for (int i = 0; i < row->n_cols; i++) {
+  for (int i = 0; i < m->n_rows; i++) {
 
     row->i = i;                               /* cellwise numbering */
     row->g_id = row->col_g_id[i];             /* global numbering */
@@ -1703,9 +1743,7 @@ cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
 #else
       _add_scal_values_atomic(row, mav->matrix);
 #endif
-
     }
-
   }
 }
 
@@ -1733,7 +1771,8 @@ cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
-  row->n_cols = m->n_rows;
+  assert(m->n_rows <= m->n_cols);
+  row->n_cols = m->n_cols;
 
   /* Switch to the global numbering */
 
@@ -1742,7 +1781,7 @@ cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
 
   /* Push each row of the cellwise matrix into the assembler */
 
-  for (int i = 0; i < row->n_cols; i++) {
+  for (int i = 0; i < m->n_rows; i++) {
 
     row->i = i;                               /* cellwise numbering */
     row->g_id = row->col_g_id[i];             /* global numbering */
@@ -1756,9 +1795,7 @@ cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
 
       _set_col_idx_scal_locdist(ma, row);
       _add_scal_values_single(row, mav->matrix);
-
     }
-
   }
 }
 #endif /* defined(HAVE_MPI) */
@@ -1787,7 +1824,8 @@ cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
-  row->n_cols = m->n_rows;
+  assert(m->n_rows <= m->n_cols);
+  row->n_cols = m->n_cols;
 
   /* Switch to the global numbering */
 
@@ -1796,7 +1834,7 @@ cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
 
   /* Push each row of the cellwise matrix into the assembler */
 
-  for (int i = 0; i < row->n_cols; i++) {
+  for (int i = 0; i < m->n_rows; i++) {
 
     row->i = i;                               /* cellwise numbering */
     row->g_id = row->col_g_id[i];             /* global numbering */
@@ -1810,7 +1848,6 @@ cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
 #else
     _add_scal_values_atomic(row, mav->matrix);
 #endif
-
   }
 }
 
@@ -1839,7 +1876,8 @@ cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
-  row->n_cols = m->n_rows; /* This is a square matrix */
+  assert(m->n_rows <= m->n_cols);
+  row->n_cols = m->n_cols;
 
   /* Switch to the global numbering */
 
@@ -1848,8 +1886,7 @@ cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
 
   /* Push each row of the cellwise matrix into the assembler */
 
-  for (int i = 0; i < row->n_cols; i++) {
-
+  for (int i = 0; i < m->n_rows; i++) {
     row->i = i;                               /* cellwise numbering */
     row->g_id = row->col_g_id[i];             /* global numbering */
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
@@ -1857,7 +1894,6 @@ cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
 
     _set_col_idx_scal_loc(ma, row);
     _add_scal_values_single(row, mav->matrix);
-
   } /* Loop on rows */
 }
 
@@ -1887,6 +1923,7 @@ cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
+  assert(m->n_rows == m->n_cols);
   row->n_cols = m->n_rows; /* This is a square matrix */
 
   /* Switch to the global numbering */
@@ -1978,6 +2015,7 @@ cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
+  assert(m->n_rows == m->n_cols);
   row->n_cols = m->n_rows; /* This is a square matrix */
 
   /* Switch to the global numbering */
@@ -2065,6 +2103,7 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
+  assert(m->n_rows == m->n_cols);
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
@@ -2180,6 +2219,7 @@ cs_cdo_assembly_matrix_sys_mpit(const cs_sdm_t                   *m,
 
   cs_cdo_assembly_row_t  *row = asb->row;
 
+  assert(m->n_rows == m->n_cols);
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */

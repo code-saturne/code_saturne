@@ -472,20 +472,20 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assembly_by_blocks(const cs_cell_sys_t              *csys,
-                    const cs_cell_mesh_t             *cm,
-                    const cs_cdofb_navsto_builder_t  *nsb,
-                    cs_cdofb_monolithic_t            *sc,
-                    cs_cdofb_vecteq_t                *eqc,
-                    cs_cdo_assembly_t                *asb)
+_assembly_by_blocks(const cs_cell_sys_t             *csys,
+                    const cs_cell_mesh_t            *cm,
+                    const cs_cdofb_navsto_builder_t *nsb,
+                    cs_cdofb_monolithic_t           *sc,
+                    cs_cdofb_vecteq_t               *eqc,
+                    cs_cdo_assembly_t               *asb)
 {
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_connect_t *connect = cs_shared_connect;
 
-  cs_cdo_system_helper_t  *sh = sc->system_helper;
-  cs_cdo_system_block_t  *b = sh->blocks[0];
+  cs_cdo_system_helper_t *sh = sc->system_helper;
+  cs_cdo_system_block_t  *b  = sh->blocks[0];
   assert(b->type == CS_CDO_SYSTEM_BLOCK_SPLIT);
-  cs_cdo_system_sblock_t  *sb = b->block_pointer;
-  cs_sdm_t  *cw_mat = cs_cdofb_monolithic_cw_mat[cs_get_thread_id()];
+  cs_cdo_system_sblock_t *sb = b->block_pointer;
+  cs_sdm_t *cw_mat           = cs_cdofb_monolithic_cw_mat[cs_get_thread_id()];
 
   /* Convert csys->mat into a block view by component */
 
@@ -496,8 +496,8 @@ _assembly_by_blocks(const cs_cell_sys_t              *csys,
   for (int i = 0; i < sh->n_col_blocks; i++) {
     for (int j = 0; j < sh->n_col_blocks; j++) {
 
-      cs_matrix_assembler_values_t   *mav = sb->mav_array[3*i+j];
-      cs_sdm_t  *m_ij = cs_sdm_get_block(cw_mat, i, j);
+      cs_matrix_assembler_values_t *mav  = sb->mav_array[3 * i + j];
+      cs_sdm_t                     *m_ij = cs_sdm_get_block(cw_mat, i, j);
 
       sb->assembly_func(m_ij, cm->f_ids, sb->range_set, asb, mav);
 
@@ -507,12 +507,12 @@ _assembly_by_blocks(const cs_cell_sys_t              *csys,
   /* 2.a RHS assembly (momentum)
    * =========================== */
 
-# pragma omp critical
+#pragma omp critical
   {
     for (short int f = 0; f < cm->n_fc; f++) {
-      sh->rhs_array[0][cm->f_ids[f]] += csys->rhs[3*f];
-      sh->rhs_array[1][cm->f_ids[f]] += csys->rhs[3*f+1];
-      sh->rhs_array[2][cm->f_ids[f]] += csys->rhs[3*f+2];
+      sh->rhs_array[0][cm->f_ids[f]] += csys->rhs[3 * f];
+      sh->rhs_array[1][cm->f_ids[f]] += csys->rhs[3 * f + 1];
+      sh->rhs_array[2][cm->f_ids[f]] += csys->rhs[3 * f + 2];
     }
   }
 
@@ -525,16 +525,16 @@ _assembly_by_blocks(const cs_cell_sys_t              *csys,
      Source term is only hold by the cell DoF in face-based schemes */
 
   if (eqc->source_terms != NULL) {
-    cs_real_t  *st = eqc->source_terms + 3*cm->c_id;
+    cs_real_t *st = eqc->source_terms + 3 * cm->c_id;
     for (int k = 0; k < 3; k++)
-      st[k] = csys->source[3*cm->n_fc + k];
+      st[k] = csys->source[3 * cm->n_fc + k];
   }
 
   /* 2. Store the divergence operator in a non assembly way
    * ====================================================== */
 
-  cs_real_t  *_div = sc->block21_op + 3*connect->c2f->idx[cm->c_id];
-  memcpy(_div, nsb->div_op, 3*cm->n_fc*sizeof(cs_real_t));
+  cs_real_t *_div = sc->block21_op + 3 * connect->c2f->idx[cm->c_id];
+  memcpy(_div, nsb->div_op, 3 * cm->n_fc * sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/

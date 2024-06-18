@@ -1303,6 +1303,195 @@ cs_adjacency_compose(int                      n_c_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Create a new cs_adjacency_t structure from the concatenation of
+ *          two cs_adjacency_t structures: A -> B created by
+ *          two different compositions: (1) A -> B = A -> C + C -> B
+ *                                      (2) A -> B = A -> D + D -> B
+ *
+ *  The resulting structure describes A -> B.
+ *  It does not rely on a stride and has no sgn member and duplicated elements
+ *  are removed
+ *
+ * \param[in]  a2b_1     adjacency A -> B (1)
+ * \param[in]  a2b_2     adjacency A -> B (2)
+ *
+ *\return  a pointer to the cs_adjacency_t structure A -> B
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_adjacency_concatenate(const cs_adjacency_t *a2b_1,
+                         const cs_adjacency_t *a2b_2)
+{
+  assert(a2b_1 != NULL && a2b_2 != NULL);
+
+  if (a2b_1->n_elts != a2b_2->n_elts) {
+    bft_error(
+      __FILE__,
+      __LINE__,
+      0,
+      " The input cs_adjacency_t structures have incompatible size in %s\n",
+      __func__);
+  }
+
+  cs_lnum_t       n_elts = a2b_1->n_elts;
+  cs_adjacency_t *a2b    = cs_adjacency_create(0, -1, n_elts);
+
+  /* Build index */
+  /* ----------- */
+
+  a2b->idx[0] = 0;
+
+  BFT_MALLOC(a2b->ids, a2b_1->idx[n_elts] + a2b_2->idx[n_elts], cs_lnum_t);
+
+  /* Fill ids */
+  /* -------- */
+
+  cs_lnum_t shift = 0;
+  if (a2b_1->stride < 1 && a2b_2->stride < 1) {
+
+    /* The two adjacencies rely on an indexed array */
+    for (cs_lnum_t a1_id = 0; a1_id < n_elts; a1_id++) {
+
+      for (cs_lnum_t ja1 = a2b_1->idx[a1_id]; ja1 < a2b_1->idx[a1_id + 1];
+           ja1++) {
+        a2b->ids[shift++] = a2b_1->ids[ja1];
+      }
+
+      cs_lnum_t nb_elem = a2b_1->idx[a1_id + 1] - a2b_1->idx[a1_id];
+
+      for (cs_lnum_t ja2 = a2b_2->idx[a1_id]; ja2 < a2b_2->idx[a1_id + 1];
+           ja2++) {
+
+        bool            lfind = false;
+        const cs_lnum_t b2_id = a2b_2->ids[ja2];
+
+        for (cs_lnum_t ja1 = a2b_1->idx[a1_id]; ja1 < a2b_1->idx[a1_id + 1];
+             ja1++) {
+          if (b2_id == a2b_1->ids[ja1]) {
+            lfind = true;
+            break;
+          }
+        }
+
+        if (!lfind) {
+          nb_elem++;
+          a2b->ids[shift++] = b2_id;
+        }
+      }
+
+      a2b->idx[a1_id + 1] = a2b->idx[a1_id] + nb_elem;
+    }
+  }
+  else {
+    bft_error(
+      __FILE__,
+      __LINE__,
+      0,
+      " The input cs_adjacency_t structures have incompatible stride in %s\n",
+      __func__);
+  }
+
+  assert(shift == a2b->idx[a2b->n_elts]);
+
+  BFT_REALLOC(a2b->ids, a2b->idx[a2b->n_elts], cs_lnum_t);
+
+  return a2b;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a new cs_adjacency_t structure from the difference of
+ *          two cs_adjacency_t structures: A -> B created by
+ *          two different compositions: (1) A -> B = A -> C + C -> B
+ *                                      (2) A -> B = A -> D + D -> B
+ *
+ *  The resulting structure describes (1)\(2).
+ *  It does not rely on a stride and has no sgn member and duplicated elements
+ *  are removed
+ *
+ * \param[in]  a2b_1     adjacency A -> B (1)
+ * \param[in]  a2b_2     adjacency A -> B (2)
+ *
+ *\return  a pointer to the cs_adjacency_t structure A -> B
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_adjacency_difference(const cs_adjacency_t *a2b_1,
+                        const cs_adjacency_t *a2b_2)
+{
+  assert(a2b_1 != NULL && a2b_2 != NULL);
+
+  if (a2b_1->n_elts != a2b_2->n_elts) {
+    bft_error(
+      __FILE__,
+      __LINE__,
+      0,
+      " The input cs_adjacency_t structures have incompatible size in %s\n",
+      __func__);
+  }
+
+  cs_lnum_t       n_elts = a2b_1->n_elts;
+  cs_adjacency_t *a2b    = cs_adjacency_create(0, -1, n_elts);
+
+  /* Build index */
+  /* ----------- */
+
+  a2b->idx[0] = 0;
+
+  BFT_MALLOC(a2b->ids, a2b_1->idx[n_elts], cs_lnum_t);
+
+  /* Fill ids */
+  /* -------- */
+
+  cs_lnum_t shift = 0;
+  if (a2b_1->stride < 1 && a2b_2->stride < 1) {
+
+    /* The two adjacencies rely on an indexed array */
+    for (cs_lnum_t a1_id = 0; a1_id < n_elts; a1_id++) {
+      cs_lnum_t nb_elem = 0;
+
+      for (cs_lnum_t ja1 = a2b_1->idx[a1_id]; ja1 < a2b_1->idx[a1_id + 1];
+           ja1++) {
+        bool            lfind = false;
+        const cs_lnum_t b1_id = a2b_1->ids[ja1];
+
+        for (cs_lnum_t ja2 = a2b_2->idx[a1_id]; ja2 < a2b_2->idx[a1_id + 1];
+             ja2++) {
+
+          if (b1_id == a2b_2->ids[ja2]) {
+            lfind = true;
+            break;
+          }
+        }
+
+        if (!lfind) {
+          nb_elem++;
+          a2b->ids[shift++] = b1_id;
+        }
+      }
+      a2b->idx[a1_id + 1] = a2b->idx[a1_id] + nb_elem;
+    }
+  }
+  else {
+    bft_error(
+      __FILE__,
+      __LINE__,
+      0,
+      " The input cs_adjacency_t structures have incompatible stride in %s\n",
+      __func__);
+  }
+
+  assert(shift == a2b->idx[a2b->n_elts]);
+
+  BFT_REALLOC(a2b->ids, a2b->idx[a2b->n_elts], cs_lnum_t);
+
+  return a2b;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Create a new cs_adjacency_t structure from a one corresponding to
  *          A -> B. The resulting structure deals with B -> A.
  *

@@ -1,8 +1,8 @@
-#ifndef __CS_CDOFB_NAVSTO_H__
-#define __CS_CDOFB_NAVSTO_H__
+#ifndef __CS_MACFB_NAVSTO_H__
+#define __CS_MACFB_NAVSTO_H__
 
 /*============================================================================
- * Functions shared among all face-based schemes for the discretization of the
+ * Functions shared for MAC face-based schemes for the discretization of the
  * Navier--Stokes system
  *============================================================================*/
 
@@ -41,15 +41,16 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_cdofb_navsto.h"
 #include "cs_field.h"
 #include "cs_iter_algo.h"
 #include "cs_math.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_navsto_param.h"
+#include "cs_sdm.h"
 #include "cs_time_plot.h"
 #include "cs_time_step.h"
-#include "cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -64,113 +65,28 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \enum cs_cdofb_navsto_boussinesq_type_t
+ * \enum cs_macfb_navsto_boussinesq_type_t
  * \brief Type of algorithm to compute the Boussinesq approximation
  */
 
-typedef enum {
+typedef cs_cdofb_navsto_boussinesq_type_t cs_macfb_navsto_boussinesq_type_t;
 
-  /*!
-   * \brief Boussinesq approximation relyong on a cell contribution
-   *
-   * This algorithm uses cell DoFs for the Boussinesq part corresponding to
-   * rho0 * beta * (var[c_id] - var0) * g[] while the constant part equal to
-   * rho0 * g[] is built in order to be in balance with the pressure gradient
-   * (face DoF contributions).
-   */
-
-  CS_CDOFB_NAVSTO_BOUSSINESQ_CELL_DOF,
-
-  /*!
-   * \brief Boussinesq approximation relyong on face contributions
-   *
-   * This algorithm uses only face DoFs for the Boussinesq approximation.
-   * For the constant part (rho0 * g[]) as well as the variable part
-   * rho0 * beta * (var[c_id] - var0) * g[]
-   * The aim is to be in balance with the pressure gradient
-   */
-
-  CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF
-
-} cs_cdofb_navsto_boussinesq_type_t;
-
-
-/*! \struct cs_cdofb_navsto_builder_t
+/*! \struct cs_macfb_navsto_builder_t
  *
  * \brief Structure storing additional arrays related to the building of the
  *        Navier-Stokes system.
  *
- * This structure is associated to a cell-wise building in case of CDO
+ * This structure is associated to a cell-wise building in case of MAC
  * face-based scheme.
  */
 
-typedef struct {
-
-  /*!
-   * \var rho_c
-   * Value of the mass density for the current cell
-   *
-   */
-
-  cs_real_t            rho_c;
-
-  /*!
-   * @}
-   * @name Operator(s)
-   * @{
-   *
-   * \var div_op
-   * Cell-wise divergence operator (in fact div_op = -|c| div).
-   * This operator is stored in an array of size 3*n_fc
-   *
-   */
-
-  cs_real_t           *div_op;
-
-  /*!
-   * @}
-   * @name Source term for the mass equation
-   * @{
-   *
-   * \var mass_rhs
-   * Value of the rhs dedicated to the mass equation
-   */
-
-  cs_real_t            mass_rhs;
-
-  /*!
-   * @}
-   * @name Boundary conditions
-   * @{
-   *
-   * \var bf_type
-   * Type of boundary to apply to each face.
-   *
-   * Array of size n_fc.  Zero is set for interior faces.
-   *
-   *
-   * \var pressure_bc_val
-   * Store the value of the pressure on boundary faces.
-   *
-   * Array of size n_fc. Only useful if a Dirichlet boundary condition is set
-   * on a boundary face.
-   */
-
-  cs_boundary_type_t  *bf_type;          /* Size: n_fc */
-  cs_real_t           *pressure_bc_val;  /* Size: n_fc */
-
-  /*!
-   * @}
-   */
-
-} cs_cdofb_navsto_builder_t;
+typedef cs_cdofb_navsto_builder_t cs_macfb_navsto_builder_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute and add a source term to the local RHS.
  *         This is a special treatment to enable source involving face DoFs and
  *         potentially the local discrete divergence/gradient operators.
- *         In the standard case, only the cell DoFs are involved.
  *         Examples are gravity term or Bousinesq term(s)
  *
  * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
@@ -180,11 +96,10 @@ typedef struct {
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void
-(cs_cdofb_navsto_source_t)(const cs_navsto_param_t           *nsp,
-                           const cs_cell_mesh_t              *cm,
-                           const cs_cdofb_navsto_builder_t   *nsb,
-                           cs_cell_sys_t                     *csys);
+typedef void(cs_macfb_navsto_source_t)(const cs_navsto_param_t         *nsp,
+                                       const cs_cell_mesh_t            *cm,
+                                       const cs_macfb_navsto_builder_t *nsb,
+                                       cs_cell_sys_t                   *csys);
 
 /*============================================================================
  * Public function prototypes
@@ -199,7 +114,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_set_boussinesq_algo(cs_cdofb_navsto_boussinesq_type_t   type);
+cs_macfb_navsto_set_boussinesq_algo(cs_macfb_navsto_boussinesq_type_t type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -208,32 +123,32 @@ cs_cdofb_navsto_set_boussinesq_algo(cs_cdofb_navsto_boussinesq_type_t   type);
  * \param[in] nsp         set of parameters to define the NavSto system
  * \param[in] connect     pointer to a cs_cdo_connect_t structure
  *
- * \return a cs_cdofb_navsto_builder_t structure
+ * \return a cs_macfb_navsto_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdofb_navsto_builder_t
-cs_cdofb_navsto_create_builder(const cs_navsto_param_t  *nsp,
-                               const cs_cdo_connect_t   *connect);
+cs_macfb_navsto_builder_t
+cs_macfb_navsto_create_builder(const cs_navsto_param_t *nsp,
+                               const cs_cdo_connect_t  *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy the given cs_cdofb_navsto_builder_t structure
+ * \brief  Destroy the given cs_macfb_navsto_builder_t structure
  *
- * \param[in, out] nsb   pointer to the cs_cdofb_navsto_builder_t to free
+ * \param[in, out] nsb   pointer to the cs_macfb_navsto_builder_t to free
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb);
+void cs_macfb_navsto_free_builder(cs_macfb_navsto_builder_t *nsb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the members of the cs_cdofb_navsto_builder_t structure
+ * \brief  Set the members of the cs_macfb_navsto_builder_t structure
  *
  * \param[in]      t_eval     time at which one evaluates the pressure BC
  * \param[in]      nsp        set of parameters to define the NavSto system
  * \param[in]      cm         cellwise view of the mesh
+ * \param[in]      macb       macfb builder
  * \param[in]      csys       cellwise view of the algebraic system
  * \param[in]      pr_bc      set of definitions for the presuure BCs
  * \param[in]      bf_type    type of boundaries for all boundary faces
@@ -241,14 +156,14 @@ cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
-                               const cs_navsto_param_t     *nsp,
-                               const cs_cell_mesh_t        *cm,
-                               const cs_cell_sys_t         *csys,
-                               const cs_cdo_bc_face_t      *pr_bc,
-                               const cs_boundary_type_t    *bf_type,
-                               cs_cdofb_navsto_builder_t   *nsb);
+void cs_macfb_navsto_define_builder(cs_real_t                  t_eval,
+                                    const cs_navsto_param_t   *nsp,
+                                    const cs_cell_mesh_t      *cm,
+                                    const cs_macfb_builder_t  *macb,
+                                    const cs_cell_sys_t       *csys,
+                                    const cs_cdo_bc_face_t    *pr_bc,
+                                    const cs_boundary_type_t  *bf_type,
+                                    cs_macfb_navsto_builder_t *nsb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -264,11 +179,10 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
-                          const cs_cdo_quantities_t   *quant,
-                          const cs_real_t             *face_vel,
-                          cs_real_t                   *mass_flux);
+void cs_macfb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
+                               const cs_cdo_quantities_t *quant,
+                               const cs_real_t           *face_vel,
+                               cs_real_t                 *mass_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -285,11 +199,10 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
-                                const cs_cdo_quantities_t    *quant,
-                                const cs_adjacency_t         *c2f,
-                                const cs_real_t              *f_vals);
+double cs_macfb_navsto_cell_divergence(const cs_lnum_t            c_id,
+                                       const cs_cdo_quantities_t *quant,
+                                       const cs_adjacency_t      *c2f,
+                                       const cs_real_t           *f_vals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -305,14 +218,29 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_compute_face_pressure(const cs_mesh_t             *mesh,
-                                      const cs_cdo_connect_t      *connect,
-                                      const cs_cdo_quantities_t   *quant,
-                                      const cs_time_step_t        *ts,
-                                      const cs_navsto_param_t     *nsp,
-                                      const cs_real_t             *p_cell,
-                                      cs_real_t                   *p_face);
+void cs_macfb_navsto_compute_face_pressure(const cs_mesh_t           *mesh,
+                                           const cs_cdo_connect_t    *connect,
+                                           const cs_cdo_quantities_t *quant,
+                                           const cs_time_step_t      *ts,
+                                           const cs_navsto_param_t   *nsp,
+                                           const cs_real_t           *p_cell,
+                                           cs_real_t                 *p_face);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute an estimation of the velocity at cells
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]       mass_flux scalar-valued mass flux for each face
+ * \param[in, out]  u_cell    vector-value velocity velo at each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_macfb_navsto_compute_cell_velocity(const cs_cdo_connect_t    *connect,
+                                           const cs_cdo_quantities_t *quant,
+                                           const cs_real_t           *mass_flux,
+                                           cs_real_t                 *u_cell);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -326,11 +254,10 @@ cs_cdofb_navsto_compute_face_pressure(const cs_mesh_t             *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_add_grad_div(short int          n_fc,
-                             const cs_real_t    zeta,
-                             const cs_real_t    div[],
-                             cs_sdm_t          *mat);
+void cs_macfb_navsto_add_grad_div(short int       n_fc,
+                                  const cs_real_t zeta,
+                                  const cs_real_t div[],
+                                  cs_sdm_t       *mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -343,11 +270,10 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
-                              const cs_cdo_quantities_t   *quant,
-                              const cs_time_step_t        *ts,
-                              cs_field_t                  *pr);
+void cs_macfb_navsto_init_pressure(const cs_navsto_param_t   *nsp,
+                                   const cs_cdo_quantities_t *quant,
+                                   const cs_time_step_t      *ts,
+                                   cs_field_t                *pr);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -361,11 +287,10 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
-                                   const cs_cdo_connect_t      *connect,
-                                   const cs_time_step_t        *ts,
-                                   cs_real_t                   *pr_f);
+void cs_macfb_navsto_init_face_pressure(const cs_navsto_param_t *nsp,
+                                        const cs_cdo_connect_t  *connect,
+                                        const cs_time_step_t    *ts,
+                                        cs_real_t               *pr_f);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -378,10 +303,9 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
-                                        const cs_cdo_quantities_t  *quant,
-                                        cs_real_t                   values[]);
+void cs_macfb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t   *nsp,
+                                             const cs_cdo_quantities_t *quant,
+                                             cs_real_t values[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -393,13 +317,12 @@ cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
-                                       cs_real_t                   values[]);
+void cs_macfb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t *quant,
+                                            cs_real_t values[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform extra-operation related to Fb schemes when solving
+ * \brief  Perform extra-operation related to MAC-Fb schemes when solving
  *         Navier-Stokes. Computation of the following quantities according to
  *         post-processing flags beeing activated.
  *         - The mass flux accross the boundaries.
@@ -423,23 +346,20 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in]      adv_field     pointer to a \ref cs_adv_field_t struct.
  * \param[in]      mass_flux     scalar-valued mass flux for each face
  * \param[in]      p_cell        scalar-valued pressure in each cell
- * \param[in]      u_cell        vector-valued velocity in each cell
  * \param[in]      u_face        vector-valued velocity on each face
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
-                         const cs_mesh_t             *mesh,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_time_step_t        *ts,
-                         cs_time_plot_t              *time_plotter,
-                         const cs_adv_field_t        *adv_field,
-                         const cs_real_t             *mass_flux,
-                         const cs_real_t             *p_cell,
-                         const cs_real_t             *u_cell,
-                         const cs_real_t             *u_face);
+void cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
+                              const cs_mesh_t           *mesh,
+                              const cs_cdo_quantities_t *quant,
+                              const cs_cdo_connect_t    *connect,
+                              const cs_time_step_t      *ts,
+                              cs_time_plot_t            *time_plotter,
+                              const cs_adv_field_t      *adv_field,
+                              const cs_real_t           *mass_flux,
+                              const cs_real_t           *p_cell,
+                              const cs_real_t           *u_face);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -451,16 +371,16 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_cdofb_block_dirichlet_alge(short int                  f,
+void cs_macfb_block_dirichlet_alge(short int                  f,
                                    const cs_equation_param_t *eqp,
-                                   const void                *cell_mesh,
+                                   const cs_cell_mesh_t      *cm,
                                    const cs_property_data_t  *pty,
                                    cs_cell_builder_t         *cb,
                                    cs_cell_sys_t             *csys);
@@ -477,16 +397,16 @@ void cs_cdofb_block_dirichlet_alge(short int                  f,
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_cdofb_block_dirichlet_pena(short int                  f,
+void cs_macfb_block_dirichlet_pena(short int                  f,
                                    const cs_equation_param_t *eqp,
-                                   const void                *cell_mesh,
+                                   const cs_cell_mesh_t      *cm,
                                    const cs_property_data_t  *pty,
                                    cs_cell_builder_t         *cb,
                                    cs_cell_sys_t             *csys);
@@ -503,16 +423,16 @@ void cs_cdofb_block_dirichlet_pena(short int                  f,
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_cdofb_block_dirichlet_weak(short int                  fb,
+void cs_macfb_block_dirichlet_weak(short int                  fb,
                                    const cs_equation_param_t *eqp,
-                                   const void                *cell_mesh,
+                                   const cs_cell_mesh_t      *cm,
                                    const cs_property_data_t  *pty,
                                    cs_cell_builder_t         *cb,
                                    cs_cell_sys_t             *csys);
@@ -529,16 +449,16 @@ void cs_cdofb_block_dirichlet_weak(short int                  fb,
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_cdofb_block_dirichlet_wsym(short int                  fb,
+void cs_macfb_block_dirichlet_wsym(short int                  fb,
                                    const cs_equation_param_t *eqp,
-                                   const void                *cell_mesh,
+                                   const cs_cell_mesh_t      *cm,
                                    const cs_property_data_t  *pty,
                                    cs_cell_builder_t         *cb,
                                    cs_cell_sys_t             *csys);
@@ -547,23 +467,21 @@ void cs_cdofb_block_dirichlet_wsym(short int                  fb,
 /*!
  * \brief  Take into account a boundary defined as 'symmetry' (treated as a
  *         sliding BCs on the three velocity components.)
- *         A weak penalization technique (symmetrized Nitsche) is used.  One
- *         assumes that static condensation has not been performed yet and that
- *         the velocity-block has (n_fc + 1) blocks of size 3x3.
+ *         A weak penalization technique (symmetrized Nitsche) is used.
  *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_cdofb_symmetry(short int                  fb,
+void cs_macfb_symmetry(short int                  fb,
                        const cs_equation_param_t *eqp,
-                       const void                *cell_mesh,
+                       const cs_cell_mesh_t      *cm,
                        const cs_property_data_t  *pty,
                        cs_cell_builder_t         *cb,
                        cs_cell_sys_t             *csys);
@@ -576,16 +494,16 @@ void cs_cdofb_symmetry(short int                  fb,
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_cdofb_fixed_wall(short int                  fb,
+void cs_macfb_fixed_wall(short int                  fb,
                          const cs_equation_param_t *eqp,
-                         const void                *cell_mesh,
+                         const cs_cell_mesh_t      *cm,
                          const cs_property_data_t  *pty,
                          cs_cell_builder_t         *cb,
                          cs_cell_sys_t             *csys);
@@ -606,10 +524,10 @@ void cs_cdofb_fixed_wall(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 cs_sles_convergence_state_t
-cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
-                            const cs_real_t          *pre_iterate,
-                            cs_real_t                *cur_iterate,
-                            cs_iter_algo_t           *algo);
+cs_macfb_navsto_nl_algo_cvg(cs_param_nl_algo_t nl_algo_type,
+                            const cs_real_t   *pre_iterate,
+                            cs_real_t         *cur_iterate,
+                            cs_iter_algo_t    *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -622,9 +540,8 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t      *nsp,
-                                 cs_cdofb_navsto_source_t    **p_func);
+void cs_macfb_navsto_set_gravity_func(const cs_navsto_param_t   *nsp,
+                                      cs_macfb_navsto_source_t **p_func);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -640,11 +557,10 @@ cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t      *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
-                             const cs_cell_mesh_t              *cm,
-                             const cs_cdofb_navsto_builder_t   *nsb,
-                             cs_cell_sys_t                     *csys);
+void cs_macfb_navsto_gravity_term(const cs_navsto_param_t         *nsp,
+                                  const cs_cell_mesh_t            *cm,
+                                  const cs_macfb_navsto_builder_t *nsb,
+                                  cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -661,11 +577,10 @@ cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_boussinesq_at_cell(const cs_navsto_param_t           *nsp,
-                                   const cs_cell_mesh_t              *cm,
-                                   const cs_cdofb_navsto_builder_t   *nsb,
-                                   cs_cell_sys_t                     *csys);
+void cs_macfb_navsto_boussinesq_at_cell(const cs_navsto_param_t         *nsp,
+                                        const cs_cell_mesh_t            *cm,
+                                        const cs_macfb_navsto_builder_t *nsb,
+                                        cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -682,11 +597,10 @@ cs_cdofb_navsto_boussinesq_at_cell(const cs_navsto_param_t           *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_boussinesq_at_face(const cs_navsto_param_t           *nsp,
-                                   const cs_cell_mesh_t              *cm,
-                                   const cs_cdofb_navsto_builder_t   *nsb,
-                                   cs_cell_sys_t                     *csys);
+void cs_macfb_navsto_boussinesq_at_face(const cs_navsto_param_t         *nsp,
+                                        const cs_cell_mesh_t            *cm,
+                                        const cs_macfb_navsto_builder_t *nsb,
+                                        cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -703,11 +617,10 @@ cs_cdofb_navsto_boussinesq_at_face(const cs_navsto_param_t           *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_boussinesq_by_part(const cs_navsto_param_t           *nsp,
-                                   const cs_cell_mesh_t              *cm,
-                                   const cs_cdofb_navsto_builder_t   *nsb,
-                                   cs_cell_sys_t                     *csys);
+void cs_macfb_navsto_boussinesq_by_part(const cs_navsto_param_t         *nsp,
+                                        const cs_cell_mesh_t            *cm,
+                                        const cs_macfb_navsto_builder_t *nsb,
+                                        cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -723,15 +636,14 @@ cs_cdofb_navsto_boussinesq_by_part(const cs_navsto_param_t           *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
-                                   const cs_lnum_t     *elt_ids,
-                                   bool                 dense_output,
-                                   void                *input,
-                                   cs_real_t           *retval);
+void cs_macfb_navsto_stream_source_term(cs_lnum_t        n_elts,
+                                        const cs_lnum_t *elt_ids,
+                                        bool             dense_output,
+                                        void            *input,
+                                        cs_real_t       *retval);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CDOFB_NAVSTO_H__ */
+#endif /* __CS_MACFB_NAVSTO_H__ */

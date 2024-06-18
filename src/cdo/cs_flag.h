@@ -129,6 +129,7 @@ BEGIN_C_DECLS
 #define CS_FLAG_BORDER    (1 << 10) /*!< 1024: located on the boundary */
 #define CS_FLAG_BY_CELL   (1 << 11) /*!< 2048: by cell (c2e, c2f, c2v) */
 #define CS_FLAG_BY_FACE   (1 << 12) /*!< 4096: by face (bf2v) */
+#define CS_FLAG_MAC_LOC (1 << 13)   /*!< 8192: by face (bf2v) */
 
 /*!
  * @}
@@ -170,6 +171,7 @@ extern const cs_flag_t  cs_flag_primal_cell;
 extern const cs_flag_t  cs_flag_vertex;      /* equal to cs_flag_primal_vtx */
 extern const cs_flag_t  cs_flag_cell;        /* equal to cs_flag_primal_cell */
 extern const cs_flag_t  cs_flag_boundary_face;
+extern const cs_flag_t  cs_flag_mac_primal_face;
 
 extern const cs_flag_t  cs_flag_dual_vtx;
 extern const cs_flag_t  cs_flag_dual_face;
@@ -287,18 +289,30 @@ typedef enum {
 
 typedef enum {
 
-  CS_FLAG_LOCATION_PRIMAL_VTX = CS_FLAG_PRIMAL | CS_FLAG_VERTEX,
+  CS_FLAG_LOCATION_PRIMAL_VTX  = CS_FLAG_PRIMAL | CS_FLAG_VERTEX,
   CS_FLAG_LOCATION_PRIMAL_EDGE = CS_FLAG_PRIMAL | CS_FLAG_EDGE,
   CS_FLAG_LOCATION_PRIMAL_FACE = CS_FLAG_PRIMAL | CS_FLAG_FACE,
   CS_FLAG_LOCATION_PRIMAL_CELL = CS_FLAG_PRIMAL | CS_FLAG_CELL,
-  CS_FLAG_LOCATION_DUAL_VTX  = CS_FLAG_DUAL | CS_FLAG_VERTEX,
-  CS_FLAG_LOCATION_DUAL_EDGE = CS_FLAG_DUAL | CS_FLAG_EDGE,
-  CS_FLAG_LOCATION_DUAL_FACE = CS_FLAG_DUAL | CS_FLAG_FACE,
-  CS_FLAG_LOCATION_DUAL_CELL = CS_FLAG_DUAL | CS_FLAG_CELL,
+  CS_FLAG_LOCATION_DUAL_VTX    = CS_FLAG_DUAL | CS_FLAG_VERTEX,
+  CS_FLAG_LOCATION_DUAL_EDGE   = CS_FLAG_DUAL | CS_FLAG_EDGE,
+  CS_FLAG_LOCATION_DUAL_FACE   = CS_FLAG_DUAL | CS_FLAG_FACE,
+  CS_FLAG_LOCATION_DUAL_CELL   = CS_FLAG_DUAL | CS_FLAG_CELL,
+  CS_FLAG_LOCATION_MAC_PRIMAL_FACE
+  = CS_FLAG_PRIMAL | CS_FLAG_FACE | CS_FLAG_MAC_LOC,
 
   CS_FLAG_N_LOCATIONS
 
 } cs_flag_location_t;
+
+typedef enum {
+
+  CS_FLAG_X_AXIS = 0,
+  CS_FLAG_Y_AXIS = 1,
+  CS_FLAG_Z_AXIS = 2,
+
+  CS_FLAG_N_AXIS /* undefined Cartesian axis */
+
+} cs_flag_cartesian_axis_t;
 
 /*============================================================================
  * Public function prototypes
@@ -318,8 +332,7 @@ typedef enum {
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_flag_test(cs_flag_t    flag_to_check,
-             cs_flag_t    reference)
+cs_flag_test(cs_flag_t flag_to_check, cs_flag_t reference)
 {
   if ((flag_to_check & reference) == reference)
     return true;

@@ -559,7 +559,7 @@ _run(void)
 
   cs_boundary_conditions_free();
 
-  /* Final stage for CDO/HHO schemes */
+  /* Final stage for CDO/HHO/MAC schemes */
 
   cs_cdo_finalize(cs_glob_domain);
 

@@ -103,17 +103,18 @@ typedef struct {
  * \param[in]  vb_flag      metadata for Vertex-based schemes
  * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
  * \param[in]  hho_flag     metadata for HHO schemes
+ * \param[in]  mac_flag     metadata for MAC schemes
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdo_toolbox_init(const cs_cdo_connect_t       *connect,
-                    cs_flag_t                     eb_flag,
-                    cs_flag_t                     fb_flag,
-                    cs_flag_t                     cb_flag,
-                    cs_flag_t                     vb_flag,
-                    cs_flag_t                     vcb_flag,
-                    cs_flag_t                     hho_flag);
+void cs_cdo_toolbox_init(const cs_cdo_connect_t *connect,
+                         cs_flag_t               eb_flag,
+                         cs_flag_t               fb_flag,
+                         cs_flag_t               cb_flag,
+                         cs_flag_t               vb_flag,
+                         cs_flag_t               vcb_flag,
+                         cs_flag_t               hho_flag,
+                         cs_flag_t               mac_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

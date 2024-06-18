@@ -127,6 +127,7 @@ typedef struct {
   cs_flag_t                 vb_scheme_flag;
   cs_flag_t                 vcb_scheme_flag;
   cs_flag_t                 hho_scheme_flag;
+  cs_flag_t                 mac_scheme_flag;
 
 } cs_domain_cdo_context_t;
 

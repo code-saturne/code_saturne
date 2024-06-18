@@ -753,7 +753,17 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
 
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
+    }
+    else if (strcmp(keyval, "mac_fb") == 0) {
 
+      eqp->space_scheme      = CS_SPACE_SCHEME_MACFB;
+      eqp->space_poly_degree = 0;
+
+      eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+      eqp->diffusion_hodgep.coef = 0.0;
     }
     else {
       const char *_val = keyval;

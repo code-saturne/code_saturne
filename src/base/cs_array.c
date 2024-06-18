@@ -487,6 +487,29 @@ cs_array_real_scale(cs_lnum_t           n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add in place an array s.t. r += l_add
+ *
+ * \param[in]  n_elts   number of elements
+ * \param[in]  l_add    array to add
+ * \param[out] r        destination array values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_real_padd(cs_lnum_t       n_elts,
+                   const cs_real_t l_add[],
+                   cs_real_t       r[restrict])
+{
+  if (n_elts < 1)
+    return;
+
+#pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+    r[ii] += l_add[ii];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign a constant value of dim "stride" to an interlaced array
  *        sharing the same stride
  *

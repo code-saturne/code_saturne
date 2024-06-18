@@ -2,7 +2,7 @@
 #define __CS_CDO_QUANTITIES_H__
 
 /*============================================================================
- * Manage geometrical quantities needed in CDO schemes
+ * Manage geometrical quantities needed in CDO/MAC schemes
  *============================================================================*/
 
 /*
@@ -72,7 +72,6 @@ typedef enum {
 
 } cs_cdo_quantities_cell_center_algo_t;
 
-
 /*! \enum cs_cdo_quantities_bit_t
  *  \brief Bit values for setting which quantities to compute
  *
@@ -93,21 +92,24 @@ typedef enum {
  *
  * \var CS_CDO_QUANTITIES_CB_SCHEME
  * Geometrical quantities related to cell-based schemes
+ *
+ * \var CS_CDO_QUANTITIES_MAC_SCHEME
+ * Geometrical quantities related to MAC face-based schemes
  */
 
 typedef enum {
 
   /* Set of geometrical quantities related to CDO schemes */
 
-  CS_CDO_QUANTITIES_EB_SCHEME                  = 1<<0,  /* =   1 */
-  CS_CDO_QUANTITIES_FB_SCHEME                  = 1<<1,  /* =   2 */
-  CS_CDO_QUANTITIES_HHO_SCHEME                 = 1<<2,  /* =   4 */
-  CS_CDO_QUANTITIES_VB_SCHEME                  = 1<<3,  /* =   8 */
-  CS_CDO_QUANTITIES_VCB_SCHEME                 = 1<<4,  /* =  16 */
-  CS_CDO_QUANTITIES_CB_SCHEME                  = 1<<5,  /* =  32 */
+  CS_CDO_QUANTITIES_EB_SCHEME  = 1 << 0, /* =   1 */
+  CS_CDO_QUANTITIES_FB_SCHEME  = 1 << 1, /* =   2 */
+  CS_CDO_QUANTITIES_HHO_SCHEME = 1 << 2, /* =   4 */
+  CS_CDO_QUANTITIES_VB_SCHEME  = 1 << 3, /* =   8 */
+  CS_CDO_QUANTITIES_VCB_SCHEME = 1 << 4, /* =  16 */
+  CS_CDO_QUANTITIES_CB_SCHEME  = 1 << 5, /* =  32 */
+  CS_CDO_QUANTITIES_MAC_SCHEME = 1 << 6, /* =  64 */
 
 } cs_cdo_quantities_bit_t;
-
 
 /* Structure storing information about variation of entities across the
    mesh for a given type of entity (cell, face and edge) */
@@ -181,11 +183,17 @@ typedef struct { /* Specific mesh quantities */
   const cs_real_t     *i_face_normal;    /* Shared with cs_mesh_quantities_t */
   const cs_real_t     *i_face_center;    /* Shared with cs_mesh_quantities_t */
   const cs_real_t     *i_face_surf;      /* Shared with cs_mesh_quantities_t */
+  const cs_real_t     *i_dist;           /* Shared with cs_mesh_quantities_t */
 
   const cs_nreal_3_t  *b_face_u_normal;  /* Unit normal of boundary faces. */
   const cs_real_t     *b_face_normal;    /* Shared with cs_mesh_quantities_t */
   const cs_real_t     *b_face_center;    /* Shared with cs_mesh_quantities_t */
   const cs_real_t     *b_face_surf;      /* Shared with cs_mesh_quantities_t */
+  const cs_real_t     *b_dist;           /* Shared with cs_mesh_quantities_t */
+
+  cs_flag_cartesian_axis_t *face_axis; /* Enum for normal direction of faces
+                                        * Not always allocated
+                                        */
 
   /* Remark: cs_nvec3_t structure attached to a dual edge can be built
      on-the-fly to access to its length and its unit tangential vector using
@@ -660,6 +668,22 @@ cs_quant_set_face(cs_lnum_t                    f_id,
 cs_nvec3_t
 cs_quant_set_face_nvec(cs_lnum_t                    f_id,
                        const cs_cdo_quantities_t   *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the edge center for a primal edge (interior or border)
+ *
+ * \param[in]  e_id     id related to the edfe
+ * \param[in]  topo     pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
+ *
+ * \return a pointer to the edge center coordinates
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_quant_t cs_quant_get_edge_center(cs_lnum_t                  e_id,
+                                    const cs_cdo_connect_t    *topo,
+                                    const cs_cdo_quantities_t *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!

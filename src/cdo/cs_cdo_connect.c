@@ -330,6 +330,85 @@ _build_f2f_through_cell(const cs_cdo_connect_t     *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build an exteded connectivity face -> faces through edges
+ *         + same directions
+ *
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_adjacency_t *
+_build_f2f_ed_through_edges(const cs_cdo_connect_t *connect)
+{
+  cs_adjacency_t *f2f_ed = NULL;
+
+  const cs_lnum_t n_faces = connect->n_faces[CS_ALL_FACES];
+
+  /* Build a face -> face connectivity through edges */
+
+  cs_adjacency_t *f2f_e
+    = cs_adjacency_compose(n_faces, connect->f2e, connect->e2f);
+
+  /* Get a face -> face connectivity through cells */
+
+  cs_adjacency_t *f2f_c = connect->f2f;
+  assert(f2f_c != NULL); /* Has to be build before */
+
+  /* We concatenate f2f connectivity and remove duplicate entry*/
+  f2f_ed = cs_adjacency_difference(f2f_e, f2f_c);
+  cs_adjacency_sort(f2f_ed);
+
+  /* Update index (f2f_ed has a diagonal entry. We remove it since we have in
+     mind an index structure for a matrix stored using the MSR format */
+
+  cs_adjacency_remove_self_entries(f2f_ed);
+
+  cs_adjacency_destroy(&f2f_e);
+
+  return f2f_ed;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build an exteded connectivity face -> faces through cells + edges
+ *
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_adjacency_t *
+_build_f2xf_through_cell(const cs_cdo_connect_t *connect)
+{
+  cs_adjacency_t *f2xf = NULL;
+
+  /* Get a face -> face connectivity through cells */
+
+  cs_adjacency_t *f2f_c = connect->f2f;
+  assert(f2f_c != NULL); /* Has to be build before */
+
+  /* Get a face -> face connectivity through edges */
+
+  cs_adjacency_t *f2f_ed = connect->f2f_ed;
+  assert(f2f_ed != NULL); /* Has to be build before */
+
+  /* We concatenate f2f connectivity and remove duplicate entry*/
+  f2xf = cs_adjacency_concatenate(f2f_ed, f2f_c);
+  cs_adjacency_sort(f2xf);
+
+  /* Update index (f2xf has a diagonal entry. We remove it since we have in
+     mind an index structure for a matrix stored using the MSR format */
+
+  cs_adjacency_remove_self_entries(f2xf);
+
+  return f2xf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build a connectivity edge -> edges through cells
  *
  * \param[in]  connect       pointer to a cs_cdo_connect_t structure
@@ -931,13 +1010,14 @@ _define_face_interface(const cs_mesh_t  *mesh)
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_build(cs_mesh_t      *mesh,
-                     cs_flag_t       eb_scheme_flag,
-                     cs_flag_t       fb_scheme_flag,
-                     cs_flag_t       cb_scheme_flag,
-                     cs_flag_t       vb_scheme_flag,
-                     cs_flag_t       vcb_scheme_flag,
-                     cs_flag_t       hho_scheme_flag)
+cs_cdo_connect_build(cs_mesh_t *mesh,
+                     cs_flag_t  eb_scheme_flag,
+                     cs_flag_t  fb_scheme_flag,
+                     cs_flag_t  cb_scheme_flag,
+                     cs_flag_t  vb_scheme_flag,
+                     cs_flag_t  vcb_scheme_flag,
+                     cs_flag_t  hho_scheme_flag,
+                     cs_flag_t  mac_scheme_flag)
 {
   cs_timer_t t0 = cs_timer_time();
 
@@ -1015,7 +1095,8 @@ cs_cdo_connect_build(cs_mesh_t      *mesh,
   else
     connect->v2v = NULL;
 
-  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0)
+  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0
+      || mac_scheme_flag > 0)
     connect->f2f = _build_f2f_through_cell(connect);
   else
     connect->f2f = NULL;
@@ -1024,6 +1105,21 @@ cs_cdo_connect_build(cs_mesh_t      *mesh,
     connect->e2e = _build_e2e_through_cell(connect);
   else
     connect->e2e = NULL;
+
+  if (mac_scheme_flag > 0) {
+
+    /* Build the edges --> faces connectivity */
+
+    connect->e2f = cs_adjacency_transpose(n_edges, connect->f2e);
+    cs_adjacency_sort(connect->e2f);
+
+    connect->f2f_ed = _build_f2f_ed_through_edges(connect);
+    connect->f2xf = _build_f2xf_through_cell(connect);
+  }
+  else {
+    connect->f2xf   = NULL;
+    connect->f2f_ed = NULL;
+  }
 
   /* Members to handle assembly process and parallel sync. */
 
@@ -1056,17 +1152,17 @@ cs_cdo_connect_build(cs_mesh_t      *mesh,
 
   /* CDO face-based schemes or HHO schemes with k=0 */
 
-  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0) {
+  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0
+      || mac_scheme_flag > 0) {
 
     connect->face_ifs = _define_face_interface(mesh);
 
     connect->face_rset = cs_range_set_create(connect->face_ifs,
-                                             NULL,   /* halo */
+                                             NULL, /* halo */
                                              n_faces,
-                                             false,  /* option for balance */
-                                             1,      /* tr_ignore */
-                                             0);     /* g_id_base */
-
+                                             false, /* option for balance */
+                                             1,     /* tr_ignore */
+                                             0);    /* g_id_base */
   }
 
   /* CDO edge-based schemes for vector-valued variables if needed (DoF is
@@ -1118,6 +1214,7 @@ cs_cdo_connect_free(const cs_mesh_t    *mesh,
   cs_adjacency_destroy(&(connect->if2v));
 
   cs_adjacency_destroy(&(connect->e2v));
+  cs_adjacency_destroy(&(connect->e2f));
   cs_adjacency_destroy(&(connect->f2e));
   cs_adjacency_destroy(&(connect->f2c));
 
@@ -1127,6 +1224,8 @@ cs_cdo_connect_free(const cs_mesh_t    *mesh,
 
   cs_adjacency_destroy(&(connect->v2v));
   cs_adjacency_destroy(&(connect->f2f));
+  cs_adjacency_destroy(&(connect->f2xf));
+  cs_adjacency_destroy(&(connect->f2f_ed));
   cs_adjacency_destroy(&(connect->e2e));
 
   BFT_FREE(connect->cell_type);
@@ -1515,6 +1614,7 @@ cs_cdo_connect_dump(const cs_cdo_connect_t  *connect)
   cs_adjacency_dump("Bd Face--> Vertices", fdump, connect->bf2v);
   cs_adjacency_dump("In Face--> Vertices", fdump, connect->if2v);
   cs_adjacency_dump("Edge   --> Vertices", fdump, connect->e2v);
+  cs_adjacency_dump("Edge   --> Faces", fdump, connect->e2f);
   cs_adjacency_dump("Face   --> Cells",    fdump, connect->f2c);
   cs_adjacency_dump("Cell   --> Edges",    fdump, connect->c2e);
   cs_adjacency_dump("Cell   --> Vertices", fdump, connect->c2v);

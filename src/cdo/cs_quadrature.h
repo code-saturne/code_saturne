@@ -235,6 +235,31 @@ typedef void
                                  void                  *input,
                                  double                 results[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the integral over an orthogonal hexahedron based on a
+ * specified quadrature rule and add it to \p results
+ *
+ * \param[in]      tcur     current physical time of the simulation
+ * \param[in]      vb       barycenter
+ * \param[in]      hx       length along x-dir
+ * \param[in]      hy       length along y-dir
+ * \param[in]      hz       length along z-dir
+ * \param[in]      ana      pointer to the analytic function
+ * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results  array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void(cs_quadrature_hexa_integral_t)(double              tcur,
+                                            const cs_real_3_t   vb,
+                                            const double        hx,
+                                            const double        hy,
+                                            const double        hz,
+                                            cs_analytic_func_t *ana,
+                                            void               *input,
+                                            double              results[]);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -326,6 +351,76 @@ cs_quadrature_edge_3pts(const cs_real_3_t  v1,
                         double             len,
                         cs_real_3_t        gpts[],
                         double             w[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute quadrature points for an orthogonal hexahedron
+ *          Exact for polynomial function up to order 1
+ *
+ * \param[in]      vb       barycenter
+ * \param[in]      hx       length along x-dir
+ * \param[in]      hy       length along y-dir
+ * \param[in]      hz       length along z-dir
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weight
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_hex_1pt(const cs_real_3_t vb,
+                      const double      hx,
+                      const double      hy,
+                      const double      hz,
+                      cs_real_3_t       gpts[],
+                      double           *w)
+{
+  gpts[0][0] = vb[0];
+  gpts[0][1] = vb[1];
+  gpts[0][2] = vb[2];
+  w[0]       = hx * hy * hz;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute quadrature points for an orthogonal hexahedron
+ *          Exact for polynomial function up to order 3
+ *
+ * \param[in]      vb       barycenter
+ * \param[in]      hx       length along x-dir
+ * \param[in]      hy       length along y-dir
+ * \param[in]      hz       length along z-dir
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weights
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_quadrature_hex_8pts(const cs_real_3_t vb,
+                            const double      hx,
+                            const double      hy,
+                            const double      hz,
+                            cs_real_3_t       gpts[],
+                            double           *w);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute quadrature points for an orthogonal hexahedron
+ *          Exact for polynomial function up to order 5
+ *
+ * \param[in]      vb       barycenter
+ * \param[in]      hx       length along x-dir
+ * \param[in]      hy       length along y-dir
+ * \param[in]      hz       length along z-dir
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weights
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_quadrature_hex_27pts(const cs_real_3_t vb,
+                             const double      hx,
+                             const double      hy,
+                             const double      hz,
+                             cs_real_3_t       gpts[],
+                             double            w[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1683,6 +1778,130 @@ cs_quadrature_tet_5pts_tens(double                tcur,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the integral over a orthoganal hexahedron using a barycentric
+ *         quadrature rule and add it to \p results.
+ *         Case of a vector-valued function.
+ *
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      vb           barycenter
+ * \param[in]      hx           length along x-dir
+ * \param[in]      hy           length along y-dir
+ * \param[in]      hz           length along z-dir
+ * \param[in]      ana          pointer to the analytic function
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results      array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_hex_1pt_vect(double              tcur,
+                           const cs_real_3_t   vb,
+                           const double        hx,
+                           const double        hy,
+                           const double        hz,
+                           cs_analytic_func_t *ana,
+                           void               *input,
+                           double              results[])
+{
+  cs_real_3_t xg[1];
+  double      weight[1], evaluation[3];
+
+  /* Copied from cs_quadrature_hew_1pt */
+  cs_quadrature_hex_1pt(vb, hx, hy, hz, xg, weight);
+
+  ana(tcur, 1, NULL, (const cs_real_t *)xg, false, input, evaluation);
+
+  results[0] += weight[0] * evaluation[0];
+  results[1] += weight[0] * evaluation[1];
+  results[2] += weight[0] * evaluation[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over an orthoganal hexahedron with a quadrature
+ * rule using 8 Gauss points and a unique weight and add it to \p results. Case
+ * of a vector-valued function.
+ *
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      vb           barycenter
+ * \param[in]      hx           length along x-dir
+ * \param[in]      hy           length along y-dir
+ * \param[in]      hz           length along z-dir
+ * \param[in]      ana          pointer to the analytic function
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results      array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_hex_8pts_vect(double              tcur,
+                            const cs_real_3_t   vb,
+                            const double        hx,
+                            const double        hy,
+                            const double        hz,
+                            cs_analytic_func_t *ana,
+                            void               *input,
+                            double              results[])
+{
+  cs_real_3_t gauss_pts[8];
+  double      evaluation[3 * 8], weights[8];
+
+  /* Compute Gauss points and its unique weight */
+  cs_quadrature_hex_8pts(vb, hx, hy, hz, gauss_pts, weights);
+
+  ana(tcur, 8, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
+
+  for (int p = 0; p < 8; p++) {
+    results[0] += weights[p] * evaluation[3 * p];
+    results[1] += weights[p] * evaluation[3 * p + 1];
+    results[2] += weights[p] * evaluation[3 * p + 2];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over an orthogonal hexahedron with a quadrature
+ * rule using 27 Gauss points add it to \p results. Case of a
+ * vector-valued function.
+ *
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      vb           barycenter
+ * \param[in]      hx           length along x-dir
+ * \param[in]      hy           length along y-dir
+ * \param[in]      hz           length along z-dir
+ * \param[in]      ana          pointer to the analytic function
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results      array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_hex_27pts_vect(double              tcur,
+                             const cs_real_3_t   vb,
+                             const double        hx,
+                             const double        hy,
+                             const double        hz,
+                             cs_analytic_func_t *ana,
+                             void               *input,
+                             double              results[])
+{
+  cs_real_3_t gauss_pts[27];
+  double      evaluation[3 * 27], weights[27];
+
+  /* Compute Gauss points and its weights */
+  cs_quadrature_hex_27pts(vb, hx, hy, hz, gauss_pts, weights);
+
+  ana(tcur, 27, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
+
+  for (int p = 0; p < 27; p++) {
+    results[0] += weights[p] * evaluation[3 * p];
+    results[1] += weights[p] * evaluation[3 * p + 1];
+    results[2] += weights[p] * evaluation[3 * p + 2];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the integral function according to the quadrature type
  *         and the stride provided
  *         Case of integral along edges.
@@ -1904,6 +2123,55 @@ cs_quadrature_get_tetra_integral(int                   dim,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid dimension value %d. Only 1, 3 and 9 are valid.\n",
               __func__, dim);
+
+  } /* Switch on dim */
+
+  /* Avoid no return warning */
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the integral function according to the quadrature type
+ *         and the stride provided for an hexahedron
+ *
+ * \param[in]     dim          dimension of the function to integrate
+ * \param[in]     qtype        quadrature type
+ *
+ * \return a pointer to the integral function
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_quadrature_hexa_integral_t *
+cs_quadrature_get_hexa_integral(int dim, cs_quadrature_type_t qtype)
+{
+  switch (dim) {
+
+  case 3: /* Vector-valued case */
+
+    switch (qtype) {
+
+    case CS_QUADRATURE_BARY:
+    case CS_QUADRATURE_BARY_SUBDIV:
+      return cs_quadrature_hex_1pt_vect;
+    case CS_QUADRATURE_HIGHER:
+      return cs_quadrature_hex_8pts_vect;
+    case CS_QUADRATURE_HIGHEST:
+      return cs_quadrature_hex_27pts_vect;
+
+    default:
+      bft_error(
+        __FILE__, __LINE__, 0, " %s: Invalid quadrature type\n", __func__);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: Invalid dimension value %d. Only 3 is valid.\n",
+              __func__,
+              dim);
 
   } /* Switch on dim */
 

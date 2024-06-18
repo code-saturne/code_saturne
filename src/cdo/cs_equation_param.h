@@ -1153,6 +1153,7 @@ typedef struct {
  * - "cdo_cb"  or "cdocb" for CDO cell-based scheme
  * - "hho_p1" for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
  * - "hho_p2" for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
+ * - "mac_fb" for MAC face-based scheme and cartesian grid
  *
  * \var CS_EQKEY_TIME_SCHEME
  * Set the scheme for the temporal discretization. Available choices are:

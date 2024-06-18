@@ -1386,7 +1386,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -1394,16 +1394,18 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_alge(short int                       f,
-                              const cs_equation_param_t      *eqp,
-                              const cs_cell_mesh_t           *cm,
-                              const cs_property_data_t       *pty,
-                              cs_cell_builder_t              *cb,
-                              cs_cell_sys_t                  *csys)
+cs_cdofb_block_dirichlet_alge(short int                  f,
+                              const cs_equation_param_t *eqp,
+                              const void                *cell_mesh,
+                              const cs_property_data_t  *pty,
+                              cs_cell_builder_t         *cb,
+                              cs_cell_sys_t             *csys)
 {
   CS_UNUSED(eqp);
-  CS_UNUSED(cm);
+  CS_UNUSED(cell_mesh);
   CS_UNUSED(pty);
+
+  const cs_cell_mesh_t *cm = (const cs_cell_mesh_t *)cell_mesh;
 
   double  *x_dir = cb->values;
   double  *ax_dir = cb->values + 3;
@@ -1491,7 +1493,7 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -1499,18 +1501,19 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_pena(short int                       f,
-                              const cs_equation_param_t      *eqp,
-                              const cs_cell_mesh_t           *cm,
-                              const cs_property_data_t       *pty,
-                              cs_cell_builder_t              *cb,
-                              cs_cell_sys_t                  *csys)
+cs_cdofb_block_dirichlet_pena(short int                  f,
+                              const cs_equation_param_t *eqp,
+                              const void                *cell_mesh,
+                              const cs_property_data_t  *pty,
+                              cs_cell_builder_t         *cb,
+                              cs_cell_sys_t             *csys)
 {
   CS_UNUSED(cb);
-  CS_UNUSED(cm);
   CS_UNUSED(pty);
 
   assert(csys != NULL);
+
+  const cs_cell_mesh_t *cm = (const cs_cell_mesh_t *)cell_mesh;
 
   cs_sdm_t  *m = csys->mat;
   assert(m->block_desc != NULL);
@@ -1559,7 +1562,7 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -1567,13 +1570,15 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_weak(short int                       fb,
-                              const cs_equation_param_t      *eqp,
-                              const cs_cell_mesh_t           *cm,
-                              const cs_property_data_t       *pty,
-                              cs_cell_builder_t              *cb,
-                              cs_cell_sys_t                  *csys)
+cs_cdofb_block_dirichlet_weak(short int                  fb,
+                              const cs_equation_param_t *eqp,
+                              const void                *cell_mesh,
+                              const cs_property_data_t  *pty,
+                              cs_cell_builder_t         *cb,
+                              cs_cell_sys_t             *csys)
 {
+  const cs_cell_mesh_t *cm = (const cs_cell_mesh_t *)cell_mesh;
+
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(pty->is_iso == true);
 
@@ -1646,7 +1651,7 @@ cs_cdofb_block_dirichlet_weak(short int                       fb,
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -1654,13 +1659,15 @@ cs_cdofb_block_dirichlet_weak(short int                       fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_wsym(short int                       fb,
-                              const cs_equation_param_t      *eqp,
-                              const cs_cell_mesh_t           *cm,
-                              const cs_property_data_t       *pty,
-                              cs_cell_builder_t              *cb,
-                              cs_cell_sys_t                  *csys)
+cs_cdofb_block_dirichlet_wsym(short int                  fb,
+                              const cs_equation_param_t *eqp,
+                              const void                *cell_mesh,
+                              const cs_property_data_t  *pty,
+                              cs_cell_builder_t         *cb,
+                              cs_cell_sys_t             *csys)
 {
+  const cs_cell_mesh_t *cm = (const cs_cell_mesh_t *)cell_mesh;
+
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
   assert(pty->is_iso == true);
@@ -1754,7 +1761,7 @@ cs_cdofb_block_dirichlet_wsym(short int                       fb,
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -1762,13 +1769,15 @@ cs_cdofb_block_dirichlet_wsym(short int                       fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_symmetry(short int                       fb,
-                  const cs_equation_param_t      *eqp,
-                  const cs_cell_mesh_t           *cm,
-                  const cs_property_data_t       *pty,
-                  cs_cell_builder_t              *cb,
-                  cs_cell_sys_t                  *csys)
+cs_cdofb_symmetry(short int                  fb,
+                  const cs_equation_param_t *eqp,
+                  const void                *cell_mesh,
+                  const cs_property_data_t  *pty,
+                  cs_cell_builder_t         *cb,
+                  cs_cell_sys_t             *csys)
 {
+  const cs_cell_mesh_t *cm = (const cs_cell_mesh_t *)cell_mesh;
+
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
@@ -1867,7 +1876,7 @@ cs_cdofb_symmetry(short int                       fb,
  *
  * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       cell_mesh pointer to an untyped cell_mesh structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -1875,15 +1884,17 @@ cs_cdofb_symmetry(short int                       fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_fixed_wall(short int                       fb,
-                    const cs_equation_param_t      *eqp,
-                    const cs_cell_mesh_t           *cm,
-                    const cs_property_data_t       *pty,
-                    cs_cell_builder_t              *cb,
-                    cs_cell_sys_t                  *csys)
+cs_cdofb_fixed_wall(short int                  fb,
+                    const cs_equation_param_t *eqp,
+                    const void                *cell_mesh,
+                    const cs_property_data_t  *pty,
+                    cs_cell_builder_t         *cb,
+                    cs_cell_sys_t             *csys)
 {
   CS_UNUSED(cb);
   CS_UNUSED(pty);
+
+  const cs_cell_mesh_t *cm = (const cs_cell_mesh_t *)cell_mesh;
 
   assert(cm != NULL && csys != NULL);  /* Sanity checks */
 

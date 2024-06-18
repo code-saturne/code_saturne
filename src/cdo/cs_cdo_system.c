@@ -1786,6 +1786,15 @@ cs_cdo_system_build_block(cs_cdo_system_helper_t  *sh,
         _assign_ma_ms(false, connect->f2f, b);
       break;
 
+    case CS_FLAG_LOCATION_MAC_PRIMAL_FACE:
+      assert(connect->f2xf != NULL);
+      assert(connect->n_faces[CS_ALL_FACES] == b->info.n_elements);
+      assert(connect->n_faces[CS_ALL_FACES] == connect->f2xf->n_elts);
+      _assign_ifs_rset(false, b, connect->face_ifs, connect->face_rset);
+      if (b->type != CS_CDO_SYSTEM_BLOCK_UNASS)
+        _assign_ma_ms(false, connect->f2xf, b);
+      break;
+
     default:
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid location for a system_helper structure.\n",
@@ -2143,6 +2152,11 @@ cs_cdo_system_allocate_assembly(void)
     case CS_FLAG_LOCATION_PRIMAL_FACE:
     case CS_FLAG_LOCATION_DUAL_EDGE:
       n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_fbyc);
+      break;
+
+    case CS_FLAG_LOCATION_MAC_PRIMAL_FACE:
+      /* 30 is the maximum number of connected faces to a cell */
+      n_max_cw_dofs = CS_MAX(n_max_cw_dofs, 30);
       break;
 
     default:
