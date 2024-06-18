@@ -2038,8 +2038,8 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
             if (ii < n_cells)
               n_upwind++;
             if (v_slope_test != NULL) {
-              v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
-              v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
+              v_slope_test[ii] += cs_math_fabs(i_massflux[face_id]) / cell_vol[ii];
+              v_slope_test[jj] += cs_math_fabs(i_massflux[face_id]) / cell_vol[jj];
             }
 
           }
@@ -2858,8 +2858,8 @@ _face_convection_scalar_steady(const cs_field_t           *f,
             if (ii < n_cells)
               n_upwind++;
             if (v_slope_test != NULL) {
-              v_slope_test[ii] += abs(i_massflux[face_id]) / cell_vol[ii];
-              v_slope_test[jj] += abs(i_massflux[face_id]) / cell_vol[jj];
+              v_slope_test[ii] += cs_math_fabs(i_massflux[face_id]) / cell_vol[ii];
+              v_slope_test[jj] += cs_math_fabs(i_massflux[face_id]) / cell_vol[jj];
             }
 
           }
@@ -7121,10 +7121,10 @@ _convection_diffusion_unsteady_strided
 
           if (v_slope_test != NULL) {
             cs_dispatch_sum(&v_slope_test[ii],
-                            abs(i_massflux[face_id]) / cell_vol[ii],
+                            cs_math_fabs(i_massflux[face_id]) / cell_vol[ii],
                             i_sum_type);
             cs_dispatch_sum(&v_slope_test[jj],
-                            abs(i_massflux[face_id]) / cell_vol[jj],
+                            cs_math_fabs(i_massflux[face_id]) / cell_vol[jj],
                             i_sum_type);
           }
         }

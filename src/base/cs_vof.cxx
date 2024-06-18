@@ -1194,8 +1194,8 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   /* Compute the max of flux/Surf over the entire domain*/
   cs_real_t maxfluxsurf = 0.;
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    if (maxfluxsurf < abs(i_volflux[f_id])/i_face_surf[f_id])
-      maxfluxsurf = abs(i_volflux[f_id])/i_face_surf[f_id];
+    if (maxfluxsurf < cs_math_fabs(i_volflux[f_id])/i_face_surf[f_id])
+      maxfluxsurf = cs_math_fabs(i_volflux[f_id])/i_face_surf[f_id];
   }
   cs_parall_max(1, CS_REAL_TYPE, &maxfluxsurf);
 
@@ -1205,7 +1205,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     cs_lnum_t cell_id1 = i_face_cells[f_id][0];
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
     cs_real_t fluxfactor =
-      cs_math_fmin(cdrift*abs(i_volflux[f_id])/i_face_surf[f_id], maxfluxsurf);
+      cs_math_fmin(cdrift*cs_math_fabs(i_volflux[f_id])/i_face_surf[f_id], maxfluxsurf);
 
     for (int idim = 0; idim < 3; idim++)
       gradface[idim] = (  voidf_grad[cell_id1][idim]
