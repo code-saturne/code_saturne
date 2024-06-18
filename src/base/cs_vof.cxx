@@ -497,8 +497,8 @@ _smoothe(const cs_mesh_t              *m,
                               + pow(volume[jj], cs_math_1ov3));
     cs_real_t visco = taille * taille * d_tau;
 
-    cs_real_3_t distxyz;
-    for (int i = 0; i < 3; i++)
+    cs_real_t distxyz[3];
+    for (cs_lnum_t i = 0; i < 3; i++)
       distxyz[i] =  dist[f_id] * surfac[f_id][i] / surfn[f_id]
                   + diipf[f_id][i] + djjpf[f_id][i];
 
@@ -540,7 +540,7 @@ _smoothe(const cs_mesh_t              *m,
      Dirichlet condition (move the eigenvalues spectrum) */
   cs_real_t epsi = 1.e-7;
 
-  for (int c_id = 0; c_id < n_cells; c_id++)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     dam[c_id] *= (1. + epsi);
 
   /* SOLVE SYSTEM */
@@ -976,10 +976,10 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
     coefa[face_id] = 0.;
     coefb[face_id] = 1.;
 
-    for (int i = 0; i < 3; i++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
       coefa_vec[face_id][i] = 0.;
 
-      for (int j = 0; j < 3; j++)
+      for (cs_lnum_t j = 0; j < 3; j++)
         coefb_vec[face_id][i][j] = 0.;
       coefb_vec[face_id][i][i] = 1.;
     }
@@ -994,7 +994,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   /* Void fraction diffusion solving */
   int ncycles = 5;
-  for (int i = 0; i < ncycles; i++) {
+  for (cs_lnum_t i = 0; i < ncycles; i++) {
     _smoothe(m, mq, &bc_coeffs_loc, pvar);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       pvar[c_id] = (pvar[c_id] <= 0.001) ? 0. : pvar[c_id];
@@ -1051,7 +1051,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
     cs_real_t snorm = cs_math_3_norm(surfxyz_unnormed[c_id])+1.e-8;
     cs_real_t unsnorm = 1. / snorm;
 
-    for (int i = 0; i < 3; i++)
+    for (cs_lnum_t i = 0; i < 3; i++)
       surfxyz_norm[c_id][i] = surfxyz_unnormed[c_id][i] * unsnorm;
   }
 
@@ -1082,14 +1082,14 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 
-    cs_real_3_t gradf;
+    cs_real_t gradf[3];
 
-    for (int k = 0; k < 3; k++)
+    for (cs_lnum_t k = 0; k < 3; k++)
       gradf[k] =         pond[face_id]  * surfxyz_norm[ii][k]
                  + (1. - pond[face_id]) * surfxyz_norm[jj][k];
 
-    for (int k = 0; k < 3; k++)
-      for (int l = 0; l < 3; l++)
+    for (cs_lnum_t k = 0; k < 3; k++)
+      for (cs_lnum_t l = 0; l < 3; l++)
         gradf[k] += 0.5 * dofij[face_id][l]
                         * (gradnxyz[ii][k][l] + gradnxyz[jj][k][l]);
 
@@ -1100,7 +1100,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   /* Compute volumic surface tension */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    for (int i = 0; i < 3; i++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
       stf[c_id][i] = -cpro_surftens * surfxyz_unnormed[c_id][i] * curv[c_id];
     }
 
@@ -1202,7 +1202,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   cs_parall_max(1, CS_REAL_TYPE, &maxfluxsurf);
 
   /* Compute the relative velocity at internal faces */
-  cs_real_3_t gradface, normalface;
+  cs_real_t gradface[3], normalface[3];
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t cell_id1 = i_face_cells[f_id][0];
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
@@ -1210,13 +1210,13 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
       = cs_math_fmin(cdrift*std::abs(i_volflux[f_id])/i_face_surf[f_id],
                      maxfluxsurf);
 
-    for (int idim = 0; idim < 3; idim++)
+    for (cs_lnum_t idim = 0; idim < 3; idim++)
       gradface[idim] = (  voidf_grad[cell_id1][idim]
                         + voidf_grad[cell_id2][idim])/2.;
 
     cs_real_t normgrad = cs_math_3_norm(gradface);
 
-    for (int idim = 0; idim < 3; idim++)
+    for (cs_lnum_t idim = 0; idim < 3; idim++)
       normalface[idim] = gradface[idim] / (normgrad+delta);
 
     cpro_idriftf[f_id] =
@@ -1344,9 +1344,9 @@ cs_vof_drift_term(int                        imrgra,
 
     /* Boundary coefficients */
     for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
-      for (int ii = 0 ; ii < 3 ; ii++) {
+      for (cs_lnum_t ii = 0 ; ii < 3 ; ii++) {
         coefav[ifac][ii] = 0.;
-        for (int jj = 0 ; jj < 3 ; jj++) {
+        for (cs_lnum_t jj = 0 ; jj < 3 ; jj++) {
           coefbv[ifac][ii][jj] = 0.;
         }
         coefbv[ifac][ii][ii] = 1.;
