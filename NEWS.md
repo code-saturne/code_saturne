@@ -1,3 +1,10 @@
+Release 8.2.0 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix halo synchronization for periodicity in non-MPI builds.
+
 Release 8.2.0 (2024-06-17)
 --------------------------
 
