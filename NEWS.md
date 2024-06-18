@@ -3,6 +3,8 @@ Release 8.1.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect computation Rij symmetry BC coefficients.
+
 - Fix halo synchronization for periodicity in non-MPI builds.
 
 - Fix issues when restarting without additional preprocessing:
