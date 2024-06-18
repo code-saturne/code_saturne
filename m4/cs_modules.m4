@@ -70,6 +70,7 @@ fi
 # Find the modulecmd executable; handle both modules and lmod
 
 if test "x$LMOD_CMD" != "x" ; then
+  export LMOD_PAGER=none
   MODULECMD=$LMOD_CMD
   AC_SUBST(MODULECMD)
   "$MODULECMD" python avail > /dev/null 2>&1

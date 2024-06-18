@@ -420,9 +420,10 @@ def write_script_comment(fd, comment):
 
 #-------------------------------------------------------------------------------
 
-def write_export_env(fd, var, value):
+def write_export_env(fd, var, value, prefix=''):
     """
     Write the correct command so as to export environment variables.
+    The optional prefix can be used for indenting or commenting
     """
 
     if not value:
@@ -438,7 +439,7 @@ def write_export_env(fd, var, value):
             else:
                 export_cmd = 'unset ' + var
     export_cmd = export_cmd + '\n'
-    fd.write(export_cmd)
+    fd.write(prefix + export_cmd)
 
 #-------------------------------------------------------------------------------
 

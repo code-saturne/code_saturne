@@ -1463,6 +1463,8 @@ class case:
                'Load environment if this script is run directly.\n')
             s.write('if test "$CS_ENVIRONMENT_SET" != "true" ; then\n')
             if self.package_compute.config.env_modules != "no":
+                cs_exec_environment.write_export_env(s, 'LMOD_PAGER',
+                                                     'none', prefix='  ')
                 s.write('  module purge\n')
                 for m in self.package_compute.config.env_modules.strip().split():
                     s.write('  module load ' + m + '\n')
