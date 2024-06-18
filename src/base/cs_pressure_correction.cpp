@@ -186,7 +186,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   const cs_equation_param_t *eqp_pr = cs_field_get_equation_param_const(f);
 
   cs_dispatch_context ctx, ctx_c;
-#if defined(HAVE_ACCEL)
+#if defined(HAVE_CUDA)
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
@@ -547,7 +547,7 @@ _pressure_correction_fv(int                   iterns,
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
-#if defined(HAVE_ACCEL)
+#if defined(HAVE_CUDA)
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
