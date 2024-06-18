@@ -1754,6 +1754,17 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
   _hs->n_requests = request_count;
 
+#else /* defined(HAVE_MPI) */
+
+  const int local_rank = 0;
+
+  /* Receive data from distant ranks */
+
+  for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    if (halo->c_domain_rank[rank_id] == local_rank)
+      _hs->local_rank_id = rank_id;
+  }
+
 #endif /* defined(HAVE_MPI) */
 }
 
