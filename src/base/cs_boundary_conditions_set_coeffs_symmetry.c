@@ -472,12 +472,14 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t n_b_faces   = mesh->n_b_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)mesh->b_face_cells;
   const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
-  const cs_real_t   *b_dist         = fvq->b_dist;
-  int               *isympa         = fvq->b_sym_flag;
+  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_t   *b_dist = fvq->b_dist;
+  int *isympa = fvq->b_sym_flag;
 
   const int keysca  = cs_field_key_id("scalar_id");
   const int kturt   = cs_field_key_id("turbulent_flux_model");
@@ -664,10 +666,12 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
       cs_real_6_t  *cofad_rij = (cs_real_6_t  *)rij->bc_coeffs->ad;
       cs_real_66_t *cofbd_rij = (cs_real_66_t *)rij->bc_coeffs->bd;
 
-      cs_real_t visci[3][3], dist[3] = {0., 0., 0.}, hint_rij = 0.0;
+      cs_real_t hint_rij = 0.;
 
       /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
       if (eqp_rij->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
+
+        cs_real_t visci[3][3];
 
         visci[0][0] = visclc + visten[c_id][0];
         visci[1][1] = visclc + visten[c_id][1];
@@ -678,6 +682,10 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
         visci[2][1] =          visten[c_id][4];
         visci[0][2] =          visten[c_id][5];
         visci[2][0] =          visten[c_id][5];
+
+        cs_real_t dist[3] = {b_face_cog[f_id][0] - cell_cen[c_id][0],
+                             b_face_cog[f_id][1] - cell_cen[c_id][1],
+                             b_face_cog[f_id][2] - cell_cen[c_id][2]};
 
         /* ||Ki.S||^2 */
         const cs_real_t viscis =   cs_math_pow2(  visci[0][0]*nn[0]
