@@ -3,6 +3,8 @@ Release 8.1.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix halo synchronization for periodicity in non-MPI builds.
+
 - Fix issues when restarting without additional preprocessing:
   - When using "code_saturne submit", the behavior was different from
     "code_saturne run" and unwanted extra preprocessing could occur.
