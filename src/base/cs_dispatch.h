@@ -728,7 +728,7 @@ public:
   //! Synchronize associated stream
   void
   wait(void) {
-    if (is_gpu == && use_gpu_)
+    if (is_gpu && use_gpu_)
       queue_.wait();
   }
 
