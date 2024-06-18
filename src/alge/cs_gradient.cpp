@@ -940,10 +940,10 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
             for (cs_lnum_t k = 0; k < 3; k++)
               dist[k] = cell_f_cen[c_id1][k] - cell_f_cen[c_id2][k];
 
-            cs_real_t dist1 = cs_math_fabs(  dist[0]*grad[c_id1][0]
-                                  + dist[1]*grad[c_id1][1]
-                                  + dist[2]*grad[c_id1][2]);
-            cs_real_t dvar = cs_math_fabs(pvar[c_id1] - pvar[c_id2]);
+            cs_real_t dist1 = std::abs(  dist[0]*grad[c_id1][0]
+                                       + dist[1]*grad[c_id1][1]
+                                       + dist[2]*grad[c_id1][2]);
+            cs_real_t dvar = std::abs(pvar[c_id1] - pvar[c_id2]);
 
             denum[i] = std::max(denum[i], dist1);
             denom[i] = std::max(denom[i], dvar);
@@ -1030,8 +1030,8 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
             for (cs_lnum_t k = 0; k < 3; k++)
               gradm[k] = grad[c_id1][k] + grad[c_id2][k];
 
-            cs_real_t dist1 = 0.5 * cs_math_fabs(cs_math_3_dot_product(dist, gradm));
-            cs_real_t dvar = cs_math_fabs(pvar[c_id1] - pvar[c_id2]);
+            cs_real_t dist1 = 0.5 * std::abs(cs_math_3_dot_product(dist, gradm));
+            cs_real_t dvar = std::abs(pvar[c_id1] - pvar[c_id2]);
 
             denum[i] = std::max(denum[i], dist1);
             denom[i] = std::max(denom[i], dvar);
@@ -7463,7 +7463,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     cs_real_t ref_norm = 0;
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+        ref_norm += std::abs(c_grad[kk][ll]);
     }
 
     /* Iterate over boundary condition contributions. */
@@ -7549,7 +7549,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
           c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
-          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          c_norm += std::abs(c_grad[ii][jj] - grad_i[ii][jj]);
           grad_i[ii][jj] = c_grad[ii][jj];
         }
       }
@@ -9625,7 +9625,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     cs_real_t ref_norm = 0;
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        ref_norm += cs_math_fabs(c_grad[kk][ll]);
+        ref_norm += std::abs(c_grad[kk][ll]);
     }
 
     /* Iterate over boundary condition contributions. */
@@ -9714,7 +9714,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
           c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
-          c_norm += cs_math_fabs(c_grad[ii][jj] - grad_i[ii][jj]);
+          c_norm += std::abs(c_grad[ii][jj] - grad_i[ii][jj]);
           grad_i[ii][jj] = c_grad[ii][jj];
         }
       }
