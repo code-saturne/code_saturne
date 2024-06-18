@@ -1280,7 +1280,8 @@ cs_equation_get_type(const cs_equation_t *eq)
 /*----------------------------------------------------------------------------*/
 
 double
-cs_equation_get_time_eval(const cs_time_step_t *ts, const cs_equation_t *eq)
+cs_equation_get_time_eval(const cs_time_step_t *ts,
+                          const cs_equation_t *eq)
 {
   assert(ts != NULL);
   double time_eval = ts->t_cur; /* default value */
@@ -1299,10 +1300,12 @@ cs_equation_get_time_eval(const cs_time_step_t *ts, const cs_equation_t *eq)
     time_eval = ts->t_cur + 0.5 * dt_cur;
     break;
 
-  case CS_TIME_SCHEME_THETA: {
+  case CS_TIME_SCHEME_THETA:
+  {
     double theta = cs_equation_get_theta_time_val(eq);
     time_eval    = ts->t_cur + theta * dt_cur;
-  } break;
+  }
+  break;
 
   case CS_TIME_SCHEME_EULER_IMPLICIT:
   case CS_TIME_SCHEME_BDF2:
@@ -1352,14 +1355,14 @@ cs_equation_get_flag(const cs_equation_t *eq)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_flag(cs_equation_t *eq, cs_flag_t flag)
+cs_equation_set_flag(cs_equation_t *eq,
+                     cs_flag_t flag)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(eq->param != NULL);
 
   eq->param->flag = flag;
-  ;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1452,16 +1455,16 @@ cs_equation_uses_new_mechanism(const cs_equation_t *eq)
   assert(eq->param != NULL);
 
   if (eq->param->dim == 1) {
-    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)
-        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVCB)
-        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
-        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOCB))
+    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)   ||
+         (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVCB) ||
+         (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)  ||
+         (eq->param->space_scheme == CS_SPACE_SCHEME_CDOCB))
       return true;
   }
   else if (eq->param->dim == 3) {
-    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)
-        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
-        || (eq->param->space_scheme == CS_SPACE_SCHEME_CDOEB))
+    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB) ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB) ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOEB))
       return true;
   }
 
@@ -1490,27 +1493,17 @@ cs_equation_add(const char        *eqname,
                 cs_param_bc_type_t default_bc)
 {
   if (varname == NULL)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               _(" %s: No variable name associated to an equation structure.\n"
-                " Check your initialization."),
-              __func__);
+                " Check your initialization."), __func__);
   if (eqname == NULL)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               _(" %s No equation name associated to an equation structure.\n"
-                " Check your initialization."),
-              __func__);
+                " Check your initialization."), __func__);
   if (cs_equation_by_name(eqname) != NULL)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               _(" %s: Stop adding a new equation.\n"
-                " Equation name %s is already defined."),
-              __func__,
-              eqname);
+                " Equation name %s is already defined."), __func__, eqname);
 
   cs_equation_t *eq = NULL;
 
@@ -1890,7 +1883,8 @@ cs_equation_log_setup(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_default_param(cs_equation_key_t key, const char *keyval)
+cs_equation_set_default_param(cs_equation_key_t key,
+                              const char *keyval)
 {
   if (_n_equations == 0)
     return;
@@ -2922,8 +2916,11 @@ cs_equation_define_context_structures(void)
     /* Not initialized here if it is a restart */
 
     if (eq->scheme_context == NULL)
-      eq->scheme_context = eq->init_context(
-        eq->param, eq->field_id, eq->boundary_flux_id, eq->builder);
+      eq->scheme_context = eq->init_context(eq->param,
+                                            eq->field_id,
+                                            eq->boundary_flux_id,
+                                            eq->builder);
+
 
     /* The following step should be done after the setup stage so that the
        modelling options have set the default flags if needed */
@@ -2982,7 +2979,8 @@ cs_equation_define_core_structure(const cs_equation_t *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_field_values(const cs_mesh_t *mesh, const cs_time_step_t *ts)
+cs_equation_init_field_values(const cs_mesh_t *mesh,
+                              const cs_time_step_t *ts)
 {
   /* Loop on all equations */
 
@@ -3039,7 +3037,8 @@ cs_equation_init_field_values(const cs_mesh_t *mesh, const cs_time_step_t *ts)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_build_system(const cs_mesh_t *mesh, cs_equation_t *eq)
+cs_equation_build_system(const cs_mesh_t *mesh,
+                         cs_equation_t *eq)
 {
   assert(eq != NULL);
 

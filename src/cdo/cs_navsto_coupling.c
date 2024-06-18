@@ -78,7 +78,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_NAVSTO_COUPLING_DBG 4
+#define CS_NAVSTO_COUPLING_DBG 0
 
 /*============================================================================
  * Type definitions

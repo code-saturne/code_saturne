@@ -166,8 +166,8 @@ _handle_non_linearities_settings(const cs_equation_param_t *mom_eqp,
         nsp->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
     }
     else {
-      assert(mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED
-             || mom_eqp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
+      assert(mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED ||
+             mom_eqp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
       nsp->nl_algo_type = CS_PARAM_NL_ALGO_NONE;
     }
     break;
@@ -196,7 +196,8 @@ _handle_non_linearities_settings(const cs_equation_param_t *mom_eqp,
 /*----------------------------------------------------------------------------*/
 
 static bool
-_has_weak_bc(const cs_navsto_param_t *nsp, const cs_equation_param_t *mom_eqp)
+_has_weak_bc(const cs_navsto_param_t *nsp,
+             const cs_equation_param_t *mom_eqp)
 {
   if (nsp == NULL)
     return false;
@@ -207,8 +208,8 @@ _has_weak_bc(const cs_navsto_param_t *nsp, const cs_equation_param_t *mom_eqp)
   if (_has_symmetry(nsp))
     return true;
 
-  if (mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
-      || mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+  if (mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+      mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
     return true;
 
   return false;
@@ -334,10 +335,9 @@ cs_navsto_system_update_model(bool with_thermal)
   if (with_thermal) { /* Thermal system is switch on and relies on the mass flux
                          for the advection */
 
-    if ((nsp->model_flag
-         & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER
-            | CS_NAVSTO_MODEL_BOUSSINESQ))
-        == 0) {
+    if ((nsp->model_flag & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
+                            CS_NAVSTO_MODEL_BOUSSINESQ)) == 0) {
+
 
       /* Thermal system is linked to the Navier-Stokes one but nothing has been
        * set. Add the "minimal" flag. */
@@ -369,11 +369,8 @@ cs_navsto_system_activate(const cs_boundary_t         *boundaries,
                           cs_navsto_param_post_flag_t  post_flag)
 {
   if (model == CS_NAVSTO_N_MODELS)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              "%s: Invalid model for Navier-Stokes.\n",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid model for Navier-Stokes.\n", __func__);
 
   /* Allocate an empty structure */
 
@@ -381,8 +378,11 @@ cs_navsto_system_activate(const cs_boundary_t         *boundaries,
 
   /* Initialize the set of parameters */
 
-  navsto->param = cs_navsto_param_create(
-    boundaries, model, model_flag, algo_coupling, post_flag);
+  navsto->param = cs_navsto_param_create(boundaries,
+                                         model,
+                                         model_flag,
+                                         algo_coupling,
+                                         post_flag);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
@@ -1147,8 +1147,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
         const double gamma = cs_param_saddle_get_augmentation_coef(saddlep);
 
         if (gamma > 1) {
-          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU
-              || saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
+          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU ||
+              saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
             mom_eqp->weak_pena_bc_coeff *= gamma;
         }
       }
@@ -1276,8 +1276,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
         const double gamma = cs_param_saddle_get_augmentation_coef(saddlep);
 
         if (gamma > 1) {
-          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU
-              || saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
+          if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU ||
+              saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB)
             mom_eqp->weak_pena_bc_coeff *= gamma;
         }
       }

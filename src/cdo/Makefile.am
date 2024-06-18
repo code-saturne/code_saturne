@@ -87,9 +87,9 @@ cs_cdocb_priv.h \
 cs_cdoeb_priv.h \
 cs_cdoeb_vecteq.h \
 cs_cdofb_ac.h \
+cs_cdofb_monolithic.h \
 cs_cdofb_monolithic_priv.h \
 cs_cdofb_monolithic_sles.h \
-cs_cdofb_monolithic.h \
 cs_cdofb_navsto.h \
 cs_cdofb_predco.h \
 cs_cdofb_priv.h \
@@ -101,18 +101,18 @@ cs_cdovb_scalsys.h \
 cs_cdovb_vecteq.h \
 cs_cdovcb_scaleq.h \
 cs_dbg.h \
+cs_domain.h \
 cs_domain_op.h \
 cs_domain_setup.h \
-cs_domain.h \
 cs_enforcement.h \
+cs_equation.h \
 cs_equation_bc.h \
 cs_equation_builder.h \
 cs_equation_param.h \
 cs_equation_priv.h \
+cs_equation_system.h \
 cs_equation_system_param.h \
 cs_equation_system_sles.h \
-cs_equation_system.h \
-cs_equation.h \
 cs_evaluate.h \
 cs_flag.h \
 cs_hho_builder.h \
@@ -123,9 +123,9 @@ cs_hodge.h \
 cs_iter_algo.h \
 cs_macfb_advection.h \
 cs_macfb_builder.h \
+cs_macfb_monolithic.h \
 cs_macfb_monolithic_priv.h \
 cs_macfb_monolithic_sles.h \
-cs_macfb_monolithic.h \
 cs_macfb_navsto.h \
 cs_macfb_priv.h \
 cs_macfb_vecteq.h \
@@ -148,9 +148,9 @@ cs_source_term.h \
 cs_static_condensation.h \
 cs_thermal_system.h \
 cs_walldistance.h \
+cs_xdef.h \
 cs_xdef_cw_eval.h \
 cs_xdef_eval.h \
-cs_xdef.h \
 cs_cdo_headers.h
 
 # Library source files
@@ -190,16 +190,16 @@ cs_cdovb_scalsys.c \
 cs_cdovb_vecteq.c \
 cs_cdovcb_scaleq.c \
 cs_dbg.c \
+cs_domain.c \
 cs_domain_op.c \
 cs_domain_setup.c \
-cs_domain.c \
 cs_enforcement.c \
+cs_equation.c \
 cs_equation_bc.c \
 cs_equation_builder.c \
 cs_equation_param.cxx \
 cs_equation_system.c \
 cs_equation_system_param.c \
-cs_equation.c \
 cs_evaluate.c \
 cs_flag.c \
 cs_hho_builder.c \
@@ -234,9 +234,9 @@ cs_source_term.c \
 cs_static_condensation.c \
 cs_thermal_system.c \
 cs_walldistance.c \
+cs_xdef.c \
 cs_xdef_cw_eval.c \
-cs_xdef_eval.c \
-cs_xdef.c
+cs_xdef_eval.c
 
 libcscdo_a_LIBADD =
 

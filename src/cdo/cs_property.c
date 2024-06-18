@@ -191,7 +191,8 @@ _add_new_b_def(cs_property_t     *pty)
 /*----------------------------------------------------------------------------*/
 
 static inline int
-_get_cell_def_id(const cs_lnum_t c_id, const cs_property_t *pty)
+_get_cell_def_id(const cs_lnum_t c_id,
+                 const cs_property_t *pty)
 {
   if (pty->n_definitions > 1) {
 

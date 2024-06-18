@@ -873,10 +873,11 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_advection_field_macb_dface_flux(const cs_macfb_builder_t *macb,
-                                        const cs_adv_field_t     *adv,
-                                        cs_real_t                 time_eval,
-                                        cs_real_t                *fluxes);
+void
+cs_advection_field_macb_dface_flux(const cs_macfb_builder_t *macb,
+                                   const cs_adv_field_t     *adv,
+                                   cs_real_t                 time_eval,
+                                   cs_real_t                *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!

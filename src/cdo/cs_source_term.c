@@ -965,12 +965,9 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         }
         else { /* Scalar-valued case */
 
-          bft_error(
-            __FILE__,
-            __LINE__,
-            0,
-            "%s: Invalid type of definition for a scalar source term in MACFB",
-            __func__);
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid type of definition for a scalar source term in MACFB",
+                    __func__);
         }
         break;
 
@@ -978,9 +975,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       case CS_XDEF_BY_DOF_FUNCTION:
       case CS_XDEF_BY_ARRAY:
       default:
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid type of definition for a source term in MACFB",
                   __func__);
         break;
@@ -989,9 +984,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       break;
 
     default:
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid space scheme for setting the source term.",
                 __func__);
       break;
@@ -2575,16 +2568,9 @@ cs_source_term_fcb_pcsd_by_analytic(const cs_xdef_t           *source,
     switch (cm->type) {
 
     case FVM_CELL_TETRA:
-      {
+    {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
-      qfunc(time_eval,
-            xv,
-            xv + 3,
-            xv + 6,
-            xv + 9,
-            cm->vol_c,
-            ac->func,
-            ac->input,
+      qfunc(time_eval, xv, xv+3, xv+6, xv+9, cm->vol_c, ac->func, ac->input,
             &cell_values);
     } break;
 
@@ -2610,14 +2596,9 @@ cs_source_term_fcb_pcsd_by_analytic(const cs_xdef_t           *source,
           short int v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-          qfunc(time_eval,
-                cm->xc,
-                xv + 3 * v0,
-                xv + 3 * v1,
-                xv + 3 * v2,
-                hf_coef * pfq.meas,
-                ac->func,
-                ac->input,
+          qfunc(time_eval, cm->xc, xv+3*v0, xv+3*v1, xv+3*v2,
+                hf_coef*pfq.meas,
+                ac->func, ac->input,
                 &cell_values);
         } break;
 
@@ -2633,15 +2614,8 @@ cs_source_term_fcb_pcsd_by_analytic(const cs_xdef_t           *source,
             const double   *xv0 = xv + 3 * cm->e2v_ids[2 * e0];
             const double   *xv1 = xv + 3 * cm->e2v_ids[2 * e0 + 1];
 
-            qfunc(time_eval,
-                  cm->xc,
-                  pfq.center,
-                  xv0,
-                  xv1,
-                  hf_coef * tef[e],
-                  ac->func,
-                  ac->input,
-                  &cell_values);
+            qfunc(time_eval, cm->xc, pfq.center, xv0, xv1,
+                  hf_coef*tef[e], ac->func, ac->input, &cell_values);
           }
         } break;
 
@@ -2901,17 +2875,12 @@ cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
     switch (cm->type) {
 
     case FVM_CELL_TETRA:
-      {
+    {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
-      qfunc(time_eval,
-            xv,
-            xv + 3,
-            xv + 6,
-            xv + 9,
-            cm->vol_c,
-            ac->func,
-            ac->input,
+            qfunc(time_eval, xv, xv+3, xv+6, xv+9, cm->vol_c,
+            ac->func, ac->input,
             cell_values);
+
     } break;
 
     case FVM_CELL_PYRAM:
@@ -2936,14 +2905,9 @@ cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
           short int v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-          qfunc(time_eval,
-                cm->xc,
-                xv + 3 * v0,
-                xv + 3 * v1,
-                xv + 3 * v2,
-                hf_coef * pfq.meas,
-                ac->func,
-                ac->input,
+          qfunc(time_eval, cm->xc, xv+3*v0, xv+3*v1, xv+3*v2,
+                hf_coef*pfq.meas,
+                ac->func, ac->input,
                 cell_values);
         } break;
 
@@ -2959,14 +2923,9 @@ cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
             const double   *xv0 = xv + 3 * cm->e2v_ids[2 * e0];
             const double   *xv1 = xv + 3 * cm->e2v_ids[2 * e0 + 1];
 
-            qfunc(time_eval,
-                  cm->xc,
-                  pfq.center,
-                  xv0,
-                  xv1,
-                  hf_coef * tef[e],
-                  ac->func,
-                  ac->input,
+            qfunc(time_eval, cm->xc, pfq.center, xv0, xv1,
+                  hf_coef*tef[e],
+                  ac->func, ac->input,
                   cell_values);
           }
         } break;
@@ -3123,15 +3082,10 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
           short int v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-          _hho_add_tetra_by_val(const_val[0],
-                                cbf,
-                                cm->xv + 3 * v0,
-                                cm->xv + 3 * v1,
-                                cm->xv + 3 * v2,
+          _hho_add_tetra_by_val(const_val[0], cbf,
+                                cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2,
                                 cm->xc,
-                                hf_coef * pfq.meas,
-                                cb,
-                                cell_values);
+                                hf_coef * pfq.meas, cb, cell_values);
         } break;
 
         default: {
@@ -3145,15 +3099,9 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
             const double   *xv0 = cm->xv + 3 * cm->e2v_ids[2 * e0];
             const double   *xv1 = cm->xv + 3 * cm->e2v_ids[2 * e0 + 1];
 
-            _hho_add_tetra_by_val(const_val[0],
-                                  cbf,
-                                  xv0,
-                                  xv1,
-                                  pfq.center,
-                                  cm->xc,
-                                  hf_coef * tef[e],
-                                  cb,
-                                  cell_values);
+            _hho_add_tetra_by_val(const_val[0], cbf,
+                                  xv0, xv1, pfq.center, cm->xc,
+                                  hf_coef*tef[e], cb, cell_values);
           }
         } break;
 
