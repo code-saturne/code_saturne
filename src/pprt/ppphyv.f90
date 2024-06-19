@@ -62,9 +62,8 @@
 !> \param[in]     mbrom         indicator of prescribed density at the boundary
 !_______________________________________________________________________________
 
-
-subroutine cs_physical_properties1 &
- ( mbrom  )
+subroutine cs_physical_properties1(mbrom) &
+  bind(C, name='cs_f_physical_properties1')
 
 !===============================================================================
 ! Module files
@@ -84,7 +83,7 @@ use ppincl
 use ppcpfu
 use cs_c_bindings
 use mesh
-
+use, intrinsic :: iso_c_binding
 use field
 
 !===============================================================================
@@ -171,7 +170,8 @@ end subroutine cs_physical_properties1
 !______________________________________________________________________________!
 !_______________________________________________________________________________
 
-subroutine cs_physical_properties2
+subroutine cs_physical_properties2() &
+  bind(C, name='cs_f_physical_properties2')
 
 !===============================================================================
 ! Module files
@@ -190,6 +190,7 @@ use cpincl
 use ppincl
 use mesh
 use cs_c_bindings
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 

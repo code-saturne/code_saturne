@@ -236,41 +236,4 @@ contains
 
   !=============================================================================
 
-  !> \brief Modify eddy viscosity using the Reboud correction:
-  !>\f[
-  !> \mu_t'= \dfrac{\rho_v + (1-\alpha)^{mcav}(\rho_l-\rho_v)}{\rho}\mu_t.
-  !>\f]
-  !>
-
-  !> \param[in]      crom   density array
-  !> \param[in]      voidf  void fraction array
-  !> \param[in,out]  visct  turbulent viscosity
-
-  subroutine cavitation_correct_visc_turb (crom, voidf, visct)
-
-    use mesh
-    use numvar
-    use field
-    use vof
-
-    ! Arguments
-
-    double precision crom(ncelet), voidf(ncelet)
-    double precision visct(ncelet)
-
-    ! Local variables
-
-    integer iel
-    double precision frho
-
-    do iel = 1, ncel
-      frho =  ( rho2 + (1.d0-voidf(iel))**mcav*(rho1 - rho2) ) &
-             /max(crom(iel),1.d-12)
-      visct(iel) = frho*visct(iel)
-    enddo
-
-  end subroutine cavitation_correct_visc_turb
-
-  !=============================================================================
-
 end module cavitation

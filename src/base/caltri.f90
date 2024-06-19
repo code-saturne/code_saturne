@@ -105,7 +105,7 @@ double precision, pointer, dimension(:) :: porosi => null()
 
 procedure() :: armtps, atmsol, cplact, cplsyn, cscini
 procedure() :: cs_f_user_extra_operations, ecrlis, iniva0, inivar
-procedure() :: reqsui, phyvar, stusui, trbsui, uiexop, uiporo
+procedure() :: reqsui, stusui, trbsui, uiexop, uiporo
 
 interface
 
@@ -652,7 +652,7 @@ if (icdo.ge.1) then ! CDO mode
 endif
 
 iterns = -1
-call phyvar(nvar, nscal, iterns, dt)
+call cs_physical_properties_update(iterns)
 
 !===============================================================================
 ! Initialization for the atmospheric soil model

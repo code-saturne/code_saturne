@@ -162,6 +162,7 @@ cs_parall.h \
 cs_part_to_block.h \
 cs_physical_constants.h \
 cs_physical_properties.h \
+cs_physical_properties_default.h \
 cs_porosity_from_scan.h \
 cs_porous_model.h \
 cs_post.h \
@@ -361,6 +362,7 @@ cs_parameters.c \
 cs_parameters_check.c \
 cs_physical_constants.c \
 cs_physical_properties.c \
+cs_physical_properties_default.c \
 cs_porosity_from_scan.c \
 cs_porous_model.c \
 cs_post.c \
@@ -424,7 +426,6 @@ iprbla.f90 \
 majgeo.f90 \
 modini.f90 \
 mmtycl.f90 \
-phyvar.f90 \
 schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \

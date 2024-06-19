@@ -157,8 +157,7 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 !===============================================================================
 
 procedure() :: atr1vf, cou1do, debvtl, distpr2
-procedure() :: cs_tagmro
-procedure() :: phyvar, pthrbm, schtmp
+procedure() :: pthrbm, schtmp
 
 interface
 
@@ -581,7 +580,7 @@ endif
 ! Disable solid cells in fluid_solid mode
 if (fluid_solid) call cs_porous_model_set_has_disable_flag(1)
 iterns = -1
-call phyvar(nvar, nscal, iterns, dt)
+call cs_physical_properties_update(iterns)
 
 if (itrale.gt.0) then
   call schtmp(nscal, 2)
@@ -903,8 +902,8 @@ do while (iterns.le.nterup)
   !     A PARTIR D'ICI
 
   ! Compute wall distance
-  ! TODO it has to be moved before phyvar, for that bc types have to be known
-  ! (itypfb)
+  ! TODO it has to be moved before cs_physical_properties_update, for
+  ! that bc types have to be known (itypfb)
 
   ! (New algorithm. the old one is in cs_boundary_condition_set_coeffs)
   ! In ALE, this computation is done only for the first step.
@@ -1023,7 +1022,7 @@ do while (iterns.le.nterup)
 
       ! Disable solid cells in fluid_solid mode
       if (fluid_solid) call cs_porous_model_set_has_disable_flag(1)
-      call phyvar(nvar, nscal, iterns, dt)
+      call cs_physical_properties_update(iterns)
 
       ! Correct the scalar to ensure scalar conservation
       call field_get_key_id("coupled_with_vel_p", key_buoyant_id)

@@ -157,12 +157,6 @@ void
 cs_user_extra_operations_initialize_wrapper(void);
 
 void
-cs_user_physical_properties_wrapper(void);
-
-void
-cs_user_physical_properties_turb_viscosity_wrapper(void);
-
-void
 cs_user_source_terms_wrapper(int         f_id,
                              cs_real_t  *st_exp,
                              cs_real_t  *st_imp);

@@ -2146,26 +2146,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C user function for physical properties
-
-    subroutine user_physical_properties()  &
-      bind(C, name='cs_user_physical_properties_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine user_physical_properties
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C user function for physical properties
-
-    subroutine cs_user_physical_properties_turb_viscosity_wrapper()  &
-      bind(C, name='cs_user_physical_properties_turb_viscosity_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_user_physical_properties_turb_viscosity_wrapper
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C user function
 
     subroutine user_source_terms(f_id, st_exp, st_imp)  &
@@ -3412,18 +3392,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for enthalpy-temperature conversion at cells
-
-    subroutine cs_ht_convert_h_to_t_cells(h, t)                    &
-      bind(C, name='cs_ht_convert_h_to_t_cells')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(in) :: h
-      real(kind=c_double), dimension(*), intent(inout) :: t
-    end subroutine cs_ht_convert_h_to_t_cells
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for enthalpy-temperature conversion at faces
 
     subroutine cs_ht_convert_h_to_t_faces(h, t)                    &
@@ -3523,7 +3491,7 @@ module cs_c_bindings
 
     subroutine cs_turbulence_init_by_ref_quantities() &
       bind(C, name='cs_turbulence_init_by_ref_quantities')
-     use, intrinsic :: iso_c_binding
+      use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_turbulence_init_by_ref_quantities
 
@@ -3561,6 +3529,16 @@ module cs_c_bindings
        implicit none
        real(kind=c_double), intent(inout) :: t, p, h
     end subroutine cs_atmo_aerosol_ssh_set_t_p_h
+
+    !---------------------------------------------------------------------------
+    ! Interface to C function for physical properties variable
+
+    subroutine cs_physical_properties_update(iterns) &
+      bind(C, name='cs_physical_properties_update')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iterns
+    end subroutine cs_physical_properties_update
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 

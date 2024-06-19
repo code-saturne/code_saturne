@@ -39,8 +39,9 @@
 !______________________________________________________________________________!
 !  mode           name               role                                      !
 !______________________________________________________________________________!
-!> \param[in]     nscal              total number of scalars
-!> \param[in]     iappel             call number (before of after phyvar
+!> \param[in]     nscal      total number of scalars
+!> \param[in]     iappel     call id (before of
+!>                            after cs_physical_properties_update
 !______________________________________________________________________________
 
 subroutine schtmp &
@@ -231,7 +232,7 @@ if (iappel.eq.1) then
 
 
 !===============================================================================
-! 2.  JUSTE APRES PHYVAR (ET DONC AVANT NAVSTO)
+! 2.  JUSTE APRES cs_physical_properties_update (ET DONC AVANT NAVSTO)
 !===============================================================================
 
 

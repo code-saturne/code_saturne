@@ -164,17 +164,6 @@ void CS_PROCF (cstini, CSTINI) (void);
 void CS_PROCF (uiporo, UIPORO) (void);
 
 /*----------------------------------------------------------------------------
- * User law for material Properties
- *
- * Fortran Interface:
- *
- * subroutine uiphyv
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uiphyv, UIPHYV)(void);
-
-/*----------------------------------------------------------------------------
  * extra operations
  *
  * Fortran Interface:
@@ -341,6 +330,13 @@ cs_gui_physical_constants(void);
 
 void
 cs_gui_physical_properties(void);
+
+/*----------------------------------------------------------------------------
+ * User law for material properties
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_physical_variable(void);
 
 /*----------------------------------------------------------------------------
  * Determine porosity model type

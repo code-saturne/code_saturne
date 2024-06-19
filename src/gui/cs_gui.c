@@ -2097,158 +2097,6 @@ void CS_PROCF(uiporo, UIPORO)(void)
 }
 
 /*----------------------------------------------------------------------------
- * User law for material properties
- *
- * Fortran Interface:
- *
- * subroutine uiphyv
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uiphyv, UIPHYV)(void)
-{
-  double time0 = cs_timer_wtime();
-
-  int n_zones_pp
-    = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
-  int n_zones = cs_volume_zone_n_zones();
-  /* law for density (built-in for all current integrated physical models) */
-  if (cs_glob_fluid_properties->irovar == 1) {
-    cs_field_t *c_rho = CS_F_(rho);
-    if (n_zones_pp > 0) {
-      for (int z_id = 0; z_id < n_zones; z_id++) {
-        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
-          _physical_property(c_rho, z);
-      }
-    }
-  }
-
-  /* law for molecular viscosity */
-  if (cs_glob_fluid_properties->ivivar == 1) {
-    cs_field_t *c_mu = CS_F_(mu);
-    if (n_zones_pp > 0) {
-      for (int z_id = 0; z_id < n_zones; z_id++) {
-        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
-          _physical_property(c_mu, z);
-      }
-    }
-  }
-
-  /* law for specific heat */
-  if (cs_glob_fluid_properties->icp > 0) {
-    cs_field_t *c_cp = CS_F_(cp);
-    if (n_zones_pp > 0) {
-      for (int z_id = 0; z_id < n_zones; z_id++) {
-        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
-          _physical_property(c_cp, z);
-      }
-    }
-  }
-
-  /* law for thermal conductivity */
-  if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
-
-    cs_field_t  *cond_dif = NULL;
-
-    cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(e_tot)};
-
-    for (int i = 0; i < 3; i++)
-      if (_th_f[i]) {
-        if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
-          int k = cs_field_key_id("diffusivity_id");
-          int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
-          if (cond_diff_id > -1) {
-            cond_dif = cs_field_by_id(cond_diff_id);
-            if (n_zones_pp > 0) {
-              for (int z_id = 0; z_id < n_zones; z_id++) {
-                const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-                if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
-                  _physical_property(cond_dif, z);
-              }
-            }
-          }
-          break;
-        }
-      }
-  }
-
-  /* law for volumic viscosity (compressible model) */
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-    if (cs_glob_fluid_properties->iviscv > 0) {
-      cs_field_t *c = cs_field_by_name_try("volume_viscosity");
-      if (n_zones_pp > 0 && c != NULL) {
-        for (int z_id = 0; z_id < n_zones; z_id++) {
-          const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-          if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
-            _physical_property(c, z);
-        }
-      }
-    }
-  }
-
-  /* law for scalar diffusivity */
-  int n_fields = cs_field_n_fields();
-  const int kivisl = cs_field_key_id("diffusivity_id");
-  const int kscavr = cs_field_key_id("first_moment_id");
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-
-    const cs_field_t  *f = cs_field_by_id(f_id);
-
-    if (   (f->type & CS_FIELD_VARIABLE)
-        && (f->type & CS_FIELD_USER)) {
-
-      if (   cs_field_get_key_int(f, kscavr) < 0
-          && cs_field_get_key_int(f, kivisl) >= 0) {
-
-        /* Get diffusivity pointer.
-         * diff_id is >= 0 since it is a part of the if test
-         * above!
-         */
-        int diff_id = cs_field_get_key_int(f, kivisl);
-        cs_field_t *c_prop = cs_field_by_id(diff_id);
-
-        if (n_zones_pp > 0) {
-          for (int z_id = 0; z_id < n_zones; z_id++) {
-            const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-            if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
-              const char *law = _property_formula(c_prop->name, z->name);
-              if (law != NULL) {
-                _physical_property(c_prop, z);
-                if (cs_glob_fluid_properties->irovar == 1) {
-                  cs_real_t *c_rho = CS_F_(rho)->val;
-                  for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
-                    cs_lnum_t c_id = z->elt_ids[e_id];
-                    c_prop->val[c_id] *= c_rho[c_id];
-                  }
-                }
-                else {
-                  for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
-                    cs_lnum_t c_id = z->elt_ids[e_id];
-                    c_prop->val[c_id] *= cs_glob_fluid_properties->ro0;
-                  }
-                }
-                cs_gui_add_mei_time(cs_timer_wtime() - time0);
-#if _XML_DEBUG
-                bft_printf("==> %s\n", __func__);
-                bft_printf("--law for the diffusivity coefficient "
-                           "of the scalar '%s' over zone '%s':\n  %s\n",
-                           f->name, z->name, law);
-#endif
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * extra operations
  *
  * Fortran Interface:
@@ -5773,6 +5621,156 @@ cs_gui_time_tables(void)
   }
 
 }
+
+/*----------------------------------------------------------------------------
+ * User law for material properties
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_physical_variable(void)
+{
+  double time0 = cs_timer_wtime();
+
+  int n_zones_pp
+    = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
+  int n_zones = cs_volume_zone_n_zones();
+  /* law for density (built-in for all current integrated physical models) */
+  if (cs_glob_fluid_properties->irovar == 1) {
+    cs_field_t *c_rho = CS_F_(rho);
+    if (n_zones_pp > 0) {
+      for (int z_id = 0; z_id < n_zones; z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+          _physical_property(c_rho, z);
+      }
+    }
+  }
+
+  /* law for molecular viscosity */
+  if (cs_glob_fluid_properties->ivivar == 1) {
+    cs_field_t *c_mu = CS_F_(mu);
+    if (n_zones_pp > 0) {
+      for (int z_id = 0; z_id < n_zones; z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+          _physical_property(c_mu, z);
+      }
+    }
+  }
+
+  /* law for specific heat */
+  if (cs_glob_fluid_properties->icp > 0) {
+    cs_field_t *c_cp = CS_F_(cp);
+    if (n_zones_pp > 0) {
+      for (int z_id = 0; z_id < n_zones; z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+          _physical_property(c_cp, z);
+      }
+    }
+  }
+
+  /* law for thermal conductivity */
+  if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
+
+    cs_field_t  *cond_dif = NULL;
+
+    cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(e_tot)};
+
+    for (int i = 0; i < 3; i++)
+      if (_th_f[i]) {
+        if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
+          int k = cs_field_key_id("diffusivity_id");
+          int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
+          if (cond_diff_id > -1) {
+            cond_dif = cs_field_by_id(cond_diff_id);
+            if (n_zones_pp > 0) {
+              for (int z_id = 0; z_id < n_zones; z_id++) {
+                const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+                if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+                  _physical_property(cond_dif, z);
+              }
+            }
+          }
+          break;
+        }
+      }
+  }
+
+  /* law for volumic viscosity (compressible model) */
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
+    if (cs_glob_fluid_properties->iviscv > 0) {
+      cs_field_t *c = cs_field_by_name_try("volume_viscosity");
+      if (n_zones_pp > 0 && c != NULL) {
+        for (int z_id = 0; z_id < n_zones; z_id++) {
+          const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+          if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+            _physical_property(c, z);
+        }
+      }
+    }
+  }
+
+  /* law for scalar diffusivity */
+  int n_fields = cs_field_n_fields();
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    const cs_field_t  *f = cs_field_by_id(f_id);
+
+    if (   (f->type & CS_FIELD_VARIABLE)
+        && (f->type & CS_FIELD_USER)) {
+
+      if (   cs_field_get_key_int(f, kscavr) < 0
+          && cs_field_get_key_int(f, kivisl) >= 0) {
+
+        /* Get diffusivity pointer.
+         * diff_id is >= 0 since it is a part of the if test
+         * above!
+         */
+        int diff_id = cs_field_get_key_int(f, kivisl);
+        cs_field_t *c_prop = cs_field_by_id(diff_id);
+
+        if (n_zones_pp > 0) {
+          for (int z_id = 0; z_id < n_zones; z_id++) {
+            const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+            if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+              const char *law = _property_formula(c_prop->name, z->name);
+              if (law != NULL) {
+                _physical_property(c_prop, z);
+                if (cs_glob_fluid_properties->irovar == 1) {
+                  cs_real_t *c_rho = CS_F_(rho)->val;
+                  for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+                    cs_lnum_t c_id = z->elt_ids[e_id];
+                    c_prop->val[c_id] *= c_rho[c_id];
+                  }
+                }
+                else {
+                  for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+                    cs_lnum_t c_id = z->elt_ids[e_id];
+                    c_prop->val[c_id] *= cs_glob_fluid_properties->ro0;
+                  }
+                }
+                cs_gui_add_mei_time(cs_timer_wtime() - time0);
+#if _XML_DEBUG
+                bft_printf("==> %s\n", __func__);
+                bft_printf("--law for the diffusivity coefficient "
+                           "of the scalar '%s' over zone '%s':\n  %s\n",
+                           f->name, z->name, law);
+#endif
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+}
+
+
 
 /*----------------------------------------------------------------------------*/
 
