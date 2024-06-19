@@ -268,6 +268,8 @@ _get_face_value_analytic(cs_lnum_t f_id, cs_real_t t_eval, const cs_xdef_t *def)
   cs_real_t result;
 
   cx->func(t_eval, 1, NULL, f_xc, true, cx->input, &result);
+
+  return result;
 }
 
 /*----------------------------------------------------------------------------*/
