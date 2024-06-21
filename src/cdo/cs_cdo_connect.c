@@ -1118,6 +1118,7 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
   }
   else {
     connect->f2xf   = NULL;
+    connect->e2f    = NULL;
     connect->f2f_ed = NULL;
   }
 
