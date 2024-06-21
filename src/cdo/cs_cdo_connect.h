@@ -65,8 +65,6 @@ typedef struct {
 
   cs_lnum_t              n_vertices;
 
-  cs_adjacency_t *e2f; /* edges --> faces connectivity */
-
   /* range set and interface set structures for scalar-valued vertex DoFs
      (these structures may be not allocated according to the settings) */
 
@@ -81,6 +79,7 @@ typedef struct {
   cs_gnum_t              n_g_edges;
 
   cs_adjacency_t        *e2v; /* edge --> vertices connectivity */
+  cs_adjacency_t        *e2f; /* edge --> faces connectivity */
 
   /* range set and interface set structures for scalar-valued edge DoFs
      (these structures may be not allocated according to the settings) */
@@ -113,7 +112,7 @@ typedef struct {
   cs_lnum_t              n_cells_with_ghosts;
 
   fvm_element_t         *cell_type;   /* type of cell */
-  cs_flag_t             *cell_flag;   /* Flag (Border/Solid) */
+  cs_flag_t             *cell_flag;   /* flag (border/solid) */
   cs_adjacency_t        *c2f;         /* cell --> faces connectivity */
   cs_adjacency_t        *c2e;         /* cell --> edges connectivity */
   cs_adjacency_t        *c2v;         /* cell --> vertices connectivity */

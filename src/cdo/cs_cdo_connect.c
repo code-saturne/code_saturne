@@ -1115,11 +1115,14 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
 
     connect->f2f_ed = _build_f2f_ed_through_edges(connect);
     connect->f2xf = _build_f2xf_through_cell(connect);
+
   }
   else {
-    connect->f2xf   = NULL;
+
     connect->e2f    = NULL;
     connect->f2f_ed = NULL;
+    connect->f2xf   = NULL;
+
   }
 
   /* Members to handle assembly process and parallel sync. */
