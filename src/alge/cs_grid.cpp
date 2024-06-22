@@ -4995,8 +4995,10 @@ _native_from_msr(cs_grid_t  *g)
 
   /* Synchronize matrix diagonal values */
 
+#if 0
   if (g->halo != NULL)
     cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_da, db_stride);
+#endif
 
   cs_matrix_destroy(&(g->_matrix));
   g->matrix = NULL;
@@ -5004,17 +5006,17 @@ _native_from_msr(cs_grid_t  *g)
 }
 
 /*----------------------------------------------------------------------------
- * Build MSR matrix from edge-based matrix values.
+ * Build matrix from edge-based matrix values.
  *
  * parameters:
  *   grid <-> grid structure
  *----------------------------------------------------------------------------*/
 
 static void
-_msr_from_native(cs_grid_t  *g)
-
+_matrix_from_native(cs_matrix_type_t   cm_type,
+                    cs_grid_t         *g)
 {
-  g->matrix_struct = cs_matrix_structure_create(CS_MATRIX_MSR,
+  g->matrix_struct = cs_matrix_structure_create(cm_type,
                                                 g->n_rows,
                                                 g->n_cols_ext,
                                                 g->n_faces,
@@ -5033,6 +5035,8 @@ _msr_from_native(cs_grid_t  *g)
                              g->face_cell,
                              g->da,
                              g->xa);
+
+  g->matrix = g->_matrix;
 }
 
 /*----------------------------------------------------------------------------
@@ -5903,21 +5907,6 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
    _compute_coarse_quantities_msr(f, c);
 
-    /* Merge grids if we are below the threshold */
-#if defined(HAVE_MPI)
-   if (merge_stride > 1 && c->n_ranks > 1 && recurse == 0) {
-      cs_gnum_t  _n_ranks = c->n_ranks;
-      cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
-      if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
-          || c->n_g_rows < merge_rows_glob_threshold) {
-        _native_from_msr(c);
-        _merge_grids(c, merge_stride, verbosity);
-        if (c->n_rows > 0)
-          _msr_from_native(c);
-      }
-    }
-#endif
-
   }
 
   else if (f->use_faces) {
@@ -5932,40 +5921,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
     if (c->halo != NULL)
       cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_stride);
 
-    /* Merge grids if we are below the threshold */
-
-#if defined(HAVE_MPI)
-    if (merge_stride > 1 && c->n_ranks > 1 && recurse == 0) {
-      cs_gnum_t  _n_ranks = c->n_ranks;
-      cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
-      if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
-          || c->n_g_rows < merge_rows_glob_threshold)
-        _merge_grids(c, merge_stride, verbosity);
-    }
-#endif
-
-    c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
-                                                  c->n_rows,
-                                                  c->n_cols_ext,
-                                                  c->n_faces,
-                                                  c->face_cell,
-                                                  c->halo,
-                                                  NULL);
-
-    c->_matrix = cs_matrix_create(c->matrix_struct);
-
-    cs_matrix_set_alloc_mode(c->_matrix, c->alloc_mode);
-
-    cs_matrix_set_coefficients(c->_matrix,
-                               c->symmetric,
-                               c->db_size,
-                               c->eb_size,
-                               c->n_faces,
-                               c->face_cell,
-                               c->da,
-                               c->xa);
-
-    c->matrix = c->_matrix;
+    _matrix_from_native(coarse_matrix_type, c);
 
     /* Apply tuning if needed */
 
@@ -6029,9 +5985,9 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                     coarsening_type,
                                     aggregation_limit / recurse,
                                     verbosity,
-                                    merge_stride,
-                                    merge_rows_mean_threshold,
-                                    merge_rows_glob_threshold,
+                                    0, // merge_stride,
+                                    0, // merge_rows_mean_threshold,
+                                    0, //merge_rows_glob_threshold,
                                     relaxation_parameter);
 
     /* Project coarsening */
@@ -6063,6 +6019,29 @@ cs_grid_coarsen(const cs_grid_t      *f,
     cs_grid_destroy(&c);
     c = cc;
   }
+
+  /* Merge grids if we are below the threshold */
+
+#if defined(HAVE_MPI)
+
+  if (merge_stride > 1 && c->n_ranks > 1) {
+    cs_gnum_t  _n_ranks = c->n_ranks;
+    cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
+    if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
+        || c->n_g_rows < merge_rows_glob_threshold) {
+      if (c->_xa == NULL && c->n_faces > 0)
+        _native_from_msr(c);
+      _merge_grids(c, merge_stride, verbosity);
+      if (c->_matrix != nullptr) {
+        cs_matrix_type_t cm_type = cs_matrix_get_type(c->matrix);
+        cs_matrix_destroy(&(c->_matrix));
+        cs_matrix_structure_destroy(&(c->matrix_struct));
+        _matrix_from_native(cm_type, c);
+      }
+    }
+  }
+
+#endif
 
   if (f->use_faces)
     cs_matrix_set_mesh_association(c->_matrix,
@@ -6148,7 +6127,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
     if (c->n_ranks > 1 && merge_stride > 1) {
       _native_from_msr(c);
       _merge_grids(c, merge_stride, verbosity);
-      _msr_from_native(c);
+      _matrix_from_native(CS_MATRIX_MSR, c);
     }
 #endif
   }
@@ -6175,7 +6154,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
       _merge_grids(c, merge_stride, verbosity);
 #endif
 
-    _msr_from_native(c);
+    _matrix_from_native(CS_MATRIX_MSR, c);
   }
 
   c->matrix = c->_matrix;
