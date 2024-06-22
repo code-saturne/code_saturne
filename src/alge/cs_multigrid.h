@@ -198,6 +198,27 @@ cs_multigrid_set_coarsening_options
    double                p0p1_relax,
    int                   postprocess_block_size);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set specific multigrid coarsening parameters for fine grids.
+ *
+ * \param[in, out]  mg                    pointer to multigrid info and context
+ * \param[in]       f_settings_threshold  grids of this level or higher use
+ *                                        standard (coarse grid) settings.
+ * \param[in]       aggregation_limit     maximum allowed fine rows
+ *                                        per coarse row
+ * \param[in]       coarsening_type       coarsening type;
+ *                                        see \ref cs_grid_coarsening_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_coarsening_options_fine_grid
+  (cs_multigrid_t       *mg,
+   int                   f_settings_threshold,
+   int                   aggregation_limit,
+   cs_grid_coarsening_t  coarsening_type);
+
 /*----------------------------------------------------------------------------
  * Set multigrid parameters for associated iterative solvers.
  *
@@ -292,18 +313,18 @@ void
 cs_multigrid_set_max_cycles(cs_multigrid_t     *mg,
                             int                 n_max_cycles);
 
-/*----------------------------------------------------------------------------
- * Return solver type used on fine mesh.
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Indicate if a multigrid solver requires an MSR matrix input.
  *
- * parameters:
- *   mg <-- pointer to multigrid info and context
+ * \param[in]  mg  pointer to multigrid info and context
  *
- * returns:
- *   type of smoother for descent (used for fine mesh)
- *----------------------------------------------------------------------------*/
+ * \return   true if MSR is needed, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
 
-cs_sles_it_type_t
-cs_multigrid_get_fine_solver_type(const cs_multigrid_t  *mg);
+bool
+cs_multigrid_need_msr(const cs_multigrid_t  *mg);
 
 /*----------------------------------------------------------------------------
  * Setup multigrid sparse linear equation solver.

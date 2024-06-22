@@ -279,9 +279,14 @@ struct _cs_multigrid_t {
   cs_multigrid_type_t     type;     /* Multigrid type */
   cs_multigrid_subtype_t  subtype;  /* Multigrid subtype */
 
-  int                     aggregation_limit;  /* Maximum allowed fine rows
-                                                 per coarse cell */
-  cs_grid_coarsening_t    coarsening_type;    /* Coarsening traversal type */
+  int                     f_settings_threshold;  /* Maximum level considered
+                                                    as a fine grid for specific
+                                                    settings */
+  int                     aggregation_limit[2];  /* Maximum allowed fine rows
+                                                    per coarse cell (for fine
+                                                    and coarse grids) */
+  cs_grid_coarsening_t    coarsening_type[2];    /* Coarsening traversal type
+                                                   (for fine and coarse grids) */
 
   int        n_levels_max;       /* Maximum number of grid levels */
   cs_gnum_t  n_g_rows_min;       /* Global number of rows on coarse grids
@@ -497,17 +502,41 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
     cs_log_printf(CS_LOG_SETUP,
                   _("  Multigrid preconditioner parameters:\n"));
 
-  cs_log_printf(CS_LOG_SETUP,
-                _("  Coarsening type:                   %s\n"
-                  "    Max fine rows per coarse row:    %d\n"
-                  "    Maximum number of levels :       %d\n"
-                  "    Minimum number of coarse rows:   %llu\n"
-                  "    P0/P1 relaxation parameter:      %g\n"
-                  "  Maximum number of cycles:          %d\n"),
-                _(cs_grid_coarsening_type_name[mg->coarsening_type]),
-                mg->aggregation_limit,
-                mg->n_levels_max, (unsigned long long)(mg->n_g_rows_min),
-                mg->p0p1_relax, mg->info.n_max_cycles);
+  if (mg->f_settings_threshold < 1) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Coarsening type:                   %s\n"
+                    "    Max fine rows per coarse row:    %d\n"
+                    "    Maximum number of levels :       %d\n"
+                    "    Minimum number of coarse rows:   %llu\n"
+                    "    P0/P1 relaxation parameter:      %g\n"
+                    "  Maximum number of cycles:          %d\n"),
+                  _(cs_grid_coarsening_type_name[mg->coarsening_type[1]]),
+                  mg->aggregation_limit[1],
+                  mg->n_levels_max, (unsigned long long)(mg->n_g_rows_min),
+                  mg->p0p1_relax, mg->info.n_max_cycles);
+  }
+  else {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Coarsening:\n"
+                    "    Levels 0 - %d:\n"
+                    "      Coarsening type:               %s\n"
+                    "      Max fine rows per coarse row:  %d\n"
+                    "    Levels %d and coarser:\n"
+                    "      Coarsening type:               %s\n"
+                    "      Max fine rows per coarse row:  %d\n"
+                    "    Maximum number of levels :       %d\n"
+                    "    Minimum number of coarse rows:   %llu\n"
+                    "    P0/P1 relaxation parameter:      %g\n"
+                    "  Maximum number of cycles:          %d\n"),
+                  mg->f_settings_threshold-1,
+                  _(cs_grid_coarsening_type_name[mg->coarsening_type[0]]),
+                  mg->aggregation_limit[0],
+                  mg->f_settings_threshold,
+                  _(cs_grid_coarsening_type_name[mg->coarsening_type[1]]),
+                  mg->aggregation_limit[1],
+                  mg->n_levels_max, (unsigned long long)(mg->n_g_rows_min),
+                  mg->p0p1_relax, mg->info.n_max_cycles);
+  }
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
@@ -609,13 +638,33 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                                   N_("restrict:"), N_("prolong:"),
                                   N_("BLAS")};
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                 _("\n"
-                   "  Multigrid:\n"
-                   "    %s\n"
-                   "    Coarsening: %s\n"),
-                _(cs_multigrid_type_name[mg->type]),
-                _(cs_grid_coarsening_type_name[mg->coarsening_type]));
+  if (mg->f_settings_threshold < 1) {
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("\n"
+         "  Multigrid:\n"
+         "    %s\n"
+         "    Coarsening                     : %s, r %d\n"),
+       _(cs_multigrid_type_name[mg->type]),
+       _(cs_grid_coarsening_type_name[mg->coarsening_type[1]]),
+       mg->aggregation_limit[1]);
+  }
+  else {
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("\n"
+         "  Multigrid:\n"
+         "    %s\n"
+         "    Coarsening (0 - %d)             : %s, r %d\n"
+         "    Coarsening (%d +)               : %s, r %d\n"),
+       _(cs_multigrid_type_name[mg->type]),
+       mg->f_settings_threshold-1,
+       _(cs_grid_coarsening_type_name[mg->coarsening_type[0]]),
+       mg->aggregation_limit[0],
+       mg->f_settings_threshold,
+       _(cs_grid_coarsening_type_name[mg->coarsening_type[1]]),
+       mg->aggregation_limit[1]);
+  }
 
   const char *stage_type_name[] =
     {"Descent smoother              ",
@@ -1513,7 +1562,8 @@ _multigrid_create_k_cycle_bottom_smoother(cs_multigrid_t  *parent)
 
   mg->subtype = CS_MULTIGRID_BOTTOM_SMOOTHE;
   mg->info.is_pc = true;
-  mg->aggregation_limit = 8;
+  mg->f_settings_threshold = -1;
+  mg->aggregation_limit[1] = 8;
   mg->k_cycle_threshold = -1;
 
 #if defined(HAVE_MPI)
@@ -1605,7 +1655,8 @@ _multigrid_create_k_cycle_bottom_coarsest(cs_multigrid_t  *parent)
       else {
         if (size > _k_cycle_hpc_recurse_threshold) {
           mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
-          mg->aggregation_limit = 8;
+          mg->f_settings_threshold = -1;
+          mg->aggregation_limit[1] = 8;
           mg->k_cycle_threshold = -1;
         }
       }
@@ -1642,8 +1693,9 @@ _multigrid_create_k_cycle_bottom(cs_multigrid_t  *parent)
   mg->subtype = CS_MULTIGRID_BOTTOM;
   mg->p_mg = parent;
 
-  mg->aggregation_limit = 0;
-  mg->coarsening_type = CS_GRID_COARSENING_DEFAULT; /* Not used here */
+  mg->f_settings_threshold = -1;
+  mg->aggregation_limit[1] = 0;
+  mg->coarsening_type[1] = CS_GRID_COARSENING_DEFAULT; /* Not used here */
   mg->n_levels_max = 2;
   mg->n_g_rows_min = 1;
 
@@ -2264,16 +2316,24 @@ _setup_hierarchy(void             *context,
     if (mg->subtype == CS_MULTIGRID_BOTTOM)
       g = cs_grid_coarsen_to_single(g, amode, mg->merge_stride, verbosity);
 
-    else
+    else {
+
+      int grid_lv = mg->setup_data->n_levels;
+      int fg_i = (grid_lv < mg->f_settings_threshold) ? 0 : 1;
+
+      cs_grid_coarsening_t coarsening_type = mg->coarsening_type[fg_i];
+      int aggregation_limit = mg->aggregation_limit[fg_i];
+
       g = cs_grid_coarsen(g,
                           amode,
-                          mg->coarsening_type,
-                          mg->aggregation_limit,
+                          coarsening_type,
+                          aggregation_limit,
                           verbosity,
                           mg->merge_stride,
                           mg->merge_mean_threshold,
                           mg->merge_glob_threshold,
                           mg->p0p1_relax);
+    }
 
     bool symmetric = true;
     int grid_lv;
@@ -4439,8 +4499,11 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   mg->merge_stride = 1;
 #endif
 
-  mg->aggregation_limit = 3;
-  mg->coarsening_type = CS_GRID_COARSENING_DEFAULT;
+  mg->f_settings_threshold = -1;
+  for (int i = 0; i < 2; i++) {
+    mg->aggregation_limit[i] = 3;
+    mg->coarsening_type[i] = CS_GRID_COARSENING_DEFAULT;
+  }
   mg->n_levels_max = 25;
   mg->n_g_rows_min = 30;
 
@@ -4458,15 +4521,19 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
     mg->p0p1_relax = 0.95;
   }
   else if (mg->type == CS_MULTIGRID_K_CYCLE) {
-    mg->coarsening_type = CS_GRID_COARSENING_SPD_PW;
-    mg->aggregation_limit = 4;
+    for (int i = 0; i < 2; i++) {
+      mg->coarsening_type[i] = CS_GRID_COARSENING_SPD_PW;
+      mg->aggregation_limit[i] = 4;
+    }
     mg->n_levels_max = 10;
     mg->n_g_rows_min = 256;
     mg->k_cycle_threshold = 0.25;
   }
   else if (mg->type == CS_MULTIGRID_K_CYCLE_HPC) {
-    mg->coarsening_type = CS_GRID_COARSENING_SPD_PW;
-    mg->aggregation_limit = 8;
+    for (int i = 0; i < 2; i++) {
+      mg->coarsening_type[i] = CS_GRID_COARSENING_SPD_PW;
+      mg->aggregation_limit[i] = 8;
+    }
     mg->n_levels_max = 4;
     mg->k_cycle_threshold = -1;
     mg->lv_mg[2] = _multigrid_create_k_cycle_bottom(mg);
@@ -4658,14 +4725,43 @@ cs_multigrid_set_coarsening_options
   if (mg == nullptr)
     return;
 
-  mg->aggregation_limit = aggregation_limit;
-  mg->coarsening_type = coarsening_type;
+  mg->aggregation_limit[1] = aggregation_limit;
+  mg->coarsening_type[1] = coarsening_type;
   mg->n_levels_max = n_max_levels;
   mg->n_g_rows_min = min_g_rows;
 
   mg->post_row_max = postprocess_block_size;
 
   mg->p0p1_relax = p0p1_relax;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set specific multigrid coarsening parameters for fine grids.
+ *
+ * \param[in, out]  mg                    pointer to multigrid info and context
+ * \param[in]       f_settings_threshold  grids of this level or higher use
+ *                                        standard (coarse grid) settings.
+ * \param[in]       aggregation_limit     maximum allowed fine rows
+ *                                        per coarse row
+ * \param[in]       coarsening_type       coarsening type;
+ *                                        see \ref cs_grid_coarsening_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_coarsening_options_fine_grid
+  (cs_multigrid_t       *mg,
+   int                   f_settings_threshold,
+   int                   aggregation_limit,
+   cs_grid_coarsening_t  coarsening_type)
+{
+  if (mg == nullptr)
+    return;
+
+  mg->f_settings_threshold = f_settings_threshold;
+  mg->aggregation_limit[0] = aggregation_limit;
+  mg->coarsening_type[0] = coarsening_type;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4888,23 +4984,36 @@ cs_multigrid_set_max_cycles(cs_multigrid_t     *mg,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return solver type used on fine mesh.
+ * \brief Indicate if a multigrid solver requires an MSR matrix input.
  *
  * \param[in]  mg  pointer to multigrid info and context
  *
- * \return   type of smoother for descent (used for fine mesh)
+ * \return   true if MSR is needed, false otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_it_type_t
-cs_multigrid_get_fine_solver_type(const cs_multigrid_t  *mg)
+bool
+cs_multigrid_need_msr(const cs_multigrid_t  *mg)
 {
-  if (mg == nullptr)
-    return CS_SLES_N_IT_TYPES;
+  bool retval = false;
 
-  const cs_multigrid_info_t  *info = &(mg->info);
+  if (mg != nullptr) {
+    const cs_multigrid_info_t  *info = &(mg->info);
+    for (int i = 0; i < 2; i++) {
+      for (int j = 0; j < 2; j++) {
+        int k = i + j*3;
+        cs_sles_it_type_t fs_type = info->type[k];
+        if (   fs_type >= CS_SLES_P_GAUSS_SEIDEL
+            && fs_type <= CS_SLES_TS_B_GAUSS_SEIDEL)
+          retval = true;
+      }
+      int fg_i = (mg->f_settings_threshold < 1) ? 1 : 0;
+      if (mg->coarsening_type[fg_i] == CS_GRID_COARSENING_SPD_PW)
+        retval = true;
+    }
+  }
 
-  return info->type[0];
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

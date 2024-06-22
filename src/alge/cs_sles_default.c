@@ -390,9 +390,7 @@ _sles_setup_matrix_native(int                  f_id,
 #endif
 
   if (mg != NULL) {
-    cs_sles_it_type_t fs_type = cs_multigrid_get_fine_solver_type(mg);
-    if (   fs_type >= CS_SLES_P_GAUSS_SEIDEL
-        && fs_type <= CS_SLES_TS_B_GAUSS_SEIDEL)
+    if (cs_multigrid_need_msr(mg))
       need_msr = true;
   }
 
