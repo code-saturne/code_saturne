@@ -28,8 +28,10 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
+
+#include <chrono>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -597,6 +599,10 @@ _coarsen_faces(const cs_grid_t    *fine,
                cs_lnum_t         **coarse_face,
                cs_lnum_2_t       **coarse_face_cell)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_lnum_t  ii, jj, face_id, connect_size;
 
   cs_lnum_t  *restrict c_cell_cell_cnt = NULL;
@@ -727,6 +733,16 @@ _coarsen_faces(const cs_grid_t    *fine,
   *n_coarse_faces = c_n_faces;
   *coarse_face = _coarse_face;
   *coarse_face_cell = _c_face_cell;
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -745,15 +761,12 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
                           cs_lnum_t         coarse_send[],
                           cs_lnum_t         coarse_row[])
 {
-  cs_lnum_t  i, start, length;
-
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
-    int rank_id;
     int  request_count = 0;
     const int  local_rank = cs_glob_rank_id;
 
@@ -771,10 +784,10 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
     /* Receive data from distant ranks */
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-      start = halo->index[2*rank_id];
-      length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
+      cs_lnum_t start = halo->index[2*rank_id];
+      cs_lnum_t length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
@@ -798,14 +811,15 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
     /* Send data to distant ranks */
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
       /* If this is not the local rank */
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        start = halo->send_index[2*rank_id];
-        length =  halo->send_index[2*rank_id + 2] - halo->send_index[2*rank_id];
+        cs_lnum_t start = halo->send_index[2*rank_id];
+        cs_lnum_t length =   halo->send_index[2*rank_id + 2]
+                           - halo->send_index[2*rank_id];
 
         MPI_Isend(coarse_send + start,
                   length,
@@ -845,7 +859,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
                - halo->send_index[2*local_rank_id];
 
 #     pragma omp parallel for if(length > CS_THR_MIN)
-      for (i = 0; i < length; i++)
+      for (cs_lnum_t i = 0; i < length; i++)
         _coarse_row[i] = coarse_send[start + i];
 
     }
@@ -868,6 +882,10 @@ static void
 _coarsen_halo(const cs_grid_t   *f,
               cs_grid_t         *c)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   int domain_id, tr_id, section_id;
   cs_lnum_t ii, jj;
   cs_lnum_t start_id, end_id, sub_count;
@@ -1250,6 +1268,16 @@ _coarsen_halo(const cs_grid_t   *f,
   BFT_FREE(coarse_send);
   BFT_FREE(sub_num);
   BFT_FREE(start_end_id);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -2312,6 +2340,10 @@ _merge_grids(cs_grid_t  *g,
              int         merge_stride,
              int         verbosity)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   int i, rank_id, t_id;
   cs_lnum_t j, face_id;
   int base_rank = cs_glob_rank_id;
@@ -2496,6 +2528,16 @@ _merge_grids(cs_grid_t  *g,
   if (verbosity > 3)
     bft_printf("      merged to %ld (from %ld) rows\n\n",
                (long)g->n_rows, (long)g->n_elts_r[0]);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -2539,7 +2581,6 @@ _scatter_row_int(const cs_grid_t  *g,
                g->merge_sub_root, tag, comm, &status);
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2583,7 +2624,6 @@ _scatter_row_num(const cs_grid_t  *g,
                g->merge_sub_root, tag, comm, &status);
     }
   }
-
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -2710,6 +2750,10 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
               const cs_real_t   x_val[restrict],
               cs_lnum_t        *f_c_row)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_lnum_t c_n_rows = 0;
 
   /* Mark all elements of fine to coarse rows as uninitialized */
@@ -2933,6 +2977,16 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
   BFT_FREE(s.m_head);
   BFT_FREE(a_max);
   BFT_FREE(a_m);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
 
   return c_n_rows;
 }
@@ -3232,6 +3286,10 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
                               int               verbosity,
                               cs_lnum_t        *f_c_row)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_lnum_t f_n_rows = f->n_rows;
 
   int npass_max = 10;
@@ -3419,6 +3477,16 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
   BFT_FREE(c_aggr_count);
   BFT_FREE(maxi);
   BFT_FREE(penalize);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3442,6 +3510,10 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
                           int                    verbosity,
                           cs_lnum_t             *f_c_cell)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_lnum_t n_faces;
 
   cs_lnum_t isym = 2;
@@ -3664,6 +3736,16 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
   /* Free working arrays */
 
   BFT_FREE(i_work_array);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3678,8 +3760,6 @@ static void
 _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
                                 cs_grid_t        *coarse_grid)
 {
-  cs_lnum_t ic, ii;
-
   cs_lnum_t f_n_cells = fine_grid->n_rows;
 
   cs_lnum_t c_n_cells = coarse_grid->n_rows;
@@ -3696,15 +3776,15 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
   /* Compute volume and center of coarse cells */
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
-  for (ic = 0; ic < c_n_cells_ext; ic++) {
+  for (cs_lnum_t ic = 0; ic < c_n_cells_ext; ic++) {
     c_cell_vol[ic] = 0.;
     c_cell_cen[3*ic]    = 0.;
     c_cell_cen[3*ic +1] = 0.;
     c_cell_cen[3*ic +2] = 0.;
   }
 
-  for (ii = 0; ii < f_n_cells; ii++) {
-    ic = c_coarse_row[ii];
+  for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
+    cs_lnum_t ic = c_coarse_row[ii];
     if (ic < 0)
       continue;
     c_cell_vol[ic] += f_cell_vol[ii];
@@ -3714,7 +3794,7 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
   }
 
 # pragma omp parallel for if(c_n_cells > CS_THR_MIN)
-  for (ic = 0; ic < c_n_cells; ic++) {
+  for (cs_lnum_t ic = 0; ic < c_n_cells; ic++) {
     c_cell_cen[3*ic]    /= c_cell_vol[ic];
     c_cell_cen[3*ic +1] /= c_cell_vol[ic];
     c_cell_cen[3*ic +2] /= c_cell_vol[ic];
