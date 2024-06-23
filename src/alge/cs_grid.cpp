@@ -740,7 +740,7 @@ _coarsen_faces(const cs_grid_t    *fine,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine->level);
     printf(", total = %ld\n", elapsed.count());
   }
 }
@@ -854,9 +854,9 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
       cs_lnum_t *_coarse_row
         = coarse_row + halo->n_local_elts + halo->index[2*local_rank_id];
 
-      start = halo->send_index[2*local_rank_id];
-      length =   halo->send_index[2*local_rank_id + 2]
-               - halo->send_index[2*local_rank_id];
+      cs_lnum_t start = halo->send_index[2*local_rank_id];
+      cs_lnum_t length =   halo->send_index[2*local_rank_id + 2]
+                         - halo->send_index[2*local_rank_id];
 
 #     pragma omp parallel for if(length > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < length; i++)
@@ -2340,9 +2340,9 @@ _merge_grids(cs_grid_t  *g,
              int         merge_stride,
              int         verbosity)
 {
-  std::chrono::high_resolution_clock::time_point t_start;
+  std::chrono::high_resolution_clock::time_point tm_start;
   if (cs_glob_timer_kernels_flag > 0)
-    t_start = std::chrono::high_resolution_clock::now();
+    tm_start = std::chrono::high_resolution_clock::now();
 
   int i, rank_id, t_id;
   cs_lnum_t j, face_id;
@@ -2531,11 +2531,11 @@ _merge_grids(cs_grid_t  *g,
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
-      t_stop = std::chrono::high_resolution_clock::now();
+      tm_stop = std::chrono::high_resolution_clock::now();
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
-          <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s", cs_glob_rank_id, __func__);
+          <std::chrono::microseconds>(tm_stop - tm_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, g->level);
     printf(", total = %ld\n", elapsed.count());
   }
 }
@@ -2750,243 +2750,296 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
               const cs_real_t   x_val[restrict],
               cs_lnum_t        *f_c_row)
 {
-  std::chrono::high_resolution_clock::time_point t_start;
-  if (cs_glob_timer_kernels_flag > 0)
-    t_start = std::chrono::high_resolution_clock::now();
-
   cs_lnum_t c_n_rows = 0;
 
-  /* Mark all elements of fine to coarse rows as uninitialized */
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
-    f_c_row[ii] = -2;
+#if defined(HAVE_OPENMP)
+  cs_lnum_t *t_c_scan = nullptr;
+  const int n_m_t = omp_get_max_threads();
+  if (n_m_t > 1) {
+    BFT_MALLOC(t_c_scan, n_m_t+1, cs_lnum_t);
+    for (int i = 0; i < n_m_t+1; i++)
+      t_c_scan[i] = 0;
+  }
+#endif
 
   /* Allocate working arrays */
 
   short int  *a_m;   /* active m for row */
   cs_real_t  *a_max; /* max per line */
+  cs_lnum_t *s_next;
 
   BFT_MALLOC(a_m, f_n_rows, short int);
   BFT_MALLOC(a_max, f_n_rows, cs_real_t);
+  BFT_MALLOC(s_next, f_n_rows*2, cs_lnum_t);
 
-  /* Computation of the maximum over line ii and test if the line ii is
-   * ignored. Be careful that the sum has to be the sum of the
-   * absolute value of every extra-diagonal coefficient, but the maximum is only
-   * on the negative coefficient. */
+  #pragma omp parallel shared(c_n_rows)  if (f_n_rows > CS_THR_MIN)
+  {
+    cs_lnum_t t_s_id, t_e_id;
+    cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
-  cs_lnum_t m_max = -1;
-  cs_lnum_t n_remain = f_n_rows;
+    cs_lnum_t t_f_n_rows = t_e_id - t_s_id; // Number of rows for this thread.
+    cs_lnum_t t_c_n_rows = 0;
 
-  if (dd_threshold > 0) {
+    /* Mark all elements of fine to coarse rows as uninitialized */
+    for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++)
+      f_c_row[ii] = -2;
 
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+    /* Computation of the maximum over line ii and test if the line ii is
+     * ignored. Be careful that the sum has to be the sum of the
+     * absolute value of every extra-diagonal coefficient, but the maximum
+     * is only on the negative coefficient. */
 
-      cs_real_t sum = 0.0;
+    cs_lnum_t m_max = -1;
+    cs_lnum_t n_remain = t_f_n_rows;
 
-      cs_lnum_t s_id = row_index[ii];
-      cs_lnum_t e_id = row_index[ii+1];
-      a_max[ii] = 0.0;
+    if (dd_threshold > 0) {
 
-      for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
-        cs_real_t xv = x_val[jj];
-        sum += CS_ABS(xv);
-        if (xv < 0)
-          a_max[ii] = CS_MAX(a_max[ii], -xv);
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+
+        cs_real_t sum = 0.0;
+
+        cs_lnum_t s_id = row_index[ii];
+        cs_lnum_t e_id = row_index[ii+1];
+        a_max[ii] = 0.0;
+
+        for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
+          cs_real_t xv = x_val[jj];
+          sum += CS_ABS(xv);
+          if (xv < 0)
+            a_max[ii] = CS_MAX(a_max[ii], -xv);
+        }
+
+        /* Check if the line seems ignored or not */
+
+        if (d_val[ii] > dd_threshold * sum) {
+          a_m[ii] = -1;
+          n_remain -= 1;
+          f_c_row[ii] = -1;
+        }
+        else {
+          a_m[ii] = 0;
+          for (cs_lnum_t jj = e_id-1; jj >= s_id; jj--) {
+            if (col_id[jj] < f_n_rows && x_val[jj] < beta*sum)
+              a_m[ii] += 1;
+          }
+        }
+
+        if (m_max < a_m[ii])
+          m_max = a_m[ii];
+
       }
 
-      /* Check if the line seems ignored or not */
+    }
+    else { /* variant with no diagonal dominance check */
 
-      if (d_val[ii] > dd_threshold * sum) {
-        a_m[ii] = -1;
-        n_remain -= 1;
-        f_c_row[ii] = -1;
-      }
-      else {
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+
+        cs_lnum_t s_id = row_index[ii];
+        cs_lnum_t e_id = row_index[ii+1];
+        a_max[ii] = 0.0;
+
+        for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
+          cs_real_t xv = x_val[jj];
+          if (xv < 0)
+            a_max[ii] = CS_MAX(a_max[ii], -xv);
+        }
+
         a_m[ii] = 0;
         for (cs_lnum_t jj = e_id-1; jj >= s_id; jj--) {
-          if (col_id[jj] < f_n_rows && x_val[jj] < beta*sum)
+          if (col_id[jj] < f_n_rows)
             a_m[ii] += 1;
         }
-      }
 
-      if (m_max < a_m[ii])
-        m_max = a_m[ii];
+        if (m_max < a_m[ii])
+          m_max = a_m[ii];
+
+      }
 
     }
 
-  }
-  else { /* variant with no diagonal dominance check */
+    if (m_max >= 0) {
 
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+      /* Build pointers to lists of rows by a_m
+         (to allow access to row with lowest m) */
 
-      cs_lnum_t s_id = row_index[ii];
-      cs_lnum_t e_id = row_index[ii+1];
-      a_max[ii] = 0.0;
+      cs_graph_m_ptr_t s;
 
-      for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
-        cs_real_t xv = x_val[jj];
-        if (xv < 0)
-          a_max[ii] = CS_MAX(a_max[ii], -xv);
+      s.m_min = 0;
+      s.m_max = m_max;
+
+      BFT_MALLOC(s.m_head, s.m_max+1, cs_lnum_t);
+      s.next = s_next;
+      s.prev = s.next + f_n_rows;
+
+      for (cs_lnum_t ii = 0; ii < s.m_max+1; ii++)
+        s.m_head[ii] = -1;
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        s.next[ii] = -1;
+        s.prev[ii] = -1;
       }
 
-      a_m[ii] = 0;
-      for (cs_lnum_t jj = e_id-1; jj >= s_id; jj--) {
-        if (col_id[jj] < f_n_rows)
-          a_m[ii] += 1;
-      }
-
-      if (m_max < a_m[ii])
-        m_max = a_m[ii];
-
-    }
-
-  }
-
-  if (m_max < 0)
-    return 0;
-
-  /* Build pointers to lists of rows by a_m
-     (to allow access to row with lowest m) */
-
-  cs_graph_m_ptr_t s;
-
-  s.m_min = 0;
-  s.m_max = m_max;
-
-  BFT_MALLOC(s.m_head, s.m_max+1, cs_lnum_t);
-  BFT_MALLOC(s.next, f_n_rows*2, cs_lnum_t);
-  s.prev = s.next + f_n_rows;
-
-  for (cs_lnum_t ii = 0; ii < s.m_max+1; ii++)
-    s.m_head[ii] = -1;
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-    s.next[ii] = -1;
-    s.prev[ii] = -1;
-  }
-
-  for (cs_lnum_t ii = f_n_rows-1; ii >= 0; ii--) {
-    short int _m = a_m[ii];
-    if (_m >= 0) {
-      cs_lnum_t prev_head = s.m_head[_m];
-      s.m_head[_m] = ii;
-      s.next[ii] = prev_head;
-      if (prev_head > -1)
-        s.prev[prev_head] = ii;
-    }
-  }
-
-  /* Now build pairs */
-
-  while (s.m_min < s.m_max) {
-    if (s.m_head[s.m_min] < 0)
-      s.m_min++;
-    else
-      break;
-  }
-
-  while (s.m_min > -1) {
-
-    /* Select remaining ii with minimal a_m */
-
-    cs_lnum_t ii = s.m_head[s.m_min];
-    assert(ii > -1);
-
-    cs_lnum_t gg[2] = {ii, -1};
-
-    /* Select remaining jj such that aij = min_over_k_aik */
-
-    cs_lnum_t s_id = row_index[ii];
-    cs_lnum_t e_id = row_index[ii+1];
-
-    f_c_row[ii] = c_n_rows; /* Add i to "pair" in all cases */
-
-    if (e_id > s_id) {
-
-      cs_lnum_t jj = -1;
-      cs_real_t _a_min = HUGE_VAL;
-      for (cs_lnum_t kk_idx = s_id; kk_idx < e_id; kk_idx++) {
-        cs_lnum_t kk = col_id[kk_idx];
-        if (kk < f_n_rows && f_c_row[kk] == -2) { /* not aggregated yet */
-          cs_real_t xv = x_val[kk_idx];
-          if (xv < _a_min) {
-            _a_min = xv;
-            jj = kk;
-          }
+      for (cs_lnum_t ii = t_e_id-1; ii >= t_s_id; ii--) {
+        short int _m = a_m[ii];
+        if (_m >= 0) {
+          cs_lnum_t prev_head = s.m_head[_m];
+          s.m_head[_m] = ii;
+          s.next[ii] = prev_head;
+          if (prev_head > -1)
+            s.prev[prev_head] = ii;
         }
       }
 
-      /* Keep jj only if within threshold */
+      /* Now build pairs */
 
-      if (_a_min >= -beta*a_max[ii])
-        jj = -1;
-      else {
-        f_c_row[jj] = c_n_rows; /* Add jj to "pair" */
-        gg[1] = jj;
+      while (s.m_min < s.m_max) {
+        if (s.m_head[s.m_min] < 0)
+          s.m_min++;
+        else
+          break;
       }
 
-    }
+      while (s.m_min > -1) {
 
-    c_n_rows++;
+        /* Select remaining ii with minimal a_m */
 
-    /* Now update search set */
+        cs_lnum_t ii = s.m_head[s.m_min];
+        assert(ii >= t_s_id && ii < t_e_id);
 
-    for (int ip = 0; ip < 2; ip++) {
-      cs_lnum_t i = gg[ip];
-      if (i > -1) {
-        cs_lnum_t _m = a_m[i];
-        if (_m < 0)
-          continue;
+        cs_lnum_t gg[2] = {ii, -1};
 
-        _graph_m_ptr_remove_m(&s, _m, i);
-        a_m[i] = -1;
-        cs_lnum_t _s_id = row_index[i];
-        cs_lnum_t _e_id = row_index[i+1];
-        for (cs_lnum_t k = _e_id-1; k >= _s_id; k--) {
-          cs_lnum_t j = col_id[k];
-          if (j >= f_n_rows)
-            continue;
-          _m = a_m[j];
-          if (_m >= 0) {
-            _graph_m_ptr_remove_m(&s, _m, j);
-            if (_m > 0)
-              _graph_m_ptr_insert_m(&s, _m-1, j);
-            a_m[j] = _m - 1;
+        /* Select remaining jj such that aij = min_over_k_aik */
+
+        cs_lnum_t s_id = row_index[ii];
+        cs_lnum_t e_id = row_index[ii+1];
+
+        f_c_row[ii] = t_c_n_rows; /* Add i to "pair" in all cases */
+
+        if (e_id > s_id) {
+
+          cs_lnum_t jj = -1;
+          cs_real_t _a_min = HUGE_VAL;
+          for (cs_lnum_t kk_idx = s_id; kk_idx < e_id; kk_idx++) {
+            cs_lnum_t kk = col_id[kk_idx];
+            /* not aggregated yet */
+            if (kk >= t_s_id && kk < t_e_id && f_c_row[kk] == -2) {
+              cs_real_t xv = x_val[kk_idx];
+              if (xv < _a_min) {
+                _a_min = xv;
+                jj = kk;
+              }
+            }
+          }
+
+          /* Keep jj only if within threshold */
+
+          if (_a_min >= -beta*a_max[ii])
+            jj = -1;
+          else {
+            f_c_row[jj] = t_c_n_rows; /* Add jj to "pair" */
+            gg[1] = jj;
+          }
+
+        }
+
+        t_c_n_rows++;
+
+        /* Now update search set */
+
+        for (int ip = 0; ip < 2; ip++) {
+          cs_lnum_t i = gg[ip];
+          if (i >= t_s_id && i < t_e_id) {
+            cs_lnum_t _m = a_m[i];
+            if (_m < 0)
+              continue;
+
+            _graph_m_ptr_remove_m(&s, _m, i);
+            a_m[i] = -1;
+            cs_lnum_t _s_id = row_index[i];
+            cs_lnum_t _e_id = row_index[i+1];
+            for (cs_lnum_t k = _e_id-1; k >= _s_id; k--) {
+              cs_lnum_t j = col_id[k];
+              if (j < t_s_id || j >= t_e_id)
+                continue;
+              _m = a_m[j];
+              if (_m >= 0) {
+                _graph_m_ptr_remove_m(&s, _m, j);
+                if (_m > 0)
+                  _graph_m_ptr_insert_m(&s, _m-1, j);
+                a_m[j] = _m - 1;
+              }
+            }
+            n_remain--;
+          } /* i > -1 */
+        }
+        if (s.m_min >= s.m_max) { /* check if list has become empty */
+          if (s.m_head[s.m_min] < 0) {
+            s.m_min = -1;
+            s.m_max = -1;
           }
         }
-        n_remain--;
-      } /* i > -1 */
+
+      }
+
+      /* We might have remaining cells */
+
+      for (int ii = t_s_id; ii < t_e_id; ii++) {
+        if (f_c_row[ii] < -1)
+          f_c_row[ii] = t_c_n_rows++;
+      }
+
+      BFT_FREE(s.m_head);
+
+      /* Prepare combining thread results */
+
+#if defined(HAVE_OPENMP)
+      if (n_m_t > 1)
+        t_c_scan[omp_get_thread_num() + 1] = t_c_n_rows;
+      else
+        c_n_rows = t_c_n_rows;
+#else
+      c_n_rows = t_c_n_rows;
+#endif
+
+    } //  if (m_max >= 0)
+
+  } // end of OpenMP section
+
+  /* Combine thread results */
+
+#if defined(HAVE_OPENMP)
+  if (n_m_t > 1) {
+    for (int i = 0; i < n_m_t; i++) {
+      t_c_scan[i+1] += t_c_scan[i];
     }
-    if (s.m_min >= s.m_max) { /* check if list has become empty */
-      if (s.m_head[s.m_min] < 0) {
-        s.m_min = -1;
-        s.m_max = -1;
+    c_n_rows = t_c_scan[n_m_t];
+
+#pragma omp parallel shared(c_n_rows)  if (f_n_rows > CS_THR_MIN)
+    {
+      /* Build pointers to lists of rows by a_m
+         (to allow access to row with lowest m) */
+
+      const int t_id = omp_get_thread_num();
+      cs_lnum_t r_shift = t_c_scan[t_id];
+
+      if (r_shift != 0) { /* No shift needed for thread 0 */
+        cs_lnum_t t_s_id, t_e_id;
+        cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
+        for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++)
+          f_c_row[ii] += r_shift;
       }
     }
-
   }
-
-  /* We might have remaining cells */
-
-  for (int ii = 0; ii < f_n_rows; ii++) {
-    if (f_c_row[ii] < -1)
-      f_c_row[ii] = c_n_rows++;
-  }
+#endif
 
   /* Free working arrays */
 
-  BFT_FREE(s.next);
-  BFT_FREE(s.m_head);
+  BFT_FREE(s_next);
   BFT_FREE(a_max);
   BFT_FREE(a_m);
 
-  if (cs_glob_timer_kernels_flag > 0) {
-    std::chrono::high_resolution_clock::time_point
-      t_stop = std::chrono::high_resolution_clock::now();
-    std::chrono::microseconds elapsed
-      = std::chrono::duration_cast
-          <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s", cs_glob_rank_id, __func__);
-    printf(", total = %ld\n", elapsed.count());
-  }
+#if defined(HAVE_OPENMP)
+  BFT_FREE(t_c_scan);
+#endif
 
   return c_n_rows;
 }
@@ -3007,6 +3060,10 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
                               int               verbosity,
                               cs_lnum_t        *f_c_row)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_real_t beta = 0.25;
   const cs_real_t dd_threshold = (f->level == 0) ? _dd_threshold_pw : -1;
   const cs_lnum_t f_n_rows = f->n_rows;
@@ -3056,6 +3113,17 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
 
   BFT_FREE(_d_val);
   BFT_FREE(_x_val);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3484,7 +3552,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
     printf(", total = %ld\n", elapsed.count());
   }
 }
@@ -3743,7 +3811,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
     printf(", total = %ld\n", elapsed.count());
   }
 }
@@ -4078,6 +4146,10 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                                   cs_grid_t        *coarse_grid,
                                   int               verbosity)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_lnum_t ii, jj, kk, face_id;
 
   cs_real_t dsigjg, dsxaij, agij;
@@ -4394,6 +4466,16 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
   BFT_FREE(w1);
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine_grid->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
+
   /* Optional verification */
 
   if (verbosity > 3) {
@@ -4404,7 +4486,6 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                               n_clips_max,
                               interp);
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -4421,6 +4502,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
                                      cs_grid_t        *coarse_grid,
                                      int               verbosity)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_lnum_t ic, jc, ii, jj, c_face, face_id;
 
   cs_real_t dsigjg, dsxaij, agij;
@@ -4722,6 +4807,16 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   BFT_FREE(w1);
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine_grid->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
+
   /* Optional verification */
 
   if (verbosity > 3)
@@ -4730,7 +4825,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
                               n_clips_min,
                               n_clips_max,
                               interp);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -4746,6 +4840,10 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
                                cs_grid_t        *coarse_grid)
 
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_lnum_t db_size = fine_grid->db_size;
   const cs_lnum_t db_stride = db_size*db_size;
 
@@ -5000,6 +5098,16 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   _build_coarse_matrix_msr(coarse_grid, fine_grid->symmetric,
                            c_row_index, c_col_id,
                            c_d_val, c_x_val);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine_grid->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -5011,8 +5119,11 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 
 static void
 _native_from_msr(cs_grid_t  *g)
-
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_lnum_t db_stride = g->db_size*g->db_size;
   const cs_lnum_t eb_stride = g->eb_size*g->eb_size;
 
@@ -5038,6 +5149,11 @@ _native_from_msr(cs_grid_t  *g)
     for (cs_lnum_t i = 0; i < n_rows; i++) {
       for (cs_lnum_t l = 0; l < eb_stride; l++)
         g->_da[i*db_stride + l] = d_val[i*db_stride + l];
+    }
+
+    for (cs_lnum_t i = n_rows; i < n_cols_ext; i++) {
+      for (cs_lnum_t l = 0; l < eb_stride; l++)
+        g->_da[i*db_stride + l] = 0;
     }
   }
 
@@ -5073,13 +5189,6 @@ _native_from_msr(cs_grid_t  *g)
               "%s: currently only implemented for symmetric cases.",
               __func__);
 
-  /* Synchronize matrix diagonal values */
-
-#if 0
-  if (g->halo != NULL)
-    cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_da, db_stride);
-#endif
-
   cs_matrix_destroy(&(g->_matrix));
   g->matrix = NULL;
   cs_matrix_structure_destroy(&(g->matrix_struct));
@@ -5096,6 +5205,10 @@ static void
 _matrix_from_native(cs_matrix_type_t   cm_type,
                     cs_grid_t         *g)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   g->matrix_struct = cs_matrix_structure_create(cm_type,
                                                 g->n_rows,
                                                 g->n_cols_ext,
@@ -5117,6 +5230,16 @@ _matrix_from_native(cs_matrix_type_t   cm_type,
                              g->xa);
 
   g->matrix = g->_matrix;
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, g->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -5814,6 +5937,10 @@ cs_grid_coarsen(const cs_grid_t      *f,
                 cs_gnum_t             merge_rows_glob_threshold,
                 double                relaxation_parameter)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   int recurse = 0;
   cs_lnum_t isym = 2;
   bool conv_diff = f->conv_diff;
@@ -6138,6 +6265,16 @@ cs_grid_coarsen(const cs_grid_t      *f,
     if (f->level == 0)
       _verify_matrix(f);
     _verify_matrix(c);
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
+    printf(", total = %ld\n", elapsed.count());
   }
 
   /* Return new (coarse) grid */
