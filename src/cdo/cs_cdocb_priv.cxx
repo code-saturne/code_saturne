@@ -47,6 +47,8 @@
  * Additional doxygen documentation
  *============================================================================*/
 
+BEGIN_C_DECLS
+
 /*!
   \file cs_cdocb_priv.c
 
@@ -153,3 +155,4 @@ cs_cdocb_init_default_param(cs_equation_param_t  *eqp)
 }
 
 /*----------------------------------------------------------------------------*/
+END_C_DECLS
