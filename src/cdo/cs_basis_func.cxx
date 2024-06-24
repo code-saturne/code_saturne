@@ -49,6 +49,8 @@
 
 /*----------------------------------------------------------------------------*/
 
+BEGIN_C_DECLS
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -2817,3 +2819,5 @@ cs_basis_func_fprintf(FILE                   *fp,
 #undef CK2_SIZE
 #undef FK1_SIZE
 #undef FK2_SIZE
+
+END_C_DECLS

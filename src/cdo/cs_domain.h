@@ -41,6 +41,7 @@
 #include "cs_cdo_quantities.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_param_cdo.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_xdef.h"
@@ -254,9 +255,7 @@ cs_domain_free(cs_domain_t   **p_domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_domain_set_cdo_mode(cs_domain_t    *domain,
-                       int             mode);
+void cs_domain_set_cdo_mode(cs_domain_t *domain, cs_param_cdo_mode_t mode);
 
 /*----------------------------------------------------------------------------*/
 /*!
