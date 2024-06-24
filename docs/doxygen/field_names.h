@@ -92,6 +92,8 @@
     Number of iterations for convergence of fixed-point algorithm for
     least-squares boundary gradient of vector and tensor fields.
     (scalar field on boundary faces).
+  - <tt> algo:b_velocity_inout </tt>
+    Boundary field to visualize entering velocity at outlets.
 */
 char *algo;
 

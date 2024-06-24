@@ -813,6 +813,8 @@ cs_boundary_conditions_type(bool  init,
 
       int b_massflux_id = cs_field_get_key_int(CS_F_(vel), kbmasf);
 
+      cs_field_t *f_inout = cs_field_by_name_try("algo:b_velocity_inout");
+
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
         const cs_lnum_t c_id = b_face_cells[f_id];
@@ -830,13 +832,20 @@ cs_boundary_conditions_type(bool  init,
             /* Dirichlet boundary condition */
             icodcl_vel[f_id] = 1;
             n_inout_faces++;
+            if (f_inout != NULL)
+              f_inout->val[f_id] = b_massflux/fvq->b_face_surf[f_id];
           }
-          else
+          else {
             /* Neumann boundary conditions */
             icodcl_vel[f_id] = 3;
 
+            if (f_inout != NULL)
+              f_inout->val[f_id] = 0.;
+          }
+
           for (cs_lnum_t k = 0; k < 3; k++) {
-            rcodcl1_vel[n_b_faces*k + f_id] = 0.;
+            if (rcodcl1_vel[n_b_faces*k + f_id] > 0.5 * cs_math_infinite_r)
+              rcodcl1_vel[n_b_faces*k + f_id] = 0.;
             rcodcl2_vel[n_b_faces*k + f_id] = cs_math_infinite_r;
             rcodcl3_vel[n_b_faces*k + f_id] = 0.;
           }
