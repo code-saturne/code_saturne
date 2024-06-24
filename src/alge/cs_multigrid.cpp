@@ -622,8 +622,6 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
 static void
 _multigrid_performance_log(const cs_multigrid_t *mg)
 {
-  unsigned i;
-
   unsigned long long n_builds_denom = CS_MAX(mg->info.n_calls[0], 1);
   unsigned long long n_solves_denom = CS_MAX(mg->info.n_calls[1], 1);
   int n_lv_min = mg->info.n_levels[1];
@@ -726,7 +724,7 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                 "\n  %s %s %s %s\n",
                 tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
 
-  for (i = 0; i < mg->info.n_levels[2]; i++) {
+  for (unsigned i = 0; i < mg->info.n_levels[2]; i++) {
 
     const cs_multigrid_level_info_t *lv_info = mg->lv_info + i;
     unsigned long long n_lv_builds = lv_info->n_calls[0];
@@ -829,7 +827,7 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                             "",                 /* header title */
                             true);              /* calls column */
 
-  for (i = 0; i < mg->info.n_levels[2]; i++) {
+  for (unsigned i = 0; i < mg->info.n_levels[2]; i++) {
 
     const cs_multigrid_level_info_t *lv_info = mg->lv_info + i;
 
@@ -851,7 +849,7 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
          N_("coarse level ascent smoother"),
          N_("bottom level solver")};
 
-    for (i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {
       if (mg->lv_mg[i] != nullptr) {
 
         cs_log_printf(CS_LOG_PERFORMANCE,
