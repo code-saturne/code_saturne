@@ -118,10 +118,6 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)(m->i_face_cells);
   cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  cs_lnum_t  n_sel_faces = 0;
-  cs_lnum_t *sel_faces;
-  BFT_MALLOC(sel_faces, n_i_faces, cs_lnum_t);
-
   cs_lnum_t *c_o2n;
   BFT_MALLOC(c_o2n, n_cells_ext, cs_lnum_t);
 
@@ -165,6 +161,10 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   /* Prepare for propagation of boundary face groups to interior faces
      of removed boundary cells; if the cell has multiple boundary faces
      with different groups, the first group wins */
+
+  cs_lnum_t  n_sel_faces = 0;
+  cs_lnum_t *sel_faces;
+  BFT_MALLOC(sel_faces, n_i_faces, cs_lnum_t);
 
   int *b_gc_id;
   BFT_MALLOC(b_gc_id, n_cells_ext, int);
