@@ -132,7 +132,8 @@ def main(argv, pkg):
                                  prologue = r_c['run_prologue'],
                                  epilogue = r_c['run_epilogue'],
                                  casedir  = r_c['casedir'],
-                                 autorestart = run_args.auto_restart)
+                                 autorestart = run_args.auto_restart,
+                                 memcheck = r_c['mem_check'])
     runcase.save()
 
     # Now submit case

@@ -377,6 +377,14 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
+    def check_memory_log(self):
+        """
+        Check for leaks in memory log
+        """
+        pass # Nothing to do for base method
+
+    #---------------------------------------------------------------------------
+
     def purge_result(self, name):
         """
         Remove a file or directory from execution directory.
@@ -1486,6 +1494,46 @@ class domain(base_domain):
 
         for f in dir_files:
             self.copy_result(f, purge)
+
+    #---------------------------------------------------------------------------
+
+    def check_memory_log(self):
+        """
+        Check for leaks in memory log
+        """
+        if os.path.isfile(os.path.join(self.exec_dir, "cs_mem.log")):
+            with open(os.path.join(self.exec_dir, "cs_mem.log"), 'rb') as f:
+                try: # catch OSError in case of a one line file
+                    f.seek(-2, os.SEEK_END)
+                    while f.read(1) != b'\n':
+                        f.seek(-2, os.SEEK_CUR)
+                except OSError:
+                    f.seek(0)
+                last_line = f.readline().decode()
+
+            _last = last_line.strip('\n').split(':')
+
+            is_error = False
+            _msg = ""
+            n_unfreed_ptrs = 0
+            if len(_last) != 2 or _last[0] != "Number of non freed pointers remaining":
+                is_error = True
+                _msg = f"Memory log file cs_mem.log is incomplete.\n"
+            else:
+                n_unfreed_ptrs = int(_last[1])
+
+            if n_unfreed_ptrs > 0:
+                is_error = True
+                _msg += f"Memory leaks detected with {n_unfreed_ptrs} non-freed pointers.\n"
+                _msg += f"Please check the log file {self.exec_dir}/cs_mem.log\n"
+                _msg += f"\n"
+
+            if is_error:
+                sys.stdout.write(_msg)
+                return 1
+            else:
+                return 0
+
 
     #---------------------------------------------------------------------------
 
