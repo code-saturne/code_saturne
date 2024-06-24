@@ -140,7 +140,7 @@ BEGIN_C_DECLS
 
   \brief Shared file access methods
 
-  \var CS_FILE_STDIO_SERIAL
+  \var CS_FILE_DEFAULT
        Default IO option
   \var CS_FILE_STDIO_SERIAL
        Serial standard C IO (funnelled through rank 0 in parallel)
@@ -153,6 +153,8 @@ BEGIN_C_DECLS
        Non-collective MPI-IO with collective file open and close
   \var CS_FILE_MPI_COLLECTIVE
        Collective MPI-IO
+  \var CS_FILE_IN_MEMORY_SERIAL
+       Buffer in rank 0 memory (serialized in parallel)
 
   \enum cs_file_mpi_positioning_t
 
@@ -193,6 +195,7 @@ struct _cs_file_t {
   int                rank;         /* MPI rank */
   int                n_ranks;      /* MPI rank */
   bool               swap_endian;  /* Swap big-endian and little-endian ? */
+  bool               allow_eof;    /* Allow global read attempt past EOF */
 
   FILE              *sh;           /* Serial file handle */
 
@@ -214,6 +217,10 @@ struct _cs_file_t {
 #else
   cs_file_off_t      offset;       /* File offset */
 #endif
+
+  size_t             in_mem_size;     /* Size of data in memory */
+  size_t             in_mem_max_size; /* Max size in memory */
+  unsigned char     *in_mem_data;     /* Data in memory */
 
 };
 
@@ -364,6 +371,9 @@ _access_method(cs_file_access_t  m,
                bool              w)
 {
   cs_file_access_t  _m = m;
+
+  if (_m == CS_FILE_IN_MEMORY_SERIAL)
+    return _m;
 
   /* Handle default */
 
@@ -693,6 +703,58 @@ _file_close(cs_file_t  *f)
 }
 
 /*----------------------------------------------------------------------------
+ * Read data to a buffer using standard in memory buffer.
+ *
+ * parameters:
+ *   f    <-- cs_file_t descriptor
+ *   buf  --> pointer to location receiving data
+ *   size <-- size of each item of data in bytes
+ *   ni   <-- number of items to read
+ *
+ * returns:
+ *   the (local) number of items (not bytes) sucessfully read;
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_file_read_in_memory(cs_file_t  *f,
+                     void       *buf,
+                     size_t      size,
+                     size_t      ni)
+{
+  size_t retval = 0;
+
+  size_t  nb = size*ni;
+
+  if (f->offset + nb > f->in_mem_size) {
+    if (f->allow_eof) {
+      if (f->offset < f->in_mem_size)
+        nb = f->in_mem_size - f->offset;
+      else
+        nb = 0;
+      ni = nb/size;
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error reading from in memory file \"%s\":\n\n"
+                  "  Data size:          %llu\n"
+                  "  Current offset:     %llu\n"
+                  "  Required read size: %llu"),
+                f->name,
+                (unsigned long long)f->in_mem_size,
+                (unsigned long long)f->offset,
+                (unsigned long long)nb);
+  }
+
+  if (nb > 0) {
+    assert(f->in_mem_data != NULL);
+    memcpy(buf, f->in_mem_data + f->offset, nb);
+    retval = ni;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Read data to a buffer using standard C IO.
  *
  * parameters:
@@ -726,9 +788,11 @@ _file_read(cs_file_t  *f,
         bft_error(__FILE__, __LINE__, 0,
                   _("Error reading file \"%s\":\n\n  %s"),
                   f->name, strerror(err_num));
-      else if (feof(f->sh) != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Premature end of file \"%s\""), f->name);
+      else if (feof(f->sh) != 0) {
+        if (f->allow_eof == false)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Premature end of file \"%s\""), f->name);
+      }
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Error reading file \"%s\""), f->name);
@@ -769,7 +833,53 @@ _file_read(cs_file_t  *f,
 
 #endif /* defined(HAVE_ZLIB) */
 
+  else if (f->method == CS_FILE_IN_MEMORY_SERIAL && f->rank == 0) {
+    retval = _file_read_in_memory(f, buf, size, ni);
+    return retval;
+  }
+
   assert(0);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Write data to a pseudo-file in memory
+ *
+ * parameters:
+ *   f    <-- cs_file_t descriptor
+ *   buf  --> pointer to location receiving data
+ *   size <-- size of each item of data in bytes
+ *   ni   <-- number of items to read
+ *
+ * returns:
+ *   the (local) number of items (not bytes) sucessfully read;
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_file_write_in_memory(cs_file_t   *f,
+                      const void  *buf,
+                      size_t       size,
+                      size_t       ni)
+{
+  size_t retval = 0;
+
+  size_t  nb = size*ni;
+
+  if  (f->offset + nb > f->in_mem_max_size) {
+    if (f->in_mem_max_size == 0)
+      f->in_mem_max_size = 2 << 15;
+    while (f->offset + nb > f->in_mem_max_size)
+      f->in_mem_max_size *= 2;
+    BFT_REALLOC(f->in_mem_data, f->in_mem_max_size, unsigned char);
+  }
+
+  if (nb != 0) {
+    memcpy(f->in_mem_data + f->offset, buf, nb);
+    if (f->in_mem_size < f->offset + nb)
+      f->in_mem_size = f->offset + nb;
+    retval = ni;
+  }
 
   return retval;
 }
@@ -795,23 +905,32 @@ _file_write(cs_file_t   *f,
 {
   size_t retval = 0;
 
-  assert(f->sh != NULL);
+  if (f->sh != NULL) {
 
-  if (ni != 0)
-    retval = fwrite(buf, size, ni, f->sh);
+    if (ni != 0)
+      retval = fwrite(buf, size, ni, f->sh);
 
-  /* In case of error, determine error type */
+    /* In case of error, determine error type */
 
-  if (retval != ni) {
-    int err_num = ferror(f->sh);
-    if (err_num != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error writing file \"%s\":\n\n  %s"),
-                f->name, strerror(err_num));
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error writing file \"%s\""), f->name);
+    if (retval != ni) {
+      int err_num = ferror(f->sh);
+      if (err_num != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error writing file \"%s\":\n\n  %s"),
+                  f->name, strerror(err_num));
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error writing file \"%s\""), f->name);
+    }
+
+    return retval;
+
   }
+
+  else if (f->method == CS_FILE_IN_MEMORY_SERIAL && f->rank == 0)
+    return _file_write_in_memory(f, buf, size, ni);
+
+  assert(0);
 
   return retval;
 }
@@ -994,6 +1113,97 @@ _file_tell(cs_file_t  *f)
 #endif
 
   return offset;
+}
+
+/*----------------------------------------------------------------------------
+ * Sets a file's position indicator using standard C IO.
+ *
+ * This function may call the libc's fseek() or fseeko() function.
+ * The C 99 standard specifies that for a text file, the offset
+ * argument to fseek() should be zero or a value returned by an earlier
+ * successful call to ftell().
+ *
+ * A successful call to this function clears the end-of-file indicator for
+ * this file.
+ *
+ * parameters:
+ *   f      <-> file descriptor.
+ *   offset <-- add to position specified to whence to obtain new
+ *              position, measured in characters from the beginning of
+ *              the file.
+ *   whence <-- beginning if CS_FILE_SEEK_SET, current if
+ *              CS_FILE_SEEK_CUR, or end-of-file if CS_FILE_SEEK_END.
+ *
+ * returns:
+ *   0 upon success, nonzero otherwise.
+ *----------------------------------------------------------------------------*/
+
+static int
+_file_seek_in_memory(cs_file_t       *f,
+                     cs_file_off_t    offset,
+                     cs_file_seek_t   whence)
+{
+  int retval = 0;
+
+  switch(whence) {
+  case SEEK_SET:
+    f->offset = offset;
+    break;
+  case SEEK_CUR:
+    f->offset += offset;
+    break;
+  case SEEK_END:
+    if (offset > 0)
+      f->offset = f->in_mem_size + offset;
+    else if (offset < 0) {
+      if ((size_t)f->offset > f->in_mem_size)
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("Error setting offset from end for in memory file \"%s\":\n\n"
+             "  Data size:                %llu\n"
+             "  Required offset from end: %lld"),
+          f->name,
+           (unsigned long long)f->in_mem_size,
+           (long long)f->offset);
+      retval = 1;
+    }
+  }
+
+  if ((size_t)offset > f->in_mem_size) {
+
+    if  ((size_t)offset > f->in_mem_max_size) {
+      if (f->in_mem_max_size == 0)
+        f->in_mem_max_size = 2 << 15;
+      while ((size_t)offset > f->in_mem_max_size)
+        f->in_mem_max_size *= 2;
+      BFT_REALLOC(f->in_mem_data, f->in_mem_max_size, unsigned char);
+    }
+
+    size_t nb = offset - f->in_mem_size;
+    memset(f->in_mem_data + f->offset, 0, nb);
+    f->in_mem_size = offset;
+
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Obtain the current value of a file's position indicator.
+ *
+ * parameters:
+ *   f  <-- file descriptor.
+ *
+ * returns:
+ *   current value of the file's position indicator, or -1 in case of failure.
+ *----------------------------------------------------------------------------*/
+
+static cs_file_off_t
+_file_tell_in_memory(cs_file_t  *f)
+{
+  assert(f != NULL);
+
+  return (cs_file_off_t)f->offset;
 }
 
 /*----------------------------------------------------------------------------
@@ -2451,16 +2661,21 @@ cs_file_open(const char        *name,
 
   f->offset = 0;
 
+  f->in_mem_size = 0;
+  f->in_mem_max_size = 0;
+  f->in_mem_data = NULL;
+
   BFT_MALLOC(f->name, strlen(name) + 1, char);
   strcpy(f->name, name);
 
   f->mode = mode;
-  f->method = method = _access_method(method, (mode != CS_FILE_MODE_READ));
+  f->method = _access_method(method, (mode != CS_FILE_MODE_READ));
 
   f->rank = 0;
   f->n_ranks = 1;
 
   f->swap_endian = false; /* Use native endianness by default */
+  f->allow_eof = false;   /* Do not allow global read attempt past EOF */
 
   /* Set communicator */
 
@@ -2502,11 +2717,13 @@ cs_file_open(const char        *name,
         BFT_MALLOC(f->block_size, 1, cs_gnum_t);
     }
 
-    if (f->comm == MPI_COMM_NULL)
+    if (   f->comm == MPI_COMM_NULL
+        && method != CS_FILE_IN_MEMORY_SERIAL)
       f->method = CS_FILE_STDIO_SERIAL;
   }
 #else
-  f->method = CS_FILE_STDIO_SERIAL;
+  if (method != CS_FILE_IN_MEMORY_SERIAL)
+    f->method = CS_FILE_STDIO_SERIAL;
 #endif
 
   /* Use MPI IO ? */
@@ -2532,7 +2749,8 @@ cs_file_open(const char        *name,
     if (f->rank == 0)
       errcode = _mpi_file_open(f, f->mode);
   }
-  else if (f->method > CS_FILE_MPI_INDEPENDENT)
+  else if (   f->method > CS_FILE_MPI_INDEPENDENT
+           && f->method != CS_FILE_IN_MEMORY_SERIAL)
     errcode = _mpi_file_open(f, f->mode);
 #endif
 
@@ -2658,10 +2876,72 @@ cs_file_free(cs_file_t  *f)
   BFT_FREE(f->block_size);
 #endif
 
+  BFT_FREE(_f->in_mem_data);
   BFT_FREE(_f->name);
   BFT_FREE(_f);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to data for file in memory.
+ *
+ * \param[in]  f     cs_file_t descriptor
+ *
+ * \return pointer to file data.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_file_in_memory_get_data(cs_file_t  *f)
+{
+  assert(f != NULL);
+
+  return (void *)f->in_mem_data;
+}
+
+/*----------------------------------------------------------------------------
+ * Allow global read attemps past end of file without throwing an error.
+ *
+ * Currently only for files with serial access.
+ *
+ * parameters:
+ *   f         <-> cs_file_t descriptor
+ *   allow_eof <-- allow read attempt pas EOF
+ *----------------------------------------------------------------------------*/
+
+void
+cs_file_set_allow_read_global_eof(cs_file_t  *f,
+                                  bool        allow_eof)
+{
+  f->allow_eof = allow_eof;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Transfer a block of data to file in memory.
+ *
+ * Only for files opened using CS_FILE_IN_MEMORY_SERIAL.
+ *
+ * \param[in]  f     cs_file_t descriptor
+ * \param[in]  nb    number of matching bytes for data
+ * \param[in]  data  data buffer (ownership is relinquished by caller)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_in_memory_transfer_data(cs_file_t  *f,
+                                size_t      nb,
+                                void       *data)
+{
+  assert(f != NULL);
+  assert(f->method == CS_FILE_IN_MEMORY_SERIAL && f->rank == 0);
+
+  BFT_FREE(f->in_mem_data);
+  f->in_mem_size = nb;
+  f->in_mem_max_size = nb;
+  f->in_mem_data = data;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2774,10 +3054,13 @@ cs_file_read_global(cs_file_t  *f,
 {
   size_t retval = 0;
 
-  if (f->method <= CS_FILE_STDIO_PARALLEL) {
+  if (   f->method <= CS_FILE_STDIO_PARALLEL
+      || f->method == CS_FILE_IN_MEMORY_SERIAL) {
     if (f->rank == 0) {
-      if (_file_seek(f, f->offset, CS_FILE_SEEK_SET) == 0)
+      if (_file_seek(f, f->offset, CS_FILE_SEEK_SET) == 0) {
         retval = _file_read(f, buf, size, ni);
+        ni = retval;
+      }
     }
   }
 
@@ -2899,6 +3182,11 @@ cs_file_write_global(cs_file_t   *f,
     }
     if (retval != 0)
       retval = _file_write(f, _buf, size, ni);
+  }
+
+  else if (f->method == CS_FILE_IN_MEMORY_SERIAL) {
+    if (f->rank == 0)
+      retval = _file_write_in_memory(f, _buf, size, ni);
   }
 
 #if defined(HAVE_MPI_IO)
@@ -3470,6 +3758,8 @@ cs_file_tell(cs_file_t  *f)
 
   if (f->method == CS_FILE_STDIO_SERIAL && f->rank == 0 && f->sh != NULL)
     retval = _file_tell(f);
+  else if (f->method == CS_FILE_IN_MEMORY_SERIAL && f->rank == 0)
+    retval = _file_tell_in_memory(f);
 
 #if defined(HAVE_MPI)
   if (f->comm != MPI_COMM_NULL) {
@@ -3565,7 +3855,8 @@ cs_file_dump(const cs_file_t  *f)
                                "CS_FILE_STDIO_PARALLEL",
                                "CS_FILE_MPI_INDEPENDENT",
                                "CS_FILE_MPI_NON_COLLECTIVE",
-                               "CS_FILE_MPI_COLLECTIVE"};
+                               "CS_FILE_MPI_COLLECTIVE",
+                               "CS_FILE_IN_MEMORY_SERIAL"};
 
   if (f == NULL) {
     bft_printf("\n"

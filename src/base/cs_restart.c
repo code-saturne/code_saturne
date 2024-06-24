@@ -222,16 +222,35 @@ static cs_restart_write_section_t  *_write_section_f = _write_section;
 static size_t        _n_locations_ref;    /* Number of locations */
 static _location_t  *_location_ref;       /* Location definition array */
 
-
 /* Restart multi writer */
 
 static int                       _n_restart_directories_to_write = 1;
 static int                       _n_restart_multiwriters          = 0;
 static _restart_multiwriter_t  **_restart_multiwriter             = NULL;
 
+/* Special case for in-memory buffer, which supercedes file I/O, and
+   concatenates all pseudo-file checkpoint/restart data to a single file */
+
+static bool      _need_finalize = false;
+static cs_io_t  *_checkpoint_serialized_memory = NULL;
+static cs_io_t  *_restart_serialized_memory = NULL;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Call cleanup operations for checkpoint/restart subsystem.
+ *----------------------------------------------------------------------------*/
+
+static void
+_restart_finalize(void)
+{
+  if (_checkpoint_serialized_memory != NULL)
+    cs_io_finalize(&_checkpoint_serialized_memory);
+  if (_restart_serialized_memory != NULL)
+    cs_io_finalize(&_restart_serialized_memory);
+}
 
 /*----------------------------------------------------------------------------
  * Compute number of values in a record
@@ -2092,6 +2111,137 @@ cs_restart_checkpoint_done(const cs_time_step_t  *ts)
 }
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief  Access raw restart data serialized in memory.
+ *
+ * If called previously, reinitialize memory data structure.
+ *
+ * \param[out]  nb    size of data
+ * \param[out]  data  pointer to data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_get_from_memory_serialized(size_t   *nb,
+                                      void    **data)
+{
+  *nb = 0;
+  *data = NULL;
+
+  cs_io_t *r_io = _checkpoint_serialized_memory;
+  if (r_io != NULL)
+    cs_io_get_data_in_mem(r_io, nb, data);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Indicate restart will be done based on a serialized data in memory.
+ *
+ * The restart subsystem takes ownership of the given data
+ *
+ * \param[in]  nb    number of matching bytes for data
+ * \param[in]  data  data buffer (ownership is relinquished by caller)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_set_from_memory_serialized(size_t   nb,
+                                      void    *data)
+{
+  const char magic_string[] = "Checkpoint / restart, R0";
+  const long echo = CS_IO_ECHO_NONE;
+
+  if (_restart_serialized_memory != NULL)
+    cs_io_finalize(&_restart_serialized_memory);
+
+#if defined(HAVE_MPI)
+  {
+    MPI_Comm  block_comm, comm;
+
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
+    assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
+
+    _restart_serialized_memory
+      = cs_io_initialize_with_index_from_mem("restart",
+                                             magic_string,
+                                             CS_FILE_IN_MEMORY_SERIAL,
+                                             echo,
+                                             nb, data,
+                                             block_comm, comm);
+
+#else
+
+    _restart_serialized_memory
+      = cs_io_initialize_with_index_from_mem("restart",
+                                             magic_string,
+                                             CS_FILE_IN_MEMORY_SERIAL,
+                                             echo,
+                                             nb, data);
+
+#endif
+  }
+
+  if (_need_finalize == false) {
+    _need_finalize = true;
+    cs_base_at_finalize(_restart_finalize);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Indicate checkpoint will be done to serialized data in memory.
+ *
+ * If called previously, reinitialize memory data structure.
+ *
+ * \param[in]  status  checkpoint to memory if true, to file otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_checkpoint_set_to_memory_serialized(bool  status)
+{
+  if (_checkpoint_serialized_memory != NULL)
+    cs_io_finalize(&_checkpoint_serialized_memory);
+
+  if (status) {
+
+    const char magic_string[] = "Checkpoint / restart, R0";
+    const long echo = CS_IO_ECHO_NONE;
+
+#if defined(HAVE_MPI)
+
+    MPI_Comm           block_comm, comm;
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
+
+    assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
+
+    _checkpoint_serialized_memory = cs_io_initialize("checkpoint",
+                                                     magic_string,
+                                                     CS_IO_MODE_WRITE,
+                                                     CS_FILE_IN_MEMORY_SERIAL,
+                                                     echo,
+                                                     MPI_INFO_NULL,
+                                                     block_comm,
+                                                     comm);
+#else
+
+    _checkpoint_serialized_memory = cs_io_initialize(r->name,
+                                                     magic_string,
+                                                     CS_IO_MODE_WRITE,
+                                                     CS_FILE_IN_MEMORY_SERIAL,
+                                                     echo);
+
+#endif
+
+  }
+
+  if (_need_finalize == false) {
+    _need_finalize = true;
+    cs_base_at_finalize(_restart_finalize);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Check if we have a restart directory.
  *
@@ -2292,7 +2442,26 @@ cs_restart_create(const char         *name,
 
   /* Open associated file, and build an index of sections in read mode */
 
-  _add_file(restart);
+  if (mode == CS_RESTART_MODE_READ) {
+    if (_restart_serialized_memory == NULL)
+      _add_file(restart);
+    else {
+      restart->fh = _restart_serialized_memory;
+      restart->rank_step = 1;
+      restart->min_block_size = cs_parall_get_min_coll_buf_size();
+      _locations_from_index(restart);
+    }
+  }
+
+  else {
+    if (_checkpoint_serialized_memory == NULL)
+      _add_file(restart);
+    else {
+      restart->fh = _checkpoint_serialized_memory;
+      restart->rank_step = 1;
+      restart->min_block_size = cs_parall_get_min_coll_buf_size();
+    }
+  }
 
   /* Add basic location definitions */
 
@@ -2338,7 +2507,9 @@ cs_restart_destroy(cs_restart_t  **restart)
 
   mode = r->mode;
 
-  if (r->fh != NULL)
+  if (   r->fh != NULL
+      && r->fh != _checkpoint_serialized_memory
+      && r->fh != _restart_serialized_memory)
     cs_io_finalize(&(r->fh));
 
   /* Free locations array */

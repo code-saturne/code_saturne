@@ -88,7 +88,8 @@ typedef enum {
   CS_FILE_STDIO_PARALLEL,
   CS_FILE_MPI_INDEPENDENT,
   CS_FILE_MPI_NON_COLLECTIVE,
-  CS_FILE_MPI_COLLECTIVE
+  CS_FILE_MPI_COLLECTIVE,
+  CS_FILE_IN_MEMORY_SERIAL
 
 } cs_file_access_t;
 
@@ -218,6 +219,23 @@ cs_file_open_serial(const char      *name,
 cs_file_t *
 cs_file_free(cs_file_t  *f);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Transfer a block of data to file in memory.
+ *
+ * Only for files opened using CS_FILE_IN_MEMORY_SERIAL.
+ *
+ * \param[in]  f     cs_file_t descriptor
+ * \param[in]  nb    number of matching bytes for data
+ * \param[in]  data  data buffer (ownership is relinquished by caller)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_in_memory_transfer_data(cs_file_t  *f,
+                                size_t      nb,
+                                void       *data);
+
 /*----------------------------------------------------------------------------
  * Return a file's name.
  *
@@ -230,6 +248,33 @@ cs_file_free(cs_file_t  *f);
 
 const char *
 cs_file_get_name(const cs_file_t  *f);
+
+/*----------------------------------------------------------------------------
+ * Get pointer to data for file in memory.
+ *
+ * parameters:
+ *   f <-- cs_file_t descriptor
+ *
+ * return:
+ *   pointer to file data.
+ *----------------------------------------------------------------------------*/
+
+void *
+cs_file_in_memory_get_data(cs_file_t  *f);
+
+/*----------------------------------------------------------------------------
+ * Allow global read attemps past end of file without throwing an error.
+ *
+ * Currently only for files with serial access.
+ *
+ * parameters:
+ *   f         <-> cs_file_t descriptor
+ *   allow_eof <-- allow read attempt pas EOF
+ *----------------------------------------------------------------------------*/
+
+void
+cs_file_set_allow_read_global_eof(cs_file_t  *f,
+                                  bool        allow_eof);
 
 /*----------------------------------------------------------------------------
  * Ensure that data is read or written in big-endian

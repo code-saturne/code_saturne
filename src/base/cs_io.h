@@ -187,6 +187,49 @@ cs_io_initialize_with_index(const char        *file_name,
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
+ * Initialize a kernel IO file structure with in-memory data,
+ * building an index.
+ *
+ * The magic string may be NULL, if we choose to ignore it.
+ *
+ * parameters:
+ *   name         <-- file name
+ *   magic_string <-- magic string associated with file type
+ *   method       <-- file access method
+ *   echo         <-- echo on main output (< 0 if none, header if 0,
+ *                    n first and last elements if n > 0)
+ *   nb           <-- number of matching bytes for data
+ *   data         <-- data buffer (ownership is relinquished by caller)
+ *   block_comm   <-- handle to MPI communicator used for distributed file
+ *                    block access (may be a subset of comm if some ranks do
+ *                    not directly access distributed data blocks)
+ *   comm         <-- handle to main MPI communicator
+ *
+ * returns:
+ *   pointer to kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+cs_io_t *
+cs_io_initialize_with_index_from_mem(const char        *file_name,
+                                     const char        *magic_string,
+                                     cs_file_access_t   method,
+                                     long               echo,
+                                     size_t             nb,
+                                     void              *data,
+                                     MPI_Comm           block_comm,
+                                     MPI_Comm           comm);
+#else
+cs_io_t *
+cs_io_initialize_with_index_from_mem(const char        *file_name,
+                                     const char        *magic_string,
+                                     cs_file_access_t   method,
+                                     long               echo,
+                                     size_t             nb,
+                                     void              *data);
+#endif
+
+/*----------------------------------------------------------------------------
  * Free a preprocessor output file structure, closing the associated file.
  *
  * parameters:
@@ -258,6 +301,21 @@ cs_io_get_indexed_sec_header(const cs_io_t  *inp,
 
 size_t
 cs_io_get_echo(const cs_io_t  *pp_io);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Access raw restart data serialized in memory.
+ *
+ * \param[in]   pp_io  kernel IO structure
+ * \param[out]  nb     size of data
+ * \param[out]  data   pointer to data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_io_get_data_in_mem(const cs_io_t   *pp_io,
+                      size_t          *nb,
+                      void           **data);
 
 /*----------------------------------------------------------------------------
  * Read a message header.

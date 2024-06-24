@@ -392,6 +392,49 @@ void
 cs_restart_checkpoint_done(const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief  Access raw restart data serialized in memory.
+ *
+ * If called previously, reinitialize memory data structure.
+ *
+ * \param[out]  nb    size of data
+ * \param[out]  data  pointer to data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_get_from_memory_serialized(size_t   *nb,
+                                      void    **data);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Indicate restart will be done based on a serialized data in memory.
+ *
+ * The restart subsystem takes ownership of the given data
+ *
+ * \param[in]  nb    number of matching bytes for data
+ * \param[in]  data  data buffer (ownership is relinquished by caller)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_set_from_memory_serialized(size_t   nb,
+                                      void    *data);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Indicate checkpoint will be done to serialized data in memory.
+ *
+ * If called previously, reinitialize memory data structure.
+ *
+ * \param[in]  status  checkpoint to memory if true, to file otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_checkpoint_set_to_memory_serialized(bool  status);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Check if we have a restart directory.
  *

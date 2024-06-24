@@ -580,6 +580,72 @@ _update_index_and_shift(cs_io_t             *inp,
 }
 
 /*----------------------------------------------------------------------------
+ * Read header data from file.
+ *
+ * parameters:
+ *   cs_io        <-> kernel IO structure
+ *   magic_string <-- magic string associated with file content type
+ *----------------------------------------------------------------------------*/
+
+static void
+_file_read_header(cs_io_t      *cs_io,
+                  const char   *magic_string)
+{
+  char header_data[128 + 24];
+  cs_file_off_t header_vals[3];
+
+  char  base_header[] = "Code_Saturne I/O, BE, R0";
+
+  /* Check magic string */
+
+  cs_file_read_global(cs_io->f, header_data, 1, 128 + 24);
+
+  header_data[63] = '\0';
+  header_data[127] = '\0';
+
+  /* If the format does not correspond, we have an error */
+
+  if (strncmp(header_data, base_header, 64) != 0) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error reading file: \"%s\".\n"
+                "File format is not the correct version.\n"
+                "The first 64 bytes expected contain:\n"
+                "\"%s\"\n"
+                "The first 64 bytes read contain:\n"
+                "\"%s\"\n"),
+              cs_file_get_name(cs_io->f), base_header, header_data);
+  }
+
+  /* Copy magic string */
+
+  strncpy(cs_io->contents, header_data + 64, 64);
+  cs_io->contents[63] = '\0';
+
+  /* If the magic string does not correspond, we have an error */
+
+  if (magic_string != NULL) {
+    if (strncmp(cs_io->contents, magic_string, 64) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error reading file: \"%s\".\n"
+                  "The file contents are not of the expected type.\n"
+                  "\"%s\" was expected,\n"
+                  "\"%s\" was read."),
+                cs_file_get_name(cs_io->f), magic_string, cs_io->contents);
+  }
+
+  /* Now decode the sizes */
+
+  if (cs_file_get_swap_endian(cs_io->f) == 1)
+    _swap_endian(header_data + 128, 8, 3);
+
+  _convert_to_offset((unsigned char *)(header_data + 128), header_vals, 3);
+
+  cs_io->header_size = header_vals[0];
+  cs_io->header_align = header_vals[1];
+  cs_io->body_align = header_vals[2];
+}
+
+/*----------------------------------------------------------------------------
  * Open the interface file descriptor and initialize the file by writing
  * or reading a "magic string" used to check the file content type.
  *
@@ -611,8 +677,6 @@ _file_open(cs_io_t           *cs_io,
 #endif
 {
   cs_file_mode_t f_mode;
-  char header_data[128 + 24];
-  cs_file_off_t header_vals[3];
 
   char  base_header[] = "Code_Saturne I/O, BE, R0";
 
@@ -687,58 +751,13 @@ _file_open(cs_io_t           *cs_io,
   /* Write or read a magic string */
   /*------------------------------*/
 
-  if (cs_io->mode == CS_IO_MODE_READ) {
+  if (cs_io->mode == CS_IO_MODE_READ)
+    _file_read_header(cs_io, magic_string);
 
-    cs_file_read_global(cs_io->f, header_data, 1, 128 + 24);
-
-    header_data[63] = '\0';
-    header_data[127] = '\0';
-
-    /* If the format does not correspond, we have an error */
-
-    if (strncmp(header_data, base_header, 64) != 0) {
-
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error reading file: \"%s\".\n"
-                  "File format is not the correct version.\n"
-                  "The first 64 bytes expected contain:\n"
-                  "\"%s\"\n"
-                  "The first 64 bytes read contain:\n"
-                  "\"%s\"\n"),
-                cs_file_get_name(cs_io->f), base_header, header_data);
-
-    }
-
-    /* Copy magic string */
-
-    strncpy(cs_io->contents, header_data + 64, 64);
-    cs_io->contents[63] = '\0';
-
-    /* If the magic string does not correspond, we have an error */
-
-    if (magic_string != NULL) {
-      if (strncmp(cs_io->contents, magic_string, 64) != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error reading file: \"%s\".\n"
-                    "The file contents are not of the expected type.\n"
-                    "\"%s\" was expected,\n"
-                    "\"%s\" was read."),
-                  cs_file_get_name(cs_io->f), magic_string, cs_io->contents);
-    }
-
-    /* Now decode the sizes */
-
-    if (cs_file_get_swap_endian(cs_io->f) == 1)
-      _swap_endian(header_data + 128, 8, 3);
-
-    _convert_to_offset((unsigned char *)(header_data + 128), header_vals, 3);
-
-    cs_io->header_size = header_vals[0];
-    cs_io->header_align = header_vals[1];
-    cs_io->body_align = header_vals[2];
-
-  }
   else if (cs_io->mode == CS_IO_MODE_WRITE) {
+
+    char header_data[128 + 24];
+    cs_file_off_t header_vals[3];
 
     size_t n_written = 0;
 
@@ -769,6 +788,72 @@ _file_open(cs_io_t           *cs_io,
                 _("Error writing the header of file: \"%s\".\n"),
                 cs_file_get_name(cs_io->f));
   }
+
+  cs_io->buffer_size = cs_io->header_size;
+  BFT_MALLOC(cs_io->buffer, cs_io->buffer_size, unsigned char);
+}
+
+/*----------------------------------------------------------------------------
+ * Open the interface file descriptor and initialize the file by reading
+ * data in memory.
+ *
+ * parameters:
+ *   cs_io        <-> kernel IO structure
+ *   name         <-- file name
+ *   magic_string <-- magic string associated with file content type
+ *   method       <-- file access method options
+ *   nb           <-- number of matching bytes for data
+ *   data         <-- data buffer (ownership is relinquished by caller)
+ *   block_comm   <-- associated MPI communicator for block IO
+ *   comm         <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+static void
+_file_open_read_from_mem(cs_io_t           *cs_io,
+                         const char        *name,
+                         const char        *magic_string,
+                         cs_file_access_t   method,
+                         size_t             nb,
+                         void              *data,
+                         MPI_Comm           block_comm,
+                         MPI_Comm           comm)
+#else
+static void
+_file_open_read_from_mem(cs_io_t           *cs_io,
+                         const char        *name,
+                         const char        *magic_string,
+                         cs_file_access_t   method,
+                         size_t             nb,
+                         void              *data);
+#endif
+{
+  assert(method == CS_FILE_IN_MEMORY_SERIAL);
+
+  cs_io->start_time = cs_timer_wtime();
+
+  /* Create interface file descriptor */
+
+#if defined(HAVE_MPI)
+  cs_io->f = cs_file_open(name,
+                          CS_FILE_MODE_READ, method,
+                          MPI_INFO_NULL, block_comm, comm);
+#else
+  cs_io->f = cs_file_open(name, CS_FILE_MODE_READ, method);
+#endif
+
+  cs_file_set_big_endian(cs_io->f);
+
+  /* Transfer data */
+  cs_file_in_memory_transfer_data(cs_io->f, nb, data);
+
+#if defined(HAVE_MPI)
+  cs_io->comm = comm;
+#endif
+
+  /* Check magic string and read header configuration */
+
+  _file_read_header(cs_io, magic_string);
 
   cs_io->buffer_size = cs_io->header_size;
   BFT_MALLOC(cs_io->buffer, cs_io->buffer_size, unsigned char);
@@ -1511,6 +1596,66 @@ _cs_io_initialize_with_index(cs_io_t           *inp,
 }
 
 /*----------------------------------------------------------------------------
+ * Build an index for a kernel IO file structure using in-memory data.
+ *
+ * The magic string may be NULL, if we choose to ignore it.
+ *
+ * parameters:
+ *   inp          <-> empty input kernel IO file structure
+ *   name         <-- file name
+ *   magic_string <-- magic string associated with file type
+ *   method       <-- file access method options
+ *   nb           <-- number of matching bytes for data
+ *   data         <-- data buffer (ownership is relinquished by caller)
+ *   block_comm   <-- associated MPI communicator for block IO
+ *   comm         <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+static void
+_cs_io_initialize_with_index_from_mem(cs_io_t           *inp,
+                                      const char        *file_name,
+                                      const char        *magic_string,
+                                      cs_file_access_t   method,
+                                      size_t             nb,
+                                      void              *data,
+                                      MPI_Comm           block_comm,
+                                      MPI_Comm           comm)
+#else
+static void
+_cs_io_initialize_with_index_from_mem(cs_io_t           *inp,
+                                      const char        *file_name,
+                                      const char        *magic_string,
+                                      cs_file_access_t   method,
+                                      size_t             nb,
+                                      void              *data)
+#endif /* HAVE_MPI */
+{
+  cs_io_sec_header_t  h;
+  int  end_reached = 0;
+
+#if defined(HAVE_MPI)
+  _file_open_read_from_mem(inp, file_name, magic_string, method, nb, data,
+                           block_comm, comm);
+#else
+  _file_open_read_from_mem(inp, file_name, magic_string, method, nb, data);
+#endif
+
+  cs_file_set_allow_read_global_eof(inp->f, true);
+
+  /* Read headers to build index index */
+
+  while (end_reached == 0) {
+
+    end_reached = cs_io_read_header(inp, &h);
+
+    if (end_reached == 0)
+      _update_index_and_shift(inp, &h);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Write padding with zero bytes if necessary to ensure alignment.
  *
  * Under MPI, data is only written by the associated communicator's root
@@ -1762,7 +1907,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
 
   bft_printf(_(" %llu indexed records:\n"
                "   (name, n_vals, location_id, index_id, n_loc_vals, type, "
-               "embed, file_id, offset)\n\n"),
+               "embed, offset)\n\n"),
              (unsigned long long)(idx->size));
 
   for (ii = 0; ii < idx->size; ii++) {
@@ -1774,12 +1919,11 @@ _dump_index(const cs_io_sec_index_t  *idx)
     if (h_vals[5] > 0)
       embed = 'y';
 
-    bft_printf(_(" %40s %10llu %2u %2u %2u %6s %c %2u %ld\n"),
+    bft_printf(_(" %40s %10llu %2u %2u %2u %6s %c %ld\n"),
                name, (unsigned long long)(h_vals[0]),
                (unsigned)(h_vals[1]), (unsigned)(h_vals[2]),
                (unsigned)(h_vals[3]), cs_datatype_name[h_vals[6]],
-               embed, (unsigned)(h_vals[7]),
-               (long)(idx->offset[ii]));
+               embed, (long)(idx->offset[ii]));
 
   }
 
@@ -1943,6 +2087,84 @@ cs_io_initialize_with_index(const char        *file_name,
 }
 
 /*----------------------------------------------------------------------------
+ * Initialize a kernel IO file structure with in-memory data,
+ * building an index.
+ *
+ * The magic string may be NULL, if we choose to ignore it.
+ *
+ * parameters:
+ *   name         <-- file name
+ *   magic_string <-- magic string associated with file type
+ *   method       <-- file access method
+ *   echo         <-- echo on main output (< 0 if none, header if 0,
+ *                    n first and last elements if n > 0)
+ *   nb           <-- number of matching bytes for data
+ *   data         <-- data buffer (ownership is relinquished by caller)
+ *   block_comm   <-- handle to MPI communicator used for distributed file
+ *                    block access (may be a subset of comm if some ranks do
+ *                    not directly access distributed data blocks)
+ *   comm         <-- handle to main MPI communicator
+ *
+ * returns:
+ *   pointer to kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+cs_io_t *
+cs_io_initialize_with_index_from_mem(const char        *file_name,
+                                     const char        *magic_string,
+                                     cs_file_access_t   method,
+                                     long               echo,
+                                     size_t             nb,
+                                     void              *data,
+                                     MPI_Comm           block_comm,
+                                     MPI_Comm           comm)
+#else
+cs_io_t *
+cs_io_initialize_with_index_from_mem(const char        *file_name,
+                                     const char        *magic_string,
+                                     cs_file_access_t   method,
+                                     long               echo,
+                                     size_t             nb,
+                                     void              *data)
+#endif /* HAVE_MPI */
+{
+  cs_io_t  *inp =_cs_io_create(CS_IO_MODE_READ, echo);
+
+  /* Info on interface creation */
+
+  if (echo >= CS_IO_ECHO_OPEN_CLOSE) {
+    bft_printf(_("\n Loading in memory pseudo-file: %s\n"), file_name);
+    bft_printf_flush();
+  }
+
+  /* Initialize index */
+
+  _create_index(inp);
+
+#if defined(HAVE_MPI)
+
+  MPI_Info _hints = MPI_INFO_NULL;
+
+  _cs_io_initialize_with_index_from_mem(inp, file_name, magic_string, method,
+                                        nb, data,
+                                        block_comm, comm);
+
+#else
+
+  _cs_io_initialize_with_index_from_mem(inp, file_name, magic_string, method,
+                                        nb_data);
+
+#endif
+
+  /* Now reset "file pointer" */
+
+  cs_file_seek(inp->f, 0, CS_FILE_SEEK_SET);
+
+  return inp;
+}
+
+/*----------------------------------------------------------------------------
  * Free a kernel IO file structure, closing the associated file.
  *
  * parameters:
@@ -1954,7 +2176,7 @@ cs_io_finalize(cs_io_t **cs_io)
 {
   cs_io_t *_cs_io = *cs_io;
 
-  if(_cs_io->mode == CS_IO_MODE_WRITE)
+  if (_cs_io->mode == CS_IO_MODE_WRITE)
     cs_io_write_global("EOF", 0, 0, 0, 0, CS_DATATYPE_NULL, NULL, _cs_io);
 
   /* Info on closing of interface file */
@@ -2103,6 +2325,30 @@ cs_io_get_echo(const cs_io_t  *cs_io)
   assert(cs_io != NULL);
 
   return (size_t)(cs_io->echo);
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Access raw restart data serialized in memory.
+ *
+ * \param[in]   pp_io  kernel IO structure
+ * \param[out]  nb     size of data
+ * \param[out]  data   pointer to data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_io_get_data_in_mem(const cs_io_t   *pp_io,
+                      size_t          *nb,
+                      void           **data)
+{
+  *nb = 0;
+  *data = NULL;
+
+  if (pp_io->f != NULL) {
+    *nb = cs_file_tell(pp_io->f);
+    *data = cs_file_in_memory_get_data(pp_io->f);
+  }
 }
 
 /*----------------------------------------------------------------------------
