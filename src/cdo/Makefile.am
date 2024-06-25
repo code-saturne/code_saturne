@@ -220,7 +220,7 @@ cs_mesh_deform.cxx \
 cs_navsto_coupling.cxx \
 cs_navsto_param.cxx \
 cs_navsto_system.cxx \
-cs_param_cdo.cxx \
+cs_param_cdo.c \
 cs_property.cxx \
 cs_quadrature.cxx \
 cs_reco.cxx \
