@@ -2535,9 +2535,9 @@ cs_equation_set_functions(void)
         /* Function pointers to retrieve values at mesh locations */
 
         eq->get_vertex_values = nullptr;
-        eq->get_edge_values   = nullptr;
-        eq->get_face_values   = nullptr;
-        eq->get_cell_values   = cs_cdocb_scaleq_get_cell_values;
+        eq->get_edge_values = nullptr;
+        eq->get_face_values = cs_cdocb_scaleq_get_face_values;
+        eq->get_cell_values = cs_cdocb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdocb_scaleq_get;
       }

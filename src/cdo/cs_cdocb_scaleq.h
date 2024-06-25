@@ -262,7 +262,7 @@ cs_cdocb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve an array of values at mesh vertices for the variable field
+ * \brief  Retrieve an array of values at mesh cellss for the variable field
  *         associated to the given context
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
@@ -276,6 +276,24 @@ cs_cdocb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
 
 cs_real_t *
 cs_cdocb_scaleq_get_cell_values(void        *context,
+                                bool         previous);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh faces for the variable field
+ *         associated to the given context
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
+ *
+ * \return  a pointer to an array of cs_real_t (size: n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdocb_scaleq_get_face_values(void        *context,
                                 bool         previous);
 
 /*----------------------------------------------------------------------------*/

@@ -853,6 +853,58 @@ cs_reco_scalar_v2c_v2f(const cs_cdo_connect_t    *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reconstruct at face centers by a cell-based field
+ *        weighted average.
+ *
+ *  \param[in]      connect   pointer to additional connectivities for CDO
+ *  \param[in]      cdoq      pointer to additional quantities for CDO
+ *  \param[in]      p_c       dofs at cell centers
+ *  \param[in, out] p_reco_f  reconstructed values at face centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_c2f(const cs_cdo_connect_t     *connect,
+                   const cs_cdo_quantities_t  *cdoq,
+                   const double               *p_c,
+                   double                     *p_reco_f)
+{
+  if (p_c == NULL || p_reco_f == NULL)
+    return;
+
+  /* Allocate arrays if necessary */
+
+  const cs_adjacency_t  *c2f = connect->c2f;
+
+  assert(cdoq->pvol_fc != NULL);
+
+  const double *pvol_fc = cdoq->pvol_fc;
+
+  double *pvol_f;
+  BFT_MALLOC(pvol_f, cdoq->n_faces, double);
+
+  memset(pvol_f, 0.0, cdoq->n_faces*sizeof(double));
+  memset(p_reco_f, 0.0, cdoq->n_faces*sizeof(double));
+
+  /* Reconstruction at face centers */
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+      cs_lnum_t f_id = c2f->ids[j];
+      pvol_f[f_id] += pvol_fc[j];
+      p_reco_f[f_id] += pvol_fc[j]*p_c[c_id];
+    }
+  }
+
+# pragma omp parallel for if (cdoq->n_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < cdoq->n_faces; f_id++)
+    p_reco_f[f_id] /= pvol_f[f_id];
+
+  BFT_FREE(pvol_f);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct a scalar-valued array at vertices from a scalar-valued
  *         array at cells.
  *

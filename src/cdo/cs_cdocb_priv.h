@@ -111,6 +111,11 @@ struct _cs_cdocb_t {
   cs_real_t   *flux;       /* At the last iteration */
   cs_real_t   *flux_pre;   /* At the previous iteration */
 
+  /* Reconstructred variable face values */
+
+  cs_real_t   *face_values;
+  cs_real_t   *face_values_pre;
+
   /* Members used for the cell-wise building of the linear system */
   /* ------------------------------------------------------------ */
 

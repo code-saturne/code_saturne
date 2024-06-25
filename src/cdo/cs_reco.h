@@ -272,6 +272,24 @@ cs_reco_scalar_v2f(cs_lnum_t                     n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reconstruct at face centers by a cell-based field
+ *        weighted average.
+ *
+ *  \param[in]      connect   pointer to additional connectivities for CDO
+ *  \param[in]      cdoq      pointer to additional quantities for CDO
+ *  \param[in]      p_c       dofs at cell centers
+ *  \param[in, out] p_reco_f  reconstructed values at face centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_scalar_c2f(const cs_cdo_connect_t     *connect,
+                   const cs_cdo_quantities_t  *cdoq,
+                   const double               *p_c,
+                   double                     *p_reco_f);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reconstruct at cell centers and face centers a vertex-based field
  *        Linear interpolation. If p_reco_c and/or p_reco_f are not allocated,
  *        this is done in this subroutine.

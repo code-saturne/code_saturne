@@ -1033,8 +1033,8 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
 
   eqb->msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ;
 
-  /* Values of the flux at each face (interior and border) i.e. take into
-     account BCs */
+  /* Values of the flux and face values at each face (interior and border)
+   * i.e. take into account BCs */
 
   BFT_MALLOC(eqc->flux, n_faces, cs_real_t);
   cs_array_real_fill_zero(n_faces, eqc->flux);
@@ -1044,6 +1044,10 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
     BFT_MALLOC(eqc->flux_pre, n_faces, cs_real_t);
     cs_array_real_fill_zero(n_faces, eqc->flux_pre);
   }
+
+  eqc->face_values = NULL;
+
+  eqc->face_values_pre = NULL;
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -1222,6 +1226,12 @@ cs_cdocb_scaleq_free_context(void  *scheme_context)
   BFT_FREE(eqc->flux);
   if (eqc->flux_pre != nullptr)
     BFT_FREE(eqc->flux_pre);
+
+  if (eqc->face_values != NULL)
+    BFT_FREE(eqc->face_values);
+
+  if (eqc->face_values_pre != NULL)
+    BFT_FREE(eqc->face_values_pre);
 
   cs_hodge_free_context(&(eqc->diff_hodge));
 
@@ -1636,7 +1646,7 @@ cs_cdocb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve an array of values at mesh vertices for the variable field
+ * \brief  Retrieve an array of values at mesh cells for the variable field
  *         associated to the given context
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
@@ -1664,6 +1674,45 @@ cs_cdocb_scaleq_get_cell_values(void        *context,
   }
   else
     return potential_fld->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh faces for the variable field
+ *         associated to the given context.
+ *         If the array does not exist, then it is allocated.
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
+ *
+ * \return  a pointer to an array of cs_real_t (size: n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdocb_scaleq_get_face_values(void        *context,
+                                bool         previous)
+{
+  cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
+  if (eqc == NULL)
+    return NULL;
+
+  if (previous) {
+    if (eqc->face_values_pre == NULL) {
+      BFT_MALLOC(eqc->face_values_pre, eqc->n_faces, cs_real_t);
+      cs_array_real_fill_zero(eqc->n_faces, eqc->face_values_pre);
+    }
+    return eqc->face_values_pre;
+  }
+  else {
+    if (eqc->face_values == NULL) {
+      BFT_MALLOC(eqc->face_values, eqc->n_faces, cs_real_t);
+      cs_array_real_fill_zero(eqc->n_faces, eqc->face_values);
+    }
+    return eqc->face_values;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
