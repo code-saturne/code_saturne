@@ -573,7 +573,7 @@ class case:
 
         # Memory log and test
 
-        self.mem_check = False
+        self.mem_log = False
 
         # Tool hooks
 
@@ -1556,7 +1556,7 @@ class case:
         s.write('cd ' + cs_exec_environment.enquote_arg(self.exec_dir) + '\n\n')
 
         # If user asked for it, place CS_MEM_LOG variable
-        if self.mem_check:
+        if self.mem_log:
             s.write('# Memory log\n')
             s.write('export CS_MEM_LOG=cs_mem.log')
             s.write('\n\n')
@@ -2077,7 +2077,7 @@ class case:
             if d.error:
                 e_caption = d.error
             # check for memory leaks if needed
-            if self.mem_check:
+            if self.mem_log:
                 d.check_memory_log()
 
         # Remove directories if empty

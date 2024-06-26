@@ -240,7 +240,7 @@ def arg_parser(argv):
                         help="automatically resubmit a computation if current " \
                              + "ends for a lack of sufficient wall time.")
 
-    parser.add_argument("--mem-check", dest="mem_check",
+    parser.add_argument("--mem-log", dest="mem_log",
                         action="store_true",
                         help="set CS_MEM_LOG environment variable to 'cs_mem.log' " \
                             + "and check that memory is correctly freed at the " \
@@ -259,7 +259,7 @@ def arg_parser(argv):
     parser.set_defaults(nthreads=None)
     parser.set_defaults(resource=None)
     parser.set_defaults(auto_restart=False)
-    parser.set_defaults(mem_check=False)
+    parser.set_defaults(mem_log=False)
 
     return parser
 
@@ -399,7 +399,7 @@ def process_options(options, pkg):
            'debug_args': None,
            'tool_args': None,
            'mpi_tool_args': None,
-           'mem_check':options.mem_check}
+           'mem_log':options.mem_log}
 
     if options.debug_args:
         r_c['debug_args'] = cs_exec_environment.assemble_args(options.debug_args)
@@ -437,7 +437,7 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
                    'run_prologue', 'run_epilogue',
                    'compute_prologue', 'compute_epilogue',
                    'debug_args', 'tool_args', 'mpi_tool_args',
-                   'mem_check')
+                   'mem_log')
 
     # Keys used for all cases/resources (global)
     run_conf_kw_glob = ('run_prologue', 'run_epilogue',
@@ -738,7 +738,7 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
     c.compute_prologue = r_c['compute_prologue']
     c.compute_epilogue = r_c['compute_epilogue']
 
-    c.mem_check = r_c['mem_check']
+    c.mem_log = r_c['mem_log']
 
     c.debug_args = r_c['debug_args']
     c.tool_args = r_c['tool_args']

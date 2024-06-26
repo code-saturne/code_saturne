@@ -1540,7 +1540,6 @@ class domain(base_domain):
         else:
             return 0
 
-
     #---------------------------------------------------------------------------
 
     def summary_info(self, s):

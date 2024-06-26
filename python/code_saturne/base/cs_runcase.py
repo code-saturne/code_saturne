@@ -45,7 +45,7 @@ class runcase(object):
                  epilogue=None,
                  casedir=None,
                  autorestart=False,
-                 memcheck=False):
+                 memlog=False):
         """
         Initialize runcase info object.
         """
@@ -53,7 +53,7 @@ class runcase(object):
         self.path = path
         self.package = package
         self.autorestart = autorestart
-        self.mem_check = memcheck
+        self.mem_log = memlog
         self.casedir = casedir
 
         if submit:
@@ -207,8 +207,8 @@ class runcase(object):
 
         run_cmd = enquote_arg(exec_path) + ' run'
 
-        if self.mem_check:
-            run_cmd += ' --mem-check'
+        if self.mem_log:
+            run_cmd += ' --mem-log'
 
         self.cmd_name = self.package.name
         self.run_cmd_line_id = len(self.lines)
