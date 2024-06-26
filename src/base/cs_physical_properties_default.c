@@ -675,8 +675,6 @@ _clip_visma(const bool       pass,
   cs_equation_param_t *eqp = cs_equation_param_by_name("mesh_velocity");
 
   if (eqp->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-    const cs_equation_param_t *eqp_v
-      = cs_field_get_equation_param_const(CS_F_(vism));
     const cs_real_6_t *cpro_visma_v = (const cs_real_6_t *)CS_F_(vism)->val;
     for (int ii = 0; ii < 6; ii++) {
       cs_real_t varmx = cpro_visma_v[0][ii];
@@ -689,7 +687,7 @@ _clip_visma(const bool       pass,
       cs_parall_max(1, CS_REAL_TYPE, &varmx);
       cs_parall_min(1, CS_REAL_TYPE, &varmn);
 
-      if ( (eqp_v->verbosity > 0) || (pass) || (varmn < 0.0)) {
+      if ( (eqp->verbosity > 0) || (pass) || (varmn < 0.0)) {
         if (!ok) {
           ok = true;
           bft_printf(" --- Mesh viscosity (ALE method)\n"
@@ -714,8 +712,6 @@ _clip_visma(const bool       pass,
     }
   }
   else if (eqp->idften & CS_ISOTROPIC_DIFFUSION) {
-    const cs_equation_param_t *eqp_s
-      = cs_field_get_equation_param_const(CS_F_(vism));
     const cs_real_t *cpro_visma_s = CS_F_(vism)->val;
 
     cs_real_t varmx = cpro_visma_s[0];
@@ -729,7 +725,7 @@ _clip_visma(const bool       pass,
     cs_parall_max(1, CS_REAL_TYPE, &varmx);
     cs_parall_min(1, CS_REAL_TYPE, &varmn);
 
-    if ( (eqp_s->verbosity > 0) || (pass) || (varmn < 0.0)) {
+    if ( (eqp->verbosity > 0) || (pass) || (varmn < 0.0)) {
       if (!ok) {
         ok = true;
         bft_printf(" --- Mesh viscosity (ALE method)\n"
@@ -741,13 +737,15 @@ _clip_visma(const bool       pass,
                  cs_field_get_label(CS_F_(vism)), varmn, varmx);
     }
 
-    bft_error(__FILE__, __LINE__, 0,
-              _("Warning: abort in the physical quantities computation\n"
-                "========\n"
-                "The mesh viscosity has not been correctly defined"
-                "The calculation will not be run.\n"
-                "The minimum reached is %10.12e\n"
-                "Verify he definition of this property"), varmn);
+    // Physical value checks
+    if (varmn < 0.0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Warning: abort in the physical quantities computation\n"
+                  "========\n"
+                  "The mesh viscosity has not been correctly defined"
+                  "The calculation will not be run.\n"
+                  "The minimum reached is %10.12e\n"
+                  "Verify he definition of this property"), varmn);
 
   }
 
