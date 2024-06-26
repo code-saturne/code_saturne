@@ -181,7 +181,6 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
     const cs_real_t frho = (rho2 + p_void*drho) / rho_max;
     visct[c_id] = frho*visct[c_id];
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -190,7 +189,7 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
  *
  * \param[in]  name      name of density or molecular viscosity
  * \param[in]  n_elts    number of elements (face or cells)
- * \param[in]  elts      values of density or molecular viscosity
+ * \param[in]  val       values of density or molecular viscosity
  * \param[in]  val_ref   value reference
  */
 /*----------------------------------------------------------------------------*/
@@ -198,14 +197,13 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
 static void
 _rho_mu_is_constant(const char       *name,
                     const cs_lnum_t  n_elts,
-                    const cs_real_t  elts[],
+                    const cs_real_t  val[],
                     const cs_real_t  val_ref)
 {
   bool is_constant = false;
 
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
-
-    if ( fabs(elts[ii] - val_ref) <= cs_math_epzero)
+    if ( fabs(val[ii] - val_ref) <= cs_math_epzero)
       continue;
     is_constant = true;
     break;
@@ -753,24 +751,22 @@ _clip_visma(const bool       pass,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize boundary temperature
- *
- *  \param[in]  n_b_faces     number of boundary faces
- *  \param[in]  n_cells_ext   number of cells with ghosts
- *  \param[in]  b_face_cells  boundary faces -> cells connectivity
+ * \brief Initialize boundary temperature
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_boundary_temperature(const cs_lnum_t  n_b_faces,
-                           const cs_lnum_t  n_cells_ext,
-                           const cs_lnum_t  *b_face_cells)
+_init_boundary_temperature(void)
 {
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   if (cs_field_by_name_try("boundary_temperature") == NULL)
     return;
 
-  const cs_field_t *fld = cs_field_by_name_try("temperature");
+  cs_field_t *fld = cs_field_by_name_try("temperature");
   cs_real_t *field_s_b = cs_field_by_name_try("boundary_temperature")->val;
 
   if (fld != NULL) {
@@ -778,27 +774,31 @@ _init_boundary_temperature(const cs_lnum_t  n_b_faces,
     const cs_real_t *field_s_v = fld->val;
 #   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      if (field_s_b[face_id] <= -cs_math_big_r) {
-        const cs_lnum_t c_id = b_face_cells[face_id];
-        field_s_b[face_id] = field_s_v[c_id];
-      }
+      if (field_s_b[face_id] <= -cs_math_big_r)
+        field_s_b[face_id] = field_s_v[b_face_cells[face_id]];
+
   }
   else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+
     fld = cs_field_by_name_try("enthalpy");
     if (fld != NULL) {
-      cs_real_t *ttmp = NULL;
+
       const cs_real_t *field_s_v = fld->val;
+
+      cs_real_t *ttmp = NULL;   /* n_cells should be sufficient ? */
       BFT_MALLOC(ttmp, n_cells_ext, cs_real_t);
       cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
+
 #     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        if (field_s_b[face_id] <= -cs_math_big_r) {
-          const cs_lnum_t c_id = b_face_cells[face_id];
-          field_s_b[face_id] = ttmp[c_id];
-        }
+        if (field_s_b[face_id] <= -cs_math_big_r)
+          field_s_b[face_id] = ttmp[b_face_cells[face_id]];
+
       BFT_FREE(ttmp);
+
     }
-  }
+
+  } /* Enthalpy */
 
   // Last resort
   if (fld != NULL)
@@ -863,9 +863,8 @@ cs_physical_properties_update(int   iterns)
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  cs_real_t *brom = NULL, *crom = NULL;
+  cs_field_t *rho_b_f = CS_F_(rho_b);
 
   int mbrom = 0;
   static bool pass = true;
@@ -883,18 +882,16 @@ cs_physical_properties_update(int   iterns)
      ---------------------- */
   cs_gui_physical_variable();
 
-  if (mbrom == 0 && n_b_faces > 0) {
-    brom = CS_F_(rho_b)->val;
-    brom[0] = -cs_math_big_r;
-  }
+  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != NULL)
+    rho_b_f->val[0] = -cs_math_big_r;
 
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
     cs_ht_convert_h_to_t_cells_solid();
 
   cs_user_physical_properties(cs_glob_domain);
 
-  if (mbrom == 0 && n_b_faces > 0)
-    if (brom[0] > -cs_math_big_r)
+  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != NULL)
+    if (rho_b_f->val[0] > -cs_math_big_r)
       mbrom = 1;
 
   // Finalization of physical properties for specific physics
@@ -903,16 +900,13 @@ cs_physical_properties_update(int   iterns)
     cs_f_physical_properties2();
 
   // Boundary density based on adjacent cell value if not explicitely set.
-  if (mbrom == 0) {
-    crom = CS_F_(rho)->val;
+  if (mbrom == 0 && rho_b_f != NULL) {
+    assert(CS_F_(rho) != NULL);
+    const cs_real_t  *crom = CS_F_(rho)->val;
 #   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      const cs_lnum_t c_id = b_face_cells[face_id];
-      brom[face_id] = crom[c_id];
-    }
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      rho_b_f->val[face_id] = crom[b_face_cells[face_id]];
   }
-
-  cs_mesh_sync_var_scal(crom);
 
   // Only density may be updated in Navier Stokes loop
   if (iterns > 0)
@@ -925,17 +919,15 @@ cs_physical_properties_update(int   iterns)
    *       rho (visc) in the file continued */
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
     if (cs_glob_fluid_properties->irovar == 0) {
-      crom = CS_F_(rho)->val;
-      brom = CS_F_(rho_b)->val;
       const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
       _rho_mu_is_constant("the molecular viscosity",
                           n_cells,
-                          crom,
+                          CS_F_(rho)->val,
                           ro0);
 
       _rho_mu_is_constant("the boundaries molecular viscosity",
                           n_b_faces,
-                          brom,
+                          CS_F_(rho_b)->val,
                           ro0);
     }
     if (cs_glob_fluid_properties->ivivar == 0) {
@@ -979,11 +971,10 @@ cs_physical_properties_update(int   iterns)
         || (cs_glob_turb_model->itytur == 5)
         || (cs_glob_turb_model->iturb  ==  CS_TURB_K_OMEGA)
         || (cs_glob_turb_model->iturb  ==  CS_TURB_SPALART_ALLMARAS) ) {
-      crom = CS_F_(rho)->val;
     _cavitation_correct_visc_turb(n_cells,
                                   cs_glob_vof_parameters->rho1,
                                   cs_glob_vof_parameters->rho2,
-                                  crom);
+                                  CS_F_(rho)->val);
     }
   }
 
@@ -997,8 +988,9 @@ cs_physical_properties_update(int   iterns)
   cs_turbulence_rij_compute_rusanov();
 
   // Physical value checks
-  brom = CS_F_(rho_b)->val;
-  _clip_rho_mu_cp(pass, n_scal, scalar_idx, mq, n_cells, n_b_faces, brom);
+  if (rho_b_f != NULL)
+    _clip_rho_mu_cp(pass, n_scal, scalar_idx, mq, n_cells, n_b_faces,
+                    rho_b_f->val);
 
   // Calculation of scalar limits and printing
   _clip_scalar(pass, n_scal, scalar_idx, n_cells);
@@ -1009,7 +1001,7 @@ cs_physical_properties_update(int   iterns)
   /* Initialize boundary temperature if present and not initialized yet
      ------------------------------------------------------------------ */
 
-  _init_boundary_temperature(n_b_faces, n_cells_ext, b_face_cells);
+  _init_boundary_temperature();
 
   pass = false;
 }
