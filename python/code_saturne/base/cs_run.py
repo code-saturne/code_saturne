@@ -240,6 +240,12 @@ def arg_parser(argv):
                         help="automatically resubmit a computation if current " \
                              + "ends for a lack of sufficient wall time.")
 
+    parser.add_argument("--mem-log", dest="mem_log",
+                        action="store_true",
+                        help="set CS_MEM_LOG environment variable to 'cs_mem.log' " \
+                            + "and check that memory is correctly freed at the " \
+                            + "end of the computation.")
+
     parser.set_defaults(compute_build=False)
     parser.set_defaults(suggest_id=False)
     parser.set_defaults(stage=None)
@@ -253,6 +259,7 @@ def arg_parser(argv):
     parser.set_defaults(nthreads=None)
     parser.set_defaults(resource=None)
     parser.set_defaults(auto_restart=False)
+    parser.set_defaults(mem_log=False)
 
     return parser
 
@@ -391,7 +398,8 @@ def process_options(options, pkg):
            'compute_build': compute_build,
            'debug_args': None,
            'tool_args': None,
-           'mpi_tool_args': None}
+           'mpi_tool_args': None,
+           'mem_log':options.mem_log}
 
     if options.debug_args:
         r_c['debug_args'] = cs_exec_environment.assemble_args(options.debug_args)
@@ -428,7 +436,8 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     run_conf_kw = ('job_parameters', 'job_header',
                    'run_prologue', 'run_epilogue',
                    'compute_prologue', 'compute_epilogue',
-                   'debug_args', 'tool_args', 'mpi_tool_args')
+                   'debug_args', 'tool_args', 'mpi_tool_args',
+                   'mem_log')
 
     # Keys used for all cases/resources (global)
     run_conf_kw_glob = ('run_prologue', 'run_epilogue',
@@ -728,6 +737,8 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
     c.run_epilogue = r_c['run_epilogue']
     c.compute_prologue = r_c['compute_prologue']
     c.compute_epilogue = r_c['compute_epilogue']
+
+    c.mem_log = r_c['mem_log']
 
     c.debug_args = r_c['debug_args']
     c.tool_args = r_c['tool_args']
