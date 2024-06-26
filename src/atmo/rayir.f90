@@ -286,9 +286,9 @@ endif
 
 do k = k1+1, kmray
   dzs8 = dz0(k-1) / 8.d0
-  tqq(k) = (temray(k)+temray(k-1)) / 2.d0 + tkelvi
-  zqq(k) = (zray(k) + zray(k-1)) / 2.d0
-  pspoqq(k) = (pspo(k) + pspo(k-1)) / 2.d0
+  tqq(k) = 0.5d0 * (temray(k)+temray(k-1)) + tkelvi
+  zqq(k) = 0.5d0 * (zray(k) + zray(k-1))
+  pspoqq(k) = 0.5d0 * (pspo(k) + pspo(k-1))
 
   dt4dz(k) = 4.d0 * (tqq(k)**3) * (temray(k) - temray(k-1)) / dz0(k-1)
 
@@ -338,8 +338,7 @@ if (ico2.eq.1) then
       enddo
     endif
 
-    kp1 = k+1
-    do kk = kp1, kmray
+    do kk = k+1, kmray
       tco2 = (temray(k) + tkelvi + tqq(kk))/2.d0
 
       u = qqv(kk) - qqqv(k)
@@ -579,12 +578,12 @@ endif
 if(inua.ne.1) then
 
   !  for clear sky
-  do k = k1+1, kmray
+  do k = k1, kmray
 
     ctray = sig/romray(k)/(cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(k)))
     !  a1: contribution from  0 to z
     a1 = 0.d0
-    do kk = k1+1, k
+    do kk = k+1, k
       qqqqv = qqqv(k) - qqv(kk)
       qqqqc = qqqc(k) - qqc(kk)
 
@@ -592,11 +591,10 @@ if(inua.ne.1) then
       a1 = a1 + dt4dz(kk)*(daco2(k,kk) - dtauv)*dz0(kk-1)
     enddo
 
-    kp1 = k+1
 
     ! a2: contribution from z to ztop
     a2 = 0.d0
-    do kk = kp1, kmray
+    do kk = k+1, kmray
       qqqqv = qqv(kk) - qqqv(k)
       qqqqc = qqc(kk) - qqqc(k)
 
@@ -634,11 +632,25 @@ if(inua.ne.1) then
     ! Formula follows Ponnulakshmi and al. (2009)
     rayi(k) = ctray*(a1 - a2 + t4zt*(dacsup(k) - dtvsup) - (1.d0 - emis)     &
               *(a3+t4zt*(dtvsups-dacsups(k))))
+
+    ! Save for 3D
+    ! Ck_up = depsg0 / (1 - epsg0)
+    ! With:
+    ! epsg0 = 1 - tv_infinity + acinfinity
+    ! depsg0 = - dtv_infinity + dacinfinity
+    ckup(k) = (dacinfe(k) - dtvinfe) / (tvinfe - acinfe(k))
+
+    ! Ck_down = -depsgz / (1 - epsgz)
+    ! With:
+    ! epsgz = 1 - tv_sup + acinfinity
+    ! depsgz = - dtv_infinity + dacinfinity
+    ckdown(k) = (dacsup(k) - dtvsup) / (tvsup - acsup(k))
+
   enddo
 else
 
-  !  for cloudy sky
-  do k = k1+1, kmray
+  ! For cloudy sky
+  do k = k1, kmray
 
     ctray = sig/romray(k)/(cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(k)))
     ! a1: contribution from 0 to z
@@ -669,10 +681,9 @@ else
                            + taul*dul*(tauv - aco2(k,kk)))*dz0(kk-1)
     enddo
 
-    kp1 = k+1
     ! a2: contribution from z to ztop
     a2 = 0.d0
-    do kk = kp1, kmray
+    do kk = k+1, kmray
       qqqqv = qqv(kk) - qqqv(k)
       qqqqc = qqc(kk) - qqqc(k)
       qqqql = qql(kk) - qqql(k)
@@ -709,13 +720,13 @@ else
       enddo
 
       if(fn.lt.1.d-3) then
-        taul=0.
-        fn=0.
+        taul=0.d0
+        fn=0.d0
       else
         taul=exp(-kliq(k)*qqqql/fn)
       endif
 
-      a3 = a3 + dt4dz(kk)*( (1.+fn*(taul-1.))*(daco2s(k,kk)-dtauv)           &
+      a3 = a3 + dt4dz(kk)*( (1.d0+fn*(taul-1.d0))*(daco2s(k,kk)-dtauv)           &
                            +taul*dul*(tauv-aco2s(k,kk)))*dz0(kk-1)
     enddo
 
@@ -737,7 +748,7 @@ else
       tlsup = exp(-kliq(k)*qqqql/fns)
     endif
 
-    !  ground contribution transmited by lower layers (0-z)
+    !  ground contribution transmitted by lower layers (0-z)
     qqqqv = qqqv(k)
     qqqqc = qqqc(k)
     qqqql = qqql(k)
@@ -766,8 +777,8 @@ else
     enddo
 
     if(fnss.lt.1.d-3) then
-      tlsups=0.
-      fnss=0.
+      tlsups=0.d0
+      fnss=0.d0
     else
       tlsups=exp(-kliq(k)*qqqql/fnss)
     endif
@@ -778,24 +789,26 @@ else
              *(dacsup(k) - dtvsup) + dul*tlsup*(tvsup - acsup(k)))            &
              -(1.d0-emis)*(a3+t4zt*((1.d0+fnss*(tlsups-1.d0))                 &
              *(dtvsups-dacsups(k))-dul*tlsups*(tvsups-acsups(k)))))
+
+    ! Save for 3D
+    ! Ck_up = depsg0 / (1 - epsg0)
+    ! With:
+    ! epsg0 = 1 - tv_infinity + acinfinity
+    ! depsg0 = - dtv_infinity + dacinfinity
+    ckup(k) = (dacinfe(k) - dtvinfe) / (tvinfe - acinfe(k))
+
+    ! Ck_down = -depsgz / (1 - epsgz)
+    ! With:
+    ! epsgz = 1 - tv_sup + acinfinity
+    ! depsgz = - dtv_infinity + dacinfinity
+    ckdown(k) = (dacsup(k) - dtvsup) / (tvsup - acsup(k))
+
   enddo
 endif
 
 do k = 1, kmray
   iru(k,ivertc) = ufir(k)
   ird(k,ivertc) = dfir(k)
-
-  ! Ck_up = depsg0 / (1 - epsg0)
-  ! With:
-  ! epsg0 = 1 - tv_infinity + acinfinity
-  ! depsg0 = - dtv_infinity + dacinfinity
-  ckup(k) = (dacinfe(k) - dtvinfe) / (tvinfe - acinfe(k))
-
-  ! Ck_down = -depsgz / (1 - epsgz)
-  ! With:
-  ! epsgz = 1 - tv_sup + acinfinity
-  ! depsgz = - dtv_infinity + dacinfinity
-  ckdown(k) = (dacsup(k) - dtvsup) / (tvsup - acsup(k))
 enddo
 
 ! Compute Boundary conditions for the 3D InfraRed radiance
