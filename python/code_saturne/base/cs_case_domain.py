@@ -377,6 +377,14 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
+    def check_memory_log(self):
+        """
+        Check for leaks in memory log
+        """
+        pass # Nothing to do for base method
+
+    #---------------------------------------------------------------------------
+
     def purge_result(self, name):
         """
         Remove a file or directory from execution directory.
@@ -1486,6 +1494,51 @@ class domain(base_domain):
 
         for f in dir_files:
             self.copy_result(f, purge)
+
+    #---------------------------------------------------------------------------
+
+    def check_memory_log(self):
+        """
+        Check for leaks in memory log
+        """
+
+        is_error = False
+        _msg = ""
+        for i in range(self.n_procs):
+            _log = "cs_mem.log"
+            if self.n_procs > 1:
+                _log += "." + str(i)
+            _mem_log_f = os.path.join(self.exec_dir, _log)
+            if os.path.isfile(_mem_log_f):
+                with open(_mem_log_f, 'rb') as f:
+                    try: # catch OSError in case of a one line file
+                        f.seek(-2, os.SEEK_END)
+                        while f.read(1) != b'\n':
+                            f.seek(-2, os.SEEK_CUR)
+                    except OSError:
+                        f.seek(0)
+                    last_line = f.readline().decode()
+
+                _last = last_line.strip('\n').split(':')
+
+                n_unfreed_ptrs = 0
+                if len(_last) != 2 or _last[0] != "Number of non freed pointers remaining":
+                    is_error = True
+                    _msg += f"Memory log file cs_mem.log is incomplete.\n\n"
+                else:
+                    n_unfreed_ptrs = int(_last[1])
+
+                if n_unfreed_ptrs > 0:
+                    is_error = True
+                    _msg += f"Memory leaks detected with {n_unfreed_ptrs} non-freed pointers for rank #{i}.\n"
+                    _msg += f"Please check the log file {_mem_log_f}\n"
+                    _msg += f"\n"
+
+        if is_error:
+            sys.stdout.write(_msg)
+            return 1
+        else:
+            return 0
 
     #---------------------------------------------------------------------------
 

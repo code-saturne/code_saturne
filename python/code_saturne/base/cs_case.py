@@ -571,6 +571,10 @@ class case:
         self.compute_prologue = None
         self.compute_epilogue = None
 
+        # Memory log and test
+
+        self.mem_log = False
+
         # Tool hooks
 
         self.debug_args = None
@@ -1551,6 +1555,12 @@ class case:
 
         s.write('cd ' + cs_exec_environment.enquote_arg(self.exec_dir) + '\n\n')
 
+        # If user asked for it, place CS_MEM_LOG variable
+        if self.mem_log:
+            s.write('# Memory log\n')
+            s.write('export CS_MEM_LOG=cs_mem.log')
+            s.write('\n\n')
+
         # Add user-defined prologue if defined
 
         if self.compute_prologue:
@@ -2066,6 +2076,9 @@ class case:
             d.copy_results()
             if d.error:
                 e_caption = d.error
+            # check for memory leaks if needed
+            if self.mem_log:
+                d.check_memory_log()
 
         # Remove directories if empty
 
