@@ -132,7 +132,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void
-cs_f_physical_properties1(const int mbrom);
+cs_f_physical_properties1(int *mbrom);
 
 void
 cs_f_physical_properties2(void);
@@ -876,7 +876,7 @@ cs_physical_properties_update(int   iterns)
   // First computation of physical properties for specific physics
   // BEFORE the user
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
-   cs_f_physical_properties1(mbrom);
+   cs_f_physical_properties1(&mbrom);
 
   /* Interface code_saturne
      ---------------------- */
