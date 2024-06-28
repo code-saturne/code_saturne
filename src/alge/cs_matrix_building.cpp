@@ -418,7 +418,7 @@ _sym_matrix_strided(const cs_mesh_t            *m,
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++)
       for (cs_lnum_t j = 0; j < stride; j++)
-        da[c_id][j][i] = fimp[c_id][j][i];
+        da[c_id][i][j] = fimp[c_id][i][j];
   });
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
@@ -560,7 +560,7 @@ _matrix_strided(const cs_mesh_t            *m,
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++) {
       for (cs_lnum_t j = 0; j < stride; j++) {
-        da[c_id][j][i] = fimp[c_id][j][i];
+        da[c_id][i][j] = fimp[c_id][i][j];
       }
     }
   });
@@ -841,7 +841,7 @@ _sym_matrix_anisotropic_diffusion_strided
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++)
       for (cs_lnum_t j = 0; j < stride; j++)
-        da[c_id][j][i] = fimp[c_id][j][i];
+        da[c_id][i][j] = fimp[c_id][i][j];
   });
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
@@ -985,9 +985,9 @@ _matrix_anisotropic_diffusion_strided(const cs_mesh_t            *m,
   /* Initialization */
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    for (cs_lnum_t i = 0; i < 3; i++)
-      for (cs_lnum_t j = 0; j < 3; j++)
-        da[c_id][j][i] = fimp[c_id][j][i];
+    for (cs_lnum_t i = 0; i < stride; i++)
+      for (cs_lnum_t j = 0; j < stride; j++)
+        da[c_id][i][j] = fimp[c_id][i][j];
   });
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
