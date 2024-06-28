@@ -293,17 +293,21 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
  * User-defined modifications on the particle position and its
  * velocity.
  *
- * \param[in]   coords    old particle coordinates
- * \param[in]   dt        time step (per particle)
- * \param[out]  disp      particle dispacement
+ * \param[in]   particles       pointer to particle set
+ * \param[in]   p_id            particle id
+ * \param[in]   coords          old particle coordinates
+ * \param[in]   dt              time step (per particle)
+ * \param[out]  disp            particle dispacement
  */
 /*----------------------------------------------------------------------------*/
 
-/*! [lagr_imposed_motion] */
+#pragma weak cs_user_lagr_imposed_motion
 void
-cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
-                            cs_real_t        dt,
-                            cs_real_t        disp[3])
+cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
+                            cs_lnum_t                     p_id,
+                            const cs_real_t               coords[3],
+                            const cs_real_t               dt,
+                            cs_real_t                     disp[3])
 {
   /* Angular velocity */
   cs_real_t omega = 1.0;
@@ -318,6 +322,13 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
   disp[1] = rcost * (cos(omega*dt) - 1.0 ) - rsint * sin(omega*dt);
   disp[2] = rsint * (cos(omega*dt) - 1.0 ) + rcost * sin(omega*dt);
 
+  /* If there is multiple class specify specific behaviour for a given class */
+  if (cs_glob_lagr_model->n_stat_classes > 0) {
+    if (cs_lagr_particles_get_lnum(particles, p_id, CS_LAGR_STAT_CLASS) == 1) {
+      for ( int i = 0; i < 3; i++)
+        disp[i] *= -2;
+    }
+  }
 }
 /*! [lagr_imposed_motion] */
 

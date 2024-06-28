@@ -176,16 +176,20 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
  * User-defined modifications on the particle position and its
  * velocity.
  *
- * \param[in]   coords    old particle coordinates
- * \param[in]   dt        time step (per particle)
- * \param[out]  disp      particle dispacement
+ * \param[in]   particles       pointer to particle set
+ * \param[in]   p_id            particle id
+ * \param[in]   coords          old particle coordinates
+ * \param[in]   dt              time step (per particle)
+ * \param[out]  disp            particle dispacement
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
-                            const cs_real_t  dt,
-                            cs_real_t        disp[3]);
+cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
+                            cs_lnum_t                     p_id,
+                            const cs_real_t               coords[3],
+                            const cs_real_t               dt,
+                            cs_real_t                     disp[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!

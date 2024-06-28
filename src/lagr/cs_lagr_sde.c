@@ -263,7 +263,9 @@ _lages1(cs_real_t           dtp,
     if (imposed_motion) {
       cs_real_t disp[3] = {0., 0., 0.};
 
-      cs_user_lagr_imposed_motion(old_part_coords,
+      cs_user_lagr_imposed_motion(p_set,
+                                  ip,
+                                  old_part_coords,
                                   dtp,
                                   disp);
 
@@ -2698,7 +2700,9 @@ _lagdep(cs_real_t           dtp,
       cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
                                                   CS_LAGR_VELOCITY);
 
-      cs_user_lagr_imposed_motion(old_part_coords,
+      cs_user_lagr_imposed_motion(p_set,
+                                  ip,
+                                  old_part_coords,
                                   dtp,
                                   disp);
 
