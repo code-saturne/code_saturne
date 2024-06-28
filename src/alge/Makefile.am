@@ -197,7 +197,7 @@ cs_gradient_boundary.c \
 cs_grid.cpp \
 cs_matrix.c \
 cs_matrix_assembler.c \
-cs_matrix_building.c \
+cs_matrix_building.cpp \
 cs_matrix_default.c \
 cs_matrix_spmv.cpp \
 cs_matrix_tuning.c \
