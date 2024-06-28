@@ -387,6 +387,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled");
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER_RESTART, "40");
     cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_MAX_ITER, "100");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_RTOL, "1e-8");
 
     cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
