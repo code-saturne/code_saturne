@@ -258,6 +258,27 @@ _lages1(cs_real_t           dtp,
     cs_real_t *part_coords       = cs_lagr_particle_attr(particle, p_am,
                                                          CS_LAGR_COORDS);
 
+    int imposed_motion = cs_lagr_particles_get_flag(p_set, ip,
+                                                    CS_LAGR_PART_IMPOSED_MOTION);
+    if (imposed_motion) {
+      cs_real_t disp[3] = {0., 0., 0.};
+
+      cs_user_lagr_imposed_motion(old_part_coords,
+                                  dtp,
+                                  disp);
+
+      for (cs_lnum_t id = 0; id < 3; id++) {
+
+        part_coords[id] = old_part_coords[id] + disp[id];
+
+        part_vel_seen[id] =  0.0;
+
+        part_vel[id] = disp[id]/dtp;
+
+      }
+      continue;
+    } /* End IMPOSED_MOTION */
+
     cs_real_3_t loc_fluid_vel ;
     if (cs_glob_lagr_time_scheme->interpol_field == 1) {
       for (int i = 0; i < 3; i++) {
@@ -844,7 +865,8 @@ _lages2(cs_real_t           dtp,
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED)
+          || cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_IMPOSED_MOTION))
         continue;
 
       cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am,
@@ -913,6 +935,7 @@ _lages2(cs_real_t           dtp,
         continue;
 
       if (   cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED)
+          || cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_IMPOSED_MOTION)
           || cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0)
         continue;
 
