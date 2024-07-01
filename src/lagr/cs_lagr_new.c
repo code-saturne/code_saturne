@@ -823,10 +823,6 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
                   + vagaus[l_id][2] * sqrt(eig_val[cell_id][2]) * eig_vec[cell_id][2][i];
     }
 
-    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_P_FLAG, 0);
-
-    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TR_TRUNCATE, 0);
 
   }
 

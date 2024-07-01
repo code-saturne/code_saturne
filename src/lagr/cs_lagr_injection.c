@@ -607,6 +607,208 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the initial particle values with regard to the new cell_id if
+ *        modified in cs_user_lagr_in_modif_pos
+ *
+ *
+ * \param[in,out]  p_set             particle set
+ * \param[in]      particle_range    start and past-the-end ids of new particles
+ *                                   for this zone and class
+ * \param[in]      time_id           time step indicator for fields
+ *                                     0: use fields at current time step
+ *                                     1: use fields at previous time step
+ * \param[in]      zis               injection data for this zone and set
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_init_particles(cs_lagr_particle_set_t         *p_set,
+                       const cs_lnum_t                 particle_range[2],
+                       int                             time_id,
+                       const cs_lagr_injection_set_t  *zis)
+{
+  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  const cs_real_t *vela = extra->vel->vals[time_id];
+  const cs_real_t *cval_h = NULL, *cval_t = NULL, *cval_t_l = NULL;
+  cs_real_t *_cval_t = NULL;
+
+  cs_real_t tscl_shift = 0;
+  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+
+  /* Initialize pointers (used to simplify future tests) */
+
+  if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+          && cs_glob_lagr_specific_physics->itpvar == 1)
+      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+    const cs_field_t *f = cs_field_by_name_try("temperature");
+    if (f != NULL)
+      cval_t = f->val;
+    else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
+      cval_h = cs_field_by_name("enthalpy")->val;
+
+    if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
+      tscl_shift = - cs_physical_constants_celsius_to_kelvin;
+  }
+
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+    cval_t_l = cs_field_by_name("temp_l_r")->val;
+  }
+
+  /* Prepare  enthalpy to temperature conversion if needed */
+
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+      && cs_glob_lagr_specific_physics->itpvar == 1
+      && cval_t == NULL
+      && cval_h != NULL) {
+
+    BFT_MALLOC(_cval_t, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+    cs_ht_convert_h_to_t_cells(cval_h, _cval_t);
+    cval_t = _cval_t;
+
+  }
+  const int shape = cs_glob_lagr_model->shape;
+
+  cs_lnum_t loc_rank_id = cs_glob_rank_id;
+  for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id ++) {
+    unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+    cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                   CS_LAGR_CELL_ID);
+    cs_lnum_t prev_cell_id = cs_lagr_particle_get_lnum_n(particle, p_am, 1,
+                                                         CS_LAGR_CELL_ID);
+    cs_lnum_t prev_rank_id = cs_lagr_particle_get_lnum_n(particle, p_am, 1,
+                                                         CS_LAGR_RANK_ID);
+
+    /* Test if the particles cell has been modified */
+    if (cell_id != prev_cell_id || prev_rank_id != loc_rank_id) {
+      /* Update the initial properties associated to the particles with
+       * value associated to the new cell */
+
+      /* velocity as seen from fluid */
+      if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_FLUID_VALUE) {
+        cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
+                                                    CS_LAGR_VELOCITY);
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_vel[i] = vela[cell_id * 3  + i];
+      }
+      /* else keep the velocity unchanged */
+
+      /* fluid velocity seen */
+      cs_real_t *part_seen_vel = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_VELOCITY_SEEN);
+      for (cs_lnum_t i = 0; i < 3; i++)
+        part_seen_vel[i] = vela[cell_id * 3 + i];
+
+      /* Shape for spheroids without inertia */
+      if (shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
+
+        /* Compute Euler angles
+           (random orientation with a uniform distribution in [-1;1]) */
+        cs_real_t trans_m[3][3];
+        /* Generate the first two vectors */
+        for (cs_lnum_t id = 0; id < 3; id++) {
+          cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
+          cs_random_uniform(1, &trans_m[id][1]); /* (?,1) */
+          cs_random_uniform(1, &trans_m[id][2]); /* (?,2) */
+          cs_real_3_t loc_vector =  {-1.+2*trans_m[id][0],
+                                     -1.+2*trans_m[id][1],
+                                     -1.+2*trans_m[id][2]};
+          cs_real_t norm_trans_m = cs_math_3_norm( loc_vector );
+          while ( norm_trans_m > 1 )
+          {
+            cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
+            cs_random_uniform(1, &trans_m[id][1]); /* (?,1) */
+            cs_random_uniform(1, &trans_m[id][2]); /* (?,2) */
+            loc_vector[0] = -1.+2*trans_m[id][0];
+            loc_vector[1] = -1.+2*trans_m[id][1];
+            loc_vector[2] = -1.+2*trans_m[id][2];
+            norm_trans_m = cs_math_3_norm( loc_vector );
+          }
+          for (cs_lnum_t id1 = 0; id1 < 3; id1++)
+            trans_m[id][id1] = (-1.+2*trans_m[id][id1]) / norm_trans_m;
+        }
+        /* Correct 2nd vector (for perpendicularity to the 1st) */
+        cs_real_3_t loc_vector0 =  {trans_m[0][0],
+          trans_m[0][1],
+          trans_m[0][2]};
+        cs_real_3_t loc_vector1 =  {trans_m[1][0],
+          trans_m[1][1],
+          trans_m[1][2]};
+        cs_real_t scal_prod = cs_math_3_dot_product(loc_vector0, loc_vector1);
+        for (cs_lnum_t id = 0; id < 3; id++)
+          trans_m[1][id] -= scal_prod * trans_m[0][id];
+        /* Re-normalize */
+        loc_vector1[0] = trans_m[1][0];
+        loc_vector1[1] = trans_m[1][1];
+        loc_vector1[2] = trans_m[1][2];
+        cs_real_t norm_trans_m = cs_math_3_norm( loc_vector1 );
+        for (cs_lnum_t id = 0; id < 3; id++)
+          trans_m[1][id] /= norm_trans_m;
+
+        /* Compute last vector (cross product of the two others) */
+        loc_vector1[0] = trans_m[1][0];
+        loc_vector1[1] = trans_m[1][1];
+        loc_vector1[2] = trans_m[1][2];
+        cs_real_3_t loc_vector2 =  {trans_m[2][0],
+          trans_m[2][1],
+          trans_m[2][2]};
+        cs_math_3_cross_product( loc_vector0, loc_vector1, loc_vector2);
+        for (cs_lnum_t id = 0; id < 3; id++)
+          trans_m[2][id] = loc_vector2[id];
+
+        /* Compute initial angular velocity */
+
+        /* Local reference frame */
+        cs_real_t grad_vf_r[3][3];
+        cs_math_33_transform_a_to_r(extra->grad_vel[cell_id],
+                                    trans_m,
+                                    grad_vf_r);
+
+        cs_real_t *ang_vel = cs_lagr_particle_attr(particle, p_am,
+            CS_LAGR_ANGULAR_VEL);
+
+        ang_vel[0] = 0.5*(grad_vf_r[2][1] - grad_vf_r[1][2]);
+        ang_vel[1] = 0.5*(grad_vf_r[0][2] - grad_vf_r[2][0]);
+        ang_vel[2] = 0.5*(grad_vf_r[0][1] - grad_vf_r[1][0]);
+
+      }
+
+      /* Thermal effects */
+
+      if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+          && cs_glob_lagr_specific_physics->itpvar == 1) {
+
+        if (zis->temperature_profile < 1) {
+          if (cval_t != NULL)
+            cs_lagr_particle_set_real(particle, p_am,
+                                      CS_LAGR_FLUID_TEMPERATURE,
+                                      cval_t[cell_id] + tscl_shift);
+        }
+        /* else keep the face_temperature */
+      }
+
+      else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+                                  cval_t[cell_id] + tscl_shift);
+
+      /*Cooling tower model*/
+      if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
+                                  cval_t_l[face_id]);
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+                                  cval_t[face_id]+tscl_shift);
+      }
+
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize particle values
  *
  * \param[in,out]  p_set             particle set
@@ -696,7 +898,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
     if (n_e_p < 1)
       continue;
 
-    cs_lnum_t p_s_id = p_set->n_particles +  elt_particle_idx[li];
+    cs_lnum_t p_s_id = p_set->n_particles - elt_particle_idx[n_elts]
+                     +  elt_particle_idx[li];
     cs_lnum_t p_e_id = p_s_id + n_e_p;
 
     const cs_lnum_t face_id = (face_ids != NULL) ? face_ids[li] : -1;
@@ -707,8 +910,13 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-      cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                      CS_LAGR_CELL_ID);
+
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_P_FLAG, 0);
+
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TR_TRUNCATE, 0);
 
       /* Random value associated with each particle */
 
@@ -1157,8 +1365,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
     cs_real_t dmass = 0.0;
 
-    cs_lnum_t p_s_id = p_set->n_particles;
-    cs_lnum_t p_e_id = p_s_id + elt_particle_idx[n_elts];
+    cs_lnum_t p_e_id = p_set->n_particles;
+    cs_lnum_t p_s_id = p_e_id - elt_particle_idx[n_elts];
 
     for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++)
       dmass += cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
@@ -1203,20 +1411,18 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
  *
  * \param[in,out]  p_set             particle set
  * \param[in]      zis               injection data for this zone and set
- * \param[in]      n_elts            number of elements in zone
- * \param[in]      elt_particle_idx  starting id of new particles for a given
- *                                   element (size: n_elts+1)
+ * \param[in]      particle_range    start and past-the-end ids of new particles
+ *                                   for this zone and class
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _check_particles(cs_lagr_particle_set_t         *p_set,
                  const cs_lagr_injection_set_t  *zis,
-                 cs_lnum_t                       n_elts,
-                 const cs_lnum_t                 elt_particle_idx[])
+                 const cs_lnum_t                 particle_range[2])
 {
+  const cs_lnum_t e_id = particle_range[0];
   const cs_lnum_t s_id = p_set->n_particles;
-  const cs_lnum_t e_id = s_id + elt_particle_idx[n_elts];
 
   char z_type_name[32] = "unknown";
   if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
@@ -1562,33 +1768,11 @@ cs_lagr_injection(int        time_id,
 
         BFT_FREE(elt_profile);
 
-        /* Initialize other particle attributes */
-
-        _init_particles(p_set,
-                        zis,
-                        time_id,
-                        n_z_elts,
-                        z_elt_ids,
-                        elt_particle_idx);
-
         assert(n_inject == elt_particle_idx[n_z_elts]);
 
         cs_lnum_t particle_range[2] = {p_set->n_particles,
                                        p_set->n_particles + n_inject};
-
-        cs_lagr_new_particle_init(particle_range,
-                                  time_id,
-                                  visc_length);
-
-        /* Advanced user modification:
-
-           WARNING: the user may change the particle coordinates but is
-           prevented from changing the previous location (otherwise, if
-           the particle is not in the same cell anymore, it would be lost).
-
-           Moreover, a precaution has to be taken when calling
-           "current to previous" in the tracking stage.
-        */
+        p_set->n_particles += n_inject;
 
         {
           cs_lnum_t *particle_face_ids = NULL;
@@ -1598,13 +1782,35 @@ cs_lagr_injection(int        time_id,
                                                        z_elt_ids,
                                                        elt_particle_idx);
 
+          /* Initialize other particle attributes */
+
+          _init_particles(p_set,
+                          zis,
+                          time_id,
+                          n_z_elts,
+                          z_elt_ids,
+                          elt_particle_idx);
+
+
+          /* Advanced user modification:
+
+           WARNING: the user may change the particle coordinates but is
+           prevented from changing the previous location (otherwise, if
+           the particle is not in the same cell anymore, it would be lost).
+
+           Moreover, a precaution has to be taken when calling
+           "current to previous" in the tracking stage.
+          */
           cs_lnum_t *saved_cell_id;
           cs_real_3_t *saved_coords;
           BFT_MALLOC(saved_cell_id, n_inject, cs_lnum_t);
           BFT_MALLOC(saved_coords, n_inject, cs_real_3_t);
 
-          for (cs_lnum_t i = 0; i < n_inject; i++) {
-            cs_lnum_t p_id = particle_range[0] + i;
+          for (cs_lnum_t p_id = p_set->n_particles - n_inject;
+              p_id < p_set->n_particles;
+              p_id++) {
+
+            cs_lnum_t i = p_id + n_inject - p_set->n_particles;
 
             saved_cell_id[i] = cs_lagr_particles_get_lnum(p_set,
                                                            p_id,
@@ -1613,6 +1819,107 @@ cs_lagr_injection(int        time_id,
               = cs_lagr_particles_attr_const(p_set,
                                              p_id,
                                              CS_LAGR_COORDS);
+
+            for (cs_lnum_t j = 0; j < 3; j++)
+              saved_coords[i][j] = p_coords[j];
+          }
+
+          cs_user_lagr_in_modif_pos(p_set,
+                                    zis,
+                                    particle_range,
+                                    particle_face_ids,
+                                    visc_length);
+
+
+          bool is_modified_pos = false;
+          /* For safety, reset saved values for cell number and previous
+             particle coordinates and rank_id. */
+          for (cs_lnum_t p_id = p_set->n_particles - n_inject;
+              p_id < p_set->n_particles;
+              p_id++) {
+
+            cs_lagr_particles_current_to_previous(p_set, p_id);
+
+            cs_lnum_t i = p_id + n_inject - p_set->n_particles;
+
+
+            cs_lagr_particles_set_lnum(p_set,
+                                         p_id,
+                                         CS_LAGR_CELL_ID,
+                                         saved_cell_id[i]);
+
+            cs_lagr_particles_set_lnum_n(p_set, p_id, 1, CS_LAGR_RANK_ID,
+                                                      cs_glob_rank_id);
+
+            const cs_real_t *p_coords
+              = cs_lagr_particles_attr_const(p_set,
+                                             p_id,
+                                             CS_LAGR_COORDS);
+            cs_real_t *p_coords_prev
+              = cs_lagr_particles_attr_n(p_set,
+                                         p_id,
+                                         1,
+                                         CS_LAGR_COORDS);
+            for (cs_lnum_t j = 0; j < 3; j++)
+              p_coords_prev[j] = saved_coords[i][j];
+
+            /* Check if a particle has moved*/
+            const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
+            /* Dimension less test: no movement ? */
+            cs_real_t inv_ref_length = 1./pow(cell_vol[saved_cell_id[i]],1./3.);
+            cs_real_3_t disp;
+            for (int k = 0; k < 3; k++)
+              disp[k] = p_coords[k] - p_coords_prev[k];
+            if (   fabs(disp[0] * inv_ref_length) > 1e-15
+                || fabs(disp[1] * inv_ref_length) > 1e-15
+                || fabs(disp[2] * inv_ref_length) > 1e-15)
+              is_modified_pos = true;
+          }
+
+          if (is_modified_pos) {
+            /* Tracking step to determine the cell_id of the  new location */
+            cs_lagr_tracking_particle_movement(visc_length, particle_range);
+
+            _update_init_particles(p_set, particle_range, time_id, zis);
+          }
+
+          /* The number of particles injected in each rank may have been modify
+           * in the tracking step within cs_user_lagr_in_modif_pos */
+          cs_lnum_t prev_n_inject = n_inject;
+          n_inject = particle_range[1] - particle_range[0];
+
+          cs_lagr_new_particle_init(particle_range,
+                                    time_id,
+                                    visc_length);
+
+          /* Advanced user modification:
+
+           WARNING: the user may change the particle coordinates but is
+           prevented from changing the previous location (otherwise, if
+           the particle is not in the same cell anymore, it would be lost).
+
+           Moreover, a precaution has to be taken when calling
+           "current to previous" in the tracking stage.
+          */
+          if (prev_n_inject != n_inject) {
+            BFT_REALLOC(saved_cell_id, n_inject, cs_lnum_t);
+            BFT_REALLOC(saved_coords, n_inject, cs_real_3_t);
+          }
+
+          for (cs_lnum_t p_id = p_set->n_particles - n_inject;
+              p_id < p_set->n_particles;
+              p_id++) {
+
+            cs_lnum_t i = p_id + n_inject - p_set->n_particles;
+
+            saved_cell_id[i] = cs_lagr_particles_get_lnum(p_set,
+                                                          p_id,
+                                                          CS_LAGR_CELL_ID);
+            const cs_real_t *p_coords
+              = cs_lagr_particles_attr_const(p_set,
+                                             p_id,
+                                             CS_LAGR_COORDS);
+
             for (cs_lnum_t j = 0; j < 3; j++)
               saved_coords[i][j] = p_coords[j];
           }
@@ -1623,17 +1930,18 @@ cs_lagr_injection(int        time_id,
                           particle_face_ids,
                           visc_length);
 
-          /* For safety, build values at previous time step, but reset saved values
-             for previous cell number and particle coordinates */
+          /* For safety, reset saved values for cell number and previous
+             particle coordinates. */
 
-          for (cs_lnum_t i = 0; i < n_inject; i++) {
-            cs_lnum_t p_id = particle_range[0] + i;
+          for (cs_lnum_t p_id = p_set->n_particles - n_inject;
+              p_id < p_set->n_particles;
+              p_id++) {
 
-            cs_lagr_particles_current_to_previous(p_set, p_id);
+            cs_lnum_t i = p_id + n_inject - p_set->n_particles;
 
-            cs_lagr_particles_set_lnum_n(p_set,
+
+            cs_lagr_particles_set_lnum(p_set,
                                          p_id,
-                                         1,
                                          CS_LAGR_CELL_ID,
                                          saved_cell_id[i]);
             cs_real_t *p_coords_prev
@@ -1661,7 +1969,7 @@ cs_lagr_injection(int        time_id,
               cs_real_t t_fraction = (cs_glob_lagr_time_step->dtp + res_time);
 
               for (cs_lnum_t j = 0; j < 3; j++)
-                p_coords[j] = p_coords_prev[j] + t_fraction * p_vel[j];
+                p_coords[j] += t_fraction * p_vel[j];
 
             }
 
@@ -1683,8 +1991,11 @@ cs_lagr_injection(int        time_id,
             if (events->n_events_max < events_min_size)
               cs_lagr_event_set_resize(events, events_min_size);
 
-            for (cs_lnum_t i = 0; i < n_inject; i++) {
-              cs_lnum_t p_id = particle_range[0] + i;
+            for (cs_lnum_t p_id = p_set->n_particles - n_inject;
+                p_id < p_set->n_particles;
+                p_id++) {
+
+              cs_lnum_t i = p_id + n_inject - p_set->n_particles;
 
               cs_lnum_t event_id = events->n_events;
               events->n_events += 1;
@@ -1721,15 +2032,15 @@ cs_lagr_injection(int        time_id,
 
         /* check some particle attributes consistency */
 
-        _check_particles(p_set, zis, n_z_elts, elt_particle_idx);
+        _check_particles(p_set, zis, particle_range);
 
         /* update counters and balances */
 
         cs_real_t z_weight = 0.;
 
-        for (cs_lnum_t p_id = particle_range[0];
-             p_id < particle_range[1];
-             p_id++) {
+        for (cs_lnum_t p_id = p_set->n_particles - n_inject;
+            p_id < p_set->n_particles;
+            p_id++) {
           cs_real_t s_weight = cs_lagr_particles_get_real(p_set, p_id,
                                                           CS_LAGR_STAT_WEIGHT);
           cs_real_t flow_rate = (  s_weight
@@ -1748,9 +2059,8 @@ cs_lagr_injection(int        time_id,
           z_weight += s_weight;
         }
 
-        p_set->n_particles += n_inject;
-        p_set->n_part_new += n_inject;
         p_set->weight_new += z_weight;
+        p_set->n_part_new += n_inject;
 
       } /* end of loop on sets */
 
