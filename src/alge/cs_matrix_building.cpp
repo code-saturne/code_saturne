@@ -378,7 +378,6 @@ _matrix_scalar(const cs_mesh_t            *m,
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
  * \param[in]     bc_coeffs_v   boundary condition structure for the variable
- *                               (implicit part - 3x3 tensor array)
  * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
@@ -505,7 +504,7 @@ _sym_matrix_strided(const cs_mesh_t            *m,
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride, cs_lnum_t eb_size>
-void
+static void
 _matrix_strided(const cs_mesh_t            *m,
                 const cs_mesh_quantities_t *mq,
                 int                         iconvp,
@@ -567,7 +566,7 @@ _matrix_strided(const cs_mesh_t            *m,
 
   if ((stride == 3 && eb_size == 1) || stride == 6) {
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-      cs_lnum_t _p = is_p*f_id;
+      const cs_lnum_t _p = is_p*f_id;
       cs_real_t _i_massflux = i_massflux[f_id];
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
@@ -612,7 +611,7 @@ _matrix_strided(const cs_mesh_t            *m,
   }
   else {
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-      cs_lnum_t _p = is_p*f_id;
+      const cs_lnum_t _p = is_p*f_id;
       const cs_real_t *n = b_face_u_normal[f_id];
       const cs_real_t _i_massflux = i_massflux[f_id];
       cs_lnum_t ii = i_face_cells[f_id][0];
@@ -637,16 +636,15 @@ _matrix_strided(const cs_mesh_t            *m,
        * XA_ij used to be diagonal: XA_ik n_k n_j = XA_ii n_i n_j*/
 
       for (cs_lnum_t i = 0; i < eb_size; i++) {
-        _xa[f_id][0][i][i] = flu[0];
-        _xa[f_id][1][i][i] = flu[1];
-
         for (cs_lnum_t j = 0; j < eb_size; j++) {
-          _xa[f_id][0][i][j] = thetap * (_xa[f_id][0][i][j]
-              + flu[0] * (i_f_face_factor[_p][1] - 1.) * n[i] * n[j]);
+          cs_real_t d_ij = ((i == j) ? 1. : 0.);
+
+          _xa[f_id][0][i][j] = thetap * flu[0]
+            * (d_ij + (i_f_face_factor[_p][1] - 1.) * n[i] * n[j]);
 
           //FIXME also diffusion? MF thinks so
-          _xa[f_id][1][i][j] = thetap * (_xa[f_id][1][i][j]
-              + flu[1] * (i_f_face_factor[_p][0] - 1.) * n[i] * n[j]);
+          _xa[f_id][1][i][j] = thetap * flu[1]
+            * (d_ij + (i_f_face_factor[_p][0] - 1.) * n[i] * n[j]);
         }
       }
 
@@ -663,7 +661,7 @@ _matrix_strided(const cs_mesh_t            *m,
       for (cs_lnum_t i = 0; i < eb_size; i++) {
         for (cs_lnum_t j = 0; j < eb_size; j++) {
           cs_real_t d_ij = ((i == j) ? 1. : 0.);
-          cs_real_t diag = d_ij * iconvp * i_massflux[f_id];
+          cs_real_t diag = d_ij * iconvp * _i_massflux;
 
           vfaci[stride*i+j] = - diag -_xa[f_id][1][i][j];
 
@@ -694,6 +692,7 @@ _matrix_strided(const cs_mesh_t            *m,
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
       const cs_real_t *n = b_face_u_normal[f_id];
+      const cs_lnum_t _p = is_p*f_id;
       cs_lnum_t ii = b_face_cells[f_id];
 
       cs_real_t flu[2] = {
@@ -726,7 +725,7 @@ _matrix_strided(const cs_mesh_t            *m,
                    + flu[1] * coefbp[f_id][i][j]
                    + idiffp * b_visc[f_id] * cofbfp[f_id][i][j]
                    + (flu[0] + flu[1] * n_b_n + idiffp * b_visc[f_id] * n_bf_n)
-                   * (b_f_face_factor[is_p*f_id] - 1.) * n[i] * n[j]
+                   * (b_f_face_factor[_p] - 1.) * n[i] * n[j]
                    )
              - iconvp * d_ij * b_massflux[f_id];
         }
@@ -735,6 +734,7 @@ _matrix_strided(const cs_mesh_t            *m,
       cs_dispatch_sum<stride*stride>(reinterpret_cast<cs_real_t*>(da[ii]),
                                      bfac,
                                      b_sum_type);
+
     });
   }
   else if (stride == 6) {
@@ -915,10 +915,7 @@ _sym_matrix_anisotropic_diffusion_strided
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbp        boundary condition array for the variable
- *                               (implicit part - 3x3 tensor array)
- * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (implicit part - 3x3 tensor array)
+ * \param[in]     bc_coeffs_v   boundary condition structure for the variable
  * \param[in]     fimp          part of the diagonal
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -991,7 +988,7 @@ _matrix_anisotropic_diffusion_strided(const cs_mesh_t            *m,
   });
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-    cs_lnum_t _p = is_p*f_id;
+    const cs_lnum_t _p = is_p*f_id;
     const cs_real_t *n = b_face_u_normal[f_id];
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
@@ -1004,16 +1001,16 @@ _matrix_anisotropic_diffusion_strided(const cs_mesh_t            *m,
     /* Computation of extradiagonal terms */
 
     for (cs_lnum_t i = 0; i < stride; i++) {
-      xa[f_id][0][i][i] = flu[0];
-      xa[f_id][1][i][i] = flu[1];
-
       for (cs_lnum_t j = 0; j < stride; j++) {
-        xa[f_id][0][i][j] = thetap*(  xa[f_id][0][i][j]
+        cs_real_t d_ij = ((i == j) ? 1. : 0.);
+
+        xa[f_id][0][i][j] = thetap*(  d_ij * flu[0]
                                     + (i_f_face_factor[_p][0] - 1.)
                                       * n[i] * n[j] * flu[0]
-                                     //FIXME also diffusion? MF thinks so
+                                    //FIXME also diffusion? MF thinks so
                                     - idiffp*i_visc[f_id][i][j]);
-        xa[f_id][1][i][j] = thetap*(  xa[f_id][1][i][j]
+
+        xa[f_id][1][i][j] = thetap*(  d_ij * flu[1]
                                     + (i_f_face_factor[_p][1] - 1.)
                                       * n[i] * n[j] * flu[1]
                                     - idiffp*i_visc[f_id][i][j]);
@@ -1062,7 +1059,7 @@ _matrix_anisotropic_diffusion_strided(const cs_mesh_t            *m,
     const cs_real_33_t *cofbfp = (const cs_real_33_t *)bc_coeffs_v->bf;
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-      cs_lnum_t _p = is_p*f_id;
+      const cs_lnum_t _p = is_p*f_id;
       const cs_real_t *n = b_face_u_normal[f_id];
       cs_lnum_t ii = b_face_cells[f_id];
 
