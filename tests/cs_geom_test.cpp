@@ -44,7 +44,7 @@
  * the normal and check its sign.
  *
  * parameters:
- *   plane  <-- plane definition (x,y,z, Nx,Ny,Nz)
+ *   plane  <-- plane definition (x, y, z, nx, ny, nz)
  *   x      <-- the point considered
  *
  * returns:
@@ -60,7 +60,7 @@ _is_point_inside_plane(cs_real_t plane[6],
   cs_real_t *p = &plane[0];
   cs_real_t *n = &plane[3];
 
-  cs_real_t psca = cs_math_3_distance_dot_product(p,x,n);
+  cs_real_t psca = cs_math_3_distance_dot_product(p, x, n);
 
   if (psca <= 0.0)
     val = true;
