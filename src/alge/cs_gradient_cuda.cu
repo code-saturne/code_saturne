@@ -664,7 +664,7 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
 
-  __shared__ cs_real_t _rhs[blocksize][3][3];
+  __shared__ cs_real_t _rhs[blocksize][stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
@@ -734,7 +734,7 @@ _compute_gradient_lsq_strided(cs_lnum_t          n_cells,
   size_t t_id = blockIdx.x * blockDim.x + threadIdx.x;
 
   size_t c_id = t_id / (stride*3);
-  size_t i = (t_id / stride) % stride;
+  size_t i = (t_id / 3) % stride;
   size_t j = t_id % 3;
 
   if (c_id >= n_cells)
