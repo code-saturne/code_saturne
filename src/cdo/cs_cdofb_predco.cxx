@@ -63,6 +63,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_post.h"
+#include "cs_reco.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
@@ -137,6 +138,7 @@ typedef struct {
    */
 
   cs_field_t  *pressure;
+
 
   /*! \var divergence
    *  Pointer to \ref cs_real_t containing the values of the divergence on the
@@ -482,7 +484,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   cs_timer_t  t_bld = cs_timer_time();
 
   /* Compute the source term */
-
+# pragma omp for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Compute the divergence of the predicted velocity */
@@ -490,7 +492,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
     const cs_real_t  div_c
       = cs_cdofb_navsto_cell_divergence(c_id, quant, connect->c2f, velp_f);
 
-    cc->div_st[c_id] = -div_c * quant->cell_vol[c_id];
+    cc->div_st[c_id] = - div_c * quant->cell_vol[c_id];
 
   }
 
@@ -568,12 +570,12 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
 
   /* Solve the equation related to the pressure increment */
 
-  cs_cdofb_scaleq_solve_steady_state(true, /* cur2prev */
-                                     mesh,
-                                     pre_eq->field_id,
-                                     pre_eqp,
-                                     pre_eqb,
-                                     pre_eqc);
+  pre_eq->solve_steady_state(true,
+                             mesh,
+                             pre_eq->field_id,
+                             pre_eqp,
+                             pre_eqb,
+                             pre_eqc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -586,7 +588,8 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_variables(cs_cdofb_predco_t           *sc)
+_update_variables(cs_navsto_param_t           *nsp,
+                  cs_cdofb_predco_t           *sc)
 {
   cs_navsto_projection_t *cc = sc->coupling_context;
   cs_equation_t  *pre_eq = cc->correction;
@@ -601,11 +604,13 @@ _update_variables(cs_cdofb_predco_t           *sc)
   const cs_field_t  *velp_fld = cc->predicted_velocity;
   const cs_real_t *const  velp_c = velp_fld->val;
   const cs_real_t *const  velp_f = sc->predicted_velocity_f;
-  const cs_real_t *const  dp_f = cs_cdofb_scaleq_get_face_values(pre_eqc,
-                                                                 false);
-  const cs_real_t *const  dp_c = cs_cdofb_scaleq_get_cell_values(pre_eqc,
-                                                                 false);
+
+  const cs_real_t *const dp_c = pre_eq->get_cell_values(pre_eqc,
+                                                        false);
+  const cs_real_t *const dp_f = pre_eq->get_face_values(pre_eqc,
+                                                        false);
   const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
+  const cs_adjacency_t  *c2f = connect->c2f;
 
   /* Variables to update */
 
@@ -613,13 +618,38 @@ _update_variables(cs_cdofb_predco_t           *sc)
   cs_real_t  *pr_c = sc->pressure->val; /* cell DoFs for the pressure */
   cs_real_t  *vel_c = sc->velocity->val;
   cs_real_t  *vel_f = mom_eqc->face_values;
-  cs_real_t  *div = sc->divergence->val;
+
+  cs_real_t  *div = NULL;
+  if (sc->divergence != NULL)
+    div = sc->divergence->val;
+
+  cs_real_3_t *grad_dp = NULL;
+  if (cc->pressure_incr_gradient != NULL)
+    grad_dp = (cs_real_3_t*) cc->pressure_incr_gradient->val;
+
+  cs_real_3_t  *grad_p = NULL;
+  if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT)
+    grad_p = (cs_real_3_t*) cs_field_by_name_try("pressure_gradient")->val;
+
+  cs_real_t  *mass_flux_array = sc->mass_flux_array;
 
   cs_timer_t  t_upd = cs_timer_time();
 
   cs_field_current_to_previous(sc->velocity);
   cs_field_current_to_previous(sc->pressure);
   cs_field_current_to_previous(sc->divergence);
+
+  cs_real_t *diff_flux = NULL;
+  BFT_MALLOC(diff_flux, n_faces, cs_real_t);
+
+  cs_equation_compute_diffusive_flux(pre_eq,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     cs_flag_primal_face,
+                                     cs_glob_time_step->t_cur,
+                                     diff_flux);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -645,21 +675,43 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
       /* Update the cell pressure */
 
-      pr_c[c_id] += dt_cur*dp_c[c_id];
+      pr_c[c_id] += dp_c[c_id];
 
-      /* Evaluate the cell gradient for the pressure increment */
+      if (grad_p != NULL || grad_dp != NULL) {
+        /* Reconstruct the cell gradient
+           ----------------------------- */
 
-      cs_real_t  grd_dp[3] = {0, 0, 0};
-      for (short int f = 0; f < cm->n_fc; f++) {
-        const cs_real_t  f_coef = cm->f_sgn[f]*cm->face[f].meas;
-        for (int k = 0; k < 3; k++)
-          grd_dp[k] += f_coef*dp_f[cm->f_ids[f]]*cm->face[f].unitv[k];
+        const cs_lnum_t  s = c2f->idx[c_id],
+        e = c2f->idx[c_id+1];
+        const cs_lnum_t  *c2f_ids = c2f->ids + s;
+        const short int  *c2f_sgn = c2f->sgn + s;
+
+        const cs_lnum_t n_fc = e - s;
+        const cs_real_t vol_c = quant->cell_vol[c_id];
+        const cs_real_t *cell_center = quant->cell_centers + 3*c_id;
+        cs_real_3_t grddp_reco = {0.0, 0.0, 0.0};
+
+        for (short int f_id = 0; f_id < n_fc; f_id++) {
+
+          cs_lnum_t ff = c2f_ids[f_id];
+
+          const cs_real_t *face_center  = (ff < quant->n_i_faces) ?
+            quant->i_face_center + 3*ff:
+            quant->b_face_center + 3*(ff - quant->n_i_faces);
+
+          for (short int k = 0; k < 3; k++)
+            grddp_reco[k] += - c2f_sgn[f_id]/vol_c
+                             *diff_flux[ff]*(face_center[k] - cell_center[k]);
+        }
+
+        if (grad_p != NULL)
+          for (short int k = 0; k < 3; k++)
+            grad_p[c_id][k] += grddp_reco[k];
+
+        if (grad_dp != NULL)
+          for (short int k = 0; k < 3; k++)
+            grad_dp[c_id][k] = grddp_reco[k];
       }
-
-      /* Update the cell velocity */
-
-      for (int k = 0; k < 3; k++)
-        vel_c[3*c_id + k] = velp_c[3*c_id + k] + dt_cur*grd_dp[k];
 
       /* Partial update of the face velocity:
        * v_f^(n+1) = vp_f^(n+1) + dt*grd(incr_p)
@@ -669,20 +721,25 @@ _update_variables(cs_cdofb_predco_t           *sc)
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_lnum_t  f_id = cm->f_ids[f];
+        cs_real_3_t dtgradf_dp = {0.0, 0.0, 0.0};
 
-        cs_real_t  f_coef = dt_cur;
+        const cs_quant_t pfq = cm->face[f];
+        for (short int k = 0; k < 3; k++)
+          dtgradf_dp[k] = diff_flux[f_id]/pfq.meas*pfq.unitv[k];
+
+        cs_real_t  f_coef = 1.0;
         if (f_id < quant->n_i_faces)
-          f_coef *= 0.5;
-
+          f_coef = 0.5;
         cs_real_t  *_vel = vel_f + 3*f_id;
         for (int k = 0; k < 3; k++)
-          _vel[k] += f_coef*grd_dp[k];
-
+          _vel[k] += f_coef*dtgradf_dp[k];
       }
 
     } /* Loop on cells */
 
   } /* OpenMP block */
+
+  BFT_FREE(diff_flux);
 
   /* Parallel or periodic sum */
 
@@ -696,12 +753,13 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
   /* Update face-related unknowns */
 
+  if (nsp->space_scheme == CS_SPACE_SCHEME_CDOCB)
+    cs_reco_scalar_c2f(connect, quant, dp_c, dp_f);
+
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
-    /* p^(n+1) = p^n + delta_p */
-
-    pr_f[f] += dp_f[f]*dt_cur;
+    pr_f[f] += dp_f[f];
 
     /* v_f^(n+1) = vp_f^(n+1) + dt*grd(incr_p) */
 
@@ -710,27 +768,36 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
   } /* Loop on faces */
 
-  const cs_adjacency_t  *c2f = connect->c2f;
+  /* Update the mass flux
+   * Mass flux updating must be consistent
+   * with face velocity updating
+   * ----------------------------------
+   * */
+
+  cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, mass_flux_array);
+
+  /* Update the cell velocity */
+
+  /* Compute values at cells pc from values at faces pf
+     vc = acc^-1*(RHS - Acf*vf) */
+
+  cs_static_condensation_recover_vector(connect->c2f,
+                                        mom_eqc->rc_tilda,
+                                        mom_eqc->acf_tilda,
+                                        vel_f, vel_c);
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    /* Reset the divergence of the velocity before computing the updated
-       value (vel_f has to be updated first) */
+    div[c_id] = 0.0;
+    for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
 
-    div[c_id] = 0;
-    for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
-
-      const cs_lnum_t  f_id = c2f->ids[jf];
-      const cs_real_t  *_vel = vel_f + 3*f_id;
-      const cs_real_t  *nf = cs_quant_get_face_vector_area(f_id, quant);
-
-      div[c_id] += c2f->sgn[jf]*cs_math_3_dot_product(_vel, nf);
+      cs_lnum_t f_id = c2f->ids[f];
+      div[c_id] += c2f->sgn[f]*mass_flux_array[f_id];
 
     } /* Loop on cell faces */
 
-    const cs_real_t  ovc = 1./quant->cell_vol[c_id];
-    div[c_id] *= ovc;
+    div[c_id] /= quant->cell_vol[c_id];
 
   } /* Loop on cells */
 
@@ -859,6 +926,7 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
   /* Values of the pressure at faces */
 
   BFT_MALLOC(sc->pressure_f, quant->n_faces, cs_real_t);
+
   cs_array_real_fill_zero(quant->n_faces, sc->pressure_f);
 
   /* Boundary treatment */
@@ -1001,8 +1069,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   /* Retrieve fields */
 
   cs_real_t  *pr_c = sc->pressure->val; /* cell DoFs for the pressure */
-  cs_field_t  *vel_fld = sc->velocity;
-  cs_real_t  *vel_c = vel_fld->val;
+  cs_real_t  *vel_c = mom_eq->get_cell_values(mom_eqc, false);
 
   /*--------------------------------------------------------------------------
    *                      BUILD: START
@@ -1259,14 +1326,13 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Update pressure, velocity and divergence fields */
 
-  cs_timer_t  t_upd = cs_timer_time();
-
-  /* Compute values at cells pc from values at faces pf
-     pc = acc^-1*(RHS - Acf*pf) */
-
   cs_static_condensation_recover_vector(connect->c2f,
-                                        mom_eqc->rc_tilda, mom_eqc->acf_tilda,
+                                        mom_eqc->rc_tilda,
+                                        mom_eqc->acf_tilda,
                                         velp_f, velp_c);
+
+
+  cs_timer_t  t_upd = cs_timer_time();
 
   cs_sles_free(sles);
   cs_cdo_system_helper_reset(mom_sh);      /* free rhs and matrix */
@@ -1284,7 +1350,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   /* LAST MAJOR STEP: Update the pressure and the velocity */
 
-  _update_variables(sc);
+  _update_variables(nsp, sc);
 
   if (sc->pressure_rescaling == CS_BOUNDARY_PRESSURE_RESCALING)
     cs_cdofb_navsto_rescale_pressure_to_ref(nsp, quant, pr_c);

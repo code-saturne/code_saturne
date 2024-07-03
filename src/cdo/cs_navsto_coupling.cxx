@@ -137,7 +137,8 @@ cs_navsto_coupling_get_momentum_eqp(const cs_navsto_param_t    *nsp,
     }
     break;
 
-  case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     {
       cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
       mom_eqp = cs_equation_get_param(nsc->prediction);
@@ -572,7 +573,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
   BFT_MALLOC(nsc, 1, cs_navsto_projection_t);
 
   nsc->prediction = cs_equation_add("velocity_prediction",
-                                    "velocity",
+                                    "predicted_velocity",
                                     CS_EQUATION_TYPE_NAVSTO,
                                     3,
                                     bc);
@@ -609,13 +610,22 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
 
     /* Space scheme settings (default) */
 
-    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+    const cs_navsto_param_coupling_t algo_coupling = nsp->coupling;
 
-    /* Solver settings */
+    if (algo_coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB) {
+      cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+      cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
-    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
+      /* Solver settings */
+
+      cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+
+    }
+    else
+      /* Default sles parameters are set following the CDO-Cb scheme setting */
+      cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_cb");
+      cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "gcr");
   }
 
   nsc->div_st             = nullptr;
@@ -696,31 +706,31 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(u_eqp, adv_field);
 
-  /* Add the variable field (Always keep a previous state) */
-
-  cs_equation_predefined_create_field(1, nsc->prediction);
-
   /* Correction step: Approximate the pressure */
   /* ----------------------------------------- */
 
   cs_equation_param_t *p_eqp = cs_equation_get_param(nsc->correction);
 
-  cs_navsto_param_transfer(nsp, p_eqp);
+  if (nsp->dof_reduction_mode != p_eqp->dof_reduction)
+    p_eqp->dof_reduction = nsp->dof_reduction_mode;
 
-  cs_equation_add_diffusion(p_eqp, cs_property_by_name("time_step"));
-
-  /* Add the predicted velocity field */
-
-  nsc->predicted_velocity = cs_field_create("predicted_velocity",
-                                            CS_FIELD_INTENSIVE,
-                                            loc_id,
-                                            3,
-                                            has_previous);
+  cs_equation_add_diffusion(p_eqp, cs_property_by_name("unity"));
 
   /* Add the variable field */
 
   cs_equation_predefined_create_field((has_previous ? 1 : 0), nsc->prediction);
   cs_equation_predefined_create_field(0, nsc->correction);
+
+  nsc->predicted_velocity = cs_equation_get_field(nsc->prediction);
+  nsc->phi = cs_equation_get_field(nsc->correction);
+
+  if (nsp->verbosity > 1)
+    nsc->pressure_incr_gradient =
+      cs_field_find_or_create("pressure_increment_gradient",
+                              CS_FIELD_INTENSIVE,
+                              CS_MESH_LOCATION_CELLS,
+                              3,
+                              false);
 }
 
 /*----------------------------------------------------------------------------*/

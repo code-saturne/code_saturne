@@ -426,7 +426,8 @@ cs_navsto_system_activate(const cs_boundary_t         *boundaries,
     navsto->coupling_context
       = cs_navsto_monolithic_create_context(default_bc, navsto->param);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     navsto->coupling_context
       = cs_navsto_projection_create_context(default_bc, navsto->param);
     break;
@@ -527,9 +528,10 @@ cs_navsto_system_destroy(void)
     }
     break;
 
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    navsto->coupling_context
-      = cs_navsto_projection_free_context(navsto->coupling_context);
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+    navsto->coupling_context =
+      cs_navsto_projection_free_context(navsto->coupling_context);
     break;
 
   default:
@@ -600,7 +602,8 @@ cs_navsto_system_get_momentum_eq(void)
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     eq = cs_navsto_monolithic_get_momentum_eq(navsto->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     eq = cs_navsto_projection_get_momentum_eq(navsto->coupling_context);
     break;
 
@@ -938,9 +941,13 @@ cs_navsto_system_init_setup(void)
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     cs_navsto_monolithic_init_setup(nsp, ns->adv_field, ns->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    cs_navsto_projection_init_setup(
-      nsp, ns->adv_field, location_id, has_previous, ns->coupling_context);
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+    cs_navsto_projection_init_setup(nsp,
+                                    ns->adv_field,
+                                    location_id,
+                                    has_previous,
+                                    ns->coupling_context);
     break;
 
   default:
@@ -1058,7 +1065,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     cs_navsto_monolithic_last_setup(nsp, ns->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     cs_navsto_projection_last_setup(quant, nsp, ns->coupling_context);
     break;
 
@@ -1186,7 +1194,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
         mom_eqp, mesh, quant, connect, time_step);
       break;
 
-    case CS_NAVSTO_COUPLING_PROJECTION:
+    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
       /* ============================= */
 
       ns->init_scheme_context = cs_cdofb_predco_init_scheme_context;
@@ -1449,7 +1458,7 @@ cs_navsto_system_init_values(const cs_mesh_t           *mesh,
 
   if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
 
-    if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {
+    if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB) {
 
       /* The call to the initialization of the cell pressure should be done
          before */
@@ -2043,41 +2052,62 @@ cs_navsto_system_extra_post(void                 *input,
       /* Nothing to do up to now */
       break;
 
-    case CS_NAVSTO_COUPLING_PROJECTION: {
-      cs_navsto_projection_t *cc
-        = (cs_navsto_projection_t *)ns->coupling_context;
+    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+      {
+        cs_navsto_projection_t  *cc
+          = (cs_navsto_projection_t *)ns->coupling_context;
 
-      const cs_field_t *velp = cc->predicted_velocity;
+        /* Post-process the source term of the correction equation on the
+           pressure increment (-div(velp_f) */
 
-      /* Post-process the predicted velocity */
+        cs_post_write_var(mesh_id,
+                          CS_POST_WRITER_DEFAULT,
+                          "-DivVelPred",
+                          1,
+                          true,       // interlace
+                          true,       // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          cc->div_st, // values on cells
+                          nullptr,    // values at internal faces
+                          nullptr,    // values at border faces
+                          time_step); // time step management struct.
 
-      cs_post_write_var(mesh_id,
-                        CS_POST_WRITER_DEFAULT,
-                        velp->name,
-                        3,
-                        true, // interlace
-                        true, // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        velp->val,  // values on cells
-                        nullptr,    // values at internal faces
-                        nullptr,    // values at border faces
-                        time_step); // time step management struct.
+        if (nsp->verbosity > 1) {
 
-      /* Post-process the source term of the correction equation on the
-         pressure increment (-div(velp_f) */
+          const cs_field_t  *velp = cc->predicted_velocity;
 
-      cs_post_write_var(mesh_id,
-                        CS_POST_WRITER_DEFAULT,
-                        "-DivVelPred",
-                        1,
-                        true, // interlace
-                        true, // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        cc->div_st, // values on cells
-                        nullptr,    // values at internal faces
-                        nullptr,    // values at border faces
-                        time_step); // time step management struct.
-    } break;
+          /* Post-process the predicted velocity */
+
+          cs_post_write_var(mesh_id,
+                            CS_POST_WRITER_DEFAULT,
+                            velp->name,
+                            3,
+                            true,           // interlace
+                            true,           // true = original mesh
+                            CS_POST_TYPE_cs_real_t,
+                            velp->val,      // values on cells
+                            nullptr,        // values at internal faces
+                            nullptr,        // values at border faces
+                            time_step);     // time step management struct.
+
+          const cs_field_t *grad_dp = cc->pressure_incr_gradient;
+
+          cs_post_write_var(mesh_id,
+                            CS_POST_WRITER_DEFAULT,
+                            grad_dp->name,
+                            3,
+                            true,       // interlace
+                            true,       // true = original mesh
+                            CS_POST_TYPE_cs_real_t,
+                            grad_dp->val, // values on cells
+                            nullptr,    // values at internal faces
+                            nullptr,    // values at border faces
+                            time_step); // time step management struct.
+        }
+
+      }
+      break;
 
     default:
       bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);

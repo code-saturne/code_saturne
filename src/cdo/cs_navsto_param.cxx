@@ -77,25 +77,24 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
-static const char _err_empty_nsp[]
-  = N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
-       " Please check your settings.\n");
+static const char _err_empty_nsp[] =
+  N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
+     " Please check your settings.\n");
 
-static const char cs_navsto_param_model_name[CS_NAVSTO_N_MODELS]
-                                            [CS_BASE_STRING_LEN]
-  = {
-      N_("Stokes equations"),
-      N_("Oseen equations"),
-      N_("Incompressible Navier-Stokes equations"),
-    };
+static const char
+cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
+  { N_("Stokes equations"),
+    N_("Oseen equations"),
+    N_("Incompressible Navier-Stokes equations"),
+  };
 
-static const char cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS]
-                                               [CS_BASE_STRING_LEN]
-  = {
-      N_("Artificial compressibility algorithm"),
-      N_("Monolithic"),
-      N_("Incremental projection algorithm"),
-    };
+static const char
+cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
+  { N_("Artificial compressibility algorithm"),
+    N_("Monolithic"),
+    N_("Incremental projection algo with Cb potential"),
+    N_("Incremental projection algo with Fb potential"),
+  };
 
 /* Keys to transfer settings from cs_param_navsto_t to cs_equation_param_t */
 
@@ -141,7 +140,8 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     return cs_equation_param_by_name("momentum");
 
-  case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     return cs_equation_param_by_name("velocity_prediction");
     break;
 
@@ -281,7 +281,8 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
     nsp->pressure_bc_is_owner = true;
     break;
 
-  case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     nsp->velocity_ic_is_owner = false;
     nsp->velocity_bc_is_owner = false;
     nsp->pressure_ic_is_owner = false;
@@ -797,8 +798,9 @@ cs_navsto_param_get_velocity_param(const cs_navsto_param_t *nsp)
     eqp = cs_equation_param_by_name("momentum");
     break;
 
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    eqp = cs_equation_param_by_name("velocity_prediction");
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+          eqp = cs_equation_param_by_name("velocity_prediction");
     break;
 
   default:
@@ -855,7 +857,9 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-  case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+
     return cs_navsto_param_coupling_name[coupling];
 
   default:

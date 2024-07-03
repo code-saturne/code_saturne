@@ -288,24 +288,53 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
   if (!cs_property_is_uniform(nsp->mass_density))
     nsb->rho_c = cs_property_value_in_cell(cm, nsp->mass_density, t_eval);
 
-  /* Build the divergence operator:
-   *        D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f
-   * But in the linear system what appears is after integration
-   *        [[ -div(u), q ]]_{P_c} = -|c| div(u)_c q_c
-   * Thus, the volume in the divergence drops
-   */
+  const cs_navsto_param_coupling_t algo_coupling = nsp->coupling;
 
-  for (short int f = 0; f < n_fc; f++) {
+  switch (algo_coupling) {
 
-    const cs_quant_t  pfq = cm->face[f];
-    const cs_real_t  sgn_f = -cm->f_sgn[f] * pfq.meas;
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
+    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
 
-    cs_real_t  *_div_f = nsb->div_op + 3*f;
-    _div_f[0] = sgn_f * pfq.unitv[0];
-    _div_f[1] = sgn_f * pfq.unitv[1];
-    _div_f[2] = sgn_f * pfq.unitv[2];
+      /* Build the divergence operator:
+       *        D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f
+       * But in the linear system what appears is after integration
+       *        [[ -div(u), q ]]_{P_c} = -|c| div(u)_c q_c
+       * Thus, the volume in the divergence drops
+       */
 
-  } /* Loop on cell faces */
+      for (short int f = 0; f < n_fc; f++) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const cs_real_t  sgn_f = -cm->f_sgn[f] * pfq.meas;
+
+        cs_real_t  *_div_f = nsb->div_op + 3*f;
+        _div_f[0] = sgn_f * pfq.unitv[0];
+        _div_f[1] = sgn_f * pfq.unitv[1];
+        _div_f[2] = sgn_f * pfq.unitv[2];
+
+      } /* Loop on cell faces */
+
+      break;
+    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
+
+      for (short int f = 0; f < n_fc; f++) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const cs_real_t  sgn_f = -cm->f_sgn[f] * pfq.meas;
+
+        cs_real_t  *_div_f = nsb->div_op + 3*f;
+        _div_f[0] = sgn_f * pfq.unitv[0];
+        _div_f[1] = sgn_f * pfq.unitv[1];
+        _div_f[2] = sgn_f * pfq.unitv[2];
+
+      } /* Loop on cell faces */
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling.", __func__);
+      break;
+  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 2
   if (cs_dbg_cw_test(nullptr, cm, csys)) {

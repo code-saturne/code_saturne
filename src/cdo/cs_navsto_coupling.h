@@ -126,6 +126,12 @@ typedef struct {
    */
   cs_field_t     *phi;
 
+  /*! \var pressure_incr_gradient
+   * Gradient of pressure increment. Used to store the gradient
+   * pressure increment. Only available with verbosity > 1. */
+
+  cs_field_t    *pressure_incr_gradient;
+
 } cs_navsto_projection_t;
 
 /*============================================================================
