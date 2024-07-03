@@ -2335,9 +2335,10 @@ _exchange_counter(const cs_halo_t  *halo,
  * Exchange particles
  *
  * parameters:
- *  halo      <-- pointer to a cs_halo_t structure
- *  lag_halo  <-> pointer to a cs_lagr_halo_t structure
- *  particles <-- set of particles to update
+ *  halo           <-- pointer to a cs_halo_t structure
+ *  lag_halo       <-> pointer to a cs_lagr_halo_t structure
+ *  particles      <-- set of particles to update
+ *  particle_range <-> start and past-the-end ids of tracked particles
  *----------------------------------------------------------------------------*/
 
 #if defined(__INTEL_COMPILER)
@@ -2349,7 +2350,8 @@ _exchange_counter(const cs_halo_t  *halo,
 static void
 _exchange_particles(const cs_halo_t         *halo,
                     cs_lagr_halo_t          *lag_halo,
-                    cs_lagr_particle_set_t  *particles)
+                    cs_lagr_particle_set_t  *particles,
+                    cs_lnum_t                particle_range[2])
 {
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
@@ -2468,6 +2470,7 @@ _exchange_particles(const cs_halo_t         *halo,
   }
 
   particles->n_particles += n_recv_particles;
+  particle_range[1] += n_recv_particles;
   particles->weight += tot_weight;
 }
 
@@ -2475,15 +2478,17 @@ _exchange_particles(const cs_halo_t         *halo,
  * Determine particle halo sizes
  *
  * parameters:
- *   mesh      <-- pointer to associated mesh
- *   lag_halo  <-> pointer to particle halo structure to update
- *   particles <-- set of particles to update
+ *   mesh           <-- pointer to associated mesh
+ *   lag_halo       <-> pointer to particle halo structure to update
+ *   particles      <-- set of particles to update
+ *   particle_range <-- start and past-the-end ids of tracked particles
  *----------------------------------------------------------------------------*/
 
 static void
 _lagr_halo_count(const cs_mesh_t               *mesh,
                  cs_lagr_halo_t                *lag_halo,
-                 const cs_lagr_particle_set_t  *particles)
+                 const cs_lagr_particle_set_t  *particles,
+                 const cs_lnum_t                particle_range[2])
 {
   cs_lnum_t  i, ghost_id;
 
@@ -2500,7 +2505,7 @@ _lagr_halo_count(const cs_mesh_t               *mesh,
 
   /* Loop on particles to count number of particles to send on each rank */
 
-  for (i = 0; i < particles->n_particles; i++) {
+  for (i = particle_range[0]; i < particle_range[1]; i++) {
 
     if (_get_tracking_info(particles, i)->state == CS_LAGR_PART_TO_SYNC_NEXT) {
 
@@ -2546,14 +2551,16 @@ _lagr_halo_count(const cs_mesh_t               *mesh,
  * Update particle sets, including halo synchronization.
  *
  * parameters:
- *   particles <-> set of particles to update
+ *   particles      <-> set of particles to update
+ *   particle_range <-> start and past-the-end ids of tracked particles
  *
  * returns:
  *   1 if displacement needs to continue, 0 if finished
  *----------------------------------------------------------------------------*/
 
 static int
-_sync_particle_set(cs_lagr_particle_set_t  *particles)
+_sync_particle_set(cs_lagr_particle_set_t  *particles,
+                   cs_lnum_t                particle_range[2])
 {
   cs_lnum_t  i, k, tr_id, rank, shift, ghost_id;
   cs_real_t matrix[3][4];
@@ -2585,7 +2592,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
   if (halo != NULL) {
 
-    _lagr_halo_count(mesh, lag_halo, particles);
+    _lagr_halo_count(mesh, lag_halo, particles, particle_range);
 
     for (i = 0; i < halo->n_c_domains; i++) {
       lag_halo->send_count[i] = 0;
@@ -2595,7 +2602,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   /* Loop on particles, transferring particles to synchronize to send_buf
      for particle set, and removing particles that otherwise exited the domain */
 
-  for (i = 0; i < particles->n_particles; i++) {
+  for (i = particle_range[0]; i < particle_range[1]; i++) {
 
     cs_lagr_tracking_state_t cur_part_state
       = _get_tracking_info(particles, i)->state;
@@ -2755,8 +2762,9 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
     else if (cur_part_state < CS_LAGR_PART_OUT) {
 
-      if (particle_count < i) {
-        memcpy(particles->p_buffer + p_am->extents*particle_count,
+      if (particle_count + particle_range[0] < i) {
+        memcpy(particles->p_buffer + p_am->extents*
+                                        (particle_count +  particle_range[0]),
                particles->p_buffer + p_am->extents*i,
                p_am->extents);
       }
@@ -2780,7 +2788,10 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
   } /* End of loop on particles */
 
-  particles->n_particles = particle_count;
+  particles->n_particles += particle_count - particle_range[1]
+                                           + particle_range[0];
+  particle_range[1] = particle_range[0] + particle_count;
+  /* Only the weight of within particle_range if different from the whole set*/
   particles->weight = tot_weight;
 
   particles->n_part_out += n_exit_particles;
@@ -2795,7 +2806,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   /* Exchange particles, then update set */
 
   if (halo != NULL)
-    _exchange_particles(halo, lag_halo, particles);
+    _exchange_particles(halo, lag_halo, particles, particle_range);
 
   cs_parall_max(1, CS_INT_TYPE, &continue_displacement);
 
@@ -2806,11 +2817,13 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
  * Prepare for particle movement phase
  *
  * parameters:
- *   particles        <-> pointer to particle set structure
+ *   particles      <->  pointer to particle set structure
+ *   particle_range <--  start and past-the-end ids of tracked particles
  *----------------------------------------------------------------------------*/
 
 static void
-_initialize_displacement(cs_lagr_particle_set_t  *particles)
+_initialize_displacement(cs_lagr_particle_set_t  *particles,
+                         const cs_lnum_t          particle_range[2])
 {
   const cs_lagr_attribute_map_t  *am = particles->p_am;
 
@@ -2839,8 +2852,7 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles)
   }
 
   /* Prepare tracking info */
-
-  for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
+  for (cs_lnum_t i = particle_range[0]; i < particle_range[1]; i++) {
 
     cs_lnum_t cur_part_cell_id
       = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_ID);
@@ -2908,8 +2920,7 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles)
  * Update particle set structures: compact array.
  *
  * parameters:
- *   particles        <-> pointer to particle set structure
- *   part_b_mass_flux <-> particle mass flux array, or NULL
+ *   particles      <-> pointer to particle set structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -3037,12 +3048,15 @@ cs_lagr_tracking_initialize(void)
 /*!
  * \brief Apply one particle movement step.
  *
- * \param[in]  visc_length     viscous layer thickness
+ * \param[in]       visc_length     viscous layer thickness
+ * \param[in, out]  particle_range  start and past-the-end ids of tracked
+ *                                                              particles
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
+cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
+                                   cs_lnum_t        particle_range[2])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -3077,15 +3091,14 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   const int *b_face_zone_id = cs_boundary_zone_face_class_id();
 
-  _initialize_displacement(particles);
+  _initialize_displacement(particles, particle_range);
 
   /* Main loop on particles: global propagation */
 
   while (continue_displacement) {
 
     /* Local propagation */
-
-    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
+    for (cs_lnum_t i = particle_range[0]; i < particle_range[1]; i++) {
 
       /* Local copies of the current and previous particles state vectors
          to be used in case of the first pass of _local_propagation fails */
@@ -3115,7 +3128,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
     /* Update of the particle set structure. Delete exited particles,
        update for particles which change domain. */
 
-    continue_displacement = _sync_particle_set(particles);
+    continue_displacement = _sync_particle_set(particles, particle_range);
 
 #if 0
     bft_printf("\n Particle set after sync\n");
@@ -3133,7 +3146,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   if (lagr_model->deposition > 0) {
 
-    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
+    for (cs_lnum_t i = particle_range[0]; i < particle_range[1]; i++) {
 
       unsigned char *particle = particles->p_buffer + p_am->extents * i;
 
@@ -3192,7 +3205,9 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
     }
   }
 
-  _finalize_displacement(particles);
+  /* If the whole set of particles is tracked rearrange particles */
+  if (particle_range[1] - particle_range[0] == particles->n_particles)
+    _finalize_displacement(particles);
 
   if (   cs_glob_porous_model == 3
       && lagr_model->deposition == 1)

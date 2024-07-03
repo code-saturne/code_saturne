@@ -82,12 +82,15 @@ cs_lagr_tracking_initialize(void);
 /*!
  * \brief Apply one particle movement step.
  *
- * \param[in]   visc_length  viscous layer thickness
+ * \param[in]       visc_length     viscous layer thickness
+ * \param[in, out]  particle_range  start and past-the-end ids of tracked
+ *                                                              particles
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[]);
+cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
+                                   cs_lnum_t        particle_range[2]);
 
 /*----------------------------------------------------------------------------*/
 /*!

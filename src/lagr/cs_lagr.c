@@ -2346,8 +2346,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
         lag_bdi->npstf++;
         lag_bdi->npstft++;
 
-        cs_lagr_tracking_particle_movement(vislen);
-
+        cs_lnum_t particle_range[2] = {0, p_set->n_particles};
+        cs_lagr_tracking_particle_movement(vislen, particle_range);
       }
 
       /* Update residence time */
