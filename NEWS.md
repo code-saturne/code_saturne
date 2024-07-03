@@ -4,10 +4,10 @@ Master (not on release branches yet)
 ### Users changes:
 
 - Add a runtime option for `run` and `submit` commands to check for memory leaks.
-  User can now run `code_saturne run --mem-check` which will position the
+  User can now run `code_saturne run --mem-log` which will position the
   environment variable `CS_MEM_LOG=cs_mem.log` automatically, and will
   print in the std output messages a warning if memory leaks are detected
-  within the log file.
+  within the log file(s) for any rank.
 
 Release 8.2.0 (2024-06-17)
 --------------------------
