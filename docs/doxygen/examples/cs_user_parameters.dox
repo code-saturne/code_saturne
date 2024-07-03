@@ -39,6 +39,12 @@
   Several functions are present in the file, each destined to defined
     specific parameters.
 
+  To modify the default value of parameters which do not appear in the
+    examples provided, code should be placed as follows:
+    - \ref cs_user_model for numerical and physical options
+    - \ref cs_user_parameters for numerical and physical options
+    - \ref cs_user_finalize_setup for input-output related options
+
   \section cs_user_parameters_h_cs_user_model  Base model related options (cs_user_model)
 
   Definition of user variables or properties as well as choices of physical
@@ -47,7 +53,7 @@
   Gravity and reference frame rotation (for Coriolis) can also
   be (re)-defined here.
 
-  Activate user model
+  Activate user models (such as atmospheric flow module)
 
   \snippet cs_user_parameters-base.c activate_user_model
 
@@ -797,6 +803,31 @@
 
   To activate means for all variables:
   \snippet cs_user_parameters-time_moments.c tmom_all_variables
+
+  \section cs_user_parameters_h_atmo  Calculation options for the atmospheric module
+
+  In the following example, options for the atmospheric module are set in \ref cs_user_model.
+
+  Atmospheric options are available in the following structure:
+  \snippet cs_user_parameters-base.c atmo_options
+
+  One can set the microphysics parameterization opitons as follows:
+  \snippet cs_user_parameters-base.c atmo_mircophysiscs
+
+  One can set information relative to meteo profiles:
+  \snippet cs_user_parameters-base.c atmo_profiles
+
+  One can set information relative to large scale imbrication:
+  \snippet cs_user_parameters-base.c atmo_imbr
+
+  One can set information relative to meteo chemistry:
+  \snippet cs_user_parameters-base.c atmo_chem
+
+  One can set information relative to soil modelling:
+  \snippet cs_user_parameters-base.c atmo_soil_set
+
+  One can set information relative to 1D radiative transfer:
+  \snippet cs_user_parameters-base.c atmo_1d_rad
 
   \section cs_user_parameters_h_cs_user_fans  Fan modelling options
 

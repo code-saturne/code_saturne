@@ -181,19 +181,18 @@ cs_user_model(void)
 
   /*! [activate_user_model] */
 
-  /*! [atmo_user_model_1] */
-
-  cs_atmo_set_meteo_file_name("meteo");
-
   /*--------------------------------------------------------------------------*/
 
   /* Atmospheric module options
    */
 
-  /*! [atmo_module] */
+  /*! [atmo_options] */
 
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
 
+  /*! [atmo_options] */
+
+  /*! [atmo_mircophysiscs] */
   /*  Microphysics parameterization options */
 
   /* Option for nucleation for humid atmosphere
@@ -226,10 +225,15 @@ cs_user_model(void)
 
   /* Deposition flag */
   at_opt->deposition_model = 1;
+  /*! [atmo_mircophysiscs] */
 
+  /*! [atmo_profiles] */
   /* Read the meteo file (1) or impose directly the input values to compute it
    * in code_saturne (2) */
   at_opt->meteo_profile = 2;
+
+  /* set meteo file if meteo_profile == 1 */
+  cs_atmo_set_meteo_file_name("meteo");
 
   /* Advanced choice of universal functions among for stable
    *  - CS_ATMO_UNIV_FN_CHENG (default)
@@ -290,7 +294,32 @@ cs_user_model(void)
    */
   at_opt->longitude = 0.;
   at_opt->latitude = 45.0;
+  /*! [atmo_profiles] */
 
+  /* Atmospheric imbrication on large scale meteo
+   * ---------------------------------------------*/
+
+  /*! [atmo_imbr] */
+  /* activation flag */
+  cs_glob_atmo_imbrication->imbrication_flag = false;
+  cs_glob_atmo_imbrication->imbrication_verbose = false;
+
+  /* flags for activating the cressman interpolation
+   * for the boundary conditions */
+  cs_glob_atmo_imbrication->cressman_u     = true;
+  cs_glob_atmo_imbrication->cressman_v     = true;
+  cs_glob_atmo_imbrication->cressman_tke   = true;
+  cs_glob_atmo_imbrication->cressman_eps   = true;
+  cs_glob_atmo_imbrication->cressman_theta = true;
+  cs_glob_atmo_imbrication->cressman_qw    = true;
+  cs_glob_atmo_imbrication->cressman_nc    = true;
+
+  /* numerical parameters for the cressman interpolation formulas */
+  cs_glob_atmo_imbrication->horizontal_influence_radius = 8500.;
+  cs_glob_atmo_imbrication->vertical_influence_radius = 100.;
+  /*! [atmo_imbr] */
+
+  /*! [atmo_chem] */
   /* Chemistry:
    *   model: choice of chemistry resolution scheme
    *     0: no atmospheric chemistry
@@ -345,6 +374,7 @@ cs_user_model(void)
    *   true: gaseous chemistry is frozen
    */
   cs_glob_atmo_chemistry->frozen_gas_chem = false;
+  /*! [atmo_chem] */
 
   /* Soil Atmosphere model
    * ---------------------*/
@@ -366,6 +396,7 @@ cs_user_model(void)
   /* 1-D radiative transfer
    * ---------------------*/
 
+  /*! [atmo_1d_rad] */
   /* Activate 1-D radiative transfer model */
   at_opt->radiative_model_1d = 1;
 
@@ -387,10 +418,7 @@ cs_user_model(void)
     }
 
   }
-
-  /*! [atmo_module] */
-
-  /*! [atmo_user_model_1] */
+  /*! [atmo_1d_rad] */
 
   /*--------------------------------------------------------------------------*/
 

@@ -123,34 +123,6 @@ integer           iiv
 !===============================================================================
 
 !< [usati1]
-!  -----------------------------------------------------------------------------
-!  Atmospheric imbrication on large scale meteo (atimbr module)
-!  -----------------------------------------------------------------------------
-!
-! --------------------------------------------------------------
-! activation flag
-! --------------------------------------------------------------
-imbrication_flag    = .false.
-imbrication_verbose = .false.
-
-! ------------------------------------------------------------------------------
-! flags for activating the cressman interpolation for the boundary conditions
-! ------------------------------------------------------------------------------
-cressman_u     = .true.
-cressman_v     = .true.
-cressman_tke   = .true.
-cressman_eps   = .true.
-cressman_theta = .true.
-cressman_qw    = .true.
-cressman_nc    = .true.
-
-! --------------------------------------------------------------
-! numerical parameters for the cressman interpolation formulas
-! --------------------------------------------------------------
-horizontal_influence_radius = 8500.d0
-vertical_influence_radius = 100.d0
-
-! --------------------------------------------------------------
 
 ! dtchemmax: maximal time step (s) for chemistry resolution
 dtchemmax = 10.0d0

@@ -44,10 +44,4 @@
     - \b usipes for input-output related options
            (deprecated, replaced by \ref cs_user_finalize_setup).
 
-  \section cs_f_user_parameters_h_usipsu  Calculation options for the atmospheric module (usipsu)
-
-  In the following example, options for the atmospheric module are set:
-
-  \snippet cs_user_parameters.f90 usati1
-
 */
