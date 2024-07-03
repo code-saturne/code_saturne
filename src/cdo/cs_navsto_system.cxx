@@ -1476,7 +1476,8 @@ cs_navsto_system_init_values(const cs_mesh_t           *mesh,
   }
   else if (nsp->space_scheme == CS_SPACE_SCHEME_MACFB) {
 
-    if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {
+    if (   nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB
+        || nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB) {
 
       /* The call to the initialization of the cell pressure should be done
          before */
@@ -2074,22 +2075,6 @@ cs_navsto_system_extra_post(void                 *input,
                           time_step); // time step management struct.
 
         if (nsp->verbosity > 1) {
-
-          const cs_field_t  *velp = cc->predicted_velocity;
-
-          /* Post-process the predicted velocity */
-
-          cs_post_write_var(mesh_id,
-                            CS_POST_WRITER_DEFAULT,
-                            velp->name,
-                            3,
-                            true,           // interlace
-                            true,           // true = original mesh
-                            CS_POST_TYPE_cs_real_t,
-                            velp->val,      // values on cells
-                            nullptr,        // values at internal faces
-                            nullptr,        // values at border faces
-                            time_step);     // time step management struct.
 
           const cs_field_t *grad_dp = cc->pressure_incr_gradient;
 

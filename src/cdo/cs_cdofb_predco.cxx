@@ -484,7 +484,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   cs_timer_t  t_bld = cs_timer_time();
 
   /* Compute the source term */
-# pragma omp for if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Compute the divergence of the predicted velocity */
@@ -588,8 +588,8 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_variables(cs_navsto_param_t           *nsp,
-                  cs_cdofb_predco_t           *sc)
+_update_variables(const cs_navsto_param_t           *nsp,
+                  const cs_cdofb_predco_t           *sc)
 {
   cs_navsto_projection_t *cc = sc->coupling_context;
   cs_equation_t  *pre_eq = cc->correction;
@@ -601,15 +601,12 @@ _update_variables(cs_navsto_param_t           *nsp,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_field_t  *velp_fld = cc->predicted_velocity;
-  const cs_real_t *const  velp_c = velp_fld->val;
   const cs_real_t *const  velp_f = sc->predicted_velocity_f;
 
   const cs_real_t *const dp_c = pre_eq->get_cell_values(pre_eqc,
                                                         false);
-  const cs_real_t *const dp_f = pre_eq->get_face_values(pre_eqc,
+  cs_real_t *dp_f = pre_eq->get_face_values(pre_eqc,
                                                         false);
-  const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
   const cs_adjacency_t  *c2f = connect->c2f;
 
   /* Variables to update */
@@ -1044,8 +1041,6 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                                  const cs_navsto_param_t      *nsp,
                                  void                         *scheme_context)
 {
-  CS_UNUSED(nsp);
-
   cs_timer_t  t_cmpt = cs_timer_time();
 
   const cs_time_step_t *ts = cs_shared_time_step;
