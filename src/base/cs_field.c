@@ -1964,8 +1964,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        BFT_MALLOC(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t);
+        CS_MALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
       }
       else {
         f->bc_coeffs->ad = NULL;
@@ -2009,12 +2009,12 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        BFT_REALLOC(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t);
+        CS_REALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
       }
       else {
-        BFT_FREE(f->bc_coeffs->ad);
-        BFT_FREE(f->bc_coeffs->bd);
+        CS_FREE_HD(f->bc_coeffs->ad);
+        CS_FREE_HD(f->bc_coeffs->bd);
       }
 
       if (have_conv_bc) {

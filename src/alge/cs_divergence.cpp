@@ -779,7 +779,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
   if (init == 1) {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       for (int i = 0; i < 3; i++)
-      i_massflux[face_id][i] = 0.;
+        i_massflux[face_id][i] = 0.;
     });
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       for (int i = 0; i < 3; i++)

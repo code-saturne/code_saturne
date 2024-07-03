@@ -214,7 +214,7 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
 
   /* Allocate temporary arrays */
   cs_real_t *secvis;
-  BFT_MALLOC(secvis, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(secvis, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_field_t *vel = CS_F_(vel);
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
@@ -343,7 +343,7 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
   /* TODO stresses at the wall? */
 
   /* Free memory */
-  BFT_FREE(secvis);
+  CS_FREE_HD(secvis);
 }
 
 /*----------------------------------------------------------------------------*/

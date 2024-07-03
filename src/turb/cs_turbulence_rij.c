@@ -2598,9 +2598,9 @@ _solve_epsilon(int              phase_id,
   cs_real_6_t *viscce;
   cs_real_2_t *weighf;
 
-  BFT_MALLOC(weighb, n_b_faces, cs_real_t);
-  BFT_MALLOC(weighf, n_i_faces, cs_real_2_t);
-  BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(weighb, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
   /* Symmetric tensor diffusivity (GGDH) */
   if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
@@ -2673,7 +2673,7 @@ _solve_epsilon(int              phase_id,
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
   cs_real_t *dpvar;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      1,   /* init */
@@ -2706,12 +2706,12 @@ _solve_epsilon(int              phase_id,
 
   /* Free memory */
 
-  BFT_FREE(dpvar);
+  CS_FREE_HD(dpvar);
   BFT_FREE(w1);
   BFT_FREE(cprod);
-  BFT_FREE(viscce);
-  BFT_FREE(weighb);
-  BFT_FREE(weighf);
+  CS_FREE_HD(viscce);
+  CS_FREE_HD(weighb);
+  CS_FREE_HD(weighf);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2838,8 +2838,8 @@ cs_turbulence_rij(int phase_id)
   }
 
   cs_real_t *viscf, *viscb;
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
@@ -2857,8 +2857,8 @@ cs_turbulence_rij(int phase_id)
 
   cs_real_6_t *smbrts;
   cs_real_66_t *rovsdtts;
-  BFT_MALLOC(smbrts, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(rovsdtts,  n_cells_ext, cs_real_66_t);
+  CS_MALLOC_HD(smbrts, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(rovsdtts,  n_cells_ext, cs_real_66_t, cs_alloc_mode);
 
   /* Advanced initialiation for EBRSM
    * -------------------------------- */
@@ -3173,9 +3173,9 @@ cs_turbulence_rij(int phase_id)
   cs_real_6_t *viscce;
   cs_real_2_t *weighf;
 
-  BFT_MALLOC(weighb, n_b_faces, cs_real_t);
-  BFT_MALLOC(weighf, n_i_faces, cs_real_2_t);
-  BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(weighb, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
      if (turb_rans_model->irijco == 1)
@@ -3292,17 +3292,17 @@ cs_turbulence_rij(int phase_id)
                                       smbrts,
                                       cvar_rij);
 
-   BFT_FREE(viscce);
-   BFT_FREE(rovsdtts);
-   BFT_FREE(smbrts);
+   CS_FREE_HD(viscce);
+   CS_FREE_HD(rovsdtts);
+   CS_FREE_HD(smbrts);
 
    /* Solve Epsilon
     * ------------- */
 
    {
      cs_real_t *smbr, *rovsdt;
-     BFT_MALLOC(smbr, n_cells_ext, cs_real_t);
-     BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+     CS_MALLOC_HD(smbr, n_cells_ext, cs_real_t, cs_alloc_mode);
+     CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
 
      _solve_epsilon(phase_id,
                     gradv,
@@ -3330,10 +3330,10 @@ cs_turbulence_rij(int phase_id)
 
    BFT_FREE(up_rhop);
 
-   BFT_FREE(viscf);
-   BFT_FREE(viscb);
-   BFT_FREE(weighb);
-   BFT_FREE(weighf);
+   CS_FREE_HD(viscf);
+   CS_FREE_HD(viscb);
+   CS_FREE_HD(weighb);
+   CS_FREE_HD(weighf);
 }
 
 /*----------------------------------------------------------------------------*/

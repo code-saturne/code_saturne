@@ -822,8 +822,8 @@ _div_rij(const cs_mesh_t     *m,
   const cs_equation_param_t *eqp = NULL;
 
   cs_real_3_t *tflmas = NULL, *tflmab = NULL;
-  BFT_MALLOC(tflmas, n_i_faces,cs_real_3_t);
-  BFT_MALLOC(tflmab, n_b_faces,cs_real_3_t);
+  CS_MALLOC_HD(tflmas, n_i_faces,cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(tflmab, n_b_faces,cs_real_3_t, cs_alloc_mode);
 
   /* Reynolds Stress Models */
   if (cs_glob_turb_model->itytur == 3) {
@@ -857,12 +857,12 @@ _div_rij(const cs_mesh_t     *m,
   else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
 
     cs_real_6_t *rij = NULL;
-    BFT_MALLOC(rij, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(rij, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
     cs_field_bc_coeffs_t bc_coeffs_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_loc);
-    BFT_MALLOC(bc_coeffs_loc.a, 6*n_b_faces, cs_real_t);
-    BFT_MALLOC(bc_coeffs_loc.b, 36*n_b_faces, cs_real_t);
+    CS_MALLOC_HD(bc_coeffs_loc.a, 6*n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(bc_coeffs_loc.b, 36*n_b_faces, cs_real_t, cs_alloc_mode);
     cs_real_6_t  *coefat = (cs_real_6_t  *)bc_coeffs_loc.a;
     cs_real_66_t *coefbt = (cs_real_66_t *)bc_coeffs_loc.b;
 
@@ -893,9 +893,9 @@ _div_rij(const cs_mesh_t     *m,
                         rij,
                         &bc_coeffs_loc,
                         tflmas, tflmab);
-    BFT_FREE(rij);
-    BFT_FREE(bc_coeffs_loc.a);
-    BFT_FREE(bc_coeffs_loc.b);
+    CS_FREE_HD(rij);
+    CS_FREE_HD(bc_coeffs_loc.a);
+    CS_FREE_HD(bc_coeffs_loc.b);
 
   }
 
@@ -909,8 +909,8 @@ _div_rij(const cs_mesh_t     *m,
 
   cs_tensor_divergence(m, 1, tflmas, tflmab, cpro_divr);
 
-  BFT_FREE(tflmas);
-  BFT_FREE(tflmab);
+  CS_FREE_HD(tflmas);
+  CS_FREE_HD(tflmab);
 
   /* (if iphydr=1 then this term is already taken into account) */
 
@@ -2764,7 +2764,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       cpro_divr
         = (cs_real_3_t *)cs_field_by_name_try("algo:rij_divergence")->val;
     else {
-      BFT_MALLOC(divt, n_cells_ext, cs_real_3_t);
+      CS_MALLOC_HD(divt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
       cpro_divr = divt;
     }
 
@@ -2829,7 +2829,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                 cpro_divr, stf,
                 ckupdc, dfrcxt);
 
-  BFT_FREE(divt);
+  CS_FREE_HD(divt);
   BFT_FREE(icepdc);
 #if defined(HAVE_ACCEL)
   CS_FREE_HD(_gxyz);
