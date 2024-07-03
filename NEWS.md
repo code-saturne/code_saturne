@@ -3,6 +3,8 @@ Release 8.0.4 (unreleased)
 
 ### Bug fixes:
 
+- Fix bug in atmospheric imbrication.
+
 - Fix halo synchronization for periodicity in non-MPI builds.
 
 - Fix issues when restarting without additional preprocessing:
