@@ -173,11 +173,15 @@ def process_cmd_line(argv, pkg):
     parser.add_option("--with-resource", dest="resource_name", default=None,
                       help="use resource settings based on given name")
 
+    parser.add_option("--submit",
+                      action="store_true", dest="slurm_batch", default=False,
+                      help="submission with the SLURM batch mode")
+
     parser.add_option("--slurm-batch-size", dest="slurm_batch_size", default=0,
-                      type="int", help="maximum number of cases per batch with SLURM batch mode")
+                      type="int", help="maximum number of cases per batch with SLURM batch mode (1 by default)")
 
     parser.add_option("--slurm-batch-wtime", dest="slurm_batch_wtime", default=0,
-                      type="int", help="maximum wall time in hours per batch with SLURM batch mode")
+                      type="int", help="maximum wall time in hours per batch with SLURM batch mode (8 hours by default)")
 
     parser.add_option("--slurm-batch-arg", dest="slurm_batch_args",
                       default=None, type=str, action='append',
@@ -322,14 +326,14 @@ def run_studymanager(pkg, options):
 
     # Analyse slurm options
     slurm_submission = False
-    if (options.slurm_batch_size > 0 or options.slurm_batch_wtime > 0):
+    slurm_deprecated_option = False
+    if (options.slurm_batch or options.slurm_batch_size > 0 or options.slurm_batch_wtime > 0):
         slurm_submission = True
         # we impose case analysis with slurm submission
         options.casestate = True
-        if (options.slurm_batch_size > 0 and options.slurm_batch_wtime < 1):
-            options.slurm_batch_wtime = 12
-        elif (options.slurm_batch_size < 1 and options.slurm_batch_wtime > 0):
-            options.slurm_batch_size = 50
+
+        if slurm_submission and not options.slurm_batch:
+            slurm_deprecated_option = True
 
     # Read the file of parameters
 
@@ -367,6 +371,11 @@ def run_studymanager(pkg, options):
     doc = os.path.join(dest, options.log_file)
     studies.reporting(" Ext. subprocesses logs: " + doc, report=report_in_file)
     studies.reporting("\n", report=report_in_file)
+
+    if slurm_deprecated_option:
+        studies.reporting(" WARNING: you are using a deprecated option to activate", report=report_in_file)
+        studies.reporting(" SLURM batch mode. Please use --submit to activate it", report=report_in_file)
+        studies.reporting(" see doxygen documentation for more details", report=report_in_file)
 
     # Update and test-compilation steps are done in repository
     os.chdir(studies.getRepository())
@@ -410,6 +419,7 @@ def run_studymanager(pkg, options):
 
     if options.runcase:
         if slurm_submission:
+            studies.check_slurm_batches()
             studies.run_slurm_batches()
         else:
             studies.run()

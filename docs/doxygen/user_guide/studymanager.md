@@ -113,6 +113,8 @@ Most command-line options are detailed here:
   tags (separated by commas)
 - `--create-xml`: create xml from study (current directory has to be a study)
 - `--with-resource=RESOURCE_NAME`: use resource settings based on given name
+- `--submit`: allow submission of cases per batch in SLURM batch mode (only on
+  clusters)
 - `--slurm-batch-size=SIZE`: maximum number of cases per batch in SLURM batch
   mode (50 by default)
 - `--slurm-batch-wtime=TIME`: maximum computation time in hours per batch in
@@ -165,7 +167,7 @@ Examples
   ```
 - submit "coarse" cases on cluster per block of 4 using SLURM batch mode:
   ```
-  $ code_saturne smgr -f smgr.xml -r --with-tags=coarse --slurm-batch-size=4
+  $ code_saturne smgr -f smgr.xml --submit -r --with-tags=coarse --slurm-batch-size=4
   ```
 
 ### Note
@@ -384,10 +386,7 @@ many small jobs).
 Job-dependencies are defined automatically such that blocks of dependency level
 `M` will wait until all blocks of level `M-1` are successfully finished.
 
-This is activated by defining `N > 0` or `M > 0` using the following command-line
-options:
-- `--slurm-batch-size=N`
-- `--slurm-batch-wtime=M`
+This is activated by using the `--submit` command-line.
 
 A more detailled explanation of the SLURM batch mode is given in the dedicated
 page : \subpage cs_ug_smgr_slurm

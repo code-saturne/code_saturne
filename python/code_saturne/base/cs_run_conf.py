@@ -551,6 +551,38 @@ class run_conf(object):
 
         return value
 
+
+    #---------------------------------------------------------------------------
+
+    def get_expected_time(self, section, key):
+        """
+        Get the expected time section or None if nor present
+        """
+
+        value = None
+        if section in self.sections:
+            if key in self.sections[section]:
+                value = str(self.sections[section][key])
+
+        if value:
+            try:
+                # convert in minutes data from case (format HH:MM)
+                tmp = str(value)
+                ind = tmp.find(":")
+                value = int(tmp[:ind]) * 60 + int(tmp[-2:])
+
+            except Exception:
+                if self.path:
+                    err_str = 'In file: ' + self.path + ':' + os.linesep
+                else:
+                    err_str = 'In run_conf object (' + str(self) + '):' + os.linesep
+                err_str += '  ['+section+']' + os.linesep
+                err_str += '  '+key+': ' + str(value) + os.linesep
+                err_str += 'is not a valid time (should be HH:MM).'
+                raise TypeError(err_str)
+
+        return value
+
     #---------------------------------------------------------------------------
 
     def set(self, section, key, value):

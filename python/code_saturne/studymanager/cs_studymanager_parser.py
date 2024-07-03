@@ -410,10 +410,9 @@ class Parser(object):
                     # convert in minutes data from case (format HH:MM)
                     tmp = str(node.attributes["expected_time"].value)
                     ind = tmp.find(":")
-                    d['expected_time'] = float(tmp[:ind]) * 60. + float(tmp[-2:])
+                    d['expected_time'] = int(tmp[:ind]) * 60 + int(tmp[-2:])
                 except:
-                    # default value in minutes
-                    d['expected_time'] = 180.
+                    d['expected_time'] = None
 
                 for k in setup_filter_keys:
                     d[k] = None

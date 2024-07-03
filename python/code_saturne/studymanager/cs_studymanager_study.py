@@ -273,9 +273,9 @@ class Case(object):
         self.exe = os.path.join(pkg.get_dir('bindir'),
                                 pkg.name + pkg.config.shext)
 
-        # Query number of processes
+        # Query number of processes and expected computation time
 
-        if not self.n_procs:
+        if not self.n_procs or not self.expected_time:
             if run_conf == None:
                 run_config_path = os.path.join(self.__repo, self.label,
                                                "DATA", "run.cfg")
@@ -284,10 +284,13 @@ class Case(object):
                                                     package=self.pkg)
 
             if resource_config:
-                self.n_procs = self.__query_n_procs__(run_conf,
-                                                      resource_config)
-            else:   # Should not occur in standard use
-                self.n_procs = 1
+                config = self.__query_config__(run_conf, resource_config)
+
+                # Information in data (i.e. smgr xml file) dominates over config
+                if not self.n_procs:
+                    self.n_procs = config[0]
+                if not self.expected_time:
+                    self.expected_time = config[1]
 
         # Check for dependency
         # Dependancy given in smgr xml file overwrites parametric arguments
@@ -297,16 +300,18 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def __query_n_procs__(self, run_conf, resource_config):
+    def __query_config__(self, run_conf, resource_config):
         """
-        Determine number of processes required for a given case
-        based on its run.cfg and install configurations.
+        Determine number of processes required and expected time for a given
+        case based on its run.cfg and install configurations.
         """
 
         n_procs = None
+        expected_time = None
 
         if run_conf == None:
-            return int(resource_config['resource_n_procs'])
+            return [int(resource_config['resource_n_procs']),
+                    int(resource_config['resource_exp_time'])]
 
         resource_name = resource_config['resource_name']
         if resource_name:
@@ -316,6 +321,13 @@ class Case(object):
             resource_name = resource_config['batch_name']
             if not resource_name or not resource_name in run_conf.sections:
                 resource_name = 'job_defaults'
+
+        # Try to find specific configuration with run_id in the form
+        # [<resource>/run_id=<run_id>] otherwise use classical resource
+
+        specific_resource_name = resource_name + "/run_id=" + self.run_id
+        if specific_resource_name in run_conf.sections:
+            resource_name = specific_resource_name
 
         n_procs = run_conf.get(resource_name, 'n_procs')
         if n_procs == None:
@@ -334,9 +346,19 @@ class Case(object):
         if not n_procs:
             n_procs = resource_config['resource_n_procs']
 
-        n_procs = int(n_procs)
+        expected_time = run_conf.get(resource_name, 'expected_time')
+        if expected_time:
+            # Convert expected time in minutes
+            tmp = str(expected_time)
+            ind = tmp.find(":")
+            expected_time = int(tmp[:ind]) * 60 + int(tmp[-2:])
+        else:
+            expected_time = resource_config['resource_exp_time']
 
-        return n_procs
+        n_procs = int(n_procs)
+        expected_time = int(expected_time)
+
+        return [n_procs, expected_time]
 
     #---------------------------------------------------------------------------
 
@@ -1169,9 +1191,9 @@ class Studies(object):
         self.__compare           = options.compare
         self.__ref               = options.reference
         self.__postpro           = options.post
+        self.__slurm_batch       = options.slurm_batch
         self.__slurm_batch_size  = options.slurm_batch_size
-        # Convert in minutes
-        self.__slurm_batch_wtime = options.slurm_batch_wtime * 60.
+        self.__slurm_batch_wtime = options.slurm_batch_wtime
         self.__slurm_batch_args  = options.slurm_batch_args
         self.__sheet             = options.sheet
         self.__default_fmt       = options.default_fmt
@@ -1199,6 +1221,16 @@ class Studies(object):
         resource_config['resource_n_procs'] = exec_env.resources.n_procs
         if not resource_config['resource_n_procs']:
             resource_config['resource_n_procs'] = 1
+
+        # Default expected time in minutes
+        resource_config['resource_exp_time'] = 180
+
+        # Default batch size and wall time for SLURM batch mode
+        if self.__slurm_batch:
+            if not self.__slurm_batch_size:
+                self.__slurm_batch_size = 1
+            if not self.__slurm_batch_wtime:
+                self.__slurm_batch_wtime = 8 * 60  # 8 hours in minutes
 
         rm_template = resource_config['batch']
         if rm_template:
@@ -1825,6 +1857,40 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
+    def check_slurm_batches(self):
+        """
+        Verify configuration in slurm batch mode.
+        If the number of case per batch is 1 (value by default) and the total
+        number of cases with expected time lower than 5 minutes is greater than
+        50, the maximum number of case per batch is set to 50.
+        """
+
+        self.reporting("  o Check slurm batch configuration")
+
+        nb_cases_short = 0
+
+        if self.__slurm_batch_size == 1:
+
+            # loop on level (0 means without dependency)
+            for level in range(self.graph.max_level+1):
+                # loop on number of processes
+                for nproc in range(self.graph.max_proc):
+                    # loop on cases of the sub graph
+                    for case in self.graph.extract_sub_graph(level,nproc+1).graph_dict:
+
+                        if case.expected_time < 5:
+                            nb_cases_short += 1
+
+            if nb_cases_short > 50:
+                self.__slurm_batch_size = 50
+                self.reporting("  WARNING: more than 50 cases with expected " +
+                               "time lower than 5 minutes were detected\n" +
+                               "           slurm_batch_size was set to 50\n")
+
+        self.reporting('')
+
+    #---------------------------------------------------------------------------
+
     def run_slurm_batches(self):
         """
         Run all cases in slurm batch mode.
@@ -1893,7 +1959,7 @@ class Studies(object):
                                 slurm_batch_file = open(slurm_batch_name, mode='w')
 
                                 # fill file with template
-                                hh, mm = divmod(batch_total_time, 60.)
+                                hh, mm = divmod(batch_total_time, 60)
                                 cmd = slurm_batch_template.format(nproc+1,
                                                                   math.ceil(hh),
                                                                   math.ceil(mm),
@@ -1961,7 +2027,7 @@ class Studies(object):
                     slurm_batch_file = open(slurm_batch_name, mode='w')
 
                     # fill file with template
-                    hh, mm = divmod(batch_total_time, 60.)
+                    hh, mm = divmod(batch_total_time, 60)
                     cmd = slurm_batch_template.format(nproc+1, math.ceil(hh),
                                                       math.ceil(mm), cur_batch_id)
 

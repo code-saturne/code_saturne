@@ -9,6 +9,13 @@ Master (not on release branches yet)
   print in the std output messages a warning if memory leaks are detected
   within the log file(s) for any rank.
 
+### Studymanager:
+
+- Only the command line `--submit` can be used to submit batches of cases using
+  the SLURM resource manager on cluster. Expected times can now be set in the
+  run.cfg file of a given case. Specific resources can also be specified in the
+  run.cfg file using the run_id `[<resource>/run_id=<run_id>]`.
+
 Release 8.2.0 (2024-06-17)
 --------------------------
 

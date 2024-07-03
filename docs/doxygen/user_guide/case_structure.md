@@ -505,6 +505,10 @@ of the configured batch system type (in lowercase) is used instead.
 If this is not available either, `${resource_name}` finally defaults
 to `job_defaults`.
 
+It is also possible to specify a compute environment for a given run_id by
+adding a section [${resource_name}/run_id=${run_id}]. Runs with different run_id
+will not be affected.
+
 Optional (recommended) section relative to job defaults. Allowed keywords are:
 
 * `n_procs`

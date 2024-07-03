@@ -395,6 +395,7 @@ def process_options(options, pkg):
            'n_procs': options.nprocs,
            'n_threads': options.nthreads,
            'time_limit': None,
+           'expected_time': None,
            'compute_build': compute_build,
            'debug_args': None,
            'tool_args': None,
@@ -511,16 +512,27 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
         resource_name = 'job_defaults'
 
     run_conf_r = None
+
+    # Try to find specific configuration with run_id in the form
+    # [<resource>/run_id=<run_id>] otherwise use classical resource
+
+    specific_resource_name = resource_name + "/run_id=" + r_c['run_id']
+    if specific_resource_name in run_conf.sections:
+        resource_name = specific_resource_name
+
     if resource_name in run_conf.sections:
         run_conf_r = run_conf.sections[resource_name]
 
     if run_conf_r:
-        for kw in ('n_procs', 'n_threads', 'time_limit'):
+        for kw in ('n_procs', 'n_threads', 'time_limit', 'expected_time'):
             if kw in r_c:
                 if r_c[kw] != None:
                     continue
             r_c[kw] = None
-            v = run_conf.get_int(resource_name, kw)
+            if kw == 'expected_time':
+                v = run_conf.get_expected_time(resource_name, kw)
+            else:
+                v = run_conf.get_int(resource_name, kw)
             if v:
                 r_c[kw] = v
 
@@ -613,7 +625,7 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
                        'finalize': s_c['save_results']}
 
     r_d = {}
-    for kw in ('n_procs', 'n_threads', 'time_limit'):
+    for kw in ('n_procs', 'n_threads', 'time_limit', 'expected_time'):
         if r_c[kw]:
             r_d[kw] = r_c[kw]
 

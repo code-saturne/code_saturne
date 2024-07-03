@@ -29,23 +29,38 @@ This page explains how to submit cases on a cluster using the SLURM resource
 manager with the studymanager tool.
 
 In order to activate the submission of cases on cluster with SLURM, it is
-necessary to specify at least one of the two following options:
+necessary to add the `--submit` command line.
+
+It is also possible to specify the two following options:
 - `--slurm-batch-size=N`: maximum number of cases per batch in SLURM batch mode
-  (50 by default).
+  (1 by default).
 - `--slurm-batch-wtime=M`: maximum computation time in hours per batch in SLURM
-  batch mode (12 hours by default).
+  batch mode (8 hours by default).
+
+Remark: In order to prevent a large number of submissions on cluster with a
+single case per batch, the total number of cases with an expected time lower
+than 5 minutes is counted. If this number is greater than 50,
+`--slurm-batch-size` is set to 50.
 
 For instance, the following command
   ```
-  $ code_saturne smgr -f smgr.xml -r --with-tags=coarse --slurm-batch-size=20 --slurm-batch-wtime=8
+  $ code_saturne smgr -f smgr.xml --submit -r --with-tags=coarse --slurm-batch-size=20 --slurm-batch-wtime=5
   ```
 will submit batch of cases with a maximum of 20 cases per batch and a maximum
-total computation time of 8 hours. The number of cases per batch could then be
-inferior to 20 if the total computation time exceeds 8h.
+total computation time of 5 hours. All cases are automatically sorted by number
+of required processes so that the number of tasks per batch is the same. The
+number of cases per batch could then be inferior to 20 if the total computation
+time exceeds 5h or if the number of cases with the same configuration (i.e.
+number of tasks) is limiting.
+
+Expected time
+-------------
 
 In order to compute the total computation time per batch, it is necessary to
-specify an expected computation time per case (HH:MM) in the smgr xml file (3
-hours by default).
+specify an expected computation time per case (HH:MM) otherwise the default
+value (3 hours) will be applied.
+
+The expected computation time can be specified in the SMGR xml file.
 
 ```{.xml}
     <study label="MyStudy1" status="on">
@@ -55,6 +70,27 @@ hours by default).
 ```
 In this case, the run _Grid1_ has an expected computation time of 2 hours and 15
 minutes and the one of _Grid2_ is 5 hours.
+
+It can also be specified in the run.cfg file a given case.
+
+```{.sh}
+[cronos]
+ 
+n_procs: 4
+expected_time: 00:30
+ 
+[cronos/run_id=mesh2]
+
+n_procs: 8
+expected_time: 02:00
+
+``` 
+
+In this case, all runs have an expected computation time of 30 minutes, except
+the one of the run _mesh2_ that is 2 hours.
+
+Remark: As for the number of process (`n_procs`), the expected time specified in
+SMGR xml file dominates over those specified in run.cfg files.
 
 SLURM batch options
 -------------------
@@ -141,7 +177,7 @@ Example
 In the following example, a list of 8 cases is launched in SLURM batch mode:
 
 ```
-$ code_saturne smgr -f smgr.xml -rp --slurm-batch-size=2 --slurm-batch-wtime=5
+$ code_saturne smgr -f smgr.xml --submit -rp --slurm-batch-size=2 --slurm-batch-wtime=5
 ```
 
 \image html smgr_dependency.png "Exemple of cases allocation per batch"
