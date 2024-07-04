@@ -160,6 +160,12 @@ procedure() :: pthrbm, schtmp
 
 interface
 
+  subroutine cs_wall_distance_geometric()  &
+    bind(C, name='cs_wall_distance_geometric')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_wall_distance_geometric
+
   subroutine cs_solve_transported_variables(iterns)  &
     bind(C, name='cs_solve_transported_variables')
     use, intrinsic :: iso_c_binding
@@ -897,7 +903,7 @@ do while (iterns.le.nterup)
         call cs_wall_distance(iterns)
       ! Deprecated algorithm
       else if (icdpar.eq.2) then
-        call distpr2(itypfb)
+        call cs_wall_distance_geometric
       endif
       ! Wall distance is not updated except if ALE is switched on
       if (iale.eq.0) imajdy = 1

@@ -411,7 +411,6 @@ cs_volume_zone.c \
 cs_wall_distance.cpp \
 cs_wall_functions.c \
 cs_xdef_eval_at_zone.c \
-distpr2.f90 \
 ecrlis.f90 \
 findpt.f90 \
 fldini.f90 \

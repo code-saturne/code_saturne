@@ -94,6 +94,16 @@ cs_wall_distance_yplus(cs_real_t  visvdr[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Computes distance to wall by a brute force geometric approach
+ *        (serial only)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_distance_geometric(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Provide read/write access to cs_glob_wall_distance
  *
  * \return pointer to global wall distance structure

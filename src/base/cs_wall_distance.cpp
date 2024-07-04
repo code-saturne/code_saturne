@@ -1089,7 +1089,79 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   CS_FREE_HD(b_visc);
   CS_FREE_HD(rovsdp);
   CS_FREE_HD(viscap);
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes distance to wall by a brute force geometric approach
+ *        (serial only)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_distance_geometric(void)
+{
+  const cs_mesh_t  *mesh          = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const int *bc_type = cs_glob_bc_type;
+
+  const cs_lnum_t n_cells       = mesh->n_cells;
+  const cs_lnum_t n_b_faces     = mesh->n_b_faces;
+  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *cell_cen   = (const cs_real_3_t *)fvq->cell_cen;
+
+  // Usually one would not use MPI here but just in case...
+  if (mesh->halo != nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error function cannot be used in parallel"
+                " or with periodic mesh"));
+
+  cs_field_t *f_w_dist = cs_field_by_name("wall_distance");
+  cs_real_t *wall_dist = f_w_dist->val;
+
+  /* Deprecated model to compute wall distance */
+
+  /* One must be careful in parallel or on periodic domains
+     (one wall can be closer when crossing one edge...)*/
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    wall_dist[c_id] = cs_math_big_r * cs_math_big_r;
+
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t xdis = cs_math_3_square_distance(b_face_cog[f_id],
+                                                   cell_cen[c_id]);
+        if (wall_dist[c_id] > xdis)
+          wall_dist[c_id] = xdis;
+
+      }
+    }
+  }
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    wall_dist[c_id] = sqrt(wall_dist[c_id]);
+  }
+
+  /* Compute bounds and print infoc--------------------------------------------*/
+
+  cs_real_t dismax = -cs_math_big_r;
+  cs_real_t dismin =  cs_math_big_r;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    dismin = cs_math_fmin(wall_dist[c_id], dismin);
+    dismax = cs_math_fmax(wall_dist[c_id], dismax);
+  }
+
+  cs_log_printf
+    (CS_LOG_DEFAULT,
+     _("\n"
+       " ** WALL DISTANCE (brute force algorithm) \n"
+       "    ------------- \n"
+       " \n"
+       " Min distance = %14.5f, Max distance = %14.5f \n"),
+     dismin, dismax);
 }
 
 /*----------------------------------------------------------------------------*/
