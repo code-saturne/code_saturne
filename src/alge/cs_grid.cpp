@@ -3853,12 +3853,12 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
 
   for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
     cs_lnum_t ic = c_coarse_row[ii];
-    if (ic < 0)
-      continue;
-    c_cell_vol[ic] += f_cell_vol[ii];
-    c_cell_cen[3*ic]    += f_cell_vol[ii]*f_cell_cen[3*ii];
-    c_cell_cen[3*ic +1] += f_cell_vol[ii]*f_cell_cen[3*ii +1];
-    c_cell_cen[3*ic +2] += f_cell_vol[ii]*f_cell_cen[3*ii +2];
+    if (ic > -1) {
+      c_cell_vol[ic] += f_cell_vol[ii];
+      c_cell_cen[3*ic]    += f_cell_vol[ii]*f_cell_cen[3*ii];
+      c_cell_cen[3*ic +1] += f_cell_vol[ii]*f_cell_cen[3*ii +1];
+      c_cell_cen[3*ic +2] += f_cell_vol[ii]*f_cell_cen[3*ii +2];
+    }
   }
 
 # pragma omp parallel for if(c_n_cells > CS_THR_MIN)
@@ -5120,10 +5120,6 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 static void
 _native_from_msr(cs_grid_t  *g)
 {
-  std::chrono::high_resolution_clock::time_point t_start;
-  if (cs_glob_timer_kernels_flag > 0)
-    t_start = std::chrono::high_resolution_clock::now();
-
   const cs_lnum_t db_stride = g->db_size*g->db_size;
   const cs_lnum_t eb_stride = g->eb_size*g->eb_size;
 
