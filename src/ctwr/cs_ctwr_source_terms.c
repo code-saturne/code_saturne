@@ -68,6 +68,7 @@
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
 
@@ -992,31 +993,53 @@ cs_ctwr_source_term(int              f_id,
  * Careful, this is different from an injection source term, which would
  * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
  *
- * \param[out]  mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_bulk_mass_source_term(cs_real_t         mass_source[])
+cs_ctwr_bulk_mass_source_term(void)
 {
-  cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
+  if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] <= 0)
+    return;
+
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
   /* Compute the mass exchange term */
-  cs_real_t *imp_st;
+  cs_real_t *imp_st = NULL;
+  cs_real_t *mass_source = NULL;
 
-  BFT_MALLOC(imp_st, n_cells_with_ghosts, cs_real_t);
+  BFT_MALLOC(imp_st, n_cells_ext, cs_real_t);
+  BFT_MALLOC(mass_source, n_cells_ext, cs_real_t);
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     mass_source[cell_id] = 0.0;
     imp_st[cell_id] = 0.0;
   }
 
   /* Bulk mass source term is stored for pressure */
-
   cs_ctwr_source_term(CS_F_(p)->id,
                       mass_source,
                       imp_st);
 
   BFT_FREE(imp_st);
+
+  int *itypsm = NULL;
+  cs_lnum_t ncesmp = 0, *icetsm = NULL;
+  cs_real_t *smacel= NULL, *gamma = NULL;
+
+  cs_volume_mass_injection_get_arrays(CS_F_(p),
+                                      &ncesmp,
+                                      &icetsm,
+                                      &itypsm,
+                                      &smacel,
+                                      &gamma);
+
+  for (cs_lnum_t ii = 0; ii < ncesmp; ii++) {
+    const cs_lnum_t c_id = icetsm[ii] - 1;
+    smacel[ii] += mass_source[c_id];
+  }
+
+  BFT_FREE(mass_source);
 }
 
 /*----------------------------------------------------------------------------*/

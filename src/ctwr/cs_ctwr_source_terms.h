@@ -66,13 +66,11 @@ cs_ctwr_source_term(int              f_id,
  *
  * Careful, this is different from an injection source term, which would
  * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
- *
- * \param[out]  mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_bulk_mass_source_term(cs_real_t         mass_source[]);
+cs_ctwr_bulk_mass_source_term(void);
 
 
 /*----------------------------------------------------------------------------*/

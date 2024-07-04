@@ -126,7 +126,6 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 double precision, pointer, dimension(:) :: hbord, theipb
 double precision, pointer, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
-double precision, allocatable, dimension(:) :: mass_source
 double precision, dimension(:), pointer :: brom, crom, cpro_rho_mass
 
 double precision, pointer, dimension(:,:) :: frcxt => null()
@@ -337,6 +336,13 @@ interface
     bind(C, name='cs_compute_thermo_pressure_density')
     use, intrinsic :: iso_c_binding
   end subroutine cs_compute_thermo_pressure_density
+
+  subroutine cs_ctwr_bulk_mass_source_term()                    &
+    bind(C, name='cs_ctwr_bulk_mass_source_term')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ctwr_bulk_mass_source_term
+
 
 end interface
 
@@ -586,21 +592,8 @@ endif
 if (nctsmt.gt.0) then
 
   call cs_volume_mass_injection_eval()
-
-  if (ippmod(iaeros).gt.0) then
-
-    allocate(mass_source(ncelet))
-
-    ! Cooling tower model evaporation mass exchange term
-    call cs_ctwr_bulk_mass_source_term(mass_source)
-
-    do ii = 1, ncetsm
-      iel = icetsm(ii)
-      smacel(ii, ipr) = smacel(ii, ipr) + mass_source(iel)
-    enddo
-
-    deallocate(mass_source)
-  endif
+  ! Cooling tower model evaporation mass exchange term
+  call cs_ctwr_bulk_mass_source_term()
 
 endif
 
