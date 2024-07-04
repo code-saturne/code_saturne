@@ -67,6 +67,11 @@ double precision heuray, albedo, emis, foir, fos
 double precision xvert, yvert
 double precision surf_zone
 double precision zrac,fpond,rap,tmoy,rhum,dum
+double precision soil_mean_albedo
+double precision soil_mean_emissi
+double precision soil_mean_density
+double precision soil_mean_ttsoil
+double precision soil_mean_totwat
 
 integer, allocatable :: cressm(:), interp(:)
 integer, dimension(:), pointer :: elt_ids
@@ -254,12 +259,12 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call field_get_val_s_by_name("boundary_albedo", bpro_albedo)
     call field_get_val_s_by_name("emissivity", bpro_emissi)
 
-    soil_mean%albedo = 0.d0
-    soil_mean%emissi = 0.d0
+    soil_mean_albedo = 0.d0
+    soil_mean_emissi = 0.d0
 
-    soil_mean%density = 0.d0
-    soil_mean%ttsoil  = 0.d0
-    soil_mean%totwat  = 0.d0
+    soil_mean_density = 0.d0
+    soil_mean_ttsoil  = 0.d0
+    soil_mean_totwat  = 0.d0
     surf_zone = 0.d0
 
     do isol = 1, nfmodsol
@@ -267,41 +272,41 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       ifac = elt_ids(isol) + 1 ! C > Fortran
 
       ! Density: property of the boundary face:
-      soil_mean%density = soil_mean%density + surfbn(ifac) * crom(ifabor(ifac))
+      soil_mean_density = soil_mean_density + surfbn(ifac) * crom(ifabor(ifac))
 
       ! Potential temperature for consistency with the code before, TODO is it correct?
-      soil_mean%ttsoil  = soil_mean%ttsoil  + surfbn(ifac) * (bvar_tempp(isol) - tkelvi)
-      soil_mean%totwat  = soil_mean%totwat  + surfbn(ifac) * bvar_total_water(isol)
+      soil_mean_ttsoil  = soil_mean_ttsoil  + surfbn(ifac) * (bvar_tempp(isol) - tkelvi)
+      soil_mean_totwat  = soil_mean_totwat  + surfbn(ifac) * bvar_total_water(isol)
 
-      soil_mean%albedo = soil_mean%albedo + surfbn(ifac) * bpro_albedo(ifac)
-      soil_mean%emissi = soil_mean%emissi + surfbn(ifac) * bpro_emissi(ifac)
+      soil_mean_albedo = soil_mean_albedo + surfbn(ifac) * bpro_albedo(ifac)
+      soil_mean_emissi = soil_mean_emissi + surfbn(ifac) * bpro_emissi(ifac)
 
       ! Surface of the zone, could use it directly in C
       surf_zone = surf_zone + surfbn(ifac)
     enddo
 
     if (irangp.ge.0) then
-      call parsom(soil_mean%density)
-      call parsom(soil_mean%ttsoil )
-      call parsom(soil_mean%totwat )
-      call parsom(soil_mean%albedo )
-      call parsom(soil_mean%emissi )
+      call parsom(soil_mean_density)
+      call parsom(soil_mean_ttsoil )
+      call parsom(soil_mean_totwat )
+      call parsom(soil_mean_albedo )
+      call parsom(soil_mean_emissi )
       call parsom(surf_zone)
     endif
 
-    soil_mean%density = soil_mean%density / surf_zone
-    soil_mean%ttsoil  = soil_mean%ttsoil  / surf_zone
-    soil_mean%totwat  = soil_mean%totwat  / surf_zone
-    soil_mean%albedo  = soil_mean%albedo  / surf_zone
-    soil_mean%emissi  = soil_mean%emissi  / surf_zone
+    soil_mean_density = soil_mean_density / surf_zone
+    soil_mean_ttsoil  = soil_mean_ttsoil  / surf_zone
+    soil_mean_totwat  = soil_mean_totwat  / surf_zone
+    soil_mean_albedo  = soil_mean_albedo  / surf_zone
+    soil_mean_emissi  = soil_mean_emissi  / surf_zone
     ! For now, all verticals have the same value
     ! TODO: automatic treatment for pressure?
     do ii = 1, nvert
-      soilvert(ii)%albedo = soil_mean%albedo
-      soilvert(ii)%emissi = soil_mean%emissi
-      soilvert(ii)%ttsoil = soil_mean%ttsoil
-      soilvert(ii)%totwat = soil_mean%totwat
-      soilvert(ii)%density = soil_mean%density
+      soilvert(ii)%albedo  = soil_mean_albedo
+      soilvert(ii)%emissi  = soil_mean_emissi
+      soilvert(ii)%ttsoil  = soil_mean_ttsoil
+      soilvert(ii)%totwat  = soil_mean_totwat
+      soilvert(ii)%density = soil_mean_density
     enddo
   endif
 

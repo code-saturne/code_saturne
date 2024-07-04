@@ -103,7 +103,6 @@ end type soil_tab
 
 !> Class soilvert dimension
 type(soil_tab), dimension(:), allocatable, save :: soilvert
-type(soil_tab), save :: soil_mean
 
 !> \}
 !=============================================================================
