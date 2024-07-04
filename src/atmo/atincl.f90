@@ -297,6 +297,23 @@ double precision, dimension(:), pointer :: tauz
 !> internal variable for 1D radiative model
 double precision, dimension(:), pointer :: zq
 
+!> Defines the soil constants and variables of the vertical arrays
+!> used for the 1D radiative model
+!> soil albedo
+double precision, dimension(:), pointer :: soil_albedo
+!> emissivity
+double precision, dimension(:), pointer :: soil_emissi
+!> soil thermo temperature
+double precision, dimension(:), pointer :: soil_ttsoil
+!> soil potential temperature
+double precision, dimension(:), pointer :: soil_tpsoil
+!> total water content
+double precision, dimension(:), pointer :: soil_totwat
+!> surface pressure
+double precision, dimension(:), pointer :: soil_pressure
+!> density
+double precision, dimension(:), pointer :: soil_density
+
 !> internal variable for 1D radiative model
 double precision, save :: tausup
 
@@ -461,6 +478,13 @@ double precision, save:: zaero
          p_tauzq, p_tauz, p_zq,                                                &
          p_zray, p_rayi, p_rayst,                                              &
          p_iru, p_ird, p_solu, p_sold,                                         &
+         p_soil_albedo,                                                        &
+         p_soil_emissi,                                                        &
+         p_soil_ttsoil,                                                        &
+         p_soil_tpsoil,                                                        &
+         p_soil_totwat,                                                        &
+         p_soil_pressure,                                                      &
+         p_soil_density,                                                       &
          dim_pumet, dim_phmet,                                                 &
          dim_tpmet, dim_ekmet, dim_epmet,                                      &
          dim_xyvert, dim_kmx2, dim_kmx_nvert )                                 &
@@ -481,6 +505,13 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: p_tauzq, p_tauz, p_zq
       type(c_ptr), intent(out) :: p_zray, p_rayi, p_rayst
       type(c_ptr), intent(out) :: p_iru, p_ird, p_solu, p_sold
+      type(c_ptr), intent(out) :: p_soil_albedo
+      type(c_ptr), intent(out) :: p_soil_emissi
+      type(c_ptr), intent(out) :: p_soil_ttsoil
+      type(c_ptr), intent(out) :: p_soil_tpsoil
+      type(c_ptr), intent(out) :: p_soil_totwat
+      type(c_ptr), intent(out) :: p_soil_pressure
+      type(c_ptr), intent(out) :: p_soil_density
     end subroutine cs_f_atmo_arrays_get_pointers
 
     !---------------------------------------------------------------------------
@@ -806,7 +837,7 @@ contains
       c_nsize, c_imeteo,                            &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt, &
       c_meteo_zi, c_iatsoil,                        &
-      c_nvert, c_kvert, c_kmx )
+      c_nvert, c_kvert, c_kmx)
 
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
@@ -884,6 +915,13 @@ type(c_ptr) :: c_dacsup, c_dacsups
 type(c_ptr) :: c_tauzq, c_tauz, c_zq
 type(c_ptr) :: c_zray, c_rayi, c_rayst
 type(c_ptr) :: c_iru, c_ird, c_solu, c_sold
+type(c_ptr) :: c_soil_albedo
+type(c_ptr) :: c_soil_emissi
+type(c_ptr) :: c_soil_ttsoil
+type(c_ptr) :: c_soil_tpsoil
+type(c_ptr) :: c_soil_totwat
+type(c_ptr) :: c_soil_pressure
+type(c_ptr) :: c_soil_density
 
 integer(c_int), dimension(2) :: dim_hyd_p_met, dim_u_met, dim_pot_t_met
 integer(c_int), dimension(2) :: dim_ek_met, dim_ep_met
@@ -894,14 +932,6 @@ if (imeteo.eq.1) then
 endif
 if (imeteo.eq.2) then
   call cs_atmo_init_meteo_profiles()
-endif
-
-! Allocate additional arrays for 1D radiative model
-if (iatra1.eq.1) then
-
-  ! Allocate additional arrays for 1D radiative model
-  allocate(soilvert(nvert))
-
 endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
@@ -917,6 +947,13 @@ call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
                                    c_tauzq, c_tauz, c_zq,         &
                                    c_zray, c_rayi, c_rayst,       &
                                    c_iru, c_ird, c_solu, c_sold,  &
+                                   c_soil_albedo,                 &
+                                   c_soil_emissi,                 &
+                                   c_soil_ttsoil,                 &
+                                   c_soil_tpsoil,                 &
+                                   c_soil_totwat,                 &
+                                   c_soil_pressure,               &
+                                   c_soil_density,                &
                                    dim_u_met, dim_hyd_p_met,      &
                                    dim_pot_t_met, dim_ek_met,     &
                                    dim_ep_met,                    &
@@ -945,7 +982,7 @@ call c_f_pointer(c_acsup  , acsup  , [kmx])
 call c_f_pointer(c_acsups , acsups , [kmx])
 call c_f_pointer(c_dacsup , dacsup , [kmx])
 call c_f_pointer(c_dacsups, dacsups, [kmx])
-call c_f_pointer(c_tauzq  , tauzq  , [kmx+1])!TODO check +1 works???
+call c_f_pointer(c_tauzq  , tauzq  , [kmx+1])
 call c_f_pointer(c_tauz   , tauz   , [kmx+1])
 call c_f_pointer(c_zq     , zq     , [kmx+1])
 call c_f_pointer(c_rayi   , rayi   , [dim_kmx_nvert])
@@ -955,6 +992,14 @@ call c_f_pointer(c_iru    , iru    , [dim_kmx_nvert])
 call c_f_pointer(c_ird    , ird    , [dim_kmx_nvert])
 call c_f_pointer(c_solu   , solu   , [dim_kmx_nvert])
 call c_f_pointer(c_sold   , sold   , [dim_kmx_nvert])
+
+call c_f_pointer(c_soil_albedo   , soil_albedo  , [nvert])
+call c_f_pointer(c_soil_emissi   , soil_emissi  , [nvert])
+call c_f_pointer(c_soil_ttsoil   , soil_ttsoil  , [nvert])
+call c_f_pointer(c_soil_tpsoil   , soil_tpsoil  , [nvert])
+call c_f_pointer(c_soil_totwat   , soil_totwat  , [nvert])
+call c_f_pointer(c_soil_pressure , soil_pressure, [nvert])
+call c_f_pointer(c_soil_density  , soil_density , [nvert])
 
 ! Allocate additional arrays for Water Microphysics
 
@@ -1029,8 +1074,6 @@ if (imeteo.gt.0) then
   deallocate(rmet)
 
   if (iatra1.eq.1) then
-
-    deallocate(soilvert)
 
     call mestde ()
 

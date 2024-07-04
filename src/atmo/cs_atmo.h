@@ -243,6 +243,21 @@ typedef struct {
   /*! 1D profiles of aerosols along each vertical */
   cs_real_t *rad_1d_aerosols;
 
+  /*! Value of ground albedo for each vertical */
+  cs_real_t *rad_1d_albedo0;
+  /*! Value of ground emissivity for each vertical */
+  cs_real_t *rad_1d_emissi0;
+  /*! Value of ground temperature for each vertical */
+  cs_real_t *rad_1d_temp0;
+  /*! Value of ground potential temperature for each vertical */
+  cs_real_t *rad_1d_theta0;
+  /*! Value of ground total water mass fraction for each vertical */
+  cs_real_t *rad_1d_qw0;
+  /*! Value of ground pressure for each vertical */
+  cs_real_t *rad_1d_p0;
+  /*! Value of ground density for each vertical */
+  cs_real_t *rad_1d_rho0;
+
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
   cs_real_t domain_orientation;

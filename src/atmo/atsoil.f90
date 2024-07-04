@@ -82,28 +82,6 @@ double precision :: w2ini = 0.d0
 !> array of the different features of each soil category
 type(categorie_sol), dimension(:) , allocatable :: tab_sol
 
-!> Defines the soil constants and variables of the vertical arrays
-!> used for the 1D radiative model
-type soil_tab
-!> albedo
-  double precision :: albedo
-  !> emissivity
-  double precision :: emissi
-  !> soil thermo temperature
-  double precision :: ttsoil
-  !> soil potential temperature
-  double precision :: tpsoil
-  !> total water content
-  double precision :: totwat
-  !> surface pressure
-  double precision :: pressure
-  !> density
-  double precision :: density
-end type soil_tab
-
-!> Class soilvert dimension
-type(soil_tab), dimension(:), allocatable, save :: soilvert
-
 !> \}
 !=============================================================================
 

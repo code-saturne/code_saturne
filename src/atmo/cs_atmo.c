@@ -163,6 +163,13 @@ static cs_atmo_option_t  _atmo_option = {
   .rad_1d_nc = NULL,
   .rad_1d_fn = NULL,
   .rad_1d_aerosols = NULL,
+  .rad_1d_albedo0 = NULL,
+  .rad_1d_emissi0 = NULL,
+  .rad_1d_temp0   = NULL,
+  .rad_1d_theta0  = NULL,
+  .rad_1d_qw0     = NULL,
+  .rad_1d_p0      = NULL,
+  .rad_1d_rho0    = NULL,
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
@@ -393,6 +400,13 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **ird,
                               cs_real_t **solu,
                               cs_real_t **sold,
+                              cs_real_t **soil_albedo,
+                              cs_real_t **soil_emissi,
+                              cs_real_t **soil_ttsoil,
+                              cs_real_t **soil_tpsoil,
+                              cs_real_t **soil_totwat,
+                              cs_real_t **soil_pressure,
+                              cs_real_t **soil_density,
                               int         dim_u_met[2],
                               int         dim_hyd_p_met[2],
                               int         dim_pot_t_met[2],
@@ -1749,6 +1763,13 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **ird,
                               cs_real_t **solu,
                               cs_real_t **sold,
+                              cs_real_t **soil_albedo,
+                              cs_real_t **soil_emissi,
+                              cs_real_t **soil_ttsoil,
+                              cs_real_t **soil_tpsoil,
+                              cs_real_t **soil_totwat,
+                              cs_real_t **soil_pressure,
+                              cs_real_t **soil_density,
                               int         dim_u_met[2],
                               int         dim_hyd_p_met[2],
                               int         dim_pot_t_met[2],
@@ -1879,6 +1900,34 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
     BFT_MALLOC(_atmo_option.rad_1d_aerosols, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_aerosols);
   }
+  if (         _atmo_option.rad_1d_albedo0 == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_albedo0, n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_albedo0);
+  }
+  if (         _atmo_option.rad_1d_emissi0== NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_emissi0, n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_emissi0);
+  }
+  if (         _atmo_option.rad_1d_temp0 == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_temp0, n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_temp0);
+  }
+  if (         _atmo_option.rad_1d_theta0 == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_theta0, n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_theta0);
+  }
+  if (         _atmo_option.rad_1d_qw0 == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_qw0, n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_qw0);
+  }
+  if (         _atmo_option.rad_1d_p0  == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_p0, n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_p0);
+  }
+  if (         _atmo_option.rad_1d_rho0 == NULL) {
+    BFT_MALLOC(_atmo_option.rad_1d_rho0, n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_rho0);
+  }
 
   *xyvert = _atmo_option.rad_1d_xy;
   *zvert  = _atmo_option.rad_1d_z;
@@ -1902,6 +1951,15 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   *ird    = _atmo_option.rad_1d_ird   ;
   *solu   = _atmo_option.rad_1d_solu  ;
   *sold   = _atmo_option.rad_1d_sold  ;
+
+  /* ground level arrays, of size n_vert */
+  *soil_albedo   = _atmo_option.rad_1d_albedo0;
+  *soil_emissi   = _atmo_option.rad_1d_emissi0;
+  *soil_ttsoil   = _atmo_option.rad_1d_temp0;
+  *soil_tpsoil   = _atmo_option.rad_1d_theta0;
+  *soil_totwat   = _atmo_option.rad_1d_qw0;
+  *soil_pressure = _atmo_option.rad_1d_p0;
+  *soil_density  = _atmo_option.rad_1d_rho0;
 
   dim_u_met[0]     = _atmo_option.met_1d_nlevels_d;
   dim_u_met[1]     = _atmo_option.met_1d_ntimes;
@@ -4310,6 +4368,13 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.rad_1d_ird);
   BFT_FREE(_atmo_option.rad_1d_solu);
   BFT_FREE(_atmo_option.rad_1d_sold);
+  BFT_FREE(_atmo_option.rad_1d_albedo0);
+  BFT_FREE(_atmo_option.rad_1d_emissi0);
+  BFT_FREE(_atmo_option.rad_1d_temp0);
+  BFT_FREE(_atmo_option.rad_1d_theta0);
+  BFT_FREE(_atmo_option.rad_1d_qw0);
+  BFT_FREE(_atmo_option.rad_1d_p0);
+  BFT_FREE(_atmo_option.rad_1d_rho0);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -141,12 +141,12 @@ endif
 ! Initializing the soil table of each vertical grid
 if (iatsoil.ne.0) then
   do iiv = 1, nvert
-    soilvert(iiv)%albedo  = 0.25d0
-    soilvert(iiv)%emissi  = 0.965d0
-    soilvert(iiv)%ttsoil  = 14.77d0
-    soilvert(iiv)%totwat  = 0.0043d0
-    soilvert(iiv)%pressure = 1023.d0
-    soilvert(iiv)%density = 1.23d0
+    soil_albedo  (iiv) = 0.25d0
+    soil_emissi  (iiv) = 0.965d0
+    soil_ttsoil  (iiv) = 14.77d0
+    soil_totwat  (iiv) = 0.0043d0
+    soil_pressure(iiv) = 1023.d0
+    soil_density (iiv) = 1.23d0
   enddo
 endif
 !< [usatsoil]

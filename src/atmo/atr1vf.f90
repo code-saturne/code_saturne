@@ -302,11 +302,11 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! For now, all verticals have the same value
     ! TODO: automatic treatment for pressure?
     do ii = 1, nvert
-      soilvert(ii)%albedo  = soil_mean_albedo
-      soilvert(ii)%emissi  = soil_mean_emissi
-      soilvert(ii)%ttsoil  = soil_mean_ttsoil
-      soilvert(ii)%totwat  = soil_mean_totwat
-      soilvert(ii)%density = soil_mean_density
+      soil_albedo (ii) = soil_mean_albedo
+      soil_emissi (ii) = soil_mean_emissi
+      soil_ttsoil (ii) = soil_mean_ttsoil
+      soil_totwat (ii) = soil_mean_totwat
+      soil_density(ii) = soil_mean_density
     enddo
   endif
 
@@ -320,8 +320,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     yvert = xyvert(ii,2)
 
     ! Soil constants
-    albedo = soilvert(ii)%albedo
-    emis = soilvert(ii)%emissi
+    albedo = soil_albedo(ii)
+    emis   = soil_emissi(ii)
 
     imer1 = 0
 
@@ -330,10 +330,10 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     ! Soil variables
     zray(1)   = zvert(1)
-    temray(1) = soilvert(ii)%ttsoil
-    qvray(1)  = soilvert(ii)%totwat
-    romray(1) = soilvert(ii)%density
-    preray(1) = soilvert(ii)%pressure
+    temray(1) = soil_ttsoil(ii)
+    qvray(1)  = soil_totwat(ii)
+    romray(1) = soil_density (ii)
+    preray(1) = soil_pressure(ii)
     qlray(1)  = 0.d0
     ncray(1)  = 0.d0
     fneray(1) = 0.d0
