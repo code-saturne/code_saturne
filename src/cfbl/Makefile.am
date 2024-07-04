@@ -43,6 +43,7 @@ $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -86,7 +87,7 @@ cfiniv.f90 \
 cfphyv.f90 \
 cfvarp.f90 \
 cfxtcl.f90 \
-cs_cf_boundary_conditions.c \
+cs_cf_boundary_conditions.cpp \
 cs_cf_boundary_flux.c \
 cs_cf_compute.c \
 cs_cf_energy.c \
