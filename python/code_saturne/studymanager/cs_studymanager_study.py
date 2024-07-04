@@ -630,7 +630,7 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def build_run_cmd(self, resource_name=None):
+    def build_run_cmd(self, resource_name=None, mem_log=False):
         """
         Define run command with specified options.
         """
@@ -645,6 +645,9 @@ class Case(object):
                 + " --case " + refdir \
                 + " --dest " + self.__dest \
                 + " --id " + self.run_id
+
+        if mem_log:
+            run_cmd += " --mem-log"
 
         if self.kw_args:
             if self.kw_args.find(" ") < 0:
@@ -687,13 +690,13 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def build_run_batch(self, resource_name=None):
+    def build_run_batch(self, resource_name=None, mem_log=False):
         """
         Launch run in RESU/run_id subdirectory in an batch mode.
         """
         run_cmd_batch = "cd " + self.run_dir + os.linesep
 
-        run_cmd_batch += self.build_run_cmd(resource_name)
+        run_cmd_batch += self.build_run_cmd(resource_name, mem_log)
 
         # append run_case.log in run_dir
         run_cmd_batch += " >> run_case.log 2>&1" + os.linesep + os.linesep
@@ -702,20 +705,27 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def run(self, resource_name=None):
+    def run(self, resource_name=None, mem_log=False):
         """
         Launch run in RESU/run_id subdirectory.
         """
         home = os.getcwd()
         os.chdir(self.run_dir)
 
-        run_cmd = self.build_run_cmd(resource_name)
+        run_cmd = self.build_run_cmd(resource_name, mem_log)
 
         # append run_case.log in run_dir
         file_name = os.path.join(self.run_dir, "run_case.log")
         log_run = open(file_name, mode='a')
 
         error, self.is_time = run_studymanager_command(run_cmd, log_run)
+
+        mem_log_leak = False
+        if mem_log:
+            mem_log_leak_code = 2
+            if error & mem_log_leak_code:
+                mem_log_leak = True
+                error -= mem_log_leak_code
 
         if not error:
             self.is_run = "OK"
@@ -724,7 +734,7 @@ class Case(object):
 
         os.chdir(home)
 
-        return error
+        return error, mem_log_leak
 
     #---------------------------------------------------------------------------
 
@@ -1169,6 +1179,8 @@ class Studies(object):
         self.__dis_tex           = options.disable_tex
         # tex reports compilationpdflatex
         self.__pdflatex          = not options.disable_pdflatex
+        # use the mem-log option for unfreed pointers
+        self.__mem_log           = options.mem_log
 
         # Query install configuration and current environment
         # (add number of procs based on resources to install
@@ -1772,7 +1784,8 @@ class Studies(object):
                     self.reporting('    - running %s ...' % case.title,
                                    stdout=True, report=False, status=True)
 
-                    error = case.run(resource_name = self.__resource_name)
+                    error, mem_log_leak = case.run(resource_name = self.__resource_name,
+                                          mem_log = self.__mem_log)
                     if case.is_time:
                         is_time = "%s s" % case.is_time
                     else:
@@ -1801,6 +1814,11 @@ class Studies(object):
                         self.reporting('      * see run_case.log in ' + \
                                        case.run_dir)
 
+                    if self.__mem_log and mem_log_leak:
+                        self.reporting('    - run %s --> Leaks in memory logs' \
+                                       % (case.title))
+                        self.reporting('      * see cs_mem.log(.N) in ' \
+                                       % (case.run_dir))
                     self.__log_file.flush()
 
         self.reporting('')
@@ -1861,7 +1879,7 @@ class Studies(object):
                             if (cur_batch_size == 0) or (batch_total_time + \
                                float(case.expected_time) < self.__slurm_batch_wtime):
                                 # append content of batch command with run of the case
-                                batch_cmd += case.build_run_batch()
+                                batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
                                 cur_batch_size += 1
                                 batch_total_time += float(case.expected_time)
                             else:
@@ -1933,7 +1951,7 @@ class Studies(object):
                             # complete batch info as previous one was submitted
                             if submit_prev:
                                 # append content of batch command with run of the case
-                                batch_cmd += case.build_run_batch()
+                                batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
                                 cur_batch_size += 1
                                 batch_total_time += float(case.expected_time)
 

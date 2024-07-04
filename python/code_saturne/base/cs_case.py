@@ -2072,13 +2072,16 @@ class case:
                         pass
 
         e_caption = None
+
+        memory_leak = False
         for d in self.domains:
             d.copy_results()
             if d.error:
                 e_caption = d.error
             # check for memory leaks if needed
             if self.mem_log:
-                d.check_memory_log()
+                if d.check_memory_log() == 1:
+                    memory_leak = True
 
         # Remove directories if empty
 
@@ -2094,6 +2097,8 @@ class case:
             self.update_scripts_tmp('failed', 'failed', e_caption)
 
         self.update_scripts_tmp('saving', None)
+
+        return memory_leak
 
     #---------------------------------------------------------------------------
 
@@ -2277,6 +2282,7 @@ class case:
             retcode = cs_exec_environment.run_command(self.run_prologue)
             os.chdir(cwd)
 
+        mem_log_leaks = False
         try:
             retcode = 0
             if stages['prepare_data']:
@@ -2292,7 +2298,7 @@ class case:
                 self.run_solver()
 
             if stages['save_results'] == True:
-                self.save_results()
+                mem_log_leaks = self.save_results()
                 self.clear_exec_dir_stamp()
 
         finally:
@@ -2318,6 +2324,9 @@ class case:
                 err_str += self.error_long + '\n\n'
             sys.stderr.write(err_str)
             retcode = 1
+
+        if self.mem_log and mem_log_leaks:
+            retcode += 2
 
         if self.run_epilogue:
             cwd = os.getcwd()
