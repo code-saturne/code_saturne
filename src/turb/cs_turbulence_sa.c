@@ -48,6 +48,7 @@
 #include "bft_printf.h"
 
 #include "cs_array.h"
+#include "cs_boundary_conditions.h"
 #include "cs_domain.h"
 #include "cs_equation.h"
 #include "cs_equation_iterative_solve.h"
@@ -70,6 +71,7 @@
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
@@ -166,7 +168,6 @@ _vort_trace(cs_real_t   vort[],
  * \brief Compute the Source terms
  *
  *  \param[in]      dt           time step (per cell)
- *  \param[in]      b_face_type  boundary face type
  *  \param[in]      tr_gr_nu     trace of the gradient of field nusa
  *  \param[in]      vort         vorticity
  *  \param[in]      cpro_rho_o   density (at current or previous time step)
@@ -178,7 +179,6 @@ _vort_trace(cs_real_t   vort[],
 
 static void
 _src_terms(const cs_real_t    dt[],
-           const int          b_face_type[],
            const cs_real_t    tr_gr_nu[],
            const cs_real_t    vort[],
            const cs_real_t    cpro_rho_o[],
@@ -214,7 +214,7 @@ _src_terms(const cs_real_t    dt[],
 
     cs_real_t s[2] = {0, 0};
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (b_face_type[f_id] == CS_SMOOTHWALL && b_roughness[f_id] > 0) {
+      if (cs_glob_bc_type[f_id] == CS_SMOOTHWALL && b_roughness[f_id] > 0) {
         const cs_real_t cofbnu = coefbp[f_id];
         /* Roughness of the wall */
         s[0] += b_dist[f_id] * cofbnu/(1.0 - cofbnu);  /* dsa0 */
@@ -400,26 +400,11 @@ _clip(cs_lnum_t  n_cells)
  * Solve the equation of \f$ \tilde{\nu} \f$, which is the scalar
  * quantity defined by the Spalart-Allmaras model for one time-step.
  *
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- *                              size: [nvar][ncesmp]
- * \param[in]     dt            time step (per cell)
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
- * \param[in]  b_face_type      boundary face types
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_sa(cs_lnum_t        ncesmp,
-                 cs_lnum_t        icetsm[],
-                 int              itypsm[],
-                 const cs_real_t  dt[],
-                 cs_real_t        smacel[],
-                 const int        b_face_type[])
+cs_turbulence_sa(void)
 {
   cs_domain_t  *domain = cs_glob_domain;
 
@@ -436,6 +421,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   const cs_equation_param_t *eqp_nusa
     = cs_field_get_equation_param_const(CS_F_(nusa));
 
+  const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *cpro_rho = CS_F_(rho)->val;
   const cs_real_t *cpro_rho_o = CS_F_(rho)->val;
   const cs_real_t *cpro_viscl = CS_F_(mu)->val;
@@ -484,7 +470,6 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   /* Source terms are finalized, stored in st_exp */
 
   _src_terms(dt,
-             b_face_type,
              tr_gr_nu,
              vort,
              cpro_rho_o,
@@ -567,20 +552,31 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   cs_real_t *w_1;
   BFT_MALLOC(w_1, n_cells_ext, cs_real_t);
 
-  if (ncesmp > 0) {
-    const int var_key_id = cs_field_key_id("variable_id");
-    cs_lnum_t ivar = cs_field_get_key_int(CS_F_(nusa), var_key_id) - 1;
-    cs_lnum_t ipr = cs_field_get_key_int(CS_F_(p), var_key_id) - 1;
+  const cs_lnum_t ncetsm
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
 
+  if (ncetsm > 0) {
+
+    int *itypsm = NULL;
+    cs_lnum_t ncesmp = 0;
+    cs_lnum_t *icetsm = NULL;
+    cs_real_t *smacel = NULL, *gamma = NULL;
+
+    cs_volume_mass_injection_get_arrays(CS_F_(nusa),
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
     cs_mass_source_terms(1,
                          1,
                          ncesmp,
                          icetsm,
-                         itypsm + ncesmp*ivar,
+                         itypsm,
                          cell_f_vol,
                          cvara_nusa,
-                         smacel + ncesmp*ivar,
-                         smacel + ncesmp*ipr,
+                         smacel,
+                         gamma,
                          rhs_sa,
                          imp_sa,
                          w_1);

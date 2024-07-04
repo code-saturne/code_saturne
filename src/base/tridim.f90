@@ -255,66 +255,45 @@ interface
     real(kind=c_double), dimension(*), intent(inout) :: t_wall
   end subroutine cs_syr_coupling_send_boundary
 
-  subroutine cs_turbulence_ke &
-       (phase_id, ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
+  subroutine cs_turbulence_ke (phase_id, prdv2f) &
     bind(C, name='cs_turbulence_ke')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: phase_id, ncesmp
-    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
-    real(kind=c_double), dimension(*) :: dt, smacel
+    integer(c_int), value :: phase_id
     real(kind=c_double), dimension(*), intent(in) :: prdv2f
   end subroutine cs_turbulence_ke
 
-  subroutine cs_turbulence_kw &
-       (phase_id, ncesmp, icetsm, itypsm, dt, smacel) &
+  subroutine cs_turbulence_kw (phase_id) &
     bind(C, name='cs_turbulence_kw')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: phase_id, ncesmp
-    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
-    real(kind=c_double), dimension(*) :: dt, smacel
+    integer(c_int), value :: phase_id
   end subroutine cs_turbulence_kw
 
-  subroutine cs_turbulence_rij &
-        (phase_id, ncesmp, icetsm, itypsm, smacel) &
+  subroutine cs_turbulence_rij (phase_id) &
     bind(C, name='cs_turbulence_rij')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: phase_id, ncesmp
-    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
-    real(kind=c_double), dimension(*) :: smacel
+    integer(c_int), value :: phase_id
   end subroutine cs_turbulence_rij
 
-  subroutine cs_turbulence_sa &
-       (ncesmp, icetsm, itypsm, dt, smacel, itypfb) &
+  subroutine cs_turbulence_sa () &
     bind(C, name='cs_turbulence_sa')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: ncesmp
-    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
-    real(kind=c_double), dimension(*) :: dt, smacel
-    integer(kind=c_int), dimension(*), intent(in) :: itypfb
   end subroutine cs_turbulence_sa
 
-  subroutine cs_turbulence_v2f &
-       (ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
+  subroutine cs_turbulence_v2f (prdv2f) &
     bind(C, name='cs_turbulence_v2f')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: ncesmp
-    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
-    real(kind=c_double), dimension(*) :: dt, smacel, prdv2f
+    real(kind=c_double), dimension(*) :: prdv2f
   end subroutine cs_turbulence_v2f
 
-  subroutine cs_volume_mass_injection_eval &
-       (nvar, ncesmp, itypsm, smacel) &
+  subroutine cs_volume_mass_injection_eval () &
     bind(C, name='cs_volume_mass_injection_eval')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar, ncesmp
-    integer(c_int), dimension(*), intent(in) :: itypsm
-    real(kind=c_double), dimension(*) :: smacel
   end subroutine cs_volume_mass_injection_eval
 
   subroutine cs_turbulence_htles() &
@@ -606,7 +585,7 @@ endif
 
 if (nctsmt.gt.0) then
 
-  call cs_volume_mass_injection_eval(nvar, ncetsm, itypsm, smacel)
+  call cs_volume_mass_injection_eval()
 
   if (ippmod(iaeros).gt.0) then
 
@@ -1200,11 +1179,11 @@ if (iccvfg.eq.0) then
       allocate(prdv2f(ncelet))
     endif
 
-    call cs_turbulence_ke(-1, ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
+    call cs_turbulence_ke(-1, prdv2f)
 
     if (itytur.eq.5)  then
 
-      call cs_turbulence_v2f(ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
+      call cs_turbulence_v2f(prdv2f)
 
       ! Free memory
       deallocate(prdv2f)
@@ -1242,11 +1221,11 @@ if (iccvfg.eq.0) then
 
     endif
 
-    call cs_turbulence_rij(-1, ncetsm, icetsm, itypsm, smacel)
+    call cs_turbulence_rij(-1)
 
   else if (iturb.eq.60) then
 
-    call cs_turbulence_kw(-1, ncetsm, icetsm, itypsm, dt, smacel)
+    call cs_turbulence_kw(-1)
 
     call field_get_val_s(ivarfl(ik), cvar_k)
     call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -1272,7 +1251,7 @@ if (iccvfg.eq.0) then
 
   else if (iturb.eq.70) then
 
-    call cs_turbulence_sa(ncetsm, icetsm, itypsm, dt, smacel, itypfb)
+    call cs_turbulence_sa()
 
     call field_get_val_s(ivarfl(inusa), cvar_nusa)
     call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)

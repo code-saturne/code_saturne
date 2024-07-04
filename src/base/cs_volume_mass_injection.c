@@ -562,33 +562,42 @@ cs_volume_mass_injection_build_lists(cs_lnum_t   n_cells,
 /*!
  * \brief Evaluate contributions to volume mass injection.
  *
- * \param[in]     nvar          total number of variables
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     itypsm        mass source type for the working variable
- *                              size: [nvar][ncesmp]
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_mass_injection_eval(int        nvar,
-                              cs_lnum_t  ncesmp,
-                              int        itypsm[],
-                              cs_real_t  smacel[])
+cs_volume_mass_injection_eval(void)
 {
+
+  int n_fields = cs_field_n_fields();
   const int key_eqp_id = cs_field_key_id("var_cal_opt");
-  const int var_key_id = cs_field_key_id("variable_id");
 
   /* Initialize arrays */
 
-  for (cs_lnum_t ivar = 0; ivar < nvar; ivar++) {
+  int *itypsm = NULL;
+  cs_lnum_t ncesmp = 0, *icetsm = NULL;
+  cs_real_t *smacel= NULL, *gamma = NULL;
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+
+    cs_field_t  *f = cs_field_by_id(f_id);
+    if (! (f->type & CS_FIELD_VARIABLE))
+      continue;
+
+    cs_volume_mass_injection_get_arrays(f,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
+
     for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      itypsm[ncesmp*ivar + i] = 0;
-      smacel[ncesmp*ivar + i] = 0.;
+      for (int j = 0; j < f->dim; j++) {
+        itypsm[j*ncesmp + i] = 0;
+        smacel[j*ncesmp + i] = 0.0;
+      }
     }
+
   }
 
   /* Compute shift for zones in case they do not appear in order */
@@ -609,8 +618,6 @@ cs_volume_mass_injection_eval(int        nvar,
       z_shift[z_id] = -1;
   }
 
-  int n_fields = cs_field_n_fields();
-
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
     cs_field_t  *f = cs_field_by_id(f_id);
@@ -621,7 +628,6 @@ cs_volume_mass_injection_eval(int        nvar,
     /* Retrieve the equation param to set */
 
     cs_equation_param_t *eqp = cs_field_get_key_struct_ptr(f, key_eqp_id);
-    int ivar = cs_field_get_key_int(f, var_key_id) - 1;
 
     /* xdef-based method */
 
@@ -644,20 +650,26 @@ cs_volume_mass_injection_eval(int        nvar,
 
       _volume_mass_injection_eval(v_inj, st_loc);
 
+      cs_volume_mass_injection_get_arrays(f,
+                                          &ncesmp,
+                                          &icetsm,
+                                          &itypsm,
+                                          &smacel,
+                                          &gamma);
       if (f->dim == 1) {
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           cs_lnum_t j = c_shift + i;
-          itypsm[ivar*ncesmp + j] = 1;
-          smacel[ivar*ncesmp + j] += st_loc[i];
+          itypsm[j] = 1;
+          smacel[j] += st_loc[i];
         }
       }
       else {
         const cs_lnum_t dim = f->dim;
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           cs_lnum_t j = c_shift + i;
-          itypsm[ivar*ncesmp + j] = 1;
+          itypsm[j] = 1;
           for (cs_lnum_t k = 0; k < dim; k++)
-            smacel[(ivar+k)*ncesmp + j] += st_loc[i*dim + k];
+            smacel[k*ncesmp + j] += st_loc[i*dim + k];
         }
       }
 

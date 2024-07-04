@@ -48,26 +48,11 @@ BEGIN_C_DECLS
  * Solve the equation of \f$ \tilde{\nu} \f$, which is the scalar
  * quantity defined by the Spalart-Allmaras model for one time-step.
  *
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- *                              size: [nvar][ncesmp]
- * \param[in]     dt            time step (per cell)
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
- * \param[in]  b_face_type      boundary face types
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_sa(cs_lnum_t        ncesmp,
-                 cs_lnum_t        icetsm[],
-                 int              itypsm[],
-                 const cs_real_t  dt[],
-                 cs_real_t        smacel[],
-                 const int        b_face_type[]);
+cs_turbulence_sa(void);
 
 /*----------------------------------------------------------------------------*/
 /*

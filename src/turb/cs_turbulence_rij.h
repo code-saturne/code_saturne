@@ -51,21 +51,11 @@ BEGIN_C_DECLS
  * <a href="../../theory.pdf#turrij"><b>turrij</b></a> section.
  *
  * \param[in]     phase_id     turbulent phase id (-1 for single phase flow)
- * \param[in]     ncesmp       number of cells with mass source term
- * \param[in]     icetsm       index of cells with mass source term
- * \param[in]     itypsm       mass source type for the variables
- * \param[in]     smacel       values of the variables associated to the
- *                             mass source
- *                             (for ivar=ipr, smacel is the mass flux)
  !*/
 /*-----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij(int          phase_id,
-                  cs_lnum_t    ncesmp,
-                  cs_lnum_t    icetsm[],
-                  int          itypsm[],
-                  cs_real_t    smacel[]);
+cs_turbulence_rij(int phase_id);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Solve the equation on alpha in the framework of the Rij-EBRSM model.

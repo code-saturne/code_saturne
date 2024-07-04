@@ -76,6 +76,7 @@
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_velocity_pressure.h"
 #include "cs_wall_functions.h"
 
@@ -2247,15 +2248,11 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
  *        turbulence model.
  *
  * \param[in]     phase_id    turbulent phase id (-1 for single phase flow)
- * \param[in]     ncesmp      number of cells with mass source term
- * \param[in]     icetsm      index of cells with mass source term
- * \param[in]     itypsm      type of mass source term for each variable
  * \param[in]     gradv       work array for the term grad
  *                            of velocity only for iturb=31
  * \param[in]     produc      work array for production (without
  *                            rho volume) only for iturb=30
  * \param[in]     up_rhop     work array for \f$ \vect{u}'\rho' \f$
- * \param[in]     smacel      value associated to each variable in the mass
  *                            source terms or mass rate
  * \param[in]     viscf       visc*surface/dist at internal faces
  * \param[in]     viscb       visc*surface/dist at edge faces
@@ -2266,13 +2263,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
 static void
 _solve_epsilon(int              phase_id,
-               cs_lnum_t        ncesmp,
-               cs_lnum_t        icetsm[],
-               int              itypsm[],
                const cs_real_t  gradv[][3][3],
                const cs_real_t  produc[][6],
                const cs_real_t  up_rhop[][3],
-               cs_real_t        smacel[],
                cs_real_t        viscf[],
                cs_real_t        viscb[],
                cs_real_t        rhs[],
@@ -2429,23 +2422,33 @@ _solve_epsilon(int              phase_id,
   /* Mass source term
    * ---------------- */
 
-  if (ncesmp > 0) {
+  const cs_lnum_t ncetsm
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
 
-    const int var_key_id = cs_field_key_id("variable_id");
-    const int ivar_eps = cs_field_get_key_int(f_eps, var_key_id)-1;
-    const int ivar_pr = cs_field_get_key_int(CS_F_(p), var_key_id)-1;
+  if (ncetsm > 0) {
+
+    int *itypsm = NULL;
+    cs_lnum_t ncesmp = 0;
+    cs_lnum_t *icetsm = NULL;
+    cs_real_t *smacel = NULL, *gamma = NULL;
 
     /* We increment rhs with -Gamma.var_prev. and rovsdt with Gamma */
 
+    cs_volume_mass_injection_get_arrays(f_eps,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
     cs_mass_source_terms(1, /* iterns*/
                          1, /* dim */
                          ncesmp,
                          icetsm,
-                         itypsm + ncesmp*ivar_eps,
+                         itypsm,
                          cell_f_vol,
                          cvara_ep,
-                         smacel + ncesmp*ivar_eps,
-                         smacel + ncesmp*ivar_pr,
+                         smacel,
+                         gamma,
                          rhs,
                          rovsdt,
                          w1);
@@ -2739,21 +2742,11 @@ _solve_epsilon(int              phase_id,
  * <a href="../../theory.pdf#turrij"><b>turrij</b></a> section.
  *
  * \param[in]     phase_id     turbulent phase id (-1 for single phase flow)
- * \param[in]     ncesmp       number of cells with mass source term
- * \param[in]     icetsm       index of cells with mass source term
- * \param[in]     itypsm       mass source type for the variables
- * \param[in]     smacel       values of the variables associated to the
- *                             mass source
- *                             (for ivar=ipr, smacel is the mass flux)
  !*/
 /*-----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij(int          phase_id,
-                  cs_lnum_t    ncesmp,
-                  cs_lnum_t    icetsm[],
-                  int          itypsm[],
-                  cs_real_t    smacel[])
+cs_turbulence_rij(int phase_id)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -3143,24 +3136,35 @@ cs_turbulence_rij(int          phase_id,
   /* Mass source terms
    *------------------ */
 
-  if (ncesmp > 0) {
-    const int var_key_id = cs_field_key_id("variable_id");
-    int ivar = cs_field_get_key_int(f_rij, var_key_id)-1;
-    int ivar_pr = cs_field_get_key_int(CS_F_(p), var_key_id)-1;
+  const cs_lnum_t ncetsm
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+
+  if (ncetsm > 0) {
 
     cs_real_6_t *gatinj;
     BFT_MALLOC(gatinj, n_cells_ext, cs_real_6_t);
 
+    int *itypsm = NULL;
+    cs_lnum_t ncesmp = 0;
+    cs_lnum_t *icetsm = NULL;
+    cs_real_t *smacel = NULL, *gamma = NULL;
+
     /* We increment smbrts with -Gamma.var_prev. and rovsdr with Gamma */
+    cs_volume_mass_injection_get_arrays(f_rij,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
     cs_mass_source_terms(1, /* iterns*/
                          6, /* dim */
                          ncesmp,
                          icetsm,
-                         itypsm + ivar,
+                         itypsm,
                          cell_f_vol,
                          (cs_real_t*)cvara_rij,
-                         smacel + ivar,
-                         smacel + ivar_pr,
+                         smacel,
+                         gamma,
                          (cs_real_t*)smbrts,
                          (cs_real_t*)rovsdtts,
                          (cs_real_t*)gatinj);
@@ -3331,13 +3335,9 @@ cs_turbulence_rij(int          phase_id,
      BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
      _solve_epsilon(phase_id,
-                    ncesmp,
-                    icetsm,
-                    itypsm,
                     gradv,
                     produc,
                     up_rhop,
-                    smacel,
                     viscf,
                     viscb,
                     smbr,

@@ -77,6 +77,7 @@
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_velocity_pressure.h"
 #include "cs_wall_functions.h"
 
@@ -269,26 +270,12 @@ _tsepls(int       phase_id,
  * or slightly compressible flows for one time step.
  *
  * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- *                              size: [nvar][ncesmp]
- * \param[in]     dt            time step (per cell)
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
  * \param[out]    prdv2f        v2f production term
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_ke(int              phase_id,
-                 cs_lnum_t        ncesmp,
-                 cs_lnum_t        icetsm[],
-                 int              itypsm[],
-                 const cs_real_t  dt[],
-                 cs_real_t        smacel[],
                  cs_real_t       *prdv2f)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -320,6 +307,8 @@ cs_turbulence_ke(int              phase_id,
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_phi = CS_F_(phi);
   cs_field_t *f_alpbl = CS_F_(alp_bl);
+
+  const cs_real_t *dt = CS_F_(dt)->val;
 
   if (phase_id >= 0) {
     f_k = CS_FI_(k, phase_id);
@@ -1620,7 +1609,10 @@ cs_turbulence_ke(int              phase_id,
    * Going out of the step we keep divu,  smbrk, smbre
    * ================================================= */
 
-  if (ncesmp > 0) {
+  const cs_lnum_t ncetsm
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+
+  if (ncetsm > 0) {
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1628,36 +1620,50 @@ cs_turbulence_ke(int              phase_id,
       w3[c_id] = 0.;
     }
 
-    int ivar_k = cs_field_get_key_int(f_k, var_key_id) - 1;
-    int ivar_eps = cs_field_get_key_int(f_eps, var_key_id) - 1;
-    int ivar_p = cs_field_get_key_int(CS_F_(p), var_key_id) - 1;
+    int *itypsm = NULL;
+    cs_lnum_t ncesmp = 0;
+    cs_lnum_t *icetsm = NULL;
+    cs_real_t *smacel = NULL, *gamma = NULL;
 
     /* We increment smbrs with -Gamma.var_prev and rovsdt with Gamma */
-    /* ivar = k; */
 
+    /* For k */
+    cs_volume_mass_injection_get_arrays(f_k,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
     cs_mass_source_terms(1,
                          1,
                          ncesmp,
                          icetsm,
-                         itypsm + ncesmp*ivar_k,
+                         itypsm,
                          cell_f_vol,
                          cvara_k,
-                         smacel + ncesmp*ivar_k,
-                         smacel + ncesmp*ivar_p,
+                         smacel,
+                         gamma,
                          smbrk,
                          w2,
                          w4);
 
-    /* ivar = eps; */
+    /* For eps */
+    cs_volume_mass_injection_get_arrays(f_eps,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
+
     cs_mass_source_terms(1,
                          1,
                          ncesmp,
                          icetsm,
-                         itypsm + ncesmp*ivar_eps,
+                         itypsm,
                          cell_f_vol,
                          cvara_ep,
-                         smacel + ncesmp*ivar_eps,
-                         smacel + ncesmp*ivar_p,
+                         smacel,
+                         gamma,
                          smbre,
                          w3,
                          w5);

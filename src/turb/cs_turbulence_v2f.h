@@ -48,26 +48,12 @@ BEGIN_C_DECLS
  * Solve the \f$\phi\f$ and diffusion for \f$ \overline{f} \f$
  * as part of the V2F phi-model
  *
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- *                              size: [nvar][ncesmp]
- * \param[in]     dt            time step (per cell)
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
  * \param[in]     prdv2f        v2f production term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_v2f(cs_lnum_t         ncesmp,
-                  cs_lnum_t         icetsm[],
-                  int               itypsm[],
-                  const cs_real_t  *dt,
-                  cs_real_t         smacel[],
-                  const cs_real_t   prdv2f[]);
+cs_turbulence_v2f(const cs_real_t   prdv2f[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

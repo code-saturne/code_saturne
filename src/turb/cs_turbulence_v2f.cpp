@@ -70,6 +70,7 @@
 #include "cs_prototypes.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
@@ -641,12 +642,6 @@ _solve_eq_fbr_al(const int         istprv,
  *
  * \param[in]        istprv       value associated with the key of source
  *                                terms at previous time step
- * \param[in]        ncesmp       number of cells with mass source term
- * \param[in]        icetsm       number of cells with mass source
- * \param[in]        itypsm       type of masss source for the variables
- * \param[in]        dt           time step (per cell)
- * \param[in]        smacel       value of variables associated to the
- *                                mass source
  * \param[in]        crom         density at current time step
  * \param[in]        cromo        density at previous (or current) time step
  * \param[in]        viscl        lam. visc. at current time step
@@ -663,11 +658,6 @@ _solve_eq_fbr_al(const int         istprv,
 
 static void
 _solve_eq_phi(const int           istprv,
-              cs_lnum_t           ncesmp,
-              cs_lnum_t           icetsm[],
-              int                 itypsm[],
-              const cs_real_t    *dt,
-              cs_real_t           smacel[],
               const cs_real_t     crom[],
               const cs_real_t     cromo[],
               const cs_real_t     viscl[],
@@ -688,6 +678,8 @@ _solve_eq_phi(const int           istprv,
 
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+
+  const cs_real_t *dt = CS_F_(dt)->val;
 
   cs_real_t *w2, *viscf, *viscb;
 
@@ -771,23 +763,31 @@ _solve_eq_phi(const int           istprv,
 
   /* Mass source term
      ---------------- */
+  const cs_lnum_t ncetsm
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
 
-  if (ncesmp > 0) {
-
-    const int var_key_id = cs_field_key_id("variable_id");
-    int ivar_phi = cs_field_get_key_int(f_phi, var_key_id) - 1;
-    int ivar_pr = cs_field_get_key_int(CS_F_(p), var_key_id) - 1;
-
+  if (ncetsm > 0) {
     /* We increment rhs by -Gamma.var_prev and rovsdt by Gamma */
-    cs_mass_source_terms(1, /* iterns*/
+    int *itypsm = NULL;
+    cs_lnum_t ncesmp = 0;
+    cs_lnum_t *icetsm = NULL;
+    cs_real_t *smacel = NULL, *gamma = NULL;
+
+    cs_volume_mass_injection_get_arrays(f_phi,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
+    cs_mass_source_terms(1,  /* iterns*/
                          1,  /* dim*/
                          ncesmp,
                          icetsm,
-                         itypsm + ncesmp*ivar_phi,
+                         itypsm,
                          cell_f_vol,
                          cvara_phi,
-                         smacel + ncesmp*ivar_phi,
-                         smacel + ncesmp*ivar_pr,
+                         smacel,
+                         gamma,
                          rhs,
                          rovsdt,
                          w2);
@@ -1077,26 +1077,12 @@ _solve_eq_phi(const int           istprv,
  * Solve the \f$\phi\f$ and diffusion for \f$ \overline{f} \f$
  * as part of the V2F phi-model
  *
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- *                              size: [nvar][ncesmp]
- * \param[in]     dt            time step (per cell)
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
  * \param[in]     prdv2f        v2f production term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_v2f(cs_lnum_t         ncesmp,
-                  cs_lnum_t         icetsm[],
-                  int               itypsm[],
-                  const cs_real_t  *dt,
-                  cs_real_t         smacel[],
-                  const cs_real_t   prdv2f[])
+cs_turbulence_v2f(const cs_real_t   prdv2f[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
@@ -1192,11 +1178,6 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
   /* Solve the equation of phi */
 
   _solve_eq_phi(istprv,
-                ncesmp,
-                icetsm,
-                itypsm,
-                dt,
-                smacel,
                 crom,
                 cromo,
                 viscl,

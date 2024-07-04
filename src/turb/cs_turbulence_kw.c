@@ -73,6 +73,7 @@
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_velocity_pressure.h"
 #include "cs_wall_functions.h"
 
@@ -123,25 +124,11 @@ BEGIN_C_DECLS
  * or slightly compressible flows for one time step.
  *
  * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- *                              size: [nvar][ncesmp]
- * \param[in]     dt            time step (per cell)
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_kw(int              phase_id,
-                 cs_lnum_t        ncesmp,
-                 cs_lnum_t        icetsm[],
-                 int              itypsm[],
-                 const cs_real_t  dt[],
-                 cs_real_t        smacel[])
+cs_turbulence_kw(int phase_id)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -187,10 +174,7 @@ cs_turbulence_kw(int              phase_id,
     f_rhob = CS_FI_(rho_b, phase_id);
   }
 
-  int ivar_k = cs_field_get_key_int(f_k, var_key_id) - 1;
-  int ivar_omg = cs_field_get_key_int(f_omg, var_key_id) - 1;
-  int ivar_p = cs_field_get_key_int(CS_F_(p), var_key_id) - 1;
-
+  const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
   /* Initialization
@@ -1079,41 +1063,59 @@ cs_turbulence_kw(int              phase_id,
 
   /* Mass source terms (Implicit and explicit parts)
      =============================================== */
+  const cs_lnum_t ncetsm
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
 
-  if (ncesmp > 0) {
+  if (ncetsm > 0) {
 
     cs_real_t *gamk;
     cs_real_t *gamw;
     BFT_MALLOC(gamk, n_cells_ext, cs_real_t);
     BFT_MALLOC(gamw, n_cells_ext, cs_real_t);
 
-    /* We increment SMBRS by -Gamma.var_prev and ROVSDT by Gamma */
-    /* ivar = k; */
+    int *itypsm = NULL;
+    cs_lnum_t ncesmp = 0;
+    cs_lnum_t *icetsm = NULL;
+    cs_real_t *smacel = NULL, *gamma = NULL;
 
+    /* We increment SMBRS by -Gamma.var_prev and ROVSDT by Gamma */
+
+    /* For k */
+    cs_volume_mass_injection_get_arrays(f_k,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
     cs_mass_source_terms(1,
                          1,
                          ncesmp,
                          icetsm,
-                         itypsm + ncesmp*ivar_k,
+                         itypsm,
                          cell_f_vol,
                          cvara_k,
-                         smacel + ncesmp*ivar_k,
-                         smacel + ncesmp*ivar_p,
+                         smacel,
+                         gamma,
                          smbrk,
                          tinstk,
                          gamk);
 
-    /* ivar = omg; */
-
+    /* For omg */
+     cs_volume_mass_injection_get_arrays(f_omg,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        &gamma);
     cs_mass_source_terms(1,
                          1,
                          ncesmp,
                          icetsm,
-                         itypsm + ncesmp*ivar_omg,
+                         itypsm,
                          cell_f_vol,
                          cvara_omg,
-                         smacel + ncesmp*ivar_omg,
-                         smacel + ncesmp*ivar_p,
+                         smacel,
+                         gamma,
                          smbrw,
                          tinstw,
                          gamw);

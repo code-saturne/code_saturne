@@ -75,22 +75,11 @@ cs_volume_mass_injection_build_lists(cs_lnum_t   n_cells,
 /*!
  * \brief Evaluate contributions to volume mass injection.
  *
- * \param[in]     nvar          total number of variables
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     itypsm        mass source type for the working variable
- *                              size: [nvar][ncesmp]
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_mass_injection_eval(int        nvar,
-                              cs_lnum_t  ncesmp,
-                              int        itypsm[],
-                              cs_real_t  smacel[]);
+cs_volume_mass_injection_eval(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
