@@ -72,7 +72,6 @@ cs_ctwr_source_term(int              f_id,
 void
 cs_ctwr_bulk_mass_source_term(void);
 
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

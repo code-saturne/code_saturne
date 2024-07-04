@@ -46,30 +46,16 @@
 
 #include "cs_air_props.h"
 #include "cs_atmo.h"
-#include "cs_base.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_zone.h"
 #include "cs_ctwr_physical_properties.h"
 #include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
 #include "cs_field_pointer.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_lagr.h"
-#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
-#include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
-#include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
-#include "cs_thermal_model.h"
 #include "cs_volume_mass_injection.h"
-#include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
 
 #include "cs_ctwr.h"
@@ -157,7 +143,6 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
 
   cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val; /* Humid air velocity*/
-  cs_real_t *p_tot = cs_field_by_name("total_pressure")->val; /* Total pressure */
 
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */
@@ -181,15 +166,15 @@ cs_ctwr_source_term(int              f_id,
   /* Variable and properties for rain drops */
   cs_field_t *cfld_yp = cs_field_by_name("ym_l_r");     /* Rain mass fraction */
   cs_field_t *cfld_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
-  cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_ym_l_r"); /* Rain drift
-                                                                     velocity */
+  /* Rain drift velocity */
+  cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_ym_l_r");
   /* Phases volume fractions */
-  cs_real_t *vol_f_c = cs_field_by_name("vol_f_c")->val; /* Vol frac. air */
   cs_real_t *vol_f_r = cs_field_by_name("vol_f_r")->val; /* Vol frac. rain */
 
   /* Rain inner mass flux */
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  cs_real_t *imasfl_r = cs_field_by_id(cs_field_get_key_int(cfld_yp, kimasf))->val;
+  cs_real_t *imasfl_r = cs_field_by_id
+                         (cs_field_get_key_int(cfld_yp, kimasf))->val;
 
   cs_real_t vertical[3], horizontal[3];
 
@@ -233,7 +218,7 @@ cs_ctwr_source_term(int              f_id,
   /* Table to track cells belonging to packing zones */
   cs_lnum_t  *packing_cell;
   BFT_MALLOC(packing_cell, m->n_cells_with_ghosts, int);
-#   pragma omp parallel for if (m->n_cells> CS_THR_MIN)
+# pragma omp parallel for if (m->n_cells> CS_THR_MIN)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     packing_cell[cell_id] = -1;
 
@@ -249,7 +234,6 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t ps = cs_glob_atmo_constants->ps;
   cs_real_t lambda_h = air_prop->lambda_h;
   cs_real_t droplet_diam  = air_prop->droplet_diam;
-  cs_real_t sigma = air_prop->sigma;
 
   /* Fields necessary for humid atmosphere model */
   cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
@@ -298,8 +282,10 @@ cs_ctwr_source_term(int              f_id,
         if (ct->type != CS_CTWR_INJECTION)
           packing_cell[cell_id] = ict;
 
-    /* Compute cell reference pressure */
-        cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id, p0, meteo_pressure);
+        /* Compute cell reference pressure */
+        cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id,
+                                                            p0,
+                                                            meteo_pressure);
 
         /* For correlations, T_h cannot be greater than T_l */
         cs_real_t temp_h = CS_MIN(t_h[cell_id], t_l_p[cell_id]);
@@ -338,7 +324,8 @@ cs_ctwr_source_term(int              f_id,
         /* There is evaporation only if we have an injected liquid flow */
         if (mass_flux_l > 0.) {
           beta_x_ai = a_0 * mass_flux_l * pow((mass_flux_h/mass_flux_l), xnp);
-          beta_x_ai_oy = a_0 * mass_flux_l_oy * pow((mass_flux_h/mass_flux_l), xnp);
+          beta_x_ai_oy = a_0 * mass_flux_l_oy * pow((mass_flux_h/mass_flux_l),
+                                                    xnp);
         }
 
         /* Source terms for the different equations */
@@ -413,13 +400,15 @@ cs_ctwr_source_term(int              f_id,
           }
           else {
             /* Implicit and explicit terms for temperature T */
-            l_imp_st += vol_beta_x_ai * (le_f * cp_h + (x_s_tl - x_s_th) * cp_l
-                                        / (1. + x[cell_id]));
-            l_exp_st += vol_beta_x_ai * (le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
-                                        + (x_s_tl - x_s_th)
-                                           * (cp_v * coef * (t_l_p[cell_id] + t_shift))
-                                           / (1. + x[cell_id]))
-                                        - l_imp_st * f_var[cell_id];
+            l_imp_st +=   vol_beta_x_ai
+                        * (  le_f * cp_h + (x_s_tl - x_s_th) * cp_l
+                           / (1. + x[cell_id]));
+            l_exp_st +=   vol_beta_x_ai
+                        * (  le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
+                           +   (x_s_tl - x_s_th)
+                             * (cp_v * coef * (t_l_p[cell_id] + t_shift))
+                             / (1. + x[cell_id]))
+                        - l_imp_st * f_var[cell_id];
           }
           /* If humid atmosphere model, temperature is liquid potential
            * temperature theta_l */
@@ -438,8 +427,8 @@ cs_ctwr_source_term(int              f_id,
                             + cs_physical_constants_celsius_to_kelvin;
           cs_real_t l_exp_st = 0.;
 
-          /* Note: the solved variable is yl_p.hl_p so the source term associated
-           * to evaporation is: Gamma/y_lp * (yl_p.h_lp) */
+          /* Note: the solved variable is yl_p.hl_p so the source term
+           * associated to evaporation is: Gamma/y_lp * (yl_p.h_lp) */
           /* Implicit term */
           cs_real_t l_imp_st = vol_mass_source_oy;
 
@@ -492,7 +481,8 @@ cs_ctwr_source_term(int              f_id,
         if (y_rain[cell_id] > 0.) {
 
           /* Compute cell reference pressure */
-          cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id, p0, meteo_pressure);
+          cs_real_t pphy = cs_ctwr_compute_reference_pressure
+                            (cell_id, p0, meteo_pressure);
 
           /* For correlations, T_h cannot be greater than T_p */
           cs_real_t temp_h = CS_MIN(t_h[cell_id], t_l_r[cell_id]);
@@ -628,11 +618,12 @@ cs_ctwr_source_term(int              f_id,
               /* Implicit and explicit terms for temperature T */
               l_imp_st += vol_beta_x_ai * (le_f * cp_h + (x_s_tl - x_s_th) * cp_l
                   / (1. + x[cell_id]));
-              l_exp_st = vol_beta_x_ai * (le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
-                  + (x_s_tl - x_s_th)
-                  * (cp_v * coef * (t_l_p[cell_id] + t_shift ))
-                  / (1. + x[cell_id]))
-                - l_imp_st * f_var[cell_id];
+              l_exp_st =   vol_beta_x_ai
+                         * (  le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
+                            + (  x_s_tl - x_s_th)
+                               * (cp_v * coef * (t_l_p[cell_id] + t_shift ))
+                               / (1. + x[cell_id]))
+                         - l_imp_st * f_var[cell_id];
             }
             /* If humid atmosphere model, temperature is liquid potential
              * temperature theta_l */
@@ -665,10 +656,11 @@ cs_ctwr_source_term(int              f_id,
             else {
               cs_real_t coefh = le_f * cp_h;
               /* Explicit term */
-              l_exp_st += vol_beta_x_ai * (coefh * (t_h[cell_id] - t_l_r[cell_id])
-                  + (x_s_tl - x_s_th) / (1. + x[cell_id])
-                  * (cp_l * t_h[cell_id]
-                    - (cp_v * t_l_r[cell_id] + hv0)));
+              l_exp_st +=   vol_beta_x_ai
+                          * (  coefh * (t_h[cell_id] - t_l_r[cell_id])
+                             +   (x_s_tl - x_s_th) / (1. + x[cell_id])
+                               * (  cp_l * t_h[cell_id]
+                                  - (cp_v * t_l_r[cell_id] + hv0)));
             }
             /* Because we deal with an increment */
             exp_st[cell_id] += l_exp_st;
@@ -676,8 +668,9 @@ cs_ctwr_source_term(int              f_id,
 
             /* Saving thermal power for post-processing */
             if (t_l_r[cell_id] > 0.) {
-              thermal_power_rain[cell_id] = -(l_exp_st + l_imp_st * f_var[cell_id])
-                / cell_f_vol[cell_id];
+              thermal_power_rain[cell_id]
+                = -(l_exp_st + l_imp_st * f_var[cell_id])
+                  / cell_f_vol[cell_id];
             }
           }
 
@@ -766,7 +759,8 @@ cs_ctwr_source_term(int              f_id,
 
       /* Testing if we are in an rain injection zone */
       else if (ct->xleak_fac > 0.0 && ct->type == CS_CTWR_INJECTION) {
-        const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
+        const cs_lnum_t *ze_cell_ids
+          = cs_volume_zone_by_name(ct->name)->elt_ids;
         cs_real_t inj_vol = ct->vol_f;
 
         for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
@@ -817,46 +811,50 @@ cs_ctwr_source_term(int              f_id,
           if (f_id == cfld_yp->id) {
             if (packing_cell[cell_id_0] != -1) {
               imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-              exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
+              exp_st[cell_id_0] -=   CS_MAX(imasfl_r[face_id], 0)
+                                   * f_var[cell_id_0];
             }
             if (packing_cell[cell_id_1] != -1) {
               imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-              exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
+              exp_st[cell_id_1] -=   CS_MAX(-imasfl_r[face_id], 0)
+                                   * f_var[cell_id_1];
             }
           }
 
           if (f_id == cfld_yh_rain->id) {
             if (packing_cell[cell_id_0] != -1) {
               imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-              exp_st[cell_id_0] -= CS_MAX(imasfl_r[face_id],0) * f_var[cell_id_0];
+              exp_st[cell_id_0] -=   CS_MAX(imasfl_r[face_id], 0)
+                                   * f_var[cell_id_0];
             }
             if (packing_cell[cell_id_1] != -1) {
               imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-              exp_st[cell_id_1] -= CS_MAX(-imasfl_r[face_id],0) * f_var[cell_id_1];
+              exp_st[cell_id_1] -=   CS_MAX(-imasfl_r[face_id], 0)
+                                   * f_var[cell_id_1];
             }
           }
 
           /* Liquid source term in packing zones from rain */
           if (f_id == CS_F_(y_l_pack)->id) {
-            if (packing_cell[cell_id_0] != -1)
-            {
-              exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0) * cfld_yp->val[cell_id_0];
+            if (packing_cell[cell_id_0] != -1) {
+              exp_st[cell_id_0] +=   CS_MAX(imasfl_r[face_id], 0)
+                                   * cfld_yp->val[cell_id_0];
             }
-            if (packing_cell[cell_id_1] != -1)
-            {
-              exp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id],0) * cfld_yp->val[cell_id_1];
+            if (packing_cell[cell_id_1] != -1) {
+              exp_st[cell_id_1] +=   CS_MAX(-imasfl_r[face_id], 0)
+                                   * cfld_yp->val[cell_id_1];
             }
           }
 
           if (f_id == CS_F_(yh_l_pack)->id) {
             if (packing_cell[cell_id_0] != -1) {
-              exp_st[cell_id_0] += CS_MAX(imasfl_r[face_id],0)
-                * cfld_yh_rain->val[cell_id_0];
+              exp_st[cell_id_0] +=   CS_MAX(imasfl_r[face_id], 0)
+                                   * cfld_yh_rain->val[cell_id_0];
             }
 
             if (packing_cell[cell_id_1] != -1) {
-              exp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id],0)
-                * cfld_yh_rain->val[cell_id_1];
+              exp_st[cell_id_1] +=   CS_MAX(-imasfl_r[face_id], 0)
+                                   * cfld_yh_rain->val[cell_id_1];
             }
           }
         }
@@ -885,11 +883,13 @@ cs_ctwr_source_term(int              f_id,
       /* verifying if a mass source term is activated in the lagrangian module*/
       if (cs_glob_lagr_source_terms->ltsmas == 1) {
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
-          /* Since there is only evaporation accounting for a mass transfer liquid - gasphase,
-             the transferred must be water vapour -> ym_w*/
+          /* Since there is only evaporation accounting for a liquid - gas phase
+             mass transfer, the transferred must be water vapor -> ym_w*/
           if (f_id == (CS_F_(ym_w)->id)) {
-            /* Since THETSS = 0, the explicit source could only be a function of ym_w(n).
-               However, this dependency has already been accounted for in the cs_lagr_sde_model.c
+            /* Since THETSS = 0, the explicit source can only be a
+               function of ym_w(n).
+               However, this dependency has already been accounted for in
+               the cs_lagr_sde_model.c
                subroutine, since the mass transfer rate has been calculated as
                a function of the local humidity (and thus ym_w)*/
             exp_st[cell_id] += st_val[cell_id + (lag_st->itsmas-1) * ncelet];
@@ -907,16 +907,16 @@ cs_ctwr_source_term(int              f_id,
     int class_id = 1;
     char vg_lim_name[80];
     sprintf(vg_lim_name, "vg_lim_p_%02d", class_id);
-    cs_real_3_t *vg_lim_p = (cs_real_3_t *)cs_field_by_name(vg_lim_name)->val;
+    // cs_real_3_t *vg_lim_p = (cs_real_3_t *)cs_field_by_name(vg_lim_name)->val;
 
     /* Droplets velocity relaxation time */
-    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
-    cs_real_t *cpro_taup = NULL;
-    if (cfld_taup != NULL)
-      cpro_taup = cfld_taup->val;
+    // cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
+    // cs_real_t *cpro_taup = NULL;
+    // if (cfld_taup != NULL)
+    //   cpro_taup = cfld_taup->val;
 
     /* Continuous phase drift velocity */
-    cs_real_3_t *vd_c = (cs_real_3_t *)cs_field_by_name("vd_c")->val;
+    // cs_real_3_t *vd_c = (cs_real_3_t *)cs_field_by_name("vd_c")->val;
 
     char f_name[80];
     sprintf(f_name, "v_p_%02d", class_id);
@@ -928,7 +928,7 @@ cs_ctwr_source_term(int              f_id,
 
     if (f_id == f_vp->id) {
       /* Casting implicit source term on a 3x3 symmetric matrix */
-      cs_real_33_t *_imp_st = (cs_real_33_t *)imp_st;
+      // cs_real_33_t *_imp_st = (cs_real_33_t *)imp_st;
       cs_real_3_t *_exp_st = (cs_real_3_t *)exp_st;
 
       /* Rain drops velocity */
@@ -938,16 +938,17 @@ cs_ctwr_source_term(int              f_id,
       cs_real_3_t *v_c = (cs_real_3_t *)cs_field_by_name("v_c")->val;
 
       /* Bulk mixture velocity */
-      const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
+      // const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
       /* Rain mass fraction field */
-      cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
+      // cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
 
       for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
         /* Air / droplets interfacial area density calculation */
-        cs_real_t ai_o_yp = 6.0 * rho_m[cell_id] / rho_l * (1.0 - vol_f_r[cell_id])
-                          / droplet_diam;
+        cs_real_t ai_o_yp = 6.0 * rho_m[cell_id] / rho_l
+                                * (1.0 - vol_f_r[cell_id])
+                                / droplet_diam;
         /* Relative velocity calculation */
         cs_real_t u_rel[] = {vp[cell_id][0] - v_c[cell_id][0],
                              vp[cell_id][1] - v_c[cell_id][1],
@@ -957,26 +958,31 @@ cs_ctwr_source_term(int              f_id,
         for (cs_lnum_t i = 0; i < 3; i++) {
           /* Explicit source term */
           /* Gravity term */
-          _exp_st[cell_id][i] += rho_m[cell_id] * gravity[i] * cell_f_vol[cell_id];
+          _exp_st[cell_id][i] +=   rho_m[cell_id] * gravity[i]
+                                 * cell_f_vol[cell_id];
 
           /* Drag term*/
-          cs_real_t re_p = rho_h[cell_id] * cs_math_3_norm(u_rel) * droplet_diam / visc;
+          cs_real_t re_p =   rho_h[cell_id] * cs_math_3_norm(u_rel)
+                           * droplet_diam / visc;
           cs_real_t cd = 0.;
           if (re_p > 1.e-9) {
             cd = (24./ re_p) * (1. + 0.15 * pow(re_p, 0.687));
           }
 
           _exp_st[cell_id][i] += - 1./8. * ai_o_yp * rho_h[cell_id] * cd
-                               * cs_math_3_norm(u_rel) * u_rel[i] * cell_f_vol[cell_id];
+                                 * cs_math_3_norm(u_rel) * u_rel[i]
+                                 * cell_f_vol[cell_id];
 
-          //_exp_st[cell_id][i] += y_rain[cell_id] * rho_m[cell_id] * cell_f_vol[cell_id]
+          //_exp_st[cell_id][i] += y_rain[cell_id] * rho_m[cell_id]
+          //                                       * cell_f_vol[cell_id]
           //                       * 1. / cpro_taup[cell_id]
           //                       * (vel[cell_id][i] + vd_c[cell_id][i]
           //                          + vg_lim_p[cell_id][i] - vp[cell_id][i]);
 
           /* Implicit source term: only diagonal terms */
           //_imp_st[cell_id][i][i] += 1./8. * ai_o_yp * rho_h[cell_id] * cd
-                                    //* cs_math_3_norm(u_rel) * cell_f_vol[cell_id];
+          //                                * cs_math_3_norm(u_rel)
+          //                                * cell_f_vol[cell_id];
         }
       }
     }

@@ -412,8 +412,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   const cs_lnum_t *b_face_cells
     = (const cs_lnum_t *)(cs_glob_mesh->b_face_cells);
   const cs_halo_t *halo = cs_glob_mesh->halo;
-  cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 
