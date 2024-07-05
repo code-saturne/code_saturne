@@ -110,23 +110,23 @@ if (ippmod(icompf).ge.0) then
     call field_set_key_double(ivarfl(isca(ifrace)), kvisl0, epzero)
 
     ! Pure convection equation for three fractions
-    call field_get_key_struct_var_cal_opt(ivarfl(ifracv), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ifracv)), vcopt)
     vcopt%idifft = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ifracv), vcopt)
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(ifracv)), vcopt)
 
-    call field_get_key_struct_var_cal_opt(ivarfl(ifracm), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ifracm)), vcopt)
     vcopt%idifft = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ifracm), vcopt)
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(ifracm)), vcopt)
 
-    call field_get_key_struct_var_cal_opt(ivarfl(ifrace), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ifrace)), vcopt)
     vcopt%idifft = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ifrace), vcopt)
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(ifrace)), vcopt)
 
     ! Set restart file for fractions
     call field_get_key_id('restart_file', keyrf)
-    call field_set_key_int (ivarfl(ifracv), keyrf, RESTART_MAIN)
-    call field_set_key_int (ivarfl(ifracm), keyrf, RESTART_MAIN)
-    call field_set_key_int (ivarfl(ifrace), keyrf, RESTART_MAIN)
+    call field_set_key_int (ivarfl(isca(ifracv)), keyrf, RESTART_MAIN)
+    call field_set_key_int (ivarfl(isca(ifracm)), keyrf, RESTART_MAIN)
+    call field_set_key_int (ivarfl(isca(ifrace)), keyrf, RESTART_MAIN)
   endif
 
 endif
