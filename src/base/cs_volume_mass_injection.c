@@ -756,16 +756,13 @@ cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
   cs_volume_mass_injection_t *mi = _mass_injection;
 
   if (mi != NULL) {
-
     _ncesmp = mi->n_elts;
     _icetsm = mi->elt_id;
 
-  }
+    _volume_mass_injection_get_field_arrays(f->id, &_itpsmp, &_smcelp);
 
-  _volume_mass_injection_get_field_arrays(f->id, &_itpsmp, &_smcelp);
-
-  if (_ncesmp > 0) {
-    _volume_mass_injection_get_field_arrays(CS_F_(p)->id, NULL, &_gamma);
+    if (_ncesmp > 0)
+      _volume_mass_injection_get_field_arrays(CS_F_(p)->id, NULL, &_gamma);
   }
 
   if (ncesmp != NULL) *ncesmp = _ncesmp;
