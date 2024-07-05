@@ -1925,7 +1925,7 @@ cs_user_finalize_setup(cs_domain_t     *domain)
   /* Initializing the soil table of each vertical grid */
 
   if (at_opt->soil_model != 0) {
-    for (int i = 0; i < n_vert; i++) {
+    for (int i = 0; i < at_opt->rad_1d_nvert; i++) {
       at_opt->rad_1d_albedo0[i] = 0.25;
       at_opt->rad_1d_emissi0[i] = 0.965;
       at_opt->rad_1d_temp0  [i] = 14.77;
