@@ -200,6 +200,7 @@ cs_syr_coupling.h \
 cs_sys_coupling.h \
 cs_system_info.h \
 cs_thermal_model.h \
+cs_theta_scheme.h \
 cs_time_moment.h \
 cs_time_control.h \
 cs_time_plot.h \
@@ -392,6 +393,7 @@ cs_sort_partition.c \
 cs_syr_coupling.c \
 cs_sys_coupling.c \
 cs_thermal_model.c \
+cs_theta_scheme.c \
 cs_time_table.c \
 cs_time_control.c \
 cs_time_moment.c \
@@ -418,7 +420,6 @@ iniini.f90 \
 iniva0.f90 \
 inivar.f90 \
 majgeo.f90 \
-schtmp.f90 \
 tdesi1.f90 \
 varpos.f90
 

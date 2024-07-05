@@ -75,6 +75,7 @@
 #include "cs_solve_transported_variables.h"
 #include "cs_syr_coupling.h"
 #include "cs_thermal_model.h"
+#include "cs_theta_scheme.h"
 #include "cs_time_step_compute.h"
 #include "cs_turbulence_htles.h"
 #include "cs_turbulence_ke.h"
@@ -140,10 +141,6 @@ cs_f_atleca(void);
 
 void
 cs_f_atr1vf(void);
-
-void
-cs_f_schtmp(const int n_scal,
-            const int iappel);
 
 /*============================================================================
  * Private function definitions
@@ -587,7 +584,7 @@ _solve_most(int              n_var,
 
       if (   cs_glob_time_scheme->istmpf == 2
           && cs_glob_velocity_pressure_param->itpcol == 1)
-        cs_f_schtmp(n_scal, 3);
+        cs_theta_scheme_update_var(3);
 
       // If is the last iteration : inslst = 1
       if (   icvrge == 1
@@ -607,7 +604,7 @@ _solve_most(int              n_var,
 
         // For explicit mass flux
         if (cs_glob_time_scheme->istmpf == 0 && inslst == 0)
-          cs_f_schtmp(n_scal, 3);
+          cs_theta_scheme_update_var(3);
       }
 
     } // End velocity computation
@@ -928,7 +925,7 @@ cs_solve_all(int  itrale)
 
   // If itrale = 0, we are initializing ALE; do not touch the mass flux either.
   if (itrale > 0)
-    cs_f_schtmp(n_scal, 1);
+    cs_theta_scheme_update_var(1);
 
   /* Update location of code_saturne/code_saturne coupling interfaces
      ---------------------------------------------------------------- */
@@ -954,7 +951,7 @@ cs_solve_all(int  itrale)
   cs_physical_properties_update(-1);
 
   if (itrale > 0)
-    cs_f_schtmp(n_scal, 2);
+    cs_theta_scheme_update_var(2);
 
   /* Compute head loss coeffs.
      we do it even if there is no head loss on the local rank in case
@@ -1143,9 +1140,9 @@ cs_solve_all(int  itrale)
 
   if (cs_glob_time_scheme->iccvfg == 0) {
 
-    // We pass in cs_f_schtmp only in explicit
+    // We pass in cs_theta_scheme_update_var only in explicit
     if (cs_glob_time_scheme->istmpf == 0)
-      cs_f_schtmp(n_scal, 4);
+      cs_theta_scheme_update_var(4);
 
     /* Solve turbulence
        ---------------- */
@@ -1200,7 +1197,7 @@ cs_solve_all(int  itrale)
   /* Handle mass flux, viscosity, density, and specific heat for theta-scheme
      ------------------------------------------------------------------------ */
 
-  cs_f_schtmp(n_scal, 5);
+  cs_theta_scheme_update_var(5);
 
   /* Update flow through fans
      ------------------------ */
