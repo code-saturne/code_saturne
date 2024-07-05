@@ -227,6 +227,7 @@ if HAVE_CUDA
 pkginclude_HEADERS += \
 cs_base_cuda.h \
 cs_math_cuda.cuh \
+cs_array_cuda.h \
 cs_cuda_contrib.h
 
 noinst_HEADERS += \
@@ -299,7 +300,7 @@ cs_wall_condensation_1d_thermal.c \
 cs_1d_wall_thermal.c \
 cs_1d_wall_thermal_check.c \
 cs_ale.c \
-cs_array.c \
+cs_array.cpp \
 cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \

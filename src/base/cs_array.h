@@ -28,7 +28,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
 #include <string.h>
@@ -38,10 +38,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_base_accel.h"
+#if defined (__NVCC__)
+#include "cs_array_cuda.h"
+#include "cs_base_cuda.h"
+#endif
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -71,6 +74,216 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+#if defined(__cplusplus)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign values to all elements of multiple arrays. ref_val is input
+ *        as a pointer or an array
+ *
+ * Template parmeters.
+ *                 T       type name
+ *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 Arrays  varadiac parameters pack
+ *
+ * Function parameters:
+ * \param[in]      n_elts  total number of elements to set
+ * \param[in]      ref_val value to assign
+ * \param[out]     arrays  arrays to set
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, size_t stride, typename... Arrays>
+void
+cs_arrays_set_value(const cs_lnum_t  n_elts,
+                    const T         *ref_val,
+                    Arrays&&...      arrays)
+{
+  /* Expand the parameter pack */
+  T* array_ptrs[] = {arrays ... };
+
+#if defined (__NVCC__)
+  bool is_available_on_device = cs_check_device_ptr(ref_val);
+  for (T* array : array_ptrs)
+    is_available_on_device =  is_available_on_device
+                           && (cs_check_device_ptr(array)
+                               == CS_ALLOC_HOST_DEVICE_SHARED);
+
+  if (is_available_on_device) {
+    cudaStream_t stream_ = cs_cuda_get_stream(0);
+    cs_arrays_set_value<T, stride>(stream_,
+                                   n_elts,
+                                   ref_val,
+                                   arrays...);
+    return;
+  }
+#endif
+
+  auto set_value = [=](cs_lnum_t i_elt) {
+    for (T* array : array_ptrs)
+      memcpy(array + i_elt*stride, ref_val, stride*sizeof(T));
+  };
+
+  /* Loop through each index and assign values */
+# pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    set_value(i);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign values to all elements of multiple arrays. ref_val is input
+ *        as a scalar
+ *
+ * Template parmeters.
+ *                 T       type name
+ *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 Arrays  varadiac parameters pack
+ *
+ * Function parameters:
+ * \param[in]      n_elts  total number of elements to set
+ * \param[in]      ref_val value to assign
+ * \param[out]     arrays  arrays to set
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, size_t stride, typename... Arrays>
+void
+cs_arrays_set_value(const cs_lnum_t  n_elts,
+                    const T          ref_val,
+                    Arrays&&...      arrays)
+{
+
+  /* Expand the parameter pack */
+  T* array_ptrs[] = {arrays ... };
+
+#if defined (__NVCC__)
+  bool is_available_on_device = true;
+  for (T* array : array_ptrs)
+    is_available_on_device =  is_available_on_device
+                           && (cs_check_device_ptr(array)
+                               == CS_ALLOC_HOST_DEVICE_SHARED);
+
+  if (is_available_on_device) {
+    cudaStream_t stream_ = cs_cuda_get_stream(0);
+    cs_arrays_set_value<T, stride>(stream_,
+                                   n_elts,
+                                   ref_val,
+                                   arrays...);
+    return;
+  }
+#endif
+
+  auto set_value = [=](cs_lnum_t i_elt) {
+    for (T* array : array_ptrs)
+      for (size_t k = 0; k < stride; k++) {
+        array[i_elt*stride + k] = ref_val;
+      }
+  };
+
+  /* Loop through each index and assign values */
+# pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    set_value(i);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign values on a selected subset of elements to multiple arrays.
+ *        ref_val is input as a pointer or an array
+ *
+ * Template parmeters.
+ *                 T       type name
+ *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 Arrays  varadiac parameters pack
+ *
+ * Function parameters:
+ * \param[in]      n_elts   total number of elements to set
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      ref_val  value to assign
+ * \param[out]     arrays   arrays to set
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, size_t stride, typename... Arrays>
+void
+cs_arrays_set_value_on_subset(const cs_lnum_t  n_elts,
+                              const cs_lnum_t *elt_ids,
+                              const T         *ref_val,
+                              Arrays&&...      arrays)
+{
+  if (n_elts < 1)
+    return;
+
+  if (elt_ids == NULL)
+    cs_arrays_set_value<T, stride>(n_elts, ref_val, arrays...);
+  else {
+    /* Expand the parameter pack */
+    T* array_ptrs[] = {arrays ... };
+
+    auto set_value = [=](cs_lnum_t i_elt) {
+      for (T* array : array_ptrs)
+        memcpy(array + i_elt*stride, ref_val, stride*sizeof(T));
+    };
+
+    /* Loop through each index on the subset and assign values */
+#   pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      set_value(elt_ids[i]);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign values on a selected subset of elements to multiple arrays.
+ *        ref_val is input as a scalar
+ *
+ * Template parmeters.
+ *                 T       type name
+ *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 Arrays  varadiac parameters pack
+ *
+ * Function parameters:
+ * \param[in]      n_elts  total number of elements to set
+ * \param[in]      elt_ids  list of ids in the subset or NULL (size: n_elts)
+ * \param[in]      ref_val value to assign
+ * \param[out]     arrays  arrays to set
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, size_t stride, typename... Arrays>
+void
+cs_arrays_set_value_on_subset(const cs_lnum_t  n_elts,
+                              const cs_lnum_t *elt_ids,
+                              const T          ref_val,
+                              Arrays&&...      arrays)
+{
+  if (n_elts < 1)
+    return;
+
+  if (elt_ids == NULL)
+    cs_arrays_set_value<T, stride>(n_elts, ref_val, arrays...);
+  else {
+
+    /* Expand the parameter pack */
+    T* array_ptrs[] = {arrays ... };
+
+    auto set_value = [=](cs_lnum_t i_elt) {
+      for (T* array : array_ptrs)
+        for (size_t k = 0; k < stride; k++) {
+          array[i_elt*stride + k] = ref_val;
+        }
+    };
+
+   /* Loop through each index on the subset and assign values */
+#   pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      set_value(elt_ids[i]);
+  }
+}
+#endif // __cplusplus
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!

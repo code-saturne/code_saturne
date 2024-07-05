@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_array.c
+  \file cs_array.cpp
         Array handling utilities.
 */
 
