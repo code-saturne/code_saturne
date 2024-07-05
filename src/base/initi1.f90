@@ -58,7 +58,7 @@ integer          iok, ipp, nmodpp, have_thermal_model
 !===============================================================================
 
 procedure() :: iniini, iniusi, ppini1, addfld, modini, fldini
-procedure() ::  usipes, verini, impini
+procedure() ::  usipes, impini
 
 interface
 
@@ -226,7 +226,6 @@ iok = 0
 
 ! No verification in CDO mode only. This is done elsewhere
 if (icdo.lt.2) then
-   call verini (iok)
    call parameters_check
 endif
 

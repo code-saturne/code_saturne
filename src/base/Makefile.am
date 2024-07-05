@@ -429,8 +429,7 @@ mmtycl.f90 \
 schtmp.f90 \
 tdesi1.f90 \
 tridim.f90 \
-varpos.f90 \
-verini.f90
+varpos.f90
 
 libcsbase_a_LIBADD =
 local_libraries_add =

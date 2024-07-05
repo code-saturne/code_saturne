@@ -46,6 +46,7 @@
 #include "cs_1d_wall_thermal.h"
 #include "cs_ale.h"
 #include "cs_base.h"
+#include "cs_cf_model.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
@@ -74,6 +75,7 @@
 #include "cs_velocity_pressure.h"
 #include "cs_wall_distance.h"
 #include "cs_vof.h"
+#include "cs_mobile_structures.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -146,6 +148,24 @@ _field_section_desc(cs_field_t  *f,
   snprintf(section_desc, s_size, "%s %s", section_desc_b, f_name);
 
   return section_desc;
+}
+
+/*----------------------------------------------------------------------------*
+ * Raise an error for turbulence models.
+ *
+ * If used with the coupled option and 2nd order time stepping
+ *----------------------------------------------------------------------------*/
+
+static void
+_raise_turb_error(const char  *turbulence_model_name)
+{
+  cs_parameters_error
+    (CS_ABORT_DELAYED,
+     _(turbulence_model_name),
+     _("With coupled turbulence (ikecou = %d) and model (itytur = %d),\n"
+       "second order resolution (isto2t = %d) is not currently handled."),
+     cs_glob_turb_rans_model->ikecou,
+     cs_glob_turb_model->itytur, cs_glob_time_scheme->isto2t);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -817,9 +837,18 @@ cs_parameters_check(void)
   const int keyvar = cs_field_key_id("variable_id");
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
   const int kivisl = cs_field_key_id("diffusivity_id");
-  const int kvisls0 = cs_field_key_id("diffusivity_ref");
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
   const int restart_file_key_id = cs_field_key_id("restart_file");
   const int key_limiter = cs_field_key_id("limiter_choice");
+  const int key_t_ext_id = cs_field_key_id("time_extrapolated");
+  const int key_scalar_diff = cs_field_key_id("diffusivity_id");
+  const int key_scalar_to = cs_field_key_id("scalar_time_scheme");
+  const int key_scalar_exp_extrap = cs_field_key_id("st_exp_extrapolated");
+  const int key_scalar_diff_extrap = cs_field_key_id("diffusivity_extrapolated");
+  const int key_dt_var = cs_field_key_id("time_step_factor");
+  const int kturt = cs_field_key_id("turbulent_flux_model");
+
+  const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
 
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
     return; /* Avoid the detection of false setting errors when using
@@ -847,6 +876,655 @@ cs_parameters_check(void)
   char *f_desc = NULL;
 
   int list_01[2] = {0, 1};
+
+  /*--------------------------------------------------------------------------
+   * Check number of reconstructions of the right hand side terms
+   *--------------------------------------------------------------------------*/
+
+  const int ks = cs_field_key_id_try("scalar_id");
+  const int nr_sweep_default = 10;
+  const int nr_sweep_default_p = 5;
+
+  if (cs_glob_turb_model->itytur == 4 || time_scheme->time_order == 2) {
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp != NULL) {
+        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        if (f == CS_F_(vel) || scalar_id > -1) {
+          if (eqp->nswrsm < nr_sweep_default) {
+            cs_log_warning
+              (_("Non standard time-scheme choice.\n\n"
+                 "With second order in time or LES,"
+                 " the minimum recommended value\n"
+                 "for number of reconstruction for variable %s is %d.\n"
+                 "The user-imposed value is %d\n"),
+               cs_field_get_label(f), nr_sweep_default, eqp->nswrsm);
+          }
+        }
+
+        if (f == CS_F_(p)) {
+          if (eqp->nswrsm < nr_sweep_default_p) {
+            cs_log_warning
+              (_("Non standard time-scheme choice.\n\n"
+                 "With second order in time or LES,"
+                 " the minimum recommended value\n"
+                 "for number of reconstruction for variable %s is %d.\n"
+                 "The user-imposed value is %d\n"),
+               cs_field_get_label(f),
+               nr_sweep_default_p, eqp->nswrsm);
+          }
+        }
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Verification of the consistency between time integration schemes
+   *
+   * In this case it only warns the user without stopping the computation
+   *--------------------------------------------------------------------------*/
+
+  cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
+
+  int rho_extrap = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+  int mu_extrap  = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
+  int cp_extrap = 0;
+
+  const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+  if (f_cp != NULL)
+    cp_extrap = cs_field_get_key_int(f_cp, key_t_ext_id);
+
+  if (   fabs(eqp_u->theta - 1.) < 0
+      && (   time_scheme->istmpf == 2
+          || time_scheme->isno2t != 0
+          || time_scheme->isto2t != 0
+          || rho_extrap != 0 || mu_extrap  != 0 || cp_extrap  != 0))
+    cs_log_warning
+      (_("Time scheme selection:\n"
+         "Time scheme for velocity is first order (theta = %d)\n"
+         "but some terms are second order in time with the following settings:\n"
+         "istmpf = %d, isno2t = %d, isto2t = %d (time order of the mass flux,\n"
+         "time scheme for the momentum source terms, time scheme for the\n"
+         "turbulence source terms)\n"
+         "time extrapolation for density %d, viscosity %d\n"
+         "and cp %d\n"), eqp_u->theta,
+       time_scheme->istmpf, time_scheme->isno2t,
+       time_scheme->isto2t, rho_extrap, mu_extrap, cp_extrap);
+
+  if (   fabs(eqp_u->theta - 0.5) < 0
+      && (   time_scheme->istmpf != 2
+          || time_scheme->isno2t != 1
+          || time_scheme->isto2t != 1
+          || rho_extrap != 1 || mu_extrap  != 1 || cp_extrap  != 1))
+    cs_log_warning
+      (_("Time scheme selection\n\n"
+         "Time scheme for velocity is second order (theta = %d)\n"
+         "but some terms are second order in time with the following seetings:\n"
+         "istmpf = %d, isno2t = %d, isto2t = %d (time order of the mass flux,\n"
+         "time scheme for the momentum source terms, time scheme for the\n"
+         "turbulence source terms)\n"
+         "time extrapolation for density %d, viscosity %d\n"
+         "and cp %d\n"), eqp_u->theta,
+       time_scheme->istmpf, time_scheme->isno2t,
+       time_scheme->isto2t, rho_extrap, mu_extrap, cp_extrap);
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    if (eqp == NULL)
+      continue;
+    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+    if (scalar_id > -1) {
+      const int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+      if (scalar_time_order != time_scheme->isno2t) {
+        cs_log_warning
+          (_("Non standard choice of time-scheme for \"%s\":\n"
+             "  time order is %d while general time order is %d.\n"),
+           f->name, scalar_time_order, time_scheme->isno2t);
+      }
+
+      cs_lnum_t scalar_diffusivity = cs_field_get_key_int(f, key_scalar_diff);
+      if (scalar_diffusivity != mu_extrap) {
+        cs_log_warning
+          (_("Non standard choice of time-scheme for \"%s\":\n"
+             " diffusivity extrap is %d while general extrap is %d.\n"),
+           f->name, scalar_diffusivity, mu_extrap);
+      }
+    }
+  }
+
+  if (time_scheme->time_order == 2 && eqp_u->ibdtso > 1)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("time scheme selection"),
+       _("The choice of second order time scheme is not compatible with\n"
+         "the backward differential scheme in time\n"
+         "(ibdtso = %d > 1) and (time_order = %d > 1)\n"),
+       eqp_u->ibdtso, time_scheme->time_order);
+
+  /*--------------------------------------------------------------------------
+   * Turbulence option checks
+   *--------------------------------------------------------------------------*/
+
+  if (   cs_glob_turb_model->itytur == 2
+      && cs_glob_turb_rans_model->ikecou == 1) {
+    cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
+    cs_equation_param_t *eqp_eps = cs_field_get_equation_param(CS_F_(eps));
+
+    if (   time_scheme->thetst > 0.
+        || time_scheme->isto2t > 0
+        || fabs(eqp_k->theta - 1.) > 0
+        || fabs(eqp_eps->theta - 1.) > 0)
+      _raise_turb_error("in the k-epsilon turbulence model");
+  }
+
+  if (   cs_glob_turb_model->iturb == 50
+      && cs_glob_turb_rans_model->ikecou == 1) {
+    cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
+    cs_equation_param_t *eqp_eps = cs_field_get_equation_param(CS_F_(eps));
+    cs_equation_param_t *eqp_phi = cs_field_get_equation_param(CS_F_(phi));
+    cs_equation_param_t *eqp_fb = cs_field_get_equation_param(CS_F_(f_bar));
+
+    if (   time_scheme->thetst > 0.
+        || time_scheme->isto2t > 0
+        || fabs(eqp_k->theta - 1.) > 0
+        || fabs(eqp_eps->theta - 1.) > 0
+        || fabs(eqp_phi->theta - 1.) > 0
+        || fabs(eqp_fb->theta - 1.) > 0)
+      _raise_turb_error("in the v2f-phi turbulence model");
+  }
+
+  if (   cs_glob_turb_model->iturb == 51
+      && cs_glob_turb_rans_model->ikecou == 1) {
+    cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
+    cs_equation_param_t *eqp_eps = cs_field_get_equation_param(CS_F_(eps));
+    cs_equation_param_t *eqp_phi = cs_field_get_equation_param(CS_F_(phi));
+    cs_equation_param_t *eqp_alp_bl = cs_field_get_equation_param(CS_F_(alp_bl));
+
+    if (   time_scheme->thetst > 0.
+        || time_scheme->isto2t > 0
+        || fabs(eqp_k->theta - 1.) > 0
+        || fabs(eqp_eps->theta - 1.) > 0
+        || fabs(eqp_phi->theta - 1.) > 0
+        || fabs(eqp_alp_bl->theta - 1.) > 0)
+      _raise_turb_error("in the v2f-v2k turbulence model");
+  }
+
+  if (   cs_glob_turb_model->iturb == 60
+      && cs_glob_turb_rans_model->ikecou == 1) {
+    cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
+    cs_equation_param_t *eqp_omg = cs_field_get_equation_param(CS_F_(omg));
+
+    if (   time_scheme->thetst > 0.
+        || time_scheme->isto2t > 0
+        || fabs(eqp_k->theta - 1.) > 0
+        || fabs(eqp_omg->theta - 1.) > 0)
+      _raise_turb_error("in the k-omega turbulence model");
+  }
+
+  if (   cs_glob_turb_model->iturb == 70
+      && cs_glob_turb_rans_model->ikecou == 1) {
+    cs_equation_param_t *eqp_nusa = cs_field_get_equation_param(CS_F_(nusa));
+
+    if (   time_scheme->thetst > 0.
+        || time_scheme->isto2t > 0
+        || fabs(eqp_nusa->theta - 1.) > 0)
+      _raise_turb_error("in the Spalart-Allmaras turbulence model");
+  }
+
+  /*--------------------------------------------------------------------------
+   * Verification for the second order time step and the particular physics
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_physical_model_flag[0]) {
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      bool stop_criteria = false;
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp == NULL)
+        continue;
+      if (fabs(eqp->theta - 1.) > 1.e-3)
+        stop_criteria = true;
+      if (   time_scheme->thetsn > 0.
+          || time_scheme->isno2t > 0
+          || time_scheme->thetvi > 0.
+          || time_scheme->thetcp > 0.
+          || rho_extrap > 0 || mu_extrap > 0 || cp_extrap > 0)
+        stop_criteria = true;
+
+      int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+      if (scalar_id > -1) {
+        int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+        double scalar_exp_extrap
+          = cs_field_get_key_double(f, key_scalar_exp_extrap);
+        double scalar_diff_extrap
+          = cs_field_get_key_double(f, key_scalar_diff_extrap);
+        if (   scalar_time_order > 0
+            || scalar_exp_extrap > 0.
+            || scalar_diff_extrap > 0. )
+          stop_criteria = true;
+      }
+      if (stop_criteria)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("Specific physics"),
+           _("Options for field \"%s\"\n"
+             "not validated with the time discretization scheme\n"
+             "Verify the parameters\n"), f->name);
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Check options for the Lagrangian module
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
+    if (   time_scheme->thetsn > 0.
+        || time_scheme->isno2t > 0
+        || time_scheme->thetst > 0.
+        || time_scheme->isto2t > 0.)
+
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("Lagrangian module"),
+         _("The source terms in the Lagrangian module will not be second order\n"
+           "despite the user settings.\n"
+           "For Navier-Stokes (thetsn %f, isno2t %d)\n"
+           "For turbulence (thetst %f, isto2t %d)\n"
+           "Verify the parameters and the cs_user_lagr_model function."),
+         time_scheme->thetsn, time_scheme->isno2t,
+         time_scheme->thetst, time_scheme->isto2t);
+
+    if (   (   cs_glob_thermal_model->itherm == 1
+            && cs_glob_thermal_model->itpscl == 1)
+        || cs_glob_thermal_model->itherm == 2) {
+      for (int f_id = 0; f_id < n_fields; f_id++) {
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (!(f->type & CS_FIELD_VARIABLE))
+          continue;
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        if (eqp == NULL)
+          continue;
+        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        if (scalar_id > -1) {
+          int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+          double scalar_exp_extrap
+            = cs_field_get_key_double(f, key_scalar_exp_extrap);
+          if (scalar_exp_extrap > 0. || scalar_time_order > 0)
+            cs_parameters_error
+              (CS_ABORT_DELAYED,
+               _("Thermal and Lagragian module"),
+               _("Source terms from Lagragian module will not be computed\n"
+                 "with second order in this version despite the user settings\n"
+                 "defined below:\n"
+                 "For field \"%s\" (thetss %f and isso2t %d)\n"),
+               f->name, scalar_exp_extrap, scalar_time_order);
+        }
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Check options for radiation module
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_rad_transfer_params->type > 0) {
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp == NULL)
+        continue;
+      int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+      if (scalar_id > -1) {
+        int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+        double scalar_exp_extrap
+          = cs_field_get_key_double(f, key_scalar_exp_extrap);
+        if (scalar_exp_extrap > 0. || scalar_time_order > 0)
+            cs_parameters_error
+              (CS_ABORT_DELAYED,
+               _("in the radiation module"),
+               _("Source terms coming from radiation module will not be computed\n"
+                 "with second order in this version despite the user settings\n"
+                 "defined below:\n"
+                 "For scalar %d (thetss %f and isso2t %d)\n"),
+               scalar_id, scalar_exp_extrap, scalar_time_order);
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Verification in the turbulent flux model for scalars
+   *--------------------------------------------------------------------------*/
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+
+    const int turb_flux_model = cs_field_get_key_int(f, kturt);
+    if (   turb_flux_model != 0 && turb_flux_model != 10
+        && turb_flux_model != 20 && turb_flux_model != 30
+        && turb_flux_model != 11 && turb_flux_model != 21
+        && turb_flux_model != 31)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the turbulent flux models"),
+         _("the value for %s must be equal to 0, 10, 11, 20, 21, 30 or 31\n"
+           "the value defined by the user is %d."),
+         cs_field_get_label(f), turb_flux_model);
+  }
+
+  /*--------------------------------------------------------------------------
+   * Time step multiplier
+   *--------------------------------------------------------------------------*/
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+    const int id_var = cs_field_get_key_int(f, keyvar);
+    if (id_var >= 1) {
+      const double dt_var = cs_field_get_key_double(f, key_dt_var);
+      if (dt_var < 0.)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("Time step computation"),
+           _("Variable %s has a negative dt_var value %f\n"),
+           f->name, dt_var);
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Check if gravity terms in turbulence are taken into account correctly
+   *--------------------------------------------------------------------------*/
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    if (eqp == NULL)
+      continue;
+
+    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+    if (scalar_id > -1) {
+      if (   (   cs_glob_turb_model->itytur == 2
+              || cs_glob_turb_model->iturb == 50
+              || cs_glob_turb_model->itytur == 3)
+          && cs_thermal_model_field() == NULL
+          && cs_math_3_norm(cs_glob_physical_constants->gravity) > cs_math_epzero) {
+        cs_log_warning
+          (_("Turbulence model with gravity\n"
+             "Gravity is taken into account %f %f %f without solving\n"
+             "temperature or energy\n"),
+           cs_glob_physical_constants->gravity[0],
+           cs_glob_physical_constants->gravity[1],
+           cs_glob_physical_constants->gravity[2]);
+        if (  cs_glob_turb_rans_model->igrake == 1
+            || cs_glob_turb_rans_model->igrari == 1)
+          cs_log_warning
+            (_("Turbulence model with gravity\n"
+               "Gravity is taken into account in the turbulence source terms\n"
+               "(igrake = %d or igrari %d) without solving temperature or energy\n"),
+             cs_glob_turb_rans_model->igrake, cs_glob_turb_rans_model->igrari);
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Physical constants verifications
+   *--------------------------------------------------------------------------*/
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    if (eqp != NULL) {
+      int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+      if (scalar_id > -1) {
+        const int kscacp = cs_field_key_id("is_temperature");
+        const int iscacp = cs_field_get_key_int(f, kscacp);
+        if (iscacp < 0 || iscacp > 2)
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in thermal scalar model"),
+             _("Scalar %s 'is_temperature' must be an integer equal to 0 or 1\n"
+               "but it has the value %d\n"),
+             cs_field_get_label(f), iscacp);
+
+        const int ksigmas = cs_field_key_id("turbulent_schmidt");
+        const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+        if (turb_schmidt < 0)
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in thermal scalar model"),
+             _("Scalar %s, 'turbulent schmidt' must be a positive real\n"
+               "but it has the value %f\n"),
+             cs_field_get_label(f), turb_schmidt);
+
+        const int iscavr = cs_field_get_key_int(f, kscavr);
+        const int kscmax = cs_field_key_id_try("max_scalar_clipping");
+        const cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
+        const int iclvfl = cs_field_get_key_int(f, kclvfl);
+        if (iscavr > 0 && iclvfl == 2 && scmaxp < 0)
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in thermal scalar model"),
+             _("Scalar %s, scamax must be positive but it has value %f\n"),
+             cs_field_get_label(f), scmaxp);
+
+        const int krvarfl = cs_field_key_id_try("variance_dissipation");
+        const cs_real_t rvarfl = cs_field_get_key_double(f, krvarfl);
+        if (iscavr > 0 && rvarfl < 0)
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in thermal scalar model"),
+             _("Scalar %s, rvarfl must be positive but it has value %f\n"),
+             cs_field_get_label(f), rvarfl);
+
+        if (   cs_glob_fluid_properties->icp == -1
+            && cs_glob_fluid_properties->cp0 < 0
+            && iscacp > 0) {
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in thermal scalar model"),
+             _("CP0 must be a positive real but it has value %f\n"),
+           cs_glob_fluid_properties->cp0);
+
+        }
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Verification related to periodic buondaries
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_mesh->have_rotation_perio &&
+      (vp_param->ipucou != 0 || cs_glob_ale))
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in periodic boundary condition definitions"),
+       _("Rotational periodicity is not compatible with the\n"
+         "enhanced pressure-velocity coupling or ALE method in the current\n"
+         "version."));
+
+  if (cs_glob_mesh->n_init_perio > 0 && cs_glob_wall_distance_options->need_compute
+      && cs_glob_wall_distance_options->method == 2)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in periodic boundary condition definitions"),
+       _("Periodicity is incompatible with this method for computing\n"
+         "the distance to the wall in the current version."));
+
+  if (cs_glob_mesh->have_rotation_perio && cs_glob_rad_transfer_params->type == 0)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in periodic boundary condition definitions"),
+       _("Rotational periodicity is not compatible with radiative heat\n"
+         "transfer in semi-transparent media\n"));
+
+  /*--------------------------------------------------------------------------
+   * Verification of the parallel arrays
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_rank_id > 0 && cs_glob_wall_distance_options->need_compute
+      && cs_glob_wall_distance_options->method == 2)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in parallel computations"),
+       _("Wall distance computation incompatible with parallel computing\n"));
+
+  /*--------------------------------------------------------------------------
+   * Verification in the ALE method
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_ale) {
+    if (cs_glob_ale_n_ini_f < 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in ALE module"),
+         _("number of iterations for fluid initialization with ALE\n"
+           "must be a positive integer but it has value %d\n"),
+         cs_glob_ale_n_ini_f);
+
+    if (cs_glob_mobile_structures_i_max < 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in ALE module"),
+         _("Max number of interations for implicit ALE\n"
+           "must be a positive integer but it has value %d\n"),
+         cs_glob_mobile_structures_i_max);
+
+    if (cs_glob_mobile_structures_i_eps < 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in ALE module"),
+         _("Coupling precision for ALE must be a real number > 0\n"
+           "but it has value %f\n"),
+         cs_glob_mobile_structures_i_eps);
+
+    if (   cs_glob_ale_need_init != -999
+        && cs_glob_ale_need_init != 0
+        && cs_glob_ale_need_init != 1)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in ALE module"),
+         _("Initialization iteration for ALE italin must be 0 or 1\n"
+           "but it has value %d\n"),
+        cs_glob_ale_need_init);
+  }
+
+  /*--------------------------------------------------------------------------
+   * TODO Verifications for the compressible module
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > 0) {
+    if (   cs_glob_fluid_properties->p0 < 0
+        || cs_glob_fluid_properties->t0 < 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the compressible module"),
+         _("T0 and P0 must be strictly positive real numbers but\n"
+           "T0 = %f\n"
+           "P0 = %f\n"),
+         cs_glob_fluid_properties->t0, cs_glob_fluid_properties->p0);
+
+    cs_field_t *fth = cs_thermal_model_field();
+    const cs_real_t visls_0 = cs_field_get_key_double(fth, kvisl0);
+    if (visls_0 < 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the compressible module"),
+         _("The thermal conductivity must be strictly positive\n"
+           "real number but it has value %f\n"), visls_0);
+
+    if (cs_glob_fluid_properties->viscv0 < 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the compressible module"),
+         _("The volumic viscosity must be strictly positive\n"
+           "real number but it has value %f\n"),
+         cs_glob_fluid_properties->viscv0);
+
+    if (cs_glob_cf_model->ieos < 1 || cs_glob_cf_model->ieos > 4)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the compressible module"),
+         _("IEOS must be an integer between 1 and 3 but it has\n"
+           "a value of %d\n"), cs_glob_cf_model->ieos);
+
+    if (cs_glob_cf_model->ieos == 2 && cs_glob_cf_model->gammasg < 1)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the compressible module"),
+         _("The polytropic coefficient for the stiffened gas law\n"
+           "must be a real number superior to 1 but it has a value of %f\n"),
+         cs_glob_cf_model->gammasg);
+
+    if (   cs_glob_cf_model->ieos == 1
+        && cs_glob_fluid_properties->cp0 < cs_glob_fluid_properties->cv0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the compressible module"),
+         _("The specific heat ratio (CP0/CV0) must be a real number\n"
+           "strictly superior to 1 but:\n"
+           "CP0 = %f\n"
+           "CV0 = %f\n"),
+         cs_glob_fluid_properties->cp0, cs_glob_fluid_properties->cv0);
+
+    if (  (cs_glob_cf_model->ieos == 1 || cs_glob_cf_model->ieos == 3)
+        && fabs(cs_glob_cf_model->psginf) > 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the compressible module"),
+         _("The limit pressure of the stiffened gas law must be zero in\n"
+           "ideal gas or ideal gas mix but psginf has a value of %f"),
+         cs_glob_cf_model->gammasg);
+  }
+
+  /*--------------------------------------------------------------------------
+   * Verifications for the unsteady rotor/stator coupling
+   *--------------------------------------------------------------------------*/
+
+  if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
+    if (cs_glob_time_step_options->idtvar < 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in rotor/stator unsteady model"),
+         _("Unsteady rotor/stator coupling is not compatible with the\n"
+           "steady algorithm.\n"));
+
+    if (cs_glob_time_step_options->idtvar == 1 ||
+        cs_glob_time_step_options->idtvar == 2)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in rotor/stator unsteady model"),
+         _("Unsteady rotor/stator coupling is not compatible with the\n"
+           "space or time variable time steps.\n"));
+
+  }
+
+  /*--------------------------------------------------------------------------
+   * Verification for the VOF modelling
+   *--------------------------------------------------------------------------*/
+
+  if (cs_glob_vof_parameters->vof_model > 0 && vp_model->idilat)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in the VOF method"),
+       _("The VOF method is not compatible with the dilatable or low-mach flows\n"));
 
   /*--------------------------------------------------------------------------
    * checkpoint options
@@ -890,7 +1568,7 @@ cs_parameters_check(void)
       const char *ee_active
         = N_("One or several error estimates are activated for Navier-Stokes");
 
-      if (cs_glob_time_scheme->iccvfg == 1)
+      if (time_scheme->iccvfg == 1)
         cs_parameters_error
           (CS_ABORT_DELAYED,
            _("while reading input data"),
@@ -940,11 +1618,11 @@ cs_parameters_check(void)
 
   const int icp = cs_field_id_by_name("specific_heat");
   if (   cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0
-        && icp == -1)
-      cs_parameters_error
-        (CS_ABORT_DELAYED,
-         _("while reading input data"),
-         _("Cooling towers model requires variable specific_heat field.\n"));
+      && icp == -1)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("while reading input data"),
+       _("Cooling towers model requires variable specific_heat field.\n"));
 
   /* Equations definition, time scheme, convective scheme */
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
@@ -1064,7 +1742,6 @@ cs_parameters_check(void)
      - local or variable time step */
 
   if (CS_F_(vel) != NULL) {
-    int key_t_ext_id = cs_field_key_id("time_extrapolated");
     cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
 
     const char *tds_err_str
@@ -1090,7 +1767,7 @@ cs_parameters_check(void)
     if (CS_F_(mu) != NULL)
       iviext = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
 
-    const cs_time_scheme_t *t_sch = cs_glob_time_scheme;
+    const cs_time_scheme_t *t_sch = time_scheme;
 
     if (   fabs(eqp->theta-1.0) > 1e-3
         || t_sch->thetvi > 0
@@ -1254,7 +1931,7 @@ cs_parameters_check(void)
                                 vp_param->itpcol,
                                 -1, 2);
 
-  if (cs_glob_time_scheme->iccvfg == 1) {
+  if (time_scheme->iccvfg == 1) {
     cs_parameters_is_equal_int(CS_WARNING,
                               _("while reading input data,\n"
                                 "cs_glob_velocity_pressure_param->nterup "
@@ -1954,7 +2631,7 @@ cs_parameters_check(void)
                                _("while reading porous model,\n"
                                  "integral formulation "
                                  "(cs_glob_porous_model=3) "
-                                 "not compatible \n"
+                                 "not compatible\n"
                                  "with gradient calculation method: "
                                  "least squares"),
                                "cs_glob_space_disc->imrgra",
@@ -2136,7 +2813,7 @@ cs_parameters_check(void)
     }
   }
 
-  /* physical properties reference values */
+  /* Physical properties reference values */
   cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                   _("while reading reference density value"),
                                   "cs_glob_fluid_properties->ro0",
@@ -2159,7 +2836,7 @@ cs_parameters_check(void)
                                   0.);
   }
 
-  /* check variances */
+  /* Check variances */
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
@@ -2208,9 +2885,9 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_real_t visls_0 = cs_field_get_key_double(f, kvisls0);
+      cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
       f_desc = _field_section_desc(f, "reference diffusivity value for "
-                                      "variable ");
+                                   "variable ");
 
       int diff_id = cs_field_get_key_int(f, kivisl);
       int isca = cs_field_get_key_int(f, keysca);
@@ -2431,7 +3108,7 @@ cs_parameters_check(void)
 
   }
 
-  /* stop the calculation if needed once all checks have been done */
+  /* Stop the calculation if needed once all checks have been done */
   cs_parameters_error_barrier();
 }
 

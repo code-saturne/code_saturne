@@ -137,7 +137,7 @@ cs_cf_thermo_default_init(void)
   cs_real_t *ro0   = &fluid_properties->ro0;
 
   /* Default initializations
-     t0 is positive (this assumption has been checked in verini) */
+     t0 is positive (assumption checked in cs_parameters_check.c) */
   cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *cvar_en = CS_F_(e_tot)->val;
 

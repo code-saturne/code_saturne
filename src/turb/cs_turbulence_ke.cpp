@@ -1876,7 +1876,7 @@ cs_turbulence_ke(int              phase_id,
         smbre[c_id] = smbre[c_id] - w8[c_id];
       }
 
-      /* In verini we block the
+      /* In cs_parameters_check.c we block the
          cs_glob_turb_model->iturb != CS_TURB_K_EPSILON / kecou = 1
          combination */
     }
