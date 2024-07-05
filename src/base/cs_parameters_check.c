@@ -1250,7 +1250,7 @@ cs_parameters_check(void)
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_time_step_options->itpcol",
+                                "cs_glob_velocity_pressure_param->itpcol",
                                 vp_param->itpcol,
                                 -1, 2);
 
