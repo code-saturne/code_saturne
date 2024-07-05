@@ -138,17 +138,6 @@ if (iatsoil.eq.1) then
   tab_sol(4)%rugdyn = 0.0012
 endif
 
-! Initializing the soil table of each vertical grid
-if (iatsoil.ne.0) then
-  do iiv = 1, nvert
-    soil_albedo  (iiv) = 0.25d0
-    soil_emissi  (iiv) = 0.965d0
-    soil_ttsoil  (iiv) = 14.77d0
-    soil_totwat  (iiv) = 0.0043d0
-    soil_pressure(iiv) = 1023.d0
-    soil_density (iiv) = 1.23d0
-  enddo
-endif
 !< [usatsoil]
 
 !----

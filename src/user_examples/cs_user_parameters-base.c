@@ -1922,6 +1922,20 @@ cs_user_finalize_setup(cs_domain_t     *domain)
   /*-----------------------------------------------------------------*/
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
 
+  /* Initializing the soil table of each vertical grid */
+
+  if (at_opt->soil_model != 0) {
+    for (int i = 0; i < n_vert; i++) {
+      at_opt->rad_1d_albedo0[i] = 0.25;
+      at_opt->rad_1d_emissi0[i] = 0.965;
+      at_opt->rad_1d_temp0  [i] = 14.77;
+      /* NB automatic computation of at_opt->rad_1d_theta0 [i] */
+      at_opt->rad_1d_qw0    [i] = 0.0043;
+      at_opt->rad_1d_p0     [i] = 102300.;
+      at_opt->rad_1d_rho0   [i] = 1.23;
+    }
+  }
+
   at_opt->rad_1d_z[0 ] = 0.;
   at_opt->rad_1d_z[1 ] = 5.;
   at_opt->rad_1d_z[2 ] = 20.5;
